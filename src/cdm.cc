@@ -1,4 +1,4 @@
-#include <dune/toolbox/toolbox.hh>
+#include <dune/citcat/citcat.hh>
 
 int main(int argc, char** argv)
 {
