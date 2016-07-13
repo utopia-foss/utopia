@@ -1,0 +1,10 @@
+################################
+# Dune module information file #
+################################
+
+#Name of the module
+Module: citcat
+Version: 0.1
+Maintainer: lriedel@iup.uni-heidelberg.de
+#depending on
+Depends: dune-common dune-geometry dune-grid dune-istl
