@@ -63,7 +63,7 @@ protected:
 	using Individual = typename SimulationWrapper::Individual;
 
 	using State = typename SimulationWrapper::State;
-	using StateRule = std::function<State(const std::shared_ptr<const Cell>)>;
+	using StateRule = std::function<State(const std::shared_ptr<Cell>)>;
 
 	SimulationWrapper data; //!< The simulation wrapper object containing references to the data containers
 
