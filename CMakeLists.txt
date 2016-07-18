@@ -19,6 +19,9 @@ dune_project()
 
 # check for C++14 compatibility
 dune_require_cxx_standard(MODULE "citcat" VERSION 14)
+# DUNE does not support strict aliasing
+add_compile_options(-fno-strict-aliasing)
+# enable all packages found by DUNE
 dune_enable_all_packages()
 
 # add subdirectories
