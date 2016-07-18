@@ -69,6 +69,7 @@ protected:
 
 	std::vector<StateRule> rules;
 	std::vector<StateRule> bc;
+	bool update_always;
 
 	//! Output writers. Tuple contains writer, interval for printout and time until next printout
 	std::vector< std::tuple<std::shared_ptr<DataWriter>,const float,float> > output;
@@ -87,7 +88,7 @@ public:
 	/** \param data_ Wrapper object to run the simulation on
 	 */
 	Simulation (SimulationWrapper& data_) :
-		data(data_), dt(1.0), time(0.0),
+		data(data_), update_always(true), dt(1.0), time(0.0),
 		steps(0), rule_timer(false), update_timer(false), data_timer(false)
 	{ }
 
@@ -107,6 +108,8 @@ public:
 	void set_time (const float time_) { time = time_; }
 	//! Set timestep size
 	void set_timestep (const float dt_) { dt = dt_; }
+	//! Set to true if all cells should be updated after every rule
+	void set_update_after_every_rule (const bool update) { update_always = update; }
 
 	/// Add a rule
 	template<typename F>
@@ -196,30 +199,42 @@ private:
 		else
 			apply_rules_bc_cells();
 		rule_timer.stop();
-		update_cells();
+
+		if(!update_always)
+			update_cells();
 	}
 
 	/// Apply all rules to all cells
 	void apply_rules_cells ()
 	{
-		for(auto&& cell : data.cells()){
-			for(const auto& f : rules)
+		for(const auto& f : rules){
+			for(auto&& cell : data.cells())
 				cell->new_state() = f(cell);
+			if(update_always)
+				update_cells();
 		}
 	}
 
 	/// Apply all rules to non-boundary cells. Apply all BCs to boundary cells
 	void apply_rules_bc_cells ()
 	{
-		for(auto&& cell : data.cells()){
-			if(cell->boundary()){
-				for(const auto& f : bc)
-					cell->new_state() = f(cell);
+		const auto iter = std::max(rules.size(),bc.size());
+		for(int i=0; i<iter; i++)
+		{
+			// only apply rules if there are any left
+			const bool do_bc = (i<bc.size());
+			const bool do_rule = (i<rules.size());
+
+			for(auto&& cell : data.cells()){
+				if(do_bc && cell->boundary()){
+					cell->new_state() = bc[i](cell);
+				}
+				else if(do_rule){
+					cell->new_state() = rules[i](cell);
+				}
 			}
-			else{
-				for(const auto& f : rules)
-					cell->new_state() = f(cell);
-			}
+			if(update_always)
+				update_cells();
 		}
 	}
 

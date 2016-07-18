@@ -188,16 +188,12 @@ namespace Output {
 		filename += FILETYPE;
 
 		std::array<StateType,2> range({lower,upper});
-		if(lower==upper)
+		if(lower==0 && upper==0)
 		{
 			// read range from current state range
-			for(const auto& i : cont)
-			{
-				StateType val = i->state();
-				if(val<range[0])
-					range[0]=val;
-				else if(val>range[1])
-					range[1]=val;
+			for(const auto& cell : cont){
+				range[0] = std::min(cell->state(),range[0]);
+				range[1] = std::max(cell->state(),range[1]);
 			}
 		}
 		return std::make_shared<TimeStateDensityWriter<Container>>(cont,filename,range);

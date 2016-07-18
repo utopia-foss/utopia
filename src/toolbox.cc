@@ -33,6 +33,7 @@ int main(int argc, char** argv)
 		auto vtkwriter = Output::create_vtk_writer(grid);
 		sim.add_output(vtkwriter);
 		vtkwriter->add_adaptor(Output::vtk_output_cell_state(my_cells));
+		vtkwriter->add_adaptor(Output::vtk_output_cell_state_clusters(my_cells));
 
 		for(const auto& i : my_cells)
 		{
