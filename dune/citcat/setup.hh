@@ -6,14 +6,16 @@ class Setup
 {
 private:
 
-	using Grid = typename StaticTypes::Grid::Type;
+	using DefaultGrid = Dune::YaspGrid<2,Dune::EquidistantOffsetCoordinates<double,2>>;
+	/*
 	using GV = typename StaticTypes::Grid::GridView;
-	using Domain = typename StaticTypes::Grid::Domain;
+	using Position = typename StaticTypes::Grid::Position;
 	using Mapper = typename StaticTypes::Grid::Mapper;
 	using Index = typename StaticTypes::Grid::Index;
 	using ElementIterator = typename StaticTypes::Grid::ElementIterator;
 
 	static const int dim = StaticTypes::Grid::dim;
+	*/
 
 public:
 	/// Default constructor.
@@ -23,8 +25,8 @@ public:
 	template<typename GridType, typename CellContainer>
 	static decltype(auto) create_sim_cells (const std::shared_ptr<GridType>& grid, CellContainer& cells)
 	{
-		using DataType = SimulationWrapper<GridType,CellContainer,StaticTypes::EmptyContainer>; 
-		StaticTypes::EmptyContainer individuals;
+		using DataType = SimulationWrapper<GridType,CellContainer,EmptyContainer>; 
+		EmptyContainer individuals;
 		DataType data(grid,cells,individuals);
 		Simulation<DataType> sim(data);
 		return sim;
@@ -35,7 +37,7 @@ public:
 	 * \param cells_xy Number of cells in each direction.
 	 *   Total number will be cells^2.
 	 */
-	template<typename GridType=Grid>
+	template<typename GridType=DefaultGrid>
 	static decltype(auto) create_grid(const int cells_xy)
 	{
 		return create_grid(cells_xy,cells_xy);
@@ -48,20 +50,24 @@ public:
 	 *  \param range_x Grid extension in x-direction
 	 *  \param range_y Grid extension in y-direction
 	 */
-	template<typename GridType=Grid>
+	template<typename GridType=DefaultGrid>
 	static std::shared_ptr<GridType> create_grid(const int cells_x, const int cells_y, float range_x=0.0, float range_y=0.0)
 	{
+		using GridTypes = GridTypeAdaptor<GridType>;
+		using Position = typename GridTypes::Position;
+		static constexpr int dim = GridTypes::dim;
+
 		if(range_x==0.0 && range_y==0.0){
 			range_x = cells_x;
 			range_y = cells_y;
 		}
-		const Domain extensions({range_x,range_y});
+		const Position extensions({range_x,range_y});
 		const std::array<int,dim> cells({cells_x,cells_y});
 
 		// place lower left cell center into origin
-		const Domain deviation({-range_x/(cells_x*2.0),-range_y/(cells_y*2.0)});
-		const Domain lower_left = deviation;
-		const Domain upper_right = extensions + deviation;
+		const Position deviation({-range_x/(cells_x*2.0),-range_y/(cells_y*2.0)});
+		const Position lower_left = deviation;
+		const Position upper_right = extensions + deviation;
 
 		return std::make_shared<GridType>(lower_left,upper_right,cells);
 	}
@@ -82,7 +88,7 @@ public:
 			if(!cell->boundary())
 				continue;
 
-			const Domain pos = cell->position();
+			const auto pos = cell->position();
 			if(cell->grid_neighbors_count()==2) // Edge cell
 			{
 				auto it = cells.begin();
@@ -160,20 +166,27 @@ public:
 	 *  \param f_traits Function without arguments returning traits
 	*/
 	template<typename State=int, typename Traits=int, typename GridType, typename S, typename T=std::function<Traits(void)>>
-	static CellContainer<Cell<State,Traits>> create_cells_on_grid(const std::shared_ptr<GridType> grid, S f_state, T f_traits=[](){return 0;})
+	static decltype(auto) create_cells_on_grid(const std::shared_ptr<GridType> grid, S f_state, T f_traits=[](){return 0;})
 	{
 		//static_assert(std::is_convertible<State,typename std::result_of<S>::type>::value,"This function does not return a variable of type 'State'!");
 		//static_assert(std::is_convertible<Traits,typename std::result_of<T>::type>::value,"This functions does not return a variable of type 'Traits'!");
 
+		using GridTypes = GridTypeAdaptor<GridType>;
+		using Position = typename GridTypes::Position;
+		static constexpr int dim = GridTypes::dim;
+		using GV = typename GridTypes::GridView;
+		using Mapper = typename GridTypes::Mapper;
+		using Index = typename GridTypes::Index;
+
 		GV gv(*grid);
 		Mapper mapper(gv);
-		CellContainer<Cell<State,Traits>> cells;
+		CellContainer<Cell<State,Traits,Position,Index>> cells;
 		cells.reserve(mapper.size());
 
 		// loop over all entities and create cells
 		for(auto it=gv.template begin<0>(); it!=gv.template end<0>(); ++it)
 		{
-			const Domain pos = it->geometry().center();
+			const Position pos = it->geometry().center();
 			const Index id = mapper.index(*it);
 			bool boundary = false;
 			for(auto iit=gv.ibegin(*it); iit!=gv.iend(*it); ++iit)
@@ -184,10 +197,10 @@ public:
 					break;
 				}
 			}
-			cells.push_back(std::make_shared<Cell<State,Traits>>(f_state(),f_traits(),pos,id,boundary));
+			cells.push_back(std::make_shared<Cell<State,Traits,Position,Index>>(f_state(),f_traits(),pos,id,boundary));
 		}
 
-		std::map<Index,std::shared_ptr<Cell<State,Traits>>> map;
+		std::map<Index,std::shared_ptr<Cell<State,Traits,Position,Index>>> map;
 		for(const auto& i: cells) 
 			map.emplace(i->index(),i);
 

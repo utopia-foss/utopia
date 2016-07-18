@@ -2,15 +2,16 @@
 #define DATA_VTK_HH
 
 /// Interface for wrapping data to be written by a VTKWrapper.
+//template<typename VTKWriter>
 class GridDataAdaptor
 {
 protected:
-	using VTKWriter = StaticTypes::VTKWriter;
+	//using VTKWriter = StaticTypes::VTKWriter;
 
 public:
 	GridDataAdaptor () = default;
 
-	virtual void add_data (VTKWriter& vtkwriter) = 0;
+	//virtual void add_data (VTKWriter& vtkwriter) = 0;
 
 	/// Update the local data before printout.
 	virtual void update_data () = 0;
@@ -21,8 +22,9 @@ template<typename GridType>
 class VTKWrapper : public DataWriter
 {
 protected:
-	using GV = StaticTypes::Grid::GridView;
-	using VTKWriter = StaticTypes::VTKWriter;
+	using GridTypes = GridTypeAdaptor<GridType>;
+	using GV = typename GridTypes::GridView;
+	using VTKWriter = typename GridTypes::VTKWriter;
 
 	GV gv;
 	VTKWriter vtkwriter;
@@ -75,6 +77,7 @@ public:
 		cells(cells_), grid_data(cells.size()), label(label_)
 	{ }
 
+	template<typename VTKWriter>
 	void add_data (VTKWriter& vtkwriter)
 	{
 		vtkwriter.addCellData(grid_data,label);
@@ -94,7 +97,7 @@ class CellStateClusterGridDataAdaptor : public GridDataAdaptor
 protected:
 	using Cell = typename CellContainer::value_type::element_type;
 	using State = typename Cell::State;
-	using Index = StaticTypes::Grid::Index;
+	//using Index = StaticTypes::Grid::Index;
 
 	const CellContainer& cells_; //!< Container of entities
 	std::vector<State> grid_data_; //!< Container for VTK readout
@@ -111,6 +114,7 @@ public:
 		cells_(cells), grid_data_(cells_.size()), label_(label), range_(range)
 	{ }
 
+	template<typename VTKWriter>
 	void add_data (VTKWriter& vtkwriter)
 	{
 		vtkwriter.addCellData(grid_data_,label_);
@@ -119,7 +123,7 @@ public:
 	void update_data ()
 	{
 		std::vector<bool> visited(cells_.size(),false);
-		int cluster_id = 0;
+		int cluster_id = 1;
 		for(const auto& cell : cells_){
 			if(!visited[cell->index()] && range_check(cell)){
 				grid_data_[cell->index()] = cluster_id;
@@ -148,10 +152,8 @@ private:
 	bool range_check (const Cell& cell)
 	{
 		bool ret = true;
-		if(cell->state() < range_[0])
-			ret = false;
-		if(cell->state() > range_[1])
-			ret= false;
+		if(cell->state() < range_[0]) ret = false;
+		if(cell->state() > range_[1]) ret = false;
 		return ret;
 	}
 };

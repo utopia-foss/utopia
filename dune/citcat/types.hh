@@ -1,27 +1,28 @@
 #ifndef TYPES_HH
 #define TYPES_HH
 
-struct StaticTypes
-{
-	struct Grid
-	{
-		using Type = Dune::YaspGrid<2,Dune::EquidistantOffsetCoordinates<double,2>>;
-		static const int dim = Type::dimension;
-		using DomainField = Type::ctype;
-		using Domain = Dune::FieldVector<DomainField,dim>;
-		using GridView = Type::Partition<Dune::All_Partition>::LeafGridView;
-		//using Mapper = Dune::GlobalUniversalMapper<Type>;
-		using Mapper = Dune::SingleCodimSingleGeomTypeMapper<GridView,0>;
-		using Index = Mapper::Index;
-		using ElementIterator = GridView::template Codim<0>::Iterator;
-	};
-	using EmptyContainer = std::array<std::shared_ptr<int>,0>;
-	using VTKWriter = Dune::VTKSequenceWriter<Grid::GridView>;
+using DefaultGrid = Dune::YaspGrid<2,Dune::EquidistantOffsetCoordinates<double,2>>;
 
+template<typename GridType>
+struct GridTypeAdaptor
+{
+	//! spatial dimensions of the grid
+	static constexpr int dim = GridType::dimension;
+	//! coordinate type
+	using Coordinate = typename GridType::ctype;
+	//! Coordinate vector
+	using Position = typename Dune::FieldVector<Coordinate,dim>;
+	using GridView = typename GridType::template Partition<Dune::All_Partition>::LeafGridView;
+	using VTKWriter = typename Dune::VTKSequenceWriter<GridView>;
+	using Mapper = typename Dune::SingleCodimSingleGeomTypeMapper<GridView,0>;
+	using Index = typename Mapper::Index;
 };
+
 
 template<typename CellType>
 using CellContainer = std::vector<std::shared_ptr<CellType>>;
+
+using EmptyContainer = std::array<std::shared_ptr<int>,0>;
 
 /// Neighborhood adaptors
 namespace Neighborhood

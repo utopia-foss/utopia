@@ -5,7 +5,7 @@
 /**
  *  \todo add interface for Individuals
  */
-template<typename StateType, typename TraitsType>
+template<typename StateType, typename TraitsType, typename PositionType, typename IndexType>
 class Cell : public Entity<StateType,TraitsType>
 {
 public:
@@ -15,18 +15,18 @@ public:
 
 protected:
 
-	using Domain = typename StaticTypes::Grid::Domain;
-	using Index = typename StaticTypes::Grid::Index;
+	using Position = PositionType;
+	using Index = IndexType;
 
 public:
 
 	//! Constructor
-	Cell(const State& state_, const Traits& traits_, const Domain& pos_, const Index id_, const bool boundary=false, const int tag_=0) :
+	Cell(const State& state_, const Traits& traits_, const Position& pos_, const Index id_, const bool boundary=false, const int tag_=0) :
 		Entity<State,Traits>(state_,traits_,tag_), pos(pos_), bnd(boundary), id(id_)
 	{ }
 
-	/// Return grid position
-	const Domain& position() const { return pos; }
+	/// Return position on grid
+	const Position& position() const { return pos; }
 	/// Return grid index
 	Index index() const { return id; }
 
@@ -38,9 +38,9 @@ public:
 	/// Return connected neighbors
 	/** Verify if connections to neighbors are still valid
 	 */
-	CellContainer<Cell<State,Traits>> neighbors() const
+	CellContainer<Cell<State,Traits,Position,Index>> neighbors() const
 	{
-		CellContainer<Cell<State,Traits>> ret;
+		CellContainer<Cell<State,Traits,Position,Index>> ret;
 		ret.reserve(nb.size());
 		for(const auto& i : nb){
 			if(auto x = i.lock())
@@ -52,9 +52,9 @@ public:
 	/// Return grid neighbors
 	/** Verify if connections to neighbors are still valid
 	 */
-	CellContainer<Cell<State,Traits>> grid_neighbors() const
+	CellContainer<Cell<State,Traits,Position,Index>> grid_neighbors() const
 	{
-		CellContainer<Cell<State,Traits>> ret;
+		CellContainer<Cell<State,Traits,Position,Index>> ret;
 		ret.reserve(gnb.size());
 		for(const auto& i : gnb){
 			if(auto x = i.lock())
@@ -161,7 +161,7 @@ private:
 	//! List of neighbors on grid
 	std::vector<std::weak_ptr<Cell>> gnb;
 	//! Position of cell
-	const Domain pos;
+	const Position pos;
 	//! Cell located at grid boundary
 	const bool bnd;
 	//! Grid index of cell
