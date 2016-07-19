@@ -2,13 +2,15 @@
 #define ENTITY_HH
 
 /// Base class for Cells and Individuals, containing information on State and Traits
-/** \tparam State Type of states
- *  \tparam Traits Type of traits
+/** \tparam StateType Type of states
+ *  \tparam TraitsType Type of traits
  */
-template<typename State, typename Traits>
+template<typename StateType, typename TraitsType>
 class Entity
 {
 public:
+	using State = StateType;
+	using Traits = TraitsType;
 
 	/// Constructor. Define initial state and traits, and constant tag
 	Entity(const State& state_, const Traits& traits_, const int tag_=0) :

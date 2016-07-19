@@ -20,7 +20,7 @@ protected:
 
 public:
 
-	//! Constructor
+	/// Constructor.
 	Cell(const State& state_, const Traits& traits_, const Position& pos_, const Index id_, const bool boundary=false, const int tag_=0) :
 		Entity<State,Traits>(state_,traits_,tag_), pos(pos_), bnd(boundary), id(id_)
 	{ }

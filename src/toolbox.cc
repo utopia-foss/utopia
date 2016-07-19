@@ -22,7 +22,7 @@ int main(int argc, char** argv)
 			return new_state; };
 	 	//std::function<TraitsType(void)> traits_default = []() { return TraitsType({true,false}); };
 
-		auto grid = Setup::create_grid(100);
+		auto grid = Setup::create_grid(50);
 		auto my_cells = Setup::create_cells_on_grid(grid,state_default);
 		Setup::apply_periodic_boundaries(my_cells);
 		auto sim = Setup::create_sim_cells(grid,my_cells);

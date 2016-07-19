@@ -2,24 +2,8 @@
 #define SETUP_HH
 
 /// Class for building objects.
-class Setup
+namespace Setup
 {
-private:
-
-	using DefaultGrid = Dune::YaspGrid<2,Dune::EquidistantOffsetCoordinates<double,2>>;
-	/*
-	using GV = typename StaticTypes::Grid::GridView;
-	using Position = typename StaticTypes::Grid::Position;
-	using Mapper = typename StaticTypes::Grid::Mapper;
-	using Index = typename StaticTypes::Grid::Index;
-	using ElementIterator = typename StaticTypes::Grid::ElementIterator;
-
-	static const int dim = StaticTypes::Grid::dim;
-	*/
-
-public:
-	/// Default constructor.
-	Setup () = default;
 
 	/// Create a simulation object from a grid and a set of cells
 	template<typename GridType, typename CellContainer>
@@ -30,17 +14,6 @@ public:
 		DataType data(grid,cells,individuals);
 		Simulation<DataType> sim(data);
 		return sim;
-	}
-
-	/// Build a grid and return a shared pointer to it
-	/** Cell extensions will be 1x1.
-	 * \param cells_xy Number of cells in each direction.
-	 *   Total number will be cells^2.
-	 */
-	template<typename GridType=DefaultGrid>
-	static decltype(auto) create_grid(const int cells_xy)
-	{
-		return create_grid(cells_xy,cells_xy);
 	}
 
 	/// Build a grid and return a shared pointer to it.
@@ -72,6 +45,17 @@ public:
 		return std::make_shared<GridType>(lower_left,upper_right,cells);
 	}
 
+	/// Build a grid and return a shared pointer to it
+	/** Cell extensions will be 1x1.
+	 * \param cells_xy Number of cells in each direction.
+	 *   Total number will be cells^2.
+	 */
+	template<typename GridType=DefaultGrid>
+	static std::shared_ptr<GridType> create_grid(const int cells_xy)
+	{
+		return create_grid<GridType>(cells_xy,cells_xy);
+	}
+
 	/// Add connections for periodic boundaries to cells on a rectangular grid
 	/**
 	 *  \param cells Container of cells
@@ -93,18 +77,15 @@ public:
 			{
 				auto it = cells.begin();
 				auto end = cells.end();
-				// find all adjaced edge cells
+				// find all adjacent edge cells
 				while(it!=end)
 				{
 					it = std::find_if(it,end,
 						[&pos,&cell](const CellPtr& a)
 						{
-							if(!a->boundary())
-								return false;
-							if(a==cell)
-								return false;
-							if(a->grid_neighbors_count()!=2)
-								return false;
+							if(!a->boundary()) return false;
+							if(a==cell) return false;
+							if(a->grid_neighbors_count()!=2) return false;
 							return (a->position()[0] == pos[0]) || 
 								(a->position()[1] == pos[1]);
 						});
