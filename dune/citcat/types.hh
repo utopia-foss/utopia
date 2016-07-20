@@ -21,7 +21,7 @@ struct GridTypeAdaptor
 	//! Type of VTKSequenceWriter
 	using VTKWriter = typename Dune::VTKSequenceWriter<GridView>;
 	//! Type of Grid Index Mapper
-	using Mapper = typename Dune::SingleCodimSingleGeomTypeMapper<GridView,0>;
+	using Mapper = typename Dune::MultipleCodimMultipleGeomTypeMapper<GridView,Dune::MCMGElementLayout>;
 	//! Type of grid index
 	using Index = typename Mapper::Index;
 };

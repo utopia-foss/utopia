@@ -37,9 +37,10 @@
 
 // DUNE-GRID
 #include <dune/grid/yaspgrid.hh>
+#include <dune/grid/uggrid.hh>
+#include <dune/grid/io/file/gmshreader.hh>
 #include <dune/grid/utility/structuredgridfactory.hh>
-#include <dune/grid/common/scsgmapper.hh>
-#include <dune/grid/common/universalmapper.hh>
+#include <dune/grid/common/mcmgmapper.hh>
 #include <dune/grid/io/file/vtk/vtksequencewriter.hh>
 
 // CITCAT

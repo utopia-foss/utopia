@@ -5,6 +5,23 @@
 namespace Setup
 {
 
+	/// Create a grid from a Gmsh file and return a shared pointer to it
+	/** \param filename Name of the Gmsh file with path relative to executable
+	 *  \param refinement_level Level of global refinement applied to grid
+	 */
+	static std::shared_ptr<Dune::UGGrid<2>> read_gmsh (const std::string filename, const unsigned int refinement_level=0)
+	{
+		using Grid = Dune::UGGrid<2>;
+		auto grid = std::make_shared<Grid>();
+
+		Dune::GridFactory<Grid> factory(grid.get());
+		Dune::GmshReader<Grid>::read(factory,filename);
+		factory.createGrid();
+
+		grid->globalRefine(refinement_level);
+		return grid;
+	}
+
 	/// Create a simulation object from a grid and a set of cells
 	template<typename GridType, typename CellContainer>
 	static decltype(auto) create_sim_cells (const std::shared_ptr<GridType>& grid, CellContainer& cells)
