@@ -33,7 +33,7 @@ protected:
 public:
 	VTKWrapper (const std::shared_ptr<GridType> grid, const std::string& filename) :
 		gv(grid->leafGridView()),
-		vtkwriter(gv,filename,"","")
+		vtkwriter(gv,filename,OUTPUTDIR,"")
 	{ }
 
 	/// Add a data adaptor to the output of this wrapper
@@ -100,7 +100,7 @@ protected:
 	//using Index = StaticTypes::Grid::Index;
 
 	const CellContainer& cells_; //!< Container of entities
-	std::vector<State> grid_data_; //!< Container for VTK readout
+	std::vector<int> grid_data_; //!< Container for VTK readout
 	const std::string label_; //!< data label
 	const std::array<State,2> range_; //! range of states to use
 
@@ -122,8 +122,11 @@ public:
 
 	void update_data ()
 	{
+		std::minstd_rand gen(1);
+		std::uniform_int_distribution<int> dist(1,50000);
+
 		std::vector<bool> visited(cells_.size(),false);
-		int cluster_id = 1;
+		auto cluster_id = dist(gen);
 		for(const auto& cell : cells_){
 			if(!visited[cell->index()] && range_check(cell)){
 				grid_data_[cell->index()] = cluster_id;
@@ -204,9 +207,10 @@ namespace Output {
 	 *  \param filename Name of output file
 	 */
 	template<typename GridType>
-	std::shared_ptr<VTKWrapper<GridType>> create_vtk_writer (std::shared_ptr<GridType> grid, std::string filename="grid")
+	std::shared_ptr<VTKWrapper<GridType>> create_vtk_writer (std::shared_ptr<GridType> grid, const std::string filename=EXECUTABLE_NAME)
 	{
-		return std::make_shared<VTKWrapper<GridType>>(grid,filename);
+		std::string filename_adj = filename+Output::get_file_timestamp();
+		return std::make_shared<VTKWrapper<GridType>>(grid,filename_adj);
 	}
 
 	/// Create a GridData output wrapper: Plot state for every cell

@@ -71,7 +71,7 @@ protected:
 	std::vector<StateRule> bc;
 	bool update_always;
 
-	//! Output writers. Tuple contains writer, interval for printout and time until next printout
+	//! Output writers. Tuple contains writer, interval for printout and time of next printout
 	std::vector< std::tuple<std::shared_ptr<DataWriter>,const float,float> > output;
 
 	float dt; //!< time step size
@@ -138,7 +138,7 @@ public:
 	{
 		static_assert(std::is_base_of<DataWriter,DerivedDataWriter>::value,
 			"Object for writing output must be derived from DataWriter interface");
-		output.push_back(std::make_tuple(writer,interval,interval));
+		output.push_back(std::make_tuple(writer,interval,time));
 	}
 
 	/// Single iteration. Apply rules, print data
@@ -169,18 +169,18 @@ public:
 			iterate();
 	}
 
+	/// Call data printout on added output writers. Considers the applied output interval
 	void print_data ()
 	{
 		data_timer.start();
 		for(auto&& i : output){
-			// update timer
-			auto& time_to_write = std::get<2>(i);
-			time_to_write -= dt;
-			if(time_to_write<=0.0){
+			// check if print time has been passed
+			auto& print_time = std::get<2>(i);
+			if(print_time<=time){
 				auto writer = std::get<0>(i);
 				writer->write(time);
-				// reset timer
-				std::get<2>(i) = std::get<1>(i);
+				// advance print time by interval
+				print_time += std::get<1>(i);
 			}
 		}
 		data_timer.stop();

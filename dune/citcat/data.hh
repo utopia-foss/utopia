@@ -1,6 +1,14 @@
 #ifndef DATA_HH
 #define DATA_HH
 
+#ifndef OUTPUTDIR
+#define OUTPUTDIR ""
+#endif
+
+#ifndef EXECUTABLE_NAME
+#define EXECUTABLE_NAME "toolbox"
+#endif
+
 #define COM "# " // Comment
 #define LIM "," // Separator
 #define LINBR "\n" // Linebreak
@@ -158,18 +166,28 @@ private:
 
 namespace Output {
 
+	/// Return string of format YYMMDDHHMMSS
+	std::string get_file_timestamp ()
+	{
+		const auto time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+		char stamp[12];
+		std::strftime(stamp,sizeof(stamp),"%y%m%d%H%M%S",std::localtime(&time));
+		const std::string stamp_str(stamp);
+		return stamp_str;
+	}
+
 	/// Create Output Writer: Time vs. Mean of all states
 	/**
 	 *  \param cont Data container
 	 *  \param filename Name of output file (without extension)
 	 */
 	template<typename Container>
-	std::shared_ptr<TimeStateMeanWriter<Container>> plot_time_state_mean (const Container& cont, std::string filename="state_mean")
+	std::shared_ptr<TimeStateMeanWriter<Container>> plot_time_state_mean (const Container& cont, const std::string filename="state_mean")
 	{
 		static_assert(std::is_arithmetic<typename Container::value_type::element_type::State>::value,"This data writer does not support the data type of 'State'");
 
-		filename += FILETYPE;
-		return std::make_shared<TimeStateMeanWriter<Container>>(cont,filename);
+		std::string filename_adj = OUTPUTDIR+filename+"-"+get_file_timestamp()+FILETYPE;
+		return std::make_shared<TimeStateMeanWriter<Container>>(cont,filename_adj);
 	}
 
 	/// Create Output Writer: Time vs. Density of specific state
@@ -181,11 +199,11 @@ namespace Output {
 	 *  \param upper Upper end of state range to plot
 	 */
 	template<typename Container, typename StateType=int>
-	std::shared_ptr<TimeStateDensityWriter<Container>> plot_time_state_density (const Container& cont, std::string filename="state_density", const StateType lower=0, const StateType upper=0)
+	std::shared_ptr<TimeStateDensityWriter<Container>> plot_time_state_density (const Container& cont, const std::string filename="state_density", const StateType lower=0, const StateType upper=0)
 	{
 		static_assert(std::is_integral<typename Container::value_type::element_type::State>::value,"This data writer does not support the data type of 'State'");
 
-		filename += FILETYPE;
+		std::string filename_adj = OUTPUTDIR+filename+"-"+get_file_timestamp()+FILETYPE;
 
 		std::array<StateType,2> range({lower,upper});
 		if(lower==0 && upper==0)
@@ -196,7 +214,7 @@ namespace Output {
 				range[1] = std::max(cell->state(),range[1]);
 			}
 		}
-		return std::make_shared<TimeStateDensityWriter<Container>>(cont,filename,range);
+		return std::make_shared<TimeStateDensityWriter<Container>>(cont,filename_adj,range);
 	}
 
 }
