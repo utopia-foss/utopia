@@ -46,7 +46,7 @@ public:
 	/** \param data_ Container of data to write
 	 *  \param filename Name of the file to open
 	 */
-	ContainerDataWriter (const Container& data_, const std::string& filename) :
+	ContainerDataWriter (const Container& data_, const std::string filename) :
 		data(data_)
 	{
 		file.open(filename);
@@ -85,7 +85,7 @@ public:
 	/** \param data Container of data
 	 *  \param filename Output file name
 	 */
-	TimeStateMeanWriter (const Container& data_, const std::string& filename) :
+	TimeStateMeanWriter (const Container& data_, const std::string filename) :
 		ContainerDataWriter<Container>(data_,filename)
 	{
 		write_header();
@@ -118,7 +118,7 @@ public:
 	 *  \param filename Output file name
 	 *  \param range_ Array containing the two range limits of the output
 	 */
-	TimeStateDensityWriter (const Container& data_, const std::string& filename, std::array<State,2> range_) :
+	TimeStateDensityWriter (const Container& data_, const std::string filename, std::array<State,2> range_) :
 		ContainerDataWriter<Container>(data_,filename),
 		range(range_)
 	{
@@ -199,7 +199,7 @@ namespace Output {
 	 *  \param upper Upper end of state range to plot
 	 */
 	template<typename Container, typename StateType=int>
-	std::shared_ptr<TimeStateDensityWriter<Container>> plot_time_state_density (const Container& cont, const std::string filename="state_density", const StateType lower=0, const StateType upper=0)
+	std::shared_ptr<TimeStateDensityWriter<Container>> plot_time_state_density (const Container& cont, const StateType lower=0, const StateType upper=0, const std::string filename="state_density")
 	{
 		static_assert(std::is_integral<typename Container::value_type::element_type::State>::value,"This data writer does not support the data type of 'State'");
 

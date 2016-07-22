@@ -209,7 +209,7 @@ namespace Output {
 	template<typename GridType>
 	std::shared_ptr<VTKWrapper<GridType>> create_vtk_writer (std::shared_ptr<GridType> grid, const std::string filename=EXECUTABLE_NAME)
 	{
-		std::string filename_adj = filename+Output::get_file_timestamp();
+		std::string filename_adj = filename+"-"+Output::get_file_timestamp();
 		return std::make_shared<VTKWrapper<GridType>>(grid,filename_adj);
 	}
 
