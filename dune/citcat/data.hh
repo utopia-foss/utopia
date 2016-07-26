@@ -10,7 +10,7 @@
 #endif
 
 #define COM "# " // Comment
-#define LIM "," // Separator
+#define LIM " " // Separator
 #define LINBR "\n" // Linebreak
 #define PREC std::fixed // Floating point output precision
 #define FILETYPE ".dat"
