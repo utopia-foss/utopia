@@ -170,7 +170,7 @@ namespace Output {
 	std::string get_file_timestamp ()
 	{
 		const auto time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-		char stamp[12];
+		char stamp[15];
 		std::strftime(stamp,sizeof(stamp),"%y%m%d%H%M%S",std::localtime(&time));
 		const std::string stamp_str(stamp);
 		return stamp_str;
