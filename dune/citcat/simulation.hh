@@ -67,8 +67,11 @@ protected:
 
 	SimulationWrapper data; //!< The simulation wrapper object containing references to the data containers
 
+	//! vector containing all rules. rules will be applied in order
 	std::vector<StateRule> rules;
+	//! vector containing all BCs - or none. BCs will be applied in order
 	std::vector<StateRule> bc;
+	//! bool whether update is called after every single rule is applied
 	bool update_always;
 
 	//! Output writers. Tuple contains writer, interval for printout and time of next printout
@@ -77,10 +80,13 @@ protected:
 	float dt; //!< time step size
 	float time; //!< current time
 
-	int steps;
-	Dune::Timer rule_timer;
-	Dune::Timer update_timer;
-	Dune::Timer data_timer;
+	int _steps; //!< count of completed iterations
+	Dune::Timer sim_timer; //!< timer for lifetime of this object
+	Dune::Timer cout_timer; //!< timer for cout info printer
+	float cout_interval; //!< interval of cout info printout in seconds
+	Dune::Timer rule_timer; //!< timer for rule application (cumulative)
+	Dune::Timer update_timer; //!< timer for cell update (cumulative)
+	Dune::Timer data_timer; //!< timer for data printout (cumulative)
 
 public:
 
@@ -88,16 +94,20 @@ public:
 	/** \param data_ Wrapper object to run the simulation on
 	 */
 	Simulation (SimulationWrapper& data_) :
-		data(data_), update_always(true), dt(1.0), time(0.0),
-		steps(0), rule_timer(false), update_timer(false), data_timer(false)
+		data(data_), update_always(true), dt(1.0), time(0.0), _steps(0),
+		sim_timer(true), cout_timer(true), cout_interval(10.0),
+		rule_timer(false), update_timer(false), data_timer(false)
 	{ }
 
+	/// Destructor. Displays statistics of this simulation object
 	~Simulation ()
 	{
+		std::cout << "------" << std::endl;
 		std::cout << std::scientific;
-		std::cout << "Rule application time per step: " << rule_timer.elapsed()/steps << std::endl;
-		std::cout << "Update time per step: " << update_timer.elapsed()/steps << std::endl;
-		std::cout << "Data printout time per step " << data_timer.elapsed()/steps << std::endl;
+		std::cout << "Simulation runtime: " << sim_timer.elapsed() << std::endl;
+		std::cout << "Rule application time per step: " << rule_timer.elapsed()/_steps << std::endl;
+		std::cout << "Update time per step: " << update_timer.elapsed()/_steps << std::endl;
+		std::cout << "Data printout time per step " << data_timer.elapsed()/_steps << std::endl;
 	}
 
 	//! Return current time
@@ -146,8 +156,8 @@ public:
 	{
 		advance_cells();
 		advance_time();
-		print_data();
-		steps++;
+		write_data();
+		_steps++;
 	}
 
 	/// Run simulation until time limit is reached
@@ -155,9 +165,14 @@ public:
 	 */
 	void run (const float t_end)
 	{
-		print_data(); // initial printout
-		while(time<t_end)
+		std::cout << "------" << std::endl;
+		std::cout <<"[  0\%] Commencing simulation run until time "<<t_end<<std::endl;
+		write_data(); // initial printout
+		while(time<t_end){
+			print_info(time,t_end);
 			iterate();
+		}
+		std::cout <<"[100\%] Finished computation until time "<<t_end<<std::endl;
 	}
 
 	/// Multiple Iterations. Apply rules & print data in every step
@@ -165,12 +180,17 @@ public:
 	 */
 	void iterate (const int steps)
 	{
-		for(int i=0; i<steps; i++)
+		std::cout << "------" << std::endl;
+		std::cout <<"[  0\%] Commencing simulation run of "<<steps<<" steps"<<std::endl;
+		for(int i=0; i<steps; i++){
+			print_info(i,steps);
 			iterate();
+		}
+		std::cout <<"[100\%] Finished computation of "<<steps<<" steps"<<std::endl;
 	}
 
 	/// Call data printout on added output writers. Considers the applied output interval
-	void print_data ()
+	void write_data ()
 	{
 		data_timer.start();
 		for(auto&& i : output){
@@ -238,6 +258,7 @@ private:
 		}
 	}
 
+	/// Call update() on all cells
 	void update_cells ()
 	{
 		update_timer.start();
@@ -246,10 +267,20 @@ private:
 		update_timer.stop();
 	}
 
-	void print_cells () const
+	/// Print info into the shell if cout_timer passed cout_interval
+	/** \param current Time or number of steps computed
+	 *  \param finish Finish time or target number of steps
+	 */
+	void print_info (const float current, const float finish)
 	{
-		for(const auto& cell : data.cells())
-			std::cout << "Cell No. " << cell->index() << ": " << cell->state() << std::endl;
+		if(cout_timer.elapsed()>cout_interval){
+			const std::string perc =  std::to_string(static_cast<int>(std::ceil(current*100/finish)));
+			std::cout <<"[";
+			for(int i=perc.size(); i<3; i++)
+				std::cout<<" ";
+			std::cout <<perc<<"\%] Simulation at step "<< _steps <<std::endl;
+			cout_timer.reset();
+		}
 	}
 
 };
