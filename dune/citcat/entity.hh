@@ -13,33 +13,37 @@ public:
 	using Traits = TraitsType;
 
 	/// Constructor. Define initial state and traits, and constant tag
-	Entity(const State& state_, const Traits& traits_, const int tag_=0) :
-		s(state_), s_(state_),
-		t(traits_), t_(traits_),
-		i(tag_)
+	Entity(const State& state, const Traits& traits, const int tag=0) :
+		_state(state), _state_c(state),
+		_traits(traits), _traits_c(traits),
+		_tag(tag)
 	{ }
 
 	/// Return reference to state cache
-	State& new_state() { return s_; }
+	inline State& new_state() { return _state_c; }
 	/// Return const reference to state
-	const State& state() const { return s; }
+	inline const State& state() const { return _state; }
 	/// Return reference to traits cache
-	Traits& new_traits() { return t_; }
+	inline Traits& new_traits() { return _traits_c; }
 	/// Return const reference to traits
-	const Traits& traits() const { return t; }
+	inline const Traits& traits() const { return _traits; }
 	/// Return tag
-	int tag() const { return i; }
+	inline int tag() const { return _tag; }
 
 	/// Update using the cache
-	void update()	{ s=s_; t=t_; }
+	void update()
+	{
+		_state = _state_c;
+		_traits = _traits_c;
+	}
 
 private:
 
-	State s; //!< Current State
-	State s_; //!< State cache
-	Traits t; //!< Current Traits
-	Traits t_; //!< Traits cache
-	const int i; //!< Fixed tag
+	State _state; //!< Current State
+	State _state_c; //!< State cache
+	Traits _traits; //!< Current Traits
+	Traits _traits_c; //!< Traits cache
+	const int _tag; //!< Fixed tag
 
 };
 

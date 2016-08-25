@@ -1,8 +1,17 @@
 #ifndef CELL_HH
 #define CELL_HH
 
-/// Abstract Cell on grid
-/**
+/// This class implements an Entity on a grid.
+/** An object of this class can save pointers to grid neighbors and
+ *  user-defined neighbors of the same Cell type. Technically, it is
+ *  not attached to the grid but maps to a grid entity via a Dune::Mapper
+ *  and a grid index. This index and the position on the grid are saved
+ *  as class members for convenience.
+ *  
+ *  \tparam StateType Data type of states
+ *  \tparam TraitsType Data type of traits
+ *  \tparam PositionType Data type of position vectors
+ *  \tparam IndexType Data type of grid indices
  *  \todo add interface for Individuals
  */
 template<typename StateType, typename TraitsType, typename PositionType, typename IndexType>
@@ -20,29 +29,35 @@ protected:
 
 public:
 
-	/// Constructor.
-	Cell(const State& state_, const Traits& traits_, const Position& pos_, const Index id_, const bool boundary=false, const int tag_=0) :
-		Entity<State,Traits>(state_,traits_,tag_), pos(pos_), bnd(boundary), id(id_)
+	/// Construct a cell, implementing an entity on a grid
+	/**
+	 *  \param state Initial state
+	 *  \param traits Initial traits
+	 *  \param pos Position of cell center on grid
+	 *  \param index Index on grid assigned by grid mapper
+	 *  \param boundary Boolean if cell is located at grid boundary
+	 *  \param tag Cell tracking tag
+	 */
+	Cell(const State& state, const Traits& traits, const Position& pos, const Index index, const bool boundary=false, const int tag=0) :
+		Entity<State,Traits>(state,traits,tag), _position(pos), _boundary(boundary), _index(index)
 	{ }
 
 	/// Return position on grid
-	const Position& position() const { return pos; }
+	inline const Position& position() const { return _position; }
 	/// Return grid index
-	Index index() const { return id; }
+	inline Index index() const { return _index; }
 
 	/// Return true if cell is located at grid boundary.
-	/** Notice that there is no boundary for periodic grids.
+	/** Notice that this still remains true if period boundary conditions are applied.
 	 */
-	bool boundary() const { return bnd; }
+	inline bool boundary() const { return _boundary; }
 
 	/// Return connected neighbors
-	/** Verify if connections to neighbors are still valid
-	 */
 	CellContainer<Cell<State,Traits,Position,Index>> neighbors() const
 	{
 		CellContainer<Cell<State,Traits,Position,Index>> ret;
-		ret.reserve(nb.size());
-		for(const auto& i : nb){
+		ret.reserve(_neighbors.size());
+		for(const auto& i : _neighbors){
 			if(auto x = i.lock())
 				ret.push_back(std::move(x));
 		}
@@ -50,48 +65,48 @@ public:
 	}
 
 	/// Return grid neighbors
-	/** Verify if connections to neighbors are still valid
-	 */
 	CellContainer<Cell<State,Traits,Position,Index>> grid_neighbors() const
 	{
 		CellContainer<Cell<State,Traits,Position,Index>> ret;
-		ret.reserve(gnb.size());
-		for(const auto& i : gnb){
+		ret.reserve(_grid_neighbors.size());
+		for(const auto& i : _grid_neighbors){
 			if(auto x = i.lock())
 				ret.push_back(std::move(x));
 		}
 		return ret;
 	}
 
-	/// Set new neighbor for this Cell
-	/** \return Boolean if neighbor was inserted
+	/// Set new neighbor for this Cell.
+	/** Duplicates and pointers to the cell itself will not be inserted.
+	 *  \param cell Cell to be inserted as neighbor
+	 *  \return Boolean if neighbor was inserted
 	 */
-	bool add_neighbor(const std::shared_ptr<Cell> cell_s)
+	bool add_neighbor(const std::shared_ptr<Cell> cell)
 	{
-		const auto nb_0 = neighbors();
-		//std::shared_ptr<Cell> this_cell = shared_from_this();
-		if(std::find(nb_0.begin(),nb_0.end(),cell_s)==nb_0.end()
-			&& cell_s->index()!=index())
+		const auto nb = neighbors();
+		if(std::find(nb.begin(),nb.end(),cell)==nb.end()
+			&& cell->index()!=index())
 		{
-			std::weak_ptr<Cell> n = cell_s;
-			nb.push_back(std::move(n));
+			std::weak_ptr<Cell> cell_w = cell;
+			_neighbors.push_back(std::move(cell_w));
 			return true;
 		}
 		return false;
 	}
 
 	/// Set new grid neighbor for this Cell
-	/** \return Boolean if neighbor was inserted
+	/** Duplicates and pointers to the cell itself will not be inserted.
+	 *  \param cell Cell to be inserted as grid neighbor
+	 *  \return Boolean if neighbor was inserted
 	 */
-	bool add_grid_neighbor(const std::shared_ptr<Cell> cell_s)
+	bool add_grid_neighbor(const std::shared_ptr<Cell> cell)
 	{
-		const auto gnb_0 = grid_neighbors();
-		//std::shared_ptr<Cell> this_cell = shared_from_this();
-		if(std::find(gnb_0.begin(),gnb_0.end(),cell_s)==gnb_0.end()
-			&& cell_s->index()!=index())
+		const auto gnb = grid_neighbors();
+		if(std::find(gnb.begin(),gnb.end(),cell)==gnb.end()
+			&& cell->index()!=index())
 		{
-			std::weak_ptr<Cell> n = cell_s;
-			gnb.push_back(std::move(n));
+			std::weak_ptr<Cell> cell_w = cell;
+			_grid_neighbors.push_back(std::move(cell_w));
 			return true;
 		}
 		return false;
@@ -126,10 +141,10 @@ public:
 	}
 
 	/// Return number of neighbors
-	int neighbors_count() const { return neighbors().size(); }
+	inline int neighbors_count() const { return neighbors().size(); }
 
 	/// Return number of grid neighbors
-	int grid_neighbors_count() const { return grid_neighbors().size(); }
+	inline int grid_neighbors_count() const { return grid_neighbors().size(); }
 
 	/// Return count of neighbors with state s
 	/** \todo add function for returning bool
@@ -157,15 +172,15 @@ public:
 
 private:
 	//! List of connected neighbors \todo Create tuples for connection weight
-	std::vector<std::weak_ptr<Cell>> nb;
+	std::vector<std::weak_ptr<Cell>> _neighbors;
 	//! List of neighbors on grid
-	std::vector<std::weak_ptr<Cell>> gnb;
+	std::vector<std::weak_ptr<Cell>> _grid_neighbors;
 	//! Position of cell
-	const Position pos;
+	const Position _position;
 	//! Cell located at grid boundary
-	const bool bnd;
+	const bool _boundary;
 	//! Grid index of cell
-	const Index id;
+	const Index _index;
 
 };
 
