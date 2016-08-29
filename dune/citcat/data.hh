@@ -34,7 +34,7 @@ public:
 	virtual void write (const float time) = 0;
 };
 
-/// Manage a single data file
+/// Manage a single data file. Data is written from a container.
 /** \tparam Container Container object of data to be printed
  */
 template<typename Container>
@@ -47,8 +47,9 @@ protected:
 
 public:
 
-	/// Default constructor. Opens a file for writing
-	/** \param data Container of data to write
+	/// Default constructor. Opens a file for writing.
+	/** Print generic header and define ostream precision.
+	 *  \param data Container of data to write
 	 *  \param filename Name of the file to open
 	 */
 	ContainerDataWriter (const Container& data, const std::string filename) :
@@ -56,10 +57,13 @@ public:
 	{
 		_file.open(filename);
 		write_header_base();
-		_file << PREC; // set output precision
+		_file << PREC;
 	}
 
-	/// Virtual write header function. Will be called once by the constructor.
+	/// Virtual write header function.
+	/** Intended for use from the constructor of the derived class object.
+	 *  Should contain information on the actual data printed
+	 */
 	virtual void write_header () = 0;
 
 protected:
@@ -99,11 +103,7 @@ public:
 		write_header();
 	}
 
-	void write_header ()
-	{
-		this->_file << COM << "time" << LIM << "mean" << LINBR;
-	}
-
+	/// Write the data
 	void write (const float time)
 	{
 		double mean = .0;
@@ -113,6 +113,13 @@ public:
 
 		this->_file << time << LIM << mean << LINBR;
 	}
+
+private:
+	/// Write the data file header
+	void write_header ()
+	{
+		this->_file << COM << "time" << LIM << "mean" << LINBR;
+	}
 };
 
 template<typename Container>
@@ -120,8 +127,9 @@ class TimeStateDensityWriter : public ContainerDataWriter<Container>
 {
 protected:
 	using State = typename Container::value_type::element_type::State;
+
 public:
-	/// Constructor.
+	/// Initialize data writer and write the file header
 	/** \param data Container of data
 	 *  \param filename Output file name
 	 *  \param range Array containing the two range limits of the output
@@ -138,24 +146,17 @@ public:
 
 	~TimeStateDensityWriter () = default;
 
-	void write_header ()
-	{
-		this->_file << COM << "time";
-		for(auto i=_range[0]; i<=_range[1]; i++)
-			this->_file << LIM << i;
-		this->_file << LINBR;
-	}
-
+	/// Write the data
 	void write (const float time)
 	{
 		// initialize data array
 		const State size = _range[1] - _range[0] + 1;
-		const State rtl = - _range[0];
+		const State transl = - _range[0];
 		std::vector<float> data_row(size,.0);
 
 		// iterate over container
 		for(const auto& i : this->_data){
-			data_row[i->state()+rtl] += 1.0;
+			data_row[i->state()+transl] += 1.0;
 		}
 
 		// write
@@ -169,14 +170,26 @@ public:
 
 private:
 
+	/// Write the output file header
+	void write_header ()
+	{
+		this->_file << COM << "time";
+		for(auto i=_range[0]; i<=_range[1]; i++)
+			this->_file << LIM << "\"" << i << "\"";
+		this->_file << LINBR;
+	}
+
 	std::array<State,2> _range; //!< Range of integral states is [ range[0],range[1] ]
 
 };
 
-
+/// Wrapper and helper functions for creating output classes
 namespace Output {
 
 	/// Return string of format YYMMDDHHMMSS
+	/** This function is called for creating unique output filenames
+	 *  for each simulation run
+	 */
 	std::string get_file_timestamp ()
 	{
 		const auto time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
