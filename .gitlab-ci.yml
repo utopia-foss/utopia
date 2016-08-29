@@ -1,0 +1,14 @@
+stages:
+    - build_linux
+
+linux_build:
+    stage: build_linux
+    before_script:
+        - apt-get update -y
+        - apt-get install git automake libtool cmake gcc-6 g++-6 -y
+    script:
+        - mkdir dependencies
+        - git clone -b v3.12.1 https://gitlab.dune-project.org/ug/ug dependencies/ug
+        - cd dependencies/ug
+        - autoreconf -is
+        - ./configure --prefix=$PWD/build --enable-dune --disable-x
