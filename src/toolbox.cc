@@ -9,12 +9,12 @@ void default_sim (const Grid& grid, const Cells& cells)
 
 		std::cout << "--- SIMULATION NO " << i << " ---" << std::endl;
 
-		auto sim = Setup::create_sim_cells(grid,cells);
+		auto sim = Citcat::Setup::create_sim_cells(grid,cells);
 
 		const std::string filename = "sim" + std::to_string(i);
-		auto vtkwriter = Output::create_vtk_writer(grid,filename);
+		auto vtkwriter = Citcat::Output::create_vtk_writer(grid,filename);
 		sim.add_output(vtkwriter);
-		vtkwriter->add_adaptor(Output::vtk_output_cell_state(cells));
+		vtkwriter->add_adaptor(Citcat::Output::vtk_output_cell_state(cells));
 		//vtkwriter->add_adaptor(Output::vtk_output_cell_state_clusters(cells));
 
 		// print out some data
@@ -76,16 +76,17 @@ int main(int argc, char** argv)
 			StateType new_state = 1;
 			return new_state; };
 		
-		auto grid = Setup::create_grid(50);
-		auto my_cells = Setup::create_cells_on_grid<StateType,TraitsType>(grid,state_default,[](){
-			TraitsType i({true,false});
-			return i;});
-		Setup::apply_periodic_boundaries(my_cells);
+		auto grid = Citcat::Setup::create_grid(50);
+		auto my_cells = Citcat::Setup::create_cells_on_grid<StateType,TraitsType>(grid,state_default,[](){
+				TraitsType i({true,false});
+				return i;
+			});
+		Citcat::Setup::apply_periodic_boundaries(my_cells);
 		for(auto&& i : my_cells)
-			Neighborhood::Moore::apply(i);
+			Citcat::Neighborhood::Moore::apply(i);
 
-		auto grid_gmsh = Setup::read_gmsh("../../src/square.msh");
-		auto my_cells_gmsh = Setup::create_cells_on_grid(grid_gmsh,state_default);
+		auto grid_gmsh = Citcat::Setup::read_gmsh("../../src/square.msh");
+		auto my_cells_gmsh = Citcat::Setup::create_cells_on_grid(grid_gmsh,state_default);
 
 		default_sim(grid,my_cells);
 		default_sim(grid_gmsh,my_cells_gmsh);
