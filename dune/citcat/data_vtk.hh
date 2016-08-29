@@ -2,61 +2,70 @@
 #define DATA_VTK_HH
 
 /// Interface for wrapping data to be written by a VTKWrapper.
-//template<typename VTKWriter>
+/** In order to stack an adaptor to the VTKWrapper, it must inherit
+ *  from this abstract class
+ */
 class GridDataAdaptor
 {
-protected:
-	//using VTKWriter = StaticTypes::VTKWriter;
-
 public:
+	/// Default constructor
 	GridDataAdaptor () = default;
-
-	//virtual void add_data (VTKWriter& vtkwriter) = 0;
 
 	/// Update the local data before printout.
 	virtual void update_data () = 0;
 };
 
-/// Manages the Dune::VTKWriter. Data Adaptors manage the data written by it.
+/// Manages the Dune::VTKWriter and saves instances of GridDataAdaptors
+/** This class does not manage the data but only the data adaptors and the
+ *  actual VTK writer.
+ */
 template<typename GridType>
 class VTKWrapper : public DataWriter
 {
 protected:
+	/// extract types from the type adaptor
 	using GridTypes = GridTypeAdaptor<GridType>;
 	using GV = typename GridTypes::GridView;
 	using VTKWriter = typename GridTypes::VTKWriter;
 
-	GV gv;
-	VTKWriter vtkwriter;
-	std::vector<std::shared_ptr<GridDataAdaptor>> adaptors;
+	GV _gv; //!< Grid view
+	VTKWriter _vtkwriter; //!< Dune::VTKWriter
+	std::vector<std::shared_ptr<GridDataAdaptor>> _adaptors; //!< Data adaptors
 
 public:
+	/// Create a grid view and a VTK writer
+	/** \param grid Shared pointer to the grid
+	 *  \param filename Output filename
+	 */
 	VTKWrapper (const std::shared_ptr<GridType> grid, const std::string& filename) :
-		gv(grid->leafGridView()),
-		vtkwriter(gv,filename,OUTPUTDIR,"")
+		_gv(grid->leafGridView()),
+		_vtkwriter(_gv,filename,OUTPUTDIR,"")
 	{ }
 
 	/// Add a data adaptor to the output of this wrapper
+	/** \param adpt GridDataAdaptor to be added
+	 *  \throw CompilerError The adaptor has to be derived from GridDataAdaptor
+	 */
 	template<typename DerivedGridDataAdaptor>
 	void add_adaptor (std::shared_ptr<DerivedGridDataAdaptor> adpt)
 	{
 		static_assert(std::is_base_of<GridDataAdaptor,DerivedGridDataAdaptor>::value,"Object for writing VTK data must be derived from GridDataAdaptor!");
-		adpt->add_data(vtkwriter);
-		adaptors.push_back(adpt);
+		adpt->add_data(_vtkwriter);
+		_adaptors.push_back(adpt);
 	}
 
 	void write (const float time)
 	{
-		for(auto&& i : adaptors){
+		for(auto&& i : _adaptors){
 			i->update_data();
 		}
-		vtkwriter.write(time);
+		_vtkwriter.write(time);
 	}
 
 };
 
 
-/// Write the state all entities on a grid
+/// Write the state of all entities on a grid
 template<typename CellContainer>
 class CellStateGridDataAdaptor : public GridDataAdaptor
 {
@@ -64,29 +73,29 @@ protected:
 	using Cell = typename CellContainer::value_type::element_type;
 	using State = typename Cell::State;
 
-	const CellContainer& cells; //!< Container of entities
-	std::vector<State> grid_data; //!< Container for VTK readout
-	const std::string label; //!< data label
+	const CellContainer& _cells; //!< Container of entities
+	std::vector<State> _grid_data; //!< Container for VTK readout
+	const std::string _label; //!< data label
 
 public:
 	/// Constructor
-	/** \param cells_ Container of cells
-	 *  \param label_ Data label in VTK output
+	/** \param cells Container of cells
+	 *  \param label Data label in VTK output
 	 */
-	CellStateGridDataAdaptor (const CellContainer& cells_, const std::string label_) :
-		cells(cells_), grid_data(cells.size()), label(label_)
+	CellStateGridDataAdaptor (const CellContainer& cells, const std::string label) :
+		_cells(cells), _grid_data(_cells.size()), _label(label)
 	{ }
 
 	template<typename VTKWriter>
 	void add_data (VTKWriter& vtkwriter)
 	{
-		vtkwriter.addCellData(grid_data,label);
+		vtkwriter.addCellData(_grid_data,_label);
 	}
 
 	void update_data ()
 	{
-		for(const auto& cell : cells){
-			grid_data[cell->index()] = cell->state();
+		for(const auto& cell : _cells){
+			_grid_data[cell->index()] = cell->state();
 		}
 	}
 };
@@ -99,10 +108,10 @@ protected:
 	using State = typename Cell::State;
 	//using Index = StaticTypes::Grid::Index;
 
-	const CellContainer& cells_; //!< Container of entities
-	std::vector<int> grid_data_; //!< Container for VTK readout
-	const std::string label_; //!< data label
-	const std::array<State,2> range_; //! range of states to use
+	const CellContainer& _cells; //!< Container of entities
+	std::vector<int> _grid_data; //!< Container for VTK readout
+	const std::string _label; //!< data label
+	const std::array<State,2> _range; //! range of states to use
 
 public:
 	/// Constructor
@@ -111,13 +120,13 @@ public:
 	 *  \param range Range of states to plot
 	 */
 	CellStateClusterGridDataAdaptor (const CellContainer& cells, const std::string label, std::array<State,2> range) :
-		cells_(cells), grid_data_(cells_.size()), label_(label), range_(range)
+		_cells(cells), _grid_data(_cells.size()), _label(label), _range(range)
 	{ }
 
 	template<typename VTKWriter>
 	void add_data (VTKWriter& vtkwriter)
 	{
-		vtkwriter.addCellData(grid_data_,label_);
+		vtkwriter.addCellData(_grid_data,_label);
 	}
 
 	void update_data ()
@@ -125,11 +134,11 @@ public:
 		std::minstd_rand gen(1);
 		std::uniform_int_distribution<int> dist(1,50000);
 
-		std::vector<bool> visited(cells_.size(),false);
+		std::vector<bool> visited(_cells.size(),false);
 		auto cluster_id = dist(gen);
-		for(const auto& cell : cells_){
+		for(const auto& cell : _cells){
 			if(!visited[cell->index()] && range_check(cell)){
-				grid_data_[cell->index()] = cluster_id;
+				_grid_data[cell->index()] = cluster_id;
 				visited[cell->index()] = true;
 				neighbor_clustering(cell,visited,cluster_id);
 				cluster_id++;
@@ -144,7 +153,7 @@ private:
 		for(const auto& nb : cell->neighbors()){
 			if(nb->state()==cell->state() && !visited[nb->index()])
 			{
-				grid_data_[nb->index()] = cluster_id;
+				_grid_data[nb->index()] = cluster_id;
 				visited[nb->index()] = true;
 				neighbor_clustering(nb,visited,cluster_id);
 			}
@@ -155,8 +164,8 @@ private:
 	bool range_check (const Cell& cell)
 	{
 		bool ret = true;
-		if(cell->state() < range_[0]) ret = false;
-		if(cell->state() > range_[1]) ret = false;
+		if(cell->state() < _range[0]) ret = false;
+		if(cell->state() > _range[1]) ret = false;
 		return ret;
 	}
 };

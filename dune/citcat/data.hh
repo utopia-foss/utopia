@@ -9,18 +9,23 @@
 #define EXECUTABLE_NAME "toolbox"
 #endif
 
-#define COM "# " // Comment
-#define LIM " " // Separator
-#define LINBR "\n" // Linebreak
-#define PREC std::fixed // Floating point output precision
-#define FILETYPE ".dat"
+#define COM "# " //!< Comment
+#define LIM " " //!< Separator
+#define LINBR "\n" //!< Linebreak
+#define PREC std::fixed //!< Floating point output precision
+#define FILETYPE ".dat" //!< Data file extension
 
 /// Generic data write interface.
+/** All data writers need to inherit from this class in order
+ *  to be stacked into a Simulation object.
+ */
 class DataWriter
 {
 public:
 
+	/// Default constructor
 	DataWriter () = default;
+	/// Default destructor
 	virtual ~DataWriter () = default;
 
 	/// Virtual write function. Write sequence has to be specified by derived class
@@ -37,21 +42,21 @@ class ContainerDataWriter : public DataWriter
 {
 protected:
 
-	const Container& data; //!< data to operate on
-	std::ofstream file; //!< filestream to write into
+	const Container& _data; //!< data to operate on
+	std::ofstream _file; //!< filestream to write into
 
 public:
 
 	/// Default constructor. Opens a file for writing
-	/** \param data_ Container of data to write
+	/** \param data Container of data to write
 	 *  \param filename Name of the file to open
 	 */
-	ContainerDataWriter (const Container& data_, const std::string filename) :
-		data(data_)
+	ContainerDataWriter (const Container& data, const std::string filename) :
+		_data(data)
 	{
-		file.open(filename);
+		_file.open(filename);
 		write_header_base();
-		file << PREC; // set output precision
+		_file << PREC; // set output precision
 	}
 
 	/// Virtual write header function. Will be called once by the constructor.
@@ -59,20 +64,20 @@ public:
 
 protected:
 
-	/// Default destructor. Closes the filestream
+	/// Default destructor. Flushed and closes the filestream
 	~ContainerDataWriter ()
 	{
-		file.flush();
-		file.close();
+		_file.flush();
+		_file.close();
 	}
 
 private:
 
-	/// Write the basic header: date, time, stuff.
+	/// Write the default header: date, time, stuff.
 	void write_header_base ()
 	{
 		const auto time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-		file << COM << std::put_time(std::localtime(&time), "%F %T") << LINBR;
+		_file << COM << std::put_time(std::localtime(&time), "%F %T") << LINBR;
 	}
 
 };
@@ -81,29 +86,32 @@ template<typename Container>
 class TimeStateMeanWriter final : public ContainerDataWriter<Container>
 {
 public:
-	/// Constructor.
+	/// Initialize the data writer and write the file header.
 	/** \param data Container of data
 	 *  \param filename Output file name
+	 *  \throw CompilerError if data type is not arithmetic
 	 */
-	TimeStateMeanWriter (const Container& data_, const std::string filename) :
-		ContainerDataWriter<Container>(data_,filename)
+	TimeStateMeanWriter (const Container& data, const std::string filename) :
+		ContainerDataWriter<Container>(data,filename)
 	{
+		static_assert(std::is_arithmetic<typename Container::value_type::element_type::State>::value,
+			"This data writer only supports arithmetic 'State' types!");
 		write_header();
 	}
 
 	void write_header ()
 	{
-		this->file << COM << "time" << LIM << "mean" << LINBR;
+		this->_file << COM << "time" << LIM << "mean" << LINBR;
 	}
 
 	void write (const float time)
 	{
-		float mean = .0;
-		for(const auto& i : this->data)
+		double mean = .0;
+		for(const auto& i : this->_data)
 			mean += i->state();
-		mean /= this->data.size();
+		mean /= this->_data.size();
 
-		this->file << time << LIM << mean << LINBR;
+		this->_file << time << LIM << mean << LINBR;
 	}
 };
 
@@ -116,13 +124,15 @@ public:
 	/// Constructor.
 	/** \param data Container of data
 	 *  \param filename Output file name
-	 *  \param range_ Array containing the two range limits of the output
+	 *  \param range Array containing the two range limits of the output
+	 *  \throw CompilerError if data type is not integral
 	 */
-	TimeStateDensityWriter (const Container& data_, const std::string filename, std::array<State,2> range_) :
-		ContainerDataWriter<Container>(data_,filename),
-		range(range_)
+	TimeStateDensityWriter (const Container& data, const std::string filename, std::array<State,2> range) :
+		ContainerDataWriter<Container>(data,filename),
+		_range(range)
 	{
-		static_assert(std::is_integral<State>::value,"This data writer does not support the data type of 'State'");
+		static_assert(std::is_integral<typename Container::value_type::element_type::State>::value,
+			"This data writer only supports integral 'State' types!");
 		write_header();
 	}
 
@@ -130,36 +140,36 @@ public:
 
 	void write_header ()
 	{
-		this->file << COM << "time";
-		for(auto i=range[0]; i<=range[1]; i++)
-			this->file << LIM << i;
-		this->file << LINBR;
+		this->_file << COM << "time";
+		for(auto i=_range[0]; i<=_range[1]; i++)
+			this->_file << LIM << i;
+		this->_file << LINBR;
 	}
 
 	void write (const float time)
 	{
 		// initialize data array
-		const State size = range[1]-range[0]+1;
-		const State rtl = -range[0];
+		const State size = _range[1] - _range[0] + 1;
+		const State rtl = - _range[0];
 		std::vector<float> data_row(size,.0);
 
 		// iterate over container
-		for(const auto& i : this->data){
+		for(const auto& i : this->_data){
 			data_row[i->state()+rtl] += 1.0;
 		}
 
 		// write
-		this->file << time;
+		this->_file << time;
 		for(auto&& j : data_row){
-			j /= this->data.size();
-			this->file << LIM << j;
+			j /= this->_data.size();
+			this->_file << LIM << j;
 		}
-		this->file << LINBR;
+		this->_file << LINBR;
 	}
 
 private:
 
-	std::array<State,2> range; //!< Range of integral states is [ range[0],range[1] ]
+	std::array<State,2> _range; //!< Range of integral states is [ range[0],range[1] ]
 
 };
 
@@ -177,43 +187,45 @@ namespace Output {
 	}
 
 	/// Create Output Writer: Time vs. Mean of all states
-	/**
+	/** Designed for arithmetic states types
 	 *  \param cont Data container
 	 *  \param filename Name of output file (without extension)
+	 *  \return Shared pointer to the data writer
 	 */
 	template<typename Container>
 	std::shared_ptr<TimeStateMeanWriter<Container>> plot_time_state_mean (const Container& cont, const std::string filename="state_mean")
 	{
-		static_assert(std::is_arithmetic<typename Container::value_type::element_type::State>::value,"This data writer does not support the data type of 'State'");
-
 		std::string filename_adj = OUTPUTDIR+filename+"-"+get_file_timestamp()+FILETYPE;
 		return std::make_shared<TimeStateMeanWriter<Container>>(cont,filename_adj);
 	}
 
-	/// Create Output Writer: Time vs. Density of specific state
-	/** State range will be automatically determined from
+	/// Create Output Writer: Time vs. Density of specific state.
+	/** Designed for integral (countable) state types.
+	 *  State range will be automatically determined from
 	 *  initial state distribution, if not stated specifically.
 	 *  \param cont Data container
-	 *  \param filename Name of output file (without extension)
 	 *  \param lower Lower end of state range to plot
 	 *  \param upper Upper end of state range to plot
+	 *  \param filename Name of output file (without extension)
+	 *  \return Shared pointer to the data writer
 	 */
 	template<typename Container, typename StateType=int>
-	std::shared_ptr<TimeStateDensityWriter<Container>> plot_time_state_density (const Container& cont, const StateType lower=0, const StateType upper=0, const std::string filename="state_density")
+	std::shared_ptr<TimeStateDensityWriter<Container>> plot_time_state_density (
+		const Container& cont, const StateType lower=0, const StateType upper=0,
+		const std::string filename="state_density")
 	{
-		static_assert(std::is_integral<typename Container::value_type::element_type::State>::value,"This data writer does not support the data type of 'State'");
-
-		std::string filename_adj = OUTPUTDIR+filename+"-"+get_file_timestamp()+FILETYPE;
+		std::string filename_adj = OUTPUTDIR+filename+"-"
+			+get_file_timestamp()+FILETYPE;
 
 		std::array<StateType,2> range({lower,upper});
-		if(lower==0 && upper==0)
-		{
+		if(lower==0 && upper==0){
 			// read range from current state range
 			for(const auto& cell : cont){
 				range[0] = std::min(cell->state(),range[0]);
 				range[1] = std::max(cell->state(),range[1]);
 			}
 		}
+
 		return std::make_shared<TimeStateDensityWriter<Container>>(cont,filename_adj,range);
 	}
 
