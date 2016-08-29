@@ -44,7 +44,6 @@
 #include <dune/grid/io/file/vtk/vtksequencewriter.hh>
 
 // CITCAT
-#include "util.hh"
 #include "types.hh"
 #include "entity.hh"
 #include "cell.hh"

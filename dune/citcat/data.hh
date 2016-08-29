@@ -1,22 +1,22 @@
 #ifndef DATA_HH
 #define DATA_HH
 
+#ifndef OUTPUTDIR
+#define OUTPUTDIR ""
+#endif
+
+#ifndef EXECUTABLE_NAME
+#define EXECUTABLE_NAME "toolbox"
+#endif
+
+#define COM "# " //!< Comment
+#define LIM " " //!< Separator
+#define LINBR "\n" //!< Linebreak
+#define PREC std::fixed //!< Floating point output precision
+#define FILETYPE ".dat" //!< Data file extension
+
 namespace Citcat
 {
-	#ifndef OUTPUTDIR
-	#define OUTPUTDIR ""
-	#endif
-
-	#ifndef EXECUTABLE_NAME
-	#define EXECUTABLE_NAME "toolbox"
-	#endif
-
-	#define COM "# " //!< Comment
-	#define LIM " " //!< Separator
-	#define LINBR "\n" //!< Linebreak
-	#define PREC std::fixed //!< Floating point output precision
-	#define FILETYPE ".dat" //!< Data file extension
-
 	/// Generic data write interface.
 	/** All data writers need to inherit from this class in order
 	 *  to be stacked into a Simulation object.

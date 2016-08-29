@@ -28,9 +28,10 @@ namespace Citcat
 		}
 
 		/// Create a simulation object from a grid and a set of cells
-		/** This function places the data inside a SimulationWrapper for convenience
-		 *  and sets up a simulation from this wrapper. The individuals container is
-		 *  replaced by the EmptyContainer template.
+		/** This function places the data inside a SimulationWrapper for
+		 *  convenience and sets up a simulation from this wrapper.
+		 *  The individuals container is replaced by the
+		 *  Citcat::EmptyContainer template.
 		 *  \param grid Shared pointer to the grid from which the cells were built
 		 *  \param cells Cell container
 		 *  \return Simulation object
