@@ -1,12 +1,16 @@
 #ifndef SIMULATION_HH
 #define SIMULATION_HH
 
+/// Wrap the data to run a simulation on. Export the associated data types
+/**
+ *  \tparam GridType Type of grid
+ *  \tparam CellContainerType Type of the container for cells
+ *  \tparam IndividualContainerType Type of the container for individuals
+ */
 template<typename GridType, typename CellContainerType, typename IndividualContainerType>
 class SimulationWrapper
 {
 public:
-	// export data types
-	// todo: more!!
 	using Grid = GridType;
 	using CellContainer = CellContainerType;
 	using IndividualContainer = IndividualContainerType;
@@ -20,35 +24,45 @@ public:
 	using State = typename Cell::State;
 
 private:
-	std::shared_ptr<Grid> g;
-	CellContainer& cc;
-	IndividualContainer& ic;
+	//! shared pointer to the grid
+	std::shared_ptr<Grid> _grid;
+	//! reference to the cell container
+	CellContainer& _cell_container;
+	//! referemce to the individuals container
+	IndividualContainer& _indv_container;
 
 public:
 	/// Construct Wrapper
 	/** \param grid Shared pointer to the grid
+	 *  \param cells Cell container object
+	 *  \param individuals Individuals container object
 	 */
 	SimulationWrapper (std::shared_ptr<Grid> grid, CellContainer& cells, IndividualContainer& individuals) :
-		g(grid), cc(cells), ic(individuals)
+		_grid(grid), _cell_container(cells), _indv_container(individuals)
 	{ }
 
 	/// Return reference to cell container
-	CellContainer& cells () { return cc; }
+	CellContainer& cells () { return _cell_container; }
 	/// Return const reference to cell container
-	const CellContainer& cells () const { return cc; }
+	const CellContainer& cells () const { return _cell_container; }
 
 	/// Return reference to individuals container
-	IndividualContainer& individuals () { return ic; }
+	IndividualContainer& individuals () { return _indv_container; }
 	/// Return const reference to individuals container
-	const IndividualContainer& individuals () const { return ic; }
+	const IndividualContainer& individuals () const { return _indv_container; }
 
 	/// Return shared pointer to grid
-	std::shared_ptr<Grid> grid () const { return g; }
+	std::shared_ptr<Grid> grid () const { return _grid; }
 
 };
 
 /// Manage state propagation and data printout
-/** \tparam SimulationWrapper Type of wrapper object
+/** This class serves as an interface for running simulations.
+ *  It saves a SimulationWrapper element referencing the data to operate on,
+ *  as well as the CA rules and boundary conditions to be applied.
+ *  Output writers can be stacked for writing output in arbitrary intervals.
+ *
+ *  \tparam SimulationWrapper Type of wrapper object
  */
 template<typename SimulationWrapper>
 class Simulation
@@ -65,82 +79,90 @@ protected:
 	using State = typename SimulationWrapper::State;
 	using StateRule = std::function<State(const std::shared_ptr<Cell>)>;
 
-	SimulationWrapper data; //!< The simulation wrapper object containing references to the data containers
+	SimulationWrapper _data; //!< The simulation wrapper object containing references to the data containers
 
 	//! vector containing all rules. rules will be applied in order
-	std::vector<StateRule> rules;
+	std::vector<StateRule> _rules;
 	//! vector containing all BCs - or none. BCs will be applied in order
-	std::vector<StateRule> bc;
+	std::vector<StateRule> _bc;
 	//! bool whether update is called after every single rule is applied
-	bool update_always;
+	bool _update_always;
 
 	//! Output writers. Tuple contains writer, interval for printout and time of next printout
-	std::vector< std::tuple<std::shared_ptr<DataWriter>,const float,float> > output;
+	std::vector< std::tuple<std::shared_ptr<DataWriter>,const float,float> > _output;
 
-	float dt; //!< time step size
-	float time; //!< current time
+	float _dt; //!< time step size
+	float _time; //!< current time
 
 	int _steps; //!< count of completed iterations
-	Dune::Timer sim_timer; //!< timer for lifetime of this object
-	Dune::Timer cout_timer; //!< timer for cout info printer
-	float cout_interval; //!< interval of cout info printout in seconds
-	Dune::Timer rule_timer; //!< timer for rule application (cumulative)
-	Dune::Timer update_timer; //!< timer for cell update (cumulative)
-	Dune::Timer data_timer; //!< timer for data printout (cumulative)
+	Dune::Timer _timer_sim; //!< timer for lifetime of this object
+	Dune::Timer _timer_cout; //!< timer for cout info printer
+	float _cout_interval; //!< interval of cout info printout in seconds
+	Dune::Timer _timer_rule; //!< timer for rule application (cumulative)
+	Dune::Timer _timer_update; //!< timer for cell update (cumulative)
+	Dune::Timer _timer_data; //!< timer for data printout (cumulative)
 
 public:
 
-	/// Default constructor
-	/** \param data_ Wrapper object to run the simulation on
+	/// Save the SimulationWrapper and start the timers.
+	/** \param data Wrapper object to run the simulation on
 	 */
-	Simulation (SimulationWrapper& data_) :
-		data(data_), update_always(true), dt(1.0), time(0.0), _steps(0),
-		sim_timer(true), cout_timer(true), cout_interval(10.0),
-		rule_timer(false), update_timer(false), data_timer(false)
+	Simulation (SimulationWrapper& data) :
+		_data(data), _update_always(true), _dt(1.0), _time(0.0), _steps(0),
+		_timer_sim(true), _timer_cout(true), _cout_interval(10.0),
+		_timer_rule(false), _timer_update(false), _timer_data(false)
 	{ }
 
-	/// Destructor. Displays statistics of this simulation object
+	/// Destructor. Displays time statistics of this simulation object
 	~Simulation ()
 	{
 		std::cout << "------" << std::endl;
 		std::cout << std::scientific;
-		std::cout << "Simulation runtime: " << sim_timer.elapsed() << std::endl;
-		std::cout << "Rule application time per step: " << rule_timer.elapsed()/_steps << std::endl;
-		std::cout << "Update time per step: " << update_timer.elapsed()/_steps << std::endl;
-		std::cout << "Data printout time per step " << data_timer.elapsed()/_steps << std::endl;
+		std::cout << "Simulation runtime: " << _timer_sim.elapsed() << std::endl;
+		std::cout << "Rule application time per step: " << _timer_rule.elapsed()/_steps << std::endl;
+		std::cout << "Update time per step: " << _timer_update.elapsed()/_steps << std::endl;
+		std::cout << "Data printout time per step " << _timer_data.elapsed()/_steps << std::endl;
 	}
 
 	//! Return current time
-	float get_time () const { return time; }
+	float get_time () const { return _time; }
 	//! Return timestep size
-	float get_timestep () const { return dt; }
+	float get_timestep () const { return _dt; }
 	//! Set current time
-	void set_time (const float time_) { time = time_; }
+	void set_time (const float time) { _time = time; }
 	//! Set timestep size
-	void set_timestep (const float dt_) { dt = dt_; }
+	void set_timestep (const float dt) { _dt = dt; }
 	//! Set to true if all cells should be updated after every rule
-	void set_update_after_every_rule (const bool update) { update_always = update; }
+	void set_update_after_every_rule (const bool update) { _update_always = update; }
 
-	/// Add a rule
+	/// Add a function object as rule
+	/** \param f Function to be applied to a cell, returning the new state
+	 *     of the cell
+	 *  \throw CompilerError if rule applied does not match syntax
+	 */
 	template<typename F>
 	void add_rule (F f)
 	{
-		//static_assert(std::is_function<F>::value,"This expression is not a function!");
-		// assert that pointer to cell inserted into function object results in StateType
 		static_assert(std::is_same<State,typename std::result_of<F(std::shared_ptr<Cell>)>::type>::value,"This rule does not return a variable of type 'State'!");
-		rules.push_back(f);
+		_rules.push_back(f);
 	}
 
-	/// Add a boundary condition
+	/// Add a function object as boundary condition.
+	/** BC rules will be applied to all cells whose boundary() query returns true.
+	 *  \param f Function to be applied to a cell, returning the new state
+	 *     of the cell
+	 *  \throw CompilerError if rule applied does not match syntax
+	 */
 	template<typename F>
 	void add_bc (F f)
 	{
 		static_assert(std::is_same<State,typename std::result_of<F(std::shared_ptr<Cell>)>::type>::value,"This rule does not return a variable of type 'State'!");
-		bc.push_back(f);
+		_bc.push_back(f);
 	}
 
-	/// Add an output writer to the Simulation.
-	/** \param writer Shared pointer to the output writer
+	/// Add an output writer which will print after each interval stated
+	/** The writer will print immediately.
+	 *  \param writer Shared pointer to the output writer
 	 *  \param interval Interval of data printout
 	 */
 	template<typename DerivedDataWriter>
@@ -148,7 +170,7 @@ public:
 	{
 		static_assert(std::is_base_of<DataWriter,DerivedDataWriter>::value,
 			"Object for writing output must be derived from DataWriter interface");
-		output.push_back(std::make_tuple(writer,interval,time));
+		_output.push_back(std::make_tuple(writer,interval,_time));
 	}
 
 	/// Single iteration. Apply rules, print data
@@ -161,17 +183,20 @@ public:
 	}
 
 	/// Run simulation until time limit is reached
-	/** \param t_end Time limit
+	/** Write data (initial condition) before first iteration
+	 *  \param t_end Time limit
 	 */
 	void run (const float t_end)
 	{
 		std::cout << "------" << std::endl;
 		std::cout <<"[  0\%] Commencing simulation run until time "<<t_end<<std::endl;
-		write_data(); // initial printout
-		while(time<t_end){
-			print_info(time,t_end);
+
+		write_data();
+		while(_time<t_end){
+			print_info(_time,t_end);
 			iterate();
 		}
+
 		std::cout <<"[100\%] Finished computation until time "<<t_end<<std::endl;
 	}
 
@@ -182,55 +207,59 @@ public:
 	{
 		std::cout << "------" << std::endl;
 		std::cout <<"[  0\%] Commencing simulation run of "<<steps<<" steps"<<std::endl;
+
 		for(int i=0; i<steps; i++){
 			print_info(i,steps);
 			iterate();
 		}
+
 		std::cout <<"[100\%] Finished computation of "<<steps<<" steps"<<std::endl;
 	}
 
-	/// Call data printout on added output writers. Considers the applied output interval
+	/// Call data printout on added output writers, considering the output intervals
 	void write_data ()
 	{
-		data_timer.start();
-		for(auto&& i : output){
-			// check if print time has been passed
+		_timer_data.start();
+		for(auto&& i : _output){
 			auto& print_time = std::get<2>(i);
-			if(print_time<=time){
+			if(print_time<=_time){
 				auto writer = std::get<0>(i);
-				writer->write(time);
-				// advance print time by interval
+				writer->write(_time);
 				print_time += std::get<1>(i);
 			}
 		}
-		data_timer.stop();
+		_timer_data.stop();
 	}
 
 private:
 
-	void advance_time () { time += dt; }
+	/// Advance time by saved time step interval
+	void advance_time () { _time += _dt; }
 
 	/// Calculate new states and update all cells
+	/** If now boundary conditions are stated, an optimized application function
+	 *  is called
+	 */
 	void advance_cells ()
 	{
-		rule_timer.start();
-		if(bc.empty())
+		_timer_rule.start();
+		if(_bc.empty())
 			apply_rules_cells();
 		else
 			apply_rules_bc_cells();
-		rule_timer.stop();
+		_timer_rule.stop();
 
-		if(!update_always)
+		if(!_update_always)
 			update_cells();
 	}
 
-	/// Apply all rules to all cells
+	/// Apply the rules to all cells, including boundary cells
 	void apply_rules_cells ()
 	{
-		for(const auto& f : rules){
-			for(auto&& cell : data.cells())
+		for(const auto& f : _rules){
+			for(auto&& cell : _data.cells())
 				cell->new_state() = f(cell);
-			if(update_always)
+			if(_update_always)
 				update_cells();
 		}
 	}
@@ -238,22 +267,22 @@ private:
 	/// Apply all rules to non-boundary cells. Apply all BCs to boundary cells
 	void apply_rules_bc_cells ()
 	{
-		const auto iter = std::max(rules.size(),bc.size());
+		const auto iter = std::max(_rules.size(),_bc.size());
 		for(int i=0; i<iter; i++)
 		{
-			// only apply rules if there are any left
-			const bool do_bc = (i<bc.size());
-			const bool do_rule = (i<rules.size());
+			const bool do_bc = (i<_bc.size());
+			const bool do_rule = (i<_rules.size());
 
-			for(auto&& cell : data.cells()){
+			for(auto&& cell : _data.cells()){
 				if(do_bc && cell->boundary()){
-					cell->new_state() = bc[i](cell);
+					cell->new_state() = _bc[i](cell);
 				}
 				else if(do_rule){
-					cell->new_state() = rules[i](cell);
+					cell->new_state() = _rules[i](cell);
 				}
 			}
-			if(update_always)
+
+			if(_update_always)
 				update_cells();
 		}
 	}
@@ -261,10 +290,10 @@ private:
 	/// Call update() on all cells
 	void update_cells ()
 	{
-		update_timer.start();
-		for(auto&& cell : data.cells())
+		_timer_update.start();
+		for(auto&& cell : _data.cells())
 			cell->update();
-		update_timer.stop();
+		_timer_update.stop();
 	}
 
 	/// Print info into the shell if cout_timer passed cout_interval
@@ -273,13 +302,13 @@ private:
 	 */
 	void print_info (const float current, const float finish)
 	{
-		if(cout_timer.elapsed()>cout_interval){
+		if(_timer_cout.elapsed()>_cout_interval){
 			const std::string perc =  std::to_string(static_cast<int>(std::ceil(current*100/finish)));
 			std::cout <<"[";
 			for(int i=perc.size(); i<3; i++)
 				std::cout<<" ";
 			std::cout <<perc<<"\%] Simulation at step "<< _steps <<std::endl;
-			cout_timer.reset();
+			_timer_cout.reset();
 		}
 	}
 
