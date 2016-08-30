@@ -9,7 +9,7 @@ linux_build:
   script:
   - sudo DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true add-apt-repository ppa:ubuntu-toolchain-r/test
   - sudo DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true apt-get update -y
-  - sudo DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true apt-get install git bison byacc automake autoconf libtool cmake gcc-6 g++-6 -y
+  - sudo DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true apt-get install git bison byacc flex automake autoconf libtool cmake gcc-6 g++-6 -y
   - mkdir dependencies && pushd dependencies
   - git clone -b v3.12.1 https://gitlab.dune-project.org/ug/ug.git
   - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-common.git
