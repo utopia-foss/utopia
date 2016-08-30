@@ -5,6 +5,7 @@ linux_build:
   stage: build
   tags:
   - ubuntu
+  - "16.04"
   script:
   - sudo DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true add-apt-repository ppa:ubuntu-toolchain-r/test
   - sudo DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true apt-get update -y
@@ -12,10 +13,10 @@ linux_build:
   - mkdir dependencies && pushd dependencies
   - git clone -b v3.12.1 https://gitlab.dune-project.org/ug/ug.git
   - pushd ug && autoreconf -is && ./configure --prefix=$PWD/build --enable-dune --disable-x && make && make install && popd
-  - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-common
-  - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-geometry
-  - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-grid
-  - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-istl
+  - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-common.git
+  - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-geometry.git
+  - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-grid.git
+  - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-istl.git
   - popd
   - ./dependencies/dune-common/bin/dunecontrol --module=citcat all
 
@@ -24,15 +25,15 @@ mac_build:
   tags:
   - osx
   script:
-  - mkdir dependencies && pushd dependencies
-  - mkdir homebrew && curl -L https://github.com/Homebrew/brew/tarball/master | tar xz --strip 1 -C homebrew
-  - export PATH=$PWD/homebrew/bin:$PATH
+  - echo | /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+  - export PATH=/usr/local/bin:$PATH
   - brew install automake autoconf libtool cmake gcc doxygen pkg-config
+  - mkdir dependencies && pushd dependencies
   - git clone -b v3.12.1 https://gitlab.dune-project.org/ug/ug.git
   - pushd ug && autoreconf -is && ./configure --prefix=$PWD/build --enable-dune --disable-x && make && make install && popd
-  - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-common
-  - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-geometry
-  - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-grid
-  - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-istl
+  - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-common.git
+  - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-geometry.git
+  - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-grid.git
+  - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-istl.git
   - popd
   - ./dependencies/dune-common/bin/dunecontrol --module=citcat all
