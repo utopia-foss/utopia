@@ -1,14 +1,37 @@
 stages:
-    - build_linux
+    - build
 
 linux_build:
-    stage: build_linux
+    stage: build
+    tags:
+        - ubuntu
     script:
-        - apt-get update -y
-        - apt-get install git automake libtool cmake gcc-6 g++-6 -y
-        - mkdir dependencies
-        - git clone -b v3.12.1 https://gitlab.dune-project.org/ug/ug dependencies/ug
-        - cd dependencies/ug
-        - autoreconf -is
-        - ./configure --prefix=$PWD/build --enable-dune --disable-x
-        - make && make install
+        - export SUDO="sudo DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true"
+        - SUDO apt-get update -y
+        - SUDO apt-get install git automake autoconf libtool cmake gcc-6 g++-6 -y
+        - mkdir dependencies && pushd dependencies
+        - git clone -b v3.12.1 https://gitlab.dune-project.org/ug/ug
+        - pushd ug && autoreconf -is && ./configure --prefix=$PWD/build --enable-dune --disable-x && make && make install && popd
+        - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-common
+        - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-geometry
+        - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-grid
+        - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-istl
+        - popd
+        - ./dependencies/dune-common/bin/dunecontrol --module=citcat all
+
+mac_build:
+    stage: build
+    tags:
+        - osx
+    script:
+        - echo | /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+        - brew install automake autoconf libtool cmake gcc-6 doxygen pkg-config
+        - mkdir dependencies && pushd dependencies
+        - git clone -b v3.12.1 https://gitlab.dune-project.org/ug/ug
+        - pushd ug && autoreconf -is && ./configure --prefix=$PWD/build --enable-dune --disable-x && make && make install && popd
+        - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-common
+        - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-geometry
+        - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-grid
+        - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-istl
+        - popd
+        - ./dependencies/dune-common/bin/dunecontrol --module=citcat all
