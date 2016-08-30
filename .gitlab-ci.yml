@@ -6,9 +6,8 @@ linux_build:
     tags:
         - ubuntu
     script:
-        - export SUDO="sudo DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true"
-        - SUDO apt-get update -y
-        - SUDO apt-get install git automake autoconf libtool cmake gcc-6 g++-6 -y
+        - sudo DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true apt-get update -y
+        - sudo DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true apt-get install git automake autoconf libtool cmake gcc-6 g++-6 -y
         - mkdir dependencies && pushd dependencies
         - git clone -b v3.12.1 https://gitlab.dune-project.org/ug/ug
         - pushd ug && autoreconf -is && ./configure --prefix=$PWD/build --enable-dune --disable-x && make && make install && popd
@@ -24,9 +23,10 @@ mac_build:
     tags:
         - osx
     script:
-        - echo | /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-        - brew install automake autoconf libtool cmake gcc-6 doxygen pkg-config
         - mkdir dependencies && pushd dependencies
+        - mkdir homebrew && curl -L https://github.com/Homebrew/brew/tarball/master | tar xz --strip 1 -C homebrew
+        - export PATH=$PWD/homebrew/bin:$PATH
+        - brew install automake autoconf libtool cmake gcc-6 doxygen pkg-config
         - git clone -b v3.12.1 https://gitlab.dune-project.org/ug/ug
         - pushd ug && autoreconf -is && ./configure --prefix=$PWD/build --enable-dune --disable-x && make && make install && popd
         - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-common
