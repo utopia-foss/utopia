@@ -1,6 +1,14 @@
 stages:
 - build
 
+before_script:
+  - mkdir citcat && mv * citcat
+  - git clone -b v3.12.1 https://gitlab.dune-project.org/ug/ug.git
+  - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-common.git
+  - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-geometry.git
+  - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-grid.git
+  - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-istl.git
+
 linux_build:
   stage: build
   tags:
@@ -10,16 +18,9 @@ linux_build:
   - sudo DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true add-apt-repository ppa:ubuntu-toolchain-r/test
   - sudo DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true apt-get update -y
   - sudo DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true apt-get install git bison byacc flex automake autoconf libtool cmake gcc-6 g++-6 -y
-  - mkdir dependencies && pushd dependencies
-  - git clone -b v3.12.1 https://gitlab.dune-project.org/ug/ug.git
-  - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-common.git
-  - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-geometry.git
-  - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-grid.git
-  - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-istl.git
   - pushd ug && autoreconf -is && ./configure --prefix=$PWD/build --enable-dune --disable-x && make && make install
-  - export PATH=$PATH:$PWD/build && popd
   - popd
-  - ./dependencies/dune-common/bin/dunecontrol --module=citcat all
+  - ./dune-common/bin/dunecontrol --module=citcat all
 
 mac_build:
   stage: build
@@ -29,13 +30,6 @@ mac_build:
   - echo | /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
   - export PATH=/usr/local/bin:$PATH
   - brew install automake autoconf libtool cmake gcc doxygen pkg-config
-  - mkdir dependencies && pushd dependencies
-  - git clone -b v3.12.1 https://gitlab.dune-project.org/ug/ug.git
-  - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-common.git
-  - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-geometry.git
-  - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-grid.git
-  - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-istl.git
   - pushd ug && autoreconf -is && ./configure --prefix=$PWD/build --enable-dune --disable-x && make && make install
-  - export PATH=$PATH:$PWD/build && popd
   - popd
-  - ./dependencies/dune-common/bin/dunecontrol --module=citcat all
+  - ./dune-common/bin/dunecontrol --module=citcat all
