@@ -51,11 +51,14 @@ public:
 	inline Index index() const { return _index; }
 
 	/// Return true if cell is located at grid boundary.
-	/** Notice that this still remains true if period boundary conditions are applied.
+	/** Notice that this still remains true if periodic boundary conditions are applied.
 	 */
 	inline bool boundary() const { return _boundary; }
 
-	/// Return connected neighbors
+	/// Get connected neighbors of this cell
+	/** \return Container of shared pointers to neighbors
+	 *    Notice that this container might be empty 
+	 */
 	CellContainer<Cell<State,Traits,Position,Index>> neighbors() const
 	{
 		CellContainer<Cell<State,Traits,Position,Index>> ret;
@@ -67,7 +70,10 @@ public:
 		return ret;
 	}
 
-	/// Return grid neighbors
+	/// Get grid neighbors of this cell
+	/** \return Container of shared pointers to grid neighbors
+	 *    Notice that this container might be empty
+	 */
 	CellContainer<Cell<State,Traits,Position,Index>> grid_neighbors() const
 	{
 		CellContainer<Cell<State,Traits,Position,Index>> ret;
@@ -117,7 +123,7 @@ public:
 
 	/// Generic neighbor counter
 	/** \param f Function object taking one neighbor as parameter.
-	 *  					Returns bool if neighbor will be counted.
+	 *    Returns bool if neighbor will be counted.
 	 *  \return Count for f() returning true
 	 */
 	int neighbors_count(std::function<bool(std::shared_ptr<const Cell>)> f)
@@ -131,7 +137,7 @@ public:
 
 	/// Generic grid neighbor counter
 	/** \param f Function object taking one neighbor as parameter.
-	 *  					Returns bool if neighbor will be counted.
+	 *    Returns bool if neighbor will be counted.
 	 *  \return Count for f() returning true
 	 */
 	int grid_neighbors_count(std::function<bool(std::shared_ptr<const Cell>)> f)
@@ -149,36 +155,13 @@ public:
 	/// Return number of grid neighbors
 	inline int grid_neighbors_count() const { return grid_neighbors().size(); }
 
-	/// Return count of neighbors with state s
-	/** \todo add function for returning bool
-	 */
-/*	int neighbors_with(const State& s) const
-	{
-		int count = 0;
-		for(const auto& i : neighbors()){
-			if(i->state()==s) count++;
-		}
-		return count;
-	}*/
-
-	/// Return count of neighbors with trait t
-	/** \todo add function for returning bool
-	 */
-/*	int neighbors_with(const Traits& t) const
-	{
-		int count = 0;
-		for(const auto& i : neighbors()){
-			if(i->traits()==t) count++;
-		}
-		return count;
-	}*/
 
 private:
-	//! List of connected neighbors \todo Create tuples for connection weight
+	//! List of connected neighbors
 	std::vector<std::weak_ptr<Cell>> _neighbors;
 	//! List of neighbors on grid
 	std::vector<std::weak_ptr<Cell>> _grid_neighbors;
-	//! Position of cell
+	//! Position of cell on grid
 	const Position _position;
 	//! Cell located at grid boundary
 	const bool _boundary;
