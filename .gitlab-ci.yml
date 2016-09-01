@@ -2,7 +2,7 @@ stages:
 - build
 
 before_script:
-  - mkdir citcat && cp * citcat/
+  - mkdir citcat && cp -rf * citcat/
   - rm -rf citcat/citcat
   - git clone -b v3.12.1 https://gitlab.dune-project.org/ug/ug.git
   - git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-common.git
