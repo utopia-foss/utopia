@@ -9,4 +9,4 @@ install(FILES citcat.hh
 			types.hh
 		DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/dune/citcat)
 
-add_subdirectory(test)
+add_subdirectory(test EXCLUDE_FROM_ALL)
