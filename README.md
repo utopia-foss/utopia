@@ -1,10 +1,11 @@
 # CITCAT
 
-The __C__onveniently __I__n__t__egrated __C__ellular __A__utomaton __T__oolkit
+The __C__onveniently __I__ntegrated __C__ellular __A__utomaton __T__oolkit
 
 Powered by [DUNE](https://dune-project.org/)
 
 This module is the base library for the [iCAT](http://shangrila.iup.uni-heidelberg.de:30000/citcat/icat) package. It contains class and function templates, a documentation, and unit tests.
+
 _CITCAT is not meant to be a stand-alone module. To build Cellular Automata models, use iCAT and place source files there._
 
 ## Installation
