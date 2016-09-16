@@ -2,20 +2,19 @@ image: citcat/dune-env:2.4
 
 variables:
   DUNE_CONTROL_PATH: /opt/dune:$CI_PROJECT_DIR
-  COMPILER_FLAGS: -O3
 
 stages:
-- build
+- main
 
 before_script:
   - cd /opt/dune
 
 build_job:
-  stage: build
+  stage: main
   tags:
   - docker
   script:
-  - export CMAKE_FLAGS="-DCMAKE_CXX_FLAGS='$COMPILER_FLAGS'"
   - ./dune-common/bin/dunecontrol --only=citcat all
   - cd /builds/citcat/citcat/build-cmake
   - make doc
+  - make test
