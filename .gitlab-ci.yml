@@ -1,5 +1,4 @@
 variables:
-  DUNE_CONTROL_PATH: /opt/dune:$CI_PROJECT_DIR
   COMPILER_FLAGS: -O3
 
 stages:
@@ -13,6 +12,8 @@ build_docker:
   tags:
   - docker
   image: citcat/dune-env:latest
+  variables:
+    DUNE_CONTROL_PATH: /opt/dune:$CI_PROJECT_DIR
   script:
   - cd /opt/dune
   - ./dune-common/bin/dunecontrol update
