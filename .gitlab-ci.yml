@@ -12,11 +12,10 @@ build_docker:
   tags:
   - docker
   image: citcat/dune-env:latest
-  variables:
-    DUNE_CONTROL_PATH: /opt/dune:$CI_PROJECT_DIR
   script:
   - cd /opt/dune
   - ./dune-common/bin/dunecontrol update
+  - export DUNE_CONTROL_PATH=/opt/dune:$CI_PROJECT_DIR
   - ./dune-common/bin/dunecontrol --only=citcat all
   - cd /builds/citcat/citcat/build-cmake
   - make doc
@@ -33,6 +32,5 @@ build_ubuntu:
   - git clone https://gitlab.dune-project.org/core/dune-common
   - git clone https://gitlab.dune-project.org/core/dune-geometry
   - git clone https://gitlab.dune-project.org/core/dune-grid
-  - export CMAKE_FLAGS="-DCMAKE_CXX_FLAGS='$COMPILER_FLAGS'"
   - ./dune-common/bin/dunecontrol all
   - ./dune-common/bin/dunecontrol --only=citcat bexec make doc
