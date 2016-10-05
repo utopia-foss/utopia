@@ -20,7 +20,7 @@ struct GridTypeAdaptor
 	//! Position vector
 	using Position = typename Dune::FieldVector<Coordinate,dim>;
 	//! Type of GridView implemented by Dune
-	using GridView = typename GridType::template Partition<Dune::All_Partition>::LeafGridView;
+	using GridView = typename GridType::LeafGridView;
 	//! Type of VTKSequenceWriter
 	using VTKWriter = typename Dune::VTKSequenceWriter<GridView>;
 	//! Type of Grid Index Mapper

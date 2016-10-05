@@ -1,20 +1,37 @@
-image: citcat/dune-env:2.4
-
 variables:
-  DUNE_CONTROL_PATH: /opt/dune:$CI_PROJECT_DIR
   COMPILER_FLAGS: -O3
+  SUDO: "sudo DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true"
 
 stages:
 - build
 
 before_script:
-  - cd /opt/dune
+  - export CMAKE_FLAGS="-DCMAKE_CXX_FLAGS='$COMPILER_FLAGS'"
 
-build_job:
+build_docker:
   stage: build
   tags:
   - docker
+  image: citcat/dune-env:latest
   script:
-  - export CMAKE_FLAGS="-DCMAKE_CXX_FLAGS='$COMPILER_FLAGS'"
+  - cd /opt/dune
+  - ./dune-common/bin/dunecontrol update
+  - export DUNE_CONTROL_PATH=/opt/dune:$CI_PROJECT_DIR
   - ./dune-common/bin/dunecontrol --only=citcat all
+  - cd /builds/citcat/citcat/build-cmake
+  - make doc
+
+build_ubuntu:
+  stage: build
+  tags:
+  - ubuntu
+  - "16.04"
+  script:
+  - cd ..
+  - $SUDO apt-get update && $SUDO apt-get install -y cmake doxygen gcc g++ gfortran git pkg-config
+  - git clone https://gitlab.dune-project.org/staging/dune-uggrid.git
+  - git clone https://gitlab.dune-project.org/core/dune-common
+  - git clone https://gitlab.dune-project.org/core/dune-geometry
+  - git clone https://gitlab.dune-project.org/core/dune-grid
+  - ./dune-common/bin/dunecontrol all
   - ./dune-common/bin/dunecontrol --only=citcat bexec make doc
