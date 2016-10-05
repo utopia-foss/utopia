@@ -26,8 +26,9 @@ build_ubuntu:
   - ubuntu
   - "16.04"
   script:
+  - export SUDO="sudo DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true"
   - cd ..
-  - apt-get update && apt-get install -y cmake doxygen gcc g++ gfortran git pkg-config
+  - SUDO apt-get update && SUDO apt-get install -y cmake doxygen gcc g++ gfortran git pkg-config
   - git clone https://gitlab.dune-project.org/staging/dune-uggrid.git
   - git clone https://gitlab.dune-project.org/core/dune-common
   - git clone https://gitlab.dune-project.org/core/dune-geometry
