@@ -15,7 +15,6 @@ build_docker:
   image: citcat/dune-env:latest
   script:
   - cd /opt/dune
-  - export CMAKE_FLAGS="-DCMAKE_CXX_FLAGS='$COMPILER_FLAGS'"
   - ./dune-common/bin/dunecontrol update
   - ./dune-common/bin/dunecontrol --only=citcat all
   - cd /builds/citcat/citcat/build-cmake
@@ -25,7 +24,7 @@ build_ubuntu:
   stage: build
   tags:
   - ubuntu
-  - 16.04
+  - "16.04"
   script:
   - cd ..
   - apt-get update && apt-get install -y cmake doxygen gcc g++ gfortran git pkg-config
