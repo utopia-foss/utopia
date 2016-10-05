@@ -17,5 +17,4 @@ build_job:
   script:
   - export CMAKE_FLAGS="-DCMAKE_CXX_FLAGS='$COMPILER_FLAGS'"
   - ./dune-common/bin/dunecontrol --only=citcat all
-  - cd /builds/citcat/citcat/build-cmake
-  - make doc
+  - ./dune-common/bin/dunecontrol --only=citcat bexec make doc
