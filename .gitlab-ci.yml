@@ -17,15 +17,14 @@ build_docker:
   - cd /opt/dune
   - ./dune-common/bin/dunecontrol update
   - export DUNE_CONTROL_PATH=/opt/dune:$CI_PROJECT_DIR
-  - ./dune-common/bin/dunecontrol --only=citcat all
-  - cd /builds/citcat/citcat/build-cmake
-  - make doc
+  - ./dune-common/bin/dunecontrol --module=citcat all
+  - ./dune-common/bin/dunecontrol --only=citcat make doc
 
 build_ubuntu:
   stage: build
   tags:
-  - ubuntu
-  - "16.04"
+  - docker
+  image: ubuntu:latest
   script:
   - cd ..
   - $SUDO apt-get update && $SUDO apt-get install -y cmake doxygen gcc g++ gfortran git pkg-config
@@ -34,4 +33,4 @@ build_ubuntu:
   - git clone https://gitlab.dune-project.org/core/dune-geometry
   - git clone https://gitlab.dune-project.org/core/dune-grid
   - ./dune-common/bin/dunecontrol all
-  - ./dune-common/bin/dunecontrol --only=citcat bexec make doc
+  - ./dune-common/bin/dunecontrol --only=citcat make doc
