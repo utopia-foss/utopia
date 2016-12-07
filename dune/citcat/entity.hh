@@ -16,7 +16,7 @@ public:
 	using Traits = TraitsType;
 
 	/// Constructor. Define initial state and traits, and constant tag
-	Entity(const State& state, const Traits& traits, const int tag=0) :
+	Entity(const State state, const Traits traits, const int tag=0) :
 		_state(state), _state_c(state),
 		_traits(traits), _traits_c(traits),
 		_tag(tag)
