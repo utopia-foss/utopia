@@ -68,6 +68,7 @@ void default_sim (const Grid& grid, const Cells& cells)
 int main(int argc, char** argv)
 {
 	try{
+		Dune::MPIHelper::instance(argc,argv);
 
 		using StateType = int;
 		using TraitsType = std::array<bool,2>;
@@ -85,7 +86,7 @@ int main(int argc, char** argv)
 		for(auto&& i : my_cells)
 			Citcat::Neighborhood::Moore::apply(i);
 
-		auto grid_gmsh = Citcat::Setup::read_gmsh("../../src/square.msh");
+		auto grid_gmsh = Citcat::Setup::read_gmsh<3>("../../src/cube.msh");
 		auto my_cells_gmsh = Citcat::Setup::create_cells_on_grid(grid_gmsh,state_default);
 
 		default_sim(grid,my_cells);
