@@ -8,16 +8,18 @@ namespace Citcat
 namespace Setup
 {
 
-	/// Create a grid from a Gmsh file
+	/// Create an unstructured grid from a Gmsh file
 	/**
+	 *  \tparam dim Spatial dimension of grid and mesh
 	 *  \param filename Name of the Gmsh file with path relative to executable
 	 *  \param refinement_level Level of global refinement applied to grid
 	 *  \return Shared pointer to the grid
 	 *  \warning Do not modify the grid after building other structures from it!
 	 */
-	std::shared_ptr<Dune::UGGrid<2>> read_gmsh (const std::string filename, const unsigned int refinement_level=0)
+	template<int dim=2>
+	std::shared_ptr<Dune::UGGrid<dim>> read_gmsh (const std::string filename, const unsigned int refinement_level=0)
 	{
-		using Grid = Dune::UGGrid<2>;
+		using Grid = Dune::UGGrid<dim>;
 		auto grid = std::make_shared<Grid>();
 
 		Dune::GridFactory<Grid> factory(grid.get());
