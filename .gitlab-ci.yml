@@ -18,6 +18,8 @@ build_job:
   - export DUNE_CONTROL_PATH=/opt/dune:$CI_PROJECT_DIR
   - ./dune-common/bin/dunecontrol --module=citcat all
   - ./dune-common/bin/dunecontrol --only=citcat make doc
+  - ./dune-common/bin/dunecontrol --only=citcat make build_tests
+  - ./dune-common/bin/dunecontrol --only=citcat make test
 
 build_ubuntu:
   stage: build
@@ -33,3 +35,5 @@ build_ubuntu:
   - git clone https://gitlab.dune-project.org/core/dune-grid
   - ./dune-common/bin/dunecontrol all
   - ./dune-common/bin/dunecontrol --only=citcat make doc
+  - ./dune-common/bin/dunecontrol --only=citcat make build_tests
+  - ./dune-common/bin/dunecontrol --only=citcat make test
