@@ -41,7 +41,7 @@ public:
 	 *  \param boundary Boolean if cell is located at grid boundary
 	 *  \param tag Cell tracking tag
 	 */
-	Cell(const State& state, const Traits& traits, const Position& pos, const Index index, const bool boundary=false, const int tag=0) :
+	Cell(const State state, const Traits traits, const Position pos, const Index index, const bool boundary=false, const int tag=0) :
 		Entity<State,Traits>(state,traits,tag), _position(pos), _boundary(boundary), _index(index)
 	{ }
 
