@@ -41,4 +41,17 @@ CITCAT can be set up as a dependency of, or a suggestion by your own DUNE Module
 
     #include <dune/citcat/citcat.hh>
 
+### Unit Tests
+**The unit testing is still incomplete!**
 
+CITCAT contains unit tests to ensure consistency by checking if class members and functions are working correctly. The tests are integrated into the GitLab Continuous Integration build process, meaning that failing tests cause an entire build to fail.
+
+Tests can also be executed locally, to test a (possibly altered) version of CITCAT *before* committing changes. To build them, execute
+
+    ./dune-common/bin/dunecontrol --only=citcat make build_tests
+
+and perform the tests by calling
+
+    ./dune-common/bin/dunecontrol --only=citcat make test
+
+If the test executables are not built before executing `make test`, the corresponding tests will inevitably fail.
