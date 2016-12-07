@@ -7,4 +7,4 @@ Module: citcat
 Version: 0.1
 Maintainer: lriedel@iup.uni-heidelberg.de
 #depending on
-Depends: dune-common dune-geometry dune-grid dune-istl
+Depends: dune-common dune-geometry dune-grid dune-uggrid
