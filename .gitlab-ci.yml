@@ -22,7 +22,7 @@ build_job:
   - ./dune-common/bin/dunecontrol --only=citcat make test
 
 build_ubuntu:
-  stage: build
+  stage: main
   tags:
   - docker
   image: ubuntu:latest
