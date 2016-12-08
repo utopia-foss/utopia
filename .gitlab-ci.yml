@@ -1,11 +1,5 @@
-variables:
-  COMPILER_FLAGS: -O3
-
 stages:
 - main
-
-before_script:
-  - export CMAKE_FLAGS="-DCMAKE_CXX_FLAGS='$COMPILER_FLAGS'"
 
 build_job:
   stage: main
@@ -17,23 +11,6 @@ build_job:
   - ./dune-common/bin/dunecontrol update
   - export DUNE_CONTROL_PATH=/opt/dune:$CI_PROJECT_DIR
   - ./dune-common/bin/dunecontrol --module=citcat all
-  - ./dune-common/bin/dunecontrol --only=citcat make doc
-  - ./dune-common/bin/dunecontrol --only=citcat make build_tests
-  - ./dune-common/bin/dunecontrol --only=citcat make test
-
-build_ubuntu:
-  stage: main
-  tags:
-  - docker
-  image: ubuntu:latest
-  script:
-  - cd ..
-  - apt-get update && apt-get install -y cmake doxygen gcc g++ gfortran git pkg-config
-  - git clone https://gitlab.dune-project.org/staging/dune-uggrid.git
-  - git clone https://gitlab.dune-project.org/core/dune-common
-  - git clone https://gitlab.dune-project.org/core/dune-geometry
-  - git clone https://gitlab.dune-project.org/core/dune-grid
-  - ./dune-common/bin/dunecontrol all
   - ./dune-common/bin/dunecontrol --only=citcat make doc
   - ./dune-common/bin/dunecontrol --only=citcat make build_tests
   - ./dune-common/bin/dunecontrol --only=citcat make test
