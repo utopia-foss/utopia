@@ -37,11 +37,15 @@ int main(int argc, char** argv)
 	try{
 		Dune::MPIHelper::instance(argc,argv);
 
-		auto gmsh_2d = Citcat::Setup::read_gmsh<2>("square.msh");
+		auto gmsh_2d = Citcat::Setup::read_gmsh("square.msh");
 		assert_grid_elements(gmsh_2d,1042,80,562);
 
 		auto gmsh_3d = Citcat::Setup::read_gmsh<3>("cube.msh");
 		assert_grid_elements(gmsh_3d,4461,1372,1117);
+
+		auto rect_2d = Citcat::Setup::create_grid(100);
+		assert_grid_elements(rect_2d,1E4,396,10201);
+		//assert_grid_elements(rect_2d,1E6,58416, 32767);
 
 		return 0;
 	}
