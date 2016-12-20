@@ -41,13 +41,13 @@ public:
 	}
 
 	/// Update the state only
-	void update_state()
+	inline void update_state()
 	{
 		_state = _state_c;
 	}
 
 	/// Update the traits only
-	void update_traits()
+	inline void update_traits()
 	{
 		_traits = _traits_c;
 	}
