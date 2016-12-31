@@ -49,12 +49,14 @@ namespace Setup
 		return sim;
 	}
 
-	/// Build a rectangular 2D grid.
-	/** Cell extensions will be 1x1 by default.
-	 *  \param cells_x Number of cells in x-direction
-	 *  \param cells_y Number of cells in y-direction
-	 *  \param range_x Grid extension in x-direction
-	 *  \param range_y Grid extension in y-direction
+	/// Build a rectangular grid.
+	/** Cells will be rectangular/cubic. Cell edge length defaults to 1 if
+	 *  'range' parameter is omitted.
+	 *  \tparam dim Spatial dimension of the grid. Default is 2.
+	 *  \param cells Array of size dim containing the number of cells
+	 *    in each dimension
+	 *  \param range Array of size dim containing the grid extensions
+	 *    in each dimension
 	 *  \return Shared pointer to the grid
 	 *  \warning Do not modify the grid after building other structures from it!
 	 */
@@ -91,10 +93,11 @@ namespace Setup
 		return std::make_shared<Grid>(lower_left,upper_right,cells);
 	}
 
-	/// Build a rectangular 2D grid
-	/** Cell extensions will be 1x1.
-	 *  \param cells_xy Number of cells in each direction.
-	 *     Total number will be cells^2.
+	/// Build a rectangular grid
+	/** Cells will be rectangular/cubic with edge length 1.
+	 *  \tparam dim Spatial dimension of the grid. Default is 2.
+	 *  \param cells_xyz Number of cells in each direction.
+	 *     Total number will be cells^dim.
 	 *  \return Shared pointer to the grid
 	 *  \warning Do not modify the grid after building other structures from it!
 	 */
