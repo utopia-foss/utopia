@@ -113,10 +113,12 @@ namespace Setup
 	/**
 	 *  \param cells Container of cells
 	 */
- 	template<typename CellContainer>
+ 	template<int dim=2, typename CellContainer>
 	void apply_periodic_boundaries (CellContainer& cells)
 	{
 		using CellPtr = typename CellContainer::value_type;
+		using PBA = Citcat::Setup::Low::PeriodicBoundaryApplicator<dim,CellPtr>;
+
 		std::vector<std::pair<CellPtr,CellPtr>> new_connections;
 
 		for(auto&& cell : cells)
@@ -124,61 +126,29 @@ namespace Setup
 			if(!cell->boundary())
 				continue;
 
-			const auto pos = cell->position();
-			if(cell->grid_neighbors_count()==2) // Edge cell
-			{
-				auto it = cells.begin();
-				auto end = cells.end();
-				// find all adjacent edge cells
-				while(it!=end)
-				{
-					it = std::find_if(it,end,
-						[&pos,&cell](const CellPtr& a)
-						{
-							if(!a->boundary()) return false;
-							if(a==cell) return false;
-							if(a->grid_neighbors_count()!=2) return false;
-							return (a->position()[0] == pos[0]) || 
-								(a->position()[1] == pos[1]);
-						});
-					if(it!=end)
-					{
-						new_connections.push_back(std::make_pair(cell,*it));
-						it++;
-					}
-				}
+			std::function<bool(const CellPtr)> f_search;
+
+			if(PBA::is_corner_cell(cell)){
+				f_search = std::bind(PBA::check_corner_cell,cell,std::placeholders::_1);
 			}
-			else if(cell->grid_neighbors_count()==3) // border cell
-			{
-				if(pos[0]==.0) // left border
-				{
-					// find adjacent border cell
-					auto it = std::find_if(cells.begin(),cells.end(),
-						[&pos,&cell](const CellPtr& a)
-						{
-							if(!a->boundary()) return false;
-							if(a==cell) return false;
-							if(a->grid_neighbors_count()!=3) return false;
-							return a->position()[1] == pos[1];
-						});
-					if(it!=cells.end()){
-						new_connections.push_back(std::make_pair(cell,*it));
-					}
-				}
-				else if(pos[1]==.0) // bottom border
-				{
-					// find adjacent border cell
-					auto it = std::find_if(cells.begin(),cells.end(),
-						[&pos,&cell](const CellPtr& a)
-						{
-							if(!a->boundary()) return false;
-							if(a==cell) return false;
-							if(a->grid_neighbors_count()!=3) return false;
-							return a->position()[0] == pos[0];
-						});
-					if(it!=cells.end()){
-						new_connections.push_back(std::make_pair(cell,*it));
-					}
+			else if(PBA::is_edge_cell(cell)){
+				f_search = std::bind(PBA::check_edge_cell,cell,std::placeholders::_1);
+			}
+			else if(PBA::is_surface_cell(cell)){
+				f_search = std::bind(PBA::check_surface_cell,cell,std::placeholders::_1);
+			}
+			else{
+				continue;
+			}
+
+			auto it = cells.begin();
+			const auto end = cells.end();
+
+			while(it!=end){
+				it = std::find_if(it,end,f_search);
+				if(it!=end){
+					new_connections.push_back(std::make_pair(cell,*it));
+					it++;
 				}
 			}
 		}

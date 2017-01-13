@@ -50,6 +50,7 @@
 #include "data.hh"
 #include "data_vtk.hh"
 #include "simulation.hh"
+#include "setup_low.hh"
 #include "setup.hh"
 
 #endif // CITCAT_HH
