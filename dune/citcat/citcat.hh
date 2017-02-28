@@ -21,6 +21,7 @@
 #include <type_traits>
 #include <random>
 #include <algorithm>
+#include <functional>
 
 #pragma GCC system_header // disable DUNE internal warnings
 
@@ -41,6 +42,7 @@
 #include <dune/grid/io/file/gmshreader.hh>
 #include <dune/grid/utility/structuredgridfactory.hh>
 #include <dune/grid/common/mcmgmapper.hh>
+#include <dune/grid/common/universalmapper.hh>
 #include <dune/grid/io/file/vtk/vtksequencewriter.hh>
 
 // CITCAT

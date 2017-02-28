@@ -117,25 +117,41 @@ namespace Setup
 	void apply_periodic_boundaries (CellContainer& cells)
 	{
 		using CellPtr = typename CellContainer::value_type;
-		using PBA = Citcat::Setup::Low::PeriodicBoundaryApplicator<dim,CellPtr>;
+		using PBA = Low::PeriodicBoundaryApplicator<dim,CellPtr>;
 
 		std::vector<std::pair<CellPtr,CellPtr>> new_connections;
+
+		// get the grid extensions
+		std::array<double,dim> extensions;
+		extensions.fill(.0);
+		std::cout << "Extensions :";
+		for(auto&& cell : cells){
+			const auto pos = cell->position();
+			for(int i = 0; i<dim; ++i){
+				extensions.at(i) = std::max(pos[i],extensions.at(i));
+				std::cout << extensions.at(i) << ",";
+			}
+		}
+		std::cout << std::endl;
+
+		PBA pba(extensions);
 
 		for(auto&& cell : cells)
 		{
 			if(!cell->boundary())
 				continue;
 
-			std::function<bool(const CellPtr)> f_search;
+			std::function<bool(CellPtr)> f_search;
 
-			if(PBA::is_corner_cell(cell)){
-				f_search = std::bind(PBA::check_corner_cell,cell,std::placeholders::_1);
+			if(pba.is_corner_cell(cell)){
+				std::cout << "Checking Cell: " << cell->index() << ": " << std::endl;
+				f_search = std::bind(&PBA::check_corner_cell,&pba,cell,std::placeholders::_1);
 			}
-			else if(PBA::is_edge_cell(cell)){
-				f_search = std::bind(PBA::check_edge_cell,cell,std::placeholders::_1);
+			else if(pba.is_edge_cell(cell)){
+				f_search = std::bind(&PBA::check_edge_cell,&pba,cell,std::placeholders::_1);
 			}
-			else if(PBA::is_surface_cell(cell)){
-				f_search = std::bind(PBA::check_surface_cell,cell,std::placeholders::_1);
+			else if(pba.is_surface_cell(cell)){
+				f_search = std::bind(&PBA::check_surface_cell,&pba,cell,std::placeholders::_1);
 			}
 			else{
 				continue;
