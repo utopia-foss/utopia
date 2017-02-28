@@ -3,32 +3,29 @@
 #include <dune/common/exceptions.hh>
 
 template<typename GridType>
-void assert_grid_elements (std::shared_ptr<GridType> grid, const int cells, const int cells_boundary, const int vertices)
+void assert_grid_elements (std::shared_ptr<GridType> grid, const int cells, const int cells_boundary, const int verts)
 {
 	int count_cells(0), count_cells_boundary(0), count_vertices(0);
 	auto gv = grid->leafGridView();
 
 	// iterate over cells
-	for(auto it=gv.template begin<0>(); it!=gv.template end<0>(); ++it)
+	for(const auto& e : elements(gv))
 	{
 		++count_cells;
-		// iterate over intersections
-		for(auto iit=gv.ibegin(*it); iit!=gv.iend(*it); ++iit){
-			if(iit->boundary()){
+		for(const auto& is : intersections(gv,e)){
+			if(is.boundary()){
 				++count_cells_boundary;
 				break;
 			}
 		}
 	}
 
-	// iterate over vertices
-	for(auto it=gv.template begin<GridType::dimension>(); it!=gv.template end<GridType::dimension>(); ++it)
-	{
-		++count_vertices;
-	}
+	// count vertices
+	auto vert_range = vertices(gv);
+	count_vertices = std::distance(vert_range.begin(),vert_range.end());
 
 	assert(count_cells == cells);
-	assert(count_vertices == vertices);
+	assert(count_vertices == verts);
 	assert(count_cells_boundary == cells_boundary);
 }
 

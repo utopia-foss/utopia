@@ -124,15 +124,12 @@ namespace Setup
 		// get the grid extensions
 		std::array<double,dim> extensions;
 		extensions.fill(.0);
-		std::cout << "Extensions :";
 		for(auto&& cell : cells){
 			const auto pos = cell->position();
 			for(int i = 0; i<dim; ++i){
 				extensions.at(i) = std::max(pos[i],extensions.at(i));
-				std::cout << extensions.at(i) << ",";
 			}
 		}
-		std::cout << std::endl;
 
 		PBA pba(extensions);
 
@@ -144,7 +141,6 @@ namespace Setup
 			std::function<bool(CellPtr)> f_search;
 
 			if(pba.is_corner_cell(cell)){
-				std::cout << "Checking Cell: " << cell->index() << ": " << std::endl;
 				f_search = std::bind(&PBA::check_corner_cell,&pba,cell,std::placeholders::_1);
 			}
 			else if(pba.is_edge_cell(cell)){
