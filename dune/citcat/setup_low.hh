@@ -13,8 +13,13 @@ struct PeriodicBoundaryApplicator{
 
 private:
 
+	/// extensions of the grid
 	std::array<double,dim> _extensions;
 
+	/// Check if two cells have the maximum distance
+	/** Only check coordinates that do not match
+	 *  \param counter Bitset of matching coordinates
+	 */
 	bool check_max_distance (const Cell a, const Cell b, const std::bitset<dim> counter)
 	{
 		for(int i = 0; i<dim; ++i){
@@ -27,6 +32,7 @@ private:
 		return false;
 	}
 
+	/// Check if two cells are boundary cells and not the same
 	bool check_base (const Cell a, const Cell b)
 	{
 		if(!b->boundary())
@@ -36,6 +42,7 @@ private:
 		return true;
 	}
 
+	/// Create a bitset for matching coordinates in the respective direction
 	std::bitset<dim> matching_coords (const Cell a, const Cell b)
 	{
 		std::bitset<dim> ret;
@@ -50,10 +57,14 @@ private:
 
 public:
 
+	/// Constructor
+	/** \param extension Extension of the grid
+	 */
 	PeriodicBoundaryApplicator (const std::array<double,dim> extensions) :
 		_extensions(extensions)
 	{ }
 	
+	/// Check if a cell is a corner cell
 	bool is_corner_cell (const Cell cell)
 	{
 		if(dim == 2 && cell->grid_neighbors_count() == 2)
@@ -63,7 +74,7 @@ public:
 		return false;
 	}
 
-	
+	/// Check if a cell is a edge cell
 	bool is_edge_cell (const Cell cell)
 	{
 		if(dim == 2 && cell->grid_neighbors_count() == 3)
@@ -73,7 +84,7 @@ public:
 		return false;
 	}
 
-	
+	/// Check if a cell is a surface cell
 	bool is_surface_cell (const Cell cell)
 	{
 		if(dim == 3 && cell->grid_neighbors_count() == 5)
@@ -81,7 +92,9 @@ public:
 		return false;
 	}
 
-	
+	/// Check if two corner cells should be neighbors
+	/** \note Cell a is not checked again!
+	 */
 	bool check_corner_cell (const Cell a, const Cell b)
 	{
 		if(check_base(a,b) && is_corner_cell(b) &&
@@ -91,7 +104,9 @@ public:
 		return false;
 	}
 
-	
+	/// Check if two edge cells should be neighbors
+	/** \note Cell a is not checked again!
+	 */
 	bool check_edge_cell (const Cell a, const Cell b)
 	{
 		if(check_base(a,b) && is_edge_cell(b)) {
@@ -103,7 +118,9 @@ public:
 		return false;
 	}
 
-	
+	/// Check if two surface cells should be neighbors
+	/** \note Cell a is not checked again!
+	 */
 	bool check_surface_cell (const Cell a, const Cell b)
 	{
 		bool match = false;
