@@ -8,16 +8,18 @@ namespace Citcat
 namespace Setup
 {
 
-	/// Create a grid from a Gmsh file
+	/// Create an unstructured grid from a Gmsh file
 	/**
+	 *  \tparam dim Spatial dimension of grid and mesh
 	 *  \param filename Name of the Gmsh file with path relative to executable
 	 *  \param refinement_level Level of global refinement applied to grid
 	 *  \return Shared pointer to the grid
 	 *  \warning Do not modify the grid after building other structures from it!
 	 */
-	std::shared_ptr<Dune::UGGrid<2>> read_gmsh (const std::string filename, const unsigned int refinement_level=0)
+	template<int dim=2>
+	std::shared_ptr<Dune::UGGrid<dim>> read_gmsh (const std::string filename, const unsigned int refinement_level=0)
 	{
-		using Grid = Dune::UGGrid<2>;
+		using Grid = Dune::UGGrid<dim>;
 		auto grid = std::make_shared<Grid>();
 
 		Dune::GridFactory<Grid> factory(grid.get());
@@ -47,120 +49,118 @@ namespace Setup
 		return sim;
 	}
 
-	/// Build a rectangular 2D grid.
-	/** Cell extensions will be 1x1 by default.
-	 *  \param cells_x Number of cells in x-direction
-	 *  \param cells_y Number of cells in y-direction
-	 *  \param range_x Grid extension in x-direction
-	 *  \param range_y Grid extension in y-direction
+	/// Build a rectangular grid.
+	/** Cells will be rectangular/cubic. Cell edge length defaults to 1 if
+	 *  'range' parameter is omitted.
+	 *  \tparam dim Spatial dimension of the grid. Default is 2.
+	 *  \param cells Array of size dim containing the number of cells
+	 *    in each dimension
+	 *  \param range Array of size dim containing the grid extensions
+	 *    in each dimension
 	 *  \return Shared pointer to the grid
 	 *  \warning Do not modify the grid after building other structures from it!
 	 */
-	template<typename GridType=DefaultGrid>
-	std::shared_ptr<GridType> create_grid(const int cells_x, const int cells_y, float range_x=0.0, float range_y=0.0)
+	template<int dim=2>
+	std::shared_ptr<DefaultGrid<dim>> create_grid (const std::array<int,dim> cells, std::array<float,dim> range = std::array<float,dim>())
 	{
-		using GridTypes = GridTypeAdaptor<GridType>;
+		using Grid = DefaultGrid<dim>;
+		using GridTypes = GridTypeAdaptor<Grid>;
 		using Position = typename GridTypes::Position;
-		static constexpr int dim = GridTypes::dim;
 
-		if(range_x==0.0 && range_y==0.0){
-			range_x = cells_x;
-			range_y = cells_y;
+		bool automated_range = false;
+		for(auto it = range.cbegin(); it != range.cend(); ++it){
+			if(*it == 0.0){
+				automated_range = true;
+				break;
+			}
 		}
-		const Position extensions({range_x,range_y});
-		const std::array<int,dim> cells({cells_x,cells_y});
+
+		if(automated_range){
+			std::copy(cells.cbegin(),cells.cend(),range.begin());
+		}
+
+		Position extensions;
+		std::copy(range.cbegin(),range.cend(),extensions.begin());
+
+		Position deviation;
+		for(int i=0; i<dim; ++i)
+			deviation[i] = -range.at(i)/(cells.at(i)*2.0);
 
 		// place lower left cell center into origin
-		const Position deviation({-range_x/(cells_x*2.0),-range_y/(cells_y*2.0)});
 		const Position lower_left = deviation;
 		const Position upper_right = extensions + deviation;
 
-		return std::make_shared<GridType>(lower_left,upper_right,cells);
+		return std::make_shared<Grid>(lower_left,upper_right,cells);
 	}
 
-	/// Build a rectangular 2D grid
-	/** Cell extensions will be 1x1.
-	 *  \param cells_xy Number of cells in each direction.
-	 *     Total number will be cells^2.
+	/// Build a rectangular grid
+	/** Cells will be rectangular/cubic with edge length 1.
+	 *  \tparam dim Spatial dimension of the grid. Default is 2.
+	 *  \param cells_xyz Number of cells in each direction.
+	 *     Total number will be cells^dim.
 	 *  \return Shared pointer to the grid
 	 *  \warning Do not modify the grid after building other structures from it!
 	 */
-	template<typename GridType=DefaultGrid>
-	std::shared_ptr<GridType> create_grid(const int cells_xy)
+	template<int dim=2>
+	decltype(auto) create_grid(const int cells_xyz)
 	{
-		return create_grid<GridType>(cells_xy,cells_xy);
+		std::array<int,dim> cells;
+		cells.fill(cells_xyz);
+		return create_grid<dim>(cells);
 	}
 
 	/// Add connections for periodic boundaries to cells on a rectangular grid
 	/**
 	 *  \param cells Container of cells
 	 */
- 	template<typename CellContainer>
+ 	template<int dim=2, typename CellContainer>
 	void apply_periodic_boundaries (CellContainer& cells)
 	{
 		using CellPtr = typename CellContainer::value_type;
+		using PBA = Low::PeriodicBoundaryApplicator<dim,CellPtr>;
+
 		std::vector<std::pair<CellPtr,CellPtr>> new_connections;
+
+		// get the grid extensions
+		std::array<double,dim> extensions;
+		extensions.fill(.0);
+		for(auto&& cell : cells){
+			const auto pos = cell->position();
+			for(int i = 0; i<dim; ++i){
+				extensions.at(i) = std::max(pos[i],extensions.at(i));
+			}
+		}
+
+		PBA pba(extensions);
 
 		for(auto&& cell : cells)
 		{
 			if(!cell->boundary())
 				continue;
 
-			const auto pos = cell->position();
-			if(cell->grid_neighbors_count()==2) // Edge cell
-			{
-				auto it = cells.begin();
-				auto end = cells.end();
-				// find all adjacent edge cells
-				while(it!=end)
-				{
-					it = std::find_if(it,end,
-						[&pos,&cell](const CellPtr& a)
-						{
-							if(!a->boundary()) return false;
-							if(a==cell) return false;
-							if(a->grid_neighbors_count()!=2) return false;
-							return (a->position()[0] == pos[0]) || 
-								(a->position()[1] == pos[1]);
-						});
-					if(it!=end)
-					{
-						new_connections.push_back(std::make_pair(cell,*it));
-						it++;
-					}
-				}
+			std::function<bool(CellPtr)> f_search;
+
+			if(pba.is_corner_cell(cell)){
+				f_search = std::bind(&PBA::check_corner_cell,&pba,cell,std::placeholders::_1);
 			}
-			else if(cell->grid_neighbors_count()==3) // border cell
-			{
-				if(pos[0]==.0) // left border
-				{
-					// find adjacent border cell
-					auto it = std::find_if(cells.begin(),cells.end(),
-						[&pos,&cell](const CellPtr& a)
-						{
-							if(!a->boundary()) return false;
-							if(a==cell) return false;
-							if(a->grid_neighbors_count()!=3) return false;
-							return a->position()[1] == pos[1];
-						});
-					if(it!=cells.end()){
-						new_connections.push_back(std::make_pair(cell,*it));
-					}
-				}
-				else if(pos[1]==.0) // bottom border
-				{
-					// find adjacent border cell
-					auto it = std::find_if(cells.begin(),cells.end(),
-						[&pos,&cell](const CellPtr& a)
-						{
-							if(!a->boundary()) return false;
-							if(a==cell) return false;
-							if(a->grid_neighbors_count()!=3) return false;
-							return a->position()[0] == pos[0];
-						});
-					if(it!=cells.end()){
-						new_connections.push_back(std::make_pair(cell,*it));
-					}
+			else if(pba.is_edge_cell(cell)){
+				f_search = std::bind(&PBA::check_edge_cell,&pba,cell,std::placeholders::_1);
+			}
+			else if(pba.is_surface_cell(cell)){
+				f_search = std::bind(&PBA::check_surface_cell,&pba,cell,std::placeholders::_1);
+			}
+			else{
+				continue;
+			}
+
+			auto it = cells.begin();
+			const auto end = cells.end();
+
+			while(it!=end){
+				it = std::find_if(it,end,f_search);
+				if(it!=end){
+					new_connections.push_back(std::make_pair(cell,*it));
+					it++;
 				}
 			}
 		}

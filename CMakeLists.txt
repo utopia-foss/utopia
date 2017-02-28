@@ -25,7 +25,6 @@ add_compile_options(-fno-strict-aliasing)
 dune_enable_all_packages()
 
 # add subdirectories
-add_subdirectory("src")
 add_subdirectory("m4")
 add_subdirectory("dune")
 add_subdirectory("doc")
