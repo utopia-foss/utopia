@@ -203,37 +203,41 @@ namespace Setup
 		cells.reserve(mapper.size());
 
 		// loop over all entities and create cells
-		for(auto it=gv.template begin<0>(); it!=gv.template end<0>(); ++it)
+		for(const auto& e : elements(gv))
 		{
-			const Position pos = it->geometry().center();
-			const Index id = mapper.index(*it);
+			const Position pos = e.geometry().center();
+			const Index id = mapper.index(e);
+
+			// check if entity is at boundary
 			bool boundary = false;
-			for(auto iit=gv.ibegin(*it); iit!=gv.iend(*it); ++iit)
-			{
-				if(!iit->neighbor())
-				{
+			for(const auto& is : intersections(gv,e)){
+				if(!is.neighbor()){
 					boundary = true;
 					break;
 				}
 			}
-			cells.push_back(std::make_shared<Cell<State,Traits,Position,Index>>(f_state(),f_traits(),pos,id,boundary));
+
+			cells.emplace_back(std::make_shared<Cell<State,Traits,Position,Index>>
+				(f_state(),f_traits(),pos,id,boundary));
 		}
 
+		// create a map to quickly find appropriate cells via their index
 		std::map<Index,std::shared_ptr<Cell<State,Traits,Position,Index>>> map;
 		for(const auto& i: cells) 
 			map.emplace(i->index(),i);
 
 		// add grid neighbors
-		for(auto it=gv.template begin<0>(); it!=gv.template end<0>(); ++it)
+		for(const auto& e : elements(gv))
 		{
 			// find current cell
-			const Index id = mapper.index(*it);
+			const Index id = mapper.index(e);
 			auto cell = map.find(id)->second;
+
 			// loop over intersections of grid entity
-			for(auto iit=gv.ibegin(*it); iit!=gv.iend(*it); ++iit)
+			for(const auto& is : intersections(gv,e))
 			{
-				if(!iit->neighbor()) continue;
-				const Index id_nb = mapper.index(iit->outside());
+				if(!is.neighbor()) continue;
+				const Index id_nb = mapper.index(is.outside());
 				auto cell_nb = map.find(id_nb)->second;
 				cell->add_grid_neighbor(cell_nb);
 			}
