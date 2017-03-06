@@ -40,7 +40,7 @@ public:
 	/// Constructor
 	/** \param state Initial state
 	 *  \param traits Initial traits
-	 *  \param position Initial positon
+	 *  \param position Initial position
 	 *  \param parent Initial parent
 	 *  \param tag Tracking tag
 	 *  \note There is no check whether the given parent matches the position!
@@ -54,6 +54,9 @@ public:
 
 	/// Return the parent cell of this agent
 	std::shared_ptr<Cell> parent () const { return _parent; }
+
+	/// Return the position of this agent
+	const Position& position () const { return _position; }
 
 	/// Find the parent cell of this agent according to the current position
 	/** The cell is stored as parent of this agent.
@@ -98,6 +101,18 @@ public:
 		}
 
 		DUNE_THROW(Dune::Exception,"Cell not found!");
+	}
+
+	/// Set a new position for this agent
+	void move_to (const Position& new_position)
+	{
+		_position = new_position;
+	}
+
+	/// Move along a path vector
+	void move_along (const Position& path)
+	{
+		_position = _position + path;
 	}
 };
 
