@@ -49,6 +49,7 @@
 #include "types.hh"
 #include "entity.hh"
 #include "cell.hh"
+#include "agent.hh"
 #include "data.hh"
 #include "data_vtk.hh"
 #include "simulation.hh"

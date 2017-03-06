@@ -24,9 +24,6 @@ public:
 	
 	using State = StateType;
 	using Traits = TraitsType;
-
-protected:
-
 	using Position = PositionType;
 	using Index = IndexType;
 
