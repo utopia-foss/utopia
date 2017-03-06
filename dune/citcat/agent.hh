@@ -38,6 +38,13 @@ private:
 
 public:
 	/// Constructor
+	/** \param state Initial state
+	 *  \param traits Initial traits
+	 *  \param position Initial positon
+	 *  \param parent Initial parent
+	 *  \param tag Tracking tag
+	 *  \note There is no check whether the given parent matches the position!
+	 */
 	Agent (const State state, const Traits traits, const Position position,
 		const std::shared_ptr<Cell> parent, const int tag = 0) :
 		Entity<State,Traits>(state,traits,tag),
@@ -46,12 +53,15 @@ public:
 	{ }
 
 	/// Return the parent cell of this agent
-	std::shared_ptr<Cell> parent () const
-	{
-		return _parent;
-	}
+	std::shared_ptr<Cell> parent () const { return _parent; }
 
 	/// Find the parent cell of this agent according to the current position
+	/** The cell is stored as parent of this agent.
+	 *  \param grid Grid on which the cells live
+	 *  \param cells Container of cells to search for parent
+	 *  \return Shared pointer to the parent cell
+	 *  \throw Dune::Exception Position does not match any grid entity or cell
+	 */
 	template<typename GridType, typename CellContainer>
 	std::shared_ptr<Cell> find_parent (const std::shared_ptr<GridType> grid,
 		const CellContainer& cells)
