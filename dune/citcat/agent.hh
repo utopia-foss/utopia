@@ -100,7 +100,9 @@ public:
 			}
 		}
 
-		DUNE_THROW(Dune::Exception,"Cell not found!");
+		DUNE_THROW(Dune::Exception,"Cell not found for position ("
+			+ std::to_string(_position[0]) + ","
+			+ std::to_string(_position[1]) + ")");
 	}
 
 	/// Set a new position for this agent
@@ -115,6 +117,24 @@ public:
 		_position = _position + path;
 	}
 };
+
+/// Find all agents that have a certain cell as parent
+/** \param agents Container of pointers to agents
+ *  \param cell The cell for which to search
+ *  \return std::vector with all appropriate agents
+ */
+template<typename AgentContainer, typename Cell>
+auto find_agents_on_cell (const AgentContainer& agents, std::shared_ptr<Cell> cell)
+	-> std::vector<typename AgentContainer::value_type>
+{
+	std::vector<typename AgentContainer::value_type> ret;
+	for (const auto& agent : agents){
+		if (agent->parent() == cell)
+			ret.push_back(agent);
+	}
+	return ret;
+}
+
 
 } // namespace Citcat
 

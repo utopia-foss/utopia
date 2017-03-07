@@ -262,6 +262,82 @@ namespace Setup
 		return create_cells_on_grid<State,Traits,GridType>(grid,f_state,f_traits);
 	}
 
+	/// Randomly distribute agents on a grid and connect them to parent cells
+	/**
+	 *  \param grid Shared pointer to the grid
+	 *  \param cells Container of cells
+	 *  \param count Number of agents to create
+	 *  \param state_initial Initial state of all agents
+	 *  \param traits_initial Initial traits of all agents
+	 *  \return Container with created agents
+	 */
+	template<typename State=int, typename Traits=int, typename GridType,
+		typename CellContainer>
+	decltype(auto) create_agents_on_grid_cells(
+		const std::shared_ptr<GridType> grid,
+		const CellContainer& cells,
+		const std::size_t count,
+		const State state_initial,
+		const Traits traits_initial)
+	{
+		// fetch some types
+		using GridTypes = GridTypeAdaptor<GridType>;
+		static constexpr int dim = GridTypes::dim;
+		using GV = typename GridTypes::GridView;
+		using Coordinate = typename GridTypes::Coordinate;
+		using Position = typename GridTypes::Position;
+		using Cell = typename CellContainer::value_type::element_type;
+		using Dist = typename std::uniform_real_distribution<Coordinate>;
+
+		GV gv(*grid);
+		AgentContainer<Agent<State,Traits,Cell>> agents;
+
+		// find maximum extensions of the grid
+		const Coordinate eps = 1e-1;
+		std::array<Coordinate,dim> extensions;
+		extensions.fill(.0);
+		for(const auto& v : vertices(gv)){
+			const auto pos = v.geometry().center();
+			for(int i = 0; i<dim; ++i){
+				extensions.at(i) = std::max(pos[i],extensions.at(i));
+			}
+		}
+
+		// set up random number generator for positions
+		std::ranlux24_base gen(123456);
+		std::vector<Dist> dist;
+		for(int i = 0; i<dim; ++i){
+			dist.push_back(Dist(0.0 + eps , extensions.at(i) - eps));
+		}
+
+		// create agents
+		for(std::size_t i = 0; i<count; ++i)
+		{
+			std::shared_ptr<Cell> ptr;
+			Position pos;
+			for(int i = 0; i<dim; ++i){
+				pos[i] = dist[i](gen);
+			}
+			auto new_agent = std::make_shared<Agent<State,Traits,Cell>>
+				(state_initial,traits_initial,pos,ptr);
+			new_agent->find_parent(grid,cells);
+			agents.push_back(std::move(new_agent));
+		}
+
+		return agents;
+	}
+
+	template<typename State=int, typename Traits=int, typename Cell>
+	decltype(auto) create_agent_on_cell(
+		const std::shared_ptr<Cell> cell,
+		const State state_initial,
+		const Traits traits_initial,
+		const typename Cell::Position& position)
+	{
+		return std::make_shared<Agent<State,Traits,Cell>>
+			(state_initial,traits_initial,position,cell);
+	}
+
 } // namespace Setup
 
 } // namespace Citcat
