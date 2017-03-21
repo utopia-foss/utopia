@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <functional>
 
+#pragma GCC diagnostic push
 #pragma GCC system_header // disable DUNE internal warnings
 
 #ifdef HAVE_CONFIG_H
@@ -44,6 +45,8 @@
 #include <dune/grid/common/mcmgmapper.hh>
 #include <dune/grid/common/universalmapper.hh>
 #include <dune/grid/io/file/vtk/vtksequencewriter.hh>
+
+#pragma GCC diagnostic pop
 
 // CITCAT
 #include "types.hh"
