@@ -135,6 +135,13 @@ public:
 		return count;
 	}
 
+	void clear_neighborhood()
+	{
+		_neighbors.clear();
+
+		return;
+	}
+
 	/// Generic grid neighbor counter
 	/** \param f Function object taking one neighbor as parameter.
 	 *    Returns bool if neighbor will be counted.

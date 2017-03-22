@@ -110,6 +110,81 @@ public:
 	}
 };
 
+/// Write the state of all entities on a grid
+template<typename CellContainer, typename Cell, typename Result>
+class DerivedCellStateGridDataAdaptor : public GridDataAdaptor
+{
+protected:
+	const CellContainer& _cells; //!< Container of entities
+	std::vector<Result> _grid_data; //!< Container for VTK readout
+	const std::string _label; //!< data label
+	std::function<Result(Cell)> _result;
+
+public:
+	/// Constructor
+	/** \param cells Container of cells
+	 *  \param label Data label in VTK output
+	 */
+	DerivedCellStateGridDataAdaptor (const CellContainer& cells, std::function<Result(Cell)> result, const std::string label) :
+		_cells(cells), _grid_data(_cells.size()), _result(result), _label(label)
+	{ }
+
+	/// Add the data of this adaptor to the VTKWriter
+	/** \param vtkwriter Dune VTKWriter managed by the VTKWrapper
+	 */
+	template<typename VTKWriter>
+	void add_data (VTKWriter& vtkwriter)
+	{
+		vtkwriter.addCellData(_grid_data,_label);
+	}
+
+	/// Update the data managed by this adaptor
+	void update_data ()
+	{
+		for(auto cell : _cells){
+			_grid_data[cell->index()] = _result(cell);
+		}
+	}
+};
+
+template<typename CellContainer, typename State_3d, typename State>
+class MemberCellStateGridDataAdaptor : public GridDataAdaptor
+{
+protected:
+	using Cell = typename CellContainer::value_type;
+
+	const CellContainer& _cells; //!< Container of entities
+	std::vector<State> _grid_data; //!< Container for VTK readout
+	const std::string _label; //!< data label
+	std::_Mem_fn<State (State_3d::*)() const> _stateValue;
+
+public:
+	/// Constructor
+	/** \param cells Container of cells
+	 *  \param label Data label in VTK output
+	 */
+	MemberCellStateGridDataAdaptor (const CellContainer& cells, std::_Mem_fn<State (State_3d::*)() const> &stateValue, const std::string label) :
+		_cells(cells), _grid_data(_cells.size()), _stateValue(stateValue), _label(label)
+	{ }
+
+	/// Add the data of this adaptor to the VTKWriter
+	/** \param vtkwriter Dune VTKWriter managed by the VTKWrapper
+	 */
+	template<typename VTKWriter>
+	void add_data (VTKWriter& vtkwriter)
+	{
+		vtkwriter.addCellData(_grid_data,_label);
+	}
+
+	/// Update the data managed by this adaptor
+	void update_data ()
+	{
+		for(const auto& cell : _cells){
+			_grid_data[cell->index()] = _stateValue(cell->state());
+		}
+	}
+};
+
 template<typename CellContainer>
 class CellStateClusterGridDataAdaptor : public GridDataAdaptor
 {
@@ -192,6 +267,20 @@ namespace Output {
 	{
 		std::string filename_adj = filename+"-"+Output::get_file_timestamp();
 		return std::make_shared<VTKWrapper<GridType>>(grid,filename_adj);
+	}
+
+	template<typename CellContainer, typename Cell, typename Result=double>
+	std::shared_ptr<DerivedCellStateGridDataAdaptor<CellContainer, Cell, Result>> vtk_output_derived_cell_state (const CellContainer& cont, 
+		std::function<Result(Cell)> result, const std::string label="state")
+	{
+		return std::make_shared<DerivedCellStateGridDataAdaptor<CellContainer, Cell, Result>>(cont, result, label);
+	}
+
+	template<typename CellContainer, typename State_3d, typename State=double>
+	std::shared_ptr< MemberCellStateGridDataAdaptor<CellContainer, State_3d, State> > vtk_output_cell_state_member (const CellContainer& cont, 
+		std::_Mem_fn<State (State_3d::*)() const> &stateValue, const std::string label="state")
+	{
+		return std::make_shared<MemberCellStateGridDataAdaptor<CellContainer, State_3d, State>>(cont, stateValue, label);
 	}
 
 	/// Create GridData output wrapper: Plot state for every cell
