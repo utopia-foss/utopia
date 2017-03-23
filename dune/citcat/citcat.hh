@@ -49,6 +49,7 @@
 #include "cell.hh"
 #include "data.hh"
 #include "data_vtk.hh"
+#include "data_eps.hh"
 #include "simulation.hh"
 #include "setup.hh"
 

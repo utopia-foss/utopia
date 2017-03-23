@@ -10,7 +10,7 @@ class EPSWriter {
 protected:
 	//const CellContainer& _cells;
 	const std::string _filepath;
-	std::vector<std::tuple<std::vector<double>&, const std::string > > _data;
+	std::vector<std::tuple<std::vector<double>*, const std::string > > _data;
 
 public:
 	EPSWriter(const std::string filename, 
@@ -19,7 +19,7 @@ public:
 		{ }
 
 	addCellData(std::vector<double> &grid_data, const std::string label) { 
-		_data.push_back(std::make_tuple(grid_data, label));
+		_data.push_back(std::make_tuple(&grid_data, label));
 	}
 
 	~EPSWriter() = default;
@@ -29,7 +29,7 @@ public:
 		int DX = 30;
 		for (int i = 0; i < _data.size(); i++) {
 			auto data_tuple_set = _data[i];
-			auto data_set = std::get<0>(data_tuple_set);
+			auto data_set = *(std::get<0>(data_tuple_set));
 			auto label = std::get<1>(data_tuple_set);
 			//std::tie(data_set, label) = data_tuple_set; 
 			
