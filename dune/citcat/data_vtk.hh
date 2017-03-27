@@ -269,6 +269,17 @@ namespace Output {
 		return std::make_shared<VTKWrapper<GridType>>(grid,filename_adj);
 	}
 
+	/// Create GridData output wrapper: Plot state for every cell
+	/** \param cont Container of cells
+	 *  \param label Data layer label in VTK output
+	 *  \return Shared pointer to the wrapper
+	 */
+	template<typename CellContainer>
+	std::shared_ptr<CellStateGridDataAdaptor<CellContainer>> vtk_output_cell_state (const CellContainer& cont, const std::string label="state")
+	{
+		return std::make_shared<CellStateGridDataAdaptor<CellContainer>>(cont,label);
+	}
+
 	template<typename CellContainer, typename Cell, typename Result=double>
 	std::shared_ptr<DerivedCellStateGridDataAdaptor<CellContainer, Cell, Result>> vtk_output_derived_cell_state (const CellContainer& cont, 
 		std::function<Result(Cell)> result, const std::string label="state")
@@ -281,17 +292,6 @@ namespace Output {
 		std::_Mem_fn<State (State_3d::*)() const> &stateValue, const std::string label="state")
 	{
 		return std::make_shared<MemberCellStateGridDataAdaptor<CellContainer, State_3d, State>>(cont, stateValue, label);
-	}
-
-	/// Create GridData output wrapper: Plot state for every cell
-	/** \param cont Container of cells
-	 *  \param label Data layer label in VTK output
-	 *  \return Shared pointer to the wrapper
-	 */
-	template<typename CellContainer>
-	std::shared_ptr<CellStateGridDataAdaptor<CellContainer>> vtk_output_cell_state (const CellContainer& cont, const std::string label="state")
-	{
-		return std::make_shared<CellStateGridDataAdaptor<CellContainer>>(cont,label);
 	}
 
 	/// Create a GridData output wrapper: Plot cluster ID dependent on state for every cell
