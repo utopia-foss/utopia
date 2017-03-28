@@ -67,9 +67,7 @@ public:
 			}
 			else {
 				for (int it_data = 0; it_data < size; it_data++) {
-					double gray = data_set[it_data];
-					if (min < 0) gray += min;
-					if (max > 0) gray = gray / max; 
+					double gray = (data_set[it_data] - min) / (max - min);  //rescale values between 0 ... 1
 					r[it_data] = gray;
 					g[it_data] = gray;
 					b[it_data] = gray;
@@ -104,7 +102,7 @@ public:
 						text += ", red (state 4)"; }
 					dText(text.c_str());	}
 				else {
-					std::string text = "black (lowest value: " + std::to_string(min) + " ) to white (highest values: " + std::to_string(max) + ")";
+					std::string text = "black (lowest value: " + std::to_string(min) + ") to white (highest values: " + std::to_string(max) + ")";
 					dText(text.c_str()); }
 
 	   			sColorSpace("RGB");
