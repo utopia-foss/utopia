@@ -8,7 +8,6 @@ template<typename CellContainer, typename State>
 class EPSWriter {
 
 protected:
-	//const CellContainer& _cells;
 	const std::string _filepath;
 	std::vector<std::tuple<std::vector<double>*, const std::string > > _data;
 
@@ -49,8 +48,8 @@ public:
 					grayscale = false;
 				}
 				else {
-					for (int i = 0; i < states; i++) {
-						double gray = i/double(states - 1);
+					for (int i = min; i <= max; i++) {
+						double gray = (i - min)/double(states - 1);
 						color_map.push_back({gray, gray, gray});
 					}
 				}
@@ -69,7 +68,7 @@ public:
 			else {
 				for (int it_data = 0; it_data < size; it_data++) {
 					double gray = data_set[it_data];
-					if (min < 0) { gray += min; max += min; }
+					if (min < 0) gray += min;
 					if (max > 0) gray = gray / max; 
 					r[it_data] = gray;
 					g[it_data] = gray;
@@ -86,15 +85,30 @@ public:
 			int w = 150; int h = 150;
 			int DX = 30;
 			int NCTR = 65;
+			int b_off = 15; //bottom offset
 
 			gPaper(writable);
-    			sXWorldCoord(0,Nx,0,w); sYWorldCoord(0,Ny,0,w);
+    			sXWorldCoord(0,Nx,0,w); sYWorldCoord(0,Ny,b_off,h+b_off);
 				sXIntervals(Nx/4,Nx/16,0,1); sYIntervals(Ny/4,Ny/16,0,1);
 				dXAxis(0,0,Nx,1); dYAxis(0,0,Ny,1);
 
+				movea('P',5,0);
+				if (std::is_same<State,int>::value && max - min < 5) {
+					int states = max - min + 1;
+					std::string text = "white (state 0), black (state 1)";
+					if (states >= 3) {
+						text += ", blue (state 2)";	}
+					if (states >= 4) {
+						text += ", yellow (state 3)"; }
+					if (states >= 5) {
+						text += ", red (state 4)"; }
+					dText(text.c_str());	}
+				else {
+					std::string text = "black (lowest value: " + std::to_string(min) + " ) to white (highest values: " + std::to_string(max) + ")";
+					dText(text.c_str()); }
+
 	   			sColorSpace("RGB");
-				dBitMap(0,0,w,h,Nx,Ny, r,g,b);
-				//dBitMap(0,0,w,h,Nx,Ny, map);
+				dBitMap(0,b_off,w,h,Nx,Ny, r,g,b);
 
 			endPS();
 		}
