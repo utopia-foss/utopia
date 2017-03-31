@@ -33,6 +33,7 @@ CITCAT is a DUNE module and thus relies on the [DUNE Buildsystem](https://www.du
 
 ### Optional Packages
 | Software | Version | Purpose |
+| -------- | ------- | ------- |
 | [PSGraf](https://zwackelmann.iup.uni-heidelberg.de:10443/tools/psgraf)| master | Data visualization on the fly |
 
 Install PSGraf according to its installation manual. When executing `dunecontrol`, append `CMAKE_FLAGS="-DPSGRAF_ROOT=<path/to/psgraf/build>"`. If PSGraf is found, the preprocessor macro `HAVE_PSGRAF` is set.
