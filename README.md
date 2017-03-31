@@ -31,6 +31,12 @@ CITCAT is a DUNE module and thus relies on the [DUNE Buildsystem](https://www.du
 | GCC | >= 5 | Supported compiler for CITCAT. If in doubt, use this one!
 | [doxygen](http://www.stack.nl/~dimitri/doxygen/) | | Builds the code documentation upon installation
 
+### Optional Packages
+| Software | Version | Purpose |
+| [PSGraf](https://zwackelmann.iup.uni-heidelberg.de:10443/tools/psgraf)| master | Data visualization on the fly |
+
+Install PSGraf according to its installation manual. When executing `dunecontrol`, append `CMAKE_FLAGS="-DPSGRAF_ROOT=<path/to/psgraf/build>"`. If PSGraf is found, the preprocessor macro `HAVE_PSGRAF` is set.
+
 ### Building the Documentation
 CITCAT builds a Doxygen documentation from its source files. Use `dunecontrol` to execute the appropriate command:
 
