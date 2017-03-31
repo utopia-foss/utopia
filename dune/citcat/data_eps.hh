@@ -4,7 +4,7 @@
 namespace Citcat
 {
 
-template<typename CellContainer, typename State>
+template<typename State>
 class EPSWriter {
 
 protected:
@@ -113,11 +113,11 @@ public:
 	}
 };
 
-template<typename CellContainer, typename State>
+template<typename State>
 class EPSWrapper : public DataWriter
 {
 protected:
-	EPSWriter<CellContainer, State> _epswriter;
+	EPSWriter<State> _epswriter;
 	std::vector<std::shared_ptr<GridDataAdaptor>> _adaptors;
 
 public:
@@ -258,12 +258,12 @@ public:
 
 namespace Output {
 
-	template<typename CellContainer, typename State = int>
-	std::shared_ptr<EPSWrapper<CellContainer, State>> create_eps_writer (const std::string filename=EXECUTABLE_NAME)
+	template<typename State = int>
+	std::shared_ptr<EPSWrapper<State>> create_eps_writer (const std::string filename=EXECUTABLE_NAME)
 	{
 		//TEST GRID FOR REGULAR
 		std::string filename_adj = filename+"-"+Output::get_file_timestamp();
-		return std::make_shared<EPSWrapper<CellContainer, State>>(filename_adj);
+		return std::make_shared<EPSWrapper<State>>(filename_adj);
 	}
 
 	template<typename CellContainer>
