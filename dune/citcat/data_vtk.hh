@@ -110,23 +110,31 @@ public:
 	}
 };
 
-/// Write the state of all entities on a grid
-template<typename CellContainer, typename Cell, typename Result>
-class DerivedCellStateGridDataAdaptor : public GridDataAdaptor
+/// Write data defined by a function object for every cell of the grid
+/** \tparam CellContainer Type of the container of cells
+ *  \tparam Func Type of the function object
+ */
+template<typename CellContainer, typename Func>
+class FunctionalGridDataAdaptor : public GridDataAdaptor
 {
 protected:
+	using Cell = typename CellContainer::value_type;
+	using Result = typename std::result_of_t<Func(Cell)>;
+
 	const CellContainer& _cells; //!< Container of entities
 	std::vector<Result> _grid_data; //!< Container for VTK readout
 	const std::string _label; //!< data label
-	std::function<Result(Cell)> _result;
+	//! function returning the data to print
+	std::function<Result(Cell)> _function;
 
 public:
 	/// Constructor
 	/** \param cells Container of cells
+	 *  \param function Function object returing the data for each cell
 	 *  \param label Data label in VTK output
 	 */
-	DerivedCellStateGridDataAdaptor (const CellContainer& cells, std::function<Result(Cell)> result, const std::string label) :
-		_cells(cells), _grid_data(_cells.size()), _result(result), _label(label)
+	FunctionalGridDataAdaptor (const CellContainer& cells, Func function, const std::string label) :
+		_cells(cells), _grid_data(_cells.size()), _label(label), _function(function)
 	{ }
 
 	/// Add the data of this adaptor to the VTKWriter
@@ -142,7 +150,7 @@ public:
 	void update_data ()
 	{
 		for(auto cell : _cells){
-			_grid_data[cell->index()] = _result(cell);
+			_grid_data[cell->index()] = _function(cell);
 		}
 	}
 };
@@ -243,11 +251,17 @@ namespace Output {
 		return std::make_shared<CellStateGridDataAdaptor<CellContainer>>(cont,label);
 	}
 
-	template<typename CellContainer, typename Cell, typename Result=double>
-	std::shared_ptr<DerivedCellStateGridDataAdaptor<CellContainer, Cell, Result>> vtk_output_derived_cell_state (const CellContainer& cont, 
-		std::function<Result(Cell)> result, const std::string label="state")
+	/// Create a GridData output wrapper: Plot result of a function for every cell
+	/** \param cont Container of cells
+	 *  \param function Function returning the data to print for every cell
+	 *  \param label Data layer label in VTK output
+	 *  \return Shared pointer to the wrapper
+	 */
+	template<typename CellContainer, typename Func>
+	std::shared_ptr<FunctionalGridDataAdaptor<CellContainer, Func>> vtk_output_cell_function (const CellContainer& cont,
+		Func function, const std::string label="state")
 	{
-		return std::make_shared<DerivedCellStateGridDataAdaptor<CellContainer, Cell, Result>>(cont, result, label);
+		return std::make_shared<FunctionalGridDataAdaptor<CellContainer, Func>>(cont, function, label);
 	}
 
 	/// Create a GridData output wrapper: Plot cluster ID dependent on state for every cell
