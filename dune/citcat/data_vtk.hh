@@ -147,43 +147,6 @@ public:
 	}
 };
 
-template<typename CellContainer, typename State_3d, typename State>
-class MemberCellStateGridDataAdaptor : public GridDataAdaptor
-{
-protected:
-	using Cell = typename CellContainer::value_type;
-
-	const CellContainer& _cells; //!< Container of entities
-	std::vector<State> _grid_data; //!< Container for VTK readout
-	const std::string _label; //!< data label
-	std::_Mem_fn<State (State_3d::*)() const> _stateValue;
-
-public:
-	/// Constructor
-	/** \param cells Container of cells
-	 *  \param label Data label in VTK output
-	 */
-	MemberCellStateGridDataAdaptor (const CellContainer& cells, std::_Mem_fn<State (State_3d::*)() const> &stateValue, const std::string label) :
-		_cells(cells), _grid_data(_cells.size()), _stateValue(stateValue), _label(label)
-	{ }
-
-	/// Add the data of this adaptor to the VTKWriter
-	/** \param vtkwriter Dune VTKWriter managed by the VTKWrapper
-	 */
-	template<typename VTKWriter>
-	void add_data (VTKWriter& vtkwriter)
-	{
-		vtkwriter.addCellData(_grid_data,_label);
-	}
-
-	/// Update the data managed by this adaptor
-	void update_data ()
-	{
-		for(const auto& cell : _cells){
-			_grid_data[cell->index()] = _stateValue(cell->state());
-		}
-	}
-};
 
 template<typename CellContainer>
 class CellStateClusterGridDataAdaptor : public GridDataAdaptor
@@ -285,13 +248,6 @@ namespace Output {
 		std::function<Result(Cell)> result, const std::string label="state")
 	{
 		return std::make_shared<DerivedCellStateGridDataAdaptor<CellContainer, Cell, Result>>(cont, result, label);
-	}
-
-	template<typename CellContainer, typename State_3d, typename State=double>
-	std::shared_ptr< MemberCellStateGridDataAdaptor<CellContainer, State_3d, State> > vtk_output_cell_state_member (const CellContainer& cont, 
-		std::_Mem_fn<State (State_3d::*)() const> &stateValue, const std::string label="state")
-	{
-		return std::make_shared<MemberCellStateGridDataAdaptor<CellContainer, State_3d, State>>(cont, stateValue, label);
 	}
 
 	/// Create a GridData output wrapper: Plot cluster ID dependent on state for every cell
