@@ -74,7 +74,7 @@ public:
 		Position pos_new;
 		for(int i = 0; i<dim; ++i){
 			int count = pos[i] / _extensions[i];
-			if(int count > 0){
+			if(count > 0){
 				pos_new[i] = pos[i] - count * _extensions[i];
 			}
 		}
