@@ -259,7 +259,7 @@ namespace Output {
 	 */
 	template<typename CellContainer, typename Func>
 	std::shared_ptr<FunctionalGridDataAdaptor<CellContainer, Func>> vtk_output_cell_function (const CellContainer& cont,
-		Func function, const std::string label="state")
+		Func function, const std::string label="function")
 	{
 		return std::make_shared<FunctionalGridDataAdaptor<CellContainer, Func>>(cont, function, label);
 	}
