@@ -13,6 +13,7 @@ private:
 	using Grid = GridType;
 	using GV = typename Traits::GridView;
 	using Mapper = typename Traits::Mapper;
+	using Index = typename Traits::Index;
 	using Coordinate = typename Traits::Coordinate;
 	using Position = typename Traits::Position;
 
@@ -24,8 +25,10 @@ private:
 	static constexpr bool _is_periodic = periodic;
 	static constexpr int _dim = GridTypeAdaptor::dim;
 
-	Position _extensions;
-
+	//! grid extensions in each dimension
+	std::array<Coordinate,dim> _extensions;
+	//! cells on the grid in each dimension
+	std::array<unsigned int, dim> _cells;
 
 public:
 	GridManager (const std::shared_ptr<Grid> grid):
@@ -90,6 +93,58 @@ public:
 			DUNE_THROW(Dune::Exception,"This grid is not periodic");
 		}
 		return pos;
+	}
+
+	/// Return the entity index for a given position on the grid
+	template<bool active = _is_structured>
+	std::enable_if_t<active,Index> entity_id_at (const Position& pos)
+	{
+		if (!check_inside(pos)){
+			DUNE_THROW(Dune::Exception,"This position is not inside the grid");
+		}
+
+		std::array<Index,dim> id_matrix;
+
+		for(int i = 0; i<dim; ++i){
+			id_matrix[i] = _cells[i] * pos[i] / _extensions[i];
+		}
+
+		return id_matrix_to_id(id_matrix)
+	}
+
+	/// Return the entity index for a given position on the grid
+	template<bool active = _is_structured>
+	std::enable_if_t<!active,Index> entity_id_at (const Position& pos)
+	{
+		for (const auto& e : elements(gv)){
+			const auto geo = e.geometry();
+			const auto& ref = Dune::ReferenceElements<Coordinate,dim>::general(geo.type());
+			const auto pos_local = geo.local(_position);
+
+			if (ref.checkInside(pos_local)){
+				return id = mapper.index(e);
+			}	
+		}
+
+		DUNE_THROW(Dune::Exception,"This position is not inside the grid");
+	}
+
+	template<int dim>
+	Index id_matrix_to_id (std::array<Index,dim>& mat);
+
+	template<>
+	Index id_matrix_to_id (std::array<Index,2>& mat);
+	{
+		return mat[1] * _extensions[0]
+			+ mat[0];
+	}
+
+	template<>
+	Index id_matrix_to_id (std::array<Index,3>& mat)
+	{
+		return mat[2] * _extensions[1] * _extensions[0]
+			+ mat[1] * _extensions[0]
+			+ mat[0];
 	}
 
 };
