@@ -179,24 +179,29 @@ public:
 			_grid_data[cell->index()] = double(cell->state());
 		}
 	}
-};
+};	
 
-template<typename CellContainer, typename Cell, typename Result>
-class EPSDerivedCellStateGridDataAdaptor : public GridDataAdaptor
+template<typename CellContainer, typename Func>
+class EPSFunctionalGridDataAdaptor : public GridDataAdaptor
 {
 protected:
+	using Cell = typename CellContainer::value_type;
+	using Result = typename std::result_of_t<Func(Cell)>;
+
 	const CellContainer& _cells; //!< Container of entities
 	std::vector<double> _grid_data; //!< Container for VTK readout
 	const std::string _label; //!< data label
-	std::function<Result(Cell)> _result;
+	//! function returning the data to print
+	std::function<Result(Cell)> _function;
 
 public:
 	/// Constructor
 	/** \param cells Container of cells
+	 *  \param function Function object returing the data for each cell
 	 *  \param label Data label in VTK output
 	 */
-	EPSDerivedCellStateGridDataAdaptor (const CellContainer& cells, std::function<Result(Cell)> result, const std::string label) :
-		_cells(cells), _grid_data(_cells.size()), _result(result), _label(label)
+	EPSFunctionalGridDataAdaptor (const CellContainer& cells, Func function, const std::string label) :
+		_cells(cells), _grid_data(_cells.size()), _label(label), _function(function)
 	{ }
 
 	/// Add the data of this adaptor to the VTKWriter
@@ -212,56 +217,16 @@ public:
 	void update_data ()
 	{
 		for(auto cell : _cells){
-			_grid_data[cell->index()] = double(_result(cell));
+			_grid_data[cell->index()] = double(_function(cell));
 		}
 	}
 };
-
-template<typename CellContainer, typename State_3d, typename Result>
-class EPSMemberCellStateGridDataAdaptor : public GridDataAdaptor
-{
-protected:
-	using Cell = typename CellContainer::value_type;
-
-	const CellContainer& _cells; //!< Container of entities
-	std::vector<double> _grid_data; //!< Container for VTK readout
-	const std::string _label; //!< data label
-	std::_Mem_fn<Result (State_3d::*)() const> _stateValue;
-
-public:
-	/// Constructor
-	/** \param cells Container of cells
-	 *  \param label Data label in VTK output
-	 */
-	EPSMemberCellStateGridDataAdaptor (const CellContainer& cells, std::_Mem_fn<Result (State_3d::*)() const> &stateValue, const std::string label) :
-		_cells(cells), _grid_data(_cells.size()), _stateValue(stateValue), _label(label)
-	{ }
-
-	/// Add the data of this adaptor to the VTKWriter
-	/** \param vtkwriter Dune VTKWriter managed by the VTKWrapper
-	 */
-	template<typename EPSWriter>
-	void add_data (EPSWriter& epswriter)
-	{
-		epswriter.addCellData(_grid_data,_label);
-	}
-
-	/// Update the data managed by this adaptor
-	void update_data ()
-	{
-		for(const auto& cell : _cells){
-			_grid_data[cell->index()] = double(_stateValue(cell->state()));
-		}
-	}
-};
-	
 
 namespace Output {
 
 	template<typename State = int>
 	std::shared_ptr<EPSWrapper<State>> create_eps_writer (const std::string filename=EXECUTABLE_NAME)
 	{
-		//TEST GRID FOR REGULAR
 		std::string filename_adj = filename+"-"+Output::get_file_timestamp();
 		return std::make_shared<EPSWrapper<State>>(filename_adj);
 	}
@@ -272,17 +237,11 @@ namespace Output {
 		return std::make_shared<EPSCellStateGridDataAdaptor<CellContainer>>(cont,label);
 	}
 
-	template<typename CellContainer, typename State_3d, typename Result=double>
-	std::shared_ptr< EPSMemberCellStateGridDataAdaptor<CellContainer, State_3d, Result> > eps_output_cell_state_member (const CellContainer& cont, std::_Mem_fn<Result (State_3d::*)() const> &stateValue, const std::string label="state")
+	template<typename CellContainer, typename Func>
+	std::shared_ptr<EPSFunctionalGridDataAdaptor<CellContainer, Func>> eps_output_cell_function (const CellContainer& cont,
+		Func function, const std::string label="function")
 	{
-		return std::make_shared<EPSMemberCellStateGridDataAdaptor<CellContainer, State_3d, Result>>(cont, stateValue, label);
-	}
-
-	template<typename CellContainer, typename Cell, typename Result=double>
-	std::shared_ptr<EPSDerivedCellStateGridDataAdaptor<CellContainer, Cell, Result>> eps_output_derived_cell_state (const CellContainer& cont, 
-		std::function<Result(Cell)> result, const std::string label="state")
-	{
-		return std::make_shared<EPSDerivedCellStateGridDataAdaptor<CellContainer, Cell, Result>>(cont, result, label);
+		return std::make_shared<EPSFunctionalGridDataAdaptor<CellContainer, Func>>(cont, function, label);
 	}
 
 } //Namespace Output
