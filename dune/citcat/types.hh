@@ -5,7 +5,8 @@ namespace Citcat
 {
 	
 /// Type of default grid: Rectangular, lower left cell center has coordinates (0,0)
-using DefaultGrid = Dune::YaspGrid<2,Dune::EquidistantOffsetCoordinates<double,2>>;
+template<int dim>
+using DefaultGrid = Dune::YaspGrid<dim,Dune::EquidistantOffsetCoordinates<double,dim>>;
 
 /// Extrct data types dependent on the grid data type
 /** \tparam GridType Type of the grid
@@ -25,6 +26,7 @@ struct GridTypeAdaptor
 	using VTKWriter = typename Dune::VTKSequenceWriter<GridView>;
 	//! Type of Grid Index Mapper
 	using Mapper = typename Dune::MultipleCodimMultipleGeomTypeMapper<GridView,Dune::MCMGElementLayout>;
+	//using Mapper = typename Dune::GlobalUniversalMapper<GridType>;
 	//! Type of grid index
 	using Index = typename Mapper::Index;
 };

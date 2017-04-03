@@ -21,7 +21,9 @@
 #include <type_traits>
 #include <random>
 #include <algorithm>
+#include <functional>
 
+#pragma GCC diagnostic push
 #pragma GCC system_header // disable DUNE internal warnings
 
 #ifdef HAVE_CONFIG_H
@@ -41,7 +43,10 @@
 #include <dune/grid/io/file/gmshreader.hh>
 #include <dune/grid/utility/structuredgridfactory.hh>
 #include <dune/grid/common/mcmgmapper.hh>
+#include <dune/grid/common/universalmapper.hh>
 #include <dune/grid/io/file/vtk/vtksequencewriter.hh>
+
+#pragma GCC diagnostic pop
 
 // CITCAT
 #include "types.hh"
@@ -51,6 +56,7 @@
 #include "data_vtk.hh"
 #include "data_eps.hh"
 #include "simulation.hh"
+#include "setup_low.hh"
 #include "setup.hh"
 
 #endif // CITCAT_HH

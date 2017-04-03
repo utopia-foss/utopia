@@ -2,14 +2,16 @@
 
 The __C__onveniently __I__ntegrated __C__ellular __A__utomaton __T__oolkit
 
+[![build status](https://zwackelmann.iup.uni-heidelberg.de:10443/utopia/citcat/badges/master/build.svg)](https://zwackelmann.iup.uni-heidelberg.de:10443/utopia/citcat/commits/master)
+
 Powered by [DUNE](https://dune-project.org/)
 
-This module is the base library for the [iCAT](http://shangrila.iup.uni-heidelberg.de:30000/citcat/icat) package. It contains class and function templates, a documentation, and unit tests.
+This module is the base library for the [iCAT](https://zwackelmann.iup.uni-heidelberg.de:10443/utopia/icat) package. It contains class and function templates, a documentation, and unit tests.
 
 _CITCAT is not meant to be a stand-alone module. To build Cellular Automata models, use iCAT and place source files there._
 
 ## Installation
-CITCAT is a DUNE module and thus relies on the [DUNE Buildsystem](https://www.dune-project.org/doc/installation/) for installation. Please refer to the iCAT [Installation Manual](http://shangrila.iup.uni-heidelberg.de:30000/citcat/icat/blob/master/INSTALL.md) for information on how to install CITCAT and iCAT on your machine. If all requirements are met, CITCAT is configured and built with the `dunecontrol` script:
+CITCAT is a DUNE module and thus relies on the [DUNE Buildsystem](https://www.dune-project.org/doc/installation/) for installation. Please refer to the iCAT [Installation Manual](INSTALL.md) for information on how to install CITCAT and iCAT on your machine. If all requirements are met, CITCAT is configured and built with the `dunecontrol` script:
 
     ./dune-common/bin/dunecontrol --module=citcat all
 
@@ -28,6 +30,13 @@ CITCAT is a DUNE module and thus relies on the [DUNE Buildsystem](https://www.du
 | ---------| ------- | ------- |
 | GCC | >= 5 | Supported compiler for CITCAT. If in doubt, use this one!
 | [doxygen](http://www.stack.nl/~dimitri/doxygen/) | | Builds the code documentation upon installation
+
+### Optional Packages
+| Software | Version | Purpose |
+| -------- | ------- | ------- |
+| [PSGraf](https://zwackelmann.iup.uni-heidelberg.de:10443/tools/psgraf)| master | Data visualization on the fly |
+
+Install PSGraf according to its installation manual. When executing `dunecontrol`, append `CMAKE_FLAGS="-DPSGRAF_ROOT=<path/to/psgraf/build>"`. If PSGraf is found, the preprocessor macro `HAVE_PSGRAF` is set.
 
 ### Building the Documentation
 CITCAT builds a Doxygen documentation from its source files. Use `dunecontrol` to execute the appropriate command:
