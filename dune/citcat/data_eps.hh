@@ -4,24 +4,31 @@
 namespace Citcat
 {
 
-template<typename State>
 class EPSWriter {
+public:
+	EPSWriter() = default;
+
+	virtual void addCellData(std::vector<double> &grid_data, const std::string label) = 0;
+
+	virtual void write(const float time) = 0;
+};
+
+template<typename StateType>			//int states are displayed discrete, doubles as grayscale
+class My_EPSWriter : public EPSWriter {
 
 protected:
 	const std::string _filepath;
 	std::vector<std::tuple<std::vector<double>*, const std::string > > _data;
 
 public:
-	EPSWriter(const std::string filename, 
+	My_EPSWriter(const std::string filename, 
 		const std::string outputdir = OUTPUTDIR) :
 		_filepath(outputdir+"/"+filename)
 		{ }
 
-	addCellData(std::vector<double> &grid_data, const std::string label) { 
+	void addCellData(std::vector<double> &grid_data, const std::string label) { 
 		_data.push_back(std::make_tuple(&grid_data, label));
 	}
-
-	~EPSWriter() = default;
 
 	void write(const float time) {
 		for (int i = 0; i < _data.size(); i++) {
@@ -39,7 +46,7 @@ public:
 
 			bool grayscale = true;
 			double r[size], g[size], b[size];			
-			if(std::is_same<State,int>::value) {
+			if(std::is_same<StateType,int>::value) {
 				int states = max - min + 1;
 				
 				std::vector<std::vector<double> > color_map = {};
@@ -91,7 +98,7 @@ public:
 				dXAxis(0,0,Nx,1); dYAxis(0,0,Ny,1);
 
 				movea('P',5,0);
-				if (std::is_same<State,int>::value && max - min < 5) {
+				if (std::is_same<StateType,int>::value && max - min < 5) {
 					int states = max - min + 1;
 					std::string text = "white (state 0), black (state 1)";
 					if (states >= 3) {
@@ -113,11 +120,11 @@ public:
 	}
 };
 
-template<typename State>
+template<typename StateType, typename EPSWriter>
 class EPSWrapper : public DataWriter
 {
 protected:
-	EPSWriter<State> _epswriter;
+	EPSWriter _epswriter;
 	std::vector<std::shared_ptr<GridDataAdaptor>> _adaptors;
 
 public:
@@ -224,11 +231,13 @@ public:
 
 namespace Output {
 
-	template<typename State = int>
-	std::shared_ptr<EPSWrapper<State>> create_eps_writer (const std::string filename=EXECUTABLE_NAME)
+	template<typename StateType = int, typename EPSWriter = My_EPSWriter<StateType>>
+	std::shared_ptr<EPSWrapper<StateType, EPSWriter>> create_eps_writer (const std::string filename=EXECUTABLE_NAME)
 	{
+		static_assert(std::is_base_of<Citcat::EPSWriter,EPSWriter>::value,
+			"Your EPSWriter must be derived from Citcat::EPSWriter!");
 		std::string filename_adj = filename+"-"+Output::get_file_timestamp();
-		return std::make_shared<EPSWrapper<State>>(filename_adj);
+		return std::make_shared<EPSWrapper<StateType, EPSWriter>>(filename_adj);
 	}
 
 	template<typename CellContainer>
