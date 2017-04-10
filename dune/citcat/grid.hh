@@ -3,7 +3,8 @@
 
 namespace Citcat {
 
-template<typename GridType, bool structured, bool periodic>
+template<typename GridType, bool structured, bool periodic,
+	typename CellType>
 class GridManager
 {
 public:
@@ -16,6 +17,7 @@ private:
 	using Index = typename Traits::Index;
 	using Coordinate = typename Traits::Coordinate;
 	using Position = typename Traits::Position;
+	static constexpr int dim = Traits::dim;
 
 	std::shared_ptr<Grid> _grid;
 	GV _gv;
@@ -23,14 +25,18 @@ private:
 
 	static constexpr bool _is_structured = structured;
 	static constexpr bool _is_periodic = periodic;
-	static constexpr int _dim = GridTypeAdaptor::dim;
 
 	//! grid extensions in each dimension
 	std::array<Coordinate,dim> _extensions;
 	//! cells on the grid in each dimension
-	std::array<unsigned int, dim> _cells;
+	std::array<unsigned int,dim> _grid_cells;
 
 public:
+	using Cell = CellType;
+	//! container for CA cells
+	std::vector<std::shared_ptr<Cell>> _cells;
+
+	/// Constructor. Deduce grid extensions from grid vertices
 	GridManager (const std::shared_ptr<Grid> grid):
 		_grid(grid),
 		_gv(_grid->leafGridView()),
@@ -45,10 +51,12 @@ public:
 		}
 	}
 
-	const std::array<Coordinate,dim>& extensions () { return _extensions; }
+	const std::array<unsigned int,dim>& grid_cells () const { return _grid_cells; }
+	std::array<unsigned int,dim>& grid_cells () { return _grid_cells; }
+	const std::array<Coordinate,dim>& extensions () const { return _extensions; }
 	static constexpr bool is_structured () { return _is_structured; }
 	static constexpr bool is_periodic () { return _is_periodic; }
-
+/*
 	/// Check if coordinates are outside grid
 	template<bool active = _is_periodic>
 	std::enable_if_t<active,Position> check_inside (const Position& pos)
@@ -146,7 +154,7 @@ public:
 			+ mat[1] * _extensions[0]
 			+ mat[0];
 	}
-
+*/
 };
 
 } // namespace Citcat

@@ -47,9 +47,11 @@
 
 // CITCAT
 #include "types.hh"
+#include "neighborhoods.hh"
 #include "entity.hh"
 #include "cell.hh"
 #include "agent.hh"
+#include "grid.hh"
 #include "data.hh"
 #include "data_vtk.hh"
 #include "simulation.hh"

@@ -82,15 +82,7 @@ namespace Setup
 		Position extensions;
 		std::copy(range.cbegin(),range.cend(),extensions.begin());
 
-		Position deviation;
-		for(int i=0; i<dim; ++i)
-			deviation[i] = -range.at(i)/(cells.at(i)*2.0);
-
-		// place lower left cell center into origin
-		const Position lower_left = deviation;
-		const Position upper_right = extensions + deviation;
-
-		return std::make_shared<Grid>(lower_left,upper_right,cells);
+		return std::make_shared<Grid>(extensions,cells);
 	}
 
 	/// Build a rectangular grid

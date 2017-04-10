@@ -23,10 +23,10 @@ static auto neighbors
 	const auto root_id = root->index();
 	const auto& grid_cells = mngr.grid_cells();
 
-	std::vector<Index> neighbor_ids;
+	std::vector<long long int> neighbor_ids;
 	for(std::size_t i=0; i<grid_cells.size(); ++i){
-		Index disp = 1;
-		for(std::size_t j=i-1; j>=0; --j){
+		long long int disp = 1;
+		for(int j = i-1; j>=0; --j){
 			disp *= grid_cells[j];
 		}
 		neighbor_ids.push_back(root_id + 1 * disp);
@@ -35,13 +35,15 @@ static auto neighbors
 
 	// find appropriate cell objects
 	std::vector<std::shared_ptr<Cell>> neighbors;
-	const auto& cells = mngr.cells();
+	const auto& cells = mngr._cells;
 	for(auto id : neighbor_ids){
 		if(id >= 0 && id < cells.size()){
 			neighbors.push_back(std::shared_ptr<Cell>(cells.at(id)));
 		}
 		else if(_periodic){
-			id = id % cells.size();
+			std::cout << "Apply periodic BCs: " << id << " + " << cells.size();
+			id = id + cells.size();
+			std::cout << " -> " << id << std::endl;
 			neighbors.push_back(std::shared_ptr<Cell>(cells.at(id)));
 		}
 	}
@@ -84,7 +86,7 @@ public:
 	bool add_neighbor (const std::shared_ptr<Cell> cell)
 	{
 		if(std::find(_neighbors.cbegin(),_neighbors.cend(),cell)
-			== nb.end()){
+			== _neighbors.end()){
 			_neighbors.push_back(cell);
 			return true;
 		}
