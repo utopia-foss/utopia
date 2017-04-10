@@ -52,6 +52,49 @@ static auto neighbors
 };
 
 
+template<class Cell>
+class CustomNeighborhood
+{
+private:
+	/// container for pointers to neighbors
+	std::vector<std::shared_ptr<Cell>> _neighbors;
+
+public:
+	/// Constructor. Reserve the neighborhood size.
+	CustomNeighborhood (const std::size_t size)
+	{
+		_neighbors.reserve(size);
+	}
+
+	/// Default copy constructor
+	CustomNeighborhood (const CustomNeighborhood&) = default;
+
+	/// Default move constructor
+	CustomNeighborhood (CustomNeighborhood&&) = default;
+
+	/// Return const reference to neighbor storage
+	const std::vector<std::shared_ptr<Cell>>& neighbors () const
+	{
+		return _neighbors;
+	}
+
+	/// Insert a cell into the storage, if it is not yet contained by it.
+	/** \return True if cell was inserted
+	 */
+	bool add_neighbor (const std::shared_ptr<Cell> cell)
+	{
+		if(std::find(_neighbors.cbegin(),_neighbors.cend(),cell)
+			== nb.end()){
+			_neighbors.push_back(cell);
+			return true;
+		}
+
+		return false;
+	}
+
+};
+
+
 } // namespace Neighborhoods
 } // namespace Citcat
 
