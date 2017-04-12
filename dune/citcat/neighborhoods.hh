@@ -66,7 +66,7 @@ public:
 
 				else if(i == 2){
 					const auto id_max = shift<3>(grid_cells);
-					if(root_id + disp_plus > id_max){
+					if(root_id + disp_plus >= id_max){
 						disp_plus -= id_max;
 					}
 					else if(root_id - disp_minus < 0){

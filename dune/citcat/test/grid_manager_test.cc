@@ -1,4 +1,29 @@
+#include <cassert>
 #include <dune/citcat/citcat.hh>
+#include <dune/common/exceptions.hh>
+
+#include "grid_cells_test.hh"
+
+/// Assure that periodic grid has the correct NextNeighbor count
+template<typename Manager>
+void check_grid_neighbors_count (const Manager& manager)
+{
+	const int nb_count = (Manager::Traits::dim == 2 ? 4 : 6);
+
+	bool exception = false;
+	for(const auto cell : manager._cells){
+		const auto neighbors = Citcat::Neighborhoods::NextNeighbor<Manager>::neighbors(manager,cell);
+		if(neighbors.size() != nb_count){
+			std::cerr << "Cell No. " << cell->index()
+				<< " has " << neighbors.size()
+				<< " neighbors!" << std::endl;
+			exception = true;
+		}
+	}
+	if(exception){
+		DUNE_THROW(Dune::Exception,"Wrong number of neighbors!");
+	}
+}
 
 int main(int argc, char** argv)
 {
@@ -11,22 +36,12 @@ int main(int argc, char** argv)
 		using Manager = typename Citcat::GridManager<decltype(grid)::element_type,true,true,decltype(cells)::value_type::element_type>;
 		Manager manager(grid);
 		manager._cells = cells;
-		cells.clear();
+		cells.clear(); // ensure that original container is empty
 
 		manager.grid_cells() = std::array<unsigned int,3>({10,10,10});
 
-		auto c1 = manager._cells[0];
-		auto neighbors = Citcat::Neighborhoods::NextNeighbor<Manager>::neighbors(manager,c1);
-
-		const auto& pos = c1->position();
-		std::cout << "Cell " << c1->index() << " at " << pos[0] << ":" << pos[1] << ":" << pos[2] << std::endl;
-		for(auto nb : neighbors){
-			const auto& pos_nb = nb->position();
-			std::cout << "Cell " << nb->index() << " at " << pos_nb[0] << ":" << pos_nb[1] << ":" << pos_nb[2] << std::endl;
-		}
-
-		//assert_cells_on_grid(grid,manager._cells);
-		//check_grid_neighbors_count<2>(cells_2d);
+		assert_cells_on_grid(grid,manager._cells);
+		check_grid_neighbors_count(manager);
 
 		return 0;
 	}
