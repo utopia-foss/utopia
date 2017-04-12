@@ -5,7 +5,7 @@ int main(int argc, char** argv)
 	try{
 		Dune::MPIHelper::instance(argc,argv);
 
-		auto grid = Citcat::Setup::create_grid(10);
+		auto grid = Citcat::Setup::create_grid<3>(10);
 		auto cells = Citcat::Setup::create_cells_on_grid(grid,[](){return 0;});
 
 		using Manager = typename Citcat::GridManager<decltype(grid)::element_type,true,true,decltype(cells)::value_type::element_type>;
@@ -13,16 +13,16 @@ int main(int argc, char** argv)
 		manager._cells = cells;
 		cells.clear();
 
-		manager.grid_cells() = std::array<unsigned int,2>({10,10});
+		manager.grid_cells() = std::array<unsigned int,3>({10,10,10});
 
 		auto c1 = manager._cells[0];
 		auto neighbors = Citcat::Neighborhoods::NextNeighbor<Manager>::neighbors(manager,c1);
 
 		const auto& pos = c1->position();
-		std::cout << "Cell " << c1->index() << " at " << pos[0] << ":" << pos[1] << std::endl;
+		std::cout << "Cell " << c1->index() << " at " << pos[0] << ":" << pos[1] << ":" << pos[2] << std::endl;
 		for(auto nb : neighbors){
 			const auto& pos_nb = nb->position();
-			std::cout << "Cell " << nb->index() << " at " << pos_nb[0] << ":" << pos_nb[1] << std::endl;
+			std::cout << "Cell " << nb->index() << " at " << pos_nb[0] << ":" << pos_nb[1] << ":" << pos_nb[2] << std::endl;
 		}
 
 		//assert_cells_on_grid(grid,manager._cells);
