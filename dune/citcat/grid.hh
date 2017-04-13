@@ -56,6 +56,10 @@ public:
 	const std::array<Coordinate,dim>& extensions () const { return _extensions; }
 	static constexpr bool is_structured () { return _is_structured; }
 	static constexpr bool is_periodic () { return _is_periodic; }
+
+	const GV& grid_view () const { return _gv; }
+	std::shared_ptr<Grid> grid () const { return _grid; }
+	const Mapper& mapper () const { return _mapper; }
 /*
 	/// Check if coordinates are outside grid
 	template<bool active = _is_periodic>

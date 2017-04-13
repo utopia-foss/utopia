@@ -17,6 +17,40 @@ private:
 	static constexpr int _dim = Manager::Traits::dim;
 
 public:
+	/// Return next neighbors for any grid
+	static auto neighbors
+		(const Manager& mngr, const std::shared_ptr<Cell> root)
+	{
+		// get references to grid manager members
+		const auto& gv = mngr.grid_view();
+		const auto& mapper = mngr.mapper();
+
+		// get grid entity of root cell
+		const auto root_id = root->index();
+		const auto it = std::find_if(
+			elements(gv).begin(),
+			elements(gv).end(),
+			[&mapper,root_id](const auto& x){ return root_id == mapper.index(x); }
+		);
+
+		// find adjacent grid entities
+		std::vector<Index> neighbor_ids;
+		for(auto&& is : intersections(gv,*it)){
+			if(is.neighbor()){
+				neighbor_ids.push_back(mapper.index(is.outside()));
+			}
+		}
+
+		// find appropriate cell objects
+		std::vector<std::shared_ptr<Cell>> neighbors;
+		const auto& cells = mngr._cells;
+		for(auto id : neighbor_ids){
+			neighbors.push_back(std::shared_ptr<Cell>(cells.at(id)));
+		}
+
+		return neighbors;
+	}
+
 	/// Return next neighbors for structured grid
 	static auto neighbors
 		(const Manager& mngr, const std::shared_ptr<Cell> root)
