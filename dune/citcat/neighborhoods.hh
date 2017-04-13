@@ -17,6 +17,7 @@ private:
 	static constexpr int _dim = Manager::Traits::dim;
 
 public:
+/*
 	/// Return next neighbors for any grid
 	static auto neighbors
 		(const Manager& mngr, const std::shared_ptr<Cell> root)
@@ -41,16 +42,9 @@ public:
 			}
 		}
 
-		// find appropriate cell objects
-		std::vector<std::shared_ptr<Cell>> neighbors;
-		const auto& cells = mngr._cells;
-		for(auto id : neighbor_ids){
-			neighbors.push_back(std::shared_ptr<Cell>(cells.at(id)));
-		}
-
-		return neighbors;
+		return cells_from_ids(mngr,neighbor_ids);
 	}
-
+*/
 	/// Return next neighbors for structured grid
 	static auto neighbors
 		(const Manager& mngr, const std::shared_ptr<Cell> root)
@@ -114,14 +108,7 @@ public:
 			neighbor_ids.push_back(root_id - disp_minus);
 		}
 
-		// find appropriate cell objects
-		std::vector<std::shared_ptr<Cell>> neighbors;
-		const auto& cells = mngr._cells;
-		for(auto id : neighbor_ids){
-			neighbors.push_back(std::shared_ptr<Cell>(cells.at(id)));
-		}
-
-		return neighbors;
+		return cells_from_ids(mngr,neighbor_ids);
 	}
 
 private:
@@ -146,6 +133,20 @@ private:
 			static_assert(false,"This only works for index = {0,1,2,3}.");
 		}
 		*/
+	}
+
+	template<typename IndexContainer>
+	static auto cells_from_ids (const Manager& mngr, const IndexContainer& cont)
+	{
+		// find appropriate cell objects
+		std::vector<std::shared_ptr<Cell>> ret;
+		ret.reserve(cont.size());
+		const auto& cells = mngr._cells;
+		for(auto id : cont){
+			ret.emplace_back(std::shared_ptr<Cell>(cells.at(id)));
+		}
+
+		return ret;
 	}
 
 };
