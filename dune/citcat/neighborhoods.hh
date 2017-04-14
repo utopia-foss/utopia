@@ -12,14 +12,17 @@ private:
 	using Cell = typename Manager::Cell;
 	using Index = typename Cell::Index;
 
+	using return_type = typename std::vector<std::shared_ptr<Cell>>;
+
 	static constexpr bool _structured = Manager::is_structured();
 	static constexpr bool _periodic = Manager::is_periodic();
 	static constexpr int _dim = Manager::Traits::dim;
 
 public:
-/*
+
 	/// Return next neighbors for any grid
-	static auto neighbors
+	template<bool enabled = _structured>
+	static std::enable_if_t<!enabled,return_type> neighbors
 		(const Manager& mngr, const std::shared_ptr<Cell> root)
 	{
 		// get references to grid manager members
@@ -44,68 +47,82 @@ public:
 
 		return cells_from_ids(mngr,neighbor_ids);
 	}
-*/
+
 	/// Return next neighbors for structured grid
-	static auto neighbors
+	template<bool enabled = _structured>
+	static std::enable_if_t<enabled,return_type> neighbors
 		(const Manager& mngr, const std::shared_ptr<Cell> root)
 	{
 		// find neighbor IDs
-		const auto root_id = root->index();
+		const long long int root_id = root->index();
 		const auto& grid_cells = mngr.grid_cells();
 
 		std::vector<long long int> neighbor_ids;
 
-		// interate over dimensions
-		for(std::size_t i=0; i<grid_cells.size(); ++i){
-			long long int disp = 1;
-			// iterate over lower dimensions
-			for(int j = i-1; j>=0; --j){
-				disp *= grid_cells[j];
+		// 1D shift
+		// front boundary
+		if(root_id % grid_cells[0] == 0){
+			if(_periodic){
+				neighbor_ids.push_back(root_id - shift<0>(grid_cells) + shift<1>(grid_cells));
 			}
-
-			auto disp_plus = disp;
-			auto disp_minus = disp;
-
-			if (_periodic)
-			{
-
-				if(i == 0){
-					// left boundary
-					if(root_id % grid_cells[0] == 0){
-						disp_minus -= shift<1>(grid_cells);
-					}
-					// right boundary
-					else if(root_id % grid_cells[0] == grid_cells[0] - 1){
-						disp_plus -= shift<1>(grid_cells);
-					}
-				}
-
-				else if(i == 1){
-					// 'normalize' id to lowest height (if 3D)
-					const auto root_id_nrm = root_id % shift<2>(grid_cells);
-					// front
-					if((int) root_id_nrm / grid_cells[0] == 0){
-						disp_minus -= shift<2>(grid_cells);
-					}
-					else if((int) root_id_nrm / grid_cells[0] == grid_cells[1] - 1){
-						disp_plus -= shift<2>(grid_cells);
-					}
-				}
-
-				else if(i == 2){
-					const auto id_max = shift<3>(grid_cells);
-					if(root_id + disp_plus >= id_max){
-						disp_plus -= id_max;
-					}
-					else if(root_id - disp_minus < 0){
-						disp_minus -= id_max;
-					}
-				}
-
+		}
+		else{
+			neighbor_ids.push_back(root_id - shift<0>(grid_cells));
+		}
+		// back boundary
+		if(root_id % grid_cells[0] == grid_cells[0] - 1){
+			if(_periodic){
+				neighbor_ids.push_back(root_id + shift<0>(grid_cells) - shift<1>(grid_cells));
 			}
+		}
+		else{
+			neighbor_ids.push_back(root_id + shift<0>(grid_cells));
+		}
 
-			neighbor_ids.push_back(root_id + disp_plus);
-			neighbor_ids.push_back(root_id - disp_minus);
+		// 2D shift
+		// 'normalize' id to lowest height (if 3D)
+		const auto root_id_nrm = root_id % shift<2>(grid_cells);
+		// front boundary
+		if((long long int) root_id_nrm / grid_cells[0] == 0){
+			if(_periodic){
+				neighbor_ids.push_back(root_id - shift<1>(grid_cells) + shift<2>(grid_cells));
+			}
+		}
+		else{
+			neighbor_ids.push_back(root_id - shift<1>(grid_cells));
+		}
+		// back boundary
+		if((long long int) root_id_nrm / grid_cells[0] == grid_cells[1] - 1){
+			if(_periodic){
+				neighbor_ids.push_back(root_id + shift<1>(grid_cells) - shift<2>(grid_cells));
+			}
+		}
+		else{
+			neighbor_ids.push_back(root_id + shift<1>(grid_cells));
+		}
+
+		// 3D shift
+		if(_dim == 3)
+		{
+			const auto id_max = shift<3>(grid_cells) - 1;
+			// front boundary
+			if(root_id - shift<2>(grid_cells) < 0){
+				if(_periodic){
+					neighbor_ids.push_back(root_id - shift<2>(grid_cells) + shift<3>(grid_cells));
+				}
+			}
+			else{
+				neighbor_ids.push_back(root_id - shift<2>(grid_cells));
+			}
+			// back boundary
+			if(root_id + shift<2>(grid_cells) > id_max){
+				if(_periodic){
+					neighbor_ids.push_back(root_id + shift<2>(grid_cells) - shift<3>(grid_cells));
+				}
+			}
+			else{
+				neighbor_ids.push_back(root_id + shift<2>(grid_cells));
+			}
 		}
 
 		return cells_from_ids(mngr,neighbor_ids);
@@ -117,7 +134,7 @@ private:
 	static typename T::value_type shift (const T& cells)
 	{
 		if (index == 0){
-			return 0;
+			return 1;
 		}
 		else if (index == 1){
 			return cells[0];
