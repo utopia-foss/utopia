@@ -3,6 +3,24 @@
 
 namespace Citcat {
 
+/// Find appropriate cells for a set of indices
+/** \param cont Container of indices
+ *  \param mngr Manager instance
+ *  \return Container of shared pointers to the cells
+ */
+template<typename IndexContainer, typename Manager>
+auto cells_from_ids (const IndexContainer& cont, const Manager& mngr)
+{
+	using Cell = typename Manager::Cell;
+	std::vector<std::shared_ptr<Cell>> ret;
+	ret.reserve(cont.size());
+	const auto& cells = mngr._cells;
+	for(auto id : cont){
+		ret.emplace_back(std::shared_ptr<Cell>(cells.at(id)));
+	}
+	return ret;
+}
+
 namespace Neighborhoods {
 
 template<class Manager>
@@ -45,7 +63,7 @@ public:
 			}
 		}
 
-		return cells_from_ids(mngr,neighbor_ids);
+		return cells_from_ids(neighbor_ids,mngr);
 	}
 
 	/// Return next neighbors for structured grid
@@ -125,7 +143,7 @@ public:
 			}
 		}
 
-		return cells_from_ids(mngr,neighbor_ids);
+		return cells_from_ids(neighbor_ids,mngr);
 	}
 
 private:
@@ -150,20 +168,6 @@ private:
 			static_assert(false,"This only works for index = {0,1,2,3}.");
 		}
 		*/
-	}
-
-	template<typename IndexContainer>
-	static auto cells_from_ids (const Manager& mngr, const IndexContainer& cont)
-	{
-		// find appropriate cell objects
-		std::vector<std::shared_ptr<Cell>> ret;
-		ret.reserve(cont.size());
-		const auto& cells = mngr._cells;
-		for(auto id : cont){
-			ret.emplace_back(std::shared_ptr<Cell>(cells.at(id)));
-		}
-
-		return ret;
 	}
 
 };

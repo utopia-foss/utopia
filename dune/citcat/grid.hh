@@ -20,8 +20,8 @@ private:
 	static constexpr int dim = Traits::dim;
 
 	std::shared_ptr<Grid> _grid;
-	GV _gv;
-	Mapper _mapper;
+	const GV _gv;
+	const Mapper _mapper;
 
 	static constexpr bool _is_structured = structured;
 	static constexpr bool _is_periodic = periodic;
