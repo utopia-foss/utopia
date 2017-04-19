@@ -9,22 +9,21 @@ public:
 	EPSWriter() = default;
 
 	virtual void addCellData(std::vector<double> &grid_data, const std::string label) = 0;
-
+	
 	virtual void write(const float time) = 0;
 };
 
 template<typename StateType>			//int states are displayed discrete, doubles as grayscale
-class My_EPSWriter : public EPSWriter {
+class DefaultEPSWriter : public EPSWriter {
 
 protected:
 	const std::string _filepath;
 	std::vector<std::tuple<std::vector<double>*, const std::string > > _data;
 
 public:
-	My_EPSWriter(const std::string filename, 
-		const std::string outputdir = OUTPUTDIR) :
-		_filepath(outputdir+"/"+filename)
-		{ }
+	DefaultEPSWriter(const std::string filename, 
+		const std::string outputdir = OUTPUTDIR) : _filepath(outputdir+filename)
+	{ }
 
 	void addCellData(std::vector<double> &grid_data, const std::string label) { 
 		_data.push_back(std::make_tuple(&grid_data, label));
@@ -120,33 +119,43 @@ public:
 	}
 };
 
-template<typename StateType, typename EPSWriter>
 class EPSWrapper : public DataWriter
 {
 protected:
-	EPSWriter _epswriter;
-	std::vector<std::shared_ptr<GridDataAdaptor>> _adaptors;
+	const std::string _filename;
+	const std::string _outputdir;
+	std::vector<std::tuple< std::shared_ptr<EPSWriter>,std::shared_ptr<GridDataAdaptor> >> _adaptors;
 
 public:
-	EPSWrapper(const std::string filename) :
-		_epswriter(filename, OUTPUTDIR)
-		{  }
+	EPSWrapper(const std::string filename) : 
+		_filename(filename), _outputdir(OUTPUTDIR)
+	{  }
+	
+	template<typename StateType = int, typename DerivedEPSWriter = DefaultEPSWriter<StateType>>
+	std::shared_ptr<DerivedEPSWriter> add_eps_output() {
+		DerivedEPSWriter epswriter(_filename,_outputdir);
+		return std::make_shared<DerivedEPSWriter>(epswriter);
+	}
 
-	template<typename DerivedGridDataAdaptor>
-	void add_adaptor (std::shared_ptr<DerivedGridDataAdaptor> adpt)
+	template<typename StateType = int, typename DerivedEPSWriter = DefaultEPSWriter<StateType>, typename DerivedGridDataAdaptor>
+	void add_adaptor (std::shared_ptr<DerivedGridDataAdaptor> adpt, 
+		std::shared_ptr<DerivedEPSWriter> epswriter = 0)
 	{
+		if (epswriter == 0) {
+			epswriter = add_eps_output<StateType,DerivedEPSWriter>();
+		}
 		static_assert(std::is_base_of<GridDataAdaptor,DerivedGridDataAdaptor>::value,
-			"Object for writing VTK data must be derived from GridDataAdaptor!");
-		adpt->add_data(_epswriter);
-		_adaptors.push_back(adpt);
+			"Object for writing EPS data must be derived from GridDataAdaptor!");
+		_adaptors.push_back(std::make_tuple(epswriter, adpt));
+		adpt->add_data( *(std::get<0>(_adaptors.back()) ));
 	}
 
 	void write (const float time)
 	{
 		for(auto&& i : _adaptors){
-			i->update_data();
+			std::get<1>(i)->update_data();			
+			std::get<0>(i)->write(time);
 		}
-		_epswriter.write(time);
 	}
 };
 
@@ -231,13 +240,12 @@ public:
 
 namespace Output {
 
-	template<typename StateType = int, typename EPSWriter = My_EPSWriter<StateType>>
-	std::shared_ptr<EPSWrapper<StateType, EPSWriter>> create_eps_writer (const std::string filename=EXECUTABLE_NAME)
+	std::shared_ptr<EPSWrapper> create_eps_writer (const std::string filename=EXECUTABLE_NAME)
 	{
 		static_assert(std::is_base_of<Citcat::EPSWriter,EPSWriter>::value,
 			"Your EPSWriter must be derived from Citcat::EPSWriter!");
 		std::string filename_adj = filename+"-"+Output::get_file_timestamp();
-		return std::make_shared<EPSWrapper<StateType, EPSWriter>>(filename_adj);
+		return std::make_shared<EPSWrapper>(filename_adj);
 	}
 
 	template<typename CellContainer>
