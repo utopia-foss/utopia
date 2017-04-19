@@ -141,11 +141,13 @@ public:
 	void add_adaptor (std::shared_ptr<DerivedGridDataAdaptor> adpt, 
 		std::shared_ptr<DerivedEPSWriter> epswriter = 0)
 	{
+		static_assert(std::is_base_of<GridDataAdaptor,DerivedGridDataAdaptor>::value,
+			"Object for writing EPS data must be derived from GridDataAdaptor!");
+		static_assert(std::is_base_of<EPSWriter,DerivedEPSWriter>::value,
+			"Object for EPS output object must be derived from EPSWriter!");
 		if (epswriter == 0) {
 			epswriter = add_eps_output<StateType,DerivedEPSWriter>();
 		}
-		static_assert(std::is_base_of<GridDataAdaptor,DerivedGridDataAdaptor>::value,
-			"Object for writing EPS data must be derived from GridDataAdaptor!");
 		_adaptors.push_back(std::make_tuple(epswriter, adpt));
 		adpt->add_data( *(std::get<0>(_adaptors.back()) ));
 	}
@@ -242,8 +244,6 @@ namespace Output {
 
 	std::shared_ptr<EPSWrapper> create_eps_writer (const std::string filename=EXECUTABLE_NAME)
 	{
-		static_assert(std::is_base_of<Citcat::EPSWriter,EPSWriter>::value,
-			"Your EPSWriter must be derived from Citcat::EPSWriter!");
 		std::string filename_adj = filename+"-"+Output::get_file_timestamp();
 		return std::make_shared<EPSWrapper>(filename_adj);
 	}
