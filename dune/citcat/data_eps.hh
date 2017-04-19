@@ -145,9 +145,7 @@ public:
 			"Object for writing EPS data must be derived from GridDataAdaptor!");
 		static_assert(std::is_base_of<EPSWriter,DerivedEPSWriter>::value,
 			"Object for EPS output object must be derived from EPSWriter!");
-		if (epswriter == 0) {
-			epswriter = add_eps_output<StateType,DerivedEPSWriter>();
-		}
+		if (epswriter == 0) epswriter = add_eps_output<StateType,DerivedEPSWriter>(); 
 		_adaptors.push_back(std::make_tuple(epswriter, adpt));
 		adpt->add_data( *(std::get<0>(_adaptors.back()) ));
 	}
