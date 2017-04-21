@@ -18,7 +18,7 @@ class DefaultEPSWriter : public EPSWriter {
 
 protected:
 	const std::string _filepath;
-	std::vector<std::tuple<std::vector<double>*, const std::string > > _data;
+	std::tuple<std::vector<double>*, std::string > _data;
 
 public:
 	DefaultEPSWriter(const std::string filename, 
@@ -26,14 +26,13 @@ public:
 	{ }
 
 	void addCellData(std::vector<double> &grid_data, const std::string label) { 
-		_data.push_back(std::make_tuple(&grid_data, label));
+		_data  = std::make_tuple(&grid_data, label);
 	}
 
 	void write(const float time) {
-		for (int i = 0; i < _data.size(); i++) {
-			auto data_tuple_set = _data[i];
-			auto data_set = *(std::get<0>(data_tuple_set));
-			auto label = std::get<1>(data_tuple_set);
+		if (!std::get<0>(_data)->empty()) {
+			auto data_set = *(std::get<0>(_data));
+			auto label = std::get<1>(_data);
 			int size = data_set.size();
 
 			double max = data_set[0];
