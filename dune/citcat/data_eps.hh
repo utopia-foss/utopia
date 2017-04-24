@@ -4,258 +4,118 @@
 namespace Citcat
 {
 
-class EPSWriter {
-public:
-	EPSWriter() = default;
-
-	virtual void addCellData(std::vector<double> &grid_data, const std::string label) = 0;
-	
-	virtual void write(const float time) = 0;
-};
-
-template<typename StateType>			//int states are displayed discrete, doubles as grayscale
-class DefaultEPSWriter : public EPSWriter {
-
+template<typename Container>
+class EPSDataWriter : public DataWriter {
 protected:
+	const Container& _data;
 	const std::string _filepath;
-	std::tuple<std::vector<double>*, std::string > _data;
+	const std::string _label;
 
 public:
-	DefaultEPSWriter(const std::string filename, 
-		const std::string outputdir = OUTPUTDIR) : _filepath(outputdir+filename)
-	{ }
-
-	void addCellData(std::vector<double> &grid_data, const std::string label) { 
-		_data  = std::make_tuple(&grid_data, label);
-	}
-
-	void write(const float time) {
-		if (!std::get<0>(_data)->empty()) {
-			auto data_set = *(std::get<0>(_data));
-			auto label = std::get<1>(_data);
-			int size = data_set.size();
-
-			double max = data_set[0];
-			double min = data_set[0];
-			for (int i = 0; i < size; i++) {		
-				max = std::max(max, data_set[i]); 
-				min = std::min(min, data_set[i]);
-			}
-
-			bool grayscale = true;
-			double r[size], g[size], b[size];			
-			if(std::is_same<StateType,int>::value) {
-				int states = max - min + 1;
-				
-				std::vector<std::vector<double> > color_map = {};
-				if (states <= 5) {
-					color_map = {{1,1,1}, {0,0,0}, {0,0,1}, {0,1,0}, {1,0,0}};
-					grayscale = false;
-				}
-				else {
-					for (int i = min; i <= max; i++) {
-						double gray = (i - min)/double(states - 1);
-						color_map.push_back({gray, gray, gray});
-					}
-				}
-
-				for (int it_data = 0; it_data < size; it_data++) {
-					for (int it_states = 0; it_states < states; it_states++) {
-						if (data_set[it_data] == it_states + min) {
-							r[it_data] = color_map[it_states][0];
-							g[it_data] = color_map[it_states][1];
-							b[it_data] = color_map[it_states][2];
-							break;
-						}
-					}
-				}
-			}
-			else {
-				for (int it_data = 0; it_data < size; it_data++) {
-					double gray = (data_set[it_data] - min) / (max - min);  //rescale values between 0 ... 1
-					r[it_data] = gray;
-					g[it_data] = gray;
-					b[it_data] = gray;
-				}
-			}
-
-			std::string filename_adj = _filepath+"-"+label+"-"+std::to_string((int)time);
-			char * writable = new char[filename_adj.size() + 1];
-			std::copy(filename_adj.begin(), filename_adj.end(), writable);
-			writable[filename_adj.size()] = '\0';
-
-			int Nx = std::sqrt(size); int Ny = std::sqrt(size);
-			int w = 150; int h = 150;
-			int DX = 30;
-			int NCTR = 65;
-			int b_off = 15; //bottom offset
-
-			gPaper(writable);
-    			sXWorldCoord(0,Nx,0,w); sYWorldCoord(0,Ny,b_off,h+b_off);
-				sXIntervals(Nx/4,Nx/16,0,1); sYIntervals(Ny/4,Ny/16,0,1);
-				dXAxis(0,0,Nx,1); dYAxis(0,0,Ny,1);
-
-				movea('P',5,0);
-				if (std::is_same<StateType,int>::value && max - min < 5) {
-					int states = max - min + 1;
-					std::string text = "white (state 0), black (state 1)";
-					if (states >= 3) {
-						text += ", blue (state 2)";	}
-					if (states >= 4) {
-						text += ", yellow (state 3)"; }
-					if (states >= 5) {
-						text += ", red (state 4)"; }
-					dText(text.c_str());	}
-				else {
-					std::string text = "black (lowest value: " + std::to_string(min) + ") to white (highest values: " + std::to_string(max) + ")";
-					dText(text.c_str()); }
-
-	   			sColorSpace("RGB");
-				dBitMap(0,b_off,w,h,Nx,Ny, r,g,b);
-
-			endPS();
-		}
-	}
-};
-
-class EPSWrapper : public DataWriter
-{
-protected:
-	const std::string _filename;
-	const std::string _outputdir;
-	std::vector<std::tuple< std::shared_ptr<EPSWriter>,std::shared_ptr<GridDataAdaptor> >> _adaptors;
-
-public:
-	EPSWrapper(const std::string filename) : 
-		_filename(filename), _outputdir(OUTPUTDIR)
+	EPSDataWriter (const Container& data, const std::string label, const std::string filepath) :
+		_data(data), _label(label), _filepath(filepath)
 	{  }
-	
-	template<typename StateType = int, typename DerivedEPSWriter = DefaultEPSWriter<StateType>>
-	std::shared_ptr<DerivedEPSWriter> add_eps_output() {
-		DerivedEPSWriter epswriter(_filename,_outputdir);
-		return std::make_shared<DerivedEPSWriter>(epswriter);
-	}
-
-	template<typename StateType = int, typename DerivedEPSWriter = DefaultEPSWriter<StateType>, typename DerivedGridDataAdaptor>
-	void add_adaptor (std::shared_ptr<DerivedGridDataAdaptor> adpt, 
-		std::shared_ptr<DerivedEPSWriter> epswriter = 0)
-	{
-		static_assert(std::is_base_of<GridDataAdaptor,DerivedGridDataAdaptor>::value,
-			"Object for writing EPS data must be derived from GridDataAdaptor!");
-		static_assert(std::is_base_of<EPSWriter,DerivedEPSWriter>::value,
-			"Object for EPS output object must be derived from EPSWriter!");
-		if (epswriter == 0) epswriter = add_eps_output<StateType,DerivedEPSWriter>(); 
-		_adaptors.push_back(std::make_tuple(epswriter, adpt));
-		adpt->add_data( *(std::get<0>(_adaptors.back()) ));
-	}
-
-	void write (const float time)
-	{
-		for(auto&& i : _adaptors){
-			std::get<1>(i)->update_data();			
-			std::get<0>(i)->write(time);
-		}
-	}
 };
 
-template<typename CellContainer>
-class EPSCellStateGridDataAdaptor : public GridDataAdaptor
+template<typename Container>
+class CellStateEPSDataWriter : protected EPSDataWriter<Container>
 {
 protected:
-	using Cell = typename CellContainer::value_type::element_type;
-	using State = typename Cell::State;
-
-	const CellContainer& _cells; //!< Container of entities
-	std::vector<double> _grid_data; //!< Container for VTK readout
-	const std::string _label; //!< data label
+	using StateType = typename Container::value_type::element_type::State;
 
 public:
-	/// Constructor
-	/** \param cells Container of cells
-	 *  \param label Data label in VTK output
-	 */
-	EPSCellStateGridDataAdaptor (const CellContainer& cells, const std::string label) :
-		_cells(cells), _grid_data(_cells.size()), _label(label)
-	{ }
-
-	/// Add the data of this adaptor to the VTKWriter
-	/** \param vtkwriter Dune VTKWriter managed by the VTKWrapper
-	 */
-	template<typename EPSWriter>
-	void add_data (EPSWriter& epswriter)
-	{
-		epswriter.addCellData(_grid_data,_label);
+	CellStateEPSDataWriter(const Container& data, const std::string label, const std::string filepath) :
+		EPSDataWriter<Container>(data, label, filepath)
+	{ 
+		static_assert(std::is_convertible<StateType,double>::value,
+			"Data to write with EPS Writer must be converitble to double!");
 	}
-
-	/// Update the data managed by this adaptor
-	void update_data ()
-	{
-		for(const auto& cell : _cells){
-			_grid_data[cell->index()] = double(cell->state());
+	void write(const float time) {
+		int size = this->_data.size();
+		double data[size];
+		double max = this->_data[0]->state();
+		double min = this->_data[0]->state();
+		for (int it = 0; it < size; it++) {
+			data[it] = this->_data[it]->state();
+			max = std::max(max, data[it]); 
+			min = std::min(min, data[it]);
 		}
-	}
-};	
 
-template<typename CellContainer, typename Func>
-class EPSFunctionalGridDataAdaptor : public GridDataAdaptor
-{
-protected:
-	using Cell = typename CellContainer::value_type;
-	using Result = typename std::result_of_t<Func(Cell)>;
+		bool grayscale = true;
+		double r[size], g[size], b[size];
+		if(std::is_same<StateType,int>::value && max - min < 5) { //discrete data points
+			int states = max - min + 1;
+			
+			//define coloring of states
+			std::vector<std::vector<double> > color_map = {};
+			color_map = {{1,1,1}, {0,0,0}, {0,0,1}, {0,1,0}, {1,0,0}};
+			grayscale = false;
 
-	const CellContainer& _cells; //!< Container of entities
-	std::vector<double> _grid_data; //!< Container for VTK readout
-	const std::string _label; //!< data label
-	//! function returning the data to print
-	std::function<Result(Cell)> _function;
-
-public:
-	/// Constructor
-	/** \param cells Container of cells
-	 *  \param function Function object returing the data for each cell
-	 *  \param label Data label in VTK output
-	 */
-	EPSFunctionalGridDataAdaptor (const CellContainer& cells, Func function, const std::string label) :
-		_cells(cells), _grid_data(_cells.size()), _label(label), _function(function)
-	{ }
-
-	/// Add the data of this adaptor to the VTKWriter
-	/** \param vtkwriter Dune VTKWriter managed by the VTKWrapper
-	 */
-	template<typename VTKWriter>
-	void add_data (VTKWriter& vtkwriter)
-	{
-		vtkwriter.addCellData(_grid_data,_label);
-	}
-
-	/// Update the data managed by this adaptor
-	void update_data ()
-	{
-		for(auto cell : _cells){
-			_grid_data[cell->index()] = double(_function(cell));
+			//define colour of each datapoint
+			for (int it_data = 0; it_data < size; it_data++) {
+				r[it_data] = color_map[data[it_data]-min][0];
+				g[it_data] = color_map[data[it_data]-min][1];
+				b[it_data] = color_map[data[it_data]-min][2];
+			}
 		}
+		else { //define grayscale map
+			for (int it_data = 0; it_data < size; it_data++) {
+				double gray = (data[it_data] - min) / (max - min);  //rescale values between 0 ... 1
+				r[it_data] = gray;
+				g[it_data] = gray;
+				b[it_data] = gray;
+			}
+		}
+
+		//define output path
+		std::string filename_adj = this->_filepath+"-"+this->_label+"-"+std::to_string((int)time);
+		char * writable = new char[filename_adj.size() + 1];
+		std::copy(filename_adj.begin(), filename_adj.end(), writable);
+		writable[filename_adj.size()] = '\0';
+
+		int Nx = std::sqrt(this->_data.size()); int Ny = std::sqrt(this->_data.size());
+		int w = 150; int h = 150;
+		int DX = 30;
+		int NCTR = 65;
+		int b_off = 15; //bottom offset
+
+		gPaper(writable);
+			sXWorldCoord(0,Nx,0,w); sYWorldCoord(0,Ny,b_off,h+b_off);
+			sXIntervals(Nx/4,Nx/16,0,1); sYIntervals(Ny/4,Ny/16,0,1);
+			dXAxis(0,0,Nx,1); dYAxis(0,0,Ny,1);
+
+			movea('P',5,0);
+			if (std::is_same<StateType,int>::value && max - min < 5) {
+				int states = max - min + 1;
+				std::string text = "white (state 0), black (state 1)";
+				if (states >= 3) {
+					text += ", blue (state 2)";	}
+				if (states >= 4) {
+					text += ", yellow (state 3)"; }
+				if (states >= 5) {
+					text += ", red (state 4)"; }
+				dText(text.c_str());	}
+			else {
+				std::string text = "black (lowest value: " + std::to_string(min) + ") to white (highest values: " + std::to_string(max) + ")";
+				dText(text.c_str()); }
+
+   			sColorSpace("RGB");
+			dBitMap(0,b_off,w,h,Nx,Ny, r,g,b);
+
+		endPS();
 	}
+
 };
 
 namespace Output {
 
-	std::shared_ptr<EPSWrapper> create_eps_writer (const std::string filename=EXECUTABLE_NAME)
+	template<typename Container>
+	std::shared_ptr<CellStateEPSDataWriter<Container> > eps_plot_cell_state (
+		const Container& cont, const std::string label="state", 
+		const std::string filename = EXECUTABLE_NAME, const std::string outputdir = OUTPUTDIR)
 	{
-		std::string filename_adj = filename+"-"+Output::get_file_timestamp();
-		return std::make_shared<EPSWrapper>(filename_adj);
-	}
-
-	template<typename CellContainer>
-	std::shared_ptr<EPSCellStateGridDataAdaptor<CellContainer>> eps_output_cell_state (const CellContainer& cont, const std::string label="state")
-	{
-		return std::make_shared<EPSCellStateGridDataAdaptor<CellContainer>>(cont,label);
-	}
-
-	template<typename CellContainer, typename Func>
-	std::shared_ptr<EPSFunctionalGridDataAdaptor<CellContainer, Func>> eps_output_cell_function (const CellContainer& cont,
-		Func function, const std::string label="function")
-	{
-		return std::make_shared<EPSFunctionalGridDataAdaptor<CellContainer, Func>>(cont, function, label);
+		std::string filename_adj = OUTPUTDIR+filename+"-"+get_file_timestamp();
+		return std::make_shared<CellStateEPSDataWriter<Container>>(cont,label,filename_adj);
 	}
 
 } //Namespace Output
