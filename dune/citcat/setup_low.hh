@@ -67,9 +67,9 @@ public:
 	/// Check if a cell is a corner cell
 	bool is_corner_cell (const Cell cell)
 	{
-		if(dim == 2 && cell->grid_neighbors_count() == 2)
+		if(dim == 2 && Neighborhoods::Custom<0>::neighbors(cell).size() == 2)
 			return true;
-		if(dim == 3 && cell->grid_neighbors_count() == 3)
+		if(dim == 3 && Neighborhoods::Custom<0>::neighbors(cell).size() == 3)
 			return true;
 		return false;
 	}
@@ -77,9 +77,9 @@ public:
 	/// Check if a cell is a edge cell
 	bool is_edge_cell (const Cell cell)
 	{
-		if(dim == 2 && cell->grid_neighbors_count() == 3)
+		if(dim == 2 && Neighborhoods::Custom<0>::neighbors(cell).size() == 3)
 			return true;
-		if(dim == 3 && cell->grid_neighbors_count() == 4)
+		if(dim == 3 && Neighborhoods::Custom<0>::neighbors(cell).size() == 4)
 			return true;
 		return false;
 	}
@@ -87,7 +87,7 @@ public:
 	/// Check if a cell is a surface cell
 	bool is_surface_cell (const Cell cell)
 	{
-		if(dim == 3 && cell->grid_neighbors_count() == 5)
+		if(dim == 3 && Neighborhoods::Custom<0>::neighbors(cell).size() == 5)
 			return true;
 		return false;
 	}

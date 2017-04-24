@@ -122,6 +122,9 @@ namespace Setup
 				extensions.at(i) = std::max(pos[i],extensions.at(i));
 			}
 		}
+		for(int i = 0; i<dim; ++i){
+			extensions.at(i) -= cells[0]->position()[i];
+		}
 
 		PBA pba(extensions);
 
@@ -162,8 +165,8 @@ namespace Setup
 		{
 			auto i = std::get<0>(pair);
 			auto j = std::get<1>(pair);
-			i->add_grid_neighbor(j);
-			j->add_grid_neighbor(i);
+			Neighborhoods::Custom<0>::add_neighbor(j,i);
+			Neighborhoods::Custom<0>::add_neighbor(i,j);
 		}
 	}
 

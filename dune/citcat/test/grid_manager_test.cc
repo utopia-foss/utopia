@@ -71,8 +71,11 @@ void cells_on_grid_test (const unsigned int cells_per_dim)
 	auto grid = Citcat::Setup::create_grid<dim>(cells_per_dim);
 	auto cells = Citcat::Setup::create_cells_on_grid(grid,[](){return 0;});
 
+	// structured, non-periodic
 	using M1 = typename Citcat::GridManager<typename decltype(grid)::element_type,true,false,typename decltype(cells)::value_type::element_type>;
+	// unstructured, non-periodic
 	using M2 = typename Citcat::GridManager<typename decltype(grid)::element_type,false,false,typename decltype(cells)::value_type::element_type>;
+	// structured, periodic
 	using M3 = typename Citcat::GridManager<typename decltype(grid)::element_type,true,true,typename decltype(cells)::value_type::element_type>;
 	M1 m1(grid);
 	M2 m2(grid);
@@ -101,6 +104,8 @@ void cells_on_grid_test (const unsigned int cells_per_dim)
 
 	compare_custom_and_true_neighborhoods(m1);
 	compare_custom_and_true_neighborhoods(m2);
+
+	Citcat::Setup::apply_periodic_boundaries(m3._cells);
 	compare_custom_and_true_neighborhoods(m3);
 }
 
@@ -109,8 +114,8 @@ int main(int argc, char** argv)
 	try{
 		Dune::MPIHelper::instance(argc,argv);
 
-		//cells_on_grid_test<2>(49);
-		cells_on_grid_test<3>(15);
+		cells_on_grid_test<2>(49);
+		//cells_on_grid_test<3>(15);
 
 		return 0;
 	}
