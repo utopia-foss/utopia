@@ -177,13 +177,15 @@ namespace Setup
 	 *  \param f_traits Function without arguments returning traits
 	 *  \return Container with created cells
 	*/
-	template<typename State=int, typename Traits=int, typename GridType,
-		typename S, typename T=std::function<Traits(void)>>
+	template<
+		typename State = int,
+		typename Traits = int,
+		unsigned int custom_neighborhood_count = 0,
+		typename GridType, typename S, typename T=std::function<Traits(void)>
+	>
 	decltype(auto) create_cells_on_grid(const std::shared_ptr<GridType> grid,
 		S f_state, T f_traits=[](){return 0;})
 	{
-		//static_assert(std::is_convertible<State,typename std::result_of<S>::type>::value,"This function does not return a variable of type 'State'!");
-		//static_assert(std::is_convertible<Traits,typename std::result_of<T>::type>::value,"This functions does not return a variable of type 'Traits'!");
 
 		using GridTypes = GridTypeAdaptor<GridType>;
 		using Position = typename GridTypes::Position;
@@ -192,7 +194,7 @@ namespace Setup
 		using Mapper = typename GridTypes::Mapper;
 		using Index = typename GridTypes::Index;
 
-		using CellType = Cell<State,Traits,Position,Index,1>;
+		using CellType = Cell<State,Traits,Position,Index,custom_neighborhood_count>;
 
 		GV gv(*grid);
 		Mapper mapper(gv);
@@ -216,28 +218,6 @@ namespace Setup
 
 			cells.emplace_back(std::make_shared<CellType>
 				(f_state(),f_traits(),pos,id,boundary));
-		}
-
-		// create a map to quickly find appropriate cells via their index
-		std::map<Index,std::shared_ptr<CellType>> map;
-		for(const auto& i: cells) 
-			map.emplace(i->index(),i);
-
-		// add grid neighbors
-		for(const auto& e : elements(gv))
-		{
-			// find current cell
-			const Index id = mapper.index(e);
-			auto cell = map.find(id)->second;
-
-			// loop over intersections of grid entity
-			for(const auto& is : intersections(gv,e))
-			{
-				if(!is.neighbor()) continue;
-				const Index id_nb = mapper.index(is.outside());
-				auto cell_nb = map.find(id_nb)->second;
-				Neighborhoods::Custom<0>::add_neighbor(cell_nb,cell);
-			}
 		}
 
 		cells.shrink_to_fit();

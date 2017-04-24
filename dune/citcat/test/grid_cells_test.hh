@@ -2,26 +2,6 @@
 #include <dune/common/exceptions.hh>
 #include <dune/citcat/citcat.hh>
 
-/// Check if the cells on a periodic grid have the correct number of neighbors
-template<int dim, typename CellContainer>
-void check_grid_neighbors_count(CellContainer& cells)
-{
-	const int nb_count = (dim == 2 ? 4 : 6);
-
-	bool exception = false;
-	for(auto&& cell : cells){
-		if(cell->grid_neighbors_count() != nb_count){
-			std::cerr << "Cell No. " << cell->index()
-				<< " has " << cell->grid_neighbors_count()
-				<< " neighbors!" << std::endl;
-			exception = true;
-		}
-	}
-	if(exception){
-		DUNE_THROW(Dune::Exception,"Wrong number of neighbors!");
-	}
-}
-
 template<typename Grid, typename CellContainer>
 void assert_cells_on_grid(std::shared_ptr<Grid> grid, CellContainer& cells)
 {
@@ -93,27 +73,6 @@ void compare_neighborhoods (const M1& m1, const M2& m2)
 	}
 }
 
-/// Compare custom and true neighborhood for a cell which is not at the boundary
-template<typename Manager>
-void compare_custom_and_true_neighborhoods(const Manager& manager)
-{
-	for(auto cell : manager._cells){
-		if(cell->boundary()){
-			continue;
-		}
-		const auto nb1 = Citcat::Neighborhoods::NextNeighbor::neighbors(manager,cell);
-		const auto nb2 = Citcat::Neighborhoods::Custom<0>::neighbors(cell);
-		// check size
-		assert(nb1.size() == nb2.size());
-		// check actual neighbors
-		for(auto a : nb1){
-			assert(std::find_if(nb2.begin(),nb2.end(),
-					[&a](auto b){ return a == b; })
-				!= nb2.end());
-		}
-	}
-}
-
 /// Perform a test: Assure that cells are instantiated correctly and neighborhood implementations mirror each other
 template<int dim>
 void cells_on_grid_test (const unsigned int cells_per_dim)
@@ -150,12 +109,6 @@ void cells_on_grid_test (const unsigned int cells_per_dim)
 	// compare neighborhood implementations (structured,unstructured)
 	compare_neighborhoods(m1,m2);
 
-	// compare saved vs calculated neighborhoods
-	compare_custom_and_true_neighborhoods(m1);
-	compare_custom_and_true_neighborhoods(m2);
-
 	// check periodic boundaries
 	check_grid_neighbors_count(m3);
-	Citcat::Setup::apply_periodic_boundaries(m3._cells);
-	compare_custom_and_true_neighborhoods(m3);
 }
