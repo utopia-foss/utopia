@@ -12,7 +12,7 @@ void check_grid_neighbors_count (const Manager& manager)
 
 	bool exception = false;
 	for(const auto cell : manager._cells){
-		const auto neighbors = Citcat::Neighborhoods::NextNeighbor<Manager>::neighbors(manager,cell);
+		const auto neighbors = Citcat::Neighborhoods::NextNeighbor::neighbors(manager,cell);
 		if(neighbors.size() != nb_count){
 			std::cerr << "Cell No. " << cell->index()
 				<< " has " << neighbors.size()
@@ -30,8 +30,8 @@ template<typename M1, typename M2>
 void compare_neighborhoods (const M1& m1, const M2& m2)
 {
 	for(std::size_t i=0; i<m1._cells.size(); ++i){
-		const auto nb1 = Citcat::Neighborhoods::NextNeighbor<M1>::neighbors(m1,m1._cells[i]);
-		const auto nb2 = Citcat::Neighborhoods::NextNeighbor<M2>::neighbors(m2,m2._cells[i]);
+		const auto nb1 = Citcat::Neighborhoods::NextNeighbor::neighbors(m1,m1._cells[i]);
+		const auto nb2 = Citcat::Neighborhoods::NextNeighbor::neighbors(m2,m2._cells[i]);
 		// check size
 		assert(nb1.size() == nb2.size());
 		// check actual neighbors
@@ -51,8 +51,8 @@ void compare_custom_and_true_neighborhoods(const Manager& manager)
 		if(cell->boundary()){
 			continue;
 		}
-		const auto nb1 = Citcat::Neighborhoods::NextNeighbor<Manager>::neighbors(manager,cell);
-		const auto nb2 = Citcat::Neighborhoods::CustomNeighborhood<typename Manager::Cell>::template neighbors<0>(cell);
+		const auto nb1 = Citcat::Neighborhoods::NextNeighbor::neighbors(manager,cell);
+		const auto nb2 = Citcat::Neighborhoods::Custom<0>::neighbors(cell);
 		// check size
 		assert(nb1.size() == nb2.size());
 		// check actual neighbors
@@ -109,8 +109,8 @@ int main(int argc, char** argv)
 	try{
 		Dune::MPIHelper::instance(argc,argv);
 
-		cells_on_grid_test<2>(49);
-		//cells_on_grid_test<3>(15);
+		//cells_on_grid_test<2>(49);
+		cells_on_grid_test<3>(15);
 
 		return 0;
 	}

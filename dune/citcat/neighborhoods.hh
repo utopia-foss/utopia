@@ -23,9 +23,18 @@ auto cells_from_ids (const IndexContainer& cont, const Manager& mngr)
 
 namespace Neighborhoods {
 
-template<class Manager>
+template<typename CellType>
+struct NBTraits
+{
+	using Cell = CellType;
+	using Index = typename Cell::Index;
+	using return_type = typename std::vector<std::shared_ptr<Cell>>;
+};
+
+
 class NextNeighbor
 {
+	/*
 private:
 	using Cell = typename Manager::Cell;
 	using Index = typename Cell::Index;
@@ -35,15 +44,17 @@ private:
 	static constexpr bool _structured = Manager::is_structured();
 	static constexpr bool _periodic = Manager::is_periodic();
 	static constexpr int _dim = Manager::Traits::dim;
-
+	*/
 public:
 
 	/// Return next neighbors for any grid
-	template<bool enabled = _structured>
-	static std::enable_if_t<!enabled,return_type> neighbors
-		(const Manager& mngr, const std::shared_ptr<Cell> root)
+	template<class Manager, class Cell,
+		bool enabled = Manager::is_structured()>
+	static auto neighbors (const Manager& mngr, const std::shared_ptr<Cell> root)
+		-> std::enable_if_t<!enabled,typename NBTraits<Cell>::return_type>
 	{
 		// get references to grid manager members
+		using Index = typename NBTraits<Cell>::Index;
 		const auto& gv = mngr.grid_view();
 		const auto& mapper = mngr.mapper();
 
@@ -67,10 +78,13 @@ public:
 	}
 
 	/// Return next neighbors for structured grid
-	template<bool enabled = _structured>
-	static std::enable_if_t<enabled,return_type> neighbors
-		(const Manager& mngr, const std::shared_ptr<Cell> root)
+	template<class Manager, class Cell,
+		bool enabled = Manager::is_structured()>
+	static auto neighbors (const Manager& mngr, const std::shared_ptr<Cell> root)
+		-> std::enable_if_t<enabled,typename NBTraits<Cell>::return_type>
 	{
+		constexpr bool periodic = Manager::is_periodic();
+
 		// find neighbor IDs
 		const long long int root_id = root->index();
 		const auto& grid_cells = mngr.grid_cells();
@@ -80,7 +94,7 @@ public:
 		// 1D shift
 		// front boundary
 		if(root_id % grid_cells[0] == 0){
-			if(_periodic){
+			if(periodic){
 				neighbor_ids.push_back(root_id - shift<0>(grid_cells) + shift<1>(grid_cells));
 			}
 		}
@@ -89,7 +103,7 @@ public:
 		}
 		// back boundary
 		if(root_id % grid_cells[0] == grid_cells[0] - 1){
-			if(_periodic){
+			if(periodic){
 				neighbor_ids.push_back(root_id + shift<0>(grid_cells) - shift<1>(grid_cells));
 			}
 		}
@@ -102,7 +116,7 @@ public:
 		const auto root_id_nrm = root_id % shift<2>(grid_cells);
 		// front boundary
 		if((long long int) root_id_nrm / grid_cells[0] == 0){
-			if(_periodic){
+			if(periodic){
 				neighbor_ids.push_back(root_id - shift<1>(grid_cells) + shift<2>(grid_cells));
 			}
 		}
@@ -111,7 +125,7 @@ public:
 		}
 		// back boundary
 		if((long long int) root_id_nrm / grid_cells[0] == grid_cells[1] - 1){
-			if(_periodic){
+			if(periodic){
 				neighbor_ids.push_back(root_id + shift<1>(grid_cells) - shift<2>(grid_cells));
 			}
 		}
@@ -120,12 +134,12 @@ public:
 		}
 
 		// 3D shift
-		if(_dim == 3)
+		if(Manager::Traits::dim == 3)
 		{
 			const auto id_max = shift<3>(grid_cells) - 1;
 			// front boundary
 			if(root_id - shift<2>(grid_cells) < 0){
-				if(_periodic){
+				if(periodic){
 					neighbor_ids.push_back(root_id - shift<2>(grid_cells) + shift<3>(grid_cells));
 				}
 			}
@@ -134,7 +148,7 @@ public:
 			}
 			// back boundary
 			if(root_id + shift<2>(grid_cells) > id_max){
-				if(_periodic){
+				if(periodic){
 					neighbor_ids.push_back(root_id + shift<2>(grid_cells) - shift<3>(grid_cells));
 				}
 			}
@@ -173,23 +187,24 @@ private:
 };
 
 
-template<class Cell>
-class CustomNeighborhood
+template<unsigned int i=0>
+class Custom
 {
 private:
-	using return_type = typename std::vector<std::shared_ptr<Cell>>;
 
 	/// Return reference to neighbor storage
-	template<std::size_t i=0>
-	static return_type& neighbors_nc (const std::shared_ptr<Cell> root)
+	template<class Cell>
+	static auto neighbors_nc (const std::shared_ptr<Cell> root)
+		-> typename NBTraits<Cell>::return_type&
 	{
 		return std::get<i>(root->neighborhoods());
 	}
 
 public:
 	/// Return const reference to neighbor storage
-	template<std::size_t i=0>
-	static const return_type& neighbors (const std::shared_ptr<Cell> root)
+	template<class Cell>
+	static auto neighbors (const std::shared_ptr<Cell> root)
+		-> const typename NBTraits<Cell>::return_type&
 	{
 		return std::get<i>(root->neighborhoods());
 	}
@@ -199,11 +214,11 @@ public:
 	 *  \param root Cell which receives new neighbor
 	 *  \return True if cell was inserted
 	 */
-	template<std::size_t i=0>
+	template<class Cell>
 	static bool add_neighbor (const std::shared_ptr<Cell> neighbor,
 		const std::shared_ptr<Cell> root)
 	{
-		auto& nb = neighbors_nc<i>(root);
+		auto& nb = neighbors_nc(root);
 		if(std::find(nb.cbegin(),nb.cend(),neighbor) == nb.end()){
 			nb.push_back(neighbor);
 			return true;
@@ -213,11 +228,11 @@ public:
 	}
 
 	/// Remove a cell from the neighborhood storage
-	template<std::size_t i=0>
+	template<class Cell>
 	static void remove_neighbor (const std::shared_ptr<Cell> neighbor,
 		const std::shared_ptr<Cell> root)
 	{
-		auto& nb = neighbors_nc<i>(root);
+		auto& nb = neighbors_nc(root);
 		const auto it = std::find(nb.cbegin(),nb.cend(),neighbor);
 		if(it == nb.end()){
 			DUNE_THROW(Dune::Exception,"Trying to erase a neighbor which is not in neighborhood");
