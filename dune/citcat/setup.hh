@@ -189,9 +189,11 @@ namespace Setup
 		using Mapper = typename GridTypes::Mapper;
 		using Index = typename GridTypes::Index;
 
+		using CellType = Cell<State,Traits,Position,Index,1>;
+
 		GV gv(*grid);
 		Mapper mapper(gv);
-		CellContainer<Cell<State,Traits,Position,Index>> cells;
+		CellContainer<CellType> cells;
 		cells.reserve(mapper.size());
 
 		// loop over all entities and create cells
@@ -209,12 +211,12 @@ namespace Setup
 				}
 			}
 
-			cells.emplace_back(std::make_shared<Cell<State,Traits,Position,Index>>
+			cells.emplace_back(std::make_shared<CellType>
 				(f_state(),f_traits(),pos,id,boundary));
 		}
 
 		// create a map to quickly find appropriate cells via their index
-		std::map<Index,std::shared_ptr<Cell<State,Traits,Position,Index>>> map;
+		std::map<Index,std::shared_ptr<CellType>> map;
 		for(const auto& i: cells) 
 			map.emplace(i->index(),i);
 
@@ -231,7 +233,7 @@ namespace Setup
 				if(!is.neighbor()) continue;
 				const Index id_nb = mapper.index(is.outside());
 				auto cell_nb = map.find(id_nb)->second;
-				cell->add_grid_neighbor(cell_nb);
+				Neighborhoods::CustomNeighborhoodAccess::neighbors<0>(cell).push_back(cell_nb);
 			}
 		}
 

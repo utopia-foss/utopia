@@ -187,6 +187,9 @@ public:
 		_neighbors.reserve(size);
 	}
 
+	/// Default empty constructor
+	CustomNeighborhood () = default;
+
 	/// Default copy constructor
 	CustomNeighborhood (const CustomNeighborhood&) = default;
 
@@ -194,7 +197,7 @@ public:
 	CustomNeighborhood (CustomNeighborhood&&) = default;
 
 	/// Return const reference to neighbor storage
-	const std::vector<std::shared_ptr<Cell>>& neighbors () const
+	std::vector<std::shared_ptr<Cell>>& neighbors ()
 	{
 		return _neighbors;
 	}
@@ -213,6 +216,25 @@ public:
 		return false;
 	}
 
+};
+
+class CustomNeighborhoodAccess
+{
+public:
+	/*
+	template<std::size_t i=0, class Cell>
+	static const std::vector<std::shared_ptr<Cell>>& neighbors (
+		const std::shared_ptr<Cell> root)
+	{
+		return std::get<i>(root->neighborhoods()).neighbors();
+	}
+*/
+	template<std::size_t i=0, class Cell>
+	static std::vector<std::shared_ptr<Cell>>& neighbors (
+		const std::shared_ptr<Cell> root)
+	{
+		return std::get<i>(root->neighborhoods());
+	}
 };
 
 

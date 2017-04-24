@@ -43,6 +43,27 @@ void compare_neighborhoods (const M1& m1, const M2& m2)
 	}
 }
 
+/// Compare custom and true neighborhood for a cell which is not at the boundary
+template<typename Manager>
+void compare_custom_and_true_neighborhoods(const Manager& manager)
+{
+	for(auto cell : manager._cells){
+		if(cell->boundary()){
+			continue;
+		}
+		const auto nb1 = Citcat::Neighborhoods::NextNeighbor<Manager>::neighbors(manager,cell);
+		const auto nb2 = Citcat::Neighborhoods::CustomNeighborhoodAccess::neighbors<0>(cell);
+		// check size
+		assert(nb1.size() == nb2.size());
+		// check actual neighbors
+		for(auto a : nb1){
+			assert(std::find_if(nb2.begin(),nb2.end(),
+					[&a](auto b){ return a == b; })
+				!= nb2.end());
+		}
+	}
+}
+
 /// Perform a test: Assure that cells are instantiated correctly and neighborhood implementations mirror each other
 template<int dim>
 void cells_on_grid_test (const unsigned int cells_per_dim)
@@ -77,6 +98,10 @@ void cells_on_grid_test (const unsigned int cells_per_dim)
 
 	// check neighborhood implementations
 	compare_neighborhoods(m1,m2);
+
+	compare_custom_and_true_neighborhoods(m1);
+	compare_custom_and_true_neighborhoods(m2);
+	compare_custom_and_true_neighborhoods(m3);
 }
 
 int main(int argc, char** argv)
@@ -84,8 +109,8 @@ int main(int argc, char** argv)
 	try{
 		Dune::MPIHelper::instance(argc,argv);
 
-		//cells_on_grid_test<2>(49);
-		cells_on_grid_test<3>(15);
+		cells_on_grid_test<2>(49);
+		//cells_on_grid_test<3>(15);
 
 		return 0;
 	}

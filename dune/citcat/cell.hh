@@ -15,9 +15,15 @@ namespace Citcat
  *  \tparam TraitsType Data type of traits
  *  \tparam PositionType Data type of position vectors
  *  \tparam IndexType Data type of grid indices
- *  \todo add interface for Individuals
+ *  \tparam custom_neighborhood_count Number of custom neighborhoods
+ *  	this Cell holds
  */
-template<typename StateType, typename TraitsType, typename PositionType, typename IndexType>
+template<
+	typename StateType,
+	typename TraitsType,
+	typename PositionType,
+	typename IndexType,
+	unsigned int custom_neighborhood_count = 0>
 class Cell : public Entity<StateType,TraitsType>
 {
 public:
@@ -52,112 +58,18 @@ public:
 	 */
 	inline bool boundary() const { return _boundary; }
 
-	/// Get connected neighbors of this cell
-	/** \return Container of shared pointers to neighbors
-	 *    Notice that this container might be empty 
-	 */
-	CellContainer<Cell<State,Traits,Position,Index>> neighbors() const
-	{
-		CellContainer<Cell<State,Traits,Position,Index>> ret;
-		ret.reserve(_neighbors.size());
-		for(const auto& i : _neighbors){
-			if(auto x = i.lock())
-				ret.push_back(std::move(x));
-		}
-		return ret;
-	}
+	/// Return const reference to neighborhoods
+	/*
+	const std::array<Neighborhoods::CustomNeighborhood<Cell>,custom_neighborhood_count>& neighborhoods () const { return _neighborhoods; }
+*/
+	/// Return reference to neighborhoods
+	std::array<std::vector<std::shared_ptr<Cell>>,custom_neighborhood_count>& neighborhoods () { return _neighborhoods; }
 
-	/// Get grid neighbors of this cell
-	/** \return Container of shared pointers to grid neighbors
-	 *    Notice that this container might be empty
-	 */
-	CellContainer<Cell<State,Traits,Position,Index>> grid_neighbors() const
-	{
-		CellContainer<Cell<State,Traits,Position,Index>> ret;
-		ret.reserve(_grid_neighbors.size());
-		for(const auto& i : _grid_neighbors){
-			if(auto x = i.lock())
-				ret.push_back(std::move(x));
-		}
-		return ret;
-	}
-
-	/// Set new neighbor for this Cell.
-	/** Duplicates and pointers to the cell itself will not be inserted.
-	 *  \param cell Cell to be inserted as neighbor
-	 *  \return Boolean if neighbor was inserted
-	 */
-	bool add_neighbor(const std::shared_ptr<Cell> cell)
-	{
-		const auto nb = neighbors();
-		if(std::find(nb.begin(),nb.end(),cell)==nb.end()
-			&& cell->index()!=index())
-		{
-			std::weak_ptr<Cell> cell_w = cell;
-			_neighbors.push_back(std::move(cell_w));
-			return true;
-		}
-		return false;
-	}
-
-	/// Set new grid neighbor for this Cell
-	/** Duplicates and pointers to the cell itself will not be inserted.
-	 *  \param cell Cell to be inserted as grid neighbor
-	 *  \return Boolean if neighbor was inserted
-	 */
-	bool add_grid_neighbor(const std::shared_ptr<Cell> cell)
-	{
-		const auto gnb = grid_neighbors();
-		if(std::find(gnb.begin(),gnb.end(),cell)==gnb.end()
-			&& cell->index()!=index())
-		{
-			std::weak_ptr<Cell> cell_w = cell;
-			_grid_neighbors.push_back(std::move(cell_w));
-			return true;
-		}
-		return false;
-	}
-
-	/// Generic neighbor counter
-	/** \param f Function object taking one neighbor as parameter.
-	 *    Returns bool if neighbor will be counted.
-	 *  \return Count for f() returning true
-	 */
-	int neighbors_count(std::function<bool(std::shared_ptr<const Cell>)> f)
-	{
-		int count = 0;
-		for(const auto& i : neighbors()){
-			if(f(i)) count++;
-		}
-		return count;
-	}
-
-	/// Generic grid neighbor counter
-	/** \param f Function object taking one neighbor as parameter.
-	 *    Returns bool if neighbor will be counted.
-	 *  \return Count for f() returning true
-	 */
-	int grid_neighbors_count(std::function<bool(std::shared_ptr<const Cell>)> f)
-	{
-		int count = 0;
-		for(const auto& i : grid_neighbors()){
-			if(f(i)) count++;
-		}
-		return count;
-	}
-
-	/// Return number of neighbors
-	inline int neighbors_count() const { return neighbors().size(); }
-
-	/// Return number of grid neighbors
-	inline int grid_neighbors_count() const { return grid_neighbors().size(); }
-
-
+public:
+	//! Custom neighborhood storage
+	//std::array<Neighborhoods::CustomNeighborhood<Cell>,custom_neighborhood_count> _neighborhoods;
+	std::array<std::vector<std::shared_ptr<Cell>>,custom_neighborhood_count> _neighborhoods;
 private:
-	//! List of connected neighbors
-	std::vector<std::weak_ptr<Cell>> _neighbors;
-	//! List of neighbors on grid
-	std::vector<std::weak_ptr<Cell>> _grid_neighbors;
 	//! Position of cell on grid
 	const Position _position;
 	//! Cell located at grid boundary
