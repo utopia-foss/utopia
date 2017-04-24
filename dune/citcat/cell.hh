@@ -64,10 +64,9 @@ public:
 	/// Return reference to neighborhoods
 	std::array<std::vector<std::shared_ptr<Cell>>,custom_neighborhood_count>& neighborhoods () { return _neighborhoods; }
 
-public:
+private:
 	//! Custom neighborhood storage
 	std::array<std::vector<std::shared_ptr<Cell>>,custom_neighborhood_count> _neighborhoods;
-private:
 	//! Position of cell on grid
 	const Position _position;
 	//! Cell located at grid boundary
