@@ -233,7 +233,7 @@ namespace Setup
 				if(!is.neighbor()) continue;
 				const Index id_nb = mapper.index(is.outside());
 				auto cell_nb = map.find(id_nb)->second;
-				Neighborhoods::CustomNeighborhoodAccess::neighbors<0>(cell).push_back(cell_nb);
+				Neighborhoods::CustomNeighborhood<CellType>::template add_neighbor<0>(cell_nb,cell);
 			}
 		}
 

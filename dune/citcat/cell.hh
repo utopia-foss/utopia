@@ -59,15 +59,13 @@ public:
 	inline bool boundary() const { return _boundary; }
 
 	/// Return const reference to neighborhoods
-	/*
-	const std::array<Neighborhoods::CustomNeighborhood<Cell>,custom_neighborhood_count>& neighborhoods () const { return _neighborhoods; }
-*/
+	const std::array<std::vector<std::shared_ptr<Cell>>,custom_neighborhood_count>& neighborhoods () const { return _neighborhoods; }
+
 	/// Return reference to neighborhoods
 	std::array<std::vector<std::shared_ptr<Cell>>,custom_neighborhood_count>& neighborhoods () { return _neighborhoods; }
 
 public:
 	//! Custom neighborhood storage
-	//std::array<Neighborhoods::CustomNeighborhood<Cell>,custom_neighborhood_count> _neighborhoods;
 	std::array<std::vector<std::shared_ptr<Cell>>,custom_neighborhood_count> _neighborhoods;
 private:
 	//! Position of cell on grid

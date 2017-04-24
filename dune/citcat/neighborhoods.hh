@@ -177,64 +177,54 @@ template<class Cell>
 class CustomNeighborhood
 {
 private:
-	/// container for pointers to neighbors
-	std::vector<std::shared_ptr<Cell>> _neighbors;
+	using return_type = typename std::vector<std::shared_ptr<Cell>>;
+
+	/// Return reference to neighbor storage
+	template<std::size_t i=0>
+	static return_type& neighbors_nc (const std::shared_ptr<Cell> root)
+	{
+		return std::get<i>(root->neighborhoods());
+	}
 
 public:
-	/// Constructor. Reserve the neighborhood size.
-	CustomNeighborhood (const std::size_t size)
-	{
-		_neighbors.reserve(size);
-	}
-
-	/// Default empty constructor
-	CustomNeighborhood () = default;
-
-	/// Default copy constructor
-	CustomNeighborhood (const CustomNeighborhood&) = default;
-
-	/// Default move constructor
-	CustomNeighborhood (CustomNeighborhood&&) = default;
-
 	/// Return const reference to neighbor storage
-	std::vector<std::shared_ptr<Cell>>& neighbors ()
+	template<std::size_t i=0>
+	static const return_type& neighbors (const std::shared_ptr<Cell> root)
 	{
-		return _neighbors;
+		return std::get<i>(root->neighborhoods());
 	}
 
-	/// Insert a cell into the storage, if it is not yet contained by it.
-	/** \return True if cell was inserted
+	/// Insert a cell into the neighborhood storage, if it is not yet contained by it.
+	/** \param neighbor Cell to be inserted as neighbor
+	 *  \param root Cell which receives new neighbor
+	 *  \return True if cell was inserted
 	 */
-	bool add_neighbor (const std::shared_ptr<Cell> cell)
+	template<std::size_t i=0>
+	static bool add_neighbor (const std::shared_ptr<Cell> neighbor,
+		const std::shared_ptr<Cell> root)
 	{
-		if(std::find(_neighbors.cbegin(),_neighbors.cend(),cell)
-			== _neighbors.end()){
-			_neighbors.push_back(cell);
+		auto& nb = neighbors_nc<i>(root);
+		if(std::find(nb.cbegin(),nb.cend(),neighbor) == nb.end()){
+			nb.push_back(neighbor);
 			return true;
 		}
 
 		return false;
 	}
 
-};
+	/// Remove a cell from the neighborhood storage
+	template<std::size_t i=0>
+	static void remove_neighbor (const std::shared_ptr<Cell> neighbor,
+		const std::shared_ptr<Cell> root)
+	{
+		auto& nb = neighbors_nc<i>(root);
+		const auto it = std::find(nb.cbegin(),nb.cend(),neighbor);
+		if(it == nb.end()){
+			DUNE_THROW(Dune::Exception,"Trying to erase a neighbor which is not in neighborhood");
+		}
+		nb.erase(it);
+	}
 
-class CustomNeighborhoodAccess
-{
-public:
-	/*
-	template<std::size_t i=0, class Cell>
-	static const std::vector<std::shared_ptr<Cell>>& neighbors (
-		const std::shared_ptr<Cell> root)
-	{
-		return std::get<i>(root->neighborhoods()).neighbors();
-	}
-*/
-	template<std::size_t i=0, class Cell>
-	static std::vector<std::shared_ptr<Cell>>& neighbors (
-		const std::shared_ptr<Cell> root)
-	{
-		return std::get<i>(root->neighborhoods());
-	}
 };
 
 

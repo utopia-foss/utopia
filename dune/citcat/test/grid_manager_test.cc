@@ -52,7 +52,7 @@ void compare_custom_and_true_neighborhoods(const Manager& manager)
 			continue;
 		}
 		const auto nb1 = Citcat::Neighborhoods::NextNeighbor<Manager>::neighbors(manager,cell);
-		const auto nb2 = Citcat::Neighborhoods::CustomNeighborhoodAccess::neighbors<0>(cell);
+		const auto nb2 = Citcat::Neighborhoods::CustomNeighborhood<typename Manager::Cell>::template neighbors<0>(cell);
 		// check size
 		assert(nb1.size() == nb2.size());
 		// check actual neighbors
