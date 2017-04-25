@@ -41,10 +41,10 @@ int main(int argc, char** argv)
 		assert_grid_elements(gmsh_3d,4461,1372,1117);
 
 		auto rect_2d = Citcat::Setup::create_grid(100);
-		assert_grid_elements(rect_2d,1E4,396,10201);
+		assert_grid_elements(rect_2d.first,1E4,396,10201);
 
 		auto rect_3d = Citcat::Setup::create_grid<3>(100);
-		assert_grid_elements(rect_3d,1000000,58808,1030301);
+		assert_grid_elements(rect_3d.first,1000000,58808,1030301);
 
 		return 0;
 	}

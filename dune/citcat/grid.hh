@@ -31,25 +31,41 @@ private:
 	//! cells on the grid in each dimension
 	std::array<unsigned int,dim> _grid_cells;
 
+
+private:
+
+	/// Return the extensions of a grid
+	static std::array<Coordinate,dim> determine_extensions (
+		const std::shared_ptr<Grid> grid,
+		const GV& gv)
+	{
+		std::array<Coordinate,dim> ret;
+		std::fill(ret.begin(),ret.end(),0.0);
+		for(const auto& v : vertices(gv)){
+			const auto pos = v.geometry().center();
+			for(int i = 0; i<dim; ++i){
+				ret.at(i) = std::max(pos[i],ret.at(i));
+			}
+		}
+		return ret;
+	}
+
 public:
 	using Cell = CellType;
 	//! container for CA cells
 	std::vector<std::shared_ptr<Cell>> _cells;
 
-	/// Constructor. Deduce grid extensions from grid vertices
-	GridManager (const std::shared_ptr<Grid> grid):
+	explicit GridManager (
+		const std::shared_ptr<Grid> grid,
+		const std::array<unsigned int,dim> grid_cells,
+		const std::vector<std::shared_ptr<Cell>> cells ) :
 		_grid(grid),
+		_grid_cells(grid_cells),
 		_gv(_grid->leafGridView()),
-		_mapper(_gv)
-	{
-		std::fill(_extensions.begin(),_extensions.end(),0.0);
-		for(const auto& v : vertices(_gv)){
-			const auto pos = v.geometry().center();
-			for(int i = 0; i<dim; ++i){
-				_extensions.at(i) = std::max(pos[i],_extensions.at(i));
-			}
-		}
-	}
+		_extensions(determine_extensions(_grid,_gv)),
+		_mapper(_gv),
+		_cells(cells)
+	{ }
 
 	const std::array<unsigned int,dim>& grid_cells () const { return _grid_cells; }
 	std::array<unsigned int,dim>& grid_cells () { return _grid_cells; }

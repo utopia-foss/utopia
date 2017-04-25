@@ -8,6 +8,16 @@ namespace Citcat
 namespace Setup
 {
 
+	template<bool structured, bool periodic, typename GridType, typename CellType>
+	Citcat::GridManager<GridType,structured,periodic,CellType> create_manager (
+		const std::shared_ptr<GridType> grid,
+		const std::array<unsigned int,GridType::dimension> grid_cells,
+		const std::vector<std::shared_ptr<CellType>> cells )
+	{
+		return Citcat::GridManager<GridType,structured,periodic,CellType>(
+			grid,grid_cells,cells);
+	}
+
 	/// Create an unstructured grid from a Gmsh file
 	/**
 	 *  \tparam dim Spatial dimension of grid and mesh
@@ -61,7 +71,10 @@ namespace Setup
 	 *  \warning Do not modify the grid after building other structures from it!
 	 */
 	template<int dim=2>
-	std::shared_ptr<DefaultGrid<dim>> create_grid (const std::array<int,dim> cells, std::array<float,dim> range = std::array<float,dim>())
+	std::pair<
+		std::shared_ptr<DefaultGrid<dim>>,
+		std::array<unsigned int,dim> >
+		create_grid (const std::array<unsigned int,dim> cells, std::array<float,dim> range = std::array<float,dim>())
 	{
 		using Grid = DefaultGrid<dim>;
 		using GridTypes = GridTypeAdaptor<Grid>;
@@ -82,7 +95,11 @@ namespace Setup
 		Position extensions;
 		std::copy(range.cbegin(),range.cend(),extensions.begin());
 
-		return std::make_shared<Grid>(extensions,cells);
+		// convert unsigned int to int for YaspGrid constructor
+		std::array<int,dim> cells_i;
+		std::copy(cells.cbegin(),cells.cend(),cells_i.begin());
+
+		return std::make_pair(std::make_shared<Grid>(extensions,cells_i),cells);
 	}
 
 	/// Build a rectangular grid
@@ -94,9 +111,9 @@ namespace Setup
 	 *  \warning Do not modify the grid after building other structures from it!
 	 */
 	template<int dim=2>
-	decltype(auto) create_grid(const int cells_xyz)
+	decltype(auto) create_grid(const unsigned int cells_xyz)
 	{
-		std::array<int,dim> cells;
+		std::array<unsigned int,dim> cells;
 		cells.fill(cells_xyz);
 		return create_grid<dim>(cells);
 	}
