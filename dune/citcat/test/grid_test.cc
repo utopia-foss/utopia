@@ -35,16 +35,16 @@ int main(int argc, char** argv)
 		Dune::MPIHelper::instance(argc,argv);
 
 		auto gmsh_2d = Citcat::Setup::read_gmsh("square.msh");
-		assert_grid_elements(gmsh_2d,1042,80,562);
+		assert_grid_elements(gmsh_2d._grid,1042,80,562);
 
 		auto gmsh_3d = Citcat::Setup::read_gmsh<3>("cube.msh");
-		assert_grid_elements(gmsh_3d,4461,1372,1117);
+		assert_grid_elements(gmsh_3d._grid,4461,1372,1117);
 
 		auto rect_2d = Citcat::Setup::create_grid(100);
-		assert_grid_elements(rect_2d.first,1E4,396,10201);
+		assert_grid_elements(rect_2d._grid,1E4,396,10201);
 
 		auto rect_3d = Citcat::Setup::create_grid<3>(100);
-		assert_grid_elements(rect_3d.first,1000000,58808,1030301);
+		assert_grid_elements(rect_3d._grid,1000000,58808,1030301);
 
 		return 0;
 	}

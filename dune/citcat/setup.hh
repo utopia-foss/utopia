@@ -3,6 +3,28 @@
 
 namespace Citcat
 {
+
+/// Return the extensions of a grid
+template<class Grid>
+auto determine_extensions (const std::shared_ptr<Grid> grid)
+	-> std::array<typename GridTypeAdaptor<Grid>::Coordinate,
+		GridTypeAdaptor<Grid>::dim>
+{
+	static constexpr int dim = GridTypeAdaptor<Grid>::dim;
+	using Coordinate = typename GridTypeAdaptor<Grid>::Coordinate;
+
+	auto gv = grid->leafGridView();
+	std::array<Coordinate,dim> ret;
+
+	std::fill(ret.begin(),ret.end(),0.0);
+	for(const auto& v : vertices(gv)){
+		const auto pos = v.geometry().center();
+		for(int i = 0; i<dim; ++i){
+			ret.at(i) = std::max(pos[i],ret.at(i));
+		}
+	}
+	return ret;
+}
 	
 /// Functions for building objects and setting up a simulation
 namespace Setup
@@ -10,12 +32,11 @@ namespace Setup
 
 	template<bool structured, bool periodic, typename GridType, typename CellType>
 	Citcat::GridManager<GridType,structured,periodic,CellType> create_manager (
-		const std::shared_ptr<GridType> grid,
-		const std::array<unsigned int,GridType::dimension> grid_cells,
+		const GridWrapper<GridType>& wrapper,
 		const std::vector<std::shared_ptr<CellType>> cells )
 	{
 		return Citcat::GridManager<GridType,structured,periodic,CellType>(
-			grid,grid_cells,cells);
+			wrapper,cells);
 	}
 
 	/// Create an unstructured grid from a Gmsh file
@@ -27,7 +48,7 @@ namespace Setup
 	 *  \warning Do not modify the grid after building other structures from it!
 	 */
 	template<int dim=2>
-	std::shared_ptr<Dune::UGGrid<dim>> read_gmsh (const std::string filename, const unsigned int refinement_level=0)
+	GridWrapper<Dune::UGGrid<dim>> read_gmsh (const std::string filename, const unsigned int refinement_level=0)
 	{
 		using Grid = Dune::UGGrid<dim>;
 		auto grid = std::make_shared<Grid>();
@@ -37,7 +58,9 @@ namespace Setup
 		factory.createGrid();
 
 		grid->globalRefine(refinement_level);
-		return grid;
+
+		GridWrapper<Grid> gw = {grid,determine_extensions(grid)};
+		return gw;
 	}
 
 	/// Create a simulation object from a grid and a set of cells
@@ -71,9 +94,7 @@ namespace Setup
 	 *  \warning Do not modify the grid after building other structures from it!
 	 */
 	template<int dim=2>
-	std::pair<
-		std::shared_ptr<DefaultGrid<dim>>,
-		std::array<unsigned int,dim> >
+	GridWrapper<DefaultGrid<dim>>
 		create_grid (const std::array<unsigned int,dim> cells, std::array<float,dim> range = std::array<float,dim>())
 	{
 		using Grid = DefaultGrid<dim>;
@@ -98,8 +119,10 @@ namespace Setup
 		// convert unsigned int to int for YaspGrid constructor
 		std::array<int,dim> cells_i;
 		std::copy(cells.cbegin(),cells.cend(),cells_i.begin());
+		auto grid = std::make_shared<Grid>(extensions,cells_i);
 
-		return std::make_pair(std::make_shared<Grid>(extensions,cells_i),cells);
+		GridWrapper<Grid> gw = {grid,determine_extensions(grid),cells};
+		return gw;
 	}
 
 	/// Build a rectangular grid
@@ -131,7 +154,7 @@ namespace Setup
 		unsigned int custom_neighborhood_count = 0,
 		typename GridType, typename S, typename T=std::function<Traits(void)>
 	>
-	decltype(auto) create_cells_on_grid(const std::shared_ptr<GridType> grid,
+	decltype(auto) create_cells_on_grid(const GridWrapper<GridType> grid_wrapper,
 		S f_state, T f_traits=[](){return 0;})
 	{
 
@@ -144,6 +167,7 @@ namespace Setup
 
 		using CellType = Cell<State,Traits,Position,Index,custom_neighborhood_count>;
 
+		auto grid = grid_wrapper._grid;
 		GV gv(*grid);
 		Mapper mapper(gv);
 		CellContainer<CellType> cells;

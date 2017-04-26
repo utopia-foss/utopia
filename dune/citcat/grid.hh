@@ -3,6 +3,23 @@
 
 namespace Citcat {
 
+/// Struct for returning relevant grid data from Setup functions
+template<typename GridType>
+struct GridWrapper
+{
+private:
+	using Coordinate = typename GridTypeAdaptor<GridType>::Coordinate;
+	static constexpr int dim = GridTypeAdaptor<GridType>::dim;
+public:
+	//! pointer to the grid
+	std::shared_ptr<GridType> _grid;
+	//! grid extensions in each dimension
+	std::array<Coordinate,dim> _extensions;
+	//! cells on the grid in each dimension
+	std::array<unsigned int,dim> _grid_cells;
+};
+
+
 template<typename GridType, bool structured, bool periodic,
 	typename CellType>
 class GridManager
@@ -31,38 +48,18 @@ private:
 	//! cells on the grid in each dimension
 	std::array<unsigned int,dim> _grid_cells;
 
-
-private:
-
-	/// Return the extensions of a grid
-	static std::array<Coordinate,dim> determine_extensions (
-		const std::shared_ptr<Grid> grid,
-		const GV& gv)
-	{
-		std::array<Coordinate,dim> ret;
-		std::fill(ret.begin(),ret.end(),0.0);
-		for(const auto& v : vertices(gv)){
-			const auto pos = v.geometry().center();
-			for(int i = 0; i<dim; ++i){
-				ret.at(i) = std::max(pos[i],ret.at(i));
-			}
-		}
-		return ret;
-	}
-
 public:
 	using Cell = CellType;
 	//! container for CA cells
 	std::vector<std::shared_ptr<Cell>> _cells;
 
 	explicit GridManager (
-		const std::shared_ptr<Grid> grid,
-		const std::array<unsigned int,dim> grid_cells,
+		const GridWrapper<GridType>& wrapper,
 		const std::vector<std::shared_ptr<Cell>> cells ) :
-		_grid(grid),
-		_grid_cells(grid_cells),
+		_grid(wrapper._grid),
+		_grid_cells(wrapper._grid_cells),
+		_extensions(wrapper._extensions),
 		_gv(_grid->leafGridView()),
-		_extensions(determine_extensions(_grid,_gv)),
 		_mapper(_gv),
 		_cells(cells)
 	{ }

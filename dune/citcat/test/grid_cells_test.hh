@@ -78,21 +78,21 @@ template<int dim>
 void cells_on_grid_test (const unsigned int cells_per_dim)
 {
 	auto grid = Citcat::Setup::create_grid<dim>(cells_per_dim);
-	auto cells = Citcat::Setup::create_cells_on_grid(grid.first,[](){return 0;});
+	auto cells = Citcat::Setup::create_cells_on_grid(grid,[](){return 0;});
 
 	// structured, non-periodic
-	auto m1 = Citcat::Setup::create_manager<true,false>(grid.first,grid.second,cells);
+	auto m1 = Citcat::Setup::create_manager<true,false>(grid,cells);
 	// unstructured, non-periodic
-	auto m2 = Citcat::Setup::create_manager<false,false>(grid.first,grid.second,cells);
+	auto m2 = Citcat::Setup::create_manager<false,false>(grid,cells);
 	// structured, periodic
-	auto m3 = Citcat::Setup::create_manager<true,true>(grid.first,grid.second,cells);
+	auto m3 = Citcat::Setup::create_manager<true,true>(grid,cells);
 
 	cells.clear(); // ensure that original container is empty
 
 	// assert correct initialization on grid
-	assert_cells_on_grid(grid.first,m1._cells);
-	assert_cells_on_grid(grid.first,m2._cells);
-	assert_cells_on_grid(grid.first,m3._cells);
+	assert_cells_on_grid(m1.grid(),m1._cells);
+	assert_cells_on_grid(m2.grid(),m2._cells);
+	assert_cells_on_grid(m3.grid(),m3._cells);
 
 	// compare neighborhood implementations (structured,unstructured)
 	compare_neighborhoods(m1,m2);
