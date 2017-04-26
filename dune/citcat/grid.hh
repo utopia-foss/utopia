@@ -26,6 +26,7 @@ class GridManager
 {
 public:
 	using Traits = GridTypeAdaptor<GridType>;
+	using Cell = CellType;
 
 private:
 	using Grid = GridType;
@@ -40,18 +41,18 @@ private:
 	const GV _gv;
 	const Mapper _mapper;
 
-	static constexpr bool _is_structured = structured;
-	static constexpr bool _is_periodic = periodic;
-
 	//! grid extensions in each dimension
 	std::array<Coordinate,dim> _extensions;
 	//! cells on the grid in each dimension
 	std::array<unsigned int,dim> _grid_cells;
 
-public:
-	using Cell = CellType;
+	static constexpr bool _is_structured = structured;
+	static constexpr bool _is_periodic = periodic;
+
 	//! container for CA cells
 	std::vector<std::shared_ptr<Cell>> _cells;
+
+public:
 
 	explicit GridManager (
 		const GridWrapper<GridType>& wrapper,
@@ -64,15 +65,19 @@ public:
 		_cells(cells)
 	{ }
 
-	const std::array<unsigned int,dim>& grid_cells () const { return _grid_cells; }
-	std::array<unsigned int,dim>& grid_cells () { return _grid_cells; }
-	const std::array<Coordinate,dim>& extensions () const { return _extensions; }
+	// queries on static information
 	static constexpr bool is_structured () { return _is_structured; }
 	static constexpr bool is_periodic () { return _is_periodic; }
 
-	const GV& grid_view () const { return _gv; }
+	// queries on members
 	std::shared_ptr<Grid> grid () const { return _grid; }
+	const GV& grid_view () const { return _gv; }
 	const Mapper& mapper () const { return _mapper; }
+
+	const std::array<unsigned int,dim>& grid_cells () const { return _grid_cells; }
+	const std::array<Coordinate,dim>& extensions () const { return _extensions; }
+
+	const std::vector<std::shared_ptr<Cell>>& cells () const { return _cells; }
 /*
 	/// Check if coordinates are outside grid
 	template<bool active = _is_periodic>

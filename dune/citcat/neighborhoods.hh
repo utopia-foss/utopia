@@ -14,7 +14,7 @@ auto cells_from_ids (const IndexContainer& cont, const Manager& mngr)
 	using Cell = typename Manager::Cell;
 	std::vector<std::shared_ptr<Cell>> ret;
 	ret.reserve(cont.size());
-	const auto& cells = mngr._cells;
+	const auto& cells = mngr.cells();
 	for(auto id : cont){
 		ret.emplace_back(std::shared_ptr<Cell>(cells.at(id)));
 	}

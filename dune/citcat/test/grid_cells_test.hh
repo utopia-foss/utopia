@@ -41,7 +41,7 @@ void check_grid_neighbors_count (const Manager& manager)
 	const int nb_count = (Manager::Traits::dim == 2 ? 4 : 6);
 
 	bool exception = false;
-	for(const auto cell : manager._cells){
+	for(const auto cell : manager.cells()){
 		const auto neighbors = Citcat::Neighborhoods::NextNeighbor::neighbors(manager,cell);
 		if(neighbors.size() != nb_count){
 			std::cerr << "Cell No. " << cell->index()
@@ -59,9 +59,9 @@ void check_grid_neighbors_count (const Manager& manager)
 template<typename M1, typename M2>
 void compare_neighborhoods (const M1& m1, const M2& m2)
 {
-	for(std::size_t i=0; i<m1._cells.size(); ++i){
-		const auto nb1 = Citcat::Neighborhoods::NextNeighbor::neighbors(m1,m1._cells[i]);
-		const auto nb2 = Citcat::Neighborhoods::NextNeighbor::neighbors(m2,m2._cells[i]);
+	for(std::size_t i=0; i<m1.cells().size(); ++i){
+		const auto nb1 = Citcat::Neighborhoods::NextNeighbor::neighbors(m1,m1.cells()[i]);
+		const auto nb2 = Citcat::Neighborhoods::NextNeighbor::neighbors(m2,m2.cells()[i]);
 		// check size
 		assert(nb1.size() == nb2.size());
 		// check actual neighbors
@@ -90,9 +90,9 @@ void cells_on_grid_test (const unsigned int cells_per_dim)
 	cells.clear(); // ensure that original container is empty
 
 	// assert correct initialization on grid
-	assert_cells_on_grid(m1.grid(),m1._cells);
-	assert_cells_on_grid(m2.grid(),m2._cells);
-	assert_cells_on_grid(m3.grid(),m3._cells);
+	assert_cells_on_grid(m1.grid(),m1.cells());
+	assert_cells_on_grid(m2.grid(),m2.cells());
+	assert_cells_on_grid(m3.grid(),m3.cells());
 
 	// compare neighborhood implementations (structured,unstructured)
 	compare_neighborhoods(m1,m2);
