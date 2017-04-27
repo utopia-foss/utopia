@@ -114,66 +114,6 @@ public:
 	/// Return reference to the position of this agent
 	Position& position () { return _position; }
 
-	/// Find the parent cell of this agent according to the current position
-	/** The cell is stored as parent of this agent.
-	 *  \param grid Grid on which the cells live
-	 *  \param cells Container of cells to search for parent
-	 *  \return Shared pointer to the parent cell
-	 *  \throw Dune::Exception Position does not match any grid entity or cell
-	 */
-	 /*
-	template<typename GridType, typename CellContainer>
-	std::shared_ptr<Cell> find_parent (const std::shared_ptr<GridType> grid,
-		const CellContainer& cells)
-	{
-		static_assert(std::is_same<typename CellContainer::value_type,std::shared_ptr<Cell>>::value,
-			"Agent was initialized with other type of Cells");
-
-		using GridTypes = GridTypeAdaptor<GridType>;
-		using Coordinate = typename GridTypes::Coordinate;
-		constexpr auto dim = GridTypes::dim;
-		using GV = typename GridTypes::GridView;
-		using Mapper = typename GridTypes::Mapper;
-
-		GV gv(*grid);
-		Mapper mapper(gv);
-
-		// iterate over grid elements and check if position is inside
-		for (const auto& e : elements(gv))
-		{
-			const auto geo = e.geometry();
-			const auto& ref = Dune::ReferenceElements<Coordinate,dim>::general(geo.type());
-			const auto pos_local = geo.local(_position);
-
-			if (ref.checkInside(pos_local))
-			{
-				const auto id = mapper.index(e);
-				auto it = std::find_if(cells.begin(),cells.end(),
-					[&id](auto c){ return c->index() == id; });
-				if (it != cells.end()) {
-					_parent = *it;
-					return *it;
-				}
-			}
-		}
-
-		DUNE_THROW(Dune::Exception,"Cell not found for position ("
-			+ std::to_string(_position[0]) + ","
-			+ std::to_string(_position[1]) + ")");
-	}
-
-	/// Set a new position for this agent
-	void move_to (const Position& new_position)
-	{
-		_position = new_position;
-	}
-
-	/// Move along a path vector
-	void move_along (const Position& path)
-	{
-		_position = _position + path;
-	}
-	*/
 };
 
 
