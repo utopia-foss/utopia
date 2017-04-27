@@ -3,6 +3,66 @@
 
 namespace Citcat {
 
+// --- helper functions for decreasing runtime overhead --- //
+
+/// Return the index of the grid entity for a certain position
+/** \param pos Query position
+ *  \param ext Extensions of the grid
+ *  \param grid_cells Number of grid cells in each direction
+ */
+template<std::size_t i, typename Position, typename Extensions, typename GridCells>
+std::enable_if_t<i==0,std::size_t> grid_index (const Position& pos, const Extensions& ext, const GridCells& grid_cells)
+{
+	std::size_t id_inc = pos[i] / ( ext[i] / grid_cells[i] );
+	return id_inc;
+}
+
+/// Return the index of the grid entity for a certain position
+/** \param pos Query position
+ *  \param ext Extensions of the grid
+ *  \param grid_cells Number of grid cells in each direction
+ */
+template<std::size_t i, typename Position, typename Extensions, typename GridCells>
+std::enable_if_t<i!=0,std::size_t> grid_index (const Position& pos, const Extensions& ext, const GridCells& grid_cells)
+{
+	std::size_t id_inc = pos[i] / ( ext[i] / grid_cells[i] );
+	return id_inc * shift<i>(grid_cells) + grid_index<i-1>(pos,ext,grid_cells);
+}
+
+/// Return the limits of a grid cell in one direction for a certain index
+/** \param index Query index
+ *  \param extensions Extensions of the grid
+ *  \param grid_cells Number of grid cells in each direction
+ */
+template<std::size_t i, typename Extensions, typename GridCells>
+std::enable_if_t<i==0,std::pair<double,double>> cell_limits_per_index (const std::size_t index, const Extensions& extensions, const GridCells& grid_cells)
+{
+	std::size_t offset = index % shift<1>(grid_cells);
+	const double ext_per_cell = extensions[i] / grid_cells[i];
+	return std::make_pair( offset * ext_per_cell , (offset + 1) * ext_per_cell );
+}
+
+/// Return the limits of a grid cell in one direction for a certain index
+/** \param index Query index
+ *  \param extensions Extensions of the grid
+ *  \param grid_cells Number of grid cells in each direction
+ */
+template<std::size_t i, typename Extensions, typename GridCells>
+std::enable_if_t<i!=0,std::pair<double,double>> cell_limits_per_index (const std::size_t index, const Extensions& extensions, const GridCells& grid_cells)
+{
+	std::size_t offset = index / shift<i>(grid_cells);
+	const double ext_per_cell = extensions[i] / grid_cells[i];
+	return std::make_pair( offset * ext_per_cell , (offset + 1) * ext_per_cell );
+}
+
+// ---  --- //
+
+
+/// Remove an agent from a managed container
+/** \param agent Agent to be removed
+ *  \param manager Manager of agents
+ *  \throw Exception Agent is not managed by this manager
+ */
 template<class Agent, class Manager>
 void remove (const std::shared_ptr<Agent> agent, Manager& manager)
 {
@@ -14,6 +74,12 @@ void remove (const std::shared_ptr<Agent> agent, Manager& manager)
 	agents.erase(it);
 }
 
+/// Add an agent to a managed container, if it is not yet managed
+/** The agent will be inserted at the end of the container
+ *  \param agent Agent to be added
+ *  \param manager Manager of agents
+ *  \return true if the agent was inserted
+ */
 template<class Agent, class Manager>
 bool add (const std::shared_ptr<Agent> agent, Manager& manager)
 {
@@ -25,23 +91,11 @@ bool add (const std::shared_ptr<Agent> agent, Manager& manager)
 	return false;
 }
 
-template<std::size_t i, typename Extensions, typename GridCells>
-std::enable_if_t<i==0,std::pair<double,double>> cell_limits_per_index (const std::size_t index, const Extensions& extensions, const GridCells& grid_cells)
-{
-	std::size_t offset = index % shift<1>(grid_cells);
-	const double ext_per_cell = extensions[i] / grid_cells[i];
-	return std::make_pair( offset * ext_per_cell , (offset + 1) * ext_per_cell );
-}
-
-template<std::size_t i, typename Extensions, typename GridCells>
-std::enable_if_t<i!=0,std::pair<double,double>> cell_limits_per_index (const std::size_t index, const Extensions& extensions, const GridCells& grid_cells)
-{
-	std::size_t offset = index / shift<i>(grid_cells);
-	const double ext_per_cell = extensions[i] / grid_cells[i];
-	return std::make_pair( offset * ext_per_cell , (offset + 1) * ext_per_cell );
-}
-
-/// Return all agents on a cell of a structured grid
+/// Return all agents on a cell on a structured grid
+/** Check match by calculating cell boundaries
+ *  \param cell Cell on which agents should be found
+ *  \param manager Manager of agents and associated grid
+ */
 template<class Cell, class Manager,
 	bool enabled = Manager::is_structured()>
 auto find_agents_on_cell (const std::shared_ptr<Cell> cell, const Manager& manager)
@@ -83,7 +137,11 @@ auto find_agents_on_cell (const std::shared_ptr<Cell> cell, const Manager& manag
 	return ret;
 }
 
-/// Return all agents on a cell of any grid
+/// Return all agents on a cell on an unstructured grid
+/** Transform coordinates for every agent and check match
+ *  \param cell Cell on which agents should be found
+ *  \param manager Manager of agents and associated grid
+ */
 template<class Cell, class Manager,
 	bool enabled = Manager::is_structured()>
 auto find_agents_on_cell (const std::shared_ptr<Cell> cell, const Manager& manager)
@@ -111,7 +169,12 @@ auto find_agents_on_cell (const std::shared_ptr<Cell> cell, const Manager& manag
 	return ret;
 }
 
-/// Find parent cell for any grid by performing a grid search
+/// Find parent cell in unstructured grid
+/** Transform coordinates for every grid entity and check match
+ *  \param agent Agent for which the CA cell should be found
+ *  \param manager Manager of cells and associated grid
+ *  \throw Exception if agent is outside the grid
+ */
 template<class Agent, class Manager, bool enabled = Manager::is_structured()>
 auto find_cell (const std::shared_ptr<Agent> agent, const Manager& manager)
 	-> std::enable_if_t<!enabled,std::shared_ptr<typename Manager::Cell>>
@@ -142,21 +205,12 @@ auto find_cell (const std::shared_ptr<Agent> agent, const Manager& manager)
 	return manager.cells()[id];
 }
 
-template<std::size_t i, typename Position, typename Extensions, typename GridCells>
-std::enable_if_t<i==0,std::size_t> grid_index (const Position& pos, const Extensions& ext, const GridCells& grid_cells)
-{
-	std::size_t id_inc = pos[i] / ( ext[i] / grid_cells[i] );
-	return id_inc;
-}
-
-template<std::size_t i, typename Position, typename Extensions, typename GridCells>
-std::enable_if_t<i!=0,std::size_t> grid_index (const Position& pos, const Extensions& ext, const GridCells& grid_cells)
-{
-	std::size_t id_inc = pos[i] / ( ext[i] / grid_cells[i] );
-	return id_inc * shift<i>(grid_cells) + grid_index<i-1>(pos,ext,grid_cells);
-}
-
-/// Find parent cell in structured grid using spacing information
+/// Find parent cell in structured grid
+/** Calculate index of cell using grid information
+ *  \param agent Agent for which the CA cell should be found
+ *  \param manager Manager of cells and associated grid
+ *  \throw Exception if agent is outside the grid
+ */
 template<class Agent, class Manager, bool enabled = Manager::is_structured()>
 auto find_cell (const std::shared_ptr<Agent> agent, const Manager& manager)
 	-> std::enable_if_t<enabled,std::shared_ptr<typename Manager::Cell>>
@@ -174,10 +228,20 @@ auto find_cell (const std::shared_ptr<Agent> agent, const Manager& manager)
 		index = grid_index<1>(position,extensions,grid_cells);
 	}
 
+	if(index >= manager.mapper().size()){
+		DUNE_THROW(Dune::Exception,"Agent is not inside the grid!");
+	}
+
 	return manager.cells()[index];
 }
 
-/// Move agent to a new location
+/// Move agent to a new location on a periodic grid
+/** This function automatically handles coordinate transformation
+ *  if the position is outside the actual grid.
+ *  \param pos New position (may be outside the grid)
+ *  \param agent Agent to move
+ *  \param manager Manager of Agent and associated grid
+ */
 template<typename Position, class Agent, class Manager,
 	bool enabled = Manager::is_periodic()>
 std::enable_if_t<enabled,void> move_to (const Position& pos, const std::shared_ptr<Agent> agent, const Manager& manager)
@@ -192,7 +256,12 @@ std::enable_if_t<enabled,void> move_to (const Position& pos, const std::shared_p
 	agent->position() = pos_transf;
 }
 
-/// Move agent to a new location
+/// Move agent to a new location on a non-periodic grid
+/** \param pos New position
+ *  \param agent Agent to move
+ *  \param manager Manager of Agent and associated grid
+ *  \throw Exception if position is outside the grid
+ */
 template<typename Position, class Agent, class Manager,
 	bool enabled = Manager::is_periodic()>
 std::enable_if_t<!enabled,void> move_to (const Position& pos, const std::shared_ptr<Agent> agent, const Manager& manager)
