@@ -37,17 +37,19 @@ private:
 	using Position = typename Traits::Position;
 	static constexpr int dim = Traits::dim;
 
-	std::shared_ptr<Grid> _grid;
-	const GV _gv;
-	const Mapper _mapper;
-
-	//! grid extensions in each dimension
-	std::array<Coordinate,dim> _extensions;
-	//! cells on the grid in each dimension
-	std::array<unsigned int,dim> _grid_cells;
-
 	static constexpr bool _is_structured = structured;
 	static constexpr bool _is_periodic = periodic;
+
+	//! pointer to the Dune grid
+	std::shared_ptr<Grid> _grid;
+	//! cells on the grid in each dimension
+	std::array<unsigned int,dim> _grid_cells;
+	//! grid extensions in each dimension
+	std::array<Coordinate,dim> _extensions;
+	//! Dune GridView object for access to grid entities
+	const GV _gv;
+	//! Dune Mapper for grid entities
+	const Mapper _mapper;
 
 	//! container for CA cells
 	std::vector<std::shared_ptr<Cell>> _cells;

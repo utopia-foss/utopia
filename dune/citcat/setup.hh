@@ -160,7 +160,6 @@ namespace Setup
 
 		using GridTypes = GridTypeAdaptor<GridType>;
 		using Position = typename GridTypes::Position;
-		static constexpr int dim = GridTypes::dim;
 		using GV = typename GridTypes::GridView;
 		using Mapper = typename GridTypes::Mapper;
 		using Index = typename GridTypes::Index;
