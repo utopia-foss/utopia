@@ -3,6 +3,70 @@
 
 namespace Citcat {
 
+/// Return all agents on a cell of a structured grid
+template<class Cell, class Manager,
+	bool enabled = Manager::is_structured()>
+auto find_agents_on_cell (const std::shared_ptr<Cell> cell, const Manager& manager)
+	-> std::enable_if_t<enabled,
+		std::vector<std::shared_ptr<typename Manager::Agent>> >
+{
+	std::vector<std::shared_ptr<typename Manager::Agent>> ret;
+	const auto id = cell->index();
+	const auto& extensions = manager.extensions();
+	const auto& grid_cells = manager.grid_cells();
+
+	// deduce cell boundaries
+	constexpr int dim = Manager::Traits::dim;
+	std::array<std::pair<double,double>,dim> limits;
+	std::transform(extensions.begin(),extensions.end(),grid_cells.begin(),limits.begin(),
+		[id](const auto extension, const auto count){
+			const std::size_t offset = id % count;
+			const double ext_per_cell = extension / count;
+			return std::make_pair( offset * ext_per_cell , (offset + 1) * ext_per_cell );
+		}
+	);
+
+	// find agents inside cell boundaries
+	for(auto agent : manager.agents()){
+		const auto& pos = agent->position();
+		if(std::equal(pos.begin(),pos.end(),limits.begin(),
+			[](const auto val, const auto& lim){
+				return lim.first <= val && val < lim.second;
+			}))
+		{
+			ret.push_back(agent);
+		}
+	}
+}
+
+/// Return all agents on a cell of any grid
+template<class Cell, class Manager,
+	bool enabled = Manager::is_structured()>
+auto find_agents_on_cell (const std::shared_ptr<Cell> cell, const Manager& manager)
+	-> std::enable_if_t<!enabled,
+		std::vector<std::shared_ptr<typename Manager::Agent>> >
+{
+	using Coordinate = typename Manager::Traits::Coordinate;
+	constexpr int dim = Manager::Traits::dim;
+	std::vector<std::shared_ptr<typename Manager::Agent>> ret;
+
+	// get reference element for cell
+	auto it = elements(manager.grid_view()).begin();
+	std::advance(it,cell->index());
+	const auto& geo = it->geometry();
+	const auto& ref = Dune::ReferenceElements<Coordinate,dim>::general(geo.type());
+
+	// check location by transforming coordinates
+	for(auto agent : manager.agents()){
+		const auto pos_local = geo.local(agent->position());
+		if(ref.checkInside(pos_local)){
+			ret.push_back(agent);
+		}
+	}
+
+	return ret;
+}
+
 /// Find parent cell for any grid by performing a grid search
 template<class Agent, class Manager, bool enabled = Manager::is_structured()>
 auto find_cell (const std::shared_ptr<Agent> agent, const Manager& manager)
