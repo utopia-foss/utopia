@@ -31,11 +31,11 @@ namespace Setup
 {
 
 	template<bool structured, bool periodic, typename GridType, typename CellType>
-	Citcat::GridManager<GridType,structured,periodic,CellType> create_manager (
+	Citcat::GridManager<GridType,structured,periodic,CellType,int> create_manager (
 		const GridWrapper<GridType>& wrapper,
 		const std::vector<std::shared_ptr<CellType>> cells )
 	{
-		return Citcat::GridManager<GridType,structured,periodic,CellType>(
+		return Citcat::GridManager<GridType,structured,periodic,CellType,int>(
 			wrapper,cells);
 	}
 

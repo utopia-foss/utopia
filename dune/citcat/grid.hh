@@ -21,12 +21,13 @@ public:
 
 
 template<typename GridType, bool structured, bool periodic,
-	typename CellType>
+	typename CellType, typename AgentType>
 class GridManager
 {
 public:
 	using Traits = GridTypeAdaptor<GridType>;
 	using Cell = CellType;
+	using Agent = AgentType;
 
 private:
 	using Grid = GridType;
@@ -54,8 +55,12 @@ private:
 	//! container for CA cells
 	std::vector<std::shared_ptr<Cell>> _cells;
 
+	//! container for agents
+	std::vector<std::shared_ptr<Cell>> _agents;
+
 public:
 
+	/// Constructor for grid an CA cells
 	explicit GridManager (
 		const GridWrapper<GridType>& wrapper,
 		const std::vector<std::shared_ptr<Cell>> cells ) :
@@ -65,6 +70,20 @@ public:
 		_gv(_grid->leafGridView()),
 		_mapper(_gv),
 		_cells(cells)
+	{ }
+
+	/// Constructor for grid, CA cells, and Agents
+	explicit GridManager (
+		const GridWrapper<GridType>& wrapper,
+		const std::vector<std::shared_ptr<Cell>>& cells,
+		const std::vector<std::shared_ptr<Agent>>& agents ) :
+		_grid(wrapper._grid),
+		_grid_cells(wrapper._grid_cells),
+		_extensions(wrapper._extensions),
+		_gv(_grid->leafGridView()),
+		_mapper(_gv),
+		_cells(cells),
+		_agents(agents)
 	{ }
 
 	// queries on static information
@@ -80,6 +99,7 @@ public:
 	const std::array<Coordinate,dim>& extensions () const { return _extensions; }
 
 	const std::vector<std::shared_ptr<Cell>>& cells () const { return _cells; }
+	const std::vector<std::shared_ptr<Agent>>& agents () const { return _agents; }
 /*
 	/// Check if coordinates are outside grid
 	template<bool active = _is_periodic>
