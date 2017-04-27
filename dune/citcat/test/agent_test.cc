@@ -11,12 +11,12 @@ void compare_cell_of_agent (const std::shared_ptr<Agent> agent,
 	auto cell2 = Citcat::find_cell(agent,m2);
 	auto cell3 = Citcat::find_cell(agent,m3);
 	if(cell1 != cell2){
-				auto pos_a = agent->position();
-				auto pos_c1 = cell1->position();
-				auto pos_c2 = cell2->position();
-				DUNE_THROW(Dune::Exception,"Agent (" + std::to_string(pos_a[0]) + "," + std::to_string(pos_a[1]) + "): Cell 1 (" + std::to_string(pos_c1[0]) + "," + std::to_string(pos_c1[1]) + ")" +
-					" Cell 2 (" + std::to_string(pos_c2[0]) + "," + std::to_string(pos_c2[1]) + ")");
-			}
+		auto pos_a = agent->position();
+		auto pos_c1 = cell1->position();
+		auto pos_c2 = cell2->position();
+		DUNE_THROW(Dune::Exception,"Agent (" + std::to_string(pos_a[0]) + "," + std::to_string(pos_a[1]) + "): Cell 1 (" + std::to_string(pos_c1[0]) + "," + std::to_string(pos_c1[1]) + ")" +
+			" Cell 2 (" + std::to_string(pos_c2[0]) + "," + std::to_string(pos_c2[1]) + ")");
+	}
 	assert(cell1 == cell2 && cell1 == cell3);
 }
 
@@ -52,24 +52,8 @@ int main(int argc, char** argv)
 		// check if cells are found correctly
 		for(auto agent : agents)
 			compare_cell_of_agent(agent,m1,m2,m3);
-		/*
-		for(auto agent : agents){
-			auto cell1 = Citcat::find_cell(agent,m1);
-			auto cell2 = Citcat::find_cell(agent,m2);
-			auto cell3 = Citcat::find_cell(agent,m3);
-			assert(cell1 == cell2 && cell1 == cell3);
-			if(cell1 != cell2){
-				auto pos_a = agent->position();
-				auto pos_c1 = cell1->position();
-				auto pos_c2 = cell2->position();
-				DUNE_THROW(Dune::Exception,"Agent (" + std::to_string(pos_a[0]) + "," + std::to_string(pos_a[1]) + "): Cell 1 (" + std::to_string(pos_c1[0]) + "," + std::to_string(pos_c1[1]) + ")" +
-					" Cell 2 (" + std::to_string(pos_c2[0]) + "," + std::to_string(pos_c2[1]) + ")");
-			}
-		}
-		*/
 
 		// check agent movement
-		std::cout << "Check if agents can move inside grid" << std::endl;
 		for(auto agent: agents){
 			Pos pos({dist(gen),dist(gen)});
 			Citcat::move_to(pos,agent,m1);
@@ -79,7 +63,6 @@ int main(int argc, char** argv)
 		}
 
 		// check out-of-bounds handling
-		std::cout << "Check if agents can move outside grid" << std::endl;
 		for(auto agent: agents){
 			std::uniform_real_distribution<double> dist2(-120.0,120.0);
 			Pos pos({dist2(gen),dist2(gen)});
