@@ -31,12 +31,21 @@ namespace Setup
 {
 
 	template<bool structured, bool periodic, typename GridType, typename CellType>
-	Citcat::GridManager<GridType,structured,periodic,CellType,int> create_manager (
+	GridManager<GridType,structured,periodic,CellType,int> create_manager (
 		const GridWrapper<GridType>& wrapper,
-		const std::vector<std::shared_ptr<CellType>> cells )
+		const CellContainer<CellType>& cells )
 	{
-		return Citcat::GridManager<GridType,structured,periodic,CellType,int>(
+		return GridManager<GridType,structured,periodic,CellType,int>(
 			wrapper,cells);
+	}
+
+	template<bool structured, bool periodic, typename GridType, typename CellType,typename AgentType>
+	GridManager<GridType,structured,periodic,CellType,AgentType> create_manager (
+		const GridWrapper<GridType>& wrapper,
+		const CellContainer<CellType>& cells,
+		const AgentContainer<AgentType>& agents)
+	{
+		return GridManager<GridType,structured,periodic,CellType,AgentType>(wrapper,cells,agents);
 	}
 
 	/// Create an unstructured grid from a Gmsh file

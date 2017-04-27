@@ -53,17 +53,17 @@ private:
 	const Mapper _mapper;
 
 	//! container for CA cells
-	std::vector<std::shared_ptr<Cell>> _cells;
+	CellContainer<Cell> _cells;
 
 	//! container for agents
-	std::vector<std::shared_ptr<Cell>> _agents;
+	AgentContainer<Agent> _agents;
 
 public:
 
 	/// Constructor for grid an CA cells
 	explicit GridManager (
 		const GridWrapper<GridType>& wrapper,
-		const std::vector<std::shared_ptr<Cell>> cells ) :
+		const CellContainer<Cell>& cells ) :
 		_grid(wrapper._grid),
 		_grid_cells(wrapper._grid_cells),
 		_extensions(wrapper._extensions),
@@ -75,8 +75,8 @@ public:
 	/// Constructor for grid, CA cells, and Agents
 	explicit GridManager (
 		const GridWrapper<GridType>& wrapper,
-		const std::vector<std::shared_ptr<Cell>>& cells,
-		const std::vector<std::shared_ptr<Agent>>& agents ) :
+		const CellContainer<Cell>& cells,
+		const AgentContainer<Agent>& agents ) :
 		_grid(wrapper._grid),
 		_grid_cells(wrapper._grid_cells),
 		_extensions(wrapper._extensions),
@@ -98,8 +98,8 @@ public:
 	const std::array<unsigned int,dim>& grid_cells () const { return _grid_cells; }
 	const std::array<Coordinate,dim>& extensions () const { return _extensions; }
 
-	const std::vector<std::shared_ptr<Cell>>& cells () const { return _cells; }
-	const std::vector<std::shared_ptr<Agent>>& agents () const { return _agents; }
+	const CellContainer<Cell>& cells () const { return _cells; }
+	const AgentContainer<Agent>& agents () const { return _agents; }
 /*
 	/// Check if coordinates are outside grid
 	template<bool active = _is_periodic>
