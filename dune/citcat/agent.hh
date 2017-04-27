@@ -35,11 +35,15 @@ auto find_agents_on_cell (const std::shared_ptr<Cell> cell, const Manager& manag
 	constexpr int dim = Manager::Traits::dim;
 	std::array<std::pair<double,double>,dim> limits;
 
-	if(dim == 3)
-	{
+	if(dim == 3){
 		limits[2] = cell_limits_per_index<2>(id,extensions,grid_cells);
+		// 'normalize'
+		const auto id_nrm = id % shift<2>(grid_cells);
+		limits[1] = cell_limits_per_index<1>(id_nrm,extensions,grid_cells);
 	}
-	limits[1] = cell_limits_per_index<1>(id,extensions,grid_cells);
+	else{
+		limits[1] = cell_limits_per_index<1>(id,extensions,grid_cells);
+	}
 	limits[0] = cell_limits_per_index<0>(id,extensions,grid_cells);
 
 	// find agents inside cell boundaries
