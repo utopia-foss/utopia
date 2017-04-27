@@ -23,7 +23,7 @@ template<
 	typename TraitsType,
 	typename PositionType,
 	typename IndexType,
-	unsigned int custom_neighborhood_count = 0>
+	std::size_t custom_neighborhood_count = 0>
 class Cell : public Entity<StateType,TraitsType>
 {
 public:

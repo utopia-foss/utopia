@@ -151,7 +151,7 @@ namespace Setup
 	template<
 		typename State = int,
 		typename Traits = int,
-		unsigned int custom_neighborhood_count = 0,
+		std::size_t custom_neighborhood_count = 0,
 		typename GridType, typename S, typename T=std::function<Traits(void)>
 	>
 	decltype(auto) create_cells_on_grid(const GridWrapper<GridType> grid_wrapper,

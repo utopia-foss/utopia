@@ -175,7 +175,7 @@ public:
 };
 
 
-template<unsigned int i=0>
+template<std::size_t i=0>
 class Custom
 {
 private:

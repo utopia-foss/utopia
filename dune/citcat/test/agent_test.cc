@@ -5,7 +5,7 @@
 int main(int argc, char** argv)
 {
 	try{
-		constexpr size_t agent_count = 100;
+		constexpr size_t agent_count = 1000;
 		auto& helper = Dune::MPIHelper::instance(argc,argv);
 
 		auto grid = Citcat::Setup::create_grid(50);
