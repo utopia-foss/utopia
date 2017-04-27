@@ -2,6 +2,24 @@
 #include <cassert>
 #include <dune/citcat/citcat.hh>
 
+
+template<class M1, class M2, class M3, class Agent>
+void compare_cell_of_agent (const std::shared_ptr<Agent> agent,
+	const M1& m1, const M2& m2, const M3& m3)
+{
+	auto cell1 = Citcat::find_cell(agent,m1);
+	auto cell2 = Citcat::find_cell(agent,m2);
+	auto cell3 = Citcat::find_cell(agent,m3);
+	if(cell1 != cell2){
+				auto pos_a = agent->position();
+				auto pos_c1 = cell1->position();
+				auto pos_c2 = cell2->position();
+				DUNE_THROW(Dune::Exception,"Agent (" + std::to_string(pos_a[0]) + "," + std::to_string(pos_a[1]) + "): Cell 1 (" + std::to_string(pos_c1[0]) + "," + std::to_string(pos_c1[1]) + ")" +
+					" Cell 2 (" + std::to_string(pos_c2[0]) + "," + std::to_string(pos_c2[1]) + ")");
+			}
+	assert(cell1 == cell2 && cell1 == cell3);
+}
+
 int main(int argc, char** argv)
 {
 	try{
@@ -14,6 +32,8 @@ int main(int argc, char** argv)
 		auto m1 = Citcat::Setup::create_manager<false,false>(grid,cells);
 		// structured, non-periodic
 		auto m2 = Citcat::Setup::create_manager<true,false>(grid,cells);
+		// structured, periodic
+		auto m3 = Citcat::Setup::create_manager<true,true>(grid,cells);
 
 		cells.clear();
 
@@ -29,9 +49,15 @@ int main(int argc, char** argv)
 			agents.push_back(std::make_shared<Citcat::Agent<int,int,Pos>>(0,0,pos));
 		}
 
+		// check if cells are found correctly
+		for(auto agent : agents)
+			compare_cell_of_agent(agent,m1,m2,m3);
+		/*
 		for(auto agent : agents){
 			auto cell1 = Citcat::find_cell(agent,m1);
 			auto cell2 = Citcat::find_cell(agent,m2);
+			auto cell3 = Citcat::find_cell(agent,m3);
+			assert(cell1 == cell2 && cell1 == cell3);
 			if(cell1 != cell2){
 				auto pos_a = agent->position();
 				auto pos_c1 = cell1->position();
@@ -40,38 +66,37 @@ int main(int argc, char** argv)
 					" Cell 2 (" + std::to_string(pos_c2[0]) + "," + std::to_string(pos_c2[1]) + ")");
 			}
 		}
+		*/
 
-/*
-		// set 'wrong' parent
-		Citcat::Agent<int,int,decltype(cells)::value_type::element_type> 
-			agent(0,0,{0.1,0.1},cell_a);
+		// check agent movement
+		std::cout << "Check if agents can move inside grid" << std::endl;
+		for(auto agent: agents){
+			Pos pos({dist(gen),dist(gen)});
+			Citcat::move_to(pos,agent,m1);
+			Citcat::move_to(pos,agent,m2);
+			Citcat::move_to(pos,agent,m3);
+			compare_cell_of_agent(agent,m1,m2,m3);
+		}
 
-		// check member access
-		assert(cell_a->position() == agent.parent()->position());
-		assert(cell_a == agent.parent());
+		// check out-of-bounds handling
+		std::cout << "Check if agents can move outside grid" << std::endl;
+		for(auto agent: agents){
+			std::uniform_real_distribution<double> dist2(-120.0,120.0);
+			Pos pos({dist2(gen),dist2(gen)});
+			Citcat::move_to(pos,agent,m3);
+			compare_cell_of_agent(agent,m1,m2,m3);
+		}
 
-		// find correct parent
-		agent.find_parent(grid,cells);
-		assert(cells[0] == agent.parent());
+		// check correct translation out of grid
+		Pos extensions({50.0,50.0});
+		for(auto agent: agents){
+			const auto pos = agent->position();
+			Citcat::move_to(pos+extensions,agent,m3);
+			compare_cell_of_agent(agent,m1,m2,m3);
+			const auto diff = pos - agent->position();
+			assert(diff.two_norm() < 1e-6);
+		}
 
-		// move agent
-		agent.move_along({1.0,1.0});
-		decltype(agent)::Position pos({1.1,1.1});
-		assert(agent.position() == pos);
-
-		agent.find_parent(grid,cells);
-		pos = decltype(agent)::Position({1.0,1.0});
-		assert(agent.parent()->position() == pos);
-
-		// move somewhere
-		agent.move_to({10.1,10.1});
-		pos = decltype(agent)::Position({10.1,10.1});
-		assert(agent.position() == pos);
-
-		agent.find_parent(grid,cells);
-		pos = decltype(agent)::Position({10.0,10.0});
-		assert(agent.parent()->position() == pos);
-*/
 		return 0;
 	}
 	catch(Dune::Exception c){

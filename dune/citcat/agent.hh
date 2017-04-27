@@ -69,6 +69,38 @@ auto find_cell (const std::shared_ptr<Agent> agent, const Manager& manager)
 	return manager.cells()[index];
 }
 
+/// Move agent to a new location
+template<typename Position, class Agent, class Manager,
+	bool enabled = Manager::is_periodic()>
+std::enable_if_t<enabled,void> move_to (const Position& pos, const std::shared_ptr<Agent> agent, const Manager& manager)
+{
+	const auto& ext = manager.extensions();
+	auto pos_transf = pos;
+	std::transform(pos.begin(),pos.end(),ext.begin(),pos_transf.begin(),
+		[](const auto& a, const auto& b){
+			const int shift = a / b > 0.0 ? - int(a / b) : - ( int(a / b) - 1 );
+			return a + shift * b;
+		});
+	agent->position() = pos_transf;
+}
+
+/// Move agent to a new location
+template<typename Position, class Agent, class Manager,
+	bool enabled = Manager::is_periodic()>
+std::enable_if_t<!enabled,void> move_to (const Position& pos, const std::shared_ptr<Agent> agent, const Manager& manager)
+{
+	const auto& ext = manager.extensions();
+	std::vector<bool> diff(Manager::Traits::dim);
+	std::transform(pos.begin(),pos.end(),ext.begin(),diff.begin(),
+		[](const auto& a, const auto& b){
+			return a > b;
+		});
+	if(std::any_of(diff.begin(),diff.end(),[](const auto a){ return a; })){
+		DUNE_THROW(Dune::Exception,"Position is out of grid boundaries");
+	}
+	agent->position() = pos;
+}
+
 
 /// This class implements a moving Agent on a grid
 /** An object of this class saves a pointer to the cell it resides on.
