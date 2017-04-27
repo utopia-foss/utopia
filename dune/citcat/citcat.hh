@@ -23,27 +23,12 @@
 #include <algorithm>
 #include <functional>
 
-#pragma GCC system_header // disable DUNE internal warnings
-
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
 
-// DUNE-COMMON
-#include <dune/common/parallel/mpihelper.hh>
-#include <dune/common/exceptions.hh>
-#include <dune/common/fvector.hh>
-#include <dune/common/fmatrix.hh>
-#include <dune/common/timer.hh>
-
-// DUNE-GRID
-#include <dune/grid/yaspgrid.hh>
-#include <dune/grid/uggrid.hh>
-#include <dune/grid/io/file/gmshreader.hh>
-#include <dune/grid/utility/structuredgridfactory.hh>
-#include <dune/grid/common/mcmgmapper.hh>
-#include <dune/grid/common/universalmapper.hh>
-#include <dune/grid/io/file/vtk/vtksequencewriter.hh>
+// DUNE
+#include "citcat_dune.hh"
 
 // CITCAT
 #include "types.hh"
