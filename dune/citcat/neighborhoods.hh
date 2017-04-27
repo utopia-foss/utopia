@@ -163,25 +163,15 @@ public:
 private:
 
 	template<std::size_t index, typename T>
-	static typename T::value_type shift (const T& cells)
+	static std::enable_if_t<index==0,typename T::value_type> shift (const T& cells)
 	{
-		if (index == 0){
-			return 1;
-		}
-		else if (index == 1){
-			return cells[0];
-		}
-		else if (index == 2){
-			return cells[0] * cells[1];
-		}
-		else if (index == 3){
-			return cells[0] * cells[1] * cells[2];
-		}
-		/*
-		else{
-			static_assert(false,"This only works for index = {0,1,2,3}.");
-		}
-		*/
+		return 1;
+	}
+
+	template<std::size_t index, typename T>
+	static std::enable_if_t<index!=0,typename T::value_type> shift (const T& cells)
+	{
+		return cells[index-1] * shift<index-1>(cells);
 	}
 
 };
