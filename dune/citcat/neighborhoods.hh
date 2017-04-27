@@ -3,6 +3,18 @@
 
 namespace Citcat {
 
+template<std::size_t index, typename T>
+static std::enable_if_t<index==0,typename T::value_type> shift (const T& cells)
+{
+	return 1;
+}
+
+template<std::size_t index, typename T>
+static std::enable_if_t<index!=0,typename T::value_type> shift (const T& cells)
+{
+	return cells[index-1] * shift<index-1>(cells);
+}
+
 /// Find appropriate cells for a set of indices
 /** \param cont Container of indices
  *  \param mngr Manager instance
@@ -158,20 +170,6 @@ public:
 		}
 
 		return cells_from_ids(neighbor_ids,mngr);
-	}
-
-private:
-
-	template<std::size_t index, typename T>
-	static std::enable_if_t<index==0,typename T::value_type> shift (const T& cells)
-	{
-		return 1;
-	}
-
-	template<std::size_t index, typename T>
-	static std::enable_if_t<index!=0,typename T::value_type> shift (const T& cells)
-	{
-		return cells[index-1] * shift<index-1>(cells);
 	}
 
 };
