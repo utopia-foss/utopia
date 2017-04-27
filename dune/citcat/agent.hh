@@ -3,6 +3,22 @@
 
 namespace Citcat {
 
+template<std::size_t i, typename Extensions, typename GridCells>
+std::enable_if_t<i==0,std::pair<double,double>> cell_limits_per_index (const std::size_t index, const Extensions& extensions, const GridCells& grid_cells)
+{
+	std::size_t offset = index % shift<1>(grid_cells);
+	const double ext_per_cell = extensions[i] / grid_cells[i];
+	return std::make_pair( offset * ext_per_cell , (offset + 1) * ext_per_cell );
+}
+
+template<std::size_t i, typename Extensions, typename GridCells>
+std::enable_if_t<i!=0,std::pair<double,double>> cell_limits_per_index (const std::size_t index, const Extensions& extensions, const GridCells& grid_cells)
+{
+	std::size_t offset = index / shift<i>(grid_cells);
+	const double ext_per_cell = extensions[i] / grid_cells[i];
+	return std::make_pair( offset * ext_per_cell , (offset + 1) * ext_per_cell );
+}
+
 /// Return all agents on a cell of a structured grid
 template<class Cell, class Manager,
 	bool enabled = Manager::is_structured()>
@@ -18,13 +34,13 @@ auto find_agents_on_cell (const std::shared_ptr<Cell> cell, const Manager& manag
 	// deduce cell boundaries
 	constexpr int dim = Manager::Traits::dim;
 	std::array<std::pair<double,double>,dim> limits;
-	std::transform(extensions.begin(),extensions.end(),grid_cells.begin(),limits.begin(),
-		[id](const auto extension, const auto count){
-			const std::size_t offset = id % count;
-			const double ext_per_cell = extension / count;
-			return std::make_pair( offset * ext_per_cell , (offset + 1) * ext_per_cell );
-		}
-	);
+
+	if(dim == 3)
+	{
+		limits[2] = cell_limits_per_index<2>(id,extensions,grid_cells);
+	}
+	limits[1] = cell_limits_per_index<1>(id,extensions,grid_cells);
+	limits[0] = cell_limits_per_index<0>(id,extensions,grid_cells);
 
 	// find agents inside cell boundaries
 	for(auto agent : manager.agents()){
@@ -37,6 +53,8 @@ auto find_agents_on_cell (const std::shared_ptr<Cell> cell, const Manager& manag
 			ret.push_back(agent);
 		}
 	}
+
+	return ret;
 }
 
 /// Return all agents on a cell of any grid
