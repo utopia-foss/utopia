@@ -100,7 +100,17 @@ void test_agents_on_grid (const std::size_t agent_count, const std::size_t grid_
 		assert(diff.two_norm() < 1e-6);
 	}
 
+	// check if coupling functions are compliant
 	compare_agent_cell_coupling(m1);
 	compare_agent_cell_coupling(m2);
 	compare_agent_cell_coupling(m3);
+
+	// check removal and addition of agents
+	const auto agent = *m1.agents().begin();
+	Citcat::remove(agent,m1);
+	assert(std::find(m2.agents().begin(),m2.agents().end(),agent)!=m2.agents().end());
+	assert(std::find(m1.agents().begin(),m1.agents().end(),agent)==m1.agents().end());
+	assert(Citcat::add(agent,m1));
+	assert(*(--m1.agents().end()) == agent);
+	assert(!Citcat::add(agent,m2));
 }

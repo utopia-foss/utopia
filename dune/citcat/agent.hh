@@ -3,6 +3,28 @@
 
 namespace Citcat {
 
+template<class Agent, class Manager>
+void remove (const std::shared_ptr<Agent> agent, Manager& manager)
+{
+	auto& agents = manager.agents();
+	const auto it = std::find(agents.cbegin(),agents.cend(),agent);
+	if(it==agents.cend()){
+		DUNE_THROW(Dune::Exception,"Agent is not managed by this manager");
+	}
+	agents.erase(it);
+}
+
+template<class Agent, class Manager>
+bool add (const std::shared_ptr<Agent> agent, Manager& manager)
+{
+	auto& agents = manager.agents();
+	if(std::find(agents.cbegin(),agents.cend(),agent)==agents.cend()){
+		agents.push_back(agent);
+		return true;
+	}
+	return false;
+}
+
 template<std::size_t i, typename Extensions, typename GridCells>
 std::enable_if_t<i==0,std::pair<double,double>> cell_limits_per_index (const std::size_t index, const Extensions& extensions, const GridCells& grid_cells)
 {

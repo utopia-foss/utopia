@@ -100,6 +100,7 @@ public:
 
 	const CellContainer<Cell>& cells () const { return _cells; }
 	const AgentContainer<Agent>& agents () const { return _agents; }
+	AgentContainer<Agent>& agents () { return _agents; }
 /*
 	/// Check if coordinates are outside grid
 	template<bool active = _is_periodic>
