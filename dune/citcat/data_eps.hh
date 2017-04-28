@@ -18,25 +18,43 @@ public:
 };
 
 template<typename Container>
-class CellStateEPSDataWriter : protected EPSDataWriter<Container>
+class StateEPSDataWriter : public EPSDataWriter<Container>
 {
 protected:
-	using StateType = typename Container::value_type::element_type::State;
+	using CellPtr = typename Container::value_type;
+	using StateType = typename CellPtr::element_type::State;
+	using Func = typename std::function<StateType(CellPtr)>;
+
+	Func _function;
 
 public:
-	CellStateEPSDataWriter(const Container& data, const std::string label, const std::string filepath) :
+	StateEPSDataWriter(const Container& data, const std::string label, const std::string filepath) :
 		EPSDataWriter<Container>(data, label, filepath)
 	{ 
 		static_assert(std::is_convertible<StateType,double>::value,
 			"Data to write with EPS Writer must be converitble to double!");
+
+		_function = std::function<StateType(CellPtr)>([](CellPtr cell){ return cell->state(); });
+	}
+	template<typename Function>
+	StateEPSDataWriter(const Container& data, Function function, const std::string label, const std::string filepath) :
+		EPSDataWriter<Container>(data, label, filepath)
+	{ 		
+		using Func = Function;
+		using StateType = typename std::result_of_t<Func(CellPtr)>;
+
+		static_assert(std::is_convertible<StateType,double>::value,
+			"Data to write with EPS Writer must be converitble to double! ");
+
+		_function = function;
 	}
 	void write(const float time) {
 		int size = this->_data.size();
 		double data[size];
-		double max = this->_data[0]->state();
-		double min = this->_data[0]->state();
+		double max = _function(this->_data[0]);
+		double min = _function(this->_data[0]);
 		for (int it = 0; it < size; it++) {
-			data[it] = this->_data[it]->state();
+			data[it] = _function(this->_data[it]);
 			max = std::max(max, data[it]); 
 			min = std::min(min, data[it]);
 		}
@@ -103,6 +121,8 @@ public:
 			dBitMap(0,b_off,w,h,Nx,Ny, r,g,b);
 
 		endPS();
+
+		return;
 	}
 
 };
@@ -110,12 +130,21 @@ public:
 namespace Output {
 
 	template<typename Container>
-	std::shared_ptr<CellStateEPSDataWriter<Container> > eps_plot_cell_state (
+	std::shared_ptr<StateEPSDataWriter<Container> > eps_plot_cell_state (
 		const Container& cont, const std::string label="state", 
 		const std::string filename = EXECUTABLE_NAME, const std::string outputdir = OUTPUTDIR)
 	{
 		std::string filename_adj = OUTPUTDIR+filename+"-"+get_file_timestamp();
-		return std::make_shared<CellStateEPSDataWriter<Container>>(cont,label,filename_adj);
+		return std::make_shared<StateEPSDataWriter<Container>>(cont,label,filename_adj);
+	}
+
+	template<typename Container, typename Func>
+	std::shared_ptr<StateEPSDataWriter<Container> > eps_plot_cell_function (
+		const Container& cont, Func function, const std::string label="state", 
+		const std::string filename = EXECUTABLE_NAME, const std::string outputdir = OUTPUTDIR)
+	{
+		std::string filename_adj = OUTPUTDIR+filename+"-"+get_file_timestamp();
+		return std::make_shared<StateEPSDataWriter<Container>>(cont,function,label,filename_adj);
 	}
 
 } //Namespace Output
