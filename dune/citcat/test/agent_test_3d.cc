@@ -9,7 +9,7 @@ int main(int argc, char** argv)
 	try{
 		Dune::MPIHelper::instance(argc,argv);
 
-		constexpr size_t agent_count = 1000;
+		constexpr size_t agent_count = 300;
 		constexpr size_t grid_size = 20;
 		test_agents_on_grid<3>(agent_count,grid_size);
 
