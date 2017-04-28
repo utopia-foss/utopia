@@ -106,11 +106,11 @@ void test_agents_on_grid (const std::size_t agent_count, const std::size_t grid_
 	compare_agent_cell_coupling(m3);
 
 	// check removal and addition of agents
-	const auto agent = *m1.agents().begin();
+	const auto agent = m1.agents().front();
 	Citcat::remove(agent,m1);
 	assert(std::find(m2.agents().begin(),m2.agents().end(),agent)!=m2.agents().end());
 	assert(std::find(m1.agents().begin(),m1.agents().end(),agent)==m1.agents().end());
 	assert(Citcat::add(agent,m1));
-	assert(*(--m1.agents().end()) == agent);
+	assert(m1.agents().back() == agent);
 	assert(!Citcat::add(agent,m2));
 }
