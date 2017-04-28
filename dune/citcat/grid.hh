@@ -8,8 +8,10 @@ template<typename GridType>
 struct GridWrapper
 {
 private:
-	using Coordinate = typename GridTypeAdaptor<GridType>::Coordinate;
-	static constexpr int dim = GridTypeAdaptor<GridType>::dim;
+	using Traits = GridTypeAdaptor<GridType>;
+	using Coordinate = typename Traits::Coordinate;
+	static constexpr int dim = Traits::dim;
+
 public:
 	//! pointer to the grid
 	std::shared_ptr<GridType> _grid;

@@ -27,7 +27,7 @@ template<
 class Cell : public Entity<StateType,TraitsType>
 {
 public:
-	
+
 	using State = StateType;
 	using Traits = TraitsType;
 	using Position = PositionType;

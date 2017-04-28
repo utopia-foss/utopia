@@ -42,6 +42,7 @@ void test_agents_on_grid (const std::size_t agent_count, const std::size_t grid_
 {
 	auto grid = Citcat::Setup::create_grid<dim>(grid_size);
 	auto cells = Citcat::Setup::create_cells_on_grid(grid,[](){return 0;});
+	auto agents = Citcat::Setup::create_agents_on_grid(grid,agent_count,0);
 
 	using Pos = typename Citcat::GridTypeAdaptor<typename decltype(grid._grid)::element_type>::Position;
 
@@ -49,13 +50,6 @@ void test_agents_on_grid (const std::size_t agent_count, const std::size_t grid_
 	std::mt19937 gen(rd());
 	std::uniform_real_distribution<double> dist(0.0,grid_size);
 	auto gen1 = [&gen,&dist](){ return dist(gen); };
-
-	Citcat::AgentContainer<Citcat::Agent<int,int,Pos>> agents;
-	for(std::size_t i = 0; i<agent_count; ++i){
-		Pos pos;
-		std::generate(pos.begin(),pos.end(),gen1);
-		agents.push_back(std::make_shared<Citcat::Agent<int,int,Pos>>(0,0,pos));
-	}
 
 		// unstructured, non-periodic
 	auto m1 = Citcat::Setup::create_manager<false,false>(grid,cells,agents);
