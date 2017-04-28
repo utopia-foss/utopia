@@ -30,6 +30,7 @@ auto determine_extensions (const std::shared_ptr<Grid> grid)
 namespace Setup
 {
 
+	/// Create a GridManager from a grid and a CellContainer
 	template<bool structured, bool periodic, typename GridType, typename CellType>
 	GridManager<GridType,structured,periodic,CellType,int> create_manager (
 		const GridWrapper<GridType>& wrapper,
@@ -39,6 +40,7 @@ namespace Setup
 			wrapper,cells);
 	}
 
+	/// Create a GridManager from grid, CellContainer, and AgentContainer
 	template<bool structured, bool periodic, typename GridType, typename CellType,typename AgentType>
 	GridManager<GridType,structured,periodic,CellType,AgentType> create_manager (
 		const GridWrapper<GridType>& wrapper,
@@ -46,6 +48,16 @@ namespace Setup
 		const AgentContainer<AgentType>& agents)
 	{
 		return GridManager<GridType,structured,periodic,CellType,AgentType>(wrapper,cells,agents);
+	}
+
+	/// Create a GridManager from a grid and an AgentContainer
+	template<bool structured, bool periodic, typename GridType,typename AgentType>
+	GridManager<GridType,structured,periodic,int,AgentType> create_manager (
+		const GridWrapper<GridType>& wrapper,
+		const AgentContainer<AgentType>& agents )
+	{
+		return GridManager<GridType,structured,periodic,int,AgentType>(
+			wrapper,agents);
 	}
 
 	/// Create an unstructured grid from a Gmsh file

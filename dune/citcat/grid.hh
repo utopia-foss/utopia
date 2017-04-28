@@ -88,6 +88,17 @@ public:
 		_agents(agents)
 	{ }
 
+	/// Constructor for grid and agents
+	explicit GridManager (
+		const GridWrapper<GridType>& wrapper,
+		const AgentContainer<Agent>& agents ) :
+		_grid(wrapper._grid),
+		_grid_cells(wrapper._grid_cells),
+		_extensions(wrapper._extensions),
+		_gv(_grid->leafGridView()),
+		_mapper(_gv),
+		_agents(agents)
+	{ }
 
 	/// Return true if managed grid is structured (rectangular)
 	static constexpr bool is_structured () { return _is_structured; }
