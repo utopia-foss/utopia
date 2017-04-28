@@ -3,14 +3,16 @@
 
 namespace Citcat {
 
+/// Return 0-dimensional shift in grid cells
 template<std::size_t index, typename T>
-static std::enable_if_t<index==0,typename T::value_type> shift (const T& cells)
+constexpr std::enable_if_t<index==0,typename T::value_type> shift (const T& cells)
 {
 	return 1;
 }
 
+/// Return i-dimensional shift in grid cells
 template<std::size_t index, typename T>
-static std::enable_if_t<index!=0,typename T::value_type> shift (const T& cells)
+constexpr std::enable_if_t<index!=0,typename T::value_type> shift (const T& cells)
 {
 	return cells[index-1] * shift<index-1>(cells);
 }
@@ -46,17 +48,7 @@ struct NBTraits
 
 class NextNeighbor
 {
-	/*
-private:
-	using Cell = typename Manager::Cell;
-	using Index = typename Cell::Index;
 
-	using return_type = typename std::vector<std::shared_ptr<Cell>>;
-
-	static constexpr bool _structured = Manager::is_structured();
-	static constexpr bool _periodic = Manager::is_periodic();
-	static constexpr int _dim = Manager::Traits::dim;
-	*/
 public:
 
 	/// Return next neighbors for any grid
