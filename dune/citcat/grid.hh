@@ -86,120 +86,31 @@ public:
 		_agents(agents)
 	{ }
 
-	// queries on static information
+
+	/// Return true if managed grid is structured (rectangular)
 	static constexpr bool is_structured () { return _is_structured; }
+	/// Return true if managed grid is periodic
 	static constexpr bool is_periodic () { return _is_periodic; }
 
-	// queries on members
+	/// Return shared pointer to the managed grid
 	std::shared_ptr<Grid> grid () const { return _grid; }
+	/// Return reference to the grid view
 	const GV& grid_view () const { return _gv; }
+	/// Return reference to the grid entity mapper
 	const Mapper& mapper () const { return _mapper; }
 
+	/// Return number of cells into each direction (for structured grid)
 	const std::array<unsigned int,dim>& grid_cells () const { return _grid_cells; }
+	/// Return grid extensions
 	const std::array<Coordinate,dim>& extensions () const { return _extensions; }
 
+	/// Return const reference to the managed CA cells
 	const CellContainer<Cell>& cells () const { return _cells; }
+	/// Return const reference to the managed agents
 	const AgentContainer<Agent>& agents () const { return _agents; }
+	/// Return reference to the managed agents
 	AgentContainer<Agent>& agents () { return _agents; }
-/*
-	/// Check if coordinates are outside grid
-	template<bool active = _is_periodic>
-	std::enable_if_t<active,Position> check_inside (const Position& pos)
-	{
-		return true;
-	}
 
-	/// Check if coordinates are outside grid
-	template<bool active = _is_periodic>
-	std::enable_if_t<!active,Position> check_inside (const Position& pos)
-	{
-		for(int i = 0; i<dim; ++i){
-			if(pos[i] < 0.0 || pos[i] > _extensions[i]){
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-
-	/// Transform position out of the grid into a position inside the grid
-	template<bool active = _is_periodic>
-	std::enable_if_t<active,Position> transform_position_periodic (const Position& pos)
-	{
-		Position pos_new;
-		for(int i = 0; i<dim; ++i){
-			int count = pos[i] / _extensions[i];
-			if(count > 0){
-				pos_new[i] = pos[i] - count * _extensions[i];
-			}
-		}
-
-		return pos_new;
-	}
-
-	/// Transform position out of the grid into a position inside the grid
-	template<bool active = _is_periodic>
-	std::enable_if_t<!active,Position> transform_position_periodic (const Position& pos)
-	{
-		if (!check_inside(pos)){
-			DUNE_THROW(Dune::Exception,"This grid is not periodic");
-		}
-		return pos;
-	}
-
-	/// Return the entity index for a given position on the grid
-	template<bool active = _is_structured>
-	std::enable_if_t<active,Index> entity_id_at (const Position& pos)
-	{
-		if (!check_inside(pos)){
-			DUNE_THROW(Dune::Exception,"This position is not inside the grid");
-		}
-
-		std::array<Index,dim> id_matrix;
-
-		for(int i = 0; i<dim; ++i){
-			id_matrix[i] = _cells[i] * pos[i] / _extensions[i];
-		}
-
-		return id_matrix_to_id(id_matrix)
-	}
-
-	/// Return the entity index for a given position on the grid
-	template<bool active = _is_structured>
-	std::enable_if_t<!active,Index> entity_id_at (const Position& pos)
-	{
-		for (const auto& e : elements(gv)){
-			const auto geo = e.geometry();
-			const auto& ref = Dune::ReferenceElements<Coordinate,dim>::general(geo.type());
-			const auto pos_local = geo.local(_position);
-
-			if (ref.checkInside(pos_local)){
-				return id = mapper.index(e);
-			}	
-		}
-
-		DUNE_THROW(Dune::Exception,"This position is not inside the grid");
-	}
-
-	template<int dim>
-	Index id_matrix_to_id (std::array<Index,dim>& mat);
-
-	template<>
-	Index id_matrix_to_id (std::array<Index,2>& mat);
-	{
-		return mat[1] * _extensions[0]
-			+ mat[0];
-	}
-
-	template<>
-	Index id_matrix_to_id (std::array<Index,3>& mat)
-	{
-		return mat[2] * _extensions[1] * _extensions[0]
-			+ mat[1] * _extensions[0]
-			+ mat[0];
-	}
-*/
 };
 
 } // namespace Citcat
