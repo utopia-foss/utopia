@@ -42,60 +42,6 @@ using AgentContainer = std::list<std::shared_ptr<AgentType>>;
 /// Container dummy if no cells or individuals are used
 using EmptyContainer = std::array<std::shared_ptr<int>,0>;
 
-/// Neighborhood adaptors
-namespace Neighborhood
-{
-	/// Implement von Neumann (5-)neighborhood for rectangular grid
-	struct vonNeumann
-	{
-		/// Number of cells in the neighborhood
-		static const int size = 5;
-
-		/// Apply the neighborhood on a single cell based on its grid neighbors
-		/** \param c Cell to apply to
-		 */
-		template<typename CellPtr>
-		static void apply (const CellPtr& c)
-		{
-			for(const auto& nb : c->grid_neighbors())
-				c->add_neighbor(nb);
-		}
-	};
-
-	/// Implement Moore (9-)neighborhood for rectangular grid
-	struct Moore
-	{
-		/// Number of cells in the neighborhood
-		static const int size = 9;
-
-		/// Apply the neighborhood on a single cell based on its grid neighbors
-		/** \param c Cell to apply to
-		 */
-		template<typename CellPtr>
-		static void apply (const CellPtr& c)
-		{
-			// create list of secondary neighbors
-			std::vector<CellPtr> snb_list;
-			for(const auto& nb : c->grid_neighbors()){
-				// add all grid neighbors
-				c->add_neighbor(nb);
-				for(const auto& snb : nb->grid_neighbors()){
-					if(snb==c) continue;
-					snb_list.push_back(snb);
-				}
-			}
-			// add duplicates in this list as neighbors
-			for(auto it=snb_list.begin(); it!=snb_list.end(); ++it){
-				for(auto iit=it+1; iit!=snb_list.end(); ++iit){
-					if(*it==*iit)
-						c->add_neighbor(*it);
-				}
-			}
-		}
-	};
-
-} // namespace Neighborhood
-
 } // namespace Citcat
 
 #endif // TYPES_HH
