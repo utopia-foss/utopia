@@ -64,11 +64,8 @@ public:
 
 		// get grid entity of root cell
 		const auto root_id = root->index();
-		const auto it = std::find_if(
-			elements(gv).begin(),
-			elements(gv).end(),
-			[&mapper,root_id](const auto& x){ return root_id == mapper.index(x); }
-		);
+		auto it = elements(gv).begin();
+		std::advance(it,root_id);
 
 		// find adjacent grid entities
 		std::vector<Index> neighbor_ids;
