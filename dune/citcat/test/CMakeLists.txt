@@ -11,7 +11,9 @@ set(TESTS
 	cell_test
 	grid_test
 	grid_cells_test_2d
-	grid_cells_test_3d)
+	grid_cells_test_3d
+	output_agent_test_gmsh
+	output_agent_test_rect)
 
 foreach(test ${TESTS})
 	dune_add_test(NAME ${test} SOURCES "${test}.cc" COMPILE_FLAGS ${COMPILE_FLAGS_TEST})
