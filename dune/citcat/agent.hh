@@ -280,13 +280,11 @@ std::enable_if_t<!enabled,void> move_to (const Position& pos, const std::shared_
 
 
 /// This class implements a moving Agent on a grid
-/** An object of this class saves a pointer to the cell it resides on.
- *  Attachment to the grid is achieved via attachment to a Cell. This is also
- *  useful for data analysis later on.
+/** An object of this class only saves its global position on the grid
  *
  *  \tparam StateType Data type of state
  *  \tparam TraitsType Data type of traits
- *  \tparam CellType Data type of the CA cells
+ *  \tparam PositionType Data type of position vector
  */
 template<typename StateType, typename TraitsType, typename PositionType>
 class Agent :
@@ -299,7 +297,6 @@ public:
 	using Traits = TraitsType;
 	using Position = PositionType;
 
-// Data members
 private:
 	//!< Global position on the grid
 	Position _position;
@@ -310,7 +307,6 @@ public:
 	 *  \param traits Initial traits
 	 *  \param position Initial position
 	 *  \param tag Tracking tag
-	 *  \note There is no check whether the given parent matches the position!
 	 */
 	Agent (const State state, const Traits traits, const Position position,
 		const int tag = 0) :
@@ -320,6 +316,7 @@ public:
 
 	/// Return const reference to the position of this agent
 	const Position& position () const { return _position; }
+
 	/// Return reference to the position of this agent
 	Position& position () { return _position; }
 
