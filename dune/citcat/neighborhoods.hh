@@ -90,10 +90,10 @@ public:
 		constexpr bool periodic = Manager::is_periodic();
 
 		// find neighbor IDs
-		const long long int root_id = root->index();
+		const long root_id = root->index();
 		const auto& grid_cells = mngr.grid_cells();
 
-		std::vector<long long int> neighbor_ids;
+		std::vector<long> neighbor_ids;
 
 		// 1D shift
 		// front boundary
@@ -119,7 +119,7 @@ public:
 		// 'normalize' id to lowest height (if 3D)
 		const auto root_id_nrm = root_id % shift<2>(grid_cells);
 		// front boundary
-		if((long long int) root_id_nrm / grid_cells[0] == 0){
+		if((long) root_id_nrm / grid_cells[0] == 0){
 			if(periodic){
 				neighbor_ids.push_back(root_id - shift<1>(grid_cells) + shift<2>(grid_cells));
 			}
@@ -128,7 +128,7 @@ public:
 			neighbor_ids.push_back(root_id - shift<1>(grid_cells));
 		}
 		// back boundary
-		if((long long int) root_id_nrm / grid_cells[0] == grid_cells[1] - 1){
+		if((long) root_id_nrm / grid_cells[0] == grid_cells[1] - 1){
 			if(periodic){
 				neighbor_ids.push_back(root_id + shift<1>(grid_cells) - shift<2>(grid_cells));
 			}
