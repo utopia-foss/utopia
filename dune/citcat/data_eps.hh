@@ -1,5 +1,4 @@
-#include <PSgraf311.h>  //on LINUX use PSgraf3.h
-
+#include <PSgraf312.h>
 
 namespace Citcat
 {
