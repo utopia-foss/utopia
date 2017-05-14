@@ -103,12 +103,6 @@ public:
 		return false;
 	}
 
-	void clear_neighborhood()
-	{
-		_neighbors.clear();
-		return;
-	}
-
 	/// Set new grid neighbor for this Cell
 	/** Duplicates and pointers to the cell itself will not be inserted.
 	 *  \param cell Cell to be inserted as grid neighbor
