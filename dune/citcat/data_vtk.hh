@@ -195,18 +195,20 @@ public:
 	 */
 	AgentCountGridDataAdaptor (const Manager& manager, const std::string label) :
 		_manager(manager),
-		_grid_data(_manager.cells().size()),
+		_grid_data(_manager.cells().size(),0),
 		_label(label)
 	{ }
 
 	/// Count all agents per cell
 	void update_data () override
 	{
+		std::fill(_grid_data.begin(),_grid_data.end(),0);
 		std::for_each(
-			_manager.cells().begin(),
-			_manager.cells().end(),
-			[this](const auto cell){
-				_grid_data.at(cell->index()) = find_agents_on_cell(cell,_manager).size();
+			_manager.agents().begin(),
+			_manager.agents().end(),
+			[this](const auto agent){
+				const auto cell = find_cell(agent,_manager);
+				_grid_data.at(cell->index())++;
 		});
 	}
 
