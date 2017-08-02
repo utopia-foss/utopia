@@ -1,15 +1,17 @@
+#include <random>
 #include <cassert>
 #include <dune/citcat/citcat.hh>
-#include <dune/common/exceptions.hh>
 
-#include "grid_cells_test.hh"
+#include "agent_test.hh"
 
 int main(int argc, char** argv)
 {
 	try{
 		Dune::MPIHelper::instance(argc,argv);
 
-		cells_on_grid_test<3>(15);
+		constexpr size_t agent_count = 300;
+		constexpr size_t grid_size = 20;
+		test_agents_on_grid<3>(agent_count,grid_size);
 
 		return 0;
 	}

@@ -3,61 +3,6 @@
 
 namespace Citcat
 {
-	
-/// Wrap the data to run a simulation on. Export the associated data types
-/**
- *  \tparam GridType Type of grid
- *  \tparam CellContainerType Type of the container for cells
- *  \tparam IndividualContainerType Type of the container for individuals
- */
-template<typename GridType, typename CellContainerType, typename IndividualContainerType>
-class SimulationWrapper
-{
-public:
-	using Grid = GridType;
-	using CellContainer = CellContainerType;
-	using IndividualContainer = IndividualContainerType;
-
-	using CellPtr = typename CellContainer::value_type;
-	using Cell = typename CellPtr::element_type;
-
-	using IndividualPtr = typename IndividualContainer::value_type;
-	using Individual = typename IndividualPtr::element_type;
-
-	using State = typename Cell::State;
-
-private:
-	//! shared pointer to the grid
-	std::shared_ptr<Grid> _grid;
-	//! reference to the cell container
-	CellContainer& _cell_container;
-	//! referemce to the individuals container
-	IndividualContainer& _indv_container;
-
-public:
-	/// Construct Wrapper
-	/** \param grid Shared pointer to the grid
-	 *  \param cells Cell container object
-	 *  \param individuals Individuals container object
-	 */
-	SimulationWrapper (std::shared_ptr<Grid> grid, CellContainer& cells, IndividualContainer& individuals) :
-		_grid(grid), _cell_container(cells), _indv_container(individuals)
-	{ }
-
-	/// Return reference to cell container
-	CellContainer& cells () { return _cell_container; }
-	/// Return const reference to cell container
-	const CellContainer& cells () const { return _cell_container; }
-
-	/// Return reference to individuals container
-	IndividualContainer& individuals () { return _indv_container; }
-	/// Return const reference to individuals container
-	const IndividualContainer& individuals () const { return _indv_container; }
-
-	/// Return shared pointer to grid
-	std::shared_ptr<Grid> grid () const { return _grid; }
-
-};
 
 /// Manage state propagation and data printout
 /** This class serves as an interface for running simulations.
@@ -65,24 +10,29 @@ public:
  *  as well as the CA rules and boundary conditions to be applied.
  *  Output writers can be stacked for writing output in arbitrary intervals.
  *
- *  \tparam SimulationWrapper Type of wrapper object
+ *  \tparam GridManager Type of manager object
  */
-template<typename SimulationWrapper>
+template<class GridManager>
 class Simulation
 {
+public:
+
+	/// Save a reference to the GridManager and start the timers.
+	/** \param manager GridManager to run the simulation on
+	 */
+	Simulation (GridManager& manager) :
+		_manager(manager), _update_always(true), _dt(1.0), _time(0.0), _steps(0),
+		_timer_sim(true), _timer_cout(true), _cout_interval(10.0),
+		_timer_rule(false), _timer_update(false), _timer_data(false)
+	{ }
+
 protected:
 
-	using CellContainer = typename SimulationWrapper::CellContainer;
-	using Cell = typename SimulationWrapper::Cell;
-	using CellPtr = typename SimulationWrapper::CellPtr;
-
-	using IndividualContainer = typename SimulationWrapper::IndividualContainer;
-	using Individual = typename SimulationWrapper::Individual;
-
-	using State = typename SimulationWrapper::State;
+	using Cell = typename GridManager::Cell;
+	using State = typename Cell::State;
 	using StateRule = std::function<State(const std::shared_ptr<Cell>)>;
 
-	SimulationWrapper _data; //!< The simulation wrapper object containing references to the data containers
+	GridManager& _manager; //!< The simulation wrapper object containing references to the data containers
 
 	//! vector containing all rules. rules will be applied in order
 	std::vector<StateRule> _rules;
@@ -106,15 +56,6 @@ protected:
 	Dune::Timer _timer_data; //!< timer for data printout (cumulative)
 
 public:
-
-	/// Save the SimulationWrapper and start the timers.
-	/** \param data Wrapper object to run the simulation on
-	 */
-	Simulation (SimulationWrapper& data) :
-		_data(data), _update_always(true), _dt(1.0), _time(0.0), _steps(0),
-		_timer_sim(true), _timer_cout(true), _cout_interval(10.0),
-		_timer_rule(false), _timer_update(false), _timer_data(false)
-	{ }
 
 	/// Destructor. Displays time statistics of this simulation object
 	~Simulation ()
@@ -260,7 +201,7 @@ private:
 	void apply_rules_cells ()
 	{
 		for(const auto& f : _rules){
-			for(auto&& cell : _data.cells())
+			for(auto&& cell : _manager.cells())
 				cell->new_state() = f(cell);
 			if(_update_always)
 				update_cells();
@@ -276,7 +217,7 @@ private:
 			const bool do_bc = (i<_bc.size());
 			const bool do_rule = (i<_rules.size());
 
-			for(auto&& cell : _data.cells()){
+			for(auto&& cell : _manager.cells()){
 				if(do_bc && cell->boundary()){
 					cell->new_state() = _bc[i](cell);
 				}
@@ -294,7 +235,7 @@ private:
 	void update_cells ()
 	{
 		_timer_update.start();
-		for(auto&& cell : _data.cells())
+		for(auto&& cell : _manager.cells())
 			cell->update();
 		_timer_update.stop();
 	}

@@ -226,6 +226,46 @@ private:
 };
 
 
+template<class Manager>
+class AgentCountGridDataAdaptor : public GridDataAdaptor
+{
+private:
+	const Manager& _manager; //!< manager instance
+	std::vector<unsigned int> _grid_data; //!< data to write
+	const std::string _label; //!< data label
+
+public:
+	/// Constructor
+	/** \param manager Manager containing grid, agents, cells
+	 *  \param label Data label in VTK output
+	 */
+	AgentCountGridDataAdaptor (const Manager& manager, const std::string label) :
+		_manager(manager),
+		_grid_data(_manager.cells().size(),0),
+		_label(label)
+	{ }
+
+	/// Count all agents per cell
+	void update_data () override
+	{
+		std::fill(_grid_data.begin(),_grid_data.end(),0);
+		std::for_each(
+			_manager.agents().begin(),
+			_manager.agents().end(),
+			[this](const auto agent){
+				const auto cell = find_cell(agent,_manager);
+				_grid_data.at(cell->index())++;
+		});
+	}
+
+	template<typename VTKWriter>
+	void add_data (VTKWriter& vtkwriter)
+	{
+		vtkwriter.addCellData(_grid_data,_label);
+	}
+};
+
+
 namespace Output {
 
 	/// Create wrapper object managing a Dune::VTKSequenceWriter
@@ -275,6 +315,20 @@ namespace Output {
 	{
 		std::array<StateType,2> range({lower,upper});
 		return std::make_shared<CellStateClusterGridDataAdaptor<CellContainer>>(cont,label,range);
+	}
+
+	/// create GridData output wrapper: Plot the number of agents per cell
+	/** \param cells Container of cells
+	 *  \param agents Container of agents
+	 *  \param label Data layer label in VTK output
+	 */
+	template<class Manager>
+	std::shared_ptr<AgentCountGridDataAdaptor<Manager>>
+		vtk_output_agent_count_per_cell
+		(const Manager& manager,
+		 const std::string label="agent_count")
+	{
+		return std::make_shared<AgentCountGridDataAdaptor<Manager>>(manager,label);
 	}
 
 } // namespace Output

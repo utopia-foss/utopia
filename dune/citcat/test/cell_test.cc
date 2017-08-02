@@ -20,9 +20,7 @@ int main(int argc, char const *argv[])
 		std::uniform_int_distribution<State> dist_int(std::numeric_limits<State>::min(),std::numeric_limits<State>::max());
 		std::uniform_real_distribution<Traits> dist_real(std::numeric_limits<Traits>::min(),std::numeric_limits<Traits>::max());
 		const State state = dist_int(gen);
-		const State state_1 = dist_int(gen);
 		const Traits traits = dist_real(gen);
-		const Traits traits_1 = dist_real(gen);
 		const int tag = 1;
 		const Position pos({dist_real(gen),dist_real(gen)});
 		const Index index = 2;
