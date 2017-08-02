@@ -11,7 +11,7 @@ int main(int argc, char** argv)
 		auto rect_2d = Citcat::Setup::create_grid({100,100},{1.0,1.0});
 
 		// cells on yasp grid
-		auto cells = Citcat::Setup::create_cells_on_grid(rect_2d,[](){return 0;});
+		auto cells = Citcat::Setup::create_cells_on_grid(rect_2d);
 		auto agents = Citcat::Setup::create_agents_on_grid(rect_2d,100,0);
 		auto m1 = Citcat::Setup::create_manager<false,false>(rect_2d,cells,agents);
 

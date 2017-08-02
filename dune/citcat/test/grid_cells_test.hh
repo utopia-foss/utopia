@@ -78,7 +78,7 @@ template<int dim>
 void cells_on_grid_test (const unsigned int cells_per_dim)
 {
 	auto grid = Citcat::Setup::create_grid<dim>(cells_per_dim);
-	auto cells = Citcat::Setup::create_cells_on_grid(grid,[](){return 0;});
+	auto cells = Citcat::Setup::create_cells_on_grid(grid);
 
 	// structured, non-periodic
 	auto m1 = Citcat::Setup::create_manager<true,false>(grid,cells);

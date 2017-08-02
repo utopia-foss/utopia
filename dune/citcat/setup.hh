@@ -164,19 +164,22 @@ namespace Setup
 
 	/// Create a set of cells on a grid
 	/** The cells will only map to the grid, but not share data with it.
-	 *  \param grid Shared pointer to the grid from which to build the cells
-	 *  \param f_state Function without arguments returning state
-	 *  \param f_traits Function without arguments returning traits
+	 *  \param grid_wrapper GridWrapper instance of the grid the cells
+	 *  	will be created on
+	 *  \param state Default state of all cells
+	 *  \param traits Default traits of all cells
 	 *  \return Container with created cells
 	*/
 	template<
 		typename State = int,
 		typename Traits = int,
 		std::size_t custom_neighborhood_count = 0,
-		typename GridType, typename S, typename T=std::function<Traits(void)>
+		typename GridType
 	>
-	decltype(auto) create_cells_on_grid(const GridWrapper<GridType> grid_wrapper,
-		S f_state, T f_traits=[](){return 0;})
+	decltype(auto) create_cells_on_grid (
+		const GridWrapper<GridType>& grid_wrapper,
+		const State state = 0,
+		const Traits traits = 0)
 	{
 
 		using GridTypes = GridTypeAdaptor<GridType>;
@@ -209,26 +212,11 @@ namespace Setup
 			}
 
 			cells.emplace_back(std::make_shared<CellType>
-				(f_state(),f_traits(),pos,id,boundary));
+				(state,traits,pos,id,boundary));
 		}
 
 		cells.shrink_to_fit();
 		return cells;
-	}
-
-	/// Create a set of cells with fixed states and traits on a grid.
-	/** \param grid Shared pointer to the grid
-	 *  \param state Default cell state
-	 *  \param traits Default cell traits
-	 *  \return Container with created cells
-	 */
-	template<typename State=int, typename Traits=int, typename GridType>
-	decltype(auto) create_cells_on_grid(const std::shared_ptr<GridType>& grid,
-		const State& state, const Traits& traits)
-	{
-		std::function<State(void)> f_state = [&state](){ return state; };
-		std::function<Traits(void)> f_traits = [&traits](){ return traits; };
-		return create_cells_on_grid<State,Traits,GridType>(grid,f_state,f_traits);
 	}
 
 	/// Randomly distribute agents on a grid
@@ -243,7 +231,7 @@ namespace Setup
 	decltype(auto) create_agents_on_grid(
 		const GridWrapper<GridType>& grid_wrapper,
 		const std::size_t count,
-		const State state_initial,
+		const State state_initial = 0,
 		const Traits traits_initial = 0)
 	{
 		// fetch some types

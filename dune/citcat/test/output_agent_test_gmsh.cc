@@ -11,7 +11,7 @@ int main(int argc, char** argv)
 		auto gmsh_2d = Citcat::Setup::read_gmsh("square.msh",2);
 
 		// cells on gmsh
-		auto cells = Citcat::Setup::create_cells_on_grid(gmsh_2d,[](){return 0;});
+		auto cells = Citcat::Setup::create_cells_on_grid(gmsh_2d);
 		auto agents = Citcat::Setup::create_agents_on_grid(gmsh_2d,100,0);
 
 		auto m1 = Citcat::Setup::create_manager<false,false>(gmsh_2d,cells,agents);

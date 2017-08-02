@@ -41,8 +41,8 @@ template<int dim>
 void test_agents_on_grid (const std::size_t agent_count, const std::size_t grid_size)
 {
 	auto grid = Citcat::Setup::create_grid<dim>(grid_size);
-	auto cells = Citcat::Setup::create_cells_on_grid(grid,[](){return 0;});
-	auto agents = Citcat::Setup::create_agents_on_grid(grid,agent_count,0);
+	auto cells = Citcat::Setup::create_cells_on_grid(grid);
+	auto agents = Citcat::Setup::create_agents_on_grid(grid,agent_count);
 
 	using Pos = typename Citcat::GridTypeAdaptor<typename decltype(grid._grid)::element_type>::Position;
 
