@@ -42,7 +42,7 @@ void check_grid_neighbors_count (const Manager& manager)
 
 	bool exception = false;
 	for(const auto cell : manager.cells()){
-		const auto neighbors = Citcat::Neighborhoods::NextNeighbor::neighbors(manager,cell);
+		const auto neighbors = Citcat::Neighborhoods::NextNeighbor::neighbors(cell,manager);
 		if(neighbors.size() != nb_count){
 			std::cerr << "Cell No. " << cell->index()
 				<< " has " << neighbors.size()
@@ -60,8 +60,8 @@ template<typename M1, typename M2>
 void compare_neighborhoods (const M1& m1, const M2& m2)
 {
 	for(std::size_t i=0; i<m1.cells().size(); ++i){
-		const auto nb1 = Citcat::Neighborhoods::NextNeighbor::neighbors(m1,m1.cells()[i]);
-		const auto nb2 = Citcat::Neighborhoods::NextNeighbor::neighbors(m2,m2.cells()[i]);
+		const auto nb1 = Citcat::Neighborhoods::NextNeighbor::neighbors(m1.cells()[i],m1);
+		const auto nb2 = Citcat::Neighborhoods::NextNeighbor::neighbors(m2.cells()[i],m2);
 		// check size
 		assert(nb1.size() == nb2.size());
 		// check actual neighbors

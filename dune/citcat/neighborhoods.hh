@@ -54,7 +54,7 @@ public:
 	/// Return next neighbors for any grid
 	template<class Manager, class Cell,
 		bool structured = Manager::is_structured()>
-	static auto neighbors (const Manager& mngr, const std::shared_ptr<Cell> root)
+	static auto neighbors (const std::shared_ptr<Cell> root, const Manager& mngr)
 		-> std::enable_if_t<!structured,typename NBTraits<Cell>::return_type>
 	{
 		// get references to grid manager members
@@ -81,7 +81,7 @@ public:
 	/// Return next neighbors for structured grid
 	template<class Manager, class Cell,
 		bool structured = Manager::is_structured()>
-	static auto neighbors (const Manager& mngr, const std::shared_ptr<Cell> root)
+	static auto neighbors (const std::shared_ptr<Cell> root, const Manager& mngr)
 		-> std::enable_if_t<structured,typename NBTraits<Cell>::return_type>
 	{
 		constexpr bool periodic = Manager::is_periodic();
