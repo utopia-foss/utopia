@@ -8,6 +8,8 @@
 int main(int argc, char const *argv[])
 {
 	try{
+		Dune::MPIHelper::instance(argc,argv);
+
 		using State = int;
 		using Traits = double;
 
