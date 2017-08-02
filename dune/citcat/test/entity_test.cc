@@ -5,7 +5,7 @@
 #include "entity_test.hh"
 
 /// Choose random states and traits. Check member access and update functions.
-int main(int argc, char const *argv[])
+int main(int argc, char **argv)
 {
 	try{
 		Dune::MPIHelper::instance(argc,argv);
