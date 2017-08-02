@@ -93,14 +93,10 @@ namespace Setup
 	 *  \param cells Cell container
 	 *  \return Simulation object
 	 */
-	template<typename GridType, typename CellContainer>
-	decltype(auto) create_sim_cells (const std::shared_ptr<GridType>& grid, CellContainer& cells)
+	template<class GridManager>
+	auto create_sim (GridManager& manager) -> Citcat::Simulation<GridManager>
 	{
-		using DataType = SimulationWrapper<GridType,CellContainer,EmptyContainer>; 
-		EmptyContainer individuals;
-		DataType data(grid,cells,individuals);
-		Simulation<DataType> sim(data);
-		return sim;
+		return Citcat::Simulation<GridManager>(manager);
 	}
 
 	/// Build a rectangular grid.
