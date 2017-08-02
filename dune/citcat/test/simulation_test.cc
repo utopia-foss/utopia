@@ -10,7 +10,7 @@ int main(int argc, char** argv)
 		constexpr unsigned int agent_count = 10;
 
 		auto grid = Citcat::Setup::create_grid(cell_count);
-		auto cells = Citcat::Setup::create_cells_on_grid(grid,[](){return 0;});
+		auto cells = Citcat::Setup::create_cells_on_grid(grid,0);
 		auto agents = Citcat::Setup::create_agents_on_grid(grid,agent_count,0);
 		// structured, non-periodic manager
 		auto manager = Citcat::Setup::create_manager<true,false>(grid,cells,agents);
