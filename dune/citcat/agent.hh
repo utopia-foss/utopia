@@ -57,6 +57,15 @@ std::enable_if_t<i!=0,std::pair<double,double>> cell_limits_per_index (const std
 
 // ---  --- //
 
+/// Clone an agent, copying state, traits, and position
+/** \param agent Pointer to the agent that should be cloned
+ *  \return Shared pointer to the new agent
+ */
+template<class Agent>
+std::shared_ptr<Agent> clone (const std::shared_ptr<Agent> agent)
+{
+	return std::make_shared<Agent>(*agent);
+}
 
 /// Remove an agent from a managed container
 /** \param agent Agent to be removed
