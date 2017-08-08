@@ -1,3 +1,13 @@
+template<class Agent>
+void test_cloning (Agent agent)
+{
+	auto clone = Citcat::clone(agent);
+	assert(clone != agent);
+	assert(clone->state() == agent->state());
+	assert(clone->traits() == agent->traits());
+	assert(clone->position() == agent->position());
+}
+
 template<class M1, class M2, class M3>
 void compare_cells_of_agents (const M1& m1, const M2& m2, const M3& m3)
 {
@@ -60,6 +70,11 @@ void test_agents_on_grid (const std::size_t agent_count, const std::size_t grid_
 
 	cells.clear();
 	agents.clear();
+
+	// check cloning
+	test_cloning(*m1.agents().begin());
+	// assert that clone is not inserted
+	assert(Citcat::add(Citcat::clone(*m1.agents().begin()),m1));
 
 		// check if cells are found correctly
 	compare_cells_of_agents(m1,m2,m3);
