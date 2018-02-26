@@ -1,0 +1,16 @@
+stages:
+- main
+
+build_job:
+  stage: main
+  tags:
+  - docker
+  image: citcat/dune-env:latest
+  script:
+  - cd /opt/dune
+  - ./dune-common/bin/dunecontrol update
+  - export DUNE_CONTROL_PATH=/opt/dune:$CI_PROJECT_DIR
+  - ./dune-common/bin/dunecontrol --module=citcat all
+  - ./dune-common/bin/dunecontrol --only=citcat make doc
+  - ./dune-common/bin/dunecontrol --only=citcat make build_tests
+  - ./dune-common/bin/dunecontrol --only=citcat make test

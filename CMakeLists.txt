@@ -19,10 +19,11 @@ include(DuneMacros)
 
 # start a dune project with information from dune.module
 dune_project()
-
 dune_enable_all_packages()
 
-add_subdirectory(src)
+# require most recent C++ standard
+dune_require_cxx_standard(MODULE "utopia" VERSION 17)
+
 add_subdirectory(dune)
 add_subdirectory(doc)
 add_subdirectory(cmake/modules)
