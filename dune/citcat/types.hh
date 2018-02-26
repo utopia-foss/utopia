@@ -3,7 +3,7 @@
 
 namespace Citcat
 {
-	
+    
 /// Type of default grid: Rectangular, lower left cell center has coordinates (0,0)
 template<int dim>
 using DefaultGrid = Dune::YaspGrid<dim>;
@@ -14,21 +14,21 @@ using DefaultGrid = Dune::YaspGrid<dim>;
 template<typename GridType>
 struct GridTypeAdaptor
 {
-	//! spatial dimensions of the grid
-	static constexpr int dim = GridType::dimension;
-	//! Coordinate type
-	using Coordinate = typename GridType::ctype;
-	//! Position vector
-	using Position = typename Dune::FieldVector<Coordinate,dim>;
-	//! Type of GridView implemented by Dune
-	using GridView = typename GridType::LeafGridView;
-	//! Type of VTKSequenceWriter
-	using VTKWriter = typename Dune::VTKSequenceWriter<GridView>;
-	//! Type of Grid Index Mapper
-	using Mapper = typename Dune::MultipleCodimMultipleGeomTypeMapper<GridView,Dune::MCMGElementLayout>;
-	//using Mapper = typename Dune::GlobalUniversalMapper<GridType>;
-	//! Type of grid index
-	using Index = typename Mapper::Index;
+    //! spatial dimensions of the grid
+    static constexpr int dim = GridType::dimension;
+    //! Coordinate type
+    using Coordinate = typename GridType::ctype;
+    //! Position vector
+    using Position = typename Dune::FieldVector<Coordinate,dim>;
+    //! Type of GridView implemented by Dune
+    using GridView = typename GridType::LeafGridView;
+    //! Type of VTKSequenceWriter
+    using VTKWriter = typename Dune::VTKSequenceWriter<GridView>;
+    //! Type of Grid Index Mapper
+    using Mapper = typename Dune::MultipleCodimMultipleGeomTypeMapper<GridView,Dune::MCMGElementLayout>;
+    //using Mapper = typename Dune::GlobalUniversalMapper<GridType>;
+    //! Type of grid index
+    using Index = typename Mapper::Index;
 };
 
 /// Type of the variably sized container for cells

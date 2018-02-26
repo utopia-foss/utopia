@@ -40,7 +40,7 @@
 #include "data.hh"
 #include "data_vtk.hh"
 #ifdef HAVE_PSGRAF
-	#include "data_eps.hh"
+    #include "data_eps.hh"
 #endif // HAVE_PSGRAF
 #include "simulation.hh"
 #include "setup.hh"

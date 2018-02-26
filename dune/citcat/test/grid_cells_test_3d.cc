@@ -6,19 +6,19 @@
 
 int main(int argc, char** argv)
 {
-	try{
-		Dune::MPIHelper::instance(argc,argv);
+    try{
+        Dune::MPIHelper::instance(argc,argv);
 
-		cells_on_grid_test<3>(15);
+        cells_on_grid_test<3>(15);
 
-		return 0;
-	}
-	catch(Dune::Exception c){
-		std::cerr << c << std::endl;
-		return 1;
-	}
-	catch(...){
-		std::cerr << "Unknown exception thrown!" << std::endl;
-		return 2;
-	}
+        return 0;
+    }
+    catch(Dune::Exception c){
+        std::cerr << c << std::endl;
+        return 1;
+    }
+    catch(...){
+        std::cerr << "Unknown exception thrown!" << std::endl;
+        return 2;
+    }
 }
