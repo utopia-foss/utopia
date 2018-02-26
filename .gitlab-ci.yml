@@ -19,11 +19,11 @@ build:main:
     - ./dune-common/bin/dunecontrol update
     - ./dune-common/bin/dunecontrol --module=utopia all
     - ./dune-common/bin/dunecontrol --only=utopia make doc
+    - ./dune-common/bin/dunecontrol --only=utopia make build_tests
 
 test:main:
   stage: test
   dependencies:
     - build:main
   script:
-    - ./dune-common/bin/dunecontrol --only=utopia make build_tests
     - ARGS="--output-on-failure" ./dune-common/bin/dunecontrol --only=utopia make test
