@@ -8,7 +8,7 @@ void assert_cells_on_grid(std::shared_ptr<Grid> grid, CellContainer& cells)
     using GridTypes = Utopia::GridTypeAdaptor<Grid>;
     using Mapper = typename GridTypes::Mapper;
     auto gv = grid->leafGridView();
-    Mapper mapper(gv);
+    Mapper mapper(gv, Dune::mcmgElementLayout());
 
     for(const auto& e : elements(gv)){
         const auto id = mapper.index(e);

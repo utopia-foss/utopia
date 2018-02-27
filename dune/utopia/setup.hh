@@ -188,7 +188,7 @@ namespace Setup
 
         auto grid = grid_wrapper._grid;
         GV gv(*grid);
-        Mapper mapper(gv);
+        Mapper mapper(gv, Dune::mcmgElementLayout());
         CellContainer<CellType> cells;
         cells.reserve(mapper.size());
 

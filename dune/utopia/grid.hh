@@ -70,7 +70,7 @@ public:
         _grid_cells(wrapper._grid_cells),
         _extensions(wrapper._extensions),
         _gv(_grid->leafGridView()),
-        _mapper(_gv),
+        _mapper(_gv, Dune::mcmgElementLayout()),
         _cells(cells)
     { }
 
@@ -83,7 +83,7 @@ public:
         _grid_cells(wrapper._grid_cells),
         _extensions(wrapper._extensions),
         _gv(_grid->leafGridView()),
-        _mapper(_gv),
+        _mapper(_gv, Dune::mcmgElementLayout()),
         _cells(cells),
         _agents(agents)
     { }
@@ -96,7 +96,7 @@ public:
         _grid_cells(wrapper._grid_cells),
         _extensions(wrapper._extensions),
         _gv(_grid->leafGridView()),
-        _mapper(_gv),
+        _mapper(_gv, Dune::mcmgElementLayout()),
         _agents(agents)
     { }
 
