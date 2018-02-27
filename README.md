@@ -73,7 +73,7 @@ Ubuntu is shipped with APT.
 
 5. Configure and build DUNE and Utopia by executing the `dunecontrol` script:
 
-        ./dune-common/bin/dunecontrol --module=utopia all
+        CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=Release" ./dune-common/bin/dunecontrol --module=utopia all
 
     Afterwards, reconfiguring and rebuilding can now also be done locally,
     instead of calling `dunecontrol`. After entering the `utopia/build-cmake` directory,
