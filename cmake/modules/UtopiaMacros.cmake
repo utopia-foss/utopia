@@ -11,3 +11,6 @@ message(STATUS "Found PSGraf: ${PSGRAF_LIBRARIES}")
 	list(APPEND DUNE_LIBS ${PSGRAF_LIBRARIES})
 	add_definitions(-DHAVE_PSGRAF)
 endif()
+
+# include Utopia macros
+include(PythonInstallPackageRemote)
