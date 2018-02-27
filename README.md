@@ -32,7 +32,7 @@ Follow the Step-by-step instructions below for building Utopia from source.
 ### Optional Packages
 | Software | Version | Purpose |
 | -------- | ------- | ------- |
-| [PSGraf](https://zwackelmann.iup.uni-heidelberg.de:10443/tools/psgraf)| master | Data visualization on the fly |
+| [PSGraf](https://ts-gitlab.iup.uni-heidelberg.de/tools/psgraf)| master | Data visualization on the fly |
 
 Install PSGraf according to its installation manual. When executing `dunecontrol`, append `CMAKE_FLAGS="-DPSGRAF_ROOT=<path/to/psgraf/build>"`. If PSGraf is found, the preprocessor macro `HAVE_PSGRAF` is set.
 
@@ -61,7 +61,7 @@ Ubuntu is shipped with APT.
 
 3. Use `[git clone](https://git-scm.com/docs/git-clone)` to clone the
     DUNE repositories listed above into a suitable folder on your machine.
-    Make sure to `[git checkout](https://git-scm.com/docs/git-checkout)` the correct branches.
+    Make sure to `[git checkout](https://git-scm.com/docs/git-checkout)` the correct branches (see the dependency list above).
 
 4. __macOS only:__ Make sure that CMake uses the Homebrew GCC instead of
     the command line tools Clang:
@@ -78,6 +78,10 @@ Ubuntu is shipped with APT.
     Afterwards, reconfiguring and rebuilding can now also be done locally,
     instead of calling `dunecontrol`. After entering the `utopia/build-cmake` directory,
     you can call `cmake ..` or `make` directly.
+
+    *Troubleshooting:* If you have a previous installation and the build failed, try removing *all* the `build-cmake` directories, either manually or using
+
+        rm -r ./*/build-cmake/
 
 
 ### Building the Documentation
