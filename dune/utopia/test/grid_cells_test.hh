@@ -70,13 +70,22 @@ void mark_neighbors (const std::shared_ptr<Cell> cell, const Manager &mngr)
 
 /// Plot a visual of the neighborhood of a cell
 template<typename NB, typename ID, class M1, class M2>
-void visual_check (const ID id, const M1 &m1, const M2 &m2)
+void visual_check (const ID id, const M1 &m1, const M2 &m2, const std::string prefix)
 {
+    // Mark neighbors on both grid managers
     mark_neighbors<NB>(m1.cells()[id], m1);
     mark_neighbors<NB>(m2.cells()[id], m2);
-    auto vtk_writer = Utopia::Output::create_vtk_writer(m1.grid());
-    vtk_writer->add_adaptor(Utopia::Output::vtk_output_cell_state(m1.cells()));
-    vtk_writer->write(0);
+
+    // Write out both grids
+    auto vtkw_1 = Utopia::Output::create_vtk_writer(m1.grid(),
+                                                    prefix + "_m1");
+    vtkw_1->add_adaptor(Utopia::Output::vtk_output_cell_state(m1.cells()));
+    vtkw_1->write(0);
+
+    auto vtkw_2 = Utopia::Output::create_vtk_writer(m2.grid(),
+                                                    prefix + "_m2");
+    vtkw_2->add_adaptor(Utopia::Output::vtk_output_cell_state(m2.cells()));
+    vtkw_2->write(0);
 }
 
 /// Assure that periodic grid has the correct Neighbor count
@@ -102,16 +111,23 @@ constexpr void check_grid_neighbors_count (const Manager& manager)
 
 /// Compare the neighborhood implementations for two manager types
 template<typename NBClass, typename M1, typename M2>
-void compare_neighborhoods (const M1& m1, const M2& m2)
+void compare_neighborhoods (const M1& m1, const M2& m2, const std::string comp_case)
 {
-    for(std::size_t i=0; i<m1.cells().size(); ++i){
+    // Go over all cells 
+    for(std::size_t i=1; i<m1.cells().size(); ++i){
         const auto nb1 = NBClass::neighbors(m1.cells()[i], m1);
         const auto nb2 = NBClass::neighbors(m2.cells()[i], m2);
+        
         // check size
         if (nb1.size() != nb2.size()) {
-            visual_check<NBClass>(i, m1, m2);
-            DUNE_THROW(Dune::Exception, "Mismatch of neighborhood size!");
+            visual_check<NBClass>(i, m1, m2, comp_case);
+            DUNE_THROW(Dune::Exception,
+                       "Mismatch of neighborhood size for " << comp_case
+                       << " and cell with index " << i << ": "
+                       << nb1.size() << " != "  << nb2.size() << std::endl
+                       << "Visual check output was generated.");
         }
+        
         // check actual neighbors
         for(auto a : nb1){
             assert(std::find_if(nb2.begin(),nb2.end(),
@@ -125,6 +141,12 @@ void compare_neighborhoods (const M1& m1, const M2& m2)
 template<int dim>
 void cells_on_grid_test (const unsigned int cells_per_dim)
 {
+    // Alias the neighborhood classes
+    using NextNeighbor = Utopia::Neighborhoods::NextNeighbor;
+    using NextNeighborNew = Utopia::Neighborhoods::NextNeighborNew;
+    using MooreNeighbor = Utopia::Neighborhoods::MooreNeighbor;
+
+    // Setup grid and cells
     auto grid = Utopia::Setup::create_grid<dim>(cells_per_dim);
     auto cells = Utopia::Setup::create_cells_on_grid(grid);
 
@@ -143,15 +165,18 @@ void cells_on_grid_test (const unsigned int cells_per_dim)
     assert_cells_on_grid(m3.grid(),m3.cells());
 
     // compare neighborhood implementations (m1: structured, m2: unstructured)
-    compare_neighborhoods<Utopia::Neighborhoods::NextNeighbor>(m1, m2);
-    compare_neighborhoods<Utopia::Neighborhoods::NextNeighborNew>(m1, m2);
-    compare_neighborhoods<Utopia::Neighborhoods::MooreNeighbor>(m1, m2);
+    compare_neighborhoods<NextNeighbor>(m1, m2,
+                                        std::to_string(dim) + "d_nn");
+    compare_neighborhoods<NextNeighborNew>(m1, m2,
+                                           std::to_string(dim) + "d_nn_new");
+    compare_neighborhoods<MooreNeighbor>(m1, m2,
+                                         std::to_string(dim) + "d_moore");
 
     // check periodic boundaries
-    check_grid_neighbors_count<Utopia::Neighborhoods::NextNeighbor, 2*dim>(m3);
-    check_grid_neighbors_count<Utopia::Neighborhoods::NextNeighborNew, 2*dim>(m3);
+    check_grid_neighbors_count<NextNeighbor, 2*dim>(m3);
+    check_grid_neighbors_count<NextNeighborNew, 2*dim>(m3);
 
     const int moore_nb_count = std::pow(3, dim) - 1;
-    check_grid_neighbors_count<Utopia::Neighborhoods::MooreNeighbor, moore_nb_count>(m3);
+    check_grid_neighbors_count<MooreNeighbor, moore_nb_count>(m3);
 
 }
