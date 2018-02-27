@@ -1,12 +1,19 @@
-#install headers
-install(FILES citcat.hh
+# install headers
+install(FILES
+            agent.hh
             cell.hh
-            data_vtk.hh
-            setup.hh
             data.hh
+            data_eps.hh
+            data_vtk.hh
             entity.hh
+            grid.hh
+            neighborhoods.hh
+            setup.hh
             simulation.hh
+            test
             types.hh
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/dune/citcat)
+            utopia.hh
+            utopia_dune.hh
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/dune/utopia)
 
 add_subdirectory(test EXCLUDE_FROM_ALL)
