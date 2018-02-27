@@ -5,7 +5,7 @@
 template<typename Grid, typename CellContainer>
 void assert_cells_on_grid(std::shared_ptr<Grid> grid, CellContainer& cells)
 {
-    using GridTypes = Citcat::GridTypeAdaptor<Grid>;
+    using GridTypes = Utopia::GridTypeAdaptor<Grid>;
     using Mapper = typename GridTypes::Mapper;
     auto gv = grid->leafGridView();
     Mapper mapper(gv);
@@ -42,7 +42,7 @@ void check_grid_neighbors_count (const Manager& manager)
 
     bool exception = false;
     for(const auto cell : manager.cells()){
-        const auto neighbors = Citcat::Neighborhoods::NextNeighbor::neighbors(cell,manager);
+        const auto neighbors = Utopia::Neighborhoods::NextNeighbor::neighbors(cell,manager);
         if(neighbors.size() != nb_count){
             std::cerr << "Cell No. " << cell->index()
                 << " has " << neighbors.size()
@@ -60,8 +60,8 @@ template<typename M1, typename M2>
 void compare_neighborhoods (const M1& m1, const M2& m2)
 {
     for(std::size_t i=0; i<m1.cells().size(); ++i){
-        const auto nb1 = Citcat::Neighborhoods::NextNeighbor::neighbors(m1.cells()[i],m1);
-        const auto nb2 = Citcat::Neighborhoods::NextNeighbor::neighbors(m2.cells()[i],m2);
+        const auto nb1 = Utopia::Neighborhoods::NextNeighbor::neighbors(m1.cells()[i],m1);
+        const auto nb2 = Utopia::Neighborhoods::NextNeighbor::neighbors(m2.cells()[i],m2);
         // check size
         assert(nb1.size() == nb2.size());
         // check actual neighbors
@@ -77,15 +77,15 @@ void compare_neighborhoods (const M1& m1, const M2& m2)
 template<int dim>
 void cells_on_grid_test (const unsigned int cells_per_dim)
 {
-    auto grid = Citcat::Setup::create_grid<dim>(cells_per_dim);
-    auto cells = Citcat::Setup::create_cells_on_grid(grid);
+    auto grid = Utopia::Setup::create_grid<dim>(cells_per_dim);
+    auto cells = Utopia::Setup::create_cells_on_grid(grid);
 
     // structured, non-periodic
-    auto m1 = Citcat::Setup::create_manager<true,false>(grid,cells);
+    auto m1 = Utopia::Setup::create_manager<true,false>(grid,cells);
     // unstructured, non-periodic
-    auto m2 = Citcat::Setup::create_manager<false,false>(grid,cells);
+    auto m2 = Utopia::Setup::create_manager<false,false>(grid,cells);
     // structured, periodic
-    auto m3 = Citcat::Setup::create_manager<true,true>(grid,cells);
+    auto m3 = Utopia::Setup::create_manager<true,true>(grid,cells);
 
     cells.clear(); // ensure that original container is empty
 

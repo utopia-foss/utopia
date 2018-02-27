@@ -19,4 +19,4 @@
 #include <dune/grid/common/universalmapper.hh>
 #include <dune/grid/io/file/vtk/vtksequencewriter.hh>
 
-#endif // CITCAT_DUNE_HH
+#endif // UTOPIA_DUNE_HH

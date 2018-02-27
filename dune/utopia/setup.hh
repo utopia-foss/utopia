@@ -1,7 +1,7 @@
 #ifndef SETUP_HH
 #define SETUP_HH
 
-namespace Citcat
+namespace Utopia
 {
 
 /// Return the extensions of a grid
@@ -88,15 +88,15 @@ namespace Setup
     /** This function places the data inside a SimulationWrapper for
      *  convenience and sets up a simulation from this wrapper.
      *  The individuals container is replaced by the
-     *  Citcat::EmptyContainer template.
+     *  Utopia::EmptyContainer template.
      *  \param grid Shared pointer to the grid from which the cells were built
      *  \param cells Cell container
      *  \return Simulation object
      */
     template<class GridManager>
-    auto create_sim (GridManager& manager) -> Citcat::Simulation<GridManager>
+    auto create_sim (GridManager& manager) -> Utopia::Simulation<GridManager>
     {
-        return Citcat::Simulation<GridManager>(manager);
+        return Utopia::Simulation<GridManager>(manager);
     }
 
     /// Build a rectangular grid.
@@ -263,6 +263,6 @@ namespace Setup
 
 } // namespace Setup
 
-} // namespace Citcat
+} // namespace Utopia
 
 #endif // SETUP_HH

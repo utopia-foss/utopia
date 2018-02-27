@@ -15,7 +15,7 @@
 #define PREC std::fixed //!< Floating point output precision
 #define FILETYPE ".dat" //!< Data file extension
 
-namespace Citcat
+namespace Utopia
 {
 
 /// Generic data write interface.
@@ -247,7 +247,7 @@ namespace Output
 
 } // namespace Output
 
-} // namespace Citcat
+} // namespace Utopia
 
 
 

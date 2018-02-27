@@ -1,7 +1,7 @@
 #ifndef DATA_VTK_HH
 #define DATA_VTK_HH
 
-namespace Citcat
+namespace Utopia
 {
 
 /// Interface for wrapping data to be written by a VTKWrapper.
@@ -333,6 +333,6 @@ namespace Output {
 
 } // namespace Output
 
-} // namespace Citcat
+} // namespace Utopia
 
 #endif // DATA_VTK_HH

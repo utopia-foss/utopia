@@ -27,7 +27,7 @@ int main(int argc, char **argv)
         const int tag = 1;
 
         /// test initialization
-        Citcat::Entity<State,Traits> e1(state,traits,tag);
+        Utopia::Entity<State,Traits> e1(state,traits,tag);
         assert_entity_members(e1,state,state,traits,traits,tag);
 
         /// test accessing state and traits cache

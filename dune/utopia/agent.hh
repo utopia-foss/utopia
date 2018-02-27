@@ -1,7 +1,7 @@
 #ifndef AGENT_HH
 #define AGENT_HH
 
-namespace Citcat {
+namespace Utopia {
 
 // --- helper functions for decreasing runtime overhead --- //
 
@@ -331,6 +331,6 @@ public:
 
 };
 
-} // namespace Citcat
+} // namespace Utopia
 
 #endif // AGENT_HH

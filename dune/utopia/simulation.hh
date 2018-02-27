@@ -1,7 +1,7 @@
 #ifndef SIMULATION_HH
 #define SIMULATION_HH
 
-namespace Citcat
+namespace Utopia
 {
 
 /// Manage state propagation and data printout
@@ -259,6 +259,6 @@ private:
 
 };
 
-} // namespace Citcat
+} // namespace Utopia
 
 #endif // SIMULATION_HH

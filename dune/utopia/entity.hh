@@ -1,7 +1,7 @@
 #ifndef ENTITY_HH
 #define ENTITY_HH
 
-namespace Citcat
+namespace Utopia
 {
     
 /// Base class for Cells and Individuals, containing information on State and Traits
@@ -62,6 +62,6 @@ private:
 
 };
 
-} // namespace Citcat
+} // namespace Utopia
 
 #endif // ENTITY_HH

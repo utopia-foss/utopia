@@ -1,7 +1,7 @@
 template<class Agent>
 void test_cloning (Agent agent)
 {
-    auto clone = Citcat::clone(agent);
+    auto clone = Utopia::clone(agent);
     assert(clone != agent);
     assert(clone->state() == agent->state());
     assert(clone->traits() == agent->traits());
@@ -12,9 +12,9 @@ template<class M1, class M2, class M3>
 void compare_cells_of_agents (const M1& m1, const M2& m2, const M3& m3)
 {
     for(auto agent : m1.agents()){
-        auto cell1 = Citcat::find_cell(agent,m1);
-        auto cell2 = Citcat::find_cell(agent,m2);
-        auto cell3 = Citcat::find_cell(agent,m3);
+        auto cell1 = Utopia::find_cell(agent,m1);
+        auto cell2 = Utopia::find_cell(agent,m2);
+        auto cell3 = Utopia::find_cell(agent,m3);
         assert(cell1 == cell2 && cell1 == cell3);
     }
 }
@@ -23,16 +23,16 @@ template<typename Position, class Agent, class Manager>
 void move_to_and_back (const Position& pos, const std::shared_ptr<Agent> agent, const Manager& manager)
 {
     const auto pos_old = agent->position();
-    Citcat::move_to(pos,agent,manager);
-    Citcat::move_to(pos_old,agent,manager);
+    Utopia::move_to(pos,agent,manager);
+    Utopia::move_to(pos_old,agent,manager);
 }
 
 template<class Manager>
 void compare_agent_cell_coupling (const Manager& manager)
 {
     for(auto agent : manager.agents()){
-        const auto cell = Citcat::find_cell(agent,manager);
-        const auto cell_agents = Citcat::find_agents_on_cell(cell,manager);
+        const auto cell = Utopia::find_cell(agent,manager);
+        const auto cell_agents = Utopia::find_agents_on_cell(cell,manager);
         if(std::find(cell_agents.begin(),cell_agents.end(),agent)
             == cell_agents.end()){
             std::cout << "Agent: ";
@@ -50,11 +50,11 @@ void compare_agent_cell_coupling (const Manager& manager)
 template<int dim>
 void test_agents_on_grid (const std::size_t agent_count, const std::size_t grid_size)
 {
-    auto grid = Citcat::Setup::create_grid<dim>(grid_size);
-    auto cells = Citcat::Setup::create_cells_on_grid(grid);
-    auto agents = Citcat::Setup::create_agents_on_grid(grid,agent_count);
+    auto grid = Utopia::Setup::create_grid<dim>(grid_size);
+    auto cells = Utopia::Setup::create_cells_on_grid(grid);
+    auto agents = Utopia::Setup::create_agents_on_grid(grid,agent_count);
 
-    using Pos = typename Citcat::GridTypeAdaptor<typename decltype(grid._grid)::element_type>::Position;
+    using Pos = typename Utopia::GridTypeAdaptor<typename decltype(grid._grid)::element_type>::Position;
 
     std::random_device rd;
     std::mt19937 gen(rd());
@@ -62,11 +62,11 @@ void test_agents_on_grid (const std::size_t agent_count, const std::size_t grid_
     auto gen1 = [&gen,&dist](){ return dist(gen); };
 
         // unstructured, non-periodic
-    auto m1 = Citcat::Setup::create_manager<false,false>(grid,cells,agents);
+    auto m1 = Utopia::Setup::create_manager<false,false>(grid,cells,agents);
         // structured, non-periodic
-    auto m2 = Citcat::Setup::create_manager<true,false>(grid,cells,agents);
+    auto m2 = Utopia::Setup::create_manager<true,false>(grid,cells,agents);
         // structured, periodic
-    auto m3 = Citcat::Setup::create_manager<true,true>(grid,cells,agents);
+    auto m3 = Utopia::Setup::create_manager<true,true>(grid,cells,agents);
 
     cells.clear();
     agents.clear();
@@ -74,7 +74,7 @@ void test_agents_on_grid (const std::size_t agent_count, const std::size_t grid_
     // check cloning
     test_cloning(*m1.agents().begin());
     // assert that clone is not inserted
-    assert(Citcat::add(Citcat::clone(*m1.agents().begin()),m1));
+    assert(Utopia::add(Utopia::clone(*m1.agents().begin()),m1));
 
         // check if cells are found correctly
     compare_cells_of_agents(m1,m2,m3);
@@ -95,7 +95,7 @@ void test_agents_on_grid (const std::size_t agent_count, const std::size_t grid_
         auto gen2 = [&gen,&dist2](){ return dist2(gen); };
         Pos pos;
         std::generate(pos.begin(),pos.end(),gen2);
-        Citcat::move_to(pos,agent,m3);
+        Utopia::move_to(pos,agent,m3);
     }
     compare_cells_of_agents(m1,m2,m3);
 
@@ -104,7 +104,7 @@ void test_agents_on_grid (const std::size_t agent_count, const std::size_t grid_
     std::fill(extensions.begin(),extensions.end(),grid_size);
     for(auto agent: m1.agents()){
         const auto pos = agent->position();
-        Citcat::move_to(pos+extensions,agent,m3);
+        Utopia::move_to(pos+extensions,agent,m3);
         const auto diff = pos - agent->position();
         assert(diff.two_norm() < 1e-6);
     }
@@ -116,10 +116,10 @@ void test_agents_on_grid (const std::size_t agent_count, const std::size_t grid_
 
     // check removal and addition of agents
     const auto agent = m1.agents().front();
-    Citcat::remove(agent,m1);
+    Utopia::remove(agent,m1);
     assert(std::find(m2.agents().begin(),m2.agents().end(),agent)!=m2.agents().end());
     assert(std::find(m1.agents().begin(),m1.agents().end(),agent)==m1.agents().end());
-    assert(Citcat::add(agent,m1));
+    assert(Utopia::add(agent,m1));
     assert(m1.agents().back() == agent);
-    assert(!Citcat::add(agent,m2));
+    assert(!Utopia::add(agent,m2));
 }

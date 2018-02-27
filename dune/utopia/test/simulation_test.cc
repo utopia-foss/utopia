@@ -9,18 +9,18 @@ int main(int argc, char** argv)
         constexpr unsigned int cell_count = 10;
         constexpr unsigned int agent_count = 10;
 
-        auto grid = Citcat::Setup::create_grid(cell_count);
-        auto cells = Citcat::Setup::create_cells_on_grid(grid,0);
-        auto agents = Citcat::Setup::create_agents_on_grid(grid,agent_count,0);
+        auto grid = Utopia::Setup::create_grid(cell_count);
+        auto cells = Utopia::Setup::create_cells_on_grid(grid,0);
+        auto agents = Utopia::Setup::create_agents_on_grid(grid,agent_count,0);
         // structured, non-periodic manager
-        auto manager = Citcat::Setup::create_manager<true,false>(grid,cells,agents);
+        auto manager = Utopia::Setup::create_manager<true,false>(grid,cells,agents);
 
         // create VTK writer
-        auto vtkwriter = Citcat::Output::create_vtk_writer(grid._grid,"sim-test");
-        vtkwriter->add_adaptor(Citcat::Output::vtk_output_cell_state(manager.cells()));
+        auto vtkwriter = Utopia::Output::create_vtk_writer(grid._grid,"sim-test");
+        vtkwriter->add_adaptor(Utopia::Output::vtk_output_cell_state(manager.cells()));
 
         // create simulation
-        auto sim = Citcat::Setup::create_sim(manager);
+        auto sim = Utopia::Setup::create_sim(manager);
         sim.add_output(vtkwriter);
 
         sim.add_rule([&](const auto cell){

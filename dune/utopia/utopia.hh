@@ -30,7 +30,7 @@
 // DUNE HEADERS
 #include "utopia_dune.hh"
 
-// CITCAT
+// UTOPIA
 #include "types.hh"
 #include "neighborhoods.hh"
 #include "entity.hh"
@@ -45,4 +45,4 @@
 #include "simulation.hh"
 #include "setup.hh"
 
-#endif // CITCAT_HH
+#endif // UTOPIA_HH

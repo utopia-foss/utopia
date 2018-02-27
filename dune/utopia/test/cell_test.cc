@@ -26,7 +26,7 @@ int main(int argc, char const *argv[])
         const Index index = 2;
         const bool boundary = true;
 
-        Citcat::Cell<State,Traits,Position,Index> c1(state,traits,pos,index,boundary,tag);
+        Utopia::Cell<State,Traits,Position,Index> c1(state,traits,pos,index,boundary,tag);
         assert_entity_members(c1,state,state,traits,traits,tag);
         assert_cell_members(c1,pos,index,boundary);
 

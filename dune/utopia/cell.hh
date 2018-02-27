@@ -1,7 +1,7 @@
 #ifndef CELL_HH
 #define CELL_HH
 
-namespace Citcat
+namespace Utopia
 {
 
 /// This class implements an Entity on a grid.
@@ -76,6 +76,6 @@ private:
 
 };
 
-} // namespace Citcat
+} // namespace Utopia
 
 #endif // CELL_HH

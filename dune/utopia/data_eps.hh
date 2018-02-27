@@ -1,6 +1,6 @@
 #include <PSgraf312.h>
 
-namespace Citcat
+namespace Utopia
 {
 
 template<typename Container>
@@ -171,4 +171,4 @@ namespace Output {
 
 } //Namespace Output
 
-} //Namespace CitCat
+} //Namespace Utopia

@@ -1,7 +1,7 @@
 #ifndef GRID_HH
 #define GRID_HH
 
-namespace Citcat {
+namespace Utopia {
 
 /// Struct for returning relevant grid data from Setup functions
 template<typename GridType>
@@ -126,6 +126,6 @@ public:
 
 };
 
-} // namespace Citcat
+} // namespace Utopia
 
 #endif // GRID_HH

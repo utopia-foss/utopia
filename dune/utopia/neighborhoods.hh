@@ -1,7 +1,7 @@
 #ifndef NEIGHBORHOODS_HH
 #define NEIGHBORHOODS_HH
 
-namespace Citcat {
+namespace Utopia {
 
 /// Return 0-dimensional shift in grid cells
 template<std::size_t index, typename T>
@@ -221,6 +221,6 @@ public:
 
 
 } // namespace Neighborhoods
-} // namespace Citcat
+} // namespace Utopia
 
 #endif // NEIGHBORHOODS_HH

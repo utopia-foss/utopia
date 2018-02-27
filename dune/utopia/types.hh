@@ -1,7 +1,7 @@
 #ifndef TYPES_HH
 #define TYPES_HH
 
-namespace Citcat
+namespace Utopia
 {
     
 /// Type of default grid: Rectangular, lower left cell center has coordinates (0,0)
@@ -42,6 +42,6 @@ using AgentContainer = std::list<std::shared_ptr<AgentType>>;
 /// Container dummy if no cells or individuals are used
 using EmptyContainer = std::array<std::shared_ptr<int>,0>;
 
-} // namespace Citcat
+} // namespace Utopia
 
 #endif // TYPES_HH

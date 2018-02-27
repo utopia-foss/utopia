@@ -16,10 +16,10 @@ int main(int argc, char** argv) {
         std::ranlux24_base gen(123456);
         std::uniform_int_distribution<> dist(0, 3);
 
-        auto grid = Citcat::Setup::create_grid(8);
-        auto cells = Citcat::Setup::create_cells_on_grid< int >(grid);
-        auto manager = Citcat::Setup::create_manager<structured,periodic>(grid,cells);
-        auto sim = Citcat::Setup::create_sim(manager);
+        auto grid = Utopia::Setup::create_grid(8);
+        auto cells = Utopia::Setup::create_cells_on_grid< int >(grid);
+        auto manager = Utopia::Setup::create_manager<structured,periodic>(grid,cells);
+        auto sim = Utopia::Setup::create_sim(manager);
 
         for (auto cell : cells){
             cell->new_state() = dist(gen);
@@ -29,8 +29,8 @@ int main(int argc, char** argv) {
         using Cells = decltype(cells);
         using Cell = typename Cells::value_type;
 
-        auto epswriter = Citcat::Output::eps_plot_cell_state(cells);
-        auto eps_writer = Citcat::Output::eps_plot_cell_function(cells, std::function<int(Cell)>([](Cell cell){ return cell->state(); }), "result");
+        auto epswriter = Utopia::Output::eps_plot_cell_state(cells);
+        auto eps_writer = Utopia::Output::eps_plot_cell_function(cells, std::function<int(Cell)>([](Cell cell){ return cell->state(); }), "result");
         epswriter->write(0);
         eps_writer->write(0);
         sim.add_output(epswriter);
