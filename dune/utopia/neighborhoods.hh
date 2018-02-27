@@ -340,6 +340,122 @@ public:
 
 };
 
+
+/// Moore neighborhood on structured 2D and 3D lattices and unstructured grids
+/** Classicaly, this is only defined on a 2D square lattice and only for
+ *  structured grids. The implementation here adds a 3D version, by using the
+ *  three-dimensional cube of side length 3 around the desired cell as the
+ *  neighborhood.
+ * 
+ *  The algorithm for the structured grids works basically by finding neighbors
+ *  in one dimension and then, in turn, adding the neighbors neighbors _in
+ *  another dimension_.
+ */
+class MooreNeighbor
+{
+
+public:
+    /// Return Moore neighbors for structured 2D grid
+    template<class Manager, class Cell,
+             bool structured = Manager::is_structured()>
+    static auto neighbors (const std::shared_ptr<Cell> root, const Manager& mngr)
+        -> std::enable_if_t<structured && (Manager::Traits::dim == 2), typename NBTraits<Cell>::return_type>
+    {
+        // Generate vector in which to store the neighbors
+        std::vector<long> neighbor_ids;
+        neighbor_ids.reserve(8); // is known and fixed for 2D square grids
+
+        // Use the ID of the root cell; faster than doing multiple lookups
+        const long root_id = root->index();
+
+        // Get the neighbors in the second dimension
+        add_neighbors_in_dim<2>(root_id, neighbor_ids, mngr);
+        // ...have these neighbors at indices 0 and 1 now.
+
+        // For these neighbors and the root, add neighbors in the first dimension
+        add_neighbors_in_dim<1>(root_id,         neighbor_ids, mngr);
+        add_neighbors_in_dim<1>(neighbor_ids[0], neighbor_ids, mngr);
+        add_neighbors_in_dim<1>(neighbor_ids[1], neighbor_ids, mngr);
+
+        return cells_from_ids(neighbor_ids, mngr);
+    }
+
+    /// Return Moore neighbors for structured 3D grid
+    template<class Manager, class Cell,
+             bool structured = Manager::is_structured()>
+    static auto neighbors (const std::shared_ptr<Cell> root, const Manager& mngr)
+        -> std::enable_if_t<structured && (Manager::Traits::dim == 3), typename NBTraits<Cell>::return_type>
+    {
+        // Generate vector in which to store the neighbors
+        std::vector<long> neighbor_ids;
+        neighbor_ids.reserve(26); // is known and fixed for 3D square grids
+
+        // Use the ID of the root cell; faster than doing multiple lookups
+        const long root_id = root->index();
+
+        // Get the neighbors in the third dimension
+        add_neighbors_in_dim<3>(root_id, neighbor_ids, mngr);
+        // ...have them at indices 0 and 1 now.
+
+        // For these neighbors and the root, add their neighbors in the 2nd dimension
+        add_neighbors_in_dim<2>(root_id,         neighbor_ids, mngr);
+        add_neighbors_in_dim<2>(neighbor_ids[0], neighbor_ids, mngr);
+        add_neighbors_in_dim<2>(neighbor_ids[1], neighbor_ids, mngr);
+        // ...have them at indices 2, 3, 4, 5, 6, 7 now.
+
+        // And finally, add all neighbors in the first dimension
+        add_neighbors_in_dim<1>(root_id,         neighbor_ids, mngr);
+        add_neighbors_in_dim<1>(neighbor_ids[0], neighbor_ids, mngr);
+        add_neighbors_in_dim<1>(neighbor_ids[1], neighbor_ids, mngr);
+        add_neighbors_in_dim<1>(neighbor_ids[2], neighbor_ids, mngr);
+        add_neighbors_in_dim<1>(neighbor_ids[3], neighbor_ids, mngr);
+        add_neighbors_in_dim<1>(neighbor_ids[4], neighbor_ids, mngr);
+        add_neighbors_in_dim<1>(neighbor_ids[5], neighbor_ids, mngr);
+        add_neighbors_in_dim<1>(neighbor_ids[6], neighbor_ids, mngr);
+        add_neighbors_in_dim<1>(neighbor_ids[7], neighbor_ids, mngr);
+
+        return cells_from_ids(neighbor_ids, mngr);
+    }
+
+    /// Return Moore neighbors for unstructured grid
+    template<class Manager, class Cell,
+        bool structured = Manager::is_structured()>
+    static auto neighbors (const std::shared_ptr<Cell> root,
+        const Manager& mngr)
+        -> std::enable_if_t<!structured, typename NBTraits<Cell>::return_type>
+    {
+        // get regular neighbors first
+        const auto next_neighbors = NextNeighborNew::neighbors(root, mngr);
+
+        // get their neighbors
+        typename NBTraits<Cell>::return_type ret;
+        for (auto&& nb : next_neighbors) {
+            auto nn_neighbors = NextNeighborNew::neighbors(nb, mngr);
+            std::move(nn_neighbors.begin(), nn_neighbors.end(),
+                std::back_inserter(ret));
+        }
+
+        // remove root
+        ret.erase(std::remove_if(ret.begin(), ret.end(),
+                [&root](const auto cell){ return cell == root; }),
+            ret.end());
+
+        // only keep duplicates
+        ret.erase(std::remove_if(ret.begin(), ret.end(),
+                [&ret](const auto cell){
+                    return std::count(ret.begin(), ret.end(), cell) == 1;}),
+            ret.end());
+
+        // add regular neighbors to container
+        std::move(next_neighbors.begin(), next_neighbors.end(),
+            std::back_inserter(ret));
+
+        return ret;
+    }
+
+};
+
+
 template<std::size_t i=0>
 class Custom
 {
