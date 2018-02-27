@@ -10,7 +10,6 @@ install(FILES
             neighborhoods.hh
             setup.hh
             simulation.hh
-            test
             types.hh
             utopia.hh
             utopia_dune.hh
