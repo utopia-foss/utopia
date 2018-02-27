@@ -18,6 +18,7 @@ Follow the Step-by-step instructions below for building Utopia from source.
 | ---------| ------- | -------- |
 | GCC | >= 7 | Full C++17 compiler support required |
 | [CMake](https://cmake.org/) | >= 3.1 | |
+| Python | >= 3.6 | |
 | pkg-config | | |
 | [dune-common](https://gitlab.dune-project.org/core/dune-common) | master | |
 | [dune-geometry](https://gitlab.dune-project.org/core/dune-geometry) | master | |
@@ -52,12 +53,12 @@ Ubuntu is shipped with APT.
     __Ubuntu:__
 
         apt update
-        apt install cmake doxygen gcc g++ gfortran git pkg-config
+        apt install cmake doxygen gcc g++ gfortran git pkg-config python3-dev
     
     __macOS:__
 
         brew update
-        brew install cmake doxygen gcc-7 pkg-config
+        brew install cmake doxygen gcc-7 pkg-config python3
 
 3. Use `[git clone](https://git-scm.com/docs/git-clone)` to clone the
     DUNE repositories listed above into a suitable folder on your machine.
@@ -73,7 +74,7 @@ Ubuntu is shipped with APT.
 
 5. Configure and build DUNE and Utopia by executing the `dunecontrol` script:
 
-        CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=Release" ./dune-common/bin/dunecontrol --module=utopia all
+        CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=Release -DDUNE_PYTHON_VIRTUALENV_SETUP=True -DDUNE_PYTHON_ALLOW_GET_PIP=True" ./dune-common/bin/dunecontrol --module=utopia all
 
     Afterwards, reconfiguring and rebuilding can now also be done locally,
     instead of calling `dunecontrol`. After entering the `utopia/build-cmake` directory,
