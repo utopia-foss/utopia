@@ -35,6 +35,115 @@ auto cells_from_ids (const IndexContainer& cont, const Manager& mngr)
     return ret;
 }
 
+/// Fill an index container with neighbors in different directions
+/** This function takes an index container and populates it with the indices of
+ *  neighboring cells in different dimensions, specified by template
+ *  parameter `dim_no`.
+ *  This only works on structured grids!
+ * 
+ * \param root_id Which cell to find the agents of
+ * \param neighbor_ids The container to populate with the indices
+ * \param mngr The cell manager
+ * 
+ * \tparam dim_no The dimensions in which to add neighbors
+ * \tparam structured To ensure it only works on structured grids
+ * 
+ * \return void
+ */
+template<std::size_t dim_no,
+         class Manager,
+         typename IndexContainer,
+         bool structured = Manager::is_structured()>
+auto add_neighbors_in_dim (const long root_id,
+                           IndexContainer& neighbor_ids,
+                           const Manager& mngr)
+    -> std::enable_if_t<structured, void>
+{
+    // Gather the grid information needed
+    constexpr bool periodic = Manager::is_periodic();
+    const auto& grid_cells = mngr.grid_cells();
+
+
+    // Distinguish by dimension parameter
+    // TODO: make these `if constexpr` when adopting C++17 standard
+    if (dim_no == 1) {
+        // front boundary
+        if(root_id % grid_cells[0] == 0){
+            if(periodic){
+                neighbor_ids.push_back(root_id - shift<0>(grid_cells) + shift<1>(grid_cells));
+            }
+        }
+        else{
+            neighbor_ids.push_back(root_id - shift<0>(grid_cells));
+        }
+        // back boundary
+        if(root_id % grid_cells[0] == grid_cells[0] - 1){
+            if(periodic){
+                neighbor_ids.push_back(root_id + shift<0>(grid_cells) - shift<1>(grid_cells));
+            }
+        }
+        else{
+            neighbor_ids.push_back(root_id + shift<0>(grid_cells));
+        }
+    }
+
+
+    else if (dim_no == 2) {
+        // 'normalize' id to lowest height (if 3D)
+        const auto root_id_nrm = root_id % shift<2>(grid_cells);
+
+        // front boundary
+        if ((long) root_id_nrm / grid_cells[0] == 0){
+            if (periodic) {
+                neighbor_ids.push_back(root_id - shift<1>(grid_cells) + shift<2>(grid_cells));
+            }
+        }
+        else {
+            neighbor_ids.push_back(root_id - shift<1>(grid_cells));
+        }
+        // back boundary
+        if ((long) root_id_nrm / grid_cells[0] == grid_cells[1] - 1) {
+            if (periodic) {
+                neighbor_ids.push_back(root_id + shift<1>(grid_cells) - shift<2>(grid_cells));
+            }
+        }
+        else {
+            neighbor_ids.push_back(root_id + shift<1>(grid_cells));
+        }
+    }
+
+
+    else if (dim_no == 3) {
+        const auto id_max = shift<3>(grid_cells) - 1;
+
+        // front boundary
+        if (root_id - shift<2>(grid_cells) < 0){
+            if (periodic) {
+                neighbor_ids.push_back(root_id - shift<2>(grid_cells) + shift<3>(grid_cells));
+            }
+        }
+        else {
+            neighbor_ids.push_back(root_id - shift<2>(grid_cells));
+        }
+        // back boundary
+        if (root_id + shift<2>(grid_cells) > id_max) {
+            if (periodic) {
+                neighbor_ids.push_back(root_id + shift<2>(grid_cells) - shift<3>(grid_cells));
+            }
+        }
+        else {
+            neighbor_ids.push_back(root_id + shift<2>(grid_cells));
+        }
+    }
+
+
+    else {
+        DUNE_THROW(Dune::Exception, "Can only look for neighbors in first, second, and third dimension.");
+    }
+}
+
+
+
 namespace Neighborhoods {
 
 template<typename CellType>
@@ -163,6 +272,73 @@ public:
 
 };
 
+/// New, faster neighborhood function
+/** This class utilizes the add_neighbors_in_dim function to generalize the
+ *  finding of neighbors.
+ */
+// TODO after testing: make this `NextNeighbor` and adapt documentation
+class NextNeighborNew
+{
+
+public:
+
+    /// Return next neighbors for any grid
+    template<class Manager, class Cell,
+        bool structured = Manager::is_structured()>
+    static auto neighbors (const std::shared_ptr<Cell> root, const Manager& mngr)
+        -> std::enable_if_t<!structured, typename NBTraits<Cell>::return_type>
+    {
+        // get references to grid manager members
+        using Index = typename NBTraits<Cell>::Index;
+        const auto& gv = mngr.grid_view();
+        const auto& mapper = mngr.mapper();
+
+        // get grid entity of root cell
+        const auto root_id = root->index();
+        auto it = elements(gv).begin();
+        std::advance(it,root_id);
+
+        // find adjacent grid entities
+        std::vector<Index> neighbor_ids;
+        for(auto&& is : intersections(gv,*it)){
+            if(is.neighbor()){
+                neighbor_ids.push_back(mapper.index(is.outside()));
+            }
+        }
+
+        return cells_from_ids(neighbor_ids, mngr);
+    }
+
+    /// Return next neighbors for structured grid
+    template<class Manager, class Cell,
+        bool structured = Manager::is_structured()>
+    static auto neighbors (const std::shared_ptr<Cell> root, const Manager& mngr)
+        -> std::enable_if_t<structured, typename NBTraits<Cell>::return_type>
+    {
+        // Generate vector in which to store the neighbors
+        std::vector<long> neighbor_ids;
+        neighbor_ids.reserve(2 * Manager::Traits::dim);
+        // Brings about 2x speed improvement
+        // valid only for square grids (implied by the grid being structured)
+
+        // Work with the id to reduce lookups
+        const long root_id = root->index();
+
+        // Add neighbors in first two dimensions (assuming there are at least 2)
+        add_neighbors_in_dim<1>(root_id, neighbor_ids, mngr);
+        add_neighbors_in_dim<2>(root_id, neighbor_ids, mngr);
+
+        // And third ...
+        if (Manager::Traits::dim >= 3) {
+            add_neighbors_in_dim<3>(root_id, neighbor_ids, mngr);
+
+            // Neigbors in even higher dimensions __could__ be added here
+        }
+
+        return cells_from_ids(neighbor_ids, mngr);
+    }
+
+};
 
 template<std::size_t i=0>
 class Custom
