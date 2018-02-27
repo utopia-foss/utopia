@@ -72,20 +72,14 @@ void mark_neighbors (const std::shared_ptr<Cell> cell, const Manager &mngr)
 template<typename NB, typename ID, class M1, class M2>
 void visual_check (const ID id, const M1 &m1, const M2 &m2, const std::string prefix)
 {
-    // Mark neighbors on both grid managers
+    // Mark neighbors of the given cell id
     mark_neighbors<NB>(m1.cells()[id], m1);
     mark_neighbors<NB>(m2.cells()[id], m2);
 
     // Write out both grids
-    auto vtkw_1 = Utopia::Output::create_vtk_writer(m1.grid(),
-                                                    prefix + "_m1");
-    vtkw_1->add_adaptor(Utopia::Output::vtk_output_cell_state(m1.cells()));
-    vtkw_1->write(0);
-
-    auto vtkw_2 = Utopia::Output::create_vtk_writer(m2.grid(),
-                                                    prefix + "_m2");
-    vtkw_2->add_adaptor(Utopia::Output::vtk_output_cell_state(m2.cells()));
-    vtkw_2->write(0);
+    auto vtkwriter = Utopia::Output::create_vtk_writer(m1.grid(), prefix);
+    vtkwriter->add_adaptor(Utopia::Output::vtk_output_cell_state(m1.cells()));
+    vtkwriter->write(0);
 }
 
 /// Assure that periodic grid has the correct Neighbor count
@@ -114,7 +108,7 @@ template<typename NBClass, typename M1, typename M2>
 void compare_neighborhoods (const M1& m1, const M2& m2, const std::string comp_case)
 {
     // Go over all cells 
-    for(std::size_t i=1; i<m1.cells().size(); ++i){
+    for(std::size_t i=0; i<m1.cells().size(); ++i){
         const auto nb1 = NBClass::neighbors(m1.cells()[i], m1);
         const auto nb2 = NBClass::neighbors(m2.cells()[i], m2);
         
