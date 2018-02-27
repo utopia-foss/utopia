@@ -17,7 +17,9 @@ build:main:
     expire_in: 1 day
   script:
     - ./dune-common/bin/dunecontrol update
-    - ./dune-common/bin/dunecontrol --module=utopia all
+    - CMAKE_FLAGS="-DDUNE_PYTHON_VIRTUALENV_SETUP=True
+      -DDUNE_PYTHON_ALLOW_GET_PIP=True"
+      ./dune-common/bin/dunecontrol --module=utopia all
     - ./dune-common/bin/dunecontrol --only=utopia make doc
     - ./dune-common/bin/dunecontrol --only=utopia make build_tests
 
