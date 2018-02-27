@@ -1,0 +1,10 @@
+################################
+# Dune module information file #
+################################
+
+#Name of the module
+Module: utopia
+Version: 0.1
+Maintainer: lriedel@iup.uni-heidelberg.de
+#depending on
+Depends: dune-grid dune-uggrid

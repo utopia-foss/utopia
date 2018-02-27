@@ -1,0 +1,29 @@
+image: citcat/dune-env:latest
+variables:
+  DUNE_CONTROL_PATH: /opt/dune:$CI_PROJECT_DIR
+before_script:
+  - cd /opt/dune
+
+stages:
+  - build
+  - test
+
+build:main:
+  stage: build
+  artifacts:
+    name: "$CI_JOB_NAME"
+    paths:
+      - $CI_PROJECT_DIR/build-cmake
+    expire_in: 1 day
+  script:
+    - ./dune-common/bin/dunecontrol update
+    - ./dune-common/bin/dunecontrol --module=utopia all
+    - ./dune-common/bin/dunecontrol --only=utopia make doc
+    - ./dune-common/bin/dunecontrol --only=utopia make build_tests
+
+test:main:
+  stage: test
+  dependencies:
+    - build:main
+  script:
+    - ARGS="--output-on-failure" ./dune-common/bin/dunecontrol --only=utopia make test
