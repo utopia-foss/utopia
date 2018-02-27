@@ -98,6 +98,6 @@ Tests can also be executed locally, to test a (possibly altered) version of Utop
 
 and perform the tests by calling
 
-    ./dune-common/bin/dunecontrol --only=utopia make test
+    ARGS="--output-on-failure" ./dune-common/bin/dunecontrol --only=utopia make test
 
 If the test executables are not built before executing `make test`, the corresponding tests will inevitably fail.
