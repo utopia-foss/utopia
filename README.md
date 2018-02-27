@@ -11,6 +11,8 @@ Utopia is a DUNE module and thus relies on the [DUNE Buildsystem](https://www.du
 
     ./dune-common/bin/dunecontrol --module=utopia all
 
+Follow the Step-by-step instructions below for building Utopia from source.
+
 ### Dependencies
 | Software | Version | Comments |
 | ---------| ------- | -------- |
@@ -33,6 +35,50 @@ Utopia is a DUNE module and thus relies on the [DUNE Buildsystem](https://www.du
 | [PSGraf](https://zwackelmann.iup.uni-heidelberg.de:10443/tools/psgraf)| master | Data visualization on the fly |
 
 Install PSGraf according to its installation manual. When executing `dunecontrol`, append `CMAKE_FLAGS="-DPSGRAF_ROOT=<path/to/psgraf/build>"`. If PSGraf is found, the preprocessor macro `HAVE_PSGRAF` is set.
+
+### Step-by-step Instructions
+These instructions are intended for 'clean' __Ubuntu__ or __macOS__ setups.
+The main difference between the two systems are the package managers.
+On Mac, we recommend [Homebrew](https://brew.sh/). If you prefer to use [MacPorts](https://www.macports.org/),
+notice that some packages might need to be installed differently.
+Ubuntu is shipped with APT.
+
+1. Mac OS X users need to start by installing the Apple Command Line Tools by executing
+
+        xcode-select --install
+
+2. Install third-party packages with the package manager:
+
+    __Ubuntu:__
+
+        apt update
+        apt install cmake doxygen gcc g++ gfortran git pkg-config
+    
+    __macOS:__
+
+        brew update
+        brew install cmake doxygen gcc-7 pkg-config
+
+3. Use `[git clone](https://git-scm.com/docs/git-clone)` to clone the
+    DUNE repositories listed above into a suitable folder on your machine.
+    Make sure to `[git checkout](https://git-scm.com/docs/git-checkout)` the correct branches.
+
+4. __macOS only:__ Make sure that CMake uses the Homebrew GCC instead of
+    the command line tools Clang:
+
+        export CC=gcc-7
+        export CXX=g++-7
+    
+    Notice that these commands only last for your current terminal session.
+
+5. Configure and build DUNE and Utopia by executing the `dunecontrol` script:
+
+        ./dune-common/bin/dunecontrol --module=utopia all
+
+    Afterwards, reconfiguring and rebuilding can now also be done locally,
+    instead of calling `dunecontrol`. After entering the `utopia/build-cmake` directory,
+    you can call `cmake ..` or `make` directly.
+
 
 ### Building the Documentation
 Utopia builds a Doxygen documentation from its source files. Use `dunecontrol` to execute the appropriate command:
