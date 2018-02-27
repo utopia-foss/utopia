@@ -12,6 +12,7 @@ RUN apt-get update \
         git \
         locales \
         pkg-config \
+        python3-dev \
     && apt-get clean
 
 RUN rm -rf /var/lib/apt/lists/* \
@@ -24,5 +25,7 @@ RUN git clone https://gitlab.dune-project.org/core/dune-geometry.git
 RUN git clone https://gitlab.dune-project.org/core/dune-grid.git
 RUN git clone https://gitlab.dune-project.org/staging/dune-uggrid.git
 
-WORKDIR /opt/dune
-RUN CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=Release" ./dune-common/bin/dunecontrol all
+RUN CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=Release \\
+    -DDUNE_PYTHON_VIRTUALENV_SETUP=True \\
+    -DDUNE_PYTHON_ALLOW_GET_PIP=True" \
+    ./dune-common/bin/dunecontrol all
