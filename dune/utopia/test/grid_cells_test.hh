@@ -55,15 +55,63 @@ void check_grid_neighbors_count (const Manager& manager)
     }
 }
 
+/// Mark neighbors of a cell and cell itself for visual testing
+template<typename NB, class Cell, class Manager>
+void mark_neighbors (const std::shared_ptr<Cell> cell, const Manager &mngr)
+{
+    cell->new_state() += 2;
+    cell->update();
+    const auto neighbors = NB::neighbors(cell, mngr);
+    for (int i = 0; i<neighbors.size(); ++i) {
+        neighbors[i]->new_state() += 1;
+        neighbors[i]->update();
+    }
+}
+
+/// Plot a visual of the neighborhood of a cell
+template<typename NB, typename ID, class M1, class M2>
+void visual_check (const ID id, const M1 &m1, const M2 &m2)
+{
+    mark_neighbors<NB>(m1.cells()[id], m1);
+    mark_neighbors<NB>(m2.cells()[id], m2);
+    auto vtk_writer = Utopia::Output::create_vtk_writer(m1.grid());
+    vtk_writer->add_adaptor(Utopia::Output::vtk_output_cell_state(m1.cells()));
+    vtk_writer->write(0);
+}
+
+/// Assure that periodic grid has the correct Neighbor count
+template<class NBClass, int nb_count, typename Manager>
+constexpr void check_grid_neighbors_count (const Manager& manager)
+{
+    bool exception = false;
+
+    for(const auto cell : manager.cells()){
+        const auto neighbors = NBClass::neighbors(cell, manager);
+        if(neighbors.size() != nb_count){
+            std::cerr << "Cell No. " << cell->index()
+                << " has " << neighbors.size()
+                << " neighbors! Expected " << nb_count << std::endl;
+            exception = true;
+        }
+    }
+
+    if(exception){
+        DUNE_THROW(Dune::Exception, "Wrong number of neighbors!");
+    }
+}
+
 /// Compare the neighborhood implementations for two manager types
-template<typename M1, typename M2>
+template<typename NBClass, typename M1, typename M2>
 void compare_neighborhoods (const M1& m1, const M2& m2)
 {
     for(std::size_t i=0; i<m1.cells().size(); ++i){
-        const auto nb1 = Utopia::Neighborhoods::NextNeighbor::neighbors(m1.cells()[i],m1);
-        const auto nb2 = Utopia::Neighborhoods::NextNeighbor::neighbors(m2.cells()[i],m2);
+        const auto nb1 = NBClass::neighbors(m1.cells()[i], m1);
+        const auto nb2 = NBClass::neighbors(m2.cells()[i], m2);
         // check size
-        assert(nb1.size() == nb2.size());
+        if (nb1.size() != nb2.size()) {
+            visual_check<NBClass>(i, m1, m2);
+            DUNE_THROW(Dune::Exception, "Mismatch of neighborhood size!");
+        }
         // check actual neighbors
         for(auto a : nb1){
             assert(std::find_if(nb2.begin(),nb2.end(),
@@ -94,10 +142,16 @@ void cells_on_grid_test (const unsigned int cells_per_dim)
     assert_cells_on_grid(m2.grid(),m2.cells());
     assert_cells_on_grid(m3.grid(),m3.cells());
 
-    // compare neighborhood implementations (structured,unstructured)
-    compare_neighborhoods(m1,m2);
+    // compare neighborhood implementations (m1: structured, m2: unstructured)
+    compare_neighborhoods<Utopia::Neighborhoods::NextNeighbor>(m1, m2);
+    compare_neighborhoods<Utopia::Neighborhoods::NextNeighborNew>(m1, m2);
+    compare_neighborhoods<Utopia::Neighborhoods::MooreNeighbor>(m1, m2);
 
     // check periodic boundaries
-    check_grid_neighbors_count(m3);
+    check_grid_neighbors_count<Utopia::Neighborhoods::NextNeighbor, 2*dim>(m3);
+    check_grid_neighbors_count<Utopia::Neighborhoods::NextNeighborNew, 2*dim>(m3);
+
+    const int moore_nb_count = std::pow(3, dim) - 1;
+    check_grid_neighbors_count<Utopia::Neighborhoods::MooreNeighbor, moore_nb_count>(m3);
 
 }
