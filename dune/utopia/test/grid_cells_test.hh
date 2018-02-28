@@ -51,19 +51,20 @@ void check_grid_neighbors_count (const Manager& manager)
         }
     }
     if(exception){
-        DUNE_THROW(Dune::Exception,"Wrong number of neighbors!");
+        DUNE_THROW(Dune::Exception,
+                   "Wrong number of neighbors on at least one cell!");
     }
 }
 
 /// Mark neighbors of a cell and cell itself for visual testing
 template<typename NB, class Cell, class Manager>
-void mark_neighbors (const std::shared_ptr<Cell> cell, const Manager &mngr)
+void mark_neighbors (const std::shared_ptr<Cell> cell, const Manager &mngr, const int increment=1)
 {
-    cell->new_state() += 2;
+    cell->new_state() -= increment;
     cell->update();
     const auto neighbors = NB::neighbors(cell, mngr);
     for (int i = 0; i<neighbors.size(); ++i) {
-        neighbors[i]->new_state() += 1;
+        neighbors[i]->new_state() += increment;
         neighbors[i]->update();
     }
 }
@@ -73,8 +74,8 @@ template<typename NB, typename ID, class M1, class M2>
 void visual_check (const ID id, const M1 &m1, const M2 &m2, const std::string prefix)
 {
     // Mark neighbors of the given cell id
-    mark_neighbors<NB>(m1.cells()[id], m1);
-    mark_neighbors<NB>(m2.cells()[id], m2);
+    mark_neighbors<NB>(m1.cells()[id], m1, 1);
+    mark_neighbors<NB>(m2.cells()[id], m2, 2);
 
     // Write out both grids
     auto vtkwriter = Utopia::Output::create_vtk_writer(m1.grid(), prefix);
@@ -112,14 +113,24 @@ void compare_neighborhoods (const M1& m1, const M2& m2, const std::string comp_c
         const auto nb1 = NBClass::neighbors(m1.cells()[i], m1);
         const auto nb2 = NBClass::neighbors(m2.cells()[i], m2);
         
-        // check size
+        // check size and output detailed error information in case of mismatch
         if (nb1.size() != nb2.size()) {
+            std::cerr << "Mismatch of neighborhood size for " << comp_case
+                      << " and cell with index " << i << ": "
+                      << nb1.size() << " != "  << nb2.size() << std::endl;
+            
             visual_check<NBClass>(i, m1, m2, comp_case);
-            DUNE_THROW(Dune::Exception,
-                       "Mismatch of neighborhood size for " << comp_case
-                       << " and cell with index " << i << ": "
-                       << nb1.size() << " != "  << nb2.size() << std::endl
-                       << "Visual check output was generated.");
+            std::cerr << "Visual check output generated." << std::endl;
+
+            std::cerr << "Cell indices in m1 neighborhood:" << std::endl;
+            for (auto&& cell : nb1) { std::cerr << " " << cell->index(); }
+            std::cerr << std::endl;
+
+            std::cerr << "Cell indices in m2 neighborhood:" << std::endl;
+            for (auto&& cell : nb2) { std::cerr << " " << cell->index(); }
+            std::cerr << std::endl;
+
+            DUNE_THROW(Dune::Exception, "Mismatch of neighborhood size!");
         }
         
         // check actual neighbors
@@ -131,7 +142,14 @@ void compare_neighborhoods (const M1& m1, const M2& m2, const std::string comp_c
     }
 }
 
-/// Perform a test: Assure that cells are instantiated correctly and neighborhood implementations mirror each other
+/// Assure consistent neighborhood implementations
+/** Assure that cells are instantiated correctly and neighborhood 
+ *  implementations on structured and unstructured grids mirror each other
+ * 
+ * \param cells_per_dim Number of cells the grid should have in each dimension
+ * 
+ * \tparam dim The grid dimension
+ */
 template<int dim>
 void cells_on_grid_test (const unsigned int cells_per_dim)
 {

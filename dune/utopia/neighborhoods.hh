@@ -427,7 +427,7 @@ public:
         // get regular neighbors first
         const auto next_neighbors = NextNeighborNew::neighbors(root, mngr);
 
-        // get their neighbors
+        // get their neighbors, i.e. the next next neighbors
         typename NBTraits<Cell>::return_type ret;
         for (auto&& nb : next_neighbors) {
             auto nn_neighbors = NextNeighborNew::neighbors(nb, mngr);
@@ -440,7 +440,7 @@ public:
                 [&root](const auto cell){ return cell == root; }),
             ret.end());
 
-        // only keep duplicates
+        // only keep duplicates -- those are the ones that are part of the Moore neighborhood
         ret.erase(std::remove_if(ret.begin(), ret.end(),
                 [&ret](const auto cell){
                     return std::count(ret.begin(), ret.end(), cell) == 1;}),
@@ -448,7 +448,7 @@ public:
 
         // add regular neighbors to container
         std::move(next_neighbors.begin(), next_neighbors.end(),
-            std::back_inserter(ret));
+                  std::back_inserter(ret));
 
         return ret;
     }
