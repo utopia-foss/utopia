@@ -9,7 +9,7 @@ int main(int argc, char** argv)
     try{
         Dune::MPIHelper::instance(argc,argv);
 
-        cells_on_grid_test<3>(15);
+        cells_on_grid_test<3>(10);
 
         return 0;
     }
