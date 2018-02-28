@@ -67,10 +67,6 @@ auto add_neighbors_in_dim (const long root_id,
     constexpr bool periodic = Manager::is_periodic();
     const auto& grid_cells = mngr.grid_cells();
 
-    std::cout << "    before (root " << root_id << ", dim " << dim_no << ")" << std::endl << "     ";
-    for(auto&& id : neighbor_ids) {std::cout << " " << id;}
-    std::cout << std::endl;
-
     // Distinguish by dimension parameter
     // TODO: make these `if constexpr` when adopting C++17 standard    
     if (dim_no == 1) {
@@ -162,11 +158,6 @@ auto add_neighbors_in_dim (const long root_id,
     else {
         DUNE_THROW(Dune::Exception, "Can only look for neighbors in first, second, and third dimension.");
     }
-
-
-    std::cout << "    after (root " << root_id << ", dim " << dim_no << ")" << std::endl << "     ";
-    for(auto&& id : neighbor_ids) {std::cout << " " << id;}
-    std::cout << std::endl;
 }
 
 
@@ -432,8 +423,8 @@ public:
 
         // Get the neighbors in the second dimension
         add_neighbors_in_dim<2>(root_id, neighbor_ids, mngr);
-        // if root not at border: these neighbors are at indices 0 and 1 now
-        // if root at border: only one neighbor was added, index 0
+        // root not at border: have them at indices 0 and 1 now
+        // root at border: less than two neighbors were added
 
         // Before adding the neighbors' neighbors, need to check if the root was at a boundary
         if (neighbor_ids.size() == 2) {
@@ -509,31 +500,37 @@ public:
     {
         // Generate vector in which to store the neighbors
         std::vector<long> neighbor_ids;
-        neighbor_ids.reserve(26); // is known and fixed for 3D square grids
+        neighbor_ids.reserve(26); // fewer if at boundary of course
 
         // Use the ID of the root cell; faster than doing multiple lookups
         const long root_id = root->index();
 
-        // Get the neighbors in the third dimension
+        // Add the neighbors of the root cell in the third dimension
         add_neighbors_in_dim<3>(root_id, neighbor_ids, mngr);
-        // ...have them at indices 0 and 1 now.
+        // root not at border: have them at indices 0 and 1 now
+        // root at border: less than two neighbors were added
 
-        // For these neighbors and the root, add their neighbors in the 2nd dimension
-        add_neighbors_in_dim<2>(root_id,         neighbor_ids, mngr);
-        add_neighbors_in_dim<2>(neighbor_ids[0], neighbor_ids, mngr);
-        add_neighbors_in_dim<2>(neighbor_ids[1], neighbor_ids, mngr);
-        // ...have them at indices 2, 3, 4, 5, 6, 7 now.
+        // Need a temporary variable to keep track of how many new cells were newly added in the last dimension
+        short num_new = neighbor_ids.size();
 
-        // And finally, add all neighbors in the first dimension
-        add_neighbors_in_dim<1>(root_id,         neighbor_ids, mngr);
-        add_neighbors_in_dim<1>(neighbor_ids[0], neighbor_ids, mngr);
-        add_neighbors_in_dim<1>(neighbor_ids[1], neighbor_ids, mngr);
-        add_neighbors_in_dim<1>(neighbor_ids[2], neighbor_ids, mngr);
-        add_neighbors_in_dim<1>(neighbor_ids[3], neighbor_ids, mngr);
-        add_neighbors_in_dim<1>(neighbor_ids[4], neighbor_ids, mngr);
-        add_neighbors_in_dim<1>(neighbor_ids[5], neighbor_ids, mngr);
-        add_neighbors_in_dim<1>(neighbor_ids[6], neighbor_ids, mngr);
-        add_neighbors_in_dim<1>(neighbor_ids[7], neighbor_ids, mngr);
+        // For the newly added neighbors in the third dimension, add their neighbors in the second dimension
+        for (short i=0; i < num_new; ++i) {
+            add_neighbors_in_dim<2>(neighbor_ids[i], neighbor_ids, mngr);
+        } // runs 0, 1, or 2 times
+
+        // Separately, add the root's neighbors in the second dimension
+        add_neighbors_in_dim<2>(root_id, neighbor_ids, mngr);
+
+        // Update the temporary variable
+        num_new = neighbor_ids.size();
+
+        // For the newly added neighbors of the second dimension, add their neighbors in the first dimension
+        for (short i=0; i < num_new; i++) {
+            add_neighbors_in_dim<1>(neighbor_ids[i], neighbor_ids, mngr);
+        } // runs 0 to 8 times
+
+        // Again, separately, add the root's neighbors in the first dimension
+        add_neighbors_in_dim<1>(root_id, neighbor_ids, mngr);
 
         return cells_from_ids(neighbor_ids, mngr);
     }

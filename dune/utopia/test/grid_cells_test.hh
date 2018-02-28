@@ -110,6 +110,7 @@ void compare_neighborhoods (const M1& m1, const M2& m2, const std::string comp_c
 {
     // Go over all cells 
     for(std::size_t i=0; i<m1.cells().size(); ++i){
+        // Get the neighbors of this particular cell `i`
         const auto nb1 = NBClass::neighbors(m1.cells()[i], m1);
         const auto nb2 = NBClass::neighbors(m2.cells()[i], m2);
         
