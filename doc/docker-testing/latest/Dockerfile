@@ -10,6 +10,9 @@ RUN apt-get update \
         g++ \
         gfortran \
         git \
+        libboost-dev \
+        libhdf5-dev \
+        libyaml-cpp-dev \
         locales \
         pkg-config \
         python3-dev \
