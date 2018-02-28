@@ -41,6 +41,10 @@ auto cells_from_ids (const IndexContainer& cont, const Manager& mngr)
  *  parameter `dim_no`.
  *  This only works on structured grids!
  * 
+ *  The algorithm first calculates whether the given root cell index has a
+ *  front or back boundary in the chosen dimension. If so, the neighboring cell
+ *  is only added if the grid is periodic.
+ * 
  * \param root_id Which cell to find the agents of
  * \param neighbor_ids The container to populate with the indices
  * \param mngr The cell manager
@@ -63,23 +67,31 @@ auto add_neighbors_in_dim (const long root_id,
     constexpr bool periodic = Manager::is_periodic();
     const auto& grid_cells = mngr.grid_cells();
 
+    std::cout << "    before (root " << root_id << ", dim " << dim_no << ")" << std::endl << "     ";
+    for(auto&& id : neighbor_ids) {std::cout << " " << id;}
+    std::cout << std::endl;
 
     // Distinguish by dimension parameter
-    // TODO: make these `if constexpr` when adopting C++17 standard
+    // TODO: make these `if constexpr` when adopting C++17 standard    
     if (dim_no == 1) {
-        // front boundary
+        // check if at front boundary
         if(root_id % grid_cells[0] == 0){
             if(periodic){
-                neighbor_ids.push_back(root_id - shift<0>(grid_cells) + shift<1>(grid_cells));
+                neighbor_ids.push_back(root_id
+                                       - shift<0>(grid_cells)
+                                       + shift<1>(grid_cells));
             }
         }
         else{
             neighbor_ids.push_back(root_id - shift<0>(grid_cells));
         }
-        // back boundary
+
+        // check if at back boundary
         if(root_id % grid_cells[0] == grid_cells[0] - 1){
             if(periodic){
-                neighbor_ids.push_back(root_id + shift<0>(grid_cells) - shift<1>(grid_cells));
+                neighbor_ids.push_back(root_id
+                                       + shift<0>(grid_cells)
+                                       - shift<1>(grid_cells));
             }
         }
         else{
@@ -92,19 +104,24 @@ auto add_neighbors_in_dim (const long root_id,
         // 'normalize' id to lowest height (if 3D)
         const auto root_id_nrm = root_id % shift<2>(grid_cells);
 
-        // front boundary
+        // check if at front boundary
         if ((long) root_id_nrm / grid_cells[0] == 0){
             if (periodic) {
-                neighbor_ids.push_back(root_id - shift<1>(grid_cells) + shift<2>(grid_cells));
+                neighbor_ids.push_back(root_id
+                                       - shift<1>(grid_cells)
+                                       + shift<2>(grid_cells));
             }
         }
         else {
             neighbor_ids.push_back(root_id - shift<1>(grid_cells));
         }
-        // back boundary
+
+        // check if at back boundary
         if ((long) root_id_nrm / grid_cells[0] == grid_cells[1] - 1) {
             if (periodic) {
-                neighbor_ids.push_back(root_id + shift<1>(grid_cells) - shift<2>(grid_cells));
+                neighbor_ids.push_back(root_id
+                                       + shift<1>(grid_cells)
+                                       - shift<2>(grid_cells));
             }
         }
         else {
@@ -116,19 +133,24 @@ auto add_neighbors_in_dim (const long root_id,
     else if (dim_no == 3) {
         const auto id_max = shift<3>(grid_cells) - 1;
 
-        // front boundary
+        // check if at front boundary
         if (root_id - shift<2>(grid_cells) < 0){
             if (periodic) {
-                neighbor_ids.push_back(root_id - shift<2>(grid_cells) + shift<3>(grid_cells));
+                neighbor_ids.push_back(root_id
+                                       - shift<2>(grid_cells)
+                                       + shift<3>(grid_cells));
             }
         }
         else {
             neighbor_ids.push_back(root_id - shift<2>(grid_cells));
         }
-        // back boundary
+
+        // check if at back boundary
         if (root_id + shift<2>(grid_cells) > id_max) {
             if (periodic) {
-                neighbor_ids.push_back(root_id + shift<2>(grid_cells) - shift<3>(grid_cells));
+                neighbor_ids.push_back(root_id
+                                       + shift<2>(grid_cells)
+                                       - shift<3>(grid_cells));
             }
         }
         else {
@@ -140,6 +162,11 @@ auto add_neighbors_in_dim (const long root_id,
     else {
         DUNE_THROW(Dune::Exception, "Can only look for neighbors in first, second, and third dimension.");
     }
+
+
+    std::cout << "    after (root " << root_id << ", dim " << dim_no << ")" << std::endl << "     ";
+    for(auto&& id : neighbor_ids) {std::cout << " " << id;}
+    std::cout << std::endl;
 }
 
 
@@ -355,17 +382,22 @@ class MooreNeighbor
 {
 
 public:
-    /// Return Moore neighbors for structured 2D grid
+    /// Return Moore neighbors for structured and periodic 2D grid
     template<class Manager, class Cell,
-             bool structured = Manager::is_structured()>
-    static auto neighbors (const std::shared_ptr<Cell> root, const Manager& mngr)
-        -> std::enable_if_t<structured && (Manager::Traits::dim == 2), typename NBTraits<Cell>::return_type>
+             bool structured = Manager::is_structured(),
+             bool periodic = Manager::is_periodic()>
+    static auto neighbors (const std::shared_ptr<Cell> root,
+                           const Manager& mngr)
+        -> std::enable_if_t<structured
+                           && periodic
+                           && (Manager::Traits::dim == 2),
+                           typename NBTraits<Cell>::return_type>
     {
         // Generate vector in which to store the neighbors
         std::vector<long> neighbor_ids;
-        neighbor_ids.reserve(8); // is known and fixed for 2D square grids
+        neighbor_ids.reserve(8); // is known and fixed for 2D lattice
 
-        // Use the ID of the root cell; faster than doing multiple lookups
+        // Get the ID of the root cell here; faster than doing multiple lookups
         const long root_id = root->index();
 
         // Get the neighbors in the second dimension
@@ -380,11 +412,100 @@ public:
         return cells_from_ids(neighbor_ids, mngr);
     }
 
-    /// Return Moore neighbors for structured 3D grid
+    /// Return Moore neighbors for structured and non-periodic 2D grid
     template<class Manager, class Cell,
-             bool structured = Manager::is_structured()>
-    static auto neighbors (const std::shared_ptr<Cell> root, const Manager& mngr)
-        -> std::enable_if_t<structured && (Manager::Traits::dim == 3), typename NBTraits<Cell>::return_type>
+             bool structured = Manager::is_structured(),
+             bool periodic = Manager::is_periodic()>
+    static auto neighbors (const std::shared_ptr<Cell> root,
+                           const Manager& mngr)
+        -> std::enable_if_t<structured
+                           && !periodic
+                           && (Manager::Traits::dim == 2),
+                           typename NBTraits<Cell>::return_type>
+    {
+        // Generate vector in which to store the neighbors
+        std::vector<long> neighbor_ids;
+        neighbor_ids.reserve(8); // fewer at boundary of course
+
+        // Get the ID of the root cell here; faster than doing multiple lookups
+        const long root_id = root->index();
+
+        // Get the neighbors in the second dimension
+        add_neighbors_in_dim<2>(root_id, neighbor_ids, mngr);
+        // if root not at border: these neighbors are at indices 0 and 1 now
+        // if root at border: only one neighbor was added, index 0
+
+        // Before adding the neighbors' neighbors, need to check if the root was at a boundary
+        if (neighbor_ids.size() == 2) {
+            // Was not at a boundary
+            add_neighbors_in_dim<1>(neighbor_ids[0], neighbor_ids, mngr);
+            add_neighbors_in_dim<1>(neighbor_ids[1], neighbor_ids, mngr);
+        }
+        else if (neighbor_ids.size() == 1) {
+            // Was at a front OR back boundary in dimension 2 -> only one neighbor available
+            add_neighbors_in_dim<1>(neighbor_ids[0], neighbor_ids, mngr);
+        }
+        // else: was at front AND back boundary (single row of cells in dim 2)
+
+        // Finally, add the root's neighbors in the first dimension
+        add_neighbors_in_dim<1>(root_id, neighbor_ids, mngr);
+
+        return cells_from_ids(neighbor_ids, mngr);
+    }
+
+    /// Return Moore neighbors for structured and periodic 3D grid
+    template<class Manager, class Cell,
+             bool structured = Manager::is_structured(),
+             bool periodic = Manager::is_periodic()>
+    static auto neighbors (const std::shared_ptr<Cell> root,
+                           const Manager& mngr)
+        -> std::enable_if_t<structured
+                            && periodic
+                            && (Manager::Traits::dim == 3),
+                            typename NBTraits<Cell>::return_type>
+    {
+        // Generate vector in which to store the neighbors
+        std::vector<long> neighbor_ids;
+        neighbor_ids.reserve(26); // is known and fixed for 3D square grids
+
+        // Use the ID of the root cell; faster than doing multiple lookups
+        const long root_id = root->index();
+
+        // Get the neighbors in the third dimension
+        add_neighbors_in_dim<3>(root_id, neighbor_ids, mngr);
+        // ...have them at indices 0 and 1 now.
+
+        // For these neighbors and the root, add their neighbors in the 2nd dimension
+        add_neighbors_in_dim<2>(root_id,         neighbor_ids, mngr);
+        add_neighbors_in_dim<2>(neighbor_ids[0], neighbor_ids, mngr);
+        add_neighbors_in_dim<2>(neighbor_ids[1], neighbor_ids, mngr);
+        // ...have them at indices 2, 3, 4, 5, 6, 7 now.
+
+        // And finally, add all neighbors in the first dimension
+        add_neighbors_in_dim<1>(root_id,         neighbor_ids, mngr);
+        add_neighbors_in_dim<1>(neighbor_ids[0], neighbor_ids, mngr);
+        add_neighbors_in_dim<1>(neighbor_ids[1], neighbor_ids, mngr);
+        add_neighbors_in_dim<1>(neighbor_ids[2], neighbor_ids, mngr);
+        add_neighbors_in_dim<1>(neighbor_ids[3], neighbor_ids, mngr);
+        add_neighbors_in_dim<1>(neighbor_ids[4], neighbor_ids, mngr);
+        add_neighbors_in_dim<1>(neighbor_ids[5], neighbor_ids, mngr);
+        add_neighbors_in_dim<1>(neighbor_ids[6], neighbor_ids, mngr);
+        add_neighbors_in_dim<1>(neighbor_ids[7], neighbor_ids, mngr);
+
+        return cells_from_ids(neighbor_ids, mngr);
+    }
+
+    /// Return Moore neighbors for structured and non-periodic 3D grid
+    // FIXME
+    template<class Manager, class Cell,
+             bool structured = Manager::is_structured(),
+             bool periodic = Manager::is_periodic()>
+    static auto neighbors (const std::shared_ptr<Cell> root,
+                           const Manager& mngr)
+        -> std::enable_if_t<structured
+                            && !periodic
+                            && (Manager::Traits::dim == 3),
+                            typename NBTraits<Cell>::return_type>
     {
         // Generate vector in which to store the neighbors
         std::vector<long> neighbor_ids;
@@ -419,7 +540,8 @@ public:
 
     /// Return Moore neighbors for unstructured grid
     template<class Manager, class Cell,
-        bool structured = Manager::is_structured()>
+             bool structured = Manager::is_structured(),
+             bool periodic = Manager::is_structured()>
     static auto neighbors (const std::shared_ptr<Cell> root,
         const Manager& mngr)
         -> std::enable_if_t<!structured, typename NBTraits<Cell>::return_type>
