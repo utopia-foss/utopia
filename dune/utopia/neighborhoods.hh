@@ -29,7 +29,7 @@ auto cells_from_ids (const IndexContainer& cont, const Manager& mngr)
     std::vector<std::shared_ptr<Cell>> ret;
     ret.reserve(cont.size());
     const auto& cells = mngr.cells();
-    for(auto id : cont){
+    for (auto id : cont) {
         ret.emplace_back(std::shared_ptr<Cell>(cells.at(id)));
     }
     return ret;
@@ -70,26 +70,26 @@ auto add_neighbors_in_dim (const long root_id,
     // Distinguish by dimension parameter
     if constexpr (dim_no == 1) {
         // check if at front boundary
-        if(root_id % grid_cells[0] == 0){
-            if(periodic){
+        if (root_id % grid_cells[0] == 0) {
+            if (periodic) {
                 neighbor_ids.push_back(root_id
                                        - shift<0>(grid_cells)
                                        + shift<1>(grid_cells));
             }
         }
-        else{
+        else {
             neighbor_ids.push_back(root_id - shift<0>(grid_cells));
         }
 
         // check if at back boundary
-        if(root_id % grid_cells[0] == grid_cells[0] - 1){
-            if(periodic){
+        if (root_id % grid_cells[0] == grid_cells[0] - 1) {
+            if (periodic) {
                 neighbor_ids.push_back(root_id
                                        + shift<0>(grid_cells)
                                        - shift<1>(grid_cells));
             }
         }
-        else{
+        else {
             neighbor_ids.push_back(root_id + shift<0>(grid_cells));
         }
     }
@@ -100,7 +100,7 @@ auto add_neighbors_in_dim (const long root_id,
         const auto root_id_nrm = root_id % shift<2>(grid_cells);
 
         // check if at front boundary
-        if ((long) root_id_nrm / grid_cells[0] == 0){
+        if ((long) root_id_nrm / grid_cells[0] == 0) {
             if (periodic) {
                 neighbor_ids.push_back(root_id
                                        - shift<1>(grid_cells)
@@ -129,7 +129,7 @@ auto add_neighbors_in_dim (const long root_id,
         const auto id_max = shift<3>(grid_cells) - 1;
 
         // check if at front boundary
-        if (root_id - shift<2>(grid_cells) < 0){
+        if (root_id - shift<2>(grid_cells) < 0) {
             if (periodic) {
                 neighbor_ids.push_back(root_id
                                        - shift<2>(grid_cells)
@@ -155,7 +155,8 @@ auto add_neighbors_in_dim (const long root_id,
 
 
     else {
-        DUNE_THROW(Dune::Exception, "Can only look for neighbors in first, second, and third dimension.");
+        DUNE_THROW(Dune::Exception,
+                   "Can only look for neighbors in dimensions 1, 2, and 3.");
     }
 }
 
@@ -172,6 +173,7 @@ struct NBTraits
 };
 
 
+/// Supplies functions to return Von-Neumann neighborhood
 class NextNeighbor
 {
 
@@ -195,8 +197,8 @@ public:
 
         // find adjacent grid entities
         std::vector<Index> neighbor_ids;
-        for(auto&& is : intersections(gv,*it)){
-            if(is.neighbor()){
+        for (auto&& is : intersections(gv,*it)) {
+            if (is.neighbor()) {
                 neighbor_ids.push_back(mapper.index(is.outside()));
             }
         }
@@ -220,21 +222,21 @@ public:
 
         // 1D shift
         // front boundary
-        if(root_id % grid_cells[0] == 0){
-            if(periodic){
+        if (root_id % grid_cells[0] == 0) {
+            if (periodic) {
                 neighbor_ids.push_back(root_id - shift<0>(grid_cells) + shift<1>(grid_cells));
             }
         }
-        else{
+        else {
             neighbor_ids.push_back(root_id - shift<0>(grid_cells));
         }
         // back boundary
-        if(root_id % grid_cells[0] == grid_cells[0] - 1){
-            if(periodic){
+        if (root_id % grid_cells[0] == grid_cells[0] - 1) {
+            if (periodic) {
                 neighbor_ids.push_back(root_id + shift<0>(grid_cells) - shift<1>(grid_cells));
             }
         }
-        else{
+        else {
             neighbor_ids.push_back(root_id + shift<0>(grid_cells));
         }
 
@@ -242,44 +244,44 @@ public:
         // 'normalize' id to lowest height (if 3D)
         const auto root_id_nrm = root_id % shift<2>(grid_cells);
         // front boundary
-        if((long) root_id_nrm / grid_cells[0] == 0){
-            if(periodic){
+        if ((long) root_id_nrm / grid_cells[0] == 0) {
+            if (periodic) {
                 neighbor_ids.push_back(root_id - shift<1>(grid_cells) + shift<2>(grid_cells));
             }
         }
-        else{
+        else {
             neighbor_ids.push_back(root_id - shift<1>(grid_cells));
         }
         // back boundary
-        if((long) root_id_nrm / grid_cells[0] == grid_cells[1] - 1){
-            if(periodic){
+        if ((long) root_id_nrm / grid_cells[0] == grid_cells[1] - 1) {
+            if (periodic) {
                 neighbor_ids.push_back(root_id + shift<1>(grid_cells) - shift<2>(grid_cells));
             }
         }
-        else{
+        else {
             neighbor_ids.push_back(root_id + shift<1>(grid_cells));
         }
 
         // 3D shift
-        if(Manager::Traits::dim == 3)
+        if (Manager::Traits::dim == 3)
         {
             const auto id_max = shift<3>(grid_cells) - 1;
             // front boundary
-            if(root_id - shift<2>(grid_cells) < 0){
-                if(periodic){
+            if (root_id - shift<2>(grid_cells) < 0) {
+                if (periodic) {
                     neighbor_ids.push_back(root_id - shift<2>(grid_cells) + shift<3>(grid_cells));
                 }
             }
-            else{
+            else {
                 neighbor_ids.push_back(root_id - shift<2>(grid_cells));
             }
             // back boundary
-            if(root_id + shift<2>(grid_cells) > id_max){
-                if(periodic){
+            if (root_id + shift<2>(grid_cells) > id_max) {
+                if (periodic) {
                     neighbor_ids.push_back(root_id + shift<2>(grid_cells) - shift<3>(grid_cells));
                 }
             }
-            else{
+            else {
                 neighbor_ids.push_back(root_id + shift<2>(grid_cells));
             }
         }
@@ -289,11 +291,11 @@ public:
 
 };
 
-/// New, faster neighborhood function
+/// New, faster implementation of Von-Neumann Neighborhood
 /** This class utilizes the add_neighbors_in_dim function to generalize the
  *  finding of neighbors.
  */
-// TODO after testing: make this `NextNeighbor` and adapt documentation
+// TODO after testing: rename this to `NextNeighbor` and remove the old one
 class NextNeighborNew
 {
 
@@ -317,8 +319,8 @@ public:
 
         // find adjacent grid entities
         std::vector<Index> neighbor_ids;
-        for(auto&& is : intersections(gv,*it)){
-            if(is.neighbor()){
+        for (auto&& is : intersections(gv,*it)) {
+            if (is.neighbor()) {
                 neighbor_ids.push_back(mapper.index(is.outside()));
             }
         }
@@ -486,7 +488,6 @@ public:
     }
 
     /// Return Moore neighbors for structured and non-periodic 3D grid
-    // FIXME
     template<class Manager, class Cell,
              bool structured = Manager::is_structured(),
              bool periodic = Manager::is_periodic()>
@@ -535,6 +536,7 @@ public:
     }
 
     /// Return Moore neighbors for unstructured grid
+    // FIXME this fails in 3D (not adding "corner" neighbors)
     template<class Manager, class Cell,
              bool structured = Manager::is_structured(),
              bool periodic = Manager::is_structured()>
@@ -554,13 +556,13 @@ public:
         }
 
         // remove root
-        ret.erase(std::remove_if(ret.begin(), ret.end(),
-                [&root](const auto cell){ return cell == root; }),
+        ret.erase(std::remove_if (ret.begin(), ret.end(),
+                [&root](const auto cell) { return cell == root; }),
             ret.end());
 
         // only keep duplicates -- those are the ones that are part of the Moore neighborhood
-        ret.erase(std::remove_if(ret.begin(), ret.end(),
-                [&ret](const auto cell){
+        ret.erase(std::remove_if (ret.begin(), ret.end(),
+                [&ret](const auto cell) {
                     return std::count(ret.begin(), ret.end(), cell) == 1;}),
             ret.end());
 
@@ -578,6 +580,7 @@ public:
 };
 
 
+/// Custom neighborhood, allowing to manually add neighbor cells
 template<std::size_t i=0>
 class Custom
 {
@@ -610,7 +613,7 @@ public:
         const std::shared_ptr<Cell> root)
     {
         auto& nb = neighbors_nc(root);
-        if(std::find(nb.cbegin(),nb.cend(),neighbor) == nb.end()){
+        if (std::find(nb.cbegin(),nb.cend(),neighbor) == nb.end()) {
             nb.push_back(neighbor);
             return true;
         }
@@ -625,7 +628,7 @@ public:
     {
         auto& nb = neighbors_nc(root);
         const auto it = std::find(nb.cbegin(),nb.cend(),neighbor);
-        if(it == nb.end()){
+        if (it == nb.end()) {
             DUNE_THROW(Dune::Exception,"Trying to erase a neighbor which is not in neighborhood");
         }
         nb.erase(it);
