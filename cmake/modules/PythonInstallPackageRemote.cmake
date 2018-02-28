@@ -37,7 +37,6 @@ function(python_install_package_remote)
     # add trusted-host command
     set(TRUSTED_HOST_CMD "")
     if(RINST_TRUSTED_HOST)
-        message(WARNING "Trusting hostname ${RINST_TRUSTED_HOST}!")
         set(TRUSTED_HOST_CMD "--trusted-host ${RINST_TRUSTED_HOST}")
     endif()
 
