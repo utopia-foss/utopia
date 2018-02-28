@@ -445,6 +445,7 @@ public:
                 [&ret](const auto cell){
                     return std::count(ret.begin(), ret.end(), cell) == 1;}),
             ret.end());
+        ret.erase(std::unique(ret.begin(), ret.end()), ret.end());
 
         // add regular neighbors to container
         std::move(next_neighbors.begin(), next_neighbors.end(),
