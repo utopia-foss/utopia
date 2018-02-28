@@ -445,6 +445,9 @@ public:
                 [&ret](const auto cell){
                     return std::count(ret.begin(), ret.end(), cell) == 1;}),
             ret.end());
+
+        // now only have the duplicates left; but keep only one of each
+        std::sort(ret.begin(), ret.end()); // needed for std::unique
         ret.erase(std::unique(ret.begin(), ret.end()), ret.end());
 
         // add regular neighbors to container
