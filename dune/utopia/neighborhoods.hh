@@ -68,8 +68,7 @@ auto add_neighbors_in_dim (const long root_id,
     const auto& grid_cells = mngr.grid_cells();
 
     // Distinguish by dimension parameter
-    // TODO: make these `if constexpr` when adopting C++17 standard    
-    if (dim_no == 1) {
+    if constexpr (dim_no == 1) {
         // check if at front boundary
         if(root_id % grid_cells[0] == 0){
             if(periodic){
@@ -96,7 +95,7 @@ auto add_neighbors_in_dim (const long root_id,
     }
 
 
-    else if (dim_no == 2) {
+    else if constexpr (dim_no == 2) {
         // 'normalize' id to lowest height (if 3D)
         const auto root_id_nrm = root_id % shift<2>(grid_cells);
 
@@ -126,7 +125,7 @@ auto add_neighbors_in_dim (const long root_id,
     }
 
 
-    else if (dim_no == 3) {
+    else if constexpr (dim_no == 3) {
         const auto id_max = shift<3>(grid_cells) - 1;
 
         // check if at front boundary
