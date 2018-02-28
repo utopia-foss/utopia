@@ -42,7 +42,7 @@ function(python_install_package_remote)
 
     # execute command
     set(INSTALL_CMD -m pip install --upgrade
-        ${RINST_FULL_PATH} ${TRUSTED_HOST_COMMAND})
+        ${RINST_FULL_PATH} ${TRUSTED_HOST_CMD})
     dune_execute_process(
         COMMAND "${DUNE_PYTHON_VIRTUALENV_EXECUTABLE}" "${INSTALL_CMD}"
         ERROR_MESSAGE "Error installing remote package into the venv!"
