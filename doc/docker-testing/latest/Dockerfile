@@ -5,6 +5,7 @@ MAINTAINER Lukas Riedel
 RUN apt-get update \
     && apt-get install -y \
         cmake \
+        curl \
         doxygen \
         gcc \
         g++ \
@@ -18,9 +19,15 @@ RUN apt-get update \
         python3-dev \
     && apt-get clean
 
+# manage locales
 RUN rm -rf /var/lib/apt/lists/* \
     && localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
 ENV LANG en_US.utf8
+
+# install custom CA of Heidelberg University to access our servers
+RUN curl https://pki.pca.dfn.de/uni-heidelberg-ca/pub/cacert/chain.txt \
+    -o /usr/local/share/ca-certificates/uniheidelberg.crt \
+    && update-ca-certificates
 
 WORKDIR /opt/dune
 RUN git clone https://gitlab.dune-project.org/core/dune-common.git
