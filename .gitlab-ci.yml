@@ -29,9 +29,8 @@ build:debug:
   stage: build
   allow_failure: true
   script:
-    - ./dune-common/bin/dunecontrol update
     - CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=Debug $CONFIG_FLAGS"
-      ./dune-common/bin/dunecontrol --module=utopia all
+      ./dune-common/bin/dunecontrol --only=utopia all
     - ./dune-common/bin/dunecontrol --only=utopia make build_tests
 
 test:main:
