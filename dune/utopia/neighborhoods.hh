@@ -3,18 +3,16 @@
 
 namespace Utopia {
 
-/// Return 0-dimensional shift in grid cells
-template<std::size_t index, typename T>
-constexpr std::enable_if_t<index==0,typename T::value_type> shift (const T& cells)
-{
-    return 1;
-}
-
 /// Return i-dimensional shift in grid cells
 template<std::size_t index, typename T>
-constexpr std::enable_if_t<index!=0,typename T::value_type> shift (const T& cells)
+constexpr typename T::value_type shift (const T& cells)
 {
-    return cells[index-1] * shift<index-1>(cells);
+    if constexpr (index == 0) {
+        return 1;
+    }
+    else {
+        return cells[index-1] * shift<index-1>(cells);
+    } 
 }
 
 /// Find appropriate cells for a set of indices

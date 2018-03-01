@@ -80,7 +80,10 @@ namespace Setup
 
         grid->globalRefine(refinement_level);
 
-        GridWrapper<Grid> gw = {grid,determine_extensions(grid)};
+        // add empty array
+        std::array<unsigned int,dim> cells;
+
+        GridWrapper<Grid> gw = {grid, determine_extensions(grid), cells};
         return gw;
     }
 
