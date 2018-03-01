@@ -542,35 +542,80 @@ public:
         const Manager& mngr)
         -> std::enable_if_t<!structured, typename NBTraits<Cell>::return_type>
     {
-        // get regular neighbors first
-        const auto next_neighbors = NextNeighborNew::neighbors(root, mngr);
+        typename NBTraits<Cell>::return_type ret;
 
+        // add root to 'excludes'
+        ret.push_back(root);
+
+        // get regular neighbors first
+        auto neighbors = NextNeighborNew::neighbors(root, mngr);
+        std::copy(neighbors.begin(), neighbors.end(),
+            std::back_inserter(ret));
+
+        // get 2D Moore neighborhood
+        auto moore_2d = next_neighbors_with_count<Cell>(
+            mngr, neighbors, ret, 2);
+        std::copy(moore_2d.begin(), moore_2d.end(),
+            std::back_inserter(ret));
+
+        // get 3D Moore neighborhood
+        if constexpr (Manager::Traits::dim == 3){
+            auto moore_3d = next_neighbors_with_count<Cell>(
+                mngr, moore_2d, ret, 3);
+            std::copy(moore_3d.begin(), moore_3d.end(),
+                std::back_inserter(ret));
+        }
+
+        // remove root again
+        ret.erase(std::find(ret.begin(), ret.end(), root));
+
+        // make unique again just to be sure
+        std::sort(ret.begin(), ret.end()); // needed for std::unique
+        ret.erase(std::unique(ret.begin(), ret.end()), ret.end());
+
+        return ret;
+    }
+
+private:
+
+    /// Return reoccuring neighbors from a set of root cells
+    /** \param roots Root cells for neighbor calls 
+     *  \param excludes Cells to be excluded from the set
+     *  \param count Count of neighbor occurance to be accepted
+     *  \return Container of unique next neighbors with specified occurance
+     */
+    template<class Cell, class Manager>
+    static auto next_neighbors_with_count (
+        const Manager& manager,
+        const typename NBTraits<Cell>::return_type& roots,
+        const typename NBTraits<Cell>::return_type& excludes,
+        const int count)
+    -> typename NBTraits<Cell>::return_type
+    {
         // get their neighbors, i.e. the next next neighbors
         typename NBTraits<Cell>::return_type ret;
-        for (auto&& nb : next_neighbors) {
-            auto nn_neighbors = NextNeighborNew::neighbors(nb, mngr);
+        for (auto&& nb: roots) {
+            auto nn_neighbors = NextNeighborNew::neighbors(nb, manager);
             std::move(nn_neighbors.begin(), nn_neighbors.end(),
                 std::back_inserter(ret));
         }
 
-        // remove root
+        // remove excludes
         ret.erase(std::remove_if(ret.begin(), ret.end(),
-                [&root](const auto cell){ return cell == root; }),
-            ret.end());
+                [&excludes](const auto cell){ 
+                    return std::find(excludes.begin(), excludes.end(), cell)
+                        != excludes.end();
+            }), ret.end());
 
-        // only keep duplicates -- those are the ones that are part of the Moore neighborhood
+        // only keep cells with specific count in container
         ret.erase(std::remove_if(ret.begin(), ret.end(),
-                [&ret](const auto cell){
-                    return std::count(ret.begin(), ret.end(), cell) == 1;}),
-            ret.end());
+                [&ret, count](const auto cell){
+                    return std::count(ret.begin(), ret.end(), cell) != count;
+            }),ret.end());
 
         // now only have the duplicates left; but keep only one of each
         std::sort(ret.begin(), ret.end()); // needed for std::unique
         ret.erase(std::unique(ret.begin(), ret.end()), ret.end());
-
-        // add regular neighbors to container
-        std::move(next_neighbors.begin(), next_neighbors.end(),
-                  std::back_inserter(ret));
 
         return ret;
     }
