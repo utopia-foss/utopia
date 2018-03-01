@@ -1,5 +1,5 @@
 # BOOST
-find_package(Boost 1.66 REQUIRED)
+find_package(Boost 1.62 REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 list(APPEND DUNE_LIBS ${Boost_LIBRARIES})
 
