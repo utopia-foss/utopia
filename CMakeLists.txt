@@ -24,6 +24,7 @@ dune_enable_all_packages()
 # require most recent C++ standard
 dune_require_cxx_standard(MODULE "utopia" VERSION 17)
 
+add_subdirectory(python)
 add_subdirectory(dune)
 add_subdirectory(doc)
 add_subdirectory(cmake/modules)
