@@ -1,8 +1,8 @@
 # place mesh in build directory
 file(COPY "square.msh" "cube.msh" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-# collect tests
-set(TESTS
+# collect CORE tests
+set(TESTS_CORE
     agent_test_2d
     agent_test_3d
     entity_test
@@ -15,8 +15,8 @@ set(TESTS
     simulation_test)
 
 # add all tests
-foreach(test ${TESTS})
-    dune_add_test(NAME ${test} SOURCES "${test}.cc")
+foreach(test ${TESTS_CORE})
+    dune_add_test(NAME CORE_${test} SOURCES ${test}.cc)
 endforeach(test)
 
 # add EPSWriter test and link to PSGraf library

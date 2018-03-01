@@ -4,6 +4,8 @@ variables:
   CONFIG_FLAGS:
       -DDUNE_PYTHON_VIRTUALENV_SETUP=True
       -DDUNE_PYTHON_ALLOW_GET_PIP=True
+  TEST_ARGS:
+      --output-on-failure
 before_script:
   - cd /opt/dune
 
@@ -33,9 +35,10 @@ build:debug:
       ./dune-common/bin/dunecontrol --only=utopia all
     - ./dune-common/bin/dunecontrol --only=utopia make build_tests
 
-test:main:
+test:core:
   stage: test
   dependencies:
     - build:main
   script:
-    - ARGS="--output-on-failure" ./dune-common/bin/dunecontrol --only=utopia make test
+    - ARGS="$TEST_ARGS --tests-regex ^CORE_.+$"
+      ./dune-common/bin/dunecontrol --only=utopia make test
