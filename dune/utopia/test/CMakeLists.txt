@@ -1,11 +1,6 @@
 # place mesh in build directory
 file(COPY "square.msh" "cube.msh" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-# add extra debugging flags for debug builds
-if(CMAKE_BUILD_TYPE MATCHES "Debug")
-    set(COMPILE_FLAGS_TEST -Wall -Wextra -g3)
-endif()
-
 # collect tests
 set(TESTS
     agent_test_2d
@@ -21,8 +16,7 @@ set(TESTS
 
 # add all tests
 foreach(test ${TESTS})
-    dune_add_test(NAME ${test} SOURCES "${test}.cc"
-        COMPILE_FLAGS ${COMPILE_FLAGS_TEST})
+    dune_add_test(NAME ${test} SOURCES "${test}.cc")
 endforeach(test)
 
 # add EPSWriter test and link to PSGraf library
