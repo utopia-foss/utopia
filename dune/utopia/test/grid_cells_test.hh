@@ -156,7 +156,6 @@ void cells_on_grid_test (const unsigned int cells_per_dim)
 {
     // Alias the neighborhood classes
     using NextNeighbor = Utopia::Neighborhoods::NextNeighbor;
-    using NextNeighborNew = Utopia::Neighborhoods::NextNeighborNew;
     using MooreNeighbor = Utopia::Neighborhoods::MooreNeighbor;
 
     // Setup grid and cells
@@ -180,14 +179,11 @@ void cells_on_grid_test (const unsigned int cells_per_dim)
     // compare neighborhood implementations (m1: structured, m2: unstructured)
     compare_neighborhoods<NextNeighbor>(m1, m2,
                                         std::to_string(dim) + "d_nn");
-    compare_neighborhoods<NextNeighborNew>(m1, m2,
-                                           std::to_string(dim) + "d_nn_new");
     compare_neighborhoods<MooreNeighbor>(m1, m2,
                                          std::to_string(dim) + "d_moore");
 
-    // check periodic boundaries
+    // check that neighbor count is correct everywhere on periodic grids
     check_grid_neighbors_count<NextNeighbor, 2*dim>(m3);
-    check_grid_neighbors_count<NextNeighborNew, 2*dim>(m3);
 
     const int moore_nb_count = std::pow(3, dim) - 1;
     check_grid_neighbors_count<MooreNeighbor, moore_nb_count>(m3);

@@ -173,135 +173,16 @@ struct NBTraits
 };
 
 
-/// Supplies functions to return Von-Neumann neighborhood
+/// Supplies functions to retrieve the Von-Neumann neighborhood
+/** This class utilizes the add_neighbors_in_dim function to generalize the
+ *  finding of neighbors.
+ */
 class NextNeighbor
 {
 
 public:
 
-    /// Return next neighbors for any grid
-    template<class Manager, class Cell,
-        bool structured = Manager::is_structured()>
-    static auto neighbors (const std::shared_ptr<Cell> root, const Manager& mngr)
-        -> std::enable_if_t<!structured,typename NBTraits<Cell>::return_type>
-    {
-        // get references to grid manager members
-        using Index = typename NBTraits<Cell>::Index;
-        const auto& gv = mngr.grid_view();
-        const auto& mapper = mngr.mapper();
-
-        // get grid entity of root cell
-        const auto root_id = root->index();
-        auto it = elements(gv).begin();
-        std::advance(it,root_id);
-
-        // find adjacent grid entities
-        std::vector<Index> neighbor_ids;
-        for (auto&& is : intersections(gv,*it)) {
-            if (is.neighbor()) {
-                neighbor_ids.push_back(mapper.index(is.outside()));
-            }
-        }
-
-        return cells_from_ids(neighbor_ids,mngr);
-    }
-
-    /// Return next neighbors for structured grid
-    template<class Manager, class Cell,
-        bool structured = Manager::is_structured()>
-    static auto neighbors (const std::shared_ptr<Cell> root, const Manager& mngr)
-        -> std::enable_if_t<structured,typename NBTraits<Cell>::return_type>
-    {
-        constexpr bool periodic = Manager::is_periodic();
-
-        // find neighbor IDs
-        const long root_id = root->index();
-        const auto& grid_cells = mngr.grid_cells();
-
-        std::vector<long> neighbor_ids;
-
-        // 1D shift
-        // front boundary
-        if (root_id % grid_cells[0] == 0) {
-            if (periodic) {
-                neighbor_ids.push_back(root_id - shift<0>(grid_cells) + shift<1>(grid_cells));
-            }
-        }
-        else {
-            neighbor_ids.push_back(root_id - shift<0>(grid_cells));
-        }
-        // back boundary
-        if (root_id % grid_cells[0] == grid_cells[0] - 1) {
-            if (periodic) {
-                neighbor_ids.push_back(root_id + shift<0>(grid_cells) - shift<1>(grid_cells));
-            }
-        }
-        else {
-            neighbor_ids.push_back(root_id + shift<0>(grid_cells));
-        }
-
-        // 2D shift
-        // 'normalize' id to lowest height (if 3D)
-        const auto root_id_nrm = root_id % shift<2>(grid_cells);
-        // front boundary
-        if ((long) root_id_nrm / grid_cells[0] == 0) {
-            if (periodic) {
-                neighbor_ids.push_back(root_id - shift<1>(grid_cells) + shift<2>(grid_cells));
-            }
-        }
-        else {
-            neighbor_ids.push_back(root_id - shift<1>(grid_cells));
-        }
-        // back boundary
-        if ((long) root_id_nrm / grid_cells[0] == grid_cells[1] - 1) {
-            if (periodic) {
-                neighbor_ids.push_back(root_id + shift<1>(grid_cells) - shift<2>(grid_cells));
-            }
-        }
-        else {
-            neighbor_ids.push_back(root_id + shift<1>(grid_cells));
-        }
-
-        // 3D shift
-        if (Manager::Traits::dim == 3)
-        {
-            const auto id_max = shift<3>(grid_cells) - 1;
-            // front boundary
-            if (root_id - shift<2>(grid_cells) < 0) {
-                if (periodic) {
-                    neighbor_ids.push_back(root_id - shift<2>(grid_cells) + shift<3>(grid_cells));
-                }
-            }
-            else {
-                neighbor_ids.push_back(root_id - shift<2>(grid_cells));
-            }
-            // back boundary
-            if (root_id + shift<2>(grid_cells) > id_max) {
-                if (periodic) {
-                    neighbor_ids.push_back(root_id + shift<2>(grid_cells) - shift<3>(grid_cells));
-                }
-            }
-            else {
-                neighbor_ids.push_back(root_id + shift<2>(grid_cells));
-            }
-        }
-
-        return cells_from_ids(neighbor_ids,mngr);
-    }
-
-};
-
-/// New, faster implementation of Von-Neumann Neighborhood
-/** This class utilizes the add_neighbors_in_dim function to generalize the
- *  finding of neighbors.
- */
-// TODO after testing: rename this to `NextNeighbor` and remove the old one
-class NextNeighborNew
-{
-
-public:
-
-    /// Return next neighbors for any grid
+    /// Return next neighbors for an unstructured grid
     template<class Manager, class Cell,
         bool structured = Manager::is_structured()>
     static auto neighbors (const std::shared_ptr<Cell> root, const Manager& mngr)
@@ -549,7 +430,7 @@ public:
         ret.push_back(root);
 
         // get regular neighbors first
-        auto neighbors = NextNeighborNew::neighbors(root, mngr);
+        auto neighbors = NextNeighbor::neighbors(root, mngr);
         std::copy(neighbors.begin(), neighbors.end(),
             std::back_inserter(ret));
 
@@ -596,7 +477,7 @@ private:
         // get their neighbors, i.e. the next next neighbors
         typename NBTraits<Cell>::return_type ret;
         for (auto&& nb: roots) {
-            auto nn_neighbors = NextNeighborNew::neighbors(nb, manager);
+            auto nn_neighbors = NextNeighbor::neighbors(nb, manager);
             std::move(nn_neighbors.begin(), nn_neighbors.end(),
                 std::back_inserter(ret));
         }
