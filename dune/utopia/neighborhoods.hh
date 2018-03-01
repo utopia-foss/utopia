@@ -451,10 +451,6 @@ public:
         // remove root again
         ret.erase(std::find(ret.begin(), ret.end(), root));
 
-        // make unique again just to be sure
-        std::sort(ret.begin(), ret.end()); // needed for std::unique
-        ret.erase(std::unique(ret.begin(), ret.end()), ret.end());
-
         return ret;
     }
 
