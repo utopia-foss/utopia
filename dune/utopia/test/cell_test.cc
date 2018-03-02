@@ -7,9 +7,11 @@
 #include "cell_test.hh"
 
 /// Choose random states and traits. Verify Entity members before and after update
-int main(int argc, char const *argv[])
+int main(int argc, char *argv[])
 {
     try{
+        Dune::MPIHelper::instance(argc, argv);
+
         using State = int;
         using Traits = double;
         using Position = Dune::FieldVector<double,2>;

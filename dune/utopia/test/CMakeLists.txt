@@ -1,13 +1,8 @@
 # place mesh in build directory
 file(COPY "square.msh" "cube.msh" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-# add extra debugging flags for debug builds
-if(CMAKE_BUILD_TYPE MATCHES "Debug")
-    set(COMPILE_FLAGS_TEST -Wall -Wextra -g3)
-endif()
-
-# collect tests
-set(TESTS
+# collect CORE tests
+set(TESTS_CORE
     agent_test_2d
     agent_test_3d
     entity_test
@@ -20,14 +15,17 @@ set(TESTS
     output_agent_test_rect
     simulation_test)
 
-# add all tests
-foreach(test ${TESTS})
-    dune_add_test(NAME ${test} SOURCES "${test}.cc"
-        COMPILE_FLAGS ${COMPILE_FLAGS_TEST})
+# add CORE tests
+foreach(test ${TESTS_CORE})
+    dune_add_test(NAME CORE_${test} SOURCES ${test}.cc)
 endforeach(test)
 
 # add EPSWriter test and link to PSGraf library
 if(PSGRAF_FOUND)
-    dune_add_test(NAME output_epswriter_test SOURCES output_epswriter_test.cc)
+    dune_add_test(NAME CORE_output_epswriter_test SOURCES output_epswriter_test.cc)
     target_link_libraries(output_epswriter_test ${PSGRAF_LIBRARIES})
 endif()
+
+# add custom target for 'CORE' prefix
+add_custom_target(test_core
+    COMMAND ctest --output-on-failure --tests-regex ^CORE_.+$)

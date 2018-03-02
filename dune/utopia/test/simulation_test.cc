@@ -23,10 +23,12 @@ int main(int argc, char** argv)
         auto sim = Utopia::Setup::create_sim(manager);
         sim.add_output(vtkwriter);
 
-        sim.add_rule([&](const auto cell){
+        sim.add_rule([](const auto cell){
+            cell->state();
             return 1;
         });
-        sim.add_bc([&](const auto cell){
+        sim.add_bc([](const auto cell){
+            cell->state();
             return 2;
         });
 

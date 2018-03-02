@@ -212,7 +212,7 @@ private:
     void apply_rules_bc_cells ()
     {
         const auto iter = std::max(_rules.size(),_bc.size());
-        for(int i=0; i<iter; i++)
+        for(unsigned int i=0; i<iter; i++)
         {
             const bool do_bc = (i<_bc.size());
             const bool do_rule = (i<_rules.size());
