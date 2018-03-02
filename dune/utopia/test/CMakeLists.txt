@@ -14,13 +14,17 @@ set(TESTS_CORE
     output_agent_test_rect
     simulation_test)
 
-# add all tests
+# add CORE tests
 foreach(test ${TESTS_CORE})
     dune_add_test(NAME CORE_${test} SOURCES ${test}.cc)
 endforeach(test)
 
 # add EPSWriter test and link to PSGraf library
 if(PSGRAF_FOUND)
-    dune_add_test(NAME output_epswriter_test SOURCES output_epswriter_test.cc)
+    dune_add_test(NAME CORE_output_epswriter_test SOURCES output_epswriter_test.cc)
     target_link_libraries(output_epswriter_test ${PSGRAF_LIBRARIES})
 endif()
+
+# add custom target for 'CORE' prefix
+add_custom_target(test_core
+    COMMAND ctest --output-on-failure --tests-regex ^CORE_.+$)

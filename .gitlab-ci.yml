@@ -40,5 +40,4 @@ test:core:
   dependencies:
     - build:main
   script:
-    - ARGS="$TEST_ARGS --tests-regex ^CORE_.+$"
-      ./dune-common/bin/dunecontrol --only=utopia make test
+    - ./dune-common/bin/dunecontrol --only=utopia make test_core
