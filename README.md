@@ -105,3 +105,17 @@ and perform the tests by calling
     ARGS="--output-on-failure" ./dune-common/bin/dunecontrol --only=utopia make test
 
 If the test executables are not built before executing `make test`, the corresponding tests will inevitably fail.
+
+#### Grouped Unit Tests
+We grouped the tests to receive more granular information from the CI system.
+You can choose to perform only tests from a specific group by calling
+
+    make test_<group>
+
+Replace `<group>` by the appropriate testing group identifier.
+
+Available testing groups:
+
+| Group | Info |
+| ----- | ---- |
+| `core` | Backend functions for models |
