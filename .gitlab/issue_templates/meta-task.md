@@ -18,6 +18,7 @@ _Note:_ This is a meta-task. It bundles several tasks together and is only close
 
 ### Tasks
 * [ ] _Task 1_
+
 <!-- Example (mention tasks with '#'):
 * [ ] #13: a very important task
 -->

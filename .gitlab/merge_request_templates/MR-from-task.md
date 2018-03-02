@@ -15,6 +15,7 @@ IMPORTANT: Make sure to set this merge request WIP.
 ### Can this MR be accepted?
 
 - [ ] added test ...
+
 <!-- Add more stuff here...
 - [ ] reviewed by group ...
 -->
@@ -22,6 +23,7 @@ IMPORTANT: Make sure to set this merge request WIP.
 ### Related issues
 
 Closes ...
+
 <!-- Example: (Do not put words or comma between the numbers)
 Closes #1 #23 #42
 -->
