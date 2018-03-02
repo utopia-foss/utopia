@@ -13,10 +13,12 @@ A new version of Utopia can be loaded into it an installed directly.
 For building a new image, enter the respective subdirectory (identifying the `tag`)
 and call
 
-    docker build -t citcat/dune-env:<tag> .
+    docker build --no-cache -t citcat/dune-env:<tag> .
 
 Replace `<tag>` with the appropriate tag.
 Don't forget the dot (`.`) at the end of this call!
+`--no-cache` seems to reduce timeout/rejection issues when pushing the image
+later on.
 
 Afterwards, `docker push` the new image to Docker Hub.
 

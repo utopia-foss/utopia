@@ -7,6 +7,7 @@ set(TESTS_CORE
     agent_test_3d
     entity_test
     cell_test
+    dependency_test
     grid_test
     grid_cells_test_2d
     grid_cells_test_3d

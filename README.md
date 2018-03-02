@@ -18,7 +18,11 @@ Follow the Step-by-step instructions below for building Utopia from source.
 | ---------| ------- | -------- |
 | GCC | >= 7 | Full C++17 compiler support required |
 | [CMake](https://cmake.org/) | >= 3.1 | |
+| Python | >= 3.6 | |
 | pkg-config | | |
+| [HDF5](https://www.hdfgroup.org/solutions/hdf5/) | >= 1.10. | |
+| [yaml-cpp](https://github.com/jbeder/yaml-cpp) | >= 0.5.2 | |
+| [Boost](http://www.boost.org/) | >= 1.62 | |
 | [dune-common](https://gitlab.dune-project.org/core/dune-common) | master | |
 | [dune-geometry](https://gitlab.dune-project.org/core/dune-geometry) | master | |
 | [dune-grid](https://gitlab.dune-project.org/core/dune-grid) | master | |
@@ -27,7 +31,7 @@ Follow the Step-by-step instructions below for building Utopia from source.
 ### Recommended
 | Software | Version | Purpose |
 | ---------| ------- | ------- |
-| [doxygen](http://www.stack.nl/~dimitri/doxygen/) | | Builds the code documentation upon installation |
+| [doxygen](http://www.stack.nl/~dimitri/doxygen/) | >= 1.8.14 | Builds the code documentation upon installation |
 
 ### Optional Packages
 | Software | Version | Purpose |
@@ -52,12 +56,13 @@ Ubuntu is shipped with APT.
     __Ubuntu:__
 
         apt update
-        apt install cmake doxygen gcc g++ gfortran git pkg-config
+        apt install cmake doxygen gcc g++ gfortran git libboost-dev \
+            libhdf5-dev libyaml-cpp-dev pkg-config python3-dev
     
     __macOS:__
 
         brew update
-        brew install cmake doxygen gcc-7 pkg-config
+        brew install boost cmake doxygen gcc-7 hdf5 pkg-config python3 yaml-cpp
 
 3. Use `[git clone](https://git-scm.com/docs/git-clone)` to clone the
     DUNE repositories listed above into a suitable folder on your machine.
@@ -73,7 +78,7 @@ Ubuntu is shipped with APT.
 
 5. Configure and build DUNE and Utopia by executing the `dunecontrol` script:
 
-        CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=Release" ./dune-common/bin/dunecontrol --module=utopia all
+        CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=Release -DDUNE_PYTHON_VIRTUALENV_SETUP=True -DDUNE_PYTHON_ALLOW_GET_PIP=True" ./dune-common/bin/dunecontrol --module=utopia all
 
     Afterwards, reconfiguring and rebuilding can now also be done locally,
     instead of calling `dunecontrol`. After entering the `utopia/build-cmake` directory,
