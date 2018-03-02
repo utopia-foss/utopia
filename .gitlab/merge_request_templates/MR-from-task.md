@@ -27,5 +27,3 @@ Closes ...
 <!-- Example: (Do not put words or comma between the numbers)
 Closes #1 #23 #42
 -->
-
-/target master
