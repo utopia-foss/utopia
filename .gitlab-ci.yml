@@ -31,8 +31,8 @@ build:debug:
   stage: build
   allow_failure: true
   script:
-    - CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=Debug $CONFIG_FLAGS"
-      ./dune-common/bin/dunecontrol --only=utopia all
+    - export CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=Debug $CONFIG_FLAGS -DCMAKE_CXX_FLAGS_DEBUG='$CMAKE_CXX_FLAGS_DEBUG -Wall -Wextra -Werror'"
+    - ./dune-common/bin/dunecontrol --only=utopia all
     - ./dune-common/bin/dunecontrol --only=utopia make build_tests
 
 test:core:
