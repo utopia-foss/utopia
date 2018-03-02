@@ -13,15 +13,19 @@ When creating this meta task, please take care of the following:
 
 _Note:_ This is a meta-task. It bundles several tasks together and is only closed once all these tasks are finished.
 
-## Aims
-<Write a short description of what this meta task aims to do>
+### Aims
 
-* [ ] <Brief description of task 1>
-* [ ] <Brief description of task 2>
-* [ ] <Brief description of task 3>
-* [ ] ...
 
-<!-- Mention the people that are involved in this meta-task here: -->
-__People involved:__ 
+### Tasks
+* [ ] _Task 1_
+<!-- Example (mention tasks with '#'):
+* [ ] #13: a very important task
+-->
+
+### People involved
+
+
+### Related meta-tasks
+<!-- Meta-tasks of other groups that require coordination -->
 
 /label ~meta
