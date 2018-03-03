@@ -4,8 +4,8 @@ PLEASE READ THIS
 A meta task is used to organise and discuss several regular tasks.
 
 When creating this meta task, please take care of the following:
-    - When new tasks that belong to this meta-task are created, link them here:
-        * [ ] #<issue_no> — <description>
+    - When new tasks that belong to this meta-task are created,
+        link them here, and add them as tasks
     - Attach the correct labels
     - Mention the people that should get involved
     - Assign the correct milestone (if available)
@@ -19,9 +19,8 @@ _Note:_ This is a meta-task. It bundles several tasks together and is only close
 ### Tasks
 * [ ] _Task 1_
 
-<!-- Example (mention tasks with '#'):
-* [ ] #13: a very important task
--->
+<!-- Example (mention tasks with '#'): -->
+<!-- * [ ] #13: a very important task -->
 
 ### People involved
 
