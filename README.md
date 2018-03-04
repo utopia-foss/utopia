@@ -47,7 +47,7 @@ On Mac, we recommend [Homebrew](https://brew.sh/). If you prefer to use [MacPort
 notice that some packages might need to be installed differently.
 Ubuntu is shipped with APT.
 
-1. Mac OS X users need to start by installing the Apple Command Line Tools by executing
+1. __macOS__ users need to start by installing the Apple Command Line Tools by executing
 
         xcode-select --install
 
@@ -64,9 +64,9 @@ Ubuntu is shipped with APT.
         brew update
         brew install boost cmake doxygen gcc-7 hdf5 pkg-config python3 yaml-cpp
 
-3. Use `[git clone](https://git-scm.com/docs/git-clone)` to clone the
+3. Use [`git clone`](https://git-scm.com/docs/git-clone) to clone the
     DUNE repositories listed above into a suitable folder on your machine.
-    Make sure to `[git checkout](https://git-scm.com/docs/git-checkout)` the correct branches (see the dependency list above).
+    Make sure to [`git checkout`](https://git-scm.com/docs/git-checkout) the correct branches (see the dependency list above).
 
 4. __macOS only:__ Make sure that CMake uses the Homebrew GCC instead of
     the command line tools Clang:
@@ -78,7 +78,10 @@ Ubuntu is shipped with APT.
 
 5. Configure and build DUNE and Utopia by executing the `dunecontrol` script:
 
-        CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=Release -DDUNE_PYTHON_VIRTUALENV_SETUP=True -DDUNE_PYTHON_ALLOW_GET_PIP=True" ./dune-common/bin/dunecontrol --module=utopia all
+        CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=Release \
+            -DDUNE_PYTHON_VIRTUALENV_SETUP=True \
+            -DDUNE_PYTHON_ALLOW_GET_PIP=True" \
+            ./dune-common/bin/dunecontrol --module=utopia all
 
     Afterwards, reconfiguring and rebuilding can now also be done locally,
     instead of calling `dunecontrol`. After entering the `utopia/build-cmake` directory,
@@ -95,6 +98,26 @@ Utopia builds a Doxygen documentation from its source files. Use `dunecontrol` t
     ./dune-common/bin/dunecontrol --only=utopia make doc
 
 You will find the files inside the build directory `utopia/build-cmake/doc`.
+
+### Build Types
+If you followed the instructions above, you have a `Release` build which is
+optimized for maximum performance. If you need to debug, you should reconfigure
+the entire project with CMake by navigating to the `utopia/build-cmake` folder
+and calling
+
+    cmake -DCMAKE_BUILD_TYPE=Debug ..
+
+Afterwards, call
+
+    make <something>
+
+to rebuild executables. CMake handles the required compiler flags automatically.
+
+The build type (as most other CMake flags) persists until it is explicitly
+changed by the user. To build optimized executables again, reconfigure with
+
+    cmake -DCMAKE_BUILD_TYPE=Release ..
+
 
 ### Unit Tests
 **The unit testing is still incomplete!**
