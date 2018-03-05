@@ -5,6 +5,7 @@ The Multiverse supplies the main user interface of the frontend.
 
 import os
 import time
+import math
 import logging
 
 log = logging.getLogger(__name__)
@@ -87,7 +88,9 @@ class Multiverse:
             max_dim:no: Maximal number of universes calculated
                 from param sweep from meta_cfg.yaml.
         """
-        path_universe = "uni"+str(uni_no).zfill(max_dim_no)
-        pathname = os.path.join(self.dirs['universes'], path_universe)
+        # calculate path for universe from maximum number, +1 needed because math.ceil >=
+        # e.g. math.ceil(math.log(100,10)) gives 2 but 3 places needed
+        path_universe = "uni"+str(uni_no).zfill(math.ceil(math.log(max_dim_no+1, 10)))
         # recursive folder creation automatic error if already existing
+        pathname = os.path.join(self.dirs['universes'], path_universe)
         os.makedirs(pathname)
