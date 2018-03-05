@@ -22,7 +22,7 @@ class WorkerManager:
     At the same time, it reads the worker's stream in yet separate non-blocking threads.
     """
 
-    def __init__(self, num_workers: Union[int, str], poll_freq: float=42, QueueCls=queue.Queue, line_read_func: Callable=None):
+    def __init__(self, num_workers: Union[int, str], poll_freq: float=42, QueueCls=queue.Queue):
         """Initialize the worker manager.
         
         Args:
@@ -34,8 +34,6 @@ class WorkerManager:
                 time between polls. Should not be choosen too high, as this
                 determines the CPU load of the main thread.
             QueueCls (Class, optional): Which class to use for the Queue.
-            line_read_func (Callable, optional): Which function to use for
-                reading the stdout of a worker process.
         """
         # Initialize property-managed attributes
         self._num_workers = None
@@ -49,7 +47,6 @@ class WorkerManager:
 
         # Hand over arguments
         self.poll_freq = poll_freq
-        self._line_read_func = line_read_func
 
         if num_workers == 'auto':
             self.num_workers = os.cpu_count()
@@ -208,7 +205,7 @@ class WorkerManager:
         # Spawn a worker and return the resulting process
         return self._spawn_worker(**task)
 
-    def _spawn_worker(self, *, args: str, read_stdout: bool, **popen_kwargs) -> subprocess.Popen:
+    def _spawn_worker(self, *, args: str, read_stdout: bool, line_read_func: Callable=None, **popen_kwargs) -> subprocess.Popen:
         """Spawn a worker process using subprocess.Popen and manage the corresponding queue and thread for reading the stdout stream. The new worker process is registered with the class.
         
         Args:
@@ -216,6 +213,7 @@ class WorkerManager:
                 spawn a new process with
             read_stdout (bool): Whether stdout should be streamed and its
                 output queued
+            line_read_func (Callable): The function to read the stdout with
             **popen_kwargs: kwargs passed to subprocess.Popen
         
         Returns:
@@ -250,11 +248,11 @@ class WorkerManager:
         
         # If enabled, prepare for reading the output
         if read_stdout:
-            if self._line_read_func is None:
+            if line_read_func is None:
                 raise ValueError("Need argument `line_read_func` for reading stdout.")
 
             # Generate the thread that reads the stream and populates the queue
-            t = threading.Thread(target=self._line_read_func,
+            t = threading.Thread(target=line_read_func,
                                  kwargs=dict(queue=q, stream=proc.stdout))
             # Set to be a daemon thread => will die with the parent thread
             t.daemon = True
@@ -335,7 +333,7 @@ class WorkerManager:
         # Read the remaining entries from the worker stream
         self._read_worker_stream(proc, max_num_reads=-1)
 
-    def _read_worker_streams(self, stream_name: str='out'):
+    def _read_worker_streams(self, stream_name: str='out') -> None:
         """Gathers all working workers' streams with the given `stream_name`.
         
         Args:
