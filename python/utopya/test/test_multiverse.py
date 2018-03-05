@@ -2,6 +2,8 @@
 import pytest
 import os
 import logging
+import time
+import math
 from utopya import Multiverse
 
 log = logging.getLogger(__name__)
@@ -27,4 +29,16 @@ def test_create_sim_dir():
     for folder in folder_list:
         if not os.path.isdir(os.path.join(path_base, latest, folder)):
             log.debug("Inner directory not found %s at %s", folder, os.path.join(path_base, latest, folder))
+            raise RuntimeError
+
+pytest.mark.skip("Have to wait for user-specific config file to do this.")
+def test_create_uni_dir(maximum=10):
+    time.sleep(1)
+    instance = Multiverse()
+    for i in range(0, maximum):
+        instance._create_uni_dir(i, maximum)
+    path = instance.dirs['universes']
+    for i in range(0, maximum):
+        if not os.path.isdir(os.path.join(path, "uni"+str(i).zfill(math.ceil(math.log(maximum+1, 10))))):
+            log.debug("Uni directory not found %s at %s", i, path)
             raise RuntimeError
