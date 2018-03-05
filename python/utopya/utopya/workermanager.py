@@ -5,6 +5,7 @@ import subprocess
 import queue
 import threading
 import time
+import warnings
 import logging
 from typing import Union, Callable
 
@@ -53,7 +54,7 @@ class WorkerManager:
         if num_workers == 'auto':
             self.num_workers = os.cpu_count()
         elif num_workers < 0:
-            self.num_workers = os.cpu_count() - num_workers
+            self.num_workers = os.cpu_count() + num_workers
         else:
             self.num_workers = num_workers
 
@@ -78,7 +79,14 @@ class WorkerManager:
         """Set the number of workers that can work in parallel."""
         if val <= 0 or not isinstance(val, int):
             raise ValueError("Need positive integer for number of workers, got ", val)
+        elif val > os.cpu_count():
+            warnings.warn("Set WorkerManager to use more parallel workers ({})"
+                          "than there are cpu cores ({}) on this "
+                          "machine.".format(val, os.cpu_count()),
+                          UserWarning)
+
         self._num_workers = val
+        log.debug("Set number of workers to %d", self.num_workers)
 
     @property
     def working(self) -> list:

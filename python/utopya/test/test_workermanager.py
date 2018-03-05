@@ -11,4 +11,18 @@ def wm():
 
 def test_init(wm):
     """Tests whether initialisation succeeds"""
-    return
+    # Test different `num_workers` arguments
+    WorkerManager(num_workers='auto')
+    WorkerManager(num_workers=-1)
+    WorkerManager(num_workers=1)
+
+    # Should warn (too many workers)
+    with pytest.warns(UserWarning):
+        WorkerManager(num_workers=1000)
+
+    # Should fail (not int or negative)
+    with pytest.raises(ValueError):
+        WorkerManager(num_workers=-1000)
+    
+    with pytest.raises(ValueError):
+        WorkerManager(num_workers=1.23)
