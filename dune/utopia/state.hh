@@ -17,7 +17,7 @@ public:
     using State = T;
 
     /// Export implementation type
-    static constexpr bool is_structured () { return true; }
+    static constexpr bool is_sync () { return false; }
 
     /// Construct state container with specific state
     StateContainer (const State state):
@@ -31,6 +31,35 @@ public:
 
 private:
     State _state;
+};
+
+/// State Container specialization for sync states
+template<typename T>
+class StateContainer<T, true>
+{
+public:
+    /// Type of state
+    using State = T;
+
+    /// Export implementation type
+    static constexpr bool is_sync () { return true; }
+
+    /// Construct state container with specific state
+    StateContainer (const State state):
+        _state(state),
+        _state_new(state)
+    { }
+
+    /// Return reference to state cache
+    State& state_new () { return _state_new; }
+    /// Return const reference to state
+    const State& state () const { return _state; }
+    /// Overwrite state with state cache
+    void update () noexcept { _state = _state_new; }
+
+private:
+    State _state;
+    State _state_new;
 };
 
 #endif // UTOPIA_STATE_HH
