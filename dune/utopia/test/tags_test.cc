@@ -2,13 +2,13 @@
 #include <iostream>
 #include <cassert>
 
-int main(int args, char** argv)
+int main()
 {
     try {
-        Utopia::DefaultTag t_true(true);
+        Utopia::DefaultTag t_true;
+        assert(!t_true.is_tagged);
+        t_true.is_tagged = true;
         assert(t_true.is_tagged);
-        t_true.is_tagged = false;
-        assert(!t_true.is_tagged());
         return 0;
     }
     catch(...){

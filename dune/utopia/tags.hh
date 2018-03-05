@@ -8,7 +8,7 @@ class DefaultTag
 
 public:
     /// Construct DefaultTag
-    DefaultTag(bool b) : is_tagged(b) { }
+    DefaultTag() : is_tagged(false) { }
 
     /// Report whether is tagged
     bool is_tagged;
