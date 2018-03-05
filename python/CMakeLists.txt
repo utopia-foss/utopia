@@ -14,13 +14,20 @@ dune_python_install_package(PATH utopya/
 
 # Tests .......................................................................
 
-# Add tests for utopya package (no installation needed)
-add_test(NAME FRONTEND_utopya
-         COMMAND ${CMAKE_BINARY_DIR}/run-in-dune-env
-                 python -m pytest 
-                 ${CMAKE_CURRENT_SOURCE_DIR}/utopya/test/
-                 --cov=utopya
-                 --cov-report=term-missing)
+# Add tests for utopya package
+add_custom_target(pytest_utopya
+                  COMMAND ${CMAKE_BINARY_DIR}/run-in-dune-env
+                          python -m pytest 
+                          ${CMAKE_CURRENT_SOURCE_DIR}/utopya/test/
+                          --cov=utopya
+                          --cov-report=term-missing)
+
+add_test(NAME FRONTEND_utopya COMMAND make pytest_utopya)
+
+# add custom target for 'FRONTEND' prefix
+add_custom_target(test_frontend
+                  COMMAND ctest -V --output-on-failure
+                          --tests-regex ^FRONTEND_.+$)
 
 # want to have packages installed in editable mode? call
 # set(DUNE_PYTHON_INSTALL_EDITABLE True)
