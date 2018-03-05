@@ -6,7 +6,7 @@ namespace Utopia {
 /// Base class interface for Models using the CRT Pattern
 /** \tparam Derived Type of the derived model class
  */
-template<class Derived>
+template<class Derived, typename Data, typename BCType>
 class Model
 {
 public:
@@ -16,28 +16,23 @@ public:
     { }
 
 protected:
-    /// Type of model data (state/initial condition)
-    using Data = typename Derived::Data;
-    /// Type of boundary condition
-    using BCType = typename Derived::BCType;
-
     /// Model internal time stamp
     unsigned int time;
 
 public:
     /// Return const reference to stored data
-    const Data& data () const { return impl.data(); }
+    const Data& data () const { return impl().data(); }
     /// Iterate one (time) step
-    void iterate () { impl.iterate(); }
+    void iterate () { impl().iterate(); }
     /// Set model boundary condition
     void set_boundary_condition (const BCType& bc)
     {
-        impl.set_boundary_condition(bc);
+        impl().set_boundary_condition(bc);
     }
     /// Set model initial condition
     void set_initial_condition (const Data& ic)
     {
-        impl.set_initial_condition(ic);
+        impl().set_initial_condition(ic);
     }
 
 protected:
