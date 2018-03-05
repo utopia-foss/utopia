@@ -1,13 +1,31 @@
 """Tests the WorkerManager class"""
 
+import os
+
 import pytest
+
 from utopya.workermanager import WorkerManager
 
 
+# Fixtures --------------------------------------------------------------------
 @pytest.fixture
 def wm():
-    """Create the simplest possible WorkerManager class"""
+    """Create the simplest possible WorkerManager instance"""
     return WorkerManager(num_workers=1)
+
+@pytest.fixture
+def wm_with_tasks():
+    """Create a WorkerManager instance and add some tasks"""
+    env = os.environ.copy()
+    # sleep_cmd = "python -c 'from time import sleep; sleep(1)'"
+    sleep_cmd = "python"
+
+    wm = WorkerManager(num_workers=1)
+    wm.add_task(sleep_cmd, priority=0, read_stdout=False, env=env)
+    return wm
+
+
+# Tests -----------------------------------------------------------------------
 
 def test_init(wm):
     """Tests whether initialisation succeeds"""
@@ -26,3 +44,14 @@ def test_init(wm):
     
     with pytest.raises(ValueError):
         WorkerManager(num_workers=1.23)
+
+def test_add_tasks(wm):
+    """Tests adding of tasks"""
+    sleep_cmd = "python -c 'from time import sleep; sleep(1)'"
+
+    wm.add_task(sleep_cmd, priority=0, read_stdout=True)
+
+def test_start_working(wm_with_tasks):
+    """Tests whether the start_working methods does what it should"""
+    wm = wm_with_tasks
+    wm.start_working()

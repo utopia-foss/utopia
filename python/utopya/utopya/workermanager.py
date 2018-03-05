@@ -208,7 +208,7 @@ class WorkerManager:
         # Spawn a worker and return the resulting process
         return self._spawn_worker(**task)
 
-    def _spawn_worker(self, *, args: str, read_stdout: bool) -> subprocess.Popen:
+    def _spawn_worker(self, *, args: str, read_stdout: bool, **popen_kwargs) -> subprocess.Popen:
         """Spawn a worker process using subprocess.Popen and manage the corresponding queue and thread for reading the stdout stream. The new worker process is registered with the class.
         
         Args:
@@ -216,6 +216,7 @@ class WorkerManager:
                 spawn a new process with
             read_stdout (bool): Whether stdout should be streamed and its
                 output queued
+            **popen_kwargs: kwargs passed to subprocess.Popen
         
         Returns:
             subprocess.Popen: The created process object
@@ -234,11 +235,15 @@ class WorkerManager:
             # No stream-reading is taking place; forward all streams to devnull
             stdout = stderr = subprocess.DEVNULL
 
+        # Parse the arguments from a string to a list
+        args = args.split(' ')
+
         # Spawn the child process with the given arguments
         log.debug("Spawning worker process with args:  %s", args)
         proc = subprocess.Popen(args,
                                 bufsize=1, # line buffered
-                                stdout=stdout, stderr=stderr)
+                                stdout=stdout, stderr=stderr,
+                                **popen_kwargs)
         create_time = time.time() # approximate
         log.debug("Spawned worker process with PID %s.", proc.pid)
         # ... it is running now.
@@ -339,7 +344,7 @@ class WorkerManager:
         for proc in self.working:
             self._read_worker_stream(proc, stream_name=stream_name)
 
-    def _read_worker_stream(self, proc: subprocess.Popen, stream_name: str='out', forward_to_log: bool=True, max_num_reads: int=1):
+    def _read_worker_stream(self, proc: subprocess.Popen, stream_name: str='out', forward_to_log: bool=True, max_num_reads: int=1) -> None:
         """Gather a single entry from the given worker's stream queue and store the value in the stream log.
         
         Args:
@@ -352,6 +357,10 @@ class WorkerManager:
                 WARNING: Do not make this value too large as it could block the
                 whole reader thread of this worker.
         """
+
+        if not self.workers[proc]['streams']:
+            # There are no streams to read
+            return
 
         # Get the stream dictionary and the queue
         stream = self.workers[proc]['streams'][stream_name]
