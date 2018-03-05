@@ -1,44 +1,83 @@
 
-import pytest
 import os
+import shutil
 import logging
 import time
 import math
+
+import pytest
+
 from utopya import Multiverse
 
 log = logging.getLogger(__name__)
 
-pytest.mark.skip("Not far enough to initialise this.")
+# Fixtures ----------------------------------------------------------------
+@pytest.fixture
+def mv_config():
+    return dict(paths=dict(out_dir='~/utopia_output', model_name='', model_note=''))
+
+# Tests --------------------------------------------------------------------
+@pytest.mark.skip("Not far enough to initialise this.")
 def test_init():
     """Tests the initialsation of the Multiverse."""
+    # FIXME
     Multiverse()
 
-pytest.mark.skip("Have to wait for user-specific config file to do this.")
-def test_create_sim_dir():
+
+def test_create_sim_dir(tmpdir, mv_config):
+    """Tests the folder creation in the initialsation of the Multiverse."""
     # has to be adapted if user specific path
     # read path names from meta_cfg.yaml
-    path_dict = dict(out_dir='~/utopia_output', model_name='', model_note='')
-    path_base = os.path.expanduser(path_dict['out_dir'])
-    path_base = os.path.join(path_base, path_dict['model_name'])
+
+    # adapt cfg to special needs
+    mv_config['paths']['out_dir'] = tmpdir.dirpath()
+    mv_config['paths']['model_name'] = "test_outer_folder_structure"
+
+    # Init Multiverse
+    Multiverse(mv_config)
+    # Reconstruct path from settings for testing
+    path_base = os.path.expanduser(mv_config['paths']['out_dir'])
+    path_base = os.path.join(path_base, mv_config['paths']['model_name'])
+    # get all folders in the output dir
     all_stuff = os.listdir(path_base)
+    # take the latest one
     latest = all_stuff[-1]
-    if not os.path.isdir(os.path.join(path_base, latest)):
-        log.debug("Base directory not found %s", path_base)
-        raise RuntimeError
+    # Check if the folders are present
+    assert os.path.isdir(os.path.join(path_base, latest)) is True
     folder_list = ["config", "eval", "universes"]  # may need to adapt
     for folder in folder_list:
-        if not os.path.isdir(os.path.join(path_base, latest, folder)):
-            log.debug("Inner directory not found %s at %s", folder, os.path.join(path_base, latest, folder))
-            raise RuntimeError
+        assert os.path.isdir(os.path.join(path_base, latest, folder)) is True
 
-pytest.mark.skip("Have to wait for user-specific config file to do this.")
-def test_create_uni_dir(maximum=10):
-    time.sleep(1)
-    instance = Multiverse()
+
+def test_detect_doubled_folders(tmpdir, mv_config):
+    # adapt cfg to special needs
+    mv_config['paths']['out_dir'] = tmpdir.dirpath()
+    mv_config['paths']['model_name'] = "test_universes_doubling"
+    # create two Multiverses after another (within one second) 
+    # expect error due to existing folders
+    Multiverse(mv_config)
+    with pytest.raises(FileExistsError):
+        Multiverse(mv_config)
+
+
+def test_create_uni_dir(tmpdir, mv_config, maximum=10):
+    # adapt cfg to special needs
+    mv_config['paths']['out_dir'] = tmpdir.dirpath()
+    mv_config['paths']['model_name'] = "test_universes_folder_structure"
+
+    # Init Multiverse
+    instance = Multiverse(mv_config)
+    # Create the universe directories
     for i in range(0, maximum):
         instance._create_uni_dir(i, maximum)
+    # get the path of the universes folder
     path = instance.dirs['universes']
+    # calculate the number of needed filling zeros dependend on the maximum number of different calulations
+    number_filling_zeros = math.ceil(math.log(maximum+1, 10))
+    # check if the calculation was fine (not too many leading zeros), by checking if the last one has no leading zeros
+    path_uni_last = os.path.join(path, "uni"+str(maximum-1).zfill(number_filling_zeros))
+    assert path_uni_last[4] != '0'
+    # check if all universe directories are created
     for i in range(0, maximum):
-        if not os.path.isdir(os.path.join(path, "uni"+str(i).zfill(math.ceil(math.log(maximum+1, 10))))):
-            log.debug("Uni directory not found %s at %s", i, path)
-            raise RuntimeError
+        path_uni = os.path.join(path, "uni"+str(i).zfill(number_filling_zeros))
+        assert os.path.isdir(path_uni) is True
