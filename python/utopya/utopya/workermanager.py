@@ -1,16 +1,11 @@
-"""The WorkerManager class manages tasks and worker processes to execute them.
-
-It is non-blocking and the main thread does not use significant CPU time for low poll frequencies (< 100/s). At the same time, it reads the worker's stream in yet separate non-blocking threads and -- if json-parsable -- creates a dict from them.
-"""
+"""The WorkerManager class."""
 
 import os
-import sys
 import subprocess
 import queue
 import threading
 import time
 import logging
-import json
 from typing import Union, Callable
 
 # Initialise logger
@@ -20,10 +15,27 @@ log = logging.getLogger()
 # -----------------------------------------------------------------------------
 
 class WorkerManager:
-    """"""
+    """The WorkerManager class manages tasks and worker processes to execute them.
 
-    def __init__(self, num_workers: Union[int, str], poll_freq: float=42, QueueCls=queue.Queue):
-        """Initialize the worker manager."""
+    It is non-blocking and the main thread does not use significant CPU time for low poll frequencies (< 100/s).
+    At the same time, it reads the worker's stream in yet separate non-blocking threads.
+    """
+
+    def __init__(self, num_workers: Union[int, str], poll_freq: float=42, QueueCls=queue.Queue, line_read_func: Callable=None):
+        """Initialize the worker manager.
+        
+        Args:
+            num_workers (Union[int, str]): The number of workers that can work
+                in parallel. If `auto`, uses os.cpu_count(). If negative,
+                deduces that many from the CPU count
+            poll_freq (float, optional): How many times per second the workers
+                should be polled. More precisely: 1/poll_freq gives the sleep
+                time between polls. Should not be choosen too high, as this
+                determines the CPU load of the main thread.
+            QueueCls (Class, optional): Which class to use for the Queue.
+            line_read_func (Callable, optional): Which function to use for
+                reading the stdout of a worker process.
+        """
         # Initialize property-managed attributes
         self._num_workers = None
         self._workers = {}
@@ -36,6 +48,7 @@ class WorkerManager:
 
         # Hand over arguments
         self.poll_freq = poll_freq
+        self._line_read_func = line_read_func
 
         if num_workers == 'auto':
             self.num_workers = os.cpu_count()
@@ -109,10 +122,19 @@ class WorkerManager:
 
     def add_task(self, args: str, *, priority: int=None, read_stdout: bool=True, **kwargs):
         """Adds a task to the queue.
-
+        
         A priority can be assigned to the task, but will only be used during task retrieval if the WorkerManager was initialized with a queue.PriorityQueue as task manager.
-
+        
         Additionally, each task will be assigned an ID; this is used to preserve order in a priority queue if the priority of two or more tasks is the same.
+        
+        Args:
+            args (str): The arguments to subprocess.Popen, i.e.: the command
+                that should be executed in the new process
+            priority (int, optional): The priority of this task; is only used
+                if the task queue is a priority queue
+            read_stdout (bool, optional): Whether to create a thread that reads
+                the stdout of the created process
+            **kwargs: Additional task arguments
         """
         # Generate a new ID for the task (using the current task counter)
         task_id = self.task_count
@@ -120,16 +142,19 @@ class WorkerManager:
         log.debug("Adding task with ID %d ...", task_id)
 
         # Put it into the task queue and increment the task counter
-        self._tasks.put_nowait((priority, task_id, dict(args=args, read_stdout=read_stdout, **kwargs)))
+        self._tasks.put_nowait((priority,
+                                task_id,
+                                dict(args=args, read_stdout=read_stdout,
+                                     **kwargs)))
         self.task_count += 1
 
         log.debug("Task added.", task_id)
 
     def start_working(self):
-        """Main execution routine of this class. When this method is called, all enqueued tasks will be worked on sequentially."""
+        """Upon call, all enqueued tasks will be worked on sequentially."""
         log.info("Starting to work ...")
 
-        while not self.tasks.empty() or len(self.working) > 0:
+        while not self.tasks.empty() or self.working:
             # Check if there are free workers and remaining tasks.
             if self.free_workers and not self.tasks.empty():
                 # Yes. => Grab a task and start working on it
@@ -153,14 +178,21 @@ class WorkerManager:
 
     def _grab_task(self, task=None) -> subprocess.Popen:
         """Will initiate that a new (or already existing) worker will work on a task. If a task is given, that one will be used; if not, a task will be taken from the queue.
-
+        
         Returns the process the task is being worked on at. If no task was given and the queue is empty, will raise `queue.Empty`.
+        
+        Args:
+            task (None, optional): If given, this task will be used rather than
+                one that is gotten from the task queue.
+        
+        Returns:
+            subprocess.Popen: The created process object
         """
 
         if not task:
             # Get one from the queue
-            _, task_no, task = self._tasks.get_nowait()
-            log.debug("Got task %s from queue.", task_no)
+            _, task_id, task = self._tasks.get_nowait()
+            log.debug("Got task %s from queue.", task_id)
 
         # Interpret the given task
         # NOTE optionally, add an interpretation here, e.g. a mapping to an already existing worker
@@ -168,10 +200,21 @@ class WorkerManager:
         # Spawn a worker and return the resulting process
         return self._spawn_worker(**task)
 
-    def _spawn_worker(self, *, args: str, read_stdout: bool, line_read_func: Callable=None) -> subprocess.Popen:
+    def _spawn_worker(self, *, args: str, read_stdout: bool) -> subprocess.Popen:
         """Spawn a worker process using subprocess.Popen and manage the corresponding queue and thread for reading the stdout stream. The new worker process is registered with the class.
-
-        Returns the created process object.
+        
+        Args:
+            args (str): The arguments to the Popen call, i.e. the command to
+                spawn a new process with
+            read_stdout (bool): Whether stdout should be streamed and its
+                output queued
+        
+        Returns:
+            subprocess.Popen: The created process object
+        
+        Raises:
+            ValueError: When stdout should be read but no `line_read_func` was
+                supplied during initialisation
         """
 
         if read_stdout:
@@ -194,11 +237,11 @@ class WorkerManager:
         
         # If enabled, prepare for reading the output
         if read_stdout:
-            if line_read_func is None:
+            if self._line_read_func is None:
                 raise ValueError("Need argument `line_read_func` for reading stdout.")
 
             # Generate the thread that reads the stream and populates the queue
-            t = threading.Thread(target=line_read_func,
+            t = threading.Thread(target=self._line_read_func,
                                  kwargs=dict(queue=q, stream=proc.stdout))
             # Set to be a daemon thread => will die with the parent thread
             t.daemon = True
@@ -208,7 +251,7 @@ class WorkerManager:
 
             # Create a dictionary with stream information
             streams = dict(out=dict(queue=q, thread=t, log=[]))
-            # NOTE could have more streams here, this function only focusses on stdout
+            # NOTE could have more streams here, but focus on stdout right now
 
             log.debug("Added thread to read worker's combined STDOUT and STDERR.")
         else:
@@ -219,16 +262,23 @@ class WorkerManager:
         
         return proc
 
-    def _register_worker(self, *, proc, args, streams, create_time, **kwargs) -> None:
-        """Registers a worker process with the class. This should be called soon after a process was created."""
+    def _register_worker(self, *, proc: subprocess.Popen, args: str, streams: dict, create_time: float, **kwargs) -> None:
+        """Registers a worker process with the class. This should be called soon after a process was created.
+        
+        Args:
+            proc (subprocess.Popen): The process object to register
+            args (str): The arguments it was created with
+            streams (dict): The corresponding stream information
+            create_time (float): The creation time
+            **kwargs: Any other information to store
+        """
 
         # Register in the working list
         self.working.append(proc)
         # NOTE if the process has already finished by this time, it will be removed from the working list at the next poll time
 
         # Gather information of this worker in the worker dict
-        self.workers[proc] = dict(# worker information
-                                  args=args,
+        self.workers[proc] = dict(args=args,
                                   # status information
                                   status=None, # assume running here
                                   create_time=create_time,
@@ -241,7 +291,8 @@ class WorkerManager:
         log.debug("Worker process %s registered.", proc.pid)
 
     def _poll_workers(self):
-        """Will poll all workers that are in the working list and remove them from that list if they are no longer alive."""
+        """Will poll all workers that are in the working list and remove them from that list if they are no longer alive.
+        """
         rebuild = False
 
         for proc in self.working:
@@ -259,8 +310,12 @@ class WorkerManager:
 
         log.debug("Polled workers. Currently %d alive.", len(self.working))
 
-    def _worker_finished(self, proc):
-        """Updates the entry of the worker dict after it has finished working."""
+    def _worker_finished(self, proc: subprocess.Popen) -> None:
+        """Updates the entry of the worker dict after it has finished working.
+        
+        Args:
+            proc (subprocess.Popen): The process to apply these actions to
+        """
         self.workers[proc]['status'] = proc.returncode
         self.workers[proc]['end_time'] = time.time()
 
@@ -268,12 +323,27 @@ class WorkerManager:
         self._read_worker_stream(proc, max_num_reads=-1)
 
     def _read_worker_streams(self, stream_name: str='out'):
-        """Gathers all working workers' streams with the given `stream_name`."""
+        """Gathers all working workers' streams with the given `stream_name`.
+        
+        Args:
+            stream_name (str, optional): The stream name to read
+        """
         for proc in self.working:
             self._read_worker_stream(proc, stream_name=stream_name)
 
-    def _read_worker_stream(self, proc, stream_name: str='out', log_to_stdout: bool=True, max_num_reads: int=1):
-        """Gather a single entry from the given worker's stream queue and store the value in the stream log."""
+    def _read_worker_stream(self, proc: subprocess.Popen, stream_name: str='out', forward_to_log: bool=True, max_num_reads: int=1):
+        """Gather a single entry from the given worker's stream queue and store the value in the stream log.
+        
+        Args:
+            proc (subprocess.Popen): The processes to read the stream of
+            stream_name (str, optional): The stream name
+            forward_to_log (bool, optional): Whether the read stream should be
+                forwarded to this module's log.info() function
+            max_num_reads (int, optional): How many lines should be read from
+                the buffer. For -1, reads the whole buffer.
+                WARNING: Do not make this value too large as it could block the
+                whole reader thread of this worker.
+        """
 
         # Get the stream dictionary and the queue
         stream = self.workers[proc]['streams'][stream_name]
@@ -293,7 +363,7 @@ class WorkerManager:
                 break
             else:
                 # got entry, do something with it
-                if log_to_stdout:
+                if forward_to_log:
                     # print it to the parent processe's stdout
                     log.info("  process %s:  %s", proc.pid, entry)
 
