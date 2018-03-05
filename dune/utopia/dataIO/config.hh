@@ -1,5 +1,5 @@
-#ifndef YAML_FILE_HH
-#define YAML_FILE_HH
+#ifndef CONFIG_HH
+#define CONFIG_HH
 
 #include "yaml-cpp/yaml.h"
 
@@ -10,32 +10,32 @@ namespace Utopia
 namespace DataIO
 {
 
-class YamlFile
+class Config
 {
 protected:
     std::string _filepath;
     YAML::Node _config;
 
 public:
-    YamlFile() = default;
+    Config() = default;
 
-    YamlFile(std::string filepath)
+    Config(std::string filepath)
     {
         _filepath = filepath;
         _config = YAML::LoadFile(filepath);
     }
 
-    YamlFile(std::string filepath, YAML::Node config)
+    Config(std::string filepath, YAML::Node config)
     {
         _filepath = filepath;
         _config = config;
     }
 
-    YamlFile(const YamlFile& yaml_file) :   _filepath(yaml_file.get_filepath()), 
+    Config(const Config& yaml_file) :   _filepath(yaml_file.get_filepath()), 
                                             _config(yaml_file.get_config()) 
                                             {};
 
-    YamlFile(YamlFile&& yaml_file) :    _filepath(std::move(yaml_file._filepath)), 
+    Config(Config&& yaml_file) :    _filepath(std::move(yaml_file._filepath)), 
                                         _config(std::move(yaml_file._config)) 
                                         {};
 
@@ -59,7 +59,7 @@ public:
         return _filepath;
     }
 
-    friend void swap(YamlFile& yaml_file1, YamlFile& yaml_file2)
+    friend void swap(Config& yaml_file1, Config& yaml_file2)
     {
         using std::swap;
 
@@ -67,7 +67,7 @@ public:
         swap(yaml_file1._config, yaml_file2._config);
     }
 
-    operator=(YamlFile yaml_file)
+    operator=(Config yaml_file)
     {
 
         swap(*this, yaml_file);
@@ -77,7 +77,7 @@ public:
 
     operator[](std::string name)
     {
-        return YamlFile(_filepath, _config[name]);
+        return Config(_filepath, _config[name]);
     }
 
     template <typename T>
@@ -86,9 +86,9 @@ public:
         return _config.as<type>();
     }
 
-    virtual ~YamlFile() = default;
+    virtual ~Config() = default;
 
-}; // class YamlFile
+}; // class Config
 
 
 
@@ -97,4 +97,4 @@ public:
 
 } // namespace Utopia
 
-#endif // YAML_FILE_HH
+#endif // CONFIG_HH

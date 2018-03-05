@@ -1,7 +1,7 @@
 #include <cassert>
 #include <string>
 
-void assert_yaml_file_members_and_config_values(YamlFile config, std::string filepath)
+void assert_config_members_and_parameter_access(YamlFile config, std::string filepath)
 {
 	assert(config.get_filepath() == filepath)
 	assert(config.get_config() == filepath)

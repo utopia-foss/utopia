@@ -1,7 +1,7 @@
 #include <dune/utopia/utopia.hh>
 #include <dune/common/exceptions.hh>
 
-#include "yaml_file_test.hh"
+#include "config.hh"
 #include "yaml-cpp/yaml.h"
 
 /// 
@@ -24,9 +24,9 @@ int main(int argc, char **argv)
         YamlFile c(config_filepath);
 
         // assert that YamlFile members are correct and that the config values are correct
-        assert_yaml_file_members_and_config_values(a, filepath);
-        assert_yaml_file_members_and_config_values(b, filepath);
-        assert_yaml_file_members_and_config_values(c, filepath);
+        assert_config_members_and_parameter_access(a, filepath);
+        assert_config_members_and_parameter_access(b, filepath);
+        assert_config_members_and_parameter_access(c, filepath);
 
         return 0;
     }
