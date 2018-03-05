@@ -14,9 +14,6 @@ find_package(dune-common REQUIRED)
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules"
   ${dune-common_MODULE_PATH})
 
-# The regular add_test is needed to run python tests
-set(DUNE_REENABLE_ADD_TEST TRUE)
-
 #include the dune macros
 include(DuneMacros)
 
