@@ -2,6 +2,7 @@
 #include <dune/utopia/state.hh>
 #include <dune/utopia/tags.hh>
 #include <iostream>
+#include <vector>
 #include <cassert>
 
 int main()
@@ -12,23 +13,25 @@ int main()
         Utopia::DefaultTag tag(true);
         Utopia::Entity test_entity(sc1, tag, 0);
         assert(!test_entity.is_sync());
-        assert(test_entity.is_tagged  == true);
+        assert(test_entity.is_tagged);
+        assert(test_entity.id() == 0);
         auto& state = test_entity.state();
         state = 0.2;
         assert(test_entity.state() = 0.2);
 
         // Test sync entity with vector and false tag
-    /*    std::vector<double> vec({0.1, 0.2});
+        std::vector<double> vec({0.1, 0.2});
         StateContainer<std::vector<double>, true> sc2(vec);
         tag.is_tagged = false;
-        Utopia::Entity test_entity2(sc1, tag, 0);
-        assert(test_entity2.is_tagged);
+        Utopia::Entity test_entity2(sc2, tag, 987654321);
+        assert(!test_entity2.is_tagged);
         assert(test_entity2.is_sync());
+        assert(test_entity2.id() == 987654321);
         auto& new_state = test_entity2.state_new();
         new_state = std::vector<double>({0.1, 0.3});
         assert(test_entity2.state() == vec);
         test_entity2.update();
-        assert(test_entity2.state()[1] == 0.3);*/
+        assert(test_entity2.state()[1] == 0.3);
 
         return 0;
     }
