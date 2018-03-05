@@ -5,6 +5,9 @@ The Multiverse supplies the main user interface of the frontend.
 
 import os
 import time
+import logging
+
+log = logging.getLogger(__name__)
 
 
 class Multiverse:
@@ -15,18 +18,29 @@ class Multiverse:
         creates folders,
         ...
         """
-        self.path_dict = None
-        # read in the dictionary above with #14, base from user specific file #15
-        # {base : absolute path (default is home directory), out_dir : , ....}
-        self.path_simulation = None
-        self._create_sim_dir()
 
-    def _create_sim_dir(self):
+        # FIXME
+        self.cfg = dict()
+        # FIXME dummy entry as long as cfg is not read in
+        self.cfg['paths'] = dict(out_dir='~/utopia_output', model_name='', model_note='test')
+        # read in the dictionary above with #14, base from user specific file #15
+
+        self.dirs = dict()
+        # {base : absolute path (default is home directory), config : , eval: }
+        # make output directories
+        self._create_sim_dir(**self.cfg['paths'])
+        
+    def _create_sim_dir(self, *, model_name: str, out_dir: str='~/utopia_output', model_note: str=None):
         """ The _create_sim_dir provides the output folder structure.
 
         The function checks, if the folders are already there,
         if not they are created. If the exact same folder tree (with timestamp)
         already exists a Error is thrown.
+
+        Args:
+            model_name: name of your model
+            out_dir: location of output directory
+            model_note: additional note to time stamp
 
         Folder Tree from Wiki
         utopia_output/   # all utopia output should go here
@@ -42,24 +56,23 @@ class Multiverse:
             180301125412_my_first_sim/
             180301125413_my_second_sim/
         """
-        self.path_dict = dict(base=None, out_dir='utopia_output', model_name='', model_note='test')
-
         # use recursive makedirs
-        if self.path_dict['base'] is None:
-            self.path_simulation = os.path.expanduser("~")
-        else:
-            self.path_simulation = self.path_dict['base']
-        self.path_simulation = os.path.join(self.path_simulation, self.path_dict['out_dir'], self.path_dict['model_name'])
-        self.path_simulation = os.path.join(self.path_simulation, time.strftime("%Y")+time.strftime("%m")+time.strftime("%d")+"_"+time.strftime("%H")+time.strftime("%M")+time.strftime("%S"))
-        if self.path_dict['model_note']:
-            self.path_simulation += "_"+self.path_dict['model_note']
+        log.debug("Expanding user %s", out_dir)
+        path_simulation = os.path.expanduser(out_dir)
+        path_simulation = os.path.join(path_simulation, model_name, time.strftime("%Y%m%d_%H%M%S"))
+        if model_note:
+            path_simulation += "_"+model_note
+        log.debug("Expanded user and time stamp to %s", path_simulation)
+
         # recursive folder creation automatic error if already existing
-        os.makedirs(self.path_simulation)
+        os.makedirs(path_simulation)
+        self.dirs['out_dir'] = path_simulation
         # make Subfolders
         # folder list expandable or configured by cfg yaml ?
         folder_list = ["config", "eval", "universes"]
         for folder in folder_list:
-            os.mkdir(os.path.join(self.path_simulation, folder))
+            os.mkdir(os.path.join(path_simulation, folder))
+            self.dirs[folder] = os.path.join(path_simulation, folder)
 
     def _create_uni_dir(self, uni_no, max_dim_no):
         """ The _create_uni_dir generates the folder for a single univers.
@@ -75,6 +88,6 @@ class Multiverse:
                 from param sweep from meta_cfg.yaml.
         """
         path_universe = "uni"+str(uni_no).zfill(max_dim_no)
-        pathname = os.path.join(self.path_simulation, "universes", path_universe)
+        pathname = os.path.join(self.dirs['universes'], path_universe)
         # recursive folder creation automatic error if already existing
         os.makedirs(pathname)
