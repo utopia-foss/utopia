@@ -1,6 +1,8 @@
 #ifndef ENTITY_HH
 #define ENTITY_HH
 
+#include <dune/utopia/state.hh>
+
 namespace Utopia
 {
 
@@ -10,8 +12,8 @@ namespace Utopia
  *  \tparam IndexType Type of Index
  */
 template<typename T, bool sync, class Tags, typename IndexType>
-class Entity:
-    public StateContainer<T, sync>,
+class Entity: 
+    public StateContainer<T, sync>, 
     public Tags 
 {
 public:
