@@ -47,4 +47,5 @@ test:python:
   dependencies:
     - build:main
   script:
+    - ./dune-common/bin/dunecontrol --only=utopia configure
     - ./dune-common/bin/dunecontrol --only=utopia make test_python
