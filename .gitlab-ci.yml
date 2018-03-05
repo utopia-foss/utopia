@@ -19,8 +19,7 @@ build:main:
     name: "$CI_JOB_NAME"
     paths:
       - $CI_PROJECT_DIR/build-cmake
-      - /opt/dune/dune-common/build-cmake/dune-env
-    expire_in: 1 hour
+    expire_in: 1 day
   script:
     - ./dune-common/bin/dunecontrol update
     - CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=Release $CONFIG_FLAGS"
