@@ -63,7 +63,7 @@ void mark_neighbors (const std::shared_ptr<Cell> cell, const Manager &mngr, cons
     cell->new_state() -= increment;
     cell->update();
     const auto neighbors = NB::neighbors(cell, mngr);
-    for (int i = 0; i<neighbors.size(); ++i) {
+    for (unsigned int i = 0; i<neighbors.size(); ++i) {
         neighbors[i]->new_state() += increment;
         neighbors[i]->update();
     }
