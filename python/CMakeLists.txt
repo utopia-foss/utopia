@@ -1,9 +1,26 @@
-# let's install deval into the venv using our own function!
-# python_install_package_remote(URL https://ts-gitlab.iup.uni-heidelberg.de/yunus/paramspace.git@release/v0.9.9
-    # TRUSTED_HOST ts-gitlab.iup.uni-heidelberg.de)
+# Handle installation of python packages and tests here
+
+# Installations ...............................................................
+
+# Manually install dependencies for utopya
+python_install_package_remote(URL https://ts-gitlab.iup.uni-heidelberg.de/yunus/paramspace.git@releases/v1.0b
+    TRUSTED_HOST ts-gitlab.iup.uni-heidelberg.de)
+
+# Install utopya and the extras (that are needed for testing)
+dune_python_install_package(PATH utopya/
+                            ADDITIONAL_PIP_PARAMS "${CMAKE_CURRENT_SOURCE_DIR}/utopya/[test_deps]")
+
+# NOTE Other Utopia-packages should be installed here
+
+# Tests .......................................................................
+
+# Add tests for utopya package (no installation needed)
+add_test(NAME FRONTEND_utopya
+         COMMAND ${CMAKE_BINARY_DIR}/run-in-dune-env
+                 python -m pytest 
+                 ${CMAKE_CURRENT_SOURCE_DIR}/utopya/test/
+                 --cov=utopya
+                 --cov-report=term-missing)
 
 # want to have packages installed in editable mode? call
 # set(DUNE_PYTHON_INSTALL_EDITABLE True)
-
-# if you have a python package in directory <package>, call
-# dune_python_install_package(PATH <package>)
