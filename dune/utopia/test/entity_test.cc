@@ -13,4 +13,8 @@ int main(int argc, char **argv)
 
         return 0;
     }
+    catch(...){
+        std::cerr << "Unknown exception thrown!" << std::endl;
+        return 1;
+    }
 }
