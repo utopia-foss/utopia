@@ -1,14 +1,39 @@
-#include <random>
-#include <dune/utopia/utopia.hh>
-#include <dune/common/exceptions.hh>
+//#include <random>
+#include <dune/utopia/entity.hh>
+#include <dune/utopia/state.hh>
+#include <dune/utopia/tags.hh>
+#include <iostream>
+//#include <dune/common/exceptions.hh>
 
-#include "entity_test.hh"
+//#include "entity_test.hh"
+//#include <cassert>
+
+/** \param e Entity to test
+ *  \param s State
+ *  \param s_n New State
+ *  \param t Traits
+ *  \param t_n New Traits
+ *  \param tag Tag
+ */
+/*template<typename Entity, typename State, typename Traits>
+void assert_entity_members (Entity& e, const State& s, const State& s_n, const Traits& t, const Traits& t_n, const int tag)
+{
+    assert(e.state()==s);
+    assert(e.new_state()==s_n);
+    assert(e.traits()==t);
+    assert(e.new_traits()==t_n);
+    assert(e.tag()==tag);
+}*/
 
 /// Choose random states and traits. Check member access and update functions.
 int main(int argc, char **argv)
 {
     try{
-        Dune::MPIHelper::instance(argc,argv);
+
+        StateContainer<double, false> sc1(0.1);
+        Utopia::DefaultTag tag(true);
+        Utopia::Entity test_entity(sc1, tag, 0);
+/*        Dune::MPIHelper::instance(argc,argv);
 
         using State = int;
         using Traits = double;
@@ -47,13 +72,13 @@ int main(int argc, char **argv)
         e1.new_traits() = traits_2;
         e1.update_traits();
         assert_entity_members(e1,state_2,state_2,traits_2,traits_2,tag);
-
+*/
         return 0;
     }
-    catch(Dune::Exception c){
-        std::cerr << c << std::endl;
-        return 1;
-    }
+    //catch(Dune::Exception c){
+    //    std::cerr << c << std::endl;
+    //    return 1;
+    //}
     catch(...){
         std::cerr << "Unknown exception thrown!" << std::endl;
         return 2;
