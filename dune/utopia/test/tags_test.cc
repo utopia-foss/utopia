@@ -1,4 +1,4 @@
-#include <dune/utopia/tags.hh>
+#include <dune/utopia/utopia.hh>
 #include <iostream>
 #include <cassert>
 
