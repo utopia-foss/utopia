@@ -44,5 +44,6 @@
 #endif // HAVE_PSGRAF
 #include "simulation.hh"
 #include "setup.hh"
+#include "tags.hh"
 
 #endif // UTOPIA_HH
