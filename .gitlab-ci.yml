@@ -41,3 +41,10 @@ test:core:
     - build:main
   script:
     - ./dune-common/bin/dunecontrol --only=utopia make test_core
+
+test:python:
+  stage: test
+  dependencies:
+    - build:main
+  script:
+    - ./dune-common/bin/dunecontrol --only=utopia make test_python
