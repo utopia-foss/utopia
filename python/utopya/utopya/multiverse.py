@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 
 
 class Multiverse:
-    def __init__(self):
+    def __init__(self, cfg: dict):
         """ Initialisation of the Multiverse
 
         The __init__ reads out the yaml cfg files,
@@ -20,10 +20,9 @@ class Multiverse:
         ...
         """
 
-        # FIXME
-        self.cfg = dict()
-        # FIXME dummy entry as long as cfg is not read in
-        self.cfg['paths'] = dict(out_dir='~/utopia_output', model_name='', model_note='test')
+        # Carry over config dictionary
+        self.cfg = cfg
+        # FIXME this should read in a yaml file rather than a dict
         # read in the dictionary above with #14, base from user specific file #15
 
         self.dirs = dict()
