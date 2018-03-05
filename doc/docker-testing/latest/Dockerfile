@@ -17,6 +17,7 @@ RUN apt-get update \
         locales \
         pkg-config \
         python3-dev \
+        python3-pip \
     && apt-get clean
 
 # manage locales
