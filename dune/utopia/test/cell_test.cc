@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
         //assert(c1.nonsense==pos);
         assert(c1.position()==pos);
         assert(c1.is_boundary()==boundary);
-        assert(c1._state==state);
+        assert(c1.state()==state);
         assert(c1._tag==tag);
         assert(c1.id()==index);
         //assert_cell_members(c1,pos,index,boundary);

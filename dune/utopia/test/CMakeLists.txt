@@ -3,23 +3,8 @@ file(COPY "square.msh" "cube.msh" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 # collect CORE tests
 set(TESTS_CORE
-<<<<<<< HEAD
     cell_test)
-=======
-    agent_test_2d
-    agent_test_3d
-    entity_test
-    cell_test
-    dependency_test
-    grid_test
-    grid_cells_test_2d
-    grid_cells_test_3d
-    output_agent_test_gmsh
-    output_agent_test_rect
-    simulation_test
     state_test)
->>>>>>> master
-
 # add CORE tests
 foreach(test ${TESTS_CORE})
     dune_add_test(NAME CORE_${test} SOURCES ${test}.cc)
