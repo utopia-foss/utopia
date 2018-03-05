@@ -13,7 +13,8 @@ set(TESTS_CORE
     grid_cells_test_3d
     output_agent_test_gmsh
     output_agent_test_rect
-    simulation_test)
+    simulation_test
+    state_test)
 
 # add CORE tests
 foreach(test ${TESTS_CORE})
