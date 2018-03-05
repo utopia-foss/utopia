@@ -125,7 +125,7 @@ class WorkerManager:
 
     # Public API ..............................................................
 
-    def add_task(self, args: str, *, priority: int=None, read_stdout: bool=True, **kwargs):
+    def add_task(self, args: Union[str, list], *, priority: int=None, read_stdout: bool=True, **kwargs):
         """Adds a task to the queue.
         
         A priority can be assigned to the task, but will only be used during task retrieval if the WorkerManager was initialized with a queue.PriorityQueue as task manager.
@@ -145,6 +145,14 @@ class WorkerManager:
         task_id = self.task_count
 
         log.debug("Adding task with ID %d ...", task_id)
+        log.debug("  Task args:   %s", args)
+        log.debug("  read_stdout: %s", read_stdout)
+        log.debug("  kwargs:      %s", kwargs)
+
+        # Parse the task argument, ensuring it is a tuple
+        if isinstance(args, str):
+            args = args.split(' ')
+        args = tuple(args)
 
         # Put it into the task queue and increment the task counter
         self._tasks.put_nowait((priority,
@@ -205,15 +213,15 @@ class WorkerManager:
         # Spawn a worker and return the resulting process
         return self._spawn_worker(**task)
 
-    def _spawn_worker(self, *, args: str, read_stdout: bool, line_read_func: Callable=None, **popen_kwargs) -> subprocess.Popen:
+    def _spawn_worker(self, *, args: tuple, read_stdout: bool, line_read_func: Callable=None, **popen_kwargs) -> subprocess.Popen:
         """Spawn a worker process using subprocess.Popen and manage the corresponding queue and thread for reading the stdout stream. The new worker process is registered with the class.
         
         Args:
-            args (str): The arguments to the Popen call, i.e. the command to
+            args (tuple): The arguments to the Popen call, i.e. the command to
                 spawn a new process with
             read_stdout (bool): Whether stdout should be streamed and its
                 output queued
-            line_read_func (Callable): The function to read the stdout with
+            line_read_func (Callable, optional): The function to read the stdout with
             **popen_kwargs: kwargs passed to subprocess.Popen
         
         Returns:
@@ -232,9 +240,6 @@ class WorkerManager:
         else:
             # No stream-reading is taking place; forward all streams to devnull
             stdout = stderr = subprocess.DEVNULL
-
-        # Parse the arguments from a string to a list
-        args = args.split(' ')
 
         # Spawn the child process with the given arguments
         log.debug("Spawning worker process with args:  %s", args)
@@ -289,7 +294,8 @@ class WorkerManager:
         # NOTE if the process has already finished by this time, it will be removed from the working list at the next poll time
 
         # Gather information of this worker in the worker dict
-        self.workers[proc] = dict(args=args,
+        self.workers[proc] = dict(proc=proc,
+                                  args=args,
                                   # status information
                                   status=None, # assume running here
                                   create_time=create_time,

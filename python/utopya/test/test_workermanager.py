@@ -18,7 +18,7 @@ def wm_with_tasks():
     """Create a WorkerManager instance and add some tasks"""
     env = os.environ.copy()
     # sleep_cmd = "python -c 'from time import sleep; sleep(1)'"
-    sleep_cmd = "python"
+    sleep_cmd = "python -c 'from time import sleep; sleep(1)'"
 
     wm = WorkerManager(num_workers=1)
     wm.add_task(sleep_cmd, priority=0, read_stdout=False, env=env)
@@ -55,3 +55,12 @@ def test_start_working(wm_with_tasks):
     """Tests whether the start_working methods does what it should"""
     wm = wm_with_tasks
     wm.start_working()
+
+    # Check if workers have been added
+    assert wm.workers
+
+    # Get the process dicts and perform tests on it
+    procs = [w['proc'] for w in wm.workers.values()]
+    proc = procs[0]
+
+    proc.poll()
