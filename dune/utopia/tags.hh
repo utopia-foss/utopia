@@ -8,17 +8,12 @@ class DefaultTag
 
 public:
     /// Construct DefaultTag
-    DefaultTag(bool b) : _b(b) { }
+    DefaultTag(bool b) : is_tagged(b) { }
 
-    /// Return whether is tagged
-    bool is_tagged() { return _b; }
-    void set_is_tagged(bool b) { _b = b; }
-
-private:
-    bool _b;
+    /// Report whether is tagged
+    bool is_tagged;
 
 };
-
 
 } // namespace Utopia
 
