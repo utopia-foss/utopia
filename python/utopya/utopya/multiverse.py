@@ -29,17 +29,17 @@ class Multiverse:
             self.path_simulation = os.path.expanduser("~")
         else:
             self.path_simulation = self.path_dict['base']
-        self.path_simulation += "/"+self.path_dict['out_dir']+"/"+self.path_dict['model_name']
-        self.path_simulation += "./"+time.strftime("%Y")+time.strftime("%m")+time.strftime("%d")+"_"+time.strftime("%H")+time.strftime("%M")+time.strftime("%S")
+        self.path_simulation = os.path.join(self.path_simulation, self.path_dict['out_dir'], self.path_dict['model_name'])
+        self.path_simulation = os.path.join(self.path_simulation, time.strftime("%Y")+time.strftime("%m")+time.strftime("%d")+"_"+time.strftime("%H")+time.strftime("%M")+time.strftime("%S"))
         if self.path_dict['model_note']:
             self.path_simulation += "_"+self.path_dict['model_note']
         # recursive folder creation automatic error if already existing
         os.makedirs(self.path_simulation)
         # make Subfolders
         # folder list expandable or configured by cfg yaml ?
-        folder_list = ["config", "eval", "universes"]  
+        folder_list = ["config", "eval", "universes"]
         for folder in folder_list:
-            os.mkdir(self.path_simulation+"/"+folder)
+            os.mkdir(os.path.join(self.path_simulation, folder))
 
     def _create_uni_dir(self, uni_no, max_dim_no):
         """ The _create_uni_dir generates the folder for a single univers.
@@ -49,7 +49,7 @@ class Multiverse:
         Thus they are sortable.
         """
         path_universe = "uni"+str(uni_no).zfill(max_dim_no)
-        pathname = self.path_simulation+"/universes/"+path_universe
+        pathname = os.path.join(self.path_simulation, "universes", path_universe)
         # recursive folder creation automatic error if already existing
         os.makedirs(pathname)
 
