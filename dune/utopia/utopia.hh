@@ -45,5 +45,6 @@
 #include "simulation.hh"
 #include "setup.hh"
 #include "tags.hh"
+#include "model.hh"
 
 #endif // UTOPIA_HH
