@@ -9,17 +9,17 @@ namespace Utopia
  *  \tparam Tags Tags
  *  \tparam IndexType Type of Index
  */
-template<class StateContainer, class Tags, typename IndexType>
+template<typename T, bool sync, class Tags, typename IndexType>
 class Entity:
-    public StateContainer,
+    public StateContainer<T, sync>,
     public Tags 
 {
 public:
 
     /// Constructor. Define state_container, tags and an ID index 
-    Entity (const StateContainer state_container, const Tags tags, IndexType index):
-        StateContainer(state_container),
-        Tags(tags),
+    Entity (const T state, IndexType index):
+        StateContainer<T, sync>(state),
+        Tags(),
         _id(index)
     { }
 
