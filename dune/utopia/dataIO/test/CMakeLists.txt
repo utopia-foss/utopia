@@ -1,3 +1,5 @@
+file(COPY config_test.yaml DESTINATION .)
+
 # collect DATAIO tests
 set(TESTS_DATAIO
     config_test)
