@@ -37,7 +37,7 @@
 #include "tags.hh"
 #include "entity.hh"
 // #include "cell.hh"
-// #include "agent.hh"
+ #include "agent.hh"
 #include "grid.hh"
 #include "data.hh"
 #include "data_vtk.hh"
