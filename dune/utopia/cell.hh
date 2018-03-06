@@ -17,7 +17,7 @@ public:
     //\return position of cell center
     const PositionType& position(){return _position;}
     //\return true if located at boundary
-    const inline bool is_boundary(){return _boundary;}
+    inline bool is_boundary(){return _boundary;}
     
     /// constructor of Cell
     Cell(T t, PositionType pos,const bool boundary, IndexType index) :
