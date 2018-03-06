@@ -37,6 +37,7 @@ class WorkerManager:
                 time between polls. Should not be choosen too high, as this
                 determines the CPU load of the main thread.
             QueueCls (Class, optional): Which class to use for the Queue.
+                Defaults to FiFo.
         """
         # Initialize property-managed attributes
         self._num_workers = None
@@ -205,13 +206,13 @@ class WorkerManager:
         """Increments the task counter."""
         self._task_cnt += 1
 
-    def _grab_task(self, task=None) -> subprocess.Popen:
+    def _grab_task(self, task: dict=None) -> subprocess.Popen:
         """Will initiate that a new (or already existing) worker will work on a task. If a task is given, that one will be used; if not, a task will be taken from the queue.
         
         Returns the process the task is being worked on at. If no task was given and the queue is empty, will raise `queue.Empty`.
         
         Args:
-            task (None, optional): If given, this task will be used rather than
+            task (dict, optional): If given, this task will be used rather than
                 one that is gotten from the task queue.
         
         Returns:
