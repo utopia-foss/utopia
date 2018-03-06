@@ -170,6 +170,7 @@ namespace Setup
     */
     template<
         typename State = int,
+        bool sync
         typename Tag,
         std::size_t custom_neighborhood_count = 0,
         typename GridType
@@ -186,7 +187,7 @@ namespace Setup
         using Mapper = typename GridTypes::Mapper;
         using Index = typename GridTypes::Index;
 
-        using CellType = Cell<State,Traits,Position,Index,custom_neighborhood_count>;
+        using CellType = Cell<State,     ,Position,Index>;
 
         auto grid = grid_wrapper._grid;
         GV gv(*grid);
