@@ -7,7 +7,6 @@
 #include <dune/common/fvector.hh>
 #include <dune/common/parallel/mpihelper.hh>
 
-//#include "entity_test.hh"
 #include "cell_test.hh"
 
 /// Choose random states and traits. Verify Entity members before and after update
@@ -31,16 +30,14 @@ int main(int argc, char *argv[])
         const Position pos({dist_real(gen),dist_real(gen)});
         const Index index = dist_int(gen);
         const bool boundary = true;
-        const State A=dist_int(gen);
+        const State state(dist_int(gen));
         
         //build a cell
-        Utopia::Cell<State,true,Position,Utopia::DefaultTag,Index> c1(A,pos,boundary,index);
+        Utopia::Cell<State,true,Position,Utopia::DefaultTag,Index> c1(state,pos,boundary,index);
 
         //assert that the content of the cell is correct
-        assert(c1.position()==pos);
-        assert(c1.is_boundary()==boundary);
-        assert(c1.state()==A);
-        assert(c1.id()==index);
+        assert(c1.state()==state);
+        assert_cell_members(c1, pos, index, boundary);
 
         //test whether the default flag is set correctly
         //it was created by the default constructor and not set explicitly here
