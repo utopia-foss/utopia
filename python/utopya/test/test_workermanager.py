@@ -17,10 +17,21 @@ def wm():
 def wm_with_tasks():
     """Create a WorkerManager instance and add some tasks"""
     env = os.environ.copy()
-    sleep_cmd = ('python', '-c','from time import sleep; sleep(0.5)')
+
+    # A few tasks
+    tasks = []
+    tasks.append((('python', '-c','print("hello oh so complex world")'),
+                  dict(read_stdout=True)))
+    tasks.append((('python', '-c','from time import sleep; sleep(0.5)'),
+                  dict(read_stdout=False)))
+    tasks.append(('python -c return',
+                  dict(read_stdout=False, priority=0)))
 
     wm = WorkerManager(num_workers=1)
-    wm.add_task(sleep_cmd, priority=0, read_stdout=True, env=env)
+
+    # Pass the tasks
+    for cmd, kwargs in tasks:
+        wm.add_task(cmd, env=env, **kwargs)
     return wm
 
 
@@ -52,9 +63,13 @@ def test_init(wm):
 
 def test_add_tasks(wm):
     """Tests adding of tasks"""
+    # With tuple argument
     sleep_cmd = ('python', '-c','from time import sleep; sleep(0.5)')
-
     wm.add_task(sleep_cmd, priority=0, read_stdout=True)
+
+    # With string argument and without reading stdout
+    sleep_cmd = ('python -c return')
+    wm.add_task(sleep_cmd, priority=0, read_stdout=False)
 
 def test_start_working(wm_with_tasks):
     """Tests whether the start_working methods does what it should"""
@@ -72,5 +87,6 @@ def test_start_working(wm_with_tasks):
     # Assert that the process has finished running
     assert proc.poll() is 0
 
+@pytest.mark.skip("Not implemented yet.")
 def test_read_stdout():
     pass

@@ -163,7 +163,7 @@ class WorkerManager:
                                      **kwargs)))
         self.task_count += 1
 
-        log.debug("Task added.", task_id)
+        log.debug("Task %s added.", task_id)
 
     def start_working(self):
         """Upon call, all enqueued tasks will be worked on sequentially."""
