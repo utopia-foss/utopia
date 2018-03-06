@@ -5,9 +5,11 @@ import subprocess
 import queue
 import threading
 import time
+import json
 import warnings
 import logging
 from typing import Union, Callable
+from typing.io import BinaryIO
 
 # Initialise logger
 log = logging.getLogger()
@@ -221,18 +223,26 @@ class WorkerManager:
                 spawn a new process with
             read_stdout (bool): Whether stdout should be streamed and its
                 output queued
-            line_read_func (Callable, optional): The function to read the stdout with
+            line_read_func (Callable, optional): The function to read the
+                stdout with. If not present, will use `enqueue_lines`.
+            debug (bool, optional): Attaches all streams to main thread stdout
             **popen_kwargs: kwargs passed to subprocess.Popen
         
         Returns:
             subprocess.Popen: The created process object
         
-        Raises:
+        No Longer Raises:
             ValueError: When stdout should be read but no `line_read_func` was
                 supplied during initialisation
         """
 
         if read_stdout:
+            # If no `line_read_func` was given, read the default
+            if not line_read_func:
+                log.debug("No `line_read_func` given; will use "
+                          "`enqueue_lines` instead.")
+                line_read_func = enqueue_lines
+
             # Establish queue for stream reading, creating a new pipe for STDOUT and forwarding STDERR into that same pipe
             q = queue.Queue()
             stdout = subprocess.PIPE
@@ -253,16 +263,13 @@ class WorkerManager:
         
         # If enabled, prepare for reading the output
         if read_stdout:
-            if line_read_func is None:
-                raise ValueError("Need argument `line_read_func` for reading stdout.")
-
             # Generate the thread that reads the stream and populates the queue
             t = threading.Thread(target=line_read_func,
                                  kwargs=dict(queue=q, stream=proc.stdout))
             # Set to be a daemon thread => will die with the parent thread
             t.daemon = True
 
-            # Start the thread; this will lead to enqueue_lines being called
+            # Start the thread; this will lead to line_read_func being called
             t.start()
 
             # Create a dictionary with stream information
@@ -390,3 +397,55 @@ class WorkerManager:
 
                 # Write to the stream's log
                 stream['log'].append(entry)            
+
+
+# Helper functions ------------------------------------------------------------
+# These solely relate to the WorkerManager, thus not in tools
+
+def enqueue_lines(*, queue: queue.Queue, stream: BinaryIO, parse_func: Callable=None) -> None:
+    """From the given stream, read line-buffered lines and add them to the provided queue. If they are json-parsable, parse them and add the parsed dictionary to the queue.
+    
+    Args:
+        queue (queue.Queue): The queue object to put the read line into
+        stream (BinaryIO): The stream identifier
+        parse_func (Callable, optional): A parse function that the read line
+            is passed through
+    """
+
+    if not parse_func:
+        # Define a pass-through function, doing nothing
+        parse_func = lambda line: line
+
+    # Read the lines and put them into the queue
+    for line in iter(stream.readline, b''): # <-- thread waits here for new lines, without idle looping
+        # Got a line (byte-string, assumed utf8-encoded)
+        # Send it through the parse function
+        queue.put_nowait(parse_func(line))
+
+    # Everything read. Close the stream
+    stream.close()
+    # Thread also finishes here.
+
+def parse_json(line: str) -> Union[dict, str]:
+    """A json parser that can be passed to enqueue_lines.
+
+    It tries to decode the line, and parse it as a json.
+    If that fails, it will still try to decode the string.
+    If that fails yet again, the unchanged line will be returned.
+    
+    Args:
+        line (str): The line to decode, assumed byte-string, utf8-encoded
+    
+    Returns:
+        Union[dict, str]: Either the decoded json, or, if that failed, the str
+    """
+    try:
+        return json.loads(line, encoding='utf8')
+
+    except json.JSONDecodeError:
+        # At least try to decode it
+        try:
+            return line.decode('utf8')
+        except UnicodeDecodeError:
+            # Return the (unparsed, undecoded) line into the queue
+            return line
