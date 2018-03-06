@@ -5,3 +5,6 @@ build-cmake/
 *.pytest_cache
 __pychache__
 *.pyc
+
+# Ignore cmake-configured files
+python/utopya/utopya/binaries.py
