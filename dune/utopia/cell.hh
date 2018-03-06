@@ -15,9 +15,9 @@ class Cell: public Entity<T, sync, Tags,IndexType>
 {
 public:    
     //\return position of cell center
-    const PositionType& position(){return _position;}
+    const PositionType& position() const {return _position;}
     //\return true if located at boundary
-    inline bool is_boundary(){return _boundary;}
+    inline bool is_boundary() const {return _boundary;}
     
     /// constructor of Cell
     Cell(T t, PositionType pos,const bool boundary, IndexType index) :
