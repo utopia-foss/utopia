@@ -17,11 +17,10 @@ def wm():
 def wm_with_tasks():
     """Create a WorkerManager instance and add some tasks"""
     env = os.environ.copy()
-    # sleep_cmd = "python -c 'from time import sleep; sleep(1)'"
-    sleep_cmd = "python -c 'from time import sleep; sleep(1)'"
+    sleep_cmd = ('python', '-c','from time import sleep; sleep(0.5)')
 
     wm = WorkerManager(num_workers=1)
-    wm.add_task(sleep_cmd, priority=0, read_stdout=False, env=env)
+    wm.add_task(sleep_cmd, priority=0, read_stdout=True, env=env)
     return wm
 
 
@@ -34,20 +33,26 @@ def test_init(wm):
     WorkerManager(num_workers=-1)
     WorkerManager(num_workers=1)
 
-    # Should warn (too many workers)
     with pytest.warns(UserWarning):
+        # too many workers
         WorkerManager(num_workers=1000)
 
-    # Should fail (not int or negative)
     with pytest.raises(ValueError):
+        # Negative
         WorkerManager(num_workers=-1000)
     
     with pytest.raises(ValueError):
+        # not int
         WorkerManager(num_workers=1.23)
+
+    # Test different `poll_frequencies` arguments
+    with pytest.raises(ValueError):
+        # negative
+        WorkerManager(num_workers=1, poll_freq=-1)
 
 def test_add_tasks(wm):
     """Tests adding of tasks"""
-    sleep_cmd = "python -c 'from time import sleep; sleep(1)'"
+    sleep_cmd = ('python', '-c','from time import sleep; sleep(0.5)')
 
     wm.add_task(sleep_cmd, priority=0, read_stdout=True)
 
@@ -55,6 +60,7 @@ def test_start_working(wm_with_tasks):
     """Tests whether the start_working methods does what it should"""
     wm = wm_with_tasks
     wm.start_working()
+    # This will be blocking
 
     # Check if workers have been added
     assert wm.workers
@@ -63,4 +69,8 @@ def test_start_working(wm_with_tasks):
     procs = [w['proc'] for w in wm.workers.values()]
     proc = procs[0]
 
-    proc.poll()
+    # Assert that the process has finished running
+    assert proc.poll() is 0
+
+def test_read_stdout():
+    pass
