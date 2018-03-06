@@ -9,9 +9,9 @@ namespace Utopia
  *Cell contains the position and the boolian _boundary.
  *Also Cell inherits the state, position and index from Entity.
  */
-template<class StateContainer,typename PositionType,
+template<typename T, bool sync ,typename PositionType, 
          class Tags, typename IndexType>
-class Cell:public Entity<StateContainer,Tags,IndexType>
+class Cell: public Entity<T, sync, Tags,IndexType>
 {
 public:    
     //\return position of cell center
@@ -20,9 +20,9 @@ public:
     const inline bool is_boundary(){return _boundary;}
     
     /// constructor of Cell
-    Cell(StateContainer state, PositionType pos, bool boundary, 
+    Cell(T t, PositionType pos, bool boundary, 
          Tags tag, IndexType index) :
-         Entity<StateContainer,Tags, IndexType>(state,tag,index)
+         Entity<T,sync,Tags, IndexType> (t,tag,index)
             , _position(pos), _boundary(boundary)
     { }
 private:

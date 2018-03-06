@@ -1,4 +1,6 @@
 #include <random>
+#include <dune/utopia/state.hh>
+#include <dune/utopia/entity.hh>
 #include <dune/utopia/cell.hh>
 #include <dune/common/exceptions.hh>
 #include <dune/common/fvector.hh>
@@ -9,6 +11,14 @@
 
 #include <iostream>
 #include <cassert>
+
+// template<typename T>
+class Value
+{
+public:
+    double value;
+    bool operator==(double a){if (value==a) return true;}
+};
 
 /// Choose random states and traits. Verify Entity members before and after update
 int main(int argc, char *argv[])
@@ -31,15 +41,16 @@ int main(int argc, char *argv[])
         const Position pos({dist_real(gen),dist_real(gen)});
         const Index index = 2;
         const bool boundary = true;
+        Value A;
         
-        Utopia::Cell<State,Position,int,Index> c1(state,pos,boundary,tag,index);
+        Utopia::Cell<Value,true,Position,Value,Index> c1(A,pos,boundary,A,index);
         std::cout<<"I am actually doing this"<<std::endl;
         //assert(c1);
         //assert(c1.nonsense==pos);
         assert(c1.position()==pos);
         assert(c1.is_boundary()==boundary);
         assert(c1.state()==state);
-        assert(c1.istagged()==tag);
+        assert(c1.is_tagged()==tag);
         assert(c1.id()==index);
         //assert_cell_members(c1,pos,index,boundary);
 

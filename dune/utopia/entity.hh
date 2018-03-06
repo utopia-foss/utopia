@@ -3,22 +3,22 @@
 
 namespace Utopia
 {
-
 /// Base class for Cells and Individuals, containing information on State and Traits
 /** \tparam StateContainer Container of states
  *  \tparam Tags Tags
  *  \tparam IndexType Type of Index
  */
-template<class StateContainer, class Tags, typename IndexType>
+template<typename T, bool sync, typename Tags, typename IndexType>
 class Entity:
-    public StateContainer,
+    public StateContainer<T, sync>,
     public Tags 
 {
 public:
+    using State = T;
 
     /// Constructor. Define state_container, tags and an ID index 
-    Entity (const StateContainer state_container, const Tags tags, IndexType index):
-        StateContainer(state_container),
+    Entity (const T state, const Tags tags, IndexType index):
+        StateContainer<T, sync>(state),
         Tags(tags),
         _id(index)
     { }
