@@ -168,16 +168,16 @@ namespace Setup
      *  \param traits Default traits of all cells
      *  \return Container with created cells
     */
-    template<
+    template< 
+        bool sync,
         typename State = int,
-        typename Tag,
+        typename Tag= DefaultTag,
         std::size_t custom_neighborhood_count = 0,
         typename GridType
     >
     decltype(auto) create_cells_on_grid (
         const GridWrapper<GridType>& grid_wrapper,
-        const State state = 0,
-        const Traits traits = 0)
+        const State state = 0)
     {
 
         using GridTypes = GridTypeAdaptor<GridType>;
@@ -186,7 +186,7 @@ namespace Setup
         using Mapper = typename GridTypes::Mapper;
         using Index = typename GridTypes::Index;
 
-        using CellType = Cell<State,Traits,Position,Index,custom_neighborhood_count>;
+        using CellType = Cell<State,sync,Position,Tag,Index>;
 
         auto grid = grid_wrapper._grid;
         GV gv(*grid);
@@ -210,7 +210,7 @@ namespace Setup
             }
 
             cells.emplace_back(std::make_shared<CellType>
-                (state,traits,pos,id,boundary));
+                (state,pos,boundary,id));
         }
 
         cells.shrink_to_fit();
