@@ -8,6 +8,7 @@ import time
 import json
 import warnings
 import logging
+from collections import OrderedDict
 from typing import Union, Callable
 from typing.io import BinaryIO
 
@@ -39,7 +40,7 @@ class WorkerManager:
         """
         # Initialize property-managed attributes
         self._num_workers = None
-        self._workers = {}
+        self._workers = OrderedDict()
         self._working = []
         self._poll_freq = None
         self._task_cnt = 0
@@ -112,13 +113,6 @@ class WorkerManager:
         """Returns the number of tasks that this manager *ever* took care of. Careful: This is NOT the current number of tasks in the queue!"""
         return self._task_cnt
 
-    @task_count.setter
-    def task_count(self, val: int) -> None:
-        """Sets the task counter, only allowing increments by one."""
-        if val - self._task_cnt != 1:
-            raise ValueError("Can increment task counter only by one.")
-        self._task_cnt = val
-
     @property
     def free_workers(self) -> bool:
         """Returns True if not `num_workers` amount of workers are busy at the moment."""
@@ -161,13 +155,28 @@ class WorkerManager:
                                 task_id,
                                 dict(args=args, read_stdout=read_stdout,
                                      **kwargs)))
-        self.task_count += 1
+        self._increment_task_count()
 
         log.debug("Task %s added.", task_id)
 
-    def start_working(self):
-        """Upon call, all enqueued tasks will be worked on sequentially."""
+    def start_working(self, detach: bool=False):
+        """Upon call, all enqueued tasks will be worked on sequentially.
+        
+        Args:
+            detach (bool, optional): If False (default), the WorkerManager
+                will block here, as it continuously polls the workers and
+                distributes tasks.
+        
+        Raises:
+            NotImplementedError: for `detach` True
+        """
         log.info("Starting to work ...")
+
+        if detach:
+            # TODO implement the content of this in a separate thread.
+            raise NotImplementedError("It is currently not possible to "
+                                      "detach the WorkerManager from the "
+                                      "main thread.")
 
         while not self.tasks.empty() or self.working:
             # Check if there are free workers and remaining tasks.
@@ -186,10 +195,15 @@ class WorkerManager:
             # Sleep until next poll
             time.sleep(1/self.poll_freq)
 
-        log.info("Finished working. Total tasks worked on: %d", self.task_count)
+        log.info("Finished working. Total tasks worked on: %d",
+                 self.task_count)
 
 
     # Non-public API ..........................................................
+
+    def _increment_task_count(self) -> None:
+        """Increments the task counter."""
+        self._task_cnt += 1
 
     def _grab_task(self, task=None) -> subprocess.Popen:
         """Will initiate that a new (or already existing) worker will work on a task. If a task is given, that one will be used; if not, a task will be taken from the queue.

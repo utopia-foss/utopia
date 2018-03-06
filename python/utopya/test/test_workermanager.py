@@ -4,7 +4,7 @@ import os
 
 import pytest
 
-from utopya.workermanager import WorkerManager
+from utopya.workermanager import WorkerManager, enqueue_lines, parse_json
 
 
 # Fixtures --------------------------------------------------------------------
@@ -16,7 +16,13 @@ def wm():
 @pytest.fixture
 def wm_with_tasks():
     """Create a WorkerManager instance and add some tasks"""
+    # Copy over the environment
     env = os.environ.copy()
+
+    # Set a json-reading function
+    line_read_json = lambda queue, stream: enqueue_lines(queue=queue,
+                                                         stream=stream,
+                                                         parse_func=parse_json)
 
     # A few tasks
     tasks = []
@@ -24,14 +30,17 @@ def wm_with_tasks():
                   dict(read_stdout=True)))
     tasks.append((('python', '-c','from time import sleep; sleep(0.5)'),
                   dict(read_stdout=False)))
-    tasks.append(('python -c return',
+    tasks.append(('python -c "return"',
                   dict(read_stdout=False, priority=0)))
+    tasks.append((('python', '-c','print("{\'key\': \'1.23\'}")'),
+                  dict(read_stdout=True, line_read_func=line_read_json)))
 
-    wm = WorkerManager(num_workers=1)
+    wm = WorkerManager(num_workers=3)
 
     # Pass the tasks
     for cmd, kwargs in tasks:
         wm.add_task(cmd, env=env, **kwargs)
+
     return wm
 
 
@@ -80,12 +89,16 @@ def test_start_working(wm_with_tasks):
     # Check if workers have been added
     assert wm.workers
 
-    # Get the process dicts and perform tests on it
+    # Get the process dicts and check that they all finished with exit code 0
     procs = [w['proc'] for w in wm.workers.values()]
-    proc = procs[0]
+    assert all([p.poll() is 0 for p in procs])
+    assert not any([w['status'] for w in wm.workers.values()])
 
-    # Assert that the process has finished running
-    assert proc.poll() is 0
+    # Check their run times
+    create_times = [w['create_time'] for w in wm.workers.values()]
+    end_times = [w['end_time'] for w in wm.workers.values()]
+    assert all([c < e for c, e in zip(create_times, end_times)])
+    assert (end_times[1] - create_times[1]) > 0.5 # for the sleep task
 
 @pytest.mark.skip("Not implemented yet.")
 def test_read_stdout():
