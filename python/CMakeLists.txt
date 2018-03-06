@@ -1,7 +1,10 @@
-# Handle installation of python packages and tests here
+# Handle configuration and installation of python packages and tests here
 
-# Configurations ..............................................................
-# Pass the utopia binaries (i.e., all targets) to a python file
+# Pass info to utopya  ........................................................
+# Create variables to be passed to the info module
+
+
+# Now configure the file inside the utopya module that will hold that info
 configure_file(utopya/utopya/info.py.in
                ${CMAKE_CURRENT_SOURCE_DIR}/utopya/utopya/info.py)
 
