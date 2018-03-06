@@ -13,8 +13,6 @@ set(TESTS_CORE
     grid_cells_test_3d
     grid_test
     model_test
-    output_agent_test_gmsh
-    output_agent_test_rect
     simulation_test
     state_test
     tags_test
