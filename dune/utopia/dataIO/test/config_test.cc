@@ -1,32 +1,22 @@
 #include <dune/utopia/utopia.hh>
+#include <dune/utopia/dataio/config.hh>
 #include <dune/common/exceptions.hh>
 
-#include "config.hh"
+#include "config_test.hh"
 #include "yaml-cpp/yaml.h"
 
-/// 
+/// Simple test of the Config class
 int main(int argc, char **argv)
 {
     try{
         Dune::MPIHelper::instance(argc,argv);
 
-        config_filepath = "test_config.yaml";
+        using Config = Utopia::DataIO::Config;
 
-        YAML::Node config = YAML::LoadFile(config_filepath);
+        std::string config_filepath = "config_test.yaml";
+        Config config(config_filepath);
 
-        // create YamlFile objects with different constructors
-        YamlFile a();
-        a.set_filepath(config_filepath); 
-        a.set_config(YAML::LoadFile(config_filepath));
-
-        YamlFile b = a;
-
-        YamlFile c(config_filepath);
-
-        // assert that YamlFile members are correct and that the config values are correct
-        assert_config_members_and_parameter_access(a, filepath);
-        assert_config_members_and_parameter_access(b, filepath);
-        assert_config_members_and_parameter_access(c, filepath);
+        assert_config_members_and_parameter_access(config, config_filepath);
 
         return 0;
     }
