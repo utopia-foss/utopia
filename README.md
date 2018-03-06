@@ -126,7 +126,8 @@ Utopia contains unit tests to ensure consistency by checking if class members an
 
 Tests can also be executed locally, to test a (possibly altered) version of Utopia *before* committing changes. To build them, execute
 
-    ./dune-common/bin/dunecontrol --only=utopia make build_tests
+    CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=Debug" \
+        ./dune-common/bin/dunecontrol --only=utopia make build_tests
 
 and perform the tests by calling
 
