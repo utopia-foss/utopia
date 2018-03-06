@@ -36,10 +36,22 @@ protected:
     unsigned int time;
 
 public:
+
+    // -- Default implementations -- //
+
+    /// Iterate one (time) step
+    /** Perform computation of one time step, increment time and write data
+     */
+    void iterate () {
+        perform_step();
+        increment_time();
+        write_data();
+    }
+
+    // -- User-defined implementations -- //
+
     /// Return const reference to stored data
     const Data& data () const { return impl().data(); }
-    /// Iterate one (time) step
-    void iterate () { impl().iterate(); }
     /// Set model boundary condition
     void set_boundary_condition (const BCType& bc)
     {
@@ -50,12 +62,20 @@ public:
     {
         impl().set_initial_condition(ic);
     }
+    /// Perform the computation of a step
+    void perform_step () { impl().perform_step(); }
+    /// Write data
+    void write_data () { impl().write_data(); }
 
 protected:
     /// cast to the derived class
     Derived& impl () { return static_cast<Derived&>(*this); }
     /// const cast to the derived interface
     const Derived& impl () const { return static_cast<const Derived&>(*this); }
+    /// Increment time
+    /** \param dt Time increment
+     */
+    void increment_time (unsigned int dt=1) { time += dt; }
 };
 
 } // namespace Utopia

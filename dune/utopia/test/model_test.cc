@@ -23,6 +23,12 @@ int main ()
         model.set_initial_condition(state);
         assert(compare_containers(model.data(), state));
 
+        // check override of iterate function
+        Utopia::DummyModelWithIterate model_it(state);
+        model.iterate();
+        state = std::vector<double>(1E6, 3.0);
+        assert(compare_containers(model.data(), state));
+
         return 0;
     }
     catch (...) {

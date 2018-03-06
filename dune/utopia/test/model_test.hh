@@ -37,14 +37,16 @@ public:
     { }
 
     /// Iterate by one time step
-    void iterate ()
+    void perform_step ()
     {
         std::transform(_state.begin(), _state.end(), _bc.begin(),
             _state.begin(),
             [](const auto a, const auto b) { return a + b; }
         );
-        this->time += 1;
     }
+
+    /// Do nothing for now
+    void write_data () {}
 
     // Set model boundary condition
     void set_boundary_condition (const BCType& bc) { _bc = bc; }
@@ -55,6 +57,26 @@ public:
     /// Return const reference to stored data
     const Data& data () const { return _state; }
 };
+
+/// Dummy model checking if 'iterate' can be overridden
+class DummyModelWithIterate :
+    public DummyModel
+{
+private:
+    using Data = DummyModel::Data;
+public:
+    /// Create DummyModel with initial state
+    DummyModelWithIterate (const Data& state):
+        DummyModel(state)
+    { }
+
+    /// Iterate twice for checking this implementation
+    void iterate () {
+        this->perform_step();
+        this->perform_step();
+    }
+};
+
 
 } // namespace Utopia
 
