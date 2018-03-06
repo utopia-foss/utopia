@@ -1,6 +1,4 @@
-#include <dune/utopia/entity.hh>
-#include <dune/utopia/state.hh>
-#include <dune/utopia/tags.hh>
+#include <dune/utopia/utopia.hh>
 #include <iostream>
 #include <vector>
 #include <cassert>
