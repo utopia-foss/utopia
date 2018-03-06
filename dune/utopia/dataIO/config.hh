@@ -3,95 +3,133 @@
 
 #include "yaml-cpp/yaml.h"
 
-
 namespace Utopia
 {
     
 namespace DataIO
 {
 
+/// This class manages loading YAML configuration files and accessing the configuration parameters
+/** 
+ * 
+ */
 class Config
 {
 protected:
-    std::string _filepath;
-    YAML::Node _config;
+    std::string _filepath; /// filepath storage
+    YAML::Node _yaml_config; /// YAML::Node configuration storage
+
+    /// Construct a new Config object
+    /** The YAML configuration file is read in from the given filepath
+     *  
+     *  \param filepath Path to the YAML configuration file. This should correspond to the location of the YAML configuration
+     *  \param yaml_yaml_config Configuration as a YAML::Node type
+     *  \return Config object
+     */
+    Config(std::string filepath, YAML::Node yaml_config)
+    {
+        _filepath = filepath;
+        _yaml_config = yaml_config;
+    }
 
 public:
+    /// Default constructor
     Config() = default;
 
+    /// Construct a new Config object
+    /** The YAML configuration file is read in from the given filepath
+     *  
+     *  \param filepath Path to the YAML configuration file
+     *  \return Config object
+     */
     Config(std::string filepath)
     {
         _filepath = filepath;
-        _config = YAML::LoadFile(filepath);
+        _yaml_config = YAML::LoadFile(filepath);
     }
 
-    Config(std::string filepath, YAML::Node config)
+    /// Copy constructor
+    Config(const Config& config) :  _filepath(config._filepath), 
+                                    _yaml_config(config._yaml_config) 
+                                    {};
+    
+    /// Copy constructor
+    Config(Config&& config) :       _filepath(std::move(config._filepath)), 
+                                    _yaml_config(std::move(config._yaml_config)) 
+                                    {};
+
+    /// Get the underlying YAML configuration
+    /**
+    *  \return The configuration as YAML::Node
+    */
+    YAML::Node get_yaml_config()
     {
-        _filepath = filepath;
-        _config = config;
+        return _yaml_config;
     }
 
-    Config(const Config& yaml_file) :   _filepath(yaml_file.get_filepath()), 
-                                            _config(yaml_file.get_config()) 
-                                            {};
-
-    Config(Config&& yaml_file) :    _filepath(std::move(yaml_file._filepath)), 
-                                        _config(std::move(yaml_file._config)) 
-                                        {};
-
-    YAML::Node get_config()
-    {
-        return _config;
-    }
-
-    void set_config(YAML::Node config)
-    {
-        _config = config;
-    }
-
-    // void set_filepath(const std::string filepath)
-    // {
-    //     _filepath = filepath;
-    // }
-
+    /// Get the filepath
+    /**
+    *  \return The filepath of the original YAML file
+    */
     std::string get_filepath()
     {
         return _filepath;
     }
 
-    friend void swap(Config& yaml_file1, Config& yaml_file2)
+    /// Swap two Config objects
+    /**
+    *  \param config1 First Config object
+    *  \param config2 Second Config object
+    */
+    friend void swap(Config& config1, Config& config2)
     {
         using std::swap;
 
-        swap(yaml_file1._filepath, yaml_file2._filepath);
-        swap(yaml_file1._config, yaml_file2._config);
+        swap(config1._filepath, config2._filepath);
+        swap(config1._yaml_config, config2._yaml_config);
     }
 
-    operator=(Config yaml_file)
+    /// Assign a Config object using an assignment operator
+    /** Implement assignment operation using the copy-and-swap idiom
+    *
+    *  \return the copied Config object
+    */
+    Config& operator=(Config& config)
     {
-
-        swap(*this, yaml_file);
-
+        swap(*this, config);
         return *this;
     }
 
-    operator[](std::string name)
+    /// Get a parameter subset of the Config object
+    /** Access a hierarchically lower configuration lewel using the bracket operators. 
+    *  The subset of parameters is provided corresponding to the provided keyword.
+    *  In the case of no additional hierarchical levels access the parameter provided by the keyword.
+    *  
+    *  \param keyword Keyword accessing a lower hierarchical configuration level or a configuration paramter.
+    *  \return Config object
+    */ 
+    Config operator[](std::string keyword)
     {
-        return Config(_filepath, _config[name]);
+        Config cfg(_filepath, _yaml_config[keyword]);
+        return cfg;
     }
 
+    /// Provide a parameter type and return the parameter
+    /** 
+    *  
+    *  \tparam T Return type of the input parameter
+    *  \return Parameter in the provided type
+    */
     template <typename T>
-    void as(T type)
+    T as()
     {
-        return _config.as<type>();
+        return _yaml_config.as<T>();
     }
 
+    /// Destructor
     virtual ~Config() = default;
 
 }; // class Config
-
-
-
 
 } // namespace DataIO 
 
