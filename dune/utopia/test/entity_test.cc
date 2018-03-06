@@ -1,6 +1,4 @@
-#include <dune/utopia/entity.hh>
-#include <dune/utopia/state.hh>
-#include <dune/utopia/tags.hh>
+#include <dune/utopia/utopia.hh>
 #include <iostream>
 #include <vector>
 #include <cassert>
@@ -24,6 +22,7 @@ int main()
         // Test sync entity with vector 
         std::vector<double> vec({0.1, 0.2});
         Utopia::Entity<std::vector<double>, true, Utopia::DefaultTag, int> test_entity2(vec, 987654321);
+        assert(test_entity2.id() == 987654321);
         assert(test_entity2.is_sync());
         auto& new_state = test_entity2.state_new();
         new_state = std::vector<double>({0.1, 0.3});

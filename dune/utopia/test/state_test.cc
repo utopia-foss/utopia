@@ -3,8 +3,12 @@
 #include <iostream>
 
 #include <dune/common/exceptions.hh>
+<<<<<<< HEAD
 #include <dune/common/parallel/mpihelper.hh>
 #include <dune/utopia/state.hh>
+=======
+#include <dune/utopia/utopia.hh>
+>>>>>>> 21-rewrite-entity-to-derive-from-statecontainer-and-tags
 
 /// Instantiate containers, check access and contents
 int main(int argc, char **argv)
