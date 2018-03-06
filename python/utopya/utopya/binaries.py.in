@@ -1,3 +1,0 @@
-"""This CMake-configured module holds information on utopia binaries."""
-
-CMAKE_BINARY_DIR = "@CMAKE_BINARY_DIR@"

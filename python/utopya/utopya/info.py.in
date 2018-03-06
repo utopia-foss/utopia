@@ -1,0 +1,7 @@
+"""This CMake-configured module holds information about the non-python side of utopia.
+
+Note that this is not a usual python module, but is merely used to hold this
+information data and make it easily accessible to utopya.
+"""
+
+CMAKE_BINARY_DIR = "@CMAKE_BINARY_DIR@"

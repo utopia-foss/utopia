@@ -2,8 +2,8 @@
 
 # Configurations ..............................................................
 # Pass the utopia binaries (i.e., all targets) to a python file
-configure_file(utopya/utopya/binaries.py.in
-               ${CMAKE_CURRENT_SOURCE_DIR}/utopya/utopya/binaries.py)
+configure_file(utopya/utopya/info.py.in
+               ${CMAKE_CURRENT_SOURCE_DIR}/utopya/utopya/info.py)
 
 # Installations ...............................................................
 

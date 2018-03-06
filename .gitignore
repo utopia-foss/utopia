@@ -7,4 +7,4 @@ __pychache__
 *.pyc
 
 # Ignore cmake-configured files
-python/utopya/utopya/binaries.py
+python/utopya/utopya/info.py
