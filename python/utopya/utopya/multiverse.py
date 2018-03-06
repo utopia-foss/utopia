@@ -25,54 +25,75 @@ class Multiverse:
         # FIXME this should read in a yaml file rather than a dict
         # read in the dictionary above with #14, base from user specific file #15
 
+        # Initialise empty dict for keeping track of directory paths
         self.dirs = dict()
-        # {base : absolute path (default is home directory), config : , eval: }
         # make output directories
+
+        # Now create the simulation directory and its internal subdirectories
         self._create_sim_dir(**self.cfg['paths'])
         
-    def _create_sim_dir(self, *, model_name: str, out_dir: str='~/utopia_output', model_note: str=None):
-        """ The _create_sim_dir provides the output folder structure.
-
-        The function checks, if the folders are already there,
-        if not they are created. If the exact same folder tree (with timestamp)
-        already exists a Error is thrown.
-
-        Args:
-            model_name: name of your model
-            out_dir: location of output directory
-            model_note: additional note to time stamp
-
-        Folder Tree from Wiki
+    def _create_sim_dir(self, *, model_name: str, out_dir: str, model_note: str=None) -> None:
+        """Create the folder structure for the simulation output.
+        
+        The following folder tree will be created
         utopia_output/   # all utopia output should go here
             model_a/
-            180301125410_my_first_sim/
-                config/
-                eval/
-                universes/
-                    uni000/
-                    uni001/
-                    ...
+                180301-125410_my_model_note/
+                    config/
+                    eval/
+                    universes/
+                        uni000/
+                        uni001/
+                        ...
             model_b/
-            180301125412_my_first_sim/
-            180301125413_my_second_sim/
-        """
-        # use recursive makedirs
-        log.debug("Expanding user %s", out_dir)
-        path_simulation = os.path.expanduser(out_dir)
-        path_simulation = os.path.join(path_simulation, model_name, time.strftime("%Y%m%d_%H%M%S"))
-        if model_note:
-            path_simulation += "_"+model_note
-        log.debug("Expanded user and time stamp to %s", path_simulation)
+                180301-125412_my_first_sim/
+                180301-125413_my_second_sim/
+    
 
-        # recursive folder creation automatic error if already existing
-        os.makedirs(path_simulation)
-        self.dirs['out_dir'] = path_simulation
-        # make Subfolders
-        # folder list expandable or configured by cfg yaml ?
-        folder_list = ["config", "eval", "universes"]
-        for folder in folder_list:
-            os.mkdir(os.path.join(path_simulation, folder))
-            self.dirs[folder] = os.path.join(path_simulation, folder)
+        Args:
+            model_name (str): Description
+            out_dir (str): Description
+            model_note (str, optional): Description
+            
+        Raises:
+            RuntimeError: If the simulation directory already existed. This
+                should not occur, as the timestamp is unique. If it occurs,
+                something is seriously wrong. Or you are in a strange time
+                zone.
+        """
+        # NOTE could check if the model name is valid
+
+        # Create the folder path to the simulation directory
+        log.debug("Expanding user %s", out_dir)
+        out_dir = os.path.expanduser(out_dir)
+        sim_dir = os.path.join(out_dir,
+                               model_name,
+                               time.strftime("%Y%m%d-%H%M%S"))
+
+        # Append a model note, if needed
+        if model_note:
+            sim_dir += "_" + model_note
+
+        # Inform and store to directory dict
+        log.debug("Expanded user and time stamp to %s", sim_dir)
+        self.dirs['sim_dir'] = sim_dir
+
+        # Recursively create the whole path to the simulation directory
+        try:
+            os.makedirs(sim_dir)
+        except OSError as err:
+            raise RuntimeError("Simulation directory already exists. This "
+                               "should not have happened. Try to start the "
+                               "simulation again.") from err
+
+        # Make subfolders
+        for subdir in ('config', 'eval', 'universes'):
+            subdir_path = os.path.join(sim_dir, subdir)
+            os.mkdir(subdir_path)
+            self.dirs[subdir] = subdir_path
+
+        log.debug("Finished creating simulation directory. Now registered: %s",
+                  self.dirs)
 
     def _create_uni_dir(self, uni_no, max_dim_no):
         """ The _create_uni_dir generates the folder for a single univers.
