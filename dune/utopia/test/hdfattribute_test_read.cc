@@ -1,35 +1,34 @@
-#include "hdfattribute.hh"
-#include "hdfmockclasses.hh"
+#include "../data_io/hdfattribute.hh"
+#include "../data_io/hdfmockclasses.hh"
 #include <cassert>
 #include <iostream>
 using namespace Utopia::DataIO;
 
 int main() {
-    // make file
-    HDFFile file("/Users/haraldmack/testfile.h5", "w");
+    // open a file
+    HDFFile file("/Users/haraldmack/testfile.h5", "r");
 
-    // make groups
+    // open a group 
     HDFGroup low_group = HDFGroup(file.get_basegroup(), "/testgroup");
     HDFGroup low_group2 = HDFGroup(file.get_basegroup(), "/testgroup2");
 
-    // adding attribute1
+    // open attributes
     std::string attributename = "testattribute";
-    std::string attribute_data = "this is a testing attribute";
     HDFAttribute<HDFGroup, std::string> attribute(
                 low_group, attributename);
 
-    // writing a string
-    attribute.write(attribute_data);
-
-    // adding attribute2
     std::string attributename2 = "testattribute2";
-
     HDFAttribute<HDFGroup, int> attribute2(
                 low_group2, "testattribute2");
 
-    // writing primitive type attribute
-    int attribute_data2 = 42;
-    attribute2.write(attribute_data2);
+    // read stuff and test that it is tha same as in hdfattribute_test_write.cc
+    std::string read_attribute1 = attribute.read();
+    int read_attribute2 = attribute2.read();
 
+    std::string attribute_data1 = "this is a testing attribute";
+    int attribute_data2 = 42;
+
+    assert(read_attribute1 == attribute_data1);
+    assert(read_attribute2 == attribute_data2);
     return 0;
 }

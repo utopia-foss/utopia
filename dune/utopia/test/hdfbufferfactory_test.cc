@@ -1,4 +1,4 @@
-#include "hdfbufferfactory.hh"
+#include "../data_io/hdfbufferfactory.hh"
 #include <cassert>
 #include <hdf5.h>
 #include <vector>

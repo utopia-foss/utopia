@@ -1,4 +1,4 @@
-#include "hdftypefactory.hh"
+#include "../data_io/hdftypefactory.hh"
 #include <cassert>
 #include <hdf5.h>
 using namespace Utopia;
