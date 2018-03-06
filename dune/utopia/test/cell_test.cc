@@ -1,5 +1,6 @@
 #include <random>
 #include <dune/utopia/state.hh>
+#include <dune/utopia/tags.hh>
 #include <dune/utopia/entity.hh>
 #include <dune/utopia/cell.hh>
 #include <dune/common/exceptions.hh>
@@ -17,7 +18,7 @@ class Value
 {
 public:
     double value;
-    bool operator==(double a){if (value==a) return true;}
+    const bool operator==(const Value a) const {if(value==a.value) return true;} 
 };
 
 /// Choose random states and traits. Verify Entity members before and after update
@@ -37,20 +38,18 @@ int main(int argc, char *argv[])
         std::uniform_real_distribution<Traits> dist_real(std::numeric_limits<Traits>::min(),std::numeric_limits<Traits>::max());
         const State state = dist_int(gen);
         //const Traits traits = dist_real(gen);
-        const int tag = 1;
+        Utopia::DefaultTag tag;
         const Position pos({dist_real(gen),dist_real(gen)});
         const Index index = 2;
         const bool boundary = true;
         Value A;
         
-        Utopia::Cell<Value,true,Position,Value,Index> c1(A,pos,boundary,A,index);
-        std::cout<<"I am actually doing this"<<std::endl;
-        //assert(c1);
-        //assert(c1.nonsense==pos);
+        Utopia::Cell<Value,true,Position,Utopia::DefaultTag,Index> c1(A,pos,boundary,index);
+       // std::cout<<"I am actually doing this"<<std::endl;
         assert(c1.position()==pos);
         assert(c1.is_boundary()==boundary);
-        assert(c1.state()==state);
-        assert(c1.is_tagged()==tag);
+        assert(c1.state()==A);
+        assert(c1.is_tagged==tag.is_tagged);
         assert(c1.id()==index);
         //assert_cell_members(c1,pos,index,boundary);
 

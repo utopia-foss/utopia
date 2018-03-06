@@ -20,11 +20,11 @@ public:
     const inline bool is_boundary(){return _boundary;}
     
     /// constructor of Cell
-    Cell(T t, PositionType pos, bool boundary, 
-         Tags tag, IndexType index) :
-         Entity<T,sync,Tags, IndexType> (t,tag,index)
-            , _position(pos), _boundary(boundary)
-    { }
+    Cell(T t, PositionType pos,const bool boundary, 
+         IndexType index) :
+         Entity<T,sync,Tags, IndexType> (t,index)
+             , _position(pos), _boundary(boundary)
+    {}
 private:
     //! Position of the cell center
     const PositionType _position;
