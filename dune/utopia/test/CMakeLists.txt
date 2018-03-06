@@ -15,8 +15,13 @@ set(TESTS_CORE
     output_agent_test_gmsh
     output_agent_test_rect
     simulation_test
+    model_test
+    # output_agent_test_gmsh
+    # output_agent_test_rect
+    # simulation_test
     state_test
-    tags_test)
+    tags_test
+    )
 
 # add CORE tests
 foreach(test ${TESTS_CORE})
