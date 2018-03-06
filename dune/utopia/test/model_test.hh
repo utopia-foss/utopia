@@ -3,16 +3,24 @@
 
 namespace Utopia {
 
+/// Define data types of dummy model
+using DummyModelTypes = ModelTypes<
+    std::vector<double>,
+    std::vector<double>
+>;
+
 /// Dummy model with simple update rule
 /** Holds a vector of doubles and increments its entries by the boundary
  *  condition vector or 1 otherwise.
  */
 class DummyModel:
-    public Model<DummyModel, std::vector<double>, std::vector<double>>
+    public Model<DummyModel, DummyModelTypes>
 {
 public:
-    using Data = typename std::vector<double>;
-    using BCType = typename std::vector<double>;
+    // convenience type definitions
+    using Base = Model<DummyModel, DummyModelTypes>;
+    using Data = typename Base::Data;
+    using BCType = typename Base::BCType;
 
 private:
     Data _state;
@@ -22,8 +30,8 @@ public:
     /// Construct the dummy model with an initial state
     /** \param state Initial state of the model
      */
-    DummyModel (const std::vector<double> state):
-        Model<DummyModel, std::vector<double>, std::vector<double>>(),
+    DummyModel (const Data& state):
+        Base(),
         _state(state),
         _bc(_state.size(), 1.0)
     { }

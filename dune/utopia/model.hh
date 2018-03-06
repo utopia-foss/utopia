@@ -3,10 +3,22 @@
 
 namespace Utopia {
 
+/// Wrapper struct for defining base class data types
+/** \tparam DataType Type of the data the model operates on (state)
+ *  \tparam BoundaryConditionType Data type of the boundary condition
+ */
+template<typename DataType, typename BoundaryConditionType>
+struct ModelTypes
+{
+    using Data = DataType;
+    using BCType = BoundaryConditionType;
+};
+
 /// Base class interface for Models using the CRT Pattern
 /** \tparam Derived Type of the derived model class
+ *  \tparam ModelTypes Convenience wrapper for extracting model data types
  */
-template<class Derived, typename Data, typename BCType>
+template<class Derived, typename ModelTypes>
 class Model
 {
 public:
@@ -16,6 +28,10 @@ public:
     { }
 
 protected:
+    /// Data type of the state
+    using Data = typename ModelTypes::Data;
+    /// Data type of the boundary condition
+    using BCType = typename ModelTypes::BCType;
     /// Model internal time stamp
     unsigned int time;
 
