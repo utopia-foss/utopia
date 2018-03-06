@@ -26,13 +26,13 @@ def wm_with_tasks():
 
     # A few tasks
     tasks = []
-    tasks.append((('python', '-c','print("hello oh so complex world")'),
+    tasks.append((('python3', '-c','print("hello oh so complex world")'),
                   dict(read_stdout=True)))
-    tasks.append((('python', '-c','from time import sleep; sleep(0.5)'),
+    tasks.append((('python3', '-c','from time import sleep; sleep(0.5)'),
                   dict(read_stdout=False)))
-    tasks.append(('python -c "return"',
+    tasks.append(('python3 -c "return"',
                   dict(read_stdout=False, priority=0)))
-    tasks.append((('python', '-c','print("{\'key\': \'1.23\'}")'),
+    tasks.append((('python3', '-c','print("{\'key\': \'1.23\'}")'),
                   dict(read_stdout=True, line_read_func=line_read_json)))
 
     wm = WorkerManager(num_workers=3)
@@ -73,11 +73,11 @@ def test_init(wm):
 def test_add_tasks(wm):
     """Tests adding of tasks"""
     # With tuple argument
-    sleep_cmd = ('python', '-c','from time import sleep; sleep(0.5)')
+    sleep_cmd = ('python3', '-c', '"from time import sleep; sleep(0.5)"')
     wm.add_task(sleep_cmd, priority=0, read_stdout=True)
 
     # With string argument and without reading stdout
-    sleep_cmd = ('python -c return')
+    sleep_cmd = ('python3 -c return')
     wm.add_task(sleep_cmd, priority=0, read_stdout=False)
 
 def test_start_working(wm_with_tasks):
