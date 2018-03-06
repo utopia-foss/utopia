@@ -5,7 +5,6 @@ The Multiverse supplies the main user interface of the frontend.
 
 import os
 import time
-import math
 import logging
 
 log = logging.getLogger(__name__)
@@ -95,22 +94,21 @@ class Multiverse:
         log.debug("Finished creating simulation directory. Now registered: %s",
                   self.dirs)
 
-    def _create_uni_dir(self, uni_no, max_dim_no):
-        """ The _create_uni_dir generates the folder for a single univers.
-
-        Within the universes directory, create a subdirectory uni<###>
-        for the given universe number, preceding zeros are added.
-        Thus they are sortable.
-
+    def _create_uni_dir(self, uni_id: int, max_uni_id: int) -> None:
+        """The _create_uni_dir generates the folder for a single universe
+        
+        Within the universes directory, create a subdirectory uni### for the
+        given universe number, zero-padded such that they are sortable.
+        
         Args:
-            uni_no: Number of the universe, created by the workermanager?,
-                restoreable from meta_cfg.yaml.
-            max_dim:no: Maximal number of universes calculated
-                from param sweep from meta_cfg.yaml.
+            uni_id (int): ID of the universe whose folder should be created
+            max_uni_id (int): highest ID, needed for correct zero-padding
         """
-        # calculate path for universe from maximum number, +1 needed because math.ceil >=
-        # e.g. math.ceil(math.log(100,10)) gives 2 but 3 places needed
-        path_universe = "uni"+str(uni_no).zfill(math.ceil(math.log(max_dim_no+1, 10)))
-        # recursive folder creation automatic error if already existing
-        pathname = os.path.join(self.dirs['universes'], path_universe)
-        os.makedirs(pathname)
+        # Use a format string for creating the uni_path
+        fstr = "{id:>0{digits:}d}"
+        uni_path = os.path.join(self.dirs['universes'],
+                                fstr.format(id=uni_id, digits=len(max_uni_id)))
+
+        # Now create the folder
+        os.mkdir(uni_path)
+        log.debug("Created universe path: %s", uni_path)
