@@ -1,12 +1,12 @@
-#include "../data_io/hdfattribute.hh"
-#include "../data_io/hdfmockclasses.hh"
+#include "../hdfattribute.hh"
+#include "../hdfmockclasses.hh"
 #include <cassert>
 #include <iostream>
 using namespace Utopia::DataIO;
 
 int main() {
     // make file
-    HDFFile file("/Users/haraldmack/testfile.h5", "w");
+    HDFFile file("testfile.h5", "w");
 
     // make groups
     HDFGroup low_group = HDFGroup(file.get_basegroup(), "/testgroup");
