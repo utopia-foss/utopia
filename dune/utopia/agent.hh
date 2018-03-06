@@ -297,7 +297,7 @@ std::enable_if_t<!enabled,void> move_to (const Position& pos, const std::shared_
  */
 template<typename StateType, class Tags, typename IndexType, typename PositionType>
 class Agent :
-    public Entity<StateType, false, Tags, IndexType>
+    public Entity<Agent,StateType, false, Tags, IndexType,0>
 {
 
 public:
