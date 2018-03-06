@@ -2,11 +2,12 @@
 
 The Multiverse supplies the main user interface of the frontend.
 """
-from tools import recursive_update, read_yml
 
 import os
 import time
 import logging
+
+from utopya.tools import recursive_update, read_yml
 
 log = logging.getLogger(__name__)
 
