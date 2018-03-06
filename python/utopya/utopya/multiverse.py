@@ -23,10 +23,10 @@ class Multiverse:
         """
         # read in all configuration files
         self._defaults = read_yml("default_metaconfig.yml", error_msg="default_metaconfig.yml is not present.")
-        self._metaconfig = read_yml(metaconfig, error_msg="Path to metaconfig was given but metaconfig could not be found.")
+        self._metaconfig = read_yml(metaconfig, error_msg="{0} was given but metaconfig could not be found.".format(metaconfig))
 
         if userconfig is not None:
-            self._userconfig = read_yml(userconfig, error_msg="Path to userconfig was given but userconfig could not be found.")
+            self._userconfig = read_yml(userconfig, error_msg="{0} was given but userconfig could not be found.".format(userconfig))
 
         # TODO: typechecks of values should be completed below here.
         # after this point it is assumed that all values are valid
