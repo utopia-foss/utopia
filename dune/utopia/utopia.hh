@@ -36,7 +36,7 @@
 #include "state.hh"
 #include "tags.hh"
 #include "entity.hh"
-// #include "cell.hh"
+#include "cell.hh"
 // #include "agent.hh"
 #include "grid.hh"
 #include "data.hh"
