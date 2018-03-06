@@ -4,7 +4,6 @@ void test_cloning (Agent agent)
     auto clone = Utopia::clone(agent);
     assert(clone != agent);
     assert(clone->state() == agent->state());
-    assert(clone->traits() == agent->traits());
     assert(clone->position() == agent->position());
 }
 
@@ -51,7 +50,7 @@ template<int dim>
 void test_agents_on_grid (const std::size_t agent_count, const std::size_t grid_size)
 {
     auto grid = Utopia::Setup::create_grid<dim>(grid_size);
-    auto cells = Utopia::Setup::create_cells_on_grid(grid);
+    auto cells = Utopia::Setup::create_cells_on_grid<true>(grid);
     auto agents = Utopia::Setup::create_agents_on_grid(grid,agent_count);
 
     using Pos = typename Utopia::GridTypeAdaptor<typename decltype(grid._grid)::element_type>::Position;

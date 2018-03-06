@@ -105,7 +105,7 @@ public:
     void update_data ()
     {
         for(const auto& cell : _cells){
-            _grid_data[cell->index()] = cell->state();
+            _grid_data[cell->id()] = cell->state();
         }
     }
 };
@@ -150,7 +150,7 @@ public:
     void update_data ()
     {
         for(auto cell : _cells){
-            _grid_data[cell->index()] = _function(cell);
+            _grid_data[cell->id()] = _function(cell);
         }
     }
 };
@@ -192,9 +192,9 @@ public:
         std::vector<bool> visited(_cells.size(),false);
         auto cluster_id = dist(gen);
         for(const auto& cell : _cells){
-            if(!visited[cell->index()] && range_check(cell)){
-                _grid_data[cell->index()] = cluster_id;
-                visited[cell->index()] = true;
+            if(!visited[cell->id()] && range_check(cell)){
+                _grid_data[cell->id()] = cluster_id;
+                visited[cell->id()] = true;
                 neighbor_clustering(cell,visited,cluster_id);
                 cluster_id++;
             }
@@ -206,10 +206,10 @@ private:
     void neighbor_clustering (const Cell& cell, std::vector<bool>& visited, const int cluster_id)
     {
         for(const auto& nb : cell->neighbors()){
-            if(nb->state()==cell->state() && !visited[nb->index()])
+            if(nb->state()==cell->state() && !visited[nb->id()])
             {
-                _grid_data[nb->index()] = cluster_id;
-                visited[nb->index()] = true;
+                _grid_data[nb->id()] = cluster_id;
+                visited[nb->id()] = true;
                 neighbor_clustering(nb,visited,cluster_id);
             }
         }
@@ -254,7 +254,7 @@ public:
             _manager.agents().end(),
             [this](const auto agent){
                 const auto cell = find_cell(agent,_manager);
-                _grid_data.at(cell->index())++;
+                _grid_data.at(cell->id())++;
         });
     }
 

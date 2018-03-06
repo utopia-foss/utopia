@@ -11,7 +11,7 @@ int main(int argc, char** argv)
         auto rect_2d = Utopia::Setup::create_grid({100,100},{1.0,1.0});
 
         // cells on yasp grid
-        auto cells = Utopia::Setup::create_cells_on_grid(rect_2d);
+        auto cells = Utopia::Setup::create_cells_on_grid<true>(rect_2d);
         auto agents = Utopia::Setup::create_agents_on_grid(rect_2d,100,0);
         auto m1 = Utopia::Setup::create_manager<false,false>(rect_2d,cells,agents);
 

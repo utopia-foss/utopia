@@ -15,7 +15,7 @@ void assert_cells_on_grid(std::shared_ptr<Grid> grid, CellContainer& cells)
 
         // check if entity is contained via index
         auto it = std::find_if(cells.cbegin(),cells.cend(),
-            [id](const auto c){return c->index() == id;});
+            [id](const auto c){return c->id() == id;});
         assert(it != cells.cend());
 
         // check if position is correct
@@ -30,7 +30,7 @@ void assert_cells_on_grid(std::shared_ptr<Grid> grid, CellContainer& cells)
                 break;
             }
         }
-        assert(cell->boundary() == boundary);
+        assert(cell->is_boundary() == boundary);
     }
 }
 
@@ -44,7 +44,7 @@ void check_grid_neighbors_count (const Manager& manager)
     for(const auto cell : manager.cells()){
         const auto neighbors = Utopia::Neighborhoods::NextNeighbor::neighbors(cell,manager);
         if(neighbors.size() != nb_count){
-            std::cerr << "Cell No. " << cell->index()
+            std::cerr << "Cell No. " << cell->id()
                 << " has " << neighbors.size()
                 << " neighbors!" << std::endl;
             exception = true;
@@ -60,11 +60,11 @@ void check_grid_neighbors_count (const Manager& manager)
 template<typename NB, class Cell, class Manager>
 void mark_neighbors (const std::shared_ptr<Cell> cell, const Manager &mngr, const int increment=1)
 {
-    cell->new_state() -= increment;
+    cell->state_new() -= increment;
     cell->update();
     const auto neighbors = NB::neighbors(cell, mngr);
     for (unsigned int i = 0; i<neighbors.size(); ++i) {
-        neighbors[i]->new_state() += increment;
+        neighbors[i]->state_new() += increment;
         neighbors[i]->update();
     }
 }
@@ -92,7 +92,7 @@ constexpr void check_grid_neighbors_count (const Manager& manager)
     for(const auto cell : manager.cells()){
         const auto neighbors = NBClass::neighbors(cell, manager);
         if(neighbors.size() != nb_count){
-            std::cerr << "Cell No. " << cell->index()
+            std::cerr << "Cell No. " << cell->id()
                 << " has " << neighbors.size()
                 << " neighbors! Expected " << nb_count << std::endl;
             exception = true;
@@ -124,11 +124,11 @@ void compare_neighborhoods (const M1& m1, const M2& m2, const std::string comp_c
             std::cerr << "Visual check output generated." << std::endl;
 
             std::cerr << "Cell indices in m1 neighborhood:" << std::endl;
-            for (auto&& cell : nb1) { std::cerr << " " << cell->index(); }
+            for (auto&& cell : nb1) { std::cerr << " " << cell->id(); }
             std::cerr << std::endl;
 
             std::cerr << "Cell indices in m2 neighborhood:" << std::endl;
-            for (auto&& cell : nb2) { std::cerr << " " << cell->index(); }
+            for (auto&& cell : nb2) { std::cerr << " " << cell->id(); }
             std::cerr << std::endl;
 
             DUNE_THROW(Dune::Exception, "Mismatch of neighborhood size!");
@@ -151,7 +151,7 @@ void compare_neighborhoods (const M1& m1, const M2& m2, const std::string comp_c
  * 
  * \tparam dim The grid dimension
  */
-template<int dim>
+template<int dim, bool sync>
 void cells_on_grid_test (const unsigned int cells_per_dim)
 {
     // Alias the neighborhood classes
@@ -160,14 +160,14 @@ void cells_on_grid_test (const unsigned int cells_per_dim)
 
     // Setup grid and cells
     auto grid = Utopia::Setup::create_grid<dim>(cells_per_dim);
-    auto cells = Utopia::Setup::create_cells_on_grid(grid);
+    auto cells = Utopia::Setup::create_cells_on_grid<sync>(grid);
 
     // structured, non-periodic
-    auto m1 = Utopia::Setup::create_manager<true,false>(grid,cells);
+    auto m1 = Utopia::Setup::create_manager_cells<true,false>(grid,cells);
     // unstructured, non-periodic
-    auto m2 = Utopia::Setup::create_manager<false,false>(grid,cells);
+    auto m2 = Utopia::Setup::create_manager_cells<false,false>(grid,cells);
     // structured, periodic
-    auto m3 = Utopia::Setup::create_manager<true,true>(grid,cells);
+    auto m3 = Utopia::Setup::create_manager_cells<true,true>(grid,cells);
 
     cells.clear(); // ensure that original container is empty
 

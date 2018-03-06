@@ -14,6 +14,7 @@ template<typename T, bool sync ,typename PositionType,
 class Cell: public Entity<T, sync, Tags,IndexType>
 {
 public:    
+    using Index=IndexType;
     //\return position of cell center
     const PositionType& position() const {return _position;}
     //\return true if located at boundary
