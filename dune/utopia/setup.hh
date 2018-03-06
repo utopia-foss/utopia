@@ -177,8 +177,7 @@ namespace Setup
     >
     decltype(auto) create_cells_on_grid (
         const GridWrapper<GridType>& grid_wrapper,
-        const State state = 0,
-        const Traits traits = 0)
+        const State state = 0)
     {
 
         using GridTypes = GridTypeAdaptor<GridType>;
@@ -187,7 +186,7 @@ namespace Setup
         using Mapper = typename GridTypes::Mapper;
         using Index = typename GridTypes::Index;
 
-        using CellType = Cell<State,     ,Position,Index>;
+        using CellType = Cell<State,sync,Position,Index>;
 
         auto grid = grid_wrapper._grid;
         GV gv(*grid);
