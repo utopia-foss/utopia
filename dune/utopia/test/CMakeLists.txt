@@ -11,11 +11,13 @@ set(TESTS_CORE
     grid_test
     # grid_cells_test_2d
     # grid_cells_test_3d
+    model_test
     # output_agent_test_gmsh
     # output_agent_test_rect
     # simulation_test
     state_test
-    tags_test)
+    tags_test
+    )
 
 # add CORE tests
 foreach(test ${TESTS_CORE})
