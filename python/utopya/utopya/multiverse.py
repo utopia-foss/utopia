@@ -20,8 +20,9 @@ class Multiverse:
         The default metaconfig file, the user/machine-specific file (if existing) and the regular metaconfig file are read in and the default metaconfig is adjusted accordingly to create a single output file.
 
         Args:
-            metaconfig: path to metaconfig. Defaults to filename metaconfig.yml. An empty path raises FileNotFoundError.
-            userconfig: optional user/machine-specific configuration file. Defaults to None.
+            metaconfig: path to metaconfig. An empty or invalid path raises
+                FileNotFoundError.
+            userconfig: optional user/machine-specific configuration file
 
         Returns:
             dict: returns the updated default metaconfig to be processed further or to be written out.
@@ -32,14 +33,15 @@ class Multiverse:
         # Then, the given metaconfig recursively updates the created dict
         defaults = read_yml("default_metaconfig.yml", error_msg="default_metaconfig.yml is not present.")
 
-        metaconfig = read_yml(metaconfig, error_msg="{0} was given but metaconfig could not be found.".format(metaconfig))
-
         if userconfig is not None:
             userconfig = read_yml(userconfig, error_msg="{0} was given but userconfig could not be found.".format(userconfig))
+
+        metaconfig = read_yml(metaconfig, error_msg="{0} was given but metaconfig could not be found.".format(metaconfig))
 
         # TODO: typechecks of values should be completed below here.
         # after this point it is assumed that all values are valid
 
+        # Now perform the recursive update steps
         if userconfig is not None:  # update default with user spec
             defaults = recursive_update(defaults, userconfig)
 

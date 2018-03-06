@@ -27,6 +27,4 @@ parameter_space:
   # simulation params
   simulation:
     # ...
-    prng_seed:
-      default:           1337            # when no sweep is performed
-      values:            [665, 666, 667] # sweep values
+    prng_seed:           1337
