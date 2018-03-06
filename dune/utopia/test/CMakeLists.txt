@@ -6,17 +6,22 @@ set(TESTS_CORE
     # agent_test_2d
     # agent_test_3d
     entity_test
-    # cell_test
+    cell_test
     dependency_test
     grid_test
     # grid_cells_test_2d
     # grid_cells_test_3d
+    model_test
     # output_agent_test_gmsh
     # output_agent_test_rect
     # simulation_test
     state_test
     tags_test
+<<<<<<< HEAD
     setup_test)
+=======
+    )
+>>>>>>> master
 
 # add CORE tests
 foreach(test ${TESTS_CORE})
