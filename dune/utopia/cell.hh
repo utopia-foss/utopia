@@ -11,7 +11,7 @@ namespace Utopia
  */
 template<typename T, bool sync ,typename PositionType, 
          class Tags, typename IndexType>
-class Cell: public Entity<T, sync, Tags,IndexType>
+class Cell: public Entity<Cell, T, sync, Tags,IndexType>
 {
 public:    
     //\return position of cell center
