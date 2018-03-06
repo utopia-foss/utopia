@@ -163,11 +163,11 @@ void cells_on_grid_test (const unsigned int cells_per_dim)
     auto cells = Utopia::Setup::create_cells_on_grid<sync>(grid);
 
     // structured, non-periodic
-    auto m1 = Utopia::Setup::create_manager<true,false>(grid,cells);
+    auto m1 = Utopia::Setup::create_manager_cells<true,false>(grid,cells);
     // unstructured, non-periodic
-    auto m2 = Utopia::Setup::create_manager<false,false>(grid,cells);
+    auto m2 = Utopia::Setup::create_manager_cells<false,false>(grid,cells);
     // structured, periodic
-    auto m3 = Utopia::Setup::create_manager<true,true>(grid,cells);
+    auto m3 = Utopia::Setup::create_manager_cells<true,true>(grid,cells);
 
     cells.clear(); // ensure that original container is empty
 

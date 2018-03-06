@@ -31,7 +31,7 @@ namespace Setup
 {
     /// Create a GridManager from a grid and a CellContainer
     template<bool structured, bool periodic, typename GridType, typename CellType>
-    GridManager<GridType,structured,periodic,CellType,int> create_manager (
+    GridManager<GridType,structured,periodic,CellType,int> create_manager_cells (
         const GridWrapper<GridType>& wrapper,
         const CellContainer<CellType>& cells )
     {
@@ -51,7 +51,7 @@ namespace Setup
 
     /// Create a GridManager from a grid and an AgentContainer
     template<bool structured, bool periodic, typename GridType,typename AgentType>
-    GridManager<GridType,structured,periodic,int,AgentType> create_manager (
+    GridManager<GridType,structured,periodic,int,AgentType> create_manager_agents (
         const GridWrapper<GridType>& wrapper,
         const AgentContainer<AgentType>& agents )
     {
@@ -168,13 +168,11 @@ namespace Setup
      *  \param traits Default traits of all cells
      *  \return Container with created cells
     */
-    template< 
-        bool sync,
+    template<bool sync,
         typename State = int,
-        typename Tag= DefaultTag,
+        typename Tag = DefaultTag,
         std::size_t custom_neighborhood_count = 0,
-        typename GridType
-    >
+        typename GridType>
     decltype(auto) create_cells_on_grid (
         const GridWrapper<GridType>& grid_wrapper,
         const State state = 0)

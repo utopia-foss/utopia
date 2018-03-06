@@ -10,7 +10,7 @@ int main(int argc, char** argv)
         constexpr unsigned int agent_count = 10;
 
         auto grid = Utopia::Setup::create_grid(cell_count);
-        auto cells = Utopia::Setup::create_cells_on_grid(grid,0);
+        auto cells = Utopia::Setup::create_cells_on_grid<true>(grid,0);
         auto agents = Utopia::Setup::create_agents_on_grid(grid,agent_count,0);
         // structured, non-periodic manager
         auto manager = Utopia::Setup::create_manager<true,false>(grid,cells,agents);
@@ -35,18 +35,18 @@ int main(int argc, char** argv)
         sim.run(1);
 
         for(const auto cell : manager.cells()){
-            std::cout << "Cell " << std::to_string(cell->index()) << " State " << std::to_string(cell->state()) << std::endl;
+            std::cout << "Cell " << std::to_string(cell->id()) << " State " << std::to_string(cell->state()) << std::endl;
         }
 
         // check states
         for(const auto cell : manager.cells()){
-            if (cell->boundary()) {
+            if (cell->is_boundary()) {
                 if (cell->state() != 2)
                     DUNE_THROW(Dune::Exception,"Boundary Cell State not 2");
             }
-            else if (!cell->boundary()) {
+            else if (!cell->is_boundary()) {
                 if (cell->state() != 1)
-                DUNE_THROW(Dune::Exception,"Cell " + std::to_string(cell->index()) + " is not State 1");
+                DUNE_THROW(Dune::Exception,"Cell " + std::to_string(cell->id()) + " is not State 1");
             }
         }
 
