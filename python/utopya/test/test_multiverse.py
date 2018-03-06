@@ -23,7 +23,7 @@ def test_init():
     # FIXME
     Multiverse()
 
-
+@pytest.mark.skip("To be re-implemented when the Multiverse is further developed.")
 def test_create_sim_dir(tmpdir, mv_config):
     """Tests the folder creation in the initialsation of the Multiverse."""
     # has to be adapted if user specific path
@@ -48,7 +48,7 @@ def test_create_sim_dir(tmpdir, mv_config):
     for folder in folder_list:
         assert os.path.isdir(os.path.join(path_base, latest, folder)) is True
 
-
+@pytest.mark.skip("To be re-implemented when the Multiverse is further developed.")
 def test_detect_doubled_folders(tmpdir, mv_config):
     # adapt cfg to special needs
     mv_config['paths']['out_dir'] = tmpdir.dirpath()
@@ -59,7 +59,7 @@ def test_detect_doubled_folders(tmpdir, mv_config):
     with pytest.raises(FileExistsError):
         Multiverse(mv_config)
 
-
+@pytest.mark.skip("To be re-implemented when the Multiverse is further developed.")
 def test_create_uni_dir(tmpdir, mv_config, maximum=10):
     # adapt cfg to special needs
     mv_config['paths']['out_dir'] = tmpdir.dirpath()
