@@ -2,6 +2,7 @@
 #define HDFUTILITIES_HH
 #include <array>
 #include <deque>
+#include <forward_list>
 #include <iostream>
 #include <list>
 #include <map>
@@ -32,6 +33,9 @@ struct is_container<std::vector<Args...>> : public std::true_type {};
 
 template <typename... Args>
 struct is_container<std::list<Args...>> : public std::true_type {};
+
+template <typename... Args>
+struct is_container<std::forward_list<Args...>> : public std::true_type {};
 
 template <typename... Args>
 struct is_container<std::deque<Args...>> : public std::true_type {};

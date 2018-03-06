@@ -3,6 +3,7 @@
 #include "hdfutilities.hh"
 #include <hdf5.h>
 #include <hdf5_hl.h>
+#include <iostream>
 namespace Utopia {
 namespace DataIO {
 
@@ -16,15 +17,106 @@ public:
         typename T,
         std::enable_if_t<is_container<typename std::decay_t<T>>::value == false,
                          int> = 0>
-    static inline hid_t type(std::size_t);
+    static inline hid_t type(std::size_t = 0);
 
     // overload for variable length types, includes array types
     template <
-        typename T, std::size_t size = 0,
+        typename T,
         std::enable_if_t<is_container<typename std::decay_t<T>>::value == true,
-                         int> = 1>
-    static inline hid_t type(std::size_t);
+                         int> = 0>
+    static inline hid_t type(std::size_t = 0);
 };
+
+// bunch of overloads of __get_type__ for getting hdf5 types for different c++
+// types
+template <> hid_t HDFTypeFactory::__get_type__<float>() {
+    return H5T_NATIVE_FLOAT;
+}
+template <> hid_t HDFTypeFactory::__get_type__<double>() {
+    return H5T_NATIVE_DOUBLE;
+}
+template <> hid_t HDFTypeFactory::__get_type__<long double>() {
+    return H5T_NATIVE_LDOUBLE;
+}
+template <> hid_t HDFTypeFactory::__get_type__<int>() { return H5T_NATIVE_INT; }
+
+template <> hid_t HDFTypeFactory::__get_type__<short int>() {
+    return H5T_NATIVE_SHORT;
+}
+template <> hid_t HDFTypeFactory::__get_type__<long int>() {
+    return H5T_NATIVE_LONG;
+}
+template <> hid_t HDFTypeFactory::__get_type__<long long int>() {
+    return H5T_NATIVE_LLONG;
+}
+template <> hid_t HDFTypeFactory::__get_type__<unsigned int>() {
+    return H5T_NATIVE_UINT;
+}
+template <> hid_t HDFTypeFactory::__get_type__<unsigned short int>() {
+    return H5T_NATIVE_UINT16;
+}
+template <> hid_t HDFTypeFactory::__get_type__<std::size_t>() {
+    return H5T_NATIVE_ULLONG;
+}
+template <> hid_t HDFTypeFactory::__get_type__<bool>() {
+    return H5T_NATIVE_HBOOL;
+}
+template <> hid_t HDFTypeFactory::__get_type__<char>() {
+    return H5T_NATIVE_CHAR;
+}
+
+/**
+ * @brief returns a HDF5 type from a given C++ primitive type
+ *
+ * @tparam T
+ * @tparam T,
+std::enable_if_t<
+is_container<typename std::decay_t<T>>::value == false, int>
+ * @return hid_t
+ */
+template <typename T,
+          std::enable_if_t<
+              is_container<typename std::decay_t<T>>::value == false, int>>
+inline hid_t HDFTypeFactory::type(std::size_t size) {
+    return __get_type__<typename std::decay_t<T>>();
+}
+
+/**
+ * @brief returns a HDF5 type from a given C++ fixed-or variable length C++
+ * container type
+ *
+ * @tparam T
+ * @tparam 1
+ * @param size
+ * @return hid_t
+ */
+template <typename T,
+          std::enable_if_t<
+              is_container<typename std::decay_t<T>>::value == true, int>>
+inline hid_t HDFTypeFactory::type(std::size_t size) {
+    if (size == 0) {
+        return H5Tvlen_create(__get_type__<typename T::value_type>());
+    } else {
+        hsize_t dim[1] = {size};
+        hid_t type =
+            H5Tarray_create(__get_type__<typename T::value_type>(), 1, dim);
+
+        return type;
+    }
+}
+
+// overload for strings
+template <> inline hid_t HDFTypeFactory::type<std::string>(std::size_t size) {
+    if (size == 0) {
+        hid_t type = H5Tcopy(H5T_C_S1);
+        H5Tset_size(type, H5T_VARIABLE);
+        return type;
+    } else {
+        hid_t type = H5Tcopy(H5T_C_S1);
+        H5Tset_size(type, size);
+        return type;
+    }
+}
 } // namespace DataIO
 } // namespace Utopia
 #endif
