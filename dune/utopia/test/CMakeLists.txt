@@ -4,8 +4,8 @@ file(COPY "square.msh" "cube.msh" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 # collect CORE tests
 set(TESTS_CORE
     agent_naive_test
-    #agent_test_2d
-    #agent_test_3d
+    agent_test_2d
+    agent_test_3d
     cell_test
     dependency_test
     entity_test

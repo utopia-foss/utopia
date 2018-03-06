@@ -112,7 +112,7 @@ auto find_agents_on_cell (const std::shared_ptr<Cell> cell, const Manager& manag
         std::vector<std::shared_ptr<typename Manager::Agent>> >
 {
     std::vector<std::shared_ptr<typename Manager::Agent>> ret;
-    const auto id = cell->index();
+    const auto id = cell->id();
     const auto& extensions = manager.extensions();
     const auto& grid_cells = manager.grid_cells();
 
@@ -163,7 +163,7 @@ auto find_agents_on_cell (const std::shared_ptr<Cell> cell, const Manager& manag
 
     // get reference element for cell
     auto it = elements(manager.grid_view()).begin();
-    std::advance(it,cell->index());
+    std::advance(it,cell->id());
     const auto& geo = it->geometry();
     const auto& ref = Dune::ReferenceElements<Coordinate,dim>::general(geo.type());
 
