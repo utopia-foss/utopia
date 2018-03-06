@@ -3,6 +3,7 @@
 The Multiverse supplies the main user interface of the frontend.
 """
 import yaml
+# from .tools import recursive_update, read_yaml
 
 
 class Multiverse:
@@ -14,19 +15,7 @@ class Multiverse:
         """
         self._configure(metaconfig, userconfig)
 
-    # TODO: move this function to tools?
-    def _recursive_update(self, d: dict, u: dict):
-        """Update Mapping d with values from Mapping u."""
-        for key, val in u.items():
-            if isinstance(val, dict):
-                # Already a Mapping, continue recursion
-                d[key] = self._recursive_update(d.get(key, {}), val)
-            else:
-                # Not a mapping -> at leaf -> update value
-                d[key] = val 	# ... which is just u[k]
-        return d
-
-    def _configure(self, metaconfig: str, userconfig=None):
+    def _configure(self, metaconfig: str, userconfig: str=None):
         """Read default configuration file and adjust parameters.
 
         The default metaconfig file, the user/machine-specific file (if
@@ -39,8 +28,8 @@ class Multiverse:
             with open("default_metaconfig.yml", 'r') as ymlfile:
                 self._defaults = yaml.load(ymlfile)
 
-        except FileNotFoundError:
-            raise FileNotFoundError("default_metaconfig.yml is not present.")
+        except FileNotFoundError as err:
+            raise FileNotFoundError("default_metaconfig.yml is not present.") from err
 
         try:
             with open(metaconfig, 'r') as ymlfile:
