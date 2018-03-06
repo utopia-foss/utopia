@@ -169,54 +169,54 @@ namespace Setup
      *  \param traits Default traits of all cells
      *  \return Container with created cells
     */
-    template<
-        typename State = int,
-        typename Traits = int,
-        std::size_t custom_neighborhood_count = 0,
-        typename GridType
-    >
-    decltype(auto) create_cells_on_grid (
-        const GridWrapper<GridType>& grid_wrapper,
-        const State state = 0,
-        const Traits traits = 0)
-    {
+    // template<
+    //     typename State = int,
+    //     typename Traits = int,
+    //     std::size_t custom_neighborhood_count = 0,
+    //     typename GridType
+    // >
+    // decltype(auto) create_cells_on_grid (
+    //     const GridWrapper<GridType>& grid_wrapper,
+    //     const State state = 0,
+    //     const Traits traits = 0)
+    // {
 
-        using GridTypes = GridTypeAdaptor<GridType>;
-        using Position = typename GridTypes::Position;
-        using GV = typename GridTypes::GridView;
-        using Mapper = typename GridTypes::Mapper;
-        using Index = typename GridTypes::Index;
+    //     using GridTypes = GridTypeAdaptor<GridType>;
+    //     using Position = typename GridTypes::Position;
+    //     using GV = typename GridTypes::GridView;
+    //     using Mapper = typename GridTypes::Mapper;
+    //     using Index = typename GridTypes::Index;
 
-        using CellType = Cell<State,Traits,Position,Index,custom_neighborhood_count>;
+    //     using CellType = Cell<State,Traits,Position,Index,custom_neighborhood_count>;
 
-        auto grid = grid_wrapper._grid;
-        GV gv(*grid);
-        Mapper mapper(gv, Dune::mcmgElementLayout());
-        CellContainer<CellType> cells;
-        cells.reserve(mapper.size());
+    //     auto grid = grid_wrapper._grid;
+    //     GV gv(*grid);
+    //     Mapper mapper(gv, Dune::mcmgElementLayout());
+    //     CellContainer<CellType> cells;
+    //     cells.reserve(mapper.size());
 
-        // loop over all entities and create cells
-        for(const auto& e : elements(gv))
-        {
-            const Position pos = e.geometry().center();
-            const Index id = mapper.index(e);
+    //     // loop over all entities and create cells
+    //     for(const auto& e : elements(gv))
+    //     {
+    //         const Position pos = e.geometry().center();
+    //         const Index id = mapper.index(e);
 
-            // check if entity is at boundary
-            bool boundary = false;
-            for(const auto& is : intersections(gv,e)){
-                if(!is.neighbor()){
-                    boundary = true;
-                    break;
-                }
-            }
+    //         // check if entity is at boundary
+    //         bool boundary = false;
+    //         for(const auto& is : intersections(gv,e)){
+    //             if(!is.neighbor()){
+    //                 boundary = true;
+    //                 break;
+    //             }
+    //         }
 
-            cells.emplace_back(std::make_shared<CellType>
-                (state,traits,pos,id,boundary));
-        }
+    //         cells.emplace_back(std::make_shared<CellType>
+    //             (state,traits,pos,id,boundary));
+    //     }
 
-        cells.shrink_to_fit();
-        return cells;
-    }
+    //     cells.shrink_to_fit();
+    //     return cells;
+    // }
 
     /// Randomly distribute agents on a grid
     /**
@@ -226,43 +226,43 @@ namespace Setup
      *  \param traits_initial Initial traits of all agents
      *  \return Container with created agents
      */
-    template<typename State=int, typename Traits=int, typename GridType>
-    decltype(auto) create_agents_on_grid(
-        const GridWrapper<GridType>& grid_wrapper,
-        const std::size_t count,
-        const State state_initial = 0,
-        const Traits traits_initial = 0)
-    {
-        // fetch some types
-        using Types = GridTypeAdaptor<GridType>;
-        using Position = typename Types::Position;
-        using Coordinate = typename Types::Coordinate;
+    // template<typename State=int, typename Traits=int, typename GridType>
+    // decltype(auto) create_agents_on_grid(
+    //     const GridWrapper<GridType>& grid_wrapper,
+    //     const std::size_t count,
+    //     const State state_initial = 0,
+    //     const Traits traits_initial = 0)
+    // {
+    //     // fetch some types
+    //     using Types = GridTypeAdaptor<GridType>;
+    //     using Position = typename Types::Position;
+    //     using Coordinate = typename Types::Coordinate;
 
-        using Agent = Agent<State,Traits,Position>;
-        AgentContainer<Agent> agents;
+    //     using Agent = Agent<State,Traits,Position>;
+    //     AgentContainer<Agent> agents;
 
-        // set up random number generator for positions
-        const auto& extensions = grid_wrapper._extensions;
-        std::array<std::uniform_real_distribution<Coordinate>,Types::dim> distr;
-        std::transform(extensions.begin(),extensions.end(),distr.begin(),
-            [](const auto& ext){
-                return std::uniform_real_distribution<Coordinate>(0.0,ext);
-        });
-        std::ranlux24_base ran(123456);
+    //     // set up random number generator for positions
+    //     const auto& extensions = grid_wrapper._extensions;
+    //     std::array<std::uniform_real_distribution<Coordinate>,Types::dim> distr;
+    //     std::transform(extensions.begin(),extensions.end(),distr.begin(),
+    //         [](const auto& ext){
+    //             return std::uniform_real_distribution<Coordinate>(0.0,ext);
+    //     });
+    //     std::ranlux24_base ran(123456);
 
-        // create agents
-        for(std::size_t i = 0; i<count; ++i)
-        {
-            Position pos;
-            std::transform(distr.begin(),distr.end(),pos.begin(),
-                [&ran](auto& dist){
-                    return dist(ran);
-            });
-            agents.emplace_back(std::make_shared<Agent>(state_initial,traits_initial,pos));
-        }
+    //     // create agents
+    //     for(std::size_t i = 0; i<count; ++i)
+    //     {
+    //         Position pos;
+    //         std::transform(distr.begin(),distr.end(),pos.begin(),
+    //             [&ran](auto& dist){
+    //                 return dist(ran);
+    //         });
+    //         agents.emplace_back(std::make_shared<Agent>(state_initial,traits_initial,pos));
+    //     }
 
-        return agents;
-    }
+    //     return agents;
+    // }
 
 } // namespace Setup
 

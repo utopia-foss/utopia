@@ -2,7 +2,6 @@
 
 #include <dune/common/exceptions.hh>
 #include <dune/utopia/utopia.hh>
-#include <dune/utopia/state.hh>
 
 /// Instantiate containers, check access and contents
 int main(int argc, char **argv)
