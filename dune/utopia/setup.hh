@@ -29,7 +29,6 @@ auto determine_extensions (const std::shared_ptr<Grid> grid)
 /// Functions for building objects and setting up a simulation
 namespace Setup
 {
-
     /// Create a GridManager from a grid and a CellContainer
     template<bool structured, bool periodic, typename GridType, typename CellType>
     GridManager<GridType,structured,periodic,CellType,int> create_manager (
@@ -38,7 +37,7 @@ namespace Setup
     {
         return GridManager<GridType,structured,periodic,CellType,int>(
             wrapper,cells);
-    }
+    }  
 
     /// Create a GridManager from grid, CellContainer, and AgentContainer
     template<bool structured, bool periodic, typename GridType, typename CellType,typename AgentType>
@@ -169,54 +168,54 @@ namespace Setup
      *  \param traits Default traits of all cells
      *  \return Container with created cells
     */
-    // template<
-    //     typename State = int,
-    //     typename Traits = int,
-    //     std::size_t custom_neighborhood_count = 0,
-    //     typename GridType
-    // >
-    // decltype(auto) create_cells_on_grid (
-    //     const GridWrapper<GridType>& grid_wrapper,
-    //     const State state = 0,
-    //     const Traits traits = 0)
-    // {
+    template<
+        typename State = int,
+        typename Tag,
+        std::size_t custom_neighborhood_count = 0,
+        typename GridType
+    >
+    decltype(auto) create_cells_on_grid (
+        const GridWrapper<GridType>& grid_wrapper,
+        const State state = 0,
+        const Traits traits = 0)
+    {
 
-    //     using GridTypes = GridTypeAdaptor<GridType>;
-    //     using Position = typename GridTypes::Position;
-    //     using GV = typename GridTypes::GridView;
-    //     using Mapper = typename GridTypes::Mapper;
-    //     using Index = typename GridTypes::Index;
+        using GridTypes = GridTypeAdaptor<GridType>;
+        using Position = typename GridTypes::Position;
+        using GV = typename GridTypes::GridView;
+        using Mapper = typename GridTypes::Mapper;
+        using Index = typename GridTypes::Index;
 
-    //     using CellType = Cell<State,Traits,Position,Index,custom_neighborhood_count>;
+        using CellType = Cell<State,Traits,Position,Index,custom_neighborhood_count>;
 
-    //     auto grid = grid_wrapper._grid;
-    //     GV gv(*grid);
-    //     Mapper mapper(gv, Dune::mcmgElementLayout());
-    //     CellContainer<CellType> cells;
-    //     cells.reserve(mapper.size());
+        auto grid = grid_wrapper._grid;
+        GV gv(*grid);
+        Mapper mapper(gv, Dune::mcmgElementLayout());
+        CellContainer<CellType> cells;
+        cells.reserve(mapper.size());
 
-    //     // loop over all entities and create cells
-    //     for(const auto& e : elements(gv))
-    //     {
-    //         const Position pos = e.geometry().center();
-    //         const Index id = mapper.index(e);
+        // loop over all entities and create cells
+        for(const auto& e : elements(gv))
+        {
+            const Position pos = e.geometry().center();
+            const Index id = mapper.index(e);
 
-    //         // check if entity is at boundary
-    //         bool boundary = false;
-    //         for(const auto& is : intersections(gv,e)){
-    //             if(!is.neighbor()){
-    //                 boundary = true;
-    //                 break;
-    //             }
-    //         }
+            // check if entity is at boundary
+            bool boundary = false;
+            for(const auto& is : intersections(gv,e)){
+                if(!is.neighbor()){
+                    boundary = true;
+                    break;
+                }
+            }
 
-    //         cells.emplace_back(std::make_shared<CellType>
-    //             (state,traits,pos,id,boundary));
-    //     }
+            cells.emplace_back(std::make_shared<CellType>
+                (state,traits,pos,id,boundary));
+        }
 
-    //     cells.shrink_to_fit();
-    //     return cells;
-    // }
+        cells.shrink_to_fit();
+        return cells;
+    }
 
     /// Randomly distribute agents on a grid
     /**
