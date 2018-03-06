@@ -11,7 +11,7 @@ int main(int argc, char** argv)
         auto gmsh_2d = Utopia::Setup::read_gmsh("square.msh",2);
 
         // cells on gmsh
-        auto cells = Utopia::Setup::create_cells_on_grid(gmsh_2d);
+        auto cells = Utopia::Setup::create_cells_on_grid<true>(gmsh_2d);
         auto agents = Utopia::Setup::create_agents_on_grid(gmsh_2d,100,0);
 
         auto m1 = Utopia::Setup::create_manager<false,false>(gmsh_2d,cells,agents);
