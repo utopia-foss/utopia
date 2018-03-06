@@ -7,7 +7,7 @@ namespace Utopia
 ///this class implements an entity on a grid
 /**
  *Cell contains the position and the boolian _boundary.
- *Also Cell inherits the state, position and index from Entity.
+ *Also Cell inherits the state, tag and index from Entity.
  */
 template<typename T, bool sync ,typename PositionType, 
          class Tags, typename IndexType>
@@ -20,10 +20,9 @@ public:
     const inline bool is_boundary(){return _boundary;}
     
     /// constructor of Cell
-    Cell(T t, PositionType pos,const bool boundary, 
-         IndexType index) :
+    Cell(T t, PositionType pos,const bool boundary, IndexType index) :
          Entity<T,sync,Tags, IndexType> (t,index)
-             , _position(pos), _boundary(boundary)
+         , _position(pos), _boundary(boundary)
     {}
 private:
     //! Position of the cell center

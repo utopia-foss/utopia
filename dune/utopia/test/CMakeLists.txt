@@ -3,17 +3,10 @@ file(COPY "square.msh" "cube.msh" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 # collect CORE tests
 set(TESTS_CORE
-<<<<<<< HEAD
-    cell_test
-    #entity_test
-    #tags_test
-    #state_test
-    )
-=======
     # agent_test_2d
     # agent_test_3d
     entity_test
-    # cell_test
+    cell_test
     dependency_test
     grid_test
     # grid_cells_test_2d
@@ -23,7 +16,6 @@ set(TESTS_CORE
     # simulation_test
     state_test
     tags_test)
->>>>>>> 21-rewrite-entity-to-derive-from-statecontainer-and-tags
 
 # add CORE tests
 foreach(test ${TESTS_CORE})

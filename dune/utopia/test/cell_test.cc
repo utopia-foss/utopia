@@ -35,20 +35,19 @@ int main(int argc, char *argv[])
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_int_distribution<State> dist_int(std::numeric_limits<State>::min(),std::numeric_limits<State>::max());
-        std::uniform_real_distribution<Traits> dist_real(std::numeric_limits<Traits>::min(),std::numeric_limits<Traits>::max());
-        const State state = dist_int(gen);
-        //const Traits traits = dist_real(gen);
-        Utopia::DefaultTag tag;
+        std::uniform_real_distribution<Traits> dist_real(std::numeric_limits<Traits>::min(),std::numeric_limits<Traits>::max()); 
         const Position pos({dist_real(gen),dist_real(gen)});
         const Index index = 2;
         const bool boundary = true;
         Value A;
+        A.value=dist_int(gen);;
         
         Utopia::Cell<Value,true,Position,Utopia::DefaultTag,Index> c1(A,pos,boundary,index);
-       // std::cout<<"I am actually doing this"<<std::endl;
+        Utopia::DefaultTag tag;
         assert(c1.position()==pos);
         assert(c1.is_boundary()==boundary);
         assert(c1.state()==A);
+        //Prüfe ob der DefaultTag() gesetzt ist
         assert(c1.is_tagged==tag.is_tagged);
         assert(c1.id()==index);
         //assert_cell_members(c1,pos,index,boundary);
