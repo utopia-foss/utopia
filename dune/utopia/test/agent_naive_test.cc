@@ -10,6 +10,8 @@ int main()
         assert(agent.id() == 0);
         assert(agent.position() == 1);
         assert(agent.is_tagged == false);
+        
+        //auto grid = Utopia::Setup::create_grid<2>(1000);
         return 0;
     }
     catch(...){

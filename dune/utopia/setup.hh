@@ -225,43 +225,43 @@ namespace Setup
      *  \param traits_initial Initial traits of all agents
      *  \return Container with created agents
      */
-    // template<typename State=int, typename Traits=int, typename GridType>
-    // decltype(auto) create_agents_on_grid(
-    //     const GridWrapper<GridType>& grid_wrapper,
-    //     const std::size_t count,
-    //     const State state_initial = 0,
-    //     const Traits traits_initial = 0)
-    // {
-    //     // fetch some types
-    //     using Types = GridTypeAdaptor<GridType>;
-    //     using Position = typename Types::Position;
-    //     using Coordinate = typename Types::Coordinate;
+     template<typename State=int, class Tags=Utopia::DefaultTag, typename IndexType=std::size_t, typename GridType>
+     decltype(auto) create_agents_on_grid(
+         const GridWrapper<GridType>& grid_wrapper,
+         const std::size_t count,
+         const State state_initial = 0)
+     {
+         // fetch some types
+         using Types = GridTypeAdaptor<GridType>;
+         using Position = typename Types::Position;
+         using Coordinate = typename Types::Coordinate;
+         using Index = IndexType;
+         using Agent = Agent<State,Tags,Index,Position>;
 
-    //     using Agent = Agent<State,Traits,Position>;
-    //     AgentContainer<Agent> agents;
+         AgentContainer<Agent> agents;
 
-    //     // set up random number generator for positions
-    //     const auto& extensions = grid_wrapper._extensions;
-    //     std::array<std::uniform_real_distribution<Coordinate>,Types::dim> distr;
-    //     std::transform(extensions.begin(),extensions.end(),distr.begin(),
-    //         [](const auto& ext){
-    //             return std::uniform_real_distribution<Coordinate>(0.0,ext);
-    //     });
-    //     std::ranlux24_base ran(123456);
+         // set up random number generator for positions
+         const auto& extensions = grid_wrapper._extensions;
+         std::array<std::uniform_real_distribution<Coordinate>,Types::dim> distr;
+         std::transform(extensions.begin(),extensions.end(),distr.begin(),
+             [](const auto& ext){
+                 return std::uniform_real_distribution<Coordinate>(0.0,ext);
+         });
+         std::ranlux24_base ran(123456);
 
-    //     // create agents
-    //     for(std::size_t i = 0; i<count; ++i)
-    //     {
-    //         Position pos;
-    //         std::transform(distr.begin(),distr.end(),pos.begin(),
-    //             [&ran](auto& dist){
-    //                 return dist(ran);
-    //         });
-    //         agents.emplace_back(std::make_shared<Agent>(state_initial,traits_initial,pos));
-    //     }
+         // create agents
+         for(std::size_t i = 0; i<count; ++i)
+         {
+             Position pos;
+             std::transform(distr.begin(),distr.end(),pos.begin(),
+                 [&ran](auto& dist){
+                     return dist(ran);
+             });
+             agents.emplace_back(std::make_shared<Agent>(state_initial,i,pos));
+         }
 
-    //     return agents;
-    // }
+         return agents;
+     }
 
 } // namespace Setup
 

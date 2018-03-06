@@ -45,6 +45,6 @@
     #include "data_eps.hh"
 #endif // HAVE_PSGRAF
 #include "simulation.hh"
-#include "setup.hh"
+//#include "setup.hh"
 
 #endif // UTOPIA_HH
