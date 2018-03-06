@@ -1,0 +1,21 @@
+# Multiverse parameter
+multiverse:
+  perform_sweep:         False            # otherwise runs a simulation with the default values
+
+  timeout:
+    total:               1                # timeout in seconds (for the whole simulation)
+    per_sim:             2                # for each simulation
+
+  output_path:
+    # in this directory, a folder with the timestep as name is created for each simulation
+    out_dir:             /deine_mudder
+    # model name and note are added to the output directory path (see below)
+    model_name:          my_model
+    model_note:          my_note
+  # simulation params
+parameter_space:
+  simulation:
+    # ...
+    prng_seed:
+      default:           1337            # when no sweep is performed
+      values:            [665, 666, 667] # sweep values

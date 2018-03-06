@@ -1,0 +1,11 @@
+# Multiverse parameter
+multiverse:
+  worker_manager:
+    num_workers:         8               # how many process work in parallel
+  # simulation params
+parameter_space:
+  simulation:
+    # ...
+    prng_seed:
+      default:           1337            # when no sweep is performed
+      values:            [665, 666, 667] # sweep values
