@@ -1,5 +1,5 @@
 #include <dune/utopia/utopia.hh>
-#include <dune/utopia/dataio/config.hh>
+#include <dune/utopia/data_io/config.hh>
 #include <dune/common/exceptions.hh>
 
 #include "config_test.hh"
