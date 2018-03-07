@@ -30,7 +30,9 @@ class Multiverse:
     def _configure(self, metaconfig: str, userconfig: str=None) -> dict:
         """Read default configuration file and adjust parameters.
 
-        The default metaconfig file, the user/machine-specific file (if existing) and the regular metaconfig file are read in and the default metaconfig is adjusted accordingly to create a single output file.
+        The default metaconfig file, the user/machine-specific file (if
+        existing) and the regular metaconfig file are read in and the default
+        metaconfig is adjusted accordingly to create a single output file.
 
         Args:
             metaconfig: path to metaconfig. An empty or invalid path raises
@@ -38,23 +40,35 @@ class Multiverse:
             userconfig: optional user/machine-specific configuration file
 
         Returns:
-            dict: returns the updated default metaconfig to be processed further or to be written out.
+            dict: returns the updated default metaconfig to be processed
+                further or to be written out.
         """
         # In the following, the final configuration dict is built from three components:
         # The base is the default configuration, which is always present
         # If a userconfig is present, this recursively updates the defaults
         # Then, the given metaconfig recursively updates the created dict
-        defaults = read_yml("default_metaconfig.yml", error_msg="default_metaconfig.yml is not present.")
+        log.debug("Reading default metaconfig.")
+        defaults = read_yml("default_metaconfig.yml",
+                            error_msg="default_metaconfig.yml is not present.")
 
         if userconfig is not None:
-            userconfig = read_yml(userconfig, error_msg="{0} was given but userconfig could not be found.".format(userconfig))
+            log.debug("Reading userconfig from {}.".format(userconfig))
+            userconfig = read_yml(userconfig,
+                                  error_msg="{0} was given but userconfig"
+                                            " could not be found."
+                                            "".format(userconfig))
 
-        metaconfig = read_yml(metaconfig, error_msg="{0} was given but metaconfig could not be found.".format(metaconfig))
+        log.debug("Reading metaconfig from {}.".format(metaconfig))
+        metaconfig = read_yml(metaconfig,
+                              error_msg="{0} was given but metaconfig"
+                                        " could not be found."
+                                        "".format(metaconfig))
 
         # TODO: typechecks of values should be completed below here.
         # after this point it is assumed that all values are valid
 
         # Now perform the recursive update steps
+        log.debug("Updating default metaconfig with given configurations.")
         if userconfig is not None:  # update default with user spec
             defaults = recursive_update(defaults, userconfig)
 
@@ -62,10 +76,10 @@ class Multiverse:
         defaults = recursive_update(defaults, metaconfig)
 
         return defaults
-        
+
     def _create_sim_dir(self, *, model_name: str, out_dir: str, model_note: str=None) -> None:
         """Create the folder structure for the simulation output.
-        
+
         The following folder tree will be created
         utopia_output/   # all utopia output should go here
             model_a/
@@ -79,13 +93,13 @@ class Multiverse:
             model_b/
                 180301-125412_my_first_sim/
                 180301-125413_my_second_sim/
-    
+
 
         Args:
             model_name (str): Description
             out_dir (str): Description
             model_note (str, optional): Description
-            
+
         Raises:
             RuntimeError: If the simulation directory already existed. This
                 should not occur, as the timestamp is unique. If it occurs,
@@ -127,11 +141,11 @@ class Multiverse:
                   self.dirs)
 
     def _create_uni_dir(self, uni_id: int, max_uni_id: int) -> None:
-        """The _create_uni_dir generates the folder for a single universe
-        
+        """The _create_uni_dir generates the folder for a single universe.
+
         Within the universes directory, create a subdirectory uni### for the
         given universe number, zero-padded such that they are sortable.
-        
+
         Args:
             uni_id (int): ID of the universe whose folder should be created
             max_uni_id (int): highest ID, needed for correct zero-padding
