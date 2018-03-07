@@ -3,13 +3,7 @@
 # Pass info to utopya  ........................................................
 message(STATUS "Updating utopya module with information about models...")
 
-# Set the file paths for both the file to be configured and target module file
-set(UTOPYA_INFO ${CMAKE_CURRENT_SOURCE_DIR}/utopya/utopya/info.py)
-string(TIMESTAMP CURRENT_TIME)
-
-# Delete the file and create it again, adding the information on all models
-file(REMOVE ${UTOPYA_INFO})
-configure_file(${UTOPYA_INFO}.in ${UTOPYA_INFO} @ONLY)
+generate_model_info(${CMAKE_CURRENT_SOURCE_DIR}/utopya/utopya/info.py)
 
 # Installations ...............................................................
 
