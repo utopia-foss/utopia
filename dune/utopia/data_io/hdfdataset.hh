@@ -14,8 +14,8 @@ template <class HDFObject> class HDFDataset {
 private:
     // helper function for making a compressed dataset
     template <typename Datatype>
-    hid_t __make_dataset_compressed__(std::size_t chunksize,
-                                      std::size_t compress_level) {
+    hid_t __make_dataset_compressed__(hsize_t chunksize,
+                                      hsize_t compress_level) {
         // create creation property list, set chunksize and compress level
         hid_t plist = H5Pcreate(H5P_DATASET_CREATE);
         H5Pset_deflate(plist, compress_level);
@@ -32,7 +32,7 @@ private:
     }
 
     // helper function for making a non compressed dataset
-    template <typename Datatype> hid_t __make_dataset__(std::size_t chunksize) {
+    template <typename Datatype> hid_t __make_dataset__(hsize_t chunksize) {
         if (chunksize > 0) {
 
             // create creation property list, set chunksize and compress level
@@ -49,7 +49,6 @@ private:
                              H5P_DEFAULT, plist, H5P_DEFAULT);
         } else {
             // create dataset right away
-
             return H5Dcreate(
                 _parent_object->get_id(), _name.c_str(),
                 HDFTypeFactory::type<Datatype>(),
@@ -137,15 +136,15 @@ public:
      * @param compress_level
      */
     template <typename Iter, typename Adaptor>
-    void write(Iter begin, Iter end,
-               Adaptor &&adaptor = [](auto &value) { return value; },
-               hsize_t rank = 1, std::vector<hsize_t> extend = {},
-               std::vector<hsize_t> max_size = {}, std::size_t chunksize = 0,
-               std::size_t compress_level = 0) {
+    void write(Iter begin, Iter end, Adaptor &&adaptor, hsize_t rank = 1,
+               std::vector<hsize_t> extend = {},
+               std::vector<hsize_t> max_size = {}, hsize_t chunksize = 0,
+               hsize_t compress_level = 0) {
 
         using result_type = std::decay_t<decltype(adaptor(*begin))>;
+
         // get size of stuff to write
-        std::size_t size = std::distance(begin, end);
+        hsize_t size = std::distance(begin, end);
         _rank = rank;
 
         if (_dataset == -1) { // dataset does not exist
@@ -165,11 +164,12 @@ public:
                     _dataset = __make_dataset_compressed__<result_type>(
                         chunksize, compress_level);
                 } else {
-                    _dataset = __make_dataset__<result_type>(_rank, chunksize);
+                    _dataset = __make_dataset__<result_type>(chunksize);
                 }
             } else { // chunk size 0 implies non-extendable and non - compressed
                      // dataset
                      //
+
                 if (extend.size() == 0) {
                     _extend = std::vector<hsize_t>(_rank, size);
                 } else {
@@ -177,7 +177,10 @@ public:
                 }
                 if (max_size.size() == 0) {
                     _max_extend = _extend;
+                } else {
+                    _max_extend = max_size;
                 }
+
                 // make dataset if necessary
                 if (_dataset == -1) {
                     _dataset = __make_dataset__<result_type>(chunksize);
@@ -192,7 +195,7 @@ public:
 
             // now that the dataset has been made let us write to it
             // buffering at first
-            auto buffer = HDFBufferFactory::buffer(
+            std::vector<result_type> buffer = HDFBufferFactory::buffer(
                 begin, end, std::forward<Adaptor &&>(adaptor));
 
             // write to buffer
@@ -216,12 +219,15 @@ public:
             // max_extend.
             for (std::size_t i = 0; i < _rank; ++i) {
                 if (_extend[i] == _max_extend[i]) {
-                    throw std::runtime_error("dataset cannot be extended");
+                    if (_extend[i] != 0) {
+                        throw std::runtime_error("dataset cannot be extended");
+                    }
                 }
             }
 
             //     // distinguish between ranks: treat 1d differently from nd
             if (_rank == 1) {
+
                 /* if the dataset can be extended, then do so now:
                  extend the first dimension in the dataspace, such
                  that
@@ -244,10 +250,12 @@ public:
                  ν
                 */
                 // get the offset
-                auto offset = _extend[0];
+                hsize_t offset = _extend[0];
                 hsize_t stride = 1;
+                hsize_t block = 1;
                 // make dataset larger
                 _extend[0] += size;
+
                 herr_t ext_err = H5Dset_extent(_dataset, _extend.data());
                 if (ext_err < 0) {
                     throw std::runtime_error(
@@ -256,21 +264,25 @@ public:
 
                 // select the new slab we just added for writing.
                 hid_t dspace = H5Dget_space(_dataset);
+                hid_t memspace = H5Screate_simple(_rank, &size, NULL);
+
                 herr_t select_err = H5Sselect_hyperslab(
-                    dspace, H5S_SELECT_SET, &offset, &stride, &size, nullptr);
+                    dspace, H5S_SELECT_SET, &offset, &stride, &size, &block);
                 if (select_err < 0) {
                     throw std::runtime_error("1d hyperslab failed!");
                 }
 
                 // buffering
-                auto buffer = HDFBufferFactory::buffer(
+                std::vector<result_type> buffer = HDFBufferFactory::buffer(
                     begin, end, std::forward<Adaptor &&>(adaptor));
 
                 // write to buffer
                 herr_t write_err =
                     H5Dwrite(_dataset, HDFTypeFactory::type<result_type>(),
-                             H5S_ALL, dspace, H5P_DEFAULT, buffer.data());
+                             memspace, dspace, H5P_DEFAULT, buffer.data());
 
+                H5Sclose(dspace);
+                H5Sclose(memspace);
                 if (write_err < 0) {
                     throw std::runtime_error("writing to 1d dataset failed!");
                 }
@@ -318,7 +330,7 @@ public:
                 }
 
                 // buffering
-                auto buffer = HDFBufferFactory::buffer(
+                std::vector<result_type> buffer = HDFBufferFactory::buffer(
                     begin, end, std::forward<Adaptor &&>(adaptor));
 
                 // write to buffer
@@ -334,55 +346,7 @@ public:
     }
 
     /**
-     * @brief Overload to be able to give container temporary for
-     writing
-     *
-     * @tparam Container
-     * @tparam Adaptor
-     * @param data
-     * @param adaptor
-     * @param rank
-     * @param extend
-     * @param max_size
-     * @param chunksize
-     * @param compress_level
-     */
-    template <typename Container, typename Adaptor>
-    void write(const Container &data,
-               Adaptor &&adaptor = [](auto &value) { return value; },
-               hsize_t rank = 1, std::vector<hsize_t> extend = {},
-               std::vector<hsize_t> max_size = {}, std::size_t chunksize = 0,
-               std::size_t compress_level = 0) {
-        write(data.begin(), data.end(), std::forward<Adaptor &&>(adaptor), rank,
-              extend, max_size, chunksize, compress_level);
-    }
-
-    /**
-     * @brief Overload to be able to give container temporary for
-     writing
-     *
-     * @tparam Container
-     * @tparam Adaptor
-     * @param data
-     * @param adaptor
-     * @param rank
-     * @param extend
-     * @param max_size
-     * @param chunksize
-     * @param compress_level
-     */
-    template <typename Container, typename Adaptor>
-    void write(Container &&data,
-               Adaptor &&adaptor = [](auto &value) { return value; },
-               hsize_t rank = 1, std::vector<hsize_t> extend = {},
-               std::vector<hsize_t> max_size = {}, std::size_t chunksize = 0,
-               std::size_t compress_level = 0) {
-        write(data.begin(), data.end(), std::forward<Adaptor &&>(adaptor), rank,
-              extend, max_size, chunksize, compress_level);
-    }
-
-    /**
-     * @brief Read (a subset_of) a dataset
+     * @brief Read (a subset_of) a dataset. Flattens nd datasets
      *
      * @tparam result_type
      * @param start
@@ -475,46 +439,38 @@ public:
                     throw std::invalid_argument(
                         "array arguments have to be the same size as rank");
                 }
-                //             // determine the count to be read
-                //             std::vector<hsize_t> count(start.size());
-                //             for (std::size_t i = 0; i < start.size(); ++i) {
-                //                 count[i] = (end[i] - start[i]) / stride[i];
-                //             }
+                // determine the count to be read
+                std::vector<hsize_t> count(start.size());
+                for (std::size_t i = 0; i < start.size(); ++i) {
+                    count[i] = (end[i] - start[i]) / stride[i];
+                }
 
-                //             // select the desired slab for reading in the
-                //             dataspace hid_t dspace = H5Dget_space(_dataset);
-                //             herr_t select_err = H5Sselect_hyperslab(
-                //                 dspace, H5S_SELECT_SET, &start, &stride,
-                //                 &count, nullptr);
-                //             if (select_err < 0) {
-                //                 throw std::runtime_error("selection of
-                //                 hyperslab to write
-                //                 "
-                //                                          "in 1d dataset
-                //                                          failed!");
-                //             }
+                // select the desired slab for reading in the dataspace
+                hid_t dspace = H5Dget_space(_dataset);
+                herr_t select_err =
+                    H5Sselect_hyperslab(dspace, H5S_SELECT_SET, start.data(),
+                                        stride.data(), count.data(), nullptr);
+                if (select_err < 0) {
+                    throw std::runtime_error("N-D read slab selection failed!");
+                }
 
-                //             // now make buffer
-                //             // this is a 1d data which contains the
-                //             multi-dimensional stuff
-                //             // in a flattened version
-                //             std::vector<result_type> buffer(
-                //                 std::accumulate(count.begin(), count.end(),
-                //                 0));
+                // now make buffer
+                // this is a 1d data which contains the multi - dimensional
+                // stuff in a flattened version
+                std::vector<result_type> buffer(
+                    std::accumulate(count.begin(), count.end(), 0));
 
-                //             // get type and read
-                //             hid_t type = H5Dget_type(_dataset);
-                //             herr_t read_err = H5Dread(_dataset, type,
-                //             H5S_ALL, dspace,
-                //                                       H5P_DEFAULT,
-                //                                       buffer.data());
-                //             H5Tclose(type);
-                //             if (read_err < 0) {
-                //                 throw std::runtime_error(
-                //                     "Error  reading subset of 1d dataset");
-                //             }
-                //             H5Tclose(type);
-                //             return buffer;
+                // get type and read
+                hid_t type = H5Dget_type(_dataset);
+                herr_t read_err = H5Dread(_dataset, type, H5S_ALL, dspace,
+                                          H5P_DEFAULT, buffer.data());
+                H5Tclose(type);
+                if (read_err < 0) {
+                    throw std::runtime_error(
+                        "Error  reading subset of 1d dataset");
+                }
+                H5Tclose(type);
+                return buffer;
             }
         }
     }
@@ -565,12 +521,15 @@ public:
         // try to find the dataset in the parent_object, open if it is
         // there, else postphone the dataset creation to the first write
         if (H5LTfind_dataset(_parent_object->get_id(), _name.c_str()) > 0) {
+
             _dataset =
                 H5Dopen(_parent_object->get_id(), _name.c_str(), H5P_DEFAULT);
             // get dataspace and read out extend and max extend
             hid_t dataspace = H5Dget_space(_dataset);
 
             _rank = H5Sget_simple_extent_ndims(dataspace);
+            _extend.resize(_rank);
+            _max_extend.resize(_rank);
             H5Sget_simple_extent_dims(dataspace, _extend.data(),
                                       _max_extend.data());
             H5Sclose(dataspace);

@@ -111,7 +111,7 @@ public:
     // Destructor
     ~HDFFile() {
         H5Fflush(_file, H5F_SCOPE_GLOBAL);
-        if (H5Iis_valid(_file) == 0) {
+        if (H5Iis_valid(_file) == true) {
             H5Fclose(_file);
         }
     }

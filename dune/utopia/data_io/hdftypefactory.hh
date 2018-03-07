@@ -19,6 +19,14 @@ public:
                          int> = 0>
     static inline hid_t type(std::size_t = 0);
 
+    // pointer overload
+    template <typename T,
+              std::enable_if_t<is_container<typename std::decay_t<T>>::value ==
+                                       false &&
+                                   std::is_pointer<T>::value == true,
+                               int>>
+    inline hid_t type(std::size_t = 0);
+
     // overload for variable length types, includes array types
     template <
         typename T,
@@ -81,6 +89,22 @@ inline hid_t HDFTypeFactory::type(std::size_t size) {
     return __get_type__<typename std::decay_t<T>>();
 }
 
+// overload for pointers
+/**
+ * @brief
+ *
+ * @tparam T
+ * @param size
+ * @return hid_t
+ */
+template <
+    typename T,
+    std::enable_if_t<is_container<typename std::decay_t<T>>::value == false &&
+                         std::is_pointer<T>::value == true,
+                     int>>
+inline hid_t HDFTypeFactory::type(std::size_t size) {
+    return __get_type__<typename std::remove_pointer<std::decay_t<T>>>();
+}
 /**
  * @brief returns a HDF5 type from a given C++ fixed-or variable length C++
  * container type
