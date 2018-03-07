@@ -41,7 +41,7 @@ namespace Setup
     }
 
     /// Create a GridManager from a grid and an AgentContainer
-    template<bool structured, bool periodic, typename GridType,typename AgentType>
+    template<bool structured, bool periodic, typename GridType, typename AgentType>
     auto create_manager_agents (
         const GridWrapper<GridType>& wrapper,
         const AgentContainer<AgentType>& agents )
