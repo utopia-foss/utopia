@@ -54,17 +54,18 @@ void check_rule_based_removal(Manager& manager) {
 
     // set flag to true for some agents (all that have an odd id)
     for (auto a : agents) {
-        if ((*a).id() % 2 == 1) (*a).is_tagged = true;
+        if (a->id() % 2 == 1) a->is_tagged = true;
     }
 
     // erase agents
-    manager.erase_if([&] (auto a) { return (*a).is_tagged; });
+    manager.erase_if([&] (auto a) { return a->is_tagged; });
 
     // check if there are no agents flagged true
-    for (auto a : agents) assert((*a).is_tagged == false);
+    for (auto a : agents) assert(!a->is_tagged);
 
     // check if number of agents left is consisted
-    assert((agents.size() == std::size_t(n_agents_old/2)) or (agents.size() == std::size_t(n_agents_old/2)+1));
+    assert((agents.size() == std::size_t(n_agents_old/2))
+        or (agents.size() == std::size_t(n_agents_old/2)+1));
 }
 
 template<int dim>
@@ -153,8 +154,6 @@ void test_agents_on_grid (const std::size_t agent_count, const std::size_t grid_
     assert(!Utopia::add(agent, ma2));
 
     // check rule-based removal of agents
-    check_rule_based_removal(ma1);
-    check_rule_based_removal(ma2);
     check_rule_based_removal(ma3);
 
 }
