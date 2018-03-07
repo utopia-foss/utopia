@@ -1,9 +1,26 @@
-# Multiverse parameter
-multiverse:
-  worker_manager:
-    num_workers:         8               # how many process work in parallel
-  # simulation params
-parameter_space:
-  simulation:
-    # ...
-    prng_seed:           1337
+# Paths for the output
+paths: 
+  # the output will be at run directory: out_dir/model_name/timestamp_model_note
+  # base output directory
+  out_dir:             ~/my_utopia_output
+  # model note is added to the output directory path
+  model_note:          my_note
+
+# Run
+run_kwargs:
+  # Whether to perfom a parameter sweep
+  perform_sweep:         False
+            
+  stop_conditions:
+    # Timeouts for the run in seconds
+    timeout:
+      total:               120              # timeout in seconds (for the whole run)
+      per_sim:             10              # timeout in seconds for each simulation
+
+# Worker Manager
+worker_manager:
+worker_manager:
+  # specify how many processes work in parallel
+  num_workers:         -1               # > 0 : number of processes 
+                                       # <= 0 : #CPUs - num_workers
+  poll_frequency:      20              # how often to check the state of the workers [Hz]
