@@ -27,7 +27,7 @@ class WorkerManager:
 
     def __init__(self, num_workers: Union[int, str], poll_freq: float=42, QueueCls=queue.Queue):
         """Initialize the worker manager.
-        
+
         Args:
             num_workers (Union[int, str]): The number of workers that can work
                 in parallel. If `auto`, uses os.cpu_count(). If negative,
@@ -124,11 +124,11 @@ class WorkerManager:
 
     def add_task(self, args: Union[str, list], *, priority: int=None, read_stdout: bool=True, **kwargs):
         """Adds a task to the queue.
-        
+
         A priority can be assigned to the task, but will only be used during task retrieval if the WorkerManager was initialized with a queue.PriorityQueue as task manager.
-        
+
         Additionally, each task will be assigned an ID; this is used to preserve order in a priority queue if the priority of two or more tasks is the same.
-        
+
         Args:
             args (str): The arguments to subprocess.Popen, i.e.: the command
                 that should be executed in the new process
@@ -162,12 +162,12 @@ class WorkerManager:
 
     def start_working(self, detach: bool=False):
         """Upon call, all enqueued tasks will be worked on sequentially.
-        
+
         Args:
             detach (bool, optional): If False (default), the WorkerManager
                 will block here, as it continuously polls the workers and
                 distributes tasks.
-        
+
         Raises:
             NotImplementedError: for `detach` True
         """
@@ -208,13 +208,13 @@ class WorkerManager:
 
     def _grab_task(self, task: dict=None) -> subprocess.Popen:
         """Will initiate that a new (or already existing) worker will work on a task. If a task is given, that one will be used; if not, a task will be taken from the queue.
-        
+
         Returns the process the task is being worked on at. If no task was given and the queue is empty, will raise `queue.Empty`.
-        
+
         Args:
             task (dict, optional): If given, this task will be used rather than
                 one that is gotten from the task queue.
-        
+
         Returns:
             subprocess.Popen: The created process object
         """
@@ -232,7 +232,7 @@ class WorkerManager:
 
     def _spawn_worker(self, *, args: tuple, read_stdout: bool, line_read_func: Callable=None, **popen_kwargs) -> subprocess.Popen:
         """Spawn a worker process using subprocess.Popen and manage the corresponding queue and thread for reading the stdout stream. The new worker process is registered with the class.
-        
+
         Args:
             args (tuple): The arguments to the Popen call, i.e. the command to
                 spawn a new process with
@@ -242,10 +242,10 @@ class WorkerManager:
                 stdout with. If not present, will use `enqueue_lines`.
             debug (bool, optional): Attaches all streams to main thread stdout
             **popen_kwargs: kwargs passed to subprocess.Popen
-        
+
         Returns:
             subprocess.Popen: The created process object
-        
+
         No Longer Raises:
             ValueError: When stdout should be read but no `line_read_func` was
                 supplied during initialisation
@@ -275,7 +275,7 @@ class WorkerManager:
         create_time = time.time() # approximate
         log.debug("Spawned worker process with PID %s.", proc.pid)
         # ... it is running now.
-        
+
         # If enabled, prepare for reading the output
         if read_stdout:
             # Generate the thread that reads the stream and populates the queue
@@ -297,12 +297,12 @@ class WorkerManager:
 
         # Register the worker process with the class
         self._register_worker(proc=proc, args=args, streams=streams, create_time=create_time)
-        
+
         return proc
 
     def _register_worker(self, *, proc: subprocess.Popen, args: str, streams: dict, create_time: float, **kwargs) -> None:
         """Registers a worker process with the class. This should be called soon after a process was created.
-        
+
         Args:
             proc (subprocess.Popen): The process object to register
             args (str): The arguments it was created with
@@ -351,7 +351,7 @@ class WorkerManager:
 
     def _worker_finished(self, proc: subprocess.Popen) -> None:
         """Updates the entry of the worker dict after it has finished working.
-        
+
         Args:
             proc (subprocess.Popen): The process to apply these actions to
         """
@@ -363,7 +363,7 @@ class WorkerManager:
 
     def _read_worker_streams(self, stream_name: str='out') -> None:
         """Gathers all working workers' streams with the given `stream_name`.
-        
+
         Args:
             stream_name (str, optional): The stream name to read
         """
@@ -372,7 +372,7 @@ class WorkerManager:
 
     def _read_worker_stream(self, proc: subprocess.Popen, stream_name: str='out', forward_to_log: bool=True, max_num_reads: int=1) -> None:
         """Gather a single entry from the given worker's stream queue and store the value in the stream log.
-        
+
         Args:
             proc (subprocess.Popen): The processes to read the stream of
             stream_name (str, optional): The stream name
@@ -411,7 +411,7 @@ class WorkerManager:
                     log.info("  process %s:  %s", proc.pid, entry)
 
                 # Write to the stream's log
-                stream['log'].append(entry)            
+                stream['log'].append(entry)
 
 
 # Helper functions ------------------------------------------------------------
@@ -419,7 +419,7 @@ class WorkerManager:
 
 def enqueue_lines(*, queue: queue.Queue, stream: BinaryIO, parse_func: Callable=None) -> None:
     """From the given stream, read line-buffered lines and add them to the provided queue. If they are json-parsable, parse them and add the parsed dictionary to the queue.
-    
+
     Args:
         queue (queue.Queue): The queue object to put the read line into
         stream (BinaryIO): The stream identifier
@@ -447,10 +447,10 @@ def parse_json(line: str) -> Union[dict, str]:
     It tries to decode the line, and parse it as a json.
     If that fails, it will still try to decode the string.
     If that fails yet again, the unchanged line will be returned.
-    
+
     Args:
         line (str): The line to decode, assumed byte-string, utf8-encoded
-    
+
     Returns:
         Union[dict, str]: Either the decoded json, or, if that failed, the str
     """
@@ -464,3 +464,8 @@ def parse_json(line: str) -> Union[dict, str]:
         except UnicodeDecodeError:
             # Return the (unparsed, undecoded) line into the queue
             return line
+
+
+def enqueue_json(*, queue: queue.Queue, stream: BinaryIO, parse_func: Callable=parse_json) -> None:
+    """Wrapper function for enqueue_lines with parse_json set as parse_func."""
+    return enqueue_lines(queue=queue, stream=stream, parse_func=parse_func)
