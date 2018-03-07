@@ -42,6 +42,13 @@ test:core:
   script:
     - ./dune-common/bin/dunecontrol --only=utopia make test_core
 
+test:dataio:
+  stage: test
+  dependencies:
+    - build:main
+  script:
+    - ./dune-common/bin/dunecontrol --only=utopia make test_dataio
+
 test:python:
   stage: test
   dependencies:
