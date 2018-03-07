@@ -30,48 +30,40 @@ auto determine_extensions (const std::shared_ptr<Grid> grid)
 namespace Setup
 {
     /// Create a GridManager from a grid and a CellContainer
-    template<bool structured, bool periodic, typename GridType, typename CellType>
-    auto create_manager_cells (
-        const GridWrapper<GridType>& wrapper,
-        const CellContainer<CellType>& cells)
-        -> GridManager<Manager::Cells, CellType, GridType, structured, periodic>
-    {
-        return GridManager<Manager::Cells, CellType, GridType, structured, periodic>(
-            wrapper, cells);
-    }
-
-    /// Create a GridManager from a grid and a CellContainer with a custom RNG
-    template<bool structured, bool periodic, typename GridType, typename CellType, typename RNG>
+    /** \param wrapper GridWrapper instance holding the grid
+     *  \param cells CellContainer holding the cells
+     *  \param rng Random number generator. Defaults to DefaultRNG
+     */
+    template<bool structured, bool periodic, typename GridType,
+        typename CellType, typename RNG=DefaultRNG>
     auto create_manager_cells (
         const GridWrapper<GridType>& wrapper,
         const CellContainer<CellType>& cells,
-        std::shared_ptr<RNG> rng)
-        -> GridManager<Manager::Cells, CellType, GridType, structured, periodic, RNG>
+        const std::shared_ptr<RNG> rng = std::make_shared<DefaultRNG>(0))
+        -> GridManager<
+            Manager::Cells, CellType, GridType, RNG, structured, periodic>
     {
-        return GridManager<Manager::Cells, CellType, GridType, structured, periodic, RNG>(
+        return GridManager<
+            Manager::Cells, CellType, GridType, RNG, structured, periodic>(
             wrapper, cells, rng);
     }
 
     /// Create a GridManager from a grid and an AgentContainer
-    template<bool structured, bool periodic, typename GridType, typename AgentType>
-    auto create_manager_agents (
-        const GridWrapper<GridType>& wrapper,
-        const AgentContainer<AgentType>& agents)
-        -> GridManager<Manager::Agents, AgentType, GridType, structured, periodic>
-    {
-        return GridManager<Manager::Agents, AgentType, GridType, structured, periodic>(
-            wrapper, agents);
-    }
-
-    /// Create a GridManager from a grid and an AgentContainer with a custom RNG
-    template<bool structured, bool periodic, typename GridType, typename AgentType, typename RNG>
+    /** \param wrapper GridWrapper instance holding the grid
+     *  \param agents AgentContainer holding the cells
+     *  \param rng Random number generator. Defaults to DefaultRNG
+     */
+    template<bool structured, bool periodic, typename GridType,
+        typename AgentType, typename RNG=DefaultRNG>
     auto create_manager_agents (
         const GridWrapper<GridType>& wrapper,
         const AgentContainer<AgentType>& agents,
-        std::shared_ptr<RNG> rng)
-        -> GridManager<Manager::Agents, AgentType, GridType, structured, periodic, RNG>
+        const std::shared_ptr<RNG> rng = std::make_shared<DefaultRNG>(0))
+        -> GridManager<
+            Manager::Agents, AgentType, GridType, RNG, structured, periodic>
     {
-        return GridManager<Manager::Agents, AgentType, GridType, structured, periodic, RNG>(
+        return GridManager<
+            Manager::Agents, AgentType, GridType, RNG, structured, periodic>(
             wrapper, agents, rng);
     }
 

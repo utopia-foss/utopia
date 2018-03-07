@@ -22,7 +22,7 @@ public:
 };
 
 /// Common base class for grid managers holding the actual grid
-template<typename GridType, bool structured, bool periodic, typename RNG>
+template<typename GridType, typename RNG, bool structured, bool periodic>
 class GridManagerBase
 {
 public:
@@ -57,7 +57,8 @@ private:
 public:
 
     /// Create a GridManager from a grid and cells with a default RNG
-    explicit GridManagerBase (const GridWrapper<GridType>& wrapper, std::shared_ptr<RNG> rng):
+    explicit GridManagerBase (const GridWrapper<GridType>& wrapper,
+        const std::shared_ptr<RNG> rng):
         _grid(wrapper._grid),
         _grid_cells(wrapper._grid_cells),
         _extensions(wrapper._extensions),
@@ -93,20 +94,20 @@ struct Manager {
 };
 
 /// Unspecified grid manager
-template<Manager::Type type, typename DataType, typename GridType, bool structured, bool periodic, typename RNG = DefaultRNG>
+template<Manager::Type type, typename DataType, typename GridType, typename RNG, bool structured, bool periodic>
 class GridManager
 {};
 
 /// GridManager specialization for cells
-template<typename DataType, typename GridType, bool structured, bool periodic, typename RNG>
-class GridManager<Manager::Cells, DataType, GridType, structured, periodic, RNG>:
-    public GridManagerBase<GridType, structured, periodic, RNG>
+template<typename DataType, typename GridType, typename RNG, bool structured, bool periodic>
+class GridManager<Manager::Cells, DataType, GridType, RNG, structured, periodic>:
+    public GridManagerBase<GridType, RNG, structured, periodic>
 {
 public:
     /// Data types related to the grid
     using Traits = GridTypeAdaptor<GridType>;
     /// Base class type
-    using Base = GridManagerBase<GridType, structured, periodic, RNG>;
+    using Base = GridManagerBase<GridType, RNG, structured, periodic>;
     /// Data type of cells (shared pointer to it)
     using Cell = DataType;
 
@@ -118,7 +119,7 @@ public:
     /// Create a GridManager from a grid and cells
     explicit GridManager (const GridWrapper<GridType>& wrapper,
         const CellContainer<Cell>& cells, 
-        std::shared_ptr<RNG> rng = std::make_shared<RNG>(0)):
+        const std::shared_ptr<RNG> rng):
         Base(wrapper, rng),
         _cells(cells)
     { }
@@ -128,15 +129,15 @@ public:
 };
 
 /// GridManager specialization for cells
-template<typename DataType, typename GridType, bool structured, bool periodic, typename RNG>
-class GridManager<Manager::Agents, DataType, GridType, structured, periodic, RNG>:
-    public GridManagerBase<GridType, structured, periodic, RNG>
+template<typename DataType, typename GridType, typename RNG, bool structured, bool periodic>
+class GridManager<Manager::Agents, DataType, GridType, RNG, structured, periodic>:
+    public GridManagerBase<GridType, RNG, structured, periodic>
 {
 public:
     /// Data types related to the grid
     using Traits = GridTypeAdaptor<GridType>;
     /// Base class type
-    using Base = GridManagerBase<GridType, structured, periodic, RNG>;
+    using Base = GridManagerBase<GridType, RNG, structured, periodic>;
     /// Data type of cells (shared pointer to it)
     using Agent = DataType;
 
@@ -148,7 +149,7 @@ public:
     /// Create a GridManager from a grid and cells
     explicit GridManager (const GridWrapper<GridType>& wrapper,
         const AgentContainer<Agent>& agents, 
-        std::shared_ptr<RNG> rng = std::make_shared<RNG>(0)):
+        const std::shared_ptr<RNG> rng):
         Base(wrapper, rng),
         _agents(agents)
     { }
