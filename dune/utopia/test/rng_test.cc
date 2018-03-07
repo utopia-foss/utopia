@@ -16,14 +16,22 @@ int main(int argc, char** argv)
         auto ma1 = Utopia::Setup::create_manager_agents<false, false>(grid, agents);
         //auto mc0 = Utopia::GridManager<Utopia::Manager::Cells, false, false>(grid, cells);
         auto mc1 = Utopia::Setup::create_manager_cells<false, false>(grid, cells);
-        assert(ma1.get_random() == mc1.get_random());
+        assert((*ma1.rng())() == (*mc1.rng())());
         
         // Test custom RNG
         using RNG = std::minstd_rand; //Utopia::DefaultRNG;
-        std::shared_ptr<RNG> rng = std::make_shared<RNG>(123456789);
+        auto rng = std::make_shared<RNG>(123456789);
         auto ma2 = Utopia::Setup::create_manager_agents<false, false>(grid, agents, rng);
         auto mc2 = Utopia::Setup::create_manager_cells<false, false>(grid, cells, rng);
-        assert(ma2.get_random() != mc2.get_random());
+        assert((*ma2.rng())() != (*mc2.rng())());
+
+        // copy shared pointer to RNG into new manager
+        auto ma3 = Utopia::Setup::create_manager_agents<false, false>(grid, agents, ma2.rng());
+
+        // create RNG 'clone' and check if we really copied
+        rng = std::make_shared<RNG>(123456789);
+        rng->discard(2);
+        assert((*ma3.rng())() == (*rng)());
 
         return 0;
     }

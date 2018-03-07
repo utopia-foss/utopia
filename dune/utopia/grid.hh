@@ -84,8 +84,8 @@ public:
     /// Return grid extensions
     const std::array<Coordinate,dim>& extensions () const { return _extensions; }
 
-    /// Return a random number (for debugging/testing purposes)
-    int get_random() { return (*_rng)(); }
+    /// Return shared_ptr to the random number generator
+    std::shared_ptr<RNG>& rng () { return _rng; }
 };
 
 /// Define Type for destinguishing managers
