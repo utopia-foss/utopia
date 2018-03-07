@@ -370,6 +370,8 @@ class WorkerManager:
                 # Worker finished. Mark for removal from list.
                 self._worker_finished(proc)
                 rebuild = True
+                # NOTE This flag is needed in order to not change the
+                # self.working attribute during iteration, causing errors
 
         if rebuild:
             # One process finished; have to rebuild the list of working workers. Opposite approach: (in-place) recreate list of those that are still working
