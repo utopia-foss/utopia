@@ -45,4 +45,8 @@
 #include "simulation.hh"
 #include "setup.hh"
 
+// UTOPIA I/O
+#include "data_io/config.hh"
+
+
 #endif // UTOPIA_HH
