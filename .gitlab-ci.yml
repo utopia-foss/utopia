@@ -1,11 +1,12 @@
 image: citcat/dune-env:latest
 variables:
+  PROCNUM: 2
   DUNE_CONTROL_PATH: /opt/dune:$CI_PROJECT_DIR
   CONFIG_FLAGS:
       -DDUNE_PYTHON_VIRTUALENV_SETUP=True
       -DDUNE_PYTHON_ALLOW_GET_PIP=True
-  TEST_ARGS:
-      --output-on-failure
+  MAKE_FLAGS_BUILD:
+      -j $PROCNUM
 before_script:
   - cd /opt/dune
 
@@ -27,7 +28,7 @@ build:main:
     - CMAKE_FLAGS="$CONFIG_FLAGS"
       ./dune-common/bin/dunecontrol --module=utopia all
     - ./dune-common/bin/dunecontrol --only=utopia make doc
-    - ./dune-common/bin/dunecontrol --only=utopia make build_tests
+    - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD build_tests
 
 build:debug:
   stage: build
@@ -35,9 +36,9 @@ build:debug:
   tags:
     - light
   script:
-    - export CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=Debug $CONFIG_FLAGS -DCMAKE_CXX_FLAGS_DEBUG='$CMAKE_CXX_FLAGS_DEBUG -Werror'"
-    - ./dune-common/bin/dunecontrol --only=utopia all
-    - ./dune-common/bin/dunecontrol --only=utopia make build_tests
+    - CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=Debug $CONFIG_FLAGS -DCMAKE_CXX_FLAGS_DEBUG='$CMAKE_CXX_FLAGS_DEBUG -Werror'"
+      ./dune-common/bin/dunecontrol --only=utopia all
+    - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD build_tests
 
 test:core:
   stage: test
