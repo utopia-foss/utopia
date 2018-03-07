@@ -2,25 +2,41 @@
 
 The Multiverse supplies the main user interface of the frontend.
 """
-
 import os
 import time
 import logging
 
-from utopya.tools import recursive_update, read_yml
+from utopya.workermanager import WorkerManager, enqueue_json
+from utopya.tools import recursive_update, read_yml, write_yml
 
 log = logging.getLogger(__name__)
 
 
 class Multiverse:
+    """The Multiverse is where everything is orchestrated.
+    
+    It aims to make all the functionality of the Utopia frontend accessible in
+    one place.
+    
+    Attributes:
+        dirs (dict): The absolute paths to the managed directories
+        model_name (str): The model name associated with this Multiverse
+        UTOPIA_EXEC (str): The name of the utopia executable, found in 
+    """
 
-    def __init__(self, metaconfig: str="metaconfig.yml", userconfig: str=None):
-        """Initialize the setup.
+    UTOPIA_EXEC = "utopia"
+
+    def __init__(self, *, model_name: str, metaconfig: str="metaconfig.yml", userconfig: str=None):
+        """Initialize the Multiverse.
 
         Load default configuration file and adjust parameters given
         by metaconfig and userconfig.
         """
-        self._config = self._configure(metaconfig, userconfig)
+        self._config = self._configure(metaconfig=metaconfig,
+                                       userconfig=userconfig)
+
+        # set the model name for folder setup
+        self._model_name = model_name
 
         # Initialise empty dict for keeping track of directory paths
         self.dirs = dict()
@@ -28,10 +44,24 @@ class Multiverse:
         # Now create the simulation directory and its internal subdirectories
         self._create_sim_dir(**self._config['multiverse']['output_path'])
 
-    def _configure(self, metaconfig: str, userconfig: str=None) -> dict:
+        # create a WorkerManager instance
+        self._wm = WorkerManager(**self._config['multiverse']['worker_manager'])
+
+    # Properties ..............................................................
+
+    @property
+    def model_name(self) -> str:
+        """The model name associated with this Multiverse"""
+        return self._model_name
+
+    # "Private" methods .......................................................
+
+    def _configure(self, *, metaconfig: str, userconfig: str=None) -> dict:
         """Read default configuration file and adjust parameters.
 
-        The default metaconfig file, the user/machine-specific file (if existing) and the regular metaconfig file are read in and the default metaconfig is adjusted accordingly to create a single output file.
+        The default metaconfig file, the user/machine-specific file (if
+        existing) and the regular metaconfig file are read in and the default
+        metaconfig is adjusted accordingly to create a single output file.
 
         Args:
             metaconfig: path to metaconfig. An empty or invalid path raises
@@ -39,23 +69,35 @@ class Multiverse:
             userconfig: optional user/machine-specific configuration file
 
         Returns:
-            dict: returns the updated default metaconfig to be processed further or to be written out.
+            dict: returns the updated default metaconfig to be processed
+                further or to be written out.
         """
         # In the following, the final configuration dict is built from three components:
         # The base is the default configuration, which is always present
         # If a userconfig is present, this recursively updates the defaults
         # Then, the given metaconfig recursively updates the created dict
-        defaults = read_yml("default_metaconfig.yml", error_msg="default_metaconfig.yml is not present.")
+        log.debug("Reading default metaconfig.")
+        defaults = read_yml("default_metaconfig.yml",
+                            error_msg="default_metaconfig.yml is not present.")
 
         if userconfig is not None:
-            userconfig = read_yml(userconfig, error_msg="{0} was given but userconfig could not be found.".format(userconfig))
+            log.debug("Reading userconfig from: %s.", userconfig)
+            userconfig = read_yml(userconfig,
+                                  error_msg="{0} was given but userconfig"
+                                            " could not be found."
+                                            "".format(userconfig))
 
-        metaconfig = read_yml(metaconfig, error_msg="{0} was given but metaconfig could not be found.".format(metaconfig))
+        log.debug("Reading metaconfig from: %s", metaconfig)
+        metaconfig = read_yml(metaconfig,
+                              error_msg="{0} was given but metaconfig"
+                                        " could not be found."
+                                        "".format(metaconfig))
 
         # TODO: typechecks of values should be completed below here.
         # after this point it is assumed that all values are valid
 
         # Now perform the recursive update steps
+        log.debug("Updating default metaconfig with given configurations.")
         if userconfig is not None:  # update default with user spec
             defaults = recursive_update(defaults, userconfig)
 
@@ -92,9 +134,7 @@ class Multiverse:
                 should not occur, as the timestamp is unique. If it occurs,
                 something is seriously wrong. Or you are in a strange time
                 zone.
-        """
-        # NOTE could check if the model name is valid
-
+        """ 
         # Create the folder path to the simulation directory
         log.debug("Expanding user %s", out_dir)
         out_dir = os.path.expanduser(out_dir)
@@ -127,8 +167,8 @@ class Multiverse:
         log.debug("Finished creating simulation directory. Now registered: %s",
                   self.dirs)
 
-    def _create_uni_dir(self, uni_id: int, max_uni_id: int) -> None:
-        """The _create_uni_dir generates the folder for a single universe
+    def _create_uni_dir(self, *, uni_id: int, max_uni_id: int) -> str:
+        """The _create_uni_dir generates the folder for a single universe.
 
         Within the universes directory, create a subdirectory uni### for the
         given universe number, zero-padded such that they are sortable.
@@ -153,3 +193,74 @@ class Multiverse:
         # Now create the folder
         os.mkdir(uni_path)
         log.debug("Created universe path: %s", uni_path)
+        return uni_path
+
+    def _add_sim_task(self, *, uni_id: int, max_uni_id: int, cfg_dict: dict, ) -> None:
+        """Helper function that handles task assignment to the WorkerManager.
+
+        This function performs the following steps:
+            - Creating a universe (folder) for the task (simulation).
+            - Writing the passed-over configuration to a yaml file
+            - Passing a functional setup_func and its arguments to WorkerManager.add_task
+
+        Note that the task will not be executed right away but is only
+        registered with the WorkerManager. The task will be worker on once the
+        WorkerManager has free workers available. That is the reason why the
+        setup function is only passed as a functional, not called here.
+
+        Args:
+            uni_id (int): ID of the universe whose folder should be created
+            max_uni_id (int): highest ID, needed for correct zero-padding
+            cfg_dict (dict): given by ParamSpace. Defines how many simulations
+                should be started
+        """
+        # Define the function that will setup everything needed for a universe
+        def setup_universe(*, worker_kwargs: dict, utopia_exec: str, model_name: str, uni_id: int, max_uni_id: int, cfg_dict: dict) -> dict:
+            """Sub-helper function to be returned as functional.
+
+            Creates universe for the task, writes configuration, calls
+            WorkerManager.add_task.
+
+            Args:
+                utopia_exec (str): class constant for utopia executable
+                model_name (str): name of the model *derpface*
+                uni_id (int): ID of the universe whose folder should be created
+                max_uni_id (int): highest ID, needed for correct zero-padding
+                cfg_dict (dict): given by ParamSpace. Defines how many simulations
+                    should be started
+
+            Returns:
+                dict: kwargs for the process to be run when task is grabbed by
+                    Worker.
+            """
+            # create universe directory
+            uni_dir = self._create_uni_dir(uni_id=uni_id,
+                                           max_uni_id=max_uni_id)
+
+            # write essential part of config to file:
+            uni_cfg_path = os.path.join(uni_dir, "config.yml")
+            write_yml(d=cfg_dict, path=uni_cfg_path)
+
+            # building args tuple for task assignment
+            # assuming there exists an attribute for the executable and for the
+            # model
+            args = (utopia_exec, model_name, uni_cfg_path)
+
+            # Overwrite the worker kwargs argument with totally new ones
+            worker_kwargs = dict(args=args,  # passing the arguments
+                                 read_stdout=True,
+                                 line_read_func=enqueue_json)  # Callable
+            return worker_kwargs
+
+        # Create the dict that will be passed as arguments to setup_universe
+        setup_kwargs = dict(utopia_exec=self.UTOPIA_EXEC,
+                            model_name=self.model_name,
+                            uni_id=uni_id, max_uni_id=max_uni_id,
+                            cfg_dict=cfg_dict)
+
+        # Add a task to the worker manager
+        self._wm.add_task(priority=None,
+                          setup_func=setup_universe,
+                          setup_kwargs=setup_kwargs)
+
+        log.debug("Added simulation task for universe %d.", uni_id)
