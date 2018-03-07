@@ -202,7 +202,8 @@ class Multiverse:
                     Worker.
             """
             # create universe directory
-            uni_dir = self._create_uni_dir(uni_id=uni_id, max_uni_id=max_uni_id)
+            uni_dir = self._create_uni_dir(uni_id=uni_id,
+                                           max_uni_id=max_uni_id)
 
             # write essential part of config to file:
             uni_cfg_path = os.path.join(uni_dir, "config.yml")
@@ -214,10 +215,10 @@ class Multiverse:
             args = (utopia_exec, model_name, uni_cfg_path)
 
             # setup kwargs
-            proc_kwargs = dict(args=args,  # passing the arguments
-                               read_stdout=True,
-                               line_read_func=enqueue_json)  # Callable
-            return proc_kwargs
+            worker_kwargs = dict(args=args,  # passing the arguments
+                                 read_stdout=True,
+                                 line_read_func=enqueue_json)  # Callable
+            return worker_kwargs
 
         setup_kwargs = dict(utopia_exec=self.UTOPIA_EXEC,
                             model_name=self.model_name,

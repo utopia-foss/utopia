@@ -122,7 +122,7 @@ class WorkerManager:
 
     # Public API ..............................................................
 
-    def add_task(self, *, priority: int=None, setup_func: Callable=None, setup_kwargs: dict=None, proc_kwargs: dict=None):
+    def add_task(self, *, priority: int=None, setup_func: Callable=None, setup_kwargs: dict=None, worker_kwargs: dict=None):
         """Adds a task to the queue.
 
         A priority can be assigned to the task, but will only be used during task retrieval if the WorkerManager was initialized with a queue.PriorityQueue as task manager.
@@ -141,33 +141,34 @@ class WorkerManager:
         if setup_func:
             setup_kwargs = setup_kwargs if setup_kwargs else dict()
 
-            if proc_kwargs:
-                warnings.warn("Received argument `proc_kwargs` despite a "
+            if worker_kwargs:
+                warnings.warn("Received argument `worker_kwargs` despite a "
                               "setup function having been given; the passed "
-                              "`proc_kwargs` will not be used!",
+                              "`worker_kwargs` will not be used!",
                               UserWarning)
         
-        elif proc_kwargs:
+        elif worker_kwargs:
             if setup_kwargs:
-                warnings.warn("proc_kwargs given but also setup_kwargs "
+                warnings.warn("worker_kwargs given but also setup_kwargs "
                               "specified; the latter will be ignored. Did "
                               "you mean to call a setup function? If yes, "
                               "pass it via the `setup_func` argument.",
                               UserWarning)
         else:
-            raise ValueError("Need either argument setup_func or proc_kwargs.")
+            raise ValueError("Need either argument `setup_func` or "
+                             "`worker_kwargs`, got none of those.")
 
         # Generate a new ID for the task (using the current task counter)
         task_id = self.task_count
 
         log.debug("Adding task with ID %d ...", task_id)
+        log.debug("  With setup function? %s", )
 
         # Put it into the task queue and increment the task counter
-        self._tasks.put_nowait((priority,
-                                task_id,
-                                setup_func,
-                                setup_kwargs,
-                                proc_kwargs))
+        self._tasks.put_nowait((priority, task_id,
+                                dict(setup_func=setup_func,
+                                     setup_kwargs=setup_kwargs,
+                                     worker_kwargs=worker_kwargs)))
         self._increment_task_count()
 
         log.debug("Task %s added.", task_id)
@@ -218,29 +219,32 @@ class WorkerManager:
         """Increments the task counter."""
         self._task_cnt += 1
 
-    def _grab_task(self, task: dict=None) -> subprocess.Popen:
-        """Will initiate that a new (or already existing) worker will work on a task. If a task is given, that one will be used; if not, a task will be taken from the queue.
+    def _grab_task(self) -> subprocess.Popen:
+        """Will initiate that a new (or already existing) worker will work on a task. The task will be taken from the queue.
 
         Returns the process the task is being worked on at. If no task was given and the queue is empty, will raise `queue.Empty`.
-
-        Args:
-            task (dict, optional): If given, this task will be used rather than
-                one that is gotten from the task queue.
 
         Returns:
             subprocess.Popen: The created process object
         """
 
-        if not task:
-            # Get one from the queue
-            _, task_id, task = self._tasks.get_nowait()
-            log.debug("Got task %s from queue.", task_id)
+        # Try to get one from the queue
+        try:
+            task = self._tasks.get_nowait()
+        except queue.Empty as err:
+            raise queue.Empty("No more tasks available in tasks queue.") from err
+        else:
+            # Unpack the task tuple
+            prio, task_id, task_dict = task
+            log.debug("Got task %s from queue. (Priority: %s)", task_id, prio)
 
-        # Interpret the given task
-        # NOTE optionally, add an interpretation here, e.g. a mapping to an already existing worker
+        # 
 
         # Spawn a worker and return the resulting process
         return self._spawn_worker(**task)
+
+    def _setup_worker(self, *, setup_func: Callable, setup_kwargs: dict, proc_kwargs: dict) -> dict:
+        pass
 
     def _spawn_worker(self, *, args: tuple, read_stdout: bool, line_read_func: Callable=None, **popen_kwargs) -> subprocess.Popen:
         """Spawn a worker process using subprocess.Popen and manage the corresponding queue and thread for reading the stdout stream. The new worker process is registered with the class.
@@ -263,7 +267,8 @@ class WorkerManager:
                 supplied during initialisation
         """
         if not isinstance(args, tuple):
-            raise TypeError("Need process arguments to be of type tuple, got ", +str(type(args)))
+            raise TypeError("Need process arguments to be of type tuple, "
+                            "got " + str(type(args)))
 
         if read_stdout:
             # If no `line_read_func` was given, read the default
