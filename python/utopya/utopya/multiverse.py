@@ -14,18 +14,30 @@ log = logging.getLogger(__name__)
 
 
 class Multiverse:
+    """The Multiverse is where everything is orchestrated.
+    
+    It aims to make all the functionality of the Utopia frontend accessible in
+    one place.
+    
+    Attributes:
+        dirs (dict): The absolute paths to the managed directories
+        model_name (str): The model name associated with this Multiverse
+        UTOPIA_EXEC (str): The name of the utopia executable, found in 
+    """
+
     UTOPIA_EXEC = "utopia"
 
-    def __init__(self, *, metaconfig: str="metaconfig.yml", userconfig: str=None):
-        """Initialize the setup.
+    def __init__(self, *, model_name: str, metaconfig: str="metaconfig.yml", userconfig: str=None):
+        """Initialize the Multiverse.
 
         Load default configuration file and adjust parameters given
         by metaconfig and userconfig.
         """
-        self._config = self._configure(metaconfig, userconfig)
+        self._config = self._configure(metaconfig=metaconfig,
+                                       userconfig=userconfig)
 
         # set the model name for folder setup
-        self.model_name = self._config['model_name']
+        self._model_name = model_name
 
         # Initialise empty dict for keeping track of directory paths
         self.dirs = dict()
@@ -35,6 +47,15 @@ class Multiverse:
 
         # create a WorkerManager instance
         self._wm = WorkerManager(**self._config['multiverse']['worker_manager'])
+
+    # Properties ..............................................................
+
+    @property
+    def model_name(self) -> str:
+        """The model name associated with this Multiverse"""
+        return self._model_name
+
+    # "Private" methods .......................................................
 
     def _configure(self, *, metaconfig: str, userconfig: str=None) -> dict:
         """Read default configuration file and adjust parameters.
