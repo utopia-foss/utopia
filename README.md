@@ -3,8 +3,9 @@
 __Utopia__ (gr., no-place), a non-existent society described in considerable detail. [Wikipedia, 2016]
 
 Powered by [DUNE](https://dune-project.org/)
-| testing system | python test coverage |
-| -------------- | -------------------- |
+
+| Testing System | Python Test Coverage |
+| :------------: | :------------------: |
 | [![pipeline status](https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/badges/master/pipeline.svg)](https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/commits/master) | [![coverage report](https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/badges/master/coverage.svg)](https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/commits/master) |
 
 ## Installation
