@@ -277,8 +277,9 @@ class WorkerManager:
             subprocess.Popen: The created process object
         """
         if not isinstance(args, tuple):
-            raise TypeError("Need process arguments to be of type tuple, "
-                            "got " + str(type(args)))
+            raise TypeError("Need argument `args` to be of type tuple, "
+                            "got {} with value {}. Refusing to even try to "
+                            "spawn a worker process.".format(type(args), args))
 
         if read_stdout:
             # If no `line_read_func` was given, read the default
