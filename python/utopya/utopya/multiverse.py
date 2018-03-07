@@ -8,6 +8,7 @@ import logging
 
 from utopya.workermanager import WorkerManager, enqueue_json
 from utopya.tools import recursive_update, read_yml, write_yml
+from utopya.info import MODELS
 
 log = logging.getLogger(__name__)
 
@@ -32,14 +33,16 @@ class Multiverse:
         Load default configuration file and adjust parameters given
         by metaconfig and userconfig.
         """
+        # Initialize empty attributes (partly property-managed)
+        self._model_name = None
+        self.dirs = {}
+
+        # Parse the config
         self._config = self._configure(metaconfig=metaconfig,
                                        userconfig=userconfig)
 
-        # set the model name for folder setup
-        self._model_name = model_name
-
-        # Initialise empty dict for keeping track of directory paths
-        self.dirs = dict()
+        # Set the model name
+        self.model_name = model_name
 
         # Now create the simulation directory and its internal subdirectories
         self._create_sim_dir(**self._config['multiverse']['output_path'])
@@ -53,6 +56,21 @@ class Multiverse:
     def model_name(self) -> str:
         """The model name associated with this Multiverse"""
         return self._model_name
+
+    @model_name.setter
+    def model_name(self, model_name: str):
+        """Checks if the model name is valid, then sets it and makes it read-only."""
+        if model_name not in MODELS:
+            raise ValueError("No such model '{}' available.\n"
+                             "Available models: {}"
+                             "".format(model_name, ", ".join(MODELS.keys())))
+        
+        elif self.model_name:
+            raise RuntimeError("A Multiverse's associated model cannot be changed!")
+
+        else:
+            self._model_name = model_name
+            log.debug("Set model_name:  %s", model_name)
 
     # "Private" methods .......................................................
 
