@@ -22,10 +22,7 @@ set(DUNE_PYTHON_INSTALL_EDITABLE True)
 dune_python_install_package(PATH utopya
                             ADDITIONAL_PIP_PARAMS "${CMAKE_CURRENT_SOURCE_DIR}/utopya/[test_deps]")
 
-# NOTE Other Utopia-packages should be installed here
-
 # Tests .......................................................................
-
 # Add pytest commands via dune
 dune_python_add_test(NAME FRONTEND_utopya
                      COMMAND ${CMAKE_BINARY_DIR}/run-in-dune-env
