@@ -5,3 +5,5 @@ build-cmake/
 *.pytest_cache
 __pychache__
 *.pyc
+.vscode 
+.clang-format 
