@@ -41,8 +41,8 @@ class Multiverse:
                     config/
                     eval/
                     universes/
-                        uni000/
-                        uni001/
+                        000/
+                        001/
                         ...
             model_b/
                 180301-125412_my_first_sim/
