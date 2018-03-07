@@ -101,11 +101,19 @@ class Multiverse:
         given universe number, zero-padded such that they are sortable.
 
         Args:
-            uni_id (int): ID of the universe whose folder should be created
-            max_uni_id (int): highest ID, needed for correct zero-padding
+            uni_id (int): ID of the universe whose folder should be created. 
+                Needs to be positive or zero.
+            max_uni_id (int): highest ID, needed for correct zero-padding.
+                Needs to be larger or equal to uni_id.
         """
+        # Check if uni_id and max_uni_id are positive
+        if uni_id < 0 or uni_id > max_uni_id:
+            raise RuntimeError("Input variables don't match prerequisites: "
+                               "uni_id >= 0, max_uni_id >= uni_id. Given arguments: "
+                               "uni_id: {}, max_uni_id: {}".format(uni_id, max_uni_id))
+                               
         # Use a format string for creating the uni_path
-        fstr = "uni"+"{id:>0{digits:}d}"
+        fstr = "uni{id:>0{digits:}d}"
         uni_path = os.path.join(self.dirs['universes'],
                                 fstr.format(id=uni_id, digits=len(str(max_uni_id))))
 
