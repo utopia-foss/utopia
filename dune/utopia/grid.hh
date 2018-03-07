@@ -66,16 +66,6 @@ public:
         _rng(rng)
     { }
 
-    /// Create a GridManager from a grid and cells 
-/*    explicit GridManagerBase (const GridWrapper<GridType>& wrapper, std::shared_ptr<RNG> rng):
-        _grid(wrapper._grid),
-        _grid_cells(wrapper._grid_cells),
-        _extensions(wrapper._extensions),
-        _gv(_grid->leafGridView()),
-        _mapper(_gv, Dune::mcmgElementLayout(),
-        _rng(rng))
-    { }
-*/
     /// Return true if managed grid is structured (rectangular)
     static constexpr bool is_structured () { return _is_structured; }
     /// Return true if managed grid is periodic
@@ -92,6 +82,9 @@ public:
     const std::array<unsigned int,dim>& grid_cells () const { return _grid_cells; }
     /// Return grid extensions
     const std::array<Coordinate,dim>& extensions () const { return _extensions; }
+
+    /// Return a random number (for debugging/testing purposes)
+    int get_random() { return (*_rng)(); }
 };
 
 /// Define Type for destinguishing managers

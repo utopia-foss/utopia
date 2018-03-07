@@ -33,22 +33,46 @@ namespace Setup
     template<bool structured, bool periodic, typename GridType, typename CellType>
     auto create_manager_cells (
         const GridWrapper<GridType>& wrapper,
-        const CellContainer<CellType>& cells )
+        const CellContainer<CellType>& cells)
         -> GridManager<Manager::Cells, CellType, GridType, structured, periodic>
     {
         return GridManager<Manager::Cells, CellType, GridType, structured, periodic>(
-            wrapper,cells);
+            wrapper, cells);
+    }
+
+    /// Create a GridManager from a grid and a CellContainer with a custom RNG
+    template<bool structured, bool periodic, typename GridType, typename CellType, typename RNG>
+    auto create_manager_cells (
+        const GridWrapper<GridType>& wrapper,
+        const CellContainer<CellType>& cells,
+        std::shared_ptr<RNG> rng)
+        -> GridManager<Manager::Cells, CellType, GridType, structured, periodic, RNG>
+    {
+        return GridManager<Manager::Cells, CellType, GridType, structured, periodic, RNG>(
+            wrapper, cells, rng);
     }
 
     /// Create a GridManager from a grid and an AgentContainer
     template<bool structured, bool periodic, typename GridType, typename AgentType>
     auto create_manager_agents (
         const GridWrapper<GridType>& wrapper,
-        const AgentContainer<AgentType>& agents )
+        const AgentContainer<AgentType>& agents)
         -> GridManager<Manager::Agents, AgentType, GridType, structured, periodic>
     {
         return GridManager<Manager::Agents, AgentType, GridType, structured, periodic>(
-            wrapper,agents);
+            wrapper, agents);
+    }
+
+    /// Create a GridManager from a grid and an AgentContainer with a custom RNG
+    template<bool structured, bool periodic, typename GridType, typename AgentType, typename RNG>
+    auto create_manager_agents (
+        const GridWrapper<GridType>& wrapper,
+        const AgentContainer<AgentType>& agents,
+        std::shared_ptr<RNG> rng)
+        -> GridManager<Manager::Agents, AgentType, GridType, structured, periodic, RNG>
+    {
+        return GridManager<Manager::Agents, AgentType, GridType, structured, periodic, RNG>(
+            wrapper, agents, rng);
     }
 
     /// Create an unstructured grid from a Gmsh file
