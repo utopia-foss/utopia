@@ -4,7 +4,6 @@ import shutil
 import logging
 import time
 import math
-import random as rd
 
 import pytest
 
@@ -45,7 +44,7 @@ def test_create_sim_dir(tmpdir, mv_config):
     latest = all_stuff[-1]
     # Check if the folders are present
     assert os.path.isdir(os.path.join(path_base, latest)) is True
-    for folder in ["config", "eval", "universes"]: # may need to adapt
+    for folder in ["config", "eval", "universes"]:  # may need to adapt
         assert os.path.isdir(os.path.join(path_base, latest, folder)) is True
 
 #@pytest.mark.skip("To be re-implemented when the Multiverse is further developed.")
@@ -60,29 +59,41 @@ def test_detect_doubled_folders(tmpdir, mv_config):
         Multiverse(mv_config)
 
 #@pytest.mark.skip("To be re-implemented when the Multiverse is further developed.")
-def test_create_uni_dir(tmpdir,mv_config):
+def test_create_uni_dir(tmpdir, mv_config):
     # adapt cfg to special needs
     mv_config['paths']['out_dir'] = tmpdir.dirpath()
     for i, max_uni in enumerate([1, 9, 10, 11, 99, 100, 101]):
         # adapt cfg to special needs
-        mv_config['paths']['model_name'] = "test_universes_folder_structure"+str(i)
+        mv_config['paths']['model_name'] = "test_universes_folder_structure_{}".format(i)
         single_create_uni_dir(tmpdir, mv_config, max_uni)
+    # test for possible wrong inputs
+    mv_config['paths']['model_name'] = "test_universes_folder_structure_for_errors"
+    # Init Multiverse
+    instance = Multiverse(mv_config)
+    # negative numbers:
+    with pytest.raises(RuntimeError):
+            instance._create_uni_dir(uni_id=-1, max_uni_id=-1)
+    # maximum below uni_id:
+    with pytest.raises(RuntimeError):
+            instance._create_uni_dir(uni_id=5, max_uni_id=4)    
+
 
 def single_create_uni_dir(tmpdir, mv_config, maximum=10):
     # Init Multiverse
     instance = Multiverse(mv_config)
     # Create the universe directories
-    for i in range(0, maximum+1):
-        instance._create_uni_dir(i, maximum)
+    for i in range(maximum + 1):
+        instance._create_uni_dir(uni_id=i, max_uni_id=maximum)
     # get the path of the universes folder
     path = instance.dirs['universes']
     # calculate the number of needed filling zeros dependend on the maximum number of different calulations
-    number_filling_zeros = math.ceil(math.log(maximum+1, 10))
+    number_filling_zeros = math.ceil(math.log(maximum + 1, 10))
+    # check that minimal number of filling zeros (at maximum no zero in front)
+    if maximum > 0:
+        uni = "uni" + str(maximum).zfill(number_filling_zeros)
+        assert uni[3] != '0'
 
     # check if all universe directories are created
-    for i in range(0, maximum+1):
-        path_uni = os.path.join(path, "uni"+str(i).zfill(number_filling_zeros))
+    for i in range(maximum + 1):
+        path_uni = os.path.join(path, "uni" + str(i).zfill(number_filling_zeros))
         assert os.path.isdir(path_uni) is True
-        # check if the calculation was fine (not too many leading zeros), by checking if the last one has no leading zeros
-        if i == maximum:
-            assert path_uni[4] != '0'
