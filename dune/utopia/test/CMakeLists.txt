@@ -15,6 +15,7 @@ set(TESTS_CORE
     model_test
     output_agent_test_gmsh
     output_agent_test_rect
+    rng_test
     simulation_test
     state_test
     tags_test

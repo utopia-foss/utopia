@@ -8,6 +8,9 @@ namespace Utopia
 template<int dim>
 using DefaultGrid = Dune::YaspGrid<dim>;
 
+/// Type of default random number generator
+using DefaultRNG = std::mt19937;
+
 /// Extrct data types dependent on the grid data type
 /** \tparam GridType Type of the grid
  */
