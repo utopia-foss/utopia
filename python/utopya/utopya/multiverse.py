@@ -174,8 +174,13 @@ class Multiverse:
 
         This function performs the following steps:
             - Creating a universe (folder) for the task (simulation).
-            - Writing the necessary part of the metaconfig to a file
+            - Writing the passed-over configuration to a yaml file
             - Passing a functional setup_func and its arguments to WorkerManager.add_task
+
+        Note that the task will not be executed right away but is only
+        registered with the WorkerManager. The task will be worker on once the
+        WorkerManager has free workers available. That is the reason why the
+        setup function is only passed as a functional, not called here.
 
         Args:
             uni_id (int): ID of the universe whose folder should be created
@@ -183,7 +188,8 @@ class Multiverse:
             cfg_dict (dict): given by ParamSpace. Defines how many simulations
                 should be started
         """
-        def setup_func(*, utopia_exec: str, model_name: str, uni_id: int, max_uni_id: int, cfg_dict: dict) -> dict:
+        # Define the function that will setup everything needed for a universe
+        def setup_universe(*, worker_kwargs: dict, utopia_exec: str, model_name: str, uni_id: int, max_uni_id: int, cfg_dict: dict) -> dict:
             """Sub-helper function to be returned as functional.
 
             Creates universe for the task, writes configuration, calls
@@ -214,17 +220,21 @@ class Multiverse:
             # model
             args = (utopia_exec, model_name, uni_cfg_path)
 
-            # setup kwargs
+            # Overwrite the worker kwargs argument with totally new ones
             worker_kwargs = dict(args=args,  # passing the arguments
                                  read_stdout=True,
                                  line_read_func=enqueue_json)  # Callable
             return worker_kwargs
 
+        # Create the dict that will be passed as arguments to setup_universe
         setup_kwargs = dict(utopia_exec=self.UTOPIA_EXEC,
                             model_name=self.model_name,
                             uni_id=uni_id, max_uni_id=max_uni_id,
                             cfg_dict=cfg_dict)
 
+        # Add a task to the worker manager
         self._wm.add_task(priority=None,
-                          setup_func=setup_func,
+                          setup_func=setup_universe,
                           setup_kwargs=setup_kwargs)
+
+        log.debug("Added simulation task for universe %d.", uni_id)

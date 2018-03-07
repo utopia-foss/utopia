@@ -221,11 +221,18 @@ class WorkerManager:
 
     def _grab_task(self) -> subprocess.Popen:
         """Will initiate that a new (or already existing) worker will work on a task. The task will be taken from the queue.
-
-        Returns the process the task is being worked on at. If no task was given and the queue is empty, will raise `queue.Empty`.
-
+        
+        First, it is checked whether this task defined a setup function. If so,
+        that function is called, generating the worker_kwargs.
+        
+        After that, the `worker_kwargs` from the task_dict are used to spawn
+        a worker process.
+        
         Returns:
             subprocess.Popen: The created process object
+        
+        Raises:
+            queue.Empty: If the task queue was empty
         """
 
         # Try to get one from the queue
@@ -238,13 +245,20 @@ class WorkerManager:
             prio, task_id, task_dict = task
             log.debug("Got task %s from queue. (Priority: %s)", task_id, prio)
 
-        # 
+        # If a setup function is available, call it with the given kwargs
+        worker_kwargs = task_dict['worker_kwargs']
+        setup_func = task_dict.get('setup_func')
+
+        if setup_func:
+            log.debug("Calling a setup function, ")
+            worker_kwargs = setup_func(worker_kwargs=worker_kwargs,
+                                       **task_dict.get('setup_kwargs', {}))
+        else:
+            log.debug("No setup function given; using the `worker_kwargs` "
+                      "directly.")
 
         # Spawn a worker and return the resulting process
-        return self._spawn_worker(**task)
-
-    def _setup_worker(self, *, setup_func: Callable, setup_kwargs: dict, proc_kwargs: dict) -> dict:
-        pass
+        return self._spawn_worker(**worker_kwargs)        
 
     def _spawn_worker(self, *, args: tuple, read_stdout: bool, line_read_func: Callable=None, **popen_kwargs) -> subprocess.Popen:
         """Spawn a worker process using subprocess.Popen and manage the corresponding queue and thread for reading the stdout stream. The new worker process is registered with the class.
@@ -261,10 +275,6 @@ class WorkerManager:
 
         Returns:
             subprocess.Popen: The created process object
-
-        No Longer Raises:
-            ValueError: When stdout should be read but no `line_read_func` was
-                supplied during initialisation
         """
         if not isinstance(args, tuple):
             raise TypeError("Need process arguments to be of type tuple, "
