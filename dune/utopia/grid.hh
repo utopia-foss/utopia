@@ -164,6 +164,13 @@ public:
     const AgentContainer<Agent>& agents () const { return _agents; }
     /// Return reference to the managed agents
     AgentContainer<Agent>& agents () { return _agents; }
+
+    /// Erase all agents for which the rule evaluates to true
+    template<typename Rule>
+    void erase_if(Rule rule) {
+        auto cutoff = std::remove_if(_agents.begin(), _agents.end(), rule);
+        _agents.erase(cutoff, _agents.end());
+    }
 };
 
 } // namespace Utopia

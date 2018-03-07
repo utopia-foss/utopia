@@ -26,20 +26,29 @@ def wm_with_tasks():
 
     # A few tasks
     tasks = []
-    tasks.append((('python3', '-c','print("hello oh so complex world")'),
-                  dict(read_stdout=True)))
-    tasks.append((('python3', '-c','from time import sleep; sleep(0.5)'),
-                  dict(read_stdout=False)))
-    tasks.append(('python3 -c "return"',
-                  dict(read_stdout=False, priority=0)))
-    tasks.append((('python3', '-c','print("{\'key\': \'1.23\'}")'),
-                  dict(read_stdout=True, line_read_func=line_read_json)))
+    tasks.append(dict(worker_kwargs=dict(args=('python3', '-c',
+                                               'print("hello oh so complex '
+                                               'world")'),
+                                         read_stdout=True, env=env),
+                      priority=0))
+    
+    tasks.append(dict(worker_kwargs=dict(args=('python3', '-c',
+                                               'from time import sleep; '
+                                               'sleep(0.5)'),
+                                         read_stdout=False, env=env)))
+    tasks.append(dict(worker_kwargs=dict(args=('python3', '-c', 'pass'),
+                                         read_stdout=False, env=env)))
+    tasks.append(dict(worker_kwargs=dict(args=('python3', '-c',
+                                               'print("{\'key\': \'1.23\'}")'),
+                                         read_stdout=True, env=env,
+                                         line_read_func=line_read_json)))
 
+    # Now initialise the worker manager
     wm = WorkerManager(num_workers=3)
 
-    # Pass the tasks
-    for cmd, kwargs in tasks:
-        wm.add_task(cmd, env=env, **kwargs)
+    # And pass the tasks
+    for task_dict in tasks:
+        wm.add_task(**task_dict)
 
     return wm
 
@@ -74,11 +83,10 @@ def test_add_tasks(wm):
     """Tests adding of tasks"""
     # With tuple argument
     sleep_cmd = ('python3', '-c', '"from time import sleep; sleep(0.5)"')
-    wm.add_task(sleep_cmd, priority=0, read_stdout=True)
+    wm.add_task(priority=0, worker_kwargs=dict(args=sleep_cmd,
+                                               read_stdout=True))
 
-    # With string argument and without reading stdout
-    sleep_cmd = ('python3 -c return')
-    wm.add_task(sleep_cmd, priority=0, read_stdout=False)
+    # TODO Check the warnings
 
 def test_start_working(wm_with_tasks):
     """Tests whether the start_working methods does what it should"""

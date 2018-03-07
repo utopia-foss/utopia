@@ -62,7 +62,12 @@ Ubuntu is shipped with APT.
     __macOS:__
 
         brew update
-        brew install boost cmake doxygen gcc-7 hdf5 pkg-config python3 yaml-cpp
+        brew install boost cmake doxygen gcc pkg-config python
+        brew install yaml-cpp --cc=gcc-7
+        brew install hdf5 --cc=gcc-7
+    
+    __Notice:__ If you had `hdf5` or `yaml-cpp` already installed by Homebrew,
+    make sure to `brew uninstall` them and then run the respective commands above.
 
 3. Use [`git clone`](https://git-scm.com/docs/git-clone) to clone the
     DUNE repositories listed above into a suitable folder on your machine.
