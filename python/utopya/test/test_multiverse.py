@@ -16,19 +16,21 @@ def mv_config():
     return dict(paths=dict(out_dir='~/utopia_output', model_name='', model_note=''))
 
 # Tests --------------------------------------------------------------------
-@pytest.mark.skip("Not far enough to initialise this.")
+#@pytest.mark.skip("Not far enough to initialise this.")
 def test_init():
     """Tests the initialization of the Multiverse."""
-    Multiverse()  # fails, if neither default nor metaconfig are present
-    Multiverse(metaconfig="metaconfig.yml")
-    Multiverse(metaconfig="metaconfig.yml", userconfig="userconfig.yml")
+    #Multiverse()  # fails, if neither default nor metaconfig are present
+    instance1 = Multiverse(run_cfg_path="./test/run_config.yml")
+    print(instance1.meta_config)
+    instance2 = Multiverse(run_cfg_path="./test/run_config.yml", user_cfg_path="./test/user_config.yml")
+    print(instance2.meta_config)
 
     # Testing errors
     with pytest.raises(FileNotFoundError):
-        Multiverse(metaconfig="not_existing_metaconfig.yml")
+        Multiverse(run_cfg_path="not_existing_run_config.yml")
 
     with pytest.raises(FileNotFoundError):
-        Multiverse(userconfig="not_existing_userconfig.yml")
+        Multiverse(user_cfg_path="not_existing_user_config.yml")
 
 @pytest.mark.skip("To be re-implemented when the Multiverse is further developed.")
 def test_create_sim_dir(tmpdir, mv_config):
