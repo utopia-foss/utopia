@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 
 class Multiverse:
 
-    def __init__(self, run_cfg_path: str="run_config.yml", user_cfg_path: str=None):
+    def __init__(self, model_name: str="test", run_cfg_path: str="run_config.yml", user_cfg_path: str=None):
         """Initialize the setup.
 
         Load base_configuration file and adjust parameters given
@@ -26,10 +26,12 @@ class Multiverse:
         self._meta_config = self._create_meta_config(run_cfg_path=run_cfg_path, user_cfg_path=user_cfg_path)
 
         # Initialise empty dict for keeping track of directory paths
-        self.dirs = dict()
+        self._dirs = dict()
 
-        # Now create the simulation directory and its internal subdirectories
-        #self._create_sim_dir(** model_name="test", self._meta_config['paths'])
+        # Now create the run directory and its internal subdirectories
+        # Not in init any more
+        #self._create_run_dir(model_name=model_name, **self._meta_config['paths'])
+        self._model_name = model_name
 
     # Properties ..............................................................
     @property
@@ -38,6 +40,9 @@ class Multiverse:
         return self._meta_config
 
     # Public API ..............................................................
+
+    def create_run_dir(self):
+        self._create_run_dir(model_name=self._model_name, **self._meta_config['paths'])
 
     def prepare_universe(self):  # uni_id? max_uni_id?, other stuff
         # called from worker manager or inside here?
@@ -91,7 +96,7 @@ class Multiverse:
         # return .yml file return dict ? save .yaml file at right position?
         log.debug("Multiverse._create_uni_config called, but not implemented")
        
-    def _create_sim_dir(self, *, model_name: str, out_dir: str, model_note: str=None) -> None:
+    def _create_run_dir(self, *, model_name: str, out_dir: str, model_note: str=None) -> None:
         """Create the folder structure for the simulation output.
     
         The following folder tree will be created
@@ -125,21 +130,21 @@ class Multiverse:
         # Create the folder path to the simulation directory
         log.debug("Expanding user %s", out_dir)
         out_dir = os.path.expanduser(out_dir)
-        sim_dir = os.path.join(out_dir,
+        run_dir = os.path.join(out_dir,
                                model_name,
                                time.strftime("%Y%m%d-%H%M%S"))
 
         # Append a model note, if needed
         if model_note:
-            sim_dir += "_" + model_note
+            run_dir += "_" + model_note
 
         # Inform and store to directory dict
-        log.debug("Expanded user and time stamp to %s", sim_dir)
-        self.dirs['sim_dir'] = sim_dir
+        log.debug("Expanded user and time stamp to %s", run_dir)
+        self._dirs['run_dir'] = run_dir
 
         # Recursively create the whole path to the simulation directory
         try:
-            os.makedirs(sim_dir)
+            os.makedirs(run_dir)
         except OSError as err:
             raise RuntimeError("Simulation directory already exists. This "
                                "should not have happened. Try to start the "
@@ -147,12 +152,12 @@ class Multiverse:
 
         # Make subfolders
         for subdir in ('config', 'eval', 'universes'):
-            subdir_path = os.path.join(sim_dir, subdir)
+            subdir_path = os.path.join(run_dir, subdir)
             os.mkdir(subdir_path)
-            self.dirs[subdir] = subdir_path
+            self._dirs[subdir] = subdir_path
 
         log.debug("Finished creating simulation directory. Now registered: %s",
-                  self.dirs)
+                  self._dirs)
 
     def _create_uni_dir(self, uni_id: int, max_uni_id: int) -> None:
         """The _create_uni_dir generates the folder for a single universe
@@ -174,7 +179,7 @@ class Multiverse:
                                
         # Use a format string for creating the uni_path
         fstr = "uni{id:>0{digits:}d}"
-        uni_path = os.path.join(self.dirs['universes'],
+        uni_path = os.path.join(self._dirs['universes'],
                                 fstr.format(id=uni_id, digits=len(str(max_uni_id))))
 
         # Now create the folder
