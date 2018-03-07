@@ -14,8 +14,12 @@ foreach(test ${TESTS_DATAIO})
 endforeach(test)
 
 # reading depends on writing the file first
-set_tests_properties(DATAIO_hdfattribute_test_read PROPERTIES
-    DEPENDS DATA_IOhdfattribute_test_write)
+# set_tests_properties(DATAIO_hdfattribute_test_read PROPERTIES
+    # DEPENDS DATA_IOhdfattribute_test_write)
+
+# no matter how ctest is called, make sure of dependencies between these tests
+set_tests_properties(DATAIO_hdfattribute_test_read PROPERTIES FIXTURES_SETUP H5IO)
+set_tests_properties(DATAIO_hdfattribute_test_write PROPERTIES FIXTURES_REQUIRED H5IO)
 
 # add custom target for 'DATAIO' prefix
 add_custom_target(test_dataio
