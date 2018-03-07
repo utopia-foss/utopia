@@ -5,3 +5,6 @@ information data and make it easily accessible to utopya.
 """
 
 CMAKE_BINARY_DIR = "@CMAKE_BINARY_DIR@"
+
+UTOPIA_MODEL_TARGETS = "@UTOPIA_MODEL_TARGETS@"
+UTOPIA_MODEL_BINPATHS = "@UTOPIA_MODEL_BINPATHS@"
