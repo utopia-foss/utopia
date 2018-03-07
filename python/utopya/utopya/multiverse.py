@@ -7,7 +7,9 @@ import os
 import time
 import logging
 
-from utopya.tools import recursive_update, read_yml
+from utopya.workermanager import WorkerManager, enqueue_json
+from utopya.tools import recursive_update, read_yml, write_yml
+from utopya.info import MODELS
 
 log = logging.getLogger(__name__)
 
@@ -20,7 +22,7 @@ class Multiverse:
         Load base_configuration file and adjust parameters given
         by user_config and run_config.
         """
-        # Initialise empty dict for config
+        # Initialise meta config with None
         self._meta_config = None
         # Create Meta Config
         self.meta_config = self._create_meta_config(run_cfg_path=run_cfg_path,
@@ -29,10 +31,11 @@ class Multiverse:
         # Initialise empty dict for keeping track of directory paths
         self._dirs = dict()
 
-        # Now create the run directory and its internal subdirectories
-        # Not in init any more
-        # self._create_run_dir(model_name=model_name, **self._meta_config['paths'])
-        self._model_name = model_name
+        # Initialize model name with None
+        self._model_name = None
+
+        # set the model name
+        self.model_name = model_name
 
     # Properties ..............................................................
     @property
@@ -51,6 +54,28 @@ class Multiverse:
                             " Metaconfig but {} was given".format(type(d)))
         else:
             self._meta_config = d
+
+    @property
+    def model_name(self) -> str:
+        """The model name associated with this Multiverse."""
+        return self._model_name
+
+    @model_name.setter
+    def model_name(self, model_name: str):
+        """Checking if the model name is valid, then sets it and makes it read-only."""
+        if model_name not in MODELS:
+            raise ValueError("No such model '{}' available.\n"
+                             "Available models: {}"
+                             "".format(model_name, ", ".join(MODELS.keys())))
+
+        elif self.model_name:
+            raise RuntimeError("A Multiverse's associated model cannot be"
+                               " changed!")
+
+        else:
+            self._model_name = model_name
+            log.debug("Set model_name:  %s", model_name)
+
     # Public API ..............................................................
 
     def create_run_dir(self):
@@ -63,7 +88,7 @@ class Multiverse:
         # self._create_uni_config()
         log.debug("Multiverse.prepare_universe called, but not implemented")
 
-    # Non-public API ..........................................................
+    # "Private" methods .......................................................
 
     def _create_meta_config(self, *, run_cfg_path: str, user_cfg_path: str=None) -> dict:
         """Read base configuration file and adjust parameters.
