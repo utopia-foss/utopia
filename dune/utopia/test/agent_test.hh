@@ -66,14 +66,55 @@ void test_agents_on_grid (const std::size_t agent_count, const std::size_t grid_
     auto m2 = Utopia::Setup::create_manager<true,false>(grid,cells,agents);
         // structured, periodic
     auto m3 = Utopia::Setup::create_manager<true,true>(grid,cells,agents);
-
+    
     cells.clear();
-    agents.clear();
+    //agents.clear();
+    
+    //Inserted Test for the add<bool>(container,manager) function
+    //____________________________________________________________
+    //build container  
+    auto clone = Utopia::clone(*m1.agents().begin());
+    Utopia::AgentContainer< std::remove_reference_t<decltype(*clone)> > AC;
+    //clear the agentcontainer for further tests
+    m1.agents().clear();
+    assert(m1.agents().size()==0);
+    //fresh container
+    AC.push_back(clone);
+    assert(AC.size()==1);
+    //make sure the new agent is added
+    assert(Utopia::add<true>(AC,m1)); 
+    //make sure the same agent is not added again
+    assert(!Utopia::add<true>(AC,m1));
+    //make sure that the agent is added again if debug=false
+    assert(Utopia::add<false>(AC,m1));
+    assert(m1.agents().size()==2);
+    
+    m1.agents().clear();
+    AC.clear();
+    AC.push_back(clone);
+    assert(Utopia::add<true>(AC,m1));
+    assert(m1.agents().size()==1); 
+    auto clone2=Utopia::clone(clone);
+    clone2->state()=42;
+    AC.push_back(clone2);
+    //just one new agent should be added, the other rejected, add should return false
+    assert(!Utopia::add<true>(AC,m1));
+    assert(m1.agents().size()==2);
+    assert(m1.agents()[1]->state()==42);
+    m1.agents().clear();
+    //_________________________________________________________________
 
+    m1.agents()=agents;
+    agents.clear();
     // check cloning
     test_cloning(*m1.agents().begin());
-    // assert that clone is not inserted
+    // assert that clone is inserted
     assert(Utopia::add(Utopia::clone(*m1.agents().begin()),m1));
+    
+    
+        
+   
+     // assert(Utopia::add(Utopia::clone(*m1.agents().begin()),m1));
 
         // check if cells are found correctly
     compare_cells_of_agents(m1,m2,m3);

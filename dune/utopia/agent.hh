@@ -100,6 +100,47 @@ bool add (const std::shared_ptr<Agent> agent, Manager& manager)
     return false;
 }
 
+/// Add an Agentcontainer to a managed container
+/** The new container will be inserted at the end of the container
+ *  \param agent AgentContainer to be added
+ *  \param manager Manager of agents
+ *  template parameter debug=true:
+ *  agents are compared and only new agents are added
+ *  \return true if the agent was inserted
+ */
+template<bool debug=false, class Agent, class Manager>
+//bool add (const std::shared_ptr<Agent> agent, Manager& manager)
+bool add(const AgentContainer<Agent>& additional_agents, Manager& manager)
+{
+    //check if agent is already in the container
+    if(debug==true)
+    {
+        auto& agents = manager.agents();
+        int storage_req=agents.size()+additional_agents.size();
+        agents.reserve(storage_req);
+        //only copy new agents
+        
+        auto contains_not = [&agents](auto agent)
+        {
+            return (std::find(agents.cbegin(),agents.cend(),agent)==agents.cend());
+        };
+        
+        std::copy_if(additional_agents.begin(), additional_agents.end(), std::back_inserter(agents),   
+                     contains_not);
+        //have all agents been copied?             
+        return (agents.size()==storage_req);                           
+    }
+    //just copy all
+    else
+    {
+        auto& agents = manager.agents();
+        agents.reserve(agents.size()+additional_agents.size());
+        std::copy(additional_agents.begin(), additional_agents.end(), std::back_inserter(agents));    
+        
+        return true;
+    }
+}
+
 /// Return all agents on a cell on a structured grid
 /** Check match by calculating cell boundaries
  *  \param cell Cell on which agents should be found
