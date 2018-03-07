@@ -69,16 +69,35 @@ int main(int argc, char *argv[])
         test_cell2.update();
         assert(test_cell2.state()[1] == 0.3);
 
-        Utopia::Cell<std::vector<double>, true, Position, Utopia::DefaultTag, int,1 > cell_with_neighbors(vec,pos,false, 987654321);
+
+        //test cell neighborhood
+        //create a cell with two neighborhoods
+        Utopia::Cell<std::vector<double>, true, Position, Utopia::DefaultTag, int,2 > cell_with_neighbors(vec,pos,false, 987654321);
+        
+        //look at a reference of the neighborhoods, see they are build, empty
         auto& nb=cell_with_neighbors.neighborhoods();
-        assert(nb.size()==1);
+        assert(nb.size()==2);
         assert(nb[0].size()==0);
+        assert(nb[1].size()==0);
         
-        auto neighbor= std::make_shared<Utopia::Cell<std::vector<double>, true, Position, Utopia::DefaultTag, int,1 > >(vec,pos,false, 987654321);
+        //build a neighbor cell and add it to the first neighborhood
+        auto neighbor= std::make_shared<Utopia::Cell<std::vector<double>, true, Position, Utopia::DefaultTag, int,2 > >(vec,pos,false, 42);
         nb[0].push_back(neighbor);
-        auto nn=cell_with_neighbors.neighborhoods();
-        assert(nn[0].size()==1);
         
+        //check that it was added, carries correct values 
+        assert(nb[0].size()==1);
+        assert(nb[0][0]->id()==42);
+        assert(nb[0][0]->state()==vec);
+        assert(nb[0][0]->position()==pos);
+        assert(nb[0][0]->is_boundary()==false);
+        
+        //alter the state of neighbor
+        std::vector<double> vec2({43, 0.9});
+        neighbor->state_new()=vec2;
+        neighbor->update();
+        
+        //check the altered state of neighbor via neighborlist
+        assert(nb[0][0]->state()==vec2); 
         
         return 0;
     }

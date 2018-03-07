@@ -318,7 +318,7 @@ public:
      *  \param tag Tracking tag
      */
     Agent (const State state, const Index index, const Position position) :
-        Entity<Agent, State, false, Tags, Index> (state, index),
+        Entity<Agent, State, false, Tags, Index,custom_neighborhood_count> (state, index),
         _position(position)
     { }
 
