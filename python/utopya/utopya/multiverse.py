@@ -41,8 +41,8 @@ class Multiverse:
                     config/
                     eval/
                     universes/
-                        000/
-                        001/
+                        uni000/
+                        uni001/
                         ...
             model_b/
                 180301-125412_my_first_sim/
@@ -105,7 +105,7 @@ class Multiverse:
             max_uni_id (int): highest ID, needed for correct zero-padding
         """
         # Use a format string for creating the uni_path
-        fstr = "{id:>0{digits:}d}"
+        fstr = "uni"+"{id:>0{digits:}d}"
         uni_path = os.path.join(self.dirs['universes'],
                                 fstr.format(id=uni_id, digits=len(str(max_uni_id))))
 
