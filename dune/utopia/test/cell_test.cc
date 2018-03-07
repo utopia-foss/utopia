@@ -99,6 +99,36 @@ int main(int argc, char *argv[])
         //check the altered state of neighbor via neighborlist
         assert(nb[0][0]->state()==vec2); 
         
+        
+        //Check neighborhood functions:
+        //test reference of neighbor + add function
+        auto new_cell_with_neighbors=std::make_shared<Utopia::Cell<std::vector<double>, true, Position, Utopia::DefaultTag, int,2 > >(vec,pos,false, 41);
+        auto& nn=Utopia::Neighborhoods::Custom<0>::neighbors(new_cell_with_neighbors);
+        assert(nn.size()==0);
+        Utopia::Neighborhoods::Custom<0>::add_neighbor(neighbor, new_cell_with_neighbors);
+        assert(nn.size()==1);
+        assert(nn.back()==neighbor);
+        
+        
+        //test different template parameters
+        auto& nnn=Utopia::Neighborhoods::Custom<1>::neighbors(new_cell_with_neighbors);
+        assert(nnn.size()==0);
+        auto yet_another_neighbor=std::make_shared<Utopia::Cell<std::vector<double>, true, Position, Utopia::DefaultTag, int,2 > >(vec,pos,false, 99);
+        Utopia::Neighborhoods::Custom<1>::add_neighbor(yet_another_neighbor, new_cell_with_neighbors);
+        Utopia::Neighborhoods::Custom<0>::add_neighbor(yet_another_neighbor, new_cell_with_neighbors);
+        assert(nnn.size()==1);
+        assert(nn.size()==2);
+        assert(nn.back()==nnn.back());
+        assert(nn.front()!=nnn.front());
+        
+        //test remove
+        Utopia::Neighborhoods::Custom<0>::remove_neighbor(neighbor, new_cell_with_neighbors);
+        assert(nn.size()==1);
+        assert(nn.front()==nnn.front());
+        Utopia::Neighborhoods::Custom<1>::remove_neighbor(yet_another_neighbor, new_cell_with_neighbors);
+        assert(nnn.size()==0);
+        assert(nn.size()==1);
+        
         return 0;
     }
     catch(Dune::Exception c){
