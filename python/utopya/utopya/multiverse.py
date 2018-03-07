@@ -14,55 +14,82 @@ log = logging.getLogger(__name__)
 
 class Multiverse:
 
-    def __init__(self, metaconfig: str="metaconfig.yml", userconfig: str=None):
+    def __init__(self, run_cfg_path: str="run_config.yml", user_cfg_path: str=None):
         """Initialize the setup.
 
-        Load default configuration file and adjust parameters given
-        by metaconfig and userconfig.
+        Load base_configuration file and adjust parameters given
+        by user_config and run_config.
         """
-        self._config = self._configure(metaconfig, userconfig)
+        # Initialise empty dict for config
+        self._meta_config = dict()
+        # Create Meta Config
+        self._meta_config = self._create_meta_config(run_cfg_path=run_cfg_path, user_cfg_path=user_cfg_path)
 
         # Initialise empty dict for keeping track of directory paths
         self.dirs = dict()
 
         # Now create the simulation directory and its internal subdirectories
-        self._create_sim_dir(**self._config['multiverse']['output_path'])
+        #self._create_sim_dir(** model_name="test", self._meta_config['paths'])
 
-    def _configure(self, metaconfig: str, userconfig: str=None) -> dict:
-        """Read default configuration file and adjust parameters.
+    # Properties ..............................................................
+    @property
+    def meta_config(self) -> dict:
+        """The meta_config."""
+        return self._meta_config
 
-        The default metaconfig file, the user/machine-specific file (if existing) and the regular metaconfig file are read in and the default metaconfig is adjusted accordingly to create a single output file.
+    # Public API ..............................................................
+
+    def prepare_universe(self):  # uni_id? max_uni_id?, other stuff
+        # called from worker manager or inside here?
+        # depending on whom is managing parameter sweeps
+        # self._create_uni_dir()
+        # self._create_uni_config()
+        log.debug("Multiverse.prepare_universe called, but not implemented")
+
+    # Non-public API ..........................................................
+
+    def _create_meta_config(self, *, run_cfg_path: str, user_cfg_path: str=None) -> dict:
+        """Read base configuration file and adjust parameters.
+
+        The base_config file, the user_config file (if existing) and the run_config file are read in.
+        The base_config is adjusted accordingly to create the meta_config.
 
         Args:
-            metaconfig: path to metaconfig. An empty or invalid path raises
+            run_cfg_path: path to run_config. An empty or invalid path raises
                 FileNotFoundError.
-            userconfig: optional user/machine-specific configuration file
+            user_cfg_path: optional user_config file An invalid path raises
+                FileNotFoundError.
 
         Returns:
             dict: returns the updated default metaconfig to be processed further or to be written out.
         """
         # In the following, the final configuration dict is built from three components:
-        # The base is the default configuration, which is always present
-        # If a userconfig is present, this recursively updates the defaults
-        # Then, the given metaconfig recursively updates the created dict
-        defaults = read_yml("default_metaconfig.yml", error_msg="default_metaconfig.yml is not present.")
+        # The base configuration, which is always present
+        # If a userconfig is present, this recursively updates the base
+        # Then, the given run_config recursively updates the created dict
+        defaults = read_yml("./utopya/base_config.yml", error_msg="base_config.yml is not present.")
 
-        if userconfig is not None:
-            userconfig = read_yml(userconfig, error_msg="{0} was given but userconfig could not be found.".format(userconfig))
+        if user_cfg_path is not None:
+            user_config = read_yml(user_cfg_path, error_msg="{0} was given but user_config.yaml could not be found.".format(user_cfg_path))
 
-        metaconfig = read_yml(metaconfig, error_msg="{0} was given but metaconfig could not be found.".format(metaconfig))
+        run_config = read_yml(run_cfg_path, error_msg="{0} was given but run_config could not be found.".format(run_cfg_path))
 
         # TODO: typechecks of values should be completed below here.
         # after this point it is assumed that all values are valid
 
         # Now perform the recursive update steps
-        if userconfig is not None:  # update default with user spec
-            defaults = recursive_update(defaults, userconfig)
+        if user_cfg_path is not None:  # update default with user spec
+            defaults = recursive_update(defaults, user_config)
 
         # update default_metaconfig with metaconfig
-        defaults = recursive_update(defaults, metaconfig)
+        defaults = recursive_update(defaults, run_config)
 
         return defaults
+
+    def _create_uni_config(self) -> dict: #other arguments, dummy function
+        # what to really do here ?
+        # return .yml file return dict ? save .yaml file at right position?
+        log.debug("Multiverse._create_uni_config called, but not implemented")
        
     def _create_sim_dir(self, *, model_name: str, out_dir: str, model_note: str=None) -> None:
         """Create the folder structure for the simulation output.
