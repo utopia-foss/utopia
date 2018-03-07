@@ -7,13 +7,11 @@ int main(int argc, char** argv)
         Dune::MPIHelper::instance(argc,argv);
 
         constexpr unsigned int cell_count = 10;
-        constexpr unsigned int agent_count = 10;
 
         auto grid = Utopia::Setup::create_grid(cell_count);
         auto cells = Utopia::Setup::create_cells_on_grid<true>(grid,0);
-        auto agents = Utopia::Setup::create_agents_on_grid(grid,agent_count,0);
         // structured, non-periodic manager
-        auto manager = Utopia::Setup::create_manager<true,false>(grid,cells,agents);
+        auto manager = Utopia::Setup::create_manager_cells<true,false>(grid,cells);
 
         // create VTK writer
         auto vtkwriter = Utopia::Output::create_vtk_writer(grid._grid,"sim-test");

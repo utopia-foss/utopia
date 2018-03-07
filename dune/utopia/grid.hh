@@ -21,15 +21,13 @@ public:
     std::array<unsigned int,dim> _grid_cells;
 };
 
-
-template<typename GridType, bool structured, bool periodic,
-    typename CellType, typename AgentType>
-class GridManager
+/// Common base class for grid managers holding the actual grid
+template<typename GridType, bool structured, bool periodic>
+class GridManagerBase
 {
 public:
+    /// Data types related to the grid
     using Traits = GridTypeAdaptor<GridType>;
-    using Cell = CellType;
-    using Agent = AgentType;
 
 private:
     using Grid = GridType;
@@ -54,50 +52,14 @@ private:
     //! Dune Mapper for grid entities
     const Mapper _mapper;
 
-    //! container for CA cells
-    CellContainer<Cell> _cells;
-
-    //! container for agents
-    AgentContainer<Agent> _agents;
-
 public:
-
-    /// Constructor for grid an CA cells
-    explicit GridManager (
-        const GridWrapper<GridType>& wrapper,
-        const CellContainer<Cell>& cells ) :
+    /// Create a GridManager from a grid and cells
+    explicit GridManagerBase (const GridWrapper<GridType>& wrapper):
         _grid(wrapper._grid),
         _grid_cells(wrapper._grid_cells),
         _extensions(wrapper._extensions),
         _gv(_grid->leafGridView()),
-        _mapper(_gv, Dune::mcmgElementLayout()),
-        _cells(cells)
-    { }
-
-    /// Constructor for grid, CA cells, and Agents
-    explicit GridManager (
-        const GridWrapper<GridType>& wrapper,
-        const CellContainer<Cell>& cells,
-        const AgentContainer<Agent>& agents ) :
-        _grid(wrapper._grid),
-        _grid_cells(wrapper._grid_cells),
-        _extensions(wrapper._extensions),
-        _gv(_grid->leafGridView()),
-        _mapper(_gv, Dune::mcmgElementLayout()),
-        _cells(cells),
-        _agents(agents)
-    { }
-
-    /// Constructor for grid and agents
-    explicit GridManager (
-        const GridWrapper<GridType>& wrapper,
-        const AgentContainer<Agent>& agents ) :
-        _grid(wrapper._grid),
-        _grid_cells(wrapper._grid_cells),
-        _extensions(wrapper._extensions),
-        _gv(_grid->leafGridView()),
-        _mapper(_gv, Dune::mcmgElementLayout()),
-        _agents(agents)
+        _mapper(_gv, Dune::mcmgElementLayout())
     { }
 
     /// Return true if managed grid is structured (rectangular)
@@ -116,14 +78,76 @@ public:
     const std::array<unsigned int,dim>& grid_cells () const { return _grid_cells; }
     /// Return grid extensions
     const std::array<Coordinate,dim>& extensions () const { return _extensions; }
+};
+
+/// Define Type for destinguishing managers
+struct Manager {
+    enum Type { Cells, Agents };
+};
+
+/// Unspecified grid manager
+template<Manager::Type type, typename DataType, typename GridType, bool structured, bool periodic>
+class GridManager
+{};
+
+/// GridManager specialization for cells
+template<typename DataType, typename GridType, bool structured, bool periodic>
+class GridManager<Manager::Cells, DataType, GridType, structured, periodic>:
+    public GridManagerBase<GridType, structured, periodic>
+{
+public:
+    /// Data types related to the grid
+    using Traits = GridTypeAdaptor<GridType>;
+    /// Base class type
+    using Base = GridManagerBase<GridType, structured, periodic>;
+    /// Data type of cells (shared pointer to it)
+    using Cell = DataType;
+
+private:
+    /// container for CA cells
+    CellContainer<Cell> _cells;
+
+public:
+    /// Create a GridManager from a grid and cells
+    explicit GridManager (const GridWrapper<GridType>& wrapper,
+        const CellContainer<Cell>& cells):
+        Base(wrapper),
+        _cells(cells)
+    { }
 
     /// Return const reference to the managed CA cells
     const CellContainer<Cell>& cells () const { return _cells; }
+};
+
+/// GridManager specialization for cells
+template<typename DataType, typename GridType, bool structured, bool periodic>
+class GridManager<Manager::Agents, DataType, GridType, structured, periodic>:
+    public GridManagerBase<GridType, structured, periodic>
+{
+public:
+    /// Data types related to the grid
+    using Traits = GridTypeAdaptor<GridType>;
+    /// Base class type
+    using Base = GridManagerBase<GridType, structured, periodic>;
+    /// Data type of cells (shared pointer to it)
+    using Agent = DataType;
+
+private:
+    /// container for agents
+    AgentContainer<Agent> _agents;
+
+public:
+    /// Create a GridManager from a grid and cells
+    explicit GridManager (const GridWrapper<GridType>& wrapper,
+        const AgentContainer<Agent>& agents):
+        Base(wrapper),
+        _agents(agents)
+    { }
+
     /// Return const reference to the managed agents
     const AgentContainer<Agent>& agents () const { return _agents; }
     /// Return reference to the managed agents
     AgentContainer<Agent>& agents () { return _agents; }
-
 };
 
 } // namespace Utopia

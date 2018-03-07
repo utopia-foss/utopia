@@ -31,31 +31,23 @@ namespace Setup
 {
     /// Create a GridManager from a grid and a CellContainer
     template<bool structured, bool periodic, typename GridType, typename CellType>
-    GridManager<GridType,structured,periodic,CellType,int> create_manager_cells (
+    auto create_manager_cells (
         const GridWrapper<GridType>& wrapper,
         const CellContainer<CellType>& cells )
+        -> GridManager<Manager::Cells, CellType, GridType, structured, periodic>
     {
-        return GridManager<GridType,structured,periodic,CellType,int>(
+        return GridManager<Manager::Cells, CellType, GridType, structured, periodic>(
             wrapper,cells);
-    }  
-
-    /// Create a GridManager from grid, CellContainer, and AgentContainer
-    template<bool structured, bool periodic, typename GridType, typename CellType,typename AgentType>
-    GridManager<GridType,structured,periodic,CellType,AgentType> create_manager (
-        const GridWrapper<GridType>& wrapper,
-        const CellContainer<CellType>& cells,
-        const AgentContainer<AgentType>& agents)
-    {
-        return GridManager<GridType,structured,periodic,CellType,AgentType>(wrapper,cells,agents);
     }
 
     /// Create a GridManager from a grid and an AgentContainer
     template<bool structured, bool periodic, typename GridType,typename AgentType>
-    GridManager<GridType,structured,periodic,int,AgentType> create_manager_agents (
+    auto create_manager_agents (
         const GridWrapper<GridType>& wrapper,
         const AgentContainer<AgentType>& agents )
+        -> GridManager<Manager::Agents, AgentType, GridType, structured, periodic>
     {
-        return GridManager<GridType,structured,periodic,int,AgentType>(
+        return GridManager<Manager::Agents, AgentType, GridType, structured, periodic>(
             wrapper,agents);
     }
 
