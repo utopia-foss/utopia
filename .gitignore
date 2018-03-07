@@ -1,6 +1,9 @@
 *.DS_Store
 build-cmake/
 .coverage
+.h5
+.clang_format
+.vscode/
 *.egg-info
 *.pytest_cache
 __pychache__
