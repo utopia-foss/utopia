@@ -30,10 +30,10 @@ class Multiverse:
 
         # Now create the simulation directory and its internal subdirectories
         self._create_sim_dir(**self.cfg['paths'])
-        
+       
     def _create_sim_dir(self, *, model_name: str, out_dir: str, model_note: str=None) -> None:
         """Create the folder structure for the simulation output.
-        
+    
         The following folder tree will be created
         utopia_output/   # all utopia output should go here
             model_a/
@@ -47,13 +47,13 @@ class Multiverse:
             model_b/
                 180301-125412_my_first_sim/
                 180301-125413_my_second_sim/
-    
+
 
         Args:
             model_name (str): Description
             out_dir (str): Description
             model_note (str, optional): Description
-            
+
         Raises:
             RuntimeError: If the simulation directory already existed. This
                 should not occur, as the timestamp is unique. If it occurs,
@@ -96,10 +96,10 @@ class Multiverse:
 
     def _create_uni_dir(self, uni_id: int, max_uni_id: int) -> None:
         """The _create_uni_dir generates the folder for a single universe
-        
+
         Within the universes directory, create a subdirectory uni### for the
         given universe number, zero-padded such that they are sortable.
-        
+
         Args:
             uni_id (int): ID of the universe whose folder should be created
             max_uni_id (int): highest ID, needed for correct zero-padding
