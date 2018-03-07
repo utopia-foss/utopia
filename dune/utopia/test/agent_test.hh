@@ -100,6 +100,8 @@ void test_agents_on_grid (const std::size_t agent_count, const std::size_t grid_
     //just one new agent should be added, the other rejected, add should return false
     assert(!Utopia::add<true>(AC,m1));
     assert(m1.agents().size()==2);
+    assert(m1.agents()[0]==clone);
+    assert(m1.agents()[1]==clone2);
     assert(m1.agents()[1]->state()==42);
     m1.agents().clear();
     //_________________________________________________________________
@@ -161,5 +163,8 @@ void test_agents_on_grid (const std::size_t agent_count, const std::size_t grid_
     assert(std::find(m1.agents().begin(),m1.agents().end(),agent)==m1.agents().end());
     assert(Utopia::add(agent,m1));
     assert(m1.agents().back() == agent);
-    assert(!Utopia::add(agent,m2));
+    assert(!Utopia::add<true>(agent,m2));
+    int size=m2.agents().size();
+    assert(Utopia::add<false>(agent,m2));
+    assert(m2.agents().size()==size+1);
 }

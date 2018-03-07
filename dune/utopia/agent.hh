@@ -87,25 +87,40 @@ void remove (const std::shared_ptr<Agent> agent, Manager& manager)
 /** The agent will be inserted at the end of the container
  *  \param agent Agent to be added
  *  \param manager Manager of agents
+ *  if template parameter debug=true:
+ *  agents are compared and only new agents are added
+ *  else: agents are always added 
  *  \return true if the agent was inserted
  */
-template<class Agent, class Manager>
+template<bool debug=false,class Agent, class Manager>
 bool add (const std::shared_ptr<Agent> agent, Manager& manager)
 {
-    auto& agents = manager.agents();
-    if(std::find(agents.cbegin(),agents.cend(),agent)==agents.cend()){
+    if(debug==true)
+    {
+         auto& agents = manager.agents();
+         if(std::find(agents.cbegin(),agents.cend(),agent)==agents.cend())
+         {
+             agents.push_back(agent);
+             return true;
+         }
+         return false;
+    }
+    else
+    {
+        auto& agents = manager.agents();
         agents.push_back(agent);
         return true;
     }
-    return false;
+   
 }
 
 /// Add an Agentcontainer to a managed container
 /** The new container will be inserted at the end of the container
  *  \param agent AgentContainer to be added
  *  \param manager Manager of agents
- *  template parameter debug=true:
+ *  if template parameter debug=true:
  *  agents are compared and only new agents are added
+ *  else: agents are always added
  *  \return true if the agent was inserted
  */
 template<bool debug=false, class Agent, class Manager>
