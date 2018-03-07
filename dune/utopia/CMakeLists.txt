@@ -15,5 +15,6 @@ install(FILES
             utopia_dune.hh
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/dune/utopia)
 
-add_subdirectory(test EXCLUDE_FROM_ALL)
 add_subdirectory(data_io)
+add_subdirectory(models)
+add_subdirectory(test EXCLUDE_FROM_ALL)
