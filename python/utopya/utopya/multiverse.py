@@ -107,7 +107,7 @@ class Multiverse:
         # Use a format string for creating the uni_path
         fstr = "{id:>0{digits:}d}"
         uni_path = os.path.join(self.dirs['universes'],
-                                fstr.format(id=uni_id, digits=len(max_uni_id)))
+                                fstr.format(id=uni_id, digits=len(str(max_uni_id))))
 
         # Now create the folder
         os.mkdir(uni_path)
