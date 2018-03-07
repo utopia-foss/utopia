@@ -10,5 +10,5 @@ foreach(test ${TESTS_DATAIO})
 endforeach(test)
 
 # add custom target for 'DATAIO' prefix
-add_custom_target(test_DATAIO
+add_custom_target(test_dataio
     COMMAND ctest --output-on-failure --tests-regex ^DATAIO_.+$)
