@@ -7,18 +7,9 @@ message(STATUS "Updating utopya module with information about models...")
 set(UTOPYA_INFO ${CMAKE_CURRENT_SOURCE_DIR}/utopya/utopya/info.py)
 string(TIMESTAMP CURRENT_TIME)
 
-# Delete the file and create it again
+# Delete the file and create it again, adding the information on all models
 file(REMOVE ${UTOPYA_INFO})
-configure_file(${UTOPYA_INFO}.in ${UTOPYA_INFO} @ONLY) 
-
-# add_custom_target(utopya_info_module ALL
-#                   COMMAND ${CMAKE_COMMAND} -P ${CFG_UTOPYA_INFO} 
-#                   DEPENDS
-#                     ${CFG_UTOPYA_INFO}
-#                     ${UTOPYA_INFO}.in
-#                     ${MODEL_LIST}
-#                   COMMENT "Configuring utopya info module ..."
-#                   )
+configure_file(${UTOPYA_INFO}.in ${UTOPYA_INFO} @ONLY)
 
 # Installations ...............................................................
 

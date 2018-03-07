@@ -1,7 +1,7 @@
 # Set the models here
 set(MODELS
     dummy
-    # dummy2
+    dummy2
     # ... add other models here
     )
 
@@ -32,3 +32,5 @@ message(STATUS "Added corresponding binary paths to ${CMAKE_CURRENT_BINARY_DIR}"
 # Cache the value of the bin paths
 set(UTOPIA_MODEL_BINPATHS ${model_binpaths}
     CACHE STRING "list of Utopia model binpaths" FORCE)
+
+# NOTE The two written UTOPIA_* cache variables are read in by the CMakeLists in Python, generating the utopya/info.py module
