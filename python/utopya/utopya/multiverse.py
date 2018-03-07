@@ -198,7 +198,8 @@ class Multiverse:
                     should be started
 
             Returns:
-                dict: kwargs for the task to be add by WorkerManager.add_task
+                dict: kwargs for the process to be run when task is grabbed by
+                    Worker.
             """
             # create universe directory
             uni_dir = self._create_uni_dir(uni_id=uni_id, max_uni_id=max_uni_id)
@@ -213,10 +214,10 @@ class Multiverse:
             args = (utopia_exec, model_name, uni_cfg_path)
 
             # setup kwargs
-            task_kwargs = dict(args=args,  # passing the arguments
+            proc_kwargs = dict(args=args,  # passing the arguments
                                read_stdout=True,
                                line_read_func=enqueue_json)  # Callable
-            return task_kwargs
+            return proc_kwargs
 
         setup_kwargs = dict(utopia_exec=self.UTOPIA_EXEC,
                             model_name=self.model_name,
@@ -224,7 +225,5 @@ class Multiverse:
                             cfg_dict=cfg_dict)
 
         self._wm.add_task(priority=None,
-                          read_stdout=True,
-                          line_read_func=enqueue_json,
                           setup_func=setup_func,
                           setup_kwargs=setup_kwargs)

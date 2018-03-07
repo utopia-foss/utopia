@@ -122,7 +122,7 @@ class WorkerManager:
 
     # Public API ..............................................................
 
-    def add_task(self, args: Union[str, list], *, priority: int=None, read_stdout: bool=True, **kwargs):
+    def add_task(self, *, priority: int=None, setup_func: Callable=None, setup_kwargs: dict=None, proc_kwargs: dict=None):
         """Adds a task to the queue.
 
         A priority can be assigned to the task, but will only be used during task retrieval if the WorkerManager was initialized with a queue.PriorityQueue as task manager.
@@ -138,24 +138,29 @@ class WorkerManager:
                 the stdout of the created process
             **kwargs: Additional task arguments
         """
+        if setup_func:
+            setup_kwargs = setup_kwargs if setup_kwargs else dict()
+            if not setup_kwargs:
+                warnings.warn("setup_function given but no setup_kwargs"
+                              " specified.", UserWarning)
+        elif proc_kwargs:
+            if setup_kwargs:
+                warnings.warn("proc_kwargs given but also setup_kwargs"
+                              " specified.", UserWarning)
+        else:
+            raise ValueError("Need either argument setup_func or proc_kwargs.")
+
         # Generate a new ID for the task (using the current task counter)
         task_id = self.task_count
 
         log.debug("Adding task with ID %d ...", task_id)
-        log.debug("  Task args:   %s", args)
-        log.debug("  read_stdout: %s", read_stdout)
-        log.debug("  kwargs:      %s", kwargs)
-
-        # Parse the task argument, ensuring it is a tuple
-        if isinstance(args, str):
-            args = args.split(' ')
-        args = tuple(args)
 
         # Put it into the task queue and increment the task counter
         self._tasks.put_nowait((priority,
                                 task_id,
-                                dict(args=args, read_stdout=read_stdout,
-                                     **kwargs)))
+                                setup_func,
+                                setup_kwargs,
+                                proc_kwargs))
         self._increment_task_count()
 
         log.debug("Task %s added.", task_id)
@@ -250,6 +255,8 @@ class WorkerManager:
             ValueError: When stdout should be read but no `line_read_func` was
                 supplied during initialisation
         """
+        if not isinstance(args, tuple):
+            raise TypeError("Need process arguments to be of type tuple, got ", +str(type(args)))
 
         if read_stdout:
             # If no `line_read_func` was given, read the default
