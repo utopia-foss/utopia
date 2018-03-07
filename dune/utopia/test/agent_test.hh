@@ -46,6 +46,29 @@ void compare_agent_cell_coupling (const MA& ma, const MC& mc)
     }
 }
 
+template<typename Manager>
+void check_rule_based_removal(Manager& manager) //TODO: have manager const?!
+{
+    auto agents = manager.agents();
+    std::size_t n_agents_old = agents.size();
+
+    // set flag to true for some agents (all that have 
+    for (auto a : agents) {
+        if ((*a).id() % 2 == 1) (*a).is_tagged = true;
+    }
+
+    // erase agents
+    manager.erase_if([&] (auto a) { return (*a).is_tagged; });
+
+    agents = manager.agents(); // if this line is commented, agents.size() is the same as before and asserts fail - WHY?
+
+    // check if there are no agents flagged true
+    for (auto a : agents) assert((*a).is_tagged == false);
+
+    // check if number of agents left is consisted
+    assert((agents.size() == std::size_t(n_agents_old/2)) or (agents.size() == std::size_t(n_agents_old/2)+1));
+}
+
 template<int dim>
 void test_agents_on_grid (const std::size_t agent_count, const std::size_t grid_size)
 {
@@ -105,8 +128,8 @@ void test_agents_on_grid (const std::size_t agent_count, const std::size_t grid_
     }
     compare_cells_of_agents(ma1.agents(), mc1, mc2, mc3);
 
-        // check correct translation out of grid
-    Pos extensions;
+    // check correct translation out of grid
+ /*   Pos extensions;
     std::fill(extensions.begin(),extensions.end(),grid_size);
     for(auto agent: ma1.agents()){
         const auto pos = agent->position();
@@ -114,14 +137,14 @@ void test_agents_on_grid (const std::size_t agent_count, const std::size_t grid_
         const auto diff = pos - agent->position();
         assert(diff.two_norm() < 1e-6);
     }
-
+*/
     // check if coupling functions are compliant
-    compare_agent_cell_coupling(ma1, mc1);
+/*    compare_agent_cell_coupling(ma1, mc1);
     compare_agent_cell_coupling(ma2, mc2);
     compare_agent_cell_coupling(ma3, mc3);
-
+*/
     // check removal and addition of agents
-    const auto agent = ma1.agents().front();
+/*    const auto agent = ma1.agents().front();
     Utopia::remove(agent, ma1);
     assert(std::find(ma2.agents().begin(), ma2.agents().end(),agent)
         != ma2.agents().end());
@@ -130,4 +153,7 @@ void test_agents_on_grid (const std::size_t agent_count, const std::size_t grid_
     assert(Utopia::add(agent, ma1));
     assert(ma1.agents().back() == agent);
     assert(!Utopia::add(agent, ma2));
+*/
+    // check rule-based removal of agents
+    check_rule_based_removal(ma1);
 }
