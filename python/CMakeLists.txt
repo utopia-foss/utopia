@@ -3,7 +3,10 @@
 # Pass info to utopya  ........................................................
 message(STATUS "Updating utopya module with information about models...")
 
-generate_model_info(${CMAKE_CURRENT_SOURCE_DIR}/utopya/utopya/info.py)
+generate_model_info(
+    ${CMAKE_CURRENT_SOURCE_DIR}/utopya/utopya/info.py.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/utopya/utopya/info.py
+)
 
 # Installations ...............................................................
 
