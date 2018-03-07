@@ -183,7 +183,7 @@ class Multiverse:
             cfg_dict (dict): given by ParamSpace. Defines how many simulations
                 should be started
         """
-        def setup_func(*, utopia_exec, model_name, uni_id, max_uni_id, cfg_dict) -> dict:
+        def setup_func(*, utopia_exec: str, model_name: str, uni_id: int, max_uni_id: int, cfg_dict: dict) -> dict:
             """Sub-helper function to be returned as functional.
 
             Creates universe for the task, writes configuration, calls
@@ -213,8 +213,7 @@ class Multiverse:
             args = (utopia_exec, model_name, uni_cfg_path)
 
             # setup kwargs
-            task_kwargs = dict(priority=None,
-                               args=args,  # passing the arguments
+            task_kwargs = dict(args=args,  # passing the arguments
                                read_stdout=True,
                                line_read_func=enqueue_json)  # Callable
             return task_kwargs
