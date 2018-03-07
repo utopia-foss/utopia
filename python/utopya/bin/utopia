@@ -2,6 +2,7 @@
 """This is the command line interface for Utopia"""
 
 import argparse
+import warnings
 
 import utopya
 
@@ -32,3 +33,18 @@ if __name__ == '__main__':
     # Using the args, instantiate a Multiverse object
     mv = utopya.Multiverse(model_name=args.model_name,
                            run_cfg=args.run_cfg)
+
+    if args.single:
+        if args.sweep:
+            warnings.warn("Received both --single and --sweep arguments; will "
+                          "perform a single simulation.",
+                          UserWarning)
+
+        mv.run_single()
+
+    elif args.sweep:
+        mv.run_sweep()
+
+    else:
+        mv.run()
+        
