@@ -114,44 +114,50 @@ bool add (const std::shared_ptr<Agent> agent, Manager& manager)
    
 }
 
-/// Add an Agentcontainer to a managed container
-/** The new container will be inserted at the end of the container
- *  \param agent AgentContainer to be added
+/// Append an Agentcontainer to a managed container
+/** The new container will be inserted at the end of the container.
+ *  \tparam debug Check if agents already exist in manager
+ *  \param additional_agents AgentContainer to be added
  *  \param manager Manager of agents
  *  if template parameter debug=true:
  *  agents are compared and only new agents are added
  *  else: agents are always added
- *  \return true if the agent was inserted
+ *  \return true if the agent was inserted.
+ *      Debug: return vector of booleans indicating succesful insertion.
  */
 template<bool debug=false, class Agent, class Manager>
 //bool add (const std::shared_ptr<Agent> agent, Manager& manager)
-bool add(const AgentContainer<Agent>& additional_agents, Manager& manager)
+auto add (const AgentContainer<Agent>& additional_agents, Manager& manager)
 {
     //check if agent is already in the container
-    if(debug==true)
+    if constexpr(debug)
     {
         auto& agents = manager.agents();
-        int storage_req=agents.size()+additional_agents.size();
-        agents.reserve(storage_req);
-        //only copy new agents
-        
-        auto contains_not = [&agents](auto agent)
-        {
-            return (std::find(agents.cbegin(),agents.cend(),agent)==agents.cend());
+        agents.reserve(agents.size() + additional_agents.size());
+
+        // copy new agents and store which ones have not been copied
+        std::vector<bool> was_inserted;
+        was_inserted.reserve(additional_agents.size());
+        auto contains_not = [&agents, &was_inserted](const auto agent) {
+            const auto insert = std::find(agents.cbegin(), agents.cend(), agent)
+                == agents.cend();
+            was_inserted.push_back(insert);
+            return insert;
         };
-        
-        std::copy_if(additional_agents.begin(), additional_agents.end(), std::back_inserter(agents),   
-                     contains_not);
-        //have all agents been copied?             
-        return (agents.size()==storage_req);                           
+
+        std::copy_if(additional_agents.begin(), additional_agents.end(),
+            std::back_inserter(agents), contains_not);
+             
+        return was_inserted;                           
     }
-    //just copy all
+    // just copy all
     else
     {
         auto& agents = manager.agents();
-        agents.reserve(agents.size()+additional_agents.size());
-        std::copy(additional_agents.begin(), additional_agents.end(), std::back_inserter(agents));    
-        
+        agents.reserve(agents.size() + additional_agents.size());
+        std::copy(additional_agents.begin(), additional_agents.end(),
+            std::back_inserter(agents));
+
         return true;
     }
 }
