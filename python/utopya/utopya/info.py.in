@@ -3,8 +3,8 @@
 Note that this is not a usual python module, but is merely used to hold this
 information data and make it easily accessible to utopya.
 """
-
 CMAKE_BINARY_DIR = "@CMAKE_BINARY_DIR@"
+LAST_CONFIG_TIME = "@CURRENT_TIME@"
 
 UTOPIA_MODEL_TARGETS = "@UTOPIA_MODEL_TARGETS@"
 UTOPIA_MODEL_BINPATHS = "@UTOPIA_MODEL_BINPATHS@"

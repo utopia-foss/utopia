@@ -4,22 +4,21 @@
 message(STATUS "Updating utopya module with information about models...")
 
 # Set the file paths for both the file to be configured and target module file
-set(CFG_UTOPYA_INFO ${CMAKE_CURRENT_SOURCE_DIR}/configure_utopya_info.cmake)
 set(UTOPYA_INFO ${CMAKE_CURRENT_SOURCE_DIR}/utopya/utopya/info.py)
-string(RANDOM LENGTH 42 RANDOM_STR)
+string(TIMESTAMP CURRENT_TIME)
 
-configure_file(${CFG_UTOPYA_INFO}.in ${CFG_UTOPYA_INFO} @ONLY) 
+# Delete the file and create it again
+file(REMOVE ${UTOPYA_INFO})
+configure_file(${UTOPYA_INFO}.in ${UTOPYA_INFO} @ONLY) 
 
-add_custom_command(OUTPUT ${UTOPYA_INFO}
-                   COMMAND ${CMAKE_COMMAND} -P ${CFG_UTOPYA_INFO} 
-                   DEPENDS
-                       ${CFG_UTOPYA_INFO}
-                       ${UTOPYA_INFO}.in
-                   COMMENT "Configuring input file:  utopya/info.py.in  ..." 
-                   VERBATIM) 
-
-add_custom_target(create_utopya_info_module ALL
-                  DEPENDS ${CFG_UTOPYA_INFO} ${UTOPYA_INFO})
+# add_custom_target(utopya_info_module ALL
+#                   COMMAND ${CMAKE_COMMAND} -P ${CFG_UTOPYA_INFO} 
+#                   DEPENDS
+#                     ${CFG_UTOPYA_INFO}
+#                     ${UTOPYA_INFO}.in
+#                     ${MODEL_LIST}
+#                   COMMENT "Configuring utopya info module ..."
+#                   )
 
 # Installations ...............................................................
 
