@@ -3,5 +3,8 @@ build-cmake/
 .coverage
 .h5
 .clang_format
-.clang-format 
-.vscode
+.vscode/
+*.egg-info
+*.pytest_cache
+__pychache__
+*.pyc

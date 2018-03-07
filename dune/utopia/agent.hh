@@ -112,7 +112,7 @@ auto find_agents_on_cell (const std::shared_ptr<Cell> cell, const Manager& manag
         std::vector<std::shared_ptr<typename Manager::Agent>> >
 {
     std::vector<std::shared_ptr<typename Manager::Agent>> ret;
-    const auto id = cell->index();
+    const auto id = cell->id();
     const auto& extensions = manager.extensions();
     const auto& grid_cells = manager.grid_cells();
 
@@ -163,7 +163,7 @@ auto find_agents_on_cell (const std::shared_ptr<Cell> cell, const Manager& manag
 
     // get reference element for cell
     auto it = elements(manager.grid_view()).begin();
-    std::advance(it,cell->index());
+    std::advance(it,cell->id());
     const auto& geo = it->geometry();
     const auto& ref = Dune::ReferenceElements<Coordinate,dim>::general(geo.type());
 
@@ -290,21 +290,21 @@ std::enable_if_t<!enabled,void> move_to (const Position& pos, const std::shared_
 
 /// This class implements a moving Agent on a grid
 /** An object of this class only saves its global position on the grid
- *
  *  \tparam StateType Data type of state
- *  \tparam TraitsType Data type of traits
+ *  \tparam Tags Tags class from which Entity and thus Agent derive
+ *  \tparam IndexType Data type of index
  *  \tparam PositionType Data type of position vector
  */
-template<typename StateType, typename TraitsType, typename PositionType>
+template<typename StateType, class Tags, typename IndexType, typename PositionType>
 class Agent :
-    public Entity<StateType,TraitsType>
+    public Entity<StateType, false, Tags, IndexType>
 {
 
 public:
     
     using State = StateType;
-    using Traits = TraitsType;
     using Position = PositionType;
+    using Index = IndexType;
 
 private:
     //!< Global position on the grid
@@ -317,9 +317,8 @@ public:
      *  \param position Initial position
      *  \param tag Tracking tag
      */
-    Agent (const State state, const Traits traits, const Position position,
-        const int tag = 0) :
-        Entity<State,Traits>(state,traits,tag),
+    Agent (const State state, const Index index, const Position position) :
+        Entity<State, false, Tags, Index> (state, index),
         _position(position)
     { }
 

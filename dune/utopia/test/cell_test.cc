@@ -1,9 +1,12 @@
 #include <random>
+#include <iostream>
+#include <cassert>
+
 #include <dune/utopia/utopia.hh>
 #include <dune/common/exceptions.hh>
 #include <dune/common/fvector.hh>
+#include <dune/common/parallel/mpihelper.hh>
 
-#include "entity_test.hh"
 #include "cell_test.hh"
 
 /// Choose random states and traits. Verify Entity members before and after update
@@ -12,25 +15,34 @@ int main(int argc, char *argv[])
     try{
         Dune::MPIHelper::instance(argc, argv);
 
+        //some typedefinitions
         using State = int;
-        using Traits = double;
         using Position = Dune::FieldVector<double,2>;
         using Index = int;
 
+        //create random devices
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_int_distribution<State> dist_int(std::numeric_limits<State>::min(),std::numeric_limits<State>::max());
-        std::uniform_real_distribution<Traits> dist_real(std::numeric_limits<Traits>::min(),std::numeric_limits<Traits>::max());
-        const State state = dist_int(gen);
-        const Traits traits = dist_real(gen);
-        const int tag = 1;
-        const Position pos({dist_real(gen),dist_real(gen)});
-        const Index index = 2;
-        const bool boundary = true;
+        std::uniform_real_distribution<double> dist_real(std::numeric_limits<double>::min(),std::numeric_limits<double>::max());
 
-        Utopia::Cell<State,Traits,Position,Index> c1(state,traits,pos,index,boundary,tag);
-        assert_entity_members(c1,state,state,traits,traits,tag);
-        assert_cell_members(c1,pos,index,boundary);
+        //Create Objects that are handed to the constructor
+        const Position pos({dist_real(gen),dist_real(gen)});
+        const Index index = dist_int(gen);
+        const bool boundary = true;
+        const State state(dist_int(gen));
+        
+        //build a cell
+        Utopia::Cell<State,true,Position,Utopia::DefaultTag,Index> c1(state,pos,boundary,index);
+
+        //assert that the content of the cell is correct
+        assert(c1.state()==state);
+        assert_cell_members(c1, pos, index, boundary);
+
+        //test whether the default flag is set correctly
+        //it was created by the default constructor and not set explicitly here
+        Utopia::DefaultTag tag;
+        assert(c1.is_tagged==tag.is_tagged);
 
         return 0;
     }

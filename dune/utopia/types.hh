@@ -36,7 +36,7 @@ using CellContainer = std::vector<std::shared_ptr<CellType>>;
 
 /// Type of the variably sized container for agents
 template<typename AgentType>
-using AgentContainer = std::list<std::shared_ptr<AgentType>>;
+using AgentContainer = std::vector<std::shared_ptr<AgentType>>;
 
 /// Container dummy if no cells or individuals are used
 using EmptyContainer = std::array<std::shared_ptr<int>,0>;

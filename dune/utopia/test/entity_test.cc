@@ -1,61 +1,39 @@
-#include <random>
 #include <dune/utopia/utopia.hh>
-#include <dune/common/exceptions.hh>
+#include <iostream>
+#include <vector>
+#include <cassert>
 
-#include "entity_test.hh"
-
-/// Choose random states and traits. Check member access and update functions.
-int main(int argc, char **argv)
+int main()
 {
     try{
-        Dune::MPIHelper::instance(argc,argv);
+        // Test async entity with doubles
+        Utopia::Entity<double, false, Utopia::DefaultTag, int> test_entity(0.1, 0);
+        assert(!test_entity.is_sync());
+        auto& state = test_entity.state();
+        state = 0.2;
+        assert(test_entity.state() = 0.2);
+        // Test members inherited from Tag
+        assert(!test_entity.is_tagged);
+        test_entity.is_tagged = true;
+        assert(test_entity.is_tagged);
+        // Test entity member variables
+        assert(test_entity.id() == 0);
 
-        using State = int;
-        using Traits = double;
-
-        /// get random values for states and traits
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::uniform_int_distribution<State> dist_state(std::numeric_limits<State>::min(),std::numeric_limits<State>::max());
-        std::uniform_real_distribution<Traits> dist_traits(std::numeric_limits<Traits>::min(),std::numeric_limits<Traits>::max());
-        const State state = dist_state(gen);
-        const State state_1 = dist_state(gen);
-        const State state_2 = dist_state(gen);
-        const Traits traits = dist_traits(gen);
-        const Traits traits_1 = dist_traits(gen);
-        const Traits traits_2 = dist_traits(gen);
-        const int tag = 1;
-
-        /// test initialization
-        Utopia::Entity<State,Traits> e1(state,traits,tag);
-        assert_entity_members(e1,state,state,traits,traits,tag);
-
-        /// test accessing state and traits cache
-        e1.new_state() = state_1;
-        e1.new_traits() = traits_1;
-        assert_entity_members(e1,state,state_1,traits,traits_1,tag);
-
-        /// test general update
-        e1.update();
-        assert_entity_members(e1,state_1,state_1,traits_1,traits_1,tag);
-
-        /// test separate updates
-        e1.new_state() = state_2;
-        e1.update_state();
-        assert_entity_members(e1,state_2,state_2,traits_1,traits_1,tag);
-
-        e1.new_traits() = traits_2;
-        e1.update_traits();
-        assert_entity_members(e1,state_2,state_2,traits_2,traits_2,tag);
+        // Test sync entity with vector 
+        std::vector<double> vec({0.1, 0.2});
+        Utopia::Entity<std::vector<double>, true, Utopia::DefaultTag, int> test_entity2(vec, 987654321);
+        assert(test_entity2.id() == 987654321);
+        assert(test_entity2.is_sync());
+        auto& new_state = test_entity2.state_new();
+        new_state = std::vector<double>({0.1, 0.3});
+        assert(test_entity2.state() == vec);
+        test_entity2.update();
+        assert(test_entity2.state()[1] == 0.3);
 
         return 0;
     }
-    catch(Dune::Exception c){
-        std::cerr << c << std::endl;
-        return 1;
-    }
     catch(...){
         std::cerr << "Unknown exception thrown!" << std::endl;
-        return 2;
+        return 1;
     }
 }
