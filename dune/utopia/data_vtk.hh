@@ -241,21 +241,32 @@ public:
      */
     AgentCountGridDataAdaptor (const Manager& manager, const std::string label) :
         _manager(manager),
-        _grid_data(_manager.cells().size(),0),
+        _grid_data(_manager.mapper().size(), 0),
         _label(label)
     { }
 
     /// Count all agents per cell
     void update_data () override
     {
-        std::fill(_grid_data.begin(),_grid_data.end(),0);
-        std::for_each(
-            _manager.agents().begin(),
-            _manager.agents().end(),
-            [this](const auto agent){
-                const auto cell = find_cell(agent,_manager);
-                _grid_data.at(cell->id())++;
-        });
+        using Coord = typename Manager::Traits::Coordinate;
+        constexpr auto dim = Manager::Traits::dim;
+
+        // loop over all grid cells
+        const auto& agents = _manager.agents();
+        for (const auto& cell: elements(_manager.grid_view()))
+        {
+            const auto& geo = cell.geometry();
+            const auto& ref = Dune::ReferenceElements<Coord,dim>
+                ::general(geo.type());
+            const auto count = std::count_if(agents.begin(), agents.end(),
+                [&cell, &geo, &ref](const auto agent){
+                    // transformation to element local coordinates
+                    const auto pos_local = geo.local(agent->position());
+                    return ref.checkInside(pos_local);
+            });
+
+            _grid_data.at(_manager.mapper().index(cell)) = count;
+        }
     }
 
     template<typename VTKWriter>
