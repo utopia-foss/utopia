@@ -13,6 +13,10 @@ foreach(test ${TESTS_DATAIO})
     dune_add_test(NAME DATAIO_${test} SOURCES ${test}.cc)
 endforeach(test)
 
+# reading depends on writing the file first
+set_tests_properties(DATAIO_hdfattribute_test_read PROPERTIES
+    DEPENDS DATA_IOhdfattribute_test_write)
+
 # add custom target for 'DATAIO' prefix
 add_custom_target(test_dataio
     COMMAND ctest --output-on-failure --tests-regex ^DATAIO_.+$)
