@@ -1,7 +1,7 @@
 # Set the models here
 set(MODELS
     dummy
-    # dummy2
+    dummy2
     # ... add other models here
     )
 

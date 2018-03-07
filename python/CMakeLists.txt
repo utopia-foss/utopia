@@ -1,9 +1,25 @@
 # Handle configuration and installation of python packages and tests here
 
 # Pass info to utopya  ........................................................
-# Configure the file inside the utopya module that will hold info on models
-configure_file(utopya/utopya/info.py.in
-               ${CMAKE_CURRENT_SOURCE_DIR}/utopya/utopya/info.py)
+message(STATUS "Updating utopya module with information about models...")
+
+# Set the file paths for both the file to be configured and target module file
+set(CFG_UTOPYA_INFO ${CMAKE_CURRENT_SOURCE_DIR}/configure_utopya_info.cmake)
+set(UTOPYA_INFO ${CMAKE_CURRENT_SOURCE_DIR}/utopya/utopya/info.py)
+string(RANDOM LENGTH 42 RANDOM_STR)
+
+configure_file(${CFG_UTOPYA_INFO}.in ${CFG_UTOPYA_INFO} @ONLY) 
+
+add_custom_command(OUTPUT ${UTOPYA_INFO}
+                   COMMAND ${CMAKE_COMMAND} -P ${CFG_UTOPYA_INFO} 
+                   DEPENDS
+                       ${CFG_UTOPYA_INFO}
+                       ${UTOPYA_INFO}.in
+                   COMMENT "Configuring input file:  utopya/info.py.in  ..." 
+                   VERBATIM) 
+
+add_custom_target(create_utopya_info_module ALL
+                  DEPENDS ${CFG_UTOPYA_INFO} ${UTOPYA_INFO})
 
 # Installations ...............................................................
 

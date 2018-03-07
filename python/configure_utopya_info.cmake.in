@@ -1,0 +1,9 @@
+set(UTOPYA_INFO "@UTOPYA_INFO@")
+set(RANDOM_STR "@RANDOM_STR@")
+
+set(UTOPIA_MODEL_TARGETS "@UTOPIA_MODEL_TARGETS@")
+set(UTOPIA_MODEL_BINPATHS "@UTOPIA_MODEL_BINPATHS@")
+
+# Configure the actual utopya info module
+message(STATUS "Configuring utopya info module ...")
+configure_file(${UTOPYA_INFO}.in ${UTOPYA_INFO} @ONLY) 
