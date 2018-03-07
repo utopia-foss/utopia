@@ -19,6 +19,7 @@ set(TESTS_CORE
     simulation_test
     state_test
     tags_test
+    apply_test
     )
 
 # add CORE tests
