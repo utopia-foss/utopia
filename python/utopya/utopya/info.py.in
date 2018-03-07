@@ -3,8 +3,26 @@
 Note that this is not a usual python module, but is merely used to hold this
 information data and make it easily accessible to utopya.
 """
-CMAKE_BINARY_DIR = "@CMAKE_BINARY_DIR@"
-LAST_CONFIG_TIME = "@CURRENT_TIME@"
 
-UTOPIA_MODEL_TARGETS = "@UTOPIA_MODEL_TARGETS@"
-UTOPIA_MODEL_BINPATHS = "@UTOPIA_MODEL_BINPATHS@"
+# Begin of CMake configured variables .........................................
+_CMAKE_BINARY_DIR = "@CMAKE_BINARY_DIR@"
+_LAST_CONFIG_TIME = "@CURRENT_TIME@"
+
+_UTOPIA_MODEL_TARGETS = "@UTOPIA_MODEL_TARGETS@"
+_UTOPIA_MODEL_BINPATHS = "@UTOPIA_MODEL_BINPATHS@"
+# End of CMake configured variables ...........................................
+
+# Need a function to parse the cmake variables
+def parse_utopia_models() -> dict:
+    """From the module constants, creates a dictionary with the model information in {model_name: model_binary_path} format."""
+
+    targets = _UTOPIA_MODEL_TARGETS.split(";")
+    binpaths = _UTOPIA_MODEL_BINPATHS.split(";")
+
+    model_info = {t:bp for t, bp in zip(targets, binpaths)}
+
+    return model_info
+
+# Now declare those variables that are considered useful on the outside
+MODELS = parse_utopia_models()
+NUM_MODELS = len(MODELS)
