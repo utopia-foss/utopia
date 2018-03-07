@@ -357,9 +357,9 @@ std::enable_if_t<!enabled,void> move_to (const Position& pos, const std::shared_
  *  \tparam IndexType Data type of index
  *  \tparam PositionType Data type of position vector
  */
-template<typename StateType, class Tags, typename IndexType, typename PositionType>
+template<typename StateType, class Tags, typename IndexType, typename PositionType, std::size_t custom_neighborhood_count = 0>
 class Agent :
-    public Entity<StateType, false, Tags, IndexType>
+    public Entity< Agent<StateType,Tags,IndexType,PositionType, custom_neighborhood_count> ,StateType, false, Tags, IndexType, custom_neighborhood_count>
 {
 
 public:
@@ -380,7 +380,7 @@ public:
      *  \param tag Tracking tag
      */
     Agent (const State state, const Index index, const Position position) :
-        Entity<State, false, Tags, Index> (state, index),
+        Entity<Agent, State, false, Tags, Index,custom_neighborhood_count> (state, index),
         _position(position)
     { }
 
