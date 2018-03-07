@@ -30,7 +30,7 @@ def test_create_sim_dir(tmpdir, mv_config):
     # read path names from meta_cfg.yaml
 
     # adapt cfg to special needs
-    #mv_config['paths']['out_dir'] = tmpdir.dirpath()
+    mv_config['paths']['out_dir'] = tmpdir.dirpath()
     mv_config['paths']['model_name'] = "test_outer_folder_structure"
 
     # Init Multiverse
@@ -51,7 +51,7 @@ def test_create_sim_dir(tmpdir, mv_config):
 #@pytest.mark.skip("To be re-implemented when the Multiverse is further developed.")
 def test_detect_doubled_folders(tmpdir, mv_config):
     # adapt cfg to special needs
-    #mv_config['paths']['out_dir'] = tmpdir.dirpath()
+    mv_config['paths']['out_dir'] = tmpdir.dirpath()
     mv_config['paths']['model_name'] = "test_universes_doubling"
     # create two Multiverses after another (within one second) 
     # expect error due to existing folders
@@ -62,7 +62,7 @@ def test_detect_doubled_folders(tmpdir, mv_config):
 #@pytest.mark.skip("To be re-implemented when the Multiverse is further developed.")
 def test_create_uni_dir(tmpdir, mv_config, maximum=9):
     # adapt cfg to special needs
-    #mv_config['paths']['out_dir'] = tmpdir.dirpath()
+    mv_config['paths']['out_dir'] = tmpdir.dirpath()
     mv_config['paths']['model_name'] = "test_universes_folder_structure"
 
     # Init Multiverse
