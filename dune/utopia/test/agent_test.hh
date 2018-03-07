@@ -46,6 +46,52 @@ void compare_agent_cell_coupling (const MA& ma, const MC& mc)
     }
 }
 
+/// Remove and add agents using container add
+template<class M1, class M2>
+void test_remove_and_add_container (M1& m1, M2& m2)
+{
+    // place agent and clone in container
+    auto agent = m1.agents().front();
+    auto clone = Utopia::clone(agent);
+    clone->state() = 42;
+    using Agent = std::remove_reference_t<decltype(*clone)>;
+    Utopia::AgentContainer<Agent> cont({agent, clone});
+
+    // add container to M1
+    assert(Utopia::add(cont, m1));
+    assert(std::count(m1.agents().begin(), m1.agents().end(), agent) == 2);
+    assert(std::count(m1.agents().begin(), m1.agents().end(), clone) == 1);
+
+    // check that insertion of agent fails on debugging
+    const auto ret = Utopia::add<true>(cont, m2);
+    assert(!ret[0]);
+    // clone must work
+    assert(ret[1]);
+    assert(m2.agents().back()->state() == 42);
+}
+
+/// Remove and add agent using single add
+template<class M1, class M2>
+void test_remove_and_add_single (M1& m1, M2& m2)
+{
+    // remove agent from m1
+    const auto agent = m1.agents().front();
+    Utopia::remove(agent,m1);
+    assert(std::find(m2.agents().begin(), m2.agents().end(), agent)
+        != m2.agents().end());
+    assert(std::find(m1.agents().begin(), m1.agents().end(), agent)
+        == m1.agents().end());
+    // add agent to back of m1
+    assert(Utopia::add(agent,m1));
+    assert(m1.agents().back() == agent);
+    // check that agent is not inserted, because its found
+    assert(!Utopia::add<true>(agent,m2));
+    const auto size = m2.agents().size();
+    // check that agent is inserted (no debugging)
+    assert(Utopia::add<false>(agent,m2));
+    assert(m2.agents().size() == size+1);
+}
+
 template<int dim>
 void test_agents_on_grid (const std::size_t agent_count, const std::size_t grid_size)
 {
@@ -79,8 +125,6 @@ void test_agents_on_grid (const std::size_t agent_count, const std::size_t grid_
 
     // check cloning
     test_cloning(*ma1.agents().begin());
-    // assert that clone is not inserted
-    assert(Utopia::add(Utopia::clone(*ma1.agents().begin()), ma1));
 
     // check if cells are found correctly
     compare_cells_of_agents(ma1.agents(), mc1, mc2, mc3);
@@ -120,14 +164,7 @@ void test_agents_on_grid (const std::size_t agent_count, const std::size_t grid_
     compare_agent_cell_coupling(ma2, mc2);
     compare_agent_cell_coupling(ma3, mc3);
 
-    // check removal and addition of agents
-    const auto agent = ma1.agents().front();
-    Utopia::remove(agent, ma1);
-    assert(std::find(ma2.agents().begin(), ma2.agents().end(),agent)
-        != ma2.agents().end());
-    assert(std::find(ma1.agents().begin(), ma1.agents().end(),agent)
-        == ma1.agents().end());
-    assert(Utopia::add(agent, ma1));
-    assert(ma1.agents().back() == agent);
-    assert(!Utopia::add(agent, ma2));
+    // check add functions
+    test_remove_and_add_single(ma1, ma2);
+    test_remove_and_add_container(ma1, ma2);
 }
