@@ -2,3 +2,6 @@
 build-cmake/
 .coverage
 .h5
+.clang_format
+.clang-format 
+.vscode
