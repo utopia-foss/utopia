@@ -92,6 +92,28 @@ void test_remove_and_add_single (M1& m1, M2& m2)
     assert(m2.agents().size() == size+1);
 }
 
+template<typename Manager>
+void check_rule_based_removal(Manager& manager)
+{
+    auto& agents = manager.agents();
+    std::size_t n_agents_old = agents.size();
+
+    // set flag to true for some agents (all that have an odd id)
+    for (auto a : agents) {
+        if (a->id() % 2 == 1) a->is_tagged = true;
+    }
+
+    // erase agents
+    manager.erase_if([&] (auto a) { return a->is_tagged; });
+
+    // check if there are no agents flagged true
+    for (auto a : agents) assert(!a->is_tagged);
+
+    // check if number of agents left is consisted
+    assert((agents.size() == std::size_t(n_agents_old/2))
+        or (agents.size() == std::size_t(n_agents_old/2)+1));
+}
+
 template<int dim>
 void test_agents_on_grid (const std::size_t agent_count, const std::size_t grid_size)
 {
@@ -149,7 +171,7 @@ void test_agents_on_grid (const std::size_t agent_count, const std::size_t grid_
     }
     compare_cells_of_agents(ma1.agents(), mc1, mc2, mc3);
 
-        // check correct translation out of grid
+    // check correct translation out of grid
     Pos extensions;
     std::fill(extensions.begin(),extensions.end(),grid_size);
     for(auto agent: ma1.agents()){
@@ -167,4 +189,7 @@ void test_agents_on_grid (const std::size_t agent_count, const std::size_t grid_
     // check add functions
     test_remove_and_add_single(ma1, ma2);
     test_remove_and_add_container(ma1, ma2);
+
+    // check rule-based removal of agents
+    check_rule_based_removal(ma3);
 }
