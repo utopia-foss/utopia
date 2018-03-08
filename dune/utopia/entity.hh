@@ -12,12 +12,11 @@ namespace Utopia
  *  \tparam IndexType Type of Index
  */
 template<typename Self,typename T, bool sync, class Tags, typename IndexType, std::size_t custom_neighborhood_count = 0>
-class Entity: 
+class Entity:
     public StateContainer<T, sync>, 
     public Tags 
 {
 public:
-    
 
     /// Constructor. Define state_container, tags and an ID index 
     Entity (const T state, IndexType index):
@@ -25,6 +24,9 @@ public:
         Tags(),
         _id(index)
     { }
+
+    /// export index type
+    using Index = IndexType;
 
     /// Return entity ID
     IndexType id() const { return _id; }
