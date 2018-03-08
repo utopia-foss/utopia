@@ -6,7 +6,8 @@ set(TESTS_DATAIO
     hdfattribute_test_read
     hdfattribute_test_write
     hdfbufferfactory_test
-    hdftypefactory_test)
+    hdftypefactory_test
+    hdfgroup_test)
 
 # add DATAIO tests
 foreach(test ${TESTS_DATAIO})
