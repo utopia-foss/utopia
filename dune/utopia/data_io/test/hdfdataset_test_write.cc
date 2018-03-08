@@ -1,5 +1,5 @@
-#include "hdfdataset.hh"
-#include "hdfmockclasses.hh"
+#include "../hdfdataset.hh"
+#include "../hdfmockclasses.hh"
 #include <cassert>
 #include <cmath>
 #include <cstdio>
@@ -134,6 +134,12 @@ void write_dataset_multidimensional(HDFFile &file) {
     HDFDataset<HDFGroup> multidimdataset_extendable(
         multidimgroup, "multiddim_dataset_extendable");
 
+    double writeval = 100;
+    for (std::size_t i = 0; i < data.size(); ++i) {
+        data[i] = writeval;
+        writeval += 1;
+    }
+
     multidimdataset_extendable.write(data.begin(), data.end(),
                                      [](auto &value) { return value; }, 2,
                                      {1, 100}, {}, 50);
@@ -143,16 +149,18 @@ void write_dataset_multidimensional(HDFFile &file) {
     HDFDataset<HDFGroup> multidimdataset_reopened(
         multidimgroup, "multiddim_dataset_extendable");
 
-    std::for_each(data.begin(), data.end(),
-                  [](auto &value) { return value *= -1; });
-
+    double value = 200;
+    for (std::size_t i = 0; i < data.size(); ++i) {
+        data[i] = value;
+        value += 1;
+    }
     multidimdataset_reopened.write(data.begin(), data.end(),
                                    [](auto &value) { return value; }, 2,
                                    {1, 100}, {}, 50);
 }
 
 int main() {
-    HDFFile file("/Users/haraldmack/Desktop/dataset_test.h5", "w");
+    HDFFile file("dataset_test.h5", "w");
 
     write_dataset_onedimensional(file);
 

@@ -56,7 +56,7 @@ protected:
      * @brief reference to id of parent object: dataset or group
      *
      */
-    std::shared_ptr<HDFObject> _parent_object;
+    HDFObject &_parent_object;
 
 public:
     /**
@@ -188,33 +188,30 @@ public:
     template <typename Type = Attrtype,
               std::enable_if_t<is_container_type<Type>::value == true, int> = 0>
     void write(Type &attribute_data) {
-
+        using result_type = typename Type::value_type;
         // when stuff is vector string we can write directly, otherwise we
         // have to buffer
-        if (std::is_same<Type, std::string>::value ||
-            std::is_same<Type, std::vector<typename Type::value_type>>::value) {
+        if (std::is_same<Type, std::string>::value) {
             if (_attribute == -1) {
                 _attribute = __make_attribute__<Type>(attribute_data.size());
             }
+
             H5Awrite(_attribute,
                      HDFTypeFactory::type<Type>(attribute_data.size()),
                      attribute_data.data());
             // when stuff is not a vector or string we first have to buffer
         } else {
 
-            auto buffer = HDFBufferFactory::buffer(
+            auto buffer = HDFBufferFactory::buffer<result_type>(
                 std::begin(attribute_data), std::end(attribute_data),
                 [](auto &value) { return value; });
+
             if (_attribute == -1) {
-                _attribute =
-                    __make_attribute__<typename decltype(buffer)::value_type>(
-                        attribute_data.size());
+                _attribute = __make_attribute__<Type>(attribute_data.size());
             }
-            H5Awrite(
-                _attribute,
-                HDFTypeFactory::type<typename decltype(buffer)::value_type>(
-                    attribute_data.size()),
-                attribute_data.data());
+            H5Awrite(_attribute,
+                     HDFTypeFactory::type<Type>(attribute_data.size()),
+                     buffer.data());
         }
     }
 
@@ -285,8 +282,7 @@ public:
      */
 
     HDFAttribute(HDFObject &object, std::string name)
-        : _name(name), _size(1),
-          _parent_object(std::make_shared<HDFObject>(object)) {
+        : _name(name), _size(1), _parent_object(object) {
 
         if (H5LTfind_attribute(object.get_id(), _name.c_str()) ==
             1) { // attribute exists

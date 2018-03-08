@@ -79,6 +79,11 @@ template <> hid_t HDFTypeFactory::__get_type__<unsigned short int>() {
 template <> hid_t HDFTypeFactory::__get_type__<std::size_t>() {
     return H5T_NATIVE_ULLONG;
 }
+
+template <> hid_t HDFTypeFactory::__get_type__<unsigned long long>() {
+    return H5T_NATIVE_ULLONG;
+}
+
 template <> hid_t HDFTypeFactory::__get_type__<bool>() {
     return H5T_NATIVE_HBOOL;
 }

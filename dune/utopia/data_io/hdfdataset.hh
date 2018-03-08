@@ -201,7 +201,19 @@ public:
                 throw std::runtime_error(
                     "dataset id invalid, has the dataset already been closed?");
             }
+            // add attribute with dimensionality
+            std::vector<hsize_t> dims(1 + _extend.size() + _max_extend.size());
+            std::size_t i = 0;
+            dims[i] = _rank;
+            ++i;
+            for (std::size_t j = 0; j < _extend.size(); ++j, ++i) {
+                dims[i] = _extend[j];
+            }
+            for (std::size_t j = 0; j < _max_extend.size(); ++j, ++i) {
+                dims[i] = _max_extend[i];
+            }
 
+            add_attribute<std::vector<hsize_t>>("dimensionality info", dims);
             // now that the dataset has been made let us write to it
             // buffering at first
             auto buffer = HDFBufferFactory::buffer<result_type>(
@@ -271,6 +283,22 @@ public:
                         "1d dataset could not be extended ");
                 }
 
+                // add dimensionality attribute
+                // add attribute with dimensionality
+                std::vector<hsize_t> dims(1 + _extend.size() +
+                                          _max_extend.size());
+                std::size_t i = 0;
+                dims[i] = _rank;
+                ++i;
+                for (std::size_t j = 0; j < _extend.size(); ++j, ++i) {
+                    dims[i] = _extend[j];
+                }
+                for (std::size_t j = 0; j < _max_extend.size(); ++j, ++i) {
+                    dims[i] = _max_extend[i];
+                }
+                add_attribute<std::vector<hsize_t>>("dimensionality info",
+                                                    dims);
+
                 // select the new slab we just added for writing.
                 hid_t dspace = H5Dget_space(_dataset);
                 hid_t memspace = H5Screate_simple(_rank, &size, NULL);
@@ -333,6 +361,21 @@ public:
                     throw std::runtime_error("nd enlargement failed");
                 }
 
+                // add dimensionality attribute
+                // add attribute with dimensionality
+                std::vector<hsize_t> dims(1 + _extend.size() +
+                                          _max_extend.size());
+                std::size_t i = 0;
+                dims[i] = _rank;
+                ++i;
+                for (std::size_t j = 0; j < _extend.size(); ++j, ++i) {
+                    dims[i] = _extend[j];
+                }
+                for (std::size_t j = 0; j < _max_extend.size(); ++j, ++i) {
+                    dims[i] = _max_extend[i];
+                }
+                add_attribute<std::vector<hsize_t>>("dimensionality info",
+                                                    dims);
                 // select the new slab we just added for writing.
                 hid_t dspace = H5Dget_space(_dataset);
                 herr_t select_err =
@@ -432,7 +475,7 @@ public:
                 H5Sclose(memspace);
                 if (read_err < 0) {
                     throw std::runtime_error(
-                        "Error  reading subset of 1d dataset");
+                        "Error reading subset of 1d dataset");
                 }
                 return buffer;
             }
@@ -445,8 +488,11 @@ public:
                 // make a buffer and read
                 // this is a 1d data which contains the multi - dimensional
                 // stuff in a flattened version
-                std::vector<result_type> buffer(
-                    std::accumulate(_extend.begin(), _extend.end(), 0));
+                std::size_t buffersize = 1;
+                for (std::size_t i = 0; i < _rank; ++i) {
+                    buffersize *= _extend[i];
+                }
+                std::vector<result_type> buffer(buffersize);
 
                 herr_t read_err = H5Dread(_dataset, type, H5S_ALL, H5S_ALL,
                                           H5P_DEFAULT, buffer.data());
@@ -468,36 +514,35 @@ public:
                     count[i] = (end[i] - start[i]) / stride[i];
                 }
 
-                // select the desired slab for reading in the dataspace
+                // select the desired slab for reading in the
                 hid_t dspace = H5Dget_space(_dataset);
-
-                // build the needed memory space
-
-                hid_t memspace = H5Screate_simple(1, count.data(), nullptr);
-
                 herr_t select_err =
                     H5Sselect_hyperslab(dspace, H5S_SELECT_SET, start.data(),
                                         stride.data(), count.data(), nullptr);
                 if (select_err < 0) {
-                    throw std::runtime_error("N-D read slab selection failed!");
+                    throw std::runtime_error("selection of hyperslab  to write "
+                                             "in 1d dataset failed!");
                 }
 
-                // now make buffer
-                // this is a 1d data which contains the multi - dimensional
-                // stuff in a flattened version
-                std::vector<result_type> buffer(
-                    std::accumulate(count.begin(), count.end(), 0));
+                // build the needed memory space
+                hid_t memspace = H5Screate_simple(_rank, count.data(), nullptr);
+                // now make a buffer and read
 
-                // get type and read
+                std::size_t buffersize = 1;
+                for (std::size_t i = 0; i < _rank; ++i) {
+                    buffersize *= count[i];
+                }
+                std::vector<result_type> buffer(buffersize);
                 hid_t type = H5Dget_type(_dataset);
                 herr_t read_err = H5Dread(_dataset, type, memspace, dspace,
                                           H5P_DEFAULT, buffer.data());
                 H5Tclose(type);
+                H5Sclose(dspace);
+                H5Sclose(memspace);
                 if (read_err < 0) {
                     throw std::runtime_error(
-                        "Error  reading subset of 1d dataset");
+                        "Error reading subset of 1d dataset");
                 }
-                H5Tclose(type);
                 return buffer;
             }
         }
@@ -515,7 +560,7 @@ public:
      * @param other
      */
     HDFDataset(const HDFDataset &other)
-        : _parent_object(other._parent_objet), _name(other._name),
+        : _parent_object(other._parent_object), _name(other._name),
           _dataset(other._dataset), _rank(other._rank), _extend(other._extend),
           _max_extend(other._max_extend) {}
 
