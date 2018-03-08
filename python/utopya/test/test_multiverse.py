@@ -1,7 +1,6 @@
 """Test the Multiverse class initialization and workings."""
 
 import os
-import logging
 import math
 import pkg_resources
 
@@ -10,17 +9,18 @@ import pytest
 from utopya import Multiverse
 from utopya.multiverse import distribute_user_cfg
 
-
-log = logging.getLogger(__name__)
-
-BASE_RUNCFG_PATH = pkg_resources.resource_filename('test', 'cfg/run_cfg.yml')
-BASE_USERCFG_PATH = pkg_resources.resource_filename('test', 'cfg/user_cfg.yml')
+# Get the test resources
+RUN_CFG_PATH = pkg_resources.resource_filename('test', 'cfg/run_cfg.yml')
+USER_CFG_PATH = pkg_resources.resource_filename('test', 'cfg/user_cfg.yml')
 
 # Fixtures ----------------------------------------------------------------
 @pytest.fixture
 def mv_kwargs(tmpdir) -> dict:
     """Returns a dict that can be passed to Multiverse for initialisation"""
-    return dict(model_name="dummy", run_cfg_path=BASE_RUNCFG_PATH, user_cfg_path=BASE_USERCFG_PATH)
+    return dict(model_name="dummy",
+                run_cfg_path=RUN_CFG_PATH,
+                user_cfg_path=USER_CFG_PATH,
+                update_meta_cfg=None)
 
 # Initialisation tests --------------------------------------------------------
 
@@ -110,14 +110,16 @@ def test_create_uni_dir(mv_kwargs, tmpdir):
     local_config = dict(paths=dict(out_dir=tmpdir.dirpath(),
                                    model_note="test_uni_directories"))
 
+    # Test some edge cases
     for i, max_uni in enumerate([1, 9, 10, 11, 99, 100, 101]):
+        # Set the model note to generate a unique path
         local_config['paths']['model_note'] = "test_universes_folder_structure_{}".format(i)
         single_create_uni_dir(mv_kwargs, local_config, max_uni)
 
     # test for possible wrong inputs
     # Init Multiverse
     local_config['paths']['model_note'] = "test_uni_id_consistency"
-    mv = Multiverse(**mv_kwargs, update_meta_cfg=local_config)
+    mv = Multiverse(update_meta_cfg=local_config, **mv_kwargs)
 
     # negative numbers:
     with pytest.raises(RuntimeError):
@@ -130,7 +132,6 @@ def test_create_uni_dir(mv_kwargs, tmpdir):
 
 # Simulation tests ------------------------------------------------------------
 
-@pytest.mark.skip("To be re-implemented when the Multiverse is further developed.")
 def test_single_sim(mv_kwargs):
     """Tests a run with a single simulation"""
     mv = Multiverse(**mv_kwargs)
@@ -148,11 +149,11 @@ def test_distribute_user_cfg(tmpdir, monkeypatch):
 
     # monkeypatch the "input" function, so that it returns "y" or "no".
     # This simulates the user entering something in the terminal
-    # no-case
+    # yes-case
     monkeypatch.setattr('builtins.input', lambda x: "y")
     distribute_user_cfg(user_cfg_path=test_path)
 
-    # yes-case
+    # no-case
     monkeypatch.setattr('builtins.input', lambda x: "n")
     distribute_user_cfg(user_cfg_path=test_path)
 
@@ -173,7 +174,7 @@ def single_create_uni_dir(mv_kwargs, local_config, maximum=10):
 
     # calculate the number of needed filling zeros dependend on the maximum number of different calulations
     number_filling_zeros = math.ceil(math.log(maximum + 1, 10))
-    
+
     # check that minimal number of filling zeros (at maximum no zero in front)
     if maximum > 0:
         uni = "uni" + str(maximum).zfill(number_filling_zeros)

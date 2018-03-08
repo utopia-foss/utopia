@@ -32,5 +32,5 @@ dune_python_add_test(NAME FRONTEND_utopya
                      COMMAND ${CMAKE_BINARY_DIR}/run-in-dune-env
                              python -m pytest 
                              ${CMAKE_CURRENT_SOURCE_DIR}/utopya/test/
-                             --cov=utopya --cov-report=term-missing
+                             -v --cov=utopya --cov-report=term-missing
                      )
