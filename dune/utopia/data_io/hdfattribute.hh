@@ -97,7 +97,7 @@ public:
      */
     template <
         typename Type = Attrtype,
-        std::enable_if_t<is_container<Type>::value == true &&
+        std::enable_if_t<is_container_type<Type>::value == true &&
                              std::is_same<Type, std::string>::value == false,
                          int> = 0>
     std::vector<Type> read() {
@@ -128,7 +128,7 @@ public:
      */
     template <
         typename Type = Attrtype,
-        std::enable_if_t<is_container<Type>::value == true &&
+        std::enable_if_t<is_container_type<Type>::value == true &&
                              std::is_same<Type, std::string>::value == true,
                          int> = 0>
     std::string read() {
@@ -157,8 +157,9 @@ public:
      * @tparam 0
      * @return Type
      */
-    template <typename Type = Attrtype,
-              std::enable_if_t<is_container<Type>::value == false, int> = 0>
+    template <
+        typename Type = Attrtype,
+        std::enable_if_t<is_container_type<Type>::value == false, int> = 0>
     Type read() {
         if (_attribute == -1) {
             throw std::runtime_error(
@@ -185,35 +186,32 @@ public:
      * @param adaptor
      */
     template <typename Type = Attrtype,
-              std::enable_if_t<is_container<Type>::value == true, int> = 0>
+              std::enable_if_t<is_container_type<Type>::value == true, int> = 0>
     void write(Type &attribute_data) {
-
+        using result_type = typename Type::value_type;
         // when stuff is vector string we can write directly, otherwise we
         // have to buffer
-        if (std::is_same<Type, std::string>::value ||
-            std::is_same<Type, std::vector<typename Type::value_type>>::value) {
+        if (std::is_same<Type, std::string>::value) {
             if (_attribute == -1) {
                 _attribute = __make_attribute__<Type>(attribute_data.size());
             }
+
             H5Awrite(_attribute,
                      HDFTypeFactory::type<Type>(attribute_data.size()),
                      attribute_data.data());
             // when stuff is not a vector or string we first have to buffer
         } else {
 
-            auto buffer = HDFBufferFactory::buffer(
+            auto buffer = HDFBufferFactory::buffer<result_type>(
                 std::begin(attribute_data), std::end(attribute_data),
                 [](auto &value) { return value; });
+
             if (_attribute == -1) {
-                _attribute =
-                    __make_attribute__<typename decltype(buffer)::value_type>(
-                        attribute_data.size());
+                _attribute = __make_attribute__<Type>(attribute_data.size());
             }
-            H5Awrite(
-                _attribute,
-                HDFTypeFactory::type<typename decltype(buffer)::value_type>(
-                    attribute_data.size()),
-                attribute_data.data());
+            H5Awrite(_attribute,
+                     HDFTypeFactory::type<Type>(attribute_data.size()),
+                     buffer.data());
         }
     }
 
@@ -223,8 +221,9 @@ public:
      * @tparam 0
      * @param attribute_data
      */
-    template <typename Type = Attrtype,
-              std::enable_if_t<is_container<Type>::value == false, int> = 0>
+    template <
+        typename Type = Attrtype,
+        std::enable_if_t<is_container_type<Type>::value == false, int> = 0>
     void write(Type &attribute_data) {
         if (_attribute == -1) {
             _attribute = __make_attribute__<Type>();
@@ -243,7 +242,9 @@ public:
      *
      * @param other
      */
-    HDFAttribute(const HDFAttribute &other) = delete;
+    HDFAttribute(const HDFAttribute &other)
+        : _attribute(other._attribute), _name(other._name), _size(other._size),
+          _parent_object(other._parent_object) {}
     /**
      * @brief Move constructor
      *
@@ -257,13 +258,17 @@ public:
      * @param other
      * @return HDFAttribute&
      */
-    HDFAttribute &operator=(HDFAttribute other) = delete;
+    HDFAttribute &operator=(HDFAttribute &&other) = delete;
     /**
      * @brief Destructor
      *
      */
     virtual ~HDFAttribute() {
-        if (_attribute != -1) {
+        // if (H5Iis_valid(_attribute) > 0)
+        if (H5Iis_valid(_attribute) ==
+            0) { // FIXME: add check to make sure that
+                 // it is not
+                 // more than once closed
             H5Aclose(_attribute);
         }
     }
