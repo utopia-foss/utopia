@@ -10,6 +10,7 @@ paths:
 run_kwargs:
   # Whether to perfom a parameter sweep
   perform_sweep:         False
+  # NOTE This will be ignored if run_single or run_sweep are called directly
             
   stop_conditions:
     # Timeouts

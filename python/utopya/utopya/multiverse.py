@@ -26,10 +26,18 @@ class Multiverse:
     """
 
     UTOPIA_EXEC = "utopia"
-    # TODO add class constant for default search path of user_cfg
+    USER_CFG_SEARCH_PATH = "~/.config/utopia/user_cfg.yml"
 
     def __init__(self, *, model_name: str, run_cfg_path: str, user_cfg_path: str=None):
-        """Initialize the Multiverse."""
+        """Initialize the Multiverse.
+        
+        Args:
+            model_name (str): A valid name of Utopia model
+            run_cfg_path (str): The path to the run configuration.
+            user_cfg_path (str, optional): If given, this is used to update the
+                base configuration. If None, will look for it in the default
+                path, see Multiverse.USER_CFG_SEARCH_PATH.
+        """
         # Initialize empty attributes (partly property-managed)
         self._model_name = None
         self._dirs = {}
@@ -44,11 +52,16 @@ class Multiverse:
         self.meta_config = self._create_meta_config(run_cfg_path=run_cfg_path,
                                                     user_cfg_path=user_cfg_path)
 
+        # Create the run directory and write the meta configuration into it
+        self._create_run_dir(model_name=self.model_name,
+                             **self.meta_config['paths'])
+
         # create a WorkerManager instance
-        self._wm = WorkerManager(**self._config['multiverse']['worker_manager']) # FIXME
+        self._wm = WorkerManager(**self.meta_config['worker_manager'])
+
+        log.info("Initialized Multiverse for model: '%s'", self.model_name)
 
     # Properties ..............................................................
-    # TODO add dirs and metaconfig properties
 
     @property
     def model_name(self) -> str:
@@ -89,6 +102,11 @@ class Multiverse:
             self._meta_config = d
 
     @property
+    def dirs(self) -> dict:
+        """Information on managed directories."""
+        return self._dirs
+
+    @property
     def wm(self) -> WorkerManager:
         """The Multiverse's WorkerManager."""
         return self._wm
@@ -100,21 +118,18 @@ class Multiverse:
         a Parameter sweep is decided by the contents of the meta_cfg."""
         log.info("Preparing to run Utopia ...")
 
-        # FIXME The config path needs to be changed to the correct one when putting this together. This is only a dummy for now, should be the call to the property
-        run_single = self._config['perform_sweep']
-
         # Depending on the configuration, the corresponding methods can already be called.
-        if run_single:
-            self.run_single()
-        else:
+        if self.meta_config['run_kwargs']['perform_sweep']:
             self.run_sweep()
+        else:
+            self.run_single()
     
     def run_single(self):
         """Runs a single simulation."""
 
         # Get the parameter space from the config
-        # FIXME use property here
-        pspace = self._config['parameter_space']
+        pspace = self.meta_config['parameter_space']
+        # NOTE Once the ParamSpace class is used, the defaults need to be retrieved here.
         
         # Add the task to the worker manager.
         log.info("Adding task for the single simulation ...")
@@ -170,7 +185,7 @@ class Multiverse:
                                      "not be found.".format(run_cfg_path))
 
         # After this point it is assumed that all values are valid
-        # They will throw errors once they are needed ...
+        # Those keys or values will throw errors once they are needed ...
 
         # Now perform the recursive update steps
         meta_tmp = base_cfg
@@ -187,7 +202,10 @@ class Multiverse:
         return meta_tmp
 
     def _create_run_dir(self, *, model_name: str, out_dir: str, model_note: str=None) -> None:
-        """Create the folder structure for the simulation output.
+        """Create the folder structure for the run output.
+
+        This will also write the meta config to the corresponding config
+        directory.
 
         The following folder tree will be created
         utopia_output/   # all utopia output should go here
@@ -216,7 +234,7 @@ class Multiverse:
                 zone.
         """ 
         # Create the folder path to the simulation directory
-        log.debug("Expanding user %s", out_dir)
+        log.debug("Creating path for run directory inside %s ...", out_dir)
         out_dir = os.path.expanduser(out_dir)
         run_dir = os.path.join(out_dir,
                                model_name,
@@ -246,6 +264,11 @@ class Multiverse:
 
         log.debug("Finished creating simulation directory. Now registered: %s",
                   self._dirs)
+
+        # Write the meta config to the config directory.
+        write_yml(d=self.meta_config,
+                  path=os.path.join(self.dirs['config'], "meta_cfg.yml"))
+        log.debug("Wrote meta configuration to config directory.")
 
     def _create_uni_dir(self, *, uni_id: int, max_uni_id: int) -> str:
         """The _create_uni_dir generates the folder for a single universe.
@@ -339,8 +362,8 @@ class Multiverse:
                             cfg_dict=cfg_dict)
 
         # Add a task to the worker manager
-        self._wm.add_task(priority=None,
-                          setup_func=setup_universe,
-                          setup_kwargs=setup_kwargs)
+        self.wm.add_task(priority=None,
+                         setup_func=setup_universe,
+                         setup_kwargs=setup_kwargs)
 
         log.debug("Added simulation task for universe %d.", uni_id)
