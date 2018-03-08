@@ -23,4 +23,4 @@ worker_manager:
   # specify how many processes work in parallel
   num_workers:         -1               # > 0 : number of processes 
                                        # <= 0 : #CPUs - num_workers
-  poll_frequency:      20              # how often to check the state of the workers [Hz]
+  poll_freq:      20              # how often to check the state of the workers [Hz]
