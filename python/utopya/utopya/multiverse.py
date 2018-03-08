@@ -54,16 +54,43 @@ class Multiverse:
         """The model name associated with this Multiverse"""
         return self._model_name
 
+    @property
+    def wm(self) -> WorkerManager:
+        """The Multiverse's WorkerManager."""
+        return self._wm
+
     # Public methods ..........................................................
 
     def run(self):
         """Starts a Utopia run. Whether this will be a single simulation or
         a Parameter sweep is decided by the contents of the meta_cfg."""
-        raise NotImplementedError
+        log.info("Preparing to run Utopia ...")
+
+        # FIXME The config path needs to be changed to the correct one when putting this together. This is only a dummy for now, should be the call to the property
+        run_single = self._config['perform_sweep']
+
+        # Depending on the configuration, the corresponding methods can already be called.
+        if run_single:
+            self.run_single()
+        else:
+            self.run_sweep()
     
     def run_single(self):
         """Runs a single simulation."""
-        raise NotImplementedError
+
+        # Get the parameter space from the config
+        # FIXME use property here
+        pspace = self._config['parameter_space']
+        
+        # Add the task to the worker manager.
+        log.info("Adding task for the single simulation ...")
+        self._add_sim_task(uni_id=0, max_uni_id=0, cfg_dict=pspace)
+
+        # Tell the WorkerManager to start working, which will be the blocking call
+        log.info("Starting to work now ...")
+        self.wm.start_working()
+
+        log.info("Finished single simulation run.")
 
     def run_sweep(self):
         """Runs a parameter sweep."""
@@ -210,7 +237,7 @@ class Multiverse:
         log.debug("Created universe path: %s", uni_path)
         return uni_path
 
-    def _add_sim_task(self, *, uni_id: int, max_uni_id: int, cfg_dict: dict, ) -> None:
+    def _add_sim_task(self, *, uni_id: int, max_uni_id: int, cfg_dict: dict) -> None:
         """Helper function that handles task assignment to the WorkerManager.
 
         This function performs the following steps:
