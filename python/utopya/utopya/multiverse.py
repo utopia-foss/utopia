@@ -5,6 +5,7 @@ The Multiverse supplies the main user interface of the frontend.
 import os
 import time
 import logging
+import pkg_resources
 
 from utopya.workermanager import WorkerManager, enqueue_json
 from utopya.tools import recursive_update, read_yml, write_yml
@@ -26,6 +27,8 @@ class Multiverse:
     """
 
     UTOPIA_EXEC = "utopia"
+    BASE_CFG_PATH = pkg_resources.resource_filename('utopya',
+                                                    'cfg/base_cfg.yml')
     USER_CFG_SEARCH_PATH = "~/.config/utopia/user_cfg.yml"
 
     def __init__(self, *, model_name: str, run_cfg_path: str, user_cfg_path: str=None):

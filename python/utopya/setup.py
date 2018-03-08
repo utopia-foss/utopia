@@ -15,7 +15,7 @@ setup(name='utopya',
           'Topic :: Utilities'
       ],
       packages=['utopya'],
-      include_package_data=True,
+      package_data=dict(utopya=["cfg/*.yml"]),
       install_requires=INSTALL_DEPS,
       tests_require=TEST_DEPS,
       test_suite='py.test',
