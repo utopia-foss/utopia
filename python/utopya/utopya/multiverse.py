@@ -30,7 +30,7 @@ class Multiverse:
     UTOPIA_EXEC = "utopia"
     BASE_CFG_PATH = pkg_resources.resource_filename('utopya',
                                                     'cfg/base_cfg.yml')
-    USER_CFG_SEARCH_PATH = "~/.config/utopia/user_cfg.yml"
+    USER_CFG_SEARCH_PATH = os.path.expanduser("~/.config/utopia/user_cfg.yml")
 
     def __init__(self, *, model_name: str, run_cfg_path: str, user_cfg_path: str=None, update_meta_cfg: dict=None):
         """Initialize the Multiverse.
@@ -172,18 +172,32 @@ class Multiverse:
         Returns:
             dict: returns the created metaconfig that will be saved as attr
         """
-        # Read in all the yaml files from their paths
         log.debug("Reading in configuration files ...")
 
+        # Read in the base configuration (stored inside the package)
         base_cfg = read_yml(self.BASE_CFG_PATH,
                             error_msg="Base configuration not found!")
 
-        if user_cfg_path is not None:
-            user_cfg = read_yml(user_cfg_path,
-                                error_msg="{0} was given but user_config.yaml "
-                                          "could not be found."
-                                          "".format(user_cfg_path))
+        # Decide whether to read in the user configuration from the default search location or use a user-passed one
+        if user_cfg_path is None:
+            log.debug("Looking for user configuration file in default "
+                      "location, %s", self.USER_CFG_SEARCH_PATH)
 
+            if os.path.isfile(self.USER_CFG_SEARCH_PATH):
+                user_cfg_path = self.USER_CFG_SEARCH_PATH
+            else:
+                log.debug("No file found at the default search location.")
+
+        elif user_cfg_path is False:
+            log.debug("Not loading the user configuration from the default "
+                      "search path: %s", self.USER_CFG_SEARCH_PATH)
+
+        if user_cfg_path:
+            user_cfg = read_yml(user_cfg_path,
+                                error_msg="Did not find user configuration "
+                                "at the specified path!".format(user_cfg_path))
+
+        # Read in the run configuration
         run_cfg = read_yml(run_cfg_path,
                            error_msg="{0} was given but run_config could "
                                      "not be found.".format(run_cfg_path))
