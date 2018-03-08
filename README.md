@@ -4,7 +4,9 @@ __Utopia__ (gr., no-place), a non-existent society described in considerable det
 
 Powered by [DUNE](https://dune-project.org/)
 
-[![pipeline status](https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/badges/master/pipeline.svg)](https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/commits/master)
+| Testing System | Python Test Coverage |
+| :------------: | :------------------: |
+| [![pipeline status](https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/badges/master/pipeline.svg)](https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/commits/master) | [![coverage report](https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/badges/master/coverage.svg)](https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/commits/master) |
 
 ## Installation
 Utopia is a DUNE module and thus relies on the [DUNE Buildsystem](https://www.dune-project.org/doc/installation/) for installation. If all requirements are met, Utopia is configured and built with the `dunecontrol` script:
@@ -62,7 +64,12 @@ Ubuntu is shipped with APT.
     __macOS:__
 
         brew update
-        brew install boost cmake doxygen gcc-7 hdf5 pkg-config python3 yaml-cpp
+        brew install boost cmake doxygen gcc pkg-config python
+        brew install yaml-cpp --cc=gcc-7
+        brew install hdf5 --cc=gcc-7
+    
+    __Notice:__ If you had `hdf5` or `yaml-cpp` already installed by Homebrew,
+    make sure to `brew uninstall` them and then run the respective commands above.
 
 3. Use [`git clone`](https://git-scm.com/docs/git-clone) to clone the
     DUNE repositories listed above into a suitable folder on your machine.
@@ -120,8 +127,6 @@ changed by the user. To build optimized executables again, reconfigure with
 
 
 ### Unit Tests
-**The unit testing is still incomplete!**
-
 Utopia contains unit tests to ensure consistency by checking if class members and functions are working correctly. The tests are integrated into the GitLab Continuous Integration build process, meaning that failing tests cause an entire build to fail.
 
 Tests can also be executed locally, to test a (possibly altered) version of Utopia *before* committing changes. To build them, execute
@@ -129,7 +134,7 @@ Tests can also be executed locally, to test a (possibly altered) version of Utop
     CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=Debug" \
         ./dune-common/bin/dunecontrol --only=utopia make build_tests
 
-and perform the tests by calling
+and perform all tests by calling
 
     ARGS="--output-on-failure" ./dune-common/bin/dunecontrol --only=utopia make test
 
@@ -148,3 +153,5 @@ Available testing groups:
 | Group | Info |
 | ----- | ---- |
 | `core` | Backend functions for models |
+| `dataio` | Backend functions for reading config files and writing data |
+| `python` | Frontend functions for managing simulations and analyzing data |

@@ -27,8 +27,8 @@ dune_require_cxx_standard(MODULE "utopia" VERSION 17)
 # add extra flags to debug compiler flags
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra")
 
-add_subdirectory(python)
 add_subdirectory(dune)
+add_subdirectory(python)
 add_subdirectory(doc)
 add_subdirectory(cmake/modules)
 

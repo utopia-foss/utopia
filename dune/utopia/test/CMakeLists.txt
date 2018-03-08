@@ -8,13 +8,14 @@ set(TESTS_CORE
     agent_test_3d
     cell_test
     dependency_test
-    entity_test
+    #entity_test
     grid_cells_test_2d
     grid_cells_test_3d
     grid_test
     model_test
     output_agent_test_gmsh
     output_agent_test_rect
+    rng_test
     simulation_test
     state_test
     tags_test

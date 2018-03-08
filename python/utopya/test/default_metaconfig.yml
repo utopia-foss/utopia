@@ -1,6 +1,7 @@
 # Multiverse parameter
+model_name:          my_model
 multiverse:
-  perform_sweep:         True            # otherwise runs a simulation with the default values
+  perform_sweep:         False            # otherwise runs a simulation with the default values
 
   timeout:
     total:               39              # timeout in seconds (for the whole simulation)
@@ -9,8 +10,7 @@ multiverse:
   output_path:
     # in this directory, a folder with the timestep as name is created for each simulation
     out_dir:             /utopia_output
-    # model name and note are added to the output directory path (see below)
-    model_name:          my_model
+    # model note is added to the output directory path (see below)
     model_note:          my_note
 
   worker_manager:

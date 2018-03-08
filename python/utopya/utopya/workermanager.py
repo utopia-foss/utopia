@@ -27,7 +27,7 @@ class WorkerManager:
 
     def __init__(self, num_workers: Union[int, str], poll_freq: float=42, QueueCls=queue.Queue):
         """Initialize the worker manager.
-        
+
         Args:
             num_workers (Union[int, str]): The number of workers that can work
                 in parallel. If `auto`, uses os.cpu_count(). If negative,
@@ -122,13 +122,13 @@ class WorkerManager:
 
     # Public API ..............................................................
 
-    def add_task(self, args: Union[str, list], *, priority: int=None, read_stdout: bool=True, **kwargs):
+    def add_task(self, *, priority: int=None, setup_func: Callable=None, setup_kwargs: dict=None, worker_kwargs: dict=None):
         """Adds a task to the queue.
-        
+
         A priority can be assigned to the task, but will only be used during task retrieval if the WorkerManager was initialized with a queue.PriorityQueue as task manager.
-        
+
         Additionally, each task will be assigned an ID; this is used to preserve order in a priority queue if the priority of two or more tasks is the same.
-        
+
         Args:
             args (str): The arguments to subprocess.Popen, i.e.: the command
                 that should be executed in the new process
@@ -138,36 +138,49 @@ class WorkerManager:
                 the stdout of the created process
             **kwargs: Additional task arguments
         """
+        if setup_func:
+            setup_kwargs = setup_kwargs if setup_kwargs else dict()
+
+            if worker_kwargs:
+                warnings.warn("Received argument `worker_kwargs` despite a "
+                              "setup function having been given; the passed "
+                              "`worker_kwargs` will not be used!",
+                              UserWarning)
+        
+        elif worker_kwargs:
+            if setup_kwargs:
+                warnings.warn("worker_kwargs given but also setup_kwargs "
+                              "specified; the latter will be ignored. Did "
+                              "you mean to call a setup function? If yes, "
+                              "pass it via the `setup_func` argument.",
+                              UserWarning)
+        else:
+            raise ValueError("Need either argument `setup_func` or "
+                             "`worker_kwargs`, got none of those.")
+
         # Generate a new ID for the task (using the current task counter)
         task_id = self.task_count
 
         log.debug("Adding task with ID %d ...", task_id)
-        log.debug("  Task args:   %s", args)
-        log.debug("  read_stdout: %s", read_stdout)
-        log.debug("  kwargs:      %s", kwargs)
-
-        # Parse the task argument, ensuring it is a tuple
-        if isinstance(args, str):
-            args = args.split(' ')
-        args = tuple(args)
+        log.debug("  With setup function? %s", )
 
         # Put it into the task queue and increment the task counter
-        self._tasks.put_nowait((priority,
-                                task_id,
-                                dict(args=args, read_stdout=read_stdout,
-                                     **kwargs)))
+        self._tasks.put_nowait((priority, task_id,
+                                dict(setup_func=setup_func,
+                                     setup_kwargs=setup_kwargs,
+                                     worker_kwargs=worker_kwargs)))
         self._increment_task_count()
 
         log.debug("Task %s added.", task_id)
 
     def start_working(self, detach: bool=False):
         """Upon call, all enqueued tasks will be worked on sequentially.
-        
+
         Args:
             detach (bool, optional): If False (default), the WorkerManager
                 will block here, as it continuously polls the workers and
                 distributes tasks.
-        
+
         Raises:
             NotImplementedError: for `detach` True
         """
@@ -206,33 +219,50 @@ class WorkerManager:
         """Increments the task counter."""
         self._task_cnt += 1
 
-    def _grab_task(self, task: dict=None) -> subprocess.Popen:
-        """Will initiate that a new (or already existing) worker will work on a task. If a task is given, that one will be used; if not, a task will be taken from the queue.
+    def _grab_task(self) -> subprocess.Popen:
+        """Will initiate that a new (or already existing) worker will work on a task. The task will be taken from the queue.
         
-        Returns the process the task is being worked on at. If no task was given and the queue is empty, will raise `queue.Empty`.
+        First, it is checked whether this task defined a setup function. If so,
+        that function is called, generating the worker_kwargs.
         
-        Args:
-            task (dict, optional): If given, this task will be used rather than
-                one that is gotten from the task queue.
+        After that, the `worker_kwargs` from the task_dict are used to spawn
+        a worker process.
         
         Returns:
             subprocess.Popen: The created process object
+        
+        Raises:
+            queue.Empty: If the task queue was empty
         """
 
-        if not task:
-            # Get one from the queue
-            _, task_id, task = self._tasks.get_nowait()
-            log.debug("Got task %s from queue.", task_id)
+        # Try to get one from the queue
+        try:
+            task = self._tasks.get_nowait()
+        except queue.Empty as err:
+            raise queue.Empty("No more tasks available in tasks queue.") from err
+        else:
+            # Unpack the task tuple
+            prio, task_id, task_dict = task
+            log.debug("Got task %s from queue. (Priority: %s)", task_id, prio)
 
-        # Interpret the given task
-        # NOTE optionally, add an interpretation here, e.g. a mapping to an already existing worker
+        # If a setup function is available, call it with the given kwargs
+        worker_kwargs = task_dict['worker_kwargs']
+        setup_func = task_dict.get('setup_func')
+
+        if setup_func:
+            log.debug("Calling a setup function, ")
+            worker_kwargs = setup_func(worker_kwargs=worker_kwargs,
+                                       **task_dict.get('setup_kwargs', {}))
+        else:
+            log.debug("No setup function given; using the `worker_kwargs` "
+                      "directly.")
 
         # Spawn a worker and return the resulting process
-        return self._spawn_worker(**task)
+        return self._spawn_worker(**worker_kwargs)        
 
     def _spawn_worker(self, *, args: tuple, read_stdout: bool, line_read_func: Callable=None, **popen_kwargs) -> subprocess.Popen:
         """Spawn a worker process using subprocess.Popen and manage the corresponding queue and thread for reading the stdout stream. The new worker process is registered with the class.
-        
+
         Args:
             args (tuple): The arguments to the Popen call, i.e. the command to
                 spawn a new process with
@@ -242,14 +272,14 @@ class WorkerManager:
                 stdout with. If not present, will use `enqueue_lines`.
             debug (bool, optional): Attaches all streams to main thread stdout
             **popen_kwargs: kwargs passed to subprocess.Popen
-        
+
         Returns:
             subprocess.Popen: The created process object
-        
-        No Longer Raises:
-            ValueError: When stdout should be read but no `line_read_func` was
-                supplied during initialisation
         """
+        if not isinstance(args, tuple):
+            raise TypeError("Need argument `args` to be of type tuple, "
+                            "got {} with value {}. Refusing to even try to "
+                            "spawn a worker process.".format(type(args), args))
 
         if read_stdout:
             # If no `line_read_func` was given, read the default
@@ -275,7 +305,7 @@ class WorkerManager:
         create_time = time.time() # approximate
         log.debug("Spawned worker process with PID %s.", proc.pid)
         # ... it is running now.
-        
+
         # If enabled, prepare for reading the output
         if read_stdout:
             # Generate the thread that reads the stream and populates the queue
@@ -297,12 +327,12 @@ class WorkerManager:
 
         # Register the worker process with the class
         self._register_worker(proc=proc, args=args, streams=streams, create_time=create_time)
-        
+
         return proc
 
     def _register_worker(self, *, proc: subprocess.Popen, args: str, streams: dict, create_time: float, **kwargs) -> None:
         """Registers a worker process with the class. This should be called soon after a process was created.
-        
+
         Args:
             proc (subprocess.Popen): The process object to register
             args (str): The arguments it was created with
@@ -341,6 +371,8 @@ class WorkerManager:
                 # Worker finished. Mark for removal from list.
                 self._worker_finished(proc)
                 rebuild = True
+                # NOTE This flag is needed in order to not change the
+                # self.working attribute during iteration, causing errors
 
         if rebuild:
             # One process finished; have to rebuild the list of working workers. Opposite approach: (in-place) recreate list of those that are still working
@@ -351,7 +383,7 @@ class WorkerManager:
 
     def _worker_finished(self, proc: subprocess.Popen) -> None:
         """Updates the entry of the worker dict after it has finished working.
-        
+
         Args:
             proc (subprocess.Popen): The process to apply these actions to
         """
@@ -363,7 +395,7 @@ class WorkerManager:
 
     def _read_worker_streams(self, stream_name: str='out') -> None:
         """Gathers all working workers' streams with the given `stream_name`.
-        
+
         Args:
             stream_name (str, optional): The stream name to read
         """
@@ -372,7 +404,7 @@ class WorkerManager:
 
     def _read_worker_stream(self, proc: subprocess.Popen, stream_name: str='out', forward_to_log: bool=True, max_num_reads: int=1) -> None:
         """Gather a single entry from the given worker's stream queue and store the value in the stream log.
-        
+
         Args:
             proc (subprocess.Popen): The processes to read the stream of
             stream_name (str, optional): The stream name
@@ -411,7 +443,7 @@ class WorkerManager:
                     log.info("  process %s:  %s", proc.pid, entry)
 
                 # Write to the stream's log
-                stream['log'].append(entry)            
+                stream['log'].append(entry)
 
 
 # Helper functions ------------------------------------------------------------
@@ -419,7 +451,7 @@ class WorkerManager:
 
 def enqueue_lines(*, queue: queue.Queue, stream: BinaryIO, parse_func: Callable=None) -> None:
     """From the given stream, read line-buffered lines and add them to the provided queue. If they are json-parsable, parse them and add the parsed dictionary to the queue.
-    
+
     Args:
         queue (queue.Queue): The queue object to put the read line into
         stream (BinaryIO): The stream identifier
@@ -447,10 +479,10 @@ def parse_json(line: str) -> Union[dict, str]:
     It tries to decode the line, and parse it as a json.
     If that fails, it will still try to decode the string.
     If that fails yet again, the unchanged line will be returned.
-    
+
     Args:
         line (str): The line to decode, assumed byte-string, utf8-encoded
-    
+
     Returns:
         Union[dict, str]: Either the decoded json, or, if that failed, the str
     """
@@ -464,3 +496,8 @@ def parse_json(line: str) -> Union[dict, str]:
         except UnicodeDecodeError:
             # Return the (unparsed, undecoded) line into the queue
             return line
+
+
+def enqueue_json(*, queue: queue.Queue, stream: BinaryIO, parse_func: Callable=parse_json) -> None:
+    """Wrapper function for enqueue_lines with parse_json set as parse_func."""
+    return enqueue_lines(queue=queue, stream=stream, parse_func=parse_func)
