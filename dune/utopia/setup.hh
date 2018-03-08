@@ -178,7 +178,7 @@ namespace Setup
     */
     template<bool sync,
         typename State = int,
-        typename Tag = DefaultTag,
+        typename Tag = EmptyTag,
         std::size_t custom_neighborhood_count = 0,
         typename GridType>
     decltype(auto) create_cells_on_grid (
@@ -231,7 +231,7 @@ namespace Setup
      *  \param traits_initial Initial traits of all agents
      *  \return Container with created agents
      */
-     template<typename State=int, class Tags=Utopia::DefaultTag, typename IndexType=std::size_t, typename GridType>
+     template<typename State=int, class Tags=EmptyTag, typename IndexType=std::size_t, typename GridType>
      decltype(auto) create_agents_on_grid(
          const GridWrapper<GridType>& grid_wrapper,
          const std::size_t count,

@@ -119,7 +119,7 @@ void test_agents_on_grid (const std::size_t agent_count, const std::size_t grid_
 {
     auto grid = Utopia::Setup::create_grid<dim>(grid_size);
     auto cells = Utopia::Setup::create_cells_on_grid<true>(grid);
-    auto agents = Utopia::Setup::create_agents_on_grid(grid,agent_count);
+    auto agents = Utopia::Setup::create_agents_on_grid<int, Utopia::DefaultTag, std::size_t>(grid,agent_count);
 
     using Pos = typename Utopia::GridTypeAdaptor<typename decltype(grid._grid)::element_type>::Position;
 
