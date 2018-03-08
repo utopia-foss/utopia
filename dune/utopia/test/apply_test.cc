@@ -3,145 +3,115 @@
 
 #include "grid_cells_test.hh"
 
-int main()
+int main(int argc, char* argv[])
 {
     try
     {
+        Dune::MPIHelper::instance(argc, argv);
+
+        constexpr bool sync = true;
+        constexpr bool async = false;
+
         //build the ingredients for a manager
         auto grid = Utopia::Setup::create_grid(5);
-        auto cells = Utopia::Setup::create_cells_on_grid<true>(grid);
+        auto cells = Utopia::Setup::create_cells_on_grid<sync>(grid);
 
         // build a manager - structured, periodic
-        auto mc = Utopia::Setup::create_manager_cells<true, true>(grid, cells);
+        auto m_sync = Utopia::Setup::create_manager_cells<true, true>(
+            grid, cells);
 
-        //check cell values
-        for (auto some_cell : mc.cells())
-        {
-            assert(some_cell->state() != 22);
-        }
-
-        //define a rule - neighborhoods could be considered but are ignored here
-        auto my_rule = [](const auto cell, auto mc) {
-            auto nb = Utopia::Neighborhoods::NextNeighbor::neighbors(cell, mc);
-            return 22;
+        // define a rule which yields different results for sync and async
+        auto rule_acc_neighbors = [](const auto cell, const auto manager) {
+            auto nb = Utopia::Neighborhoods::NextNeighbor::
+                neighbors(cell, manager);
+            return std::accumulate(nb.begin(), nb.end(), 1,
+                [](const auto val, const auto neighbor){
+                    return val + neighbor->state();
+            });
         };
 
-        //apply the rule in a synchronous fashion
-        Utopia::apply_rule(my_rule, mc.cells(), mc);
+        // apply the rule in a synchronous fashion
+        Utopia::apply_rule(rule_acc_neighbors, m_sync.cells(), m_sync);
+        assert(std::all_of(m_sync.cells().begin(), m_sync.cells().end(),
+            [](const auto cell){ return cell->state() == 1; }
+        ));
 
-        //make sure the rule was applied correctly
-        for (auto some_cell : mc.cells())
-        {
-            assert(some_cell->state() == 22);
-            assert(some_cell->state_new() == 22);
-        }
-
-        //repeat test for asynchronous application
-        auto grid2 = Utopia::Setup::create_grid<2>(5);
-        auto cells2 = Utopia::Setup::create_cells_on_grid<false>(grid);
+        // repeat test for asynchronous application
+        auto cells2 = Utopia::Setup::create_cells_on_grid<async>(grid);
 
         // build a manager - structured, periodic
-        auto mc2 = Utopia::Setup::create_manager_cells<true, true>(grid2, cells2);
+        auto m_async = Utopia::Setup::create_manager_cells<true, true>(
+            grid, cells2);
 
-        //check cell values
-        for (auto some_cell : mc2.cells())
-        {
-            assert(some_cell->state() != 22);
-        }
+        // store order of cells
+        std::vector<unsigned int> ids;
+        std::transform(m_async.cells().begin(), m_async.cells().end(),
+            std::back_inserter(ids),
+            [](const auto cell){ return cell->id(); }
+        );
 
-        //define a rule
-        auto my_rule2 = [](const auto cell, auto mc2) {
-            auto nb = Utopia::Neighborhoods::NextNeighbor::neighbors(cell, mc2);
-            return 22;
-        };
-
-        //apply the rule in a asynchronous fashion
-        Utopia::apply_rule(my_rule2, mc2.cells(), mc2);
-
-        //make sure the rule was applied correctly
-        for (auto some_cell : mc2.cells())
-        {
-            assert(some_cell->state() == 22);
-        }
+        // apply the rule in a asynchronous fashion
+        Utopia::apply_rule(rule_acc_neighbors, m_async.cells(), m_async);
+        assert(std::any_of(m_async.cells().begin(), m_async.cells().end(),
+            [](const auto cell){ return cell->state() != 1; }
+        ));
 
         //check that the order of the container was not altered
+        std::vector<bool> inplace;
+        std::transform(m_async.cells().begin(), m_async.cells().end(),
+            ids.begin(), std::back_inserter(inplace),
+            [](const auto cell, const auto id){ return cell->id() == id; }
+        );
+        assert(std::all_of(inplace.begin(), inplace.end(),
+            [](const bool val){ return val; }
+        ));
+
         //define a rule
-        auto do_nothing = [](const auto cell, auto mc2) {
-            auto nb = Utopia::Neighborhoods::NextNeighbor::neighbors(cell, mc2);
+        ids.clear();
+        auto rule_register_ids
+            = [&ids](const auto cell, [[maybe_unused]] auto manager) {
+            ids.push_back(cell->id());
             return cell->state();
         };
-        //alter the value in one cell
-        mc2.cells()[0]->state() = 0;
 
-        //apply the rule in a asynchronous fashion
-        Utopia::apply_rule(do_nothing, mc2.cells(), mc2);
+        // shuffle
+        Utopia::apply_rule<true>(rule_register_ids, m_async.cells(), m_async);
+        const auto ids_copy = ids;
+        // don't shuffle
+        Utopia::apply_rule<false>(rule_register_ids, m_async.cells(), m_async);
 
-        //check that the order of cells has not been altered
-        //i.e the different cell is still in the same spot
-        assert(mc2.cells()[0]->state() == 0);
-        for (int i = 1; i < mc2.cells().size(); i++)
-        {
-            assert(mc2.cells()[i]->state() == 22);
-        }
+        //check that execution order of the container changed
+        inplace.clear();
+        std::transform(ids.begin(), ids.end(),
+            ids_copy.begin(), std::back_inserter(inplace),
+            [](const auto id1, const auto id2){ return id1 == id2; }
+        );
+        assert(std::any_of(inplace.begin(), inplace.end(),
+            [](const bool val){ return !val; }
+        ));
 
-        //ascertain that the order of calls is in fact random!
-        // :( this test might in fact fail for working code, because randomness is tested (but improbable)
+        // test that apply_rule works for agents as well
+        auto agents = Utopia::Setup::create_agents_on_grid<
+            int, Utopia::DefaultTag, std::size_t>(grid, 30);
+        auto m_agents = Utopia::Setup::create_manager_agents<true, true>(
+            grid, agents);
 
-        int apply_counter = 0;
-
-        //define a rule
-        auto get_bigger = [&apply_counter](const auto cell, auto mc2) {
-            auto nb = Utopia::Neighborhoods::NextNeighbor::neighbors(cell, mc2);
-            return (apply_counter++);
+        // apply rule only to some agents
+        decltype(agents) applicants;
+        std::sample(agents.begin(), agents.end(),
+            std::back_inserter(applicants), 10, *m_agents.rng());
+        auto rule_state_increment
+            = []([[maybe_unused]] const auto agent, [[maybe_unused]] const auto manager){
+            return 42;
         };
+        Utopia::apply_rule(rule_state_increment, applicants, m_agents);
 
-        mc2.cells()[0]->state() = 22;
-        Utopia::apply_rule(get_bigger, mc2.cells(), mc2);
+        assert(std::count_if(m_agents.agents().begin(),
+                m_agents.agents().end(),
+                [](const auto agent){ return agent->state() == 42; })
+            == 10
+        );
 
-        //apply_counter gets bigger with every call,
-        //This order should not be visible in the cell contaier
-        bool sometimes_gets_bigger = false;
-        bool sometimes_gets_smaller = false;
-        for (int i = 1; i < mc2.cells().size(); i++)
-        {
-            if (mc2.cells()[i] > mc2.cells()[i - 1])
-            {
-                sometimes_gets_bigger = true;
-            }
-            else if (mc2.cells()[i] < mc2.cells()[i - 1])
-            {
-                sometimes_gets_smaller = true;
-            }
-            //wrote the same value twice which should not happen here
-            else
-            {
-                assert(false);
-            }
-        }
-        assert(sometimes_gets_bigger && sometimes_gets_smaller);
-
-        //assert every cell was called
-        assert(apply_counter == mc2.cells().size());
-
-        //test that apply_rule works for agents as well
-        auto agent_grid = Utopia::Setup::create_grid<2>(5);
-        auto agent_agents = Utopia::Setup::create_agents_on_grid<int, Utopia::DefaultTag, std::size_t>(agent_grid, 30);
-        auto ma = Utopia::Setup::create_manager_agents<true, true>(agent_grid, agent_agents);
-
-        assert(ma.agents().size() == 30);
-        for (auto agent : ma.agents())
-        {
-            assert(agent->state() != 23);
-        }
-        //define a rule
-        auto my_agent_rule = [](const auto cell, auto ma) {
-            return 23;
-        };
-        Utopia::apply_rule(my_agent_rule, ma.agents(), ma);
-        for (auto agent : ma.agents())
-        {
-            assert(agent->state() == 23);
-        }
         return 0;
     }
 
