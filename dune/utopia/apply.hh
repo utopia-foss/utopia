@@ -2,14 +2,19 @@
 #define APPLY_HH
 
 namespace Utopia {
-    //ex
+    
+    
     auto my_rule = [&manager](const auto cell){
-        auto nb = Utopia::Neighbors::NextNeighbors::neighbors(cell, manager);
+      //  auto nb = Utopia::Neighbors::NextNeighbors::neighbors(cell, manager);
         cell->state_new()=1;
-        cell->update();
+      //  cell->update();
         return 1; // new state
     }
-
+    
+    auto my_update = [&manager](const auto cell){
+        cell->update();
+        return 1;
+    }
    
     //Signatur
     template<bool sync=true, class Rule, class Container, class Manager>
@@ -18,13 +23,14 @@ namespace Utopia {
         
         for_each(container.begin(),container.end(), rule);
         
-        /*
+       
+    }
+     /*
         for (auto entity: container){
             entity->state_new() = rule(entity);
             entity->update();
         }
         */
-    }
     /*
     // call apply rule
     apply_rule(sync, my_rule, manager.cells(), manager);
