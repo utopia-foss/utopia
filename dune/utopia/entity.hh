@@ -11,12 +11,13 @@ namespace Utopia
  *  \tparam Tags Tags
  *  \tparam IndexType Type of Index
  */
-template<typename T, bool sync, class Tags, typename IndexType>
+template<typename Self,typename T, bool sync, class Tags, typename IndexType, std::size_t custom_neighborhood_count = 0>
 class Entity: 
     public StateContainer<T, sync>, 
     public Tags 
 {
 public:
+    
 
     /// Constructor. Define state_container, tags and an ID index 
     Entity (const T state, IndexType index):
@@ -27,10 +28,23 @@ public:
 
     /// Return entity ID
     IndexType id() const { return _id; }
+    
+    /// Return const reference to neighborhoods
+    const std::array<std::vector<std::shared_ptr<Self>>,custom_neighborhood_count>& neighborhoods () const { return _neighborhoods; }
+
+    /// Return reference to neighborhoods
+    std::array<std::vector<std::shared_ptr<Self>>,custom_neighborhood_count>& neighborhoods () { return _neighborhoods; }
+
+    
 
 private:
 
     const IndexType _id;
+    
+    //! Custom neighborhood storage
+    std::array<std::vector<std::shared_ptr<Self>>,custom_neighborhood_count> _neighborhoods;
+    
+    
 
 };
 

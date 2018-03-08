@@ -69,15 +69,22 @@ template <> hid_t HDFTypeFactory::__get_type__<char>() {
  * @brief returns a HDF5 type from a given C++ primitive type
  *
  * @tparam T
+<<<<<<< HEAD
  * @tparam T,
 std::enable_if_t<
 is_container<typename std::decay_t<T>>::value == false, int>
+=======
+>>>>>>> 8f008242f4d8075f07cab050f07d224793826403
  * @return hid_t
  */
 template <typename T,
           std::enable_if_t<
               is_container<typename std::decay_t<T>>::value == false, int>>
+<<<<<<< HEAD
 inline hid_t HDFTypeFactory::type(std::size_t size) {
+=======
+inline hid_t HDFTypeFactory::type([[maybe_unused]] std::size_t size) { //adding [[maybe_unused]] to silence compiler warning
+>>>>>>> 8f008242f4d8075f07cab050f07d224793826403
     return __get_type__<typename std::decay_t<T>>();
 }
 

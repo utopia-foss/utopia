@@ -202,7 +202,7 @@ private:
     {
         for(const auto& f : _rules){
             for(auto&& cell : _manager.cells())
-                cell->new_state() = f(cell);
+                cell->state_new() = f(cell);
             if(_update_always)
                 update_cells();
         }
@@ -218,11 +218,11 @@ private:
             const bool do_rule = (i<_rules.size());
 
             for(auto&& cell : _manager.cells()){
-                if(do_bc && cell->boundary()){
-                    cell->new_state() = _bc[i](cell);
+                if(do_bc && cell->is_boundary()){
+                    cell->state_new() = _bc[i](cell);
                 }
                 else if(do_rule){
-                    cell->new_state() = _rules[i](cell);
+                    cell->state_new() = _rules[i](cell);
                 }
             }
 

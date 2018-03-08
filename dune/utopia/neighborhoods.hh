@@ -192,7 +192,7 @@ public:
         const auto& mapper = mngr.mapper();
 
         // get grid entity of root cell
-        const auto root_id = root->index();
+        const auto root_id = root->id();
         auto it = elements(gv).begin();
         std::advance(it,root_id);
 
@@ -220,7 +220,7 @@ public:
         // valid only for square grids (implied by the grid being structured)
 
         // Work with the id to reduce lookups
-        const long root_id = root->index();
+        const long root_id = root->id();
 
         // Add neighbors in first two dimensions (assuming there are at least 2)
         add_neighbors_in_dim<1>(root_id, neighbor_ids, mngr);
@@ -269,7 +269,7 @@ public:
         neighbor_ids.reserve(8); // is known and fixed for 2D lattice
 
         // Get the ID of the root cell here; faster than doing multiple lookups
-        const long root_id = root->index();
+        const long root_id = root->id();
 
         // Get the neighbors in the second dimension
         add_neighbors_in_dim<2>(root_id, neighbor_ids, mngr);
@@ -299,7 +299,7 @@ public:
         neighbor_ids.reserve(8); // fewer at boundary of course
 
         // Get the ID of the root cell here; faster than doing multiple lookups
-        const long root_id = root->index();
+        const long root_id = root->id();
 
         // Get the neighbors in the second dimension
         add_neighbors_in_dim<2>(root_id, neighbor_ids, mngr);
@@ -340,7 +340,7 @@ public:
         neighbor_ids.reserve(26); // is known and fixed for 3D square grids
 
         // Use the ID of the root cell; faster than doing multiple lookups
-        const long root_id = root->index();
+        const long root_id = root->id();
 
         // Get the neighbors in the third dimension
         add_neighbors_in_dim<3>(root_id, neighbor_ids, mngr);
@@ -382,7 +382,7 @@ public:
         neighbor_ids.reserve(26); // fewer if at boundary of course
 
         // Use the ID of the root cell; faster than doing multiple lookups
-        const long root_id = root->index();
+        const long root_id = root->id();
 
         // Add the neighbors of the root cell in the third dimension
         add_neighbors_in_dim<3>(root_id, neighbor_ids, mngr);

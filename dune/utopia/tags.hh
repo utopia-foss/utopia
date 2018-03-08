@@ -3,6 +3,8 @@
 
 namespace Utopia {
 
+class EmptyTag{};
+
 class DefaultTag
 {
 

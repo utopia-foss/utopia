@@ -87,17 +87,79 @@ void remove (const std::shared_ptr<Agent> agent, Manager& manager)
 /** The agent will be inserted at the end of the container
  *  \param agent Agent to be added
  *  \param manager Manager of agents
+ *  if template parameter debug=true:
+ *  agents are compared and only new agents are added
+ *  else: agents are always added 
  *  \return true if the agent was inserted
  */
-template<class Agent, class Manager>
+template<bool debug=false,class Agent, class Manager>
 bool add (const std::shared_ptr<Agent> agent, Manager& manager)
 {
-    auto& agents = manager.agents();
-    if(std::find(agents.cbegin(),agents.cend(),agent)==agents.cend()){
+    if(debug==true)
+    {
+         auto& agents = manager.agents();
+         if(std::find(agents.cbegin(),agents.cend(),agent)==agents.cend())
+         {
+             agents.push_back(agent);
+             return true;
+         }
+         return false;
+    }
+    else
+    {
+        auto& agents = manager.agents();
         agents.push_back(agent);
         return true;
     }
-    return false;
+   
+}
+
+/// Append an Agentcontainer to a managed container
+/** The new container will be inserted at the end of the container.
+ *  \tparam debug Check if agents already exist in manager
+ *  \param additional_agents AgentContainer to be added
+ *  \param manager Manager of agents
+ *  if template parameter debug=true:
+ *  agents are compared and only new agents are added
+ *  else: agents are always added
+ *  \return true if the agent was inserted.
+ *      Debug: return vector of booleans indicating succesful insertion.
+ */
+template<bool debug=false, class Agent, class Manager>
+//bool add (const std::shared_ptr<Agent> agent, Manager& manager)
+auto add (const AgentContainer<Agent>& additional_agents, Manager& manager)
+{
+    //check if agent is already in the container
+    if constexpr(debug)
+    {
+        auto& agents = manager.agents();
+        agents.reserve(agents.size() + additional_agents.size());
+
+        // copy new agents and store which ones have not been copied
+        std::vector<bool> was_inserted;
+        was_inserted.reserve(additional_agents.size());
+        auto contains_not = [&agents, &was_inserted](const auto agent) {
+            const auto insert = std::find(agents.cbegin(), agents.cend(), agent)
+                == agents.cend();
+            was_inserted.push_back(insert);
+            return insert;
+        };
+
+        std::copy_if(additional_agents.begin(), additional_agents.end(),
+            std::back_inserter(agents), contains_not);
+             
+        return was_inserted;                           
+    }
+    // just copy all
+    else
+    {
+        auto& agents = manager.agents();
+        agents.reserve(agents.size() + additional_agents.size());
+        std::copy(additional_agents.begin(), additional_agents.end(),
+            std::back_inserter(agents));
+
+        return true;
+    }
 }
 
 /// Return all agents on a cell on a structured grid
@@ -112,7 +174,7 @@ auto find_agents_on_cell (const std::shared_ptr<Cell> cell, const Manager& manag
         std::vector<std::shared_ptr<typename Manager::Agent>> >
 {
     std::vector<std::shared_ptr<typename Manager::Agent>> ret;
-    const auto id = cell->index();
+    const auto id = cell->id();
     const auto& extensions = manager.extensions();
     const auto& grid_cells = manager.grid_cells();
 
@@ -163,7 +225,7 @@ auto find_agents_on_cell (const std::shared_ptr<Cell> cell, const Manager& manag
 
     // get reference element for cell
     auto it = elements(manager.grid_view()).begin();
-    std::advance(it,cell->index());
+    std::advance(it,cell->id());
     const auto& geo = it->geometry();
     const auto& ref = Dune::ReferenceElements<Coordinate,dim>::general(geo.type());
 
@@ -290,21 +352,21 @@ std::enable_if_t<!enabled,void> move_to (const Position& pos, const std::shared_
 
 /// This class implements a moving Agent on a grid
 /** An object of this class only saves its global position on the grid
- *
  *  \tparam StateType Data type of state
- *  \tparam TraitsType Data type of traits
+ *  \tparam Tags Tags class from which Entity and thus Agent derive
+ *  \tparam IndexType Data type of index
  *  \tparam PositionType Data type of position vector
  */
-template<typename StateType, typename TraitsType, typename PositionType>
+template<typename StateType, class Tags, typename IndexType, typename PositionType, std::size_t custom_neighborhood_count = 0>
 class Agent :
-    public Entity<StateType,TraitsType>
+    public Entity< Agent<StateType,Tags,IndexType,PositionType, custom_neighborhood_count> ,StateType, false, Tags, IndexType, custom_neighborhood_count>
 {
 
 public:
     
     using State = StateType;
-    using Traits = TraitsType;
     using Position = PositionType;
+    using Index = IndexType;
 
 private:
     //!< Global position on the grid
@@ -317,9 +379,8 @@ public:
      *  \param position Initial position
      *  \param tag Tracking tag
      */
-    Agent (const State state, const Traits traits, const Position position,
-        const int tag = 0) :
-        Entity<State,Traits>(state,traits,tag),
+    Agent (const State state, const Index index, const Position position) :
+        Entity<Agent, State, false, Tags, Index,custom_neighborhood_count> (state, index),
         _position(position)
     { }
 

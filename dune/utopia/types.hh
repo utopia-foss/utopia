@@ -8,6 +8,9 @@ namespace Utopia
 template<int dim>
 using DefaultGrid = Dune::YaspGrid<dim>;
 
+/// Type of default random number generator
+using DefaultRNG = std::mt19937;
+
 /// Extrct data types dependent on the grid data type
 /** \tparam GridType Type of the grid
  */
@@ -36,7 +39,7 @@ using CellContainer = std::vector<std::shared_ptr<CellType>>;
 
 /// Type of the variably sized container for agents
 template<typename AgentType>
-using AgentContainer = std::list<std::shared_ptr<AgentType>>;
+using AgentContainer = std::vector<std::shared_ptr<AgentType>>;
 
 /// Container dummy if no cells or individuals are used
 using EmptyContainer = std::array<std::shared_ptr<int>,0>;
