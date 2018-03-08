@@ -127,8 +127,6 @@ changed by the user. To build optimized executables again, reconfigure with
 
 
 ### Unit Tests
-**The unit testing is still incomplete!**
-
 Utopia contains unit tests to ensure consistency by checking if class members and functions are working correctly. The tests are integrated into the GitLab Continuous Integration build process, meaning that failing tests cause an entire build to fail.
 
 Tests can also be executed locally, to test a (possibly altered) version of Utopia *before* committing changes. To build them, execute
@@ -136,7 +134,7 @@ Tests can also be executed locally, to test a (possibly altered) version of Utop
     CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=Debug" \
         ./dune-common/bin/dunecontrol --only=utopia make build_tests
 
-and perform the tests by calling
+and perform all tests by calling
 
     ARGS="--output-on-failure" ./dune-common/bin/dunecontrol --only=utopia make test
 
@@ -155,3 +153,5 @@ Available testing groups:
 | Group | Info |
 | ----- | ---- |
 | `core` | Backend functions for models |
+| `dataio` | Backend functions for reading config files and writing data |
+| `python` | Frontend functions for managing simulations and analyzing data |
