@@ -3,60 +3,35 @@
 
 namespace Utopia {
     
-    /*
-    auto my_rule = [&mc](const auto cell)
-    {
-        auto nb = Utopia::Neighborhoods::NextNeighbor::neighbors(cell, mc);
-        cell->state_new()=22;
-        return 22; 
-    };
+    template<bool sync, class Rule, class Container, class Manager>
+    void apply_rule(Rule rule, Container& container, Manager& manager);
     
-    auto my_update = [&mc](const auto cell)
+    ///synchronous update rule
+    template<class Rule, class Container, class Manager>
+    void apply_rule<true> (Rule rule, Container& container, Manager& manager)
     {
-        cell->update();
-        return 1;
-    };
-    */
-    //Signatur
-    template<bool sync=true, class Rule, class Container, class Manager>
-    void apply_rule (Rule rule, Container& container, Manager& manager)
-    {
+        //reduce the number of parameters in rule 
+        //by binding parameter 2 to manager
+        auto bind_rule=std::bind(rule, std::placeholders::_1, manager);
         
-        for_each(container.begin(),container.end(), rule);
-    }
-     /*
-        for (auto entity: container){
-            entity->state_new() = rule(entity);
-            entity->update();
-        }
-        */
-    /*
-    // call apply rule
-    apply_rule(sync, my_rule, manager.cells(), manager);
+        for_each(container.begin(),container.end(),
+            [&bind_rule](const auto cell){ cell->state_new() = bind_rule(cell); });
+        for_each(container.begin(),container.end(),
+            [](const auto cell){ cell->update(); });         
+    }  
     
-    
-    template<bool sync=false, class Rule, class Container, class Manager>
-    void apply_rule (Rule rule, Container& container, Manager& manager)
+    ///asynchronous update rule
+    template<class Rule, class Container, class Manager>
+    void apply_rule<false> (Rule rule, Container& container, Manager& manager)
     {
-        std::shuffle(container)
-        for (auto entity: container){
-            entity->state() = rule(entity);
-        }
-            
-    }
-    
-    
-    //Sim
-    void apply_rules_cells ()
-    {
-        for(const auto& f : _rules){
-            for(auto&& cell : _manager.cells())
-                cell->state_new() = f(cell);
-            if(_update_always)
-                update_cells();
-        }
-    }
-    */
-    
+        //reduce the number of parameters in rule 
+        //by binding parameter 2 to manager
+        auto bind_rule=std::bind(rule, std::placeholders::_1, manager);
+        
+        std::random_shuffle(container.begin(),container.end());
+        for_each(container.begin(),container.end(),
+            [&bind_rule](const auto cell){ cell->state_new() = bind_rule(cell); });
+               
+    }     
 }
 #endif // APPLY_HH    
