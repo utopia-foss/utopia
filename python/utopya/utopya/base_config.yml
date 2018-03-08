@@ -1,0 +1,37 @@
+# Paths for the output
+paths: 
+  # the output will be at run directory: out_dir/model_name/timestamp_model_note
+  # base output directory
+  out_dir:             ~/utopia_output
+  # model note is added to the output directory path
+  model_note:          base_note
+
+# Run
+run_kwargs:
+  # Whether to perfom a parameter sweep
+  perform_sweep:         False
+            
+  stop_conditions:
+    # Timeouts
+    timeout:
+      total:               60              # timeout in seconds (for the whole run)
+      per_sim:             10              # timeout in seconds for each simulation
+
+# Worker Manager
+worker_manager:
+  # specify how many processes work in parallel
+  num_workers:         0               # > 0 : number of processes 
+                                       # <= 0 : #CPUs - num_workers
+  poll_frequency:      20              # how often to check the state of the workers [Hz]
+
+# Reporter
+reporter: {} 
+
+# Data Manager
+data_manager: {} 
+
+# Plot Manager
+plot_manager: {} 
+
+# Parameter Space - specified via run_config
+parameter_space: {} 

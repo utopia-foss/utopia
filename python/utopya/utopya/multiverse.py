@@ -26,31 +26,29 @@ class Multiverse:
     """
 
     UTOPIA_EXEC = "utopia"
+    # TODO add class constant for default search path of user_cfg
 
-    def __init__(self, *, model_name: str, metaconfig: str="metaconfig.yml", userconfig: str=None):
-        """Initialize the Multiverse.
-
-        Load default configuration file and adjust parameters given
-        by metaconfig and userconfig.
-        """
+    def __init__(self, *, model_name: str, run_cfg_path: str, user_cfg_path: str=None):
+        """Initialize the Multiverse."""
         # Initialize empty attributes (partly property-managed)
         self._model_name = None
-        self.dirs = {}
-
-        # Parse the config
-        self._config = self._configure(metaconfig=metaconfig,
-                                       userconfig=userconfig)
+        self._dirs = {}
 
         # Set the model name
         self.model_name = model_name
 
-        # Now create the simulation directory and its internal subdirectories
-        self._create_sim_dir(**self._config['multiverse']['output_path'])
+        # Initialise meta config with None
+        self._meta_config = None
+
+        # Create Meta Config
+        self.meta_config = self._create_meta_config(run_cfg_path=run_cfg_path,
+                                                    user_cfg_path=user_cfg_path)
 
         # create a WorkerManager instance
-        self._wm = WorkerManager(**self._config['multiverse']['worker_manager'])
+        self._wm = WorkerManager(**self._config['multiverse']['worker_manager']) # FIXME
 
     # Properties ..............................................................
+    # TODO add dirs and metaconfig properties
 
     @property
     def model_name(self) -> str:
@@ -66,11 +64,29 @@ class Multiverse:
                              "".format(model_name, ", ".join(MODELS.keys())))
         
         elif self.model_name:
-            raise RuntimeError("A Multiverse's associated model cannot be changed!")
+            raise RuntimeError("A Multiverse's associated model cannot be "
+                               "changed!")
 
         else:
             self._model_name = model_name
             log.debug("Set model_name:  %s", model_name)
+
+    @property
+    def meta_config(self) -> dict:
+        """The meta configuration."""
+        return self._meta_config
+
+    @meta_config.setter
+    def meta_config(self, d: dict) -> None:
+        """Set the meta configuration dict."""
+        if self._meta_config:
+            raise RuntimeError("Metaconfig can only be set once.")
+
+        elif not isinstance(d, dict):
+            raise TypeError("Can only interpret dictionary input for"
+                            " Metaconfig but {} was given".format(type(d)))
+        else:
+            self._meta_config = d
 
     @property
     def wm(self) -> WorkerManager:
@@ -116,59 +132,63 @@ class Multiverse:
 
     # "Private" methods .......................................................
 
-    def _configure(self, *, metaconfig: str, userconfig: str=None) -> dict:
-        """Read default configuration file and adjust parameters.
+    def _create_meta_config(self, *, run_cfg_path: str, user_cfg_path: str=None) -> dict:
+        """Read base configuration file and adjust parameters.
 
-        The default metaconfig file, the user/machine-specific file (if
-        existing) and the regular metaconfig file are read in and the default
-        metaconfig is adjusted accordingly to create a single output file.
+        The base_config file, the user_config file (if existing) and the run_config file are read in.
+        The base_config is adjusted accordingly to create the meta_config.
+    
+        The final configuration dict is built from three components:
+            1. The base is the default configuration, which is always present
+            2. If a userconfig is present, this recursively updates the defaults
+            3. Then, the given metaconfig recursively updates the created dict
 
         Args:
-            metaconfig: path to metaconfig. An empty or invalid path raises
+            run_cfg_path: path to run_config. An empty or invalid path raises
                 FileNotFoundError.
-            userconfig: optional user/machine-specific configuration file
+            user_cfg_path: optional user_config file An invalid path raises
+                FileNotFoundError.
 
         Returns:
             dict: returns the updated default metaconfig to be processed
                 further or to be written out.
         """
-        # In the following, the final configuration dict is built from three components:
-        # The base is the default configuration, which is always present
-        # If a userconfig is present, this recursively updates the defaults
-        # Then, the given metaconfig recursively updates the created dict
-        log.debug("Reading default metaconfig.")
-        defaults = read_yml("default_metaconfig.yml",
-                            error_msg="default_metaconfig.yml is not present.")
+        # Read in all the yaml files from their paths
+        log.debug("Reading in configuration files ...")
 
-        if userconfig is not None:
-            log.debug("Reading userconfig from: %s.", userconfig)
-            userconfig = read_yml(userconfig,
-                                  error_msg="{0} was given but userconfig"
-                                            " could not be found."
-                                            "".format(userconfig))
+        base_cfg = read_yml("./utopya/base_config.yml", # FIXME
+                            error_msg="base_config.yml is not present.")
 
-        log.debug("Reading metaconfig from: %s", metaconfig)
-        metaconfig = read_yml(metaconfig,
-                              error_msg="{0} was given but metaconfig"
-                                        " could not be found."
-                                        "".format(metaconfig))
+        if user_cfg_path is not None:
+            user_cfg = read_yml(user_cfg_path,
+                                error_msg="{0} was given but user_config.yaml "
+                                          "could not be found."
+                                          "".format(user_cfg_path))
 
-        # TODO: typechecks of values should be completed below here.
-        # after this point it is assumed that all values are valid
+        run_cfg = read_yml(run_cfg_path,
+                           error_msg="{0} was given but run_config could "
+                                     "not be found.".format(run_cfg_path))
+
+        # After this point it is assumed that all values are valid
+        # They will throw errors once they are needed ...
 
         # Now perform the recursive update steps
-        log.debug("Updating default metaconfig with given configurations.")
-        if userconfig is not None:  # update default with user spec
-            defaults = recursive_update(defaults, userconfig)
+        meta_tmp = base_cfg
 
-        # update default_metaconfig with metaconfig
-        defaults = recursive_update(defaults, metaconfig)
+        if user_cfg_path is not None:  # update default with user spec
+            log.debug("Updating configuration with user configuration ...")
+            meta_tmp = recursive_update(meta_tmp, user_cfg)
 
-        return defaults
-       
-    def _create_sim_dir(self, *, model_name: str, out_dir: str, model_note: str=None) -> None:
+        # And now recursively update with the run config
+        log.debug("Updating configuration with run configuration ...")
+        meta_tmp = recursive_update(meta_tmp, run_cfg)
+
+        log.info("Loaded meta configuration.")
+        return meta_tmp
+
+    def _create_run_dir(self, *, model_name: str, out_dir: str, model_note: str=None) -> None:
         """Create the folder structure for the simulation output.
-    
+
         The following folder tree will be created
         utopia_output/   # all utopia output should go here
             model_a/
@@ -198,21 +218,21 @@ class Multiverse:
         # Create the folder path to the simulation directory
         log.debug("Expanding user %s", out_dir)
         out_dir = os.path.expanduser(out_dir)
-        sim_dir = os.path.join(out_dir,
+        run_dir = os.path.join(out_dir,
                                model_name,
                                time.strftime("%Y%m%d-%H%M%S"))
 
         # Append a model note, if needed
         if model_note:
-            sim_dir += "_" + model_note
+            run_dir += "_" + model_note
 
         # Inform and store to directory dict
-        log.debug("Expanded user and time stamp to %s", sim_dir)
-        self.dirs['sim_dir'] = sim_dir
+        log.debug("Expanded user and time stamp to %s", run_dir)
+        self._dirs['run_dir'] = run_dir
 
         # Recursively create the whole path to the simulation directory
         try:
-            os.makedirs(sim_dir)
+            os.makedirs(run_dir)
         except OSError as err:
             raise RuntimeError("Simulation directory already exists. This "
                                "should not have happened. Try to start the "
@@ -220,12 +240,12 @@ class Multiverse:
 
         # Make subfolders
         for subdir in ('config', 'eval', 'universes'):
-            subdir_path = os.path.join(sim_dir, subdir)
+            subdir_path = os.path.join(run_dir, subdir)
             os.mkdir(subdir_path)
-            self.dirs[subdir] = subdir_path
+            self._dirs[subdir] = subdir_path
 
         log.debug("Finished creating simulation directory. Now registered: %s",
-                  self.dirs)
+                  self._dirs)
 
     def _create_uni_dir(self, *, uni_id: int, max_uni_id: int) -> str:
         """The _create_uni_dir generates the folder for a single universe.
@@ -234,7 +254,7 @@ class Multiverse:
         given universe number, zero-padded such that they are sortable.
 
         Args:
-            uni_id (int): ID of the universe whose folder should be created. 
+            uni_id (int): ID of the universe whose folder should be created.
                 Needs to be positive or zero.
             max_uni_id (int): highest ID, needed for correct zero-padding.
                 Needs to be larger or equal to uni_id.
@@ -244,10 +264,10 @@ class Multiverse:
             raise RuntimeError("Input variables don't match prerequisites: "
                                "uni_id >= 0, max_uni_id >= uni_id. Given arguments: "
                                "uni_id: {}, max_uni_id: {}".format(uni_id, max_uni_id))
-                               
+
         # Use a format string for creating the uni_path
         fstr = "uni{id:>0{digits:}d}"
-        uni_path = os.path.join(self.dirs['universes'],
+        uni_path = os.path.join(self._dirs['universes'],
                                 fstr.format(id=uni_id, digits=len(str(max_uni_id))))
 
         # Now create the folder

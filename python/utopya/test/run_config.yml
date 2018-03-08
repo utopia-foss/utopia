@@ -1,0 +1,15 @@
+# Parameter Space
+parameter_space: 
+  simulation:
+    # ...
+    prng_seed:            1337
+    #
+    _model:
+      ca_geomorphology:
+        # rain rate
+        # erosion
+        #  ....
+      ca_vegetation:
+        # ..
+      abm_animals:
+        # ...
