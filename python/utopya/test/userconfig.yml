@@ -1,9 +1,0 @@
-# Multiverse parameter
-multiverse:
-  worker_manager:
-    num_workers:         8               # how many process work in parallel
-  # simulation params
-parameter_space:
-  simulation:
-    # ...
-    prng_seed:           1337
