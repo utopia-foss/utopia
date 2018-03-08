@@ -15,6 +15,12 @@ log = logging.getLogger(__name__)
 def mv_config():
     return dict(paths=dict(out_dir='~/utopia_output', model_name='', model_note=''))
 
+@pytest.fixture
+def mv_kwargs() -> dict:
+    """Returns a dict that can be passed to Multiverse for initialisation"""
+    return dict(run_cfg_path="", user_cfg_path=None)
+
+
 # Tests --------------------------------------------------------------------
 @pytest.mark.skip("Not far enough to initialise this.")
 def test_init():
@@ -84,6 +90,14 @@ def test_create_uni_dir(tmpdir, mv_config):
     with pytest.raises(RuntimeError):
             instance._create_uni_dir(uni_id=5, max_uni_id=4)    
 
+@pytest.mark.skip("To be re-implemented when the Multiverse is further developed.")
+def test_single_sim(mv_kwargs):
+    """Tests a run with a single simulation"""
+    mv = Multiverse(**mv_kwargs)
+
+    mv.run_single()
+
+# Helpers ---------------------------------------------------------------------
 
 def single_create_uni_dir(tmpdir, mv_config, maximum=10):
     # Init Multiverse
