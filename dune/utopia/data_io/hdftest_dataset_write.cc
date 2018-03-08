@@ -1,6 +1,7 @@
 #include "hdfdataset.hh"
 #include "hdfmockclasses.hh"
 #include <cassert>
+#include <cmath>
 #include <cstdio>
 #include <iostream>
 #include <vector>
@@ -37,7 +38,6 @@ hid_t make_dataset_for_tests(hid_t id, std::string _name, hsize_t _rank,
 }
 
 void write_dataset_onedimensional(HDFFile &file) {
-    std::vector<double> data(100, 3.14);
 
     // 1d dataset tests
     HDFGroup testgroup1(file.get_basegroup(), "/testgroup1");
@@ -69,6 +69,10 @@ void write_dataset_onedimensional(HDFFile &file) {
     // check if name is correct
     assert(name == dsetname);
 
+    std::vector<double> data(100, 3.14);
+    for (std::size_t i = 0; i < data.size(); ++i) {
+        data[i] += i;
+    }
     // test write: most simple case
     testdataset.write(data.begin(), data.end(),
                       [](auto &value) { return value; });
@@ -95,7 +99,8 @@ void write_dataset_onedimensional(HDFFile &file) {
                               [](auto &value) { return value; });
 
     // 2d data
-    std::vector<std::vector<double>> data_2d(100, std::vector<double>(10));
+    std::vector<std::vector<double>> data_2d(100,
+                                             std::vector<double>(10, 3.16));
 
     // 1d dataset variable length
 
@@ -123,25 +128,35 @@ void write_dataset_multidimensional(HDFFile &file) {
     multidimdataset_compressed.write(data.begin(), data.end(),
                                      [](auto &value) { return value; }, 2,
                                      {1, 100}, {}, 50, 5);
+
+    multidimdataset.close();
+
+    HDFDataset<HDFGroup> multidimdataset_extendable(
+        multidimgroup, "multiddim_dataset_extendable");
+
+    multidimdataset_extendable.write(data.begin(), data.end(),
+                                     [](auto &value) { return value; }, 2,
+                                     {1, 100}, {}, 50);
+
+    multidimdataset_extendable.close();
+
+    HDFDataset<HDFGroup> multidimdataset_reopened(
+        multidimgroup, "multiddim_dataset_extendable");
+
+    std::for_each(data.begin(), data.end(),
+                  [](auto &value) { return value *= -1; });
+
+    multidimdataset_reopened.write(data.begin(), data.end(),
+                                   [](auto &value) { return value; }, 2,
+                                   {1, 100}, {}, 50);
 }
 
-void read_dataset_tests(HDFFile &file) {
-    HDFGroup testgroup1(file.get_basegroup(), "/testgroup1");
-    HDFGroup testgroup2(file.get_basegroup(), "/testgroup2");
-    HDFDataset<HDFGroup> testdataset(testgroup2, "testdataset");
-    HDFDataset<HDFGroup> testdataset2(testgroup1, "testdataset2");
-    HDFDataset<HDFGroup> compressed_dataset(testgroup1, "compressed_dataset");
-    HDFGroup multidimgroup(file.get_basegroup(), "/multi_dim_data");
-    HDFDataset<HDFGroup> multidimdataset(multidimgroup, "/multiddim_dataset");
-}
 int main() {
     HDFFile file("/Users/haraldmack/Desktop/dataset_test.h5", "w");
 
     write_dataset_onedimensional(file);
 
     write_dataset_multidimensional(file);
-
-    read_dataset_tests(file);
 
     return 0;
 }

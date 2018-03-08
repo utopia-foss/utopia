@@ -17,18 +17,15 @@ private:
     hid_t __make_dataset_compressed__(hsize_t chunksize,
                                       hsize_t compress_level) {
         // create creation property list, set chunksize and compress level
-        std::cout << "creating plist " << _name << std::endl;
         hid_t plist = H5Pcreate(H5P_DATASET_CREATE);
         std::vector<hsize_t> chunksizes(_rank, chunksize);
         H5Pset_chunk(plist, _rank, chunksizes.data());
         H5Pset_deflate(plist, compress_level);
 
-        std::cout << "creating despace " << _name << std::endl;
         // make dataspace
         hid_t dspace =
             H5Screate_simple(_rank, _extend.data(), _max_extend.data());
 
-        std::cout << "creating dataset " << _name << std::endl;
         // make dataset and return
         return H5Dcreate(_parent_object->get_id(), _name.c_str(),
                          HDFTypeFactory::type<Datatype>(), dspace, H5P_DEFAULT,
@@ -41,7 +38,8 @@ private:
 
             // create creation property list, set chunksize and compress level
             hid_t plist = H5Pcreate(H5P_DATASET_CREATE);
-            H5Pset_chunk(plist, _rank, &chunksize);
+            std::vector<hsize_t> chunksizes(_rank, chunksize);
+            H5Pset_chunk(plist, _rank, chunksizes.data());
 
             // make dataspace
             hid_t dspace =
@@ -151,6 +149,12 @@ public:
         // get size of stuff to write
         hsize_t size = std::distance(begin, end);
         _rank = rank;
+
+        // currently not supported rank -> throw error
+        if (_rank > 2) {
+            throw std::runtime_error(
+                "ranks higher than 2 not supported currently");
+        }
 
         if (_dataset == -1) { // dataset does not exist
             if (chunksize > 0) {
@@ -320,6 +324,10 @@ public:
 
                 // extend
                 _extend[0] += 1; // add one more slice
+                for (std::size_t i = 1; i < offset.size(); ++i) {
+                    offset[i] = 0;
+                }
+
                 herr_t ext_err = H5Dset_extent(_dataset, _extend.data());
                 if (ext_err < 0) {
                     throw std::runtime_error("nd enlargement failed");
@@ -330,6 +338,9 @@ public:
                 herr_t select_err =
                     H5Sselect_hyperslab(dspace, H5S_SELECT_SET, offset.data(),
                                         stride.data(), count.data(), nullptr);
+
+                hid_t memspace = H5Screate_simple(_rank, count.data(), nullptr);
+
                 if (select_err < 0) {
                     throw std::runtime_error("nd hyperslab failed");
                 }
@@ -341,7 +352,10 @@ public:
                 // write to buffer
                 herr_t write_err =
                     H5Dwrite(_dataset, HDFTypeFactory::type<result_type>(),
-                             H5S_ALL, dspace, H5P_DEFAULT, buffer.data());
+                             memspace, dspace, H5P_DEFAULT, buffer.data());
+
+                H5Sclose(memspace);
+                H5Sclose(dspace);
 
                 if (write_err < 0) {
                     throw std::runtime_error("writing to n-d dataset failed!");
@@ -406,12 +420,16 @@ public:
                                              "in 1d dataset failed!");
                 }
 
+                // build the needed memory space
+                hid_t memspace = H5Screate_simple(1, count.data(), nullptr);
                 // now make a buffer and read
                 std::vector<result_type> buffer(count[0]);
                 hid_t type = H5Dget_type(_dataset);
-                herr_t read_err = H5Dread(_dataset, type, H5S_ALL, dspace,
+                herr_t read_err = H5Dread(_dataset, type, memspace, dspace,
                                           H5P_DEFAULT, buffer.data());
                 H5Tclose(type);
+                H5Sclose(dspace);
+                H5Sclose(memspace);
                 if (read_err < 0) {
                     throw std::runtime_error(
                         "Error  reading subset of 1d dataset");
@@ -452,6 +470,11 @@ public:
 
                 // select the desired slab for reading in the dataspace
                 hid_t dspace = H5Dget_space(_dataset);
+
+                // build the needed memory space
+
+                hid_t memspace = H5Screate_simple(1, count.data(), nullptr);
+
                 herr_t select_err =
                     H5Sselect_hyperslab(dspace, H5S_SELECT_SET, start.data(),
                                         stride.data(), count.data(), nullptr);
@@ -467,7 +490,7 @@ public:
 
                 // get type and read
                 hid_t type = H5Dget_type(_dataset);
-                herr_t read_err = H5Dread(_dataset, type, H5S_ALL, dspace,
+                herr_t read_err = H5Dread(_dataset, type, memspace, dspace,
                                           H5P_DEFAULT, buffer.data());
                 H5Tclose(type);
                 if (read_err < 0) {
