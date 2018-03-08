@@ -17,14 +17,18 @@ private:
     hid_t __make_dataset_compressed__(hsize_t chunksize,
                                       hsize_t compress_level) {
         // create creation property list, set chunksize and compress level
+        std::cout << "creating plist " << _name << std::endl;
         hid_t plist = H5Pcreate(H5P_DATASET_CREATE);
+        std::vector<hsize_t> chunksizes(_rank, chunksize);
+        H5Pset_chunk(plist, _rank, chunksizes.data());
         H5Pset_deflate(plist, compress_level);
-        H5Pset_chunk(plist, _rank, &chunksize);
 
+        std::cout << "creating despace " << _name << std::endl;
         // make dataspace
         hid_t dspace =
             H5Screate_simple(_rank, _extend.data(), _max_extend.data());
 
+        std::cout << "creating dataset " << _name << std::endl;
         // make dataset and return
         return H5Dcreate(_parent_object->get_id(), _name.c_str(),
                          HDFTypeFactory::type<Datatype>(), dspace, H5P_DEFAULT,
@@ -141,7 +145,8 @@ public:
                std::vector<hsize_t> max_size = {}, hsize_t chunksize = 0,
                hsize_t compress_level = 0) {
 
-        using result_type = std::decay_t<decltype(adaptor(*begin))>;
+        using result_type = typename HDFTypeFactory::result_type<
+            std::decay_t<decltype(adaptor(*begin))>>::type;
 
         // get size of stuff to write
         hsize_t size = std::distance(begin, end);
@@ -157,10 +162,10 @@ public:
                 }
                 if (max_size.size() == 0) {
                     _max_extend = std::vector<decltype(H5S_UNLIMITED)>(
-                        rank, H5S_UNLIMITED);
+                        _rank, H5S_UNLIMITED);
                 }
-                if (compress_level >
-                    0) { // compressed dataset: make a new 1d dataset
+                if (compress_level > 0) {
+                    // compressed dataset: make a new dataset
                     _dataset = __make_dataset_compressed__<result_type>(
                         chunksize, compress_level);
                 } else {
@@ -195,7 +200,7 @@ public:
 
             // now that the dataset has been made let us write to it
             // buffering at first
-            std::vector<result_type> buffer = HDFBufferFactory::buffer(
+            auto buffer = HDFBufferFactory::buffer<result_type>(
                 begin, end, std::forward<Adaptor &&>(adaptor));
 
             // write to buffer
@@ -273,7 +278,7 @@ public:
                 }
 
                 // buffering
-                std::vector<result_type> buffer = HDFBufferFactory::buffer(
+                auto buffer = HDFBufferFactory::buffer<result_type>(
                     begin, end, std::forward<Adaptor &&>(adaptor));
 
                 // write to buffer
@@ -330,7 +335,7 @@ public:
                 }
 
                 // buffering
-                std::vector<result_type> buffer = HDFBufferFactory::buffer(
+                auto buffer = HDFBufferFactory::buffer<result_type>(
                     begin, end, std::forward<Adaptor &&>(adaptor));
 
                 // write to buffer

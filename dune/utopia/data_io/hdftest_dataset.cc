@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <iostream>
 #include <vector>
+
 using namespace Utopia::DataIO;
 
 // helper function for making a non compressed dataset
@@ -35,7 +36,7 @@ hid_t make_dataset_for_tests(hid_t id, std::string _name, hsize_t _rank,
     }
 }
 
-void write_dataset_tests(HDFFile &file) {
+void write_dataset_onedimensional(HDFFile &file) {
     std::vector<double> data(100, 3.14);
 
     // 1d dataset tests
@@ -94,15 +95,32 @@ void write_dataset_tests(HDFFile &file) {
                               [](auto &value) { return value; });
 
     // 2d data
-    std::vector<std::vector<double>> data_2d(100,
-                                             std::vector<double>(10, 2.75));
-    // nd dataset, most simple
+    std::vector<std::vector<double>> data_2d(100, std::vector<double>(10));
 
-    HDFDataset<HDFGroup> dataset2d(testgroup1, "2d_dataset");
-    // dataset2d.write(data_2d.begin(), data_2d.end(),
-    //                 [](auto &value) { return value.data(); }, 2, {100, 10});
+    // 1d dataset variable length
+
+    HDFDataset<HDFGroup> varlen_dataset(testgroup1, "varlendataset");
+    varlen_dataset.write(
+        data_2d.begin(), data_2d.end(),
+        [](auto &value) -> std::vector<double> & { return value; }, 1, {100});
 
     // nd dataset, extendible
+}
+
+void write_dataset_multidimensional(HDFFile &file) {
+    HDFGroup multidimgroup(file.get_basegroup(), "/multi_dim_data");
+    std::vector<double> data(100, 2.718);
+
+    HDFDataset<HDFGroup> multidimdataset(multidimgroup, "multiddim_dataset");
+    multidimdataset.write(data.begin(), data.end(),
+                          [](auto &value) { return value; }, 2, {1, 100});
+
+    HDFDataset<HDFGroup> multidimdataset_compressed(multidimgroup,
+                                                    "/multiddim_dataset");
+
+    multidimdataset_compressed.write(data.begin(), data.end(),
+                                     [](auto &value) { return value; }, 2,
+                                     {1, 100}, {}, 50, 5);
 }
 
 void read_dataset_tests(HDFFile &file) {
@@ -111,11 +129,16 @@ void read_dataset_tests(HDFFile &file) {
     HDFDataset<HDFGroup> testdataset(testgroup2, "testdataset");
     HDFDataset<HDFGroup> testdataset2(testgroup1, "testdataset2");
     HDFDataset<HDFGroup> compressed_dataset(testgroup1, "compressed_dataset");
+    HDFGroup multidimgroup(file.get_basegroup(), "/multi_dim_data");
+    HDFDataset<HDFGroup> multidimdataset(multidimgroup, "/multiddim_dataset");
 }
 int main() {
     HDFFile file("/Users/haraldmack/Desktop/dataset_test.h5", "w");
 
-    write_dataset_tests(file);
+    write_dataset_onedimensional(file);
+
+    write_dataset_multidimensional(file);
+
     read_dataset_tests(file);
 
     return 0;

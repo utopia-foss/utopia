@@ -12,26 +12,39 @@ private:
     template <typename T> hid_t static inline __get_type__() { return 0; }
 
 public:
+    /**
+     * @brief struct for getting a plain type from a return type of a function
+     *
+     * @tparam T
+     * @tparam T
+     */
+    template <typename T, typename U = T> struct result_type {
+        using type = T;
+    };
+
+    template <typename T> struct result_type<T *> { using type = T; };
+
+    template <typename T> struct result_type<T &> { using type = T; };
     // overload for primitive types
-    template <
-        typename T,
-        std::enable_if_t<is_container<typename std::decay_t<T>>::value == false,
-                         int> = 0>
+    template <typename T,
+              std::enable_if_t<
+                  is_container_type<typename std::decay_t<T>>::value == false,
+                  int> = 0>
     static inline hid_t type(std::size_t = 0);
 
     // pointer overload
     template <typename T,
-              std::enable_if_t<is_container<typename std::decay_t<T>>::value ==
-                                       false &&
-                                   std::is_pointer<T>::value == true,
-                               int>>
+              std::enable_if_t<
+                  is_container_type<typename std::decay_t<T>>::value == false &&
+                      std::is_pointer<T>::value == true,
+                  int>>
     inline hid_t type(std::size_t = 0);
 
     // overload for variable length types, includes array types
-    template <
-        typename T,
-        std::enable_if_t<is_container<typename std::decay_t<T>>::value == true,
-                         int> = 0>
+    template <typename T,
+              std::enable_if_t<
+                  is_container_type<typename std::decay_t<T>>::value == true,
+                  int> = 0>
     static inline hid_t type(std::size_t = 0);
 };
 
@@ -84,7 +97,7 @@ is_container<typename std::decay_t<T>>::value == false, int>
  */
 template <typename T,
           std::enable_if_t<
-              is_container<typename std::decay_t<T>>::value == false, int>>
+              is_container_type<typename std::decay_t<T>>::value == false, int>>
 inline hid_t HDFTypeFactory::type(std::size_t size) {
     return __get_type__<typename std::decay_t<T>>();
 }
@@ -97,11 +110,11 @@ inline hid_t HDFTypeFactory::type(std::size_t size) {
  * @param size
  * @return hid_t
  */
-template <
-    typename T,
-    std::enable_if_t<is_container<typename std::decay_t<T>>::value == false &&
-                         std::is_pointer<T>::value == true,
-                     int>>
+template <typename T,
+          std::enable_if_t<is_container_type<typename std::decay_t<T>>::value ==
+                                   false &&
+                               std::is_pointer<T>::value == true,
+                           int>>
 inline hid_t HDFTypeFactory::type(std::size_t size) {
     return __get_type__<typename std::remove_pointer<std::decay_t<T>>>();
 }
@@ -116,7 +129,7 @@ inline hid_t HDFTypeFactory::type(std::size_t size) {
  */
 template <typename T,
           std::enable_if_t<
-              is_container<typename std::decay_t<T>>::value == true, int>>
+              is_container_type<typename std::decay_t<T>>::value == true, int>>
 inline hid_t HDFTypeFactory::type(std::size_t size) {
     if (size == 0) {
         return H5Tvlen_create(__get_type__<typename T::value_type>());

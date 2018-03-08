@@ -97,7 +97,7 @@ public:
      */
     template <
         typename Type = Attrtype,
-        std::enable_if_t<is_container<Type>::value == true &&
+        std::enable_if_t<is_container_type<Type>::value == true &&
                              std::is_same<Type, std::string>::value == false,
                          int> = 0>
     std::vector<Type> read() {
@@ -128,7 +128,7 @@ public:
      */
     template <
         typename Type = Attrtype,
-        std::enable_if_t<is_container<Type>::value == true &&
+        std::enable_if_t<is_container_type<Type>::value == true &&
                              std::is_same<Type, std::string>::value == true,
                          int> = 0>
     std::string read() {
@@ -157,8 +157,9 @@ public:
      * @tparam 0
      * @return Type
      */
-    template <typename Type = Attrtype,
-              std::enable_if_t<is_container<Type>::value == false, int> = 0>
+    template <
+        typename Type = Attrtype,
+        std::enable_if_t<is_container_type<Type>::value == false, int> = 0>
     Type read() {
         if (_attribute == -1) {
             throw std::runtime_error(
@@ -185,7 +186,7 @@ public:
      * @param adaptor
      */
     template <typename Type = Attrtype,
-              std::enable_if_t<is_container<Type>::value == true, int> = 0>
+              std::enable_if_t<is_container_type<Type>::value == true, int> = 0>
     void write(Type &attribute_data) {
 
         // when stuff is vector string we can write directly, otherwise we
@@ -223,8 +224,9 @@ public:
      * @tparam 0
      * @param attribute_data
      */
-    template <typename Type = Attrtype,
-              std::enable_if_t<is_container<Type>::value == false, int> = 0>
+    template <
+        typename Type = Attrtype,
+        std::enable_if_t<is_container_type<Type>::value == false, int> = 0>
     void write(Type &attribute_data) {
         if (_attribute == -1) {
             _attribute = __make_attribute__<Type>();
