@@ -3,27 +3,26 @@
 
 namespace Utopia {
     
+    /*
+    auto my_rule = [&mc](const auto cell)
+    {
+        auto nb = Utopia::Neighborhoods::NextNeighbor::neighbors(cell, mc);
+        cell->state_new()=22;
+        return 22; 
+    };
     
-    auto my_rule = [&manager](const auto cell){
-      //  auto nb = Utopia::Neighbors::NextNeighbors::neighbors(cell, manager);
-        cell->state_new()=1;
-      //  cell->update();
-        return 1; // new state
-    }
-    
-    auto my_update = [&manager](const auto cell){
+    auto my_update = [&mc](const auto cell)
+    {
         cell->update();
         return 1;
-    }
-   
+    };
+    */
     //Signatur
     template<bool sync=true, class Rule, class Container, class Manager>
     void apply_rule (Rule rule, Container& container, Manager& manager)
     {
         
         for_each(container.begin(),container.end(), rule);
-        
-       
     }
      /*
         for (auto entity: container){
@@ -58,4 +57,6 @@ namespace Utopia {
         }
     }
     */
+    
+}
 #endif // APPLY_HH    
