@@ -20,7 +20,7 @@ private:
         std::cout << "creating plist " << _name << std::endl;
         hid_t plist = H5Pcreate(H5P_DATASET_CREATE);
         std::vector<hsize_t> chunksizes(_rank, chunksize);
-        H5Pset_chunk(plist, _rank, chunksizes.data());
+        H5Pset_chunk(plist, _rank, chunkdims.data());
         H5Pset_deflate(plist, compress_level);
 
         std::cout << "creating despace " << _name << std::endl;
