@@ -4,9 +4,11 @@ include_directories(${Boost_INCLUDE_DIRS})
 list(APPEND DUNE_LIBS ${Boost_LIBRARIES})
 
 # HDF5
-find_package(HDF5 1.10 REQUIRED)
+find_package(HDF5 1.10 REQUIRED COMPONENTS C HL) 
 include_directories(${HDF5_INCLUDE_DIRS})
-list(APPEND DUNE_LIBS ${HDF5_LIBRARIES})
+list(APPEND DUNE_LIBS ${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES})
+
+
 
 # YAML-CPP
 find_package(yaml-cpp 0.5.2 REQUIRED)
