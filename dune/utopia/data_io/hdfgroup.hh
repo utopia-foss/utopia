@@ -108,16 +108,15 @@ public:
     */
     void close_group(std::string path)
     {
-        auto found = _open_groups.find(path);
-        if (found != _open_groups.end())
+        auto it = _open_groups.find(path);
+        if (it != _open_groups.end())
         {
-            _open_groups.erase(found);
+            _open_groups.erase(it);
         }
         else
         {
             throw std::runtime_error("Trying to delete a nonexistant or closed group!");
         }
-
     }
 
     /// Close the group if there are no more child groups or datasets
