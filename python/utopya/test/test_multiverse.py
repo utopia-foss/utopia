@@ -1,7 +1,11 @@
-"""Test the Multiverse class initialization and workings."""
+"""Test the Multiverse class initialization and workings.
+
+As the Multiverse will always generate a folder structure, it needs to be taken care that these output folders are temporary and are deleted after the tests. This can be done with the tmpdir fixture of pytest.
+"""
 
 import os
 import math
+import uuid
 import pkg_resources
 
 import pytest
@@ -19,8 +23,18 @@ def mv_kwargs(tmpdir) -> dict:
     """Returns a dict that can be passed to Multiverse for initialisation"""
     return dict(model_name="dummy",
                 run_cfg_path=RUN_CFG_PATH,
-                user_cfg_path=USER_CFG_PATH,
-                update_meta_cfg=None)
+                user_cfg_path=USER_CFG_PATH)
+
+@pytest.fixture
+def default_mv(tmpdir, mv_kwargs) -> Multiverse:
+    """Initialises a default configuration of the Multiverse to test everything beyond initialisation."""
+    # Generate a unique configuration for this multiverse
+    rand_str = uuid.uuid4().hex
+    update_cfg = dict(paths=dict(out_dir=tmpdir.dirpath(),
+                                 model_note=rand_str))
+
+    # Initialise it together with the base configuration that is the mv_kwargs
+    return Multiverse(update_meta_cfg=update_cfg, **mv_kwargs)
 
 # Initialisation tests --------------------------------------------------------
 
@@ -34,7 +48,8 @@ def test_invalid_model_name_and_operation(mv_kwargs, tmpdir):
     mv_local = mv_kwargs
 
     # Try to change the model name
-    local_config = dict(paths=dict(out_dir=tmpdir.dirpath(), model_note="test_try_change_model_name"))
+    local_config = dict(paths=dict(out_dir=tmpdir.dirpath(),
+                                   model_note="test_try_change_model_name"))
     instance = Multiverse(**mv_local, update_meta_cfg=local_config)
     with pytest.raises(RuntimeError):
         instance.model_name = "dummy"
@@ -105,6 +120,7 @@ def test_detect_doubled_folders(mv_kwargs, tmpdir):
         # make output folder
         Multiverse(**mv_kwargs, update_meta_cfg=local_config)
 
+@pytest.mark.skip("Needs reworking")
 def test_create_uni_dir(mv_kwargs, tmpdir):
     """Test creation of the uni directory"""
     local_config = dict(paths=dict(out_dir=tmpdir.dirpath(),
@@ -132,9 +148,9 @@ def test_create_uni_dir(mv_kwargs, tmpdir):
 
 # Simulation tests ------------------------------------------------------------
 
-def test_single_sim(mv_kwargs):
+def test_single_sim(default_mv):
     """Tests a run with a single simulation"""
-    mv = Multiverse(**mv_kwargs)
+    mv = default_mv
 
     mv.run_single()
 

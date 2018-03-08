@@ -9,6 +9,7 @@ import copy
 import logging
 import pkg_resources
 from shutil import copyfile
+from typing import Callable
 
 from utopya.workermanager import WorkerManager, enqueue_json
 from utopya.tools import recursive_update, read_yml, write_yml
@@ -312,18 +313,58 @@ class Multiverse:
         # Check if uni_id and max_uni_id are positive
         if uni_id < 0 or uni_id > max_uni_id:
             raise RuntimeError("Input variables don't match prerequisites: "
-                               "uni_id >= 0, max_uni_id >= uni_id. Given arguments: "
-                               "uni_id: {}, max_uni_id: {}".format(uni_id, max_uni_id))
+                               "uni_id >= 0, max_uni_id >= uni_id. "
+                               "Given arguments: "
+                               "uni_id {}, max_uni_id {}".format(uni_id,
+                                                                 max_uni_id))
 
         # Use a format string for creating the uni_path
         fstr = "uni{id:>0{digits:}d}"
-        uni_path = os.path.join(self._dirs['universes'],
-                                fstr.format(id=uni_id, digits=len(str(max_uni_id))))
+        uni_path = os.path.join(self.dirs['universes'],
+                                fstr.format(id=uni_id,
+                                            digits=len(str(max_uni_id))))
 
         # Now create the folder
         os.mkdir(uni_path)
-        log.debug("Created universe path: %s", uni_path)
+        log.debug("Created directory for universe %d: %s", uni_id, uni_path)
+
         return uni_path
+
+    @staticmethod
+    def _setup_universe(*, worker_kwargs: dict, utopia_exec: str, model_name: str, cfg_dict: dict, uni_dir_func: Callable) -> dict:
+        """The callable that will setup everything needed for a universe.
+
+        This is called before the worker process starts working on the universe.
+
+        Args:
+            utopia_exec (str): class constant for utopia executable
+            model_name (str): name of the model *derpface*
+            uni_id (int): ID of the universe whose folder should be created
+            max_uni_id (int): highest ID, needed for correct zero-padding
+            cfg_dict (dict): given by ParamSpace. Defines how many simulations
+                should be started
+
+        Returns:
+            dict: kwargs for the process to be run when task is grabbed by
+                Worker.
+        """
+        # create universe directory
+        uni_dir = uni_dir_func()
+
+        # write essential part of config to file:
+        uni_cfg_path = os.path.join(uni_dir, "config.yml")
+        write_yml(d=cfg_dict, path=uni_cfg_path)
+
+        # building args tuple for task assignment
+        # assuming there exists an attribute for the executable and for the
+        # model
+        args = (utopia_exec, model_name, uni_cfg_path)
+
+        # Overwrite the worker kwargs argument with totally new ones
+        worker_kwargs = dict(args=args,  # passing the arguments
+                             read_stdout=True,
+                             line_read_func=enqueue_json)  # Callable
+        return worker_kwargs
 
     def _add_sim_task(self, *, uni_id: int, max_uni_id: int, cfg_dict: dict) -> None:
         """Helper function that handles task assignment to the WorkerManager.
@@ -344,60 +385,26 @@ class Multiverse:
             cfg_dict (dict): given by ParamSpace. Defines how many simulations
                 should be started
         """
-        # Define the function that will setup everything needed for a universe
-        def setup_universe(*, worker_kwargs: dict, utopia_exec: str, model_name: str, uni_id: int, max_uni_id: int, cfg_dict: dict) -> dict:
-            """Sub-helper function to be returned as functional.
-
-            Creates universe for the task, writes configuration, calls
-            WorkerManager.add_task.
-
-            Args:
-                utopia_exec (str): class constant for utopia executable
-                model_name (str): name of the model *derpface*
-                uni_id (int): ID of the universe whose folder should be created
-                max_uni_id (int): highest ID, needed for correct zero-padding
-                cfg_dict (dict): given by ParamSpace. Defines how many simulations
-                    should be started
-
-            Returns:
-                dict: kwargs for the process to be run when task is grabbed by
-                    Worker.
-            """
-            # create universe directory
-            uni_dir = self._create_uni_dir(uni_id=uni_id,
-                                           max_uni_id=max_uni_id)
-
-            # write essential part of config to file:
-            uni_cfg_path = os.path.join(uni_dir, "config.yml")
-            write_yml(d=cfg_dict, path=uni_cfg_path)
-
-            # building args tuple for task assignment
-            # assuming there exists an attribute for the executable and for the
-            # model
-            args = (utopia_exec, model_name, uni_cfg_path)
-
-            # Overwrite the worker kwargs argument with totally new ones
-            worker_kwargs = dict(args=args,  # passing the arguments
-                                 read_stdout=True,
-                                 line_read_func=enqueue_json)  # Callable
-            return worker_kwargs
+        # Prepare the Callable that creates the universe directory
+        uni_dir_func = lambda: self._create_uni_dir(uni_id=uni_id,
+                                                    max_uni_id=max_uni_id)
 
         # Create the dict that will be passed as arguments to setup_universe
         setup_kwargs = dict(utopia_exec=self.UTOPIA_EXEC,
                             model_name=self.model_name,
-                            uni_id=uni_id, max_uni_id=max_uni_id,
+                            uni_dir_func=uni_dir_func,
                             cfg_dict=cfg_dict)
 
         # Add a task to the worker manager
         self.wm.add_task(priority=None,
-                         setup_func=setup_universe,
+                         setup_func=self._setup_universe,
                          setup_kwargs=setup_kwargs)
 
         log.debug("Added simulation task for universe %d.", uni_id)
 
 
 # -----------------------------------------------------------------------------
-# Helpers
+# Others
 
 def distribute_user_cfg(user_cfg_path: str=Multiverse.USER_CFG_SEARCH_PATH):
     """Distributes a copy of the base config to the user config search path of the Multiverse class."""
