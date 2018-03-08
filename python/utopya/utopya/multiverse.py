@@ -54,6 +54,21 @@ class Multiverse:
         """The model name associated with this Multiverse"""
         return self._model_name
 
+    # Public methods ..........................................................
+
+    def run(self):
+        """Starts a Utopia run. Whether this will be a single simulation or
+        a Parameter sweep is decided by the contents of the meta_cfg."""
+        raise NotImplementedError
+    
+    def run_single(self):
+        """Runs a single simulation."""
+        raise NotImplementedError
+
+    def run_sweep(self):
+        """Runs a parameter sweep."""
+        raise NotImplementedError
+
     # "Private" methods .......................................................
 
     def _configure(self, *, metaconfig: str, userconfig: str=None) -> dict:
