@@ -250,7 +250,7 @@ class WorkerManager:
         setup_func = task_dict.get('setup_func')
 
         if setup_func:
-            log.debug("Calling a setup function, ")
+            log.debug("Calling a setup function ...")
             worker_kwargs = setup_func(worker_kwargs=worker_kwargs,
                                        **task_dict.get('setup_kwargs', {}))
         else:
