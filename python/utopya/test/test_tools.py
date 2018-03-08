@@ -68,13 +68,10 @@ def test_recursive_update(testdict):
     # actually make changes to change_dict
     change_dict['T'] = 5
 
-    with pytest.raises(RuntimeError):
-        if change_dict != to_update_dict:
-            raise RuntimeError("The dictionaries are obviously not equal.")
+    assert change_dict != to_update_dict
 
     to_update_dict = t.recursive_update(to_update_dict, change_dict)
-    if to_update_dict != change_dict:
-        raise RuntimeError("recursive_update doesn't work!")
+    assert to_update_dict == change_dict
 
 
 def test_recursive_update_deep(testdict_deep):
@@ -86,13 +83,10 @@ def test_recursive_update_deep(testdict_deep):
     # actually make changes to change_dict
     change_dict['T']['b'] = 5
 
-    with pytest.raises(RuntimeError):
-        if change_dict != to_update_dict:
-            raise RuntimeError("The dictionaries are obviously not equal.")
+    assert change_dict != to_update_dict
 
     to_update_dict = t.recursive_update(to_update_dict, change_dict)
-    if to_update_dict != change_dict:
-        raise RuntimeError("recursive_update doesn't work!")
+    assert to_update_dict == change_dict
 
 
 def test_read_yml_with_error(tmpdir):
