@@ -10,7 +10,6 @@ import pytest
 
 from utopya import Multiverse
 
-import time
 
 log = logging.getLogger(__name__)
 
@@ -24,7 +23,16 @@ def mv_kwargs(tmpdir) -> dict:
     return dict(model_name="dummy", run_cfg_path=BASE_RUNCFG_PATH, user_cfg_path=BASE_USERCFG_PATH)
 
 # Tests --------------------------------------------------------------------
-#@pytest.mark.skip("Not far enough to initialise this.")
+
+
+def test_invalid_model_name(mv_kwargs, tmpdir):
+    mv_local = mv_kwargs
+    local_config = dict(paths=dict(out_dir=tmpdir.dirpath(), model_note="test_invalid_model_name"))
+    mv_local['model_name'] = "invalid_model_RandomShit_bgsbjkbkfvwuRILUWghfopiwehGEP"
+    with pytest.raises(ValueError):
+        Multiverse(**mv_local, update_meta_cfg=local_config)
+
+
 def test_config_handling(mv_kwargs, tmpdir):
     """Tests the initialization of the Multiverse."""
     mv_local = mv_kwargs
@@ -34,23 +42,21 @@ def test_config_handling(mv_kwargs, tmpdir):
     Multiverse(**mv_kwargs, update_meta_cfg=local_config)
     # Multiverse() with default user config and run config
     mv_local['user_cfg_path'] = None
-    local_config['model_note'] = "test_run_cfg"
-    time.sleep(1)
+    local_config['paths']['model_note'] = "test_run_cfg"
     Multiverse(**mv_local, update_meta_cfg=local_config)
     # Testing errors
     # Multiverse with wrong run config
     with pytest.raises(FileNotFoundError):
         mv_local['run_cfg_path'] = './unvalid_run_cfg.yml'
-        local_config['model_note'] = "test_not existing_run_cfg"
+        local_config['paths']['model_note'] = "test_not existing_run_cfg"
         Multiverse(**mv_local, update_meta_cfg=local_config)
 
     with pytest.raises(FileNotFoundError):
         mv_local['run_cfg_path'] = './unvalid_user_cfg.yml'
-        local_config['model_note'] = "test_not existing_user_cfg"
+        local_config['paths']['model_note'] = "test_not existing_user_cfg"
         Multiverse(**mv_local, update_meta_cfg=local_config)
 
 
-#@pytest.mark.skip("To be re-implemented when the Multiverse is further developed.")
 def test_create_run_dir(mv_kwargs, tmpdir):
     """Tests the folder creation in the initialsation of the Multiverse."""
     local_config = dict(paths=dict(out_dir=tmpdir.dirpath(), model_note="test_outer_directories"))
@@ -68,28 +74,27 @@ def test_create_run_dir(mv_kwargs, tmpdir):
     for folder in ["config", "eval", "universes"]:  # may need to adapt
         assert os.path.isdir(os.path.join(path_base, latest, folder)) is True
 
-@pytest.mark.skip("To be re-implemented when the Multiverse is further developed.")
+
 def test_detect_doubled_folders(mv_kwargs, tmpdir):
     local_config = dict(paths=dict(out_dir=tmpdir.dirpath(), model_note="test_universes_doubling"))
     # Init Multiverse
-    instance = Multiverse(model_name=model_name, run_cfg_path="./test/run_config.yml")
-    # set out dir to temp
-    instance._meta_config['paths']['out_dir'] = tmpdir.dirpath()
-    # make output folder
-    instance.create_run_dir()
+    Multiverse(**mv_kwargs, update_meta_cfg=local_config)
     # create output folders again
     # expect error due to existing folders
     with pytest.raises(RuntimeError):
         # make output folder
-        instance.create_run_dir()
+        Multiverse(**mv_kwargs, update_meta_cfg=local_config)
 
-@pytest.mark.skip("To be re-implemented when the Multiverse is further developed.")
-def test_create_uni_dir(tmpdir):
+
+def test_create_uni_dir(mv_kwargs, tmpdir):
+    local_config = dict(paths=dict(out_dir=tmpdir.dirpath(), model_note="test_uni_directories"))
     for i, max_uni in enumerate([1, 9, 10, 11, 99, 100, 101]):
-        single_create_uni_dir(tmpdir, "test_universes_folder_structure_{}".format(i), max_uni)
+        local_config['paths']['model_note'] = "test_universes_folder_structure_{}".format(i)
+        single_create_uni_dir(mv_kwargs, local_config, max_uni)
     # test for possible wrong inputs
     # Init Multiverse
-    instance = Multiverse(model_name="test_universes_folder_structure_for_errors", run_cfg_path="./test/run_config.yml")
+    local_config['paths']['model_note'] = "test_uni_id_consistency"
+    instance = Multiverse(**mv_kwargs, update_meta_cfg=local_config)
     # negative numbers:
     with pytest.raises(RuntimeError):
             instance._create_uni_dir(uni_id=-1, max_uni_id=-1)
@@ -104,14 +109,13 @@ def test_single_sim(mv_kwargs):
 
     mv.run_single()
 
+
 # Helpers ---------------------------------------------------------------------
 
-def single_create_uni_dir(tmpdir, model_name="test_universe_folder_structure_single", maximum=10):
+
+def single_create_uni_dir(mv_kwargs, local_config, maximum=10):
     # Init Multiverse
-    instance = Multiverse(model_name=model_name, run_cfg_path="./test/run_config.yml")
-    # set out dir to temp
-    instance._meta_config['paths']['out_dir'] = tmpdir.dirpath()
-    instance.create_run_dir()
+    instance = Multiverse(**mv_kwargs, update_meta_cfg=local_config)
     # Create the universe directories
     for i in range(maximum + 1):
         instance._create_uni_dir(uni_id=i, max_uni_id=maximum)

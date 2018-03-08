@@ -3,10 +3,12 @@
 The Multiverse supplies the main user interface of the frontend.
 """
 import os
+import sys
 import time
 import copy
 import logging
 import pkg_resources
+from shutil import copyfile
 
 from utopya.workermanager import WorkerManager, enqueue_json
 from utopya.tools import recursive_update, read_yml, write_yml
@@ -392,3 +394,35 @@ class Multiverse:
                          setup_kwargs=setup_kwargs)
 
         log.debug("Added simulation task for universe %d.", uni_id)
+
+
+# -----------------------------------------------------------------------------
+# Helpers
+
+def distribute_user_cfg():
+    """Distributes a copy of the base config to the user config search path of the Multiverse class."""
+    # Get the class constants
+    base_cfg_path = Multiverse.BASE_CFG_PATH
+    user_cfg_path = Multiverse.USER_CFG_SEARCH_PATH
+
+    # Check if a user config already exists
+    if os.path.isfile(user_cfg_path):
+        # There already is one. Ask if this should be overwritten...
+        print("A user config already exists at "+str(user_cfg_path))
+        if input("Replace with base config? [y, N]  ").lower() in ['yes', 'y']:
+            # Delete the file
+            os.remove(user_cfg_path)
+
+        else:
+            # Abort here
+            print("Not distributing user config ...")
+            return False
+    
+    # At this point, can assume that it is desired to write the file and there is no other file there
+    # Make sure that the folder exists
+    os.makedirs(os.path.dirname(user_cfg_path), exist_ok=True)
+
+    # Copy the file to where it should be
+    copyfile(base_cfg_path, user_cfg_path)
+
+    print("Distributed user configuration to "+user_cfg_path)
