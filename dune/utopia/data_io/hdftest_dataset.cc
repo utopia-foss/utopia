@@ -115,9 +115,11 @@ void write_dataset_multidimensional(HDFFile &file) {
     multidimdataset.write(data.begin(), data.end(),
                           [](auto &value) { return value; }, 2, {1, 100});
 
-    HDFDataset<HDFGroup> multidimdataset_compressed(multidimgroup,
-                                                    "/multiddim_dataset");
+    HDFDataset<HDFGroup> multidimdataset_compressed(
+        multidimgroup, "multiddim_dataset_compressed");
 
+    std::for_each(data.begin(), data.end(),
+                  [](auto &value) { return value += 1; });
     multidimdataset_compressed.write(data.begin(), data.end(),
                                      [](auto &value) { return value; }, 2,
                                      {1, 100}, {}, 50, 5);
