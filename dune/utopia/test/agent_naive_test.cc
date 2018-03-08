@@ -11,8 +11,6 @@ int main()
         assert(agent.position() == 1);
         assert(agent.is_tagged == false);
         
-        //auto grid = Utopia::Setup::create_grid<2>(1000);
-        
         //test of neighborhood
         Utopia::Agent<double, Utopia::DefaultTag, int, int, 2> agent_with_neighbors(0.2, 0, 1);
         
@@ -25,7 +23,6 @@ int main()
         //build a neighbor cell and add it to the first neighborhood
         auto neighbor= std::make_shared<Utopia::Agent<double, Utopia::DefaultTag, int, int, 2> >(0.3, 0, 42);
         nb[0].push_back(neighbor);
-        
         
         //check that it was added, carries correct values 
         assert(nb[0].size()==1);
