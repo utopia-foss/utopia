@@ -4,6 +4,7 @@ The Multiverse supplies the main user interface of the frontend.
 """
 import os
 import time
+import copy
 import logging
 import pkg_resources
 
@@ -31,7 +32,7 @@ class Multiverse:
                                                     'cfg/base_cfg.yml')
     USER_CFG_SEARCH_PATH = "~/.config/utopia/user_cfg.yml"
 
-    def __init__(self, *, model_name: str, run_cfg_path: str, user_cfg_path: str=None):
+    def __init__(self, *, model_name: str, run_cfg_path: str, user_cfg_path: str=None, update_meta_cfg: dict=None):
         """Initialize the Multiverse.
         
         Args:
@@ -40,6 +41,8 @@ class Multiverse:
             user_cfg_path (str, optional): If given, this is used to update the
                 base configuration. If None, will look for it in the default
                 path, see Multiverse.USER_CFG_SEARCH_PATH.
+            update_meta_cfg (dict, optional): Can be used to update the meta
+                config that is generated from the run_cfg and user_cfg.
         """
         # Initialize empty attributes (partly property-managed)
         self._model_name = None
@@ -52,8 +55,7 @@ class Multiverse:
         self._meta_config = None
 
         # Create Meta Config
-        self.meta_config = self._create_meta_config(run_cfg_path=run_cfg_path,
-                                                    user_cfg_path=user_cfg_path)
+        self.meta_config = self._create_meta_config(run_cfg_path=run_cfg_path, user_cfg_path=user_cfg_path, update_meta_cfg=update_meta_cfg)
 
         # Create the run directory and write the meta configuration into it
         self._create_run_dir(model_name=self.model_name,
@@ -150,32 +152,31 @@ class Multiverse:
 
     # "Private" methods .......................................................
 
-    def _create_meta_config(self, *, run_cfg_path: str, user_cfg_path: str=None) -> dict:
+    def _create_meta_config(self, *, run_cfg_path: str, user_cfg_path: str=None, update_meta_cfg: dict=None) -> dict:
         """Read base configuration file and adjust parameters.
-
+        
         The base_config file, the user_config file (if existing) and the run_config file are read in.
         The base_config is adjusted accordingly to create the meta_config.
-    
+        
         The final configuration dict is built from three components:
             1. The base is the default configuration, which is always present
             2. If a userconfig is present, this recursively updates the defaults
             3. Then, the given metaconfig recursively updates the created dict
-
+            4. As a last step, the update_meta_cfg dict will be applied
+        
         Args:
-            run_cfg_path: path to run_config. An empty or invalid path raises
-                FileNotFoundError.
-            user_cfg_path: optional user_config file An invalid path raises
-                FileNotFoundError.
-
+            run_cfg_path (str): path to run_config
+            user_cfg_path (str, optional): path to the user_config file
+            update_meta_cfg (dict, optional): will be
+        
         Returns:
-            dict: returns the updated default metaconfig to be processed
-                further or to be written out.
+            dict: returns the created metaconfig that will be saved as attr
         """
         # Read in all the yaml files from their paths
         log.debug("Reading in configuration files ...")
 
-        base_cfg = read_yml("./utopya/base_config.yml", # FIXME
-                            error_msg="base_config.yml is not present.")
+        base_cfg = read_yml(self.BASE_CFG_PATH,
+                            error_msg="Base configuration not found!")
 
         if user_cfg_path is not None:
             user_cfg = read_yml(user_cfg_path,
@@ -200,6 +201,13 @@ class Multiverse:
         # And now recursively update with the run config
         log.debug("Updating configuration with run configuration ...")
         meta_tmp = recursive_update(meta_tmp, run_cfg)
+
+        # ... and the update_meta_cfg dictionary
+        if update_meta_cfg:
+            log.debug("Updating configuration with given `update_meta_cfg`")
+            meta_tmp = recursive_update(meta_tmp,
+                                        copy.deepcopy(update_meta_cfg))
+            # NOTE using copy to make sure that usage of the dict will not interfere with the Multiverse's meta config
 
         log.info("Loaded meta configuration.")
         return meta_tmp
