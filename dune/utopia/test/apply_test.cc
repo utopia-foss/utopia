@@ -93,12 +93,12 @@ int main()
     // :( this test might in fact fail for working code, because randomness is tested (but improbable)
     
     int apply_counter=0;
-    int* p=&apply_counter;
+    
     //define a rule
-    auto get_bigger = [p](const auto cell, auto mc2)
+    auto get_bigger = [&apply_counter](const auto cell, auto mc2)
     {
         auto nb = Utopia::Neighborhoods::NextNeighbor::neighbors(cell, mc2);
-        return ((*p)++); 
+        return (apply_counter++); 
     };
     
     mc2.cells()[0]->state()=22;
