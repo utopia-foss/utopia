@@ -14,23 +14,24 @@ log = logging.getLogger(__name__)
 
 class Multiverse:
 
-    def __init__(self, model_name: str="test", run_cfg_path: str="run_config.yml", user_cfg_path: str=None):
+    def __init__(self, *, model_name: str, run_cfg_path: str, user_cfg_path: str=None):
         """Initialize the setup.
 
         Load base_configuration file and adjust parameters given
         by user_config and run_config.
         """
         # Initialise empty dict for config
-        self._meta_config = dict()
+        self._meta_config = None
         # Create Meta Config
-        self._meta_config = self._create_meta_config(run_cfg_path=run_cfg_path, user_cfg_path=user_cfg_path)
+        self.meta_config = self._create_meta_config(run_cfg_path=run_cfg_path,
+                                                    user_cfg_path=user_cfg_path)
 
         # Initialise empty dict for keeping track of directory paths
         self._dirs = dict()
 
         # Now create the run directory and its internal subdirectories
         # Not in init any more
-        #self._create_run_dir(model_name=model_name, **self._meta_config['paths'])
+        # self._create_run_dir(model_name=model_name, **self._meta_config['paths'])
         self._model_name = model_name
 
     # Properties ..............................................................
@@ -39,6 +40,17 @@ class Multiverse:
         """The meta_config."""
         return self._meta_config
 
+    @meta_config.setter
+    def meta_config(self, d: dict) -> None:
+        """Set the meta_config dict."""
+        if self._meta_config:
+            raise RuntimeError("Metaconfig can only be set once.")
+
+        elif not isinstance(d, dict):
+            raise TypeError("Can only interpret dictionary input for"
+                            " Metaconfig but {} was given".format(type(d)))
+        else:
+            self._meta_config = d
     # Public API ..............................................................
 
     def create_run_dir(self):
@@ -95,10 +107,10 @@ class Multiverse:
         # what to really do here ?
         # return .yml file return dict ? save .yaml file at right position?
         log.debug("Multiverse._create_uni_config called, but not implemented")
-       
+
     def _create_run_dir(self, *, model_name: str, out_dir: str, model_note: str=None) -> None:
         """Create the folder structure for the simulation output.
-    
+
         The following folder tree will be created
         utopia_output/   # all utopia output should go here
             model_a/
@@ -166,7 +178,7 @@ class Multiverse:
         given universe number, zero-padded such that they are sortable.
 
         Args:
-            uni_id (int): ID of the universe whose folder should be created. 
+            uni_id (int): ID of the universe whose folder should be created.
                 Needs to be positive or zero.
             max_uni_id (int): highest ID, needed for correct zero-padding.
                 Needs to be larger or equal to uni_id.
@@ -176,7 +188,7 @@ class Multiverse:
             raise RuntimeError("Input variables don't match prerequisites: "
                                "uni_id >= 0, max_uni_id >= uni_id. Given arguments: "
                                "uni_id: {}, max_uni_id: {}".format(uni_id, max_uni_id))
-                               
+
         # Use a format string for creating the uni_path
         fstr = "uni{id:>0{digits:}d}"
         uni_path = os.path.join(self._dirs['universes'],
