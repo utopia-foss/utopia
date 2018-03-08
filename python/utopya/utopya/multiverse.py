@@ -412,11 +412,12 @@ def distribute_user_cfg():
         if input("Replace with base config? [y, N]  ").lower() in ['yes', 'y']:
             # Delete the file
             os.remove(user_cfg_path)
+            print("")
 
         else:
             # Abort here
             print("Not distributing user config ...")
-            return False
+            return
     
     # At this point, can assume that it is desired to write the file and there is no other file there
     # Make sure that the folder exists
@@ -425,4 +426,4 @@ def distribute_user_cfg():
     # Copy the file to where it should be
     copyfile(base_cfg_path, user_cfg_path)
 
-    print("Distributed user configuration to "+user_cfg_path)
+    print("Distributed user configuration to {}\n".format(user_cfg_path))

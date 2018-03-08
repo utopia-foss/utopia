@@ -32,8 +32,9 @@ def parse_utopia_models(targets: str=_UTOPIA_MODEL_TARGETS,
         print(targets, binpaths)
         return {}
 
-    model_info = {t:bp for t, bp in zip(targets.split(";"),
-                                        binpaths.split(";"))}
+    # Populate model info with target names and model info dict containing binpath
+    model_info = {t:dict(binpath=bp) for t, bp in zip(targets.split(";"),
+                                                      binpaths.split(";"))}
 
     return model_info
 
