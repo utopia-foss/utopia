@@ -3,12 +3,12 @@
 import os
 import logging
 import math
-
 import pkg_resources
 
 import pytest
 
 from utopya import Multiverse
+from utopya.multiverse import distribute_user_cfg
 
 
 log = logging.getLogger(__name__)
@@ -109,9 +109,25 @@ def test_single_sim(mv_kwargs):
 
     mv.run_single()
 
+def test_distribute_user_cfg(tmpdir, monkeypatch):
+    """Tests whether user configuration distribution works as desired."""
+    test_path = os.path.join(tmpdir.dirpath(), "my_user_cfg.yml")
+    distribute_user_cfg(user_cfg_path=test_path)
+
+    assert os.path.isfile(test_path)
+
+    # monkeypatch the "input" function, so that it returns "y" or "no".
+    # This simulates the user entering something in the terminal
+    # no-case
+    monkeypatch.setattr('builtins.input', lambda x: "y")
+    distribute_user_cfg(user_cfg_path=test_path)
+
+    # yes-case
+    monkeypatch.setattr('builtins.input', lambda x: "n")
+    distribute_user_cfg(user_cfg_path=test_path)
+
 
 # Helpers ---------------------------------------------------------------------
-
 
 def single_create_uni_dir(mv_kwargs, local_config, maximum=10):
     # Init Multiverse

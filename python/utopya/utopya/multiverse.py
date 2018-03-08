@@ -399,11 +399,10 @@ class Multiverse:
 # -----------------------------------------------------------------------------
 # Helpers
 
-def distribute_user_cfg():
+def distribute_user_cfg(user_cfg_path: str=Multiverse.USER_CFG_SEARCH_PATH):
     """Distributes a copy of the base config to the user config search path of the Multiverse class."""
-    # Get the class constants
+    # Get the class constants for the base config
     base_cfg_path = Multiverse.BASE_CFG_PATH
-    user_cfg_path = Multiverse.USER_CFG_SEARCH_PATH
 
     # Check if a user config already exists
     if os.path.isfile(user_cfg_path):
