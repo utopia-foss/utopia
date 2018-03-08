@@ -25,12 +25,20 @@ def mv_kwargs(tmpdir) -> dict:
 # Tests --------------------------------------------------------------------
 
 
-def test_invalid_model_name(mv_kwargs, tmpdir):
+def test_invalid_model_name_and_operation(mv_kwargs, tmpdir):
     mv_local = mv_kwargs
+    # Try to change the model name
+    local_config = dict(paths=dict(out_dir=tmpdir.dirpath(), model_note="test_try_change_model_name"))
+    instance = Multiverse(**mv_local, update_meta_cfg=local_config)
+    with pytest.raises(RuntimeError):
+        instance.model_name = "dummy"
+    # Try invalid model name  
     local_config = dict(paths=dict(out_dir=tmpdir.dirpath(), model_note="test_invalid_model_name"))
     mv_local['model_name'] = "invalid_model_RandomShit_bgsbjkbkfvwuRILUWghfopiwehGEP"
     with pytest.raises(ValueError):
         Multiverse(**mv_local, update_meta_cfg=local_config)
+
+
 
 
 def test_config_handling(mv_kwargs, tmpdir):
