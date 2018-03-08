@@ -20,5 +20,9 @@ setup(name='utopya',
       tests_require=TEST_DEPS,
       test_suite='py.test',
       extras_require=dict(test_deps=TEST_DEPS),
-      scripts=['bin/utopia'] # installs this into the virtual env!
+      scripts=['bin/utopia'], # installs this into the virtual env!
+      entry_points = {
+          'console_scripts': [
+              'utopia_distribute_user_cfg = utopya.multiverse:distribute_user_cfg'
+          ]}
       )

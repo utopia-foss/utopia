@@ -1,6 +1,7 @@
 """For functions that are not bound to classes, but useful."""
-import yaml
+
 import os
+import yaml
 
 
 def recursive_update(d: dict, u: dict) -> dict:
