@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
         const State state(dist_int(gen));
         
         //build a cell
-        Utopia::Cell<State,true,Position,Utopia::DefaultTag,Index> c1(state,pos,boundary,index);
+        Utopia::Cell<State,true,Utopia::DefaultTag,Position,Index> c1(state,pos,boundary,index);
 
         //assert that the content of the cell is correct
         assert(c1.state()==state);
@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
         
         
         // Test async Cell with doubles
-        Utopia::Cell<double, false, Position, Utopia::DefaultTag, int> test_cell(0.1,pos,false,0);
+        Utopia::Cell<double, false, Utopia::DefaultTag, Position, int> test_cell(0.1,pos,false,0);
         assert(!test_cell.is_sync());
         auto& c_state = test_cell.state();
         c_state = 0.2;
@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
 
         // Test sync Cell with vector 
         std::vector<double> vec({0.1, 0.2});
-        Utopia::Cell<std::vector<double>, true,Position, Utopia::DefaultTag, int> test_cell2(vec,pos,false, 987654321);
+        Utopia::Cell<std::vector<double>, true,Utopia::DefaultTag, Position,  int> test_cell2(vec,pos,false, 987654321);
         assert(test_cell2.id() == 987654321);
         assert(test_cell2.is_sync());
         auto& new_state = test_cell2.state_new();
@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
 
         //test cell neighborhood
         //create a cell with two neighborhoods
-        Utopia::Cell<std::vector<double>, true, Position, Utopia::DefaultTag, int,2 > cell_with_neighbors(vec,pos,false, 987654321);
+        Utopia::Cell<std::vector<double>, true, Utopia::DefaultTag, Position,  int,2 > cell_with_neighbors(vec,pos,false, 987654321);
         
         //look at a reference of the neighborhoods, see they are build, empty
         auto& nb=cell_with_neighbors.neighborhoods();
@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
         assert(nb[1].size()==0);
         
         //build a neighbor cell and add it to the first neighborhood
-        auto neighbor= std::make_shared<Utopia::Cell<std::vector<double>, true, Position, Utopia::DefaultTag, int,2 > >(vec,pos,false, 42);
+        auto neighbor= std::make_shared<Utopia::Cell<std::vector<double>, true, Utopia::DefaultTag, Position, int,2 > >(vec,pos,false, 42);
         nb[0].push_back(neighbor);
         
         //check that it was added, carries correct values 
@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
         
         //Check neighborhood functions:
         //test reference of neighbor + add function
-        auto new_cell_with_neighbors=std::make_shared<Utopia::Cell<std::vector<double>, true, Position, Utopia::DefaultTag, int,2 > >(vec,pos,false, 41);
+        auto new_cell_with_neighbors=std::make_shared<Utopia::Cell<std::vector<double>, true, Utopia::DefaultTag, Position, int,2 > >(vec,pos,false, 41);
         auto& nn=Utopia::Neighborhoods::Custom<0>::neighbors(new_cell_with_neighbors);
         assert(nn.size()==0);
         Utopia::Neighborhoods::Custom<0>::add_neighbor(neighbor, new_cell_with_neighbors);
@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
         //test different template parameters
         auto& nnn=Utopia::Neighborhoods::Custom<1>::neighbors(new_cell_with_neighbors);
         assert(nnn.size()==0);
-        auto yet_another_neighbor=std::make_shared<Utopia::Cell<std::vector<double>, true, Position, Utopia::DefaultTag, int,2 > >(vec,pos,false, 99);
+        auto yet_another_neighbor=std::make_shared<Utopia::Cell<std::vector<double>, true, Utopia::DefaultTag, Position, int,2 > >(vec,pos,false, 99);
         Utopia::Neighborhoods::Custom<1>::add_neighbor(yet_another_neighbor, new_cell_with_neighbors);
         Utopia::Neighborhoods::Custom<0>::add_neighbor(yet_another_neighbor, new_cell_with_neighbors);
         assert(nnn.size()==1);

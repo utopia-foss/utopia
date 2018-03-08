@@ -192,7 +192,7 @@ namespace Setup
         using Mapper = typename GridTypes::Mapper;
         using Index = typename GridTypes::Index;
 
-        using CellType = Cell<State,sync,Position,Tag,Index>;
+        using CellType = Cell<State, sync, Tag, Position, Index>;
 
         auto grid = grid_wrapper._grid;
         GV gv(*grid);
