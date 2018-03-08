@@ -110,6 +110,8 @@ public:
     using Base = GridManagerBase<GridType, RNG, structured, periodic>;
     /// Data type of cells (shared pointer to it)
     using Cell = DataType;
+    /// Data type of the container
+    using Container = CellContainer<Cell>;
 
 private:
     /// container for CA cells
@@ -140,6 +142,8 @@ public:
     using Base = GridManagerBase<GridType, RNG, structured, periodic>;
     /// Data type of cells (shared pointer to it)
     using Agent = DataType;
+    /// Data type of the container
+    using Container = AgentContainer<Agent>;
 
 private:
     /// container for agents
