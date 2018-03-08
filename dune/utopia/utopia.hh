@@ -48,6 +48,13 @@
 #include "setup.hh"
 #include "model.hh"
 
+// Models
+#include "models/dummy.hh"
+#include "models/core.hh"
+#include "models/vegetation.hh"
+#include "models/vegetation_setup.hh"
+
+
 // UTOPIA I/O
 #include "data_io/config.hh"
 
