@@ -27,14 +27,22 @@ class HDFGroup
 protected:
     hid_t _group; /// Storage of group id
     std::string _path; /// Storage of the path
-    std::unordered_map<std::string, std::shared_ptr<HDFGroup>> _open_groups; /// Storage of child groups and their path
-    std::unordered_map<std::string, std::shared_ptr<HDFDataset<HDFGroup>>> _open_datasets; /// Storage of child datasets and their path
 
 public:
     void info()
     {
         // TODO
-        // H5Gget_info(_group);
+        H5G_info_t* info;
+        H5Gget_info(_group, info);
+
+
+        std::cout << "Printing information of the group:" << std::endl
+            << "- Group id: " << _group
+            << "- Group path: " << _path
+            << "- Number of links in group: " << info->nlinks 
+            << "- Current maximum creation order value for group: " << info->max_corder
+            << "- There are mounted files on the group: " << info->mounted
+            << std::endl; 
     }
 
     /// Get the id
@@ -55,7 +63,6 @@ public:
         return _path;
     }
 
-
     /// Add an attribute to the HDFGroup object
     /** Adds an attribute to a group
     *  \tparam Attrdata Attribute type 
@@ -71,20 +78,6 @@ public:
         attribute.write(attribute_data);
     }
 
-    /// Get open groups 
-    /** Adds an attribute to a group
-    *  return open_groups A vector containing std::shared_pointer pointing at the HDFGroup objects
-    */
-    std::vector<std::shared_ptr<HDFGroup>> get_open_groups()
-    {
-        std::vector<std::shared_ptr<HDFGroup>> open_groups;
-        for (auto group : _open_groups)
-        {
-            open_groups.push_back(group.second);
-        }
-        return open_groups;
-    }
-
     /// Open a new HDFGroup
     /**
     * \param path The path
@@ -92,44 +85,16 @@ public:
     */
     std::shared_ptr<HDFGroup> open_group(std::string path)
     {
-        auto found = _open_groups.find(path);
-        // Assure that the group is not yet open
-        if (found == _open_groups.end())
-        {
-            auto it = _open_groups.insert( 
-                std::make_pair(path, std::make_shared<HDFGroup>(HDFGroup(*this, path))));
-            return it.first->second;
-        }
-    }
-
-    /// Close a group
-    /** Closes a child group if it is a child. 
-    * \param path The path
-    */
-    void close_group(std::string path)
-    {
-        auto it = _open_groups.find(path);
-        if (it != _open_groups.end())
-        {
-            _open_groups.erase(it);
-        }
-        else
-        {
-            throw std::runtime_error("Trying to delete a nonexistant or closed group!");
-        }
+        return std::make_shared<HDFGroup>(HDFGroup(*this, path));
     }
 
     /// Close the group if there are no more child groups or datasets
     void close() 
-    {         
-        if (_open_groups.size() == 0 && _open_datasets.size() == 0)
+    {
+        if (H5Iis_valid(_group) == 0)
         {
             H5Gclose(_group); 
-        }
-        else
-        {
-            throw std::runtime_error("The group still contains child groups or datasets");
-        }
+        } 
     }
 
     /// Open a HDFDataset
@@ -138,33 +103,9 @@ public:
     */
     std::shared_ptr<HDFDataset<HDFGroup>>  open_dataset(std::string path)
     {
-        auto found = _open_datasets.find(path);
-        // Assure that the dataset is not yet open
-        if (found == _open_datasets.end())
-        {
-            auto data = HDFDataset<HDFGroup>(*this, path);
-            auto data_ptr = std::make_shared<HDFDataset<HDFGroup>>(data);
-            _open_datasets.insert(std::make_pair(path, data_ptr));
-            return data_ptr;
-
-            // auto it = _open_datasets.insert( 
-            //     std::make_pair(path, std::make_shared<HDFDataset<HDFGroup>>(
-            //         HDFDataset<HDFGroup>(*this, path))));
-            // return it.first->second;
-        }  
-    }
-
-    void close_dataset(std::string path)
-    {
-        auto it = _open_datasets.find(path);
-        if (it != _open_datasets.end())
-        {
-            _open_datasets.erase(it);
-        }
-        else
-        {
-            throw std::runtime_error("Trying to delete a nonexistant or closed group!");
-        }
+        auto data = HDFDataset<HDFGroup>(*this, path);
+        auto data_ptr = std::make_shared<HDFDataset<HDFGroup>>(data);
+        return std::make_shared<HDFDataset<HDFGroup>>(data);
     }
 
     /// Swap two HDFGroup objects
@@ -178,8 +119,6 @@ public:
 
         swap(group1._group, group2._group);
         swap(group1._path, group2._path);
-        swap(group1._open_groups, group2._open_groups);
-        swap(group1._open_datasets, group2._open_datasets);
     }
 
     /// Default constructor
@@ -190,9 +129,7 @@ public:
     *  \param group The HDFGroup object that is copied
     */
     HDFGroup(const HDFGroup& group) :   _group(group._group),
-                                        _path(group._path),
-                                        _open_groups(group._open_groups),
-                                        _open_datasets(group._open_datasets)
+                                        _path(group._path)
     {};
 
     /// Move constructor
@@ -200,9 +137,7 @@ public:
     * \param group The rvalue reference
     */
     HDFGroup(HDFGroup&& group):     _group(std::move(group._group)),
-                                    _path(std::move(group._path)),
-                                    _open_groups(std::move(group._open_groups)),
-                                    _open_datasets(std::move(group._open_datasets))
+                                    _path(std::move(group._path))
     {};
 
     /// Assign a HDFGroup object using an assignment operator
@@ -254,8 +189,7 @@ public:
     virtual ~HDFGroup()
     {
         if (H5Iis_valid(_group) == 0) { 
-            // H5Gclose(_group);
-            close();
+            H5Gclose(_group);
         }
     }
 
