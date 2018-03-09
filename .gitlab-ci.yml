@@ -29,6 +29,8 @@ build:main:
       ./dune-common/bin/dunecontrol --module=utopia configure
     - ./dune-common/bin/dunecontrol --only=utopia make doc
     - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD build_tests
+    - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD all
+    # TODO move building of models into separate stage
 
 build:debug:
   stage: build

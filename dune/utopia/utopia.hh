@@ -32,6 +32,7 @@
 
 // UTOPIA
 #include "types.hh"
+#include "apply.hh"
 #include "neighborhoods.hh"
 #include "state.hh"
 #include "tags.hh"

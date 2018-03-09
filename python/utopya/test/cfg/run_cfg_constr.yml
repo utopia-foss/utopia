@@ -1,0 +1,23 @@
+# Parameter Space
+parameter_space: !pspace
+  simulation:
+    # ...
+    prng_seed: !sweep
+      default: 1337
+      values: [23, 42, 667]
+    #
+    _model:
+      ca_geomorphology: !expr 60*30/2
+        # rain rate
+        # erosion
+        #  ....
+      ca_vegetation:
+        stuff: !expr NaN
+        # ..
+      abm_animals:
+        # ...
+
+run_kwargs:
+  stop_conditions:
+    total: !expr         inf        # timeout in seconds (for the whole simulation)
+    per_sim: !expr       -inf            # for each simulation
