@@ -39,7 +39,7 @@ namespace Setup
     auto create_manager_cells (
         const GridWrapper<GridType>& wrapper,
         const CellContainer<CellType>& cells,
-        const std::shared_ptr<RNG> rng = std::make_shared<DefaultRNG>(42))
+        const std::shared_ptr<RNG> rng = std::make_shared<DefaultRNG>(0))
         -> GridManager<
             Manager::Cells, CellType, GridType, RNG, structured, periodic>
     {
@@ -58,7 +58,7 @@ namespace Setup
     auto create_manager_agents (
         const GridWrapper<GridType>& wrapper,
         const AgentContainer<AgentType>& agents,
-        const std::shared_ptr<RNG> rng = std::make_shared<DefaultRNG>(42))
+        const std::shared_ptr<RNG> rng = std::make_shared<DefaultRNG>(0))
         -> GridManager<
             Manager::Agents, AgentType, GridType, RNG, structured, periodic>
     {
