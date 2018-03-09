@@ -2,6 +2,9 @@
 
 The Task supplies a container for a task handled by the WorkerManager.
 """
+def test_task2(a):
+    return a
+
 
 class Task:
     """The Task is a container for a task handled by the WorkerManager.

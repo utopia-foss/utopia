@@ -1,5 +1,5 @@
 import pytest
-
+from utopya.task import test_task2
 from utopya import Task
 
 
