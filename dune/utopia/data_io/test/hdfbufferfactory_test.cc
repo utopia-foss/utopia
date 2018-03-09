@@ -1,4 +1,5 @@
 #include "../hdfbufferfactory.hh"
+#include "../hdfgroup.hh"
 #include <cassert>
 #include <hdf5.h>
 #include <vector>

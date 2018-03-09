@@ -7,6 +7,7 @@ set(TESTS_DATAIO
     hdfattribute_test_write
     hdfbufferfactory_test
     hdftypefactory_test
+    hdfgroup_test
     hdfdataset_test_write
     hdfdataset_test_read)
 

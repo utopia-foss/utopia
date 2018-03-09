@@ -1,5 +1,6 @@
 #include "../hdfattribute.hh"
 #include "../hdfmockclasses.hh"
+#include "../hdfgroup.hh"
 #include <cassert>
 #include <iostream>
 using namespace Utopia::DataIO;
