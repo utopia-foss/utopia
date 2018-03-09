@@ -12,6 +12,7 @@ parameter_space: !pspace
         # erosion
         #  ....
       ca_vegetation:
+        stuff: !expr NaN
         # ..
       abm_animals:
         # ...
