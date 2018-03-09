@@ -1,5 +1,5 @@
 #include <dune/utopia/base.hh>
-#include <dune/utopia/setup.hh>
+#include <dune/utopia/core/setup.hh>
 
 template<class Agent>
 void test_cloning (Agent agent)

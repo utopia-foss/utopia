@@ -1,7 +1,7 @@
 #ifndef GRID_HH
 #define GRID_HH
 
-#include <dune/utopia/types.hh>
+#include <dune/utopia/core/types.hh>
 
 namespace Utopia {
 

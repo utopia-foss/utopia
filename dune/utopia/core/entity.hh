@@ -1,7 +1,7 @@
 #ifndef ENTITY_HH
 #define ENTITY_HH
 
-#include <dune/utopia/state.hh>
+#include <dune/utopia/core/state.hh>
 
 namespace Utopia
 {

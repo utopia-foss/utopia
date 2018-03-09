@@ -1,6 +1,6 @@
 #include <cassert>
 #include <dune/utopia/base.hh>
-#include <dune/utopia/setup.hh>
+#include <dune/utopia/core/setup.hh>
 
 int main(int argc, char *argv[])
 {

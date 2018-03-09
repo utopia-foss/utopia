@@ -1,8 +1,8 @@
 #include <cassert>
 #include <dune/utopia/base.hh>
-#include <dune/utopia/setup.hh>
-#include <dune/utopia/simulation.hh>
-#include <dune/utopia/data_vtk.hh>
+#include <dune/utopia/core/setup.hh>
+#include <dune/utopia/core/simulation.hh>
+#include <dune/utopia/core/data_vtk.hh>
 
 int main(int argc, char** argv)
 {

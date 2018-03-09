@@ -1,6 +1,10 @@
 #ifndef UTOPIA_TEST_MODEL_TEST_HH
 #define UTOPIA_TEST_MODEL_TEST_HH
 
+#include <dune/utopia/base.hh>
+#include <dune/utopia/core/model.hh>
+
+
 namespace Utopia {
 
 /// Define data types of dummy model

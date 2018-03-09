@@ -1,7 +1,7 @@
 #include <cassert>
 
 #include <dune/utopia/base.hh>
-#include <dune/utopia/state.hh>
+#include <dune/utopia/core/state.hh>
 
 /// Instantiate containers, check access and contents
 int main(int argc, char **argv)

@@ -1,6 +1,6 @@
 #include <cassert>
 #include <dune/utopia/base.hh>
-#include <dune/utopia/setup.hh>
+#include <dune/utopia/core/setup.hh>
 
 template<typename GridType>
 void assert_grid_elements (std::shared_ptr<GridType> grid, const int cells, const int cells_boundary, const int verts)

@@ -1,7 +1,7 @@
 #include <cassert>
 
 #include <dune/utopia/base.hh>
-#include <dune/utopia/setup.hh>
+#include <dune/utopia/core/setup.hh>
 #include "cell_test.hh"
 
 /// Choose random states and traits. Verify Entity members before and after update

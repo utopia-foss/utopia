@@ -2,9 +2,9 @@
 #define AGENT_HH
 
 #include <dune/utopia/base.hh>
-#include <dune/utopia/entity.hh>
-#include <dune/utopia/neighborhoods.hh>
-#include <dune/utopia/types.hh>
+#include <dune/utopia/core/entity.hh>
+#include <dune/utopia/core/neighborhoods.hh>
+#include <dune/utopia/core/types.hh>
 
 namespace Utopia {
 

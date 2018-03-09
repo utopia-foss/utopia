@@ -1,6 +1,6 @@
 #include <dune/utopia/base.hh>
-#include <dune/utopia/setup.hh>
-#include <dune/utopia/apply.hh>
+#include <dune/utopia/core/setup.hh>
+#include <dune/utopia/core/apply.hh>
 #include <cassert>
 
 template<class Manager>

@@ -1,13 +1,14 @@
 #include <iostream>       // std::cout, std::endl
 #include <thread>         // std::this_thread::sleep_for
 #include <chrono>         // std::chrono::seconds
-#include <dune/utopia/utopia.hh>
 
 #include "dummy.hh"
 
 int main (int argc, char** argv)
 {
     try {
+        Dune::MPIHelper::instance(argc, argv);
+
         std::vector<double> state(1E6, 0.0);
         Utopia::DummyModel model(state);
 

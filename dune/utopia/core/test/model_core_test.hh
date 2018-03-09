@@ -2,8 +2,8 @@
 #define UTOPIA_MODEL_TEST_MODEL_CORE_HH
 
 #include <dune/utopia/base.hh>
-#include <dune/utopia/setup.hh>
-#include <dune/utopia/model.hh>
+#include <dune/utopia/core/setup.hh>
+#include <dune/utopia/core/model.hh>
 
 /// Template declaration for model types extracted from Manager
 template<class Manager>

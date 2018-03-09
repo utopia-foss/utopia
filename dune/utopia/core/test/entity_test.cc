@@ -1,5 +1,5 @@
-#include <dune/utopia/entity.hh>
-#include <dune/utopia/tags.hh>
+#include <dune/utopia/core/entity.hh>
+#include <dune/utopia/core/tags.hh>
 #include <cassert>
 
 int main(int argc, char *argv[])

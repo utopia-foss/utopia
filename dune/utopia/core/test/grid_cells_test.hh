@@ -1,7 +1,7 @@
 #include <cassert>
 #include <dune/utopia/base.hh>
-#include <dune/utopia/setup.hh>
-#include <dune/utopia/data_vtk.hh>
+#include <dune/utopia/core/setup.hh>
+#include <dune/utopia/core/data_vtk.hh>
 
 template<typename Grid, typename CellContainer>
 void assert_cells_on_grid(std::shared_ptr<Grid> grid, CellContainer& cells)

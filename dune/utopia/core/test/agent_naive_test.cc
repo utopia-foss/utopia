@@ -1,6 +1,6 @@
 
-#include <dune/utopia/agent.hh>
-#include <dune/utopia/tags.hh>
+#include <dune/utopia/core/agent.hh>
+#include <dune/utopia/core/tags.hh>
 
 #include <iostream>
 #include <cassert>

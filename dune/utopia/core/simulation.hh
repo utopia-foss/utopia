@@ -1,7 +1,7 @@
 #ifndef SIMULATION_HH
 #define SIMULATION_HH
 
-#include <dune/utopia/data.hh>
+#include <dune/utopia/core/data.hh>
 
 namespace Utopia
 {
