@@ -33,8 +33,8 @@ int main (int argc, char** argv)
         assert(compare_containers(model.data(), state));
 
         // Sleep (to be read by frontend)
-        unsigned int sleep_time = 1000; // in milliseconds
-        unsigned int num_sleeps = 10;
+        unsigned int sleep_time = 500; // in milliseconds
+        unsigned int num_sleeps = 5;
 
         for (int i = 0; i < num_sleeps; ++i) {
             std::cout << "Sleep #" << (i+1) << " ..." << std::endl;

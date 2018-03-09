@@ -9,12 +9,12 @@ import copy
 import logging
 import pkg_resources
 from shutil import copyfile
-from typing import Callable
 
 from utopya.workermanager import WorkerManager, enqueue_json
 from utopya.tools import recursive_update, read_yml, write_yml
 from utopya.info import MODELS
 
+# Configure and get logger
 log = logging.getLogger(__name__)
 
 
@@ -144,7 +144,7 @@ class Multiverse:
 
         # Tell the WorkerManager to start working, which will be the blocking call
         log.info("Starting to work now ...")
-        self.wm.start_working()
+        self.wm.start_working(forward_streams=True)
 
         log.info("Finished single simulation run.")
 
@@ -356,17 +356,18 @@ class Multiverse:
         """
         def setup_universe(*, worker_kwargs: dict, model_binpath: str, cfg_dict: dict, uni_id: int, max_uni_id: int) -> dict:
             """The callable that will setup everything needed for a universe.
-
+            
             This is called before the worker process starts working on the universe.
-
+            
             Args:
-                utopia_exec (str): class constant for utopia executable
-                model_name (str): name of the model *derpface*
+                worker_kwargs (dict): the current status of the worker_kwargs
+                    dictionary; is always passed to a task setup function
+                model_binpath (str): path to the binary to execute
+                cfg_dict (dict): the configuration to create a yml file from
+                    which is then needed by the model
                 uni_id (int): ID of the universe whose folder should be created
                 max_uni_id (int): highest ID, needed for correct zero-padding
-                cfg_dict (dict): given by ParamSpace. Defines how many simulations
-                    should be started
-
+            
             Returns:
                 dict: kwargs for the process to be run when task is grabbed by
                     Worker.
@@ -392,6 +393,8 @@ class Multiverse:
 
         # Get the model binary path
         model_binpath = MODELS[self.model_name]['binpath']
+        log.debug("Executable path for model %s:\n  %s",
+                  self.model_name, model_binpath)
 
         # Create the dict that will be passed as arguments to setup_universe
         setup_kwargs = dict(model_binpath=model_binpath,
