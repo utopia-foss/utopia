@@ -1,80 +1,43 @@
 #ifndef CELL_HH
 #define CELL_HH
 
+
 namespace Utopia
 {
-
-/// This class implements an Entity on a grid.
-/** An object of this class can save pointers to grid neighbors and
- *  user-defined neighbors of the same Cell type. Technically, it is
- *  not attached to the grid but maps to a grid entity via a Dune::Mapper
- *  and a grid index. This index and the position on the grid are saved
- *  as class members for convenience.
- *  
- *  \tparam StateType Data type of states
- *  \tparam TraitsType Data type of traits
- *  \tparam PositionType Data type of position vectors
- *  \tparam IndexType Data type of grid indices
- *  \tparam custom_neighborhood_count Number of custom neighborhoods
- *  	this Cell holds
+///this class implements an entity on a grid
+/**
+ *Cell contains the position and the boolian _boundary.
+ *Also Cell inherits the state, tag and index from Entity.
  */
 template<
-    typename StateType,
-    typename TraitsType,
-    typename PositionType,
-    typename IndexType,
-    std::size_t custom_neighborhood_count = 0>
-class Cell : public Entity<StateType,TraitsType>
+    typename T, bool sync, class Tags, typename PositionType,
+    typename IndexType, std::size_t custom_neighborhood_count = 0>
+class Cell:
+    public Entity<
+        Cell<T, sync, Tags, PositionType, IndexType, custom_neighborhood_count>,
+        T, sync, Tags, IndexType, custom_neighborhood_count>
 {
 public:
-
-    using State = StateType;
-    using Traits = TraitsType;
-    using Position = PositionType;
-    using Index = IndexType;
-
-public:
-
-    /// Construct a cell, implementing an entity on a grid
-    /**
-     *  \param state Initial state
-     *  \param traits Initial traits
-     *  \param pos Position of cell center on grid
-     *  \param index Index on grid assigned by grid mapper
-     *  \param boundary Boolean if cell is located at grid boundary
-     *  \param tag Cell tracking tag
-     */
-    Cell(const State state, const Traits traits, const Position pos, const Index index, const bool boundary=false, const int tag=0) :
-        Entity<State,Traits>(state,traits,tag), _position(pos), _boundary(boundary), _index(index)
+    //\return position of cell center
+    const PositionType& position() const {return _position;}
+    //\return true if located at boundary
+    inline bool is_boundary() const {return _boundary;}
+    
+    /// constructor of Cell
+    Cell(T t, PositionType pos, const bool boundary, IndexType index) :
+        Entity<Cell, T, sync, Tags, IndexType, custom_neighborhood_count>
+            (t, index),
+        _position(pos), _boundary(boundary)
     { }
 
-    /// Return position on grid
-    inline const Position& position() const { return _position; }
-    /// Return grid index
-    inline Index index() const { return _index; }
-
-    /// Return true if cell is located at grid boundary.
-    /** Notice that this still remains true if periodic boundary conditions are applied.
-     */
-    inline bool boundary() const { return _boundary; }
-
-    /// Return const reference to neighborhoods
-    const std::array<std::vector<std::shared_ptr<Cell>>,custom_neighborhood_count>& neighborhoods () const { return _neighborhoods; }
-
-    /// Return reference to neighborhoods
-    std::array<std::vector<std::shared_ptr<Cell>>,custom_neighborhood_count>& neighborhoods () { return _neighborhoods; }
-
 private:
-    //! Custom neighborhood storage
-    std::array<std::vector<std::shared_ptr<Cell>>,custom_neighborhood_count> _neighborhoods;
-    //! Position of cell on grid
-    const Position _position;
-    //! Cell located at grid boundary
-    const bool _boundary;
-    //! Grid index of cell
-    const Index _index;
+    //! Position of the cell center
+    const PositionType _position;
 
+    //! Does this cell lie on the grid boundary?
+    const bool _boundary;    
 };
+    
 
 } // namespace Utopia
 

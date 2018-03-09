@@ -3,17 +3,24 @@ file(COPY "square.msh" "cube.msh" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 # collect CORE tests
 set(TESTS_CORE
+    agent_naive_test
     agent_test_2d
     agent_test_3d
-    entity_test
     cell_test
     dependency_test
-    grid_test
+    #entity_test
     grid_cells_test_2d
     grid_cells_test_3d
+    grid_test
+    model_test
+    model_core_test
     output_agent_test_gmsh
     output_agent_test_rect
-    simulation_test)
+    rng_test
+    simulation_test
+    state_test
+    tags_test
+    )
 
 # add CORE tests
 foreach(test ${TESTS_CORE})

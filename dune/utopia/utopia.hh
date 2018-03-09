@@ -33,9 +33,11 @@
 // UTOPIA
 #include "types.hh"
 #include "neighborhoods.hh"
+#include "state.hh"
+#include "tags.hh"
 #include "entity.hh"
-#include "cell.hh"
 #include "agent.hh"
+#include "cell.hh"
 #include "grid.hh"
 #include "data.hh"
 #include "data_vtk.hh"
@@ -44,5 +46,14 @@
 #endif // HAVE_PSGRAF
 #include "simulation.hh"
 #include "setup.hh"
+#include "model.hh"
+
+// UTOPIA I/O
+#include "data_io/config.hh"
+
+
+// UTOPIA I/O
+#include "data_io/config.hh"
+
 
 #endif // UTOPIA_HH

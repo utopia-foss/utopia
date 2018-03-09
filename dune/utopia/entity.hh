@@ -1,64 +1,52 @@
 #ifndef ENTITY_HH
 #define ENTITY_HH
 
+#include <dune/utopia/state.hh>
+
 namespace Utopia
 {
-    
+
 /// Base class for Cells and Individuals, containing information on State and Traits
-/** \tparam StateType Type of states
- *  \tparam TraitsType Type of traits
+/** \tparam StateContainer Container of states
+ *  \tparam Tags Tags
+ *  \tparam IndexType Type of Index
  */
-template<typename StateType, typename TraitsType>
-class Entity
+template<typename Self,typename T, bool sync, class Tags, typename IndexType, std::size_t custom_neighborhood_count = 0>
+class Entity:
+    public StateContainer<T, sync>, 
+    public Tags 
 {
 public:
-    using State = StateType;
-    using Traits = TraitsType;
 
-    /// Constructor. Define initial state and traits, and constant tag
-    Entity(const State state, const Traits traits, const int tag=0) :
-        _state(state), _state_c(state),
-        _traits(traits), _traits_c(traits),
-        _tag(tag)
+    /// Constructor. Define state_container, tags and an ID index 
+    Entity (const T state, IndexType index):
+        StateContainer<T, sync>(state),
+        Tags(),
+        _id(index)
     { }
 
-    /// Return reference to state cache
-    inline State& new_state() { return _state_c; }
-    /// Return const reference to state
-    inline const State& state() const { return _state; }
-    /// Return reference to traits cache
-    inline Traits& new_traits() { return _traits_c; }
-    /// Return const reference to traits
-    inline const Traits& traits() const { return _traits; }
-    /// Return tag
-    inline int tag() const { return _tag; }
+    /// export index type
+    using Index = IndexType;
 
-    /// Update using the cache
-    void update()
-    {
-        update_state();
-        update_traits();
-    }
+    /// Return entity ID
+    IndexType id() const { return _id; }
+    
+    /// Return const reference to neighborhoods
+    const std::array<std::vector<std::shared_ptr<Self>>,custom_neighborhood_count>& neighborhoods () const { return _neighborhoods; }
 
-    /// Update the state only
-    inline void update_state()
-    {
-        _state = _state_c;
-    }
+    /// Return reference to neighborhoods
+    std::array<std::vector<std::shared_ptr<Self>>,custom_neighborhood_count>& neighborhoods () { return _neighborhoods; }
 
-    /// Update the traits only
-    inline void update_traits()
-    {
-        _traits = _traits_c;
-    }
+    
 
 private:
 
-    State _state; //!< Current State
-    State _state_c; //!< State cache
-    Traits _traits; //!< Current Traits
-    Traits _traits_c; //!< Traits cache
-    const int _tag; //!< Fixed tag
+    const IndexType _id;
+    
+    //! Custom neighborhood storage
+    std::array<std::vector<std::shared_ptr<Self>>,custom_neighborhood_count> _neighborhoods;
+    
+    
 
 };
 

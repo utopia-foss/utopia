@@ -13,7 +13,5 @@ private:
 int main ()
 {
     YAML::Node config;
-    hid_t some_id;
-    Serial s;
     return 0;
 }

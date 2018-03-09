@@ -29,35 +29,42 @@ auto determine_extensions (const std::shared_ptr<Grid> grid)
 /// Functions for building objects and setting up a simulation
 namespace Setup
 {
-
     /// Create a GridManager from a grid and a CellContainer
-    template<bool structured, bool periodic, typename GridType, typename CellType>
-    GridManager<GridType,structured,periodic,CellType,int> create_manager (
-        const GridWrapper<GridType>& wrapper,
-        const CellContainer<CellType>& cells )
-    {
-        return GridManager<GridType,structured,periodic,CellType,int>(
-            wrapper,cells);
-    }
-
-    /// Create a GridManager from grid, CellContainer, and AgentContainer
-    template<bool structured, bool periodic, typename GridType, typename CellType,typename AgentType>
-    GridManager<GridType,structured,periodic,CellType,AgentType> create_manager (
+    /** \param wrapper GridWrapper instance holding the grid
+     *  \param cells CellContainer holding the cells
+     *  \param rng Random number generator. Defaults to DefaultRNG
+     */
+    template<bool structured, bool periodic, typename GridType,
+        typename CellType, typename RNG=DefaultRNG>
+    auto create_manager_cells (
         const GridWrapper<GridType>& wrapper,
         const CellContainer<CellType>& cells,
-        const AgentContainer<AgentType>& agents)
+        const std::shared_ptr<RNG> rng = std::make_shared<DefaultRNG>(0))
+        -> GridManager<
+            Manager::Cells, CellType, GridType, RNG, structured, periodic>
     {
-        return GridManager<GridType,structured,periodic,CellType,AgentType>(wrapper,cells,agents);
+        return GridManager<
+            Manager::Cells, CellType, GridType, RNG, structured, periodic>(
+            wrapper, cells, rng);
     }
 
     /// Create a GridManager from a grid and an AgentContainer
-    template<bool structured, bool periodic, typename GridType,typename AgentType>
-    GridManager<GridType,structured,periodic,int,AgentType> create_manager (
+    /** \param wrapper GridWrapper instance holding the grid
+     *  \param agents AgentContainer holding the cells
+     *  \param rng Random number generator. Defaults to DefaultRNG
+     */
+    template<bool structured, bool periodic, typename GridType,
+        typename AgentType, typename RNG=DefaultRNG>
+    auto create_manager_agents (
         const GridWrapper<GridType>& wrapper,
-        const AgentContainer<AgentType>& agents )
+        const AgentContainer<AgentType>& agents,
+        const std::shared_ptr<RNG> rng = std::make_shared<DefaultRNG>(0))
+        -> GridManager<
+            Manager::Agents, AgentType, GridType, RNG, structured, periodic>
     {
-        return GridManager<GridType,structured,periodic,int,AgentType>(
-            wrapper,agents);
+        return GridManager<
+            Manager::Agents, AgentType, GridType, RNG, structured, periodic>(
+            wrapper, agents, rng);
     }
 
     /// Create an unstructured grid from a Gmsh file
@@ -169,16 +176,14 @@ namespace Setup
      *  \param traits Default traits of all cells
      *  \return Container with created cells
     */
-    template<
+    template<bool sync,
         typename State = int,
-        typename Traits = int,
+        typename Tag = EmptyTag,
         std::size_t custom_neighborhood_count = 0,
-        typename GridType
-    >
+        typename GridType>
     decltype(auto) create_cells_on_grid (
         const GridWrapper<GridType>& grid_wrapper,
-        const State state = 0,
-        const Traits traits = 0)
+        const State state = 0)
     {
 
         using GridTypes = GridTypeAdaptor<GridType>;
@@ -187,7 +192,7 @@ namespace Setup
         using Mapper = typename GridTypes::Mapper;
         using Index = typename GridTypes::Index;
 
-        using CellType = Cell<State,Traits,Position,Index,custom_neighborhood_count>;
+        using CellType = Cell<State, sync, Tag, Position, Index>;
 
         auto grid = grid_wrapper._grid;
         GV gv(*grid);
@@ -211,7 +216,7 @@ namespace Setup
             }
 
             cells.emplace_back(std::make_shared<CellType>
-                (state,traits,pos,id,boundary));
+                (state,pos,boundary,id));
         }
 
         cells.shrink_to_fit();
@@ -226,43 +231,43 @@ namespace Setup
      *  \param traits_initial Initial traits of all agents
      *  \return Container with created agents
      */
-    template<typename State=int, typename Traits=int, typename GridType>
-    decltype(auto) create_agents_on_grid(
-        const GridWrapper<GridType>& grid_wrapper,
-        const std::size_t count,
-        const State state_initial = 0,
-        const Traits traits_initial = 0)
-    {
-        // fetch some types
-        using Types = GridTypeAdaptor<GridType>;
-        using Position = typename Types::Position;
-        using Coordinate = typename Types::Coordinate;
+     template<typename State=int, class Tags=EmptyTag, typename IndexType=std::size_t, typename GridType>
+     decltype(auto) create_agents_on_grid(
+         const GridWrapper<GridType>& grid_wrapper,
+         const std::size_t count,
+         const State state_initial = 0)
+     {
+         // fetch some types
+         using Types = GridTypeAdaptor<GridType>;
+         using Position = typename Types::Position;
+         using Coordinate = typename Types::Coordinate;
+         using Index = IndexType;
+         using Agent = Agent<State,Tags,Index,Position>;
 
-        using Agent = Agent<State,Traits,Position>;
-        AgentContainer<Agent> agents;
+         AgentContainer<Agent> agents;
 
-        // set up random number generator for positions
-        const auto& extensions = grid_wrapper._extensions;
-        std::array<std::uniform_real_distribution<Coordinate>,Types::dim> distr;
-        std::transform(extensions.begin(),extensions.end(),distr.begin(),
-            [](const auto& ext){
-                return std::uniform_real_distribution<Coordinate>(0.0,ext);
-        });
-        std::ranlux24_base ran(123456);
+         // set up random number generator for positions
+         const auto& extensions = grid_wrapper._extensions;
+         std::array<std::uniform_real_distribution<Coordinate>,Types::dim> distr;
+         std::transform(extensions.begin(),extensions.end(),distr.begin(),
+             [](const auto& ext){
+                 return std::uniform_real_distribution<Coordinate>(0.0,ext);
+         });
+         std::ranlux24_base ran(123456);
 
-        // create agents
-        for(std::size_t i = 0; i<count; ++i)
-        {
-            Position pos;
-            std::transform(distr.begin(),distr.end(),pos.begin(),
-                [&ran](auto& dist){
-                    return dist(ran);
-            });
-            agents.emplace_back(std::make_shared<Agent>(state_initial,traits_initial,pos));
-        }
+         // create agents
+         for(std::size_t i = 0; i<count; ++i)
+         {
+             Position pos;
+             std::transform(distr.begin(),distr.end(),pos.begin(),
+                 [&ran](auto& dist){
+                     return dist(ran);
+             });
+             agents.emplace_back(std::make_shared<Agent>(state_initial,i,pos));
+         }
 
-        return agents;
-    }
+         return agents;
+     }
 
 } // namespace Setup
 
