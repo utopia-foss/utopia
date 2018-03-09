@@ -481,7 +481,7 @@ def enqueue_lines(*, queue: queue.Queue, stream: BinaryIO, parse_func: Callable=
         # Got a line (byte-string, assumed utf8-encoded)
         # Try to decode and strip newline
         try:
-            line = line.decode('utf8')[:-2]
+            line = line.decode('utf8').rstrip()
         except UnicodeDecodeError:
             # Remains a bytestring
             pass
