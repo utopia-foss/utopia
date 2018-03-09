@@ -55,8 +55,7 @@ public:
                 << "- Group path: " << _path << std::endl
                 << "- Number of links in group: " << info.nlinks  << std::endl
                 << "- Current maximum creation order value for group: " << info.max_corder << std::endl
-                << "- There are mounted files on the group: " << info.mounted << std::endl
-                << std::endl; 
+                << "- There are mounted files on the group: " << info.mounted << std::endl;
         }        
     }
 
@@ -210,7 +209,7 @@ public:
     virtual ~HDFGroup()
     {
         if (H5Iis_valid(_group) == 0) { 
-            herr_t err = H5Gclose(_group);
+           H5Gclose(_group);
         }
     }
 
