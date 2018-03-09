@@ -44,6 +44,19 @@ using AgentContainer = std::vector<std::shared_ptr<AgentType>>;
 /// Container dummy if no cells or individuals are used
 using EmptyContainer = std::array<std::shared_ptr<int>,0>;
 
+
+namespace impl {
+
+/// Return the pointer type of any container holding pointers to entities
+template<class Container>
+using pointer_t = typename Container::value_type;
+
+/// Return the element type of any container holding pointers to entities
+template<class Container>
+using entity_t = typename Container::value_type::element_type;
+
+} // namespace impl 
+
 } // namespace Utopia
 
 #endif // TYPES_HH
