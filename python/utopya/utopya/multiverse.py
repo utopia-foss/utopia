@@ -9,6 +9,8 @@ import logging
 from shutil import copyfile
 import pkg_resources
 
+import paramspace as psp
+
 from utopya.workermanager import WorkerManager, enqueue_json
 from utopya.tools import recursive_update, read_yml, write_yml
 from utopya.info import MODELS
@@ -135,10 +137,14 @@ class Multiverse:
 
         # Get the parameter space from the config
         pspace = self.meta_config['parameter_space']
-        # NOTE Once the ParamSpace class is used, the defaults need to be retrieved here.
+        
+        if isinstance(pspace, psp.ParamSpace):
+            # Get the default
+            log.info("Got a ParamSpace object. Retrieving default point ...")
+            pspace = pspace.default
         
         # Add the task to the worker manager.
-        log.info("Adding task for the single simulation ...")
+        log.info("Adding task for simulation of a single universe ...")
         self._add_sim_task(uni_id=0, max_uni_id=0, cfg_dict=pspace)
 
         # Tell the WorkerManager to start working, which will be the blocking call
@@ -148,7 +154,24 @@ class Multiverse:
 
     def run_sweep(self):
         """Runs a parameter sweep."""
-        raise NotImplementedError
+        
+        # Get the parameter space from the config
+        pspace = self.meta_config['parameter_space']
+
+        if not isinstance(pspace, psp.ParamSpace):
+            raise TypeError("For performing parameter sweeps, the run "
+                            "configuration needs to be initialized with a "
+                            "ParamSpace object at key `parameter_space`. "
+                            "If initializing via a YAML file, make sure to "
+                            "have added the `!pspace` tag to that key.")
+
+        log.info("Adding tasks for simulation of %d universes ...",
+                 pspace.volume)
+
+        max_uni_id = pspace.volume - 1
+
+        for pdict, uni_id in pspace.all_points(with_info=('state_no',)):
+            print(pdict, uni_id)
 
     # "Private" methods .......................................................
 
