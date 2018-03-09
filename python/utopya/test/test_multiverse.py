@@ -38,10 +38,9 @@ def default_mv(tmpdir, mv_kwargs) -> Multiverse:
 
 # Initialisation tests --------------------------------------------------------
 
-@pytest.mark.skip("TODO")
-def test_init():
-    """Tests whether initialisation works for all cases."""
-    raise NotImplementedError
+def test_simple_init(wm_kwargs):
+    """Tests whether initialisation works for all basic cases."""
+    Multiverse(**wm_kwargs)
 
 def test_invalid_model_name_and_operation(mv_kwargs, tmpdir):
     """Tests for correct behaviour upon invalid model names"""
@@ -120,7 +119,6 @@ def test_detect_doubled_folders(mv_kwargs, tmpdir):
         # make output folder
         Multiverse(**mv_kwargs, update_meta_cfg=local_config)
 
-@pytest.mark.skip("Needs reworking")
 def test_create_uni_dir(mv_kwargs, tmpdir):
     """Test creation of the uni directory"""
     local_config = dict(paths=dict(out_dir=tmpdir.dirpath(),
