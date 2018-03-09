@@ -21,6 +21,7 @@ set(TESTS_CORE
     state_test
     tags_test
     apply_test
+    apply_runtime_test
     )
 
 # add CORE tests
