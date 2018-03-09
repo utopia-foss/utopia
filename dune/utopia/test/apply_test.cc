@@ -1,6 +1,18 @@
 #include <dune/utopia/utopia.hh>
 #include <cassert>
 
+template<class Manager>
+decltype(auto) get_rule_acc_neighbors_with_mngr (Manager& manager){
+    auto rule = [&manager](const auto cell) {
+        auto nb = Utopia::Neighborhoods::NextNeighbor::neighbors(cell, manager);
+        return std::accumulate(nb.begin(), nb.end(), 1,
+            [](const auto val, const auto neighbor){
+                return val + neighbor->state();
+        });
+    };
+    return rule;
+}
+
 int main(int argc, char* argv[])
 {
     try
@@ -19,17 +31,10 @@ int main(int argc, char* argv[])
             grid, cells);
 
         // define a rule which yields different results for sync and async
-        auto rule_acc_neighbors = [](const auto cell, const auto manager) {
-            auto nb = Utopia::Neighborhoods::NextNeighbor::
-                neighbors(cell, manager);
-            return std::accumulate(nb.begin(), nb.end(), 1,
-                [](const auto val, const auto neighbor){
-                    return val + neighbor->state();
-            });
-        };
+        auto rule_acc_neighbors_sync = get_rule_acc_neighbors_with_mngr(m_sync);
 
         // apply the rule in a synchronous fashion
-        Utopia::apply_rule(rule_acc_neighbors, m_sync.cells(), m_sync);
+        Utopia::apply_rule(rule_acc_neighbors_sync, m_sync.cells());
         assert(std::all_of(m_sync.cells().begin(), m_sync.cells().end(),
             [](const auto cell){ return cell->state() == 1; }
         ));
@@ -49,7 +54,9 @@ int main(int argc, char* argv[])
         );
 
         // apply the rule in a asynchronous fashion
-        Utopia::apply_rule(rule_acc_neighbors, m_async.cells(), m_async);
+        auto rule_acc_neighbors_async 
+            = get_rule_acc_neighbors_with_mngr(m_async);
+        Utopia::apply_rule(rule_acc_neighbors_async, m_async.cells(), *m_async.rng());
         assert(std::any_of(m_async.cells().begin(), m_async.cells().end(),
             [](const auto cell){ return cell->state() != 1; }
         ));
@@ -67,16 +74,17 @@ int main(int argc, char* argv[])
         //define a rule
         ids.clear();
         auto rule_register_ids
-            = [&ids](const auto cell, [[maybe_unused]] const auto manager) {
+            = [&ids](const auto cell) {
             ids.push_back(cell->id());
             return cell->state();
         };
 
         // shuffle
-        Utopia::apply_rule<true>(rule_register_ids, m_async.cells(), m_async);
+        Utopia::apply_rule<true>(rule_register_ids, m_async.cells(),
+            *m_async.rng());
         const auto ids_copy = ids;
         // don't shuffle
-        Utopia::apply_rule<false>(rule_register_ids, m_async.cells(), m_async);
+        Utopia::apply_rule<false>(rule_register_ids, m_async.cells());
 
         //check that execution order of the container changed
         inplace.clear();
@@ -99,11 +107,10 @@ int main(int argc, char* argv[])
         std::sample(agents.begin(), agents.end(),
             std::back_inserter(applicants), 10, *m_agents.rng());
         auto rule_state_increment
-            = []([[maybe_unused]] const auto agent,
-                [[maybe_unused]] const auto manager){
+            = []([[maybe_unused]] const auto agent){
             return 42;
         };
-        Utopia::apply_rule(rule_state_increment, applicants, m_agents);
+        Utopia::apply_rule(rule_state_increment, applicants, *m_agents.rng());
 
         assert(std::count_if(m_agents.agents().begin(),
                 m_agents.agents().end(),
