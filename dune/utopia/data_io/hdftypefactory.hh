@@ -103,7 +103,7 @@ is_container<typename std::decay_t<T>>::value == false, int>
 template <typename T,
           std::enable_if_t<
               is_container_type<typename std::decay_t<T>>::value == false, int>>
-inline hid_t HDFTypeFactory::type(std::size_t size) {
+inline hid_t HDFTypeFactory::type([[maybe_unused]] std::size_t size) {
     return __get_type__<typename std::decay_t<T>>();
 }
 
