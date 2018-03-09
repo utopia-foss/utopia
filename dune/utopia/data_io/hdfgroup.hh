@@ -8,6 +8,7 @@
 #include <hdf5.h>
 #include <hdf5_hl.h>
 #include "hdfmockclasses.hh"
+#include "hdfdataset.hh"
 
 namespace Utopia
 {
@@ -16,7 +17,6 @@ namespace DataIO
 {
 
 class HDFFile;
-
 
 /// An object representing a HDFGroup 
 /** 
@@ -28,7 +28,7 @@ protected:
     hid_t _group; /// Storage of group id
     std::string _path; /// Storage of the path
     std::unordered_map<std::string, std::shared_ptr<HDFGroup>> _open_groups; /// Storage of child groups and their path
-    std::unordered_map<std::string, std::shared_ptr<HDFGroup>> _open_datasets; /// Storage of child datasets and their path
+    std::unordered_map<std::string, std::shared_ptr<HDFDataset<HDFGroup>>> _open_datasets; /// Storage of child datasets and their path
 
 public:
     void info()
@@ -132,15 +132,39 @@ public:
         }
     }
 
-
-    void open_dataset(std::string path)
+    /// Open a HDFDataset
+    /** 
+    *  
+    */
+    std::shared_ptr<HDFDataset<HDFGroup>>  open_dataset(std::string path)
     {
-        // TODO
+        auto found = _open_datasets.find(path);
+        // Assure that the dataset is not yet open
+        if (found == _open_datasets.end())
+        {
+            auto data = HDFDataset<HDFGroup>(*this, path);
+            auto data_ptr = std::make_shared<HDFDataset<HDFGroup>>(data);
+            _open_datasets.insert(std::make_pair(path, data_ptr));
+            return data_ptr;
+
+            // auto it = _open_datasets.insert( 
+            //     std::make_pair(path, std::make_shared<HDFDataset<HDFGroup>>(
+            //         HDFDataset<HDFGroup>(*this, path))));
+            // return it.first->second;
+        }  
     }
 
     void close_dataset(std::string path)
     {
-        // TODO
+        auto it = _open_datasets.find(path);
+        if (it != _open_datasets.end())
+        {
+            _open_datasets.erase(it);
+        }
+        else
+        {
+            throw std::runtime_error("Trying to delete a nonexistant or closed group!");
+        }
     }
 
     /// Swap two HDFGroup objects
