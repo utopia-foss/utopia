@@ -1,7 +1,10 @@
 #include "../hdfattribute.hh"
-#include "../hdfmockclasses.hh"
+#include "../hdffile.hh"
+#include "../hdfgroup.hh"
 #include <cassert>
 #include <iostream>
+#include <string>
+
 using namespace Utopia::DataIO;
 
 int main() {
@@ -15,8 +18,7 @@ int main() {
     // adding attribute1
     std::string attributename = "testattribute";
     std::string attribute_data = "this is a testing attribute";
-    HDFAttribute<HDFGroup, std::string> attribute(
-                low_group, attributename);
+    HDFAttribute<HDFGroup, std::string> attribute(low_group, attributename);
 
     // writing a string
     attribute.write(attribute_data);
@@ -24,8 +26,7 @@ int main() {
     // adding attribute2
     std::string attributename2 = "testattribute2";
 
-    HDFAttribute<HDFGroup, int> attribute2(
-                low_group2, "testattribute2");
+    HDFAttribute<HDFGroup, int> attribute2(low_group2, "testattribute2");
 
     // writing primitive type attribute
     int attribute_data2 = 42;

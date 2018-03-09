@@ -2,6 +2,7 @@
 #include <cassert>
 #include <hdf5.h>
 #include <vector>
+#include <string>
 
 using namespace Utopia::DataIO;
 struct Test {

@@ -1,9 +1,11 @@
 #include "../hdfdataset.hh"
-#include "../hdfmockclasses.hh"
+#include "../hdffile.hh"
+#include "../hdfgroup.hh"
 #include <cassert>
 #include <cmath>
 #include <cstdio>
 #include <iostream>
+#include <string>
 #include <vector>
 
 using namespace Utopia::DataIO;

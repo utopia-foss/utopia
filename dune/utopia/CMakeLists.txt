@@ -18,4 +18,3 @@ install(FILES
 add_subdirectory(data_io)
 add_subdirectory(models)
 add_subdirectory(test EXCLUDE_FROM_ALL)
-add_subdirectory(data_io)

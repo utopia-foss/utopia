@@ -36,6 +36,9 @@
         "utility": "cpp",
         "__config": "cpp",
         "*.ipp": "cpp",
-        "cassert": "cpp"
-    }
+        "cassert": "cpp",
+        "vector": "cpp",
+        "iostream": "cpp"
+    },
+    "C_Cpp.errorSquiggles": "Disabled"
 }
