@@ -44,27 +44,6 @@ apply_rule(Rule rule, const Container& container, Manager& manager)
     );
 }
 
-/// synchronous application of rules with a reference to the manager
-template<
-    class Rule,
-    class Container,
-    class Manager,
-    bool sync=impl::entity_t<Container>::is_sync()>
-std::enable_if_t<sync, void>
-apply_rule_ref(Rule rule, const Container& container, Manager& manager)
-{
-    //reduce the number of parameters in rule
-    //by binding parameter 2 to manager
-    // auto bind_rule = std::bind(rule, std::placeholders::_1, manager);
-    
-    for_each(container.begin(), container.end(),
-        [&rule, &manager](const auto cell){ cell->state_new() = rule(cell, manager); }
-    );
-    for_each(container.begin(), container.end(),
-        [](const auto cell){ cell->update(); }
-    );
-}
-
 
 /// aynchronous application of rules
 /**\param rule Function that takes an entity and manager and returns a new state
