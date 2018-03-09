@@ -1,5 +1,6 @@
 #ifndef HDFFILE_HH
 #define HDFFILE_HH
+#include "hdfdataset.hh"
 #include "hdfgroup.hh"
 #include <hdf5.h>
 #include <hdf5_hl.h>
@@ -11,7 +12,6 @@ namespace Utopia {
 namespace DataIO {
 // forward declaration of HDFGroup -> exchange later for the real thing.
 
-// mock class for file
 class HDFFile {
 protected:
     hid_t _file;
@@ -86,14 +86,6 @@ public:
             parent = current;
         }
         return current;
-    }
-
-    std::shared_ptr<HDFDataset> open_dataset(std::string &&path) {
-        std::string part;
-        std::size_t datasetbegin = path.find_last_of('/');
-        std::cout << path.substr(0, datasetbegin) << std::endl;
-        auto group = open_group(path.substr(0, datasetbegin));
-        return HDFDataset
     }
 
     /**
