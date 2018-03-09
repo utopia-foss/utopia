@@ -16,6 +16,7 @@ from utopya.multiverse import distribute_user_cfg
 # Get the test resources
 RUN_CFG_PATH = pkg_resources.resource_filename('test', 'cfg/run_cfg.yml')
 USER_CFG_PATH = pkg_resources.resource_filename('test', 'cfg/user_cfg.yml')
+SWEEP_CFG_PATH = pkg_resources.resource_filename('test', 'cfg/sweep_cfg.yml')
 
 # Fixtures ----------------------------------------------------------------
 @pytest.fixture
@@ -116,8 +117,10 @@ def test_detect_doubled_folders(mv_kwargs, tmpdir):
     # create output folders again
     # expect error due to existing folders
     with pytest.raises(RuntimeError):
-        # make output folder
+        # And another one, that will also create a directory
         Multiverse(**mv_kwargs, update_meta_cfg=local_config)
+        Multiverse(**mv_kwargs, update_meta_cfg=local_config)
+        # NOTE this test assumes that the two calls are so close to each other that the timestamp is the same, that's why there are two calls so that the latest the second call should raise such an error
 
 def test_create_uni_dir(mv_kwargs, tmpdir):
     """Test creation of the uni directory"""
@@ -146,11 +149,21 @@ def test_create_uni_dir(mv_kwargs, tmpdir):
 
 # Simulation tests ------------------------------------------------------------
 
-def test_single_sim(default_mv):
+def test_run_single(default_mv):
     """Tests a run with a single simulation"""
     mv = default_mv
 
     mv.run_single()
+
+    print("Workers: ", mv.wm.workers)
+
+def test_run_sweep(mv_kwargs):
+    """Tests a run with a single simulation"""
+    mv_kwargs['run_cfg_path'] = SWEEP_CFG_PATH
+
+    mv = Multiverse(**mv_kwargs)
+
+    mv.run_sweep()
 
     print("Workers: ", mv.wm.workers)
 
