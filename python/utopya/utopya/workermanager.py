@@ -25,7 +25,7 @@ class WorkerManager:
     At the same time, it reads the worker's stream in yet separate non-blocking threads.
     """
 
-    def __init__(self, num_workers: Union[int, str], poll_freq: float=42, QueueCls=queue.Queue):
+    def __init__(self, num_workers: Union[int, str], poll_freq: float=42, QueueCls=queue.Queue, reporter=None):
         """Initialize the worker manager.
 
         Args:
@@ -45,12 +45,14 @@ class WorkerManager:
         self._working = []
         self._poll_freq = None
         self._task_cnt = 0
+        self._reporter = None
 
         # Initialize method-managed attributes
         self._tasks = QueueCls()
 
         # Hand over arguments
         self.poll_freq = poll_freq
+        self.reporter = reporter
 
         if num_workers == 'auto':
             self.num_workers = os.cpu_count()
@@ -64,6 +66,19 @@ class WorkerManager:
     def tasks(self) -> queue.Queue:
         """The task queue."""
         return self._tasks
+
+    @property
+    def reporter(self):
+        """Returns the associated Reporter object, if there is one."""
+        return self._reporter
+
+    @reporter.setter
+    def reporter(self, reporter):
+        """Set the Reporter object for this WorkerManager."""
+        self._reporter = reporter
+
+        # Associate this worker manager with the reporter
+        self.reporter.wm = self
 
     @property
     def workers(self) -> dict:

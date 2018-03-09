@@ -10,6 +10,7 @@ from shutil import copyfile
 import pkg_resources
 
 from utopya.workermanager import WorkerManager, enqueue_json
+from utopya.reporter import WorkerManagerReporter
 from utopya.tools import recursive_update, read_yml, write_yml
 from utopya.info import MODELS
 
@@ -62,8 +63,13 @@ class Multiverse:
         self._create_run_dir(model_name=self.model_name,
                              **self.meta_config['paths'])
 
+        # Instantiate the Reporter
+        self._reporter = WorkerManagerReporter(report_dir=self.dirs['run'],
+                                               **self.meta_config['reporter'])
+
         # create a WorkerManager instance
-        self._wm = WorkerManager(**self.meta_config['worker_manager'])
+        self._wm = WorkerManager(reporter=self._reporter,
+                                 **self.meta_config['worker_manager'])
 
         log.info("Initialized Multiverse for model: '%s'", self.model_name)
 
@@ -277,7 +283,7 @@ class Multiverse:
 
         # Inform and store to directory dict
         log.debug("Expanded user and time stamp to %s", run_dir)
-        self._dirs['run_dir'] = run_dir
+        self._dirs['run'] = run_dir
 
         # Recursively create the whole path to the simulation directory
         try:
