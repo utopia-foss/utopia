@@ -12,6 +12,8 @@ from collections import OrderedDict
 from typing import Union, Callable
 from typing.io import BinaryIO
 
+from utopya.reporter import WorkerManagerReporter
+
 # Initialise logger
 log = logging.getLogger(__name__)
 
@@ -52,7 +54,9 @@ class WorkerManager:
 
         # Hand over arguments
         self.poll_freq = poll_freq
-        self.reporter = reporter
+
+        if reporter is not None:
+            self.reporter = reporter
 
         if num_workers == 'auto':
             self.num_workers = os.cpu_count()
@@ -68,13 +72,17 @@ class WorkerManager:
         return self._tasks
 
     @property
-    def reporter(self):
+    def reporter(self) -> WorkerManagerReporter:
         """Returns the associated Reporter object, if there is one."""
         return self._reporter
 
     @reporter.setter
-    def reporter(self, reporter):
+    def reporter(self, reporter) -> None:
         """Set the Reporter object for this WorkerManager."""
+        if not isinstance(reporter, WorkerManagerReporter):
+            raise TypeError("No no no. Need a WorkerManagerReporter for "
+                            "reporting from WorkerManager.")
+
         self._reporter = reporter
 
         # Associate this worker manager with the reporter
@@ -91,7 +99,7 @@ class WorkerManager:
         return self._num_workers
 
     @num_workers.setter
-    def num_workers(self, val):
+    def num_workers(self, val) -> None:
         """Set the number of workers that can work in parallel."""
         if val <= 0 or not isinstance(val, int):
             raise ValueError("Need positive integer for number of workers, got ", val)
@@ -222,6 +230,8 @@ class WorkerManager:
             # Poll the workers
             self._poll_workers()
             # NOTE this will also remove no longer active workers
+
+            self._invoke_reporter()
 
             # Sleep until next poll
             time.sleep(1/self.poll_freq)
@@ -471,7 +481,11 @@ class WorkerManager:
             read_single_stream(self.workers[proc]['streams'][stream_name])
 
         return
-        
+
+    def _invoke_reporter(self):
+        """Invokes the reporter during working"""
+        if self.reporter:
+            self.reporter.report(targets=['stdout'])
 
 
 # Helper functions ------------------------------------------------------------

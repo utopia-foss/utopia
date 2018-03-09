@@ -9,6 +9,10 @@ class Reporter:
         """
         self.report_dir = report_dir
 
+    def report(self, targets: list) -> None:
+        """When called, creates a report"""
+        if 'stdout' in targets:
+            print("Hey. :)")
 
 
 class WorkerManagerReporter(Reporter):
