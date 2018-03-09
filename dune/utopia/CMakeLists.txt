@@ -1,20 +1,4 @@
-# install headers
-install(FILES
-            agent.hh
-            cell.hh
-            data.hh
-            data_eps.hh
-            data_vtk.hh
-            entity.hh
-            grid.hh
-            neighborhoods.hh
-            setup.hh
-            simulation.hh
-            types.hh
-            utopia.hh
-            utopia_dune.hh
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/dune/utopia)
-
+add_subdirectory(core)
 add_subdirectory(data_io)
+
 add_subdirectory(models)
-add_subdirectory(test EXCLUDE_FROM_ALL)

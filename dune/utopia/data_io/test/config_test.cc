@@ -1,6 +1,5 @@
-#include <dune/utopia/utopia.hh>
+#include <dune/utopia/base.hh>
 #include <dune/utopia/data_io/config.hh>
-#include <dune/common/exceptions.hh>
 
 #include "config_test.hh"
 #include "yaml-cpp/yaml.h"
