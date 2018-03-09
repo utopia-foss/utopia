@@ -4,6 +4,7 @@
 #include "hdfbufferfactory.hh"
 #include "hdftypefactory.hh"
 #include "hdfutilities.hh"
+
 #include <hdf5.h>
 #include <hdf5_hl.h>
 #include <numeric>
@@ -15,9 +16,8 @@ namespace DataIO {
  * @brief Class representing a HDFDataset, wich reads and writes data
  *        and attributes
  *
- * @tparam HDFObject
  */
-template <class HDFObject> class HDFDataset {
+template <typename HDFGroup, typename HDFFile> class HDFDataset {
 private:
     // helper function for making a compressed dataset
     template <typename Datatype>
@@ -34,7 +34,7 @@ private:
             H5Screate_simple(_rank, _extend.data(), _max_extend.data());
 
         // make dataset and return
-        return H5Dcreate(_parent_object->get_id(), _name.c_str(),
+        return H5Dcreate(_parent_group->get_id(), _name.c_str(),
                          HDFTypeFactory::type<Datatype>(), dspace, H5P_DEFAULT,
                          plist, H5P_DEFAULT);
     }
@@ -53,13 +53,13 @@ private:
                 H5Screate_simple(_rank, _extend.data(), _max_extend.data());
 
             // create dataset and return
-            return H5Dcreate(_parent_object->get_id(), _name.c_str(),
+            return H5Dcreate(_parent_group->get_id(), _name.c_str(),
                              HDFTypeFactory::type<Datatype>(), dspace,
                              H5P_DEFAULT, plist, H5P_DEFAULT);
         } else {
             // create dataset right away
             return H5Dcreate(
-                _parent_object->get_id(), _name.c_str(),
+                _parent_group->get_id(), _name.c_str(),
                 HDFTypeFactory::type<Datatype>(),
                 H5Screate_simple(_rank, _extend.data(), _max_extend.data()),
                 H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
@@ -67,7 +67,9 @@ private:
     }
 
 protected:
-    std::shared_ptr<HDFObject> _parent_object;
+    std::shared_ptr<HDFGroup> _parent_group;
+    std::shared_ptr<HDFFile> _parent_file;
+
     std::string _name;
     hid_t _dataset;
     hsize_t _rank;
@@ -78,9 +80,9 @@ public:
     /**
      * @brief get a weak ptr to the parent_object
      *
-     * @return std::weak_ptr<HDFObject>
+     * @return std::weak_ptr<HDFGroup>
      */
-    std::weak_ptr<HDFObject> get_parent() { return _parent_object; }
+    std::weak_ptr<HDFGroup> get_parent() { return _parent_group; }
 
     std::string get_name() { return _name; }
 
@@ -125,7 +127,7 @@ public:
      */
     void swap(HDFDataset &other) {
         using std::swap;
-        swap(_parent_object, other._parent_object);
+        swap(_parent_group, other._parent_group);
         swap(_name, other._name);
         swap(_dataset, other._dataset);
         swap(_rank, other._rank);
@@ -161,6 +163,7 @@ public:
 
         // currently not supported rank -> throw error
         if (_rank > 2) {
+            _parent_file->close();
             throw std::runtime_error(
                 "ranks higher than 2 not supported currently");
         }
@@ -187,7 +190,6 @@ public:
             } else { // chunk size 0 implies non-extendable and non - compressed
                      // dataset
                      //
-
                 if (extend.size() == 0) {
                     _extend = std::vector<hsize_t>(_rank, size);
                 } else {
@@ -207,6 +209,8 @@ public:
 
             // check validity of own dataset id
             if (H5Iis_valid(_dataset) == false) {
+                _parent_file->close();
+
                 throw std::runtime_error(
                     "dataset id invalid, has the dataset already been closed?");
             }
@@ -234,6 +238,8 @@ public:
                          H5S_ALL, H5P_DEFAULT, buffer.data());
 
             if (write_err < 0) {
+                _parent_file->close();
+
                 throw std::runtime_error("writing to 1d dataset failed!");
             }
 
@@ -241,6 +247,8 @@ public:
 
             // check validity of own dataset id
             if (H5Iis_valid(_dataset) == false) {
+                _parent_file->close();
+
                 throw std::runtime_error(
                     "dataset id invalid, has the dataset already been closed?");
             }
@@ -250,6 +258,8 @@ public:
             for (std::size_t i = 0; i < _rank; ++i) {
                 if (_extend[i] == _max_extend[i]) {
                     if (_extend[i] != 0) {
+                        _parent_file->close();
+
                         throw std::runtime_error("dataset cannot be extended");
                     }
                 }
@@ -288,6 +298,8 @@ public:
 
                 herr_t ext_err = H5Dset_extent(_dataset, _extend.data());
                 if (ext_err < 0) {
+                    _parent_file->close();
+
                     throw std::runtime_error(
                         "1d dataset could not be extended ");
                 }
@@ -315,6 +327,8 @@ public:
                 herr_t select_err = H5Sselect_hyperslab(
                     dspace, H5S_SELECT_SET, &offset, &stride, &size, &block);
                 if (select_err < 0) {
+                    _parent_file->close();
+
                     throw std::runtime_error("1d hyperslab failed!");
                 }
 
@@ -330,6 +344,8 @@ public:
                 H5Sclose(dspace);
                 H5Sclose(memspace);
                 if (write_err < 0) {
+                    _parent_file->close();
+
                     throw std::runtime_error("writing to 1d dataset failed!");
                 }
             } else { // N- dimensional dataset
@@ -367,6 +383,8 @@ public:
 
                 herr_t ext_err = H5Dset_extent(_dataset, _extend.data());
                 if (ext_err < 0) {
+                    _parent_file->close();
+
                     throw std::runtime_error("nd enlargement failed");
                 }
 
@@ -394,6 +412,8 @@ public:
                 hid_t memspace = H5Screate_simple(_rank, count.data(), nullptr);
 
                 if (select_err < 0) {
+                    _parent_file->close();
+
                     throw std::runtime_error("nd hyperslab failed");
                 }
 
@@ -410,6 +430,8 @@ public:
                 H5Sclose(dspace);
 
                 if (write_err < 0) {
+                    _parent_file->close();
+
                     throw std::runtime_error("writing to n-d dataset failed!");
                 }
             }
@@ -431,6 +453,8 @@ public:
                                   std::vector<hsize_t> stride = {}) {
         // check if dataset id is ok
         if (H5Iis_valid(_dataset) == false) {
+            _parent_file->close();
+
             throw std::runtime_error(
                 "dataset id invalid, has the dataset already been closed?");
         }
@@ -445,6 +469,8 @@ public:
                 herr_t read_err = H5Dread(_dataset, type, H5S_ALL, H5S_ALL,
                                           H5P_DEFAULT, buffer.data());
                 if (read_err < 0) {
+                    _parent_file->close();
+
                     throw std::runtime_error("Error reading 1d dataset");
                 }
                 H5Tclose(type);
@@ -454,6 +480,8 @@ public:
                      // check that the arrays have the correct size:
                 if (start.size() != _rank || end.size() != _rank ||
                     stride.size() != _rank) {
+                    _parent_file->close();
+
                     throw std::invalid_argument("array sizes != rank");
                 }
                 // determine the count to be read
@@ -468,6 +496,8 @@ public:
                     H5Sselect_hyperslab(dspace, H5S_SELECT_SET, start.data(),
                                         stride.data(), count.data(), nullptr);
                 if (select_err < 0) {
+                    _parent_file->close();
+
                     throw std::runtime_error("selection of hyperslab  to write "
                                              "in 1d dataset failed!");
                 }
@@ -483,6 +513,8 @@ public:
                 H5Sclose(dspace);
                 H5Sclose(memspace);
                 if (read_err < 0) {
+                    _parent_file->close();
+
                     throw std::runtime_error(
                         "Error reading subset of 1d dataset");
                 }
@@ -506,6 +538,8 @@ public:
                 herr_t read_err = H5Dread(_dataset, type, H5S_ALL, H5S_ALL,
                                           H5P_DEFAULT, buffer.data());
                 if (read_err < 0) {
+                    _parent_file->close();
+
                     throw std::runtime_error("Error  reading 1d dataset");
                 }
                 H5Tclose(type);
@@ -514,6 +548,8 @@ public:
                 // check that the arrays have the correct size:
                 if (start.size() != _rank || end.size() != _rank ||
                     stride.size() != _rank) {
+                    _parent_file->close();
+
                     throw std::invalid_argument(
                         "array arguments have to be the same size as rank");
                 }
@@ -529,6 +565,8 @@ public:
                     H5Sselect_hyperslab(dspace, H5S_SELECT_SET, start.data(),
                                         stride.data(), count.data(), nullptr);
                 if (select_err < 0) {
+                    _parent_file->close();
+
                     throw std::runtime_error("selection of hyperslab  to write "
                                              "in 1d dataset failed!");
                 }
@@ -549,6 +587,8 @@ public:
                 H5Sclose(dspace);
                 H5Sclose(memspace);
                 if (read_err < 0) {
+                    _parent_file->close();
+
                     throw std::runtime_error(
                         "Error reading subset of 1d dataset");
                 }
@@ -569,7 +609,7 @@ public:
      * @param other
      */
     HDFDataset(const HDFDataset &other)
-        : _parent_object(other._parent_object), _name(other._name),
+        : _parent_group(other._parent_group), _name(other._name),
           _dataset(other._dataset), _rank(other._rank), _extend(other._extend),
           _max_extend(other._max_extend) {}
 
@@ -596,16 +636,17 @@ public:
      * @param parent_object
      * @param name
      */
-    HDFDataset(HDFObject &parent_object, std::string name)
-        : _parent_object(std::make_shared<HDFObject>(parent_object)),
-          _name(name), _dataset(-1), _rank(0), _extend({}), _max_extend({}) {
+    HDFDataset(HDFGroup &parent_object, HDFFile &parent_file, std::string name)
+        : _parent_group(std::make_shared<HDFGroup>(parent_object)),
+          _parent_file(std::make_shared<HDFFile>(parent_file)), _name(name),
+          _dataset(-1), _rank(0), _extend({}), _max_extend({}) {
 
         // try to find the dataset in the parent_object, open if it is
         // there, else postphone the dataset creation to the first write
-        if (H5LTfind_dataset(_parent_object->get_id(), _name.c_str()) > 0) {
+        if (H5LTfind_dataset(_parent_group->get_id(), _name.c_str()) > 0) {
 
             _dataset =
-                H5Dopen(_parent_object->get_id(), _name.c_str(), H5P_DEFAULT);
+                H5Dopen(_parent_group->get_id(), _name.c_str(), H5P_DEFAULT);
             // get dataspace and read out extend and max extend
             hid_t dataspace = H5Dget_space(_dataset);
 
@@ -632,12 +673,13 @@ public:
 /**
  * @brief EXchange state between lhs and rhs
  *
- * @tparam HDFObject
+ * @tparam HDFGroup
  * @param lhs
  * @param rhs
  */
-template <typename HDFObject>
-void swap(HDFDataset<HDFObject> &lhs, HDFDataset<HDFObject> &rhs) {
+template <typename HDFGroup, typename HDFFile>
+void swap(HDFDataset<HDFGroup, HDFFile> &lhs,
+          HDFDataset<HDFGroup, HDFFile> &rhs) {
     lhs.swap(rhs);
 }
 

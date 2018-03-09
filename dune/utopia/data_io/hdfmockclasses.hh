@@ -6,7 +6,7 @@
 // testing hdfattributes, will be later replaced by real stuff
 namespace Utopia {
 namespace DataIO {
-class HDFFile;
+// class HDFFile;
 // mock class for group
 
 // class HDFGroup {
