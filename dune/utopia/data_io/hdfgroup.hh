@@ -103,24 +103,26 @@ public:
         return std::make_shared<HDFGroup>(HDFGroup(*this, path));
     }
 
-    /// Close the group if there are no more child groups or datasets
+    /// Open a HDFDataset
+    /** 
+    *  \tparam HDFDataset<HDFGroup> HDFDataset type with parent type HDFGroup
+    *  \param path The path of the HDFDataset
+    *  \return A std::shared_ptr pointing at the newly created dataset
+    */
+    std::shared_ptr<HDFDataset<HDFGroup>> open_dataset(std::string path)
+    {
+        auto data = HDFDataset<HDFGroup>(*this, path);
+        auto data_ptr = std::make_shared<HDFDataset<HDFGroup>>(data);
+        return std::make_shared<HDFDataset<HDFGroup>>(data);
+    }
+
+    /// Close the group
     void close() 
     {
         if (H5Iis_valid(_group) == 0)
         {
             H5Gclose(_group); 
         } 
-    }
-
-    /// Open a HDFDataset
-    /** 
-    *  
-    */
-    std::shared_ptr<HDFDataset<HDFGroup>>  open_dataset(std::string path)
-    {
-        auto data = HDFDataset<HDFGroup>(*this, path);
-        auto data_ptr = std::make_shared<HDFDataset<HDFGroup>>(data);
-        return std::make_shared<HDFDataset<HDFGroup>>(data);
     }
 
     /// Swap two HDFGroup objects
