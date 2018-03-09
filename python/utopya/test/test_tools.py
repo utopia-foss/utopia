@@ -94,3 +94,20 @@ def test_read_yml_with_error(tmpdir):
     path = os.path.join(tmpdir.dirpath(), "not_existent_config.yml")
     with pytest.raises(FileNotFoundError):
         t.read_yml(path, "My Custom error message.")
+
+
+def test_read_run_cfg_with_constructors():
+    """Testing if run_cfg can be read with yaml constructors."""
+    path = "utopia/python/utopya/test/cfg/run_cfg_constr.yml"
+    t.read_yml(path)
+
+
+def test_read_run_cfg_update_base(tmpdir):
+    """Reading base_cfg and run_cfg and perform update."""
+    base_path = "utopia/python/utopya/utopya/cfg/base_cfg.yml"
+    run_path = "utopia/python/utopya/test/cfg/run_cfg.yml"
+
+    # read the files
+    base = t.read_yml(base_path)
+    run = t.read_yml(run_path)
+    t.recursive_update(base, run)
