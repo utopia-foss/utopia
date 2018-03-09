@@ -11,9 +11,9 @@ namespace Utopia {
  *
  * \section impl Implementation
  * A rule must be implemented by the programmer as a function (object).
- * The function it represents must take two arguments: A single entity
- * and a GridManager. The function's return value is the new state of the
- * entity it is applied to.
+ * The function it represents must take a pointer to the entity as single
+ * argument and may capture arbitrary objects.
+ * The function's return value is the new state of the entity it is applied to.
  *
  * Currently, rules may also alter other members (i.e., tags) of the entity
  * they are applied to, and may even change states of other entities.
