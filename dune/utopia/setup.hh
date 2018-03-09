@@ -1,6 +1,14 @@
 #ifndef SETUP_HH
 #define SETUP_HH
 
+#include <dune/utopia/base.hh>
+#include <dune/utopia/types.hh>
+#include <dune/utopia/tags.hh>
+#include <dune/utopia/cell.hh>
+#include <dune/utopia/agent.hh>
+#include <dune/utopia/grid.hh>
+#include <dune/utopia/simulation.hh>
+
 namespace Utopia
 {
 

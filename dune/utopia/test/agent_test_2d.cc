@@ -1,6 +1,5 @@
 #include <random>
 #include <cassert>
-#include <dune/utopia/utopia.hh>
 
 #include "agent_test.hh"
 

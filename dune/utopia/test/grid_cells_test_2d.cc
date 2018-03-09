@@ -1,6 +1,4 @@
 #include <cassert>
-#include <dune/utopia/utopia.hh>
-#include <dune/common/exceptions.hh>
 
 #include "grid_cells_test.hh"
 

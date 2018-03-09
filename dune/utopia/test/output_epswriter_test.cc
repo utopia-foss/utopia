@@ -1,7 +1,10 @@
 #include <dune/utopia/utopia.hh>
+#include <dune/utopia/base.hh>
+#include <dune/utopia/setup.hh>
+
 #ifdef HAVE_PSGRAF
-#include <PSGraf312.h>
-#endif
+    #include <dune/utopia/data_eps.hh>
+#endif // HAVE_PSGRAF
 
 int main(int argc, char** argv) {
     try{ 

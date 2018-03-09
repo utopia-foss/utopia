@@ -1,6 +1,8 @@
 #ifndef NEIGHBORHOODS_HH
 #define NEIGHBORHOODS_HH
 
+#include <dune/utopia/base.hh>
+
 namespace Utopia {
 
 /// Return i-dimensional shift in grid cells

@@ -1,6 +1,9 @@
 #ifndef DATA_VTK_HH
 #define DATA_VTK_HH
 
+#include <dune/utopia/types.hh>
+#include <dune/utopia/data.hh>
+
 namespace Utopia
 {
 

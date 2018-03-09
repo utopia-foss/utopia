@@ -1,4 +1,6 @@
-#include <dune/utopia/utopia.hh>
+#include <dune/utopia/base.hh>
+#include <dune/utopia/setup.hh>
+#include <dune/utopia/apply.hh>
 #include <cassert>
 
 template<class Manager>

@@ -1,6 +1,8 @@
 #ifndef GRID_HH
 #define GRID_HH
 
+#include <dune/utopia/types.hh>
+
 namespace Utopia {
 
 /// Struct for returning relevant grid data from Setup functions

@@ -1,11 +1,12 @@
-#include <dune/utopia/utopia.hh>
-#include <iostream>
-#include <vector>
+#include <dune/utopia/entity.hh>
+#include <dune/utopia/tags.hh>
 #include <cassert>
 
-int main()
+int main(int argc, char *argv[])
 {
     try{
+        Dune::MPIHelper::instance(argc,argv);
+
         // Test async entity with doubles
         Utopia::Entity<double, false, Utopia::DefaultTag, int> test_entity(0.1, 0);
         assert(!test_entity.is_sync());

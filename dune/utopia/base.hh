@@ -1,6 +1,33 @@
-#ifndef UTOPIA_DUNE_HH
-#define UTOPIA_DUNE_HH
+#ifndef UTOPIA_HH
+#define UTOPIA_BASE_HH
 
+// STL containers
+#include <vector>
+#include <array>
+#include <initializer_list>
+#include <map>
+#include <bitset>
+
+// I/O
+#include <string>
+#include <iostream>
+#include <fstream>
+#include <iomanip>
+#include <ctime>
+
+// Utility
+#include <memory>
+#include <chrono>
+#include <type_traits>
+#include <random>
+#include <algorithm>
+#include <functional>
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+// DUNE HEADERS
 #pragma GCC system_header // disable DUNE internal warnings
 
 // DUNE-COMMON
@@ -18,4 +45,7 @@
 #include <dune/grid/common/mcmgmapper.hh>
 #include <dune/grid/io/file/vtk/vtksequencewriter.hh>
 
-#endif // UTOPIA_DUNE_HH
+// // UTOPIA I/O
+// #include "data_io/config.hh"
+
+#endif // UTOPIA_BASE_HH

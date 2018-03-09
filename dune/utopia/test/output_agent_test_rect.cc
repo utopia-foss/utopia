@@ -1,6 +1,7 @@
 #include <cassert>
-#include <dune/utopia/utopia.hh>
-#include <dune/common/exceptions.hh>
+#include <dune/utopia/base.hh>
+#include <dune/utopia/setup.hh>
+#include <dune/utopia/data_vtk.hh>
 
 int main(int argc, char** argv)
 {

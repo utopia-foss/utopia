@@ -1,6 +1,8 @@
 #ifndef CELL_HH
 #define CELL_HH
 
+#include <dune/utopia/neighborhoods.hh>
+#include <dune/utopia/entity.hh>
 
 namespace Utopia
 {

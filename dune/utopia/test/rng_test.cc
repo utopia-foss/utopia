@@ -1,8 +1,7 @@
-#include <random>
-#include <iostream>
 #include <cassert>
 
-#include <dune/utopia/utopia.hh>
+#include <dune/utopia/base.hh>
+#include <dune/utopia/setup.hh>
 
 int main(int argc, char** argv)
 {

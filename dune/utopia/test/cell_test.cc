@@ -1,12 +1,7 @@
-#include <random>
-#include <iostream>
 #include <cassert>
 
-#include <dune/utopia/utopia.hh>
-#include <dune/common/exceptions.hh>
-#include <dune/common/fvector.hh>
-#include <dune/common/parallel/mpihelper.hh>
-
+#include <dune/utopia/base.hh>
+#include <dune/utopia/setup.hh>
 #include "cell_test.hh"
 
 /// Choose random states and traits. Verify Entity members before and after update

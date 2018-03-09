@@ -1,12 +1,7 @@
 #include <cassert>
-#include <vector>
-#include <iostream>
 
-#include <dune/common/exceptions.hh>
-#include <dune/common/parallel/mpihelper.hh>
+#include <dune/utopia/base.hh>
 #include <dune/utopia/state.hh>
-
-//#include <dune/utopia/utopia.hh>
 
 /// Instantiate containers, check access and contents
 int main(int argc, char **argv)

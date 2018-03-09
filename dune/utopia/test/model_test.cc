@@ -1,10 +1,12 @@
-#include <dune/utopia/utopia.hh>
+#include <cassert>
 
 #include "model_test.hh"
 
-int main ()
+int main(int argc, char *argv[])
 {
     try {
+        Dune::MPIHelper::instance(argc,argv);
+
         std::vector<double> state(1E6, 0.0);
         Utopia::DummyModel model(state);
 

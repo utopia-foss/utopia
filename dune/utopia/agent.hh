@@ -1,6 +1,11 @@
 #ifndef AGENT_HH
 #define AGENT_HH
 
+#include <dune/utopia/base.hh>
+#include <dune/utopia/entity.hh>
+#include <dune/utopia/neighborhoods.hh>
+#include <dune/utopia/types.hh>
+
 namespace Utopia {
 
 // --- helper functions for decreasing runtime overhead --- //
