@@ -39,18 +39,13 @@ public:
     void perform_step ()
     {
         auto& cells = _manager.cells();
-        std::for_each(cells.begin(), cells.end(),
-            [this](const auto cell){
+        auto rule = [this](const auto cell){
                 auto state = cell->state();
                 auto rain  = std::get<0>(_bc)(*(this->_manager.rng()));
                 auto birth = std::get<1>(_bc);
-                cell->state_new() = state + state*birth*(1 - state/rain);
-        });
-        std::for_each(cells.begin(), cells.end(),
-            [this](const auto cell){
-                cell->update();
-        });
-
+                return state + state*birth*(1 - state/rain);
+        };
+        apply_rule(rule, cells);
     }
 
     /// Do nothing

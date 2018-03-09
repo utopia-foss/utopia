@@ -1,7 +1,5 @@
 #include <dune/utopia/utopia.hh>
 
-#include "model_test.hh"
-
 int main ()
 {
     try {
