@@ -1,8 +1,6 @@
 #include <dune/utopia/utopia.hh>
 #include <cassert>
 
-#include "grid_cells_test.hh"
-
 int main(int argc, char* argv[])
 {
     try
