@@ -34,13 +34,13 @@ int file_open_tester() {
 
 int file_func_tester() {
     auto file = std::make_shared<HDFFile>(
-        "/Users/haraldmack/Desktop/hdf5testfile_func.h5", "w");
+        "hdf5testfile_func.h5", "w");
 
     // check that group opening works
     auto testgroup2 = file->open_group("/testgroup1/testgroup2");
     file->close();
     file = std::make_shared<HDFFile>(
-        "/Users/haraldmack/Desktop/hdf5testfile_func.h5", "r+");
+        "hdf5testfile_func.h5", "r+");
     hid_t group_test =
         H5Gopen(file->get_id(), "/testgroup1/testgroup2", H5P_DEFAULT);
 
