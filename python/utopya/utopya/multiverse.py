@@ -141,16 +141,18 @@ class Multiverse:
         if isinstance(pspace, psp.ParamSpace):
             # Get the default
             log.info("Got a ParamSpace object. Retrieving default point ...")
-            pspace = pspace.default
+            uni_cfg = pspace.default
+        else:
+            uni_cfg = pspace
         
         # Add the task to the worker manager.
         log.info("Adding task for simulation of a single universe ...")
-        self._add_sim_task(uni_id=0, max_uni_id=0, cfg_dict=pspace)
+        self._add_sim_task(uni_id=0, max_uni_id=0, uni_cfg=uni_cfg)
 
         # Tell the WorkerManager to start working, which will be the blocking call
         self.wm.start_working(forward_streams=True)
 
-        log.info("Finished single simulation run.")
+        log.info("Finished single universe run. Yay. :)")
 
     def run_sweep(self):
         """Runs a parameter sweep."""
@@ -170,8 +172,14 @@ class Multiverse:
 
         max_uni_id = pspace.volume - 1
 
-        for pdict, uni_id in pspace.all_points(with_info=('state_no',)):
-            print(pdict, uni_id)
+        for uni_cfg, uni_id in pspace.all_points(with_info=('state_no',)):
+            self._add_sim_task(uni_id=uni_id, max_uni_id=max_uni_id,
+                               uni_cfg=uni_cfg)
+
+        log.info("Tasks added.")
+        self.wm.start_working(forward_streams=True)
+
+        log.info("Finished Multiverse parameter sweep. Wohoo. :)")
 
     # "Private" methods .......................................................
 
@@ -217,8 +225,9 @@ class Multiverse:
 
         if user_cfg_path:
             user_cfg = read_yml(user_cfg_path,
-                                error_msg="Did not find user configuration "
-                                "at the specified path!".format(user_cfg_path))
+                                error_msg="Did not find user "
+                                "configuration at the specified "
+                                "path {}!".format(user_cfg_path))
         else:
             user_cfg = None
 
@@ -356,7 +365,7 @@ class Multiverse:
 
         return uni_path
 
-    def _add_sim_task(self, *, uni_id: int, max_uni_id: int, cfg_dict: dict) -> None:
+    def _add_sim_task(self, *, uni_id: int, max_uni_id: int, uni_cfg: dict) -> None:
         """Helper function that handles task assignment to the WorkerManager.
 
         This function performs the following steps:
@@ -372,10 +381,10 @@ class Multiverse:
         Args:
             uni_id (int): ID of the universe whose folder should be created
             max_uni_id (int): highest ID, needed for correct zero-padding
-            cfg_dict (dict): given by ParamSpace. Defines how many simulations
+            uni_cfg (dict): given by ParamSpace. Defines how many simulations
                 should be started
         """
-        def setup_universe(*, worker_kwargs: dict, model_binpath: str, cfg_dict: dict, uni_id: int, max_uni_id: int) -> dict:
+        def setup_universe(*, worker_kwargs: dict, model_binpath: str, uni_cfg: dict, uni_id: int, max_uni_id: int) -> dict:
             """The callable that will setup everything needed for a universe.
             
             This is called before the worker process starts working on the universe.
@@ -384,7 +393,7 @@ class Multiverse:
                 worker_kwargs (dict): the current status of the worker_kwargs
                     dictionary; is always passed to a task setup function
                 model_binpath (str): path to the binary to execute
-                cfg_dict (dict): the configuration to create a yml file from
+                uni_cfg (dict): the configuration to create a yml file from
                     which is then needed by the model
                 uni_id (int): ID of the universe whose folder should be created
                 max_uni_id (int): highest ID, needed for correct zero-padding
@@ -399,7 +408,7 @@ class Multiverse:
 
             # write essential part of config to file:
             uni_cfg_path = os.path.join(uni_dir, "config.yml")
-            write_yml(d=cfg_dict, path=uni_cfg_path)
+            write_yml(d=uni_cfg, path=uni_cfg_path)
 
             # building args tuple for task assignment
             # assuming there exists an attribute for the executable and for the
@@ -419,7 +428,7 @@ class Multiverse:
 
         # Create the dict that will be passed as arguments to setup_universe
         setup_kwargs = dict(model_binpath=model_binpath,
-                            cfg_dict=cfg_dict,
+                            uni_cfg=uni_cfg,
                             uni_id=uni_id, max_uni_id=max_uni_id)
 
         # Add a task to the worker manager
