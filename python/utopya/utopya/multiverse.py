@@ -143,7 +143,7 @@ class Multiverse:
             log.info("Got a ParamSpace object. Retrieving default point ...")
             uni_cfg = pspace.default
         else:
-            uni_cfg = pspace
+            uni_cfg = copy.deepcopy(pspace)
         
         # Add the task to the worker manager.
         log.info("Adding task for simulation of a single universe ...")
@@ -384,7 +384,7 @@ class Multiverse:
             uni_cfg (dict): given by ParamSpace. Defines how many simulations
                 should be started
         """
-        def setup_universe(*, worker_kwargs: dict, model_binpath: str, uni_cfg: dict, uni_id: int, max_uni_id: int) -> dict:
+        def setup_universe(*, worker_kwargs: dict, model_name: str, model_binpath: str, uni_cfg: dict, uni_id: int, max_uni_id: int) -> dict:
             """The callable that will setup everything needed for a universe.
             
             This is called before the worker process starts working on the universe.
@@ -405,6 +405,15 @@ class Multiverse:
             # create universe directory
             uni_dir = self._create_uni_dir(uni_id=uni_id,
                                            max_uni_id=max_uni_id)
+
+            # Generate a path to the output hdf5 file and add it to the dict
+            output_path = os.path.join(uni_dir, "data.h5")
+            
+            if model_name not in uni_cfg:
+                # Need to create the high level entry
+                uni_cfg[model_name] = dict(output_path=output_path)
+            else:
+                uni_cfg[model_name]['output_path'] = output_path
 
             # write essential part of config to file:
             uni_cfg_path = os.path.join(uni_dir, "config.yml")
@@ -427,7 +436,8 @@ class Multiverse:
                   self.model_name, model_binpath)
 
         # Create the dict that will be passed as arguments to setup_universe
-        setup_kwargs = dict(model_binpath=model_binpath,
+        setup_kwargs = dict(model_name=self.model_name,
+                            model_binpath=model_binpath,
                             uni_cfg=uni_cfg,
                             uni_id=uni_id, max_uni_id=max_uni_id)
 
