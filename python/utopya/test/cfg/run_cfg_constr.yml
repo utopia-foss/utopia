@@ -1,0 +1,20 @@
+# Parameter Space
+parameter_space:
+  simulation:
+    # ...
+    prng_seed: !expr    NaN
+    #
+    _model:
+      ca_geomorphology: !expr 60*30/2
+        # rain rate
+        # erosion
+        #  ....
+      ca_vegetation:
+        # ..
+      abm_animals:
+        # ...
+
+run_kwargs:
+  stop_conditions:
+    total: !expr         inf        # timeout in seconds (for the whole simulation)
+    per_sim: !expr       -inf            # for each simulation
