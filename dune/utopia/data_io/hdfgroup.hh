@@ -121,7 +121,11 @@ public:
     {
         if (H5Iis_valid(_group) == 0)
         {
-            H5Gclose(_group); 
+            herr_t err = H5Gclose(_group); 
+            if (err < 0)
+            {
+                throw std::runtime_error("There is an error in closing the group in calling the destructor!");
+            }
         } 
     }
 
@@ -206,7 +210,7 @@ public:
     virtual ~HDFGroup()
     {
         if (H5Iis_valid(_group) == 0) { 
-            H5Gclose(_group);
+            herr_t err = H5Gclose(_group);
         }
     }
 
