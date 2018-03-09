@@ -63,7 +63,7 @@ int main() {
   for (std::size_t l = 0; l < data_vectors.size(); ++l) {
     assert(data_vectors[l].size() == complex_buffer[l].len);
     for (std::size_t i = 0; i < data_vectors[i].size(); ++i) {
-      data_vectors[l][i] = reinterpret_cast<int *>(complex_buffer[l].p)[i];
+      assert(data_vectors[l][i] == reinterpret_cast<int *>(complex_buffer[l].p)[i]);
     }
   }
   return 0;
