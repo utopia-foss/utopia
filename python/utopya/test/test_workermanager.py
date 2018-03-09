@@ -108,6 +108,9 @@ def test_start_working(wm_with_tasks):
     assert all([c < e for c, e in zip(create_times, end_times)])
     assert (end_times[1] - create_times[1]) > 0.5 # for the sleep task
 
-@pytest.mark.skip("Not implemented yet.")
-def test_read_stdout():
-    pass
+def test_read_stdout(wm):
+    """Checks if the stdout was read"""
+
+    wm.start_working()
+
+    # TODO read the stream output here

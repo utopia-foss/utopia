@@ -55,6 +55,30 @@ struct is_container<std::set<Args...>> : public std::true_type {};
 template <typename... Args>
 struct is_container<std::basic_string<Args...>> : public std::true_type {};
 
+/**
+ * @brief wrapper for more simple usage of 'is_container'
+ *
+ * @tparam T
+ */
+template <typename T, typename U = T>
+struct is_container_type : public is_container<U> {};
+
+// specialization for reference types
+template <typename T> struct is_container_type<T &> : public is_container<T> {};
+// specialization for pointer types
+template <typename T> struct is_container_type<T *> : public is_container<T> {};
+
+// specialization for const types
+template <typename T>
+struct is_container_type<const T &> : public is_container<T> {};
+// specialization for pointer types
+template <typename T>
+struct is_container_type<const T *> : public is_container<T> {};
+
+// specialization for rvalue refs
+template <typename T>
+struct is_container_type<T &&> : public is_container<T> {};
+
 // FIXME: tuple_for_each needed here!
 } // namespace DataIO
 } // namespace Utopia

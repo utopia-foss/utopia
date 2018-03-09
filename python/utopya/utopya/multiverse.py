@@ -3,17 +3,17 @@
 The Multiverse supplies the main user interface of the frontend.
 """
 import os
-import sys
 import time
 import copy
 import logging
-import pkg_resources
 from shutil import copyfile
+import pkg_resources
 
 from utopya.workermanager import WorkerManager, enqueue_json
 from utopya.tools import recursive_update, read_yml, write_yml
 from utopya.info import MODELS
 
+# Configure and get logger
 log = logging.getLogger(__name__)
 
 
@@ -29,22 +29,21 @@ class Multiverse:
         UTOPIA_EXEC (str): The name of the utopia executable, found in 
     """
 
-    UTOPIA_EXEC = "utopia"
     BASE_CFG_PATH = pkg_resources.resource_filename('utopya',
                                                     'cfg/base_cfg.yml')
     USER_CFG_SEARCH_PATH = os.path.expanduser("~/.config/utopia/user_cfg.yml")
 
-    def __init__(self, *, model_name: str, run_cfg_path: str, user_cfg_path: str=None, update_meta_cfg: dict=None):
+    def __init__(self, *, model_name: str, run_cfg_path: str=None, update_meta_cfg: dict=None, user_cfg_path: str=None):
         """Initialize the Multiverse.
         
         Args:
             model_name (str): A valid name of Utopia model
-            run_cfg_path (str): The path to the run configuration.
+            run_cfg_path (str, optional): The path to the run configuration.
+            update_meta_cfg (dict, optional): Can be used to update the meta
+                config that is generated from the run_cfg and user_cfg.
             user_cfg_path (str, optional): If given, this is used to update the
                 base configuration. If None, will look for it in the default
                 path, see Multiverse.USER_CFG_SEARCH_PATH.
-            update_meta_cfg (dict, optional): Can be used to update the meta
-                config that is generated from the run_cfg and user_cfg.
         """
         # Initialize empty attributes (partly property-managed)
         self._model_name = None
@@ -123,7 +122,7 @@ class Multiverse:
     def run(self):
         """Starts a Utopia run. Whether this will be a single simulation or
         a Parameter sweep is decided by the contents of the meta_cfg."""
-        log.info("Preparing to run Utopia ...")
+        log.info("Preparing to run Multiverse ...")
 
         # Depending on the configuration, the corresponding methods can already be called.
         if self.meta_config['run_kwargs']['perform_sweep']:
@@ -143,8 +142,7 @@ class Multiverse:
         self._add_sim_task(uni_id=0, max_uni_id=0, cfg_dict=pspace)
 
         # Tell the WorkerManager to start working, which will be the blocking call
-        log.info("Starting to work now ...")
-        self.wm.start_working()
+        self.wm.start_working(forward_streams=True)
 
         log.info("Finished single simulation run.")
 
@@ -198,11 +196,16 @@ class Multiverse:
             user_cfg = read_yml(user_cfg_path,
                                 error_msg="Did not find user configuration "
                                 "at the specified path!".format(user_cfg_path))
+        else:
+            user_cfg = None
 
         # Read in the run configuration
-        run_cfg = read_yml(run_cfg_path,
-                           error_msg="{0} was given but run_config could "
-                                     "not be found.".format(run_cfg_path))
+        if run_cfg_path:
+            run_cfg = read_yml(run_cfg_path,
+                               error_msg="{0} was given but run_config could "
+                                         "not be found.".format(run_cfg_path))
+        else:
+            run_cfg = None
 
         # After this point it is assumed that all values are valid
         # Those keys or values will throw errors once they are needed ...
@@ -210,13 +213,14 @@ class Multiverse:
         # Now perform the recursive update steps
         meta_tmp = base_cfg
 
-        if user_cfg_path is not None:  # update default with user spec
+        if user_cfg:  # update default with user spec
             log.debug("Updating configuration with user configuration ...")
             meta_tmp = recursive_update(meta_tmp, user_cfg)
 
-        # And now recursively update with the run config
-        log.debug("Updating configuration with run configuration ...")
-        meta_tmp = recursive_update(meta_tmp, run_cfg)
+        # And now recursively update with the run config, if available
+        if run_cfg:
+            log.debug("Updating configuration with run configuration ...")
+            meta_tmp = recursive_update(meta_tmp, run_cfg)
 
         # ... and the update_meta_cfg dictionary
         if update_meta_cfg:
@@ -312,17 +316,21 @@ class Multiverse:
         # Check if uni_id and max_uni_id are positive
         if uni_id < 0 or uni_id > max_uni_id:
             raise RuntimeError("Input variables don't match prerequisites: "
-                               "uni_id >= 0, max_uni_id >= uni_id. Given arguments: "
-                               "uni_id: {}, max_uni_id: {}".format(uni_id, max_uni_id))
+                               "uni_id >= 0, max_uni_id >= uni_id. "
+                               "Given arguments: "
+                               "uni_id {}, max_uni_id {}".format(uni_id,
+                                                                 max_uni_id))
 
         # Use a format string for creating the uni_path
         fstr = "uni{id:>0{digits:}d}"
-        uni_path = os.path.join(self._dirs['universes'],
-                                fstr.format(id=uni_id, digits=len(str(max_uni_id))))
+        uni_path = os.path.join(self.dirs['universes'],
+                                fstr.format(id=uni_id,
+                                            digits=len(str(max_uni_id))))
 
         # Now create the folder
         os.mkdir(uni_path)
-        log.debug("Created universe path: %s", uni_path)
+        log.debug("Created directory for universe %d: %s", uni_id, uni_path)
+
         return uni_path
 
     def _add_sim_task(self, *, uni_id: int, max_uni_id: int, cfg_dict: dict) -> None:
@@ -344,21 +352,20 @@ class Multiverse:
             cfg_dict (dict): given by ParamSpace. Defines how many simulations
                 should be started
         """
-        # Define the function that will setup everything needed for a universe
-        def setup_universe(*, worker_kwargs: dict, utopia_exec: str, model_name: str, uni_id: int, max_uni_id: int, cfg_dict: dict) -> dict:
-            """Sub-helper function to be returned as functional.
-
-            Creates universe for the task, writes configuration, calls
-            WorkerManager.add_task.
-
+        def setup_universe(*, worker_kwargs: dict, model_binpath: str, cfg_dict: dict, uni_id: int, max_uni_id: int) -> dict:
+            """The callable that will setup everything needed for a universe.
+            
+            This is called before the worker process starts working on the universe.
+            
             Args:
-                utopia_exec (str): class constant for utopia executable
-                model_name (str): name of the model *derpface*
+                worker_kwargs (dict): the current status of the worker_kwargs
+                    dictionary; is always passed to a task setup function
+                model_binpath (str): path to the binary to execute
+                cfg_dict (dict): the configuration to create a yml file from
+                    which is then needed by the model
                 uni_id (int): ID of the universe whose folder should be created
                 max_uni_id (int): highest ID, needed for correct zero-padding
-                cfg_dict (dict): given by ParamSpace. Defines how many simulations
-                    should be started
-
+            
             Returns:
                 dict: kwargs for the process to be run when task is grabbed by
                     Worker.
@@ -374,7 +381,7 @@ class Multiverse:
             # building args tuple for task assignment
             # assuming there exists an attribute for the executable and for the
             # model
-            args = (utopia_exec, model_name, uni_cfg_path)
+            args = (model_binpath, uni_cfg_path)
 
             # Overwrite the worker kwargs argument with totally new ones
             worker_kwargs = dict(args=args,  # passing the arguments
@@ -382,11 +389,15 @@ class Multiverse:
                                  line_read_func=enqueue_json)  # Callable
             return worker_kwargs
 
+        # Get the model binary path
+        model_binpath = MODELS[self.model_name]['binpath']
+        log.debug("Executable path for model %s:\n  %s",
+                  self.model_name, model_binpath)
+
         # Create the dict that will be passed as arguments to setup_universe
-        setup_kwargs = dict(utopia_exec=self.UTOPIA_EXEC,
-                            model_name=self.model_name,
-                            uni_id=uni_id, max_uni_id=max_uni_id,
-                            cfg_dict=cfg_dict)
+        setup_kwargs = dict(model_binpath=model_binpath,
+                            cfg_dict=cfg_dict,
+                            uni_id=uni_id, max_uni_id=max_uni_id)
 
         # Add a task to the worker manager
         self.wm.add_task(priority=None,
@@ -397,7 +408,7 @@ class Multiverse:
 
 
 # -----------------------------------------------------------------------------
-# Helpers
+# Others
 
 def distribute_user_cfg(user_cfg_path: str=Multiverse.USER_CFG_SEARCH_PATH):
     """Distributes a copy of the base config to the user config search path of the Multiverse class."""
