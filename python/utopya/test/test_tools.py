@@ -1,11 +1,21 @@
 """I'm a docstring."""
-import pytest
 import os
 import copy
+import pkg_resources
+
+import pytest
+
 import utopya.tools as t
 
 
-# Fixtures
+BASE_CFG_PATH = pkg_resources.resource_filename('utopya',
+                                                'cfg/base_cfg.yml')
+RUN_CFG_PATH = pkg_resources.resource_filename('test',
+                                               'cfg/run_cfg.yml')
+RUN_CFG_CONSTR_PATH = pkg_resources.resource_filename('test',
+                                                      'cfg/run_cfg_constr.yml')
+
+# Fixtures --------------------------------------------------------------------
 @pytest.fixture
 def testdict():
     """Create a dummy dictionary."""
@@ -94,3 +104,18 @@ def test_read_yml_with_error(tmpdir):
     path = os.path.join(tmpdir.dirpath(), "not_existent_config.yml")
     with pytest.raises(FileNotFoundError):
         t.read_yml(path, "My Custom error message.")
+
+
+def test_read_run_cfg_with_constructors():
+    """Testing if run_cfg can be read with yaml constructors."""
+    t.read_yml(RUN_CFG_CONSTR_PATH)
+
+
+def test_read_run_cfg_update_base():
+    """Reading base_cfg and run_cfg and perform update."""
+    # read the files
+    base = t.read_yml(BASE_CFG_PATH)
+    run = t.read_yml(RUN_CFG_PATH)
+
+    # Check the update call
+    t.recursive_update(base, run)
