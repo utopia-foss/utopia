@@ -32,17 +32,19 @@ public:
         swap(_path, other._path);
         swap(_base_group, other._base_group);
     }
-    
+
     /**
      * @brief closes the hdffile
      *
      */
     void close() {
-        H5Fflush(_file, H5F_SCOPE_GLOBAL);
         if (H5Iis_valid(_file) == true) {
+            H5Fflush(_file, H5F_SCOPE_GLOBAL);
+
             H5Fclose(_file);
         }
     }
+
     /**
      * @brief Get the id object
      *
@@ -71,19 +73,27 @@ public:
      * @param path
      * @return std::shared_ptr<HDFGroup>
      */
-    std::shared_ptr<HDFGroup> open_group(std::string path) {
+    std::shared_ptr<HDFGroup> open_group(std::string &&path) {
         std::stringstream stream(path);
         std::string part;
-        std::string total_path = "/";
-        HDFGroup parent = *_base_group;
-        HDFGroup current;
-        herr_t status = 0;
-
+        auto current = std::make_shared<HDFGroup>();
+        auto parent = _base_group;
         while (std::getline(stream, part, '/')) {
-            current = HDFGroup(parent, total_path += part);
+            if (part == "") {
+                continue;
+            }
+            current = std::make_shared<HDFGroup>(*parent, *this, part);
             parent = current;
         }
-        return std::make_shared<HDFGroup>(current);
+        return current;
+    }
+
+    std::shared_ptr<HDFDataset> open_dataset(std::string &&path) {
+        std::string part;
+        std::size_t datasetbegin = path.find_last_of('/');
+        std::cout << path.substr(0, datasetbegin) << std::endl;
+        auto group = open_group(path.substr(0, datasetbegin));
+        return HDFDataset
     }
 
     /**
@@ -91,14 +101,18 @@ public:
      *
      * @param path absolute path to group to delete
      */
-    void delete_group(std::string path) {
+
+    void delete_group(std::string &&path) {
         // check if group exists in file, if does delete link
         herr_t status = 1;
         if (H5Lexists(_file, path.c_str(), H5P_DEFAULT) == true) {
-                        // group exists, can be deleted
+            // group exists, can be deleted
 
             hid_t group_to_delete = H5Gopen(_file, path.c_str(), H5P_DEFAULT);
-            status = H5Ldelete(group_to_delete, path.c_str(), H5P_DEFAULT);
+            if (H5Iis_valid(group_to_delete)) {
+                status = H5Ldelete(group_to_delete, path.c_str(), H5P_DEFAULT);
+                H5Gclose(group_to_delete);
+            }
             if (status < 0) {
                 close();
                 throw std::runtime_error(
@@ -112,7 +126,11 @@ public:
      * @brief Initiates an immediate write to disk of the data of the file
      *
      */
-    void flush() { H5Fflush(_file, H5F_SCOPE_GLOBAL); }
+    void flush() {
+        if (H5Iis_valid(_file) == true) {
+            H5Fflush(_file, H5F_SCOPE_GLOBAL);
+        }
+    }
 
     /**
      * @brief Construct a new default HDFFile object
@@ -132,13 +150,14 @@ public:
      * @param rvalue reference to HDFFile object
      * @return HDFFile&
      */
-    HDFFile &operator=(HDFFile &&other) {
+    HDFFile &operator=(HDFFile other) {
         this->swap(other);
         return *this;
     }
 
-    HDFFile(const HDFFile &) = delete;
-    HDFFile &operator=(const HDFFile &) = delete;
+    HDFFile(const HDFFile &other)
+        : _file(other._file), _path(other._path),
+          _base_group(other._base_group) {}
 
     /**
      * @brief Construct a new HDFFile object
@@ -162,8 +181,15 @@ public:
                   return H5Fopen(path.c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
 
               } else if (access == "x") {
-                  return H5Fcreate(path.c_str(), H5F_ACC_EXCL, H5P_DEFAULT,
-                                   H5P_DEFAULT);
+                  hid_t file = H5Fcreate(path.c_str(), H5F_ACC_EXCL,
+                                         H5P_DEFAULT, H5P_DEFAULT);
+                  if (file < 0) {
+                      throw std::runtime_error("tried to create an existing "
+                                               "file in non-truncate mode");
+
+                  } else {
+                      return file;
+                  }
               } else if (access == "a") {
                   hid_t file_test =
                       H5Fopen(path.c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
@@ -177,21 +203,22 @@ public:
                   throw std::invalid_argument("wrong type of access specifier, "
                                               "see documentation for allowed "
                                               "values");
-                return static_cast<hid_t>(0);
               }
           }()),
-          _path(path), _base_group(std::make_shared<HDFGroup>(*this, "/")) {}
+          _path(path),
+          _base_group(std::make_shared<HDFGroup>(*this, *this, "/")) {}
 
     /**
      * @brief Destroy the HDFFile object
      *
      */
     virtual ~HDFFile() {
-        H5Fflush(_file, H5F_SCOPE_GLOBAL);
         if (H5Iis_valid(_file) == true) {
+            H5Fflush(_file, H5F_SCOPE_GLOBAL);
             H5Fclose(_file);
         }
     }
 };
-}}
+} // namespace DataIO
+} // namespace Utopia
 #endif

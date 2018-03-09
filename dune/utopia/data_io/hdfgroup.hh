@@ -1,6 +1,7 @@
 #ifndef HDFGROUP_HH
 #define HDFGROUP_HH
 #include "hdfattribute.hh"
+
 #include <hdf5.h>
 #include <hdf5_hl.h>
 #include <string>
@@ -14,17 +15,20 @@ private:
 protected:
     hid_t _group;
     std::string _path;
+    std::shared_ptr<HDFFile> _parent_file;
 
 public:
     void swap(HDFGroup &other) {
         using std::swap;
         swap(_group, other._group);
         swap(_path, other._path);
+        swap(_parent_file, other._parent_file);
     }
     std::string get_path() { return _path; }
     // id
     hid_t get_id() { return _group; }
 
+    auto get_parent_file() { return _parent_file; }
     template <typename Attrdata>
     void add_attribute(std::string name, Attrdata attribute_data) {
 
@@ -34,21 +38,29 @@ public:
         attribute.write(attribute_data);
     }
 
-    void close() { H5Gclose(_group); }
+    void close() {
+        if (H5Iis_valid(_group) == true) {
+            H5Gclose(_group);
+            _group = -1;
+        }
+    }
 
     // default constructor
     HDFGroup() = default;
     HDFGroup(const HDFGroup &other)
         : _group(other._group), _path(other._path) {}
 
-    HDFGroup &operator=(const HDFGroup &other) {
-        _group = other._group;
-        _path = other._path;
+    HDFGroup(HDFGroup &&other) : HDFGroup() { this->swap(other); }
+
+    HDFGroup &operator=(HDFGroup other) {
+        this->swap(other);
         return *this;
     }
+
     // constructor
     template <typename HDFObject>
-    HDFGroup(HDFObject &object, std::string name) : _path(name) {
+    HDFGroup(HDFObject &object, HDFFile &parent_file, std::string name)
+        : _path(name), _parent_file(std::make_shared<HDFFile>(parent_file)) {
         if (std::is_same<HDFObject, HDFFile>::value) {
             if (_path == "/") {
                 _group = H5Gopen(object.get_id(), "/", H5P_DEFAULT);
@@ -75,7 +87,7 @@ public:
 
     // destructor
     ~HDFGroup() {
-        if (H5Iis_valid(_group) == 0) {
+        if (H5Iis_valid(_group) == true) {
             H5Gclose(_group);
         }
     }
