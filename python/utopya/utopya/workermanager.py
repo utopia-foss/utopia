@@ -192,7 +192,7 @@ class WorkerManager:
                                       "detach the WorkerManager from the "
                                       "main thread.")
 
-        while not self.tasks.empty() or self.working:
+        while self.working or self.tasks.qsize() > 0:
             # Check if there are free workers and remaining tasks.
             if self.free_workers and not self.tasks.empty():
                 # Yes. => Grab a task and start working on it
