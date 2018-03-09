@@ -58,7 +58,7 @@ template<
     class Manager,
     bool sync=impl::entity_t<Container>::is_sync()>
 std::enable_if_t<!sync, void>
-apply_rule(Rule rule, const Container& container, const Manager& manager)
+apply_rule(Rule rule, const Container& container, Manager& manager)
 {
     //reduce the number of parameters in rule
     //by binding parameter 2 to manager
