@@ -5,6 +5,10 @@
 #include <dune/utopia/core/model.hh>
 
 #include <dune/utopia/data_io/config.hh>
+// #include <dune/utopia/data_io/hdffile.hh>
+// #include <dune/utopia/data_io/hdfgroup.hh>
+#include <dune/utopia/data_io/hdfdataset.hh>
+#include <dune/utopia/data_io/hdfmockclasses.hh>
 
 namespace Utopia {
 
@@ -32,6 +36,7 @@ private:
     BCType _bc;
     Utopia::DataIO::Config _config;
     std::mt19937 _rng;
+    DataIO::HDFFile _file;
 
 public:
     /// Construct the dummy model with an initial state
@@ -42,7 +47,8 @@ public:
         _state(state),
         _bc(_state.size(), 1.0),
         _config(config),
-        _rng(_config["seed"].as<int>())
+        _rng(_config["seed"].as<int>()),
+        _file(_config["output_path"].as<std::string>(), "w")
     { }
 
     /// Iterate by one time step
@@ -57,7 +63,12 @@ public:
     }
 
     /// Do nothing for now
-    void write_data () {}
+    void write_data ()
+    {
+        std::shared_ptr<DataIO::HDFDataset<DataIO::HDFGroup>> dataset
+            = _file.get_basegroup().open_dataset("data");
+        dataset->write(_state.begin(), _state.end(), [](auto &value) { return value; });
+    }
 
     // Set model boundary condition
     void set_boundary_condition (const BCType& bc) { _bc = bc; }

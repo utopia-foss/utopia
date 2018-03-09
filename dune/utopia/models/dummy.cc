@@ -14,7 +14,7 @@ int main (int argc, char** argv)
 
         // const unsigned int steps = std::stoi(argv[2]);
 
-        std::vector<double> state(1E6, 0.0);
+        std::vector<double> state(1E3, 0.0);
         Utopia::DummyModel model(state, config["dummy"]);
 
         // for(int i = 0; i < steps; ++i)
