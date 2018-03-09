@@ -34,6 +34,13 @@ int main()
     // open subtestgroup and check whether it exists
     std::shared_ptr<HDFGroup> subgroup = group.open_group("subtestgroup");
     assert(H5Lexists(group.get_id(), "subtestgroup", H5P_DEFAULT ) == 1);
+    std::shared_ptr<HDFGroup> subgroup2 = group.open_group("subtestgroup/a/b/c");
+    assert(H5Lexists(group.get_id(), "subtestgroup/a/b/c", H5P_DEFAULT ) == 1);
+
+    // test delete_group function
+    group.delete_group("subtestgroup/a/b");
+    assert(H5Lexists(group.get_id(), "subtestgroup/a/b", H5P_DEFAULT ) == 0);
+
 
     // open subsubtestgroup and check whether it exists
     std::shared_ptr<HDFGroup> subsubtestgroup = subgroup->open_group("subsubtestgroup2");

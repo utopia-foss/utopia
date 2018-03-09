@@ -92,14 +92,46 @@ public:
         attribute.write(attribute_data);
     }
 
-    /// Open a new HDFGroup
+    /// Open group at path, creating all intermediate objects in the path
     /**
-    * \param path The path
-    * \return A pointer to the newly created HDFGroup
-    */
-    std::shared_ptr<HDFGroup> open_group(std::string path)
+     * \param path
+     * \return std::shared_ptr<HDFGroup>
+     */
+    std::shared_ptr<HDFGroup> open_group(std::string path) {
+        std::stringstream stream(path);
+        std::string part;
+        HDFGroup parent = *this;
+        HDFGroup current;
+
+        while (std::getline(stream, part, '/')) {
+            current = HDFGroup(parent, part);
+            parent = current;
+        }
+        return std::make_shared<HDFGroup>(current);
+    }
+
+    /// Deletes the group pointed to by absolute path 'path'
+    /**
+     * \param path relative path to group to delete
+     */
+    void delete_group(std::string path) 
     {
-        return std::make_shared<HDFGroup>(HDFGroup(*this, path));
+        // check if group exists in file, if does delete link
+        herr_t status = 1;
+        if (H5Lexists(_group, path.c_str(), H5P_DEFAULT) == true) 
+        {
+                        // group exists, can be deleted
+
+            hid_t group_to_delete = _group;
+            status = H5Ldelete(group_to_delete, path.c_str(), H5P_DEFAULT);
+            if (status < 0) 
+            {
+                close();
+                throw std::runtime_error(
+                    "deletion of group failed, wrong path?");
+            }
+        }
+        // group does not exist, do nothing
     }
 
     /// Open a HDFDataset
