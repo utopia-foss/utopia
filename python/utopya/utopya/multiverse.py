@@ -154,7 +154,7 @@ class Multiverse:
 
     # "Private" methods .......................................................
 
-    def _create_meta_config(self, *, run_cfg_path: str, user_cfg_path: str=None, update_meta_cfg: dict=None) -> dict:
+    def _create_meta_config(self, *, run_cfg_path: str, user_cfg_path: str, update_meta_cfg: dict) -> dict:
         """Read base configuration file and adjust parameters.
         
         The base_config file, the user_config file (if existing) and the run_config file are read in.
@@ -168,8 +168,8 @@ class Multiverse:
         
         Args:
             run_cfg_path (str): path to run_config
-            user_cfg_path (str, optional): path to the user_config file
-            update_meta_cfg (dict, optional): will be
+            user_cfg_path (str): path to the user_config file
+            update_meta_cfg (dict): will be used to update the resulting dict
         
         Returns:
             dict: returns the created metaconfig that will be saved as attr
