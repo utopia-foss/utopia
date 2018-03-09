@@ -330,42 +330,6 @@ class Multiverse:
 
         return uni_path
 
-    @staticmethod
-    def _setup_universe(*, worker_kwargs: dict, utopia_exec: str, model_name: str, cfg_dict: dict, uni_dir_func: Callable) -> dict:
-        """The callable that will setup everything needed for a universe.
-
-        This is called before the worker process starts working on the universe.
-
-        Args:
-            utopia_exec (str): class constant for utopia executable
-            model_name (str): name of the model *derpface*
-            uni_id (int): ID of the universe whose folder should be created
-            max_uni_id (int): highest ID, needed for correct zero-padding
-            cfg_dict (dict): given by ParamSpace. Defines how many simulations
-                should be started
-
-        Returns:
-            dict: kwargs for the process to be run when task is grabbed by
-                Worker.
-        """
-        # create universe directory
-        uni_dir = uni_dir_func()
-
-        # write essential part of config to file:
-        uni_cfg_path = os.path.join(uni_dir, "config.yml")
-        write_yml(d=cfg_dict, path=uni_cfg_path)
-
-        # building args tuple for task assignment
-        # assuming there exists an attribute for the executable and for the
-        # model
-        args = (utopia_exec, model_name, uni_cfg_path)
-
-        # Overwrite the worker kwargs argument with totally new ones
-        worker_kwargs = dict(args=args,  # passing the arguments
-                             read_stdout=True,
-                             line_read_func=enqueue_json)  # Callable
-        return worker_kwargs
-
     def _add_sim_task(self, *, uni_id: int, max_uni_id: int, cfg_dict: dict) -> None:
         """Helper function that handles task assignment to the WorkerManager.
 
@@ -385,19 +349,51 @@ class Multiverse:
             cfg_dict (dict): given by ParamSpace. Defines how many simulations
                 should be started
         """
-        # Prepare the Callable that creates the universe directory
-        uni_dir_func = lambda: self._create_uni_dir(uni_id=uni_id,
-                                                    max_uni_id=max_uni_id)
+        def setup_universe(*, worker_kwargs: dict, utopia_exec: str, model_name: str, cfg_dict: dict, uni_id: int, max_uni_id: int) -> dict:
+            """The callable that will setup everything needed for a universe.
+
+            This is called before the worker process starts working on the universe.
+
+            Args:
+                utopia_exec (str): class constant for utopia executable
+                model_name (str): name of the model *derpface*
+                uni_id (int): ID of the universe whose folder should be created
+                max_uni_id (int): highest ID, needed for correct zero-padding
+                cfg_dict (dict): given by ParamSpace. Defines how many simulations
+                    should be started
+
+            Returns:
+                dict: kwargs for the process to be run when task is grabbed by
+                    Worker.
+            """
+            # create universe directory
+            uni_dir = self._create_uni_dir(uni_id=uni_id,
+                                           max_uni_id=max_uni_id)
+
+            # write essential part of config to file:
+            uni_cfg_path = os.path.join(uni_dir, "config.yml")
+            write_yml(d=cfg_dict, path=uni_cfg_path)
+
+            # building args tuple for task assignment
+            # assuming there exists an attribute for the executable and for the
+            # model
+            args = (utopia_exec, model_name, uni_cfg_path)
+
+            # Overwrite the worker kwargs argument with totally new ones
+            worker_kwargs = dict(args=args,  # passing the arguments
+                                 read_stdout=True,
+                                 line_read_func=enqueue_json)  # Callable
+            return worker_kwargs
 
         # Create the dict that will be passed as arguments to setup_universe
         setup_kwargs = dict(utopia_exec=self.UTOPIA_EXEC,
                             model_name=self.model_name,
-                            uni_dir_func=uni_dir_func,
-                            cfg_dict=cfg_dict)
+                            cfg_dict=cfg_dict,
+                            uni_id=uni_id, max_uni_id=max_uni_id)
 
         # Add a task to the worker manager
         self.wm.add_task(priority=None,
-                         setup_func=self._setup_universe,
+                         setup_func=setup_universe,
                          setup_kwargs=setup_kwargs)
 
         log.debug("Added simulation task for universe %d.", uni_id)
