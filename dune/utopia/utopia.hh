@@ -47,6 +47,7 @@
 #include "simulation.hh"
 #include "setup.hh"
 #include "model.hh"
+#include "apply.hh"
 
 // Models
 #include "models/dummy.hh"

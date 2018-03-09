@@ -6,9 +6,9 @@ namespace Utopia {
 /// Template declaration for model types extracted from Manager
 template<class Manager>
 using VegetationModelTypes = Utopia::ModelTypes<
-    typename Manager::Container, //?
-    //std::tuple<double, double> //rand_dist, equ.wateruptake
-    std::tuple<std::normal_distribution<>, double> //rand_dist, equ.wateruptake
+    typename Manager::Container, // unused
+    std::tuple<std::normal_distribution<>, double> // probability distribution for rain, 
+                                                   // reproduction rate
 >;
 
 /// A very simple model implementing 
@@ -29,7 +29,7 @@ public:
     /// Construct the model.
     /** \param manager Manager for this model
      */
-    Vegetation (const Manager& manager, BCType bc):
+    Vegetation (Manager& manager, BCType bc):
         Base(),
         _manager(manager),
         _bc(bc)
@@ -41,12 +41,16 @@ public:
         auto& cells = _manager.cells();
         std::for_each(cells.begin(), cells.end(),
             [this](const auto cell){
-                auto nb = Utopia::Neighborhoods::NextNeighbor::neighbors(
-                    cell, this->_manager);
-                cell->state() = nb.size();
-                if (cell->is_boundary())
-                    cell->is_tagged = true;
+                auto state = cell->state();
+                auto rain  = std::get<0>(_bc)(*(this->_manager.rng()));
+                auto birth = std::get<1>(_bc);
+                cell->state_new() = state + state*birth*(1 - state/rain);
         });
+        std::for_each(cells.begin(), cells.end(),
+            [this](const auto cell){
+                cell->update();
+        });
+
     }
 
     /// Do nothing
@@ -55,19 +59,6 @@ public:
     /// Return const reference to cell container
     const Data& data () const { return _manager.cells(); }
 
-    // Set model boundary condition
-    void set_boundary_condition (const BCType& bc) { }
-
-    /// Set model initial condition
-    void set_initial_condition (const Data& container) {
-        // check container size
-        const auto& cells = _manager.cells();
-        assert(container.size() == cells.size());
-        for(std::size_t i = 0; i<container.size(); ++i){
-            cells[i]->state() = container[i]->state();
-            cells[i]->is_tagged = container[i]->is_tagged;
-        }
-    }
 };
 
 } // namespace Utopia
