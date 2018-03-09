@@ -21,7 +21,7 @@ int main(int argc, char* argv[])
             grid, cells);
 
         // define a rule which yields different results for sync and async
-        auto rule_acc_neighbors = [](const auto cell, const auto& manager) {
+        auto rule_acc_neighbors = [](const auto cell, const auto manager) {
             auto nb = Utopia::Neighborhoods::NextNeighbor::
                 neighbors(cell, manager);
             return std::accumulate(nb.begin(), nb.end(), 1,
@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
         //define a rule
         ids.clear();
         auto rule_register_ids
-            = [&ids](const auto cell, [[maybe_unused]] auto& manager) {
+            = [&ids](const auto cell, [[maybe_unused]] const auto manager) {
             ids.push_back(cell->id());
             return cell->state();
         };
@@ -102,7 +102,7 @@ int main(int argc, char* argv[])
             std::back_inserter(applicants), 10, *m_agents.rng());
         auto rule_state_increment
             = []([[maybe_unused]] const auto agent,
-                [[maybe_unused]] const auto& manager){
+                [[maybe_unused]] const auto manager){
             return 42;
         };
         Utopia::apply_rule(rule_state_increment, applicants, m_agents);
