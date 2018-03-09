@@ -29,20 +29,35 @@ protected:
     std::string _path; /// Storage of the path
 
 public:
+    /// Print information about the group
+    /**
+    *  The function outputs in the terminal:
+    *    - the group id
+    *    - the group path
+    *    - the Number of links in group
+    *    - the current maximum creation order value for group
+    *    - whether there are mounted files on the group
+    */
     void info()
     {
-        // TODO
-        H5G_info_t* info;
-        H5Gget_info(_group, info);
+        // get information from the hdf5 group
+        H5G_info_t info;
+        herr_t err = H5Gget_info(_group, &info);
 
-
-        std::cout << "Printing information of the group:" << std::endl
-            << "- Group id: " << _group
-            << "- Group path: " << _path
-            << "- Number of links in group: " << info->nlinks 
-            << "- Current maximum creation order value for group: " << info->max_corder
-            << "- There are mounted files on the group: " << info->mounted
-            << std::endl; 
+        // if information is succesfully retrieved print out the information
+        if (err < 0)
+        {
+            throw std::runtime_error("Getting the information by calling H5Gget_info failed!");
+        }
+        else{
+            std::cout << "Printing information of the group:" << std::endl
+                << "- Group id: " << _group << std::endl
+                << "- Group path: " << _path << std::endl
+                << "- Number of links in group: " << info.nlinks  << std::endl
+                << "- Current maximum creation order value for group: " << info.max_corder << std::endl
+                << "- There are mounted files on the group: " << info.mounted << std::endl
+                << std::endl; 
+        }        
     }
 
     /// Get the id
