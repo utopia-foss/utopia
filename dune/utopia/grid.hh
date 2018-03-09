@@ -3,6 +3,17 @@
 
 namespace Utopia {
 
+/// Prints output which type of constructor was called
+struct CopyMoveAware {
+    CopyMoveAware() = default;
+    CopyMoveAware(const CopyMoveAware&){
+        std::cout << "Copy Constructor called" << std::endl;
+    }
+    CopyMoveAware(CopyMoveAware&&){
+        std::cout << "Move Constructor called" << std::endl;
+    }
+};
+
 /// Struct for returning relevant grid data from Setup functions
 template<typename GridType>
 struct GridWrapper
@@ -23,7 +34,8 @@ public:
 
 /// Common base class for grid managers holding the actual grid
 template<typename GridType, typename RNG, bool structured, bool periodic>
-class GridManagerBase
+class GridManagerBase :
+    public CopyMoveAware
 {
 public:
     /// Data types related to the grid
@@ -59,13 +71,16 @@ public:
     /// Create a GridManager from a grid and cells with a default RNG
     explicit GridManagerBase (const GridWrapper<GridType>& wrapper,
         const std::shared_ptr<RNG> rng):
+        CopyMoveAware(),
         _grid(wrapper._grid),
         _grid_cells(wrapper._grid_cells),
         _extensions(wrapper._extensions),
         _gv(_grid->leafGridView()),
         _mapper(_gv, Dune::mcmgElementLayout()),
         _rng(rng)
-    { }
+    {
+        std::cout << "Custom GridManager Constructor called!" << std::endl;
+    }
 
     /// Return true if managed grid is structured (rectangular)
     static constexpr bool is_structured () { return _is_structured; }
