@@ -12,8 +12,8 @@ int main() {
     HDFFile file("testfile.h5", "w");
 
     // make groups
-    HDFGroup low_group = HDFGroup(*file.get_basegroup(), "/testgroup");
-    HDFGroup low_group2 = HDFGroup(*file.get_basegroup(), "/testgroup2");
+    HDFGroup low_group = HDFGroup(*file.get_basegroup(), file, "/testgroup");
+    HDFGroup low_group2 = HDFGroup(*file.get_basegroup(), file, "/testgroup2");
 
     // adding attribute1
     std::string attributename = "testattribute";
