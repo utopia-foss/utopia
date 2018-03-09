@@ -38,9 +38,9 @@ def default_mv(tmpdir, mv_kwargs) -> Multiverse:
 
 # Initialisation tests --------------------------------------------------------
 
-def test_simple_init(wm_kwargs):
+def test_simple_init(mv_kwargs):
     """Tests whether initialisation works for all basic cases."""
-    Multiverse(**wm_kwargs)
+    Multiverse(**mv_kwargs)
 
 def test_invalid_model_name_and_operation(mv_kwargs, tmpdir):
     """Tests for correct behaviour upon invalid model names"""
