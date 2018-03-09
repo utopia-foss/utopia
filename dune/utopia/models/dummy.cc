@@ -17,7 +17,7 @@ int main (int argc, char** argv)
         std::vector<double> state(1E3, 0.0);
         Utopia::DummyModel model(state, config["dummy"]);
 
-        // for(int i = 0; i < steps; ++i)
+        for(int i = 0; i < config["num_steps"].as<int>(); ++i)
             model.iterate();
 
         // Sleep (to be read by frontend)

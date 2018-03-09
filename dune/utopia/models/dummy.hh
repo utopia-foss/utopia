@@ -65,9 +65,10 @@ public:
     /// Do nothing for now
     void write_data ()
     {
-        std::shared_ptr<DataIO::HDFDataset<DataIO::HDFGroup>> dataset
-            = _file.get_basegroup().open_dataset("data");
-        dataset->write(_state.begin(), _state.end(), [](auto &value) { return value; });
+        const std::string set_name = "data-" + std::to_string(this->time);
+        auto dataset = _file.get_basegroup().open_dataset(set_name);
+        dataset->write(_state.begin(), _state.end(),
+            [](auto &value) { return value; });
     }
 
     // Set model boundary condition
