@@ -1,6 +1,7 @@
 """Tests the WorkerManager class"""
 
 import os
+from datetime import timedelta
 
 import pytest
 
@@ -31,7 +32,7 @@ def wm_with_tasks():
                                                'world")'),
                                          read_stdout=True, env=env),
                       priority=0))
-    
+
     tasks.append(dict(worker_kwargs=dict(args=('python3', '-c',
                                                'from time import sleep; '
                                                'sleep(0.5)'),
@@ -69,7 +70,7 @@ def test_init(wm):
     with pytest.raises(ValueError):
         # Negative
         WorkerManager(num_workers=-1000)
-    
+
     with pytest.raises(ValueError):
         # not int
         WorkerManager(num_workers=1.23)
@@ -106,7 +107,7 @@ def test_start_working(wm_with_tasks):
     create_times = [w['create_time'] for w in wm.workers.values()]
     end_times = [w['end_time'] for w in wm.workers.values()]
     assert all([c < e for c, e in zip(create_times, end_times)])
-    assert (end_times[1] - create_times[1]) > 0.5 # for the sleep task
+    assert (end_times[1] - create_times[1]) > timedelta(microseconds=500)  # for the sleep task
 
 def test_read_stdout(wm):
     """Checks if the stdout was read"""

@@ -1,5 +1,6 @@
 """Implementation of the Reporter class."""
-import time
+from datetime import datetime as dt
+from typing import Union
 
 class Reporter:
     """The Reporter is where everything is reported.
@@ -15,10 +16,18 @@ class Reporter:
         """
         self.report_dir = report_dir
 
-    def report(self, targets: list) -> None:
+    def report(self, targets: list, content: Union[str, list, dict]=None) -> None:
         """When called, creates a report."""
+        # ensure targets is list of targets:
+        if not isinstance(targets, list):
+            target_list = list()
+            target_list.append(targets)
+
         if 'stdout' in targets:
-            print("Hey. :)")
+            if content:
+                print(content)
+            else:
+                print("Hey. :)")
 
 
 class WorkerManagerReporter(Reporter):
@@ -38,8 +47,11 @@ class WorkerManagerReporter(Reporter):
 
         NOTE: this method should be called in WorkerManager._worker_finished
         """
-        # approximate runtime in seconds
-        runtime = proc['end_time'] - proc['create_time']
+        if isinstance(proc['end_time'], dt):
+            # approximate runtime as datetime object
+            runtime = proc['end_time'] - proc['create_time']
 
-        if 'stdout' in targets:
-            print(runtime)  # this needs to be fancier :)
+        else:
+            raise ValueError("Only datetime.datetime objects are accepted.")
+
+        self.report(targets=targets, content=runtime)

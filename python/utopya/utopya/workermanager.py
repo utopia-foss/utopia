@@ -4,6 +4,7 @@ import os
 import subprocess
 import queue
 import threading
+from datetime import datetime as dt
 import time
 import json
 import warnings
@@ -169,7 +170,7 @@ class WorkerManager:
                               "setup function having been given; the passed "
                               "`worker_kwargs` will not be used!",
                               UserWarning)
-        
+
         elif worker_kwargs:
             if setup_kwargs:
                 warnings.warn("worker_kwargs given but also setup_kwargs "
@@ -248,16 +249,16 @@ class WorkerManager:
 
     def _grab_task(self) -> subprocess.Popen:
         """Will initiate that a new (or already existing) worker will work on a task. The task will be taken from the queue.
-        
+
         First, it is checked whether this task defined a setup function. If so,
         that function is called, generating the worker_kwargs.
-        
+
         After that, the `worker_kwargs` from the task_dict are used to spawn
         a worker process.
-        
+
         Returns:
             subprocess.Popen: The created process object
-        
+
         Raises:
             queue.Empty: If the task queue was empty
         """
@@ -291,7 +292,7 @@ class WorkerManager:
                          worker_kwargs=worker_kwargs)
 
         # Spawn a worker and return the resulting process
-        return self._spawn_worker(task_info=task_info, **worker_kwargs)        
+        return self._spawn_worker(task_info=task_info, **worker_kwargs)
 
     def _spawn_worker(self, *, args: tuple, read_stdout: bool, line_read_func: Callable=None, task_info: dict=None, **popen_kwargs) -> subprocess.Popen:
         """Spawn a worker process using subprocess.Popen and manage the corresponding queue and thread for reading the stdout stream. The new worker process is registered with the class.
@@ -332,10 +333,10 @@ class WorkerManager:
         # Spawn the child process with the given arguments
         log.debug("Spawning worker process with args:  %s", args)
         proc = subprocess.Popen(args,
-                                bufsize=1, # line buffered
+                                bufsize=1,  # line buffered
                                 stdout=stdout, stderr=stderr,
                                 **popen_kwargs)
-        create_time = time.time() # approximate
+        create_time = dt.utcnow()  # approximate
         log.debug("Spawned worker process with PID %s.", proc.pid)
         # ... it is running now.
 
@@ -382,7 +383,7 @@ class WorkerManager:
         self.workers[proc] = dict(proc=proc,
                                   args=args,
                                   # status information
-                                  status=None, # assume running here
+                                  status=None,  # assume running here
                                   create_time=create_time,
                                   end_time=None,
                                   # TODO monitor CPU time rather than wall time
@@ -421,14 +422,17 @@ class WorkerManager:
             proc (subprocess.Popen): The process to apply these actions to
         """
         self.workers[proc]['status'] = proc.returncode
-        self.workers[proc]['end_time'] = time.time()
-        
+        self.workers[proc]['end_time'] = dt.utcnow()
+        if self.reporter:
+            self.reporter.report_process(proc=self.workers[proc],
+                                         targets=["stdout"])
+
         # Read the remaining entries from the worker stream
         self._read_worker_streams(proc, max_num_reads=-1)
 
     def _read_worker_streams(self, proc: subprocess.Popen, stream_names: list='all', forward_streams: bool=True, max_num_reads: int=1) -> None:
         """Gather a single entry from the given worker's stream queue and store the value in the stream log.
-        
+
         Args:
             proc (subprocess.Popen): The processes to read the stream of
             stream_names (list, optional): The list of stream
@@ -439,7 +443,7 @@ class WorkerManager:
                 the buffer. For -1, reads the whole buffer.
                 WARNING: Do not make this value too large as it could block the
                 whole reader thread of this worker.
-        
+
         Returns:
             None: Description
         """
