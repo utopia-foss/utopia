@@ -1,8 +1,10 @@
 # Parameter Space
-parameter_space:
+parameter_space: !pspace
   simulation:
     # ...
-    prng_seed: !expr    NaN
+    prng_seed: !sweep
+      default: 1337
+      values: [23, 42, 667]
     #
     _model:
       ca_geomorphology: !expr 60*30/2
