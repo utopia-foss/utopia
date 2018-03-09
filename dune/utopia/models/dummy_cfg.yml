@@ -1,0 +1,8 @@
+worker_manager:
+  num_workers: 2
+
+parameter_space: !pspace
+  dummy:
+    seed: !sweep
+      default: 1337
+      values: [23, 42, 665, 667]
