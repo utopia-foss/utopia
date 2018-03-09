@@ -30,22 +30,21 @@ class Multiverse:
         UTOPIA_EXEC (str): The name of the utopia executable, found in 
     """
 
-    UTOPIA_EXEC = "utopia"
     BASE_CFG_PATH = pkg_resources.resource_filename('utopya',
                                                     'cfg/base_cfg.yml')
     USER_CFG_SEARCH_PATH = os.path.expanduser("~/.config/utopia/user_cfg.yml")
 
-    def __init__(self, *, model_name: str, run_cfg_path: str, user_cfg_path: str=None, update_meta_cfg: dict=None):
+    def __init__(self, *, model_name: str, run_cfg_path: str=None, update_meta_cfg: dict=None, user_cfg_path: str=None):
         """Initialize the Multiverse.
         
         Args:
             model_name (str): A valid name of Utopia model
-            run_cfg_path (str): The path to the run configuration.
+            run_cfg_path (str, optional): The path to the run configuration.
+            update_meta_cfg (dict, optional): Can be used to update the meta
+                config that is generated from the run_cfg and user_cfg.
             user_cfg_path (str, optional): If given, this is used to update the
                 base configuration. If None, will look for it in the default
                 path, see Multiverse.USER_CFG_SEARCH_PATH.
-            update_meta_cfg (dict, optional): Can be used to update the meta
-                config that is generated from the run_cfg and user_cfg.
         """
         # Initialize empty attributes (partly property-managed)
         self._model_name = None
@@ -155,7 +154,7 @@ class Multiverse:
 
     # "Private" methods .......................................................
 
-    def _create_meta_config(self, *, run_cfg_path: str, user_cfg_path: str=None, update_meta_cfg: dict=None) -> dict:
+    def _create_meta_config(self, *, run_cfg_path: str, user_cfg_path: str, update_meta_cfg: dict=None) -> dict:
         """Read base configuration file and adjust parameters.
         
         The base_config file, the user_config file (if existing) and the run_config file are read in.
@@ -199,11 +198,16 @@ class Multiverse:
             user_cfg = read_yml(user_cfg_path,
                                 error_msg="Did not find user configuration "
                                 "at the specified path!".format(user_cfg_path))
+        else:
+            user_cfg = None
 
         # Read in the run configuration
-        run_cfg = read_yml(run_cfg_path,
-                           error_msg="{0} was given but run_config could "
-                                     "not be found.".format(run_cfg_path))
+        if run_cfg_path:
+            run_cfg = read_yml(run_cfg_path,
+                               error_msg="{0} was given but run_config could "
+                                         "not be found.".format(run_cfg_path))
+        else:
+            run_cfg = None
 
         # After this point it is assumed that all values are valid
         # Those keys or values will throw errors once they are needed ...
@@ -211,13 +215,14 @@ class Multiverse:
         # Now perform the recursive update steps
         meta_tmp = base_cfg
 
-        if user_cfg_path is not None:  # update default with user spec
+        if user_cfg:  # update default with user spec
             log.debug("Updating configuration with user configuration ...")
             meta_tmp = recursive_update(meta_tmp, user_cfg)
 
-        # And now recursively update with the run config
-        log.debug("Updating configuration with run configuration ...")
-        meta_tmp = recursive_update(meta_tmp, run_cfg)
+        # And now recursively update with the run config, if available
+        if run_cfg:
+            log.debug("Updating configuration with run configuration ...")
+            meta_tmp = recursive_update(meta_tmp, run_cfg)
 
         # ... and the update_meta_cfg dictionary
         if update_meta_cfg:
@@ -349,7 +354,7 @@ class Multiverse:
             cfg_dict (dict): given by ParamSpace. Defines how many simulations
                 should be started
         """
-        def setup_universe(*, worker_kwargs: dict, utopia_exec: str, model_name: str, cfg_dict: dict, uni_id: int, max_uni_id: int) -> dict:
+        def setup_universe(*, worker_kwargs: dict, model_binpath: str, cfg_dict: dict, uni_id: int, max_uni_id: int) -> dict:
             """The callable that will setup everything needed for a universe.
 
             This is called before the worker process starts working on the universe.
@@ -377,7 +382,7 @@ class Multiverse:
             # building args tuple for task assignment
             # assuming there exists an attribute for the executable and for the
             # model
-            args = (utopia_exec, model_name, uni_cfg_path)
+            args = (model_binpath, uni_cfg_path)
 
             # Overwrite the worker kwargs argument with totally new ones
             worker_kwargs = dict(args=args,  # passing the arguments
@@ -385,9 +390,11 @@ class Multiverse:
                                  line_read_func=enqueue_json)  # Callable
             return worker_kwargs
 
+        # Get the model binary path
+        model_binpath = MODELS[self.model_name]['binpath']
+
         # Create the dict that will be passed as arguments to setup_universe
-        setup_kwargs = dict(utopia_exec=self.UTOPIA_EXEC,
-                            model_name=self.model_name,
+        setup_kwargs = dict(model_binpath=model_binpath,
                             cfg_dict=cfg_dict,
                             uni_id=uni_id, max_uni_id=max_uni_id)
 

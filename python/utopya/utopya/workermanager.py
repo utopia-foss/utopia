@@ -248,19 +248,25 @@ class WorkerManager:
         # If a setup function is available, call it with the given kwargs
         worker_kwargs = task_dict['worker_kwargs']
         setup_func = task_dict.get('setup_func')
+        setup_kwargs = task_dict.get('setup_kwargs', {})
 
         if setup_func:
             log.debug("Calling a setup function ...")
             worker_kwargs = setup_func(worker_kwargs=worker_kwargs,
-                                       **task_dict.get('setup_kwargs', {}))
+                                       **setup_kwargs)
         else:
             log.debug("No setup function given; using the `worker_kwargs` "
                       "directly.")
 
-        # Spawn a worker and return the resulting process
-        return self._spawn_worker(**worker_kwargs)        
+        # Bundle the task information
+        task_info = dict(id=task_id, priority=prio,
+                         setup_func=setup_func, setup_kwargs=setup_kwargs,
+                         worker_kwargs=worker_kwargs),
 
-    def _spawn_worker(self, *, args: tuple, read_stdout: bool, line_read_func: Callable=None, **popen_kwargs) -> subprocess.Popen:
+        # Spawn a worker and return the resulting process
+        return self._spawn_worker(task_info=task_info, **worker_kwargs)        
+
+    def _spawn_worker(self, *, args: tuple, read_stdout: bool, line_read_func: Callable=None, task_info: dict=None, **popen_kwargs) -> subprocess.Popen:
         """Spawn a worker process using subprocess.Popen and manage the corresponding queue and thread for reading the stdout stream. The new worker process is registered with the class.
 
         Args:
@@ -326,7 +332,7 @@ class WorkerManager:
             streams = None
 
         # Register the worker process with the class
-        self._register_worker(proc=proc, args=args, streams=streams, create_time=create_time)
+        self._register_worker(proc=proc, args=args, streams=streams, create_time=create_time, task_info=task_info)
 
         return proc
 

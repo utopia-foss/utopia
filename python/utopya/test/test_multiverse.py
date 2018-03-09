@@ -154,6 +154,9 @@ def test_single_sim(default_mv):
 
     mv.run_single()
 
+    print("Workers: ", mv.wm.workers)
+    assert False # For testing purposes
+
 # Other tests -----------------------------------------------------------------
 
 def test_distribute_user_cfg(tmpdir, monkeypatch):
