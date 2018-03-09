@@ -4,32 +4,79 @@
 
 #include <hdf5.h>
 #include <hdf5_hl.h>
+#include <sstream>
 #include <string>
 #include <vector>
 
 namespace Utopia {
 namespace DataIO {
-class HDFFile; // forward declaration because needed
+class HDFFile;
 class HDFGroup {
 private:
 protected:
     hid_t _group;
     std::string _path;
-    std::shared_ptr<HDFFile> _parent_file;
 
 public:
+    /**
+     * @brief switch state of object with other's state
+     *
+     * @param other
+     */
     void swap(HDFGroup &other) {
         using std::swap;
         swap(_group, other._group);
         swap(_path, other._path);
-        swap(_parent_file, other._parent_file);
     }
+
+    /**
+     * @brief Get the path object
+     *
+     * @return std::string
+     */
     std::string get_path() { return _path; }
-    // id
+
+    /**
+     * @brief Get the id object
+     *
+     * @return hid_t
+     */
     hid_t get_id() { return _group; }
 
-    auto get_parent_file() { return _parent_file; }
+    /**
+     * @brief get info about group
+     *
+     */
+    void info() {
+        // get information from the hdf5 group
+        H5G_info_t info;
+        herr_t err = H5Gget_info(_group, &info);
+
+        // if information is succesfully retrieved print out the information
+        if (err < 0) {
+            throw std::runtime_error(
+                "Getting the information by calling H5Gget_info failed!");
+        } else {
+            std::cout << "Printing information of the group:" << std::endl
+                      << "- Group id: " << _group << std::endl
+                      << "- Group path: " << _path << std::endl
+                      << "- Number of links in group: " << info.nlinks
+                      << std::endl
+                      << "- Current maximum creation order value for group: "
+                      << info.max_corder << std::endl
+                      << "- There are mounted files on the group: "
+                      << info.mounted << std::endl;
+        }
+    }
+
+    /**
+     * @brief write attribuet
+     *
+     * @param name
+     * @param attribute_data
+     */
     template <typename Attrdata>
+
     void add_attribute(std::string name, Attrdata attribute_data) {
 
         HDFAttribute<HDFGroup, Attrdata> attribute(
@@ -38,6 +85,10 @@ public:
         attribute.write(attribute_data);
     }
 
+    /**
+     * @brief close group
+     *
+     */
     void close() {
         if (H5Iis_valid(_group) == true) {
             H5Gclose(_group);
@@ -45,22 +96,70 @@ public:
         }
     }
 
+    /**
+     * \param path
+     * \return std::shared_ptr<HDFGroup>
+     */
+    std::shared_ptr<HDFGroup> open_group(std::string path) {
+        std::stringstream stream(path);
+        std::string part;
+        HDFGroup parent = *this;
+        auto current = std::make_shared<HDFGroup>();
+
+        while (std::getline(stream, part, '/')) {
+            current = std::make_shared<HDFGroup>(parent, part);
+            parent = *current;
+        }
+        return current;
+    }
+
+    /// Open a HDFDataset
+    /**
+     *  \tparam HDFDataset<HDFGroup> HDFDataset type with parent type HDFGroup
+     *  \param path The path of the HDFDataset
+     *  \return A std::shared_ptr pointing at the newly created dataset
+     */
+    std::shared_ptr<HDFDataset<HDFGroup>> open_dataset(std::string path) {
+        return std::make_shared<HDFDataset<HDFGroup>>(*this, path);
+    }
+
     // default constructor
     HDFGroup() = default;
+    /**
+     * @brief Construct a new HDFGroup object
+     *
+     * @param other
+     */
     HDFGroup(const HDFGroup &other)
         : _group(other._group), _path(other._path) {}
 
+    /**
+     * @brief Construct a new HDFGroup object
+     *
+     * @param other
+     */
     HDFGroup(HDFGroup &&other) : HDFGroup() { this->swap(other); }
 
+    /**
+     * @brief assignment operator
+     *
+     * @param other
+     * @return HDFGroup&
+     */
     HDFGroup &operator=(HDFGroup other) {
         this->swap(other);
         return *this;
     }
 
-    // constructor
+    /**
+     * @brief Construct a new HDFGroup object
+     *
+     * @tparam HDFObject
+     * @param object
+     * @param name
+     */
     template <typename HDFObject>
-    HDFGroup(HDFObject &object, HDFFile &parent_file, std::string name)
-        : _path(name), _parent_file(std::make_shared<HDFFile>(parent_file)) {
+    HDFGroup(HDFObject &object, std::string name) : _path(name) {
         if (std::is_same<HDFObject, HDFFile>::value) {
             if (_path == "/") {
                 _group = H5Gopen(object.get_id(), "/", H5P_DEFAULT);
@@ -85,13 +184,32 @@ public:
         }
     }
 
+    /**
+     * \param path relative path to group to delete
+     */
+    void delete_group(std::string path) {
+        // check if group exists in file, if does delete link
+        herr_t status = 1;
+        if (H5Lexists(_group, path.c_str(), H5P_DEFAULT) == true) {
+            // group exists, can be deleted
+
+            status = H5Ldelete(_group, path.c_str(), H5P_DEFAULT);
+            if (status < 0) {
+                close();
+                throw std::runtime_error(
+                    "deletion of group failed, wrong path?");
+            }
+        }
+        // group does not exist, do nothing
+    }
+
     // destructor
     ~HDFGroup() {
         if (H5Iis_valid(_group) == true) {
             H5Gclose(_group);
         }
     }
-};
+}; // namespace DataIO
 
 void swap(HDFGroup &lhs, HDFGroup &rhs) { lhs.swap(rhs); }
 } // namespace DataIO

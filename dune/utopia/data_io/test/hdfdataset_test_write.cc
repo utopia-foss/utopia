@@ -42,13 +42,13 @@ hid_t make_dataset_for_tests(hid_t id, std::string _name, hsize_t _rank,
 void write_dataset_onedimensional(HDFFile &file) {
 
     // 1d dataset tests
-    HDFGroup testgroup1(*file.get_basegroup(), file, "/testgroup1");
-    HDFGroup testgroup2(*file.get_basegroup(), file, "/testgroup2");
+    HDFGroup testgroup1(*file.get_basegroup(), "/testgroup1");
+    HDFGroup testgroup2(*file.get_basegroup(), "/testgroup2");
 
     // Test for constructor
 
     // nothing happend until now
-    HDFDataset<HDFGroup, HDFFile> testdataset(testgroup2, file, "testdataset");
+    HDFDataset<HDFGroup> testdataset(testgroup2, "testdataset");
     assert(testdataset.get_id() == -1);
 
     // make a dummy dataset to which later will be written
@@ -57,8 +57,7 @@ void write_dataset_onedimensional(HDFFile &file) {
         {H5S_UNLIMITED}, 50);
     H5Dclose(dummy_dset);
     // open dataset again
-    HDFDataset<HDFGroup, HDFFile> testdataset2(testgroup1, file,
-                                               "testdataset2");
+    HDFDataset<HDFGroup> testdataset2(testgroup1, "testdataset2");
     hid_t dummy_dset2 =
         H5Dopen(file.get_id(), "/testgroup1/testdataset2", H5P_DEFAULT);
     // get its name
@@ -86,16 +85,14 @@ void write_dataset_onedimensional(HDFFile &file) {
     testdataset2.write(data.begin(), data.end(),
                        [](auto &value) { return value; });
 
-    HDFDataset<HDFGroup, HDFFile> compressed_dataset(testgroup1, file,
-                                                     "compressed_dataset");
+    HDFDataset<HDFGroup> compressed_dataset(testgroup1, "compressed_dataset");
     compressed_dataset.write(data.begin(), data.end(),
                              [](auto &value) { return value; }, 1,
                              {data.size()}, {}, 20, 5);
 
     compressed_dataset.close();
 
-    HDFDataset<HDFGroup, HDFFile> compressed_dataset2(testgroup1, file,
-                                                      "compressed_dataset");
+    HDFDataset<HDFGroup> compressed_dataset2(testgroup1, "compressed_dataset");
 
     for (auto &value : data) {
         value = 3.14 / 2;
@@ -109,8 +106,7 @@ void write_dataset_onedimensional(HDFFile &file) {
 
     // 1d dataset variable length
 
-    HDFDataset<HDFGroup, HDFFile> varlen_dataset(testgroup1, file,
-                                                 "varlendataset");
+    HDFDataset<HDFGroup> varlen_dataset(testgroup1, "varlendataset");
     varlen_dataset.write(
         data_2d.begin(), data_2d.end(),
         [](auto &value) -> std::vector<double> & { return value; }, 1, {100});
@@ -119,16 +115,15 @@ void write_dataset_onedimensional(HDFFile &file) {
 }
 
 void write_dataset_multidimensional(HDFFile &file) {
-    HDFGroup multidimgroup(*file.get_basegroup(), file, "/multi_dim_data");
+    HDFGroup multidimgroup(*file.get_basegroup(), "/multi_dim_data");
     std::vector<double> data(100, 2.718);
 
-    HDFDataset<HDFGroup, HDFFile> multidimdataset(multidimgroup, file,
-                                                  "multiddim_dataset");
+    HDFDataset<HDFGroup> multidimdataset(multidimgroup, "multiddim_dataset");
     multidimdataset.write(data.begin(), data.end(),
                           [](auto &value) { return value; }, 2, {1, 100});
 
-    HDFDataset<HDFGroup, HDFFile> multidimdataset_compressed(
-        multidimgroup, file, "multiddim_dataset_compressed");
+    HDFDataset<HDFGroup> multidimdataset_compressed(
+        multidimgroup, "multiddim_dataset_compressed");
 
     std::for_each(data.begin(), data.end(),
                   [](auto &value) { return value += 1; });
@@ -138,8 +133,8 @@ void write_dataset_multidimensional(HDFFile &file) {
 
     multidimdataset.close();
 
-    HDFDataset<HDFGroup, HDFFile> multidimdataset_extendable(
-        multidimgroup, file, "multiddim_dataset_extendable");
+    HDFDataset<HDFGroup> multidimdataset_extendable(
+        multidimgroup, "multiddim_dataset_extendable");
 
     double writeval = 100;
     for (std::size_t i = 0; i < data.size(); ++i) {
@@ -153,8 +148,8 @@ void write_dataset_multidimensional(HDFFile &file) {
 
     multidimdataset_extendable.close();
 
-    HDFDataset<HDFGroup, HDFFile> multidimdataset_reopened(
-        multidimgroup, file, "multiddim_dataset_extendable");
+    HDFDataset<HDFGroup> multidimdataset_reopened(
+        multidimgroup, "multiddim_dataset_extendable");
 
     double value = 200;
     for (std::size_t i = 0; i < data.size(); ++i) {

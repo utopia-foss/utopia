@@ -11,21 +11,18 @@
 using namespace Utopia::DataIO;
 
 void read_dataset_tests(HDFFile &file) {
-    HDFGroup testgroup1(*file.get_basegroup(), file, "/testgroup1");
-    HDFGroup testgroup2(*file.get_basegroup(), file, "/testgroup2");
-    HDFGroup multidimgroup(*file.get_basegroup(), file, "/multi_dim_data");
+    HDFGroup testgroup1(*file.get_basegroup(), "/testgroup1");
+    HDFGroup testgroup2(*file.get_basegroup(), "/testgroup2");
+    HDFGroup multidimgroup(*file.get_basegroup(), "/multi_dim_data");
 
-    HDFDataset<HDFGroup, HDFFile> testdataset(testgroup2, file, "testdataset");
-    HDFDataset<HDFGroup, HDFFile> testdataset2(testgroup1, file,
-                                               "testdataset2");
-    HDFDataset<HDFGroup, HDFFile> compressed_dataset(testgroup1, file,
-                                                     "compressed_dataset");
-    HDFDataset<HDFGroup, HDFFile> multidimdataset(multidimgroup, file,
-                                                  "multiddim_dataset");
-    HDFDataset<HDFGroup, HDFFile> multidimdataset_compressed(
-        multidimgroup, file, "multiddim_dataset_compressed");
-    HDFDataset<HDFGroup, HDFFile> multidimdataset_extendable(
-        multidimgroup, file, "multiddim_dataset_extendable");
+    HDFDataset<HDFGroup> testdataset(testgroup2, "testdataset");
+    HDFDataset<HDFGroup> testdataset2(testgroup1, "testdataset2");
+    HDFDataset<HDFGroup> compressed_dataset(testgroup1, "compressed_dataset");
+    HDFDataset<HDFGroup> multidimdataset(multidimgroup, "multiddim_dataset");
+    HDFDataset<HDFGroup> multidimdataset_compressed(
+        multidimgroup, "multiddim_dataset_compressed");
+    HDFDataset<HDFGroup> multidimdataset_extendable(
+        multidimgroup, "multiddim_dataset_extendable");
 
     // read entire 1d dataset
     std::vector<double> data(100, 3.14);

@@ -82,7 +82,7 @@ public:
             if (part == "") {
                 continue;
             }
-            current = std::make_shared<HDFGroup>(*parent, *this, part);
+            current = std::make_shared<HDFGroup>(*parent, part);
             parent = current;
         }
         return current;
@@ -197,8 +197,7 @@ public:
                                               "values");
               }
           }()),
-          _path(path),
-          _base_group(std::make_shared<HDFGroup>(*this, *this, "/")) {}
+          _path(path), _base_group(std::make_shared<HDFGroup>(*this, "/")) {}
 
     /**
      * @brief Destroy the HDFFile object
