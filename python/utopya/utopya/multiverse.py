@@ -123,7 +123,7 @@ class Multiverse:
     def run(self):
         """Starts a Utopia run. Whether this will be a single simulation or
         a Parameter sweep is decided by the contents of the meta_cfg."""
-        log.info("Preparing to run Utopia ...")
+        log.info("Preparing to run Multiverse ...")
 
         # Depending on the configuration, the corresponding methods can already be called.
         if self.meta_config['run_kwargs']['perform_sweep']:
@@ -143,7 +143,6 @@ class Multiverse:
         self._add_sim_task(uni_id=0, max_uni_id=0, cfg_dict=pspace)
 
         # Tell the WorkerManager to start working, which will be the blocking call
-        log.info("Starting to work now ...")
         self.wm.start_working(forward_streams=True)
 
         log.info("Finished single simulation run.")
