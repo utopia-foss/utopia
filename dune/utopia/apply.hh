@@ -3,8 +3,24 @@
 
 namespace Utopia {
 
+/** \page rule The Rule Concept
+ *
+ * \section idea The General Idea
+ * A rule is a function that computes the new state of the entity it is applied
+ * to.
+ *
+ * \section impl Implementation
+ * A rule must be implemented by the programmer as a function (object).
+ * The function it represents must take two arguments: A single entity
+ * and a GridManager. The function's return value is the new state of the
+ * entity it is applied to.
+ *
+ * Currently, rules may also alter other members (i.e., tags) of the entity
+ * they are applied to, and may even change states of other entities.
+ */
+
 /// synchronous application of rules
-/**\param rule Function that takes an entity and manager and returns a new state
+/**\param rule An application rule, see \ref rule
  * \param Container A container with the entities upon whom rule is applied
  * \param Manager holds the entities to be modified
  */
@@ -14,7 +30,7 @@ template<
     class Manager,
     bool sync=impl::entity_t<Container>::is_sync()>
 std::enable_if_t<sync, void>
-apply_rule(Rule rule, Container& container, Manager& manager)
+apply_rule(Rule rule, const Container& container, Manager& manager)
 {
     //reduce the number of parameters in rule
     //by binding parameter 2 to manager
@@ -31,6 +47,7 @@ apply_rule(Rule rule, Container& container, Manager& manager)
 
 /// aynchronous application of rules
 /**\param rule Function that takes an entity and manager and returns a new state
+ *      See \ref rule
  * \param Container A container with the entities upon whom rule is applied
  * \param Manager holds the entities to be modified
  */
@@ -41,7 +58,7 @@ template<
     class Manager,
     bool sync=impl::entity_t<Container>::is_sync()>
 std::enable_if_t<!sync, void>
-apply_rule(Rule rule, Container& container, Manager& manager)
+apply_rule(Rule rule, const Container& container, const Manager& manager)
 {
     //reduce the number of parameters in rule
     //by binding parameter 2 to manager
