@@ -182,7 +182,7 @@ class WorkerManager:
 
         log.debug("Task %s added.", task_id)
 
-    def start_working(self, detach: bool=False, forward_streams: bool=False, timeout: float=None) -> bool:
+    def start_working(self, detach: bool=False, forward_streams: bool=False, timeout: float=None):
         """Upon call, all enqueued tasks will be worked on sequentially.
         
         Args:
@@ -198,9 +198,7 @@ class WorkerManager:
         Raises:
             NotImplementedError: for `detach` True
             ValueError: For invalid (i.e., negative) timeout value
-        
-        Returns:
-            bool: Whether the run was finished successfully
+            WorkerManagerTotalTimeout: Description
         """
         if timeout:
             if timeout <= 0:
@@ -224,12 +222,10 @@ class WorkerManager:
         while self.working or self.tasks.qsize() > 0:
             # Check timeout
             if timeout_time is not None:
-                if time.time() > timeout_time:
-                    log.warning("Total timeout reached! Terminating remaining "
-                                "workers ...")
-                    self._signal_workers(workers=self.working,
-                                         signal='terminate')
-                    break
+                if time.time() > timeout_time:                    
+                    exc = WorkerManagerTotalTimeout("Total timeout reached!")
+                    break 
+                    # NOTE this will trigger termination of all workers and the exception being raised ...
 
             # Check if there are free workers and remaining tasks.
             if self.free_workers and not self.tasks.empty():
@@ -253,10 +249,15 @@ class WorkerManager:
             # Finished because no working workers and no more tasks remained
             log.info("Finished working. Total tasks worked on: %d",
                      self.task_count)
-            return True
+            return
 
-        # If this point is reached, there was a timeout or a stop condition 
-        log.warning("Did not finish working.")
+        # If this point is reached, there was an exception
+        log.warning("Did not finish working due to a %s ...",
+                    exc.__class__.__name__)
+        
+        log.warning("Terminating remaining workers ...")
+        self._signal_workers(workers=self.working, signal='terminate')
+        raise exc
 
 
     # Non-public API ..........................................................
@@ -595,3 +596,13 @@ def parse_json(line: str) -> Union[dict, str]:
 def enqueue_json(*, queue: queue.Queue, stream: BinaryIO, parse_func: Callable=parse_json) -> None:
     """Wrapper function for enqueue_lines with parse_json set as parse_func."""
     return enqueue_lines(queue=queue, stream=stream, parse_func=parse_func)
+
+# Custom exceptions -----------------------------------------------------------
+
+class WorkerManagerError(BaseException):
+    """The base exception class for WorkerManager errors"""
+    pass
+
+class WorkerManagerTotalTimeout(WorkerManagerError):
+    """Raised when a total timeout occured"""
+    pass
