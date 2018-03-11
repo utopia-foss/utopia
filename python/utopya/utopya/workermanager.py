@@ -182,7 +182,7 @@ class WorkerManager:
 
         log.debug("Task %s added.", task_id)
 
-    def start_working(self, detach: bool=False, forward_streams: bool=False):
+    def start_working(self, detach: bool=False, forward_streams: bool=False, timeout: float=None) -> bool:
         """Upon call, all enqueued tasks will be worked on sequentially.
         
         Args:
@@ -191,19 +191,46 @@ class WorkerManager:
                 distributes tasks.
             forward_streams (bool, optional): If True, workers' streams are
                 forwarded to stdout via the log module.
+            timeout (float, optional): If given, the number of seconds this
+                work session is allowed to take. Workers will be aborted if
+                the number is exceeded. Note that this is not measured in CPU time, but the host systems wall time.
         
         Raises:
             NotImplementedError: for `detach` True
+            ValueError: For invalid (i.e., negative) timeout value
+        
+        Returns:
+            bool: Whether the run was finished successfully
         """
-        log.info("Starting to work ...")
+        if timeout:
+            if timeout <= 0:
+                raise ValueError("Invalid value for argument `timeout`: {} -- "
+                                 "needs to be positive.".format(timeout))
+            # Already calculate the time after which a timeout would be reached
+            timeout_time = time.time() + timeout
+            log.debug("Set timeout time to now + %f seconds", timeout)
+        
+        else:
+            timeout_time = None
 
         if detach:
             # TODO implement the content of this in a separate thread.
             raise NotImplementedError("It is currently not possible to "
                                       "detach the WorkerManager from the "
                                       "main thread.")
+        
+        log.info("Starting to work ...")
 
         while self.working or self.tasks.qsize() > 0:
+            # Check timeout
+            if timeout_time is not None:
+                if time.time() > timeout_time:
+                    log.warning("Total timeout reached! Terminating remaining "
+                                "workers ...")
+                    self._signal_workers(workers=self.working,
+                                         signal='terminate')
+                    break
+
             # Check if there are free workers and remaining tasks.
             if self.free_workers and not self.tasks.empty():
                 # Yes. => Grab a task and start working on it
@@ -222,8 +249,14 @@ class WorkerManager:
             # Sleep until next poll
             time.sleep(1/self.poll_freq)
 
-        log.info("Finished working. Total tasks worked on: %d",
-                 self.task_count)
+        else:
+            # Finished because no working workers and no more tasks remained
+            log.info("Finished working. Total tasks worked on: %d",
+                     self.task_count)
+            return True
+
+        # If this point is reached, there was a timeout or a stop condition 
+        log.warning("Did not finish working.")
 
 
     # Non-public API ..........................................................
@@ -399,6 +432,39 @@ class WorkerManager:
                                if self.workers[proc]['status'] is None]
 
         log.debug("Polled workers. Currently %d alive.", len(self.working))
+
+    @staticmethod
+    def _signal_workers(*, workers: list, signal: Union[str, int]='SIGTERM'):
+        """Sends a signal to the given list of workers.
+        
+        Args:
+            workers (list): The list of workers to terminate
+            signal (Union[str, int], optional): The signal to send. Can be
+                SIGTERM or SIGKILL or a valid signal number.
+        
+        Raises:
+            ValueError: When an invalid `signal` argument was given
+        """
+        if signal == 'SIGTERM':
+            log.debug("Terminating %d workers...", len(workers))
+            for worker in workers:
+                worker.terminate()
+
+        elif signal == 'SIGKILL':
+            log.debug("Killing %d workers...", len(workers))
+            for worker in workers:
+                worker.kill()
+
+        elif isinstance(signal, int):
+            log.debug("Sending signal %d to %d workers...",
+                      signal, len(workers))
+            for worker in workers:
+                worker.send_signal(signal)
+
+        else:
+            raise ValueError("Invalid argument `signal`: Got '{}', but need "
+                             "either SIGTERM, SIGKILL, or an integer signal "
+                             "number.".format(signal))
 
     def _worker_finished(self, proc: subprocess.Popen) -> None:
         """Updates the entry of the worker dict after it has finished working.
