@@ -101,16 +101,26 @@ public:
      * \return std::shared_ptr<HDFGroup>
      */
     std::shared_ptr<HDFGroup> open_group(std::string path) {
-        std::stringstream stream(path);
+        std::size_t pos = path.find_last_of('/');
+        std::stringstream stream(path.substr(0, pos));
         std::string part;
-        HDFGroup parent = *this;
-        auto current = std::make_shared<HDFGroup>();
+        HDFGroup temp = *this;
+        int n = std::count(path.begin(), path.end(), '/');
+        int s = 0;
+        if (n > 0) {
 
-        while (std::getline(stream, part, '/')) {
-            current = std::make_shared<HDFGroup>(parent, part);
-            parent = *current;
+            while (std::getline(stream, part, '/')) {
+                if (part == "") {
+                    continue;
+                }
+                // std::cout << "part = " << part << std::endl;
+                temp = HDFGroup(temp, part);
+                ++s;
+            }
+            return std::make_shared<HDFGroup>(temp, path.substr(pos + 1));
+        } else {
+            return std::make_shared<HDFGroup>(*this, path);
         }
-        return current;
     }
 
     /// Open a HDFDataset
@@ -121,6 +131,25 @@ public:
      */
     std::shared_ptr<HDFDataset<HDFGroup>> open_dataset(std::string path) {
         return std::make_shared<HDFDataset<HDFGroup>>(*this, path);
+    }
+
+    /**
+     * \param path relative path to group to delete
+     */
+    void delete_group(std::string path) {
+        // check if group exists in file, if does delete link
+        herr_t status = 1;
+        if (H5Lexists(_group, path.c_str(), H5P_DEFAULT) == true) {
+            // group exists, can be deleted
+
+            status = H5Ldelete(_group, path.c_str(), H5P_DEFAULT);
+            if (status < 0) {
+                close();
+                throw std::runtime_error(
+                    "deletion of group failed, wrong path?");
+            }
+        }
+        // group does not exist, do nothing
     }
 
     // default constructor
@@ -182,25 +211,6 @@ public:
                                    H5P_DEFAULT, H5P_DEFAULT);
             }
         }
-    }
-
-    /**
-     * \param path relative path to group to delete
-     */
-    void delete_group(std::string path) {
-        // check if group exists in file, if does delete link
-        herr_t status = 1;
-        if (H5Lexists(_group, path.c_str(), H5P_DEFAULT) == true) {
-            // group exists, can be deleted
-
-            status = H5Ldelete(_group, path.c_str(), H5P_DEFAULT);
-            if (status < 0) {
-                close();
-                throw std::runtime_error(
-                    "deletion of group failed, wrong path?");
-            }
-        }
-        // group does not exist, do nothing
     }
 
     // destructor

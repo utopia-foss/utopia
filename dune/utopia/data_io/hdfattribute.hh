@@ -29,9 +29,12 @@ private:
     template <typename result_type>
     hid_t __make_attribute__(hsize_t typesize = 0) {
         hid_t dspace = H5Screate_simple(1, &_size, nullptr);
-        return H5Acreate2(_parent_object.get_id(), _name.c_str(),
-                          HDFTypeFactory::type<result_type>(typesize), dspace,
-                          H5P_DEFAULT, H5P_DEFAULT);
+
+        hid_t atr = H5Acreate2(_parent_object.get_id(), _name.c_str(),
+                               HDFTypeFactory::type<result_type>(typesize),
+                               dspace, H5P_DEFAULT, H5P_DEFAULT);
+        H5Sclose(dspace);
+        return atr;
     }
 
 protected:

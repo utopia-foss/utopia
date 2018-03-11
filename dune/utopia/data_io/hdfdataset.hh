@@ -7,7 +7,6 @@
 #include <hdf5.h>
 #include <hdf5_hl.h>
 #include <numeric>
-
 namespace Utopia {
 namespace DataIO {
 
@@ -102,10 +101,10 @@ public:
     template <typename Attrdata>
     void add_attribute(std::string attribute_name, Attrdata attribute_data) {
 
-        HDFAttribute<HDFDataset, Attrdata> attribute(
-            *this, std::forward<std::string &&>(attribute_name));
+        // make attribute and write
 
-        attribute.write(attribute_data);
+        HDFAttribute<HDFDataset, std::string>(*this, attribute_name)
+            .write(attribute_data);
     }
     /**
      * @brief close the dataset
@@ -602,8 +601,7 @@ public:
 
         // try to find the dataset in the parent_object, open if it is
         // there, else postphone the dataset creation to the first write
-        if (H5LTfind_dataset(_parent_object->get_id(), _name.c_str()) > 0) {
-
+        if (H5LTfind_dataset(_parent_object->get_id(), _name.c_str()) == 1) {
             _dataset =
                 H5Dopen(_parent_object->get_id(), _name.c_str(), H5P_DEFAULT);
             // get dataspace and read out extend and max extend

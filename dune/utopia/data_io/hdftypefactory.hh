@@ -40,6 +40,14 @@ public:
                   int>>
     inline hid_t type(std::size_t = 0);
 
+    // reference overload
+    template <typename T,
+              std::enable_if_t<
+                  is_container_type<typename std::decay_t<T>>::value == false &&
+                      std::is_reference<T>::value == true,
+                  int>>
+    inline hid_t type(std::size_t = 0);
+
     // overload for variable length types, includes array types
     template <typename T,
               std::enable_if_t<
@@ -121,7 +129,24 @@ template <typename T,
                                std::is_pointer<T>::value == true,
                            int>>
 inline hid_t HDFTypeFactory::type(std::size_t size) {
-    return __get_type__<typename std::remove_pointer<std::decay_t<T>>>();
+    return __get_type__<std::remove_pointer_t<std::decay_t<T>>>();
+}
+
+/**
+ * @brief overload for reference
+ *
+ * @tparam T
+
+ * @param size
+ * @return hid_t
+ */
+template <typename T,
+          std::enable_if_t<is_container_type<typename std::decay_t<T>>::value ==
+                                   false &&
+                               std::is_reference<T>::value == true,
+                           int>>
+inline hid_t HDFTypeFactory::type(std::size_t size) {
+    return __get_type__<std::remove_reference_t<std::decay_t<T>>>();
 }
 /**
  * @brief returns a HDF5 type from a given C++ fixed-or variable length C++
@@ -149,6 +174,30 @@ inline hid_t HDFTypeFactory::type(std::size_t size) {
 
 // overload for strings
 template <> inline hid_t HDFTypeFactory::type<std::string>(std::size_t size) {
+    if (size == 0) {
+        hid_t type = H5Tcopy(H5T_C_S1);
+        H5Tset_size(type, H5T_VARIABLE);
+        return type;
+    } else {
+        hid_t type = H5Tcopy(H5T_C_S1);
+        H5Tset_size(type, size);
+        return type;
+    }
+}
+
+template <> inline hid_t HDFTypeFactory::type<char *>(std::size_t size) {
+    if (size == 0) {
+        hid_t type = H5Tcopy(H5T_C_S1);
+        H5Tset_size(type, H5T_VARIABLE);
+        return type;
+    } else {
+        hid_t type = H5Tcopy(H5T_C_S1);
+        H5Tset_size(type, size);
+        return type;
+    }
+}
+
+template <> inline hid_t HDFTypeFactory::type<const char *>(std::size_t size) {
     if (size == 0) {
         hid_t type = H5Tcopy(H5T_C_S1);
         H5Tset_size(type, H5T_VARIABLE);

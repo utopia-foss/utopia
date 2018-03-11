@@ -10,6 +10,7 @@ set(TESTS_DATAIO
     hdfattribute_test_write
     hdfdataset_test_write
     hdfdataset_test_read
+    hdfintegration_test
     )
 
 # add DATAIO tests

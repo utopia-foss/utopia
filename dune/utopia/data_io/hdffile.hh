@@ -74,20 +74,18 @@ public:
      * @return std::shared_ptr<HDFGroup>
      */
     std::shared_ptr<HDFGroup> open_group(std::string &&path) {
-        std::stringstream stream(path);
-        std::string part;
-        auto current = std::make_shared<HDFGroup>();
-        auto parent = _base_group;
-        while (std::getline(stream, part, '/')) {
-            if (part == "") {
-                continue;
-            }
-            current = std::make_shared<HDFGroup>(*parent, part);
-            parent = current;
-        }
-        return current;
+        return _base_group->open_group(std::forward<std::string &&>(path));
     }
 
+    /**
+     * @brief open dataset
+     *
+     * @param path
+     * @return std::shared_ptr<HDFDataset<HDFGroup>>
+     */
+    std::shared_ptr<HDFDataset<HDFGroup>> open_dataset(std::string &&path) {
+        return _base_group->open_dataset(std::forward<std::string &&>(path));
+    }
     /**
      * @brief deletes the group pointed to by absolute path 'path'
      *
@@ -95,23 +93,7 @@ public:
      */
 
     void delete_group(std::string &&path) {
-        // check if group exists in file, if does delete link
-        herr_t status = 1;
-        if (H5Lexists(_file, path.c_str(), H5P_DEFAULT) == true) {
-            // group exists, can be deleted
-
-            hid_t group_to_delete = H5Gopen(_file, path.c_str(), H5P_DEFAULT);
-            if (H5Iis_valid(group_to_delete)) {
-                status = H5Ldelete(group_to_delete, path.c_str(), H5P_DEFAULT);
-                H5Gclose(group_to_delete);
-            }
-            if (status < 0) {
-                close();
-                throw std::runtime_error(
-                    "deletion of group failed, wrong path?");
-            }
-        }
-        // group does not exist, do nothing
+        _base_group->delete_group(std::forward<std::string &&>(path));
     }
 
     /**
