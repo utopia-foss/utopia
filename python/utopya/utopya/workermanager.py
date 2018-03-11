@@ -122,21 +122,29 @@ class WorkerManager:
 
     # Public API ..............................................................
 
-    def add_task(self, *, priority: int=None, setup_func: Callable=None, setup_kwargs: dict=None, worker_kwargs: dict=None):
+    def add_task(self, *, priority: int=None, setup_func: Callable=None, setup_kwargs: dict=None, worker_kwargs: dict=None, stop_conditions: list=None):
         """Adds a task to the queue.
-
+        
         A priority can be assigned to the task, but will only be used during task retrieval if the WorkerManager was initialized with a queue.PriorityQueue as task manager.
-
+        
         Additionally, each task will be assigned an ID; this is used to preserve order in a priority queue if the priority of two or more tasks is the same.
-
+        
         Args:
-            args (str): The arguments to subprocess.Popen, i.e.: the command
-                that should be executed in the new process
             priority (int, optional): The priority of this task; is only used
                 if the task queue is a priority queue
-            read_stdout (bool, optional): Whether to create a thread that reads
-                the stdout of the created process
-            **kwargs: Additional task arguments
+            setup_func (Callable, optional): The setup function of this task.
+                It is called by the WorkerManager once the task is grabbed and
+                can be used to create the parameters for spawning a worker
+            setup_kwargs (dict, optional): The kwargs passed to `setup_func`
+            worker_kwargs (dict, optional): The kwargs used to spawn a worker.
+                If no setup function is given, these will be passed directly
+                to the function that spawns a task's worker. Otherwise, the
+                setup function is also provided with this dict and can adjust
+                the values in it.
+            stop_conditions (list, optional): A list of StopCondition objects
+        
+        Raises:
+            ValueError: If neither setup_func nor worker_kwargs were given
         """
         if setup_func:
             setup_kwargs = setup_kwargs if setup_kwargs else dict()
@@ -168,19 +176,22 @@ class WorkerManager:
         self._tasks.put_nowait((priority, task_id,
                                 dict(setup_func=setup_func,
                                      setup_kwargs=setup_kwargs,
-                                     worker_kwargs=worker_kwargs)))
+                                     worker_kwargs=worker_kwargs,
+                                     stop_conditions=stop_conditions)))
         self._increment_task_count()
 
         log.debug("Task %s added.", task_id)
 
     def start_working(self, detach: bool=False, forward_streams: bool=False):
         """Upon call, all enqueued tasks will be worked on sequentially.
-
+        
         Args:
             detach (bool, optional): If False (default), the WorkerManager
                 will block here, as it continuously polls the workers and
                 distributes tasks.
-
+            forward_streams (bool, optional): If True, workers' streams are
+                forwarded to stdout via the log module.
+        
         Raises:
             NotImplementedError: for `detach` True
         """
