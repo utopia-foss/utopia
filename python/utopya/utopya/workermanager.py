@@ -256,7 +256,7 @@ class WorkerManager:
                     exc.__class__.__name__)
         
         log.warning("Terminating remaining workers ...")
-        self._signal_workers(workers=self.working, signal='terminate')
+        self._signal_workers(workers=self.working, signal='SIGTERM')
         raise exc
 
 

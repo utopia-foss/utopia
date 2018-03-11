@@ -1,20 +1,29 @@
 """Tests the WorkerManager class"""
 
 import os
+import copy
 
 import pytest
 
-from utopya.workermanager import WorkerManager, enqueue_lines, parse_json
+from utopya.workermanager import WorkerManager, enqueue_lines, parse_json, WorkerManagerTotalTimeout
 
 
 # Fixtures --------------------------------------------------------------------
 @pytest.fixture
 def wm():
     """Create the simplest possible WorkerManager instance"""
-    return WorkerManager(num_workers=1)
+    return WorkerManager(num_workers=2)
 
 @pytest.fixture
-def wm_with_tasks():
+def sleep_task() -> dict:
+    """Returns a dict that can be used to call add_task and just sleeps 0.5 seconds"""
+    env = os.environ.copy()
+    return dict(worker_kwargs=dict(args=('python3', '-c',
+                                         'from time import sleep; sleep(0.5)'),
+                                   read_stdout=False, env=env))
+
+@pytest.fixture
+def wm_with_tasks(sleep_task):
     """Create a WorkerManager instance and add some tasks"""
     # Copy over the environment
     env = os.environ.copy()
@@ -32,10 +41,7 @@ def wm_with_tasks():
                                          read_stdout=True, env=env),
                       priority=0))
     
-    tasks.append(dict(worker_kwargs=dict(args=('python3', '-c',
-                                               'from time import sleep; '
-                                               'sleep(0.5)'),
-                                         read_stdout=False, env=env)))
+    tasks.append(sleep_task)
     tasks.append(dict(worker_kwargs=dict(args=('python3', '-c', 'pass'),
                                          read_stdout=False, env=env)))
     tasks.append(dict(worker_kwargs=dict(args=('python3', '-c',
@@ -108,6 +114,30 @@ def test_start_working(wm_with_tasks):
     assert all([c < e for c, e in zip(create_times, end_times)])
     assert (end_times[1] - create_times[1]) > 0.5 # for the sleep task
 
+def test_timeout(wm, sleep_task):
+    """Tests whether the timeout succeeds"""
+    # Add some sleep tasks
+    for _ in range(3):
+        wm.add_task(**sleep_task)
+    # NOTE This should take 1 second to execute
+
+    # Check if the run does not start for an invalid timeout value
+    with pytest.raises(ValueError):
+        wm.start_working(timeout=-123.45)
+
+    # Check if no WorkerManagerTotalTimeout is raised for a high timeout value
+    wm.start_working(timeout=2.)
+
+    # Add more asks
+    for _ in range(3):
+        wm.add_task(**sleep_task)
+
+    # Test if one is raised for a smaller timeout value
+    with pytest.raises(WorkerManagerTotalTimeout):
+        wm.start_working(timeout=0.7)
+
+
+@pytest.mark.skip("Properly implement this!")
 def test_read_stdout(wm):
     """Checks if the stdout was read"""
 
