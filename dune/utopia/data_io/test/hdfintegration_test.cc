@@ -24,8 +24,15 @@ void write(std::vector<Teststruct> &data) {
     dataset->write(data.begin(), data.end(),
                    [](auto &value) { return value.x; });
     // std::string attrdata = "this is a testattribute";
-    dataset->add_attribute("testattribute",
-                           std::string("this is a testattribute"));
+    dataset->add_attribute(
+        "testattribute",
+        std::string("this is an attribute to a double dataset"));
+
+    auto dataset2 = group->open_dataset("dataset2");
+    dataset2->write(data.begin(), data.end(),
+                    [](auto &value) -> std::string & { return value.y; });
+    dataset2->add_attribute("stringattribute",
+                            "this is an attribute to std::string");
 }
 
 void read(std::vector<Teststruct> &data) {
@@ -50,13 +57,14 @@ void read(std::vector<Teststruct> &data) {
     HDFAttribute<HDFDataset<HDFGroup>, std::string> attribute(*dataset,
                                                               "testattribute");
     auto read_attribute = attribute.read();
-    assert(read_attribute == "this is a testattribute");
+    assert(read_attribute == "this is an attribute to a double dataset");
     assert(values.size() == data.size());
     for (std::size_t i = 0; i < data.size(); ++i) {
         assert(std::abs(values[i] - data[i].x) < 1e-16);
     }
 }
 int main() {
+    H5Eset_auto(error_stack, NULL, NULL); // turn off automatic error printings
     std::vector<Teststruct> data(50);
     double d = 3.14;
     std::string a = "a";

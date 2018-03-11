@@ -101,26 +101,7 @@ public:
      * \return std::shared_ptr<HDFGroup>
      */
     std::shared_ptr<HDFGroup> open_group(std::string path) {
-        std::size_t pos = path.find_last_of('/');
-        std::stringstream stream(path.substr(0, pos));
-        std::string part;
-        HDFGroup temp = *this;
-        int n = std::count(path.begin(), path.end(), '/');
-        int s = 0;
-        if (n > 0) {
-
-            while (std::getline(stream, part, '/')) {
-                if (part == "") {
-                    continue;
-                }
-                // std::cout << "part = " << part << std::endl;
-                temp = HDFGroup(temp, part);
-                ++s;
-            }
-            return std::make_shared<HDFGroup>(temp, path.substr(pos + 1));
-        } else {
-            return std::make_shared<HDFGroup>(*this, path);
-        }
+        return std::make_shared<HDFGroup>(*this, path);
     }
 
     /// Open a HDFDataset
@@ -189,27 +170,13 @@ public:
      */
     template <typename HDFObject>
     HDFGroup(HDFObject &object, std::string name) : _path(name) {
-        if (std::is_same<HDFObject, HDFFile>::value) {
-            if (_path == "/") {
-                _group = H5Gopen(object.get_id(), "/", H5P_DEFAULT);
-
-            } else {
-                if (H5Lexists(object.get_id(), _path.c_str(), H5P_DEFAULT) >
-                    0) {
-                    _group =
-                        H5Gopen(object.get_id(), _path.c_str(), H5P_DEFAULT);
-                } else {
-                    _group = H5Gcreate(object.get_id(), _path.c_str(),
-                                       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-                }
-            }
-        } else if (std::is_same<HDFObject, HDFGroup>::value) {
-            if (H5Lexists(object.get_id(), _path.c_str(), H5P_DEFAULT) > 0) {
-                _group = H5Gopen(object.get_id(), _path.c_str(), H5P_DEFAULT);
-            } else {
-                _group = H5Gcreate(object.get_id(), _path.c_str(), H5P_DEFAULT,
-                                   H5P_DEFAULT, H5P_DEFAULT);
-            }
+        if (H5Lexists(object.get_id(), _path.c_str(), H5P_DEFAULT) > 0) {
+            _group = H5Gopen(object.get_id(), _path.c_str(), H5P_DEFAULT);
+        } else {
+            hid_t group_plist = H5Pcreate(H5P_LINK_CREATE);
+            H5Pset_create_intermediate_group(group_plist, 1);
+            _group = H5Gcreate(object.get_id(), _path.c_str(), group_plist,
+                               H5P_DEFAULT, H5P_DEFAULT);
         }
     }
 

@@ -18,35 +18,21 @@ namespace DataIO {
  */
 template <class HDFObject> class HDFDataset {
 private:
-    // helper function for making a compressed dataset
-    template <typename Datatype>
-    hid_t __make_dataset_compressed__(hsize_t chunksize,
-                                      hsize_t compress_level) {
-        // create creation property list, set chunksize and compress level
-        hid_t plist = H5Pcreate(H5P_DATASET_CREATE);
-        std::vector<hsize_t> chunksizes(_rank, chunksize);
-        H5Pset_chunk(plist, _rank, chunksizes.data());
-        H5Pset_deflate(plist, compress_level);
-
-        // make dataspace
-        hid_t dspace =
-            H5Screate_simple(_rank, _extend.data(), _max_extend.data());
-
-        // make dataset and return
-        return H5Dcreate(_parent_object->get_id(), _name.c_str(),
-                         HDFTypeFactory::type<Datatype>(), dspace, H5P_DEFAULT,
-                         plist, H5P_DEFAULT);
-    }
-
     // helper function for making a non compressed dataset
-    template <typename Datatype> hid_t __make_dataset__(hsize_t chunksize) {
+    template <typename Datatype>
+    hid_t __make_dataset__(hsize_t chunksize, hsize_t compress_level) {
+        hid_t group_plist = H5Pcreate(H5P_LINK_CREATE);
+        H5Pset_create_intermediate_group(group_plist, 1);
+
         if (chunksize > 0) {
 
             // create creation property list, set chunksize and compress level
             hid_t plist = H5Pcreate(H5P_DATASET_CREATE);
             std::vector<hsize_t> chunksizes(_rank, chunksize);
             H5Pset_chunk(plist, _rank, chunksizes.data());
-
+            if (compress_level > 0) {
+                H5Pset_deflate(plist, compress_level);
+            }
             // make dataspace
             hid_t dspace =
                 H5Screate_simple(_rank, _extend.data(), _max_extend.data());
@@ -54,14 +40,14 @@ private:
             // create dataset and return
             return H5Dcreate(_parent_object->get_id(), _name.c_str(),
                              HDFTypeFactory::type<Datatype>(), dspace,
-                             H5P_DEFAULT, plist, H5P_DEFAULT);
+                             group_plist, plist, H5P_DEFAULT);
         } else {
             // create dataset right away
             return H5Dcreate(
                 _parent_object->get_id(), _name.c_str(),
                 HDFTypeFactory::type<Datatype>(),
                 H5Screate_simple(_rank, _extend.data(), _max_extend.data()),
-                H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+                group_plist, H5P_DEFAULT, H5P_DEFAULT);
         }
     }
 
@@ -79,7 +65,7 @@ public:
      *
      * @return std::weak_ptr<HDFObject>
      */
-    std::weak_ptr<HDFObject> get_parent() { return _parent_object; }
+    std::shared_ptr<HDFObject> get_parent() { return _parent_object; }
 
     std::string get_name() { return _name; }
 
@@ -178,10 +164,11 @@ public:
                 }
                 if (compress_level > 0) {
                     // compressed dataset: make a new dataset
-                    _dataset = __make_dataset_compressed__<result_type>(
-                        chunksize, compress_level);
+                    _dataset = __make_dataset__<result_type>(chunksize,
+                                                             compress_level);
                 } else {
-                    _dataset = __make_dataset__<result_type>(chunksize);
+                    _dataset = __make_dataset__<result_type>(chunksize,
+                                                             compress_level);
                 }
             } else { // chunk size 0 implies non-extendable and non - compressed
                      // dataset
@@ -200,7 +187,8 @@ public:
 
                 // make dataset if necessary
                 if (_dataset == -1) {
-                    _dataset = __make_dataset__<result_type>(chunksize);
+                    _dataset = __make_dataset__<result_type>(chunksize,
+                                                             compress_level);
                 }
             }
 
@@ -227,11 +215,12 @@ public:
             auto buffer = HDFBufferFactory::buffer<result_type>(
                 begin, end, std::forward<Adaptor &&>(adaptor));
 
+            // std::cout << "buffer test: " << buffer.back().len << std::endl;
+
             // write to buffer
             herr_t write_err =
                 H5Dwrite(_dataset, HDFTypeFactory::type<result_type>(), H5S_ALL,
                          H5S_ALL, H5P_DEFAULT, buffer.data());
-
             if (write_err < 0) {
                 throw std::runtime_error("writing to 1d dataset failed!");
             }

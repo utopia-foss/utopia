@@ -25,6 +25,7 @@ public:
     template <typename T> struct result_type<T *> { using type = T; };
 
     template <typename T> struct result_type<T &> { using type = T; };
+
     // overload for primitive types
     template <typename T,
               std::enable_if_t<
