@@ -107,18 +107,33 @@ def test_detect_doubled_folders(mv_kwargs):
 def test_create_uni_dir(default_mv):
     """Test creation of the uni directory"""
     mv = default_mv
+    test_ids = [(0, 0), (1, 1), (2, 9), (3, 10), (4, 11), (99, 99), (100, 100), (101, 101)]
     fstr = "uni{id:>0{digs:d}d}"
 
     # Test some edge cases
-    for uni_id, max_uni_id in enumerate([0, 1, 9, 10, 11, 99, 100, 101]):
+    for uni_id, max_uni_id in test_ids:
+        print("Testing id {}, max id {}".format(uni_id, max_uni_id))
         # Call the private method to generate the desired folder
         uni_dir = mv._create_uni_dir(uni_id=uni_id, max_uni_id=max_uni_id)
         
-        # Now test if it was created and has the correct format
+        # Now test if it was created
         assert os.path.isdir(uni_dir)
-        assert uni_dir.split('/')[-1] == fstr.format(id=uni_id,
-                                                     digs=len(str(max_uni_id)))
+
+        # Assure there is no trailing slash
+        assert uni_dir[-1] != os.path.sep
+
+        # Test for correct format
+        uni_dir_name = uni_dir.split(os.path.sep)[-1]
+        assert uni_dir_name == fstr.format(id=uni_id,
+                                           digs=len(str(max_uni_id)))
         # NOTE this tests only for +/- 1 errors in uni_id / max_uni_id path creation. Generating the correct format string from id and number of digits is reliable enough to not need testing
+
+        # Test for uni_id == maximum_uni_id that the first number is not zero, i.e. that there are not too many leading zeros
+        if uni_id == max_uni_id and uni_id != 0:
+            assert uni_dir_name[3] != "0"
+
+        # Test that the whole universe ID is part of the filename
+        assert uni_dir_name[-len(str(uni_id)):] == str(uni_id)
 
     # Test uniqueness of the folders
     with pytest.raises(FileExistsError):
