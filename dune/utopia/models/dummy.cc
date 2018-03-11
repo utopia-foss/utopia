@@ -21,8 +21,8 @@ int main (int argc, char** argv)
             model.iterate();
 
         // Sleep (to be read by frontend)
-        unsigned int sleep_time = 500; // in milliseconds
-        unsigned int num_sleeps = 5;
+        unsigned int sleep_time = 300; // in milliseconds
+        unsigned int num_sleeps = 3;
 
         for (unsigned int i = 0; i < num_sleeps; ++i) {
             std::cout << "Sleep #" << (i+1) << " ..." << std::endl;
