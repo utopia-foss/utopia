@@ -4,7 +4,6 @@ As the Multiverse will always generate a folder structure, it needs to be taken 
 """
 
 import os
-import math
 import uuid
 import pkg_resources
 
@@ -21,7 +20,11 @@ SWEEP_CFG_PATH = pkg_resources.resource_filename('test', 'cfg/sweep_cfg.yml')
 # Fixtures ----------------------------------------------------------------
 @pytest.fixture
 def mv_kwargs(tmpdir) -> dict:
-    """Returns a dict that can be passed to Multiverse for initialisation"""
+    """Returns a dict that can be passed to Multiverse for initialisation.
+
+    This uses the `tmpdir` fixture provided by pytest, which creates a unique
+    temporary directory that is removed after the tests ran through.
+    """
     rand_str = "test_" + uuid.uuid4().hex
     unique_paths = dict(out_dir=tmpdir.dirpath(), model_note=rand_str)
 
@@ -31,15 +34,12 @@ def mv_kwargs(tmpdir) -> dict:
                 update_meta_cfg=dict(paths=unique_paths))
 
 @pytest.fixture
-def default_mv(tmpdir, mv_kwargs) -> Multiverse:
-    """Initialises a default configuration of the Multiverse to test everything beyond initialisation."""
-    # Generate a unique configuration for this multiverse
-    rand_str = "test_" + uuid.uuid4().hex
-    update_cfg = dict(paths=dict(out_dir=tmpdir.dirpath(),
-                                 model_note=rand_str))
-    mv_kwargs['update_meta_cfg'] = update_cfg
+def default_mv(mv_kwargs) -> Multiverse:
+    """Initialises a unique default configuration of the Multiverse to test everything beyond initialisation.
 
-    # Initialise it together with the base configuration that is the mv_kwargs
+    Using the mv_kwargs fixture, it is assured that the output directory is
+    unique.
+    """
     return Multiverse(**mv_kwargs)
 
 # Initialisation tests --------------------------------------------------------
