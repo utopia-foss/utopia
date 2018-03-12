@@ -133,18 +133,18 @@ def test_signal_workers(wm, sleep_task):
         wm.add_task(**sleep_task)
 
     # Start running with a post-poll function that directly kills off the workers
-    ppf = lambda: wm._signal_workers(workers=wm.working, signal='SIGKILL')
+    ppf = lambda: wm._signal_workers(wm.working, signal='SIGKILL')
     wm.start_working(post_poll_func=ppf)
 
     # Same thing with an integer signal
     for _ in range(3):
         wm.add_task(**sleep_task)
-    ppf = lambda: wm._signal_workers(workers=wm.working, signal=9)
+    ppf = lambda: wm._signal_workers(wm.working, signal=9)
     wm.start_working(post_poll_func=ppf)
 
     # And invalid signalling value
     with pytest.raises(ValueError):
-        wm._signal_workers(workers=None, signal=3.14)
+        wm._signal_workers(None, signal=3.14)
 
 def test_timeout(wm, sleep_task):
     """Tests whether the timeout succeeds"""

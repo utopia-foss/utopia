@@ -9,8 +9,10 @@ import json
 import warnings
 import logging
 from collections import OrderedDict
-from typing import Union, Callable
+from typing import Union, Callable, Sequence, List
 from typing.io import BinaryIO
+
+from utopya.stopcond import StopCondition
 
 # Initialise logger
 log = logging.getLogger(__name__)
@@ -183,7 +185,7 @@ class WorkerManager:
 
         log.debug("Task %s added.", task_id)
 
-    def start_working(self, detach: bool=False, forward_streams: bool=False, timeout: float=None, post_poll_func: Callable=None):
+    def start_working(self, detach: bool=False, forward_streams: bool=False, timeout: float=None, stop_conditions: Sequence[StopCondition]=None, post_poll_func: Callable=None):
         """Upon call, all enqueued tasks will be worked on sequentially.
         
         Args:
@@ -195,19 +197,18 @@ class WorkerManager:
             timeout (float, optional): If given, the number of seconds this
                 work session is allowed to take. Workers will be aborted if
                 the number is exceeded. Note that this is not measured in CPU time, but the host systems wall time.
+            stop_conditions (Sequence[StopCondition]): Description
             post_poll_func (Callable, optional): If given, this is called after
                 each polling loop has finished.
         
         Raises:
-            exc: Description
+            err: Description
             NotImplementedError: for `detach` True
             ValueError: For invalid (i.e., negative) timeout value
+            WorkerManagerTotalTimeout: Upon a total working timeout
         
         Returns:
             TYPE: Description
-        
-        No Longer Raises:
-            WorkerManagerTotalTimeout: Description
         """
         if timeout:
             if timeout <= 0:
@@ -228,50 +229,53 @@ class WorkerManager:
         
         log.info("Starting to work ...")
 
-        while self.working or self.tasks.qsize() > 0:
-            # Check timeout
-            if timeout_time is not None:
-                if time.time() > timeout_time:                    
-                    exc = WorkerManagerTotalTimeout("Total timeout reached!")
-                    break 
-                    # NOTE this will trigger termination of all workers and the exception being raised ...
+        try:
+            while self.working or self.tasks.qsize() > 0:
+                # Check total timeout
+                if timeout_time is not None and time.time() > timeout_time:
+                    raise WorkerManagerTotalTimeout()
 
-            # Check if there are free workers and remaining tasks.
-            if self.free_workers and not self.tasks.empty():
-                # Yes. => Grab a task and start working on it
-                # Conservative approach: one task is grabbed here, even if there are more than one free workers
-                self._grab_task()
+                # Check other stop conditions
+                if stop_conditions is not None:
+                    to_terminate = self._check_stop_conditions(stop_conditions)
+                    if to_terminate:
+                        self._signal_workers(to_terminate, signal='SIGTERM')
 
-            # Gather the streams of all working workers
-            for proc in self.working:
-                self._read_worker_streams(proc,
-                                          forward_streams=forward_streams)
+                # Check if there are free workers and remaining tasks.
+                if self.free_workers and not self.tasks.empty():
+                    # Yes. => Grab a task and start working on it
+                    # Conservative approach: one task is grabbed here, even if there are more than one free workers
+                    self._grab_task()
 
-            # Poll the workers
-            self._poll_workers()
-            # NOTE this will also remove no longer active workers
+                # Gather the streams of all working workers
+                for proc in self.working:
+                    self._read_worker_streams(proc,
+                                              forward_streams=forward_streams)
 
-            # Call the post-poll function
-            if post_poll_func:
-                post_poll_func()
+                # Poll the workers
+                self._poll_workers()
+                # NOTE this will also remove no longer active workers
 
-            # Sleep until next poll
-            time.sleep(1/self.poll_freq)
+                # Call the post-poll function
+                if post_poll_func is not None:
+                    post_poll_func()
+
+                # Sleep until next poll
+                time.sleep(1/self.poll_freq)
+
+        except WorkerManagerError as err:
+            log.warning("Did not finish working due to a %s ...",
+                        err.__class__.__name__)
+            
+            log.warning("Terminating remaining workers ...")
+            self._signal_workers(self.working, signal='SIGTERM')
+            raise err
 
         else:
             # Finished because no working workers and no more tasks remained
             log.info("Finished working. Total tasks worked on: %d",
                      self.task_count)
             return
-
-        # If this point is reached, there was an exception
-        log.warning("Did not finish working due to a %s ...",
-                    exc.__class__.__name__)
-        
-        log.warning("Terminating remaining workers ...")
-        self._signal_workers(workers=self.working, signal='SIGTERM')
-        raise exc
-
 
     # Non-public API ..........................................................
 
@@ -447,8 +451,32 @@ class WorkerManager:
 
         log.debug("Polled workers. Currently %d alive.", len(self.working))
 
+    def _check_stop_conditions(self, stop_conditions: Sequence[StopCondition]) -> List[subprocess.Popen]:
+        """Checks the given stop conditions for the working workers and compiles a list of workers that need to be terminated.
+        
+        Args:
+            stop_conditions (Sequence[StopCondition]): The stop conditions that
+                are to be checked.
+        
+        Returns:
+            List[subprocess.Popen]: The workers that need to be terminated
+        """
+        to_terminate = []
+        
+        for sc in stop_conditions:
+            fulfilled = [proc
+                         for proc in self.working
+                         if sc.is_true(proc, worker_info=self.workers[proc])]
+
+            if fulfilled:
+                log.info("Stop condition %s was fulfilled for %d worker.",
+                         sc.name, len(fulfilled))
+                to_terminate += fulfilled
+
+        return to_terminate
+
     @staticmethod
-    def _signal_workers(*, workers: list, signal: Union[str, int]='SIGTERM'):
+    def _signal_workers(workers: list, *, signal: Union[str, int]='SIGTERM'):
         """Sends a signal to the given list of workers.
         
         Args:
@@ -587,6 +615,7 @@ def enqueue_lines(*, queue: queue.Queue, stream: BinaryIO, parse_func: Callable=
     stream.close()
     # Thread also finishes here.
 
+
 def parse_json(line: str) -> Union[dict, str]:
     """A json parser that can be passed to enqueue_lines.
 
@@ -606,15 +635,19 @@ def parse_json(line: str) -> Union[dict, str]:
         # Failed to do that. Just return the unparsed line
         return line
 
+
 def enqueue_json(*, queue: queue.Queue, stream: BinaryIO, parse_func: Callable=parse_json) -> None:
     """Wrapper function for enqueue_lines with parse_json set as parse_func."""
     return enqueue_lines(queue=queue, stream=stream, parse_func=parse_func)
 
+
 # Custom exceptions -----------------------------------------------------------
+
 
 class WorkerManagerError(BaseException):
     """The base exception class for WorkerManager errors"""
     pass
+
 
 class WorkerManagerTotalTimeout(WorkerManagerError):
     """Raised when a total timeout occured"""
