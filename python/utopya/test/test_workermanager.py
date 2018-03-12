@@ -200,10 +200,7 @@ def test_stopconds(wm, wm_with_tasks, longer_sleep_task, sc_run_kws):
 
     # Now to the more complex setting
     wm = wm_with_tasks
-    # wm.start_working(**sc_run_kws) # TODO re-enable
-
-    assert False
-
+    wm.start_working(**sc_run_kws)
 
 @pytest.mark.skip("Properly implement this!")
 def test_read_stdout(wm):
