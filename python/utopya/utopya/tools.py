@@ -3,8 +3,11 @@
 import os
 import yaml
 import re
+
 import numpy as np
 import paramspace.yaml_constructors as psp_constrs
+
+import utopya.stopcond
 
 
 def recursive_update(d: dict, u: dict) -> dict:
@@ -74,7 +77,7 @@ def write_yml(d: dict, path: str) -> None:
 def _expr_constructor(loader, node):
     """Custom pyyaml constructor for evaluating strings with simple mathematical expressions.
 
-    Supports: +, -, *, /, e-X, eX
+    Supports: +, -, *, **, /, e-X, eX
     """
     # get expression string
     expr_str = loader.construct_scalar(node)
@@ -83,6 +86,7 @@ def _expr_constructor(loader, node):
     expr_str = expr_str.replace(" ", "")
 
     # Parse some special strings
+    # FIXME these will cause errors if emitting again to C++
     if expr_str in ['np.nan', 'nan', 'NaN']:
         return np.nan
 
@@ -100,7 +104,9 @@ def _expr_constructor(loader, node):
     return eval(expr_str)
 
 
+# Add the constructors to the yaml module
 yaml.add_constructor(u'!expr', _expr_constructor)
+yaml.add_constructor(u'!stop-condition', utopya.stopcond.stop_cond_constructor)
 yaml.add_constructor(u'!pspace', psp_constrs.pspace)
 yaml.add_constructor(u'!sweep', psp_constrs.pdim_enabled_only)
 yaml.add_constructor(u'!sweep-default', psp_constrs.pdim_get_default)
