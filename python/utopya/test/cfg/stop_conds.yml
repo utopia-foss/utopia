@@ -1,0 +1,19 @@
+---
+run_kwargs:
+  forward_streams: true
+
+  # A list of StopCondition objects to check during the run _for each worker_
+  # The entries of the following list are OR-connected, i.e. it suffices that
+  # one is fulfilled for the corresponding worker to be stopped
+  stop_conditions:
+    - !stop-condition
+      name: single simulation timeout
+      description: terminates a worker if it ran for too long
+      enabled: true
+      to_check:
+        # The functions specified here are AND-connected, i.e.: _all_
+        # need to return True for the stop condition to be fulfilled
+        - func_name: timeout_wall
+          # will look for utopya.stopcond._sc_timeout_wall method
+          seconds: 0.4
+          # further arguments to utopya.stopcond._sc_timeout_wall

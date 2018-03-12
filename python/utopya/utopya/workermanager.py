@@ -236,12 +236,6 @@ class WorkerManager:
                 if timeout_time is not None and time.time() > timeout_time:
                     raise WorkerManagerTotalTimeout()
 
-                # Check other stop conditions
-                if stop_conditions is not None:
-                    # Compile a list of workers that need to be terminated
-                    to_terminate = self._check_stop_conds(stop_conditions)
-                    self._signal_workers(to_terminate, signal='SIGTERM')
-
                 # Check if there are free workers and remaining tasks.
                 if self.free_workers and not self.tasks.empty():
                     # Yes. => Grab a task and start working on it
@@ -251,12 +245,18 @@ class WorkerManager:
                 # Gather the streams of all working workers
                 self._read_all_worker_streams(forward_streams=forward_streams)
 
+                # Check stop conditions
+                if stop_conditions is not None:
+                    # Compile a list of workers that need to be terminated
+                    to_terminate = self._check_stop_conds(stop_conditions)
+                    self._signal_workers(to_terminate, signal='SIGTERM')
+
+                # Delay the poll to slow down the while loop
+                time.sleep(1/self.poll_freq)
+
                 # Poll the workers
                 self._poll_workers(post_poll_func=post_poll_func)
                 # NOTE this will also remove no longer active workers
-
-                # Sleep until next poll
-                time.sleep(1/self.poll_freq)
 
         except WorkerManagerError as err:
             log.warning("Did not finish working due to a %s ...",
@@ -464,7 +464,8 @@ class WorkerManager:
             List[subprocess.Popen]: The workers that need to be terminated
         """
         to_terminate = []
-        
+        log.debug("Checking %d stop condition(s) ...", len(stop_conds))
+
         for sc in stop_conds:
             log.debug("Checking stop condition '%s' ...", sc.name)
             fulfilled = [proc
@@ -472,8 +473,9 @@ class WorkerManager:
                          if sc.fulfilled(proc, worker_info=self.workers[proc])]
 
             if fulfilled:
-                log.info("Stop condition '%s' was fulfilled for %d worker(s).",
-                         sc.name, len(fulfilled))
+                log.debug("Stop condition '%s' was fulfilled for %d worker(s) "
+                          "with PIDs:  %s", sc.name, len(fulfilled),
+                          ", ".join([str(p.pid) for p in fulfilled]))
                 to_terminate += fulfilled
 
         return to_terminate
