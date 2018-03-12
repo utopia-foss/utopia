@@ -1,55 +1,67 @@
+---
 # Paths for the output
-paths: 
+paths:
   # base output directory
-  out_dir:                  ~/utopia_output
+  out_dir: ~/utopia_output
+
   # model note is added to the output directory path
-  model_note:               ~
-  # From this, the run directory will be created at:
-  #                       /out_dir/model_name/timestamp-model_note/
+  model_note: ~
+
+  # From the two above, the run directory will be created at:
+  # <out_dir>/<model_name>/<timestamp>-<model_note>/
 
 # Whether to perfom a parameter sweep
-perform_sweep:              False
+perform_sweep: false
 # NOTE This will be ignored if run_single or run_sweep are called directly
 
 # Run configuration for the WorkerManager
 run_kwargs:
-  forward_streams:          True          # forward streams to main stdout
-  
-  timeout:                  ~             # total timeout (in s) of a run
-  
-  stop_conditions: # A list of StopCondition objects to check during the run
-    # The entries of this list are OR-connected, i.e. when one is fulfilled,
-    # the corresponding simulation will be stopped
-    - !stop-condition
-      name:                 single simulation timeout
-      description:          terminates a single worker if it ran for too long
-      enabled:              False
-      to_check:
-        # The functions specified here are AND-connected, i.e.: all need to
-        # return True for the stop condition to be fulfilled
-        - func_name:        timeout_wall
-          seconds: !expr    60*10
-          # further arguments to the utopya.stopcond._sc_timeout_wall function
-      
+  # Whether to forward the worker streams to the main thread's stdout
+  forward_streams: true
 
+  # Total timeout (in s) of a run; to ignore, set to ~
+  timeout: ~
+
+  # A list of StopCondition objects to check during the run _for each worker_
+  # The entries of the following list are OR-connected, i.e. it suffices that
+  # one is fulfilled for the corresponding worker to be stopped
+  stop_conditions: ~
+  # EXAMPLE:
+    # - !stop-condition
+    #   name: single simulation timeout
+    #   description: terminates a worker if it ran for too long
+    #   enabled: true  # also the default value
+    #   to_check:
+    #     # The functions specified here are AND-connected, i.e.: _all_
+    #     # need to return True for the stop condition to be fulfilled
+    #     - func_name: timeout_wall
+    #       # will look for utopya.stopcond._sc_timeout_wall method
+    #       seconds: !expr 60*10
+    #       # further arguments to utopya.stopcond._sc_timeout_wall
 
 # Worker Manager
 worker_manager:
   # specify how many processes work in parallel
-  num_workers:              auto          # auto : number of processor cores
-                                          # <= 0 : #CPUs - num_workers
-  poll_freq:                20            # how often to check the state of the workers [Hz]
+  # auto : number of processor cores. For values <= 0: #CPUs - num_workers
+  num_workers: auto
+
+  # how often to check the state of the workers [Hz]
+  poll_freq: 20
 
 # Reporter
-reporter: {} 
+reporter: {}
 
 # Data Manager
-data_manager: {} 
+data_manager: {}
 
 # Plot Manager
-plot_manager: {} 
+plot_manager: {}
 
 # Parameter Space - passed to the models
 parameter_space:
-  simulation:
-    seed:                   1337
+  output_path: ~  # will be set dynamically by frontend
+  num_steps: 10
+  seed: 1337
+
+  # All model information goes in here:
+  models: {}
