@@ -237,9 +237,9 @@ class WorkerManager:
 
                 # Check other stop conditions
                 if stop_conditions is not None:
+                    # Compile a list of 
                     to_terminate = self._check_stop_conditions(stop_conditions)
-                    if to_terminate:
-                        self._signal_workers(to_terminate, signal='SIGTERM')
+                    self._signal_workers(to_terminate, signal='SIGTERM')
 
                 # Check if there are free workers and remaining tasks.
                 if self.free_workers and not self.tasks.empty():
@@ -469,24 +469,28 @@ class WorkerManager:
                          if sc.is_true(proc, worker_info=self.workers[proc])]
 
             if fulfilled:
-                log.info("Stop condition %s was fulfilled for %d worker.",
+                log.info("Stop condition '%s' was fulfilled for %d worker(s).",
                          sc.name, len(fulfilled))
                 to_terminate += fulfilled
 
         return to_terminate
 
     @staticmethod
-    def _signal_workers(workers: list, *, signal: Union[str, int]='SIGTERM'):
+    def _signal_workers(workers: List[subprocess.Popen], *, signal: Union[str, int]='SIGTERM'):
         """Sends a signal to the given list of workers.
         
         Args:
-            workers (list): The list of workers to terminate
+            workers (List[subprocess.Popen]): The list of workers to terminate
             signal (Union[str, int], optional): The signal to send. Can be
                 SIGTERM or SIGKILL or a valid signal number.
         
         Raises:
             ValueError: When an invalid `signal` argument was given
         """
+        if not workers:
+            log.debug("No workers given to terminate ...")
+            return
+
         if signal == 'SIGTERM':
             log.debug("Terminating %d workers...", len(workers))
             for worker in workers:

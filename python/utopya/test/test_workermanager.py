@@ -143,8 +143,13 @@ def test_signal_workers(wm, sleep_task):
     wm.start_working(post_poll_func=ppf)
 
     # And invalid signalling value
+    wm.add_task(**sleep_task)
+    ppf = lambda: wm._signal_workers(wm.working, signal=3.14)
     with pytest.raises(ValueError):
-        wm._signal_workers(None, signal=3.14)
+        wm.start_working(post_poll_func=ppf)
+
+    # Call without workers should directly return
+    wm._signal_workers(None, signal=9)
 
 def test_timeout(wm, sleep_task):
     """Tests whether the timeout succeeds"""
