@@ -1,23 +1,20 @@
+---
 # Paths for the output
-paths: 
-  # the output will be at run directory: out_dir/model_name/timestamp_model_note
+paths:
   # base output directory
-  out_dir:             ~/utopia_output_test
+  out_dir: ~/utopia_output_test
+
   # model note is added to the output directory path
-  model_note:          test_note
+  model_note: test_note
 
-# Whether to perfom a parameter sweep
-perform_sweep:         False
-
-# Run
-run_kwargs:
-  timeout:             120            
-  stop_conditions:     []
+  # From the two above, the run directory will be created at:
+  # <out_dir>/<model_name>/<timestamp>-<model_note>/
 
 # Worker Manager
 worker_manager:
-worker_manager:
   # specify how many processes work in parallel
-  num_workers:         -1   # > 0 : number of processes 
-                            # <= 0 : #CPUs - num_workers
-  poll_freq:           20   # how often to check the state of the workers [Hz]
+  # auto : number of processor cores. For values <= 0: #CPUs - num_workers
+  num_workers: 2
+
+  # how often to check the state of the workers [Hz]
+  poll_freq: 23

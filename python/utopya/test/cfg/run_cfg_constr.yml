@@ -1,3 +1,4 @@
+---
 # Parameter Space
 parameter_space: !pspace
   simulation:
@@ -21,7 +22,7 @@ parameter_space: !pspace
 run_kwargs:
   timeout: !expr inf  # timeout in seconds (for the whole simulation)
   stop_conditions:  # list of stop conditions
-   - !stop-condition
-    name: foo
-    description: bar
-    to_check: []
+    - !stop-condition
+      name: foo
+      description: bar
+      to_check: []
