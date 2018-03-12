@@ -152,7 +152,8 @@ class WorkerManager:
             if worker_kwargs:
                 warnings.warn("Received argument `worker_kwargs` despite a "
                               "setup function having been given; the passed "
-                              "`worker_kwargs` will not be used!",
+                              "`worker_kwargs` are passed to the setup "
+                              "function but might not end up being used!",
                               UserWarning)
         
         elif worker_kwargs:
@@ -182,7 +183,7 @@ class WorkerManager:
 
         log.debug("Task %s added.", task_id)
 
-    def start_working(self, detach: bool=False, forward_streams: bool=False, timeout: float=None):
+    def start_working(self, detach: bool=False, forward_streams: bool=False, timeout: float=None, post_poll_func: Callable=None):
         """Upon call, all enqueued tasks will be worked on sequentially.
         
         Args:
@@ -194,10 +195,18 @@ class WorkerManager:
             timeout (float, optional): If given, the number of seconds this
                 work session is allowed to take. Workers will be aborted if
                 the number is exceeded. Note that this is not measured in CPU time, but the host systems wall time.
+            post_poll_func (Callable, optional): If given, this is called after
+                each polling loop has finished.
         
         Raises:
+            exc: Description
             NotImplementedError: for `detach` True
             ValueError: For invalid (i.e., negative) timeout value
+        
+        Returns:
+            TYPE: Description
+        
+        No Longer Raises:
             WorkerManagerTotalTimeout: Description
         """
         if timeout:
@@ -241,6 +250,10 @@ class WorkerManager:
             # Poll the workers
             self._poll_workers()
             # NOTE this will also remove no longer active workers
+
+            # Call the post-poll function
+            if post_poll_func:
+                post_poll_func()
 
             # Sleep until next poll
             time.sleep(1/self.poll_freq)

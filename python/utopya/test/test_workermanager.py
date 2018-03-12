@@ -61,7 +61,7 @@ def wm_with_tasks(sleep_task):
 
 # Tests -----------------------------------------------------------------------
 
-def test_init(wm):
+def test_init():
     """Tests whether initialisation succeeds"""
     # Test different `num_workers` arguments
     WorkerManager(num_workers='auto')
@@ -85,14 +85,27 @@ def test_init(wm):
         # negative
         WorkerManager(num_workers=1, poll_freq=-1)
 
-def test_add_tasks(wm):
+def test_add_tasks(wm, sleep_task):
     """Tests adding of tasks"""
-    # With tuple argument
-    sleep_cmd = ('python3', '-c', '"from time import sleep; sleep(0.5)"')
-    wm.add_task(priority=0, worker_kwargs=dict(args=sleep_cmd,
-                                               read_stdout=True))
+    # This one should work
+    wm.add_task(**sleep_task)
 
-    # TODO Check the warnings
+    # Check the warnings
+    with pytest.warns(UserWarning):
+        wm.add_task(setup_func=lambda: "foo", **sleep_task)
+    
+    with pytest.warns(UserWarning):
+        wm.add_task(setup_kwargs=dict(foo="bar"), **sleep_task)
+
+    # And the errors
+    with pytest.raises(ValueError):
+        wm.add_task()
+
+def test_spawn_worker(wm):
+    """Tests the spawning of a worker"""
+    # Try to spawn from non-tuple `args` argument
+    with pytest.raises(TypeError):
+        wm._spawn_worker(args="echo $?", read_stdout=False)
 
 def test_start_working(wm_with_tasks):
     """Tests whether the start_working methods does what it should"""
@@ -113,6 +126,25 @@ def test_start_working(wm_with_tasks):
     end_times = [w['end_time'] for w in wm.workers.values()]
     assert all([c < e for c, e in zip(create_times, end_times)])
     assert (end_times[1] - create_times[1]) > 0.5 # for the sleep task
+
+def test_signal_workers(wm, sleep_task):
+    """Tests the signalling of workers"""
+    for _ in range(3):
+        wm.add_task(**sleep_task)
+
+    # Start running with a post-poll function that directly kills off the workers
+    ppf = lambda: wm._signal_workers(workers=wm.working, signal='SIGKILL')
+    wm.start_working(post_poll_func=ppf)
+
+    # Same thing with an integer signal
+    for _ in range(3):
+        wm.add_task(**sleep_task)
+    ppf = lambda: wm._signal_workers(workers=wm.working, signal=9)
+    wm.start_working(post_poll_func=ppf)
+
+    # And invalid signalling value
+    with pytest.raises(ValueError):
+        wm._signal_workers(workers=None, signal=3.14)
 
 def test_timeout(wm, sleep_task):
     """Tests whether the timeout succeeds"""
