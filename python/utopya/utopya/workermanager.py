@@ -117,10 +117,9 @@ class WorkerManager:
         return self._task_cnt
 
     @property
-    def free_workers(self) -> bool:
-        """Returns True if not `num_workers` amount of workers are busy at the moment."""
-        return bool(len(self.working) < self.num_workers)
-
+    def num_free_workers(self) -> int:
+        """Returns the number of free workers at the moment."""
+        return self.num_workers - len(self.working)
 
     # Public API ..............................................................
 
@@ -237,7 +236,7 @@ class WorkerManager:
                     raise WorkerManagerTotalTimeout()
 
                 # Check if there are free workers and remaining tasks.
-                if self.free_workers and not self.tasks.empty():
+                if self.num_free_workers and not self.tasks.empty():
                     # Yes. => Grab a task and start working on it
                     # Conservative approach: one task is grabbed here, even if there are more than one free workers
                     self._grab_task()
