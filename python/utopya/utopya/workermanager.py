@@ -9,7 +9,7 @@ import json
 import warnings
 import logging
 from collections import OrderedDict
-from typing import Union, Callable, Sequence, List
+from typing import Union, Callable, Tuple, List
 from typing.io import BinaryIO
 
 from utopya.stopcond import StopCondition
@@ -27,9 +27,9 @@ class WorkerManager:
     At the same time, it reads the worker's stream in yet separate non-blocking threads.
     """
 
-    def __init__(self, num_workers: Union[int, str], poll_freq: float=42, QueueCls=queue.Queue):
+    def __init__(self, num_workers: Union[int, str], poll_freq: float=42, QueueCls=queue.Queue, stop_conditions: Tuple[StopCondition]=None):
         """Initialize the worker manager.
-
+        
         Args:
             num_workers (Union[int, str]): The number of workers that can work
                 in parallel. If `auto`, uses os.cpu_count(). If negative,
@@ -40,6 +40,8 @@ class WorkerManager:
                 determines the CPU load of the main thread.
             QueueCls (Class, optional): Which class to use for the Queue.
                 Defaults to FiFo.
+            stop_conditions (Tuple[StopCondition]): A list of StopCondition
+                objects that are checked against all workers.
         """
         # Initialize property-managed attributes
         self._num_workers = None
@@ -53,6 +55,7 @@ class WorkerManager:
 
         # Hand over arguments
         self.poll_freq = poll_freq
+        self.stop_conds = stop_conditions if stop_conditions else ()
 
         if num_workers == 'auto':
             self.num_workers = os.cpu_count()
@@ -124,7 +127,7 @@ class WorkerManager:
 
     # Public API ..............................................................
 
-    def add_task(self, *, priority: int=None, setup_func: Callable=None, setup_kwargs: dict=None, worker_kwargs: dict=None, stop_conditions: list=None):
+    def add_task(self, *, priority: int=None, setup_func: Callable=None, setup_kwargs: dict=None, worker_kwargs: dict=None):
         """Adds a task to the queue.
         
         A priority can be assigned to the task, but will only be used during task retrieval if the WorkerManager was initialized with a queue.PriorityQueue as task manager.
@@ -143,7 +146,6 @@ class WorkerManager:
                 to the function that spawns a task's worker. Otherwise, the
                 setup function is also provided with this dict and can adjust
                 the values in it.
-            stop_conditions (list, optional): A list of StopCondition objects
         
         Raises:
             ValueError: If neither setup_func nor worker_kwargs were given
@@ -179,13 +181,12 @@ class WorkerManager:
         self._tasks.put_nowait((priority, task_id,
                                 dict(setup_func=setup_func,
                                      setup_kwargs=setup_kwargs,
-                                     worker_kwargs=worker_kwargs,
-                                     stop_conditions=stop_conditions)))
+                                     worker_kwargs=worker_kwargs)))
         self._increment_task_count()
 
         log.debug("Task %s added.", task_id)
 
-    def start_working(self, detach: bool=False, forward_streams: bool=False, timeout: float=None, stop_conditions: Sequence[StopCondition]=None, post_poll_func: Callable=None):
+    def start_working(self, *, detach: bool=False, forward_streams: bool=False, timeout: float=None, stop_conditions: Tuple[StopCondition]=None, post_poll_func: Callable=None) -> None:
         """Upon call, all enqueued tasks will be worked on sequentially.
         
         Args:
@@ -197,19 +198,21 @@ class WorkerManager:
             timeout (float, optional): If given, the number of seconds this
                 work session is allowed to take. Workers will be aborted if
                 the number is exceeded. Note that this is not measured in CPU time, but the host systems wall time.
-            stop_conditions (Sequence[StopCondition]): Description
+            stop_conditions (Tuple[StopCondition], optional): If given,
+                extends the default tuple of stop conditions that are checked
+                during the run. If False, no stop conditions will be checked.
             post_poll_func (Callable, optional): If given, this is called after
-                each polling loop has finished.
+                all workers have been polled. It can be used to perform custom
+                actions during a the polling loop.
         
         Raises:
-            err: Description
             NotImplementedError: for `detach` True
             ValueError: For invalid (i.e., negative) timeout value
-            WorkerManagerTotalTimeout: Upon a total working timeout
-        
-        Returns:
-            TYPE: Description
+            WorkerManagerTotalTimeout: Upon a total timeout
         """
+        # Determine timeout arguments 
+        timeout_time = None
+
         if timeout:
             if timeout <= 0:
                 raise ValueError("Invalid value for argument `timeout`: {} -- "
@@ -217,18 +220,32 @@ class WorkerManager:
             # Already calculate the time after which a timeout would be reached
             timeout_time = time.time() + timeout
             log.debug("Set timeout time to now + %f seconds", timeout)
-        
-        else:
-            timeout_time = None
 
+        # Determine which stop conditions should be checked
+        stop_conds = self.stop_conds
+        
+        if stop_conditions:
+            log.debug("Extending the default list of stop conditions ...")
+            stop_conds += stop_conditions
+            # NOTE being tuple, there are no mutability issues
+
+        elif stop_conditions is False:
+            log.debug("No stop conditions will be checked.")
+            stop_conds = None
+
+        # Determine whether to detach the whole working loop
         if detach:
             # TODO implement the content of this in a separate thread.
             raise NotImplementedError("It is currently not possible to "
                                       "detach the WorkerManager from the "
                                       "main thread.")
-        
-        log.info("Starting to work ...")
 
+        log.info("Starting to work ...")
+        log.debug("  Checking %d stop condition(s) during the run.",
+                  len(stop_conds))
+
+        # Start with the polling loop
+        # Basically all working time will be spent in there ...
         try:
             while self.working or self.tasks.qsize() > 0:
                 # Check total timeout
@@ -236,9 +253,9 @@ class WorkerManager:
                     raise WorkerManagerTotalTimeout()
 
                 # Check other stop conditions
-                if stop_conditions is not None:
-                    # Compile a list of 
-                    to_terminate = self._check_stop_conditions(stop_conditions)
+                if stop_conds:
+                    # Compile a list of workers that need to be terminated
+                    to_terminate = self._check_stop_conds(stop_conds)
                     self._signal_workers(to_terminate, signal='SIGTERM')
 
                 # Check if there are free workers and remaining tasks.
@@ -248,17 +265,11 @@ class WorkerManager:
                     self._grab_task()
 
                 # Gather the streams of all working workers
-                for proc in self.working:
-                    self._read_worker_streams(proc,
-                                              forward_streams=forward_streams)
+                self._read_all_worker_streams(forward_streams=forward_streams)
 
                 # Poll the workers
-                self._poll_workers()
+                self._poll_workers(post_poll_func=post_poll_func)
                 # NOTE this will also remove no longer active workers
-
-                # Call the post-poll function
-                if post_poll_func is not None:
-                    post_poll_func()
 
                 # Sleep until next poll
                 time.sleep(1/self.poll_freq)
@@ -269,13 +280,12 @@ class WorkerManager:
             
             log.warning("Terminating remaining workers ...")
             self._signal_workers(self.working, signal='SIGTERM')
-            raise err
+            raise
 
         else:
             # Finished because no working workers and no more tasks remained
             log.info("Finished working. Total tasks worked on: %d",
                      self.task_count)
-            return
 
     # Non-public API ..........................................................
 
@@ -429,8 +439,12 @@ class WorkerManager:
 
         log.debug("Worker process %s registered.", proc.pid)
 
-    def _poll_workers(self):
+    def _poll_workers(self, post_poll_func: Callable=None):
         """Will poll all workers that are in the working list and remove them from that list if they are no longer alive.
+        
+        Args:
+            post_poll_func (Callable, optional): A function that is called
+                after all workers were pulled.
         """
         rebuild = False
 
@@ -451,11 +465,15 @@ class WorkerManager:
 
         log.debug("Polled workers. Currently %d alive.", len(self.working))
 
-    def _check_stop_conditions(self, stop_conditions: Sequence[StopCondition]) -> List[subprocess.Popen]:
+        if post_poll_func is not None:
+            log.debug("Calling post_poll_func ...")
+            post_poll_func()
+
+    def _check_stop_conds(self, stop_conds: Tuple[StopCondition]) -> List[subprocess.Popen]:
         """Checks the given stop conditions for the working workers and compiles a list of workers that need to be terminated.
         
         Args:
-            stop_conditions (Sequence[StopCondition]): The stop conditions that
+            stop_conds (Tuple[StopCondition]): The stop conditions that
                 are to be checked.
         
         Returns:
@@ -463,7 +481,7 @@ class WorkerManager:
         """
         to_terminate = []
         
-        for sc in stop_conditions:
+        for sc in stop_conds:
             fulfilled = [proc
                          for proc in self.working
                          if sc.is_true(proc, worker_info=self.workers[proc])]
@@ -524,7 +542,7 @@ class WorkerManager:
         # Read the remaining entries from the worker stream
         self._read_worker_streams(proc, max_num_reads=-1)
 
-    def _read_worker_streams(self, proc: subprocess.Popen, stream_names: list='all', forward_streams: bool=True, max_num_reads: int=1) -> None:
+    def _read_worker_streams(self, proc: subprocess.Popen, *, stream_names: list='all', forward_streams: bool=True, max_num_reads: int=1) -> None:
         """Gather a single entry from the given worker's stream queue and store the value in the stream log.
         
         Args:
@@ -579,7 +597,11 @@ class WorkerManager:
             read_single_stream(self.workers[proc]['streams'][stream_name])
 
         return
-        
+
+    def _read_all_worker_streams(self, **read_kwargs) -> None:
+        """Reads all working workers' streams."""
+        for proc in self.working:
+            self._read_worker_streams(proc, **read_kwargs)
 
 
 # Helper functions ------------------------------------------------------------
