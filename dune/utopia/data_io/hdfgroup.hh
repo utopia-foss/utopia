@@ -1,7 +1,7 @@
 #ifndef HDFGROUP_HH
 #define HDFGROUP_HH
 #include "hdfattribute.hh"
-
+#include "hdfdataset.hh"
 #include <hdf5.h>
 #include <hdf5_hl.h>
 #include <sstream>
