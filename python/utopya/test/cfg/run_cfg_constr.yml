@@ -24,3 +24,4 @@ run_kwargs:
    - !stop-condition
     name: foo
     description: bar
+    to_check: []

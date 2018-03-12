@@ -18,9 +18,20 @@ run_kwargs:
   timeout:                  ~             # total timeout (in s) of a run
   
   stop_conditions: # A list of StopCondition objects to check during the run
+    # The entries of this list are OR-connected, i.e. when one is fulfilled,
+    # the corresponding simulation will be stopped
     - !stop-condition
-      name: single_timeout
-      enabled: False
+      name:                 single simulation timeout
+      description:          terminates a single worker if it ran for too long
+      enabled:              False
+      to_check:
+        # The functions specified here are AND-connected, i.e.: all need to
+        # return True for the stop condition to be fulfilled
+        - func_name:        timeout_wall
+          seconds: !expr    60*10
+          # further arguments to the utopya.stopcond._sc_timeout_wall function
+      
+
 
 # Worker Manager
 worker_manager:
