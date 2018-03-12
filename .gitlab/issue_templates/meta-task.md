@@ -1,3 +1,22 @@
+_Note:_ This is a meta-task. It bundles several tasks together and is only closed once all these tasks are finished.
+
+### Aims
+
+
+### Tasks
+* [ ] _Task 1_
+* [ ] _Task 2_
+
+<!-- Remember to mention tasks with '#' here, once they are created. -->
+
+### People involved
+
+
+### Related meta-tasks
+<!-- Meta-tasks of other groups that require coordination -->
+
+/label ~meta
+
 <!--
 PLEASE READ THIS
 
@@ -10,22 +29,3 @@ When creating this meta task, please take care of the following:
     - Mention the people that should get involved
     - Assign the correct milestone (if available)
 -->
-
-_Note:_ This is a meta-task. It bundles several tasks together and is only closed once all these tasks are finished.
-
-### Aims
-
-
-### Tasks
-* [ ] _Task 1_
-
-<!-- Example (mention tasks with '#'): -->
-<!-- * [ ] #13: a very important task -->
-
-### People involved
-
-
-### Related meta-tasks
-<!-- Meta-tasks of other groups that require coordination -->
-
-/label ~meta
