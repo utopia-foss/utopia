@@ -484,7 +484,7 @@ class WorkerManager:
         for sc in stop_conds:
             fulfilled = [proc
                          for proc in self.working
-                         if sc.is_true(proc, worker_info=self.workers[proc])]
+                         if sc.fulfilled(proc, worker_info=self.workers[proc])]
 
             if fulfilled:
                 log.info("Stop condition '%s' was fulfilled for %d worker(s).",
