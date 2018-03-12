@@ -1,47 +1,87 @@
-"""Implementation of the Task class.
+"""The Task supplies a container for a task handled by the WorkerManager."""
 
-The Task supplies a container for a task handled by the WorkerManager.
-"""
-def test_task2(a):
-    return a
+import logging
+from typing import Callable
+
+# Initialise logger
+log = logging.getLogger(__name__)
 
 
 class Task:
     """The Task is a container for a task handled by the WorkerManager.
     
-    It aims to provide necessary interfaces
+    It aims to provide the necessary interfaces for the WorkerManager to easily
+    associate tasks with the corresponding workers and vice versa.
     
     Attributes:
-        id (int): Task_ID (positive, read only)
-        priority (int): The model name associated with this Multiverse
+        uid (int): the task ID, assumed to be a unique integer
+        priority (int): The task priority
     """
-    def __init__(self, task_id: int, priority: int=0):
-        self.id = task_id
-        self._priority = priority  # (possible between -int and + int)
-        self.setup_func = None
-        self.setup_kwargs = None
-        
-    def __repr__(self):
-        return "ID: {}, Pri: {}".format(self.id, self._priority)
-    
-    # compariosn operator for priority
-    def __lt__(self, other):
-        return self._priority < other._priority
+
+    def __init__(self, *, task_id: int, priority: int=None, setup_func: Callable=None, setup_kwargs: dict=None, worker_kwargs: dict=None):
+        """Initialize a Task object."""
+        # Create property-managed attributes
+        self._uid = None
+
+        # Carry over attributes
+        self.uid = task_id
+        self._priority = priority
+
+        self.setup_func = setup_func
+        self.setup_kwargs = setup_kwargs
+        self.worker_kwargs = worker_kwargs
 
     # Properties --------------------------------------------------------------
+    
     @property
-    def id(self):
-        return self._id
-    @id.setter
-    def id(self, task_id: int):
-        """Checks if the model name is valid, then sets it and makes it read-only."""
-        if task_id < 0:
-            raise ValueError("Negative task Id not allowed, chosen ID: {}".format(task_id))
-        elif self.id:
-            raise RuntimeError("A Task's ID cannot be changed!")
+    def uid(self) -> int:
+        """The task's ID, assumed to be unique"""
+        return self._uid
+
+    @uid.setter
+    def uid(self, task_id: int):
+        """Checks if the given ID is valid, then sets it and makes it read-only."""
+        if not isinstance(task_id, int):
+            raise TypeError("Need integer task ID, got " + str(type(task_id)))
+        
+        elif task_id < 0:
+            raise ValueError("Negative task ID not allowed: " + str(task_id))
+        
+        elif self.uid is not None:
+            raise RuntimeError("Task ID was already set and can't be changed!")
+
         else:
-            self._id = task_id
-            log.debug("Set Task ID:  %s", task_id)
+            self._uid = task_id
+            log.debug("Set task ID:  %d", self.uid)
+
+    @property
+    def priority(self) -> float:
+        """The task priority, usually a """
+        return self._priority
+
+    @property
+    def order_tuple(self) -> tuple:
+        """Returns the ordering tuple (priority, task ID)"""
+        return (self.priority, self.uid)
+
+    # Magic methods -----------------------------------------------------------
+    
+    def __str__(self):
+        return "Task<uid: {}, priority: {}>".format(self.uid, self._priority)
+    
+    # Rich comparisons, needed in PriorityQueue
+    # NOTE only need to implement __lt__, __le__, and __eq__
+    
+    def __lt__(self, other):
+        return bool(self.order_tuple < other.order_tuple)
+    
+    def __le__(self, other):
+        return bool(self.order_tuple <= other.order_tuple)
+    
+    def __eq__(self, other):
+        return bool(self.order_tuple == other.order_tuple)
+        # NOTE that this should only occur if comparing to itself
+        # TODO consider throwing an error here; identity should be checked via is keyword rather than ==
 
     # Public API --------------------------------------------------------------
 
