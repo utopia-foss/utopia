@@ -17,10 +17,14 @@ class StopCondition:
     of this class store the information required to deduce whether the
     condition if fulfilled or not.
     """
-    def __init__(self, name: str, description: str=None):
+    def __init__(self, name: str, description: str=None, enabled: bool=True):
         """Create a new stop condition"""
+        # Carry over attributes
+        self.enabled = enabled
         self.name = name
         self.description = description
+
+        # Attributes that define the stop condition
 
     def __str__(self) -> str:
         return ("StopCondition '{name:}':\n"
@@ -33,7 +37,11 @@ class StopCondition:
             proc (Popen): Worker object that is to be checked
             worker_info (dict): The information dict for this specific worker
         """
-        pass
+        if not self.enabled:
+            return False
+
+        # Now perform the check
+        # TODO continue here
 
 
 # -----------------------------------------------------------------------------

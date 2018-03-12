@@ -127,7 +127,7 @@ class Multiverse:
         log.info("Preparing to run Multiverse ...")
 
         # Depending on the configuration, the corresponding methods can already be called.
-        if self.meta_config['run_kwargs']['perform_sweep']:
+        if self.meta_config.get('perform_sweep'):
             self.run_sweep()
         else:
             self.run_single()
@@ -138,19 +138,21 @@ class Multiverse:
         # Get the parameter space from the config
         pspace = self.meta_config['parameter_space']
         
+        # If this is a ParamSpace, we need to retrieve the default point
         if isinstance(pspace, psp.ParamSpace):
-            # Get the default
             log.info("Got a ParamSpace object. Retrieving default point ...")
             uni_cfg = pspace.default
+
         else:
             uni_cfg = copy.deepcopy(pspace)
-        
+
         # Add the task to the worker manager.
         log.info("Adding task for simulation of a single universe ...")
         self._add_sim_task(uni_id=0, max_uni_id=0, uni_cfg=uni_cfg)
 
-        # Tell the WorkerManager to start working, which will be the blocking call
-        self.wm.start_working(forward_streams=True)
+        # Tell the WorkerManager to start working
+        self.wm.start_working(**self.meta_config['run_kwargs'])
+        # NOTE This is the blocking call
 
         log.info("Finished single universe run. Yay. :)")
 
@@ -175,9 +177,10 @@ class Multiverse:
         for uni_cfg, uni_id in pspace.all_points(with_info=('state_no',)):
             self._add_sim_task(uni_id=uni_id, max_uni_id=max_uni_id,
                                uni_cfg=uni_cfg)
-
         log.info("Tasks added.")
-        self.wm.start_working(forward_streams=True)
+
+        # Now start working ...
+        self.wm.start_working(**self.meta_config['run_kwargs'])
 
         log.info("Finished Multiverse parameter sweep. Wohoo. :)")
 

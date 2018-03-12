@@ -7,17 +7,20 @@ paths:
   # From this, the run directory will be created at:
   #                       /out_dir/model_name/timestamp-model_note/
 
-# Run
+# Whether to perfom a parameter sweep
+perform_sweep:              False
+# NOTE This will be ignored if run_single or run_sweep are called directly
+
+# Run configuration for the WorkerManager
 run_kwargs:
-  # Whether to perfom a parameter sweep
-  perform_sweep:            False
-  # NOTE This will be ignored if run_single or run_sweep are called directly
-            
-  stop_conditions:
-    # Timeouts
-    timeout:
-      total:                60            # timeout in seconds (for the whole run)
-      per_sim:              10            # timeout in seconds for each simulation
+  forward_streams:          True          # forward streams to main stdout
+  
+  timeout:                  ~             # total timeout (in s) of a run
+  
+  stop_conditions: # A list of StopCondition objects to check during the run
+    - !stop-condition
+      name: single_timeout
+      enabled: False
 
 # Worker Manager
 worker_manager:

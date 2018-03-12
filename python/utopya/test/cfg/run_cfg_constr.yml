@@ -15,9 +15,12 @@ parameter_space: !pspace
         stuff: !expr NaN
         # ..
       abm_animals:
+        more_stuff: !expr -inf
         # ...
 
 run_kwargs:
-  stop_conditions:
-    total: !expr         inf        # timeout in seconds (for the whole simulation)
-    per_sim: !expr       -inf            # for each simulation
+  timeout: !expr inf  # timeout in seconds (for the whole simulation)
+  stop_conditions:  # list of stop conditions
+   - !stop-condition
+    name: foo
+    description: bar

@@ -9,7 +9,7 @@ import json
 import warnings
 import logging
 from collections import OrderedDict
-from typing import Union, Callable, Tuple, List
+from typing import Union, Callable, Sequence, List
 from typing.io import BinaryIO
 
 from utopya.stopcond import StopCondition
@@ -27,7 +27,7 @@ class WorkerManager:
     At the same time, it reads the worker's stream in yet separate non-blocking threads.
     """
 
-    def __init__(self, num_workers: Union[int, str], poll_freq: float=42, QueueCls=queue.Queue, stop_conditions: Tuple[StopCondition]=None):
+    def __init__(self, num_workers: Union[int, str], poll_freq: float=42, QueueCls=queue.Queue):
         """Initialize the worker manager.
         
         Args:
@@ -40,8 +40,6 @@ class WorkerManager:
                 determines the CPU load of the main thread.
             QueueCls (Class, optional): Which class to use for the Queue.
                 Defaults to FiFo.
-            stop_conditions (Tuple[StopCondition]): A list of StopCondition
-                objects that are checked against all workers.
         """
         # Initialize property-managed attributes
         self._num_workers = None
@@ -55,7 +53,6 @@ class WorkerManager:
 
         # Hand over arguments
         self.poll_freq = poll_freq
-        self.stop_conds = stop_conditions if stop_conditions else ()
 
         if num_workers == 'auto':
             self.num_workers = os.cpu_count()
@@ -186,7 +183,7 @@ class WorkerManager:
 
         log.debug("Task %s added.", task_id)
 
-    def start_working(self, *, detach: bool=False, forward_streams: bool=False, timeout: float=None, stop_conditions: Tuple[StopCondition]=None, post_poll_func: Callable=None) -> None:
+    def start_working(self, *, detach: bool=False, forward_streams: bool=False, timeout: float=None, stop_conditions: Sequence[StopCondition]=None, post_poll_func: Callable=None) -> None:
         """Upon call, all enqueued tasks will be worked on sequentially.
         
         Args:
@@ -198,9 +195,8 @@ class WorkerManager:
             timeout (float, optional): If given, the number of seconds this
                 work session is allowed to take. Workers will be aborted if
                 the number is exceeded. Note that this is not measured in CPU time, but the host systems wall time.
-            stop_conditions (Tuple[StopCondition], optional): If given,
-                extends the default tuple of stop conditions that are checked
-                during the run. If False, no stop conditions will be checked.
+            stop_conditions (Sequence[StopCondition], optional): During the
+                run these StopCondition objects will be checked
             post_poll_func (Callable, optional): If given, this is called after
                 all workers have been polled. It can be used to perform custom
                 actions during a the polling loop.
@@ -219,19 +215,7 @@ class WorkerManager:
                                  "needs to be positive.".format(timeout))
             # Already calculate the time after which a timeout would be reached
             timeout_time = time.time() + timeout
-            log.debug("Set timeout time to now + %f seconds", timeout)
-
-        # Determine which stop conditions should be checked
-        stop_conds = self.stop_conds
-        
-        if stop_conditions:
-            log.debug("Extending the default list of stop conditions ...")
-            stop_conds += stop_conditions
-            # NOTE being tuple, there are no mutability issues
-
-        elif stop_conditions is False:
-            log.debug("No stop conditions will be checked.")
-            stop_conds = None
+            log.debug("Set timeout time to now + %f seconds", timeout) 
 
         # Determine whether to detach the whole working loop
         if detach:
@@ -241,8 +225,8 @@ class WorkerManager:
                                       "main thread.")
 
         log.info("Starting to work ...")
-        log.debug("  Checking %d stop condition(s) during the run.",
-                  len(stop_conds))
+        log.debug("  Timeout:          now + %ss", timeout)
+        log.debug("  Stop conditions:  %s", stop_conditions)
 
         # Start with the polling loop
         # Basically all working time will be spent in there ...
@@ -253,9 +237,9 @@ class WorkerManager:
                     raise WorkerManagerTotalTimeout()
 
                 # Check other stop conditions
-                if stop_conds:
+                if stop_conditions is not None:
                     # Compile a list of workers that need to be terminated
-                    to_terminate = self._check_stop_conds(stop_conds)
+                    to_terminate = self._check_stop_conds(stop_conditions)
                     self._signal_workers(to_terminate, signal='SIGTERM')
 
                 # Check if there are free workers and remaining tasks.
@@ -469,11 +453,11 @@ class WorkerManager:
             log.debug("Calling post_poll_func ...")
             post_poll_func()
 
-    def _check_stop_conds(self, stop_conds: Tuple[StopCondition]) -> List[subprocess.Popen]:
+    def _check_stop_conds(self, stop_conds: Sequence[StopCondition]) -> List[subprocess.Popen]:
         """Checks the given stop conditions for the working workers and compiles a list of workers that need to be terminated.
         
         Args:
-            stop_conds (Tuple[StopCondition]): The stop conditions that
+            stop_conds (Sequence[StopCondition]): The stop conditions that
                 are to be checked.
         
         Returns:
@@ -482,6 +466,7 @@ class WorkerManager:
         to_terminate = []
         
         for sc in stop_conds:
+            log.debug("Checking stop condition '%s' ...", sc.name)
             fulfilled = [proc
                          for proc in self.working
                          if sc.fulfilled(proc, worker_info=self.workers[proc])]
