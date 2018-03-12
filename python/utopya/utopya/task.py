@@ -18,13 +18,13 @@ class Task:
         priority (int): The task priority
     """
 
-    def __init__(self, *, task_id: int, priority: int=None, setup_func: Callable=None, setup_kwargs: dict=None, worker_kwargs: dict=None):
+    def __init__(self, *, uid: int, priority: int=None, setup_func: Callable=None, setup_kwargs: dict=None, worker_kwargs: dict=None):
         """Initialize a Task object."""
         # Create property-managed attributes
         self._uid = None
 
         # Carry over attributes
-        self.uid = task_id
+        self.uid = uid
         self._priority = priority
 
         self.setup_func = setup_func
@@ -39,19 +39,19 @@ class Task:
         return self._uid
 
     @uid.setter
-    def uid(self, task_id: int):
+    def uid(self, uid: int):
         """Checks if the given ID is valid, then sets it and makes it read-only."""
-        if not isinstance(task_id, int):
-            raise TypeError("Need integer task ID, got " + str(type(task_id)))
+        if not isinstance(uid, int):
+            raise TypeError("Need integer task ID, got " + str(type(uid)))
         
-        elif task_id < 0:
-            raise ValueError("Negative task ID not allowed: " + str(task_id))
+        elif uid < 0:
+            raise ValueError("Negative task ID not allowed: " + str(uid))
         
         elif self.uid is not None:
             raise RuntimeError("Task ID was already set and can't be changed!")
 
         else:
-            self._uid = task_id
+            self._uid = uid
             log.debug("Set task ID:  %d", self.uid)
 
     @property

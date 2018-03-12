@@ -1,47 +1,53 @@
+"""Test the Task class implementation"""
+
+from typing import List
+
+import numpy as np
 import pytest
-from utopya.task import test_task2
-from utopya import Task
+
+from utopya.task import Task
 
 
 # Fixtures ----------------------------------------------------------------
-@pytest.fixture
-def mv_kwargs(tmpdir) -> dict:
-    """Returns a dict that can be passed to Task for initialisation"""
-    return dict(model_name="dummy",
-                run_cfg_path=RUN_CFG_PATH,
-                user_cfg_path=USER_CFG_PATH)
 
+@pytest.fixture
+def tasks() -> List[Task]:
+    """Returns a list of tasks"""
+    tasks = []
+    for uid, priority in enumerate(np.random.random(size=50)):
+        tasks.append(Task(uid=uid, priority=priority))
+
+    return tasks
 
 # Initialisation tests --------------------------------------------------------
 
-def test_simple_init(mv_kwargs):
-    """Tests whether initialisation works."""
-    Task(**mv_kwargs)
+def test_init():
+    """Test task initialization"""
+    Task(uid=0)
+    Task(uid=1, priority=1000)
 
-def test_invalid_model_name_and_operation(mv_kwargs, tmpdir):
-    """Tests for correct behaviour upon invalid model names"""
-    mv_local = mv_kwargs
-
-    # Try to change the model name
-    local_config = dict(paths=dict(out_dir=tmpdir.dirpath(),
-                                   model_note="test_try_change_model_name"))
-    instance = Multiverse(**mv_local, update_meta_cfg=local_config)
-    with pytest.raises(RuntimeError):
-        instance.model_name = "dummy"
-
-    # Try invalid model name  
-    local_config = dict(paths=dict(out_dir=tmpdir.dirpath(),
-                                   model_note="test_invalid_model_name"))
-    mv_local['model_name'] = "invalid_model_RandomShit_bgsbjkbkfvwuRfopiwehGEP"
-
+    # Invalid initialization arguments
+    with pytest.raises(TypeError):
+        Task(uid=1.23)
     with pytest.raises(ValueError):
-        Multiverse(**mv_local, update_meta_cfg=local_config)
+        Task(uid=-1)
 
-'''
-tasks=[]
-for i in range(10):
-    tasks.append(Task(i,rd.randint(-10,10)))
-    
-print(tasks)
-print(sorted(tasks))
-#'''
+    # Test that the task ID cannot be changed
+    with pytest.raises(RuntimeError):
+        t = Task(uid=2)
+        t.uid = 3
+
+def test_sorting(tasks):
+    """Tests whether different task objects are sortable"""
+    tasks.sort()
+
+    t1 = tasks[0]
+    t2 = tasks[1]
+
+    assert (t1 <= t2) is True
+    assert (t1 == t2) is False
+    assert (t1 == t1) is True
+
+def test_magic_methods(tasks):
+    """Test magic methods"""
+    task_strs = [str(t) for t in tasks]
