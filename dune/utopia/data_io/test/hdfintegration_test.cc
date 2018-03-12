@@ -11,6 +11,7 @@ using namespace Utopia::DataIO;
 struct Teststruct {
     double x;
     std::string y;
+    std::vector<int> z;
 };
 
 void write(std::vector<Teststruct> &data) {
@@ -20,6 +21,7 @@ void write(std::vector<Teststruct> &data) {
     auto group = file.get_basegroup()
                      ->open_group("first_deeper")
                      ->open_group("second_deeper/third_deeper");
+
     auto dataset = group->open_dataset("dataset");
     dataset->write(data.begin(), data.end(),
                    [](auto &value) { return value.x; });
@@ -28,29 +30,26 @@ void write(std::vector<Teststruct> &data) {
         "testattribute",
         std::string("this is an attribute to a double dataset"));
 
+    // write variable length string
     auto dataset2 = group->open_dataset("dataset2");
     dataset2->write(data.begin(), data.end(),
                     [](auto &value) -> std::string & { return value.y; });
     dataset2->add_attribute("stringattribute",
                             "this is an attribute to std::string");
+
+    auto dataset3 = group->open_dataset("dataset3");
+    dataset3->write(data.begin(), data.end(),
+                    [](auto &value) -> std::vector<int> & { return value.z; });
+
+    dataset3->add_attribute("integer vector attribute",
+                            "this is an attribute to an int vector");
 }
 
 void read(std::vector<Teststruct> &data) {
     HDFFile file("integrationtest_file.h5", "r");
-    // H5O_info_t infobuf;
-    // herr_t status;
-    // opdata od;
-
-    // status = H5Oget_info(file.get_id(), &infobuf);
-    // od.recurs = 0;
-    // od.prev = NULL;
-    // od.addr = infobuf.addr;
 
     auto group = file.open_group("/first_deeper/second_deeper/third_deeper");
     auto dataset = group->open_dataset("dataset");
-
-    // status = H5Literate(file.get_id(), H5_INDEX_NAME, H5_ITER_NATIVE, NULL,
-    //                     op_func, (void *)&od);
 
     auto values = dataset->read<double>();
 
@@ -62,18 +61,38 @@ void read(std::vector<Teststruct> &data) {
     for (std::size_t i = 0; i < data.size(); ++i) {
         assert(std::abs(values[i] - data[i].x) < 1e-16);
     }
+
+    auto dataset2 = group->open_dataset("dataset2");
+    auto read_data = dataset2->read<std::string>();
+    assert(read_data.size() == data.size());
+    for (std::size_t i = 0; i < read_data.size(); ++i) {
+        assert(std::string(read_data[i]) == data[i].y);
+    }
+
+    auto dataset3 = group->open_dataset("dataset3");
+    auto read_data_int = dataset3->read<std::vector<int>>();
+    for (std::size_t i = 0; i < read_data.size(); ++i) {
+        assert(read_data_int[i].size() == data[i].z.size());
+        for (std::size_t j = 0; j < data[i].z.size(); ++j) {
+            assert(read_data_int[i][j] == data[i].z[j]);
+        }
+    }
 }
 int main() {
-    H5Eset_auto(error_stack, NULL, NULL); // turn off automatic error printings
+    // H5Eset_auto(error_stack, NULL, NULL); // turn off automatic error
+    // printings
     std::vector<Teststruct> data(50);
     double d = 3.14;
     std::string a = "a";
+    std::size_t size = 1;
     std::generate(data.begin(), data.end(), [&]() {
         Teststruct object;
         object.x = d;
         object.y = a;
+        object.z = std::vector<int>(size, 1);
         a += "a";
         d += 1.;
+        size += 1;
         return object;
     });
 

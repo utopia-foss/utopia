@@ -19,7 +19,7 @@ public:
     template <
         typename T,
         std::enable_if_t<std::is_same<T, std::string>::value == false, int> = 0>
-    static auto convert_source(T source) {
+    static auto convert_source(T &source) {
         hvl_t value;
         value.len = source.size();
         value.p = source.data();
@@ -50,15 +50,15 @@ public:
               std::enable_if_t<is_container_type<T>::value == false, int> = 0>
     static auto buffer(Iter begin, Iter end, Adaptor &&adaptor) {
         // set up buffer
-        std::vector<std::decay_t<decltype(adaptor(*begin))>> buffer(
+        std::vector<std::decay_t<decltype(adaptor(*begin))>> data_buffer(
             std::distance(begin, end));
 
         // make buffer
-        auto buffer_begin = buffer.begin();
+        auto buffer_begin = data_buffer.begin();
         for (; begin != end; ++begin, ++buffer_begin) {
             *buffer_begin = adaptor(*begin);
         }
-        return buffer;
+        return data_buffer;
     }
 
     /**
@@ -83,18 +83,18 @@ public:
     static auto buffer(Iter begin, Iter end, Adaptor &&adaptor) {
         // set up buffer
 
-        std::vector<hvl_t> buffer(std::distance(begin, end));
+        std::vector<hvl_t> data_buffer(std::distance(begin, end));
 
         // using result_value_type = typename result_container_type::value_type;
         // if (std::is_same<result_container_type,
         //                  std::vector<result_value_type>>::value) {
-        auto buffer_begin = buffer.begin();
+        auto buffer_begin = data_buffer.begin();
         for (; begin != end; ++begin, ++buffer_begin) {
             *buffer_begin = convert_source(adaptor(*begin));
         }
         // }
 
-        return buffer;
+        return data_buffer;
     }
 
     // overload for fucking strings
@@ -105,24 +105,24 @@ public:
     static auto buffer(Iter begin, Iter end, Adaptor &&adaptor) {
         // set up buffer
 
-        std::vector<const char *> buffer(std::distance(begin, end));
+        std::vector<const char *> data_buffer(std::distance(begin, end));
 
         // using result_value_type = typename result_container_type::value_type;
         // if (std::is_same<result_container_type,
         //                  std::vector<result_value_type>>::value) {
-        auto buffer_begin = buffer.begin();
+        auto buffer_begin = data_buffer.begin();
         for (auto it = begin; it != end; ++it, ++buffer_begin) {
             *buffer_begin = convert_source(adaptor(*it));
         }
         // }
 
-        return buffer;
+        return data_buffer;
     }
 
-    // get a buffer for reading
-    template <typename T> auto read_buffer(hsize_t size) {
-        return std::vector<T> buffer(size);
-    }
+    // // get a buffer for reading
+    // template <typename T> auto read_buffer(hsize_t size) {
+    //     return std::vector<T>(size);
+    // }
 };
 
 } // namespace DataIO
