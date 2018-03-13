@@ -3,12 +3,10 @@
 import os
 import subprocess
 import queue
-import threading
 import time
-import json
 import warnings
 import logging
-from typing import Union, Callable, List
+from typing import Union, List
 
 from utopya.task import WorkerTask, TaskList
 
@@ -159,21 +157,29 @@ class WorkerManager:
             raise NotImplementedError("It is currently not possible to "
                                       "detach the WorkerManager from the "
                                       "main thread.")
+        
+        # Count the polls
+        poll_no = 0
 
         while self.active_tasks or self.task_queue.qsize() > 0:
             # Check if there are free workers and remaining tasks.
             if self.num_free_workers and self.task_queue.qsize():
                 # Yes. => Grab a task and start working on it
                 # Conservative approach: one task is grabbed here, even if there are more than one free workers
-                self._grab_task()
+                new_task = self._grab_task()
+                self.active_tasks.append(new_task)
 
             # Gather the streams of all working workers
             for task in self.active_tasks:
-                task.read_worker_streams(forward_streams=forward_streams)
+                task.read_streams(forward_streams=forward_streams)
 
-            # Poll the workers
+            # Poll the workers and update the active_tasks list
             self._poll_workers()
-            # NOTE this will also remove no longer active workers
+            
+            # Some information
+            poll_no += 1
+            log.debug("Poll # %6d:  %d active tasks",
+                      poll_no, len(self.active_tasks))
 
             # Delay the next poll
             time.sleep(self.poll_delay)
@@ -184,7 +190,7 @@ class WorkerManager:
 
     # Non-public API ..........................................................
 
-    def _grab_task(self) -> subprocess.Popen:
+    def _grab_task(self) -> WorkerTask:
         """Will initiate that a task is gotten from the queue and it spawns its
         worker process.
         
@@ -204,8 +210,11 @@ class WorkerManager:
             log.debug("Got task %s from queue. (Priority: %s)",
                       task.uid, task.priority)
 
-        # Let it spawn its own worker and then return
-        return task.spawn_worker()
+        # Let it spawn its own worker
+        task.spawn_worker()
+
+        # Now return the task
+        return task
 
     def _poll_workers(self):
         """Will poll all workers that are in the working list and remove them from that list if they are no longer alive.

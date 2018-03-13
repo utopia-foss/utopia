@@ -1,11 +1,9 @@
 """Test the Task class implementation"""
 
-from typing import List
-
 import numpy as np
 import pytest
 
-from utopya.task import Task, TaskList
+from utopya.task import Task, WorkerTask, TaskList
 
 
 # Fixtures ----------------------------------------------------------------
@@ -19,7 +17,17 @@ def tasks() -> TaskList:
 
     return tasks
 
-# Initialisation tests --------------------------------------------------------
+@pytest.fixture
+def workertasks() -> TaskList:
+    """Returns a TaskList filled with WorkerTasks"""
+    tasks = TaskList()
+    for uid, priority in enumerate(np.random.random(size=50)):
+        tasks.append(WorkerTask(uid=uid, priority=priority,
+                                worker_kwargs=dict(args=('echo', '$?'))))
+
+    return tasks
+
+# Task tests ------------------------------------------------------------------
 
 def test_task_init():
     """Test task initialization"""
@@ -55,6 +63,36 @@ def test_task_sorting(tasks):
 def test_task_magic_methods(tasks):
     """Test magic methods"""
     _ = [str(t) for t in tasks]
+
+
+# WorkerTask tests ------------------------------------------------------------
+
+def test_workertask_init():
+    """Tests the WorkerTask class"""
+    WorkerTask(uid=0, worker_kwargs=dict(foo="bar"))
+
+    with pytest.warns(UserWarning):
+        WorkerTask(uid=0, setup_func=print, worker_kwargs=dict(foo="bar"))
+    
+    with pytest.warns(UserWarning):
+        WorkerTask(uid=0, setup_kwargs=dict(foo="bar"),
+                   worker_kwargs=dict(foo="bar"))
+
+    with pytest.raises(ValueError):
+        WorkerTask(uid=0, )
+
+def test_workertask_magic_methods(workertasks):
+    """Test magic methods"""
+    _ = [str(t) for t in workertasks]
+
+def test_workertask_invalid_args():
+    """It should not be possible to spawn a worker with non-tuple arguments"""
+    t = WorkerTask(uid=0, worker_kwargs=dict(args="python -c 'hello hello'"))
+    
+    with pytest.raises(TypeError):
+        t.spawn_worker()
+
+# TaskList tests --------------------------------------------------------------
 
 def test_tasklist(tasks):
     """Tests the TaskList features"""

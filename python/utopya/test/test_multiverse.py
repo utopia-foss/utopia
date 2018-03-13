@@ -154,7 +154,7 @@ def test_create_uni_dir(default_mv):
 def test_run_single(default_mv):
     """Tests a run with a single simulation"""
     default_mv.run_single()
-    print("Workers: ", default_mv.wm.workers)
+    print("Tasks: ", default_mv.wm.tasks)
 
 def test_run_sweep(mv_kwargs):
     """Tests a run with a single simulation"""
@@ -166,7 +166,7 @@ def test_run_sweep(mv_kwargs):
     mv.run_sweep()
 
     # Print some info.
-    print("Workers: ", mv.wm.workers)
+    print("Tasks: ", mv.wm.tasks)
 
 # Other tests -----------------------------------------------------------------
 

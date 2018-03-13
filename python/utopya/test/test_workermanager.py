@@ -28,8 +28,8 @@ def wm_with_tasks():
     # A few tasks
     tasks = []
     tasks.append(dict(worker_kwargs=dict(args=('python3', '-c',
-                                               'print("hello oh so complex '
-                                               'world")'),
+                                               'print("hello\\noh so\\n'
+                                               'complex world")'),
                                          read_stdout=True, env=env),
                       priority=0))
     
@@ -91,27 +91,35 @@ def test_add_tasks(wm):
     wm.add_task(priority=0, worker_kwargs=dict(args=sleep_cmd,
                                                read_stdout=True))
 
-    # TODO Check the warnings
+    # Test that errors propagate through
+    with pytest.warns(UserWarning):
+        wm.add_task(setup_func=print, worker_kwargs=dict(foo="bar"))
+    
+    with pytest.warns(UserWarning):
+        wm.add_task(setup_kwargs=dict(foo="bar"),
+                    worker_kwargs=dict(foo="bar"))
+
+    with pytest.raises(ValueError):
+        wm.add_task()
 
 def test_start_working(wm_with_tasks):
     """Tests whether the start_working methods does what it should"""
     wm = wm_with_tasks
-    wm.start_working()
+    wm.start_working(forward_streams=True)
     # This will be blocking
 
-    # Check if workers have been added
-    assert wm.workers
+    # Check that all tasks finished with exit status 0
+    for task in wm.tasks:
+        assert task.worker_status == 0
+        assert task.profiling['end_time'] > task.profiling['create_time']
 
-    # Get the process dicts and check that they all finished with exit code 0
-    procs = [w['proc'] for w in wm.workers.values()]
-    assert all([p.poll() is 0 for p in procs])
-    assert not any([w['status'] for w in wm.workers.values()])
+        # Trying to spawn or assigning another worker should fail
+        with pytest.raises(RuntimeError):
+            task.spawn_worker()
 
-    # Check their run times
-    create_times = [w['create_time'] for w in wm.workers.values()]
-    end_times = [w['end_time'] for w in wm.workers.values()]
-    assert all([c < e for c, e in zip(create_times, end_times)])
-    assert (end_times[1] - create_times[1]) > 0.5 # for the sleep task
+        with pytest.raises(RuntimeError):
+            task.worker = "something"
+
 
 def test_read_stdout(wm):
     """Checks if the stdout was read"""

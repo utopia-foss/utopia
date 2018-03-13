@@ -3,6 +3,7 @@
 The WorkerTask specialises on tasks for the WorkerManager."""
 
 import time
+import json
 import queue
 import threading
 import subprocess
@@ -81,7 +82,7 @@ class Task:
     # Magic methods -----------------------------------------------------------
     
     def __str__(self) -> str:
-        return "Task<uid: {}, priority: {}>".format(self.uid, self._priority)
+        return "Task<uid: {}, priority: {}>".format(self.uid, self.priority)
 
     # Rich comparisons, needed in PriorityQueue
     # NOTE only need to implement __lt__, __le__, and __eq__
@@ -161,7 +162,7 @@ class WorkerTask(Task):
         self.streams = dict()
         self.profiling = dict()
 
-        log.debug("Specialized Task to be a WorkerTask.")
+        log.debug("Finished setting up task %d as a worker task.", self.uid)
         log.debug("  With setup function?  %s", bool(setup_func))
 
     # Properties ..............................................................
@@ -192,7 +193,10 @@ class WorkerTask(Task):
 
     @property
     def worker_status(self) -> Union[int, None]:
-        """Returns the worker processes current status."""
+        """Returns the worker processes current status or False, if there is no worker spawned yet."""
+        if not self.worker:
+            return False
+
         if self._worker_status is None:
             # No cached value yet; poll the worker
             poll_res = self.worker.poll()
@@ -210,15 +214,15 @@ class WorkerTask(Task):
     # Magic methods ...........................................................
 
     def __str__(self) -> str:
-        return "WorkerTask<uid: {}, priority: {}>".format(self.uid, self._priority)
+        return "WorkerTask<uid: {}, priority: {}, worker: {}, worker_status: {}>".format(self.uid, self.priority, self.worker, self.worker_status)
 
     # Public API ..............................................................
 
     def spawn_worker(self) -> subprocess.Popen:
         """Spawn a worker process using subprocess.Popen and manage the corresponding queue and thread for reading the stdout stream.
-
+        
         If there is a setup_func, this function will be called first.
-
+        
         Afterwards, from the worker_kwargs returned by that function or from
         the ones given during initialisation (if not setup_func was given),
         the worker process is spawned and associated with this task.
@@ -227,8 +231,12 @@ class WorkerTask(Task):
             subprocess.Popen: The created process object
         
         Raises:
+            RuntimeError: If a worker was already spawned for this task.
             TypeError: For invalid `args` argument
         """
+
+        if self.worker:
+            raise RuntimeError("Can only spawn one worker per task!")
 
         # If a setup function is available, call it with the given kwargs
         if self.setup_func:
@@ -269,10 +277,11 @@ class WorkerTask(Task):
 
         # Done with the checks now.
         # Spawn the child process with the given arguments
-        log.debug("Spawning worker process with args:  %s", args)
+        log.debug("Spawning worker process with args:\n  %s", args)
         proc = subprocess.Popen(args,
                                 bufsize=1, # line buffered
                                 stdout=stdout, stderr=stderr,
+                                # stdout=stdout, stderr=stderr,
                                 **popen_kwargs)
 
         # Save the approximate creation time (as soon as possible)
@@ -318,8 +327,8 @@ class WorkerTask(Task):
         Returns:
             None: Description
         """
-        def read_single_stream(stream: dict, max_num_reads=max_num_reads):
-            """A function to read a single stream"""
+        def read_single_stream(stream: dict, stream_name: str, max_num_reads=max_num_reads):
+            """A function to read a single stream"""            
             q = stream['queue']
 
             # In certain cases, read as many as queue reports to have
@@ -338,14 +347,15 @@ class WorkerTask(Task):
                     # got entry, do something with it
                     if forward_streams:
                         # print it to the parent processe's stdout
-                        log.info(" task %4d:  %s", self.uid, entry)
+                        log.info("  Task %4d %s:   %s",
+                                 self.uid, stream_name, entry)
 
                     # Write to the stream's log
                     stream['log'].append(entry)
 
         if not self.streams:
             # There are no streams to read
-            log.debug("No streams to read for task %d!", self.uid)
+            log.debug("No streams to read for task %d.", self.uid)
             return
 
         elif stream_names == 'all':
@@ -354,8 +364,7 @@ class WorkerTask(Task):
 
         # Loop over stream names and call the function to read a single stream
         for stream_name in stream_names:
-            log.debug("Reading single stream '%s' ...", stream_name)
-            read_single_stream(self.streams[stream_name])
+            read_single_stream(self.streams[stream_name], stream_name)
 
         return
 
