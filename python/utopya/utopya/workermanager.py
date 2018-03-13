@@ -1,7 +1,6 @@
 """The WorkerManager class."""
 
 import os
-import subprocess
 import queue
 import time
 import warnings
@@ -17,10 +16,11 @@ log = logging.getLogger(__name__)
 # -----------------------------------------------------------------------------
 
 class WorkerManager:
-    """The WorkerManager class manages tasks and worker processes to execute them.
-
-    It is non-blocking and the main thread does not use significant CPU time for low poll frequencies (< 100/s).
-    At the same time, it reads the worker's stream in yet separate non-blocking threads.
+    """The WorkerManager class manages WorkerTasks.
+    
+    Attributes:
+        num_workers (int): The number of parallel workers
+        poll_delay (float): The delay (in s) between after a poll
     """
 
     def __init__(self, num_workers: Union[int, str], poll_delay: float=0.05, QueueCls=queue.Queue):
@@ -141,12 +141,14 @@ class WorkerManager:
 
     def start_working(self, detach: bool=False, forward_streams: bool=False):
         """Upon call, all enqueued tasks will be worked on sequentially.
-
+        
         Args:
             detach (bool, optional): If False (default), the WorkerManager
                 will block here, as it continuously polls the workers and
                 distributes tasks.
-
+            forward_streams (bool, optional): If True, the streams are
+                forwarded to the main thread's stdout
+        
         Raises:
             NotImplementedError: for `detach` True
         """
@@ -161,6 +163,7 @@ class WorkerManager:
         # Count the polls
         poll_no = 0
 
+        # Enter the polling loop, where most of the time will be spent
         while self.active_tasks or self.task_queue.qsize() > 0:
             # Check if there are free workers and remaining tasks.
             if self.num_free_workers and self.task_queue.qsize():
@@ -191,11 +194,11 @@ class WorkerManager:
     # Non-public API ..........................................................
 
     def _grab_task(self) -> WorkerTask:
-        """Will initiate that a task is gotten from the queue and it spawns its
-        worker process.
+        """Will initiate that a task is gotten from the queue and that it
+        spawns its worker process.
         
         Returns:
-            subprocess.Popen: The created process object
+            WorkerTask: The WorkerTask grabbed from the queue.
         
         Raises:
             queue.Empty: If the task queue was empty
@@ -204,8 +207,10 @@ class WorkerManager:
         # Get a task from the queue
         try:
             task = self.task_queue.get_nowait()
+
         except queue.Empty as err:
             raise queue.Empty("No more tasks available in tasks queue.") from err
+        
         else:
             log.debug("Got task %s from queue. (Priority: %s)",
                       task.uid, task.priority)
@@ -216,8 +221,11 @@ class WorkerManager:
         # Now return the task
         return task
 
-    def _poll_workers(self):
+    def _poll_workers(self) -> None:
         """Will poll all workers that are in the working list and remove them from that list if they are no longer alive.
+        
+        Returns:
+            None
         """
         # Poll the task's worker's status
         for task in self.active_tasks:
@@ -232,7 +240,5 @@ class WorkerManager:
         # have to rebuild the list of active tasks now...
         self.active_tasks[:] = [t for t in self.active_tasks
                                 if t.worker_status is None]
-        # NOTE this will also poll all other active tasks.
-
-        log.debug("Polled workers. Currently working on %d tasks.",
-                  len(self.active_tasks))
+        # NOTE this will also poll all other active tasks and potentially not add them to the active_tasks list again.
+        return

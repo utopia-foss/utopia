@@ -103,6 +103,10 @@ class Task:
 class WorkerTask(Task):
     """A specialisation of the Task class that is aimed at use in the WorkerManager.
     
+    It is able to spawn a worker process, executing the task. Task execution
+    is non-blocking. At the same time, the worker's stream can be read in via
+    another non-blocking thread.
+
     Attributes:
         setup_func (Callable): The setup function to use before this task is
             being worked on
@@ -169,12 +173,21 @@ class WorkerTask(Task):
     
     @property
     def worker(self) -> subprocess.Popen:
-        """If created, return the associated worker process object."""
+        """The associated worker process object or None, if not yet created."""
         return self._worker
 
     @worker.setter
     def worker(self, proc: subprocess.Popen):
-        """Set the associated worker process of this task."""
+        """Set the associated worker process of this task.
+        
+        This can only be done once.
+        
+        Args:
+            proc (subprocess.Popen): The process to associate with this task.
+        
+        Raises:
+            RuntimeError: If a process was already associated.
+        """
         if self.worker is not None:
             raise RuntimeError("A worker process was already associated with "
                                "this task; cannot change it!")
@@ -193,7 +206,12 @@ class WorkerTask(Task):
 
     @property
     def worker_status(self) -> Union[int, None]:
-        """Returns the worker processes current status or False, if there is no worker spawned yet."""
+        """The worker processe's current status or False, if there is no worker spawned yet.
+        
+        Returns:
+            Union[int, None]: Current worker status. False, if there was no
+                worker associated yet.
+        """
         if not self.worker:
             return False
 
@@ -214,7 +232,8 @@ class WorkerTask(Task):
     # Magic methods ...........................................................
 
     def __str__(self) -> str:
-        return "WorkerTask<uid: {}, priority: {}, worker: {}, worker_status: {}>".format(self.uid, self.priority, self.worker, self.worker_status)
+        """Return basic WorkerTask information."""
+        return "WorkerTask<uid: {}, priority: {}, worker_status: {}>".format(self.uid, self.priority, self.worker_status)
 
     # Public API ..............................................................
 
@@ -370,8 +389,12 @@ class WorkerTask(Task):
 
     # Private API .............................................................
 
-    def _finished(self):
-        """Is called once the worker has finished working on this task."""
+    def _finished(self) -> None:
+        """Is called once the worker has finished working on this task.
+
+        It takes care that a profiling time is saved and that the remaining
+        stream information is logged.
+        """
         self.profiling['end_time'] = time.time()  # approximate
 
         # Read all remaining stream lines
