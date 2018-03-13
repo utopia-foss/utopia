@@ -4,7 +4,6 @@ As the Multiverse will always generate a folder structure, it needs to be taken 
 """
 
 import os
-import math
 import uuid
 import pkg_resources
 
@@ -21,21 +20,27 @@ SWEEP_CFG_PATH = pkg_resources.resource_filename('test', 'cfg/sweep_cfg.yml')
 # Fixtures ----------------------------------------------------------------
 @pytest.fixture
 def mv_kwargs(tmpdir) -> dict:
-    """Returns a dict that can be passed to Multiverse for initialisation"""
+    """Returns a dict that can be passed to Multiverse for initialisation.
+
+    This uses the `tmpdir` fixture provided by pytest, which creates a unique
+    temporary directory that is removed after the tests ran through.
+    """
+    rand_str = "test_" + uuid.uuid4().hex
+    unique_paths = dict(out_dir=tmpdir.dirpath(), model_note=rand_str)
+
     return dict(model_name="dummy",
                 run_cfg_path=RUN_CFG_PATH,
-                user_cfg_path=USER_CFG_PATH)
+                user_cfg_path=USER_CFG_PATH,
+                update_meta_cfg=dict(paths=unique_paths))
 
 @pytest.fixture
-def default_mv(tmpdir, mv_kwargs) -> Multiverse:
-    """Initialises a default configuration of the Multiverse to test everything beyond initialisation."""
-    # Generate a unique configuration for this multiverse
-    rand_str = uuid.uuid4().hex
-    update_cfg = dict(paths=dict(out_dir=tmpdir.dirpath(),
-                                 model_note=rand_str))
+def default_mv(mv_kwargs) -> Multiverse:
+    """Initialises a unique default configuration of the Multiverse to test everything beyond initialisation.
 
-    # Initialise it together with the base configuration that is the mv_kwargs
-    return Multiverse(update_meta_cfg=update_cfg, **mv_kwargs)
+    Using the mv_kwargs fixture, it is assured that the output directory is
+    unique.
+    """
+    return Multiverse(**mv_kwargs)
 
 # Initialisation tests --------------------------------------------------------
 
@@ -43,57 +48,36 @@ def test_simple_init(mv_kwargs):
     """Tests whether initialisation works for all basic cases."""
     Multiverse(**mv_kwargs)
 
-def test_invalid_model_name_and_operation(mv_kwargs, tmpdir):
+def test_invalid_model_name_and_operation(default_mv, mv_kwargs):
     """Tests for correct behaviour upon invalid model names"""
-    mv_local = mv_kwargs
-
     # Try to change the model name
-    local_config = dict(paths=dict(out_dir=tmpdir.dirpath(),
-                                   model_note="test_try_change_model_name"))
-    instance = Multiverse(**mv_local, update_meta_cfg=local_config)
     with pytest.raises(RuntimeError):
-        instance.model_name = "dummy"
+        default_mv.model_name = "dummy"
 
-    # Try invalid model name  
-    local_config = dict(paths=dict(out_dir=tmpdir.dirpath(),
-                                   model_note="test_invalid_model_name"))
-    mv_local['model_name'] = "invalid_model_RandomShit_bgsbjkbkfvwuRfopiwehGEP"
-
+    # Try to instantiate with invalid model name
+    mv_kwargs['model_name'] = "invalid_model_RandomShit_bgsbjkbkfvwuRfopiwehGP"
     with pytest.raises(ValueError):
-        Multiverse(**mv_local, update_meta_cfg=local_config)
+        Multiverse(**mv_kwargs)
 
-def test_config_handling(mv_kwargs, tmpdir):
+def test_config_handling(mv_kwargs):
     """Tests the config handling of the Multiverse"""
-    mv_local = mv_kwargs
-    local_config = dict(paths=dict(out_dir=tmpdir.dirpath(),
-                                   model_note="test_user_and_run_cfg"))
-    
-    # Multiverse  with special user and run config
-    Multiverse(**mv_kwargs, update_meta_cfg=local_config)
+    # Multiverse that does not load the default user config
+    mv_kwargs['user_cfg_path'] = False
+    Multiverse(**mv_kwargs)
 
-    # Multiverse with default user config and run config
-    mv_local['user_cfg_path'] = None
-    local_config['paths']['model_note'] = "test_run_cfg"
-    Multiverse(**mv_local, update_meta_cfg=local_config)
-
-    # Testing whether errors are raises
+    # Testing whether errors are raised
     # Multiverse with wrong run config
-    mv_local['run_cfg_path'] = './invalid_run_cfg.yml'
-    local_config['paths']['model_note'] = "test_not existing_run_cfg"
+    mv_kwargs['run_cfg_path'] = 'an/invalid/run_cfg_path'
     with pytest.raises(FileNotFoundError):
-        Multiverse(**mv_local, update_meta_cfg=local_config)
+        Multiverse(**mv_kwargs)
 
-def test_create_run_dir(mv_kwargs, tmpdir):
+def test_create_run_dir(default_mv):
     """Tests the folder creation in the initialsation of the Multiverse."""
-    local_config = dict(paths=dict(out_dir=tmpdir.dirpath(),
-                                   model_note="test_outer_directories"))
-
-    # Init Multiverse
-    instance = Multiverse(**mv_kwargs, update_meta_cfg=local_config)
+    mv = default_mv
 
     # Reconstruct path from settings for testing
-    path_base = os.path.expanduser(instance.meta_config['paths']['out_dir'])
-    path_base = os.path.join(path_base, mv_kwargs['model_name'])
+    path_base = os.path.expanduser(mv.meta_config['paths']['out_dir'])
+    path_base = os.path.join(path_base, mv.model_name)
 
     # get all folders in the output dir
     folders = os.listdir(path_base)
@@ -101,43 +85,61 @@ def test_create_run_dir(mv_kwargs, tmpdir):
     # take the latest one
     latest = folders[-1]
 
-    # Check if the folders are present
+    # Check if the subdirectories are present
     assert os.path.isdir(os.path.join(path_base, latest)) is True
+
     for folder in ["config", "eval", "universes"]:  # may need to adapt
         assert os.path.isdir(os.path.join(path_base, latest, folder)) is True
 
-def test_detect_doubled_folders(mv_kwargs, tmpdir):
+def test_detect_doubled_folders(mv_kwargs):
     """Tests whether an existing folder will raise an exception."""
-    local_config = dict(paths=dict(out_dir=tmpdir.dirpath(),
-                                   model_note="test_universes_doubling"))
-
     # Init Multiverse
-    Multiverse(**mv_kwargs, update_meta_cfg=local_config)
+    Multiverse(**mv_kwargs)
 
     # create output folders again
     # expect error due to existing folders
     with pytest.raises(RuntimeError):
         # And another one, that will also create a directory
-        Multiverse(**mv_kwargs, update_meta_cfg=local_config)
-        Multiverse(**mv_kwargs, update_meta_cfg=local_config)
+        Multiverse(**mv_kwargs)
+        Multiverse(**mv_kwargs)
         # NOTE this test assumes that the two calls are so close to each other that the timestamp is the same, that's why there are two calls so that the latest the second call should raise such an error
 
-def test_create_uni_dir(mv_kwargs, tmpdir):
+def test_create_uni_dir(default_mv):
     """Test creation of the uni directory"""
-    local_config = dict(paths=dict(out_dir=tmpdir.dirpath(),
-                                   model_note="test_uni_directories"))
+    mv = default_mv
+    test_ids = [(0, 0), (1, 1), (2, 9), (3, 10), (4, 11), (99, 99), (100, 100), (101, 101)]
+    fstr = "uni{id:>0{digs:d}d}"
 
     # Test some edge cases
-    for i, max_uni in enumerate([1, 9, 10, 11, 99, 100, 101]):
-        # Set the model note to generate a unique path
-        local_config['paths']['model_note'] = "test_universes_folder_structure_{}".format(i)
-        single_create_uni_dir(mv_kwargs, local_config, max_uni)
+    for uni_id, max_uni_id in test_ids:
+        print("Testing id {}, max id {}".format(uni_id, max_uni_id))
+        # Call the private method to generate the desired folder
+        uni_dir = mv._create_uni_dir(uni_id=uni_id, max_uni_id=max_uni_id)
+        
+        # Now test if it was created
+        assert os.path.isdir(uni_dir)
 
-    # test for possible wrong inputs
-    # Init Multiverse
-    local_config['paths']['model_note'] = "test_uni_id_consistency"
-    mv = Multiverse(update_meta_cfg=local_config, **mv_kwargs)
+        # Assure there is no trailing slash
+        assert uni_dir[-1] != os.path.sep
 
+        # Test for correct format
+        uni_dir_name = uni_dir.split(os.path.sep)[-1]
+        assert uni_dir_name == fstr.format(id=uni_id,
+                                           digs=len(str(max_uni_id)))
+        # NOTE this tests only for +/- 1 errors in uni_id / max_uni_id path creation. Generating the correct format string from id and number of digits is reliable enough to not need testing
+
+        # Test for uni_id == maximum_uni_id that the first number is not zero, i.e. that there are not too many leading zeros
+        if uni_id == max_uni_id and uni_id != 0:
+            assert uni_dir_name[3] != "0"
+
+        # Test that the whole universe ID is part of the filename
+        assert uni_dir_name[-len(str(uni_id)):] == str(uni_id)
+
+    # Test uniqueness of the folders
+    with pytest.raises(FileExistsError):
+        mv._create_uni_dir(uni_id=0, max_uni_id=0) # first case in above loop
+
+    # Test invalid input
     # negative numbers:
     with pytest.raises(RuntimeError):
             mv._create_uni_dir(uni_id=-1, max_uni_id=-1)
@@ -151,20 +153,19 @@ def test_create_uni_dir(mv_kwargs, tmpdir):
 
 def test_run_single(default_mv):
     """Tests a run with a single simulation"""
-    mv = default_mv
-
-    mv.run_single()
-
-    print("Workers: ", mv.wm.workers)
+    default_mv.run_single()
+    print("Workers: ", default_mv.wm.workers)
 
 def test_run_sweep(mv_kwargs):
     """Tests a run with a single simulation"""
+    # Adjust the defaults to use the sweep configuration for run configuration
     mv_kwargs['run_cfg_path'] = SWEEP_CFG_PATH
-
     mv = Multiverse(**mv_kwargs)
 
+    # Run the sweep
     mv.run_sweep()
 
+    # Print some info.
     print("Workers: ", mv.wm.workers)
 
 # Other tests -----------------------------------------------------------------
@@ -188,28 +189,3 @@ def test_distribute_user_cfg(tmpdir, monkeypatch):
 
 
 # Helpers ---------------------------------------------------------------------
-
-def single_create_uni_dir(mv_kwargs, local_config, maximum=10):
-    """A helper function to create a single uni dir"""
-    # Init Multiverse
-    mv = Multiverse(**mv_kwargs, update_meta_cfg=local_config)
-
-    # Create the universe directories
-    for i in range(maximum + 1):
-        mv._create_uni_dir(uni_id=i, max_uni_id=maximum)
-
-    # get the path of the universes folder
-    path = mv.dirs['universes']
-
-    # calculate the number of needed filling zeros dependend on the maximum number of different calulations
-    number_filling_zeros = math.ceil(math.log(maximum + 1, 10))
-
-    # check that minimal number of filling zeros (at maximum no zero in front)
-    if maximum > 0:
-        uni = "uni" + str(maximum).zfill(number_filling_zeros)
-        assert uni[3] != '0'
-
-    # check if all universe directories are created
-    for i in range(maximum + 1):
-        path_uni = os.path.join(path, "uni" + str(i).zfill(number_filling_zeros))
-        assert os.path.isdir(path_uni) is True
