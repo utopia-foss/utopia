@@ -74,10 +74,14 @@ def test_init(wm):
         # not int
         WorkerManager(num_workers=1.23)
 
-    # Test different `poll_frequencies` arguments
+    # Test different `poll_delay` arguments
     with pytest.raises(ValueError):
         # negative
-        WorkerManager(num_workers=1, poll_freq=-1)
+        WorkerManager(num_workers=1, poll_delay=-1000)
+    
+    with pytest.warns(UserWarning):
+        # small value
+        WorkerManager(num_workers=1, poll_delay=0.001)
 
 def test_add_tasks(wm):
     """Tests adding of tasks"""

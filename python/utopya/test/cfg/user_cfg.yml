@@ -19,8 +19,7 @@ run_kwargs:
 
 # Worker Manager
 worker_manager:
-worker_manager:
   # specify how many processes work in parallel
   num_workers:         -1               # > 0 : number of processes 
                                        # <= 0 : #CPUs - num_workers
-  poll_freq:      20              # how often to check the state of the workers [Hz]
+  poll_delay:      0.05              # delays between polls (in seconds)

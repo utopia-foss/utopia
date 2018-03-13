@@ -24,7 +24,7 @@ worker_manager:
   # specify how many processes work in parallel
   num_workers:              auto          # auto : number of processor cores
                                           # <= 0 : #CPUs - num_workers
-  poll_freq:                20            # how often to check the state of the workers [Hz]
+  poll_delay:               0.05          # delay between polls (in seconds)
 
 # Reporter
 reporter: {} 

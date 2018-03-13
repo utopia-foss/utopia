@@ -25,17 +25,16 @@ class WorkerManager:
     At the same time, it reads the worker's stream in yet separate non-blocking threads.
     """
 
-    def __init__(self, num_workers: Union[int, str], poll_freq: float=42, QueueCls=queue.Queue):
+    def __init__(self, num_workers: Union[int, str], poll_delay: float=0.05, QueueCls=queue.Queue):
         """Initialize the worker manager.
 
         Args:
             num_workers (Union[int, str]): The number of workers that can work
                 in parallel. If `auto`, uses os.cpu_count(). If negative,
                 deduces that many from the CPU count
-            poll_freq (float, optional): How many times per second the workers
-                should be polled. More precisely: 1/poll_freq gives the sleep
-                time between polls. Should not be choosen too high, as this
-                determines the CPU load of the main thread.
+            poll_delay (float, optional): How long (in seconds) the delay
+                between worker polls should be. For too small delays (<0.01),
+                the CPU load will become significant.
             QueueCls (Class, optional): Which class to use for the Queue.
                 Defaults to FiFo.
         """
@@ -43,14 +42,14 @@ class WorkerManager:
         self._num_workers = None
         self._workers = OrderedDict()
         self._working = []
-        self._poll_freq = None
+        self._poll_delay = None
         self._task_cnt = 0
 
         # Initialize method-managed attributes
         self._tasks = QueueCls()
 
         # Hand over arguments
-        self.poll_freq = poll_freq
+        self.poll_delay = poll_delay
 
         if num_workers == 'auto':
             self.num_workers = os.cpu_count()
@@ -98,16 +97,20 @@ class WorkerManager:
         return self._working
 
     @property
-    def poll_freq(self) -> float:
+    def poll_delay(self) -> float:
         """The poll frequency in polls/second. Strictly speaking: the sleep time between two polls, which roughly equals the poll frequency."""
-        return self._poll_freq
+        return self._poll_delay
 
-    @poll_freq.setter
-    def poll_freq(self, val) -> None:
+    @poll_delay.setter
+    def poll_delay(self, val) -> None:
         """Set the poll frequency to a positive value."""
         if val <= 0.:
-            raise ValueError("Poll frequency needs to be positive, was", val)
-        self._poll_freq = val
+            raise ValueError("Poll delay needs to be positive, was "+str(val))
+        elif val < 0.01:
+            warnings.warn("Setting a poll delay of {} < 0.01s can lead to "
+                          "significant CPU load. Consider choosing a higher "
+                          "value.", UserWarning)
+        self._poll_delay = val
 
     @property
     def task_count(self) -> int:
@@ -208,8 +211,8 @@ class WorkerManager:
             self._poll_workers()
             # NOTE this will also remove no longer active workers
 
-            # Sleep until next poll
-            time.sleep(1/self.poll_freq)
+            # Delay the next poll
+            time.sleep(self.poll_delay)
 
         log.info("Finished working. Total tasks worked on: %d",
                  self.task_count)
