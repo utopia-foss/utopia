@@ -2,9 +2,10 @@
 
 The WorkerTask specialises on tasks for the WorkerManager."""
 
+import subprocess
 import warnings
 import logging
-from typing import Callable
+from typing import Callable, Union
 
 # Initialise logger
 log = logging.getLogger(__name__)
@@ -94,7 +95,14 @@ class Task:
 
 
 class WorkerTask(Task):
-    """A specialisation of the Task class that is aimed at use in the WorkerManager."""
+    """A specialisation of the Task class that is aimed at use in the WorkerManager.
+    
+    Attributes:
+        setup_func (Callable): The setup function to use before this task is
+            being worked on
+        setup_kwargs (dict): The kwargs to use to call setup_func
+        worker_kwargs (dict): The kwargs to use to spawn a worker process
+    """
 
     def __init__(self, *, setup_func: Callable=None, setup_kwargs: dict=None, worker_kwargs: dict=None, **task_kwargs):
         """Initialize a WorkerTask object, a specialization of a task for use in the WorkerManager.
@@ -141,8 +149,47 @@ class WorkerTask(Task):
         self.setup_kwargs = setup_kwargs
         self.worker_kwargs = worker_kwargs
 
+        # Create empty attributes to be filled with worker information
+        self._worker = None
+        self._worker_pid = None
+        self.streams = dict()
+        self.profiling = dict()
+
         log.debug("Specialized Task to be a WorkerTask.")
         log.debug("  With setup function?  %s", bool(setup_func))
+
+    # Properties ..............................................................
+    
+    @property
+    def worker(self) -> subprocess.Popen:
+        """If created, return the associated worker process object."""
+        return self._worker
+
+    @worker.setter
+    def worker(self, proc: subprocess.Popen):
+        """Set the associated worker process of this task."""
+        if self.worker is not None:
+            raise RuntimeError("A worker process was already associated with "
+                               "this task; cannot change it!")
+
+        # Save the object and its process id
+        self._worker = proc
+        self._worker_pid = proc.pid
+
+        log.debug("Associated worker process %d with task %d.",
+                  self.worker_pid, self.uid)
+
+    @property
+    def worker_pid(self) -> int:
+        """The process ID of the associated worker process"""
+        return self._worker_pid
+
+    @property
+    def worker_status(self) -> Union[int, None]:
+        """Returns the worker processes current status."""
+        return self.worker.poll()
+
+    # Magic methods ...........................................................
 
     def __str__(self) -> str:
         return "WorkerTask<uid: {}, priority: {}>".format(self.uid, self._priority)
