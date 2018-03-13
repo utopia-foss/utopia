@@ -4,7 +4,8 @@ import os
 
 import pytest
 
-from utopya.workermanager import WorkerManager, enqueue_lines, parse_json
+from utopya.workermanager import WorkerManager
+from utopya.task import enqueue_lines, parse_json
 
 
 # Fixtures --------------------------------------------------------------------

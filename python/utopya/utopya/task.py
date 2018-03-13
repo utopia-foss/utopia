@@ -2,10 +2,14 @@
 
 The WorkerTask specialises on tasks for the WorkerManager."""
 
+import time
+import queue
+import threading
 import subprocess
 import warnings
 import logging
 from typing import Callable, Union
+from typing.io import BinaryIO
 
 # Initialise logger
 log = logging.getLogger(__name__)
@@ -93,6 +97,7 @@ class Task:
         # NOTE that this should only occur if comparing to itself
         # TODO consider throwing an error here; identity should be checked via is keyword rather than ==
 
+# -----------------------------------------------------------------------------
 
 class WorkerTask(Task):
     """A specialisation of the Task class that is aimed at use in the WorkerManager.
@@ -152,6 +157,7 @@ class WorkerTask(Task):
         # Create empty attributes to be filled with worker information
         self._worker = None
         self._worker_pid = None
+        self._worker_status = None
         self.streams = dict()
         self.profiling = dict()
 
@@ -187,13 +193,183 @@ class WorkerTask(Task):
     @property
     def worker_status(self) -> Union[int, None]:
         """Returns the worker processes current status."""
-        return self.worker.poll()
+        if self._worker_status is None:
+            # No cached value yet; poll the worker
+            poll_res = self.worker.poll()
+        
+            if poll_res is not None:
+                # The worker finished. Save the exit status and finish up ...
+                self._worker_status = poll_res
+                self._finished()
+
+            return poll_res
+        
+        else:
+            return self._worker_status
 
     # Magic methods ...........................................................
 
     def __str__(self) -> str:
         return "WorkerTask<uid: {}, priority: {}>".format(self.uid, self._priority)
 
+    # Public API ..............................................................
+
+    def spawn_worker(self) -> subprocess.Popen:
+        """Spawn a worker process using subprocess.Popen and manage the corresponding queue and thread for reading the stdout stream.
+
+        If there is a setup_func, this function will be called first.
+
+        Afterwards, from the worker_kwargs returned by that function or from
+        the ones given during initialisation (if not setup_func was given),
+        the worker process is spawned and associated with this task.
+        
+        Returns:
+            subprocess.Popen: The created process object
+        
+        Raises:
+            TypeError: For invalid `args` argument
+        """
+
+        # If a setup function is available, call it with the given kwargs
+        if self.setup_func:
+            log.debug("Calling a setup function ...")
+            worker_kwargs = self.setup_func(worker_kwargs=self.worker_kwargs,
+                                            **self.setup_kwargs)
+        else:
+            log.debug("No setup function given; using the `worker_kwargs` "
+                      "directly.")
+            worker_kwargs = self.worker_kwargs
+
+        # Extract information from the worker_kwargs
+        args = worker_kwargs['args']
+        read_stdout = worker_kwargs.get('read_stdout', True)
+        line_read_func = worker_kwargs.get('line_read_func')
+        popen_kwargs = worker_kwargs.get('popen_kwargs', {})
+
+        # Perform some checks
+        if not isinstance(args, tuple):
+            raise TypeError("Need argument `args` to be of type tuple, "
+                            "got {} with value {}. Refusing to even try to "
+                            "spawn a worker process.".format(type(args), args))
+
+        if read_stdout:
+            # If no `line_read_func` was given, read the default
+            if not line_read_func:
+                log.debug("No `line_read_func` given; will use "
+                          "`enqueue_lines` instead.")
+                line_read_func = enqueue_lines
+
+            # Establish queue for stream reading, creating a new pipe for STDOUT and forwarding STDERR into that same pipe
+            q = queue.Queue()
+            stdout = subprocess.PIPE
+            stderr = subprocess.STDOUT
+        else:
+            # No stream-reading is taking place; forward all streams to devnull
+            stdout = stderr = subprocess.DEVNULL
+
+        # Done with the checks now.
+        # Spawn the child process with the given arguments
+        log.debug("Spawning worker process with args:  %s", args)
+        proc = subprocess.Popen(args,
+                                bufsize=1, # line buffered
+                                stdout=stdout, stderr=stderr,
+                                **popen_kwargs)
+
+        # Save the approximate creation time (as soon as possible)
+        self.profiling['create_time'] = time.time()
+        log.debug("Spawned worker process with PID %s.", proc.pid)
+        # ... it is running now.
+
+        # Associate the process with the task
+        self.worker = proc
+
+        # If enabled, prepare for reading the output
+        if read_stdout:
+            # Generate the thread that reads the stream and populates the queue
+            t = threading.Thread(target=line_read_func,
+                                 kwargs=dict(queue=q, stream=proc.stdout))
+            # Set to be a daemon thread => will die with the parent thread
+            t.daemon = True
+
+            # Start the thread; this will lead to line_read_func being called
+            t.start()
+
+            # Save the stream information in the WorkerTask object
+            self.streams['out'] = dict(queue=q, thread=t, log=[])
+            # NOTE could have more streams here, but focus on stdout right now
+
+            log.debug("Added thread to read worker's combined STDOUT and STDERR.")        
+
+        return self.worker
+
+    def read_streams(self, stream_names: list='all', forward_streams: bool=True, max_num_reads: int=1) -> None:
+        """Read the streams associated with this task's worker.
+        
+        Args:
+            stream_names (list, optional): The list of stream
+                names to read. If 'all' (default), will read all streams.
+            forward_streams (bool, optional): Whether the read stream should be
+                forwarded to this module's log.info() function
+            max_num_reads (int, optional): How many lines should be read from
+                the buffer. For -1, reads the whole buffer.
+                WARNING: Do not make this value too large as it could block the
+                whole reader thread of this worker.
+        
+        Returns:
+            None: Description
+        """
+        def read_single_stream(stream: dict, max_num_reads=max_num_reads):
+            """A function to read a single stream"""
+            q = stream['queue']
+
+            # In certain cases, read as many as queue reports to have
+            if max_num_reads == -1:
+                max_num_reads = q.qsize()
+                # NOTE this value is approximate; thus, this should only be called if it is reasonably certain that the queue size will not change
+
+            # Perform the read operations
+            for _ in range(max_num_reads):
+                # Try to read a single entry
+                try:
+                    entry = q.get_nowait()
+                except queue.Empty:
+                    break
+                else:
+                    # got entry, do something with it
+                    if forward_streams:
+                        # print it to the parent processe's stdout
+                        log.info(" task %4d:  %s", self.uid, entry)
+
+                    # Write to the stream's log
+                    stream['log'].append(entry)
+
+        if not self.streams:
+            # There are no streams to read
+            log.debug("No streams to read for task %d!", self.uid)
+            return
+
+        elif stream_names == 'all':
+            # Gather list of stream names
+            stream_names = list(self.streams.keys())
+
+        # Loop over stream names and call the function to read a single stream
+        for stream_name in stream_names:
+            log.debug("Reading single stream '%s' ...", stream_name)
+            read_single_stream(self.streams[stream_name])
+
+        return
+
+    # Private API .............................................................
+
+    def _finished(self):
+        """Is called once the worker has finished working on this task."""
+        self.profiling['end_time'] = time.time()  # approximate
+
+        # Read all remaining stream lines
+        self.read_streams(max_num_reads=-1)
+
+        log.debug("Worker of task %d finished with status %s.",
+                  self.uid, self.worker_status)
 
 # -----------------------------------------------------------------------------
 
@@ -273,3 +449,63 @@ class TaskList(list):
     def extend(self, *args):
         raise NotImplementedError("TaskList does not allow extension. "
                                   "Please use append to add tasks.")
+
+# -----------------------------------------------------------------------------
+# These solely relate to the WorkerTask class, thus not in the tools module
+
+def enqueue_lines(*, queue: queue.Queue, stream: BinaryIO, parse_func: Callable=None) -> None:
+    """From the given stream, read line-buffered lines and add them to the provided queue. If they are json-parsable, parse them and add the parsed dictionary to the queue.
+
+    Args:
+        queue (queue.Queue): The queue object to put the read line into
+        stream (BinaryIO): The stream identifier
+        parse_func (Callable, optional): A parse function that the read line
+            is passed through
+    """
+
+    if not parse_func:
+        # Define a pass-through function, doing nothing
+        parse_func = lambda line: line
+
+    # Read the lines and put them into the queue
+    for line in iter(stream.readline, b''): # <-- thread waits here for new lines, without idle looping
+        # Got a line (byte-string, assumed utf8-encoded)
+        # Try to decode and strip newline
+        try:
+            line = line.decode('utf8').rstrip()
+        except UnicodeDecodeError:
+            # Remains a bytestring
+            pass
+        else:
+            # Could decode. Pass to parse function
+            line = parse_func(line)
+
+        # Send it through the parse function
+        queue.put_nowait(parse_func(line))
+
+    # Everything read. Close the stream
+    stream.close()
+    # Thread also finishes here.
+
+def parse_json(line: str) -> Union[dict, str]:
+    """A json parser that can be passed to enqueue_lines.
+
+    It tries to decode the line, and parse it as a json.
+    If that fails, it will still try to decode the string.
+    If that fails yet again, the unchanged line will be returned.
+
+    Args:
+        line (str): The line to decode, assumed byte-string, utf8-encoded
+
+    Returns:
+        Union[dict, str]: Either the decoded json, or, if that failed, the str
+    """
+    try:
+        return json.loads(line, encoding='utf8')
+    except json.JSONDecodeError:
+        # Failed to do that. Just return the unparsed line
+        return line
+
+def enqueue_json(*, queue: queue.Queue, stream: BinaryIO, parse_func: Callable=parse_json) -> None:
+    """Wrapper function for enqueue_lines with parse_json set as parse_func."""
+    return enqueue_lines(queue=queue, stream=stream, parse_func=parse_func)

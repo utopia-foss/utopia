@@ -11,7 +11,8 @@ import pkg_resources
 
 import paramspace as psp
 
-from utopya.workermanager import WorkerManager, enqueue_json
+from utopya.workermanager import WorkerManager
+from utopya.task import enqueue_json
 from utopya.tools import recursive_update, read_yml, write_yml
 from utopya.info import MODELS
 
