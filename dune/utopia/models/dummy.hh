@@ -4,6 +4,11 @@
 #include <dune/utopia/base.hh>
 #include <dune/utopia/core/model.hh>
 
+#include <dune/utopia/data_io/config.hh>
+// #include <dune/utopia/data_io/hdffile.hh>
+// #include <dune/utopia/data_io/hdfgroup.hh>
+#include <dune/utopia/data_io/hdfdataset.hh>
+#include <dune/utopia/data_io/hdfmockclasses.hh>
 
 namespace Utopia {
 
@@ -29,20 +34,28 @@ public:
 private:
     Data _state;
     BCType _bc;
+    Utopia::DataIO::Config _config;
+    std::mt19937 _rng;
+    DataIO::HDFFile _file;
 
 public:
     /// Construct the dummy model with an initial state
     /** \param state Initial state of the model
      */
-    DummyModel (const Data& state):
+    DummyModel (const Data& state, Utopia::DataIO::Config config):
         Base(),
         _state(state),
-        _bc(_state.size(), 1.0)
+        _bc(_state.size(), 1.0),
+        _config(config),
+        _rng(_config["seed"].as<int>()),
+        _file(_config["output_path"].as<std::string>(), "w")
     { }
 
     /// Iterate by one time step
     void perform_step ()
     {
+        auto gen = std::bind(std::uniform_real_distribution<>(), _rng);
+        std::generate(_bc.begin(), _bc.end(), gen);
         std::transform(_state.begin(), _state.end(), _bc.begin(),
             _state.begin(),
             [](const auto a, const auto b) { return a + b; }
@@ -50,7 +63,13 @@ public:
     }
 
     /// Do nothing for now
-    void write_data () {}
+    void write_data ()
+    {
+        const std::string set_name = "data-" + std::to_string(this->time);
+        auto dataset = _file.get_basegroup().open_dataset(set_name);
+        dataset->write(_state.begin(), _state.end(),
+            [](auto &value) { return value; });
+    }
 
     // Set model boundary condition
     void set_boundary_condition (const BCType& bc) { _bc = bc; }
@@ -62,44 +81,6 @@ public:
     const Data& data () const { return _state; }
 };
 
-/// Dummy model checking if 'iterate' can be overridden
-class DummyModelWithIterate :
-    public DummyModel
-{
-private:
-    using Data = DummyModel::Data;
-public:
-    /// Create DummyModel with initial state
-    DummyModelWithIterate (const Data& state):
-        DummyModel(state)
-    { }
-
-    /// Iterate twice for checking this implementation
-    void iterate () {
-        this->perform_step();
-        this->perform_step();
-    }
-};
-
-
 } // namespace Utopia
-
-/// Compare two containers
-template<typename A, typename B>
-bool compare_containers (const A& a, const B& b)
-{
-    if (a.size() != b.size())
-        return false;
-    
-    std::vector<bool> res(a.size());
-    std::transform(a.begin(), a.end(), b.begin(),
-        res.begin(),
-        [](const auto x, const auto y) { return x == y; }
-    );
-
-    return std::all_of(res.begin(), res.end(),
-        [](const auto x){ return x; }
-    );
-}
 
 #endif // UTOPIA_TEST_MODEL_TEST_HH

@@ -1,7 +1,8 @@
 worker_manager:
-  num_workers: 2
+  num_workers: 3
 
 parameter_space: !pspace
+  num_steps: 5
   dummy:
     seed: !sweep
       default: 1337
