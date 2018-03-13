@@ -5,15 +5,15 @@ from typing import List
 import numpy as np
 import pytest
 
-from utopya.task import Task
+from utopya.task import Task, TaskList
 
 
 # Fixtures ----------------------------------------------------------------
 
 @pytest.fixture
-def tasks() -> List[Task]:
-    """Returns a list of tasks"""
-    tasks = []
+def tasks() -> TaskList:
+    """Returns a TaskList filled with tasks"""
+    tasks = TaskList()
     for uid, priority in enumerate(np.random.random(size=50)):
         tasks.append(Task(uid=uid, priority=priority))
 
@@ -21,7 +21,7 @@ def tasks() -> List[Task]:
 
 # Initialisation tests --------------------------------------------------------
 
-def test_init():
+def test_task_init():
     """Test task initialization"""
     Task(uid=0)
     Task(uid=1, priority=1000)
@@ -37,8 +37,12 @@ def test_init():
         t = Task(uid=2)
         t.uid = 3
 
-def test_sorting(tasks):
+def test_task_sorting(tasks):
     """Tests whether different task objects are sortable"""
+    # Put into a normal list, as the TaskList does not support sorting
+    tasks = list(tasks)
+
+    # Sort it, then do some checks
     tasks.sort()
 
     t1 = tasks[0]
@@ -48,6 +52,42 @@ def test_sorting(tasks):
     assert (t1 == t2) is False
     assert (t1 == t1) is True
 
-def test_magic_methods(tasks):
+def test_task_magic_methods(tasks):
     """Test magic methods"""
-    task_strs = [str(t) for t in tasks]
+    _ = [str(t) for t in tasks]
+
+def test_tasklist(tasks):
+    """Tests the TaskList features"""
+    # This should work
+    for _ in range(3):
+        tasks.append(Task(uid=len(tasks)))
+
+    # Or changing a task at a specific position
+    tasks[3] = Task(uid=3)
+
+    # This should not: the tasks already exist
+    with pytest.raises(ValueError):
+        tasks.append(Task(uid=0))
+
+    # Or it was not even a task
+    with pytest.raises(TypeError):
+        tasks.append(("foo", "bar"))
+
+def test_tasklist_prohibited(tasks):
+    """Tests the prohibited methods of this class."""
+    prohibited = [
+        ('__add__', (None,)),
+        ('__iadd__', (None,)),
+        ('__delitem__', (0,)),
+        ('clear', ()),
+        ('insert', (0, "foo")),
+        ('pop', (0,)),
+        ('reverse', ()),
+        ('sort', ()),
+        ('remove', (0,)),
+        ('extend', ([1,2,3])),
+    ]
+
+    for attr_name, args in prohibited:
+        with pytest.raises(NotImplementedError):
+            getattr(tasks, attr_name)(*args)
