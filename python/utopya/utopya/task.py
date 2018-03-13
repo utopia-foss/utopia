@@ -1,11 +1,15 @@
-"""The Task supplies a container for a task handled by the WorkerManager."""
+"""The Task class supplies a container for all information needed for a task.
 
+The WorkerTask specialises on tasks for the WorkerManager."""
+
+import warnings
 import logging
 from typing import Callable
 
 # Initialise logger
 log = logging.getLogger(__name__)
 
+# -----------------------------------------------------------------------------
 
 class Task:
     """The Task is a container for a task handled by the WorkerManager.
@@ -18,8 +22,14 @@ class Task:
         priority (int): The task priority
     """
 
-    def __init__(self, *, uid: int, priority: int=None, setup_func: Callable=None, setup_kwargs: dict=None, worker_kwargs: dict=None):
-        """Initialize a Task object."""
+    def __init__(self, *, uid: int, priority: int=None):
+        """Initialize a Task object.
+
+        Args:
+            uid (int): The task's unique ID
+            priority (int, optional): The priority of this task; is only used
+                if the task queue is a priority queue
+        """
         # Create property-managed attributes
         self._uid = None
 
@@ -27,9 +37,7 @@ class Task:
         self.uid = uid
         self._priority = priority
 
-        self.setup_func = setup_func
-        self.setup_kwargs = setup_kwargs
-        self.worker_kwargs = worker_kwargs
+        log.debug("Initialized Task with ID %d.", self.uid)
 
     # Properties --------------------------------------------------------------
     
@@ -84,10 +92,63 @@ class Task:
         # NOTE that this should only occur if comparing to itself
         # TODO consider throwing an error here; identity should be checked via is keyword rather than ==
 
-    # Public API --------------------------------------------------------------
 
-    # Non-Public API ----------------------------------------------------------
+class WorkerTask(Task):
+    """A specialisation of the Task class that is aimed at use in the WorkerManager."""
 
+    def __init__(self, *, setup_func: Callable=None, setup_kwargs: dict=None, worker_kwargs: dict=None, **task_kwargs):
+        """Initialize a WorkerTask object, a specialization of a task for use in the WorkerManager.
+        
+        Args:
+            setup_func (Callable, optional): The function to call before the
+                worker process is spawned
+            setup_kwargs (dict, optional): The kwargs to call setup_func with
+            worker_kwargs (dict, optional): The kwargs needed to spawn the
+                worker. Note that these are also passed to setup_func and, if a
+                setup_func is given, the return value of that function will be
+                used for the worker_kwargs.
+            **task_kwargs: Arguments to be passed to Task.__init__
+        
+        Raises:
+            ValueError: If neither `setup_func` nor `worker_kwargs` were given
+        """
+
+        super().__init__(**task_kwargs)
+
+        # Check the argument values
+        if setup_func:
+            setup_kwargs = setup_kwargs if setup_kwargs else dict()
+
+            if worker_kwargs:
+                warnings.warn("Received argument `worker_kwargs` despite a "
+                              "setup function having been given; the passed "
+                              "`worker_kwargs` will not be used!",
+                              UserWarning)
+        
+        elif worker_kwargs:
+            if setup_kwargs:
+                warnings.warn("worker_kwargs given but also setup_kwargs "
+                              "specified; the latter will be ignored. Did "
+                              "you mean to call a setup function? If yes, "
+                              "pass it via the `setup_func` argument.",
+                              UserWarning)
+        else:
+            raise ValueError("Need either argument `setup_func` or "
+                             "`worker_kwargs`, got none of those.")
+
+        # Save the arguments
+        self.setup_func = setup_func
+        self.setup_kwargs = setup_kwargs
+        self.worker_kwargs = worker_kwargs
+
+        log.debug("Specialized Task to be a WorkerTask.")
+        log.debug("  With setup function?  %s", bool(setup_func))
+
+    def __str__(self) -> str:
+        return "WorkerTask<uid: {}, priority: {}>".format(self.uid, self._priority)
+
+
+# -----------------------------------------------------------------------------
 
 class TaskList(list):
     """This list is meant to store tasks in it.
@@ -95,7 +156,7 @@ class TaskList(list):
     It disallows the use of some parent methods.
     """
 
-    # Adapt some methods to make this a list of tasks -------------------------
+    # Adapt some methods to make this a list of tasks .........................
 
     def __setitem__(self, idx: int, val: Task):
         """Set the item with the given index. Only allow Tasks with the correct uid."""
@@ -133,7 +194,7 @@ class TaskList(list):
 
         # No raise: everything ok.
 
-    # Disallow any methods that change the existing content -------------------
+    # Disallow any methods that change the existing content ...................
 
     def __add__(self, other):
         raise NotImplementedError("Please use append to add Task objects.")
