@@ -53,8 +53,8 @@ class StopCondition:
 
             # Check it
             if not (sc_func and callable(sc_func)):
-                raise ValueError("Could not find function '{}' in local "
-                                 "scope!".format(_func_name))
+                raise ImportError("Could not find function '{}' in local "
+                                  "scope!".format(_func_name))
 
             # Valid. Append the information to the list
             funcs_and_kws.append((sc_func, func_name, func_dict))
