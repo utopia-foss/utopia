@@ -27,9 +27,12 @@ class Multiverse:
     one place.
     
     Attributes:
-        dirs (dict): The absolute paths to the managed directories
+        BASE_CFG_PATH (str): The path to the base configuration, supplied with
+            the utopya package
+        meta_config (dict): The parsed Multiverse meta-configuration. All
+            further arguments are extracted from this dict.
         model_name (str): The model name associated with this Multiverse
-        UTOPIA_EXEC (str): The name of the utopia executable, found in 
+        USER_CFG_SEARCH_PATH (str): The path at which a user config is expected
     """
 
     BASE_CFG_PATH = pkg_resources.resource_filename('utopya',
@@ -129,6 +132,7 @@ class Multiverse:
         return self._wm
 
     # Public methods ..........................................................
+    # TODO the run methods should only be allowed to run once!
 
     def run(self):
         """Starts a Utopia run. Whether this will be a single simulation or
@@ -346,12 +350,18 @@ class Multiverse:
     def _create_uni_basename(*, uni_id: int, max_uni_id: int) -> str:
         """Returns the formatted universe basename, zero-padded, for usage
         in WorkerTask names and universe directory creation.
-
+        
         Args:
             uni_id (int): ID of the universe whose folder should be created.
                 Needs to be positive or zero.
             max_uni_id (int): highest ID, needed for correct zero-padding.
                 Needs to be larger or equal to uni_id.
+        
+        Returns:
+            str: The zero-padded universe basename, e.g. uni0042
+        
+        Raises:
+            ValueError: For invalid `uni_id` or `max_uni_id` arguments 
         """
 
         # Check if uni_id and max_uni_id are positive
@@ -368,15 +378,14 @@ class Multiverse:
     def _add_sim_task(self, *, uni_id: int, max_uni_id: int, uni_cfg: dict) -> None:
         """Helper function that handles task assignment to the WorkerManager.
         
-        This function performs the following steps:
-          - Creating a universe (folder) for the task (simulation).
-          - Writing the passed-over configuration to a yaml file
-          - Passing a functional setup_func and its arguments to WorkerManager.add_task
+        This function creates a WorkerTask that will perform the following
+        actions __once it is grabbed and worked at__:
+          - Create a universe (folder) for the task (simulation)
+          - Write that universe's configuration to a yaml file in that folder
+          - Create the correct arguments for the call to the model binary
     
-        Note that the task will not be executed right away but is only
-        registered with the WorkerManager. The task will be worker on once the
-        WorkerManager has free workers available. That is the reason why the
-        setup function is only passed as a functional, not called here.
+        To that end, this method gathers all necessary arguments and registers
+        a WorkerTask with the WorkerManager.
         
         Args:
             uni_id (int): ID of the universe whose folder should be created
@@ -396,13 +405,14 @@ class Multiverse:
                 model_binpath (str): path to the binary to execute
                 uni_cfg (dict): the configuration to create a yml file from
                     which is then needed by the model
-                uni_basename (str): Description
+                uni_basename (str): Basename of the universe to use for folder
+                    creation, i.e.: zero-padded universe number, e.g. uni0042
             
-            Returned:
+            Returns:
                 dict: kwargs for the process to be run when task is grabbed by
                     Worker.
             """
-            # create universe directory path
+            # create universe directory path using the basename
             uni_dir = os.path.join(self.dirs['universes'], uni_basename)
 
             # Now create the folder
@@ -412,7 +422,7 @@ class Multiverse:
             # Generate a path to the output hdf5 file and add it to the dict
             output_path = os.path.join(uni_dir, "data.h5")
             
-            # FIXME this should actually not be saved under the key of the model name!
+            # FIXME this should actually not be saved under the key of the model name, but on the highest level of the generated configuration
             if model_name not in uni_cfg:
                 # Need to create the high level entry
                 uni_cfg[model_name] = dict(output_path=output_path)

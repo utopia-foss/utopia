@@ -23,10 +23,6 @@ class Task:
     
     It aims to provide the necessary interfaces for the WorkerManager to easily
     associate tasks with the corresponding workers and vice versa.
-    
-    Attributes:
-        uid (int): the task ID, assumed to be a unique integer
-        priority (int): The task priority
     """
 
     __slots__ = ('_name', '_priority', '_uid')
@@ -35,7 +31,8 @@ class Task:
         """Initialize a Task object.
         
         Args:
-            name (str): The task's name
+            name (str, optional): The task's name. If none is given, the
+                generated uuid will be used.
             priority (int, optional): The priority of this task; is only used
                 if the task queue is a priority queue
         """
@@ -46,7 +43,8 @@ class Task:
         # Create a unique ID
         self._uid = uuid.uuid1()
 
-        log.debug("Initialized Task with ID %d.", self.uid)
+        log.debug("Initialized Task '%s'.\n  Priority: %s,  UID: %s.",
+                  self.name, self.priority, self.uid)
 
     # Properties --------------------------------------------------------------
 
@@ -78,7 +76,8 @@ class Task:
         return "Task<uid: {}, priority: {}>".format(self.uid, self.priority)
 
     # Rich comparisons, needed in PriorityQueue
-    # NOTE only need to implement __lt__, __le__, and __eq__
+    # NOTE only need to implement __lt__, __le__, and __eq__, the others are
+    # created by calling the methods with swapped arguments.
     
     def __lt__(self, other):
         return bool(self.order_tuple < other.order_tuple)
@@ -99,11 +98,14 @@ class WorkerTask(Task):
     It is able to spawn a worker process, executing the task. Task execution
     is non-blocking. At the same time, the worker's stream can be read in via
     another non-blocking thread.
-
+    
     Attributes:
+        profiling (dict): Profiling information of this WorkerTask
         setup_func (Callable): The setup function to use before this task is
             being worked on
         setup_kwargs (dict): The kwargs to use to call setup_func
+        streams (dict): the associated streams of this WorkerTask
+        worker (subprocess.Popen): The worker process, if spawned
         worker_kwargs (dict): The kwargs to use to spawn a worker process
     """
 
@@ -164,7 +166,7 @@ class WorkerTask(Task):
         self.streams = dict()
         self.profiling = dict()
 
-        log.debug("Finished setting up task %d as a worker task.", self.uid)
+        log.debug("Finished setting up task '%s' as a WorkerTask.", self.name)
         log.debug("  With setup function?  %s", bool(setup_func))
 
     # Properties ..............................................................
@@ -364,8 +366,8 @@ class WorkerTask(Task):
                     # got entry, do something with it
                     if forward_streams:
                         # print it to the parent processe's stdout
-                        log.info("  Task %4d %s:   %s",
-                                 self.uid, stream_name, entry)
+                        log.info("  %s %s:   %s",
+                                 self.name, stream_name, entry)
 
                     # Write to the stream's log
                     stream['log'].append(entry)
