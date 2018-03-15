@@ -2,11 +2,14 @@
 WorkerManager to stop a worker process in certain situations."""
 
 import copy
-import time
-import yaml
 import logging
-from typing import List
+import warnings
+from typing import List, Callable
 from subprocess import Popen
+
+import yaml
+
+import utopya.stopcond_funcs as sc_funcs
 
 # Initialise logger
 log = logging.getLogger(__name__)
@@ -19,11 +22,30 @@ class StopCondition:
     of this class store the information required to deduce whether the
     condition if fulfilled or not.
     """
-    def __init__(self, *, to_check: List[dict], name: str=None, description: str=None, enabled: bool=True):
-        """Create a new stop condition"""
+    def __init__(self, *, to_check: List[dict]=None, name: str=None, description: str=None, enabled: bool=True, func: Callable=None, **func_kwargs):
+        """Create a new stop condition
+        
+        Args:
+            to_check (List[dict], optional): A list of dicts, that holds the
+                functions to call and the arguments to call them with. The only
+                requirement for the dict is that the `func` key is available.
+                All other keys are unpacked and passed as kwargs to the given
+                function.
+            name (str, optional): The name of this stop condition
+            description (str, optional): A short description of this stop
+                condition
+            enabled (bool, optional): Whether this stop condition should be
+                checked; if False, it will be created but will always be un-
+                fulfilled when checked.
+            func (Callable, optional): (For the short syntax only!) If no
+                `to_check` argument is given, a function can be given here that
+                will be the only one that is checked.
+            **func_kwargs: (For the short syntax) The kwargs that are passed
+                to the single stop condition function
+        """ 
 
         # Resolve functions that are to be checked
-        self.to_check = self._resolve_sc_funcs(to_check)
+        self.to_check = self._resolve_sc_funcs(to_check, func, func_kwargs)
 
         # Carry over descriptive attributes
         self.enabled = enabled
@@ -35,29 +57,42 @@ class StopCondition:
                   "function(s).", self.name, len(self.to_check))
 
     @staticmethod
-    def _resolve_sc_funcs(to_check: List[dict]) -> List[tuple]:
-        """Resolves the functions and kwargs"""
+    def _resolve_sc_funcs(to_check: List[dict], func: Callable, func_kwargs: dict) -> List[tuple]:
+        """Resolves the functions and kwargs that are to be checked."""
+
+        if func and not to_check:
+            # Not using the `to_check` argument
+            log.debug("Got `func` directly and no `to_check` argument; will "
+                      "use only this function for checking.")
+            return [(func, func.__name__, func_kwargs)]
+
+        elif to_check and (func or func_kwargs):
+            warnings.warn("Got both `to_check` and `func` or `func_kwargs` "
+                          "argument. `func` and `func_kwargs` will be "
+                          "ignored!")
+
+        # Everything ok, resolve the to_check list
         funcs_and_kws = []
 
         for func_dict in to_check:
-            # Work on a copy
+            # Work on a copy (to be able to pop the func off)
             func_dict = copy.deepcopy(func_dict)
 
-            # Pop the name and resolve the function
-            func_name = func_dict.pop('func_name')
-            _func_name = '_sc_' + func_name
-
-            log.debug("Resolving function '%s' from global scope ...",
-                      _func_name)
-            sc_func = globals().get(_func_name)
+            # Pop the function off the dict and get its name
+            func = func_dict.pop('func')
 
             # Check it
-            if not (sc_func and callable(sc_func)):
-                raise ImportError("Could not find function '{}' in local "
-                                  "scope!".format(_func_name))
+            if not callable(func):
+                raise TypeError("Given value of key `func` needs to be a "
+                                "callable, but was {} with value {}."
+                                "".format(type(func), func))
+
+            # else: is callable, has the __name__ attribute
+            func_name = func.__name__
+            log.debug("Got function '%s' for stop condition ...", func_name)
 
             # Valid. Append the information to the list
-            funcs_and_kws.append((sc_func, func_name, func_dict))
+            funcs_and_kws.append((func, func_name, func_dict))
         
         log.debug("Resolved %d stop condition function(s).",
                   len(funcs_and_kws))
@@ -99,7 +134,7 @@ class StopCondition:
 # -----------------------------------------------------------------------------
 
 def stop_cond_constructor(loader, node) -> StopCondition:
-    """constructor for creating a StopCondition object from a mapping"""
+    """Constructor for creating a StopCondition object from a mapping"""
     log.debug("Encountered tag associated with StopCondition.")
 
     if isinstance(node, yaml.nodes.MappingNode):
@@ -113,12 +148,28 @@ def stop_cond_constructor(loader, node) -> StopCondition:
 
     return stop_cond
 
-# -----------------------------------------------------------------------------
-# Stop condition functions
-# These all get passed the worker process, information and additional kwargs
-# Required signature:  (*, worker_info, proc, **kws)
-# If `proc` or `worker_info` is not needed, this can be indicated via default arguments
+def sc_func_constructor(loader, node) -> Callable:
+    """Constructor for creating a callable from a function name.
 
-def _sc_timeout_wall(*, worker_info: dict, seconds: float, proc: Popen=None) -> bool:
-    """Checks the wall timeout of the given worker"""
-    return bool(time.time() - worker_info['create_time'] > seconds)
+    The callables are used in a StopCondition object and are thus only searched
+    for in the `stopcond_funcs` module.
+    """
+    log.debug("Encountered tag associated with stop condition function.")
+
+    if isinstance(node, yaml.nodes.ScalarNode):
+        log.debug("Constructing python string from scalar ...")
+        sc_func_name = loader.construct_python_str(node)
+        log.debug("  Resolved string:  %s", sc_func_name)
+    else:
+        raise TypeError("A stop condition function can only be constructed "
+                        "from a scalar node, but got node of type {} "
+                        "with value:\n{}".format(type(node), node))
+
+    log.debug("Getting corresponding function from stopcond_funcs module ...")
+    sc_func = sc_funcs.__dict__.get(sc_func_name)
+
+    if not sc_func or not callable(sc_func):
+        raise ImportError("Could not find a callable named '{}' in "
+                          "stopcond_funcs module!".format(sc_func_name))
+
+    return sc_func
