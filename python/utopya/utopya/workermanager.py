@@ -131,7 +131,7 @@ class WorkerManager:
                 utopya.task.Task.__init__ for all valid arguments.
         """
         # Generate the task object, creating a unique ID by using the current task count
-        task = WorkerTask(uid=self.task_count, **task_kwargs)
+        task = WorkerTask(**task_kwargs)
 
         # Append it to the task list and put it into the task queue
         self.tasks.append(task)

@@ -2,6 +2,7 @@
 
 The WorkerTask specialises on tasks for the WorkerManager."""
 
+import uuid
 import time
 import json
 import queue
@@ -28,46 +29,38 @@ class Task:
         priority (int): The task priority
     """
 
-    def __init__(self, *, uid: int, priority: int=None):
-        """Initialize a Task object.
+    __slots__ = ('_name', '_priority', '_uid')
 
+    def __init__(self, *, name: str=None, priority: int=None):
+        """Initialize a Task object.
+        
         Args:
-            uid (int): The task's unique ID
+            name (str): The task's name
             priority (int, optional): The priority of this task; is only used
                 if the task queue is a priority queue
         """
-        # Create property-managed attributes
-        self._uid = None
-
-        # Carry over attributes
-        self.uid = uid
+        # Carry over arguments attributes
+        self._name = str(name) if name else None
         self._priority = priority
+        
+        # Create a unique ID
+        self._uid = uuid.uuid1()
 
         log.debug("Initialized Task with ID %d.", self.uid)
 
     # Properties --------------------------------------------------------------
+
+    @property
+    def name(self) -> str:
+        """The task's name, if given; else the uid."""
+        if self._name is not None:
+            return self._name
+        return str(self.uid)
     
     @property
     def uid(self) -> int:
-        """The task's ID, assumed to be unique"""
+        """The task's unique ID"""
         return self._uid
-
-    @uid.setter
-    def uid(self, uid: int):
-        """Checks if the given ID is valid, then sets it and makes it read-only."""
-        if not isinstance(uid, int):
-            raise TypeError("Need integer UID, got " + str(type(uid)))
-        
-        elif uid < 0:
-            raise ValueError("Negative UID not allowed: " + str(uid))
-        
-        elif self.uid is not None:
-            raise RuntimeError("Task UID was already set and cannot be "
-                               "changed!")
-
-        else:
-            self._uid = uid
-            log.debug("Set task UID:  %d", self.uid)
 
     @property
     def priority(self) -> float:
@@ -76,8 +69,8 @@ class Task:
 
     @property
     def order_tuple(self) -> tuple:
-        """Returns the ordering tuple (priority, task ID)"""
-        return (self.priority, self.uid)
+        """Returns the ordering tuple (priority, uid.time)"""
+        return (self.priority, self.uid.time)
 
     # Magic methods -----------------------------------------------------------
     
@@ -113,6 +106,11 @@ class WorkerTask(Task):
         setup_kwargs (dict): The kwargs to use to call setup_func
         worker_kwargs (dict): The kwargs to use to spawn a worker process
     """
+
+    # Extend the slots of the Task class with some WorkerTask-specific slots
+    __slots__ = ('setup_func', 'setup_kwargs', 'worker_kwargs',
+                 '_worker', '_worker_pid', '_worker_status',
+                 'streams', 'profiling')
 
     def __init__(self, *, setup_func: Callable=None, setup_kwargs: dict=None, worker_kwargs: dict=None, **task_kwargs):
         """Initialize a WorkerTask object, a specialization of a task for use in the WorkerManager.
@@ -405,82 +403,47 @@ class WorkerTask(Task):
 
 # -----------------------------------------------------------------------------
 
-class TaskList(list):
-    """This list is meant to store tasks in it.
-
-    It disallows the use of some parent methods.
+class TaskList:
+    """The TaskList stores Task objects in it, ensuring that none is in there twice.
     """
 
-    # Adapt some methods to make this a list of tasks .........................
+    def __init__(self):
+        """Initialize an empty TaskList."""
+        self._l = []
 
-    def __setitem__(self, idx: int, val: Task):
-        """Set the item with the given index. Only allow Tasks with the correct uid."""
-        self._check_item_val_and_idx(idx=idx, val=val)
+    def __len__(self) -> int:
+        """The length of the TaskList."""
+        return len(self._l)
 
-        # Everything ok, set the item
-        super().__setitem__(idx, val)
+    def __contains__(self, val: Task) -> bool:
+        """Checks if the given object is contained in this TaskList."""
+        if not isinstance(val, Task):
+            # Cannot be part of this TaskList
+            return False
+        return val in self._l
+
+    def __getitem__(self, idx: int) -> Task:
+        """Returns the item at the given index in the TaskList."""
+        return self._l[idx]
+
+    def __iter__(self):
+        """Iterate over the TaskList"""
+        return iter(self._l)
 
     def append(self, val: Task):
         """Append a Task object to this TaskList"""
-        self._check_item_val_and_idx(idx=len(self), val=val)
+        
+        if not isinstance(val, Task):
+            raise TypeError("TaskList can only be filled with "
+                            "Task objects, got object of type {}, "
+                            "value {}".format(type(val), val))
+        elif val in self:
+            raise ValueError("Task '{}' (uid: {}) was already added "
+                             "to this TaskList, cannot be added "
+                             "again.".format(val.name, val.uid))
 
         # Everything ok, append the object
-        super().append(val)
-
-    @staticmethod
-    def _check_item_val_and_idx(*, idx: int, val: Task):
-        """Checks the validity of the given item value and index.
-        
-        Args:
-            idx (int): The index where this task should be inserted
-            val (Task): The item to be set, i.e. the Task object
-        
-        Raises:
-            TypeError: Given item was not a Task object
-            ValueError: Given Task did not match the allowed index
-        """
-        if not isinstance(val, Task):
-            raise TypeError("TaskList can only be filled with tasks, got "
-                            "object of type {}, value {}".format(type(val),
-                                                                 val))
-        
-        elif val.uid != idx:
-            raise ValueError("Task's UID and TaskList index do not match!")
-
-        # No raise: everything ok.
-
-    # Disallow any methods that change the existing content ...................
-
-    def __add__(self, other):
-        raise NotImplementedError("Please use append to add Task objects.")
-    
-    def __iadd__(self, other):
-        raise NotImplementedError("Please use append to add Task objects.")
-
-    def __delitem__(self, idx):
-        raise NotImplementedError("TaskList does not allow item deletion.")
-
-    def clear(self):
-        raise NotImplementedError("TaskList does not allow clearing.")
-    
-    def insert(self, idx, item):
-        raise NotImplementedError("TaskList does not allow insertion.")
-    
-    def pop(self, idx):
-        raise NotImplementedError("TaskList does not allow popping items.")
-    
-    def reverse(self):
-        raise NotImplementedError("TaskList does not allow reversion.")
-
-    def sort(self):
-        raise NotImplementedError("TaskList does not allow sorting.")
-    
-    def remove(self, idx):
-        raise NotImplementedError("TaskList does not allow removing.")
-    
-    def extend(self, *args):
-        raise NotImplementedError("TaskList does not allow extension. "
-                                  "Please use append to add tasks.")
+        self._l.append(val)
 
 # -----------------------------------------------------------------------------
 # These solely relate to the WorkerTask class, thus not in the tools module
