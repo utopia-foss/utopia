@@ -10,9 +10,16 @@ generate_model_info(
 
 # Installations ...............................................................
 
-# Manually install dependencies for utopya
-python_install_package_remote(URL https://ts-gitlab.iup.uni-heidelberg.de/yunus/paramspace.git@releases/v1.0b
-    TRUSTED_HOST ts-gitlab.iup.uni-heidelberg.de)
+# Manually install dependencies for utopya, if they are not already satisfied
+# paramspace
+dune_python_find_package(PACKAGE paramspace
+                         VERSION 1.0b0 EXACT  # NOTE exact needed during beta
+                         INTERPRETER ${DUNE_PYTHON_VIRTUALENV_EXECUTABLE})
+
+if(NOT DUNE_PYTHON_paramspace_FOUND)
+    python_install_package_remote(URL https://ts-gitlab.iup.uni-heidelberg.de/yunus/paramspace.git@releases/v1.0b
+        TRUSTED_HOST ts-gitlab.iup.uni-heidelberg.de)
+endif()
 
 
 # For easier development: install using symlinks to the local package
