@@ -57,6 +57,7 @@ private:
                             std::vector<hsize_t> extend,
                             std::vector<hsize_t> max_size, hsize_t chunksize,
                             hsize_t compress_level) {
+        _rank = rank;
         if (chunksize > 0) {
             if (extend.size() == 0) {
                 _extend = std::vector<hsize_t>(_rank, size);
