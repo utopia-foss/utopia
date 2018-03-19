@@ -37,7 +37,7 @@ public:
               std::enable_if_t<
                   is_container_type<typename std::decay_t<T>>::value == false,
                   int> = 0>
-    static inline hid_t type([[maybe_unused]] std::size_t = 0);
+    static inline hid_t type(std::size_t = 0);
 
     /**
      * @brief Overload for references types
@@ -45,7 +45,7 @@ public:
      */
     template <typename T,
               std::enable_if_t<std::is_reference<T>::value == true, int>>
-    inline hid_t type([[maybe_unused]] std::size_t = 0);
+    inline hid_t type(std::size_t = 0);
 
     /**
      * @brief Overload for pointer types
@@ -53,7 +53,7 @@ public:
      */
     template <typename T,
               std::enable_if_t<std::is_pointer<T>::value == true, int>>
-    inline hid_t type([[maybe_unused]] std::size_t = 0);
+    inline hid_t type(std::size_t = 0);
 
     /**
      * @brief Overload for container types types
@@ -63,7 +63,7 @@ public:
               std::enable_if_t<
                   is_container_type<typename std::decay_t<T>>::value == true,
                   int> = 0>
-    static inline hid_t type([[maybe_unused]] std::size_t = 0);
+    static inline hid_t type(std::size_t = 0);
 };
 
 // bunch of overloads of __get_type__ for getting hdf5 types for different c++
@@ -121,7 +121,7 @@ is_container<typename std::decay_t<T>>::value == false, int>
 template <typename T,
           std::enable_if_t<
               is_container_type<typename std::decay_t<T>>::value == false, int>>
-inline hid_t HDFTypeFactory::type(std::size_t size) {
+inline hid_t HDFTypeFactory::type([[maybe_unused]] std::size_t size) {
     return __get_type__<typename std::decay_t<T>>();
 }
 
@@ -134,7 +134,7 @@ inline hid_t HDFTypeFactory::type(std::size_t size) {
  * @return hid_t
  */
 template <typename T, std::enable_if_t<std::is_pointer<T>::value == true, int>>
-inline hid_t HDFTypeFactory::type(std::size_t size) {
+inline hid_t HDFTypeFactory::type([[maybe_unused]] std::size_t size) {
     return HDFTypeFactory::type<std::remove_pointer_t<std::decay_t<T>>>();
 }
 
@@ -148,7 +148,7 @@ inline hid_t HDFTypeFactory::type(std::size_t size) {
  */
 template <typename T,
           std::enable_if_t<std::is_reference<T>::value == true, int>>
-inline hid_t HDFTypeFactory::type(std::size_t size) {
+inline hid_t HDFTypeFactory::type([[maybe_unused]] std::size_t size) {
     return HDFTypeFactory::type<std::remove_reference_t<std::decay_t<T>>>();
 }
 /**
@@ -163,7 +163,7 @@ inline hid_t HDFTypeFactory::type(std::size_t size) {
 template <typename T,
           std::enable_if_t<
               is_container_type<typename std::decay_t<T>>::value == true, int>>
-inline hid_t HDFTypeFactory::type(std::size_t size) {
+inline hid_t HDFTypeFactory::type([[maybe_unused]] std::size_t size) {
     if (size == 0) {
         return H5Tvlen_create(__get_type__<typename T::value_type>());
     } else {
@@ -176,7 +176,9 @@ inline hid_t HDFTypeFactory::type(std::size_t size) {
 }
 
 // overload for strings
-template <> inline hid_t HDFTypeFactory::type<std::string>(std::size_t size) {
+template <>
+inline hid_t
+HDFTypeFactory::type<std::string>([[maybe_unused]] std::size_t size) {
     if (size == 0) {
         hid_t type = H5Tcopy(H5T_C_S1);
         H5Tset_size(type, H5T_VARIABLE);
@@ -189,7 +191,8 @@ template <> inline hid_t HDFTypeFactory::type<std::string>(std::size_t size) {
 }
 
 // overload for C strings
-template <> inline hid_t HDFTypeFactory::type<char *>(std::size_t size) {
+template <>
+inline hid_t HDFTypeFactory::type<char *>([[maybe_unused]] std::size_t size) {
     if (size == 0) {
         hid_t type = H5Tcopy(H5T_C_S1);
         H5Tset_size(type, H5T_VARIABLE);
@@ -202,7 +205,9 @@ template <> inline hid_t HDFTypeFactory::type<char *>(std::size_t size) {
 }
 
 // overload for C strings
-template <> inline hid_t HDFTypeFactory::type<const char *>(std::size_t size) {
+template <>
+inline hid_t
+HDFTypeFactory::type<const char *>([[maybe_unused]] std::size_t size) {
     if (size == 0) {
         hid_t type = H5Tcopy(H5T_C_S1);
         H5Tset_size(type, H5T_VARIABLE);
