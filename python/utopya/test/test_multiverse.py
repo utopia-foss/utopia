@@ -104,57 +104,15 @@ def test_detect_doubled_folders(mv_kwargs):
         Multiverse(**mv_kwargs)
         # NOTE this test assumes that the two calls are so close to each other that the timestamp is the same, that's why there are two calls so that the latest the second call should raise such an error
 
-def test_create_uni_dir(default_mv):
-    """Test creation of the uni directory"""
-    mv = default_mv
-    test_ids = [(0, 0), (1, 1), (2, 9), (3, 10), (4, 11), (99, 99), (100, 100), (101, 101)]
-    fstr = "uni{id:>0{digs:d}d}"
-
-    # Test some edge cases
-    for uni_id, max_uni_id in test_ids:
-        print("Testing id {}, max id {}".format(uni_id, max_uni_id))
-        # Call the private method to generate the desired folder
-        uni_dir = mv._create_uni_dir(uni_id=uni_id, max_uni_id=max_uni_id)
-        
-        # Now test if it was created
-        assert os.path.isdir(uni_dir)
-
-        # Assure there is no trailing slash
-        assert uni_dir[-1] != os.path.sep
-
-        # Test for correct format
-        uni_dir_name = uni_dir.split(os.path.sep)[-1]
-        assert uni_dir_name == fstr.format(id=uni_id,
-                                           digs=len(str(max_uni_id)))
-        # NOTE this tests only for +/- 1 errors in uni_id / max_uni_id path creation. Generating the correct format string from id and number of digits is reliable enough to not need testing
-
-        # Test for uni_id == maximum_uni_id that the first number is not zero, i.e. that there are not too many leading zeros
-        if uni_id == max_uni_id and uni_id != 0:
-            assert uni_dir_name[3] != "0"
-
-        # Test that the whole universe ID is part of the filename
-        assert uni_dir_name[-len(str(uni_id)):] == str(uni_id)
-
-    # Test uniqueness of the folders
-    with pytest.raises(FileExistsError):
-        mv._create_uni_dir(uni_id=0, max_uni_id=0) # first case in above loop
-
-    # Test invalid input
-    # negative numbers:
-    with pytest.raises(RuntimeError):
-            mv._create_uni_dir(uni_id=-1, max_uni_id=-1)
-
-    # maximum below uni_id:
-    with pytest.raises(RuntimeError):
-            mv._create_uni_dir(uni_id=5, max_uni_id=4)    
-
-
 # Simulation tests ------------------------------------------------------------
 
 def test_run_single(default_mv):
     """Tests a run with a single simulation"""
     default_mv.run_single()
-    print("Workers: ", default_mv.wm.workers)
+    print("Tasks: ", default_mv.wm.tasks)
+
+    # Test that the universe directory was created
+    assert os.path.isdir(os.path.join(default_mv.dirs['universes'], 'uni0'))
 
 def test_run_sweep(mv_kwargs):
     """Tests a run with a single simulation"""
@@ -166,7 +124,7 @@ def test_run_sweep(mv_kwargs):
     mv.run_sweep()
 
     # Print some info.
-    print("Workers: ", mv.wm.workers)
+    print("Tasks: ", mv.wm.tasks)
 
 # Other tests -----------------------------------------------------------------
 

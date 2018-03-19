@@ -8,6 +8,7 @@ import pytest
 
 import utopya.stopcond as sc
 import utopya.stopcond_funcs as sc_funcs
+from utopya.task import WorkerTask
 
 # Fixtures --------------------------------------------------------------------
 @pytest.fixture
@@ -18,14 +19,12 @@ def basic_sc():
                             name="wall timeout")
 
 @pytest.fixture
-def proc():
-    """A mock process object"""
-    return subprocess.Popen(args=('echo', '$?'))
+def task() -> WorkerTask:
+    """Generates a WorkerTask object, manipulating it somewhat"""
+    task = WorkerTask(name="foo", worker_kwargs=dict(args=('echo','$?')))
+    task.profiling['create_time'] = time.time() - 124.
 
-@pytest.fixture
-def worker_info():
-    """A mock worker_info dictionary that suggests that there was a timeout when tested against the `timeout_wall` method"""
-    return dict(create_time=time.time() - 124.)
+    return task
 
 # Tests of the class ----------------------------------------------------------
 
@@ -72,13 +71,13 @@ def test_magic_methods(basic_sc):
     """Tests magic methods of the StopCond class."""
     str(basic_sc)
 
-def test_fulfilled(basic_sc, proc, worker_info):
+def test_fulfilled(basic_sc, task):
     """Tests magic methods of the StopCond class."""
     # Test if it is fulfilled (should always be the case when using the fixtures)
-    assert basic_sc.fulfilled(proc, worker_info=worker_info) is True
+    assert basic_sc.fulfilled(task) is True
 
     # Disable it: should now be false
     basic_sc.enabled = False
-    assert basic_sc.fulfilled(proc, worker_info=worker_info) is False
+    assert basic_sc.fulfilled(task) is False
 
 # Tests of the stop condition methods -----------------------------------------

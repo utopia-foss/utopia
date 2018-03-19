@@ -45,8 +45,8 @@ worker_manager:
   # auto : number of processor cores. For values <= 0: #CPUs - num_workers
   num_workers: auto
 
-  # how often to check the state of the workers [Hz]
-  poll_freq: 20
+  # delay between polls [seconds]
+  poll_delay: 0.05
 
 # Reporter
 reporter: {}

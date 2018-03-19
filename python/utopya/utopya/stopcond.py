@@ -5,11 +5,11 @@ import copy
 import logging
 import warnings
 from typing import List, Callable
-from subprocess import Popen
 
 import yaml
 
 import utopya.stopcond_funcs as sc_funcs
+from utopya.task import Task
 
 # Initialise logger
 log = logging.getLogger(__name__)
@@ -102,14 +102,14 @@ class StopCondition:
         return ("StopCondition '{name:}':\n"
                 "  {desc:}\n".format(name=self.name, desc=self.description))
 
-    def fulfilled(self, proc: Popen, *, worker_info: dict) -> bool:
+    def fulfilled(self, task: Task) -> bool:
         """Checks if the stop condition is fulfilled for the given worker, using the information from the dict.
         
         All given stop condition functions are evaluated; if all of them return
         True, this method will also return True.
         
         Args:
-            proc (Popen): Worker object that is to be checked
+            task (Task): Task object that is to be checked
             worker_info (dict): The information dict for this specific worker
         
         Returns:
@@ -120,9 +120,9 @@ class StopCondition:
             # Never fulfilled
             return False
 
-        # Now perform the check on all stop condition functions
+        # Now perform the check on this task with all stop condition functions
         for sc_func, name, kws in self.to_check:
-            if not sc_func(worker_info=worker_info, proc=proc, **kws):
+            if not sc_func(task, **kws):
                 # One was not True -> not fulfilled, need not check the others
                 log.debug("%s not fulfilled! Returning False ...", name)
                 return False

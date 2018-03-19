@@ -5,7 +5,8 @@ import pkg_resources
 
 import pytest
 
-from utopya.workermanager import WorkerManager, enqueue_lines, parse_json, WorkerManagerTotalTimeout
+from utopya.workermanager import WorkerManager, WorkerManagerTotalTimeout
+from utopya.task import enqueue_lines, parse_json
 from utopya.tools import read_yml
 
 # Some constants
@@ -15,7 +16,7 @@ STOP_CONDS_PATH = pkg_resources.resource_filename('test', 'cfg/stop_conds.yml')
 @pytest.fixture
 def wm():
     """Create the simplest possible WorkerManager instance"""
-    return WorkerManager(num_workers=2, poll_freq=42)
+    return WorkerManager(num_workers=2, poll_delay=0.042)
 
 @pytest.fixture
 def sleep_task() -> dict:
@@ -42,8 +43,8 @@ def wm_with_tasks(sleep_task):
     # A few tasks
     tasks = []
     tasks.append(dict(worker_kwargs=dict(args=('python3', '-c',
-                                               'print("hello oh so complex '
-                                               'world")'),
+                                               'print("hello\\noh so\\n'
+                                               'complex world")'),
                                          read_stdout=True),
                       priority=0))
     
@@ -90,76 +91,79 @@ def test_init():
         # not int
         WorkerManager(num_workers=1.23)
 
-    # Test different `poll_frequencies` arguments
+    # Test different `poll_delay` arguments
     with pytest.raises(ValueError):
         # negative
-        WorkerManager(num_workers=1, poll_freq=-1)
+        WorkerManager(num_workers=1, poll_delay=-1000)
+    
+    with pytest.warns(UserWarning):
+        # small value
+        WorkerManager(num_workers=1, poll_delay=0.001)
 
 def test_add_tasks(wm, sleep_task):
     """Tests adding of tasks"""
     # This one should work
     wm.add_task(**sleep_task)
 
-    # Check the warnings
+    # Test that errors propagate through
     with pytest.warns(UserWarning):
-        wm.add_task(setup_func=lambda: "foo", **sleep_task)
+        wm.add_task(setup_func=print, worker_kwargs=dict(foo="bar"))
     
     with pytest.warns(UserWarning):
-        wm.add_task(setup_kwargs=dict(foo="bar"), **sleep_task)
+        wm.add_task(setup_kwargs=dict(foo="bar"),
+                    worker_kwargs=dict(foo="bar"))
 
-    # And the errors
     with pytest.raises(ValueError):
         wm.add_task()
-
-def test_spawn_worker(wm):
-    """Tests the spawning of a worker"""
-    # Try to spawn from non-tuple `args` argument
-    with pytest.raises(TypeError):
-        wm._spawn_worker(args="echo $?", read_stdout=False)
 
 def test_start_working(wm_with_tasks):
     """Tests whether the start_working methods does what it should"""
     wm = wm_with_tasks
-    wm.start_working()
+    wm.start_working(forward_streams=True)
     # This will be blocking
 
-    # Check if workers have been added
-    assert wm.workers
+    # Check that all tasks finished with exit status 0
+    for task in wm.tasks:
+        assert task.worker_status == 0
+        assert task.profiling['end_time'] > task.profiling['create_time']
 
-    # Get the process dicts and check that they all finished with exit code 0
-    procs = [w['proc'] for w in wm.workers.values()]
-    assert all([p.poll() is 0 for p in procs])
-    assert not any([w['status'] for w in wm.workers.values()])
+        # Trying to spawn or assigning another worker should fail
+        with pytest.raises(RuntimeError):
+            task.spawn_worker()
 
-    # Check their run times
-    create_times = [w['create_time'] for w in wm.workers.values()]
-    end_times = [w['end_time'] for w in wm.workers.values()]
-    assert all([c < e for c, e in zip(create_times, end_times)])
-    assert (end_times[1] - create_times[1]) > 0.5 # for the sleep task
+        with pytest.raises(RuntimeError):
+            task.worker = "something"
 
 def test_signal_workers(wm, sleep_task):
     """Tests the signalling of workers"""
+    # Start running with a post-poll function that directly kills off the workers
     for _ in range(3):
         wm.add_task(**sleep_task)
-
-    # Start running with a post-poll function that directly kills off the workers
-    ppf = lambda: wm._signal_workers(wm.working, signal='SIGKILL')
+    ppf = lambda: wm._signal_workers('active', signal='SIGKILL')
     wm.start_working(post_poll_func=ppf)
 
     # Same thing with an integer signal
     for _ in range(3):
         wm.add_task(**sleep_task)
-    ppf = lambda: wm._signal_workers(wm.working, signal=9)
+    ppf = lambda: wm._signal_workers('active', signal=9)
     wm.start_working(post_poll_func=ppf)
+
+    # Check if they were all killed
+    for task in wm.tasks:
+        assert task.worker_status == -9
 
     # And invalid signalling value
     wm.add_task(**sleep_task)
-    ppf = lambda: wm._signal_workers(wm.working, signal=3.14)
+    ppf = lambda: wm._signal_workers('active', signal=3.14)
     with pytest.raises(ValueError):
         wm.start_working(post_poll_func=ppf)
 
-    # Call without workers should directly return
-    wm._signal_workers(None, signal=9)
+    # Invalid list to signal
+    with pytest.raises(ValueError):
+        wm._signal_workers('foo', signal=9)
+
+    # Signal all tasks (they all ended anyway)
+    wm._signal_workers('all', signal=15)
 
 def test_timeout(wm, sleep_task):
     """Tests whether the timeout succeeds"""
@@ -193,14 +197,15 @@ def test_stopconds(wm, wm_with_tasks, longer_sleep_task, sc_run_kws):
     wm.start_working(**sc_run_kws)
 
     # Assert that there are no workers remaining and that both have exit status -15
-    assert wm.working == []
-    procs = [k for k in wm.workers.keys()]  # FIXME ugly
-    assert wm.workers[procs[0]]['status'] == -15
-    assert wm.workers[procs[1]]['status'] == -15
+    assert wm.active_tasks == []
+    for task in wm.tasks:
+        assert task.worker_status == -15
 
     # Now to the more complex setting
     wm = wm_with_tasks
     wm.start_working(**sc_run_kws)
+
+    # TODO more tests here
 
 @pytest.mark.skip("Properly implement this!")
 def test_read_stdout(wm):
