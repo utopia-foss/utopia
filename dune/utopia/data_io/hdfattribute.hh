@@ -82,6 +82,10 @@ public:
      */
     HDFObject &get_parent() { return _parent_object; }
 
+    /**
+     * @brief closes the attribute
+     *
+     */
     void close() {
         if (_attribute != -1) {
             H5Aclose(_attribute);

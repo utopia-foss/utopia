@@ -16,6 +16,14 @@ class HDFBufferFactory {
 private:
 protected:
 public:
+    /**
+     * @brief function for converting source data into varilble length type
+     *
+     * @tparam T
+     * @tparam 0
+     * @param source
+     * @return auto
+     */
     template <
         typename T,
         std::enable_if_t<std::is_same<T, std::string>::value == false, int> = 0>
@@ -26,6 +34,14 @@ public:
         return value;
     }
 
+    /**
+     * @brief Overload for strings
+     *
+     * @tparam T
+     * @tparam 0
+     * @param source
+     * @return auto
+     */
     template <
         typename T,
         std::enable_if_t<std::is_same<T, std::string>::value == true, int> = 0>

@@ -37,7 +37,7 @@ public:
               std::enable_if_t<
                   is_container_type<typename std::decay_t<T>>::value == false,
                   int> = 0>
-    static inline hid_t type(std::size_t = 0);
+    static inline hid_t type([[maybe_unused]] std::size_t = 0);
 
     /**
      * @brief Overload for references types
@@ -45,7 +45,7 @@ public:
      */
     template <typename T,
               std::enable_if_t<std::is_reference<T>::value == true, int>>
-    inline hid_t type(std::size_t = 0);
+    inline hid_t type([[maybe_unused]] std::size_t = 0);
 
     /**
      * @brief Overload for pointer types
@@ -53,7 +53,7 @@ public:
      */
     template <typename T,
               std::enable_if_t<std::is_pointer<T>::value == true, int>>
-    inline hid_t type(std::size_t = 0);
+    inline hid_t type([[maybe_unused]] std::size_t = 0);
 
     /**
      * @brief Overload for container types types
@@ -63,7 +63,7 @@ public:
               std::enable_if_t<
                   is_container_type<typename std::decay_t<T>>::value == true,
                   int> = 0>
-    static inline hid_t type(std::size_t = 0);
+    static inline hid_t type([[maybe_unused]] std::size_t = 0);
 };
 
 // bunch of overloads of __get_type__ for getting hdf5 types for different c++
