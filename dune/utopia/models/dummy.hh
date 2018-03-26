@@ -5,10 +5,9 @@
 #include <dune/utopia/core/model.hh>
 
 #include <dune/utopia/data_io/config.hh>
-// #include <dune/utopia/data_io/hdffile.hh>
-// #include <dune/utopia/data_io/hdfgroup.hh>
+#include <dune/utopia/data_io/hdffile.hh>
+#include <dune/utopia/data_io/hdfgroup.hh>
 #include <dune/utopia/data_io/hdfdataset.hh>
-#include <dune/utopia/data_io/hdfmockclasses.hh>
 
 namespace Utopia {
 
@@ -66,7 +65,7 @@ public:
     void write_data ()
     {
         const std::string set_name = "data-" + std::to_string(this->time);
-        auto dataset = _file.get_basegroup().open_dataset(set_name);
+        auto dataset = _file.get_basegroup()->open_dataset(set_name);
         dataset->write(_state.begin(), _state.end(),
             [](auto &value) { return value; });
     }
