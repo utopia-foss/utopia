@@ -92,9 +92,13 @@ class Task:
         return bool(self.order_tuple <= other.order_tuple)
     
     def __eq__(self, other):
-        return bool(self.order_tuple == other.order_tuple)
+        if (self.order_tuple == other.order_tuple) and not (self.order_tuple is other.order_tuple):
+            raise RuntimeError("The order of two tasks is equal but the tasks are "
+                               "not the same. Which is in contradiction to the "
+                               "unique task id." "Caused from own tuple %s compared "
+                               "with %s .", self.order_tuple, other.order_tuple)
+        return bool(self.order_tuple is other.order_tuple)
         # NOTE that this should only occur if comparing to itself
-        # TODO consider throwing an error here; identity should be checked via is keyword rather than ==
 
 # -----------------------------------------------------------------------------
 
