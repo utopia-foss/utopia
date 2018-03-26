@@ -1,7 +1,0 @@
-numpy>=1.13
-PyYAML>=3.12
-paramspace>=1.0b
-
-[test_deps]
-pytest>=3.4.0
-pytest-cov>=2.5.1
