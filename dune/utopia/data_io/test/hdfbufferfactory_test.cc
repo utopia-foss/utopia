@@ -56,26 +56,19 @@ int main() {
         std::vector<int>(data_lists[i].begin(), data_lists[i].end());
   }
 
-    // convert lists to vectors first, then use buffering
-    std::vector<std::vector<int>> data_vectors(100);
-    for (std::size_t i = 0; i < 100; ++i) {
-        data_vectors[i] =
-            std::vector<int>(data_lists[i].begin(), data_lists[i].end());
-    }
-
-    std::vector<hvl_t> complex_buffer =
+  std::vector<hvl_t> complex_buffer =
         HDFBufferFactory::buffer<std::vector<int>>(
             data_vectors.begin(), data_vectors.end(),
             [](auto &vector) -> std::vector<int> & { return vector; });
 
-    assert(complex_buffer.size() == data_vectors.size());
-    for (std::size_t l = 0; l < data_vectors.size(); ++l) {
+  assert(complex_buffer.size() == data_vectors.size());
+  for (std::size_t l = 0; l < data_vectors.size(); ++l) {
         assert(data_vectors[l].size() == complex_buffer[l].len);
         for (std::size_t i = 0; i < data_vectors[i].size(); ++i) {
             assert(data_vectors[l][i] ==
                    reinterpret_cast<int *>(complex_buffer[l].p)[i]);
         }
     }
-  }
+
   return 0;
 }
