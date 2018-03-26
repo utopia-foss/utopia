@@ -34,6 +34,12 @@ def test_task_init():
     Task() # will get a UID as name
     Task(name=0)
     Task(name=1, priority=1000)
+    Task(name=2, priority=1000.01)
+    # Test unallowed priority
+    with pytest.raises(AttributeError):
+        Task(name=3, priority='1000')
+    with pytest.raises(AttributeError):
+        Task(name=4, priority='german autobahn')
 
     # Test that the task name cannot be changed
     with pytest.raises(AttributeError):
@@ -66,6 +72,9 @@ def test_task_properties(tasks):
     # Check if the UID is returned if no name was given
     task = Task()
     assert task.name == str(task.uid)
+
+    # Check if the default priority is given
+    assert task.priority == -np.inf
 
 # WorkerTask tests ------------------------------------------------------------
 
@@ -113,3 +122,7 @@ def test_tasklist(tasks):
     # Check the __contains__ method
     assert ("foo",) not in tasks
     assert all([task in tasks for task in tasks])
+
+def test_tasklist_ordering(tasks):
+    tasks.sort()
+    # TODO implement HERE test if sorting works
