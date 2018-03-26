@@ -17,8 +17,15 @@ set(MODEL_DIRS
 # -----------------------------------------------------------------------------
 # NOTE Do not change below this line ------------------------------------------
 
+message(STATUS "Starting Utopia model registration ...")
+
+list(LENGTH MODEL_DIRS num_model_dirs)
+message(STATUS "${num_model_dirs} model directories given.")
+
 # Register the model directories
 foreach(model_dir ${MODEL_DIRS})
+    message(STATUS "Entering model directory:  ${model_dir}")
     add_subdirectory(${model_dir})
-    message(STATUS "Added Utopia model directory:  ${model_dir}")
 endforeach(model_dir)
+
+message(STATUS "Model registration finished.\n")
