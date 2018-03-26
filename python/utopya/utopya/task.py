@@ -2,6 +2,7 @@
 
 The WorkerTask specialises on tasks for the WorkerManager."""
 
+import numpy as np
 import uuid
 import time
 import json
@@ -27,14 +28,16 @@ class Task:
 
     __slots__ = ('_name', '_priority', '_uid')
 
-    def __init__(self, *, name: str=None, priority: int=None):
+    def __init__(self, *, name: str=None, priority: float=-np.inf):
         """Initialize a Task object.
         
         Args:
             name (str, optional): The task's name. If none is given, the
                 generated uuid will be used.
-            priority (int, optional): The priority of this task; is only used
-                if the task queue is a priority queue
+            priority (float, optional): The priority of this task; If not given,
+                default is -inf (from numpy -np.inf).
+                If no priority is given for any task they are order by their
+                creation time.
         """
         # Carry over arguments attributes
         self._name = str(name) if name else None
@@ -62,7 +65,7 @@ class Task:
 
     @property
     def priority(self) -> float:
-        """The task priority, usually a """
+        """The task's priority. Default is -inf."""
         return self._priority
 
     @property
