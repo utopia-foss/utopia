@@ -1,89 +1,82 @@
 #ifndef HDFGROUP_HH
 #define HDFGROUP_HH
-
-#include <string>
-#include <sstream>
-#include <unordered_map>
-
+#include "hdfattribute.hh"
+#include "hdfdataset.hh"
 #include <hdf5.h>
 #include <hdf5_hl.h>
-#include "hdfmockclasses.hh"
-#include "hdfdataset.hh"
+#include <sstream>
+#include <string>
+#include <vector>
 
-namespace Utopia
-{
-    
-namespace DataIO
-{
-
+namespace Utopia {
+namespace DataIO {
 class HDFFile;
-
-/// An object representing a HDFGroup 
-/** 
- * 
-*/
-class HDFGroup
-{
+class HDFGroup {
+private:
 protected:
-    hid_t _group; /// Storage of group id
-    std::string _path; /// Storage of the path
+    hid_t _group;
+    std::string _path;
 
 public:
-    /// Print information about the group
     /**
-    *  The function outputs in the terminal:
-    *    - the group id
-    *    - the group path
-    *    - the Number of links in group
-    *    - the current maximum creation order value for group
-    *    - whether there are mounted files on the group
-    */
-    void info()
-    {
+     * @brief switch state of object with other's state
+     *
+     * @param other
+     */
+    void swap(HDFGroup &other) {
+        using std::swap;
+        swap(_group, other._group);
+        swap(_path, other._path);
+    }
+
+    /**
+     * @brief Get the path object
+     *
+     * @return std::string
+     */
+    std::string get_path() { return _path; }
+
+    /**
+     * @brief Get the id object
+     *
+     * @return hid_t
+     */
+    hid_t get_id() { return _group; }
+
+    /**
+     * @brief get info about group
+     *
+     */
+    void info() {
         // get information from the hdf5 group
         H5G_info_t info;
         herr_t err = H5Gget_info(_group, &info);
 
         // if information is succesfully retrieved print out the information
-        if (err < 0)
-        {
-            throw std::runtime_error("Getting the information by calling H5Gget_info failed!");
-        }
-        else{
+        if (err < 0) {
+            throw std::runtime_error(
+                "Getting the information by calling H5Gget_info failed!");
+        } else {
             std::cout << "Printing information of the group:" << std::endl
-                << "- Group id: " << _group << std::endl
-                << "- Group path: " << _path << std::endl
-                << "- Number of links in group: " << info.nlinks  << std::endl
-                << "- Current maximum creation order value for group: " << info.max_corder << std::endl
-                << "- There are mounted files on the group: " << info.mounted << std::endl;
-        }        
+                      << "- Group id: " << _group << std::endl
+                      << "- Group path: " << _path << std::endl
+                      << "- Number of links in group: " << info.nlinks
+                      << std::endl
+                      << "- Current maximum creation order value for group: "
+                      << info.max_corder << std::endl
+                      << "- There are mounted files on the group: "
+                      << info.mounted << std::endl;
+        }
     }
 
-    /// Get the id
     /**
-    *  \return The hdf5 id
-    */
-    hid_t get_id()
-    {
-        return _group;
-    }
-
-    /// Get the path
-    /**
-    *  \return The hdf5 path
-    */
-    std::string get_path()
-    {
-        return _path;
-    }
-
-    /// Add an attribute to the HDFGroup object
-    /** Adds an attribute to a group
-    *  \tparam Attrdata Attribute type 
-    *  \param name Attribute name
-    *  \param attribute_data Attribute data
-    */
+     * @brief write attribuet
+     *
+     * @param name
+     * @param attribute_data
+     */
     template <typename Attrdata>
+
     void add_attribute(std::string name, Attrdata attribute_data) {
 
         HDFAttribute<HDFGroup, Attrdata> attribute(
@@ -92,40 +85,46 @@ public:
         attribute.write(attribute_data);
     }
 
-    /// Open group at path, creating all intermediate objects in the path
+    /**
+     * @brief close group
+     *
+     */
+    void close() {
+        if (H5Iis_valid(_group) == true) {
+            H5Gclose(_group);
+            _group = -1;
+        }
+    }
+
     /**
      * \param path
      * \return std::shared_ptr<HDFGroup>
      */
     std::shared_ptr<HDFGroup> open_group(std::string path) {
-        std::stringstream stream(path);
-        std::string part;
-        HDFGroup parent = *this;
-        HDFGroup current;
-
-        while (std::getline(stream, part, '/')) {
-            current = HDFGroup(parent, part);
-            parent = current;
-        }
-        return std::make_shared<HDFGroup>(current);
+        return std::make_shared<HDFGroup>(*this, path);
     }
 
-    /// Deletes the group pointed to by absolute path 'path'
+    /// Open a HDFDataset
+    /**
+     *  \tparam HDFDataset<HDFGroup> HDFDataset type with parent type HDFGroup
+     *  \param path The path of the HDFDataset
+     *  \return A std::shared_ptr pointing at the newly created dataset
+     */
+    std::shared_ptr<HDFDataset<HDFGroup>> open_dataset(std::string path) {
+        return std::make_shared<HDFDataset<HDFGroup>>(*this, path);
+    }
+
     /**
      * \param path relative path to group to delete
      */
-    void delete_group(std::string path) 
-    {
+    void delete_group(std::string path) {
         // check if group exists in file, if does delete link
         herr_t status = 1;
-        if (H5Lexists(_group, path.c_str(), H5P_DEFAULT) == true) 
-        {
-                        // group exists, can be deleted
+        if (H5Lexists(_group, path.c_str(), H5P_DEFAULT) == true) {
+            // group exists, can be deleted
 
-            hid_t group_to_delete = _group;
-            status = H5Ldelete(group_to_delete, path.c_str(), H5P_DEFAULT);
-            if (status < 0) 
-            {
+            status = H5Ldelete(_group, path.c_str(), H5P_DEFAULT);
+            if (status < 0) {
                 close();
                 throw std::runtime_error(
                     "deletion of group failed, wrong path?");
@@ -134,121 +133,62 @@ public:
         // group does not exist, do nothing
     }
 
-    /// Open a HDFDataset
-    /** 
-    *  \tparam HDFDataset<HDFGroup> HDFDataset type with parent type HDFGroup
-    *  \param path The path of the HDFDataset
-    *  \return A std::shared_ptr pointing at the newly created dataset
-    */
-    std::shared_ptr<HDFDataset<HDFGroup>> open_dataset(std::string path)
-    {
-        auto data = HDFDataset<HDFGroup>(*this, path);
-        auto data_ptr = std::make_shared<HDFDataset<HDFGroup>>(data);
-        return std::make_shared<HDFDataset<HDFGroup>>(data);
-    }
-
-    /// Close the group
-    void close() 
-    {
-        if (H5Iis_valid(_group) == 0)
-        {
-            herr_t err = H5Gclose(_group); 
-            if (err < 0)
-            {
-                throw std::runtime_error("There is an error in closing the group in calling the destructor!");
-            }
-        } 
-    }
-
-    /// Swap two HDFGroup objects
-    /**
-    *  \param group1 First HDFGroup object
-    *  \param group2 Second HDFGroup object
-    */
-    friend void swap(HDFGroup& group1, HDFGroup& group2)
-    {
-        using std::swap;
-
-        swap(group1._group, group2._group);
-        swap(group1._path, group2._path);
-    }
-
-    /// Default constructor
+    // default constructor
     HDFGroup() = default;
+    /**
+     * @brief Construct a new HDFGroup object
+     *
+     * @param other
+     */
+    HDFGroup(const HDFGroup &other)
+        : _group(other._group), _path(other._path) {}
 
-    /// Copy constructor
-    /** Constructs an HDFGroup object by copying another HDFGroup object
-    *  \param group The HDFGroup object that is copied
-    */
-    HDFGroup(const HDFGroup& group) :   _group(group._group),
-                                        _path(group._path)
-    {};
+    /**
+     * @brief Construct a new HDFGroup object
+     *
+     * @param other
+     */
+    HDFGroup(HDFGroup &&other) : HDFGroup() { this->swap(other); }
 
-    /// Move constructor
-    /** 
-    * \param group The rvalue reference
-    */
-    HDFGroup(HDFGroup&& group):     _group(std::move(group._group)),
-                                    _path(std::move(group._path))
-    {};
-
-    /// Assign a HDFGroup object using an assignment operator
-    /** Implement assignment operation using the copy-and-swap idiom
-    *
-    *  \return the copied HDFGroup object
-    */ 
-    HDFGroup& operator=(HDFGroup group)
-    {
-        swap(group, *this);
+    /**
+     * @brief assignment operator
+     *
+     * @param other
+     * @return HDFGroup&
+     */
+    HDFGroup &operator=(HDFGroup other) {
+        this->swap(other);
         return *this;
     }
-    
-    /// Constructor
-    template <typename Object>
-    HDFGroup(Object &object, std::string name) : _path(name) 
-    {
-        if (std::is_same<Object, HDFFile>::value) 
-        {
-            if (_path == "/") 
-            {
-                _group = H5Gopen(object.get_id(), "/", H5P_DEFAULT);
-            } else 
-            {
-                if (H5Lexists(object.get_id(), _path.c_str(), H5P_DEFAULT) == 1) 
-                {
-                    _group =
-                        H5Gopen(object.get_id(), _path.c_str(), H5P_DEFAULT);
-                } else 
-                {
-                    _group = H5Gcreate(object.get_id(), _path.c_str(),
-                                       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-                }
-            }
-        } else if (std::is_same<Object, HDFGroup>::value) 
-        {
-            if (H5Lexists(object.get_id(), _path.c_str(), H5P_DEFAULT) == 1) 
-            {
-                _group = H5Gopen(object.get_id(), _path.c_str(), H5P_DEFAULT);
-            } else 
-            {
-                _group = H5Gcreate(object.get_id(), _path.c_str(), H5P_DEFAULT,
-                                   H5P_DEFAULT, H5P_DEFAULT);
-            }
+
+    /**
+     * @brief Construct a new HDFGroup object
+     *
+     * @tparam HDFObject
+     * @param object
+     * @param name
+     */
+    template <typename HDFObject>
+    HDFGroup(HDFObject &object, std::string name) : _path(name) {
+        if (H5Lexists(object.get_id(), _path.c_str(), H5P_DEFAULT) > 0) {
+            _group = H5Gopen(object.get_id(), _path.c_str(), H5P_DEFAULT);
+        } else {
+            hid_t group_plist = H5Pcreate(H5P_LINK_CREATE);
+            H5Pset_create_intermediate_group(group_plist, 1);
+            _group = H5Gcreate(object.get_id(), _path.c_str(), group_plist,
+                               H5P_DEFAULT, H5P_DEFAULT);
         }
     }
 
-    /// Destructor
-    virtual ~HDFGroup()
-    {
-        if (H5Iis_valid(_group) == 0) { 
-           H5Gclose(_group);
+    // destructor
+    ~HDFGroup() {
+        if (H5Iis_valid(_group) == true) {
+            H5Gclose(_group);
         }
     }
+}; // namespace DataIO
 
-}; // class HDFGroup
-
-} // namespace DataIO 
-
+void swap(HDFGroup &lhs, HDFGroup &rhs) { lhs.swap(rhs); }
+} // namespace DataIO
 } // namespace Utopia
-
-#endif // HDFGROUP_HH
+#endif

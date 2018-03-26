@@ -1,6 +1,8 @@
 #include "../hdfattribute.hh"
-#include "../hdfmockclasses.hh"
+#include "../hdffile.hh"
 #include "../hdfgroup.hh"
+#include <string>
+
 #include <cassert>
 #include <iostream>
 using namespace Utopia::DataIO;
@@ -9,18 +11,16 @@ int main() {
     // open a file
     HDFFile file("testfile.h5", "r");
 
-    // open a group 
-    HDFGroup low_group = HDFGroup(file.get_basegroup(), "/testgroup");
-    HDFGroup low_group2 = HDFGroup(file.get_basegroup(), "/testgroup2");
+    // open a group
+    HDFGroup low_group = HDFGroup(*file.get_basegroup(), "/testgroup");
+    HDFGroup low_group2 = HDFGroup(*file.get_basegroup(), "/testgroup2");
 
     // open attributes
     std::string attributename = "testattribute";
-    HDFAttribute<HDFGroup, std::string> attribute(
-                low_group, attributename);
+    HDFAttribute<HDFGroup, std::string> attribute(low_group, attributename);
 
     std::string attributename2 = "testattribute2";
-    HDFAttribute<HDFGroup, int> attribute2(
-                low_group2, "testattribute2");
+    HDFAttribute<HDFGroup, int> attribute2(low_group2, "testattribute2");
 
     // read stuff and test that it is tha same as in hdfattribute_test_write.cc
     std::string read_attribute1 = attribute.read();

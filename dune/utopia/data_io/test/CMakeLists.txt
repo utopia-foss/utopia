@@ -1,15 +1,18 @@
 file(COPY config_test.yaml DESTINATION .)
 
-# collect DATAIO tests
+
 set(TESTS_DATAIO
     config_test
-    hdfattribute_test_read
-    hdfattribute_test_write
     hdfbufferfactory_test
     hdftypefactory_test
-    hdfgroup_test
+    hdffile_test
+    hdfattribute_test_read
+    hdfattribute_test_write
     hdfdataset_test_write
-    hdfdataset_test_read)
+    hdfdataset_test_read
+    hdfintegration_test
+    hdfgroup_test
+    )
 
 # add DATAIO tests
 foreach(test ${TESTS_DATAIO})
