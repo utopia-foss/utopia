@@ -2,7 +2,6 @@
 
 The WorkerTask specialises on tasks for the WorkerManager."""
 
-import numpy as np
 import uuid
 import time
 import json
@@ -13,6 +12,8 @@ import warnings
 import logging
 from typing import Callable, Union
 from typing.io import BinaryIO
+
+import numpy as np
 
 # Initialise logger
 log = logging.getLogger(__name__)
