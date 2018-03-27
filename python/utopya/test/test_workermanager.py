@@ -4,6 +4,8 @@ import os
 import pkg_resources
 
 import pytest
+import random as rd
+import numpy as np
 
 from utopya.workermanager import WorkerManager, WorkerManagerTotalTimeout
 from utopya.task import enqueue_lines, parse_json
@@ -214,3 +216,62 @@ def test_read_stdout(wm):
     wm.start_working()
 
     # TODO read the stream output here
+
+
+
+def test_task_queue(wm, tmpdir):
+    """Checks tasks are order properly in queue, according to priority from -inf(high priority) to inf(low)"""
+    # TODO Nicen the Test
+    for num_workers in [1, 2, 10]:
+        os.mkdir(os.path.join(tmpdir, str(num_workers)))
+        print(os.listdir(tmpdir))
+        wm.num_workers = num_workers  # that tasks are not only started but also finished in order
+
+        # Set a json-reading function
+        line_read_json = lambda queue, stream: enqueue_lines(queue=queue,
+                                                             stream=stream,
+                                                             parse_func=parse_json)
+                                            
+        # A few tasks
+        tasks = []
+        priorities_ids = []  # [(pri,id),...]
+        id_i = 0
+        for i in range(10):
+            if rd.random() > 0.3:
+                priority = rd.random()
+            else:
+                priority = np.inf  # None #None does not work as priority is set manually and not via task class
+            tasks.append(dict(worker_kwargs=dict(args=('python3', '-c',
+                                                       'import os; from time import time;'
+                                                       'print(os.listdir("{0}")); os.mkdir(os.path.join("{0}", "{1}", str(time()),"{2}","{3}"))'.format(tmpdir, num_workers, priority, id_i)
+                                                       #'print("priority : "+str(priority)+"  "+"id : "+str(id_i))'
+                                                       ),
+                                                 read_stdout=True,
+                                                 line_read_func=line_read_json),
+                              priority=priority))
+            if priority is None:
+                priority = np.inf
+            priorities_ids.append((priority, id_i))
+            id_i += 1
+
+        # And pass the tasks
+        for task_dict in tasks:
+            wm.add_task(**task_dict)
+
+        wm.start_working()
+
+        # TODO read the stream output here and chek priorities and ids are order right, may simpler than building so much folders
+        print('Used task list', priorities_ids)
+        # sort local list
+        priorities_ids.sort()
+        print('Sorted Used task list', priorities_ids)
+        # check folder structure
+        act_path = os.path.join(tmpdir, str(num_workers))
+        folders = [name for name in os.listdir(act_path)]
+        folders.sort()
+        for i, folder in enumerate(folders):
+            if not os.listdir(os.path.join(act_path, str(folder)))[0] == priorities_ids[i][0]:
+                raise RuntimeError('WrongOrder Priority')
+            if not os.listdir(os.path.join(act_path, str(folder), str(priorities_ids[i][0])))[0] == priorities_ids[i][1]:
+                raise RuntimeError('WrongOrder ID')
+        
