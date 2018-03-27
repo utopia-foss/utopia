@@ -173,6 +173,14 @@ def test_signal_workers(wm, sleep_task):
     # Signal all tasks (they all ended anyway)
     wm._signal_workers('all', signal=15)
 
+def test_detach(wm):
+    with pytest.raises(NotImplementedError):
+        wm.start_working(detach=True)
+
+def test_empty_task_queue(wm):
+    with pytest.raises(queue.Empty):
+        wm._grab_task()
+
 def test_timeout(wm, sleep_task):
     """Tests whether the timeout succeeds"""
     # Add some sleep tasks
