@@ -198,9 +198,10 @@ class WorkerManager:
                 # Check if there are free workers and remaining tasks.
                 if self.num_free_workers and self.task_queue.qsize():
                     # Yes. => Grab a task and start working on it
-                    # Conservative approach: one task is grabbed here, even if there are more than one free workers
-                    new_task = self._grab_task()
-                    self.active_tasks.append(new_task)
+                    # Aproach with adding tasks as number of free workers, limited by available tasks in queue
+                    for _ in range(min(self.num_free_workers, self.task_queue.qsize())):
+                        new_task = self._grab_task()
+                        self.active_tasks.append(new_task)
 
                 # Gather the streams of all working workers
                 for task in self.active_tasks:
