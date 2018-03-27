@@ -28,15 +28,15 @@ class Task:
 
     __slots__ = ('_name', '_priority', '_uid')
 
-    def __init__(self, *, name: str=None, priority: float=-np.inf):
+    def __init__(self, *, name: str=None, priority: float=+np.inf):
         """Initialize a Task object.
         
         Args:
             name (str, optional): The task's name. If none is given, the
                 generated uuid will be used.
             priority (float, optional): The priority of this task; If not given,
-                default is -inf (from numpy -np.inf).
-                If no priority is given for any task they are order by their
+                default is +inf (from numpy +np.inf), which is the lowest priority.
+                If no priority is given for any task they are orderd by their
                 creation time.
         """
         # Carry over arguments attributes
@@ -65,7 +65,7 @@ class Task:
 
     @property
     def priority(self) -> float:
-        """The task's priority. Default is -inf."""
+        """The task's priority. Default is +inf, which is the lowest priority."""
         return self._priority
 
     @property
