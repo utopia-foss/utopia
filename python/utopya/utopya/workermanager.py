@@ -25,7 +25,7 @@ class WorkerManager:
         poll_delay (float): The delay (in s) between after a poll
     """
 
-    def __init__(self, num_workers: Union[int, str], poll_delay: float=0.05, QueueCls=queue.Queue):
+    def __init__(self, num_workers: Union[int, str], poll_delay: float=0.05, QueueCls=queue.PriorityQueue):
         """Initialize the worker manager.
         
         Args:
