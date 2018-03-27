@@ -2,6 +2,7 @@
 
 import os
 import pkg_resources
+import queue
 
 import pytest
 import random as rd
@@ -19,6 +20,11 @@ STOP_CONDS_PATH = pkg_resources.resource_filename('test', 'cfg/stop_conds.yml')
 def wm():
     """Create the simplest possible WorkerManager instance"""
     return WorkerManager(num_workers=2, poll_delay=0.042)
+
+@pytest.fixture
+def wm_priQ():
+    """Create the simplest possible WorkerManager instance"""
+    return WorkerManager(num_workers=2, poll_delay=0.042, QueueCls=queue.PriorityQueue)
 
 @pytest.fixture
 def sleep_task() -> dict:
@@ -219,13 +225,13 @@ def test_read_stdout(wm):
 
 
 
-def test_task_queue(wm, tmpdir):
+def test_task_queue(wm_priQ, tmpdir):
     """Checks tasks are order properly in queue, according to priority from -inf(high priority) to inf(low)"""
     # TODO Nicen the Test
     for num_workers in [1, 2, 10]:
         os.mkdir(os.path.join(tmpdir, str(num_workers)))
         print(os.listdir(tmpdir))
-        wm.num_workers = num_workers  # that tasks are not only started but also finished in order
+        wm_priQ.num_workers = num_workers
 
         # Set a json-reading function
         line_read_json = lambda queue, stream: enqueue_lines(queue=queue,
@@ -244,7 +250,7 @@ def test_task_queue(wm, tmpdir):
             tasks.append(dict(worker_kwargs=dict(args=('python3', '-c',
                                                        'import os; from time import time;'
                                                        'print(os.listdir("{0}")); os.mkdir(os.path.join("{0}", "{1}", str(time()),"{2}","{3}"))'.format(tmpdir, num_workers, priority, id_i)
-                                                       #'print("priority : "+str(priority)+"  "+"id : "+str(id_i))'
+                                                       # 'print("priority : "+str(priority)+"  "+"id : "+str(id_i))'
                                                        ),
                                                  read_stdout=True,
                                                  line_read_func=line_read_json),
@@ -256,9 +262,9 @@ def test_task_queue(wm, tmpdir):
 
         # And pass the tasks
         for task_dict in tasks:
-            wm.add_task(**task_dict)
+            wm_priQ.add_task(**task_dict)
 
-        wm.start_working()
+        wm_priQ.start_working()
 
         # TODO read the stream output here and chek priorities and ids are order right, may simpler than building so much folders
         print('Used task list', priorities_ids)
