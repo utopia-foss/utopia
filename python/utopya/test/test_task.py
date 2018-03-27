@@ -1,9 +1,12 @@
 """Test the Task class implementation"""
 
+import queue
+import io
+
 import numpy as np
 import pytest
 
-from utopya.task import Task, WorkerTask, TaskList
+from utopya.task import Task, WorkerTask, TaskList, enqueue_lines, enqueue_json
 
 
 # Fixtures ----------------------------------------------------------------
@@ -117,4 +120,19 @@ def test_tasklist(tasks):
     # Check the __contains__ method
     assert ("foo",) not in tasks
     assert all([task in tasks for task in tasks])
-    
+
+# Additional functions Test from task.py tests --------------------------------
+
+def test_enque_lines_unicode():
+    # only testing the inner block of the function, the error is raised later from put_noawait()
+    # valid unicode utf8
+    with pytest.raises(TypeError):
+        enqueue_lines(queue=queue.Queue, stream=io.BytesIO(bytes('hello', 'utf-8')))
+    # non valid unicode utf8
+    with pytest.raises(TypeError):
+        enqueue_lines(queue=queue.Queue, stream=io.BytesIO(bytes('hello', 'utf-32')))
+
+def test_enque_json():
+    # only testing the wrapper, the error is raised later from put_noawait() in enqueue_lines
+    with pytest.raises(TypeError):
+        enqueue_json(queue=queue.Queue, stream=io.BytesIO(bytes('hello', 'utf-8')))
