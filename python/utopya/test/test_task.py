@@ -35,11 +35,6 @@ def test_task_init():
     Task(name=0)
     Task(name=1, priority=1000)
     Task(name=2, priority=1000.01)
-    # Test unallowed priority
-    with pytest.raises(AttributeError):
-        Task(name=3, priority='1000')
-    with pytest.raises(AttributeError):
-        Task(name=4, priority='german autobahn')
 
     # Test that the task name cannot be changed
     with pytest.raises(AttributeError):
