@@ -24,7 +24,7 @@ def wm():
 @pytest.fixture
 def wm_priQ():
     """Create the simplest possible WorkerManager instance"""
-    return WorkerManager(num_workers=2, poll_delay=0.042, QueueCls=queue.PriorityQueue)
+    return WorkerManager(num_workers=2, poll_delay=0.01, QueueCls=queue.PriorityQueue)
 
 @pytest.fixture
 def sleep_task() -> dict:
