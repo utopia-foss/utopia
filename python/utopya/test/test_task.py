@@ -117,9 +117,4 @@ def test_tasklist(tasks):
     # Check the __contains__ method
     assert ("foo",) not in tasks
     assert all([task in tasks for task in tasks])
-
-@pytest.mark.skip(reason="Have to adapt test")
-def test_tasklist_ordering(tasks):
-    print('Task list test not impl !')
-    #tasks.sort()
-    # TODO implement HERE test if sorting works
+    
