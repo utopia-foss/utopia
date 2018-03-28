@@ -4,7 +4,7 @@ from typing import Union
 
 class Reporter:
     """The Reporter is where everything is reported.
-
+    
     Reportery reportery...
     """
 
@@ -31,7 +31,8 @@ class Reporter:
 
 
 class WorkerManagerReporter(Reporter):
-    """The specialised case of a reporter for a WorkerManager."""
+    """The specialised case of a reporter for a WorkerManager.
+    Uses Data from the monitor (from backend) handeled via Workermanager ?"""
 
     def __init__(self, **kwargs):
         """Initialize the Reporter for the WorkerManager."""
@@ -55,3 +56,6 @@ class WorkerManagerReporter(Reporter):
             raise ValueError("Only datetime.datetime objects are accepted.")
 
         self.report(targets=targets, content=runtime)
+
+    def report_progress(self, proc: dict, tasks: dict, targets: list):  # tasks dict with finish, active, remaining in queue
+        """ Report progress of the run. """
