@@ -23,7 +23,8 @@ def wm():
 
 @pytest.fixture
 def wm_priQ():
-    """Create the simplest possible WorkerManager instance"""
+    """Create simple WorkerManager instance with a PriorityQueue for the tasks.
+        Priority from -inf to +inf (high to low)."""
     return WorkerManager(num_workers=2, poll_delay=0.01, QueueCls=queue.PriorityQueue)
 
 @pytest.fixture
