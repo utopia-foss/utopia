@@ -29,7 +29,7 @@ class Task:
 
     __slots__ = ('_name', '_priority', '_uid')
 
-    def __init__(self, *, name: str=None, priority: float=+np.inf):
+    def __init__(self, *, name: str=None, priority: float=np.inf):
         """Initialize a Task object.
         
         Args:
