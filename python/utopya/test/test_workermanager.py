@@ -1,12 +1,11 @@
 """Tests the WorkerManager class"""
 
 import os
-import pkg_resources
 import queue
+import pkg_resources
 
-import pytest
-import random as rd
 import numpy as np
+import pytest
 
 from utopya.workermanager import WorkerManager, WorkerManagerTotalTimeout
 from utopya.task import enqueue_lines, parse_json
@@ -25,7 +24,8 @@ def wm():
 def wm_priQ():
     """Create simple WorkerManager instance with a PriorityQueue for the tasks.
         Priority from -inf to +inf (high to low)."""
-    return WorkerManager(num_workers=2, poll_delay=0.01, QueueCls=queue.PriorityQueue)
+    return WorkerManager(num_workers=2, poll_delay=0.01,
+                         QueueCls=queue.PriorityQueue)
 
 @pytest.fixture
 def sleep_task() -> dict:
@@ -174,9 +174,9 @@ def test_signal_workers(wm, sleep_task):
     # Signal all tasks (they all ended anyway)
     wm._signal_workers('all', signal=15)
 
+@pytest.mark.skip("Feature not yet implemented.")
 def test_detach(wm):
-    with pytest.raises(NotImplementedError):
-        wm.start_working(detach=True)
+    pass
 
 def test_empty_task_queue(wm):
     with pytest.raises(queue.Empty):
@@ -232,61 +232,39 @@ def test_read_stdout(wm):
 
     # TODO read the stream output here
 
+def test_priority_queue(wm_priQ, sleep_task):
+    """Checks that tasks are dispatched from the task queue in order of their
+    priority, if a priority queue is used."""
+    wm = wm_priQ
 
+    # Create a list of priorities that should be checked
+    prios         = [-np.inf, 2., 1., None, 0, -np.inf, 0, +np.inf, 1.]
+    correct_order = [0,       6,  4,  7,    2, 1,       3, 8,       5]
+    # If priorites are equal, the task added first have higher priority
+    # NOTE cannot just order the list of tasks, because then there would be
+    # no ground truth (the same ordering mechanism between tasks would be used)
+    
+    # Add tasks to the WorkerManager, keeping track of addition order
+    tasks = []
+    for prio in prios:
+        tasks.append(wm.add_task(priority=prio, **sleep_task))
 
-def test_task_queue(wm_priQ, tmpdir):
-    """Checks tasks are order properly in queue, according to priority from -inf(high priority) to inf(low)"""
-    # TODO Nicen the Test
-    for num_workers in [1, 2, 10]:
-        os.mkdir(os.path.join(tmpdir, str(num_workers)))
-        print(os.listdir(tmpdir))
-        wm_priQ.num_workers = num_workers
+    # Now, start working
+    wm.start_working()
+    # Done working now.
 
-        # Set a json-reading function
-        line_read_json = lambda queue, stream: enqueue_lines(queue=queue,
-                                                             stream=stream,
-                                                             parse_func=parse_json)
-                                            
-        # A few tasks
-        tasks = []
-        priorities_ids = []  # [(pri,id),...]
-        id_i = 0
-        for i in range(10):
-            if rd.random() > 0.3:
-                priority = rd.random()
-            else:
-                priority = np.inf  # None #None does not work as priority is set manually and not via task class
-            tasks.append(dict(worker_kwargs=dict(args=('python3', '-c',
-                                                       'import os; from time import time;'
-                                                       'print(os.listdir("{0}")); os.mkdir(os.path.join("{0}", "{1}", str(time()),"{2}","{3}"))'.format(tmpdir, num_workers, priority, id_i)
-                                                       # 'print("priority : "+str(priority)+"  "+"id : "+str(id_i))'
-                                                       ),
-                                                 read_stdout=True,
-                                                 line_read_func=line_read_json),
-                              priority=priority))
-            if priority is None:
-                priority = np.inf
-            priorities_ids.append((priority, id_i))
-            id_i += 1
+    # Assert that the internal task list has the same order
+    assert tasks == wm.tasks
 
-        # And pass the tasks
-        for task_dict in tasks:
-            wm_priQ.add_task(**task_dict)
+    # Extract the creation times of the tasks for manual checks
+    creation_times = [t.profiling['create_time'] for t in tasks]
+    print("Creation times:")
+    print("\n".join([str(e) for e in creation_times]))
+    print("Correct order:", correct_order)
 
-        wm_priQ.start_working()
-
-        # TODO read the stream output here and chek priorities and ids are order right, may simpler than building so much folders
-        print('Used task list', priorities_ids)
-        # sort local list
-        priorities_ids.sort()
-        print('Sorted Used task list', priorities_ids)
-        # check folder structure
-        act_path = os.path.join(tmpdir, str(num_workers))
-        folders = [name for name in os.listdir(act_path)]
-        folders.sort()
-        for i, folder in enumerate(folders):
-            if not os.listdir(os.path.join(act_path, str(folder)))[0] == priorities_ids[i][0]:
-                raise RuntimeError('WrongOrder Priority')
-            if not os.listdir(os.path.join(act_path, str(folder), str(priorities_ids[i][0])))[0] == priorities_ids[i][1]:
-                raise RuntimeError('WrongOrder ID')
-        
+    # Sort task list by correct order and by creation times
+    tasks_by_correct_order = [t for _, t in sorted(zip(correct_order, tasks))]
+    tasks_by_creation_time = [t for _, t in sorted(zip(creation_times, tasks))]
+    
+    # Check that the two lists compare equal
+    assert tasks_by_correct_order == tasks_by_creation_time

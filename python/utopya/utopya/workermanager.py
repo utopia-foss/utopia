@@ -121,7 +121,7 @@ class WorkerManager:
 
     # Public API ..............................................................
 
-    def add_task(self, **task_kwargs):
+    def add_task(self, **task_kwargs) -> WorkerTask:
         """Adds a task to the WorkerManager.
         
         Args:
@@ -136,6 +136,7 @@ class WorkerManager:
         self.task_queue.put_nowait(task)
 
         log.debug("Task %s (uid: %s) added.", task.name, task.uid)
+        return task
 
     def start_working(self, *, detach: bool=False, forward_streams: bool=False, timeout: float=None, stop_conditions: Sequence[StopCondition]=None, post_poll_func: Callable=None) -> None:
         """Upon call, all enqueued tasks will be worked on sequentially.

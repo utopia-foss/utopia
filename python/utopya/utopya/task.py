@@ -29,20 +29,20 @@ class Task:
 
     __slots__ = ('_name', '_priority', '_uid')
 
-    def __init__(self, *, name: str=None, priority: float=np.inf):
+    def __init__(self, *, name: str=None, priority: float=None):
         """Initialize a Task object.
         
         Args:
             name (str, optional): The task's name. If none is given, the
                 generated uuid will be used.
-            priority (float, optional): The priority of this task; If not given,
-                default is +inf (from numpy +np.inf), which is the lowest priority.
-                If no priority is given for any task they are orderd by their
-                creation time.
+            priority (float, optional): The priority of this task; if None,
+                default is +np.inf, i.e. the lowest priority. If two priority
+                values are the same, the task created earlier has a higher
+                priority.
         """
         # Carry over arguments attributes
         self._name = str(name) if name else None
-        self._priority = priority
+        self._priority = priority if priority is not None else np.inf
         
         # Create a unique ID
         self._uid = uuid.uuid1()
@@ -466,6 +466,10 @@ class TaskList:
     def __iter__(self):
         """Iterate over the TaskList"""
         return iter(self._l)
+
+    def __eq__(self, other) -> bool:
+        """Tests for equality of the task list by forwarding to _l attribute"""
+        return bool(self._l == other)
 
     def append(self, val: Task):
         """Append a Task object to this TaskList"""
