@@ -195,13 +195,25 @@ class WorkerManager:
                 if timeout_time is not None and time.time() > timeout_time:
                     raise WorkerManagerTotalTimeout()
 
-                # Check if there are free workers and remaining tasks.
-                if self.num_free_workers and self.task_queue.qsize():
-                    # Yes. => Grab a task and start working on it
-                    # Aproach with adding tasks as number of free workers, limited by available tasks in queue
-                    for _ in range(min(self.num_free_workers, self.task_queue.qsize())):
+                # Check if there are free workers
+                if self.num_free_workers:
+                    # Yes. => Try to grab a task and start working on it
+                    try:
                         new_task = self._grab_task()
+                    except queue.Empty:
+                        # There were no tasks left in the task queue
+                        pass
+                    else:
+                        # Succeeded in grabbing a task; worker spawned
                         self.active_tasks.append(new_task)
+                    # NOTE Only a single task is grabbed here, even if there is
+                    # more than one free worker. This is to assure that the
+                    # while loop iterations have comparable run time, even if
+                    # a task is added (which can take O(ms)). As this loop
+                    # handles more than just grabbing new tasks, it is safer
+                    # to have it run reliably and foreseeably.
+                    # Also, the poll delay is usually not so large that there
+                    # would be an issue with workers staying idle for too long.
 
                 # Gather the streams of all working workers
                 for task in self.active_tasks:
