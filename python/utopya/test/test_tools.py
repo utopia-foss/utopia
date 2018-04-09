@@ -1,72 +1,78 @@
 """I'm a docstring."""
 import os
 import copy
-import pkg_resources
+from pkg_resources import resource_filename
 
 import pytest
 
 import utopya.tools as t
 
-
-BASE_CFG_PATH = pkg_resources.resource_filename('utopya',
-                                                'cfg/base_cfg.yml')
-RUN_CFG_PATH = pkg_resources.resource_filename('test',
-                                               'cfg/run_cfg.yml')
-RUN_CFG_CONSTR_PATH = pkg_resources.resource_filename('test',
-                                                      'cfg/run_cfg_constr.yml')
+# Local constants
+READ_TEST_PATH = resource_filename('test', 'cfg/read_test.yml')
+CONSTR_TEST_PATH = resource_filename('test', 'cfg/constr_test.yml')
 
 # Fixtures --------------------------------------------------------------------
 @pytest.fixture
 def testdict():
     """Create a dummy dictionary."""
-    testdict = dict()
-    for i, s in enumerate(list("Test")):
-        testdict[s] = i
-    return testdict
-
-
-@pytest.fixture
-def testdict_deep():
-    """Create a dummy dictionary with multiple levels."""
-    testdict_deep = dict()
-    for s in list("Test"):
-        for i, v in enumerate(list("bar")):
-            testdict_deep[s] = dict(v=i)
-    return testdict_deep
+    return dict(foo="bar", bar=123.456,
+                baz=dict(foo="more_bar", bar=456.123, baz=[1,2,3]),
+                a_tuple=(1,2,3),
+                nothing=None)
 
 
 # Tests -----------------------------------------------------------------------
-def test_write_yml_single(testdict, tmpdir):
-    """Testing if dummy write is succesful."""
-    t.write_yml(testdict, os.path.join(tmpdir.dirpath(), "test_cfg_dummy.yml"))
-
-
-def test_write_yml_double(testdict, tmpdir):
-    """Writing two yml configs to see if the Exception is raised."""
-    t.write_yml(testdict, os.path.join(tmpdir.dirpath(), "test_cfg.yml"))
-
-    # calling the write function again should cause an error:
-    with pytest.raises(FileExistsError):
-        t.write_yml(testdict, tmpdir.dirpath())
-
-
-def test_write_yml_deep(testdict_deep, tmpdir):
-    """Writing a deep dummy dictionary with multiple levels."""
-    t.write_yml(testdict_deep,
-                os.path.join(tmpdir.dirpath(), "test_cfg_deep.yml"))
-
 
 def test_read_yml(tmpdir):
     """Testing if previously written file can be read."""
-    path = os.path.join(tmpdir.dirpath(), "test_cfg.yml")
-    t.read_yml(path)
+    # Read the test file
+    d = t.read_yml(READ_TEST_PATH)
 
-
-def test_read_yml_not_existing(tmpdir):
-    """Testing if Exception is raised when no file is found."""
-    path = os.path.join(tmpdir.dirpath(), "not_existent_config.yml")
+    # An Exception should be raised when no file is found
+    bad_path = os.path.join(tmpdir.dirpath(), "not_existent_config.yml")
     with pytest.raises(FileNotFoundError):
-        t.read_yml(path)
+        t.read_yml(bad_path)
+
+    with pytest.raises(FileNotFoundError, match="My Custom error message."):
+        t.read_yml(bad_path, error_msg="My Custom error message.")
+
+    # Assert that the read content is correct. Content of READ_TEST_PATH:
+    # foo: bar
+    # baz: 123.45
+    # a_list: [1,2,3]
+    # a_map:
+    #   another_map:
+    #     a: 1
+    #     b: 2
+    #     c: 3
+    #   yet_another_map:
+    #     foo: bar
+    #     baz: 123
+    #     a_list: [1,2,3]
+
+    assert d['foo'] == 'bar'
+    assert d['baz'] == 123.45
+    assert d['a_list'] == [1,2,3]
+    assert d['a_map']['another_map'] == dict(a=1, b=2, c=3)
+    assert d['a_map']['yet_another_map'] == dict(foo="bar", baz=123,
+                                                 a_list=[1,2,3])
+
+    # Also read files that include custom constructors
+    t.read_yml(CONSTR_TEST_PATH)
+
+
+def test_write_yml(testdict, tmpdir):
+    """Testing if writing dicts to yaml is succesful."""
+    # Write the test dictionary
+    path = os.path.join(tmpdir.dirpath(), "test.yml")
+    t.write_yml(testdict, path=path)
+
+    # Writing again should fail
+    with pytest.raises(FileExistsError):
+        t.write_yml(testdict, path=os.path.join(tmpdir.dirpath(), "test.yml"))
+
+    # Read in the file and assert equality between written and read file
+    assert testdict == t.read_yml(path)
 
 
 def test_recursive_update(testdict):
@@ -83,39 +89,3 @@ def test_recursive_update(testdict):
     to_update_dict = t.recursive_update(to_update_dict, change_dict)
     assert to_update_dict == change_dict
 
-
-def test_recursive_update_deep(testdict_deep):
-    """Testing if deep recursive update actually works."""
-    # creating 2 dummy dictionaries
-    to_update_dict = testdict_deep
-    change_dict = copy.deepcopy(to_update_dict)
-
-    # actually make changes to change_dict
-    change_dict['T']['b'] = 5
-
-    assert change_dict != to_update_dict
-
-    to_update_dict = t.recursive_update(to_update_dict, change_dict)
-    assert to_update_dict == change_dict
-
-
-def test_read_yml_with_error(tmpdir):
-    """Testing if Exception is raised when no file is found with custom Error message."""
-    path = os.path.join(tmpdir.dirpath(), "not_existent_config.yml")
-    with pytest.raises(FileNotFoundError):
-        t.read_yml(path, "My Custom error message.")
-
-
-def test_read_run_cfg_with_constructors():
-    """Testing if run_cfg can be read with yaml constructors."""
-    t.read_yml(RUN_CFG_CONSTR_PATH)
-
-
-def test_read_run_cfg_update_base():
-    """Reading base_cfg and run_cfg and perform update."""
-    # read the files
-    base = t.read_yml(BASE_CFG_PATH)
-    run = t.read_yml(RUN_CFG_PATH)
-
-    # Check the update call
-    t.recursive_update(base, run)

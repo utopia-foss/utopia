@@ -31,18 +31,20 @@ def recursive_update(d: dict, u: dict) -> dict:
             d[key] = val 	# ... which is just u[key]
     return d
 
+# input/output ----------------------------------------------------------------
 
-def read_yml(path: str, error_msg: str=None) -> dict:
-    """Read yaml configuration file and return dict.
-
-    The given error_msg is given upon FileNotFoundError.
-
+def read_yml(path: str, *, error_msg: str=None) -> dict:
+    """Read a yaml file and return the resulting dict.
+    
     Args:
-        path:       path to yml file
-        error_msg:  string to be printed upon FileNotFoundError. Defaults to None.
-
+        path (str): path to yml file that is to be read
+        error_msg (str, optional): if given, this is used as error message
+    
     Returns:
-        dict: with contents of yml file. Raises FileNotFoundError if file is not found.
+        dict: with contents of yml file
+    
+    Raises:
+        FileNotFoundError: If file was not found at `path`
     """
     try:
         with open(path, 'r') as ymlfile:
@@ -50,26 +52,31 @@ def read_yml(path: str, error_msg: str=None) -> dict:
     except FileNotFoundError as err:
         if error_msg:  # is None by default
             raise FileNotFoundError(error_msg) from err
-        else:
-            raise err
+        raise err
+
+    # Everything ok, return the dict
     return d
 
 
-def write_yml(d: dict, path: str) -> None:
+def write_yml(d: dict, *, path: str) -> None:
     """Write dict to yml file in path.
-
+    
     Writes a given dictionary into a yaml file. Error is raised if file already exists.
-
+    
     Args:
-        d:      dict to be written
-        path:   to output file
+        d (dict): dict to be written
+        path (str): target path. This should include the extension `*.yml`
+    
+    Raises:
+        FileExistsError: If the file already exists.
     """
     # check whether file already exists
     if os.path.exists(path):
         raise FileExistsError("Target file {0} already exists.".format(path))
-    else:  # dump the dict into the config file
-        with open(path, 'w') as ymlout:
-            yaml.dump(d, ymlout, default_flow_style=False)
+    
+    # else: dump the dict into the config file
+    with open(path, 'w') as ymlout:
+        yaml.dump(d, ymlout, default_flow_style=False)
 
 # yaml constructors -----------------------------------------------------------
 
