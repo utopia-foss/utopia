@@ -8,6 +8,7 @@ variables:
       -DDUNE_PYTHON_ALLOW_GET_PIP=True
   MAKE_FLAGS_BUILD:
       -j $PROCNUM
+  MODEL_DIR: $CI_PROJECT_DIR/dune/utopia/models
 before_script:
   - cd /opt/dune
 
@@ -97,5 +98,4 @@ test:models:
     # test the default model config
     - $RUN_IN_DUNE_ENV utopia dummy
     # test a configuration that allows a sweep
-    - $RUN_IN_DUNE_ENV utopia dummy
-      $CI_PROJECT_DIR/dune/utopia/models/dummy/test/dummy_cfg.yml --sweep
+    - $RUN_IN_DUNE_ENV utopia dummy $MODEL_DIR/dummy/test/dummy_cfg.yml --sweep --note sweep
