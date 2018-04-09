@@ -317,7 +317,7 @@ class Multiverse:
         # Done.
         return cfg_parts
 
-    def _create_run_dir(self, *, out_dir: str, model_note: str=None, granular_backup: bool=True, cfg_parts: dict=None) -> None:
+    def _create_run_dir(self, *, out_dir: str, model_note: str=None, backup_involved_cfg_files: bool=True, cfg_parts: dict=None) -> None:
         """Create the folder structure for the run output.
         
         This will also write the meta config to the corresponding config
@@ -342,9 +342,9 @@ class Multiverse:
             out_dir (str): The base output directory, where all simulation data
                 is stored
             model_note (str, optional): The note to add to the model
-            granular_backup (bool, optional): If true, saves all relevant parts
-                of the configuration process to the config directory. Note
-                that the meta configuration is always saved there.
+            backup_involved_cfg_files (bool, optional): If true, saves all
+                involved parts of the configuration process to the config
+                directory. Note: the meta configuration is always saved there!
             cfg_parts (dict, optional): The parts of the config to backup
         
         Raises:
@@ -393,7 +393,7 @@ class Multiverse:
         log.debug("Wrote meta configuration to config directory.")
 
         # If configured, backup the other cfg files one by one
-        if granular_backup and cfg_parts:
+        if backup_involved_cfg_files and cfg_parts:
             log.debug("Backing up %d config parts...", len(cfg_parts))
 
             for part_name, val in cfg_parts.items():

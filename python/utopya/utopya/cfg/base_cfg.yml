@@ -11,9 +11,9 @@ paths:
   # <out_dir>/<model_name>/<timestamp>-<model_note>/
   # With subfolders: config, eval, universes
 
-  # Whether to save all related config files granularly, i.e. one by one.
+  # Whether to save all involved config files granularly, i.e. one by one.
   # If false, only the resulting meta_cfg is saved to the config subdirectory.
-  granular_backup: true
+  backup_involved_cfg_files: true
 
 # Whether to perfom a parameter sweep
 perform_sweep: false
