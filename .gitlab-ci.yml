@@ -94,5 +94,8 @@ test:models:
     - light
   script:
     - ./dune-common/bin/dunecontrol --only=utopia configure
-    - $RUN_IN_DUNE_ENV utopia dummy 
+    # test the default model config
+    - $RUN_IN_DUNE_ENV utopia dummy
+    # test a configuration that allows a sweep
+    - $RUN_IN_DUNE_ENV utopia dummy
       $CI_PROJECT_DIR/dune/utopia/models/dummy/test/dummy_cfg.yml --sweep

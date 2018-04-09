@@ -25,11 +25,6 @@ if __name__ == '__main__':
                         default=None, action='store_true',
                         help="If given, forces a parameter sweep. Is ignored, "
                              "if the --single argument was also given.")
-    parser.add_argument('--no-run-cfg',
-                        dest='no_run_cfg',
-                        default=False, action='store_true',
-                        help="If given, it is allowd to omit the "
-                             "`run_cfg_path` argument.")
     parser.add_argument('-v', '--verbose',
                         default=0, action='count',
                         help="(UNSUPPORTED) Sets the verbosity level of the "
@@ -37,13 +32,6 @@ if __name__ == '__main__':
 
     # CLI defined. Parse the arguments now.
     args = parser.parse_args()
-
-    # Check the arguments
-    if args.no_run_cfg is False and args.run_cfg_path is None:
-        print("No positional argument `run_cfg_path` given!\n"
-              "If it should be omitted, add the --no-run-cfg flag.\n")
-        parser.print_help()
-        sys.exit()
 
     # Using the args, instantiate a Multiverse object
     mv = utopya.Multiverse(model_name=args.model_name,
