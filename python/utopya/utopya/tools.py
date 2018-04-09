@@ -107,10 +107,11 @@ def write_yml(d: dict, *, path: str) -> None:
 # -----------------------------------------------------------------------------
 
 def recursive_update(d: dict, u: dict) -> dict:
-    """Update dict d with values from dict u.
+    """Update dict `d` with values from dict `u`.
     
-    NOTE: With `d` being mutable, its contents will change when applying this
-    method.
+    NOTE: This method does _not_ copy mutable entries! If you want to assure
+    that the contents of `u` cannot be changed by changing its counterparts in
+    the updated `d`, you need to supply a deep copy of `u` to this method.
     
     Args:
         d (dict): The dict to be updated
@@ -119,11 +120,20 @@ def recursive_update(d: dict, u: dict) -> dict:
     Returns:
         dict: updated version of d
     """
+    # Need to check whether `d` is a mapping at all
+    if not isinstance(d, collections.Mapping):
+        # It is not. Need not go any further and can just return `u`
+        return u
+
+    # d can now assumed to be a mapping
+    # Iterate over the keys of the update dict and (recursively) add them
     for key, val in u.items():
-        if isinstance(val, dict):
+        if isinstance(val, collections.Mapping):
             # Already a Mapping, continue recursion
             d[key] = recursive_update(d.get(key, {}), val)
         else:
             # Not a mapping -> at leaf -> update value
             d[key] = val    # ... which is just u[key]
+
+    # Finished at this level; return updated dict
     return d
