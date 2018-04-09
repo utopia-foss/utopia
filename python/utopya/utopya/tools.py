@@ -1,35 +1,60 @@
-"""For functions that are not bound to classes, but useful."""
+"""For functions that are not bound to classes, but generally useful."""
 
 import os
-import yaml
 import re
+import collections
 
+import yaml
 import numpy as np
+
 import paramspace.yaml_constructors as psp_constrs
 
 import utopya.stopcond
 
+# Local constants
 
-def recursive_update(d: dict, u: dict) -> dict:
-    """Update dict d with values from dict u.
+# -----------------------------------------------------------------------------
+# yaml constructors -----------------------------------------------------------
 
-    No copy of d is created so its contents will be changed.
 
-    Args:
-        d: The dict to be updated
-        u: The dict used to update
+def _expr_constructor(loader, node):
+    """Custom pyyaml constructor for evaluating strings with simple mathematical expressions.
 
-    Returns:
-        dict: d with updated contents
+    Supports: +, -, *, **, /, e-X, eX
     """
-    for key, val in u.items():
-        if isinstance(val, dict):
-            # Already a Mapping, continue recursion
-            d[key] = recursive_update(d.get(key, {}), val)
-        else:
-            # Not a mapping -> at leaf -> update value
-            d[key] = val 	# ... which is just u[key]
-    return d
+    # get expression string
+    expr_str = loader.construct_scalar(node)
+
+    # Remove spaces
+    expr_str = expr_str.replace(" ", "")
+
+    # Parse some special strings
+    # FIXME these will cause errors if emitting again to C++
+    if expr_str in ['np.nan', 'nan', 'NaN']:
+        return np.nan
+
+    elif expr_str in ['np.inf', 'inf', 'INF']:
+        return np.inf
+
+    elif expr_str in ['-np.inf', '-inf', '-INF']:
+        return -np.inf
+
+    # remove everything that might cause trouble -- only allow digits, dot, +,
+    # -, *, /, and eE to allow for writing exponentials
+    expr_str = re.sub(r'[^0-9eE\-.+\*\/]', '', expr_str)
+
+    # Try to eval
+    return eval(expr_str)
+
+
+# Add the constructors to the yaml module
+yaml.add_constructor(u'!expr', _expr_constructor)
+yaml.add_constructor(u'!stop-condition', utopya.stopcond.stop_cond_constructor)
+yaml.add_constructor(u'!sc-func', utopya.stopcond.sc_func_constructor)
+yaml.add_constructor(u'!pspace', psp_constrs.pspace)
+yaml.add_constructor(u'!sweep', psp_constrs.pdim_enabled_only)
+yaml.add_constructor(u'!sweep-default', psp_constrs.pdim_get_default)
+
 
 # input/output ----------------------------------------------------------------
 
@@ -78,43 +103,27 @@ def write_yml(d: dict, *, path: str) -> None:
     with open(path, 'w') as ymlout:
         yaml.dump(d, ymlout, default_flow_style=False)
 
-# yaml constructors -----------------------------------------------------------
 
+# -----------------------------------------------------------------------------
 
-def _expr_constructor(loader, node):
-    """Custom pyyaml constructor for evaluating strings with simple mathematical expressions.
-
-    Supports: +, -, *, **, /, e-X, eX
+def recursive_update(d: dict, u: dict) -> dict:
+    """Update dict d with values from dict u.
+    
+    NOTE: With `d` being mutable, its contents will change when applying this
+    method.
+    
+    Args:
+        d (dict): The dict to be updated
+        u (dict): The dict used to update
+    
+    Returns:
+        dict: updated version of d
     """
-    # get expression string
-    expr_str = loader.construct_scalar(node)
-
-    # Remove spaces
-    expr_str = expr_str.replace(" ", "")
-
-    # Parse some special strings
-    # FIXME these will cause errors if emitting again to C++
-    if expr_str in ['np.nan', 'nan', 'NaN']:
-        return np.nan
-
-    elif expr_str in ['np.inf', 'inf', 'INF']:
-        return np.inf
-
-    elif expr_str in ['-np.inf', '-inf', '-INF']:
-        return -np.inf
-
-    # remove everything that might cause trouble -- only allow digits, dot, +,
-    # -, *, /, and eE to allow for writing exponentials
-    expr_str = re.sub(r'[^0-9eE\-.+\*\/]', '', expr_str)
-
-    # Try to eval
-    return eval(expr_str)
-
-
-# Add the constructors to the yaml module
-yaml.add_constructor(u'!expr', _expr_constructor)
-yaml.add_constructor(u'!stop-condition', utopya.stopcond.stop_cond_constructor)
-yaml.add_constructor(u'!sc-func', utopya.stopcond.sc_func_constructor)
-yaml.add_constructor(u'!pspace', psp_constrs.pspace)
-yaml.add_constructor(u'!sweep', psp_constrs.pdim_enabled_only)
-yaml.add_constructor(u'!sweep-default', psp_constrs.pdim_get_default)
+    for key, val in u.items():
+        if isinstance(val, dict):
+            # Already a Mapping, continue recursion
+            d[key] = recursive_update(d.get(key, {}), val)
+        else:
+            # Not a mapping -> at leaf -> update value
+            d[key] = val    # ... which is just u[key]
+    return d
