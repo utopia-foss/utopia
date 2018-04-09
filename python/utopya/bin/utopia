@@ -25,6 +25,10 @@ if __name__ == '__main__':
                         default=None, action='store_true',
                         help="If given, forces a parameter sweep. Is ignored, "
                              "if the --single argument was also given.")
+    parser.add_argument('--note',
+                        default=None, nargs='?',
+                        help="Overwrites the `paths->model_note` entry which "
+                             "is used in creation of the run directory path.")
     parser.add_argument('-v', '--verbose',
                         default=0, action='count',
                         help="(UNSUPPORTED) Sets the verbosity level of the "
@@ -33,9 +37,16 @@ if __name__ == '__main__':
     # CLI defined. Parse the arguments now.
     args = parser.parse_args()
 
+    # Check if the model_note was given
+    if args.note:
+        update_dict = dict(paths=dict(model_note=args.note))
+    else:
+        update_dict = None
+
     # Using the args, instantiate a Multiverse object
     mv = utopya.Multiverse(model_name=args.model_name,
-                           run_cfg_path=args.run_cfg_path)
+                           run_cfg_path=args.run_cfg_path,
+                           update_meta_cfg=update_dict)
 
     if args.single:
         if args.sweep:
