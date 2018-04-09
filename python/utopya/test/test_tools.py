@@ -16,9 +16,9 @@ CONSTR_TEST_PATH = resource_filename('test', 'cfg/constr_test.yml')
 def testdict():
     """Create a dummy dictionary."""
     return dict(foo="bar", bar=123.456,
-                baz=dict(foo="more_bar", bar=456.123, baz=[1,2,3]),
+                baz=dict(foo="more_bar", bar=456.123, baz=[1,2,dict(three=3)]),
                 a_tuple=(1,2,3),
-                nothing=None)
+                nothing=None, more_nothing=None)
 
 
 # Tests -----------------------------------------------------------------------
@@ -76,16 +76,30 @@ def test_write_yml(testdict, tmpdir):
 
 
 def test_recursive_update(testdict):
-    """Testing if recursive update actually works."""
-    # creating 2 dummy dictionaries
-    to_update_dict = testdict
-    change_dict = copy.deepcopy(to_update_dict)
+    """Testing if recursive update works as desired."""
+    d = testdict
+    u = copy.deepcopy(d)
 
-    # actually make changes to change_dict
-    change_dict['T'] = 5
+    # Make some changes
+    u['more_entries'] = dict(a=1, b=2)
+    u['foo'] = "changed_bar"
+    u['bar'] = 654.321
+    del u['a_tuple']
+    u['baz'] = dict(another_entry="hello", foo="more_changed_bars",
+                    nothing=dict(some="thing"))
+    u['nothing'] = dict(some="thing")
+    u['more_nothing'] = "something"
 
-    assert change_dict != to_update_dict
+    assert d != u
 
-    to_update_dict = t.recursive_update(to_update_dict, change_dict)
-    assert to_update_dict == change_dict
-
+    # Perform the update
+    d = t.recursive_update(d, u)
+    assert d['more_entries'] == dict(a=1, b=2)
+    assert d['foo'] == "changed_bar"
+    assert d['bar'] == 654.321
+    assert d['a_tuple'] == (1,2,3)
+    assert d['baz'] == dict(another_entry="hello", foo="more_changed_bars",
+                            bar=456.123, baz=[1,2,dict(three=3)],
+                            nothing=dict(some="thing"))
+    assert d['nothing'] == dict(some="thing")
+    assert d['more_nothing'] == "something"
