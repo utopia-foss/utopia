@@ -10,18 +10,25 @@ _LAST_CONFIG_TIME = "@CURRENT_TIME@"
 
 _UTOPIA_MODEL_TARGETS = "@UTOPIA_MODEL_TARGETS@"
 _UTOPIA_MODEL_BINPATHS = "@UTOPIA_MODEL_BINPATHS@"
+_UTOPIA_MODEL_SRC_DIRS = "@UTOPIA_MODEL_SRC_DIRS@"
 # End of CMake configured variables ...........................................
 
 # Need a function to parse the cmake variables
 def parse_utopia_models(targets: str=_UTOPIA_MODEL_TARGETS, 
-    binpaths: str=_UTOPIA_MODEL_BINPATHS) -> dict:
-    """From the module constants, creates a dictionary with the model information in {model_name: model_binary_path} format.
+                        binpaths: str=_UTOPIA_MODEL_BINPATHS,
+                        src_dirs: str=_UTOPIA_MODEL_SRC_DIRS) -> dict:
+    """From the given strings, creates a dictionary with the model information.
+
+    The dictionary has as keys the model names. The entries are again dicts and
+    include the keys `binpath` and `src_dir`.
     
     Args:
         targets (str, optional): The CMake-parsed, semi-colon separated list of
             utopia targets 
         binpaths (str, optional): The CMake-parsed, semi-colon separated list
             of utopia target binary paths
+        src_dirs (str, optional): The CMake-parsed, semi-colon separated list
+            of utopia model source directories (without trailing slash!)
     
     Returns:
         dict: The model info dictionary
@@ -32,9 +39,19 @@ def parse_utopia_models(targets: str=_UTOPIA_MODEL_TARGETS,
         print(targets, binpaths)
         return {}
 
-    # Populate model info with target names and model info dict containing binpath
-    model_info = {t:dict(binpath=bp) for t, bp in zip(targets.split(";"),
-                                                      binpaths.split(";"))}
+    # Parse the CMake-syntax lists
+    targets = targets.split(";")
+    binpaths = binpaths.split(";")
+    src_dirs = src_dirs.split(";")
+
+    if len(targets) != len(binpaths) != len(src_dirs):
+        raise ValueError("Utopia model information lists need to be of the "
+                         "same length, were:\ntargets: {}\nbinpaths: {}\n"
+                         "src_dirs: {}".format(targets, binpaths, src_dirs))
+
+    # Populate model info with target names and model info dict
+    model_info = {t:dict(binpath=bp, src_dir=sd)
+                  for t, bp, sd in zip(targets, binpaths, src_dirs)}
 
     return model_info
 

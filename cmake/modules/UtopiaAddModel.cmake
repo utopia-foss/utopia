@@ -9,15 +9,22 @@
 #
 #   The target is registered as Utopia Model and its name and path are
 #   appended to the Cache for relaying them to the utopya Python module.
+#   Additionally, the source directory is also appended to a cached list.
 #
 function(add_model target_name)
     # register regularly
     add_executable(${target_name} ${ARGN})
 
+    # the rest of this function is to relay information to the utopya package
     # add name to target list
     set(UTOPIA_MODEL_TARGETS ${UTOPIA_MODEL_TARGETS} ${target_name}
         CACHE STRING "list of Utopia model targets" FORCE)
     
+    # add path to source directory of this model to the cache
+    set(UTOPIA_MODEL_SRC_DIRS
+        ${UTOPIA_MODEL_SRC_DIRS} ${CMAKE_CURRENT_LIST_DIR}
+        CACHE STRING "list of Utopia model source directories" FORCE)
+
     # get path to binary
     file(RELATIVE_PATH relative_binary_path
         ${PROJECT_SOURCE_DIR} ${CMAKE_CURRENT_LIST_DIR})
@@ -35,3 +42,4 @@ endfunction()
 # clear cache variables before configuration
 set(UTOPIA_MODEL_TARGETS CACHE STRING "list of Utopia model targets" FORCE)
 set(UTOPIA_MODEL_BINPATHS CACHE STRING "list of Utopia model binpaths" FORCE)
+set(UTOPIA_MODEL_SRC_DIRS CACHE STRING "list of Utopia model source directories" FORCE)
