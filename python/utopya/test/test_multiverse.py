@@ -71,6 +71,17 @@ def test_config_handling(mv_kwargs):
     with pytest.raises(FileNotFoundError):
         Multiverse(**mv_kwargs)
 
+def test_granular_backup(mv_kwargs):
+    """Tests whether the backup of all config parts works"""
+    mv = Multiverse(**mv_kwargs)
+    cfg_path = mv.dirs['config']
+
+    assert os.path.isfile(os.path.join(cfg_path, 'base_cfg.yml'))
+    assert os.path.isfile(os.path.join(cfg_path, 'user_cfg.yml'))
+    assert os.path.isfile(os.path.join(cfg_path, 'model_cfg.yml'))
+    assert os.path.isfile(os.path.join(cfg_path, 'run_cfg.yml'))
+    assert os.path.isfile(os.path.join(cfg_path, 'update_cfg.yml'))
+
 def test_create_run_dir(default_mv):
     """Tests the folder creation in the initialsation of the Multiverse."""
     mv = default_mv

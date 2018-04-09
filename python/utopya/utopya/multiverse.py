@@ -7,7 +7,7 @@ import time
 import copy
 import logging
 from shutil import copyfile
-import pkg_resources
+from pkg_resources import resource_filename
 
 import paramspace as psp
 
@@ -35,8 +35,7 @@ class Multiverse:
         USER_CFG_SEARCH_PATH (str): The path at which a user config is expected
     """
 
-    BASE_CFG_PATH = pkg_resources.resource_filename('utopya',
-                                                    'cfg/base_cfg.yml')
+    BASE_CFG_PATH = resource_filename('utopya', 'cfg/base_cfg.yml')
     USER_CFG_SEARCH_PATH = os.path.expanduser("~/.config/utopia/user_cfg.yml")
 
     def __init__(self, *, model_name: str, run_cfg_path: str=None, update_meta_cfg: dict=None, user_cfg_path: str=None):
@@ -63,13 +62,14 @@ class Multiverse:
         log.debug("Associated executable of model '%s':\n  %s",
                   self.model_name, self.model_binpath)
 
-        # Create Meta Config
+        # Create meta configuration and list of used config files
         self._meta_config = None
-        self.meta_config = self._create_meta_config(run_cfg_path=run_cfg_path, user_cfg_path=user_cfg_path, update_meta_cfg=update_meta_cfg)
+        files = self._create_meta_config(run_cfg_path=run_cfg_path,
+                                         user_cfg_path=user_cfg_path,
+                                         update_meta_cfg=update_meta_cfg)
 
         # Create the run directory and write the meta configuration into it
-        self._create_run_dir(model_name=self.model_name,
-                             **self.meta_config['paths'])
+        self._create_run_dir(**self.meta_config['paths'], cfg_parts=files)
 
         # create a WorkerManager instance
         self._wm = WorkerManager(**self.meta_config['worker_manager'])
@@ -200,16 +200,22 @@ class Multiverse:
     # "Private" methods .......................................................
 
     def _create_meta_config(self, *, run_cfg_path: str, user_cfg_path: str, update_meta_cfg: dict) -> dict:
-        """Read base configuration file and adjust parameters.
+        """Create the meta configuration from several parts and store it.
         
-        The base_config file, the user_config file (if existing) and the run_config file are read in.
-        The base_config is adjusted accordingly to create the meta_config.
-        
-        The final configuration dict is built from three components:
-            1. The base is the default configuration, which is always present
-            2. If a userconfig is present, this recursively updates the defaults
-            3. Then, the given metaconfig recursively updates the created dict
-            4. As a last step, the update_meta_cfg dict will be applied
+        The final configuration dict is built from up to five components,
+        where one is always recursively updating the previous level:
+            1. base: the default configuration, which is always present
+            2. user (optional): configuration of user- and machine-related
+               parameters
+            3. model: the model configuration, depending on self.model_name
+            4. run (optional): the configuration for the current Multiverse
+               instance
+            5. update: if given, this dict can be used for a last update step
+
+        The resulting configuration is the meta configuration and is stored
+        to the `meta_config` attribute.
+
+        The parts are recorded in the `cfg_parts` dict and returned.
         
         Args:
             run_cfg_path (str): path to run_config
@@ -217,7 +223,9 @@ class Multiverse:
             update_meta_cfg (dict): will be used to update the resulting dict
         
         Returns:
-            dict: returns the created metaconfig that will be saved as attr
+            dict: dict of the parts that were needed to create the meta config.
+                The dict-key corresponds to the part name, the value is the
+                payload which can be either a path to a cfg file or a dict
         """
         log.debug("Reading in configuration files ...")
 
@@ -233,6 +241,7 @@ class Multiverse:
             if os.path.isfile(self.USER_CFG_SEARCH_PATH):
                 user_cfg_path = self.USER_CFG_SEARCH_PATH
             else:
+                # No user cfg will be loaded
                 log.debug("No file found at the default search location.")
 
         elif user_cfg_path is False:
@@ -293,17 +302,27 @@ class Multiverse:
             meta_tmp = recursive_update(meta_tmp,
                                         copy.deepcopy(update_meta_cfg))
             # NOTE using copy to make sure that usage of the dict will not interfere with the Multiverse's meta config
+        
+        log.info("Loaded meta configuration. Storing it ...")
+        self.meta_config = meta_tmp
+
+        # Prepare dict to store paths for config files in (for later backup)
+        log.debug("Preparing dict of config parts ...")
+        cfg_parts = dict(base=self.BASE_CFG_PATH,
+                         user=user_cfg_path,
+                         model=model_cfg_path,
+                         run=run_cfg_path,
+                         update=update_meta_cfg)
 
         # Done.
-        log.info("Loaded meta configuration.")
-        return meta_tmp
+        return cfg_parts
 
-    def _create_run_dir(self, *, model_name: str, out_dir: str, model_note: str=None) -> None:
+    def _create_run_dir(self, *, out_dir: str, model_note: str=None, granular_backup: bool=True, cfg_parts: dict=None) -> None:
         """Create the folder structure for the run output.
-
+        
         This will also write the meta config to the corresponding config
         directory.
-
+        
         The following folder tree will be created
         utopia_output/   # all utopia output should go here
             model_a/
@@ -317,24 +336,28 @@ class Multiverse:
             model_b/
                 180301-125412_my_first_sim/
                 180301-125413_my_second_sim/
-
-
+        
+        
         Args:
-            model_name (str): Description
-            out_dir (str): Description
-            model_note (str, optional): Description
-
+            out_dir (str): The base output directory, where all simulation data
+                is stored
+            model_note (str, optional): The note to add to the model
+            granular_backup (bool, optional): If true, saves all relevant parts
+                of the configuration process to the config directory. Note
+                that the meta configuration is always saved there.
+            cfg_parts (dict, optional): The parts of the config to backup
+        
         Raises:
             RuntimeError: If the simulation directory already existed. This
                 should not occur, as the timestamp is unique. If it occurs,
-                something is seriously wrong. Or you are in a strange time
-                zone.
-        """ 
+                you either started two simulations very close to each other or 
+                something is seriously wrong. Strange time zone perhaps?
+        """
         # Create the folder path to the simulation directory
         log.debug("Creating path for run directory inside %s ...", out_dir)
         out_dir = os.path.expanduser(out_dir)
         run_dir = os.path.join(out_dir,
-                               model_name,
+                               self.model_name,
                                time.strftime("%Y%m%d-%H%M%S"))
 
         # Append a model note, if needed
@@ -350,7 +373,9 @@ class Multiverse:
             os.makedirs(run_dir)
         except OSError as err:
             raise RuntimeError("Simulation directory already exists. This "
-                               "should not have happened. Try to start the "
+                               "should not have happened and is probably due "
+                               "to two simulations having been started at "
+                               "almost the same time. Try to start the "
                                "simulation again.") from err
 
         # Make subfolders
@@ -363,9 +388,27 @@ class Multiverse:
                   self._dirs)
 
         # Write the meta config to the config directory.
-        write_yml(d=self.meta_config,
+        write_yml(self.meta_config,
                   path=os.path.join(self.dirs['config'], "meta_cfg.yml"))
         log.debug("Wrote meta configuration to config directory.")
+
+        # If configured, backup the other cfg files one by one
+        if granular_backup and cfg_parts:
+            log.debug("Backing up %d config parts...", len(cfg_parts))
+
+            for part_name, val in cfg_parts.items():
+                _path = os.path.join(self.dirs['config'], part_name+"_cfg.yml")
+                # Distinguish two types of payload that will be saved:
+                if isinstance(val, str):
+                    # Assumed to be path to a config file; copy it
+                    log.debug("Copying %s config ...", part_name)
+                    copyfile(val, _path)
+
+                elif isinstance(val, dict):
+                    log.debug("Dumping %s config dict ...", part_name)
+                    write_yml(val, path=_path)
+
+        log.debug("Finished creating run directory and backing up config.")
 
     @staticmethod
     def _create_uni_basename(*, uni_id: int, max_uni_id: int) -> str:
