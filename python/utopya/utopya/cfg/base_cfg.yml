@@ -62,11 +62,5 @@ data_manager: {}
 # Plot Manager
 plot_manager: {}
 
-# Parameter Space - passed to the models
-parameter_space:
-  output_path: ~  # will be set dynamically by frontend
-  num_steps: 10
-  seed: 1337
-
-  # All model information goes in here:
-  models: {}
+# Parameter Space - default values are set by the model config
+parameter_space: {}
