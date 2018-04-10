@@ -1,8 +1,10 @@
 """Tests the WorkerManager class"""
 
 import os
+import queue
 import pkg_resources
 
+import numpy as np
 import pytest
 
 from utopya.workermanager import WorkerManager, WorkerManagerTotalTimeout
@@ -17,6 +19,13 @@ STOP_CONDS_PATH = pkg_resources.resource_filename('test', 'cfg/stop_conds.yml')
 def wm():
     """Create the simplest possible WorkerManager instance"""
     return WorkerManager(num_workers=2, poll_delay=0.042)
+
+@pytest.fixture
+def wm_priQ():
+    """Create simple WorkerManager instance with a PriorityQueue for the tasks.
+        Priority from -inf to +inf (high to low)."""
+    return WorkerManager(num_workers=2, poll_delay=0.01,
+                         QueueCls=queue.PriorityQueue)
 
 @pytest.fixture
 def sleep_task() -> dict:
@@ -165,6 +174,14 @@ def test_signal_workers(wm, sleep_task):
     # Signal all tasks (they all ended anyway)
     wm._signal_workers('all', signal=15)
 
+@pytest.mark.skip("Feature not yet implemented.")
+def test_detach(wm):
+    pass
+
+def test_empty_task_queue(wm):
+    with pytest.raises(queue.Empty):
+        wm._grab_task()
+
 def test_timeout(wm, sleep_task):
     """Tests whether the timeout succeeds"""
     # Add some sleep tasks
@@ -214,3 +231,40 @@ def test_read_stdout(wm):
     wm.start_working()
 
     # TODO read the stream output here
+
+def test_priority_queue(wm_priQ, sleep_task):
+    """Checks that tasks are dispatched from the task queue in order of their
+    priority, if a priority queue is used."""
+    wm = wm_priQ
+
+    # Create a list of priorities that should be checked
+    prios         = [-np.inf, 2., 1., None, 0, -np.inf, 0, +np.inf, 1.]
+    correct_order = [0,       6,  4,  7,    2, 1,       3, 8,       5]
+    # If priorites are equal, the task added first have higher priority
+    # NOTE cannot just order the list of tasks, because then there would be
+    # no ground truth (the same ordering mechanism between tasks would be used)
+    
+    # Add tasks to the WorkerManager, keeping track of addition order
+    tasks = []
+    for prio in prios:
+        tasks.append(wm.add_task(priority=prio, **sleep_task))
+
+    # Now, start working
+    wm.start_working()
+    # Done working now.
+
+    # Assert that the internal task list has the same order
+    assert tasks == wm.tasks
+
+    # Extract the creation times of the tasks for manual checks
+    creation_times = [t.profiling['create_time'] for t in tasks]
+    print("Creation times:")
+    print("\n".join([str(e) for e in creation_times]))
+    print("Correct order:", correct_order)
+
+    # Sort task list by correct order and by creation times
+    tasks_by_correct_order = [t for _, t in sorted(zip(correct_order, tasks))]
+    tasks_by_creation_time = [t for _, t in sorted(zip(creation_times, tasks))]
+    
+    # Check that the two lists compare equal
+    assert tasks_by_correct_order == tasks_by_creation_time

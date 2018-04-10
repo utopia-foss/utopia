@@ -13,6 +13,8 @@ import logging
 from typing import Callable, Union
 from typing.io import BinaryIO
 
+import numpy as np
+
 # Initialise logger
 log = logging.getLogger(__name__)
 
@@ -27,18 +29,20 @@ class Task:
 
     __slots__ = ('_name', '_priority', '_uid')
 
-    def __init__(self, *, name: str=None, priority: int=None):
+    def __init__(self, *, name: str=None, priority: float=None):
         """Initialize a Task object.
         
         Args:
             name (str, optional): The task's name. If none is given, the
                 generated uuid will be used.
-            priority (int, optional): The priority of this task; is only used
-                if the task queue is a priority queue
+            priority (float, optional): The priority of this task; if None,
+                default is +np.inf, i.e. the lowest priority. If two priority
+                values are the same, the task created earlier has a higher
+                priority.
         """
         # Carry over arguments attributes
         self._name = str(name) if name else None
-        self._priority = priority
+        self._priority = priority if priority is not None else np.inf
         
         # Create a unique ID
         self._uid = uuid.uuid1()
@@ -62,7 +66,7 @@ class Task:
 
     @property
     def priority(self) -> float:
-        """The task priority, usually a """
+        """The task's priority. Default is +inf, which is the lowest priority."""
         return self._priority
 
     @property
@@ -89,9 +93,9 @@ class Task:
         return bool(self.order_tuple <= other.order_tuple)
     
     def __eq__(self, other):
-        return bool(self.order_tuple == other.order_tuple)
-        # NOTE that this should only occur if comparing to itself
-        # TODO consider throwing an error here; identity should be checked via is keyword rather than ==
+        return bool(self is other)
+        # NOTE we trust 'uuid' that the IDs are unique therefore different tasks
+        # can not get the same ID --> are different in ordering
 
 # -----------------------------------------------------------------------------
 
@@ -462,6 +466,10 @@ class TaskList:
     def __iter__(self):
         """Iterate over the TaskList"""
         return iter(self._l)
+
+    def __eq__(self, other) -> bool:
+        """Tests for equality of the task list by forwarding to _l attribute"""
+        return bool(self._l == other)
 
     def append(self, val: Task):
         """Append a Task object to this TaskList"""
