@@ -177,7 +177,7 @@ def test_timeout(wm, sleep_task):
         wm.start_working(timeout=-123.45)
 
     # Check if no WorkerManagerTotalTimeout is raised for a high timeout value
-    wm.start_working(timeout=1.7)
+    wm.start_working(timeout=23.4)
 
     # Add more asks
     for _ in range(3):
