@@ -10,7 +10,5 @@ def test_model_info():
     for model_name, model_info in info.MODELS.items():
         print("Model name:", model_name)
         assert 'binpath' in model_info
-    
-    # Directly test the parse method
-    assert info.parse_utopia_models(targets=None, binpaths=None) == {}
+        assert 'src_dir' in model_info
     
