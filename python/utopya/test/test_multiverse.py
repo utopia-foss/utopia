@@ -26,7 +26,7 @@ def mv_kwargs(tmpdir) -> dict:
     temporary directory that is removed after the tests ran through.
     """
     rand_str = "test_" + uuid.uuid4().hex
-    unique_paths = dict(out_dir=tmpdir.dirpath(), model_note=rand_str)
+    unique_paths = dict(out_dir=tmpdir, model_note=rand_str)
 
     return dict(model_name="dummy",
                 run_cfg_path=RUN_CFG_PATH,
@@ -130,7 +130,7 @@ def test_run_sweep(mv_kwargs):
 
 def test_distribute_user_cfg(tmpdir, monkeypatch):
     """Tests whether user configuration distribution works as desired."""
-    test_path = os.path.join(tmpdir.dirpath(), "my_user_cfg.yml")
+    test_path = tmpdir.join("my_user_cfg.yml")
     distribute_user_cfg(user_cfg_path=test_path)
 
     assert os.path.isfile(test_path)
