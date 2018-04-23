@@ -71,6 +71,10 @@ def read_yml(path: str, *, error_msg: str=None) -> dict:
     Raises:
         FileNotFoundError: If file was not found at `path`
     """
+    # Ensure the given path is a string (and not a path-like object)
+    path = str(path)
+
+    # Try opening and loading
     try:
         with open(path, 'r') as ymlfile:
             d = yaml.load(ymlfile)
@@ -95,6 +99,9 @@ def write_yml(d: dict, *, path: str) -> None:
     Raises:
         FileExistsError: If the file already exists.
     """
+    # Ensure the given path is a string (and not a path-like object)
+    path = str(path)
+    
     # check whether file already exists
     if os.path.exists(path):
         raise FileExistsError("Target file {0} already exists.".format(path))

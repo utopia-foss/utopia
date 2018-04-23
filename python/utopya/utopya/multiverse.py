@@ -95,9 +95,8 @@ class Multiverse:
             raise RuntimeError("A Multiverse's associated model cannot be "
                                "changed!")
 
-        else:
-            self._model_name = model_name
-            log.debug("Set model_name:  %s", model_name)
+        self._model_name = model_name
+        log.debug("Set model_name:  %s", model_name)
 
     @property
     def model_binpath(self) -> str:
@@ -118,8 +117,7 @@ class Multiverse:
         elif not isinstance(d, dict):
             raise TypeError("Can only interpret dictionary input for"
                             " Metaconfig but {} was given".format(type(d)))
-        else:
-            self._meta_config = d
+        self._meta_config = d
 
     @property
     def dirs(self) -> dict:
@@ -313,8 +311,10 @@ class Multiverse:
                 zone.
         """ 
         # Create the folder path to the simulation directory
+        # NOTE the str case ensures that out_dir is not a path-like object
+        # which causes problems for python < 3.6
         log.debug("Creating path for run directory inside %s ...", out_dir)
-        out_dir = os.path.expanduser(out_dir)
+        out_dir = os.path.expanduser(str(out_dir))
         run_dir = os.path.join(out_dir,
                                model_name,
                                time.strftime("%Y%m%d-%H%M%S"))
@@ -473,6 +473,9 @@ def distribute_user_cfg(user_cfg_path: str=Multiverse.USER_CFG_SEARCH_PATH):
     """Distributes a copy of the base config to the user config search path of the Multiverse class."""
     # Get the class constants for the base config
     base_cfg_path = Multiverse.BASE_CFG_PATH
+
+    # Ensure the given path is a string (and not a path-like object)
+    user_cfg_path = str(user_cfg_path)
 
     # Check if a user config already exists
     if os.path.isfile(user_cfg_path):

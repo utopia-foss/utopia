@@ -29,7 +29,7 @@ def test_read_yml(tmpdir):
     d = t.read_yml(READ_TEST_PATH)
 
     # An Exception should be raised when no file is found
-    bad_path = os.path.join(tmpdir.dirpath(), "not_existent_config.yml")
+    bad_path = tmpdir.join("not_existent_config.yml")
     with pytest.raises(FileNotFoundError):
         t.read_yml(bad_path)
 
@@ -64,12 +64,12 @@ def test_read_yml(tmpdir):
 def test_write_yml(testdict, tmpdir):
     """Testing if writing dicts to yaml is succesful."""
     # Write the test dictionary
-    path = os.path.join(tmpdir.dirpath(), "test.yml")
+    path = tmpdir.join("test.yml")
     t.write_yml(testdict, path=path)
 
     # Writing again should fail
     with pytest.raises(FileExistsError):
-        t.write_yml(testdict, path=os.path.join(tmpdir.dirpath(), "test.yml"))
+        t.write_yml(testdict, path=tmpdir.join("test.yml"))
 
     # Read in the file and assert equality between written and read file
     assert testdict == t.read_yml(path)

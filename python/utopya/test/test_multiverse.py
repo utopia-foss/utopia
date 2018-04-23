@@ -25,8 +25,10 @@ def mv_kwargs(tmpdir) -> dict:
     This uses the `tmpdir` fixture provided by pytest, which creates a unique
     temporary directory that is removed after the tests ran through.
     """
+    # Create a dict that specifies a unique testing path.
+    # The str cast is needed for python version < 3.6
     rand_str = "test_" + uuid.uuid4().hex
-    unique_paths = dict(out_dir=tmpdir.dirpath(), model_note=rand_str)
+    unique_paths = dict(out_dir=tmpdir, model_note=rand_str)
 
     return dict(model_name="dummy",
                 run_cfg_path=RUN_CFG_PATH,
@@ -75,20 +77,18 @@ def test_create_run_dir(default_mv):
     """Tests the folder creation in the initialsation of the Multiverse."""
     mv = default_mv
 
-    # Reconstruct path from settings for testing
-    path_base = os.path.expanduser(mv.meta_config['paths']['out_dir'])
-    path_base = os.path.join(path_base, mv.model_name)
+    # Reconstruct path from meta-config to have a parameter to compare to
+    out_dir = str(mv.meta_config['paths']['out_dir'])  # need for python < 3.6
+    path_base = os.path.join(out_dir, mv.model_name)
 
     # get all folders in the output dir
     folders = os.listdir(path_base)
 
-    # take the latest one
+    # select the latest one (there should be only one anyway)
     latest = folders[-1]
 
     # Check if the subdirectories are present
-    assert os.path.isdir(os.path.join(path_base, latest)) is True
-
-    for folder in ["config", "eval", "universes"]:  # may need to adapt
+    for folder in ["config", "eval", "universes"]:
         assert os.path.isdir(os.path.join(path_base, latest, folder)) is True
 
 def test_detect_doubled_folders(mv_kwargs):
@@ -130,9 +130,12 @@ def test_run_sweep(mv_kwargs):
 
 def test_distribute_user_cfg(tmpdir, monkeypatch):
     """Tests whether user configuration distribution works as desired."""
-    test_path = os.path.join(tmpdir.dirpath(), "my_user_cfg.yml")
-    distribute_user_cfg(user_cfg_path=test_path)
+    # Create a path for the user config test file; needs to be str-cast to
+    # allow python < 3.6 implementation of os.path
+    test_path = str(tmpdir.join("my_user_cfg.yml"))
 
+    # Execute the distribute function with this path and assert it worked
+    distribute_user_cfg(user_cfg_path=test_path)
     assert os.path.isfile(test_path)
 
     # monkeypatch the "input" function, so that it returns "y" or "no".
