@@ -20,7 +20,7 @@ Follow the Step-by-step instructions below for building Utopia from source.
 | ---------| ------- | -------- |
 | GCC | >= 7 | Full C++17 compiler support required |
 | [CMake](https://cmake.org/) | >= 3.1 | |
-| Python | >= 3.6 | |
+| Python | >= 3.6 | Earlier Python3 versions _may_ work, but are not tested |
 | pkg-config | | |
 | [HDF5](https://www.hdfgroup.org/solutions/hdf5/) | >= 1.10. | |
 | [yaml-cpp](https://github.com/jbeder/yaml-cpp) | >= 0.5.2 | |
