@@ -1,17 +1,19 @@
 #include "../hdfdataset.hh"
-#include "../hdfmockclasses.hh"
+#include "../hdffile.hh"
+#include "../hdfgroup.hh"
 #include <cassert>
 #include <cmath>
 #include <cstdio>
 #include <iostream>
+#include <string>
 #include <vector>
 
 using namespace Utopia::DataIO;
 
 void read_dataset_tests(HDFFile &file) {
-    HDFGroup testgroup1(file.get_basegroup(), "/testgroup1");
-    HDFGroup testgroup2(file.get_basegroup(), "/testgroup2");
-    HDFGroup multidimgroup(file.get_basegroup(), "/multi_dim_data");
+    HDFGroup testgroup1(*file.get_basegroup(), "/testgroup1");
+    HDFGroup testgroup2(*file.get_basegroup(), "/testgroup2");
+    HDFGroup multidimgroup(*file.get_basegroup(), "/multi_dim_data");
 
     HDFDataset<HDFGroup> testdataset(testgroup2, "testdataset");
     HDFDataset<HDFGroup> testdataset2(testgroup1, "testdataset2");

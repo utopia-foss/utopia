@@ -1,14 +1,17 @@
-# Set the models here
-set(MODELS
-    dummy
-    # ... add other models here
-    )
+# Instructions for adding a model to Utopia:
+#   1. Create a subfolder with the name of your model, <name>
+#   2. Add the corresponding `add_subdirectory(<name>)` below
+#   3. Add a CMakeLists.txt in the model directory
+#   4. Call `add_model(<name> <name>.cc)` there, where <name> is the name of
+#      the model directory. For consistency and identification of the models,
+#      it is important that the names of folders and targets match.
+#   5. Re-configure using `cmake ..`
 
-# NOTE Do not change below this line ------------------------------------------
-# -----------------------------------------------------------------------------
+message(STATUS "Starting Utopia model registration ...")
 
-# Add the models as targets
-foreach(model ${MODELS})
-    add_model(${model} ${model}.cc)
-    message(STATUS "Added Utopia model executable:  ${model}")
-endforeach(model)
+# Register the model directories
+add_subdirectory(dummy)
+# ...
+# NOTE add your subdirectory above (alphabetically sorted)
+
+message(STATUS "Model registration finished.")

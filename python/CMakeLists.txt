@@ -9,11 +9,25 @@ generate_model_info(
 )
 
 # Installations ...............................................................
+message(STATUS "Installing required Python packages ...")
 
-# Manually install dependencies for utopya
-python_install_package_remote(URL https://ts-gitlab.iup.uni-heidelberg.de/yunus/paramspace.git@releases/v1.0b
-    TRUSTED_HOST ts-gitlab.iup.uni-heidelberg.de)
+# Manually install dependencies for utopya, if they are not already satisfied
+# paramspace
+dune_python_find_package(PACKAGE paramspace
+                         VERSION 1.0b0 EXACT  # NOTE exact needed during beta
+                         INTERPRETER ${DUNE_PYTHON_VIRTUALENV_EXECUTABLE})
 
+if(NOT DUNE_PYTHON_paramspace_FOUND)
+    python_install_package_remote(URL https://ts-gitlab.iup.uni-heidelberg.de/yunus/paramspace.git@releases/v1.0b
+        TRUSTED_HOST ts-gitlab.iup.uni-heidelberg.de)
+endif()
+
+# deval
+# TODO
+
+
+# Now, ready to install utopya
+message(STATUS "Installing utopya ...")
 
 # For easier development: install using symlinks to the local package
 set(DUNE_PYTHON_INSTALL_EDITABLE True)
@@ -27,6 +41,8 @@ dune_python_install_package(PATH utopya
 # TODO add linker target here
 
 # Tests .......................................................................
+message(STATUS "Adding test_python target ...")
+
 # Add pytest commands via dune
 dune_python_add_test(NAME FRONTEND_utopya
                      COMMAND ${CMAKE_BINARY_DIR}/run-in-dune-env
@@ -35,3 +51,5 @@ dune_python_add_test(NAME FRONTEND_utopya
                              --cov=${CMAKE_CURRENT_SOURCE_DIR}/utopya/utopya/
                              --cov-report=term-missing
                      )
+
+message(STATUS "Python setup complete.")
