@@ -1,7 +1,6 @@
 """Implementation of the Reporter class."""
 
 import sys
-import abc
 import logging
 from datetime import datetime as dt
 from typing import Union
@@ -12,7 +11,7 @@ log = logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------------
 
-class Reporter(metaclass=abc.ABCMeta):
+class Reporter:
     """The Reporter class holds general reporting capabilities.
 
     It needs to be subclassed in order to specialise its reporting functions.
@@ -30,6 +29,10 @@ class Reporter(metaclass=abc.ABCMeta):
         # Resolve write functions and create a dictionary of bound func calls
         self.writer = getattr(self, "_write_to_" + write_to)
         self.writer_kwargs = writer_kwargs if writer_kwargs else {}
+
+        # Add attributes
+        self.counters = dict(reports=0)
+        self.times = dict(init=dt.now(), last_report=None)
 
         log.debug("Reporter.__init__ finished.")
 
@@ -61,7 +64,7 @@ class Reporter(metaclass=abc.ABCMeta):
         log.debug("Parsed report using %s .", parser.__name__)
 
         # Determine the writer
-        if writer is None:
+        if write_to is None:
             writer = self.writer
             writer_kwargs = self.writer_kwargs
         else:
@@ -72,19 +75,21 @@ class Reporter(metaclass=abc.ABCMeta):
         writer(rep, **writer_kwargs)
         log.debug("Wrote report using %s .", writer.__name__)
 
+        # Increment counter and times
+        self.counters['reports'] += 1
+        self.times['last_report'] = dt.now()
+
     # Parser methods ..........................................................
-
-    @abc.abstractmethod
+    
     def _parse_default(self) -> str:
-        """The default parsing method"""
-
-    # Can add more parser methods here
+        """The default parser; returns reporter initialsation time."""
+        "Report #{:d}".format(self.counters['reports'] + 1)
 
     # Writer methods ..........................................................
 
     def _write_to_stdout(self, s: str, flush: bool=True, **print_kws):
         """Writes the given string to stdout"""
-        print(s, end=end, flush=flush, **print_kws)
+        print(s, flush=flush, **print_kws)
 
     def _write_to_file(self, s: str, path: str, mode: str='a'):
         """Writes the given string to a file"""
@@ -94,7 +99,7 @@ class Reporter(metaclass=abc.ABCMeta):
 class WorkerManagerReporter(Reporter):
     """This class reports on the state of the WorkerManager."""
 
-    def __init__(self, wm, **reporter_kwargs):
+    def __init__(self, wm, parser: str='one_line', **reporter_kwargs):
         """Initialize the Reporter for the WorkerManager."""
 
         super().__init__(**reporter_kwargs)
@@ -110,5 +115,5 @@ class WorkerManagerReporter(Reporter):
         """Returns the associated WorkerManager."""
         return self._wm
 
-    def _parse_default(self) -> str:
+    def _parse_one_line(self) -> str:
         return "foo"
