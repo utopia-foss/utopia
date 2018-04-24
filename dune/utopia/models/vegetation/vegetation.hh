@@ -11,11 +11,14 @@ namespace Utopia {
 template<class Manager>
 using VegetationModelTypes = Utopia::ModelTypes<
     typename Manager::Container, // unused
-    std::tuple<std::normal_distribution<>, double> // probability distribution for rain, 
-                                                   // reproduction rate
+    std::tuple<std::normal_distribution<>, double, double> // probability distribution for rain, 
+                                                           // growth rate
+                                                           // seeding rate
+                                                           // seeding and rain use the same probability distribution at the moment
+                                                           // maybe change later...
 >;
 
-/// A very simple model implementing 
+/// A very simple vegetation model
 template<class Manager>
 class VegetationModel:
     public Model<VegetationModel<Manager>, VegetationModelTypes<Manager>>
@@ -31,7 +34,8 @@ private:
 
 public:
     /// Construct the model.
-    /** \param manager Manager for this model
+    /** \param manager Manager for the cells
+     *  \param bc Parameters of the vegetation model
      */
     VegetationModel(Manager& manager, BCType bc):
         Base(),
@@ -43,13 +47,23 @@ public:
     void perform_step ()
     {
         auto& cells = _manager.cells();
-        auto rule = [this](const auto cell){
+
+        // Growth
+        auto growth_rule = [this](const auto cell){
                 auto state = cell->state();
                 auto rain  = std::get<0>(_bc)(*(this->_manager.rng()));
-                auto birth = std::get<1>(_bc);
-                return state + state*birth*(1 - state/rain);
+                auto growth = std::get<1>(_bc);
+                return state + state*growth*(1 - state/rain); // Logistic growth
         };
-        apply_rule(rule, cells);
+        apply_rule(growth_rule, cells);
+
+        // Seeding
+        auto seeding_rule = [this](const auto cell){
+                auto state = cell->state();
+                auto seeding = std::get<2>(_bc);
+                return (state == 0) ? seeding*std::get<0>(_bc)(*(this->_manager.rng())) : state;
+        };
+        apply_rule(seeding_rule, cells);
     }
 
     /// Do nothing

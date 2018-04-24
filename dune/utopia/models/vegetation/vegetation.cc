@@ -15,15 +15,16 @@ int main (int argc, char** argv)
         const std::string config_file = argv[1];
         Utopia::DataIO::Config config(config_file);
 
+        double growth_rate = 0.1;
+        double seeding_rate = 0.2;
+        std::normal_distribution<> rain{10,2};
+        std::tuple<std::normal_distribution<>, double, double> bc = std::make_tuple(rain, growth_rate, seeding_rate);
+        
         constexpr bool sync = true;
         using State = double;
         using Tag = Utopia::DefaultTag;
-        State initial_state = 3.0;
-        double birth_rate = 0.1;
-        std::normal_distribution<> rain{10,2};
-        std::tuple<std::normal_distribution<>, double> bc = std::make_tuple(rain, birth_rate);
-        
         int grid_size = 10;
+        State initial_state = 3.0;
         auto grid = Utopia::Setup::create_grid(grid_size);
         auto cells = Utopia::Setup::create_cells_on_grid<sync, State, Tag>(grid, initial_state);
         auto manager = Utopia::Setup::create_manager_cells<true, true>(grid, cells);
