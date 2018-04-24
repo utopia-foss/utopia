@@ -1,6 +1,8 @@
 #include "../hdftypefactory.hh"
 #include <cassert>
 #include <hdf5.h>
+#include <string>
+
 using namespace Utopia;
 using namespace Utopia::DataIO;
 int main() {

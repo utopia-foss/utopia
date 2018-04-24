@@ -9,7 +9,10 @@ import logging
 from shutil import copyfile
 import pkg_resources
 
-from utopya.workermanager import WorkerManager, enqueue_json
+import paramspace as psp
+
+from utopya.workermanager import WorkerManager
+from utopya.task import enqueue_json
 from utopya.reporter import WorkerManagerReporter
 from utopya.tools import recursive_update, read_yml, write_yml
 from utopya.info import MODELS
@@ -25,9 +28,12 @@ class Multiverse:
     one place.
     
     Attributes:
-        dirs (dict): The absolute paths to the managed directories
+        BASE_CFG_PATH (str): The path to the base configuration, supplied with
+            the utopya package
+        meta_config (dict): The parsed Multiverse meta-configuration. All
+            further arguments are extracted from this dict.
         model_name (str): The model name associated with this Multiverse
-        UTOPIA_EXEC (str): The name of the utopia executable, found in 
+        USER_CFG_SEARCH_PATH (str): The path at which a user config is expected
     """
 
     BASE_CFG_PATH = pkg_resources.resource_filename('utopya',
@@ -53,10 +59,13 @@ class Multiverse:
         # Set the model name
         self.model_name = model_name
 
-        # Initialise meta config with None
-        self._meta_config = None
+        # Save the model binary path
+        self._model_binpath = MODELS[self.model_name]['binpath']
+        log.debug("Associated executable of model '%s':\n  %s",
+                  self.model_name, self.model_binpath)
 
         # Create Meta Config
+        self._meta_config = None
         self.meta_config = self._create_meta_config(run_cfg_path=run_cfg_path, user_cfg_path=user_cfg_path, update_meta_cfg=update_meta_cfg)
 
         # Create the run directory and write the meta configuration into it
@@ -97,6 +106,11 @@ class Multiverse:
             log.debug("Set model_name:  %s", model_name)
 
     @property
+    def model_binpath(self) -> str:
+        """The path to this model's binary"""
+        return self._model_binpath
+
+    @property
     def meta_config(self) -> dict:
         """The meta configuration."""
         return self._meta_config
@@ -124,6 +138,7 @@ class Multiverse:
         return self._wm
 
     # Public methods ..........................................................
+    # TODO the run methods should only be allowed to run once!
 
     def run(self):
         """Starts a Utopia run. Whether this will be a single simulation or
@@ -131,7 +146,7 @@ class Multiverse:
         log.info("Preparing to run Multiverse ...")
 
         # Depending on the configuration, the corresponding methods can already be called.
-        if self.meta_config['run_kwargs']['perform_sweep']:
+        if self.meta_config.get('perform_sweep'):
             self.run_sweep()
         else:
             self.run_single()
@@ -141,20 +156,52 @@ class Multiverse:
 
         # Get the parameter space from the config
         pspace = self.meta_config['parameter_space']
-        # NOTE Once the ParamSpace class is used, the defaults need to be retrieved here.
         
+        # If this is a ParamSpace, we need to retrieve the default point
+        if isinstance(pspace, psp.ParamSpace):
+            log.info("Got a ParamSpace object. Retrieving default point ...")
+            uni_cfg = pspace.default
+
+        else:
+            uni_cfg = copy.deepcopy(pspace)
+
         # Add the task to the worker manager.
-        log.info("Adding task for the single simulation ...")
-        self._add_sim_task(uni_id=0, max_uni_id=0, cfg_dict=pspace)
+        log.info("Adding task for simulation of a single universe ...")
+        self._add_sim_task(uni_id=0, max_uni_id=0, uni_cfg=uni_cfg)
 
-        # Tell the WorkerManager to start working, which will be the blocking call
-        self.wm.start_working(forward_streams=True)
+        # Tell the WorkerManager to start working
+        self.wm.start_working(**self.meta_config['run_kwargs'])
+        # NOTE This is the blocking call
 
-        log.info("Finished single simulation run.")
+        log.info("Finished single universe run. Yay. :)")
 
     def run_sweep(self):
         """Runs a parameter sweep."""
-        raise NotImplementedError
+        
+        # Get the parameter space from the config
+        pspace = self.meta_config['parameter_space']
+
+        if not isinstance(pspace, psp.ParamSpace):
+            raise TypeError("For performing parameter sweeps, the run "
+                            "configuration needs to be initialized with a "
+                            "ParamSpace object at key `parameter_space`. "
+                            "If initializing via a YAML file, make sure to "
+                            "have added the `!pspace` tag to that key.")
+
+        log.info("Adding tasks for simulation of %d universes ...",
+                 pspace.volume)
+
+        max_uni_id = pspace.volume - 1
+
+        for uni_cfg, uni_id in pspace.all_points(with_info=('state_no',)):
+            self._add_sim_task(uni_id=uni_id, max_uni_id=max_uni_id,
+                               uni_cfg=uni_cfg)
+        log.info("Tasks added.")
+
+        # Now start working ...
+        self.wm.start_working(**self.meta_config['run_kwargs'])
+
+        log.info("Finished Multiverse parameter sweep. Wohoo. :)")
 
     # "Private" methods .......................................................
 
@@ -200,8 +247,9 @@ class Multiverse:
 
         if user_cfg_path:
             user_cfg = read_yml(user_cfg_path,
-                                error_msg="Did not find user configuration "
-                                "at the specified path!".format(user_cfg_path))
+                                error_msg="Did not find user "
+                                "configuration at the specified "
+                                "path {}!".format(user_cfg_path))
         else:
             user_cfg = None
 
@@ -307,58 +355,54 @@ class Multiverse:
                   path=os.path.join(self.dirs['config'], "meta_cfg.yml"))
         log.debug("Wrote meta configuration to config directory.")
 
-    def _create_uni_dir(self, *, uni_id: int, max_uni_id: int) -> str:
-        """The _create_uni_dir generates the folder for a single universe.
-
-        Within the universes directory, create a subdirectory uni### for the
-        given universe number, zero-padded such that they are sortable.
-
+    @staticmethod
+    def _create_uni_basename(*, uni_id: int, max_uni_id: int) -> str:
+        """Returns the formatted universe basename, zero-padded, for usage
+        in WorkerTask names and universe directory creation.
+        
         Args:
             uni_id (int): ID of the universe whose folder should be created.
                 Needs to be positive or zero.
             max_uni_id (int): highest ID, needed for correct zero-padding.
                 Needs to be larger or equal to uni_id.
+        
+        Returns:
+            str: The zero-padded universe basename, e.g. uni0042
+        
+        Raises:
+            ValueError: For invalid `uni_id` or `max_uni_id` arguments 
         """
+
         # Check if uni_id and max_uni_id are positive
         if uni_id < 0 or uni_id > max_uni_id:
-            raise RuntimeError("Input variables don't match prerequisites: "
-                               "uni_id >= 0, max_uni_id >= uni_id. "
-                               "Given arguments: "
-                               "uni_id {}, max_uni_id {}".format(uni_id,
-                                                                 max_uni_id))
+            raise ValueError("Input variables don't match prerequisites: "
+                             "uni_id >= 0, max_uni_id >= uni_id. Given "
+                             "arguments: uni_id {}, max_uni_id {}"
+                             "".format(uni_id, max_uni_id))
 
-        # Use a format string for creating the uni_path
-        fstr = "uni{id:>0{digits:}d}"
-        uni_path = os.path.join(self.dirs['universes'],
-                                fstr.format(id=uni_id,
-                                            digits=len(str(max_uni_id))))
+        # Use a format string to create the zero-padded universe basename
+        return "uni{id:>0{digits:}d}".format(id=uni_id,
+                                             digits=len(str(max_uni_id)))
 
-        # Now create the folder
-        os.mkdir(uni_path)
-        log.debug("Created directory for universe %d: %s", uni_id, uni_path)
-
-        return uni_path
-
-    def _add_sim_task(self, *, uni_id: int, max_uni_id: int, cfg_dict: dict) -> None:
+    def _add_sim_task(self, *, uni_id: int, max_uni_id: int, uni_cfg: dict) -> None:
         """Helper function that handles task assignment to the WorkerManager.
-
-        This function performs the following steps:
-            - Creating a universe (folder) for the task (simulation).
-            - Writing the passed-over configuration to a yaml file
-            - Passing a functional setup_func and its arguments to WorkerManager.add_task
-
-        Note that the task will not be executed right away but is only
-        registered with the WorkerManager. The task will be worker on once the
-        WorkerManager has free workers available. That is the reason why the
-        setup function is only passed as a functional, not called here.
-
+        
+        This function creates a WorkerTask that will perform the following
+        actions __once it is grabbed and worked at__:
+          - Create a universe (folder) for the task (simulation)
+          - Write that universe's configuration to a yaml file in that folder
+          - Create the correct arguments for the call to the model binary
+    
+        To that end, this method gathers all necessary arguments and registers
+        a WorkerTask with the WorkerManager.
+        
         Args:
             uni_id (int): ID of the universe whose folder should be created
             max_uni_id (int): highest ID, needed for correct zero-padding
-            cfg_dict (dict): given by ParamSpace. Defines how many simulations
+            uni_cfg (dict): given by ParamSpace. Defines how many simulations
                 should be started
         """
-        def setup_universe(*, worker_kwargs: dict, model_binpath: str, cfg_dict: dict, uni_id: int, max_uni_id: int) -> dict:
+        def setup_universe(*, worker_kwargs: dict, model_name: str, model_binpath: str, uni_cfg: dict, uni_basename: str) -> dict:
             """The callable that will setup everything needed for a universe.
             
             This is called before the worker process starts working on the universe.
@@ -366,23 +410,37 @@ class Multiverse:
             Args:
                 worker_kwargs (dict): the current status of the worker_kwargs
                     dictionary; is always passed to a task setup function
+                model_name (str): The name of the model
                 model_binpath (str): path to the binary to execute
-                cfg_dict (dict): the configuration to create a yml file from
+                uni_cfg (dict): the configuration to create a yml file from
                     which is then needed by the model
-                uni_id (int): ID of the universe whose folder should be created
-                max_uni_id (int): highest ID, needed for correct zero-padding
+                uni_basename (str): Basename of the universe to use for folder
+                    creation, i.e.: zero-padded universe number, e.g. uni0042
             
             Returns:
                 dict: kwargs for the process to be run when task is grabbed by
                     Worker.
             """
-            # create universe directory
-            uni_dir = self._create_uni_dir(uni_id=uni_id,
-                                           max_uni_id=max_uni_id)
+            # create universe directory path using the basename
+            uni_dir = os.path.join(self.dirs['universes'], uni_basename)
+
+            # Now create the folder
+            os.mkdir(uni_dir)
+            log.debug("Created universe directory:\n  %s", uni_dir)
+
+            # Generate a path to the output hdf5 file and add it to the dict
+            output_path = os.path.join(uni_dir, "data.h5")
+            
+            # FIXME this should actually not be saved under the key of the model name, but on the highest level of the generated configuration
+            if model_name not in uni_cfg:
+                # Need to create the high level entry
+                uni_cfg[model_name] = dict(output_path=output_path)
+            else:
+                uni_cfg[model_name]['output_path'] = output_path
 
             # write essential part of config to file:
             uni_cfg_path = os.path.join(uni_dir, "config.yml")
-            write_yml(d=cfg_dict, path=uni_cfg_path)
+            write_yml(d=uni_cfg, path=uni_cfg_path)
 
             # building args tuple for task assignment
             # assuming there exists an attribute for the executable and for the
@@ -395,18 +453,19 @@ class Multiverse:
                                  line_read_func=enqueue_json)  # Callable
             return worker_kwargs
 
-        # Get the model binary path
-        model_binpath = MODELS[self.model_name]['binpath']
-        log.debug("Executable path for model %s:\n  %s",
-                  self.model_name, model_binpath)
+        # Generate the universe basename, which will be used for the folder and the task name
+        uni_basename = self._create_uni_basename(uni_id=uni_id,
+                                                 max_uni_id=max_uni_id)
 
         # Create the dict that will be passed as arguments to setup_universe
-        setup_kwargs = dict(model_binpath=model_binpath,
-                            cfg_dict=cfg_dict,
-                            uni_id=uni_id, max_uni_id=max_uni_id)
+        setup_kwargs = dict(model_name=self.model_name,
+                            model_binpath=self.model_binpath,
+                            uni_cfg=uni_cfg,
+                            uni_basename=uni_basename)
 
         # Add a task to the worker manager
-        self.wm.add_task(priority=None,
+        self.wm.add_task(name=uni_basename,
+                         priority=None,
                          setup_func=setup_universe,
                          setup_kwargs=setup_kwargs)
 

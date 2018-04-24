@@ -27,6 +27,9 @@ function(add_model target_name)
     # add directory to list
     set(UTOPIA_MODEL_BINPATHS ${UTOPIA_MODEL_BINPATHS} ${target_binary_path}
         CACHE STRING "list of Utopia model binpaths" FORCE)
+
+    # information message about the model having been added
+    message(STATUS "Registered model target:   ${target_name}")
 endfunction()
 
 # clear cache variables before configuration

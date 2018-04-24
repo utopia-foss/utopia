@@ -1,3 +1,15 @@
+### Description
+
+
+### Proposal
+
+
+### How to test the implementation?
+
+
+### Related issues
+Meta-task: #...
+
 <!--
 PLEASE READ THIS
 
@@ -12,13 +24,3 @@ Please make sure that:
     - the appropriate meta-tasks mentions this issue
     - you mention other issues you expect conflicts with
 -->
-### Description
-
-
-### Proposal
-
-
-### How to test the implementation?
-
-
-### Related issues
