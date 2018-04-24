@@ -1,6 +1,10 @@
 #ifndef VEGETATION_HH
 #define VEGETATION_HH
 
+#include <dune/utopia/base.hh>
+#include <dune/utopia/core/model.hh>
+#include <dune/utopia/core/apply.hh>
+
 namespace Utopia {
 
 /// Template declaration for model types extracted from Manager
@@ -13,12 +17,12 @@ using VegetationModelTypes = Utopia::ModelTypes<
 
 /// A very simple model implementing 
 template<class Manager>
-class Vegetation:
-    public Utopia::Model<Vegetation<Manager>, VegetationModelTypes<Manager>>
+class VegetationModel:
+    public Model<VegetationModel<Manager>, VegetationModelTypes<Manager>>
 {
 public:
     using Data = typename Manager::Container;
-    using Base = Utopia::Model<Vegetation<Manager>, VegetationModelTypes<Manager>>;
+    using Base = Model<VegetationModel<Manager>, VegetationModelTypes<Manager>>;
     using BCType = typename Base::BCType;
 
 private:
@@ -29,7 +33,7 @@ public:
     /// Construct the model.
     /** \param manager Manager for this model
      */
-    Vegetation (Manager& manager, BCType bc):
+    VegetationModel(Manager& manager, BCType bc):
         Base(),
         _manager(manager),
         _bc(bc)

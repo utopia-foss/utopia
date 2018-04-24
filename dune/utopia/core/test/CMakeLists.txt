@@ -12,8 +12,8 @@ set(TESTS_CORE
     grid_cells_test_2d
     grid_cells_test_3d
     grid_test
-    model_test
-    model_core_test
+    #model_test
+    #model_core_test
     output_agent_test_gmsh
     output_agent_test_rect
     rng_test
