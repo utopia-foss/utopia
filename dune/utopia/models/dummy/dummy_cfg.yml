@@ -1,9 +1,16 @@
-worker_manager:
-  num_workers: 3
-
-parameter_space: !pspace
+# The model configuration for the dummy model
+#
+# This file should ONLY contain model-specific configuration. It should specify
+# all available parameters and their default values.
+# These should be specified under the `parameter_space` key.
+#
+# This file should NOT be used to overwrite any other parts of the utopya
+# configuration.
+# 
+# As this file is (usually) handled by the frontend, it is possible to use
+# yaml features like anchors, inheritance, ...
+---
+parameter_space:
   num_steps: 5
   dummy:
-    seed: !sweep
-      default: 1337
-      values: [23, 42, 665, 667]
+    seed: 1337

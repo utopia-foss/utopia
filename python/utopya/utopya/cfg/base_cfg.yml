@@ -9,6 +9,11 @@ paths:
 
   # From the two above, the run directory will be created at:
   # <out_dir>/<model_name>/<timestamp>-<model_note>/
+  # With subfolders: config, eval, universes
+
+  # Whether to save all involved config files granularly, i.e. one by one.
+  # If false, only the resulting meta_cfg is saved to the config subdirectory.
+  backup_involved_cfg_files: true
 
 # Whether to perfom a parameter sweep
 perform_sweep: false
@@ -57,11 +62,5 @@ data_manager: {}
 # Plot Manager
 plot_manager: {}
 
-# Parameter Space - passed to the models
-parameter_space:
-  output_path: ~  # will be set dynamically by frontend
-  num_steps: 10
-  seed: 1337
-
-  # All model information goes in here:
-  models: {}
+# Parameter Space - default values are set by the model config
+parameter_space: {}
