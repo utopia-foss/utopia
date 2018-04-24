@@ -3,7 +3,12 @@
 import sys
 import logging
 from datetime import datetime as dt
+from datetime import timedelta
 from typing import Union
+
+import numpy as np
+
+import utopya.tools as tools
 
 # Initialise logger
 log = logging.getLogger(__name__)
@@ -17,8 +22,18 @@ class Reporter:
     It needs to be subclassed in order to specialise its reporting functions.
     """
 
-    def __init__(self, *, parser: str='default', parser_kwargs: dict=None, write_to: str='stdout', writer_kwargs: dict=None):
-        """Initialize the Reporter for the WorkerManager."""
+    def __init__(self, *, min_report_intv: float=None, parser: str='default', parser_kwargs: dict=None, write_to: str='stdout', writer_kwargs: dict=None):
+        """Initialize the Reporter for the WorkerManager.
+        
+        Args:
+            min_report_intv (float, optional): The minimum time that needs to
+                have passed since the last report before another report is
+                created.
+            parser (str, optional): Description
+            parser_kwargs (dict, optional): Description
+            write_to (str, optional): Description
+            writer_kwargs (dict, optional): Description
+        """
 
         super().__init__()
 
@@ -30,26 +45,52 @@ class Reporter:
         self.writer = getattr(self, "_write_to_" + write_to)
         self.writer_kwargs = writer_kwargs if writer_kwargs else {}
 
-        # Add attributes
+        # Add counters and times dicts
         self.counters = dict(reports=0)
-        self.times = dict(init=dt.now(), last_report=None)
+        self.times = dict(init=dt.now(), last_report=dt.now())
+        
+        # Store the minimum report interval; or None if not given
+        if min_report_intv:
+            self.min_report_intv = timedelta(seconds=min_report_intv)
+            self.times['last_report'] -= self.min_report_intv
+        else:
+            self.min_report_intv = None
 
         log.debug("Reporter.__init__ finished.")
 
+    # Properties ..............................................................
+
+    @property
+    def reporting_blocked(self) -> bool:
+        """Determines whether the reporter should report now or not."""
+        # One aspect: within report time
+        if not self.min_report_intv:
+            return False
+        return (dt.now() - self.times['last_report']) < self.min_report_intv
+
     # Public API ..............................................................
 
-    def report(self, *, parser: str=None, parser_kwargs: dict=None, write_to: str=None, writer_kwargs: dict=None):
+    def report(self, *, force: bool=False, parser: str=None, parser_kwargs: dict=None, write_to: str=None, writer_kwargs: dict=None) -> bool:
         """Create a report.
-
+        
         This will use the default values, unless the arguments `parser` or
         `write_to` are given.
         
         Args:
+            force (bool, optional): If True, will ignore the minimum report
+                interval.
             parser (str, optional): Description
             parser_kwargs (dict, optional): Description
             write_to (str, optional): Description
             writer_kwargs (dict, optional): Description
+        
+        Returns:
+            bool: Whether there was a report
         """
+        if not force and self.reporting_blocked:
+            # Should not report right now
+            return False
+
         # Determine the parser
         if not parser:
             # Use the default parser
@@ -79,11 +120,13 @@ class Reporter:
         self.counters['reports'] += 1
         self.times['last_report'] = dt.now()
 
+        return True
+
     # Parser methods ..........................................................
     
     def _parse_default(self) -> str:
         """The default parser; returns reporter initialsation time."""
-        "Report #{:d}".format(self.counters['reports'] + 1)
+        return "Report #{:d}".format(self.counters['reports'] + 1)
 
     # Writer methods ..........................................................
 
@@ -96,24 +139,30 @@ class Reporter:
         raise NotImplementedError
 
 
+# -----------------------------------------------------------------------------
+
 class WorkerManagerReporter(Reporter):
     """This class reports on the state of the WorkerManager."""
 
     def __init__(self, wm, parser: str='one_line', **reporter_kwargs):
         """Initialize the Reporter for the WorkerManager."""
 
-        super().__init__(**reporter_kwargs)
+        super().__init__(parser=parser, **reporter_kwargs)
 
         # Store the WorkerManager and associate it with this reporter
         self._wm = wm
         wm.reporter = self
+        log.debug("Associated reporter with WorkerManager.")
 
-        log.debug("Initialised and associated WorkerManagerReporter.")
+        # Attributes
+
+        log.debug("WorkerManagerReporter initialised.")
 
     @property
     def wm(self):
         """Returns the associated WorkerManager."""
         return self._wm
 
-    def _parse_one_line(self) -> str:
+    def _parse_one_line(self, mode: str='progress') -> str:
+        """Parses a one-line report aimed for terminal output"""
         return "foo"
