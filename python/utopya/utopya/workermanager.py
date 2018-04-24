@@ -131,15 +131,20 @@ class WorkerManager:
 
     @reporter.setter
     def reporter(self, reporter):
-        """Set the Reporter object for this WorkerManager."""
+        """Set the Reporter object for this WorkerManager.
+
+        This includes a check for the correct type and whether the reporter was
+        already set.
+        """
         if not isinstance(reporter, WorkerManagerReporter):
             raise TypeError("Need a WorkerManagerReporter for reporting from "
                             "WorkerManager, got {}.".format(type(reporter)))
+        elif self.reporter:
+            raise RuntimeError("Already set the reporter; cannot change it.")
 
         self._reporter = reporter
 
-        # Associate this worker manager with the reporter
-        self.reporter.wm = self
+        log.debug("Set reporter of WorkerManager.")
 
     # Public API ..............................................................
 

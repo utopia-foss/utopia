@@ -72,13 +72,12 @@ class Multiverse:
         self._create_run_dir(model_name=self.model_name,
                              **self.meta_config['paths'])
 
-        # Instantiate the Reporter
-        self._reporter = WorkerManagerReporter(report_dir=self.dirs['run'],
-                                               **self.meta_config['reporter'])
-
         # Create a WorkerManager instance and pass the reporter to it
-        self._wm = WorkerManager(reporter=self._reporter,
-                                 **self.meta_config['worker_manager'])
+        self._wm = WorkerManager(**self.meta_config['worker_manager'])
+
+        # Instantiate the Reporter
+        self._reporter = WorkerManagerReporter(self._wm,
+                                               **self.meta_config['reporter'])
 
         log.info("Initialized Multiverse for model: '%s'", self.model_name)
 
