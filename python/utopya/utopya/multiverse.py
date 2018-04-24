@@ -76,7 +76,7 @@ class Multiverse:
         self._reporter = WorkerManagerReporter(report_dir=self.dirs['run'],
                                                **self.meta_config['reporter'])
 
-        # create a WorkerManager instance
+        # Create a WorkerManager instance and pass the reporter to it
         self._wm = WorkerManager(reporter=self._reporter,
                                  **self.meta_config['worker_manager'])
 

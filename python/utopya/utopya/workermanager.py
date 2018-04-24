@@ -10,6 +10,7 @@ from typing.io import BinaryIO
 
 from utopya.task import WorkerTask, TaskList
 from utopya.stopcond import StopCondition
+from utopya.reporter import WorkerManagerReporter
 
 # Initialise logger
 log = logging.getLogger(__name__)
@@ -25,7 +26,7 @@ class WorkerManager:
         poll_delay (float): The delay (in s) between after a poll
     """
 
-    def __init__(self, num_workers: Union[int, str], poll_delay: float=0.05, QueueCls=queue.Queue):
+    def __init__(self, num_workers: Union[int, str], poll_delay: float=0.05, QueueCls=queue.Queue, reporter: WorkerManagerReporter=None):
         """Initialize the worker manager.
         
         Args:
@@ -44,6 +45,7 @@ class WorkerManager:
         self._tasks = TaskList()
         self._task_q = QueueCls()
         self._active_tasks = []
+        self._reporter = None
 
         # Hand over arguments
         self.poll_delay = poll_delay
@@ -54,6 +56,9 @@ class WorkerManager:
             self.num_workers = os.cpu_count() + num_workers
         else:
             self.num_workers = num_workers
+
+        if reporter:
+            self.reporter = reporter
 
     # Properties ..............................................................
     @property
@@ -118,6 +123,23 @@ class WorkerManager:
                           "significant CPU load. Consider choosing a higher "
                           "value.", UserWarning)
         self._poll_delay = val            
+
+    @property
+    def reporter(self) -> WorkerManagerReporter:
+        """Returns the associated Reporter object or None, of none is set."""
+        return self._reporter
+
+    @reporter.setter
+    def reporter(self, reporter):
+        """Set the Reporter object for this WorkerManager."""
+        if not isinstance(reporter, WorkerManagerReporter):
+            raise TypeError("Need a WorkerManagerReporter for reporting from "
+                            "WorkerManager, got {}.".format(type(reporter)))
+
+        self._reporter = reporter
+
+        # Associate this worker manager with the reporter
+        self.reporter.wm = self
 
     # Public API ..............................................................
 
@@ -362,6 +384,11 @@ class WorkerManager:
         
         log.debug("All tasks signalled. Tasks' worker status:\n  %s",
                   ", ".join([str(t.worker_status) for t in tasks]))
+
+    def _invoke_reporter(self):
+        """Invokes the reporter, if available."""
+        if self.reporter:
+            self.reporter.report()
 
 # Custom exceptions -----------------------------------------------------------
 
