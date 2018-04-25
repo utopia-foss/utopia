@@ -14,7 +14,8 @@ import utopya.tools as tools
 # Initialise logger
 log = logging.getLogger(__name__)
 
-
+# Local constants
+TTY_MARGIN = 2
 
 # -----------------------------------------------------------------------------
 
@@ -303,9 +304,16 @@ class Reporter:
         """Writes the given string to stdout"""
         print(s, flush=flush, **print_kws)
 
-    def _write_to_stdout_noreturn(self, s: str, report_no: int=None):
-        """Writes to stdout without ending the line"""
-        print(s, flush=True, end='\r')
+    def _write_to_stdout_noreturn(self, s: str, *, prepend="  ", report_no: int=None):
+        """Writes to stdout without ending the line.
+        
+        Args:
+            s (str): The string to write
+            prepend (str, optional): Is prepended to the string; useful because
+                the cursor might block this point of the terminal
+            report_no (int, optional): accepted from ReportFormat call
+        """
+        print(prepend + s, flush=True, end='\r')
 
     def _write_to_log(self, s: str, *, lvl: int=10, report_no: int=None):
         """Writes the given string via the logging module"""
@@ -362,11 +370,9 @@ class WorkerManagerReporter(Reporter):
         """
         num = OrderedDict()
         num['total'] = self.wm.task_count
-        num['queued'] = self.wm.task_queue.qsize()
         num['active'] = len(self.wm.active_tasks)
-        num['finished'] = num['total'] - (num['queued'] + num['active'])
+        num['finished'] = self.wm.num_finished_tasks
         return num
-
 
     # Parser methods ..........................................................
 
@@ -387,7 +393,7 @@ class WorkerManagerReporter(Reporter):
                           digs=len(str(cntr['total'])),
                           p=cntr['finished']/cntr['total'] * 100))
 
-    def _parse_progress_bar(self, *, num_cols: int=tools.TTY_COLS - 10, show_total: bool=False, report_no: int=None):
+    def _parse_progress_bar(self, *, num_cols: int=(tools.TTY_COLS - TTY_MARGIN), show_total: bool=False, report_no: int=None):
         """Returns a progress bar"""
         # Get the task counter and check that some tasks have been assigned
         cntr = self.task_counters
@@ -397,15 +403,15 @@ class WorkerManagerReporter(Reporter):
 
         # Define the symbols and format strings to use, calculating the
         # progress bar width alongside
-        syms = dict(finished="▓", active="░", queued=" ", space=" ")
+        syms = dict(finished="▓", active="░", space=" ")
 
         if show_total:
-            fstr = "╠{:}{:}{:}{:}╣ {p:>5.1f}%  (of {total:d}) "
-            pb_width = num_cols - (12 + 5 + len(str(cntr['total'])))
+            fstr = "  ╠{:}{:}{:}╣ {p:>5.1f}%  (of {total:d}) "
+            pb_width = num_cols - (14 + 5 + len(str(cntr['total'])))
         
         else:
-            fstr = "╠{:}{:}{:}{:}╣ {p:>5.1f}% "
-            pb_width = num_cols - (5 + 5)
+            fstr = "  ╠{:}{:}{:}╣ {p:>5.1f}% "
+            pb_width = num_cols - (7 + 5)
 
         # Fall back to regular progress indicator if there is not enough space
         # for a progress bar
@@ -414,16 +420,15 @@ class WorkerManagerReporter(Reporter):
 
         # Calculate the ticks
         ticks = dict()
-        ticks['finished'] = int(cntr['finished'] / cntr['total'] * pb_width)
-        ticks['active'] = int(cntr['active'] / cntr['total'] * pb_width)
-        ticks['queued'] = int(cntr['queued'] / cntr['total'] * pb_width)
+        factor = pb_width / cntr['total']
+        ticks['finished'] = int(round(cntr['finished'] * factor))
+        ticks['active'] = int(round(cntr['active'] * factor))
         ticks['space'] = pb_width - sum(ticks.values())
         # Note: the space ticks are needed as int is rounding down
 
         # Format the progress bar
         return (fstr.format(syms['finished'] * ticks['finished'],
                             syms['active'] * ticks['active'],
-                            syms['queued'] * ticks['queued'],
                             syms['space'] * ticks['space'],
                             p=cntr['finished']/cntr['total'] * 100,
                             total=cntr['total']))
