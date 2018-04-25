@@ -156,16 +156,16 @@ def recursive_update(d: dict, u: dict) -> dict:
 
 # string formatting -----------------------------------------------------------
 
-def format_time(time_in_s: float, *, ms_precision: int=1) -> str:
-    """Given the time in seconds, formats it into a duration.
+def format_time(duration: float, *, ms_precision: int=0) -> str:
+    """Given a duration (in seconds), formats it into a string.
     
     The formatting divisors are: days, hours, minutes, seconds
     
-    If `ms_precision` > 0 and `time_in_s` < 60, decimal places will be shown
+    If `ms_precision` > 0 and `duration` < 60, decimal places will be shown
     for the seconds.
     
     Args:
-        time_in_s (float): The time to format into a duration string
+        duration (float): The time to format into a duration string
         ms_precision (int, optional): The precision of the seconds slot if only
             seconds will be shown.
     
@@ -173,56 +173,62 @@ def format_time(time_in_s: float, *, ms_precision: int=1) -> str:
         str: The formatted duration string    
     """
 
-    divisors = [24*60*60, 60*60, 60, 1]
-    letters = ['d', 'h', 'm', 's']
-    remaining = float(time_in_s)
-    text = ''
+    divisors = (24*60*60, 60*60, 60, 1)
+    letters = ("d", "h", "m", "s")
+    remaining = float(duration)
+    parts = []
 
     for divisor, letter in zip(divisors, letters):
         time_to_represent = int(remaining/divisor)
         remaining -= time_to_represent * divisor
 
-        if time_to_represent > 0 or len(text):
-            if len(text):
-                text += ' '
-
+        if time_to_represent > 0:
             # Distinguish between seconds and other divisors for short times
-            if ms_precision <= 0 or time_in_s > 60:
+            if ms_precision <= 0 or duration > 60:
                 # Regular behaviour: Seconds do not have decimals
-                text += '{:d}{:}'.format(time_to_represent, letter)
+                s = "{:d}{:}".format(time_to_represent, letter)
 
-            elif ms_precision > 0 and letter == 's':
+            elif ms_precision > 0 and letter == "s":
                 # Decimal places for seconds
-                text += '{val:.{prec:d}f}s'.format(val=(time_to_represent
-                                                        + remaining),
-                                                   prec=int(ms_precision))
+                s = "{val:.{prec:d}f}s".format(val=(time_to_represent
+                                                    + remaining),
+                                               prec=int(ms_precision))
 
-    if len(text) == 0 and ms_precision == 0:
+            parts.append(s)
+
+    if not parts and ms_precision == 0:
         # Just show an approximation
-        text = '< 1s'
+        parts.append("< 1s")
 
-    elif len(text) == 0 and ms_precision > 0:
+    elif not parts and ms_precision > 0:
         # Show as decimal with ms_precision decimal places
-        text = '{val:{tot}.{prec}f}s'.format(val=remaining,
-                                             tot=int(ms_precision) + 2,
-                                             prec=int(ms_precision))
+        s = '{val:{tot}.{prec}f}s'.format(val=remaining,
+                                          tot=int(ms_precision) + 2,
+                                          prec=int(ms_precision))
+        parts.append(s)
 
-    return text
+    return " ".join(parts)
 
 def fill_line(s: str, *, num_cols: int=TTY_COLS, fill_char: str=" ", align: str="left") -> str:
     """Extends the given string such that it fills a whole line of `num_cols` columns.
     
     Args:
-        s (str): The string to extend to a whole TTY line
+        s (str): The string to extend to a whole line
+        num_cols (int, optional): The number of colums of the line; defaults to
+            the number of TTY columns or – if those are not available – 79
         fill_char (str, optional): The fill character
         align (str, optional): The alignment. Can be: 'left', 'right', 'center'
+            or the one-letter equivalents.
     
     Returns:
-        str: The string of length `num_cols - num_blocked`
+        str: The string of length `num_cols`
     
     Raises:
-        ValueError: For invalid `align` argument
+        ValueError: For invalid `align` or `fill_char` argument
     """
+    if len(fill_char) != 1:
+        raise ValueError("Argument `fill_char` needs to be string of length 1 "
+                         "but was: "+str(fill_char))
 
     fill_str = fill_char * (num_cols - len(s))
 
@@ -235,21 +241,21 @@ def fill_line(s: str, *, num_cols: int=TTY_COLS, fill_char: str=" ", align: str=
     elif align in ["center", "centre", "c"]:
         return fill_str[:len(fill_str)//2] + s + fill_str[len(fill_str)//2:]
 
-    else:
-        raise ValueError("align argument '{}' not supported".format(align))
+    raise ValueError("align argument '{}' not supported".format(align))
 
 
-def center_in_line(s: str, *, num_cols: int=TTY_COLS, fill_char: str="·", spacing: str=" ") -> str:
+def center_in_line(s: str, *, num_cols: int=TTY_COLS, fill_char: str="·", spacing: int=1) -> str:
     """Shortcut for a common fill_line use case.
     
     Args:
         s (str): The string to center in the line
         num_cols (int, optional): The number of columns in the line
         fill_char (str, optional): The fill character
-        spacing (str, optional): The spacing around the string `s`
+        spacing (int, optional): The spacing around the string `s`
     
     Returns:
         str: The string centered in the line
     """
-    return fill_tty_line(spacing + s + spacing, num_cols=num_cols,
-                         fill_char=fill_char, align='centre')
+    spacing = " " * spacing
+    return fill_line(spacing + s + spacing, num_cols=num_cols,
+                     fill_char=fill_char, align='centre')
