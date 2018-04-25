@@ -400,8 +400,8 @@ class WorkerManagerReporter(Reporter):
         syms = dict(finished="▓", active="░", queued=" ", space=" ")
 
         if show_total:
-            fstr = "╠{:}{:}{:}{:}╣ {p:>5.1f}%  of  {total:d} "
-            pb_width = num_cols - (11 + 5 + len(str(cntr['total'])))
+            fstr = "╠{:}{:}{:}{:}╣ {p:>5.1f}%  (of {total:d}) "
+            pb_width = num_cols - (12 + 5 + len(str(cntr['total'])))
         
         else:
             fstr = "╠{:}{:}{:}{:}╣ {p:>5.1f}% "
