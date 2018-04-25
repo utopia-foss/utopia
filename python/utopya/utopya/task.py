@@ -10,7 +10,7 @@ import threading
 import subprocess
 import warnings
 import logging
-from typing import Callable, Union
+from typing import Callable, Union, Dict
 from typing.io import BinaryIO
 
 import numpy as np
@@ -119,9 +119,9 @@ class WorkerTask(Task):
     # Extend the slots of the Task class with some WorkerTask-specific slots
     __slots__ = ('setup_func', 'setup_kwargs', 'worker_kwargs',
                  '_worker', '_worker_pid', '_worker_status',
-                 'streams', 'profiling')
+                 'streams', 'profiling', 'callbacks')
 
-    def __init__(self, *, setup_func: Callable=None, setup_kwargs: dict=None, worker_kwargs: dict=None, **task_kwargs):
+    def __init__(self, *, setup_func: Callable=None, setup_kwargs: dict=None, worker_kwargs: dict=None, callbacks: Dict[str, Callable]=None, **task_kwargs):
         """Initialize a WorkerTask object, a specialization of a task for use in the WorkerManager.
         
         Args:
@@ -132,6 +132,9 @@ class WorkerTask(Task):
                 worker. Note that these are also passed to setup_func and, if a
                 setup_func is given, the return value of that function will be
                 used for the worker_kwargs.
+            callbacks (Dict[str, Callable], optional): A dict of callback funcs
+                that are called at different points of the life of a process:
+                Possible keys: 'spawn', 'finished', 'after_signal'
             **task_kwargs: Arguments to be passed to Task.__init__
         
         Raises:
@@ -165,6 +168,9 @@ class WorkerTask(Task):
         self.setup_func = setup_func
         self.setup_kwargs = setup_kwargs
         self.worker_kwargs = worker_kwargs
+
+        # Save the callbacks
+        self.callbacks = callbacks
 
         # Create empty attributes to be filled with worker information
         self._worker = None
@@ -315,6 +321,9 @@ class WorkerTask(Task):
         log.debug("Spawned worker process with PID %s.", proc.pid)
         # ... it is running now.
 
+        # If given, call the callback function
+        self._invoke_callback('spawn')
+
         # Associate the process with the task
         self.worker = proc
 
@@ -423,6 +432,8 @@ class WorkerTask(Task):
                              "either SIGTERM, SIGKILL, or an integer signal "
                              "number.".format(signal))
 
+        self._invoke_callback('after_signal')
+
     # Private API .............................................................
 
     def _finished(self) -> None:
@@ -436,8 +447,16 @@ class WorkerTask(Task):
         # Read all remaining stream lines
         self.read_streams(max_num_reads=-1)
 
+        # If given, call the callback function
+        self._invoke_callback('finished')
+
         log.debug("Task %s: worker finished with status %s.",
                   self.name, self.worker_status)
+
+    def _invoke_callback(self, name: str):
+        """If given, invokes the callback function with the name `name`."""
+        if name in self.callbacks:
+            self.callbacks[name]()
 
 # -----------------------------------------------------------------------------
 
