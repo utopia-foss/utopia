@@ -32,15 +32,27 @@ def wm(sleep_task) -> WorkerManager:
     return wm
 
 @pytest.fixture
-def rep(wm) -> WorkerManagerReporter:
+def rf_list() -> list:
+    """Returns a list of report formats; this will invoke them with their
+    default settings."""
+    return ['runtime', 'task_counters', 'progress', 'progress_bar']
+
+@pytest.fixture
+def rf_dict() -> dict:
+    """Returns a report format dict."""
+    raise NotImplementedError
+
+@pytest.fixture
+def rep(wm, rf_list) -> WorkerManagerReporter:
     """Returns a WorkerManagerReporter"""
-    return WorkerManagerReporter(wm, min_report_intv=MIN_REP_INTV)
+    return WorkerManagerReporter(wm, report_formats=rf_list,
+                                 default_format='runtime')
 
 # Tests -----------------------------------------------------------------------
 
-def test_init(wm):
+def test_init(wm, rf_list):
     """Test initialisation of the WorkerManagerReporter"""
-    rep = WorkerManagerReporter(wm)
+    rep = WorkerManagerReporter(wm, report_formats=rf_list)
 
     # Associating another one with the same WorkerManager should fail
     with pytest.raises(RuntimeError, match="Already set the reporter"):
@@ -52,20 +64,13 @@ def test_init(wm):
 
 def test_report(rep):
     """Tests the report method."""
-
+    # Test the default report format
     assert rep.report()
 
-    # Ensure that reporting is not carried out if inside the min report intv.
-    assert not rep.report()
-    time.sleep(MIN_REP_INTV)
-    assert rep.report()
-    assert not rep.report()
-
-    # Continue without min_report_intv
-    rep.min_report_intv = None
-
-    # Custom writer and parser
-    assert rep.report(write_to='log', parser='default')
+    # Other report formats
+    assert rep.report('task_counters')
+    assert rep.report('progress')
+    assert rep.report('progress_bar')
 
 def test_task_counter(rep):
     """Tests the task_counters property"""
