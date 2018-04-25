@@ -120,7 +120,7 @@ class Reporter:
 
         # Initialise property-managed attributes
         self._report_formats = dict()
-        self._default_report_format = None
+        self._default_format = None
 
         # Ensure the report_formats argument is a dict
         if report_formats is None:
@@ -135,7 +135,7 @@ class Reporter:
 
         # Set the default report format, if given
         if default_format:
-            self.default_report_format = default_format
+            self.default_format = default_format
 
         # Create dicts to store counters and times in
         self.counters = OrderedDict()
@@ -153,15 +153,19 @@ class Reporter:
         return self._report_formats
 
     @property
-    def default_report_format(self) -> Union[None, ReportFormat]:
+    def default_format(self) -> Union[None, ReportFormat]:
         """Returns the default report format or None, if not set."""
-        return self._default_report_format
+        return self._default_format
 
-    @default_report_format.setter
-    def default_report_format(self, name: str):
+    @default_format.setter
+    def default_format(self, name: str):
         """Given the name of the report formats, set the default value."""
-        self._default_report_format = self.report_formats[name]
-        log.debug("Set default report format to '%s'.", name)
+        if name is not None:
+            self._default_format = self.report_formats[name]
+            log.debug("Set default report format to '%s'.", name)
+        else:
+            self._default_format = None
+            log.debug("Unset default report format.")
 
     # Public API ..............................................................
 
@@ -251,13 +255,13 @@ class Reporter:
         """
         # Get the report format to use
         if report_format is None:
-            if self.default_report_format is None:
+            if self.default_format is None:
                 raise ValueError("Either a default format needs to be set for "
                                  "this {} or the name of the report format "
                                  "needs to be supplied to the .report method."
                                  "".format(self.__class__.__name__))
 
-            rf = self.default_report_format
+            rf = self.default_format
 
         else:
             rf = self.report_formats[report_format]

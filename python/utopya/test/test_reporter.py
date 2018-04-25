@@ -42,7 +42,7 @@ def rf_dict() -> dict:
     """Returns a report format dict."""
     return dict(runtime=dict(min_report_intv=MIN_REP_INTV),
                 tasks=dict(parser='task_counters'),
-                progress=dict(),
+                progress=dict(write_to=dict(log=dict(lvl=5))),
                 short_progress_bar=dict(parser='progress_bar', num_cols=19))
 
 @pytest.fixture
@@ -113,16 +113,27 @@ def test_task_counter(rep):
     assert tc['active'] == 0
     assert tc['finished'] == 11
 
-def test_parsers(rep, sleep_task):
+def test_parsers(rf_dict, sleep_task):
     """Tests the custom parser methods of the WorkerManagerReporter that is
     written for simple terminal reports
     """
+    wm = WorkerManager(num_workers=4)
+    rep = WorkerManagerReporter(wm, report_formats=rf_dict)
 
     # Disable minimum report interval and create shortcuts to the parse methods
     rep.min_report_intv = None
     ptc = rep._parse_task_counters
     pp = rep._parse_progress
     ppb = lambda *a, **kws: rep._parse_progress_bar(*a, num_cols=19, **kws)
+
+    # Test without tasks assigned
+    assert ptc() == "total: 0,  queued: 0,  active: 0,  finished: 0"
+    assert pp() == "(No tasks assigned to WorkerManager yet.)"
+    assert ppb() == "(No tasks assigned to WorkerManager yet.)"
+
+    # Assign tasks to wm
+    for _ in range(11):
+        wm.add_task(**sleep_task)
 
     # Test the initial return strings
     assert ptc() == "total: 11,  queued: 11,  active: 0,  finished: 0"
@@ -155,6 +166,11 @@ def test_report(rep):
     with pytest.raises(KeyError):
         rep.report('foo')
 
+    # Without default format
+    rep.default_format = None
+    with pytest.raises(ValueError, match="Either a default format needs"):
+        rep.report()
+
 def test_min_report_intv(wm, rf_dict):
     """Test correct behaviour of the minimum report interval"""
     rep = WorkerManagerReporter(wm, report_formats=rf_dict,
@@ -173,3 +189,8 @@ def test_min_report_intv(wm, rf_dict):
 
     # And blocked again ...
     assert not rep.report()
+
+def test_parse_and_write(rep):
+    """Tests the parse_and_write function"""
+    rep.parse_and_write(parser='runtime', write_to='stdout')
+    rep.parse_and_write(parser='runtime', write_to='log')
