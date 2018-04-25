@@ -155,9 +155,7 @@ class Reporter:
     @property
     def default_report_format(self) -> Union[None, ReportFormat]:
         """Returns the default report format or None, if not set."""
-        if self._default_report_format:
-            return self._default_report_format
-        return None
+        return self._default_report_format
 
     @default_report_format.setter
     def default_report_format(self, name: str):
@@ -192,7 +190,13 @@ class Reporter:
                              "".format(name))
 
         # Get the parser function
-        parser = getattr(self, '_parse_' + (parser if parser else name))
+        parser_name = parser if parser else name
+        try:
+            parser = getattr(self, '_parse_' + parser_name)
+        except AttributeError as err:
+            raise ValueError("No parser named '{}' available in {}!"
+                             "".format(parser_name,
+                                       self.__class__.__name__)) from err
 
         # If given, create a lambda function that already passes the kwargs
         if parser_kwargs:
@@ -209,7 +213,12 @@ class Reporter:
 
         writers = {}
         for writer_name, params in write_to.items():
-            writer = getattr(self, '_write_to_' + writer_name)
+            try:
+                writer = getattr(self, '_write_to_' + writer_name)
+            except AttributeError as err:
+                raise ValueError("No writer named '{}' available in {}!"
+                                 "".format(parser_name,
+                                           self.__class__.__name__)) from err
             
             # If given, create a lambda function that already passes the kwargs
             if params:

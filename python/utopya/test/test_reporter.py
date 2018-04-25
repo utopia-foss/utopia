@@ -74,34 +74,25 @@ def test_init_with_rf_dict(wm, rf_dict):
     rep = WorkerManagerReporter(wm, report_formats=rf_dict,
                                 default_format='runtime')
 
-def test_report(rep):
-    """Tests the report method."""
-    # Test the default report format
-    assert rep.report()
+def test_add_report_format(rep):
+    """Test the add_report_format method"""
 
-    # Other report formats
-    assert rep.report('task_counters')
-    assert rep.report('progress')
-    assert rep.report('progress_bar')
+    # Adding formats with the same name should not work
+    with pytest.raises(ValueError, match="A report format with the name"):
+        rep.add_report_format('runtime')
 
-def test_min_report_intv(wm, rf_dict):
-    """Test correct behaviour of the minimum report interval"""
-    rep = WorkerManagerReporter(wm, report_formats=rf_dict,
-                                default_format='runtime')
+    # Invalid write_to argument
+    with pytest.raises(TypeError,
+                       match="Invalid type for argument `write_to`"):
+        rep.add_report_format('foo', parser='runtime', write_to=(1, 2, 3))
 
-    # This should work
-    assert rep.report()
-
-    # Now this should hit the minimum report interval
-    assert not rep.report()
-    assert not rep.report()
-
-    # After sleeping, this should work again
-    time.sleep(MIN_REP_INTV)
-    assert rep.report()
-
-    # And blocked again ...
-    assert not rep.report()
+    # Invalid parser
+    with pytest.raises(ValueError, match="No parser named"):
+        rep.add_report_format('invalid')
+    
+    # Invalid writer
+    with pytest.raises(ValueError, match="No writer named"):
+        rep.add_report_format('foo', parser='runtime', write_to='invalid')
 
 def test_task_counter(rep):
     """Tests the task_counters property"""
@@ -149,3 +140,36 @@ def test_parsers(rep, sleep_task):
     assert ptc() == "total: 12,  queued: 1,  active: 0,  finished: 11"
     assert pp() == "Finished  11 / 12  (91.7%)"
     assert ppb() == "╠▓▓▓▓▓▓▓▓▓ ╣  91.7%"
+
+def test_report(rep):
+    """Tests the report method."""
+    # Test the default report format
+    assert rep.report()
+
+    # Other report formats
+    assert rep.report('task_counters')
+    assert rep.report('progress')
+    assert rep.report('progress_bar')
+
+    # Invalid report formats
+    with pytest.raises(KeyError):
+        rep.report('foo')
+
+def test_min_report_intv(wm, rf_dict):
+    """Test correct behaviour of the minimum report interval"""
+    rep = WorkerManagerReporter(wm, report_formats=rf_dict,
+                                default_format='runtime')
+
+    # This should work
+    assert rep.report()
+
+    # Now this should hit the minimum report interval
+    assert not rep.report()
+    assert not rep.report()
+
+    # After sleeping, this should work again
+    time.sleep(MIN_REP_INTV)
+    assert rep.report()
+
+    # And blocked again ...
+    assert not rep.report()
