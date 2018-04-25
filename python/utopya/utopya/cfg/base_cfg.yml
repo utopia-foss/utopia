@@ -49,7 +49,12 @@ worker_manager:
   poll_delay: 0.05
 
 # Reporter
-reporter: {}
+reporter:
+  report_formats:
+    while_working:
+      parser: progress_bar
+      write_to: stdout_noreturn
+      min_report_intv: 0.5
 
 # Data Manager
 data_manager: {}

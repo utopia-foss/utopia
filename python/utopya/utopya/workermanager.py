@@ -268,6 +268,10 @@ class WorkerManager:
                 log.debug("Poll # %6d:  %d active tasks",
                           poll_no, len(self.active_tasks))
 
+                # Invoke the reporter, if available
+                if self.reporter is not None:
+                    self.reporter.report('while_working')
+
                 # Delay the next poll
                 time.sleep(self.poll_delay)
 
