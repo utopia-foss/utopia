@@ -37,6 +37,12 @@ class Reporter:
 
         super().__init__()
 
+        # Property-managed attributes
+        self._min_report_intv = None
+
+        # Store the minimum report interval
+        self.min_report_intv = min_report_intv
+
         # Prepare the default parser
         self.parser = getattr(self, "_parse_"+parser)
         self.parser_kwargs = parser_kwargs if parser_kwargs else {}
@@ -47,25 +53,34 @@ class Reporter:
 
         # Add counters and times dicts
         self.counters = dict(reports=0)
-        self.times = dict(init=dt.now(), last_report=dt.now())
+        self.times = dict(init=dt.now(),
+                          last_report=dt.fromtimestamp(0))  # waaay back
         
-        # Store the minimum report interval; or None if not given
-        if min_report_intv:
-            self.min_report_intv = timedelta(seconds=min_report_intv)
-            self.times['last_report'] -= self.min_report_intv
-        else:
-            self.min_report_intv = None
-
         log.debug("Reporter.__init__ finished.")
 
     # Properties ..............................................................
 
     @property
+    def min_report_intv(self) -> Union[timedelta, None]:
+        """Returns the minimum report intv"""
+        return self._min_report_intv
+
+    @min_report_intv.setter
+    def min_report_intv(self, sec: float):
+        """Set the minimum report interval"""
+        self._min_report_intv = timedelta(seconds=sec) if sec else None
+
+    @property
     def reporting_blocked(self) -> bool:
-        """Determines whether the reporter should report now or not."""
-        # One aspect: within report time
+        """Determines whether the reporter should report now or not.
+
+        One reason why it should not report can be that the last report
+        happened very recently. There can potentially be more reasons.
+        """
         if not self.min_report_intv:
+            # Never blocked
             return False
+        # Check time since last report
         return (dt.now() - self.times['last_report']) < self.min_report_intv
 
     # Public API ..............................................................
@@ -109,7 +124,7 @@ class Reporter:
             writer = self.writer
             writer_kwargs = self.writer_kwargs
         else:
-            writer = getattr(self, "_write_to_" + writer)
+            writer = getattr(self, "_write_to_" + write_to)
             writer_kwargs = writer_kwargs if writer_kwargs else {}
 
         # Write the report
@@ -133,6 +148,10 @@ class Reporter:
     def _write_to_stdout(self, s: str, flush: bool=True, **print_kws):
         """Writes the given string to stdout"""
         print(s, flush=flush, **print_kws)
+
+    def _write_to_log(self, s: str, lvl: int=10):
+        """Writes the given string via the logging module"""
+        log.log(lvl, s)
 
     def _write_to_file(self, s: str, path: str, mode: str='a'):
         """Writes the given string to a file"""

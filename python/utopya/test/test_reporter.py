@@ -35,14 +35,30 @@ def rep(wm) -> WorkerManagerReporter:
 
 def test_init(wm):
     """Test initialisation of the WorkerManagerReporter"""
-    rep = WorkerManagerReporter(wm, min_report_intv=MIN_REP_INTV)
+    rep = WorkerManagerReporter(wm)
+
+    # Associating another one with the same WorkerManager should fail
+    with pytest.raises(RuntimeError, match="Already set the reporter"):
+        WorkerManagerReporter(wm)
+
+    # Ensure correct association
+    assert rep.wm is wm
+    assert wm._reporter is rep
 
 def test_report(rep):
     """Tests the report method."""
-    # Ensure that reporting is not carried out if inside the min report intv.
+
     assert rep.report()
+
+    # Ensure that reporting is not carried out if inside the min report intv.
     assert not rep.report()
     time.sleep(MIN_REP_INTV)
     assert rep.report()
     assert not rep.report()
+
+    # Continue without min_report_intv
+    rep.min_report_intv = None
+
+    # Custom writer and parser
+    assert rep.report(write_to='log', parser='default')
     
