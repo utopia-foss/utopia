@@ -46,6 +46,7 @@ class WorkerManager:
         self._task_q = QueueCls()
         self._active_tasks = []
         self._reporter = None
+        self._num_finished_tasks = 0
 
         # Hand over arguments
         self.poll_delay = poll_delay
@@ -104,6 +105,13 @@ class WorkerManager:
         return self._active_tasks
 
     @property
+    def num_finished_tasks(self) -> int:
+        """The number of finished tasks. Incremented whenever a task leaves
+        the active_tasks list.
+        """
+        return self._num_finished_tasks
+
+    @property
     def num_free_workers(self) -> int:
         """Returns the number of free workers."""
         return self.num_workers - len(self.active_tasks)
@@ -155,8 +163,12 @@ class WorkerManager:
             **task_kwargs: All arguments needed for WorkerTask initialization.
                 See utopya.task.WorkerTask.__init__ for all valid arguments.
         """
+        # Prepare the callback functions needed by the reporter
+        cbf = lambda: self._invoke_report('while_working', force=True)
+        callbacks = dict(spawn=cbf, finished=cbf)
+
         # Generate the WorkerTask object from the given parameters
-        task = WorkerTask(**task_kwargs)
+        task = WorkerTask(callbacks=callbacks, **task_kwargs)
 
         # Append it to the task list and put it into the task queue
         self.tasks.append(task)
@@ -274,6 +286,9 @@ class WorkerManager:
                 # Delay the next poll
                 time.sleep(self.poll_delay)
 
+            # Final report: all is done
+            self._invoke_report('while_working', force=True)
+
         except WorkerManagerError as err:
             print("")
             log.warning("Did not finish working due to a %s ...",
@@ -336,11 +351,16 @@ class WorkerManager:
             # Nothing to rebuild
             return
 
-        # Broke out of the loop, i.e.: at least ne task finished
+        # Broke out of the loop, i.e.: at least one task finished
+        old_len = len(self.active_tasks)
+
         # have to rebuild the list of active tasks now...
         self.active_tasks[:] = [t for t in self.active_tasks
                                 if t.worker_status is None]
         # NOTE this will also poll all other active tasks and potentially not add them to the active_tasks list again.
+        # Now, only active tasks are in the list, but the list is shorter
+        # Can deduce the number of finished tasks from this
+        self._num_finished_tasks += (old_len - len(self.active_tasks))
 
         return
 
@@ -400,10 +420,6 @@ class WorkerManager:
         log.debug("All tasks signalled. Tasks' worker status:\n  %s",
                   ", ".join([str(t.worker_status) for t in tasks]))
 
-    def _invoke_reporter(self):
-        """Invokes the reporter, if available."""
-        if self.reporter:
-            self.reporter.report()
 
 # Custom exceptions -----------------------------------------------------------
 
