@@ -226,7 +226,7 @@ class WorkerManagerReporter(Reporter):
     def _parse_progress_bar(self, num_cols: int=tools.TTY_COLS - 10):
         """Returns a progress bar"""
         # Define the symbols to use
-        syms = dict(finished="#", active=".", queued=" ", space=" ")
+        syms = dict(finished="▓", active="░", queued=" ", space=" ")
 
         # Calculate number of ticks
         pb_width = num_cols - (7 + 2)
@@ -246,7 +246,7 @@ class WorkerManagerReporter(Reporter):
         # Note: the space ticks are needed as int is rounding down
 
         # Format the progress bar
-        return ("[{:}{:}{:}{:}] {p:>5.1f}%"
+        return ("╠{:}{:}{:}{:}╣ {p:>5.1f}%"
                 "".format(syms['finished'] * ticks['finished'],
                           syms['active'] * ticks['active'],
                           syms['queued'] * ticks['queued'],

@@ -100,16 +100,16 @@ def test_parsers(rep, sleep_task):
     # Test the initial return strings
     assert ptc() == "total: 11,  queued: 11,  active: 0,  finished: 0"
     assert pp() == "Finished   0 / 11  (0.0%)"
-    assert ppb() == "[          ]   0.0%"
+    assert ppb() == "╠          ╣   0.0%"
     
     # Start working and check again afterwards
     rep.wm.start_working()
     assert ptc() == "total: 11,  queued: 0,  active: 0,  finished: 11"
     assert pp() == "Finished  11 / 11  (100.0%)"
-    assert ppb() == "[##########] 100.0%"
+    assert ppb() == "╠▓▓▓▓▓▓▓▓▓▓╣ 100.0%"
 
     # Add another task to the WorkerManager, which should change the counts
     rep.wm.add_task(**sleep_task)
     assert ptc() == "total: 12,  queued: 1,  active: 0,  finished: 11"
     assert pp() == "Finished  11 / 12  (91.7%)"
-    assert ppb() == "[######### ]  91.7%"
+    assert ppb() == "╠▓▓▓▓▓▓▓▓▓ ╣  91.7%"
