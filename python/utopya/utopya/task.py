@@ -337,7 +337,7 @@ class WorkerTask(Task):
 
         return self.worker
 
-    def read_streams(self, stream_names: list='all', forward_streams: bool=True, max_num_reads: int=1) -> None:
+    def read_streams(self, stream_names: list='all', forward_streams: bool=False, max_num_reads: int=1, log_level: int=20) -> None:
         """Read the streams associated with this task's worker.
         
         Args:
@@ -349,6 +349,7 @@ class WorkerTask(Task):
                 the buffer. For -1, reads the whole buffer.
                 WARNING: Do not make this value too large as it could block the
                 whole reader thread of this worker.
+            log_level (int, optional): Level at which the stream gets logged
         
         Returns:
             None: Description
@@ -373,7 +374,7 @@ class WorkerTask(Task):
                     # got entry, do something with it
                     if forward_streams:
                         # print it to the parent processe's stdout
-                        log.info("  %s %s:   %s",
+                        log.log(log_level, "  %s %s:   %s",
                                  self.name, stream_name, entry)
 
                     # Write to the stream's log

@@ -17,7 +17,7 @@ perform_sweep: false
 # Run configuration for the WorkerManager
 run_kwargs:
   # Whether to forward the worker streams to the main thread's stdout
-  forward_streams: true
+  forward_streams: false
 
   # Total timeout (in s) of a run; to ignore, set to ~
   timeout: ~

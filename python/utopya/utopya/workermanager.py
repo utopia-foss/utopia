@@ -243,6 +243,9 @@ class WorkerManager:
                     # Also, the poll delay is usually not so large that there
                     # would be an issue with workers staying idle for too long.
 
+                # Invoke the reporter, if available
+                self._invoke_report('while_working')
+
                 # Gather the streams of all working workers
                 for task in self.active_tasks:
                     task.read_streams(forward_streams=forward_streams)
@@ -268,14 +271,11 @@ class WorkerManager:
                 log.debug("Poll # %6d:  %d active tasks",
                           poll_no, len(self.active_tasks))
 
-                # Invoke the reporter, if available
-                if self.reporter is not None:
-                    self.reporter.report('while_working')
-
                 # Delay the next poll
                 time.sleep(self.poll_delay)
 
         except WorkerManagerError as err:
+            print("")
             log.warning("Did not finish working due to a %s ...",
                         err.__class__.__name__)
             
@@ -285,10 +285,16 @@ class WorkerManager:
 
         else:
             # Finished because no working workers and no more tasks remained
+            print("")
             log.info("Finished working. Total tasks worked on: %d",
                      self.task_count)
 
     # Non-public API ..........................................................
+
+    def _invoke_report(self, *args, **kwargs):
+        """Helper function to invoke the reporter's report function"""
+        if self.reporter is not None:
+            self.reporter.report(*args, **kwargs)
 
     def _grab_task(self) -> WorkerTask:
         """Will initiate that a task is gotten from the queue and that it
