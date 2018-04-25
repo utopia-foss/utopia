@@ -5,6 +5,7 @@ import logging
 from datetime import datetime as dt
 from datetime import timedelta
 from typing import Union
+from collections import OrderedDict
 
 import numpy as np
 
@@ -51,11 +52,14 @@ class Reporter:
         self.writer = getattr(self, "_write_to_" + write_to)
         self.writer_kwargs = writer_kwargs if writer_kwargs else {}
 
-        # Add counters and times dicts
-        self.counters = dict(reports=0)
-        self.times = dict(init=dt.now(),
-                          last_report=dt.fromtimestamp(0))  # waaay back
-        
+        # Add counters and times dicts and fill them with initial values
+        self.counters = OrderedDict()
+        self.times = OrderedDict()
+
+        self.counters['reports'] = 0
+        self.times['init'] = dt.now()
+        self.times['last_report'] = dt.fromtimestamp(0)  # waaay back
+
         log.debug("Reporter.__init__ finished.")
 
     # Properties ..............................................................
@@ -182,6 +186,37 @@ class WorkerManagerReporter(Reporter):
         """Returns the associated WorkerManager."""
         return self._wm
 
+    # Properties that extract info from the WorkerManager .....................
+
+    @property
+    def task_counters(self) -> OrderedDict:
+        """Returns a dict of task statistics:
+        total: total number of tasks associated with the WorkerManager
+        finished: number of finished tasks
+        active: number of active tasks
+        queued: number of unfinished tasks
+        """
+        num = OrderedDict()
+        num['total'] = self.wm.task_count
+        num['queued'] = self.wm.task_queue.qsize()
+        num['active'] = len(self.wm.active_tasks)
+        num['finished'] = num['total'] - (num['queued'] + num['active'])
+        return num
+
+
+    # Parser methods ..........................................................
+
     def _parse_one_line(self, mode: str='progress') -> str:
         """Parses a one-line report aimed for terminal output"""
-        return "foo"
+        if mode in ['counters']:
+            return ",  ".join(["{}: {}".format(k, v)
+                               for k, v in self.task_counters.items()])
+
+        elif mode in ['progress']:
+            cntr = self.task_counters
+            return ("Finished  {fin:>{digs:}d} / {tot:d}  ({p:.1f}%)"
+                    "".format(fin=cntr['finished'], tot=cntr['total'],
+                              digs=len(str(cntr['total'])),
+                              p=cntr['finished']/cntr['total'] * 100))
+
+        raise ValueError("Invalid value for argument `mode`: "+str(mode))
