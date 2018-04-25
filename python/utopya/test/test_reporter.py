@@ -42,7 +42,9 @@ def rf_dict() -> dict:
     """Returns a report format dict."""
     return dict(runtime=dict(min_report_intv=MIN_REP_INTV),
                 tasks=dict(parser='task_counters'),
-                progress=dict(write_to=dict(log=dict(lvl=5))),
+                progress=dict(write_to=dict(log=dict(lvl=5),
+                                            stdout=dict(end='\r'),
+                                            stdout_noreturn=dict())),
                 short_progress_bar=dict(parser='progress_bar', num_cols=19))
 
 @pytest.fixture
@@ -124,12 +126,15 @@ def test_parsers(rf_dict, sleep_task):
     rep.min_report_intv = None
     ptc = rep._parse_task_counters
     pp = rep._parse_progress
-    ppb = lambda *a, **kws: rep._parse_progress_bar(*a, num_cols=19, **kws)
+    ppb = lambda *a, **kws: rep._parse_progress_bar(*a, num_cols=20, **kws)
+    ppbt = lambda *a, **kws: rep._parse_progress_bar(*a, num_cols=28,
+                                                     show_total=True, **kws)
 
     # Test without tasks assigned
     assert ptc() == "total: 0,  queued: 0,  active: 0,  finished: 0"
     assert pp() == "(No tasks assigned to WorkerManager yet.)"
     assert ppb() == "(No tasks assigned to WorkerManager yet.)"
+    assert ppbt() == "(No tasks assigned to WorkerManager yet.)"
 
     # Assign tasks to wm
     for _ in range(11):
@@ -138,19 +143,22 @@ def test_parsers(rf_dict, sleep_task):
     # Test the initial return strings
     assert ptc() == "total: 11,  queued: 11,  active: 0,  finished: 0"
     assert pp() == "Finished   0 / 11  (0.0%)"
-    assert ppb() == "╠          ╣   0.0%"
+    assert ppb() == "╠          ╣   0.0% "
+    assert ppbt() == "╠          ╣   0.0%  of  11 "
     
     # Start working and check again afterwards
     rep.wm.start_working()
     assert ptc() == "total: 11,  queued: 0,  active: 0,  finished: 11"
     assert pp() == "Finished  11 / 11  (100.0%)"
-    assert ppb() == "╠▓▓▓▓▓▓▓▓▓▓╣ 100.0%"
+    assert ppb() == "╠▓▓▓▓▓▓▓▓▓▓╣ 100.0% "
+    assert ppbt() == "╠▓▓▓▓▓▓▓▓▓▓╣ 100.0%  of  11 "
 
     # Add another task to the WorkerManager, which should change the counts
     rep.wm.add_task(**sleep_task)
     assert ptc() == "total: 12,  queued: 1,  active: 0,  finished: 11"
     assert pp() == "Finished  11 / 12  (91.7%)"
-    assert ppb() == "╠▓▓▓▓▓▓▓▓▓ ╣  91.7%"
+    assert ppb() == "╠▓▓▓▓▓▓▓▓▓ ╣  91.7% "
+    assert ppbt() == "╠▓▓▓▓▓▓▓▓▓ ╣  91.7%  of  12 "
 
 def test_report(rep):
     """Tests the report method."""

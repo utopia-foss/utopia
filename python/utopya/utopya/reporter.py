@@ -303,6 +303,10 @@ class Reporter:
         """Writes the given string to stdout"""
         print(s, flush=flush, **print_kws)
 
+    def _write_to_stdout_noreturn(self, s: str, report_no: int=None):
+        """Writes to stdout without ending the line"""
+        print(s, flush=True, end='\r')
+
     def _write_to_log(self, s: str, *, lvl: int=10, report_no: int=None):
         """Writes the given string via the logging module"""
         log.log(lvl, s)
@@ -322,12 +326,22 @@ class WorkerManagerReporter(Reporter):
 
         super().__init__(**reporter_kwargs)
 
+        # Make sure that a format 'while_working' is available
+        if 'while_working' not in self.report_formats:
+            log.debug("No report format 'while_working' found; adding one "
+                      "because it is needed by the WorkerManager.")
+
+            # Add a default configuration
+            self.add_report_format('while_working', parser='progress_bar',
+                                   write_to='stdout_noreturn')
+
         # Store the WorkerManager and associate it with this reporter
         self._wm = wm
         wm.reporter = self
         log.debug("Associated reporter with WorkerManager.")
 
         # Attributes
+        # ...
 
         log.debug("WorkerManagerReporter initialised.")
 
@@ -373,19 +387,30 @@ class WorkerManagerReporter(Reporter):
                           digs=len(str(cntr['total'])),
                           p=cntr['finished']/cntr['total'] * 100))
 
-    def _parse_progress_bar(self, *, num_cols: int=tools.TTY_COLS - 10, report_no: int=None):
+    def _parse_progress_bar(self, *, num_cols: int=tools.TTY_COLS - 10, show_total: bool=False, report_no: int=None):
         """Returns a progress bar"""
-        # Define the symbols to use
-        syms = dict(finished="▓", active="░", queued=" ", space=" ")
-
-        # Calculate number of ticks
-        pb_width = num_cols - (7 + 2)
-
         # Get the task counter and check that some tasks have been assigned
         cntr = self.task_counters
 
         if cntr['total'] <= 0:
             return "(No tasks assigned to WorkerManager yet.)"
+
+        # Define the symbols and format strings to use, calculating the
+        # progress bar width alongside
+        syms = dict(finished="▓", active="░", queued=" ", space=" ")
+
+        if show_total:
+            fstr = "╠{:}{:}{:}{:}╣ {p:>5.1f}%  of  {total:d} "
+            pb_width = num_cols - (11 + 5 + len(str(cntr['total'])))
+        
+        else:
+            fstr = "╠{:}{:}{:}{:}╣ {p:>5.1f}% "
+            pb_width = num_cols - (5 + 5)
+
+        # Fall back to regular progress indicator if there is not enough space
+        # for a progress bar
+        if pb_width < 4:
+            return self._parse_progress(report_no=report_no)
 
         # Calculate the ticks
         ticks = dict()
@@ -396,10 +421,10 @@ class WorkerManagerReporter(Reporter):
         # Note: the space ticks are needed as int is rounding down
 
         # Format the progress bar
-        return ("╠{:}{:}{:}{:}╣ {p:>5.1f}%"
-                "".format(syms['finished'] * ticks['finished'],
-                          syms['active'] * ticks['active'],
-                          syms['queued'] * ticks['queued'],
-                          syms['space'] * ticks['space'],
-                          p=cntr['finished']/cntr['total'] * 100))
+        return (fstr.format(syms['finished'] * ticks['finished'],
+                            syms['active'] * ticks['active'],
+                            syms['queued'] * ticks['queued'],
+                            syms['space'] * ticks['space'],
+                            p=cntr['finished']/cntr['total'] * 100,
+                            total=cntr['total']))
 
