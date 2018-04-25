@@ -167,7 +167,7 @@ class Reporter:
 class WorkerManagerReporter(Reporter):
     """This class reports on the state of the WorkerManager."""
 
-    def __init__(self, wm, parser: str='one_line', **reporter_kwargs):
+    def __init__(self, wm, parser: str='progress', **reporter_kwargs):
         """Initialize the Reporter for the WorkerManager."""
 
         super().__init__(parser=parser, **reporter_kwargs)
@@ -206,17 +206,49 @@ class WorkerManagerReporter(Reporter):
 
     # Parser methods ..........................................................
 
-    def _parse_one_line(self, mode: str='progress') -> str:
-        """Parses a one-line report aimed for terminal output"""
-        if mode in ['counters']:
-            return ",  ".join(["{}: {}".format(k, v)
-                               for k, v in self.task_counters.items()])
+    def _parse_task_counters(self) -> str:
+        """Return a string that shows the task counters"""
+        return ",  ".join(["{}: {}".format(k, v)
+                           for k, v in self.task_counters.items()])
 
-        elif mode in ['progress']:
-            cntr = self.task_counters
-            return ("Finished  {fin:>{digs:}d} / {tot:d}  ({p:.1f}%)"
-                    "".format(fin=cntr['finished'], tot=cntr['total'],
-                              digs=len(str(cntr['total'])),
-                              p=cntr['finished']/cntr['total'] * 100))
+    def _parse_progress(self) -> str:
+        """Returns a progress string"""
+        cntr = self.task_counters
 
-        raise ValueError("Invalid value for argument `mode`: "+str(mode))
+        if cntr['total'] <= 0:
+            return "(No tasks assigned to WorkerManager yet.)"
+
+        return ("Finished  {fin:>{digs:}d} / {tot:d}  ({p:.1f}%)"
+                "".format(fin=cntr['finished'], tot=cntr['total'],
+                          digs=len(str(cntr['total'])),
+                          p=cntr['finished']/cntr['total'] * 100))
+
+    def _parse_progress_bar(self, num_cols: int=tools.TTY_COLS - 10):
+        """Returns a progress bar"""
+        # Define the symbols to use
+        syms = dict(finished="#", active=".", queued=" ", space=" ")
+
+        # Calculate number of ticks
+        pb_width = num_cols - (7 + 2)
+
+        # Get the task counter and check that some tasks have been assigned
+        cntr = self.task_counters
+
+        if cntr['total'] <= 0:
+            return "(No tasks assigned to WorkerManager yet.)"
+
+        # Calculate the ticks
+        ticks = dict()
+        ticks['finished'] = int(cntr['finished'] / cntr['total'] * pb_width)
+        ticks['active'] = int(cntr['active'] / cntr['total'] * pb_width)
+        ticks['queued'] = int(cntr['queued'] / cntr['total'] * pb_width)
+        ticks['space'] = pb_width - sum(ticks.values())
+        # Note: the space ticks are needed as int is rounding down
+
+        # Format the progress bar
+        return ("[{:}{:}{:}{:}] {p:>5.1f}%"
+                "".format(syms['finished'] * ticks['finished'],
+                          syms['active'] * ticks['active'],
+                          syms['queued'] * ticks['queued'],
+                          syms['space'] * ticks['space'],
+                          p=cntr['finished']/cntr['total'] * 100))
