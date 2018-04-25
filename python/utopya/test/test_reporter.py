@@ -40,7 +40,10 @@ def rf_list() -> list:
 @pytest.fixture
 def rf_dict() -> dict:
     """Returns a report format dict."""
-    raise NotImplementedError
+    return dict(runtime=dict(min_report_intv=MIN_REP_INTV),
+                tasks=dict(parser='task_counters'),
+                progress=dict(),
+                short_progress_bar=dict(parser='progress_bar', num_cols=19))
 
 @pytest.fixture
 def rep(wm, rf_list) -> WorkerManagerReporter:
@@ -50,9 +53,9 @@ def rep(wm, rf_list) -> WorkerManagerReporter:
 
 # Tests -----------------------------------------------------------------------
 
-def test_init(wm, rf_list):
-    """Test initialisation of the WorkerManagerReporter"""
-    rep = WorkerManagerReporter(wm, report_formats=rf_list)
+def test_init(wm):
+    """Test simplest initialisation of the WorkerManagerReporter"""
+    rep = WorkerManagerReporter(wm)
 
     # Associating another one with the same WorkerManager should fail
     with pytest.raises(RuntimeError, match="Already set the reporter"):
@@ -61,6 +64,15 @@ def test_init(wm, rf_list):
     # Ensure correct association
     assert rep.wm is wm
     assert wm._reporter is rep
+
+def test_init_with_rf_list(wm, rf_list):
+    """Test initialisation of the WorkerManagerReporter with report formats"""
+    rep = WorkerManagerReporter(wm, report_formats=rf_list)
+
+def test_init_with_rf_dict(wm, rf_dict):
+    """Test initialisation of the WorkerManagerReporter"""
+    rep = WorkerManagerReporter(wm, report_formats=rf_dict,
+                                default_format='runtime')
 
 def test_report(rep):
     """Tests the report method."""
@@ -71,6 +83,25 @@ def test_report(rep):
     assert rep.report('task_counters')
     assert rep.report('progress')
     assert rep.report('progress_bar')
+
+def test_min_report_intv(wm, rf_dict):
+    """Test correct behaviour of the minimum report interval"""
+    rep = WorkerManagerReporter(wm, report_formats=rf_dict,
+                                default_format='runtime')
+
+    # This should work
+    assert rep.report()
+
+    # Now this should hit the minimum report interval
+    assert not rep.report()
+    assert not rep.report()
+
+    # After sleeping, this should work again
+    time.sleep(MIN_REP_INTV)
+    assert rep.report()
+
+    # And blocked again ...
+    assert not rep.report()
 
 def test_task_counter(rep):
     """Tests the task_counters property"""

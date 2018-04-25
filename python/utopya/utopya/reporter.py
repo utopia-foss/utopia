@@ -167,21 +167,21 @@ class Reporter:
 
     # Public API ..............................................................
 
-    def add_report_format(self, name: str, *, parser: str=None, parser_kwargs: dict=None, write_to: Union[str, Dict[str, dict]]='stdout', min_report_intv: float=None, **rf_kwargs):
+    def add_report_format(self, name: str, *, parser: str=None, write_to: Union[str, Dict[str, dict]]='stdout', min_report_intv: float=None, rf_kwargs: dict=None, **parser_kwargs):
         """Add a report format to this reporter.
         
         Args:
             name (str): The name of this format
             parser (str, optional): The name of the parser; if not given, the
                 name of the report format is assumed
-            parser_kwargs (dict, optional): The kwargs to the parser function
             write_to (Union[str, Dict[str, dict]], optional): The name of the
                 writer. If this is a dict of dict, the keys will be
                 interpreted as the names of the writers and the nested dict as
                 the **kwargs to the writer function.
             min_report_intv (float, optional): The minimum report interval (in
                 seconds) for this report format
-            **rf_kwargs: Description
+            rf_kwargs (dict, optional): Further kwargs to ReportFormat.__init__
+            **parser_kwargs: The kwargs to the parser function
         
         Raises:
             TypeError: Invalid `write_to` type
@@ -221,7 +221,8 @@ class Reporter:
 
         # Initialise the ReportFormat object with the parsers and writers
         rf = ReportFormat(parser=parser, writers=writers,
-                          min_report_intv=min_report_intv, **rf_kwargs)
+                          min_report_intv=min_report_intv,
+                          **(rf_kwargs if rf_kwargs else {}))
 
         self._report_formats[name] = rf
         log.debug("Added report format '%s' to %s.",
