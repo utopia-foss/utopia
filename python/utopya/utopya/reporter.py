@@ -145,7 +145,10 @@ class Reporter:
             self.default_format = default_format
 
         # Store the report dir
-        self.report_dir =os.path.expanduser(report_dir) if report_dir else None
+        if report_dir:
+            self.report_dir = os.path.expanduser(str(report_dir))
+        else:
+            self.report_dir = None
 
         log.debug("Reporter.__init__ finished.")
 
@@ -334,7 +337,7 @@ class Reporter:
 
         # If a single callable is already given, return that
         if callable(write_to):
-            return [write_to]
+            return {write_to.__name__: write_to}
 
         # If a single string is given, bring it into dict format
         elif isinstance(write_to, str):
@@ -347,9 +350,9 @@ class Reporter:
             for item in write_to:
                 if callable(item):
                     # Check if already present
-                    if item.__name__ in writers:
+                    if item in writers.values():
                         raise ValueError("Given writer callable with name "
-                                         "'{}' already exists!"
+                                         "'{}' was already added!"
                                          "".format(item.__name__))
                     writers[item.__name__] = item
 
@@ -438,7 +441,7 @@ class Reporter:
                 given and writes to "_report.txt" in there.
             mode (str, optional): Writing mode of that file
         """
-        # Check that the given path is valid
+        # For given relative paths, join them to the report directory
         if not os.path.isabs(path):
             if not self.report_dir:
                 raise ValueError("Need either an absolute `path` argument or "

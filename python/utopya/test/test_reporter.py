@@ -79,28 +79,64 @@ def test_init_with_rf_dict(wm, rf_dict):
     rep = WorkerManagerReporter(wm, report_formats=rf_dict,
                                 default_format='progress')
 
+def test_resolve_writers(rep):
+    """Tests the _resolve_writers method."""
+    rw = rep._resolve_writers
+
+    # Test passing a callable directly
+    assert rw(print) == {print.__name__: print}
+
+    # A list or tuple of callables
+    assert rw([print]) == {print.__name__: print}
+    assert rw((print,)) == {print.__name__: print}
+
+    # A mixed list or tuple of strings and callables
+    assert rw([print, 'stdout']) == {print.__name__: print,
+                                     'stdout': rep._write_to_stdout}
+    assert rw((print, 'stdout')) == {print.__name__: print,
+                                     'stdout': rep._write_to_stdout}
+
+    # With invalid types, this should fail
+    with pytest.raises(TypeError, match="Invalid type "):
+        rw(123)
+    with pytest.raises(TypeError, match="One item of given `write_to` "):
+        rw([print, 123])
+    with pytest.raises(TypeError, match="One item of given `write_to` "):
+        rw(['stdout', 123])
+
+    # With the callable already existing, this should also fail
+    with pytest.raises(ValueError, match="Given writer callable with name "):
+        rw([print, print])
+
+    # Invalid writer name
+    with pytest.raises(ValueError, match="No writer named"):
+        rw('invalid')
+
+
 def test_add_report_format(rep):
     """Test the add_report_format method"""
 
+    add_rf = rep.add_report_format
+
     # Adding formats with the same name should not work
     with pytest.raises(ValueError, match="A report format with the name"):
-        rep.add_report_format('task_counters')
+        add_rf('task_counters')
 
     # Invalid write_to argument
     with pytest.raises(TypeError,
                        match="Invalid type <class 'int'> for argument"):
-        rep.add_report_format('foo', parser='progress', write_to=1)
+        add_rf('foo', parser='progress', write_to=1)
     with pytest.raises(TypeError,
                        match="One item of given `write_to` argument"):
-        rep.add_report_format('foo', parser='progress', write_to=(1,2,3))
+        add_rf('foo', parser='progress', write_to=(1,2,3))
 
     # Invalid parser
     with pytest.raises(ValueError, match="No parser named"):
-        rep.add_report_format('invalid')
+        add_rf('invalid')
     
     # Invalid writer
     with pytest.raises(ValueError, match="No writer named"):
-        rep.add_report_format('foo', parser='progress', write_to='invalid')
+        add_rf('foo', parser='progress', write_to='invalid')
 
 def test_task_counter(rep):
     """Tests the task_counters property"""
@@ -244,3 +280,21 @@ def test_runtime_statistics(rep):
 
     # Test the parsing method:
     assert rep._parse_runtime_stats()
+
+def test_write_to_file(wm, rf_dict, tmpdir):
+    """Test writing to a file."""
+    rep = WorkerManagerReporter(wm, report_dir=tmpdir)
+
+    rep.parse_and_write(parser='task_counters', write_to='file')
+    report_file = tmpdir.join('_report.txt')
+    assert report_file.isfile()
+
+    # Read file content
+    with open(str(report_file), 'r') as f:
+        assert f.read() == "total: 11,  active: 0,  finished: 0"
+
+    # Unset the report directory and try with relative path
+    rep.report_dir = None
+
+    with pytest.raises(ValueError):
+        rep.parse_and_write(parser='task_counters', write_to='file')
