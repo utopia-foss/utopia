@@ -2,9 +2,10 @@
 
 import os
 import queue
-import time
 import warnings
 import logging
+import time
+from datetime import datetime as dt
 from typing import Union, Callable, Sequence, List, Set
 from typing.io import BinaryIO
 
@@ -60,6 +61,10 @@ class WorkerManager:
 
         if reporter:
             self.reporter = reporter
+
+        # Store some profiling information
+        self.times = dict(init=dt.now(), start_working=None, timeout=None)
+        # These are also accessed by the reporter
 
     # Properties ..............................................................
     @property
@@ -207,16 +212,20 @@ class WorkerManager:
             ValueError: For invalid (i.e., negative) timeout value
             WorkerManagerTotalTimeout: Upon a total timeout
         """
-        # Determine timeout arguments 
-        timeout_time = None
-
+        # Determine timeout arguments
         if timeout:
             if timeout <= 0:
                 raise ValueError("Invalid value for argument `timeout`: {} -- "
                                  "needs to be positive.".format(timeout))
+            
             # Already calculate the time after which a timeout would be reached
-            timeout_time = time.time() + timeout
+            self.times['timeout'] = time.time() + timeout
+
             log.debug("Set timeout time to now + %f seconds", timeout) 
+
+        # Set the variable needed for checking; if above condition was not
+        # fulfilled, this will be None
+        timeout_time = self.times['timeout']
 
         # Determine whether to detach the whole working loop
         if detach:
@@ -225,8 +234,10 @@ class WorkerManager:
                                       "detach the WorkerManager from the "
                                       "main thread.")
         
-        # Count the polls
+        # Count the polls and save the time of the start of work
         poll_no = 0
+
+        self.times['start_working'] = dt.now()
 
         log.info("Starting to work ...")
         log.debug("  Timeout:          now + %ss", timeout)

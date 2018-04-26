@@ -1,6 +1,8 @@
 """Tests the Reporter class and derived classes."""
 
 import time
+from datetime import datetime as dt
+from datetime import timedelta
 
 import pytest
 
@@ -37,7 +39,7 @@ def wm(sleep_task) -> WorkerManager:
 def rf_list() -> list:
     """Returns a list of report formats; this will invoke them with their
     default settings."""
-    return ['task_counters', 'progress', 'progress_bar']
+    return ['task_counters', 'progress', 'progress_bar', 'times']
 
 @pytest.fixture
 def rf_dict() -> dict:
@@ -48,12 +50,14 @@ def rf_dict() -> dict:
                               write_to=dict(log=dict(lvl=5),
                                             stdout=dict(end='\r'),
                                             stdout_noreturn=dict())),
-                short_progress_bar=dict(parser='progress_bar', num_cols=19))
+                short_progress_bar=dict(parser='progress_bar', num_cols=19),
+                times=dict())
 
 @pytest.fixture
-def rep(wm, rf_list) -> WorkerManagerReporter:
+def rep(wm, rf_list, tmpdir) -> WorkerManagerReporter:
     """Returns a WorkerManagerReporter"""
-    return WorkerManagerReporter(wm, report_formats=rf_list,
+    return WorkerManagerReporter(wm, report_dir=tmpdir,
+                                 report_formats=rf_list,
                                  default_format='task_counters')
 
 # Tests -----------------------------------------------------------------------
@@ -155,6 +159,41 @@ def test_task_counter(rep):
     assert tc['active'] == 0
     assert tc['finished'] == 11
 
+def test_wm_progress(sleep_task):
+    """Tests the wm_progress property"""
+    wm = WorkerManager(num_workers=2)
+    rep = WorkerManagerReporter(wm)
+
+    # Should be zero if there are no tasks
+    assert rep.wm_progress == 0.
+
+    # Should still be zero after having added a task
+    wm.add_task(**sleep_task)
+    assert rep.wm_progress == 0.
+
+    # Should be 1. after working
+    wm.start_working()
+    assert rep.wm_progress == 1.
+
+def test_wm_times(rep):
+    """Test the wm_times property"""
+    t1 = rep.wm_times
+    assert t1['start'] is None
+    assert 'now' in t1
+    assert t1['elapsed'] is None
+    assert t1['est_left'] is None
+    assert t1['est_end'] is None
+
+    # Work
+    rep.wm.start_working()
+
+    t2 = rep.wm_times
+    assert t2['start'] is rep.wm.times['start_working']
+    assert 'now' in t2 and t2['now'] > t1['now']
+    assert t2['elapsed']
+    assert t2['est_left'].total_seconds() == 0.
+    assert t2['est_end'] < dt.now()
+
 def test_parsers(rf_dict, sleep_task):
     """Tests the custom parser methods of the WorkerManagerReporter that is
     written for simple terminal reports
@@ -216,6 +255,7 @@ def test_report(rep):
     assert rep.report('task_counters')
     assert rep.report('progress')
     assert rep.report('progress_bar')
+    assert rep.report('times')
 
     # Invalid report formats
     with pytest.raises(KeyError):
@@ -283,6 +323,17 @@ def test_runtime_statistics(rep):
 
     # Test the parsing method:
     assert rep._parse_runtime_stats()
+
+def test_parse_times(rep):
+    """Test the _parse_elapsed function"""
+    pt = rep._parse_times
+
+    # Not having worked:
+    assert pt() == "Elapsed: (not started)  |  Est. left: ∞  |  Est. end: ∞"
+
+    # Start working and then check again
+    rep.wm.start_working()
+    assert pt()
 
 def test_write_to_file(wm, rf_dict, tmpdir):
     """Test writing to a file."""

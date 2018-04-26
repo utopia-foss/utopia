@@ -509,6 +509,40 @@ class WorkerManagerReporter(Reporter):
         num['finished'] = self.wm.num_finished_tasks
         return num
 
+    @property
+    def wm_progress(self) -> float:
+        """The WorkerManager progress, between 0 and 1."""
+        cntr = self.task_counters
+        if cntr['total'] > 0:
+            return cntr['finished']/cntr['total']
+        # Invoked if no tasks were added yet
+        return 0.
+
+    @property
+    def wm_elapsed(self) -> Union[timedelta, None]:
+        """Seconds elapsed since start of working or None if not yet started"""
+        if self.wm.times['start_working'] is None:
+            return None
+        return dt.now() - self.wm.times['start_working']
+
+    @property
+    def wm_times(self) -> dict:
+        """Return the characteristics WorkerManager times."""
+        d = dict(start=self.wm.times['start_working'],
+                 now=dt.now(), elapsed=self.wm_elapsed,
+                 est_left=None, est_end=None)
+
+        # Add estimate time remaining and eta, if the WorkerManager started
+        if d['start'] is not None:
+            progress = self.wm_progress
+            if progress > 0.:
+                d['est_left'] = (1-progress) / progress * d['elapsed']
+
+        if d['est_left'] is not None:
+            d['est_end'] = d['now'] + d['est_left']
+
+        return d
+
     # Methods working on data .................................................
 
     def register_runtime(self, task):
@@ -552,6 +586,8 @@ class WorkerManagerReporter(Reporter):
         return d
 
     # Parser methods ..........................................................
+    
+    # One-line parsers . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
     def _parse_task_counters(self, *, report_no: int=None) -> str:
         """Return a string that shows the task counters"""
@@ -609,6 +645,32 @@ class WorkerManagerReporter(Reporter):
                             p=cntr['finished']/cntr['total'] * 100,
                             total=cntr['total']))
 
+    def _parse_times(self, *, fstr: str="Elapsed: {elapsed:}  |  Est. left: {est_left:}  |  Est. end: {est_end:}", timefstr="%d.%m., %H:%M", report_no: int=None) -> str:
+        """Parses the worker manager time information and est time left"""
+        times = self.wm_times
+
+        # Convert some values to durations
+        if times['elapsed']:
+            times['elapsed'] = tools.format_time(times['elapsed'])
+        else:
+            times['elapsed'] = "(not started)"
+
+        if times['est_left']:
+            times['est_left'] = tools.format_time(times['est_left'])
+        else:
+            times['est_left'] = "∞"
+        
+        # Convert points in time to strings
+        for key in ['start', 'now', 'est_end']:
+            if times[key]:
+                times[key] = times[key].strftime(timefstr)
+            else:
+                times[key] = "∞"
+
+        return fstr.format(**times)
+
+    # Multi-line parsers . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
     def _parse_runtime_stats(self, fstr: str="  {k:<13s} {v:}", join_char="\n") -> str:
         """Parses the runtime statistics dict into a multiline string"""
         rtstats = self.calc_runtime_statistics()
@@ -617,5 +679,4 @@ class WorkerManagerReporter(Reporter):
                  for k, v in rtstats.items()]
 
         return join_char.join(parts)
-
 

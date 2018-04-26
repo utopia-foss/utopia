@@ -6,6 +6,8 @@ import re
 import logging
 import collections
 import subprocess
+from datetime import timedelta
+from typing import Union
 
 import yaml
 import numpy as np
@@ -156,7 +158,7 @@ def recursive_update(d: dict, u: dict) -> dict:
 
 # string formatting -----------------------------------------------------------
 
-def format_time(duration: float, *, ms_precision: int=0) -> str:
+def format_time(duration: Union[float, timedelta], *, ms_precision: int=0) -> str:
     """Given a duration (in seconds), formats it into a string.
     
     The formatting divisors are: days, hours, minutes, seconds
@@ -165,7 +167,8 @@ def format_time(duration: float, *, ms_precision: int=0) -> str:
     for the seconds.
     
     Args:
-        duration (float): The time to format into a duration string
+        duration (Union[float, timedelta]): The duration in seconds to format
+            into a duration string; it can also be a timedelta object.
         ms_precision (int, optional): The precision of the seconds slot if only
             seconds will be shown.
     
@@ -173,11 +176,21 @@ def format_time(duration: float, *, ms_precision: int=0) -> str:
         str: The formatted duration string    
     """
 
+    if isinstance(duration, timedelta):
+        duration = duration.total_seconds()
+
     divisors = (24*60*60, 60*60, 60, 1)
     letters = ("d", "h", "m", "s")
     remaining = float(duration)
     parts = []
 
+    # Also handle negative numbers
+    is_negative = bool(duration < 0)
+    if is_negative:
+        # Calculate with the positive value
+        remaining *= -1
+
+    # Go over divisors and letters and see if there is something to represent
     for divisor, letter in zip(divisors, letters):
         time_to_represent = int(remaining/divisor)
         remaining -= time_to_represent * divisor
@@ -196,16 +209,28 @@ def format_time(duration: float, *, ms_precision: int=0) -> str:
 
             parts.append(s)
 
-    if not parts and ms_precision == 0:
-        # Just show an approximation
-        parts.append("< 1s")
+    # If nothing was added so far, the time was below one second
+    if not parts:
+        if ms_precision == 0:
+            # Just show an approximation
+            if not is_negative:
+                s = "< 1s"
+            else:
+                s = "> -1s"
 
-    elif not parts and ms_precision > 0:
-        # Show as decimal with ms_precision decimal places
-        s = '{val:{tot}.{prec}f}s'.format(val=remaining,
-                                          tot=int(ms_precision) + 2,
-                                          prec=int(ms_precision))
+        else:
+            # Show with ms_precision decimal places
+            s = '{val:{tot}.{prec}f}s'.format(val=remaining,
+                                              tot=int(ms_precision) + 2,
+                                              prec=int(ms_precision))
+            if is_negative:
+                s = "-" + s
+
         parts.append(s)
+
+    if is_negative:
+        # Prepend a minus
+        parts = ["-"] + parts
 
     return " ".join(parts)
 
