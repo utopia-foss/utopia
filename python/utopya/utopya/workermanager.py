@@ -191,12 +191,16 @@ class WorkerManager:
                 See utopya.task.WorkerTask.__init__ for all valid arguments.
         """
         # Prepare the callback functions needed by the reporter
-        def task_spawned(t):
+        def task_spawned(task):
+            """Invokes the task_spawned report_spec"""
             self._invoke_report('task_spawned', force=True)
         
-        def task_finished(t):
+        def task_finished(task):
+            """Invokes the task_finished report_spec and registers the task's
+            runtime with the report (needed for runtime statistics)"""
             self._invoke_report('task_finished', force=True)
-            self.reporter.register_runtime(t)
+            if self.reporter is not None:
+                self.reporter.register_runtime(task)
 
         callbacks = dict(spawn=task_spawned,
                          finished=task_finished)
