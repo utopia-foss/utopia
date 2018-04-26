@@ -51,7 +51,9 @@ def rf_dict() -> dict:
                                             stdout=dict(end='\r'),
                                             stdout_noreturn=dict())),
                 short_progress_bar=dict(parser='progress_bar', num_cols=19),
-                times=dict())
+                times=dict(),
+                while_working=dict(parser='times'),
+                after_work=dict(parser='times'))
 
 @pytest.fixture
 def rep(wm, rf_list, tmpdir) -> WorkerManagerReporter:
@@ -115,7 +117,6 @@ def test_resolve_writers(rep):
     # Invalid writer name
     with pytest.raises(ValueError, match="No writer named"):
         rw('invalid')
-
 
 def test_add_report_format(rep):
     """Test the add_report_format method"""
