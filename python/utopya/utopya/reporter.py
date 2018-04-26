@@ -606,12 +606,26 @@ class WorkerManagerReporter(Reporter):
     # One-line parsers . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
     def _parse_task_counters(self, *, report_no: int=None) -> str:
-        """Return a string that shows the task counters"""
+        """Return a string that shows the task counters of the WorkerManager
+        
+        Args:
+            report_no (int, optional): Passed by ReportFormat call
+        
+        Returns:
+            str: A str representation of the task counters of the WorkerManager
+        """
         return ",  ".join(["{}: {}".format(k, v)
                            for k, v in self.task_counters.items()])
 
     def _parse_progress(self, *, report_no: int=None) -> str:
-        """Returns a progress string"""
+        """Returns a progress string
+        
+        Args:
+            report_no (int, optional): Passed by ReportFormat call
+        
+        Returns:
+            str: A simple progress indicator
+        """
         cntr = self.task_counters
 
         if cntr['total'] <= 0:
@@ -622,8 +636,21 @@ class WorkerManagerReporter(Reporter):
                           digs=len(str(cntr['total'])),
                           p=cntr['finished']/cntr['total'] * 100))
 
-    def _parse_progress_bar(self, *, num_cols: int=(tools.TTY_COLS - TTY_MARGIN), show_total: bool=False, report_no: int=None):
-        """Returns a progress bar"""
+    def _parse_progress_bar(self, *, num_cols: int=(tools.TTY_COLS - TTY_MARGIN), show_total: bool=False, report_no: int=None) -> str:
+        """Returns a progress bar.
+        
+        It shows the amount of finished tasks, active tasks, and a percentage.
+        
+        Args:
+            num_cols (int, optional): The number of columns available for
+                creating the progress bar.
+            show_total (bool, optional): Whether to show the total number of
+                tasks alongside the percentage.
+            report_no (int, optional): Passed by ReportFormat call
+        
+        Returns:
+            str: The one-line progress bar
+        """
         # Get the task counter and check that some tasks have been assigned
         cntr = self.task_counters
 
@@ -758,8 +785,20 @@ class WorkerManagerReporter(Reporter):
 
     # Multi-line parsers . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
-    def _parse_runtime_stats(self, fstr: str="  {k:<13s} {v:}", join_char="\n") -> str:
-        """Parses the runtime statistics dict into a multiline string"""
+    def _parse_runtime_stats(self, fstr: str="  {k:<13s} {v:}", join_char="\n", report_no: int=None) -> str:
+        """Parses the runtime statistics dict into a multiline string
+        
+        Args:
+            fstr (str, optional): The format string to use. Gets passed the
+                keys 'k' and 'v' where k is the name of the entry and v its
+                value.
+            join_char (str, optional): The join character / string to put the
+                elements together.
+            report_no (int, optional): Passed by ReportFormat call
+        
+        Returns:
+            str: The multi-line runtime statistics
+        """
         rtstats = self.calc_runtime_statistics()
 
         parts = [fstr.format(k=k, v=tools.format_time(v, ms_precision=1))
