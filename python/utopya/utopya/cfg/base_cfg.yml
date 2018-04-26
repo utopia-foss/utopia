@@ -64,11 +64,13 @@ reporter:
   report_formats:
     while_working:
       parser: progress_bar
+      show_times: True
       write_to: stdout_noreturn
       min_report_intv: 0.5
 
     after_work:
       parser: progress_bar
+      show_times: True
       write_to: stdout_noreturn
 
 # Data Manager

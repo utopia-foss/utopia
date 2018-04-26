@@ -207,8 +207,8 @@ def test_parsers(rf_dict, sleep_task):
     rep.min_report_intv = None
     ptc = rep._parse_task_counters
     pp = rep._parse_progress
-    ppb = lambda *a, **kws: rep._parse_progress_bar(*a, num_cols=22, **kws)
-    ppbt = lambda *a, **kws: rep._parse_progress_bar(*a, num_cols=29,
+    ppb = lambda *a, **kws: rep._parse_progress_bar(*a, num_cols=23, **kws)
+    ppbt = lambda *a, **kws: rep._parse_progress_bar(*a, num_cols=30,
                                                      show_total=True, **kws)
     ppbtt = lambda *a, **kws: rep._parse_progress_bar(*a, num_cols=60,
                                                       show_total=True,
@@ -228,30 +228,30 @@ def test_parsers(rf_dict, sleep_task):
     # Test the initial return strings
     assert ptc() == "total: 11,  active: 0,  finished: 0"
     assert pp() == "Finished   0 / 11  (0.0%)"
-    assert ppb() == "  ╠          ╣   0.0% "
-    assert ppbt() == "  ╠          ╣   0.0%  of 11 "
-    assert re.match("  ╠(.*)╣   0.0%  of 11  | * elapsed | * left ", ppbtt())
+    assert ppb() == "  ╠          ╣   0.0%  "
+    assert ppbt() == "  ╠          ╣   0.0%  of 11  "
+    assert re.match("  ╠(.*)╣   0.0%  of 11 | * elapsed | ~* left  ", ppbtt())
 
     # For the progress bars, ensure the length matches the given num_cols
-    assert len(ppb()) == 22
-    assert len(ppbt()) == 29
+    assert len(ppb()) == 23
+    assert len(ppbt()) == 30
     assert len(ppbtt()) == 60
     
     # Start working and check again afterwards
     rep.wm.start_working()
     assert ptc() == "total: 11,  active: 0,  finished: 11"
     assert pp() == "Finished  11 / 11  (100.0%)"
-    assert ppb() == "  ╠▓▓▓▓▓▓▓▓▓▓╣ 100.0% "
-    assert ppbt() == "  ╠▓▓▓▓▓▓▓▓▓▓╣ 100.0%  of 11 "
-    assert re.match("  ╠(▓*)╣ 100.0%  of 11  | * elapsed | * left ", ppbtt())
+    assert ppb() == "  ╠▓▓▓▓▓▓▓▓▓▓╣ 100.0%  "
+    assert ppbt() == "  ╠▓▓▓▓▓▓▓▓▓▓╣ 100.0%  of 11  "
+    assert re.match("  ╠(▓*)╣ 100.0%  of 11 | * elapsed | ~* left  ", ppbtt())
 
     # Add another task to the WorkerManager, which should change the counts
     rep.wm.add_task(**sleep_task)
     assert ptc() == "total: 12,  active: 0,  finished: 11"
     assert pp() == "Finished  11 / 12  (91.7%)"
-    assert ppb() == "  ╠▓▓▓▓▓▓▓▓▓ ╣  91.7% "
-    assert ppbt() == "  ╠▓▓▓▓▓▓▓▓▓ ╣  91.7%  of 12 "
-    assert re.match("  ╠(▓*)(.*)╣  91.7%  of 12  | * elapsed | * left ",
+    assert ppb() == "  ╠▓▓▓▓▓▓▓▓▓ ╣  91.7%  "
+    assert ppbt() == "  ╠▓▓▓▓▓▓▓▓▓ ╣  91.7%  of 12  "
+    assert re.match("  ╠(▓*)(.*)╣  91.7%  of 12 | * elapsed | ~* left  ",
                     ppbtt())
 
     # Very short progress bar should return only the percentage indicator

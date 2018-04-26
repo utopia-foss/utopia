@@ -3,6 +3,7 @@
 import os
 import sys
 import logging
+from functools import partial
 from datetime import datetime as dt
 from datetime import timedelta
 from typing import Union, List, Callable, Dict
@@ -81,13 +82,13 @@ class ReportFormat:
             return False
 
         # Generate the report
-        log.debug("Creating report using '%s' parser...", self.parser.__name__)
+        log.debug("Creating report using parser %s ...", self.parser)
         report = self.parser(report_no=self.num_reports)
         log.debug("Created report of length %d.", len(report))
 
         # Write the report
         for writer_name, writer in self.writers.items():
-            log.debug("Writing report using '%s' ...", writer_name)
+            log.debug("Writing report using writer '%s' ...", writer_name)
             writer(report)
 
         # Update counter and last report time
@@ -258,7 +259,7 @@ class Reporter:
         # Parse the report
         report = parser()
         log.debug("Parsed report using %s, got string of length %d.",
-                  parser.__name__, len(report))
+                  parser, len(report))
 
         # Determine the writers
         writers = self._resolve_writers(write_to)
@@ -300,10 +301,10 @@ class Reporter:
 
         # parser is now a callable
 
-        # If given, create a lambda function that already passes the kwargs
+        # If given, partially apply the kwargs
         if parser_kwargs:
             log.debug("Binding parser_kwargs to parser method ...")
-            parser = lambda *a, **kws: parser(*a, **parser_kwargs, **kws)
+            parser = partial(parser, **parser_kwargs)
 
         return parser
 
@@ -329,6 +330,13 @@ class Reporter:
                 with the given name is not available.
         
         """
+        def get_callable_name(c) -> str:
+            """Returns the name of the callable"""
+            if hasattr(c, '__name__'):
+                return c.__name__
+            # Does not have that attribute, e.g. because it is a partial func
+            return str(c)
+
         # The target dict of callables
         writers = {}
 
@@ -337,7 +345,7 @@ class Reporter:
 
         # If a single callable is already given, return that
         if callable(write_to):
-            return {write_to.__name__: write_to}
+            return {get_callable_name(write_to): write_to}
 
         # If a single string is given, bring it into dict format
         elif isinstance(write_to, str):
@@ -353,8 +361,8 @@ class Reporter:
                     if item in writers.values():
                         raise ValueError("Given writer callable with name "
                                          "'{}' was already added!"
-                                         "".format(item.__name__))
-                    writers[item.__name__] = item
+                                         "".format(get_callable_name(item)))
+                    writers[get_callable_name(item)] = item
 
                 elif isinstance(item, str):
                     # Add an empty entry to the new write_to dict
@@ -384,9 +392,9 @@ class Reporter:
                                  "".format(writer_name,
                                            self.__class__.__name__)) from err
             
-            # If given, create a lambda function that already passes the kwargs
+            # If given, partially apply the params
             if params:
-                writer = lambda *a, **kws: writer(*a, **params, **kws)
+                writer = partial(writer, **params)
 
             # Store in dict of writers
             writers[writer_name] = writer
@@ -660,7 +668,7 @@ class WorkerManagerReporter(Reporter):
             return "(No tasks assigned to WorkerManager yet.)"
 
         if show_times:
-            times_fstr = " | {elapsed:} elapsed | ~ {est_left:} left"
+            times_fstr = "| {elapsed:} elapsed | ~{est_left:} left "
             times = self._parse_times(fstr=times_fstr)
         else:
             times = ""
@@ -670,13 +678,13 @@ class WorkerManagerReporter(Reporter):
         syms = dict(finished="▓", active="░", space=" ")
 
         if show_total:
-            fstr = "  ╠{:}{:}{:}╣ {p:>5.1f}%  of {total:d} {times:}"
-            pb_width = num_cols - (12 + 5
+            fstr = "  ╠{:}{:}{:}╣ {p:>5.1f}%  of {total:d} {times:} "
+            pb_width = num_cols - (13 + 5
                                    + len(str(cntr['total'])) + len(times))
         
         else:
-            fstr = "  ╠{:}{:}{:}╣ {p:>5.1f}% {times:}"
-            pb_width = num_cols - (7 + 5 + len(times))
+            fstr = "  ╠{:}{:}{:}╣ {p:>5.1f}% {times:} "
+            pb_width = num_cols - (8 + 5 + len(times))
 
         # Only return percentage indicator if the width would be very short
         if pb_width < 4:
