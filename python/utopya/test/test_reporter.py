@@ -243,7 +243,8 @@ def test_parsers(rf_dict, sleep_task):
     assert pp() == "Finished  11 / 11  (100.0%)"
     assert ppb() == "  ╠▓▓▓▓▓▓▓▓▓▓╣ 100.0%  "
     assert ppbt() == "  ╠▓▓▓▓▓▓▓▓▓▓╣ 100.0%  of 11  "
-    assert re.match("  ╠(▓*)╣ 100.0%  of 11 | * elapsed | ~* left  ", ppbtt())
+    assert re.match("  ╠(▓*)╣ 100.0%  of 11 | finished in *  ",
+                    ppbtt())
 
     # Add another task to the WorkerManager, which should change the counts
     rep.wm.add_task(**sleep_task)

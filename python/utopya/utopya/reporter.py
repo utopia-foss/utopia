@@ -667,8 +667,11 @@ class WorkerManagerReporter(Reporter):
         if cntr['total'] <= 0:
             return "(No tasks assigned to WorkerManager yet.)"
 
-        if show_times:
+        if show_times and self.wm_progress < 1.:
             times_fstr = "| {elapsed:} elapsed | ~{est_left:} left "
+            times = self._parse_times(fstr=times_fstr)
+        elif show_times:
+            times_fstr = "| finished in {elapsed:}  "
             times = self._parse_times(fstr=times_fstr)
         else:
             times = ""
@@ -741,7 +744,12 @@ class WorkerManagerReporter(Reporter):
         if times['est_left']:
             tstrs['est_left'] = tools.format_time(times['est_left'])
         else:
-            tstrs['est_left'] = "∞"
+            # No est_left available 
+            # Distinguish between finished and not started simulaltions
+            if self.wm_progress == 1.:
+                tstrs['est_left'] = "(finished)"
+            else:
+                tstrs['est_left'] = "∞"
         
         # Check if the start and end times are given
         if not (times['start'] and times['est_end']):
