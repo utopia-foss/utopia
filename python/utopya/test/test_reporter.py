@@ -330,11 +330,45 @@ def test_parse_times(rep):
     pt = rep._parse_times
 
     # Not having worked:
-    assert pt() == "Elapsed: (not started)  |  Est. left: ∞  |  Est. end: ∞"
+    assert pt() == ("Elapsed:  (not started)  |  "
+                    "Est. left:  ∞         |  "
+                    "Est. end:  (unknown) ")
 
     # Start working and then check again
     rep.wm.start_working()
     assert pt()
+
+    # Create dummy times dict to use for testing the other cases
+    # Use one now() definition for that
+    now = dt.now()
+
+    # Not started yet
+    times = dict(start=None, now=now, elapsed=None,
+                 est_left=None, est_end=None, end=None)
+    assert pt(times=times)
+
+    # Just started, finish tomorrow
+    times = dict(start=now,
+                 now=now,
+                 elapsed=timedelta(0),
+                 est_left=timedelta(1),  # 1 day
+                 est_end=now + timedelta(1), # tomorrow
+                 end=None)
+
+    assert pt(times=times)
+
+    # Move the est end into the future one more day
+    times['est_end'] += timedelta(1)
+    assert pt(times=times)
+
+    # Simulation started yesterday and ends today (~now)
+    times = dict(start=now - timedelta(1),
+                 now=now,
+                 elapsed=timedelta(1),
+                 est_left=timedelta(0),
+                 est_end=now,
+                 end=None)
+    assert pt(times=times)
 
 def test_write_to_file(wm, rf_dict, tmpdir):
     """Test writing to a file."""

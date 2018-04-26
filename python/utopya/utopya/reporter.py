@@ -527,16 +527,26 @@ class WorkerManagerReporter(Reporter):
     @property
     def wm_elapsed(self) -> Union[timedelta, None]:
         """Seconds elapsed since start of working or None if not yet started"""
-        if self.wm.times['start_working'] is None:
+        times = self.wm.times
+        
+        if times['start_working'] is None:
+            # Not started yet
             return None
-        return dt.now() - self.wm.times['start_working']
+
+        elif times['end_working'] is None:
+            # Currently working: measure against now
+            return dt.now() - times['start_working']
+
+        # Finished working: measure against end of work
+        return times['end_working'] - times['start_working']
 
     @property
     def wm_times(self) -> dict:
         """Return the characteristics WorkerManager times."""
         d = dict(start=self.wm.times['start_working'],
                  now=dt.now(), elapsed=self.wm_elapsed,
-                 est_left=None, est_end=None)
+                 est_left=None, est_end=None,
+                 end=self.wm.times['end_working'])
 
         # Add estimate time remaining and eta, if the WorkerManager started
         if d['start'] is not None:
@@ -651,29 +661,100 @@ class WorkerManagerReporter(Reporter):
                             p=cntr['finished']/cntr['total'] * 100,
                             total=cntr['total']))
 
-    def _parse_times(self, *, fstr: str="Elapsed: {elapsed:<8s}  |  Est. left: {est_left:<8s}  |  Est. end: {est_end:<20s}", timefstr="%d.%m., %H:%M:%S", report_no: int=None) -> str:
-        """Parses the worker manager time information and est time left"""
-        times = self.wm_times
+    def _parse_times(self, *, fstr: str="Elapsed:  {elapsed:<8s}  |  Est. left:  {est_left:<8s}  |  Est. end:  {est_end:<10s}", timefstr_short: str="%H:%M:%S", timefstr_full: str="%d.%m., %H:%M:%S", use_relative: bool=True, times: dict=None, report_no: int=None) -> str:
+        """Parses the worker manager time information and est time left
+        
+        Args:
+            fstr (str, optional): The main format string; gets as keys the
+                results of the WorkerManager time information. Available keys:
+                'elapsed', 'est_left', 'est_end', 'start', 'now', 'end'
+            timefstr_short (str, optional): A time format string for absolute
+                dates; short version.
+            timefstr_full (str, optional): A time format string for absolute
+                dates; long (ideally: full) version.
+            use_relative (bool, optional): Whether for a date difference of 1
+                to use relative dates, e.g. "Today, 13:37"
+            times (dict, optional): A dict of times to use; this is mainly
+                for testing purposes!
+            report_no (int, optional): The report number passed by ReportFormat
+        
+        Returns:
+            str: A string representation of the time information
+        """
+        # Get the times from the worker manager, if not given
+        if times is None:
+            times = self.wm_times
+
+        # The dict of strings that is filled and passed to the fstr
+        tstrs = dict()
 
         # Convert some values to durations
         if times['elapsed']:
-            times['elapsed'] = tools.format_time(times['elapsed'])
+            tstrs['elapsed'] = tools.format_time(times['elapsed'])
         else:
-            times['elapsed'] = "(not started)"
+            tstrs['elapsed'] = "(not started)"
 
         if times['est_left']:
-            times['est_left'] = tools.format_time(times['est_left'])
+            tstrs['est_left'] = tools.format_time(times['est_left'])
         else:
-            times['est_left'] = "∞"
+            tstrs['est_left'] = "∞"
         
-        # Convert points in time to strings
-        for key in ['start', 'now', 'est_end']:
-            if times[key]:
-                times[key] = times[key].strftime(timefstr)
-            else:
-                times[key] = "∞"
+        # Check if the start and end times are given
+        if not (times['start'] and times['est_end']):
+            # Not given -> not started yet
+            tstrs['start'] = "(not started)"
+            tstrs['now'] = times['now'].strftime(timefstr_full)
+            tstrs['est_end'] = "(unknown)"
+            tstrs['end'] = "(unknown)"
 
-        return fstr.format(**times)
+        else:
+            # Were given.
+            # Decide which time format string to use, depending on whether
+            # start and end are on the same day, and whether to put a manual
+            # prefix in front
+            prefixes = dict()
+
+            # Calculate timedelta in days
+            delta_days = (times['est_end'].date()
+                          - times['start'].date()).days
+
+            if delta_days == 0:
+                # All on the same day -> use short format, no prefixes
+                timefstr = timefstr_abs = timefstr_short
+
+            elif delta_days == 1 and use_relative:
+                # Use short format with prefixes
+                timefstr = timefstr_short
+                timefstr_abs = timefstr_full
+
+                if times['now'].date() == times['start'].date():
+                    # Same day as start -> end is tomorrow
+                    prefixes['start'] = "Today, "
+                    prefixes['est_end'] = "Tomorrow, "
+                else:
+                    # Same day as est end -> start was yesterday
+                    prefixes['start'] = "Yesterday, "
+                    prefixes['est_end'] = "Today, "
+
+            else:
+                # Full format
+                timefstr = timefstr_abs = timefstr_full
+
+            # Create the strings
+            tstrs['start'] = times['start'].strftime(timefstr)
+            tstrs['now'] = times['now'].strftime(timefstr_abs)
+            tstrs['est_end'] = times['est_end'].strftime(timefstr)
+            
+            if times['end']:
+                tstrs['end'] = times['end'].strftime(timefstr_abs)
+            else:
+                tstrs['end'] = "(unknown)"
+
+            # Add prefixes
+            for key, prefix in prefixes.items():
+                tstrs[key] = prefix + tstrs[key]
+
+        return fstr.format(**tstrs)
 
     # Multi-line parsers . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
