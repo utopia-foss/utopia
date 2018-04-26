@@ -519,30 +519,32 @@ class WorkerManagerReporter(Reporter):
         if 'run_time' in task.profiling:
             self.runtimes.append(task.profiling['run_time'])
 
-    def calc_runtime_statistics(self) -> OrderedDict:
+    def calc_runtime_statistics(self, min_num: int=10) -> OrderedDict:
         """Calculates the current runtime statistics.
         
         Returns:
             OrderedDict: name of the calculated statistic and its value, i.e.
                 the runtime in seconds
         """
-        if len(self.runtimes) <= 5:
+        if len(self.runtimes) <= min_num:
             # Only calculate if there is enough data
             return None
         
-        rts = self.runtimes
+        # Throw out Nones and convert to np.array
+        rts = np.array([rt for rt in self.runtimes if rt is not None])
+        
+        # Calculate statistics
         d = OrderedDict()
-
-        d['mean']        = np.nanmean(rts)
-        d[' (last 50%)'] = np.nanmean(rts[-len(rts)//2:])
-        d[' (last 20%)'] = np.nanmean(rts[-len(rts)//5:])
-        d[' (last 5%)']  = np.nanmean(rts[-len(rts)//20:])
-        d['std']         = np.nanstd(rts)
-        d['min']         = np.nanmin(rts)
+        d['mean']        = np.mean(rts)
+        d[' (last 50%)'] = np.mean(rts[-len(rts)//2:])
+        d[' (last 20%)'] = np.mean(rts[-len(rts)//5:])
+        d[' (last 5%)']  = np.mean(rts[-len(rts)//20:])
+        d['std']         = np.std(rts)
+        d['min']         = np.min(rts)
         d['at 25%']      = np.percentile(rts, 25)
-        d['median']      = np.nanmedian(rts)
+        d['median']      = np.median(rts)
         d['at 75%']      = np.percentile(rts, 75)
-        d['max']         = np.nanmax(rts)
+        d['max']         = np.max(rts)
 
         return d
 

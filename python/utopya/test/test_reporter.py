@@ -10,13 +10,15 @@ from utopya.reporter import Reporter, WorkerManagerReporter
 
 # Local constants
 MIN_REP_INTV = 0.1
+SLEEP_TIME = 0.1
 
 # Fixtures --------------------------------------------------------------------
 
 @pytest.fixture
 def sleep_task() -> dict:
     """The kwargs for a sleep task"""
-    sleep_args = ('python3', '-c', 'from time import sleep; sleep(0.1)')
+    sleep_args = ('python3', '-c',
+                  'from time import sleep; sleep({})'.format(SLEEP_TIME))
     return dict(worker_kwargs=dict(args=sleep_args, read_stdout=True))
 
 @pytest.fixture
@@ -210,10 +212,35 @@ def test_parse_and_write(rep):
     rep.parse_and_write(parser='progress', write_to='log')
 
 def test_runtime_statistics(rep):
-    """Tests the runtime statistics gathering and parsing."""
+    """Tests the runtime statistics gathering and parsing.
 
+    NOTE that this does not test the results of the _calculations_ of the
+    run times; there, it is trusted that the used numpy methods do what they
+    are supposed to do.
+    """
+    # In the beginning, there should be no run times registered
     assert not rep.runtimes
 
-    rep.wm.start_working()
+    # The runtime statistics should return None now
+    assert rep.calc_runtime_statistics() is None
 
+    # After working, there should be some
+    rep.wm.start_working()
     assert len(rep.runtimes) == 11
+
+    # Calculate the runtime statistics
+    rtstats = rep.calc_runtime_statistics()
+
+    # All entries but the std should be larger than the sleep time of the task
+    for key, val in rtstats.items():
+        if key == 'std':
+            assert val > 0.
+        else:
+            assert val > SLEEP_TIME
+
+    # Test if it also works with some Nones thrown in there
+    rep.runtimes.append(None)
+    assert rep.calc_runtime_statistics()
+
+    # Test the parsing method:
+    assert rep._parse_runtime_stats()
