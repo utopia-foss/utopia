@@ -147,12 +147,6 @@ class Reporter:
         # Store the report dir
         self.report_dir =os.path.expanduser(report_dir) if report_dir else None
 
-        # Create dicts to store counters and times in
-        self.counters = OrderedDict()
-        self.times = OrderedDict()
-        self.counters['reports'] = 0
-        self.times['init'] = dt.now()
-
         log.debug("Reporter.__init__ finished.")
 
     # Properties ..............................................................
@@ -301,11 +295,7 @@ class Reporter:
 
     # Parser methods ..........................................................
     
-    def _parse_runtime(self, *, report_no: int=None) -> str:
-        """The default parser; returns reporter run time."""
-        runtime = (dt.now() - self.times['init']).total_seconds()
-        return ("Reporter run time:  {}  and counting ..."
-                "".format(tools.format_time(runtime)))
+    # None available in the base class
 
     # Writer methods ..........................................................
 
@@ -365,7 +355,7 @@ class Reporter:
 
         with open(path, mode) as file:
             file.write(s)
-            
+
         log.debug("Finished writing.")
 
 # -----------------------------------------------------------------------------

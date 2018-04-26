@@ -35,14 +35,15 @@ def wm(sleep_task) -> WorkerManager:
 def rf_list() -> list:
     """Returns a list of report formats; this will invoke them with their
     default settings."""
-    return ['runtime', 'task_counters', 'progress', 'progress_bar']
+    return ['task_counters', 'progress', 'progress_bar']
 
 @pytest.fixture
 def rf_dict() -> dict:
     """Returns a report format dict."""
-    return dict(runtime=dict(min_report_intv=MIN_REP_INTV),
-                tasks=dict(parser='task_counters'),
-                progress=dict(write_to=dict(log=dict(lvl=5),
+    return dict(tasks=dict(parser='task_counters',
+                           min_report_intv=MIN_REP_INTV),
+                progress=dict(min_report_intv=MIN_REP_INTV,
+                              write_to=dict(log=dict(lvl=5),
                                             stdout=dict(end='\r'),
                                             stdout_noreturn=dict())),
                 short_progress_bar=dict(parser='progress_bar', num_cols=19))
@@ -51,7 +52,7 @@ def rf_dict() -> dict:
 def rep(wm, rf_list) -> WorkerManagerReporter:
     """Returns a WorkerManagerReporter"""
     return WorkerManagerReporter(wm, report_formats=rf_list,
-                                 default_format='runtime')
+                                 default_format='task_counters')
 
 # Tests -----------------------------------------------------------------------
 
@@ -74,19 +75,19 @@ def test_init_with_rf_list(wm, rf_list):
 def test_init_with_rf_dict(wm, rf_dict):
     """Test initialisation of the WorkerManagerReporter"""
     rep = WorkerManagerReporter(wm, report_formats=rf_dict,
-                                default_format='runtime')
+                                default_format='progress')
 
 def test_add_report_format(rep):
     """Test the add_report_format method"""
 
     # Adding formats with the same name should not work
     with pytest.raises(ValueError, match="A report format with the name"):
-        rep.add_report_format('runtime')
+        rep.add_report_format('task_counters')
 
     # Invalid write_to argument
     with pytest.raises(TypeError,
                        match="Invalid type for argument `write_to`"):
-        rep.add_report_format('foo', parser='runtime', write_to=(1, 2, 3))
+        rep.add_report_format('foo', parser='progress', write_to=(1, 2, 3))
 
     # Invalid parser
     with pytest.raises(ValueError, match="No parser named"):
@@ -94,7 +95,7 @@ def test_add_report_format(rep):
     
     # Invalid writer
     with pytest.raises(ValueError, match="No writer named"):
-        rep.add_report_format('foo', parser='runtime', write_to='invalid')
+        rep.add_report_format('foo', parser='progress', write_to='invalid')
 
 def test_task_counter(rep):
     """Tests the task_counters property"""
@@ -167,7 +168,7 @@ def test_report(rep):
     # Test the default report format
     assert rep.report()
 
-    # Other report formats
+    # Other, explicitly specified, report formats
     assert rep.report('task_counters')
     assert rep.report('progress')
     assert rep.report('progress_bar')
@@ -184,7 +185,7 @@ def test_report(rep):
 def test_min_report_intv(wm, rf_dict):
     """Test correct behaviour of the minimum report interval"""
     rep = WorkerManagerReporter(wm, report_formats=rf_dict,
-                                default_format='runtime')
+                                default_format='progress')
 
     # This should work
     assert rep.report()
@@ -202,8 +203,8 @@ def test_min_report_intv(wm, rf_dict):
 
 def test_parse_and_write(rep):
     """Tests the parse_and_write function"""
-    rep.parse_and_write(parser='runtime', write_to='stdout')
-    rep.parse_and_write(parser='runtime', write_to='log')
+    rep.parse_and_write(parser='progress', write_to='stdout')
+    rep.parse_and_write(parser='progress', write_to='log')
 
 def test_runtime_statistics(rep):
     """Tests the runtime statistics gathering and parsing."""
