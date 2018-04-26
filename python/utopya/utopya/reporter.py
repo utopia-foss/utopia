@@ -470,12 +470,18 @@ class WorkerManagerReporter(Reporter):
         super().__init__(**reporter_kwargs)
 
         # Make sure that a format 'working' is available
-        if 'working' not in self.report_formats:
-            log.debug("No report format 'working' found; adding one "
+        if 'while_working' not in self.report_formats:
+            log.debug("No report format 'while_working' found; adding one "
                       "because it is needed by the WorkerManager.")
 
-            # Add a default configuration
-            self.add_report_format('working', parser='progress_bar',
+            self.add_report_format('while_working', parser='progress_bar',
+                                   write_to='stdout_noreturn')
+
+        if 'after_work' not in self.report_formats:
+            log.debug("No report format 'after_work' found; adding one "
+                      "because it is needed by the WorkerManager.")
+
+            self.add_report_format('after_work', parser='progress_bar',
                                    write_to='stdout_noreturn')
 
         # Store the WorkerManager and associate it with this reporter

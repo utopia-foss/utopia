@@ -6,7 +6,7 @@ import warnings
 import logging
 import time
 from datetime import datetime as dt
-from typing import Union, Callable, Sequence, List, Set
+from typing import Union, Callable, Sequence, List, Set, Dict
 from typing.io import BinaryIO
 
 from utopya.task import WorkerTask, TaskList
@@ -27,7 +27,7 @@ class WorkerManager:
         poll_delay (float): The delay (in s) between after a poll
     """
 
-    def __init__(self, num_workers: Union[int, str], poll_delay: float=0.05, QueueCls=queue.Queue, reporter: WorkerManagerReporter=None):
+    def __init__(self, num_workers: Union[int, str], poll_delay: float=0.05, QueueCls=queue.Queue, reporter: WorkerManagerReporter=None, rf_spec: Dict[str, Union[str, List[str]]]=None):
         """Initialize the worker manager.
         
         Args:
@@ -39,6 +39,18 @@ class WorkerManager:
                 the CPU load will become significant.
             QueueCls (Class, optional): Which class to use for the Queue.
                 Defaults to FiFo.
+            reporter (WorkerManagerReporter, optional): The reporter associated
+                with this WorkerManager, reporting on the progress.
+            rf_spec (Dict[str, Union[str, List[str]]], optional): The names of
+                report formats that should be invoked at different points of
+                the WorkerManager's operation.
+                Possible keys:
+                    'while_working', 'after_work', 'after_abort',
+                    'task_spawn', 'task_finished'
+                All other keys are ignored.
+                The values of the dict can be either strings or lists of
+                strings, where the strings always refer to report formats
+                registered with the WorkerManagerReporter
         """
         # Initialize attributes, some of which are property-managed
         self._num_workers = None
@@ -59,11 +71,21 @@ class WorkerManager:
         else:
             self.num_workers = num_workers
 
+        # Reporter-related
         if reporter:
             self.reporter = reporter
 
+        self.rf_spec = dict(while_working='while_working',
+                            task_spawned='while_working',
+                            task_finished='while_working',
+                            after_work='after_work',
+                            after_abort='after_work')
+        if rf_spec:
+            self.rf_spec.update(rf_spec)
+
         # Store some profiling information
-        self.times = dict(init=dt.now(), start_working=None, timeout=None)
+        self.times = dict(init=dt.now(), start_working=None,
+                          timeout=None, end_working=None)
         # These are also accessed by the reporter
 
     # Properties ..............................................................
@@ -169,15 +191,15 @@ class WorkerManager:
                 See utopya.task.WorkerTask.__init__ for all valid arguments.
         """
         # Prepare the callback functions needed by the reporter
-        def force_report(t):
-            self._invoke_report('working', force=True)
+        def task_spawned(t):
+            self._invoke_report('task_spawned', force=True)
         
-        def report_and_register_runtime(t):
-            self._invoke_report('working', force=True)
+        def task_finished(t):
+            self._invoke_report('task_finished', force=True)
             self.reporter.register_runtime(t)
 
-        callbacks = dict(spawn=force_report,
-                         finished=report_and_register_runtime)
+        callbacks = dict(spawn=task_spawned,
+                         finished=task_finished)
 
         # Generate the WorkerTask object from the given parameters
         task = WorkerTask(callbacks=callbacks, **task_kwargs)
@@ -274,7 +296,7 @@ class WorkerManager:
                     # would be an issue with workers staying idle for too long.
 
                 # Invoke the reporter, if available
-                self._invoke_report('working')
+                self._invoke_report('while_working')
 
                 # Gather the streams of all working workers
                 for task in self.active_tasks:
@@ -304,8 +326,7 @@ class WorkerManager:
                 # Delay the next poll
                 time.sleep(self.poll_delay)
 
-            # Final report: all is done
-            self._invoke_report('working', force=True)
+            # Finished working
 
         except WorkerManagerError as err:
             print("")
@@ -314,20 +335,34 @@ class WorkerManager:
             
             log.warning("Terminating active tasks ...")
             self._signal_workers(self.active_tasks, signal='SIGTERM')
+
+            # Store end time and invoke a report
+            self.times['end_working'] = dt.now()
+            self._invoke_report('after_abort', force=True)
+
             raise
 
-        else:
-            # Finished because no working workers and no more tasks remained
-            print("")
-            log.info("Finished working. Total tasks worked on: %d",
-                     self.task_count)
+        # Register end time and invoke final report
+        self.times['end_working'] = dt.now()
+        self._invoke_report('after_work', force=True)
+
+        print("")
+        log.info("Finished working. Total tasks worked on: %d",
+                 self.task_count)
 
     # Non-public API ..........................................................
 
-    def _invoke_report(self, *args, **kwargs):
+    def _invoke_report(self, rf_spec_name: str, *args, **kwargs):
         """Helper function to invoke the reporter's report function"""
         if self.reporter is not None:
-            self.reporter.report(*args, **kwargs)
+            # Resolve the spec name
+            rfs = self.rf_spec[rf_spec_name]
+            
+            if not isinstance(rfs, list):
+                rfs = [rfs]
+
+            for rf in rfs:
+                self.reporter.report(rf, *args, **kwargs)
 
     def _grab_task(self) -> WorkerTask:
         """Will initiate that a task is gotten from the queue and that it
