@@ -636,7 +636,7 @@ class WorkerManagerReporter(Reporter):
                           digs=len(str(cntr['total'])),
                           p=cntr['finished']/cntr['total'] * 100))
 
-    def _parse_progress_bar(self, *, num_cols: int=(tools.TTY_COLS - TTY_MARGIN), show_total: bool=False, report_no: int=None) -> str:
+    def _parse_progress_bar(self, *, num_cols: int=(tools.TTY_COLS - TTY_MARGIN), show_total: bool=False, show_times: bool=False, report_no: int=None) -> str:
         """Returns a progress bar.
         
         It shows the amount of finished tasks, active tasks, and a percentage.
@@ -646,6 +646,8 @@ class WorkerManagerReporter(Reporter):
                 creating the progress bar.
             show_total (bool, optional): Whether to show the total number of
                 tasks alongside the percentage.
+            show_times (bool, optional): Whether to show a short version of the
+                results of the times parser
             report_no (int, optional): Passed by ReportFormat call
         
         Returns:
@@ -657,17 +659,24 @@ class WorkerManagerReporter(Reporter):
         if cntr['total'] <= 0:
             return "(No tasks assigned to WorkerManager yet.)"
 
+        if show_times:
+            times_fstr = " | {elapsed:} elapsed | ~ {est_left:} left"
+            times = self._parse_times(fstr=times_fstr)
+        else:
+            times = ""
+
         # Define the symbols and format strings to use, calculating the
         # progress bar width alongside
         syms = dict(finished="▓", active="░", space=" ")
 
         if show_total:
-            fstr = "  ╠{:}{:}{:}╣ {p:>5.1f}%  (of {total:d}) "
-            pb_width = num_cols - (14 + 5 + len(str(cntr['total'])))
+            fstr = "  ╠{:}{:}{:}╣ {p:>5.1f}%  of {total:d} {times:}"
+            pb_width = num_cols - (12 + 5
+                                   + len(str(cntr['total'])) + len(times))
         
         else:
-            fstr = "  ╠{:}{:}{:}╣ {p:>5.1f}% "
-            pb_width = num_cols - (7 + 5)
+            fstr = "  ╠{:}{:}{:}╣ {p:>5.1f}% {times:}"
+            pb_width = num_cols - (7 + 5 + len(times))
 
         # Only return percentage indicator if the width would be very short
         if pb_width < 4:
@@ -686,7 +695,7 @@ class WorkerManagerReporter(Reporter):
                             syms['active'] * ticks['active'],
                             syms['space'] * ticks['space'],
                             p=cntr['finished']/cntr['total'] * 100,
-                            total=cntr['total']))
+                            total=cntr['total'], times=times))
 
     def _parse_times(self, *, fstr: str="Elapsed:  {elapsed:<8s}  |  Est. left:  {est_left:<8s}  |  Est. end:  {est_end:<10s}", timefstr_short: str="%H:%M:%S", timefstr_full: str="%d.%m., %H:%M:%S", use_relative: bool=True, times: dict=None, report_no: int=None) -> str:
         """Parses the worker manager time information and est time left
