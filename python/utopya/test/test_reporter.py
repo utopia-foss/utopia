@@ -204,6 +204,9 @@ def test_parsers(rf_dict, sleep_task):
     assert ppb() == "  ╠▓▓▓▓▓▓▓▓▓ ╣  91.7% "
     assert ppbt() == "  ╠▓▓▓▓▓▓▓▓▓ ╣  91.7%  (of 12) "
 
+    # Very short progress bar should return only the percentage indicator
+    assert rep._parse_progress_bar(num_cols=10) == "  91.7% "
+
 def test_report(rep):
     """Tests the report method."""
     # Test the default report format

@@ -590,10 +590,9 @@ class WorkerManagerReporter(Reporter):
             fstr = "  ╠{:}{:}{:}╣ {p:>5.1f}% "
             pb_width = num_cols - (7 + 5)
 
-        # Fall back to regular progress indicator if there is not enough space
-        # for a progress bar
+        # Only return percentage indicator if the width would be very short
         if pb_width < 4:
-            return self._parse_progress(report_no=report_no)
+            return " {:>5.1f}% ".format(cntr['finished']/cntr['total'] * 100)
 
         # Calculate the ticks
         ticks = dict()
