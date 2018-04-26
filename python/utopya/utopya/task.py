@@ -27,9 +27,9 @@ class Task:
     associate tasks with the corresponding workers and vice versa.
     """
 
-    __slots__ = ('_name', '_priority', '_uid')
+    __slots__ = ('_name', '_priority', '_uid', 'callbacks')
 
-    def __init__(self, *, name: str=None, priority: float=None):
+    def __init__(self, *, name: str=None, priority: float=None, callbacks: Dict[str, Callable]=None):
         """Initialize a Task object.
         
         Args:
@@ -39,6 +39,9 @@ class Task:
                 default is +np.inf, i.e. the lowest priority. If two priority
                 values are the same, the task created earlier has a higher
                 priority.
+            callbacks (Dict[str, Callable], optional): A dict of callback funcs
+                that are called at different points of the life of this task.
+                The function gets passed as only argument this task object.
         """
         # Carry over arguments attributes
         self._name = str(name) if name else None
@@ -47,10 +50,13 @@ class Task:
         # Create a unique ID
         self._uid = uuid.uuid1()
 
+        # Save the callbacks
+        self.callbacks = callbacks
+
         log.debug("Initialized Task '%s'.\n  Priority: %s,  UID: %s.",
                   self.name, self.priority, self.uid)
 
-    # Properties --------------------------------------------------------------
+    # Properties ..............................................................
 
     @property
     def name(self) -> str:
@@ -74,7 +80,7 @@ class Task:
         """Returns the ordering tuple (priority, uid.time)"""
         return (self.priority, self.uid.time)
 
-    # Magic methods -----------------------------------------------------------
+    # Magic methods ...........................................................
 
     def __hash__(self) -> int:
         return hash(self.uid)
@@ -96,6 +102,13 @@ class Task:
         return bool(self is other)
         # NOTE we trust 'uuid' that the IDs are unique therefore different tasks
         # can not get the same ID --> are different in ordering
+
+    # Private methods .........................................................
+
+    def _invoke_callback(self, name: str):
+        """If given, invokes the callback function with the name `name`."""
+        if self.callbacks and name in self.callbacks:
+            self.callbacks[name](self)
 
 # -----------------------------------------------------------------------------
 
@@ -119,7 +132,7 @@ class WorkerTask(Task):
     # Extend the slots of the Task class with some WorkerTask-specific slots
     __slots__ = ('setup_func', 'setup_kwargs', 'worker_kwargs',
                  '_worker', '_worker_pid', '_worker_status',
-                 'streams', 'profiling', 'callbacks')
+                 'streams', 'profiling')
 
     def __init__(self, *, setup_func: Callable=None, setup_kwargs: dict=None, worker_kwargs: dict=None, callbacks: Dict[str, Callable]=None, **task_kwargs):
         """Initialize a WorkerTask object, a specialization of a task for use in the WorkerManager.
@@ -132,16 +145,16 @@ class WorkerTask(Task):
                 worker. Note that these are also passed to setup_func and, if a
                 setup_func is given, the return value of that function will be
                 used for the worker_kwargs.
-            callbacks (Dict[str, Callable], optional): A dict of callback funcs
-                that are called at different points of the life of a process:
-                Possible keys: 'spawn', 'finished', 'after_signal'
+            callbacks (Dict[str, Callable], optional): Callbacks available in
+                the WorkerTask follow the life of a process; available keys
+                are: 'spawn', 'finished', 'after_signal'.
             **task_kwargs: Arguments to be passed to Task.__init__
         
         Raises:
             ValueError: If neither `setup_func` nor `worker_kwargs` were given
         """
 
-        super().__init__(**task_kwargs)
+        super().__init__(callbacks=callbacks, **task_kwargs)
 
         # Check the argument values
         if setup_func:
@@ -168,9 +181,6 @@ class WorkerTask(Task):
         self.setup_func = setup_func
         self.setup_kwargs = setup_kwargs
         self.worker_kwargs = worker_kwargs
-
-        # Save the callbacks
-        self.callbacks = callbacks
 
         # Create empty attributes to be filled with worker information
         self._worker = None
@@ -442,7 +452,12 @@ class WorkerTask(Task):
         It takes care that a profiling time is saved and that the remaining
         stream information is logged.
         """
-        self.profiling['end_time'] = time.time()  # approximate
+        # Update profiling info
+        self.profiling['end_time'] = time.time()
+        self.profiling['run_time'] = (self.profiling['end_time']
+                                      - self.profiling['create_time']) 
+        # NOTE these are both approximate values as the worker process must
+        # have ended prior to the call to this method
 
         # Read all remaining stream lines
         self.read_streams(max_num_reads=-1)
@@ -452,11 +467,6 @@ class WorkerTask(Task):
 
         log.debug("Task %s: worker finished with status %s.",
                   self.name, self.worker_status)
-
-    def _invoke_callback(self, name: str):
-        """If given, invokes the callback function with the name `name`."""
-        if name in self.callbacks:
-            self.callbacks[name]()
 
 # -----------------------------------------------------------------------------
 

@@ -51,7 +51,7 @@ worker_manager:
 # Reporter
 reporter:
   report_formats:
-    while_working:
+    working:
       parser: progress_bar
       write_to: stdout_noreturn
       min_report_intv: 0.5

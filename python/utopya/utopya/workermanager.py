@@ -164,8 +164,15 @@ class WorkerManager:
                 See utopya.task.WorkerTask.__init__ for all valid arguments.
         """
         # Prepare the callback functions needed by the reporter
-        cbf = lambda: self._invoke_report('while_working', force=True)
-        callbacks = dict(spawn=cbf, finished=cbf)
+        def force_report(t):
+            self._invoke_report('working', force=True)
+        
+        def report_and_register_runtime(t):
+            self._invoke_report('working', force=True)
+            self.reporter.register_runtime(t)
+
+        callbacks = dict(spawn=force_report,
+                         finished=report_and_register_runtime)
 
         # Generate the WorkerTask object from the given parameters
         task = WorkerTask(callbacks=callbacks, **task_kwargs)
@@ -256,7 +263,7 @@ class WorkerManager:
                     # would be an issue with workers staying idle for too long.
 
                 # Invoke the reporter, if available
-                self._invoke_report('while_working')
+                self._invoke_report('working')
 
                 # Gather the streams of all working workers
                 for task in self.active_tasks:
@@ -287,7 +294,7 @@ class WorkerManager:
                 time.sleep(self.poll_delay)
 
             # Final report: all is done
-            self._invoke_report('while_working', force=True)
+            self._invoke_report('working', force=True)
 
         except WorkerManagerError as err:
             print("")

@@ -334,13 +334,13 @@ class WorkerManagerReporter(Reporter):
 
         super().__init__(**reporter_kwargs)
 
-        # Make sure that a format 'while_working' is available
-        if 'while_working' not in self.report_formats:
-            log.debug("No report format 'while_working' found; adding one "
+        # Make sure that a format 'working' is available
+        if 'working' not in self.report_formats:
+            log.debug("No report format 'working' found; adding one "
                       "because it is needed by the WorkerManager.")
 
             # Add a default configuration
-            self.add_report_format('while_working', parser='progress_bar',
+            self.add_report_format('working', parser='progress_bar',
                                    write_to='stdout_noreturn')
 
         # Store the WorkerManager and associate it with this reporter
@@ -349,7 +349,7 @@ class WorkerManagerReporter(Reporter):
         log.debug("Associated reporter with WorkerManager.")
 
         # Attributes
-        # ...
+        self.runtimes = []
 
         log.debug("WorkerManagerReporter initialised.")
 
@@ -373,6 +373,46 @@ class WorkerManagerReporter(Reporter):
         num['active'] = len(self.wm.active_tasks)
         num['finished'] = self.wm.num_finished_tasks
         return num
+
+    # Methods working on data .................................................
+
+    def register_runtime(self, task):
+        """Given the task object, extracts the runtime and stores it.
+        
+        This can be used as a callback function from a WorkerTask object.
+        
+        Args:
+            task (WorkerTask): The WorkerTask to extract the runtime from.
+        """
+        if 'run_time' in task.profiling:
+            self.runtimes.append(task.profiling['run_time'])
+
+    def calc_runtime_statistics(self) -> OrderedDict:
+        """Calculates the current runtime statistics.
+        
+        Returns:
+            OrderedDict: name of the calculated statistic and its value, i.e.
+                the runtime in seconds
+        """
+        if len(self.runtimes) <= 5:
+            # Only calculate if there is enough data
+            return None
+        
+        rts = self.runtimes
+        d = OrderedDict()
+
+        d['mean']        = np.nanmean(rts)
+        d[' (last 50%)'] = np.nanmean(rts[-len(rts)//2:])
+        d[' (last 20%)'] = np.nanmean(rts[-len(rts)//5:])
+        d[' (last 5%)']  = np.nanmean(rts[-len(rts)//20:])
+        d['std']         = np.nanstd(rts)
+        d['min']         = np.nanmin(rts)
+        d['at 25%']      = np.percentile(rts, 25)
+        d['median']      = np.nanmedian(rts)
+        d['at 75%']      = np.percentile(rts, 75)
+        d['max']         = np.nanmax(rts)
+
+        return d
 
     # Parser methods ..........................................................
 
@@ -432,4 +472,14 @@ class WorkerManagerReporter(Reporter):
                             syms['space'] * ticks['space'],
                             p=cntr['finished']/cntr['total'] * 100,
                             total=cntr['total']))
+
+    def _parse_runtime_stats(self, fstr: str="  {k:<13s} {v:}", join_char="\n") -> str:
+        """Parses the runtime statistics dict into a multiline string"""
+        rtstats = self.calc_runtime_statistics()
+
+        parts = [fstr.format(k=k, v=tools.format_time(v, ms_precision=1))
+                 for k, v in rtstats.items()]
+
+        return join_char.join(parts)
+
 

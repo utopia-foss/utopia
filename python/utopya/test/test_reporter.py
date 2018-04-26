@@ -204,3 +204,12 @@ def test_parse_and_write(rep):
     """Tests the parse_and_write function"""
     rep.parse_and_write(parser='runtime', write_to='stdout')
     rep.parse_and_write(parser='runtime', write_to='log')
+
+def test_runtime_statistics(rep):
+    """Tests the runtime statistics gathering and parsing."""
+
+    assert not rep.runtimes
+
+    rep.wm.start_working()
+
+    assert len(rep.runtimes) == 11
