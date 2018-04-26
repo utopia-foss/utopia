@@ -651,7 +651,7 @@ class WorkerManagerReporter(Reporter):
                             p=cntr['finished']/cntr['total'] * 100,
                             total=cntr['total']))
 
-    def _parse_times(self, *, fstr: str="Elapsed: {elapsed:}  |  Est. left: {est_left:}  |  Est. end: {est_end:}", timefstr="%d.%m., %H:%M", report_no: int=None) -> str:
+    def _parse_times(self, *, fstr: str="Elapsed: {elapsed:<8s}  |  Est. left: {est_left:<8s}  |  Est. end: {est_end:<20s}", timefstr="%d.%m., %H:%M:%S", report_no: int=None) -> str:
         """Parses the worker manager time information and est time left"""
         times = self.wm_times
 

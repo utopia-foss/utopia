@@ -69,7 +69,7 @@ reporter:
 
     after_work:
       parser: progress_bar
-      wrte_to: stdout_noreturn
+      write_to: stdout_noreturn
 
 # Data Manager
 data_manager: {}
