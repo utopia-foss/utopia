@@ -86,8 +86,11 @@ def test_add_report_format(rep):
 
     # Invalid write_to argument
     with pytest.raises(TypeError,
-                       match="Invalid type for argument `write_to`"):
-        rep.add_report_format('foo', parser='progress', write_to=(1, 2, 3))
+                       match="Invalid type <class 'int'> for argument"):
+        rep.add_report_format('foo', parser='progress', write_to=1)
+    with pytest.raises(TypeError,
+                       match="One item of given `write_to` argument"):
+        rep.add_report_format('foo', parser='progress', write_to=(1,2,3))
 
     # Invalid parser
     with pytest.raises(ValueError, match="No parser named"):

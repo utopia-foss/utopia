@@ -190,51 +190,16 @@ class Reporter:
             **parser_kwargs: The kwargs to the parser function
         
         Raises:
-            TypeError: Invalid `write_to` type
             ValueError: A report format with this `name` already exists
         """
         if name in self.report_formats:
             raise ValueError("A report format with the name {} already exists."
                              "".format(name))
 
-        # Get the parser function
-        parser_name = parser if parser else name
-        try:
-            parser = getattr(self, '_parse_' + parser_name)
-        except AttributeError as err:
-            raise ValueError("No parser named '{}' available in {}!"
-                             "".format(parser_name,
-                                       self.__class__.__name__)) from err
-
-        # If given, create a lambda function that already passes the kwargs
-        if parser_kwargs:
-            parser = lambda *a, **kws: parser(*a, **parser_kwargs, **kws)
-
-        # Determine the writers
-        if isinstance(write_to, str):
-            # Ensure it is of the dict-format
-            write_to = {write_to: {}}
-
-        if not isinstance(write_to, dict):
-            raise TypeError("Invalid type for argument `write_to`; needs to "
-                            "be either a string or a dict of dicts.")
-
-        writers = {}
-        for writer_name, params in write_to.items():
-            try:
-                writer = getattr(self, '_write_to_' + writer_name)
-            except AttributeError as err:
-                raise ValueError("No writer named '{}' available in {}!"
-                                 "".format(parser_name,
-                                           self.__class__.__name__)) from err
-            
-            # If given, create a lambda function that already passes the kwargs
-            if params:
-                writer = lambda *a, **kws: writer(*a, **params, **kws)
-
-            # Store in dict of writers
-            writers[writer_name] = writer
-            log.debug("Added writer with name '%s'.", writer_name)
+        # Get the parser and writer function
+        parser = self._resolve_parser(parser if parser else name,
+                                      **parser_kwargs)
+        writers = self._resolve_writers(write_to)
 
         # Initialise the ReportFormat object with the parsers and writers
         rf = ReportFormat(parser=parser, writers=writers,
@@ -273,25 +238,158 @@ class Reporter:
         # Delegate reporting to the ReportFormat class
         return rf.report(force=force)
 
-    def parse_and_write(self, *, parser: str, write_to: str, parser_kwargs: dict=None, writer_kwargs: dict=None):
-        """This function allows to select a parser and writer explicitly."""
+    def parse_and_write(self, *, parser: Union[str, Callable], write_to: Union[str, Callable], **parser_kwargs):
+        """This function allows to select a parser and writer explicitly.
+        
+        Args:
+            parser (Union[str, Callable]): The parser method to use.
+            write_to (Union[str, Callable]): The write method to use. Can also
+                be a sequence of names and/or callables or a Dict. For allowed
+                specification formats, see the ._resolve_writers method.
+            **parser_kwargs: Passed to the parser, if given
+        """
 
         # Determine the parser    
-        parser = getattr(self, "_parse_" + parser)
-        parser_kwargs = parser_kwargs if parser_kwargs else {}
+        parser = self._resolve_parser(parser, **parser_kwargs)
 
         # Parse the report
         report = parser()
         log.debug("Parsed report using %s, got string of length %d.",
                   parser.__name__, len(report))
 
-        # Determine the writer
-        writer = getattr(self, "_write_to_" + write_to)
-        writer_kwargs = writer_kwargs if writer_kwargs else {}
+        # Determine the writers
+        writers = self._resolve_writers(write_to)
 
         # Write the report
-        writer(report, **writer_kwargs)
-        log.debug("Wrote report using %s .", writer.__name__)
+        for writer_name, writer in writers.items():
+            writer(report)
+            log.debug("Wrote report using %s .", writer_name)
+
+    # Private methods .........................................................
+    
+    def _resolve_parser(self, parser: Union[str, Callable], **parser_kwargs) -> Callable:
+        """Given a string or a callable, returns the corresponding callable.
+        
+        Args:
+            parser (Union[str, Callable]): If a callable is already given,
+                returns that; otherwise looks for a parser method with the
+                given name in the attributes of this class.
+            **parser_kwargs: Arguments that should be passed to the parser.
+                If given, a new function is created where these arguments are
+                already included.
+        
+        Returns:
+            Callable: The desired parser function
+        
+        Raises:
+            ValueError: If no parser with the given name is available
+        """
+        if not callable(parser):
+            # A name was given; try to resolve from attributes
+            try:
+                parser = getattr(self, '_parse_' + parser)
+            except AttributeError as err:
+                raise ValueError("No parser named '{}' available in {}!"
+                                 "".format(parser,
+                                           self.__class__.__name__)) from err
+
+            log.debug("Resolved parser: %s", str(parser))
+
+        # parser is now a callable
+
+        # If given, create a lambda function that already passes the kwargs
+        if parser_kwargs:
+            log.debug("Binding parser_kwargs to parser method ...")
+            parser = lambda *a, **kws: parser(*a, **parser_kwargs, **kws)
+
+        return parser
+
+    def _resolve_writers(self, write_to) -> Dict[str, Callable]:
+        """Resolves the given argument to a list of callable writer functions.
+        
+        Args:
+            write_to: a specification of the writers to use. Allows many
+                different ways of specifying the writer functions:
+                - str: the name of the writer method of this reporter
+                - Callable: the writer function to use
+                - sequence of str and/or Callable: the names and/or functions
+                to use
+                - Dict[str, dict]: the names of the writer functions and
+                additional keyword arguments.
+        
+        Returns:
+            Dict[str, Callable]: the writers (key: name, value: writer method)
+        
+        Raises:
+            TypeError: Invalid `write_to` argument
+            ValueError: A writer with that name was already added or a writer
+                with the given name is not available.
+        
+        """
+        # The target dict of callables
+        writers = {}
+
+        # First, need to bring the argument into a uniform structure.
+        # This requires checking the many possible input formats
+
+        # If a single callable is already given, return that
+        if callable(write_to):
+            return [write_to]
+
+        # If a single string is given, bring it into dict format
+        elif isinstance(write_to, str):
+            write_to = {write_to: {}}
+
+        # If a list is given, move the callables to the writers dict; the items
+        # that are strings remain.
+        elif isinstance(write_to, (list, tuple)):
+            wt = {}
+            for item in write_to:
+                if callable(item):
+                    # Check if already present
+                    if item.__name__ in writers:
+                        raise ValueError("Given writer callable with name "
+                                         "'{}' already exists!"
+                                         "".format(item.__name__))
+                    writers[item.__name__] = item
+
+                elif isinstance(item, str):
+                    # Add an empty entry to the new write_to dict
+                    wt[item] = dict()
+
+                else:
+                    raise TypeError("One item of given `write_to` argument {} "
+                                    "of type {} was neither a string nor a "
+                                    "callable! "
+                                    "".format(write_to, type(write_to)))
+
+            # Use the new write_to dict
+            write_to = wt
+            
+        # Ensure that the format is a dict now
+        if not isinstance(write_to, dict):
+            raise TypeError("Invalid type {} for argument `write_to`!"
+                            "".format(type(write_to)))
+
+        # Now populate the writers dict with the remaining str-specified funcs
+        for writer_name, params in write_to.items():
+            try:
+                writer = getattr(self, '_write_to_' + writer_name)
+
+            except AttributeError as err:
+                raise ValueError("No writer named '{}' available in {}!"
+                                 "".format(writer_name,
+                                           self.__class__.__name__)) from err
+            
+            # If given, create a lambda function that already passes the kwargs
+            if params:
+                writer = lambda *a, **kws: writer(*a, **params, **kws)
+
+            # Store in dict of writers
+            writers[writer_name] = writer
+            log.debug("Added writer with name '%s'.", writer_name)
+
+        return writers
 
     # Parser methods ..........................................................
     
