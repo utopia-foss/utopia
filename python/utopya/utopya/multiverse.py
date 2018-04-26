@@ -77,6 +77,7 @@ class Multiverse:
 
         # Instantiate the Reporter
         self._reporter = WorkerManagerReporter(self._wm,
+                                               report_dir=self.dirs['run'],
                                                **self.meta_config['reporter'])
 
         log.info("Initialized Multiverse for model: '%s'", self.model_name)
@@ -330,7 +331,7 @@ class Multiverse:
 
         # Inform and store to directory dict
         log.debug("Expanded user and time stamp to %s", run_dir)
-        self._dirs['run'] = run_dir
+        self.dirs['run'] = run_dir
 
         # Recursively create the whole path to the simulation directory
         try:
@@ -344,7 +345,7 @@ class Multiverse:
         for subdir in ('config', 'eval', 'universes'):
             subdir_path = os.path.join(run_dir, subdir)
             os.mkdir(subdir_path)
-            self._dirs[subdir] = subdir_path
+            self.dirs[subdir] = subdir_path
 
         log.debug("Finished creating simulation directory. Now registered: %s",
                   self._dirs)

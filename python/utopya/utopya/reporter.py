@@ -1,5 +1,6 @@
 """Implementation of the Reporter class."""
 
+import os
 import sys
 import logging
 from datetime import datetime as dt
@@ -87,7 +88,7 @@ class ReportFormat:
         # Write the report
         for writer_name, writer in self.writers.items():
             log.debug("Writing report using '%s' ...", writer_name)
-            writer(report, report_no=self.num_reports)
+            writer(report)
 
         # Update counter and last report time
         self.num_reports += 1
@@ -104,17 +105,22 @@ class Reporter:
     It needs to be subclassed in order to specialise its reporting functions.
     """
 
-    def __init__(self, *, report_formats: Union[List[str], Dict[str, dict]]=None, default_format: str=None):
+    def __init__(self, *, report_formats: Union[List[str], Dict[str, dict]]=None, default_format: str=None, report_dir: str=None):
         """Initialize the Reporter for the WorkerManager.
         
         Args:
-            report_formats (Union[List[str], Dict[str, dict]], optional):
-                The report formats to use with this reporter. If given as list
-                of strings, the strings are the names of the report formats as well as those of the parsers; all other parameters are the defaults. If given as dict of dicts, the keys are the names of
-                the formats and the inner dicts are the parameters to create report formats from.
+            report_formats (Union[List[str], Dict[str, dict]], optional): The
+                report formats to use with this reporter. If given as list
+                of strings, the strings are the names of the report formats as
+                well as those of the parsers; all other parameters are the
+                defaults. If given as dict of dicts, the keys are the names of
+                the formats and the inner dicts are the parameters to create
+                report formats from.
             default_format (str, optional): The name of the default report
                 format; if None is given, the .report method requires the name
                 of a report format.
+            report_dir (str, optional): if reporting to a file; this is the
+                base directory that is reported to.
         """
 
         super().__init__()
@@ -137,6 +143,9 @@ class Reporter:
         # Set the default report format, if given
         if default_format:
             self.default_format = default_format
+
+        # Store the report dir
+        self.report_dir =os.path.expanduser(report_dir) if report_dir else None
 
         # Create dicts to store counters and times in
         self.counters = OrderedDict()
@@ -300,12 +309,18 @@ class Reporter:
 
     # Writer methods ..........................................................
 
-    def _write_to_stdout(self, s: str, *, flush: bool=True, report_no: int=None, **print_kws):
-        """Writes the given string to stdout"""
+    def _write_to_stdout(self, s: str, *, flush: bool=True, **print_kws):
+        """Writes the given string to stdout using the print function.
+        
+        Args:
+            s (str): The string to write
+            flush (bool, optional): Whether to flush directly; default: True
+            **print_kws: Other print function keyword arguments
+        """
         print(s, flush=flush, **print_kws)
 
-    def _write_to_stdout_noreturn(self, s: str, *, prepend="  ", report_no: int=None):
-        """Writes to stdout without ending the line.
+    def _write_to_stdout_noreturn(self, s: str, *, prepend="  "):
+        """Writes to stdout without ending the line. Always flushes.
         
         Args:
             s (str): The string to write
@@ -315,14 +330,43 @@ class Reporter:
         """
         print(prepend + s, flush=True, end='\r')
 
-    def _write_to_log(self, s: str, *, lvl: int=10, report_no: int=None):
-        """Writes the given string via the logging module"""
+    def _write_to_log(self, s: str, *, lvl: int=10):
+        """Writes the given string via the logging module.
+        
+        Args:
+            s (str): The string to log
+            lvl (int, optional): The level at which to log at; default: DEBUG
+        """
         log.log(lvl, s)
 
-    def _write_to_file(self, s: str, *, path: str, mode: str='a', report_no: int=None):
-        """Writes the given string to a file"""
-        raise NotImplementedError
+    def _write_to_file(self, s: str, *, path: str="_report.txt", mode: str='w'):
+        """Writes the given string to a file
+        
+        Args:
+            s (str): The string to write
+            path (str): The path to write it to; will be assumed relative to
+                the `report_dir` attribute; if that is not given, `path` needs
+                to be absolute. By default, assumes that there is a report_dir
+                given and writes to "_report.txt" in there.
+            mode (str, optional): Writing mode of that file
+        """
+        # Check that the given path is valid
+        if not os.path.isabs(path):
+            if not self.report_dir:
+                raise ValueError("Need either an absolute `path` argument or "
+                                 "initialise the {} with the `report_dir` "
+                                 "argument such that `path` can be "
+                                 "interpreted relative to that directory."
+                                 "".format(self.__class__.__name__))
 
+            path = os.path.join(self.report_dir, path)
+
+        log.debug("Writing given string (length %d) to %s ...", len(s), path)
+
+        with open(path, mode) as file:
+            file.write(s)
+            
+        log.debug("Finished writing.")
 
 # -----------------------------------------------------------------------------
 
