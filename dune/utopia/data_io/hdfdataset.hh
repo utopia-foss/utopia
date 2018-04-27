@@ -278,7 +278,7 @@ public:
         return _dataset;
     }
 
-    auto get_refcounts()
+    auto get_referencecounter()
     {
         return _refcounts;
     }
@@ -759,7 +759,7 @@ public:
           _rank(0),
           _extend({}),
           _max_extend({}),
-          _refcounts(parent_object.get_refcounts())
+          _refcounts(parent_object.get_referencecounter())
 
     {
         // try to find the dataset in the parent_object, open if it is
