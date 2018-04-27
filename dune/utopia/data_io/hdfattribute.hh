@@ -8,15 +8,18 @@
 #include <hdf5_hl.h>
 #include <memory>
 #include <string>
-namespace Utopia {
-namespace DataIO {
-
+namespace Utopia
+{
+namespace DataIO
+{
 /**
  * @brief Class for hdf5 attribute, which can be attached to groups and
  * datasets.
 
  */
-template <typename HDFObject, typename Attrtype> class HDFAttribute {
+template <typename HDFObject>
+class HDFAttribute
+{
 private:
     // helper for making attribute
 
@@ -27,7 +30,8 @@ private:
      * @return hid_t
      */
     template <typename result_type>
-    hid_t __make_attribute__(hsize_t typesize = 0) {
+    hid_t __make_attribute__(hsize_t typesize = 0)
+    {
         hid_t dspace = H5Screate_simple(1, &_size, nullptr);
 
         hid_t atr = H5Acreate2(_parent_object.get_id(), _name.c_str(),
@@ -59,7 +63,7 @@ protected:
      * @brief reference to id of parent object: dataset or group
      *
      */
-    HDFObject &_parent_object;
+    HDFObject& _parent_object;
 
 public:
     /**
@@ -67,27 +71,38 @@ public:
      *
      * @return hid_t underlying HDF5 id.
      */
-    hid_t get_id() { return _attribute; }
+    hid_t get_id()
+    {
+        return _attribute;
+    }
     /**
      * @brief get Attribute name
      *
      * @return std::string
      */
-    std::string get_name() { return _name; }
+    std::string get_name()
+    {
+        return _name;
+    }
 
     /**
      * @brief Get the hdf5 object to which the attribute belongs
      *
      * @return weak pointer to HDFObject
      */
-    HDFObject &get_parent() { return _parent_object; }
+    HDFObject& get_parent()
+    {
+        return _parent_object;
+    }
 
     /**
      * @brief closes the attribute
      *
      */
-    void close() {
-        if (_attribute != -1) {
+    void close()
+    {
+        if (_attribute != -1)
+        {
             H5Aclose(_attribute);
             _attribute = -1;
         }
@@ -102,86 +117,65 @@ public:
      * @param end
      * @param adaptor
      */
-    template <
-        typename Type = Attrtype,
-        std::enable_if_t<is_container_type<Type>::value == true &&
-                             std::is_same<Type, std::string>::value == false,
-                         int> = 0>
-    std::vector<Type> read() {
-        if (_attribute == -1) {
+    template <typename Type>
+    auto read()
+    {
+        if (_attribute == -1)
+        {
             throw std::runtime_error(
                 "trying to read a nonexstiant or closed attribute");
-        } else {
-            // get type the attribute has internally
-            hid_t type = H5Aget_type(_attribute);
-            _size = H5Tget_size(type);
-            // make a vector of the corresponding C type
-
-            std::vector<Type> buffer(_size);
-
-            // read data into it and return
-
-            H5Aread(_attribute, type, buffer.data());
-            return buffer;
         }
-    }
+        if constexpr (is_container_type<Type>::value == true)
+        {
+            if constexpr (std::is_same_v<Type, std::string> == true)
+            {
+                // get type the attribute has internally
+                hid_t type = H5Aget_type(_attribute);
+                _size = H5Tget_size(type);
+                // make a vector of the corresponding C type
 
-    /**
-     * @brief Overload for strings
-     *
-     * @tparam Attrtype
-     * @tparam 0
-     * @return std::vector<Type>
-     */
-    template <
-        typename Type = Attrtype,
-        std::enable_if_t<is_container_type<Type>::value == true &&
-                             std::is_same<Type, std::string>::value == true,
-                         int> = 0>
-    std::string read() {
-        if (_attribute == -1) {
-            throw std::runtime_error(
-                "trying to read a nonexstiant or closed attribute");
-        } else {
-            // get type the attribute has internally
-            hid_t type = H5Aget_type(_attribute);
-            _size = H5Tget_size(type);
-            // make a vector of the corresponding C type
+                std::string buffer;
+                buffer.resize(_size);
+                // read data into it and return
 
-            std::string buffer;
-            buffer.resize(_size);
-            // read data into it and return
+                H5Aread(_attribute, type, buffer.data());
+                return buffer;
+            }
+            else
+            {
+                // get type the attribute has internally
+                hid_t type = H5Aget_type(_attribute);
+                _size = H5Tget_size(type);
+                // make a vector of the corresponding C type
 
-            H5Aread(_attribute, type, buffer.data());
-            return buffer;
+                std::vector<Type> buffer(_size);
+
+                // read data into it and return
+
+                H5Aread(_attribute, type, buffer.data());
+                return buffer;
+            }
         }
-    }
+        else
+        {
+            if (_attribute == -1)
+            {
+                throw std::runtime_error(
+                    "trying to read a nonexstiant or closed attribute");
+            }
+            else
+            {
+                // get type the attribute has internally
+                hid_t type = H5Aget_type(_attribute);
+                // make a vector of the corresponding C type
 
-    /**
-     * @brief read primitive type
-     *
-     * @tparam Attrtype
-     * @tparam 0
-     * @return Type
-     */
-    template <
-        typename Type = Attrtype,
-        std::enable_if_t<is_container_type<Type>::value == false, int> = 0>
-    Type read() {
-        if (_attribute == -1) {
-            throw std::runtime_error(
-                "trying to read a nonexstiant or closed attribute");
-        } else {
-            // get type the attribute has internally
-            hid_t type = H5Aget_type(_attribute);
-            // make a vector of the corresponding C type
+                Type data;
 
-            Type data;
+                // read data into it and return
 
-            // read data into it and return
-
-            H5Aread(_attribute, type, &data);
-            return data;
+                H5Aread(_attribute, type, &data);
+                return data;
+            }
         }
     }
 
@@ -192,50 +186,43 @@ public:
      * @param end
      * @param adaptor
      */
-    template <typename Type = Attrtype,
-              std::enable_if_t<is_container_type<Type>::value == true, int> = 0>
-    void write(Type &attribute_data) {
+    template <typename Type>
+    void write(Type& attribute_data)
+    {
+        if (_attribute == -1)
+        {
+            _attribute = __make_attribute__<Type>(attribute_data.size());
+        }
+
         using result_type = typename Type::value_type;
         // when stuff is vector string we can write directly, otherwise we
         // have to buffer
-        if (std::is_same<Type, std::string>::value) {
-            if (_attribute == -1) {
-                _attribute = __make_attribute__<Type>(attribute_data.size());
+        if constexpr (is_container_type<Type>::value == true)
+        {
+            if constexpr (std::is_same_v<Type, std::string>)
+            {
+                H5Awrite(_attribute, HDFTypeFactory::type<Type>(attribute_data.size()),
+                         attribute_data.data());
+                // when stuff is not a vector or string we first have to buffer
             }
+            else
+            {
+                auto buffer = HDFBufferFactory::buffer<result_type>(
+                    std::begin(attribute_data), std::end(attribute_data),
+                    [](auto& value) { return value; });
 
-            H5Awrite(_attribute,
-                     HDFTypeFactory::type<Type>(attribute_data.size()),
-                     attribute_data.data());
-            // when stuff is not a vector or string we first have to buffer
-        } else {
-
-            auto buffer = HDFBufferFactory::buffer<result_type>(
-                std::begin(attribute_data), std::end(attribute_data),
-                [](auto &value) { return value; });
-
-            if (_attribute == -1) {
-                _attribute = __make_attribute__<Type>(attribute_data.size());
+                if (_attribute == -1)
+                {
+                    _attribute = __make_attribute__<Type>(attribute_data.size());
+                }
+                H5Awrite(_attribute, HDFTypeFactory::type<Type>(attribute_data.size()),
+                         buffer.data());
             }
-            H5Awrite(_attribute,
-                     HDFTypeFactory::type<Type>(attribute_data.size()),
-                     buffer.data());
         }
-    }
-
-    /**
-     * @brief overload for primitive types
-     *
-     * @tparam 0
-     * @param attribute_data
-     */
-    template <
-        typename Type = Attrtype,
-        std::enable_if_t<is_container_type<Type>::value == false, int> = 0>
-    void write(Type &attribute_data) {
-        if (_attribute == -1) {
-            _attribute = __make_attribute__<Type>();
+        else
+        {
+            H5Awrite(_attribute, HDFTypeFactory::type<Type>(), &attribute_data);
         }
-        H5Awrite(_attribute, HDFTypeFactory::type<Type>(), &attribute_data);
     }
 
     /**
@@ -249,15 +236,19 @@ public:
      *
      * @param other
      */
-    HDFAttribute(const HDFAttribute &other)
-        : _attribute(other._attribute), _name(other._name), _size(other._size),
-          _parent_object(other._parent_object) {}
+    HDFAttribute(const HDFAttribute& other)
+        : _attribute(other._attribute),
+          _name(other._name),
+          _size(other._size),
+          _parent_object(other._parent_object)
+    {
+    }
     /**
      * @brief Move constructor
      *
      * @param other
      */
-    HDFAttribute(HDFAttribute &&other) = delete;
+    HDFAttribute(HDFAttribute&& other) = delete;
 
     /**
      * @brief Assignment operator
@@ -265,17 +256,18 @@ public:
      * @param other
      * @return HDFAttribute&
      */
-    HDFAttribute &operator=(HDFAttribute &&other) = delete;
+    HDFAttribute& operator=(HDFAttribute&& other) = delete;
     /**
      * @brief Destructor
      *
      */
-    virtual ~HDFAttribute() {
+    virtual ~HDFAttribute()
+    {
         // if (H5Iis_valid(_attribute) > 0)
-        if (H5Iis_valid(_attribute) ==
-            0) { // FIXME: add check to make sure that
-                 // it is not
-                 // more than once closed
+        if (H5Iis_valid(_attribute) == 0)
+        { // FIXME: add check to make sure that
+          // it is not
+          // more than once closed
             H5Aclose(_attribute);
         }
     }
@@ -288,13 +280,15 @@ public:
      * @param size the size of the attribute if known, if unknown it is 1
      */
 
-    HDFAttribute(HDFObject &object, std::string name)
-        : _name(name), _size(1), _parent_object(object) {
-
-        if (H5LTfind_attribute(object.get_id(), _name.c_str()) ==
-            1) { // attribute exists
+    HDFAttribute(HDFObject& object, std::string name)
+        : _name(name), _size(1), _parent_object(object)
+    {
+        if (H5LTfind_attribute(object.get_id(), _name.c_str()) == 1)
+        { // attribute exists
             _attribute = H5Aopen(object.get_id(), _name.c_str(), H5P_DEFAULT);
-        } else { // attribute does not exist: make
+        }
+        else
+        { // attribute does not exist: make
             _attribute = -1;
         }
     }
