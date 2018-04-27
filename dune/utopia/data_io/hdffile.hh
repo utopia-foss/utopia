@@ -52,6 +52,11 @@ public:
         }
     }
 
+    /**
+     * @brief Get the referencecounter object
+     *
+     * @return auto
+     */
     auto get_referencecounter()
     {
         return _refcounts;
