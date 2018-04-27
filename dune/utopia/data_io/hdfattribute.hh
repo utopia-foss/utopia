@@ -189,16 +189,15 @@ public:
     template <typename Type>
     void write(Type& attribute_data)
     {
-        if (_attribute == -1)
-        {
-            _attribute = __make_attribute__<Type>(attribute_data.size());
-        }
-
-        using result_type = typename Type::value_type;
+        // using result_type = typename HDFTypeFactory::result_type<Type>::type;
         // when stuff is vector string we can write directly, otherwise we
         // have to buffer
         if constexpr (is_container_type<Type>::value == true)
         {
+            if (_attribute == -1)
+            {
+                _attribute = __make_attribute__<Type>(attribute_data.size());
+            }
             if constexpr (std::is_same_v<Type, std::string>)
             {
                 H5Awrite(_attribute, HDFTypeFactory::type<Type>(attribute_data.size()),
@@ -207,7 +206,7 @@ public:
             }
             else
             {
-                auto buffer = HDFBufferFactory::buffer<result_type>(
+                auto buffer = HDFBufferFactory::buffer(
                     std::begin(attribute_data), std::end(attribute_data),
                     [](auto& value) { return value; });
 
@@ -221,6 +220,10 @@ public:
         }
         else
         {
+            if (_attribute == -1)
+            {
+                _attribute = __make_attribute__<Type>();
+            }
             H5Awrite(_attribute, HDFTypeFactory::type<Type>(), &attribute_data);
         }
     }

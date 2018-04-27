@@ -124,11 +124,12 @@ private:
     template <typename Iter, typename Adaptor>
     void __write_dataset__(Iter begin, Iter end, Adaptor&& adaptor, hid_t dspace, hid_t memspace)
     {
-        using result_type = HDFTypeFactory::type<decltype(adaptor(*begin))>::type;
+        using result_type =
+            typename HDFTypeFactory::result_type<decltype(adaptor(*begin))>::type;
         // now that the dataset has been made let us write to it
         // buffering at first
-        auto buffer = HDFBufferFactory::buffer<result_type>(
-            begin, end, std::forward<Adaptor&&>(adaptor));
+        auto buffer =
+            HDFBufferFactory::buffer(begin, end, std::forward<Adaptor&&>(adaptor));
 
         // std::cout << "buffer test: " << buffer.back().len << std::endl;
 
@@ -285,7 +286,7 @@ public:
     {
         // make attribute and write
 
-        HDFAttribute<HDFDataset, std::string>(*this, attribute_name).write(attribute_data);
+        HDFAttribute<HDFDataset>(*this, attribute_name).write(attribute_data);
     }
     /**
      * @brief close the dataset
@@ -341,7 +342,7 @@ public:
                hsize_t compress_level = 0)
     {
         using result_type =
-            typename HDFTypeFactory::result_type<std::decay_t<decltype(adaptor(*begin))>>::type;
+            typename HDFTypeFactory::result_type<decltype(adaptor(*begin))>::type;
 
         // get size of stuff to write
         hsize_t size = std::distance(begin, end);
@@ -586,8 +587,7 @@ public:
             // read;
             if (start.size() == 0)
             {
-                return __read_from_dataset__<desired_type, is_container<desired_type>::value>(
-                    _extend[0], H5S_ALL, H5S_ALL);
+                return __read_from_dataset__<desired_type>(_extend[0], H5S_ALL, H5S_ALL);
             }
             else
             { // read a subset determined by start end stride
@@ -610,9 +610,7 @@ public:
                 hid_t memspace = spaces[1];
 
                 // read
-                auto buffer =
-                    __read_from_dataset__<desired_type, is_container<desired_type>::value>(
-                        count[0], dspace, memspace);
+                auto buffer = __read_from_dataset__<desired_type>(count[0], dspace, memspace);
 
                 // close memoryspace resources
                 H5Sclose(dspace);
@@ -638,8 +636,7 @@ public:
                     buffersize *= _extend[i];
                 }
 
-                return __read_from_dataset__<desired_type, is_container<desired_type>::value>(
-                    buffersize, H5S_ALL, H5S_ALL);
+                return __read_from_dataset__<desired_type>(buffersize, H5S_ALL, H5S_ALL);
             }
             else
             { // read a subset determined by start end stride
@@ -668,8 +665,7 @@ public:
                 }
 
                 auto buffer =
-                    __read_from_dataset__<desired_type, is_container<desired_type>::value>(
-                        buffersize, dspace, memspace);
+                    __read_from_dataset__<desired_type>(buffersize, dspace, memspace);
 
                 // close memoryspace resources
                 H5Sclose(dspace);
