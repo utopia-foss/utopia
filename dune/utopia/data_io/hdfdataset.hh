@@ -7,6 +7,7 @@
 #include <hdf5.h>
 #include <hdf5_hl.h>
 #include <numeric>
+#include <unordered_map>
 namespace Utopia
 {
 namespace DataIO
@@ -237,6 +238,9 @@ protected:
     hsize_t _rank;
     std::vector<hsize_t> _extend;
     std::vector<hsize_t> _max_extend;
+    H5O_info_t _info;
+    haddr_t _address;
+    std::shared_ptr<std::unordered_map<haddr_t, int>> _refcounts;
 
 public:
     /**
@@ -274,6 +278,16 @@ public:
         return _dataset;
     }
 
+    auto get_refcounts()
+    {
+        return _refcounts;
+    }
+
+    haddr_t get_address()
+    {
+        return _address;
+    }
+
     /**
      * @brief add attribute to the dataset
      *
@@ -288,17 +302,25 @@ public:
 
         HDFAttribute<HDFDataset>(*this, attribute_name).write(attribute_data);
     }
+
     /**
      * @brief close the dataset
      *
      */
     void close()
     {
-        if (H5Iis_valid(_dataset) > 0)
+        if (H5Iis_valid(_dataset) == true)
         {
-            H5Dclose(_dataset);
+            if ((*_refcounts)[_address] == 1)
+            {
+                H5Dclose(_dataset);
+                _refcounts->erase(_refcounts->find(_address));
+            }
+            else
+            {
+                --(*_refcounts)[_address];
+            }
         }
-        _dataset = -1;
     }
 
     /**
@@ -315,6 +337,9 @@ public:
         swap(_rank, other._rank);
         swap(_extend, other._extend);
         swap(_max_extend, other._max_extend);
+        swap(_info, other._info);
+        swap(_address, other._address);
+        swap(_refcounts, other._refcounts);
     }
 
     /**
@@ -693,7 +718,10 @@ public:
           _dataset(other._dataset),
           _rank(other._rank),
           _extend(other._extend),
-          _max_extend(other._max_extend)
+          _max_extend(other._max_extend),
+          _info(other._info),
+          _address(other._address),
+          _refcounts(other._refcounts)
     {
     }
 
@@ -730,7 +758,9 @@ public:
           _dataset(-1),
           _rank(0),
           _extend({}),
-          _max_extend({})
+          _max_extend({}),
+          _refcounts(parent_object.get_refcounts())
+
     {
         // try to find the dataset in the parent_object, open if it is
         // there, else postphone the dataset creation to the first write
@@ -745,6 +775,10 @@ public:
             _max_extend.resize(_rank);
             H5Sget_simple_extent_dims(dataspace, _extend.data(), _max_extend.data());
             H5Sclose(dataspace);
+
+            H5Oget_info(_dataset, &_info);
+            _address = _info.addr;
+            (*_refcounts)[_address] += 1;
         }
     }
 
@@ -756,7 +790,15 @@ public:
     {
         if (H5Iis_valid(_dataset) == true)
         {
-            H5Dclose(_dataset);
+            if ((*_refcounts)[_address] == 1)
+            {
+                H5Dclose(_dataset);
+                _refcounts->erase(_refcounts->find(_address));
+            }
+            else
+            {
+                --(*_refcounts)[_address];
+            }
         }
     }
 };
