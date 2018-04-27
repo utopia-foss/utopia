@@ -70,6 +70,16 @@ public:
     }
 
     /**
+     * @brief Get the address object
+     *
+     * @return auto
+     */
+    auto get_address()
+    {
+        return _address;
+    }
+
+    /**
      * @brief get info about group
      *
      */
@@ -226,9 +236,9 @@ public:
         if (H5Lexists(object.get_id(), _path.c_str(), H5P_DEFAULT) > 0)
         {
             _group = H5Gopen(object.get_id(), _path.c_str(), H5P_DEFAULT);
-            _H5Oget_info(_group, &_info);
+            H5Oget_info(_group, &_info);
             _address = _info.addr;
-            (*_refcounts)[_address] += 1;
+            ++(*_refcounts)[_address];
         }
         else
         {
@@ -236,7 +246,8 @@ public:
             H5Pset_create_intermediate_group(group_plist, 1);
             _group = H5Gcreate(object.get_id(), _path.c_str(), group_plist,
                                H5P_DEFAULT, H5P_DEFAULT);
-            _H5Oget_info(_group, &_info);
+
+            H5Oget_info(_group, &_info);
             _address = _info.addr;
             (*_refcounts)[_address] = 1;
         }

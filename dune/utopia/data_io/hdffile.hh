@@ -19,8 +19,8 @@ class HDFFile
 protected:
     hid_t _file;
     std::string _path;
-    std::shared_ptr<HDFGroup> _base_group;
     std::shared_ptr<std::unordered_map<haddr_t, int>> _refcounts;
+    std::shared_ptr<HDFGroup> _base_group;
 
 public:
     /**
@@ -167,8 +167,8 @@ public:
     HDFFile(const HDFFile& other)
         : _file(other._file),
           _path(other._path),
-          _base_group(other._base_group),
-          _refcounts(other._refcounts)
+          _refcounts(other._refcounts),
+          _base_group(other._base_group)
     {
     }
 
@@ -229,10 +229,13 @@ public:
               }
           }()),
           _path(path),
+          _refcounts(std::make_shared<std::unordered_map<haddr_t, int>>()),
           _base_group(std::make_shared<HDFGroup>(*this, "/"))
+
     {
         H5Eset_auto(0, 0, NULL);
-        (*_refcounts)[_base_group->get_address()] += 1;
+
+        ++(*_refcounts)[_base_group->get_address()];
     }
 
     /**
