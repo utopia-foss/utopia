@@ -160,8 +160,8 @@ class WorkerManager:
         self._poll_delay = val            
 
     @property
-    def reporter(self) -> WorkerManagerReporter:
-        """Returns the associated Reporter object or None, of none is set."""
+    def reporter(self) -> Union[WorkerManagerReporter, None]:
+        """Returns the associated Reporter object or None, if none is set."""
         return self._reporter
 
     @reporter.setter
