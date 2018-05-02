@@ -29,7 +29,7 @@ private:
   hid_t __make_attribute__(hsize_t typesize = 0) {
     hid_t dspace = H5Screate_simple(1, &_size, nullptr);
 
-    hid_t atr = H5Acreate2(_parent_object.get_id(), _name.c_str(),
+    hid_t atr = H5Acreate2(_parent_object->get_id(), _name.c_str(),
                            HDFTypeFactory::type<result_type>(typesize), dspace,
                            H5P_DEFAULT, H5P_DEFAULT);
     H5Sclose(dspace);
@@ -79,7 +79,7 @@ public:
    *
    * @return weak pointer to HDFObject
    */
-  HDFObject &get_parent() { return _parent_object; }
+  auto get_parent() { return _parent_object; }
 
   /**
    * @brief closes the attribute
@@ -244,7 +244,7 @@ public:
   HDFAttribute(HDFObject &object, std::string name)
       : _name(name), _size(1), _parent_object(object) {
 
-    if (H5Iis_valid(_parent_object.get_id()) == false) {
+    if (H5Iis_valid(_parent_object->get_id()) == false) {
       throw std::invalid_argument(
           "parent_object is invalid, has it been closed?");
     } else {
