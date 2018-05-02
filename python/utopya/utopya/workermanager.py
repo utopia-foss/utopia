@@ -50,8 +50,18 @@ class WorkerManager:
 
         if num_workers == 'auto':
             self.num_workers = os.cpu_count()
+
         elif num_workers < 0:
-            self.num_workers = os.cpu_count() + num_workers
+            try:
+                self.num_workers = os.cpu_count() + num_workers
+            except ValueError as err:
+                raise ValueError("Received invalid argument `num_workers` of "
+                                 "value {}. If giving a negative value, note "
+                                 "that it needs to sum up with the CPU count "
+                                 "({}) to a positive integer."
+                                 "".format(num_workers, os.cpu_count())
+                                 ) from err
+
         else:
             self.num_workers = num_workers
 
@@ -80,7 +90,9 @@ class WorkerManager:
     def num_workers(self, val):
         """Set the number of workers that can work in parallel."""
         if val <= 0 or not isinstance(val, int):
-            raise ValueError("Need positive integer for number of workers, got ", val)
+            raise ValueError("Need positive integer for number of workers, "
+                             "got {} of value {}.".format(type(val), val))
+
         elif val > os.cpu_count():
             warnings.warn("Set WorkerManager to use more parallel workers ({})"
                           "than there are cpu cores ({}) on this "
