@@ -37,8 +37,9 @@ before_script:
   - chmod 700 ~/.ssh
   ## 
   ## Add the known hosts lists to ensure this ssh connection is the right one
-  - echo "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
-  - chmod 644 ~/.ssh/known_hosts
+  # - echo "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+  # - chmod 644 ~/.ssh/known_hosts
+  - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config' # FIXME
 
 # Build stage -----------------------------------------------------------------
 build:main:
