@@ -22,7 +22,7 @@ perform_sweep: false
 # Run configuration for the WorkerManager
 run_kwargs:
   # Whether to forward the worker streams to the main thread's stdout
-  forward_streams: true
+  forward_streams: false
 
   # Total timeout (in s) of a run; to ignore, set to ~
   timeout: ~
@@ -53,8 +53,30 @@ worker_manager:
   # delay between polls [seconds]
   poll_delay: 0.05
 
+  # report format specifications at different points of the WM's operation
+  rf_spec:
+    while_working: while_working
+    task_spawned: while_working
+    task_finished: while_working
+    after_work: after_work
+    after_abort: after_work
+  # These entries can also be lists, leading to multiple reports being invoked
+  # in the specified format.
+  # To add report formats, specify them under reporter.report_formats
+
 # Reporter
-reporter: {}
+reporter:
+  report_formats:
+    while_working:
+      parser: progress_bar
+      show_times: True
+      write_to: stdout_noreturn
+      min_report_intv: 0.5
+
+    after_work:
+      parser: progress_bar
+      show_times: True
+      write_to: stdout_noreturn
 
 # Data Manager
 data_manager: {}

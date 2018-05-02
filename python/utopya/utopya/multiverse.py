@@ -13,6 +13,7 @@ import paramspace as psp
 
 from utopya.workermanager import WorkerManager
 from utopya.task import enqueue_json
+from utopya.reporter import WorkerManagerReporter
 from utopya.tools import recursive_update, read_yml, write_yml
 from utopya.info import MODELS
 
@@ -71,8 +72,13 @@ class Multiverse:
         # Create the run directory and write the meta configuration into it
         self._create_run_dir(**self.meta_config['paths'], cfg_parts=files)
 
-        # create a WorkerManager instance
+        # Create a WorkerManager instance and pass the reporter to it
         self._wm = WorkerManager(**self.meta_config['worker_manager'])
+
+        # Instantiate the Reporter
+        self._reporter = WorkerManagerReporter(self._wm,
+                                               report_dir=self.dirs['run'],
+                                               **self.meta_config['reporter'])
 
         log.info("Initialized Multiverse for model: '%s'", self.model_name)
 
@@ -366,7 +372,7 @@ class Multiverse:
 
         # Inform and store to directory dict
         log.debug("Expanded user and time stamp to %s", run_dir)
-        self._dirs['run_dir'] = run_dir
+        self.dirs['run'] = run_dir
 
         # Recursively create the whole path to the simulation directory
         try:
@@ -382,7 +388,7 @@ class Multiverse:
         for subdir in ('config', 'eval', 'universes'):
             subdir_path = os.path.join(run_dir, subdir)
             os.mkdir(subdir_path)
-            self._dirs[subdir] = subdir_path
+            self.dirs[subdir] = subdir_path
 
         log.debug("Finished creating simulation directory. Now registered: %s",
                   self._dirs)
