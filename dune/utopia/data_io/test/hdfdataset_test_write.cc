@@ -42,6 +42,20 @@ hid_t make_dataset_for_tests(hid_t id,
     }
 }
 
+void dataset_lifecycle_test(HDFFile& file)
+{
+    HDFGroup lifecyclegroup(*file.get_basegroup(), "livecycletest");
+    std::vector<int> data(100, 42);
+
+    HDFDataset first(lifecyclegroup, "first");
+
+    first.write(data.begin(), data.end(), [](auto& value) { return value; });
+    assert((*first.get_referencecounter())[first.get_address()] == 1);
+
+    auto second = first;
+    assert((*second.get_referencecounter())[second.get_address()] == 2);
+}
+
 void write_dataset_onedimensional(HDFFile& file)
 {
     // 1d dataset tests
@@ -51,7 +65,7 @@ void write_dataset_onedimensional(HDFFile& file)
     // Test for constructor
 
     // nothing happend until now
-    HDFDataset<HDFGroup> testdataset(testgroup2, "testdataset");
+    HDFDataset testdataset(testgroup2, "testdataset");
     assert(testdataset.get_id() == -1);
 
     // make a dummy dataset to which later will be written
@@ -59,7 +73,7 @@ void write_dataset_onedimensional(HDFFile& file)
         testgroup1.get_id(), "/testgroup1/testdataset2", 1, {100}, {H5S_UNLIMITED}, 50);
     H5Dclose(dummy_dset);
     // open dataset again
-    HDFDataset<HDFGroup> testdataset2(testgroup1, "testdataset2");
+    HDFDataset testdataset2(testgroup1, "testdataset2");
     hid_t dummy_dset2 = H5Dopen(file.get_id(), "/testgroup1/testdataset2", H5P_DEFAULT);
     // get its name
     std::string name;
@@ -111,27 +125,41 @@ void write_dataset_onedimensional(HDFFile& file)
         data_2d.begin(), data_2d.end(),
         [](auto& value) -> std::vector<double>& { return value; }, 1, {100});
 
-    HDFDataset<HDFGroup> multirefdataset1(testgroup1, "multirefdataset");
-    multirefdataset1.add_attribute("what is this?",
-                                   "this is a test for reference count");
-
-    HDFDataset<HDFGroup> multirefdataset2(testgroup1, "multirefdataset");
-
-    // close multirefdataset1 now
-    multirefdataset1.close();
-    // check that multirefdataset2 still works
-
-    multirefdataset2.add_attribute("what is that?",
-                                   "because without refcount having a dataset "
-                                   "open multiple times lead to problems");
+    // multiple objects refer to the same dataset
+    HDFGroup multirefgroup(*file.get_basegroup(), "multiref_test");
+    HDFDataset multirefdataset1(multirefgroup, "multirefdataset");
 
     data = std::vector<double>(100, 3.14);
     for (std::size_t i = 0; i < data.size(); ++i)
     {
         data[i] += i;
     }
+
+    // write some stuff to multirefdataset1
+    multirefdataset1.write(data.begin(), data.end(),
+                           [](auto& value) { return value; }, 1, {100}, {}, 50);
+
+    std::string attr1 = "First attribute to multiple reference dataset";
+    multirefdataset1.add_attribute("Attribute1", attr1);
+    HDFDataset multirefdataset2(multirefgroup, "multirefdataset");
+
+    assert((*multirefdataset1.get_referencecounter())[multirefdataset1.get_address()] == 2);
+    assert((*multirefdataset2.get_referencecounter())[multirefdataset1.get_address()] == 2);
+
+    multirefdataset1.close();
+
+    assert((*multirefdataset2.get_referencecounter())[multirefdataset1.get_address()] == 1);
+    assert((*multirefdataset1.get_referencecounter())[multirefdataset1.get_address()] == 1);
+
+    for (std::size_t i = 0; i < data.size(); ++i)
+    {
+        data[i] += i + 100;
+    }
+    // write some stuff to multirefdataset2
     multirefdataset2.write(data.begin(), data.end(),
-                           [](auto& value) { return value; });
+                           [](auto& value) { return value; }, 1, {100}, {}, 50);
+    std::string attr2 = "Second attribute to multirefdataset";
+    multirefdataset2.add_attribute("Attribute2", attr2);
 }
 
 void write_dataset_multidimensional(HDFFile& file)
@@ -139,12 +167,12 @@ void write_dataset_multidimensional(HDFFile& file)
     HDFGroup multidimgroup(*file.get_basegroup(), "/multi_dim_data");
     std::vector<double> data(100, 2.718);
 
-    HDFDataset<HDFGroup> multidimdataset(multidimgroup, "multiddim_dataset");
+    HDFDataset multidimdataset(multidimgroup, "multiddim_dataset");
     multidimdataset.write(data.begin(), data.end(),
                           [](auto& value) { return value; }, 2, {1, 100});
 
-    HDFDataset<HDFGroup> multidimdataset_compressed(
-        multidimgroup, "multiddim_dataset_compressed");
+    HDFDataset multidimdataset_compressed(multidimgroup,
+                                          "multiddim_dataset_compressed");
 
     std::for_each(data.begin(), data.end(),
                   [](auto& value) { return value += 1; });
@@ -154,8 +182,8 @@ void write_dataset_multidimensional(HDFFile& file)
 
     multidimdataset.close();
 
-    HDFDataset<HDFGroup> multidimdataset_extendable(
-        multidimgroup, "multiddim_dataset_extendable");
+    HDFDataset multidimdataset_extendable(multidimgroup,
+                                          "multiddim_dataset_extendable");
 
     double writeval = 100;
     for (std::size_t i = 0; i < data.size(); ++i)
@@ -169,8 +197,8 @@ void write_dataset_multidimensional(HDFFile& file)
 
     multidimdataset_extendable.close();
 
-    HDFDataset<HDFGroup> multidimdataset_reopened(
-        multidimgroup, "multiddim_dataset_extendable");
+    HDFDataset multidimdataset_reopened(multidimgroup,
+                                        "multiddim_dataset_extendable");
 
     double value = 200;
     for (std::size_t i = 0; i < data.size(); ++i)
@@ -185,6 +213,8 @@ void write_dataset_multidimensional(HDFFile& file)
 int main()
 {
     HDFFile file("dataset_test.h5", "w");
+
+    dataset_lifecycle_test(file);
 
     write_dataset_onedimensional(file);
 

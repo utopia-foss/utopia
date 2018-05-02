@@ -175,7 +175,6 @@ public:
             status = H5Ldelete(_group, path.c_str(), H5P_DEFAULT);
             if (status < 0)
             {
-                close();
                 throw std::runtime_error(
                     "deletion of group failed, wrong path?");
             }

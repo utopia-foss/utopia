@@ -233,7 +233,7 @@ public:
           _base_group(std::make_shared<HDFGroup>(*this, "/"))
 
     {
-        H5Eset_auto(0, 0, NULL);
+        // H5Eset_auto(0, 0, NULL);
 
         ++(*_refcounts)[_base_group->get_address()];
     }

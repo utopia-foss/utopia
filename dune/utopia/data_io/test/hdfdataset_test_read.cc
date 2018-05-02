@@ -109,13 +109,34 @@ void read_dataset_tests(HDFFile& file)
         data[i] += i;
     }
     // check that multirefdataset worked as expected
-    HDFDataset<HDFGroup> multirefdataset(testgroup1, "multirefdataset");
-    auto datavector = multirefdataset.read<double>();
-    assert(datavector.size() == read_data.size());
-    for (std::size_t i = 0; i < datavector.size(); ++i)
+    HDFGroup multirefgroup(*file.get_basegroup(), "multiref_test");
+    HDFDataset multirefdataset(multirefgroup, "multirefdataset");
+
+    std::vector<double> multirefdata(200, 3.14);
+    for (std::size_t i = 0; i < 200; ++i)
     {
-        assert(std::abs(datavector[i] - data[i]) < 1e-16);
+        multirefdata[i] += i;
     }
+
+    auto datavector = multirefdataset.read<double>();
+
+    assert(datavector.size() == multirefdata.size());
+
+    for (std::size_t i = multirefdata.size(); i < multirefdata.size(); ++i)
+    {
+        assert(std::abs(datavector[i] - multirefdata[i]) < 1e-16);
+    }
+    std::string attr1 = "First attribute to multiple reference dataset";
+
+    std::string attr2 = "Second attribute to multirefdataset";
+
+    HDFAttribute multirefattribute(multirefdataset, "Attribute1");
+    auto multirefattrdata1 = multirefattribute.read<std::string>();
+    assert(multirefattrdata1 == attr1);
+
+    HDFAttribute multirefattribute2(multirefdataset, "Attribute2");
+    auto multirefattrdata2 = multirefattribute2.read<std::string>();
+    assert(multirefattrdata2 == attr2);
 }
 
 int main()

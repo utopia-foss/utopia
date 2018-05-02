@@ -34,6 +34,7 @@ int main()
     assert(check_exists_group(
                file, "/first_deeper/second_deeper/third_deeper") == false);
 
+    // test for reference counting and correct resource management
     auto testgroup = base_group->open_group("/testgroup1/dummygroup");
     auto testgroup2 = base_group->open_group("/testgroup1/dummygroup");
 

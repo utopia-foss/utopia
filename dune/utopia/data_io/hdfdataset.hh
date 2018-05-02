@@ -81,6 +81,10 @@ private:
             {
                 _max_extend = std::vector<decltype(H5S_UNLIMITED)>(_rank, H5S_UNLIMITED);
             }
+            else
+            {
+                _max_extend = max_size;
+            }
             if (compress_level > 0)
             {
                 // compressed dataset: make a new dataset
@@ -114,11 +118,13 @@ private:
             }
 
             // make dataset if necessary
-            if (_dataset == -1)
-            {
-                _dataset = __create_dataset_helper__<result_type>(chunksize, compress_level);
-            }
+            _dataset = __create_dataset_helper__<result_type>(chunksize, compress_level);
         }
+
+        // update info and add the new dataset to the reference counter
+        H5Oget_info(_dataset, &_info);
+        _address = _info.addr;
+        (*_refcounts)[_address] = 1;
     }
 
     // for writing a  dataset
@@ -131,8 +137,6 @@ private:
         // buffering at first
         auto buffer =
             HDFBufferFactory::buffer(begin, end, std::forward<Adaptor&&>(adaptor));
-
-        // std::cout << "buffer test: " << buffer.back().len << std::endl;
 
         // write to buffer
         herr_t write_err = H5Dwrite(_dataset, HDFTypeFactory::type<result_type>(),
@@ -300,7 +304,8 @@ public:
     {
         // make attribute and write
 
-        HDFAttribute<HDFDataset>(*this, attribute_name).write(attribute_data);
+        HDFAttribute attr(*this, attribute_name);
+        attr.write(attribute_data);
     }
 
     /**
@@ -391,7 +396,8 @@ public:
             if (H5Iis_valid(_dataset) == false)
             {
                 throw std::runtime_error(
-                    "dataset id invalid, has the dataset already been closed?");
+                    "Trying to create dataset named '" + _name +
+                    "' resulted in invalid id, check your arguments.");
             }
 
             // add attribute with dimensionality
@@ -419,7 +425,8 @@ public:
             if (H5Iis_valid(_dataset) == false)
             {
                 throw std::runtime_error(
-                    "dataset id invalid, has the dataset already been closed?");
+                    "Apparently existing dataset named '" + _name +
+                    "' invalid, has the dataset already been closed?");
             }
 
             // check if the dataset can be extended, i.e. if extend <
@@ -602,7 +609,8 @@ public:
         if (H5Iis_valid(_dataset) == false)
         {
             throw std::runtime_error(
-                "dataset id invalid, has the dataset already been closed?");
+                "dataset id of '" + _name +
+                "' invalid, has the dataset already been closed?");
         }
 
         // 1d dataset
@@ -723,6 +731,7 @@ public:
           _address(other._address),
           _refcounts(other._refcounts)
     {
+        (*_refcounts)[_address] += 1;
     }
 
     /**
