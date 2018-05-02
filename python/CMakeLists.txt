@@ -18,7 +18,7 @@ dune_python_find_package(PACKAGE paramspace
                          INTERPRETER ${DUNE_PYTHON_VIRTUALENV_EXECUTABLE})
 
 if(NOT DUNE_PYTHON_paramspace_FOUND)
-    python_install_package_remote(URL https://ts-gitlab.iup.uni-heidelberg.de/yunus/paramspace.git@releases/v1.0b
+    python_install_package_remote(URL ssh://git@ts-gitlab.iup.uni-heidelberg.de:10022/yunus/paramspace.git@releases/v1.0b
         TRUSTED_HOST ts-gitlab.iup.uni-heidelberg.de)
 endif()
 
