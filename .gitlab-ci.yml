@@ -1,7 +1,9 @@
+---
 image: citcat/dune-env:latest
+
 variables:
   PROCNUM: 2
-  DUNE_CONTROL_PATH: /opt/dune:$CI_PROJECT_DIR
+  DUNE_CONTROL_PATH: /opt/dune:$CI_PROJECT_DIR  # such that DUNE finds Utopia
   RUN_IN_DUNE_ENV: $CI_PROJECT_DIR/build-cmake/run-in-dune-env
   CONFIG_FLAGS:
       -DDUNE_PYTHON_VIRTUALENV_SETUP=True
@@ -9,13 +11,19 @@ variables:
   MAKE_FLAGS_BUILD:
       -j $PROCNUM
   MODEL_DIR: $CI_PROJECT_DIR/dune/utopia/models
-before_script:
-  - cd /opt/dune
 
 stages:
   - build
   - test
 
+before_script:
+  # Enter dune directory
+  - cd /opt/dune
+  #
+  # Deployment of needed packages via deploy key
+  # TODO: CONTINUE HERE
+
+# Build stage -----------------------------------------------------------------
 build:main:
   stage: build
   artifacts:
@@ -59,6 +67,7 @@ build:models:
       ./dune-common/bin/dunecontrol --module=utopia configure
     - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD all
 
+# Test stage ------------------------------------------------------------------
 test:core:
   stage: test
   dependencies:
