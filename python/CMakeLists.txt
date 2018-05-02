@@ -22,8 +22,15 @@ if(NOT DUNE_PYTHON_paramspace_FOUND)
         TRUSTED_HOST ts-gitlab.iup.uni-heidelberg.de)
 endif()
 
-# deval
-# TODO
+# dantro
+dune_python_find_package(PACKAGE dantro
+                         VERSION 0.1b0 EXACT  # NOTE exact needed during beta
+                         INTERPRETER ${DUNE_PYTHON_VIRTUALENV_EXECUTABLE})
+
+if(NOT DUNE_PYTHON_dantro_FOUND)
+    python_install_package_remote(URL ssh://git@ts-gitlab.iup.uni-heidelberg.de:10022/utopia/dantro.git
+        TRUSTED_HOST ts-gitlab.iup.uni-heidelberg.de)
+endif()
 
 
 # Now, ready to install utopya
