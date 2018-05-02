@@ -88,15 +88,20 @@ def test_init():
     WorkerManager(num_workers=-1)
     WorkerManager(num_workers=1)
 
-    with pytest.warns(UserWarning):
+    with pytest.warns(UserWarning, match="Set WorkerManager to use more"):
         # too many workers
         WorkerManager(num_workers=1000)
 
-    with pytest.raises(ValueError):
-        # Negative
+    with pytest.raises(ValueError, match="Need positive integer"):
+        # Not positive
+        WorkerManager(num_workers=0)
+    
+    with pytest.raises(ValueError,
+                       match="Received invalid argument `num_workers`"):
+        # Too negative
         WorkerManager(num_workers=-1000)
     
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Need positive integer"):
         # not int
         WorkerManager(num_workers=1.23)
 
