@@ -126,7 +126,7 @@ public:
      */
     void close()
     {
-        if (H5Iis_valid(_group) == true)
+        if (H5Iis_valid(_group))
         {
             if ((*_refcounts)[_address] == 1)
             {
@@ -168,7 +168,7 @@ public:
     {
         // check if group exists in file, if does delete link
         herr_t status = 1;
-        if (H5Lexists(_group, path.c_str(), H5P_DEFAULT) == true)
+        if (H5Lexists(_group, path.c_str(), H5P_DEFAULT))
         {
             // group exists, can be deleted
 
@@ -258,7 +258,7 @@ public:
      */
     virtual ~HDFGroup()
     {
-        if (H5Iis_valid(_group) == true)
+        if (H5Iis_valid(_group))
         {
             if ((*_refcounts)[_address] == 1)
             {

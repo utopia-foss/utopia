@@ -126,9 +126,9 @@ public:
                 "trying to read a nonexstiant or closed attribute named '" +
                 _name + "'");
         }
-        if constexpr (is_container_type<Type>::value == true)
+        if constexpr (is_container_type<Type>::value)
         {
-            if constexpr (std::is_same_v<Type, std::string> == true)
+            if constexpr (std::is_same_v<Type, std::string>)
             {
                 // get type the attribute has internally
                 hid_t type = H5Aget_type(_attribute);
@@ -194,7 +194,7 @@ public:
         // using result_type = typename HDFTypeFactory::result_type<Type>::type;
         // when stuff is vector string we can write directly, otherwise we
         // have to buffer
-        if constexpr (is_container_type<Type>::value == true)
+        if constexpr (is_container_type<Type>::value)
         {
             if (_attribute == -1)
             {
@@ -297,7 +297,7 @@ public:
      */
     virtual ~HDFAttribute()
     {
-        if (H5Iis_valid(_attribute) == true)
+        if (H5Iis_valid(_attribute))
         { // FIXME: add check to make sure that
           // it is not
           // more than once closed

@@ -29,7 +29,7 @@ public:
     template <typename T>
     static auto convert_source(T& source)
     {
-        if constexpr (std::is_same_v<T, std::string> == true)
+        if constexpr (std::is_same_v<T, std::string>)
         {
             return source.c_str();
         }
@@ -60,9 +60,9 @@ public:
     {
         using T = typename HDFTypeFactory::result_type<decltype(adaptor(*begin))>::type;
 
-        if constexpr (is_container_type<T>::value == true)
+        if constexpr (is_container_type<T>::value)
         {
-            if constexpr (std::is_same_v<T, std::string> == true)
+            if constexpr (std::is_same_v<T, std::string>)
             {
                 // set up buffer
 

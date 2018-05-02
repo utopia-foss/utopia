@@ -171,9 +171,9 @@ private:
     template <typename desired_type>
     auto __read_from_dataset__(hsize_t buffer_size, hid_t dspace, hid_t memspace)
     {
-        if constexpr (is_container<desired_type>::value == true)
+        if constexpr (is_container<desired_type>::value)
         {
-            if constexpr (std::is_same_v<std::string, desired_type> == true)
+            if constexpr (std::is_same_v<std::string, desired_type>)
             {
                 std::vector<const char*> buffer(buffer_size);
                 hid_t type = H5Dget_type(_dataset);
@@ -314,7 +314,7 @@ public:
      */
     void close()
     {
-        if (H5Iis_valid(_dataset) == true)
+        if (H5Iis_valid(_dataset))
         {
             if ((*_refcounts)[_address] == 1)
             {
@@ -797,7 +797,7 @@ public:
      */
     virtual ~HDFDataset()
     {
-        if (H5Iis_valid(_dataset) == true)
+        if (H5Iis_valid(_dataset))
         {
             if ((*_refcounts)[_address] == 1)
             {

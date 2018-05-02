@@ -44,7 +44,7 @@ public:
      */
     void close()
     {
-        if (H5Iis_valid(_file) == true)
+        if (H5Iis_valid(_file))
         {
             H5Fflush(_file, H5F_SCOPE_GLOBAL);
 
@@ -131,7 +131,7 @@ public:
      */
     void flush()
     {
-        if (H5Iis_valid(_file) == true)
+        if (H5Iis_valid(_file))
         {
             H5Fflush(_file, H5F_SCOPE_GLOBAL);
         }
@@ -244,7 +244,7 @@ public:
      */
     virtual ~HDFFile()
     {
-        if (H5Iis_valid(_file) == true)
+        if (H5Iis_valid(_file))
         {
             H5Fflush(_file, H5F_SCOPE_GLOBAL);
             H5Fclose(_file);
