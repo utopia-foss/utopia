@@ -42,20 +42,6 @@ hid_t make_dataset_for_tests(hid_t id,
     }
 }
 
-void dataset_lifecycle_test(HDFFile& file)
-{
-    HDFGroup lifecyclegroup(*file.get_basegroup(), "livecycletest");
-    std::vector<int> data(100, 42);
-
-    HDFDataset first(lifecyclegroup, "first");
-
-    first.write(data.begin(), data.end(), [](auto& value) { return value; });
-    assert((*first.get_referencecounter())[first.get_address()] == 1);
-
-    auto second = first;
-    assert((*second.get_referencecounter())[second.get_address()] == 2);
-}
-
 void write_dataset_onedimensional(HDFFile& file)
 {
     // 1d dataset tests
@@ -213,8 +199,6 @@ void write_dataset_multidimensional(HDFFile& file)
 int main()
 {
     HDFFile file("dataset_test.h5", "w");
-
-    dataset_lifecycle_test(file);
 
     write_dataset_onedimensional(file);
 
