@@ -108,6 +108,7 @@ data_manager:
       loader: hdf5_proxy
       glob_str: 'universes/uni*/data.h5'
       required: true
+      always_create_group: true
       path_regex: 'universes/uni(\d+)/data.h5'
 
 

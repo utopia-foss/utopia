@@ -86,4 +86,5 @@ def test_load_sweep(dm_after_sweep):
     assert 'uni_cfg' in dm
 
     # Check that the binary data is loaded as expected
-    # TODO
+    assert 'data' in dm
+    # TODO add more checks here
