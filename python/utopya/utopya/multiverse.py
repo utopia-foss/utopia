@@ -11,6 +11,7 @@ from pkg_resources import resource_filename
 
 import paramspace as psp
 
+from utopya.datamanager import DataManager
 from utopya.workermanager import WorkerManager
 from utopya.task import enqueue_json
 from utopya.reporter import WorkerManagerReporter
@@ -72,6 +73,9 @@ class Multiverse:
         # Create the run directory and write the meta configuration into it
         self._create_run_dir(**self.meta_config['paths'], cfg_parts=files)
 
+        # Create a data manager
+        self._dm = DataManager(**self.meta_config['data_manager'])
+
         # Create a WorkerManager instance and pass the reporter to it
         self._wm = WorkerManager(**self.meta_config['worker_manager'])
 
@@ -129,6 +133,11 @@ class Multiverse:
     def dirs(self) -> dict:
         """Information on managed directories."""
         return self._dirs
+
+    @property
+    def dm(self) -> DataManager:
+        """The Multiverse's DataManager."""
+        return self._dm
 
     @property
     def wm(self) -> WorkerManager:
