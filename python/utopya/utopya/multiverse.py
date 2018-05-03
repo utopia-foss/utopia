@@ -75,6 +75,7 @@ class Multiverse:
 
         # Create a data manager
         self._dm = DataManager(self.dirs['run'],
+                               name=self.model_name + "_data",
                                **self.meta_config['data_manager'])
 
         # Create a WorkerManager instance and pass the reporter to it
