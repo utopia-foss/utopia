@@ -2,14 +2,16 @@
 
 import os
 import queue
-import time
 import warnings
 import logging
-from typing import Union, Callable, Sequence, List, Set
+import time
+from datetime import datetime as dt
+from typing import Union, Callable, Sequence, List, Set, Dict
 from typing.io import BinaryIO
 
 from utopya.task import WorkerTask, TaskList
 from utopya.stopcond import StopCondition
+from utopya.reporter import WorkerManagerReporter
 
 # Initialise logger
 log = logging.getLogger(__name__)
@@ -25,7 +27,7 @@ class WorkerManager:
         poll_delay (float): The delay (in s) between after a poll
     """
 
-    def __init__(self, num_workers: Union[int, str], poll_delay: float=0.05, QueueCls=queue.Queue):
+    def __init__(self, num_workers: Union[int, str], poll_delay: float=0.05, QueueCls=queue.Queue, reporter: WorkerManagerReporter=None, rf_spec: Dict[str, Union[str, List[str]]]=None):
         """Initialize the worker manager.
         
         Args:
@@ -37,6 +39,18 @@ class WorkerManager:
                 the CPU load will become significant.
             QueueCls (Class, optional): Which class to use for the Queue.
                 Defaults to FiFo.
+            reporter (WorkerManagerReporter, optional): The reporter associated
+                with this WorkerManager, reporting on the progress.
+            rf_spec (Dict[str, Union[str, List[str]]], optional): The names of
+                report formats that should be invoked at different points of
+                the WorkerManager's operation.
+                Possible keys:
+                    'while_working', 'after_work', 'after_abort',
+                    'task_spawn', 'task_finished'
+                All other keys are ignored.
+                The values of the dict can be either strings or lists of
+                strings, where the strings always refer to report formats
+                registered with the WorkerManagerReporter
         """
         # Initialize attributes, some of which are property-managed
         self._num_workers = None
@@ -44,16 +58,45 @@ class WorkerManager:
         self._tasks = TaskList()
         self._task_q = QueueCls()
         self._active_tasks = []
+        self._reporter = None
+        self._num_finished_tasks = 0
 
         # Hand over arguments
         self.poll_delay = poll_delay
 
         if num_workers == 'auto':
             self.num_workers = os.cpu_count()
+
         elif num_workers < 0:
-            self.num_workers = os.cpu_count() + num_workers
+            try:
+                self.num_workers = os.cpu_count() + num_workers
+            except ValueError as err:
+                raise ValueError("Received invalid argument `num_workers` of "
+                                 "value {}. If giving a negative value, note "
+                                 "that it needs to sum up with the CPU count "
+                                 "({}) to a positive integer."
+                                 "".format(num_workers, os.cpu_count())
+                                 ) from err
+
         else:
             self.num_workers = num_workers
+
+        # Reporter-related
+        if reporter:
+            self.reporter = reporter
+
+        self.rf_spec = dict(while_working='while_working',
+                            task_spawned='while_working',
+                            task_finished='while_working',
+                            after_work='after_work',
+                            after_abort='after_work')
+        if rf_spec:
+            self.rf_spec.update(rf_spec)
+
+        # Store some profiling information
+        self.times = dict(init=dt.now(), start_working=None,
+                          timeout=None, end_working=None)
+        # These are also accessed by the reporter
 
     # Properties ..............................................................
     @property
@@ -80,7 +123,9 @@ class WorkerManager:
     def num_workers(self, val):
         """Set the number of workers that can work in parallel."""
         if val <= 0 or not isinstance(val, int):
-            raise ValueError("Need positive integer for number of workers, got ", val)
+            raise ValueError("Need positive integer for number of workers, "
+                             "got {} of value {}.".format(type(val), val))
+
         elif val > os.cpu_count():
             warnings.warn("Set WorkerManager to use more parallel workers ({})"
                           "than there are cpu cores ({}) on this "
@@ -97,6 +142,13 @@ class WorkerManager:
         Note that this information might not be up-to-date; a process might quit just after the list has been updated.
         """
         return self._active_tasks
+
+    @property
+    def num_finished_tasks(self) -> int:
+        """The number of finished tasks. Incremented whenever a task leaves
+        the active_tasks list.
+        """
+        return self._num_finished_tasks
 
     @property
     def num_free_workers(self) -> int:
@@ -119,23 +171,61 @@ class WorkerManager:
                           "value.", UserWarning)
         self._poll_delay = val            
 
+    @property
+    def reporter(self) -> Union[WorkerManagerReporter, None]:
+        """Returns the associated Reporter object or None, if none is set."""
+        return self._reporter
+
+    @reporter.setter
+    def reporter(self, reporter):
+        """Set the Reporter object for this WorkerManager.
+
+        This includes a check for the correct type and whether the reporter was
+        already set.
+        """
+        if not isinstance(reporter, WorkerManagerReporter):
+            raise TypeError("Need a WorkerManagerReporter for reporting from "
+                            "WorkerManager, got {}.".format(type(reporter)))
+        elif self.reporter:
+            raise RuntimeError("Already set the reporter; cannot change it.")
+
+        self._reporter = reporter
+
+        log.debug("Set reporter of WorkerManager.")
+
     # Public API ..............................................................
 
-    def add_task(self, **task_kwargs):
+    def add_task(self, **task_kwargs) -> WorkerTask:
         """Adds a task to the WorkerManager.
         
         Args:
             **task_kwargs: All arguments needed for WorkerTask initialization.
                 See utopya.task.WorkerTask.__init__ for all valid arguments.
         """
+        # Prepare the callback functions needed by the reporter
+        def task_spawned(task):
+            """Invokes the task_spawned report_spec"""
+            self._invoke_report('task_spawned', force=True)
+        
+        def task_finished(task):
+            """Invokes the task_finished report_spec and registers the task's
+            runtime with the report (needed for runtime statistics)"""
+            self._invoke_report('task_finished', force=True)
+            if self.reporter is not None:
+                self.reporter.register_runtime(task)
+
+        callbacks = dict(spawn=task_spawned,
+                         finished=task_finished)
+
         # Generate the WorkerTask object from the given parameters
-        task = WorkerTask(**task_kwargs)
+        task = WorkerTask(callbacks=callbacks, **task_kwargs)
 
         # Append it to the task list and put it into the task queue
         self.tasks.append(task)
         self.task_queue.put_nowait(task)
 
         log.debug("Task %s (uid: %s) added.", task.name, task.uid)
+        return task
 
     def start_working(self, *, detach: bool=False, forward_streams: bool=False, timeout: float=None, stop_conditions: Sequence[StopCondition]=None, post_poll_func: Callable=None) -> None:
         """Upon call, all enqueued tasks will be worked on sequentially.
@@ -160,16 +250,20 @@ class WorkerManager:
             ValueError: For invalid (i.e., negative) timeout value
             WorkerManagerTotalTimeout: Upon a total timeout
         """
-        # Determine timeout arguments 
-        timeout_time = None
-
+        # Determine timeout arguments
         if timeout:
             if timeout <= 0:
                 raise ValueError("Invalid value for argument `timeout`: {} -- "
                                  "needs to be positive.".format(timeout))
+            
             # Already calculate the time after which a timeout would be reached
-            timeout_time = time.time() + timeout
+            self.times['timeout'] = time.time() + timeout
+
             log.debug("Set timeout time to now + %f seconds", timeout) 
+
+        # Set the variable needed for checking; if above condition was not
+        # fulfilled, this will be None
+        timeout_time = self.times['timeout']
 
         # Determine whether to detach the whole working loop
         if detach:
@@ -178,8 +272,10 @@ class WorkerManager:
                                       "detach the WorkerManager from the "
                                       "main thread.")
         
-        # Count the polls
+        # Count the polls and save the time of the start of work
         poll_no = 0
+
+        self.times['start_working'] = dt.now()
 
         log.info("Starting to work ...")
         log.debug("  Timeout:          now + %ss", timeout)
@@ -195,12 +291,28 @@ class WorkerManager:
                 if timeout_time is not None and time.time() > timeout_time:
                     raise WorkerManagerTotalTimeout()
 
-                # Check if there are free workers and remaining tasks.
-                if self.num_free_workers and self.task_queue.qsize():
-                    # Yes. => Grab a task and start working on it
-                    # Conservative approach: one task is grabbed here, even if there are more than one free workers
-                    new_task = self._grab_task()
-                    self.active_tasks.append(new_task)
+                # Check if there are free workers
+                if self.num_free_workers:
+                    # Yes. => Try to grab a task and start working on it
+                    try:
+                        new_task = self._grab_task()
+                    except queue.Empty:
+                        # There were no tasks left in the task queue
+                        pass
+                    else:
+                        # Succeeded in grabbing a task; worker spawned
+                        self.active_tasks.append(new_task)
+                    # NOTE Only a single task is grabbed here, even if there is
+                    # more than one free worker. This is to assure that the
+                    # while loop iterations have comparable run time, even if
+                    # a task is added (which can take O(ms)). As this loop
+                    # handles more than just grabbing new tasks, it is safer
+                    # to have it run reliably and foreseeably.
+                    # Also, the poll delay is usually not so large that there
+                    # would be an issue with workers staying idle for too long.
+
+                # Invoke the reporter, if available
+                self._invoke_report('while_working')
 
                 # Gather the streams of all working workers
                 for task in self.active_tasks:
@@ -230,20 +342,43 @@ class WorkerManager:
                 # Delay the next poll
                 time.sleep(self.poll_delay)
 
+            # Finished working
+
         except WorkerManagerError as err:
+            print("")
             log.warning("Did not finish working due to a %s ...",
                         err.__class__.__name__)
             
             log.warning("Terminating active tasks ...")
             self._signal_workers(self.active_tasks, signal='SIGTERM')
+
+            # Store end time and invoke a report
+            self.times['end_working'] = dt.now()
+            self._invoke_report('after_abort', force=True)
+
             raise
 
-        else:
-            # Finished because no working workers and no more tasks remained
-            log.info("Finished working. Total tasks worked on: %d",
-                     self.task_count)
+        # Register end time and invoke final report
+        self.times['end_working'] = dt.now()
+        self._invoke_report('after_work', force=True)
+
+        print("")
+        log.info("Finished working. Total tasks worked on: %d",
+                 self.task_count)
 
     # Non-public API ..........................................................
+
+    def _invoke_report(self, rf_spec_name: str, *args, **kwargs):
+        """Helper function to invoke the reporter's report function"""
+        if self.reporter is not None:
+            # Resolve the spec name
+            rfs = self.rf_spec[rf_spec_name]
+            
+            if not isinstance(rfs, list):
+                rfs = [rfs]
+
+            for rf in rfs:
+                self.reporter.report(rf, *args, **kwargs)
 
     def _grab_task(self) -> WorkerTask:
         """Will initiate that a task is gotten from the queue and that it
@@ -285,11 +420,16 @@ class WorkerManager:
             # Nothing to rebuild
             return
 
-        # Broke out of the loop, i.e.: at least ne task finished
+        # Broke out of the loop, i.e.: at least one task finished
+        old_len = len(self.active_tasks)
+
         # have to rebuild the list of active tasks now...
         self.active_tasks[:] = [t for t in self.active_tasks
                                 if t.worker_status is None]
         # NOTE this will also poll all other active tasks and potentially not add them to the active_tasks list again.
+        # Now, only active tasks are in the list, but the list is shorter
+        # Can deduce the number of finished tasks from this
+        self._num_finished_tasks += (old_len - len(self.active_tasks))
 
         return
 
@@ -348,6 +488,7 @@ class WorkerManager:
         
         log.debug("All tasks signalled. Tasks' worker status:\n  %s",
                   ", ".join([str(t.worker_status) for t in tasks]))
+
 
 # Custom exceptions -----------------------------------------------------------
 

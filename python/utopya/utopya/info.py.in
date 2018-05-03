@@ -1,42 +1,63 @@
-"""This CMake-configured module holds information about the non-python side of utopia.
+"""This CMake-configured module file holds information about the non-python
+side of utopia, e.g. information on which model targets are available and what
+the paths to their source and binary directories are.
 
 Note that this is not a usual python module, but is merely used to hold this
 information data and make it easily accessible to utopya.
 """
 
+import os
+
 # Begin of CMake configured variables .........................................
-_CMAKE_BINARY_DIR = "@CMAKE_BINARY_DIR@"
 _LAST_CONFIG_TIME = "@CURRENT_TIME@"
+
+_CMAKE_SOURCE_DIR = "@CMAKE_SOURCE_DIR@"
+_CMAKE_BINARY_DIR = "@CMAKE_BINARY_DIR@"
 
 _UTOPIA_MODEL_TARGETS = "@UTOPIA_MODEL_TARGETS@"
 _UTOPIA_MODEL_BINPATHS = "@UTOPIA_MODEL_BINPATHS@"
+_UTOPIA_MODEL_SRC_DIRS = "@UTOPIA_MODEL_SRC_DIRS@"
 # End of CMake configured variables ...........................................
 
-# Need a function to parse the cmake variables
-def parse_utopia_models(targets: str=_UTOPIA_MODEL_TARGETS, 
-    binpaths: str=_UTOPIA_MODEL_BINPATHS) -> dict:
-    """From the module constants, creates a dictionary with the model information in {model_name: model_binary_path} format.
-    
-    Args:
-        targets (str, optional): The CMake-parsed, semi-colon separated list of
-            utopia targets 
-        binpaths (str, optional): The CMake-parsed, semi-colon separated list
-            of utopia target binary paths
+def parse_model_info() -> dict:
+    """Using the constants available on the module level, parses them to a dict
+    that contains information about all registered Utopia models.
+
+    The dictionary has as keys the model names.
+    The entries are again dicts and include the keys `binpath` and `src_dir`.
     
     Returns:
         dict: The model info dictionary
-    """  
+    """
 
-    if not targets or not binpaths:
+    if not _UTOPIA_MODEL_TARGETS or not _UTOPIA_MODEL_BINPATHS:
         # No models present
-        print(targets, binpaths)
         return {}
 
-    # Populate model info with target names and model info dict containing binpath
-    model_info = {t:dict(binpath=bp) for t, bp in zip(targets.split(";"),
-                                                      binpaths.split(";"))}
+    # Parse the CMake-syntax lists
+    targets = _UTOPIA_MODEL_TARGETS.split(";")
+    rel_bin_paths = _UTOPIA_MODEL_BINPATHS.split(";")
+    rel_src_paths = _UTOPIA_MODEL_SRC_DIRS.split(";")
+
+    if len(targets) != len(rel_bin_paths) != len(rel_src_paths):
+        raise ValueError("Utopia model information lists need to be of the "
+                         "same length, but were:\n"
+                         "targets: {}\n"
+                         "rel. binary paths: {}\n"
+                         "rel. source paths: {}"
+                         "".format(targets, rel_bin_paths, rel_src_paths))
+
+    # Get binary and source dir, of which the above paths are relative to
+    bin_dir = _CMAKE_BINARY_DIR
+    src_dir = _CMAKE_SOURCE_DIR
+
+    # Populate model info with target names and model info dict
+    # This dict comprehension also creates absolute paths
+    model_info = {t:dict(binpath=os.path.join(bin_dir, bp),
+                         src_dir=os.path.join(src_dir, sd))
+                  for t, bp, sd in zip(targets, rel_bin_paths, rel_src_paths)}
 
     return model_info
 
 # Now declare those variables that are 
-MODELS = parse_utopia_models()
+MODELS = parse_model_info()

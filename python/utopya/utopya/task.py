@@ -10,8 +10,10 @@ import threading
 import subprocess
 import warnings
 import logging
-from typing import Callable, Union
+from typing import Callable, Union, Dict
 from typing.io import BinaryIO
+
+import numpy as np
 
 # Initialise logger
 log = logging.getLogger(__name__)
@@ -25,28 +27,36 @@ class Task:
     associate tasks with the corresponding workers and vice versa.
     """
 
-    __slots__ = ('_name', '_priority', '_uid')
+    __slots__ = ('_name', '_priority', '_uid', 'callbacks')
 
-    def __init__(self, *, name: str=None, priority: int=None):
+    def __init__(self, *, name: str=None, priority: float=None, callbacks: Dict[str, Callable]=None):
         """Initialize a Task object.
         
         Args:
             name (str, optional): The task's name. If none is given, the
                 generated uuid will be used.
-            priority (int, optional): The priority of this task; is only used
-                if the task queue is a priority queue
+            priority (float, optional): The priority of this task; if None,
+                default is +np.inf, i.e. the lowest priority. If two priority
+                values are the same, the task created earlier has a higher
+                priority.
+            callbacks (Dict[str, Callable], optional): A dict of callback funcs
+                that are called at different points of the life of this task.
+                The function gets passed as only argument this task object.
         """
         # Carry over arguments attributes
         self._name = str(name) if name else None
-        self._priority = priority
+        self._priority = priority if priority is not None else np.inf
         
         # Create a unique ID
         self._uid = uuid.uuid1()
 
+        # Save the callbacks
+        self.callbacks = callbacks
+
         log.debug("Initialized Task '%s'.\n  Priority: %s,  UID: %s.",
                   self.name, self.priority, self.uid)
 
-    # Properties --------------------------------------------------------------
+    # Properties ..............................................................
 
     @property
     def name(self) -> str:
@@ -62,7 +72,7 @@ class Task:
 
     @property
     def priority(self) -> float:
-        """The task priority, usually a """
+        """The task's priority. Default is +inf, which is the lowest priority."""
         return self._priority
 
     @property
@@ -70,7 +80,7 @@ class Task:
         """Returns the ordering tuple (priority, uid.time)"""
         return (self.priority, self.uid.time)
 
-    # Magic methods -----------------------------------------------------------
+    # Magic methods ...........................................................
 
     def __hash__(self) -> int:
         return hash(self.uid)
@@ -89,9 +99,16 @@ class Task:
         return bool(self.order_tuple <= other.order_tuple)
     
     def __eq__(self, other):
-        return bool(self.order_tuple == other.order_tuple)
-        # NOTE that this should only occur if comparing to itself
-        # TODO consider throwing an error here; identity should be checked via is keyword rather than ==
+        return bool(self is other)
+        # NOTE we trust 'uuid' that the IDs are unique therefore different tasks
+        # can not get the same ID --> are different in ordering
+
+    # Private methods .........................................................
+
+    def _invoke_callback(self, name: str):
+        """If given, invokes the callback function with the name `name`."""
+        if self.callbacks and name in self.callbacks:
+            self.callbacks[name](self)
 
 # -----------------------------------------------------------------------------
 
@@ -117,7 +134,7 @@ class WorkerTask(Task):
                  '_worker', '_worker_pid', '_worker_status',
                  'streams', 'profiling')
 
-    def __init__(self, *, setup_func: Callable=None, setup_kwargs: dict=None, worker_kwargs: dict=None, **task_kwargs):
+    def __init__(self, *, setup_func: Callable=None, setup_kwargs: dict=None, worker_kwargs: dict=None, callbacks: Dict[str, Callable]=None, **task_kwargs):
         """Initialize a WorkerTask object, a specialization of a task for use in the WorkerManager.
         
         Args:
@@ -128,13 +145,16 @@ class WorkerTask(Task):
                 worker. Note that these are also passed to setup_func and, if a
                 setup_func is given, the return value of that function will be
                 used for the worker_kwargs.
+            callbacks (Dict[str, Callable], optional): Callbacks available in
+                the WorkerTask follow the life of a process; available keys
+                are: 'spawn', 'finished', 'after_signal'.
             **task_kwargs: Arguments to be passed to Task.__init__
         
         Raises:
             ValueError: If neither `setup_func` nor `worker_kwargs` were given
         """
 
-        super().__init__(**task_kwargs)
+        super().__init__(callbacks=callbacks, **task_kwargs)
 
         # Check the argument values
         if setup_func:
@@ -311,6 +331,9 @@ class WorkerTask(Task):
         log.debug("Spawned worker process with PID %s.", proc.pid)
         # ... it is running now.
 
+        # If given, call the callback function
+        self._invoke_callback('spawn')
+
         # Associate the process with the task
         self.worker = proc
 
@@ -333,7 +356,7 @@ class WorkerTask(Task):
 
         return self.worker
 
-    def read_streams(self, stream_names: list='all', forward_streams: bool=True, max_num_reads: int=1) -> None:
+    def read_streams(self, stream_names: list='all', forward_streams: bool=False, max_num_reads: int=1, log_level: int=20) -> None:
         """Read the streams associated with this task's worker.
         
         Args:
@@ -345,6 +368,7 @@ class WorkerTask(Task):
                 the buffer. For -1, reads the whole buffer.
                 WARNING: Do not make this value too large as it could block the
                 whole reader thread of this worker.
+            log_level (int, optional): Level at which the stream gets logged
         
         Returns:
             None: Description
@@ -369,7 +393,7 @@ class WorkerTask(Task):
                     # got entry, do something with it
                     if forward_streams:
                         # print it to the parent processe's stdout
-                        log.info("  %s %s:   %s",
+                        log.log(log_level, "  %s %s:   %s",
                                  self.name, stream_name, entry)
 
                     # Write to the stream's log
@@ -418,6 +442,8 @@ class WorkerTask(Task):
                              "either SIGTERM, SIGKILL, or an integer signal "
                              "number.".format(signal))
 
+        self._invoke_callback('after_signal')
+
     # Private API .............................................................
 
     def _finished(self) -> None:
@@ -426,10 +452,18 @@ class WorkerTask(Task):
         It takes care that a profiling time is saved and that the remaining
         stream information is logged.
         """
-        self.profiling['end_time'] = time.time()  # approximate
+        # Update profiling info
+        self.profiling['end_time'] = time.time()
+        self.profiling['run_time'] = (self.profiling['end_time']
+                                      - self.profiling['create_time']) 
+        # NOTE these are both approximate values as the worker process must
+        # have ended prior to the call to this method
 
         # Read all remaining stream lines
         self.read_streams(max_num_reads=-1)
+
+        # If given, call the callback function
+        self._invoke_callback('finished')
 
         log.debug("Task %s: worker finished with status %s.",
                   self.name, self.worker_status)
@@ -462,6 +496,10 @@ class TaskList:
     def __iter__(self):
         """Iterate over the TaskList"""
         return iter(self._l)
+
+    def __eq__(self, other) -> bool:
+        """Tests for equality of the task list by forwarding to _l attribute"""
+        return bool(self._l == other)
 
     def append(self, val: Task):
         """Append a Task object to this TaskList"""
