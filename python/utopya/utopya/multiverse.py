@@ -74,7 +74,8 @@ class Multiverse:
         self._create_run_dir(**self.meta_config['paths'], cfg_parts=files)
 
         # Create a data manager
-        self._dm = DataManager(**self.meta_config['data_manager'])
+        self._dm = DataManager(self.dirs['run'],
+                               **self.meta_config['data_manager'])
 
         # Create a WorkerManager instance and pass the reporter to it
         self._wm = WorkerManager(**self.meta_config['worker_manager'])

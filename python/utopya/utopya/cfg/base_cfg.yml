@@ -82,7 +82,12 @@ reporter:
 
 
 # Data Manager ................................................................
-data_manager: {}
+data_manager:
+  # Where to create the output directory for this data manager, relative to
+  # the run directory of the Multiverse.
+  out_dir: 'eval/{date:}'
+  # NOTE: this includes the current timestamp such that future DataManager
+  #       instances on the same data directory do not create collisions
 
 
 # Plot Manager ................................................................

@@ -1,36 +1,74 @@
 """Tests the UtopiaDataManager and involved functions and classes."""
 
+import uuid
+from pkg_resources import resource_filename
+
 import pytest
 
-from utopya import DataManager
-from utopya.tools import write_yml
+from utopya import Multiverse, DataManager
+
+# Local constants
+RUN_CFG_PATH = resource_filename('test', 'cfg/run_cfg.yml')
+SWEEP_CFG_PATH = resource_filename('test', 'cfg/sweep_cfg.yml')
 
 # Fixtures --------------------------------------------------------------------
 
 @pytest.fixture
-def data_dir(tmpdir) -> str:
-    """Writes dummy data to a temporary directory and returns that directory"""
+def mv_kwargs(tmpdir) -> dict:
+    """Returns a dict that can be passed to Multiverse for initialisation.
+
+    This uses the `tmpdir` fixture provided by pytest, which creates a unique
+    temporary directory that is removed after the tests ran through.
+    """
+    # Create a dict that specifies a unique testing path.
+    # The str cast is needed for python version < 3.6
+    rand_str = "test_" + uuid.uuid4().hex[:8]
+    unique_paths = dict(out_dir=tmpdir, model_note=rand_str)
+
+    return dict(model_name='dummy',
+                run_cfg_path=RUN_CFG_PATH,
+                user_cfg_path=False,  # to omit the user config
+                update_meta_cfg=dict(paths=unique_paths))
+
+@pytest.fixture
+def dm_after_sweep(mv_kwargs) -> DataManager:
+    """Initialises a Multiverse with a DataManager, runs a simulation with
+    output going into a temporary directory, then returns the DataManager."""
+    # Initialise the Multiverse
+    mv_kwargs['run_cfg_path'] = SWEEP_CFG_PATH
+    mv = Multiverse(**mv_kwargs)
+
+    # Run the sweep
+    mv.run_sweep()
     
-    # Create YAML dummy data and write it out
-    foobar = dict(one=1, two=2,
-                  go_deeper=dict(eleven=11),
-                  a_list=list(range(10)))
+    # Return the data manager
+    return mv.dm
 
-    lamo = dict(nothing="to see here")
+@pytest.fixture
+def load_cfg() -> dict:
+    """Returns a dict that specifies a load configuration"""
+    lc = dict()
+    lc['cfg'] = dict(loader='yaml', glob_str='config/*.yml')
 
-    write_yml(foobar, path=tmpdir.join("foobar.yml"))
-    write_yml(lamo, path=tmpdir.join("lamo.yml"))
-    write_yml(lamo, path=tmpdir.join("also_lamo.yml"))
-    write_yml(lamo, path=tmpdir.join("looooooooooong_filename.yml"))
-
-    subdir = tmpdir.mkdir("sub")
-    write_yml(foobar, path=subdir.join("abc123.yml"))
-    write_yml(foobar, path=subdir.join("abcdef.yml"))
-
-    return tmpdir
+    return lc
 
 # Tests -----------------------------------------------------------------------
 
-def test_init(data_dir):
+def test_init(tmpdir):
     """Tests initialisation of the Utopia data manager"""
-    DataManager(str(data_dir))
+    DataManager(str(tmpdir))
+
+def test_load_sweep(dm_after_sweep, load_cfg):
+    """Tests the loading of simulation data for a sweep"""
+    dm = dm_after_sweep
+
+    dm.load_from_cfg(load_cfg=load_cfg)
+
+    print("{:tree}".format(dm))
+
+    assert 'cfg' in dm
+    assert 'cfg/base_cfg' in dm
+    assert 'cfg/meta_cfg' in dm
+    assert 'cfg/model_cfg' in dm
+    assert 'cfg/run_cfg' in dm
+    assert 'cfg/update_cfg' in dm
