@@ -29,7 +29,7 @@ def mv_kwargs(tmpdir) -> dict:
     return dict(model_name='dummy',
                 run_cfg_path=RUN_CFG_PATH,
                 user_cfg_path=False,  # to omit the user config
-                # update_meta_cfg=dict(paths=unique_paths)
+                update_meta_cfg=dict(paths=unique_paths)
                 )
 
 @pytest.fixture
