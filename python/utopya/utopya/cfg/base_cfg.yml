@@ -89,6 +89,27 @@ data_manager:
   # NOTE: this includes the current timestamp such that future DataManager
   #       instances on the same data directory do not create collisions
 
+  # Supply a default load configuration
+  load_cfg:
+    cfg:
+      loader: yaml
+      glob_str: 'config/*.yml'
+      required: true
+      always_create_group: true
+
+    uni_cfg:
+      loader: yaml
+      glob_str: 'universes/uni*/config.yml'
+      required: true
+      always_create_group: true
+      path_regex: 'universes/uni(\d+)/config.yml'
+
+    data:
+      loader: hdf5_proxy
+      glob_str: 'universes/uni*/data.h5'
+      required: true
+      path_regex: 'universes/uni(\d+)/data.h5'
+
 
 # Plot Manager ................................................................
 plot_manager: {}
