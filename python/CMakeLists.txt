@@ -9,6 +9,7 @@ generate_model_info(
 )
 
 # Installations ...............................................................
+message(STATUS "")
 message(STATUS "Installing required Python packages ...")
 
 # Manually install dependencies for utopya, if they are not already satisfied
@@ -59,4 +60,4 @@ dune_python_add_test(NAME FRONTEND_utopya
                              --cov-report=term-missing
                      )
 
-message(STATUS "Python setup complete.")
+message(STATUS "Python setup complete.\n")
