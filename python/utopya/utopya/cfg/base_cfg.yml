@@ -1,5 +1,5 @@
 ---
-# Paths for the output
+# Paths for the output ........................................................
 paths:
   # base output directory
   out_dir: ~/utopia_output
@@ -44,7 +44,8 @@ run_kwargs:
     #       seconds: !expr 60*10
     #       # further arguments to utopya.stopcond._sc_timeout_wall
 
-# Worker Manager
+
+# Worker Manager ..............................................................
 worker_manager:
   # specify how many processes work in parallel
   # auto : number of processor cores. For values <= 0: #CPUs - num_workers
@@ -64,7 +65,8 @@ worker_manager:
   # in the specified format.
   # To add report formats, specify them under reporter.report_formats
 
-# Reporter
+
+# Reporter ....................................................................
 reporter:
   report_formats:
     while_working:
@@ -78,11 +80,16 @@ reporter:
       show_times: True
       write_to: stdout_noreturn
 
-# Data Manager
+
+# Data Manager ................................................................
 data_manager: {}
 
-# Plot Manager
+
+# Plot Manager ................................................................
 plot_manager: {}
 
-# Parameter Space - default values are set by the model config
+
+# Parameter Space .............................................................
+# Only add values here that are independent of models.
+# For model-specific configuration, use the model configuration.
 parameter_space: {}
