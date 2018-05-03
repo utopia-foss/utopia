@@ -8,4 +8,5 @@ log = logging.getLogger(__name__)
 
 # Import those objects that should be easily accessible when importing utopya
 from .multiverse import Multiverse
+from .datamanager import DataManager
 from . import info
