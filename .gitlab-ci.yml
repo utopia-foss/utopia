@@ -26,10 +26,13 @@ build:main:
   tags:
     - light
   script:
+    - ./dune-common/bin/dunecontrol update
     - CMAKE_FLAGS="$CONFIG_FLAGS"
       ./dune-common/bin/dunecontrol --module=utopia configure
     - ./dune-common/bin/dunecontrol --only=utopia make doc
     - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD build_tests
+    - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD all
+    # TODO move building of models into separate stage
 
 build:debug:
   stage: build
@@ -40,7 +43,6 @@ build:debug:
     - CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=Debug $CONFIG_FLAGS -DCMAKE_CXX_FLAGS_DEBUG='$CMAKE_CXX_FLAGS_DEBUG -Werror'"
       ./dune-common/bin/dunecontrol --only=utopia configure
     - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD build_tests
-    - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD all
 
 build:models:
   stage: build
@@ -52,21 +54,10 @@ build:models:
   tags:
     - light
   script:
+    - ./dune-common/bin/dunecontrol update
     - CMAKE_FLAGS="$CONFIG_FLAGS"
       ./dune-common/bin/dunecontrol --module=utopia configure
     - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD all
-
-build:update-dune:
-  stage: build
-  allow_failure: true
-  tags:
-    - light
-  script:
-    - ./dune-common/bin/dunecontrol update
-    - CMAKE_FLAGS="$CONFIG_FLAGS" MAKE_FLAGS="$MAKE_FLAGS_BUILD"
-      ./dune-common/bin/dunecontrol --module=utopia all
-    - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD build_tests
-
 
 test:core:
   stage: test

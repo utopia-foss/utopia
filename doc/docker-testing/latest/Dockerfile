@@ -1,4 +1,4 @@
-FROM ubuntu:artful
+FROM ubuntu:rolling
 MAINTAINER Lukas Riedel
 
 # install dependencies
