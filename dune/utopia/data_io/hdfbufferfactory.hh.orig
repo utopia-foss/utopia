@@ -29,7 +29,11 @@ public:
     template <typename T>
     static auto convert_source(T& source)
     {
+<<<<<<< HEAD
+        if constexpr (std::is_same_v<T, std::string> == true)
+=======
         if constexpr (std::is_same_v<T, std::string>)
+>>>>>>> 100-invalid-dataset-id-in-dummy-model-test
         {
             return source.c_str();
         }
@@ -60,14 +64,24 @@ public:
     {
         using T = typename HDFTypeFactory::result_type<decltype(adaptor(*begin))>::type;
 
+<<<<<<< HEAD
+        if constexpr (is_container_type<T>::value == true)
+        {
+            if constexpr (std::is_same_v<T, std::string> == true)
+=======
         if constexpr (is_container_type<T>::value)
         {
             if constexpr (std::is_same_v<T, std::string>)
+>>>>>>> 100-invalid-dataset-id-in-dummy-model-test
             {
                 // set up buffer
 
                 std::vector<const char*> data_buffer(std::distance(begin, end));
 
+<<<<<<< HEAD
+
+=======
+>>>>>>> 100-invalid-dataset-id-in-dummy-model-test
                 auto buffer_begin = data_buffer.begin();
                 for (auto it = begin; it != end; ++it, ++buffer_begin)
                 {

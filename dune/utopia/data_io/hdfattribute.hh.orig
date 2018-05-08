@@ -63,7 +63,11 @@ protected:
      * @brief reference to id of parent object: dataset or group
      *
      */
+<<<<<<< HEAD
+    HDFObject& _parent_object;
+=======
     std::reference_wrapper<HDFObject> _parent_object;
+>>>>>>> 100-invalid-dataset-id-in-dummy-model-test
 
 public:
     /**
@@ -92,7 +96,11 @@ public:
      */
     HDFObject& get_parent()
     {
+<<<<<<< HEAD
+        return _parent_object;
+=======
         return _parent_object.get();
+>>>>>>> 100-invalid-dataset-id-in-dummy-model-test
     }
 
     /**
@@ -123,12 +131,20 @@ public:
         if (_attribute == -1)
         {
             throw std::runtime_error(
+<<<<<<< HEAD
+                "trying to read a nonexstiant or closed attribute");
+        }
+        if constexpr (is_container_type<Type>::value == true)
+        {
+            if constexpr (std::is_same_v<Type, std::string> == true)
+=======
                 "trying to read a nonexstiant or closed attribute named '" +
                 _name + "'");
         }
         if constexpr (is_container_type<Type>::value)
         {
             if constexpr (std::is_same_v<Type, std::string>)
+>>>>>>> 100-invalid-dataset-id-in-dummy-model-test
             {
                 // get type the attribute has internally
                 hid_t type = H5Aget_type(_attribute);
@@ -162,8 +178,12 @@ public:
             if (_attribute == -1)
             {
                 throw std::runtime_error(
+<<<<<<< HEAD
+                    "trying to read a nonexstiant or closed attribute");
+=======
                     "trying to read a nonexstiant or closed attribute named '" +
                     _name + "'");
+>>>>>>> 100-invalid-dataset-id-in-dummy-model-test
             }
             else
             {
@@ -194,7 +214,11 @@ public:
         // using result_type = typename HDFTypeFactory::result_type<Type>::type;
         // when stuff is vector string we can write directly, otherwise we
         // have to buffer
+<<<<<<< HEAD
+        if constexpr (is_container_type<Type>::value == true)
+=======
         if constexpr (is_container_type<Type>::value)
+>>>>>>> 100-invalid-dataset-id-in-dummy-model-test
         {
             if (_attribute == -1)
             {
@@ -248,12 +272,18 @@ public:
           _parent_object(other._parent_object)
     {
     }
+<<<<<<< HEAD
+=======
 
+>>>>>>> 100-invalid-dataset-id-in-dummy-model-test
     /**
      * @brief Move constructor
      *
      * @param other
      */
+<<<<<<< HEAD
+    HDFAttribute(HDFAttribute&& other) = delete;
+=======
     HDFAttribute(HDFAttribute&& other)
         : _attribute(std::move(other._attribute)),
           _name(std::move(other._name)),
@@ -261,6 +291,7 @@ public:
           _parent_object(std::move(other._parent_object))
     {
     }
+>>>>>>> 100-invalid-dataset-id-in-dummy-model-test
 
     /**
      * @brief Assignment operator
@@ -268,6 +299,9 @@ public:
      * @param other
      * @return HDFAttribute&
      */
+<<<<<<< HEAD
+    HDFAttribute& operator=(HDFAttribute&& other) = delete;
+=======
     HDFAttribute& operator=(const HDFAttribute& other)
     {
         _attribute = other._attribute;
@@ -291,13 +325,19 @@ public:
         _parent_object = std::move(other._parent_object);
         return *this;
     }
+>>>>>>> 100-invalid-dataset-id-in-dummy-model-test
     /**
      * @brief Destructor
      *
      */
     virtual ~HDFAttribute()
     {
+<<<<<<< HEAD
+        // if (H5Iis_valid(_attribute) > 0)
+        if (H5Iis_valid(_attribute) == 0)
+=======
         if (H5Iis_valid(_attribute))
+>>>>>>> 100-invalid-dataset-id-in-dummy-model-test
         { // FIXME: add check to make sure that
           // it is not
           // more than once closed
@@ -316,6 +356,15 @@ public:
     HDFAttribute(HDFObject& object, std::string name)
         : _name(name), _size(1), _parent_object(object)
     {
+<<<<<<< HEAD
+        if (H5LTfind_attribute(object.get_id(), _name.c_str()) == 1)
+        { // attribute exists
+            _attribute = H5Aopen(object.get_id(), _name.c_str(), H5P_DEFAULT);
+        }
+        else
+        { // attribute does not exist: make
+            _attribute = -1;
+=======
         // checks the validity and opens attribute if possible, else postphones
         // until it is written
         if (H5Iis_valid(_parent_object.get().get_id()) == false)
@@ -334,6 +383,7 @@ public:
             { // attribute does not exist: make
                 _attribute = -1;
             }
+>>>>>>> 100-invalid-dataset-id-in-dummy-model-test
         }
     }
 };

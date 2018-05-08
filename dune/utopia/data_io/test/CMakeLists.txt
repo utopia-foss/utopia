@@ -8,6 +8,8 @@ set(TESTS_DATAIO
     hdffile_test
     hdfattribute_test_read
     hdfattribute_test_write
+    hdfdataset_test_lifecycle
+    hdfgroup_test_lifecycle
     hdfdataset_test_write
     hdfdataset_test_read
     hdfintegration_test

@@ -7,7 +7,10 @@
 #include <hdf5.h>
 #include <hdf5_hl.h>
 #include <numeric>
+<<<<<<< HEAD
+=======
 #include <unordered_map>
+>>>>>>> 100-invalid-dataset-id-in-dummy-model-test
 namespace Utopia
 {
 namespace DataIO
@@ -80,10 +83,13 @@ private:
             if (max_size.size() == 0)
             {
                 _max_extend = std::vector<decltype(H5S_UNLIMITED)>(_rank, H5S_UNLIMITED);
+<<<<<<< HEAD
+=======
             }
             else
             {
                 _max_extend = max_size;
+>>>>>>> 100-invalid-dataset-id-in-dummy-model-test
             }
             if (compress_level > 0)
             {
@@ -118,7 +124,14 @@ private:
             }
 
             // make dataset if necessary
+<<<<<<< HEAD
+            if (_dataset == -1)
+            {
+                _dataset = __create_dataset_helper__<result_type>(chunksize, compress_level);
+            }
+=======
             _dataset = __create_dataset_helper__<result_type>(chunksize, compress_level);
+>>>>>>> 100-invalid-dataset-id-in-dummy-model-test
         }
 
         // update info and add the new dataset to the reference counter
@@ -137,6 +150,11 @@ private:
         // buffering at first
         auto buffer =
             HDFBufferFactory::buffer(begin, end, std::forward<Adaptor&&>(adaptor));
+<<<<<<< HEAD
+
+        // std::cout << "buffer test: " << buffer.back().len << std::endl;
+=======
+>>>>>>> 100-invalid-dataset-id-in-dummy-model-test
 
         // write to buffer
         herr_t write_err = H5Dwrite(_dataset, HDFTypeFactory::type<result_type>(),
@@ -171,9 +189,15 @@ private:
     template <typename desired_type>
     auto __read_from_dataset__(hsize_t buffer_size, hid_t dspace, hid_t memspace)
     {
+<<<<<<< HEAD
+        if constexpr (is_container<desired_type>::value == true)
+        {
+            if constexpr (std::is_same_v<std::string, desired_type> == true)
+=======
         if constexpr (is_container<desired_type>::value)
         {
             if constexpr (std::is_same_v<std::string, desired_type>)
+>>>>>>> 100-invalid-dataset-id-in-dummy-model-test
             {
                 std::vector<const char*> buffer(buffer_size);
                 hid_t type = H5Dget_type(_dataset);
@@ -281,6 +305,8 @@ public:
     {
         return _dataset;
     }
+<<<<<<< HEAD
+=======
 
     auto get_referencecounter()
     {
@@ -291,6 +317,7 @@ public:
     {
         return _address;
     }
+>>>>>>> 100-invalid-dataset-id-in-dummy-model-test
 
     /**
      * @brief add attribute to the dataset
@@ -304,8 +331,12 @@ public:
     {
         // make attribute and write
 
+<<<<<<< HEAD
+        HDFAttribute<HDFDataset>(*this, attribute_name).write(attribute_data);
+=======
         HDFAttribute attr(*this, attribute_name);
         attr.write(attribute_data);
+>>>>>>> 100-invalid-dataset-id-in-dummy-model-test
     }
 
     /**
@@ -314,6 +345,11 @@ public:
      */
     void close()
     {
+<<<<<<< HEAD
+        if (H5Iis_valid(_dataset) > 0)
+        {
+            H5Dclose(_dataset);
+=======
         if (H5Iis_valid(_dataset))
         {
             if ((*_refcounts)[_address] == 1)
@@ -325,6 +361,7 @@ public:
             {
                 --(*_refcounts)[_address];
             }
+>>>>>>> 100-invalid-dataset-id-in-dummy-model-test
         }
     }
 
@@ -726,12 +763,17 @@ public:
           _dataset(other._dataset),
           _rank(other._rank),
           _extend(other._extend),
+<<<<<<< HEAD
+          _max_extend(other._max_extend)
+    {
+=======
           _max_extend(other._max_extend),
           _info(other._info),
           _address(other._address),
           _refcounts(other._refcounts)
     {
         (*_refcounts)[_address] += 1;
+>>>>>>> 100-invalid-dataset-id-in-dummy-model-test
     }
 
     /**
@@ -767,9 +809,13 @@ public:
           _dataset(-1),
           _rank(0),
           _extend({}),
+<<<<<<< HEAD
+          _max_extend({})
+=======
           _max_extend({}),
           _refcounts(parent_object.get_referencecounter())
 
+>>>>>>> 100-invalid-dataset-id-in-dummy-model-test
     {
         // try to find the dataset in the parent_object, open if it is
         // there, else postphone the dataset creation to the first write
@@ -797,6 +843,11 @@ public:
      */
     virtual ~HDFDataset()
     {
+<<<<<<< HEAD
+        if (H5Iis_valid(_dataset) == true)
+        {
+            H5Dclose(_dataset);
+=======
         if (H5Iis_valid(_dataset))
         {
             if ((*_refcounts)[_address] == 1)
@@ -808,6 +859,7 @@ public:
             {
                 --(*_refcounts)[_address];
             }
+>>>>>>> 100-invalid-dataset-id-in-dummy-model-test
         }
     }
 };
