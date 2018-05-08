@@ -7,6 +7,7 @@ from pkg_resources import resource_filename
 import pytest
 
 from utopya import Multiverse, DataManager
+import utopya.datacontainer as udc
 
 # Local constants
 RUN_CFG_PATH = resource_filename('test', 'cfg/run_cfg.yml')
@@ -83,8 +84,17 @@ def test_load_sweep(dm_after_sweep):
     assert 'cfg/run_cfg' in dm
 
     # Check that the uni config is also loaded
-    assert 'uni_cfg' in dm
+    assert 'uni/0/cfg' in dm
+    assert 'uni/1/cfg' in dm
+    assert 'uni/2/cfg' in dm
+    assert 'uni/3/cfg' in dm
 
     # Check that the binary data is loaded as expected
-    assert 'data' in dm
-    # TODO add more checks here
+    assert 'uni/0/data' in dm
+    assert 'uni/1/data' in dm
+    assert 'uni/2/data' in dm
+    assert 'uni/3/data' in dm
+
+    # ...and the type matches
+    assert isinstance(dm['uni/0/data/data-1'], udc.UtopiaDC)
+

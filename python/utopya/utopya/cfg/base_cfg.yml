@@ -85,7 +85,7 @@ reporter:
 data_manager:
   # Where to create the output directory for this data manager, relative to
   # the run directory of the Multiverse.
-  out_dir: 'eval/{date:}'
+  out_dir: eval/{date:}
   # NOTE: this includes the current timestamp such that future DataManager
   #       instances on the same data directory do not create collisions
 
@@ -95,21 +95,20 @@ data_manager:
       loader: yaml
       glob_str: 'config/*.yml'
       required: true
-      always_create_group: true
 
     uni_cfg:
       loader: yaml
-      glob_str: 'universes/uni*/config.yml'
+      glob_str: universes/uni*/config.yml
       required: true
-      always_create_group: true
-      path_regex: 'universes/uni(\d+)/config.yml'
+      path_regex: universes/uni(\d+)/config.yml
+      target_path: uni/{match:}/cfg
 
     data:
       loader: hdf5_proxy
-      glob_str: 'universes/uni*/data.h5'
+      glob_str: universes/uni*/data.h5
       required: true
-      always_create_group: true
-      path_regex: 'universes/uni(\d+)/data.h5'
+      path_regex: universes/uni(\d+)/data.h5
+      target_path: uni/{match:}/data
 
 
 # Plot Manager ................................................................
