@@ -1,4 +1,4 @@
-#ifndef UTOPIA_HH
+#ifndef UTOPIA_BASE_HH
 #define UTOPIA_BASE_HH
 
 // STL containers
