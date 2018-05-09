@@ -69,14 +69,47 @@ def test_init(tmpdir):
     """Tests initialisation of the Utopia data manager"""
     DataManager(str(tmpdir))
 
+def test_load_single(dm_after_single):
+    """Tests the loading of simulation data for a single simulation"""
+    dm = dm_after_single
+
+    # Load and print a tree of the loaded data
+    dm.load_from_cfg(print_tree=True)
+
+    # Check that the config is loaded as expected
+    assert 'cfg' in dm
+    assert 'cfg/base_cfg' in dm
+    assert 'cfg/meta_cfg' in dm
+    assert 'cfg/model_cfg' in dm
+    assert 'cfg/run_cfg' in dm
+
+    assert len(dm['uni']) == 1
+    assert 'uni/0' in dm
+    uni = dm['uni/0']
+    
+    # Check that the uni config is loaded
+    assert 'cfg' in uni
+
+    # Check that the binary data is loaded as expected
+    assert 'data' in uni
+
+    # NOTE the lines below need to be adjusted if the dummy model changes
+    # the way it writes output
+    dset = uni['data/data-1']
+
+    assert isinstance(dset, udc.NumpyDC)
+
+    assert dset.shape == (1000,)
+    assert dset.dtype is np.dtype("float64")
+    assert all([0 <= v <= 1 for v in dset.data.flat])
+
+
 def test_load_sweep(dm_after_sweep):
     """Tests the loading of simulation data for a sweep"""
     dm = dm_after_sweep
 
-    # Load and plot a tree of the loaded data
-    dm.load_from_cfg()
-
-    print("{:tree}".format(dm))
+    # Load and print a tree of the loaded data
+    dm.load_from_cfg(print_tree=True)
 
     # Check that the config is loaded as expected
     assert 'cfg' in dm
