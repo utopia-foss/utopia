@@ -96,5 +96,5 @@ def test_load_sweep(dm_after_sweep):
     assert 'uni/3/data' in dm
 
     # ...and the type matches
-    assert isinstance(dm['uni/0/data/data-1'], udc.UtopiaDC)
+    assert isinstance(dm['uni/0/data/data-1'], udc.NumpyDC)
 

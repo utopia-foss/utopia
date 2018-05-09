@@ -6,9 +6,8 @@ the NumpyDataContainer.
 
 import logging
 
-import dantro as dtr
-import dantro.container
-import dantro.mixins
+from dantro.container import NumpyDataContainer
+from dantro.mixins import Hdf5ProxyMixin
 
 # Configure and get logger
 log = logging.getLogger(__name__)
@@ -17,7 +16,7 @@ log = logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------------
 
-class UtopiaDC(dtr.container.NumpyDataContainer):
+class NumpyDC(Hdf5ProxyMixin, NumpyDataContainer):
     """This is the base class for all numerical data used in Utopia.
 
     It is based on the NumpyDataContainer provided by dantro and extends it

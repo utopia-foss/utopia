@@ -27,4 +27,4 @@ class DataManager(Hdf5LoaderMixin, YamlLoaderMixin, dtr.data_mngr.DataManager):
     """
 
     # Tell the HDF5 loader which container class to use
-    _HDF5_DSET_DEFAULT_CLS = udc.UtopiaDC
+    _HDF5_DSET_DEFAULT_CLS = udc.NumpyDC
