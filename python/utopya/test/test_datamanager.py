@@ -4,6 +4,8 @@ import os
 import uuid
 from pkg_resources import resource_filename
 
+import numpy as np
+
 import pytest
 
 from utopya import Multiverse, DataManager
@@ -83,18 +85,19 @@ def test_load_sweep(dm_after_sweep):
     assert 'cfg/model_cfg' in dm
     assert 'cfg/run_cfg' in dm
 
-    # Check that the uni config is also loaded
-    assert 'uni/0/cfg' in dm
-    assert 'uni/1/cfg' in dm
-    assert 'uni/2/cfg' in dm
-    assert 'uni/3/cfg' in dm
+    for uni_no, uni in dm['uni'].items():
+        # Check that the uni config is loaded
+        assert 'cfg' in uni
 
-    # Check that the binary data is loaded as expected
-    assert 'uni/0/data' in dm
-    assert 'uni/1/data' in dm
-    assert 'uni/2/data' in dm
-    assert 'uni/3/data' in dm
+        # Check that the binary data is loaded as expected
+        assert 'data' in uni
+    
+        # NOTE the lines below need to be adjusted if the dummy model changes
+        # the way it writes output
+        dset = uni['data/data-1']
 
-    # ...and the type matches
-    assert isinstance(dm['uni/0/data/data-1'], udc.NumpyDC)
+        assert isinstance(dset, udc.NumpyDC)
 
+        assert dset.shape == (1000,)
+        assert dset.dtype is np.dtype("float64")
+        assert all([0 <= v <= 1 for v in dset.data.flat])
