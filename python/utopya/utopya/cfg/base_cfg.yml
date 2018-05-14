@@ -83,19 +83,26 @@ reporter:
 
 # Data Manager ................................................................
 data_manager:
-  # Where to create the output directory for this data manager, relative to
+  # Where to create the output directory for this DataManager, relative to
   # the run directory of the Multiverse.
   out_dir: eval/{date:}
-  # NOTE: this includes the current timestamp such that future DataManager
-  #       instances on the same data directory do not create collisions
+  # The {date:} placeholder is replaced by the current timestamp such that
+  # future DataManager instances that operate on the same data directory do
+  # not create collisions.
 
-  # Supply a default load configuration
+  # Supply a default load configuration for the DataManager
   load_cfg:
+    # Load the frontend configuration files from the config/ directory
+    # Each file refers to a level of the configuration that is supplied to
+    # the Multiverse: base <- user <- model <- run <- update
     cfg:
       loader: yaml
       glob_str: 'config/*.yml'
       required: true
 
+    # Load the configuration files that are generated for _each_ simulation
+    # These hold all information that is available to a single simulation and
+    # are in an explicit, human-readable form.
     uni_cfg:
       loader: yaml
       glob_str: universes/uni*/config.yml
@@ -103,6 +110,7 @@ data_manager:
       path_regex: universes/uni(\d+)/config.yml
       target_path: uni/{match:}/cfg
 
+    # Load the binary output data from each simulation.
     data:
       loader: hdf5_proxy
       glob_str: universes/uni*/data.h5
