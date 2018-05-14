@@ -78,10 +78,10 @@ def test_load_single(dm_after_single):
 
     # Check that the config is loaded as expected
     assert 'cfg' in dm
-    assert 'cfg/base_cfg' in dm
-    assert 'cfg/meta_cfg' in dm
-    assert 'cfg/model_cfg' in dm
-    assert 'cfg/run_cfg' in dm
+    assert 'cfg/base' in dm
+    assert 'cfg/meta' in dm
+    assert 'cfg/model' in dm
+    assert 'cfg/run' in dm
 
     assert len(dm['uni']) == 1
     assert 'uni/0' in dm
@@ -113,10 +113,10 @@ def test_load_sweep(dm_after_sweep):
 
     # Check that the config is loaded as expected
     assert 'cfg' in dm
-    assert 'cfg/base_cfg' in dm
-    assert 'cfg/meta_cfg' in dm
-    assert 'cfg/model_cfg' in dm
-    assert 'cfg/run_cfg' in dm
+    assert 'cfg/base' in dm
+    assert 'cfg/meta' in dm
+    assert 'cfg/model' in dm
+    assert 'cfg/run' in dm
 
     for uni_no, uni in dm['uni'].items():
         # Check that the uni config is loaded

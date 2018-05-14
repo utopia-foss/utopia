@@ -99,6 +99,8 @@ data_manager:
       loader: yaml
       glob_str: 'config/*.yml'
       required: true
+      path_regex: config/(\w+)_cfg.yml
+      target_path: cfg/{match:}
 
     # Load the configuration files that are generated for _each_ simulation
     # These hold all information that is available to a single simulation and
@@ -117,6 +119,21 @@ data_manager:
       required: true
       path_regex: universes/uni(\d+)/data.h5
       target_path: uni/{match:}/data
+
+    # The resulting data tree is then:
+    #  └┬ cfg
+    #     └┬ base
+    #      ├ meta
+    #      ├ model
+    #      ├ run
+    #      └ update
+    #   └ uni
+    #     └┬ 0
+    #        └┬ cfg
+    #         └ data
+    #           └─ ...         
+    #      ├ 1
+    #      ...
 
 
 # Plot Manager ................................................................
