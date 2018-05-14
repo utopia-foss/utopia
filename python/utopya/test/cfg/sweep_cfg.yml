@@ -1,5 +1,10 @@
+# A test configuration that runs a parameter sweep over the seed
 ---
 parameter_space: !pspace
-  seed: !sweep
-    default: 1337
-    values: [23, 42, 665, 667]
+  dummy:
+    seed: !sweep  # FIXME this should be on the top level
+      default: 1337
+      values: [23, 42, 665, 667]
+
+  num_steps: 5
+  

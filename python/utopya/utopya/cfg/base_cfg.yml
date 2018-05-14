@@ -1,5 +1,5 @@
 ---
-# Paths for the output
+# Paths for the output ........................................................
 paths:
   # base output directory
   out_dir: ~/utopia_output
@@ -44,7 +44,8 @@ run_kwargs:
     #       seconds: !expr 60*10
     #       # further arguments to utopya.stopcond._sc_timeout_wall
 
-# Worker Manager
+
+# Worker Manager ..............................................................
 worker_manager:
   # specify how many processes work in parallel
   # auto : number of processor cores. For values <= 0: #CPUs - num_workers
@@ -64,7 +65,8 @@ worker_manager:
   # in the specified format.
   # To add report formats, specify them under reporter.report_formats
 
-# Reporter
+
+# Reporter ....................................................................
 reporter:
   report_formats:
     while_working:
@@ -78,11 +80,67 @@ reporter:
       show_times: True
       write_to: stdout_noreturn
 
-# Data Manager
-data_manager: {}
 
-# Plot Manager
+# Data Manager ................................................................
+data_manager:
+  # Where to create the output directory for this DataManager, relative to
+  # the run directory of the Multiverse.
+  out_dir: eval/{date:}
+  # The {date:} placeholder is replaced by the current timestamp such that
+  # future DataManager instances that operate on the same data directory do
+  # not create collisions.
+
+  # Supply a default load configuration for the DataManager
+  load_cfg:
+    # Load the frontend configuration files from the config/ directory
+    # Each file refers to a level of the configuration that is supplied to
+    # the Multiverse: base <- user <- model <- run <- update
+    cfg:
+      loader: yaml
+      glob_str: 'config/*.yml'
+      required: true
+      path_regex: config/(\w+)_cfg.yml
+      target_path: cfg/{match:}
+
+    # Load the configuration files that are generated for _each_ simulation
+    # These hold all information that is available to a single simulation and
+    # are in an explicit, human-readable form.
+    uni_cfg:
+      loader: yaml
+      glob_str: universes/uni*/config.yml
+      required: true
+      path_regex: universes/uni(\d+)/config.yml
+      target_path: uni/{match:}/cfg
+
+    # Load the binary output data from each simulation.
+    data:
+      loader: hdf5_proxy
+      glob_str: universes/uni*/data.h5
+      required: true
+      path_regex: universes/uni(\d+)/data.h5
+      target_path: uni/{match:}/data
+
+    # The resulting data tree is then:
+    #  └┬ cfg
+    #     └┬ base
+    #      ├ meta
+    #      ├ model
+    #      ├ run
+    #      └ update
+    #   └ uni
+    #     └┬ 0
+    #        └┬ cfg
+    #         └ data
+    #           └─ ...         
+    #      ├ 1
+    #      ...
+
+
+# Plot Manager ................................................................
 plot_manager: {}
 
-# Parameter Space - default values are set by the model config
+
+# Parameter Space .............................................................
+# Only add values here that are independent of models.
+# For model-specific configuration, use the model configuration.
 parameter_space: {}
