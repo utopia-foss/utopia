@@ -35,6 +35,7 @@ private:
     Utopia::DataIO::Config _config;
     std::shared_ptr<Utopia::DataIO::HDFGroup> _group;
     std::mt19937 _rng;
+    // TODO store _grid here
 
 public:
     /// Construct the SimpleEG model
@@ -43,21 +44,39 @@ public:
      *  \param group The HDFGroup to write data to
      */
     SimpleEGModel (const std::string name,
-                   Utopia::DataIO::Config config,
+                   Utopia::DataIO::Config &config,
                    std::shared_ptr<Utopia::DataIO::HDFGroup> group):
         Base(),
         _name(name),
-        _config(config),
+        _config(config[_name]),
         _group(group->open_group(_name)),
         _rng(_config["seed"].as<int>())
-    { }
+    { 
+        // Setup the grid
+        setup_grid();
+        
+        // Setup the dataset
+        setup_datasets();
+    }
 
+    // Setup functions
+    
     /// Setup the grid
-    void setup_grid ()
+    void setup_grid()
     {
         // TODO
         // ...
     }
+    
+    /// Setup datasets
+    void setup_datasets()
+    {
+        // TODO
+        // ...
+    }
+
+    /// Setup the datasets
+
 
     /// Iterate single step
     void perform_step ()
