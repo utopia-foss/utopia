@@ -11,6 +11,7 @@ message(STATUS "Starting Utopia model registration ...")
 
 # Register the model directories
 add_subdirectory(dummy)
+add_subdirectory(SimpleEG)
 # ...
 # NOTE add your subdirectory above (alphabetically sorted)
 
