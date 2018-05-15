@@ -11,7 +11,7 @@
 
 namespace Utopia {
 
-/// Define data types of dummy model
+/// Define data types of SimpleEG model
 using SimpleEGModelTypes = ModelTypes<
     std::vector<double>,
     std::vector<double>
@@ -31,53 +31,57 @@ public:
     using BCType = typename Base::BCType;
 
 private:
-    Data _state;
-    BCType _bc;
+    const std::string _name;
     Utopia::DataIO::Config _config;
+    std::shared_ptr<Utopia::DataIO::HDFGroup> _group;
     std::mt19937 _rng;
-    DataIO::HDFFile _file;
 
 public:
-    /// Construct the SimpleEG model with an initial state
-    /** \param state Initial state of the model
+    /// Construct the SimpleEG model
+    /** \param name Name of this model instance
+     *  \param config The corresponding config node
+     *  \param group The HDFGroup to write data to
      */
-    SimpleEGModel (const Data& state, Utopia::DataIO::Config config):
+    SimpleEGModel (const std::string name,
+                   Utopia::DataIO::Config config,
+                   std::shared_ptr<Utopia::DataIO::HDFGroup> group):
         Base(),
-        _state(state),
-        _bc(_state.size(), 1.0),
+        _name(name),
         _config(config),
-        _rng(_config["seed"].as<int>()),
-        _file(_config["output_path"].as<std::string>(), "w")
+        _group(group->open_group(_name)),
+        _rng(_config["seed"].as<int>())
     { }
 
-    /// Iterate by one time step
+    /// Setup the grid
+    void setup_grid ()
+    {
+        // TODO
+        // ...
+    }
+
+    /// Iterate single step
     void perform_step ()
     {
-        auto gen = std::bind(std::uniform_real_distribution<>(), _rng);
-        std::generate(_bc.begin(), _bc.end(), gen);
-        std::transform(_state.begin(), _state.end(), _bc.begin(),
-            _state.begin(),
-            [](const auto a, const auto b) { return a + b; }
-        );
+        // TODO
+        // ...
     }
 
-    /// Do nothing for now
+    /// Write data
     void write_data ()
     {
-        const std::string set_name = "data-" + std::to_string(this->time);
-        auto dataset = _file.get_basegroup()->open_dataset(set_name);
-        dataset->write(_state.begin(), _state.end(),
-            [](auto &value) { return value; });
+        // TODO
+        // ...
     }
 
-    // Set model boundary condition
-    void set_boundary_condition (const BCType& bc) { _bc = bc; }
+    // TODO Check what to do with the below methods
+    /// Set model boundary condition
+    // void set_boundary_condition (const BCType& bc) { _bc = bc; }
 
     /// Set model initial condition
-    void set_initial_condition (const Data& ic) { _state = ic; }
+    // void set_initial_condition (const Data& ic) { _state = ic; }
 
     /// Return const reference to stored data
-    const Data& data () const { return _state; }
+    // const Data& data () const { return _state; }
 };
 
 } // namespace Utopia

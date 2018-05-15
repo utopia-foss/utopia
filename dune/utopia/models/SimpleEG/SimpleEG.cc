@@ -9,27 +9,25 @@ int main (int argc, char** argv)
     try {
         Dune::MPIHelper::instance(argc, argv);
 
-        const std::string config_file = argv[1];
-        Utopia::DataIO::Config config(config_file);
+        // Load the config file
+        const std::string cfg_path = argv[1];
+        Utopia::DataIO::Config config(cfg_path);
 
-        // const unsigned int steps = std::stoi(argv[2]);
+        // Initialize the HDF file
+        auto output_path = config["SimpleEG"]["output_path"].as<std::string>();
+        auto file = Utopia::DataIO::HDFFile(output_path, "w");
+        // TODO the output_path should be at the top level, not under SimpleEG
 
-        std::vector<double> state(1E3, 0.0);
-        Utopia::SimpleEGModel model(state, config["SimpleEG"]);
+        // ...and get the basegroup that this model will write into
+        auto basegroup = file.get_basegroup();
 
+        // Initialize the main model instance
+        Utopia::SimpleEGModel model("SimpleEG", config, basegroup);
+        // NOTE This already implements the new model interface
+
+        // Perform the iteration
         for(int i = 0; i < config["num_steps"].as<int>(); ++i)
             model.iterate();
-
-        // Sleep (to be read by frontend)
-        unsigned int sleep_time = 300; // in milliseconds
-        unsigned int num_sleeps = 3;
-
-        for (unsigned int i = 0; i < num_sleeps; ++i) {
-            std::cout << "Sleep #" << (i+1) << " ..." << std::endl;
-            std::this_thread::sleep_for(std::chrono::milliseconds(sleep_time));
-        }
-
-        std::cout << "All done." << std::endl << "Really." << std::endl;
 
         return 0;
     }
