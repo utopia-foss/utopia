@@ -145,6 +145,7 @@ class WorkerTask(Task):
                 worker. Note that these are also passed to setup_func and, if a
                 setup_func is given, the return value of that function will be
                 used for the worker_kwargs.
+            write_stream_to (sstr, optional): Description
             callbacks (Dict[str, Callable], optional): Callbacks available in
                 the WorkerTask follow the life of a process; available keys
                 are: 'spawn', 'finished', 'after_signal'.
@@ -230,6 +231,8 @@ class WorkerTask(Task):
     @property
     def worker_status(self) -> Union[int, None]:
         """The worker processe's current status or False, if there is no worker spawned yet.
+
+        Note that this invokes a poll to the worker process if one was spawned.
         
         Returns:
             Union[int, None]: Current worker status. False, if there was no
@@ -292,9 +295,13 @@ class WorkerTask(Task):
 
         # Extract information from the worker_kwargs
         args = worker_kwargs['args']
+        popen_kwargs = worker_kwargs.get('popen_kwargs', {})
+
         read_stdout = worker_kwargs.get('read_stdout', True)
         line_read_func = worker_kwargs.get('line_read_func')
-        popen_kwargs = worker_kwargs.get('popen_kwargs', {})
+
+        save_streams = worker_kwargs.get('save_streams', False)
+        save_streams_to = worker_kwargs.get('save_streams_to')
 
         # Perform some checks
         if not isinstance(args, tuple):
@@ -323,7 +330,6 @@ class WorkerTask(Task):
         proc = subprocess.Popen(args,
                                 bufsize=1, # line buffered
                                 stdout=stdout, stderr=stderr,
-                                # stdout=stdout, stderr=stderr,
                                 **popen_kwargs)
 
         # Save the approximate creation time (as soon as possible)
@@ -349,10 +355,29 @@ class WorkerTask(Task):
             t.start()
 
             # Save the stream information in the WorkerTask object
-            self.streams['out'] = dict(queue=q, thread=t, log=[])
+            self.streams['out'] = dict(queue=q, thread=t, log=[],
+                                       save=save_streams,
+                                       save_path=None)
             # NOTE could have more streams here, but focus on stdout right now
 
-            log.debug("Added thread to read worker's combined STDOUT and STDERR.")        
+            log.debug("Added thread to read worker %s's combined STDOUT and "
+                      "STDERR.", self.name)
+
+            # If configured to save, save the 
+            if save_streams:
+                if not save_streams_to:
+                    raise ValueError("Was told to `save_streams` but did not "
+                                     "find a `save_streams_to` argument in "
+                                     "`worker_kwargs`: {}."
+                                     "".format(worker_kwargs))
+
+                # Perform a format operation to generate the path
+                save_path = save_streams_to.format(name='out')
+                self.streams['out']['save_path'] = save_path
+
+                # Also create an entry to keep track of how many lines were
+                # already saved
+                self.streams['out']['lines_saved'] = 0
 
         return self.worker
 
@@ -394,7 +419,7 @@ class WorkerTask(Task):
                     if forward_streams:
                         # print it to the parent processe's stdout
                         log.log(log_level, "  %s %s:   %s",
-                                 self.name, stream_name, entry)
+                                self.name, stream_name, entry)
 
                     # Write to the stream's log
                     stream['log'].append(entry)
@@ -413,6 +438,42 @@ class WorkerTask(Task):
             read_single_stream(self.streams[stream_name], stream_name)
 
         return
+
+    def save_streams(self):
+        """For each stream, checks if it is to be saved and then does so."""
+        for stream_name, stream in self.streams.items():
+            if not stream.get('save'):
+                continue
+            # else: this stream is to be saved
+
+            # Determine the lines to save
+            lines_to_save = stream['log'][slice(stream['lines_saved'], None)]
+
+            if not lines_to_save:
+                log.debug("No lines to save for stream '%s'. Lines already "
+                          "saved: %d / %d.", stream_name,
+                          stream['lines_saved'], len(stream['log']))
+                continue
+
+            log.debug("Saving the log of stream '%s' to %s, starting from "
+                      "line %d ...",
+                      stream_name, stream['save_path'], stream['lines_saved'])
+
+            # Open the file and append the not yet saved lines
+            with open(stream['save_path'], 'a') as f:
+                # Write header, if not already done
+                if stream['lines_saved'] == 0:
+                    f.write("Log of '{}' stream of WorkerTask '{}'\n\n"
+                            "".format(stream_name, self.name))
+
+                # Write the lines to save
+                f.write("\n".join(lines_to_save))
+
+                # Ensure new line at the end
+                f.write("\n")
+
+            # Update counter
+            stream['lines_saved'] += len(lines_to_save)
 
     def signal_worker(self, signal: Union[str, int]):
         """Sends a signal to this WorkerTask's worker.
@@ -459,8 +520,9 @@ class WorkerTask(Task):
         # NOTE these are both approximate values as the worker process must
         # have ended prior to the call to this method
 
-        # Read all remaining stream lines
+        # Read all remaining stream lines and then call the save function
         self.read_streams(max_num_reads=-1)
+        self.save_streams()
 
         # If given, call the callback function
         self._invoke_callback('finished')

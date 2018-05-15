@@ -500,6 +500,9 @@ class Multiverse:
             os.mkdir(uni_dir)
             log.debug("Created universe directory:\n  %s", uni_dir)
 
+            # Generate a path to the potential log file of the streams
+            streams_path = os.path.join(uni_dir, "{name:}.log")
+
             # Generate a path to the output hdf5 file and add it to the dict
             output_path = os.path.join(uni_dir, "data.h5")
             
@@ -512,16 +515,17 @@ class Multiverse:
 
             # write essential part of config to file:
             uni_cfg_path = os.path.join(uni_dir, "config.yml")
-            write_yml(d=uni_cfg, path=uni_cfg_path)
+            write_yml(uni_cfg, path=uni_cfg_path)
 
             # building args tuple for task assignment
-            # assuming there exists an attribute for the executable and for the
-            # model
+            # assuming the binary takes as only argument the path to the config
             args = (model_binpath, uni_cfg_path)
 
             # Overwrite the worker kwargs argument with totally new ones
             worker_kwargs = dict(args=args,  # passing the arguments
                                  read_stdout=True,
+                                 save_streams=True,
+                                 save_streams_to=streams_path,
                                  line_read_func=enqueue_json)  # Callable
             return worker_kwargs
 
