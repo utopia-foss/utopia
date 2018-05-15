@@ -136,3 +136,5 @@ test:models:
     - $RUN_IN_DUNE_ENV utopia dummy
     # test a configuration that allows a sweep
     - $RUN_IN_DUNE_ENV utopia dummy $MODEL_DIR/dummy/test/dummy_cfg.yml --sweep --note sweep
+    # test the other models
+    - $RUN_IN_DUNE_ENV utopia SimpleEG $MODEL_DIR/SimpleEG/test/SimpleEG_cfg.yml --sweep --note sweep
