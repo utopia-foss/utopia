@@ -1,0 +1,16 @@
+# The model configuration for the SimpleEG model
+#
+# This file should ONLY contain model-specific configuration. It should specify
+# all available parameters and their default values.
+# These should be specified under the `parameter_space` key.
+#
+# This file should NOT be used to overwrite any other parts of the utopya
+# configuration.
+# 
+# As this file is (usually) handled by the frontend, it is possible to use
+# yaml features like anchors, inheritance, ...
+---
+parameter_space:
+  num_steps: 5
+  SimpleEG:
+    seed: 1337
