@@ -1,5 +1,6 @@
 ---
-# Paths for the output ........................................................
+# Multiverse configuration ....................................................
+# Output paths
 paths:
   # base output directory
   out_dir: ~/utopia_output
@@ -19,7 +20,29 @@ paths:
 perform_sweep: false
 # NOTE This will be ignored if run_single or run_sweep are called directly
 
-# Run configuration for the WorkerManager
+
+# Worker Manager ..............................................................
+worker_manager:
+  # specify how many processes work in parallel
+  # auto : number of processor cores. For values <= 0: #CPUs - num_workers
+  num_workers: auto
+
+  # delay between polls [seconds]
+  poll_delay: 0.05
+
+  # report format specifications at different points of the WM's operation
+  rf_spec:
+    while_working: while_working
+    task_spawned: while_working
+    task_finished: while_working
+    after_work: after_work
+    after_abort: after_work
+  # These entries can also be lists, leading to multiple reports being invoked
+  # in the specified format.
+  # To add report formats, specify them under reporter.report_formats
+
+
+# Configuration for the WorkerManager.start_working method
 run_kwargs:
   # Whether to forward the worker streams to the main thread's stdout
   forward_streams: false
@@ -45,26 +68,11 @@ run_kwargs:
     #       # further arguments to utopya.stopcond._sc_timeout_wall
 
 
-# Worker Manager ..............................................................
-worker_manager:
-  # specify how many processes work in parallel
-  # auto : number of processor cores. For values <= 0: #CPUs - num_workers
-  num_workers: auto
-
-  # delay between polls [seconds]
-  poll_delay: 0.05
-
-  # report format specifications at different points of the WM's operation
-  rf_spec:
-    while_working: while_working
-    task_spawned: while_working
-    task_finished: while_working
-    after_work: after_work
-    after_abort: after_work
-  # These entries can also be lists, leading to multiple reports being invoked
-  # in the specified format.
-  # To add report formats, specify them under reporter.report_formats
-
+# The defaults for the worker_kwargs, passed to the setup function of each
+# WorkerTask before it is spawned
+worker_kwargs:
+  save_streams: true
+  popen_kwargs: {}
 
 # Reporter ....................................................................
 reporter:

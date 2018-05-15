@@ -500,9 +500,6 @@ class Multiverse:
             os.mkdir(uni_dir)
             log.debug("Created universe directory:\n  %s", uni_dir)
 
-            # Generate a path to the potential log file of the streams
-            streams_path = os.path.join(uni_dir, "{name:}.log")
-
             # Generate a path to the output hdf5 file and add it to the dict
             output_path = os.path.join(uni_dir, "data.h5")
             
@@ -521,13 +518,18 @@ class Multiverse:
             # assuming the binary takes as only argument the path to the config
             args = (model_binpath, uni_cfg_path)
 
-            # Overwrite the worker kwargs argument with totally new ones
-            worker_kwargs = dict(args=args,  # passing the arguments
-                                 read_stdout=True,
-                                 save_streams=True,
-                                 save_streams_to=streams_path,
-                                 line_read_func=enqueue_json)  # Callable
-            return worker_kwargs
+            # Generate a new worker_kwargs dict, carrying over the given ones
+            wk = dict(args=args,
+                      read_stdout=True,
+                      line_read_func=enqueue_json,
+                      **worker_kwargs)
+
+            # Determine whether to save the streams
+            if wk.get('save_streams', True):
+                # Generate a path and store in the worker kwargs
+                wk['save_streams_to'] = os.path.join(uni_dir, "{name:}.log")
+
+            return wk
 
         # Generate the universe basename, which will be used for the folder and the task name
         uni_basename = self._create_uni_basename(uni_id=uni_id,
@@ -543,7 +545,8 @@ class Multiverse:
         self.wm.add_task(name=uni_basename,
                          priority=None,
                          setup_func=setup_universe,
-                         setup_kwargs=setup_kwargs)
+                         setup_kwargs=setup_kwargs,
+                         worker_kwargs=self.meta_config.get('worker_kwargs'))
 
         log.debug("Added simulation task for universe %d.", uni_id)
 

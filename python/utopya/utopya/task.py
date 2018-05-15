@@ -160,16 +160,10 @@ class WorkerTask(Task):
         # Check the argument values
         if setup_func:
             setup_kwargs = setup_kwargs if setup_kwargs else dict()
-
-            if worker_kwargs:
-                warnings.warn("Received argument `worker_kwargs` despite a "
-                              "setup function having been given; the passed "
-                              "`worker_kwargs` will not be used!",
-                              UserWarning)
         
         elif worker_kwargs:
             if setup_kwargs:
-                warnings.warn("worker_kwargs given but also setup_kwargs "
+                warnings.warn("`worker_kwargs` given but also `setup_kwargs` "
                               "specified; the latter will be ignored. Did "
                               "you mean to call a setup function? If yes, "
                               "pass it via the `setup_func` argument.",
