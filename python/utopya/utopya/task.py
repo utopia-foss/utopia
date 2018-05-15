@@ -441,6 +441,7 @@ class WorkerTask(Task):
 
     def save_streams(self):
         """For each stream, checks if it is to be saved and then does so."""
+        # Go over all streams and check if they were configured to be saved
         for stream_name, stream in self.streams.items():
             if not stream.get('save'):
                 continue
@@ -474,6 +475,9 @@ class WorkerTask(Task):
 
             # Update counter
             stream['lines_saved'] += len(lines_to_save)
+
+            log.debug("Saved %d lines of stream '%s'.",
+                      len(lines_to_save), stream_name)
 
     def signal_worker(self, signal: Union[str, int]):
         """Sends a signal to this WorkerTask's worker.
