@@ -2,6 +2,7 @@
 
 import queue
 import io
+from time import sleep
 
 import numpy as np
 import pytest
@@ -95,11 +96,66 @@ def test_workertask_magic_methods(workertasks):
     _ = [str(t) for t in workertasks]
 
 def test_workertask_invalid_args():
-    """It should not be possible to spawn a worker with non-tuple arguments"""
+    """Test for invalid argument to the WorkerTask"""
+    # It should not be possible to spawn a worker with non-tuple arguments
     t = WorkerTask(name=0, worker_kwargs=dict(args="python -c 'hello hello'"))
     
     with pytest.raises(TypeError):
         t.spawn_worker()
+
+    # Wanting to save streams but not giving a path should raise an error
+    t = WorkerTask(name=1, worker_kwargs=dict(args=("python", "--version"),
+                                              save_streams=True))
+
+    with pytest.raises(ValueError, match="Was told to `save_streams` but"):
+        t.spawn_worker()
+
+def test_workertask_streams(tmpdir):
+    """Tests the read_ and save_streams methods of the WorkerTask"""
+    save_path = tmpdir.join("out.log")
+
+    t = WorkerTask(name="stream_test", 
+                   worker_kwargs=dict(args=("echo", "foo\nbar\nbaz"),
+                                            read_stdout=True,
+                                            line_read_func=enqueue_json,
+                                            save_streams=True,
+                                            save_streams_to=str(save_path)))
+
+    # There are no streams yet, so trying to save streams now should not
+    # generate a file at save_path
+    t.save_streams()
+    assert not save_path.isfile()
+
+    # Now spawn the worker
+    t.spawn_worker()
+    
+    # Wait until done
+    while t.worker.poll() is None:
+        # Delay the while loop
+        sleep(0.05)
+
+    # Read a single line
+    t.read_streams()
+    assert len(t.streams['out']['log']) == 1
+
+    # Read all the remaining stream content
+    t.read_streams(max_num_reads=-1)
+    assert len(t.streams['out']['log']) == 3
+
+    # Save it
+    t.save_streams()
+    assert save_path.isfile()
+
+    # Check the content
+    with open(save_path) as f:
+        lines = [line.strip() for line in f]
+
+    assert len(lines) == 5
+    assert lines[0].startswith("Log of 'out' stream of WorkerTask")
+    assert lines[2:] == ["foo", "bar", "baz"]
+
+    # Trying to save the streams again, there should be no more lines available
+    t.save_streams()
 
 # TaskList tests --------------------------------------------------------------
 
