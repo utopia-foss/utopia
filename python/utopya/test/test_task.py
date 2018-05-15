@@ -80,15 +80,12 @@ def test_task_properties(tasks):
 def test_workertask_init():
     """Tests the WorkerTask class"""
     WorkerTask(name=0, worker_kwargs=dict(foo="bar"))
-
-    with pytest.warns(UserWarning):
-        WorkerTask(name=0, setup_func=print, worker_kwargs=dict(foo="bar"))
     
-    with pytest.warns(UserWarning):
+    with pytest.warns(UserWarning, match="`worker_kwargs` given but also"):
         WorkerTask(name=0, setup_kwargs=dict(foo="bar"),
                    worker_kwargs=dict(foo="bar"))
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Need either argument `setup_func`"):
         WorkerTask(name=0)
 
 def test_workertask_magic_methods(workertasks):
