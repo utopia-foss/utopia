@@ -21,8 +21,13 @@ int main (int argc, char** argv)
         // ...and get the basegroup that this model will write into
         auto basegroup = file.get_basegroup();
 
+        // Initialize the RNG
+        auto seed = config["SimpleEG"]["seed"].as<int>();
+        auto rng = std::make_shared<std::mt19937>(seed);
+        // TODO the seed should actually be taken from the top-level
+
         // Initialize the main model instance
-        Utopia::SimpleEGModel model("SimpleEG", config, basegroup);
+        Utopia::SimpleEGModel model("SimpleEG", config, basegroup, rng);
         // NOTE This already implements the new model interface
 
         // Perform the iteration
