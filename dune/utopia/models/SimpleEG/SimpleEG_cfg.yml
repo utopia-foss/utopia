@@ -12,5 +12,31 @@
 ---
 parameter_space:
   num_steps: 5
+
   SimpleEG:
+    # Legacy parameters
+    # TODO remove these once the model config changed its structure, see #122
     seed: 1337
+
+    # Model parameters ........................................................
+    # Grid parameters
+    grid_size: [127, 127]
+    periodic: true          # false: cells at boundary have fewer neighbors
+
+    # Initial state
+    initial_state: random   # can be: random, fraction, single_s0, single_s1
+    s1_fraction: 0.5        # only used for 'fraction' initial state
+    # Explanation:
+    #   - random:             each strategy occurs with probability 0.5
+    #   - fraction:           s1_fraction of all cells have strategy 1
+    #   - single_s0:          single cell at the center has strategy 0
+    #   - single_s1:          single cell at the center has strategy 1
+
+    # The interaction matrix
+    ia_matrix: [[1, 2], [3, 4]]
+
+    # The following parameters can also be given
+    # They will always result in a Prisoners' Dillema situation
+    # bc_pair: [1, 0]       # ignored if ia_matrix is given
+    # b: 1.23               # ignored if either ia_matrix or bc_pair is given
+
