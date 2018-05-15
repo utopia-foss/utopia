@@ -385,8 +385,8 @@ class WorkerTask(Task):
         """Read the streams associated with this task's worker.
         
         Args:
-            stream_names (list, optional): The list of stream
-                names to read. If 'all' (default), will read all streams.
+            stream_names (list, optional): The list of stream names to read.
+                If 'all' (default), will read all streams.
             forward_streams (bool, optional): Whether the read stream should be
                 forwarded to this module's log.info() function
             max_num_reads (int, optional): How many lines should be read from
@@ -426,7 +426,8 @@ class WorkerTask(Task):
 
         if not self.streams:
             # There are no streams to read
-            log.debug("No streams to read for task %d.", self.uid)
+            log.debug("No streams to read for WorkerTask '%s' (uid: %s).",
+                      self.name, self.uid)
             return
 
         elif stream_names == 'all':
@@ -435,15 +436,50 @@ class WorkerTask(Task):
 
         # Loop over stream names and call the function to read a single stream
         for stream_name in stream_names:
-            read_single_stream(self.streams[stream_name], stream_name)
+            # Get the corresponding stream dict
+            stream = self.streams[stream_name]
+            # NOTE: This way a non-existent stream_name will not pass silently
+            #       put raise a KeyError
+
+            read_single_stream(stream, stream_name)
 
         return
 
-    def save_streams(self):
-        """For each stream, checks if it is to be saved and then does so."""
+    def save_streams(self, stream_names: list='all'):
+        """For each stream, checks if it is to be saved, and if yes: saves it.
+
+        The saving location is stored in the streams dict. The relevant keys
+        are the `save` flag and the `save_path` string.
+
+        Note that this function does not save the whole stream log, but only
+        those part of the stream log that have not already been saved. The
+        position up to which the stream was saved is stored under the
+        `lines_saved` key in the stream dict.
+        
+        Args:
+            stream_names (list, optional): The list of stream names to _check_.
+                If 'all' (default), will check all streams whether the `save`
+                flag is set.
+        """
+
+        if not self.streams:
+            # There are no streams to save
+            log.debug("No streams to save for WorkerTask '%s' (uid: %s).",
+                      self.name, self.uid)
+            return
+
+        elif stream_names == 'all':
+            # Gather list of stream names
+            stream_names = list(self.streams.keys())
+
         # Go over all streams and check if they were configured to be saved
-        for stream_name, stream in self.streams.items():
+        for stream_name in stream_names:
+            # Get the corresponding stream dict
+            stream = self.streams[stream_name]
+
+            # Determine if to save this one
             if not stream.get('save'):
+                log.debug("Not saving stream '%s' ...", stream_name)
                 continue
             # else: this stream is to be saved
 
