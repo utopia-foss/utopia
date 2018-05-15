@@ -522,7 +522,7 @@ class Multiverse:
             wk = dict(args=args,
                       read_stdout=True,
                       line_read_func=enqueue_json,
-                      **worker_kwargs)
+                      **(worker_kwargs if worker_kwargs else {}))
 
             # Determine whether to save the streams
             if wk.get('save_streams', True):

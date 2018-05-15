@@ -68,10 +68,13 @@ run_kwargs:
     #       # further arguments to utopya.stopcond._sc_timeout_wall
 
 
-# The defaults for the worker_kwargs, passed to the setup function of each
-# WorkerTask before it is spawned
+# The defaults for the worker_kwargs
+# These are passed to the setup function of each WorkerTask before spawning
 worker_kwargs:
+  # Whether to save the streams of each Universe to a log file
   save_streams: true
+
+  # Changes to entries below here have not been tested!
   popen_kwargs: {}
 
 # Reporter ....................................................................
