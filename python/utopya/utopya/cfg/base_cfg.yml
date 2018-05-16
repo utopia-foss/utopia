@@ -46,7 +46,7 @@ worker_manager:
 run_kwargs:
   # Whether to forward the worker streams to the main thread's stdout
   forward_streams: in_single_run
-  # can be: true, false, or 'in_single_run'
+  # can be: true, false, or 'in_single_run' (forward only for single runs)
 
   # Total timeout (in s) of a run; to ignore, set to ~
   timeout: ~
