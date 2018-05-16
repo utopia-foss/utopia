@@ -278,8 +278,9 @@ class WorkerManager:
         self.times['start_working'] = dt.now()
 
         log.info("Starting to work ...")
-        log.debug("  Timeout:          now + %ss", timeout)
-        log.debug("  Stop conditions:  %s", stop_conditions)
+        log.debug("  Forwarding streams:  %s", forward_streams)
+        log.debug("  Timeout:             now + %ss", timeout)
+        log.debug("  Stop conditions:     %s", stop_conditions)
 
         if forward_streams and self.reporter is not None:
             # Set reporter to suppress carriage returns

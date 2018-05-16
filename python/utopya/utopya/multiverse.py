@@ -224,7 +224,7 @@ class Multiverse:
             rk['forward_streams'] = False
 
         # Now start working ...
-        self.wm.start_working(**self.meta_config['run_kwargs'])
+        self.wm.start_working(**rk)
 
         log.info("Finished Multiverse parameter sweep. Wohoo. :)")
 
