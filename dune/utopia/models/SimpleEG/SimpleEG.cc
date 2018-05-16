@@ -26,12 +26,9 @@ int main (int argc, char** argv)
         auto rng = std::make_shared<std::mt19937>(seed);
         // TODO the seed should actually be taken from the top-level
 
-        // Setup the manager
-        auto manager = Utopia::setup_manager<>(config["SimpleEG"], rng);
-
         // Initialize the main model instance
         Utopia::SimpleEGModel model("SimpleEG", config, basegroup, rng,
-                                    manager);
+                                    Utopia::setup_manager<>(config["SimpleEG"], rng));
         // NOTE This already implements the new model interface
 
         // Perform the iteration

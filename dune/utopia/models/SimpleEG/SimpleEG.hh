@@ -57,7 +57,7 @@ public:
                    Utopia::DataIO::Config &config,
                    std::shared_ptr<Utopia::DataIO::HDFGroup> group,
                    std::shared_ptr<std::mt19937> rng,
-                   ManagerType manager):
+                   ManagerType&& manager):
         Base(),
         // NOTE the following will need to be passed to the Base constructor
         //      once the base Model class is adjusted
