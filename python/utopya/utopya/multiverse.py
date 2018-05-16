@@ -512,18 +512,24 @@ class Multiverse:
 
             # write essential part of config to file:
             uni_cfg_path = os.path.join(uni_dir, "config.yml")
-            write_yml(d=uni_cfg, path=uni_cfg_path)
+            write_yml(uni_cfg, path=uni_cfg_path)
 
             # building args tuple for task assignment
-            # assuming there exists an attribute for the executable and for the
-            # model
+            # assuming the binary takes as only argument the path to the config
             args = (model_binpath, uni_cfg_path)
 
-            # Overwrite the worker kwargs argument with totally new ones
-            worker_kwargs = dict(args=args,  # passing the arguments
-                                 read_stdout=True,
-                                 line_read_func=enqueue_json)  # Callable
-            return worker_kwargs
+            # Generate a new worker_kwargs dict, carrying over the given ones
+            wk = dict(args=args,
+                      read_stdout=True,
+                      line_read_func=enqueue_json,
+                      **(worker_kwargs if worker_kwargs else {}))
+
+            # Determine whether to save the streams
+            if wk.get('save_streams', True):
+                # Generate a path and store in the worker kwargs
+                wk['save_streams_to'] = os.path.join(uni_dir, "{name:}.log")
+
+            return wk
 
         # Generate the universe basename, which will be used for the folder and the task name
         uni_basename = self._create_uni_basename(uni_id=uni_id,
@@ -539,7 +545,8 @@ class Multiverse:
         self.wm.add_task(name=uni_basename,
                          priority=None,
                          setup_func=setup_universe,
-                         setup_kwargs=setup_kwargs)
+                         setup_kwargs=setup_kwargs,
+                         worker_kwargs=self.meta_config.get('worker_kwargs'))
 
         log.debug("Added simulation task for universe %d.", uni_id)
 

@@ -119,15 +119,12 @@ def test_add_tasks(wm, sleep_task):
     # This one should work
     wm.add_task(**sleep_task)
 
-    # Test that errors propagate through
-    with pytest.warns(UserWarning):
-        wm.add_task(setup_func=print, worker_kwargs=dict(foo="bar"))
-    
-    with pytest.warns(UserWarning):
+    # Test that warnings and errors propagate through    
+    with pytest.warns(UserWarning, match="`worker_kwargs` given but also"):
         wm.add_task(setup_kwargs=dict(foo="bar"),
                     worker_kwargs=dict(foo="bar"))
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Need either argument `setup_func`"):
         wm.add_task()
 
 def test_start_working(wm_with_tasks):
