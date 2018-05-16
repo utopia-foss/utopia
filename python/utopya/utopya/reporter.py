@@ -422,7 +422,7 @@ class Reporter:
             flush (bool, optional): Whether to flush directly; default: True
             **print_kws: Other print function keyword arguments
         """
-        if suppress_cr and print_kws.get('end') == "\r":
+        if self.suppress_cr and print_kws.get('end') == "\r":
             # Enforce line feed
             print_kws['end'] = "\n"
 
