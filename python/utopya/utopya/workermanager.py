@@ -208,11 +208,19 @@ class WorkerManager:
             self._invoke_report('task_spawned', force=True)
         
         def task_finished(task):
-            """Invokes the task_finished report_spec and registers the task's
-            runtime with the report (needed for runtime statistics)"""
+            """Performs actions after a task has finished.
+
+            - invokes the 'task_finished' report specification
+            - registers the task with the reporter, which extracts information
+              on the run time of the task and its exit status
+            - TODO performs an action upon non-zero exit status of the task
+            """
             self._invoke_report('task_finished', force=True)
+
             if self.reporter is not None:
-                self.reporter.register_runtime(task)
+                self.reporter.register_task(task)
+
+            # TODO add action upon non-zero exit status here
 
         callbacks = dict(spawn=task_spawned,
                          finished=task_finished)
