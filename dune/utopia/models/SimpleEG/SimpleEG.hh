@@ -11,23 +11,29 @@
 #include <dune/utopia/data_io/hdfdataset.hh>
 
 namespace Utopia {
+enum Strategy{ S0, S1};
+
+struct State {
+    Strategy strategy;
+    double payoff;
+};
+
+struct Boundary {};
 
 /// Define data types of SimpleEG model
-// TODO
-using SimpleEGModelTypes = ModelTypes<double, double>;
-
-// using Manager = ; // FIXME is this even possible?
+using SimpleEGModelTypes = ModelTypes<State, Boundary>;
 
 /// Simple model of evolutionary games on grids
 /** ...
  *  ...
  */
+template<class ManagerType>
 class SimpleEGModel:
-    public Model<SimpleEGModel, SimpleEGModelTypes>
+    public Model<SimpleEGModel<ManagerType>, SimpleEGModelTypes>
 {
 public:
     // convenience type definitions
-    using Base = Model<SimpleEGModel, SimpleEGModelTypes>;
+    using Base = Model<SimpleEGModel<ManagerType>, SimpleEGModelTypes>;
     using Data = typename Base::Data;
     using BCType = typename Base::BCType;
 
@@ -38,7 +44,7 @@ private:
     std::shared_ptr<Utopia::DataIO::HDFGroup> _group;
     std::shared_ptr<std::mt19937> _rng;
     // Members of this model
-    Manager _manager;
+    ManagerType _manager;
 
 
 public:
@@ -50,44 +56,22 @@ public:
     SimpleEGModel (const std::string name,
                    Utopia::DataIO::Config &config,
                    std::shared_ptr<Utopia::DataIO::HDFGroup> group,
-                   std::shared_ptr<std::mt19937> rng):
+                   std::shared_ptr<std::mt19937> rng,
+                   ManagerType manager):
         Base(),
         // NOTE the following will need to be passed to the Base constructor
         //      once the base Model class is adjusted
         _name(name),
         _config(config[_name]),
         _group(group->open_group(_name)),
-        _rng(rng)
-    { 
-        // Setup the grid
-        setup_manager();
-        
+        _rng(rng),
+        _manager(manager)
+    {         
         // Setup the datasets
         setup_datasets();
-
     }
 
     // Setup functions
-    
-    /// Setup the grid manager
-    void setup_manager()
-    {
-        // Extract grid size from config and create grid
-        auto gsize = _config["grid_size"].as<std::array<unsigned int, 2>>();
-        auto grid = Utopia::Setup::create_grid<2>(gsize);
-
-        // Create cells on that grid
-        auto cells = Utopia::Setup::create_cells_on_grid<true>(grid, 0.0);
-
-        // Create the manager
-        auto manager = Utopia::Setup::create_manager_cells<true, true>(grid,
-                                                                       cells,
-                                                                       _rng);
-
-        // TODO can the manager be stored as a member here?! Is the type known
-        // at compile time?
-    }
-    
     /// Setup datasets
     void setup_datasets()
     {
@@ -122,6 +106,27 @@ public:
     /// Return const reference to stored data
     // const Data& data () const { return _state; }
 };
+
+
+/// Setup the grid manager
+template<bool periodic=true, class RNGType=std::mt19937>
+auto setup_manager(Utopia::DataIO::Config config, std::shared_ptr<RNGType> rng)
+{
+    // Extract grid size from config and create grid
+    auto gsize = config["grid_size"].as<std::array<unsigned int, 2>>();
+    auto grid = Utopia::Setup::create_grid<2>(gsize);
+
+    // Create cells on that grid
+    auto cells = Utopia::Setup::create_cells_on_grid<true>(grid, 0.0);
+
+    // Create the manager
+    auto manager = Utopia::Setup::create_manager_cells<true, periodic>(grid, cells, rng);
+
+    return manager;
+    // TODO can the manager be stored as a member here?! Is the type known
+    // at compile time?
+}
+
 
 } // namespace Utopia
 
