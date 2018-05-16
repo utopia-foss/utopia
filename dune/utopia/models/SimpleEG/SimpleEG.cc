@@ -35,6 +35,8 @@ int main (int argc, char** argv)
         for(int i = 0; i < config["num_steps"].as<int>(); ++i)
             model.iterate();
 
+        std::cout << "Done." << std::endl;
+
         return 0;
     }
     catch (std::exception& e) {
