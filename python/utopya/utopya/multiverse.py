@@ -13,7 +13,8 @@ from pkg_resources import resource_filename
 import paramspace as psp
 
 from utopya.datamanager import DataManager
-from utopya.workermanager import WorkerManager, WorkerManagerError
+from utopya.workermanager import WorkerManager
+from utopya.workermanager import WorkerManagerError, WorkerTaskNonZeroExit
 from utopya.task import enqueue_json
 from utopya.reporter import WorkerManagerReporter
 from utopya.tools import recursive_update, read_yml, write_yml
@@ -568,15 +569,30 @@ class Multiverse:
             # Tell the WorkerManager to start working
             self.wm.start_working(**self.meta_config['run_kwargs'])
             # NOTE This is the blocking call
+
+        except WorkerTaskNonZeroExit as err:
+            # A WorkerTask failed
+            # Provide some custom error handling for this
+            log.error("WorkerTask '%s' exited with non-zero exit "
+                      "status: %s", err.task.name, err.task.worker_status)
+            
+            # In debug mode, also exit here
+            if self.debug_mode:
+                log.critical("debug_mode enabled. Exiting here with exit code "
+                             "of the failed WorkerTask ...")
+
+                # Extract the tasks exit code from the exception and exit
+                sys.exit(err.task.worker_status)
         
         except WorkerManagerError as err:
+            # There was a different WorkerManagerError
+            # Log the error
+            log.error("%s: %s", err.__class__.__name__, str(err))
+            
+            # If in debug mode, also exit here
             if self.debug_mode:
                 # re-raise it
                 raise
-            
-            # just log the error
-            log.error("%s: %s", err.__class__.__name__, str(err))
-
 
 # -----------------------------------------------------------------------------
 # Others

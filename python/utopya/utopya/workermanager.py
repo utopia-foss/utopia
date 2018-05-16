@@ -237,9 +237,6 @@ class WorkerManager:
 
             # If in debug mode, perform an action upon non-zero exit status
             if self.debug_mode and task.worker_status not in [0, None]:
-                log.warning("WorkerTask '%s' exited with non-zero exit "
-                            "status: %s", task.name, task.worker_status)
-
                 # Generate an exception and add it to the list of pending ones
                 self.pending_exceptions.append(WorkerTaskNonZeroExit(task))
 
@@ -375,7 +372,7 @@ class WorkerManager:
                 time.sleep(self.poll_delay)
 
             # Finished working
-            
+
             # Still handle exceptions
             self._handle_pending_exceptions()
             # TODO set `handle_all` once implemented
@@ -545,13 +542,15 @@ class WorkerManager:
 
         if not self.pending_exceptions:
             return
-
-        # Pop the latest exception
-        exc = self.pending_exceptions.pop()
+        # else: there was an exception
 
         # In debug mode, raise
         if self.debug_mode:
-            raise exc
+            # Set the reporter to suppress CRs
+            self.reporter.suppress_cr = True
+
+            # Raise the latest pending exception
+            raise self.pending_exceptions.pop()
             # If this was an exception that is derived from the
             # WorkerManagerError, execution continues in the except
             # block at the end of this while loop
@@ -580,4 +579,10 @@ class WorkerTaskError(WorkerManagerError):
 
 class WorkerTaskNonZeroExit(WorkerTaskError):
     """Can be raised when a WorkerTask exited with a non-zero exit code."""
-    pass
+    
+    def __init__(self, task: WorkerTask, *args, **kwargs):
+        # Store the task        
+        self.task = task
+
+        # Pass everything else to the parent init
+        super().__init__(*args, **kwargs)
