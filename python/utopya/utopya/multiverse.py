@@ -3,6 +3,7 @@
 The Multiverse supplies the main user interface of the frontend.
 """
 import os
+import sys
 import time
 import copy
 import logging
@@ -12,7 +13,7 @@ from pkg_resources import resource_filename
 import paramspace as psp
 
 from utopya.datamanager import DataManager
-from utopya.workermanager import WorkerManager
+from utopya.workermanager import WorkerManager, WorkerManagerError
 from utopya.task import enqueue_json
 from utopya.reporter import WorkerManagerReporter
 from utopya.tools import recursive_update, read_yml, write_yml
@@ -53,6 +54,7 @@ class Multiverse:
                 path, see Multiverse.USER_CFG_SEARCH_PATH.
         """
         # Initialize empty attributes (partly property-managed)
+        self._meta_config = None
         self._model_name = None
         self._dirs = {}
 
@@ -65,7 +67,6 @@ class Multiverse:
                   self.model_name, self.model_binpath)
 
         # Create meta configuration and list of used config files
-        self._meta_config = None
         files = self._create_meta_config(run_cfg_path=run_cfg_path,
                                          user_cfg_path=user_cfg_path,
                                          update_meta_cfg=update_meta_cfg)
@@ -79,7 +80,8 @@ class Multiverse:
                                **self.meta_config['data_manager'])
 
         # Create a WorkerManager instance and pass the reporter to it
-        self._wm = WorkerManager(**self.meta_config['worker_manager'])
+        self._wm = WorkerManager(**self.meta_config['worker_manager'],
+                                 debug_mode=self.debug_mode)
 
         # Instantiate the Reporter
         self._reporter = WorkerManagerReporter(self._wm,
@@ -87,6 +89,9 @@ class Multiverse:
                                                **self.meta_config['reporter'])
 
         log.info("Initialized Multiverse for model: '%s'", self.model_name)
+
+        if self.debug_mode:
+            log.info("  Multiverse is in debug mode.")
 
     # Properties ..............................................................
 
@@ -146,6 +151,11 @@ class Multiverse:
         """The Multiverse's WorkerManager."""
         return self._wm
 
+    @property
+    def debug_mode(self) -> bool:
+        """Returns the 'debug_mode' flag from meta_config or False if unset."""
+        return self.meta_config.get('debug_mode', False)
+
     # Public methods ..........................................................
     # TODO the run methods should only be allowed to run once!
 
@@ -178,9 +188,8 @@ class Multiverse:
         log.info("Adding task for simulation of a single universe ...")
         self._add_sim_task(uni_id=0, max_uni_id=0, uni_cfg=uni_cfg)
 
-        # Tell the WorkerManager to start working
-        self.wm.start_working(**self.meta_config['run_kwargs'])
-        # NOTE This is the blocking call
+        # Tell the worker manager to start working
+        self._start_working()  # blocking here until finished
 
         log.info("Finished single universe run. Yay. :)")
 
@@ -208,7 +217,7 @@ class Multiverse:
         log.info("Tasks added.")
 
         # Now start working ...
-        self.wm.start_working(**self.meta_config['run_kwargs'])
+        self._start_working()
 
         log.info("Finished Multiverse parameter sweep. Wohoo. :)")
 
@@ -549,6 +558,24 @@ class Multiverse:
                          worker_kwargs=self.meta_config.get('worker_kwargs'))
 
         log.debug("Added simulation task for universe %d.", uni_id)
+
+    def _start_working(self):
+        """This method is called by the run_* methods to handle the call to
+        the WorkerManager.start_working method and the corresponding exception
+        handling.
+        """
+        try:
+            # Tell the WorkerManager to start working
+            self.wm.start_working(**self.meta_config['run_kwargs'])
+            # NOTE This is the blocking call
+        
+        except WorkerManagerError as err:
+            if self.debug_mode:
+                # re-raise it
+                raise
+            
+            # just log the error
+            log.error("%s: %s", err.__class__.__name__, str(err))
 
 
 # -----------------------------------------------------------------------------

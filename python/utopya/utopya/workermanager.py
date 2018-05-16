@@ -27,7 +27,7 @@ class WorkerManager:
         poll_delay (float): The delay (in s) between after a poll
     """
 
-    def __init__(self, num_workers: Union[int, str], poll_delay: float=0.05, QueueCls=queue.Queue, reporter: WorkerManagerReporter=None, rf_spec: Dict[str, Union[str, List[str]]]=None):
+    def __init__(self, num_workers: Union[int, str], poll_delay: float=0.05, QueueCls=queue.Queue, reporter: WorkerManagerReporter=None, rf_spec: Dict[str, Union[str, List[str]]]=None, debug_mode: bool=False):
         """Initialize the worker manager.
         
         Args:
@@ -51,6 +51,13 @@ class WorkerManager:
                 The values of the dict can be either strings or lists of
                 strings, where the strings always refer to report formats
                 registered with the WorkerManagerReporter
+            debug_mode (bool, optional): If True, a WorkerTask finishing with
+                a non-zero exit status will lead to the WorkerManager to exit
+                the working loop. This event can be caught and handled
+                accordingly.
+        
+        Raises:
+            ValueError: For too negative `num_workers` argument
         """
         # Initialize attributes, some of which are property-managed
         self._num_workers = None
@@ -60,6 +67,8 @@ class WorkerManager:
         self._active_tasks = []
         self._reporter = None
         self._num_finished_tasks = 0
+        self.debug_mode = debug_mode
+        self.pending_exceptions = []
 
         # Hand over arguments
         self.poll_delay = poll_delay
@@ -97,6 +106,12 @@ class WorkerManager:
         self.times = dict(init=dt.now(), start_working=None,
                           timeout=None, end_working=None)
         # These are also accessed by the reporter
+
+        log.info("Initialized WorkerManager with %d worker(s).",
+                 self.num_workers)
+
+        if self.debug_mode:
+            log.info("  WorkerManager is in debug mode.")
 
     # Properties ..............................................................
     @property
@@ -213,14 +228,20 @@ class WorkerManager:
             - invokes the 'task_finished' report specification
             - registers the task with the reporter, which extracts information
               on the run time of the task and its exit status
-            - TODO performs an action upon non-zero exit status of the task
+            - in debug mode, performs an action upon non-zero task exit status
             """
             self._invoke_report('task_finished', force=True)
 
             if self.reporter is not None:
                 self.reporter.register_task(task)
 
-            # TODO add action upon non-zero exit status here
+            # If in debug mode, perform an action upon non-zero exit status
+            if self.debug_mode and task.worker_status not in [0, None]:
+                log.warning("WorkerTask '%s' exited with non-zero exit "
+                            "status: %s", task.name, task.worker_status)
+
+                # Generate an exception and add it to the list of pending ones
+                self.pending_exceptions.append(WorkerTaskNonZeroExit(task))
 
         callbacks = dict(spawn=task_spawned,
                          finished=task_finished)
@@ -299,6 +320,9 @@ class WorkerManager:
                 if timeout_time is not None and time.time() > timeout_time:
                     raise WorkerManagerTotalTimeout()
 
+                # Check if there was another reason for exiting
+                self._handle_pending_exceptions()
+
                 # Check if there are free workers
                 if self.num_free_workers:
                     # Yes. => Try to grab a task and start working on it
@@ -351,6 +375,10 @@ class WorkerManager:
                 time.sleep(self.poll_delay)
 
             # Finished working
+            
+            # Still handle exceptions
+            self._handle_pending_exceptions()
+            # TODO set `handle_all` once implemented
 
         except WorkerManagerError as err:
             print("")
@@ -497,6 +525,40 @@ class WorkerManager:
         log.debug("All tasks signalled. Tasks' worker status:\n  %s",
                   ", ".join([str(t.worker_status) for t in tasks]))
 
+    def _handle_pending_exceptions(self, handle_all: bool=False) -> None:
+        """This method handles the list of pending exceptions during working
+        
+        Args:
+            handle_all (bool, optional): Whether to handle all pending
+                exceptions. False: only handle the latest.
+        
+        Returns:
+            None
+        
+        Raises:
+            exc: The latest exception
+            NotImplementedError: handle_all
+        """
+
+        if handle_all:
+            raise NotImplementedError("handle_all")
+
+        if not self.pending_exceptions:
+            return
+
+        # Pop the latest exception
+        exc = self.pending_exceptions.pop()
+
+        # In debug mode, raise
+        if self.debug_mode:
+            raise exc
+            # If this was an exception that is derived from the
+            # WorkerManagerError, execution continues in the except
+            # block at the end of this while loop
+
+        # Otherwise, just log it as a warning
+        log.warning(str(exc))
+
 
 # Custom exceptions -----------------------------------------------------------
 
@@ -508,4 +570,14 @@ class WorkerManagerError(BaseException):
 
 class WorkerManagerTotalTimeout(WorkerManagerError):
     """Raised when a total timeout occured"""
+    pass
+
+
+class WorkerTaskError(WorkerManagerError):
+    """Raised when there was an error in a WorkerTask"""
+    pass
+
+
+class WorkerTaskNonZeroExit(WorkerTaskError):
+    """Can be raised when a WorkerTask exited with a non-zero exit code."""
     pass
