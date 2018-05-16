@@ -66,9 +66,54 @@ public:
         _group(group->open_group(_name)),
         _rng(rng),
         _manager(manager)
-    {         
+    {   
+        // Initialise cells
+        this->initialise_cells();
+
         // Setup the datasets
         setup_datasets();
+    }
+
+    /**
+     * @brief Initialise the cells
+     * 
+     */
+    void initialise_cells()
+    {
+        std::string initial_state = _config["initial_state"].as<std::string>();
+        if (initial_state == "random")
+        {
+            std::uniform_int_distribution<> dist(0, 1);
+            for (auto&& cell : _manager.cells())
+            {
+                // int init_strategy = dist(_rng);
+                
+                // cell->state().strategy = init_strategy;
+                auto& state_struct = cell->state_new();
+                std::cout << state_struct.payoff << std::endl;
+                // cell->state_new().payoff = 0.;
+                // std::cout << cell->state().payoff << std::endl;
+
+                // cell.state_new().strategy = init_strategy;
+                // cell.state_new().payoff = 0.;
+            }
+        } 
+        else if (initial_state == "fraction")
+        {
+
+        }
+        else if (initial_state == "single_s0")
+        {
+
+        }
+        else if (initial_state == "single_s1")
+        {
+
+        }
+        else
+        {
+            std::runtime_error("The initial state is not a valid option!");
+        }
     }
 
     // Setup functions
@@ -123,8 +168,6 @@ auto setup_manager(Utopia::DataIO::Config config, std::shared_ptr<RNGType> rng)
     auto manager = Utopia::Setup::create_manager_cells<true, periodic>(grid, cells, rng);
 
     return manager;
-    // TODO can the manager be stored as a member here?! Is the type known
-    // at compile time?
 }
 
 
