@@ -582,6 +582,12 @@ class Multiverse:
             log.error("WorkerTask '%s' exited with non-zero exit "
                       "status: %s", err.task.name, err.task.worker_status)
             
+            # Show the log
+            if err.task.streams.get('out'):
+                lines = err.task.streams['out']['log'][-20:]
+                log.error("Last ≤20 lines of combined stdout and stderr:\n"
+                          "\n  %s\n", "\n  ".join(lines))
+            
             # In debug mode, also exit here
             if self.debug_mode:
                 log.critical("debug_mode enabled. Exiting here with exit code "
