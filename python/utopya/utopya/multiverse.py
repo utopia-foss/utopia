@@ -223,7 +223,7 @@ class Multiverse:
         log.info("Tasks added.")
 
         # Now start working ...
-        self._start_working()
+        self._start_working()  # blocking here until finished
 
         log.info("Finished Multiverse parameter sweep. Wohoo. :)")
 

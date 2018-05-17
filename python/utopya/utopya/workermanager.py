@@ -550,8 +550,9 @@ class WorkerManager:
 
         # In debug mode, raise
         if self.debug_mode:
-            # Set the reporter to suppress CRs
-            self.reporter.suppress_cr = True
+            # If there is a reporter, set it to suppress CRs
+            if self.reporter is not None:
+                self.reporter.suppress_cr = True
 
             # Raise the latest pending exception
             raise self.pending_exceptions.pop()
