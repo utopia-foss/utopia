@@ -27,13 +27,13 @@ class WorkerManager:
         poll_delay (float): The delay (in s) between after a poll
     """
 
-    def __init__(self, num_workers: Union[int, str], poll_delay: float=0.05, QueueCls=queue.Queue, reporter: WorkerManagerReporter=None, rf_spec: Dict[str, Union[str, List[str]]]=None, debug_mode: bool=False):
+    def __init__(self, num_workers: Union[int, str]='auto', poll_delay: float=0.05, QueueCls=queue.Queue, reporter: WorkerManagerReporter=None, rf_spec: Dict[str, Union[str, List[str]]]=None, debug_mode: bool=False):
         """Initialize the worker manager.
         
         Args:
-            num_workers (Union[int, str]): The number of workers that can work
-                in parallel. If `auto`, uses os.cpu_count(). If below zero,
-                deduces abs(num_workers) from the CPU count.
+            num_workers (Union[int, str], optional): The number of workers
+                that can work in parallel. If 'auto' (default), uses
+                os.cpu_count(). If below zero, deduces abs(num_workers) from the CPU count.
             poll_delay (float, optional): How long (in seconds) the delay
                 between worker polls should be. For too small delays (<0.01),
                 the CPU load will become significant.
