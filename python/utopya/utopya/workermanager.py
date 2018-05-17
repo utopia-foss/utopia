@@ -1,6 +1,7 @@
 """The WorkerManager class."""
 
 import os
+import sys
 import queue
 import warnings
 import logging
@@ -27,7 +28,7 @@ class WorkerManager:
         poll_delay (float): The delay (in s) between after a poll
     """
 
-    def __init__(self, num_workers: Union[int, str]='auto', poll_delay: float=0.05, QueueCls=queue.Queue, reporter: WorkerManagerReporter=None, rf_spec: Dict[str, Union[str, List[str]]]=None, debug_mode: bool=False):
+    def __init__(self, num_workers: Union[int, str]='auto', poll_delay: float=0.05, QueueCls=queue.Queue, reporter: WorkerManagerReporter=None, rf_spec: Dict[str, Union[str, List[str]]]=None, nonzero_exit_handling: str='ignore'):
         """Initialize the worker manager.
         
         Args:
@@ -51,10 +52,11 @@ class WorkerManager:
                 The values of the dict can be either strings or lists of
                 strings, where the strings always refer to report formats
                 registered with the WorkerManagerReporter
-            debug_mode (bool, optional): If True, a WorkerTask finishing with
-                a non-zero exit status will lead to the WorkerManager to exit
-                the working loop. This event can be caught and handled
-                accordingly.
+            nonzero_exit_handling (str, optional): How to react if a WorkerTask
+                exits with a non-zero exit code. For 'ignore', nothing happens.
+                For 'warn', a warning is logged. For 'raise', the log is shown
+                and the WorkerManager exits with the same exit code as the
+                WorkerTask exited with.
         
         Raises:
             ValueError: For too negative `num_workers` argument
@@ -69,11 +71,12 @@ class WorkerManager:
         self._active_tasks = []
         self._reporter = None
         self._num_finished_tasks = 0
-        self.debug_mode = debug_mode
+        self._nonzero_exit_handling = None
         self.pending_exceptions = []
 
         # Hand over arguments
         self.poll_delay = poll_delay
+        self.nonzero_exit_handling = nonzero_exit_handling
 
         if num_workers == 'auto':
             self.num_workers = os.cpu_count()
@@ -107,8 +110,7 @@ class WorkerManager:
         # Provide some information
         log.info("  Number of available CPUs:  %d", os.cpu_count())
         log.info("  Number of workers:         %d", self.num_workers)
-        if self.debug_mode:
-            log.info("  WorkerManager is in debug mode.")
+        log.info("  Non-zero exit handling:    %s", self.nonzero_exit_handling)
 
         # Store some profiling information
         self.times = dict(init=dt.now(), start_working=None,
@@ -188,7 +190,22 @@ class WorkerManager:
             warnings.warn("Setting a poll delay of {} < 0.01s can lead to "
                           "significant CPU load. Consider choosing a higher "
                           "value.", UserWarning)
-        self._poll_delay = val            
+        self._poll_delay = val    
+
+    @property
+    def nonzero_exit_handling(self) -> str:
+        """The action upon non-zero WorkerTask exit code."""
+        return self._nonzero_exit_handling
+
+    @nonzero_exit_handling.setter
+    def nonzero_exit_handling(self, val: str) -> None:
+        """Set the nonzero_exit_handling attribute."""
+        allowed_vals = ['ignore', 'warn', 'raise']
+        if val not in allowed_vals:
+            raise ValueError("`nonzero_exit_handling` needs to be one of {}, "
+                             "but was '{}'.".format(allowed_vals, val))
+        
+        self._nonzero_exit_handling = val
 
     @property
     def reporter(self) -> Union[WorkerManagerReporter, None]:
@@ -239,9 +256,11 @@ class WorkerManager:
             if self.reporter is not None:
                 self.reporter.register_task(task)
 
-            # If in debug mode, perform an action upon non-zero exit status
-            if self.debug_mode and task.worker_status not in [0, None]:
-                # Generate an exception and add it to the list of pending ones
+            # If there was a non-zero exit and the handling mode is set
+            # accordingly, generate an exception and add it to the list of
+            # pending exceptions
+            if (self.nonzero_exit_handling != 'ignore'
+                and task.worker_status not in [0, None]):
                 self.pending_exceptions.append(WorkerTaskNonZeroExit(task))
 
         callbacks = dict(spawn=task_spawned,
@@ -377,15 +396,22 @@ class WorkerManager:
 
             # Finished working
 
-            # Still handle exceptions
+            # Handle any remaining pending exceptions
             self._handle_pending_exceptions()
-            # TODO set `handle_all` once implemented
 
         except WorkerManagerError as err:
-            print("")
-            log.warning("Did not finish working due to a %s ...",
-                        err.__class__.__name__)
+            # Some error not related to the non-zero exit code occured
+            # Gracefully terminate remaining tasks before re-raising the
+            # exception
+
+            # Suppress reporter to use CR; then inform via log messages
+            if self.reporter:
+                self.reporter.suppress_cr = True
+
+            log.warning("Did not finish working due to a %s: %s",
+                        err.__class__.__name__, str(err))
             
+            # Not terminate the remaining active tasks
             log.warning("Terminating active tasks ...")
             self._signal_workers(self.active_tasks, signal='SIGTERM')
 
@@ -393,6 +419,14 @@ class WorkerManager:
             self.times['end_working'] = dt.now()
             self._invoke_report('after_abort', force=True)
 
+            # For a non-zero exit code case, do not raise but sys.exit
+            if isinstance(err, WorkerTaskNonZeroExit):
+                log.critical("Exiting now ...")
+                
+                # Extract the tasks exit code from the exception and exit
+                sys.exit(err.task.worker_status)
+
+            # Otherwise, just raise
             raise
 
         # Register end time and invoke final report
@@ -526,42 +560,76 @@ class WorkerManager:
         log.debug("All tasks signalled. Tasks' worker status:\n  %s",
                   ", ".join([str(t.worker_status) for t in tasks]))
 
-    def _handle_pending_exceptions(self, handle_all: bool=False) -> None:
-        """This method handles the list of pending exceptions during working
-        
-        Args:
-            handle_all (bool, optional): Whether to handle all pending
-                exceptions. False: only handle the latest.
+    def _handle_pending_exceptions(self) -> None:
+        """This method handles the list of pending exceptions during working,
+        starting from the one added most recently.
         
         Returns:
             None
         
         Raises:
             exc: The latest exception
-            NotImplementedError: handle_all
         """
 
-        if handle_all:
-            raise NotImplementedError("handle_all")
-
         if not self.pending_exceptions:
+            log.debug("No exceptions pending.")
             return
-        # else: there was an exception
+        # else: there was at least one exception
 
-        # In debug mode, raise
-        if self.debug_mode:
-            # If there is a reporter, set it to suppress CRs
+        # Go over all exceptions
+        while self.pending_exceptions:
+            # Get the latest one
+            exc = self.pending_exceptions.pop()
+
+            # Only the WorkerTaskNonZeroExit exceptions are handled here
+            # If the type does not match, can directly raise it
+            if not isinstance(exc, WorkerTaskNonZeroExit):
+                log.error("Encountered a pending exception that requires "
+                          "raising!")
+                raise exc
+
+            log.debug("Handling %s ...", exc.__class__.__name__)
+
+            # Else: add some custom exception handling for this exception type
+            # distinguish different ways of handling these exceptions
+            if self.nonzero_exit_handling == 'ignore':
+                # TODO
+                # Done here. Continue with the next exception
+                continue
+
+            # else: will generate some log output, so need to adjust Reporter
+            # to not use CR values which mingle up the output
             if self.reporter is not None:
                 self.reporter.suppress_cr = True
 
-            # Raise the latest pending exception
-            raise self.pending_exceptions.pop()
-            # If this was an exception that is derived from the
-            # WorkerManagerError, execution continues in the except
-            # block at the end of this while loop
+            # Generate a message
+            log.warning("WorkerTask '%s' exited with non-zero exit status: %s",
+                        exc.task.name, exc.task.worker_status)
+            
+            if self.nonzero_exit_handling == 'warn':
+                # Nothing else to do
+                continue
 
-        # Otherwise, just log it as a warning
-        log.warning(str(exc))
+            # At this stage, 'raise' is the desired handling mode
+            # Show the log
+            if exc.task.streams.get('out'):
+                lines = exc.task.streams['out']['log'][-20:]
+                log.error("Last ≤20 lines of combined stdout and stderr:\n"
+                          "\n  %s\n", "\n  ".join(lines))
+            
+            # Inform about exiting
+            log.critical("Action upon non-zero exit of a simulation is set "
+                         "to '%s'. The WorkerManager will terminate the "
+                         "remaining tasks and then sys.exit with the exit "
+                         "code of the failed WorkerTask ...",
+                         self.nonzero_exit_handling)
+
+            # By raising here, the except block in start_working will be
+            # invoked and terminate workers before calling sys.exit
+            raise exc
+            
+        # The pending_exceptions list is now empty
+        log.debug("Handled all pending exceptions.")
 
 
 # Custom exceptions -----------------------------------------------------------

@@ -30,7 +30,7 @@ if __name__ == '__main__':
                         help="Overwrites the `paths->model_note` entry which "
                              "is used in creation of the run directory path.")
     parser.add_argument('-d', '--debug',
-                        action='store_true',
+                        default=0, action='count',
                         help="Run the Multiverse in debug mode. This will "
                              "lead to the run being aborted if a single "
                              "simulation exits with a non-zero exit code.")
@@ -45,9 +45,12 @@ if __name__ == '__main__':
     if args.note:
         update_dict['paths'] = dict(model_note=args.note)
 
-    # Set the debug mode, if given
+    # Set the WorkerManager's non-zero exit handling, if in debug mode
     if args.debug:
-        update_dict['debug_mode'] = True
+        if args.debug == 1:
+            update_dict['worker_manager'] = dict(nonzero_exit_handling='warn')
+        else:
+            update_dict['worker_manager'] = dict(nonzero_exit_handling='raise')
 
     # Using the args, instantiate a Multiverse object
     mv = utopya.Multiverse(model_name=args.model_name,

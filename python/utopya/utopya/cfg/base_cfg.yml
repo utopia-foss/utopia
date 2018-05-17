@@ -20,8 +20,6 @@ paths:
 perform_sweep: false
 # NOTE This will be ignored if run_single or run_sweep are called directly
 
-# If in debug mode, a failing simulation will lead to the end of a run
-debug_mode: false
 
 # Worker Manager ..............................................................
 worker_manager:
@@ -31,6 +29,10 @@ worker_manager:
 
   # delay between polls [seconds]
   poll_delay: 0.05
+
+  # how to react upon a simulation exiting with non-zero exit code
+  nonzero_exit_handling: ignore
+  # can be: ignore, warn, raise
 
   # report format specifications at different points of the WM's operation
   rf_spec:

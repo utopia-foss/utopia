@@ -3,7 +3,6 @@
 The Multiverse supplies the main user interface of the frontend.
 """
 import os
-import sys
 import time
 import copy
 import logging
@@ -14,7 +13,6 @@ import paramspace as psp
 
 from utopya.datamanager import DataManager
 from utopya.workermanager import WorkerManager
-from utopya.workermanager import WorkerManagerError, WorkerTaskNonZeroExit
 from utopya.task import enqueue_json
 from utopya.reporter import WorkerManagerReporter
 from utopya.tools import recursive_update, read_yml, write_yml
@@ -80,8 +78,6 @@ class Multiverse:
 
         # Provide some information
         log.info("  Run directory:  %s", self.dirs['run'])
-        if self.debug_mode:
-            log.info("  Multiverse is in debug mode.")
 
         # Create a data manager
         self._dm = DataManager(self.dirs['run'],
@@ -89,8 +85,7 @@ class Multiverse:
                                **self.meta_config['data_manager'])
 
         # Create a WorkerManager instance and pass the reporter to it
-        self._wm = WorkerManager(**self.meta_config['worker_manager'],
-                                 debug_mode=self.debug_mode)
+        self._wm = WorkerManager(**self.meta_config['worker_manager'])
 
         # Instantiate the Reporter
         self._reporter = WorkerManagerReporter(self._wm,
@@ -157,11 +152,6 @@ class Multiverse:
         """The Multiverse's WorkerManager."""
         return self._wm
 
-    @property
-    def debug_mode(self) -> bool:
-        """Returns the 'debug_mode' flag from meta_config or False if unset."""
-        return self.meta_config.get('debug_mode', False)
-
     # Public methods ..........................................................
     # TODO the run methods should only be allowed to run once!
 
@@ -194,8 +184,8 @@ class Multiverse:
         log.info("Adding task for simulation of a single universe ...")
         self._add_sim_task(uni_id=0, max_uni_id=0, uni_cfg=uni_cfg)
 
-        # Tell the worker manager to start working
-        self._start_working()  # blocking here until finished
+        # Tell the WorkerManager to start working (is a blocking call)
+        self.wm.start_working(**self.meta_config['run_kwargs'])
 
         log.info("Finished single universe run. Yay. :)")
 
@@ -222,8 +212,8 @@ class Multiverse:
                                uni_cfg=uni_cfg)
         log.info("Tasks added.")
 
-        # Now start working ...
-        self._start_working()  # blocking here until finished
+        # Tell the WorkerManager to start working (is a blocking call)
+        self.wm.start_working(**self.meta_config['run_kwargs'])
 
         log.info("Finished Multiverse parameter sweep. Wohoo. :)")
 
@@ -566,45 +556,6 @@ class Multiverse:
 
         log.debug("Added simulation task for universe %d.", uni_id)
 
-    def _start_working(self):
-        """This method is called by the run_* methods to handle the call to
-        the WorkerManager.start_working method and the corresponding exception
-        handling.
-        """
-        try:
-            # Tell the WorkerManager to start working
-            self.wm.start_working(**self.meta_config['run_kwargs'])
-            # NOTE This is the blocking call
-
-        except WorkerTaskNonZeroExit as err:
-            # A WorkerTask failed
-            # Provide some custom error handling for this
-            log.error("WorkerTask '%s' exited with non-zero exit "
-                      "status: %s", err.task.name, err.task.worker_status)
-            
-            # Show the log
-            if err.task.streams.get('out'):
-                lines = err.task.streams['out']['log'][-20:]
-                log.error("Last ≤20 lines of combined stdout and stderr:\n"
-                          "\n  %s\n", "\n  ".join(lines))
-            
-            # In debug mode, also exit here
-            if self.debug_mode:
-                log.critical("debug_mode enabled. Exiting here with exit code "
-                             "of the failed WorkerTask ...")
-
-                # Extract the tasks exit code from the exception and exit
-                sys.exit(err.task.worker_status)
-        
-        except WorkerManagerError as err:
-            # There was a different WorkerManagerError
-            # Log the error
-            log.error("%s: %s", err.__class__.__name__, str(err))
-            
-            # If in debug mode, also exit here
-            if self.debug_mode:
-                # re-raise it
-                raise
 
 # -----------------------------------------------------------------------------
 # Others
