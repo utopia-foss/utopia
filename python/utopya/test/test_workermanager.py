@@ -115,8 +115,12 @@ def test_init():
         # small value
         WorkerManager(num_workers=1, poll_delay=0.001)
 
-    # Test initialisation in debug mode
-    WorkerManager(debug_mode=True)
+    # Test initialisation with different nonzero_exit_handling values
+    WorkerManager(nonzero_exit_handling='ignore')
+    WorkerManager(nonzero_exit_handling='warn')
+    WorkerManager(nonzero_exit_handling='raise')
+    with pytest.raises(ValueError, match="`nonzero_exit_handling` needs to"):
+        WorkerManager(nonzero_exit_handling='invalid')
 
     # Test initialisation with an (invalid) Reporter type
     with pytest.raises(TypeError, match="Need a WorkerManagerReporter"):
@@ -157,22 +161,40 @@ def test_start_working(wm_with_tasks):
         with pytest.raises(RuntimeError):
             task.worker = "something"
 
-def test_debug_mode(wm):
-    """Test that the debug mode leads to the excepted raises"""
+def test_nonzero_exit_handling(wm):
+    """Test that the non-zero exception handling works"""
 
-    # Generate a failing task
+    # Work sequentially
+    wm.num_workers = 1
+
+    # Generate a failing task config
     failing_task = dict(worker_kwargs=dict(args=("false",)))
 
-    # Add it and check that working on it _outside of debug mode_ is no issue
+    # Test that with 'ignore', everything runs as expected
+    wm.nonzero_exit_handling = 'ignore'
+    wm.add_task(**failing_task)
     wm.add_task(**failing_task)
     wm.start_working()
+    assert wm.num_finished_tasks == 2
 
-    # Now enter debug mode and do the same again
-    wm.debug_mode = True
+    # Now run through 'warning' mode
+    wm.nonzero_exit_handling = 'warn'
+    wm.add_task(**failing_task)
+    wm.add_task(**failing_task)
+    wm.start_working()
+    assert wm.num_finished_tasks == 4
+
+    # Now run through 'raise' mode
+    wm.nonzero_exit_handling = 'raise'
+    wm.add_task(**failing_task)
     wm.add_task(**failing_task)
 
-    with pytest.raises(WorkerTaskNonZeroExit):
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
         wm.start_working()
+    
+    assert pytest_wrapped_e.type == SystemExit
+    assert pytest_wrapped_e.value.code == 1
+    assert wm.num_finished_tasks == 5
 
 def test_signal_workers(wm, sleep_task):
     """Tests the signalling of workers"""
