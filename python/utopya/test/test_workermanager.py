@@ -84,6 +84,7 @@ def sc_run_kws():
 def test_init():
     """Tests whether initialisation succeeds"""
     # Test different `num_workers` arguments
+    WorkerManager()
     WorkerManager(num_workers='auto')
     WorkerManager(num_workers=-1)
     WorkerManager(num_workers=1)
@@ -113,6 +114,17 @@ def test_init():
     with pytest.warns(UserWarning):
         # small value
         WorkerManager(num_workers=1, poll_delay=0.001)
+
+    # Test initialisation in debug mode
+    WorkerManager(debug_mode=True)
+
+    # Test initialisation with an (invalid) Reporter type
+    with pytest.raises(TypeError, match="Need a WorkerManagerReporter"):
+        WorkerManager(reporter='not_a_reporter')
+
+    # Test passing report specifications
+    wm = WorkerManager(rf_spec=dict(after_abort='foobar'))
+    assert wm.rf_spec['after_abort'] == 'foobar'
 
 def test_add_tasks(wm, sleep_task):
     """Tests adding of tasks"""
