@@ -29,19 +29,25 @@ if __name__ == '__main__':
                         default=None, nargs='?',
                         help="Overwrites the `paths->model_note` entry which "
                              "is used in creation of the run directory path.")
-    parser.add_argument('-v', '--verbose',
-                        default=0, action='count',
-                        help="(UNSUPPORTED) Sets the verbosity level of the "
-                             "frontend.")
+    parser.add_argument('-d', '--debug',
+                        action='store_true',
+                        help="Run the Multiverse in debug mode. This will "
+                             "lead to the run being aborted if a single "
+                             "simulation exits with a non-zero exit code.")
 
     # CLI defined. Parse the arguments now.
     args = parser.parse_args()
 
-    # Check if the model_note was given
+    # Set an empty update dict. It will hold adjustments to the given configs
+    update_dict = {}
+
+    # If a model_note was given, add it to the paths
     if args.note:
-        update_dict = dict(paths=dict(model_note=args.note))
-    else:
-        update_dict = None
+        update_dict['paths'] = dict(model_note=args.note)
+
+    # Set the debug mode, if given
+    if args.debug:
+        update_dict['debug_mode'] = True
 
     # Using the args, instantiate a Multiverse object
     mv = utopya.Multiverse(model_name=args.model_name,

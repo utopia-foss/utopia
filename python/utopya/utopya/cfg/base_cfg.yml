@@ -21,7 +21,7 @@ perform_sweep: false
 # NOTE This will be ignored if run_single or run_sweep are called directly
 
 # If in debug mode, a failing simulation will lead to the end of a run
-debug_mode: true
+debug_mode: false
 
 # Worker Manager ..............................................................
 worker_manager:
