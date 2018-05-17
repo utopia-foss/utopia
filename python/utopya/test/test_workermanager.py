@@ -7,7 +7,7 @@ import pkg_resources
 import numpy as np
 import pytest
 
-from utopya.workermanager import WorkerManager, WorkerManagerTotalTimeout
+from utopya.workermanager import WorkerManager, WorkerManagerTotalTimeout, WorkerTaskNonZeroExit
 from utopya.task import enqueue_lines, parse_json
 from utopya.tools import read_yml
 
@@ -123,8 +123,8 @@ def test_init():
         WorkerManager(reporter='not_a_reporter')
 
     # Test passing report specifications
-    wm = WorkerManager(rf_spec=dict(after_abort='foobar'))
-    assert wm.rf_spec['after_abort'] == 'foobar'
+    wm = WorkerManager(rf_spec=dict(foo='bar'))
+    assert wm.rf_spec['foo'] == 'bar'
 
 def test_add_tasks(wm, sleep_task):
     """Tests adding of tasks"""
@@ -156,6 +156,23 @@ def test_start_working(wm_with_tasks):
 
         with pytest.raises(RuntimeError):
             task.worker = "something"
+
+def test_debug_mode(wm):
+    """Test that the debug mode leads to the excepted raises"""
+
+    # Generate a failing task
+    failing_task = dict(worker_kwargs=dict(args=("false",)))
+
+    # Add it and check that working on it _outside of debug mode_ is no issue
+    wm.add_task(**failing_task)
+    wm.start_working()
+
+    # Now enter debug mode and do the same again
+    wm.debug_mode = True
+    wm.add_task(**failing_task)
+
+    with pytest.raises(WorkerTaskNonZeroExit):
+        wm.start_working()
 
 def test_signal_workers(wm, sleep_task):
     """Tests the signalling of workers"""

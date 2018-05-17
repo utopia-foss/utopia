@@ -11,11 +11,13 @@ import pytest
 
 from utopya import Multiverse
 from utopya.multiverse import distribute_user_cfg
+from utopya.workermanager import WorkerManagerError
 
 # Get the test resources
 RUN_CFG_PATH = pkg_resources.resource_filename('test', 'cfg/run_cfg.yml')
 USER_CFG_PATH = pkg_resources.resource_filename('test', 'cfg/user_cfg.yml')
 SWEEP_CFG_PATH = pkg_resources.resource_filename('test', 'cfg/sweep_cfg.yml')
+BAD_CFG_PATH = pkg_resources.resource_filename('test', 'cfg/bad_cfg.yml')
 
 # Fixtures ----------------------------------------------------------------
 @pytest.fixture
@@ -136,6 +138,37 @@ def test_run_sweep(mv_kwargs):
 
     # Print some info.
     print("Tasks: ", mv.wm.tasks)
+
+def test_debug_mode(mv_kwargs):
+    """Tests a run in debug mode"""
+    # Adjust the defaults to use the sweep configuration for run configuration
+    mv_kwargs['run_cfg_path'] = RUN_CFG_PATH
+    mv_kwargs['update_meta_cfg']['paths']['model_note'] = "ok_config"
+
+    # Set the debug mode flag
+    mv_kwargs['update_meta_cfg']['debug_mode'] = True
+
+    # Initialize the Multiverse
+    mv = Multiverse(**mv_kwargs)
+    assert mv.debug_mode
+
+    # Run the sweep. This should work as expected.
+    # FIXME this does not currently work due to #100; re-enable once fixed
+    # mv.run_single()
+
+    # Now create another Multiverse, where the config is invalid
+    mv_kwargs['run_cfg_path'] = BAD_CFG_PATH
+    mv_kwargs['update_meta_cfg']['paths']['model_note'] = "bad_config"
+    mv = Multiverse(**mv_kwargs)
+    assert mv.debug_mode
+
+    # When now running a simulation, this should lead to a sys.exit
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        mv.run_single()
+    
+    assert pytest_wrapped_e.type == SystemExit
+    assert pytest_wrapped_e.value.code == 1
+
 
 # Other tests -----------------------------------------------------------------
 

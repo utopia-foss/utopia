@@ -1,0 +1,4 @@
+# This configuration is used in test_multiverse.py:test_debug_mode
+---
+parameter_space:
+  num_steps: nine thousand
