@@ -61,6 +61,8 @@ class Multiverse:
 
         # Set the model name
         self.model_name = model_name
+        
+        log.info("Initializing Multiverse for '%s' model ...", self.model_name)
 
         # Save the model binary path and the configuration file
         self._model_binpath = MODELS[self.model_name]['binpath']
@@ -71,9 +73,15 @@ class Multiverse:
         files = self._create_meta_config(run_cfg_path=run_cfg_path,
                                          user_cfg_path=user_cfg_path,
                                          update_meta_cfg=update_meta_cfg)
+        
 
         # Create the run directory and write the meta configuration into it
         self._create_run_dir(**self.meta_config['paths'], cfg_parts=files)
+
+        # Provide some information
+        log.info("  Run directory:  %s", self.dirs['run'])
+        if self.debug_mode:
+            log.info("  Multiverse is in debug mode.")
 
         # Create a data manager
         self._dm = DataManager(self.dirs['run'],
@@ -89,10 +97,7 @@ class Multiverse:
                                                report_dir=self.dirs['run'],
                                                **self.meta_config['reporter'])
 
-        log.info("Initialized Multiverse for model: '%s'", self.model_name)
-
-        if self.debug_mode:
-            log.info("  Multiverse is in debug mode.")
+        log.info("Initialized Multiverse.")
 
     # Properties ..............................................................
 
@@ -328,8 +333,9 @@ class Multiverse:
                                         copy.deepcopy(update_meta_cfg))
             # NOTE using copy to make sure that usage of the dict will not interfere with the Multiverse's meta config
         
-        log.info("Loaded meta configuration. Storing it ...")
+        # Store it
         self.meta_config = meta_tmp
+        log.info("Loaded meta configuration.")
 
         # Prepare dict to store paths for config files in (for later backup)
         log.debug("Preparing dict of config parts ...")

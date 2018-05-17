@@ -59,6 +59,8 @@ class WorkerManager:
         Raises:
             ValueError: For too negative `num_workers` argument
         """
+        log.info("Initializing WorkerManager ...")
+
         # Initialize attributes, some of which are property-managed
         self._num_workers = None
         self._poll_delay = None
@@ -102,16 +104,18 @@ class WorkerManager:
         if rf_spec:
             self.rf_spec.update(rf_spec)
 
+        # Provide some information
+        log.info("  Number of available CPUs:  %d", os.cpu_count())
+        log.info("  Number of workers:         %d", self.num_workers)
+        if self.debug_mode:
+            log.info("  WorkerManager is in debug mode.")
+
         # Store some profiling information
         self.times = dict(init=dt.now(), start_working=None,
                           timeout=None, end_working=None)
         # These are also accessed by the reporter
 
-        log.info("Initialized WorkerManager with %d worker(s).",
-                 self.num_workers)
-
-        if self.debug_mode:
-            log.info("  WorkerManager is in debug mode.")
+        log.info("Initialized WorkerManager.")
 
     # Properties ..............................................................
     @property
