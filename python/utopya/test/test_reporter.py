@@ -386,15 +386,18 @@ def test_suppress_cr(wm, tmpdir, capsys):
     rep = WorkerManagerReporter(wm, report_dir=tmpdir)
     rep.suppress_cr = True
 
+    # This should have written a line break
+    captured = capsys.readouterr()
+    assert captured.out == "\n"
+
+    # Write more
     rep._write_to_stdout("foo",)
     rep._write_to_stdout("bar", end="\n")
     rep._write_to_stdout("baz", end="\r")
     rep._write_to_stdout_noreturn("spam", prepend="")
 
-    # Read the captures streams
-    captured = capsys.readouterr()
-
     # Assert that no \r were written
+    captured = capsys.readouterr()
     assert captured.out == "foo\nbar\nbaz\nspam\n"
 
 def test_write_to_file(wm, rf_dict, tmpdir):
