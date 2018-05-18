@@ -198,8 +198,15 @@ class WorkerManager:
         return self._nonzero_exit_handling
 
     @nonzero_exit_handling.setter
-    def nonzero_exit_handling(self, val: str) -> None:
-        """Set the nonzero_exit_handling attribute."""
+    def nonzero_exit_handling(self, val: str):
+        """Set the nonzero_exit_handling attribute.
+        
+        Args:
+            val (str): The value to set it to. Can be: ignore, warn, raise
+        
+        Raises:
+            ValueError: For invalid value
+        """
         allowed_vals = ['ignore', 'warn', 'raise']
         if val not in allowed_vals:
             raise ValueError("`nonzero_exit_handling` needs to be one of {}, "
@@ -422,7 +429,7 @@ class WorkerManager:
             # For a non-zero exit code case, do not raise but sys.exit
             if isinstance(err, WorkerTaskNonZeroExit):
                 log.critical("Exiting now ...")
-                
+
                 # Extract the tasks exit code from the exception and exit
                 sys.exit(err.task.worker_status)
 
