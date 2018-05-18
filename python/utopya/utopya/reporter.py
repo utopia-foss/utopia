@@ -132,6 +132,7 @@ class Reporter:
         # Initialise property-managed attributes
         self._report_formats = dict()
         self._default_format = None
+        self._suppress_cr = False
 
         # Ensure the report_formats argument is a dict
         if report_formats is None:
@@ -180,6 +181,30 @@ class Reporter:
         else:
             self._default_format = None
             log.debug("Unset default report format.")
+
+    @property
+    def suppress_cr(self) -> bool:
+        """Whether to suppress a carriage return. Objects using the reporter
+        can set this property to communicate that they will be putting content
+        into the stdout stream as well. The writers can check this property
+        and adjust their behaviour accordingly.
+        """
+        return self._suppress_cr
+
+    @suppress_cr.setter
+    def suppress_cr(self, val: bool):
+        """Set the suppress_cr property.
+
+        When setting this to True the first time, a linebreak is issued in
+        order to not overwrite any previously written lines that ended with
+        a carriage return character.
+        """
+        # Go to the next line
+        if val and not self.suppress_cr:
+            print("")
+
+        # Set the value
+        self._suppress_cr = val
 
     # Public API ..............................................................
 
