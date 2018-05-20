@@ -3,6 +3,7 @@
 #include "hdfbufferfactory.hh"
 #include "hdftypefactory.hh"
 
+#include <cstring>
 #include <functional>
 #include <hdf5.h>
 #include <hdf5_hl.h>
@@ -188,16 +189,14 @@ public:
      * @brief Function for writing data to the attribute
      *
      * @param attribute_data Data to write
+     * @param len of arrays if a container of arrays shall be written which are all the same length
      * @param ptrlen arraysize in case a pointer is given to write
      */
     template <typename Type>
-    void write(Type attribute_data, [[maybe_unused]] std::size_t ptrlen = 0)
+    void write(Type attribute_data,
+               [[maybe_unused]] std::size_t arraylen = 0,
+               [[maybe_unused]] std::size_t ptrlen = 0)
     {
-        // check if attribute has been created, else do
-        if (_attribute == -1)
-        {
-            _attribute = __make_attribute__<Type>(attribute_data.size());
-        }
         // using result_type = typename HDFTypeFactory::result_type<Type>::type;
         // when stuff is vector string we can write directly, otherwise we
         // have to buffer
@@ -206,47 +205,87 @@ public:
         // tests, plain old data can be written right away
         if constexpr (is_container_type<Type>::value)
         {
+            _size = attribute_data.size();
+            // are consecutive memory types, namely std::vector and ptr types.
+            // exclude however containers of containers because they have to
+            // be buffered due to hdf5 internals
+            if constexpr (std::is_same_v<Type, std::vector<typename Type::value_type>> &&
+                          !is_container_type<typename Type::value_type>::value)
+            {
+                // std::cout << "writing vector for " << _name << std::endl;
+                // std::cout << "of size: " << _size << std::endl;
+                // check if attribute has been created, else do
+                if (_attribute == -1)
+                {
+                    _attribute = __make_attribute__<typename Type::value_type>(arraylen);
+                }
+
+                H5Awrite(_attribute,
+                         HDFTypeFactory::type<typename Type::value_type>(arraylen),
+                         attribute_data.data());
+            }
+            else if constexpr (std::is_pointer_v<Type>)
+            {
+                if (_attribute == -1)
+                {
+                    _attribute =
+                        __make_attribute__<typename HDFTypeFactory::result_type<Type>::type>(arraylen);
+                }
+
+                H5Awrite(_attribute,
+                         HDFTypeFactory::type<typename HDFTypeFactory::result_type<Type>::type>(arraylen),
+                         attribute_data);
+            }
+            else
+            {
+                auto buffer = HDFBufferFactory::buffer(
+                    std::begin(attribute_data),
+                    std::end(attribute_data), [](auto& value) -> typename Type::value_type& {
+                        return value;
+                    });
+
+                if (_attribute == -1)
+                {
+                    _attribute = __make_attribute__<typename Type::value_type>(arraylen);
+                }
+
+                H5Awrite(_attribute,
+                         HDFTypeFactory::type<typename Type::value_type>(arraylen),
+                         buffer.data());
+            }
+        }
+        else
+        {
             if constexpr (std::is_same_v<Type, std::string>)
             {
+                if (_attribute == -1)
+                {
+                    _attribute = __make_attribute__<Type>(attribute_data.size());
+                }
                 H5Awrite(_attribute, HDFTypeFactory::type<Type>(attribute_data.size()),
-                         attribute_data.data());
-                // when stuff is not a vector or string we first have to buffer
+                         attribute_data.c_str());
             }
-            if constexpr (std::is_same_v<Type, const char*>)
+            else if constexpr (std::is_same_v<Type, const char*>)
             {
+                // check if attribute has been created, else do
+                if (_attribute == -1)
+                {
+                    _attribute = __make_attribute__<Type>(std::strlen(attribute_data));
+                }
+
                 H5Awrite(_attribute,
                          HDFTypeFactory::type<Type>(std::strlen(attribute_data)),
                          attribute_data);
             }
             else
             {
-                // avoid buffering for types which can be written directly, these
-                // are consecutive memory types, namely std::vector and ptr types.
-                if constexpr (std::is_same_v<Type, std::vector<typename Type::value_type>>)
+                if (_attribute == -1)
                 {
-                    H5Awrite(_attribute,
-                             HDFTypeFactory::type<Type>(attribute_data.size()),
-                             attribute_data.data());
+                    _attribute = __make_attribute__<Type>();
                 }
-                else if constexpr (std::is_pointer_v<Type>)
-                {
-                    H5Awrite(_attribute, HDFTypeFactory::type<Type>(ptrlen), attribute_data);
-                }
-                else
-                {
-                    auto buffer = HDFBufferFactory::buffer(
-                        std::begin(attribute_data), std::end(attribute_data),
-                        [](auto& value) { return value; });
 
-                    H5Awrite(_attribute,
-                             HDFTypeFactory::type<Type>(attribute_data.size()),
-                             buffer.data());
-                }
+                H5Awrite(_attribute, HDFTypeFactory::type<Type>(), &attribute_data);
             }
-        }
-        else
-        {
-            H5Awrite(_attribute, HDFTypeFactory::type<Type>(), &attribute_data);
         }
     }
 
@@ -260,30 +299,23 @@ public:
      * @param adaptor
      */
     template <typename Iter, typename Adaptor>
-    void write(Iter begin, Iter end, Adaptor adaptor = [](auto& value) {
-        return value;
-    })
+    void write(Iter begin,
+               Iter end,
+               Adaptor adaptor = [](auto& value) { return value; },
+               [[maybe_unused]] std::size_t arraylen = 0)
     {
         using Type = typename HDFTypeFactory::result_type<decltype(adaptor(*begin))>::type;
-        std::size_t datasize = std::distance(begin, end);
-        // check if attribute has been created, else do
-        if (_attribute == -1)
-        {
-            _attribute = __make_attribute__<Type>(datasize);
-        }
+
         // if we copy only the content of [begin, end), then simple vector copy
         // suffices
         if constexpr (std::is_same<Type, typename Iter::value_type>::value)
         {
-            std::vector<Type> buffer(begin, end);
-            H5Awrite(_attribute, HDFTypeFactory::type<Type>(datasize), buffer.data());
+            write(std::vector<Type>(begin, end), arraylen);
         }
         else
         {
             // buffer data, have to because we cannot write iterator ranges
-            auto buffer = HDFBufferFactory::buffer(begin, end, adaptor);
-
-            H5Awrite(_attribute, HDFTypeFactory::type<Type>(datasize), buffer.data());
+            write(HDFBufferFactory::buffer(begin, end, adaptor), arraylen);
         }
     }
 
@@ -393,7 +425,7 @@ public:
             }
         }
     }
-};
+}; // namespace DataIO
 
 } // namespace DataIO
 } // namespace Utopia

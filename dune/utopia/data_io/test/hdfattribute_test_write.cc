@@ -8,6 +8,13 @@
 
 using namespace Utopia::DataIO;
 
+struct Datastruct
+{
+    std::size_t a;
+    double b;
+    std::string c;
+};
+
 int main()
 {
     std::default_random_engine rng(67584327);
@@ -20,11 +27,18 @@ int main()
     HDFGroup low_group = HDFGroup(*file.get_basegroup(), "/testgroup");
 
     // adding attribute1
+    std::string attributename0 = "coupledattribute";
     std::string attributename1 = "stringattribute";
     std::string attributename2 = "vectorattribute";
     std::string attributename3 = "integerattribute";
     std::string attributename4 = "varlenattribute";
     std::string attributename5 = "charptrattribute";
+
+    // making struct data for attribute0
+    std::vector<Datastruct> structdata(100);
+    std::generate(structdata.begin(), structdata.end(), [&]() {
+        return Datastruct{idist(rng), dist(rng), "a"};
+    });
 
     // make attribute_data1
     std::string attribute_data1 = "this is a testing attribute";
@@ -46,11 +60,16 @@ int main()
     });
 
     // make attributes
+    HDFAttribute<HDFGroup> attribute0(low_group, attributename0);
     HDFAttribute<HDFGroup> attribute1(low_group, attributename1);
     HDFAttribute<HDFGroup> attribute2(low_group, attributename2);
     HDFAttribute<HDFGroup> attribute3(low_group, attributename3);
     HDFAttribute<HDFGroup> attribute4(low_group, attributename4);
     HDFAttribute<HDFGroup> attribute5(low_group, attributename5);
+
+    // writing an element vector of struct
+    attribute0.write(structdata.begin(), structdata.end(),
+                     [](auto& compound) { return compound.b; });
 
     // writing a string
     attribute1.write(attribute_data1);
@@ -73,21 +92,21 @@ int main()
     HDFAttribute<HDFGroup> attribute9(low_group, attributename3 + "_rvalue");
     HDFAttribute<HDFGroup> attribute10(low_group, attributename4 + "_rvalue");
 
-    // writing rvalue references
-    // writing a string
-    attribute7.write(std::string("this is an rvalue string"));
+    // // writing rvalue references
+    // // writing a string
+    // attribute7.write(std::string("this is an rvalue string"));
 
-    // writing vector
-    attribute8.write(std::vector<double>({dist(rng), dist(rng), dist(rng)}));
+    // // writing vector
+    // attribute8.write(std::vector<double>({dist(rng), dist(rng), dist(rng)}));
 
-    // writing a simple number
-    attribute9.write(21);
+    // // writing a simple number
+    // attribute9.write(21);
 
-    // writing a nested vector
-    attribute10.write(std::vector<std::vector<double>>{
-        {dist(rng), dist(rng), dist(rng)},
-        {dist(rng), dist(rng), dist(rng), dist(rng), dist(rng), dist(rng)},
-        {dist(rng), dist(rng), dist(rng), dist(rng), dist(rng)}});
+    // // writing a nested vector
+    // attribute10.write(std::vector<std::vector<double>>{
+    //     {dist(rng), dist(rng), dist(rng)},
+    //     {dist(rng), dist(rng), dist(rng), dist(rng), dist(rng), dist(rng)},
+    //     {dist(rng), dist(rng), dist(rng), dist(rng), dist(rng)}});
 
     return 0;
 }
