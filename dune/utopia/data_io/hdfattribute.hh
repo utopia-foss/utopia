@@ -8,6 +8,9 @@
 #include <hdf5_hl.h>
 #include <memory>
 #include <string>
+
+// FIXME: writing ndimensional attribute is still missing!
+
 namespace Utopia
 {
 namespace DataIO
@@ -126,9 +129,10 @@ public:
                 "trying to read a nonexstiant or closed attribute named '" +
                 _name + "'");
         }
-        if constexpr (is_container_type<Type>::value)
+        if constexpr (is_container_type<Type>::value || std::is_same_v<Type, const char*>)
         {
-            if constexpr (std::is_same_v<Type, std::string>)
+            if constexpr (std::is_same_v<Type, std::string> ||
+                          std::is_same_v<Type, const char*>)
             {
                 // get type the attribute has internally
                 hid_t type = H5Aget_type(_attribute);
@@ -148,7 +152,6 @@ public:
                 hid_t type = H5Aget_type(_attribute);
                 _size = H5Tget_size(type);
                 // make a vector of the corresponding C type
-
                 std::vector<Type> buffer(_size);
 
                 // read data into it and return
@@ -182,56 +185,110 @@ public:
     }
 
     /**
-     * @brief Function for writing data to the dataset
+     * @brief Function for writing data to the attribute
      *
-     * @param begin
-     * @param end
-     * @param adaptor
+     * @param attribute_data Data to write
+     * @param ptrlen arraysize in case a pointer is given to write
      */
     template <typename Type>
-    void write(Type& attribute_data)
+    void write(Type attribute_data, [[maybe_unused]] std::size_t ptrlen = 0)
     {
+        // check if attribute has been created, else do
+        if (_attribute == -1)
+        {
+            _attribute = __make_attribute__<Type>(attribute_data.size());
+        }
         // using result_type = typename HDFTypeFactory::result_type<Type>::type;
         // when stuff is vector string we can write directly, otherwise we
         // have to buffer
+
+        // check if we have a container. Writing containers requires further t
+        // tests, plain old data can be written right away
         if constexpr (is_container_type<Type>::value)
         {
-            if (_attribute == -1)
-            {
-                _attribute = __make_attribute__<Type>(attribute_data.size());
-            }
             if constexpr (std::is_same_v<Type, std::string>)
             {
                 H5Awrite(_attribute, HDFTypeFactory::type<Type>(attribute_data.size()),
                          attribute_data.data());
                 // when stuff is not a vector or string we first have to buffer
             }
+            if constexpr (std::is_same_v<Type, const char*>)
+            {
+                H5Awrite(_attribute,
+                         HDFTypeFactory::type<Type>(std::strlen(attribute_data)),
+                         attribute_data);
+            }
             else
             {
-                auto buffer = HDFBufferFactory::buffer(
-                    std::begin(attribute_data), std::end(attribute_data),
-                    [](auto& value) { return value; });
-
-                if (_attribute == -1)
+                // avoid buffering for types which can be written directly, these
+                // are consecutive memory types, namely std::vector and ptr types.
+                if constexpr (std::is_same_v<Type, std::vector<typename Type::value_type>>)
                 {
-                    _attribute = __make_attribute__<Type>(attribute_data.size());
+                    H5Awrite(_attribute,
+                             HDFTypeFactory::type<Type>(attribute_data.size()),
+                             attribute_data.data());
                 }
-                H5Awrite(_attribute, HDFTypeFactory::type<Type>(attribute_data.size()),
-                         buffer.data());
+                else if constexpr (std::is_pointer_v<Type>)
+                {
+                    H5Awrite(_attribute, HDFTypeFactory::type<Type>(ptrlen), attribute_data);
+                }
+                else
+                {
+                    auto buffer = HDFBufferFactory::buffer(
+                        std::begin(attribute_data), std::end(attribute_data),
+                        [](auto& value) { return value; });
+
+                    H5Awrite(_attribute,
+                             HDFTypeFactory::type<Type>(attribute_data.size()),
+                             buffer.data());
+                }
             }
         }
         else
         {
-            if (_attribute == -1)
-            {
-                _attribute = __make_attribute__<Type>();
-            }
             H5Awrite(_attribute, HDFTypeFactory::type<Type>(), &attribute_data);
         }
     }
 
     /**
-     * @brief Default constructor
+     * @brief Function for writing data to the attribute
+     *
+     * @tparam Iter Iterator type
+     * @tparam Adaptor Adaptor which allows for extraction of a value from compound types, i.e. classes or structs
+     * @param begin
+     * @param end
+     * @param adaptor
+     */
+    template <typename Iter, typename Adaptor>
+    void write(Iter begin, Iter end, Adaptor adaptor = [](auto& value) {
+        return value;
+    })
+    {
+        using Type = typename HDFTypeFactory::result_type<decltype(adaptor(*begin))>::type;
+        std::size_t datasize = std::distance(begin, end);
+        // check if attribute has been created, else do
+        if (_attribute == -1)
+        {
+            _attribute = __make_attribute__<Type>(datasize);
+        }
+        // if we copy only the content of [begin, end), then simple vector copy
+        // suffices
+        if constexpr (std::is_same<Type, typename Iter::value_type>::value)
+        {
+            std::vector<Type> buffer(begin, end);
+            H5Awrite(_attribute, HDFTypeFactory::type<Type>(datasize), buffer.data());
+        }
+        else
+        {
+            // buffer data, have to because we cannot write iterator ranges
+            auto buffer = HDFBufferFactory::buffer(begin, end, adaptor);
+
+            H5Awrite(_attribute, HDFTypeFactory::type<Type>(datasize), buffer.data());
+        }
+    }
+
+    /**
+     * @brief Default constructor, deleted because of reference member
      *
      */
     HDFAttribute() = delete;
