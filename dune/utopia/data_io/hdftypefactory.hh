@@ -60,9 +60,23 @@ public:
         {
             return type<std::remove_pointer_t<T>>(size);
         }
-
         // include const char* which is a  c-string
-        if constexpr (is_container_type<T>::value || std::is_same<T, const char*>::value)
+        if constexpr (is_container_type<T>::value)
+        {
+            if (size == 0)
+            {
+                return H5Tvlen_create(__get_type__<typename T::value_type>());
+            }
+            else
+            {
+                hsize_t dim[1] = {size};
+                hid_t type =
+                    H5Tarray_create(__get_type__<typename T::value_type>(), 1, dim);
+
+                return type;
+            }
+        }
+        else
         {
             if constexpr (std::is_same<T, std::string>::value ||
                           std::is_same<T, const char*>::value)
@@ -75,6 +89,7 @@ public:
                 }
                 else
                 {
+                    std::cout << " making string datatype of size: " << size << std::endl;
                     hid_t type = H5Tcopy(H5T_C_S1);
                     H5Tset_size(type, size);
                     return type;
@@ -82,23 +97,8 @@ public:
             }
             else
             {
-                if (size == 0)
-                {
-                    return H5Tvlen_create(__get_type__<typename T::value_type>());
-                }
-                else
-                {
-                    hsize_t dim[1] = {size};
-                    hid_t type = H5Tarray_create(
-                        __get_type__<typename T::value_type>(), 1, dim);
-
-                    return type;
-                }
+                return __get_type__<T>();
             }
-        }
-        else
-        {
-            return __get_type__<T>();
         }
     }
 };
