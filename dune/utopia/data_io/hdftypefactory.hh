@@ -51,19 +51,21 @@ public:
     template <typename T>
     static inline hid_t type([[maybe_unused]] std::size_t size = 0)
     {
-        if constexpr (std::is_reference_v<T>)
+        if constexpr (std::is_reference<T>::value)
         {
             return type<std::remove_reference_t<T>>(size);
         }
-
-        if constexpr (std::is_pointer_v<T>)
+        // exclude const char* which is a C stirng
+        if constexpr (std::is_pointer<T>::value && !std::is_same<T, const char*>::value)
         {
             return type<std::remove_pointer_t<T>>(size);
         }
 
-        if constexpr (is_container_type<T>::value)
+        // include const char* which is a  c-string
+        if constexpr (is_container_type<T>::value || std::is_same<T, const char*>::value)
         {
-            if constexpr (std::is_same<T, std::string>::value)
+            if constexpr (std::is_same<T, std::string>::value ||
+                          std::is_same<T, const char*>::value)
             {
                 if (size == 0)
                 {
