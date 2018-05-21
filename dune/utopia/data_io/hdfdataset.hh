@@ -173,6 +173,33 @@ private:
     {
         if constexpr (is_container<desired_type>::value)
         {
+            std::vector<hvl_t> buffer(buffer_size);
+            std::vector<desired_type> data(buffer_size);
+
+            hid_t type = H5Dget_type(_dataset);
+            herr_t read_err = H5Dread(_dataset, type, memspace, dspace,
+                                      H5P_DEFAULT, buffer.data());
+            H5Tclose(type);
+            if (read_err < 0)
+            {
+                throw std::runtime_error("Error reading 1d dataset");
+            }
+            for (std::size_t i = 0; i < buffer_size; ++i)
+            {
+                data[i].resize(buffer[i].len);
+                auto ptr =
+                    static_cast<typename desired_type::value_type*>(buffer[i].p);
+
+                for (std::size_t j = 0; j < buffer[i].len; ++j)
+                {
+                    data[i][j] = ptr[j];
+                }
+            }
+
+            return data;
+        }
+        else
+        {
             if constexpr (std::is_same_v<std::string, desired_type>)
             {
                 std::vector<const char*> buffer(buffer_size);
@@ -194,9 +221,7 @@ private:
             }
             else
             {
-                std::vector<hvl_t> buffer(buffer_size);
-                std::vector<desired_type> data(buffer_size);
-
+                std::vector<desired_type> buffer(buffer_size);
                 hid_t type = H5Dget_type(_dataset);
                 herr_t read_err = H5Dread(_dataset, type, memspace, dspace,
                                           H5P_DEFAULT, buffer.data());
@@ -205,33 +230,8 @@ private:
                 {
                     throw std::runtime_error("Error reading 1d dataset");
                 }
-                for (std::size_t i = 0; i < buffer_size; ++i)
-                {
-                    data[i].resize(buffer[i].len);
-                    auto ptr = static_cast<typename desired_type::value_type*>(
-                        buffer[i].p);
-
-                    for (std::size_t j = 0; j < buffer[i].len; ++j)
-                    {
-                        data[i][j] = ptr[j];
-                    }
-                }
-
-                return data;
+                return buffer;
             }
-        }
-        else
-        {
-            std::vector<desired_type> buffer(buffer_size);
-            hid_t type = H5Dget_type(_dataset);
-            herr_t read_err = H5Dread(_dataset, type, memspace, dspace,
-                                      H5P_DEFAULT, buffer.data());
-            H5Tclose(type);
-            if (read_err < 0)
-            {
-                throw std::runtime_error("Error reading 1d dataset");
-            }
-            return buffer;
         }
     }
 

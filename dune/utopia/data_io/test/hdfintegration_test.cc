@@ -51,15 +51,11 @@ void read(std::vector<Teststruct>& data)
     HDFFile file("integrationtest_file.h5", "r");
 
     // open file and read
-    std::cout << "opening group" << std::endl;
     auto group = file.get_basegroup()->open_group(
         "first_deeper/second_deeper/third_deeper");
 
-    std::cout << "opening dataset1" << std::endl;
     auto dataset1 = group->open_dataset("dataset1");
-    std::cout << "opening dataset2" << std::endl;
     auto dataset2 = group->open_dataset("dataset2");
-    std::cout << "opening dataset3" << std::endl;
     auto dataset3 = group->open_dataset("dataset3");
 
     auto values = dataset1->read<double>();

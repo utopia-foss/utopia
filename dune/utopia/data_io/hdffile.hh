@@ -185,6 +185,8 @@ public:
      */
     HDFFile(std::string path, std::string access)
         : _file([&]() {
+              H5Eset_auto(0, 0, NULL);
+
               if (access == "w")
               {
                   return H5Fcreate(path.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
