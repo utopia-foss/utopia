@@ -33,7 +33,7 @@ int main()
     std::string attributename3 = "integerattribute";
     std::string attributename4 = "varlenattribute";
     std::string attributename5 = "charptrattribute";
-
+    std::string attributename6 = "multidimattribute";
     // making struct data for attribute0
     std::vector<Datastruct> structdata(100);
     std::generate(structdata.begin(), structdata.end(), [&]() {
@@ -59,6 +59,16 @@ int main()
         return data;
     });
 
+    // make attribute_data6
+    int arr[20][50];
+    for (std::size_t i = 0; i < 20; ++i)
+    {
+        for (std::size_t j = 0; j < 50; ++j)
+        {
+            arr[i][j] = i + j;
+        }
+    }
+
     // make attributes
     HDFAttribute<HDFGroup> attribute0(low_group, attributename0);
     HDFAttribute<HDFGroup> attribute1(low_group, attributename1);
@@ -66,6 +76,7 @@ int main()
     HDFAttribute<HDFGroup> attribute3(low_group, attributename3);
     HDFAttribute<HDFGroup> attribute4(low_group, attributename4);
     HDFAttribute<HDFGroup> attribute5(low_group, attributename5);
+    HDFAttribute<HDFGroup> attribute6(low_group, attributename6);
 
     // writing an element vector of struct
     attribute0.write(structdata.begin(), structdata.end(),
@@ -86,27 +97,30 @@ int main()
     // writing a char*
     attribute5.write("this is a char* attribute");
 
+    // writing 2d attribute
+    attribute6.write(arr, {20, 50});
+
     // make attributes
     HDFAttribute<HDFGroup> attribute7(low_group, attributename1 + "_rvalue");
     HDFAttribute<HDFGroup> attribute8(low_group, attributename2 + "_rvalue");
     HDFAttribute<HDFGroup> attribute9(low_group, attributename3 + "_rvalue");
     HDFAttribute<HDFGroup> attribute10(low_group, attributename4 + "_rvalue");
 
-    // // writing rvalue references
-    // // writing a string
-    // attribute7.write(std::string("this is an rvalue string"));
+    // writing rvalue references
+    // writing a string
+    attribute7.write(std::string("this is an rvalue string"));
 
-    // // writing vector
-    // attribute8.write(std::vector<double>({dist(rng), dist(rng), dist(rng)}));
+    // writing vector
+    attribute8.write(std::vector<double>({dist(rng), dist(rng), dist(rng)}));
 
-    // // writing a simple number
-    // attribute9.write(21);
+    // writing a simple number
+    attribute9.write(21);
 
-    // // writing a nested vector
-    // attribute10.write(std::vector<std::vector<double>>{
-    //     {dist(rng), dist(rng), dist(rng)},
-    //     {dist(rng), dist(rng), dist(rng), dist(rng), dist(rng), dist(rng)},
-    //     {dist(rng), dist(rng), dist(rng), dist(rng), dist(rng)}});
+    // writing a nested vector
+    attribute10.write(std::vector<std::vector<double>>{
+        {dist(rng), dist(rng), dist(rng)},
+        {dist(rng), dist(rng), dist(rng), dist(rng), dist(rng), dist(rng)},
+        {dist(rng), dist(rng), dist(rng), dist(rng), dist(rng)}});
 
     return 0;
 }

@@ -10,8 +10,6 @@
 #include <memory>
 #include <string>
 
-// FIXME: writing ndimensional attribute is still missing!
-
 namespace Utopia
 {
 namespace DataIO
@@ -36,7 +34,7 @@ private:
     template <typename result_type>
     hid_t __make_attribute__(hsize_t typesize = 0)
     {
-        hid_t dspace = H5Screate_simple(1, &_size, nullptr);
+        hid_t dspace = H5Screate_simple(_shape.size(), _shape.data(), nullptr);
 
         hid_t atr = H5Acreate2(_parent_object.get().get_id(), _name.c_str(),
                                HDFTypeFactory::type<result_type>(typesize),
@@ -62,7 +60,7 @@ protected:
      * @brief size of the attributes dataspace
      *
      */
-    hsize_t _size;
+    std::vector<hsize_t> _shape;
     /**
      * @brief reference to id of parent object: dataset or group
      *
@@ -113,75 +111,101 @@ public:
     }
 
     /**
-     * @brief For reading an attribute back
+     * @brief Reads data from attribute, and returns the data and its shape in
+     *        the form of a hsize_t vector. N-dimensional data are read into
+     *        1d arrays, and the shape has to be used to regain the original
+     *        layout via index arithmetic
      *
-     * @tparam Iter
-     * @tparam Adaptor
-     * @param begin
-     * @param end
-     * @param adaptor
+     * @tparam Type Type into which the data shall be read
+     * @return tuple (shape, data)
      */
     template <typename Type>
     auto read()
     {
-        if (_attribute == -1)
+        if (!H5Iis_valid(_attribute))
         {
             throw std::runtime_error(
                 "trying to read a nonexstiant or closed attribute named '" +
                 _name + "'");
         }
-        if constexpr (is_container_type<Type>::value || std::is_same_v<Type, const char*>)
+
+        if constexpr (is_container_type<Type>::value)
         {
-            if constexpr (std::is_same_v<Type, std::string> ||
-                          std::is_same_v<Type, const char*>)
+            // get type the attribute has internally
+            hid_t type = H5Aget_type(_attribute);
+
+            // get dataspace
+            hid_t dspace = H5Aget_space(_attribute);
+
+            // get shape
+            _shape.resize(H5Sget_simple_extent_ndims(dspace));
+            H5Sget_simple_extent_dims(dspace, _shape, nullptr);
+
+            // make buffer large enough to read data
+            std::size_t size = 0;
+            for (auto& value : _shape)
             {
-                // get type the attribute has internally
-                hid_t type = H5Aget_type(_attribute);
-                _size = H5Tget_size(type);
-                // make a vector of the corresponding C type
+                size *= value;
+            }
 
-                std::string buffer;
-                buffer.resize(_size);
-                // read data into it and return
+            // make a vector of the corresponding C type
+            std::vector<typename Type::value_type> buffer(size);
 
-                H5Aread(_attribute, type, buffer.data());
-                return buffer;
+            // read data into it and return
+            H5Aread(_attribute, type, buffer.data());
+
+            if constexpr (std::is_same_v<Type, decltype(buffer)>)
+            {
+                return std::make_tuple(_shape, buffer);
             }
             else
             {
-                // get type the attribute has internally
-                hid_t type = H5Aget_type(_attribute);
-                _size = H5Tget_size(type);
-                // make a vector of the corresponding C type
-                std::vector<Type> buffer(_size);
-
-                // read data into it and return
-
-                H5Aread(_attribute, type, buffer.data());
-                return buffer;
+                return std::make_tuple(_shape, Type(buffer.begin(), buffer.end()));
             }
+        }
+        else if constexpr (std::is_same_v<Type, std::string> ||
+                           std::is_same_v<Type, const char*>)
+        {
+            // get type the attribute has internally
+            hid_t type = H5Aget_type(_attribute);
+
+            // get size type
+            auto size = H5Tget_size(type);
+
+            // get dataspace
+            hid_t dspace = H5Aget_space(_attribute);
+
+            // get shape
+            _shape.resize(H5Sget_simple_extent_ndims(dspace));
+            H5Sget_simple_extent_dims(dspace, _shape, nullptr);
+
+            // buffer
+            std::string buffer;
+            buffer.resize(size);
+            // read data into it and return
+
+            H5Aread(_attribute, type, buffer.data());
+            return std::make_tuple(_shape, buffer);
         }
         else
         {
-            if (_attribute == -1)
-            {
-                throw std::runtime_error(
-                    "trying to read a nonexstiant or closed attribute named '" +
-                    _name + "'");
-            }
-            else
-            {
-                // get type the attribute has internally
-                hid_t type = H5Aget_type(_attribute);
-                // make a vector of the corresponding C type
+            // get type the attribute has internally
+            hid_t type = H5Aget_type(_attribute);
 
-                Type data;
+            // get dataspace
+            hid_t dspace = H5Aget_space(_attribute);
 
-                // read data into it and return
+            // get shape
+            _shape.resize(H5Sget_simple_extent_ndims(dspace));
+            H5Sget_simple_extent_dims(dspace, _shape, nullptr);
 
-                H5Aread(_attribute, type, &data);
-                return data;
-            }
+            // make buffer for corresponding c type
+            Type buffer;
+
+            // read data into it and return
+
+            H5Aread(_attribute, type, &buffer);
+            return std::make_tuple(_shape, buffer);
         }
     }
 
@@ -194,21 +218,28 @@ public:
      */
     template <typename Type>
     void write(Type attribute_data,
-               [[maybe_unused]] std::size_t arraylen = 0,
-               [[maybe_unused]] std::size_t ptrlen = 0)
+               std::vector<hsize_t> shape = {},
+               [[maybe_unused]] std::size_t typelen = 0)
     {
-        // using result_type = typename HDFTypeFactory::result_type<Type>::type;
-        // when stuff is vector string we can write directly, otherwise we
-        // have to buffer
+        // using result_type = typename
+        // HDFTypeFactory::result_type<Type>::type; when stuff is vector
+        // string we can write directly, otherwise we have to buffer
 
-        // check if we have a container. Writing containers requires further t
-        // tests, plain old data can be written right away
+        // check if we have a container. Writing containers requires further
+        // t tests, plain old data can be written right away
         if constexpr (is_container_type<Type>::value)
         {
-            _size = attribute_data.size();
-            // are consecutive memory types, namely std::vector and ptr types.
-            // exclude however containers of containers because they have to
-            // be buffered due to hdf5 internals
+            if (shape.size() == 0)
+            {
+                _shape = {attribute_data.size()};
+            }
+            else
+            {
+                _shape = shape;
+            }
+            // are consecutive memory types, namely std::vector and ptr
+            // types. exclude however containers of containers because they
+            // have to be buffered due to hdf5 internals
             if constexpr (std::is_same_v<Type, std::vector<typename Type::value_type>> &&
                           !is_container_type<typename Type::value_type>::value)
             {
@@ -217,24 +248,15 @@ public:
                 // check if attribute has been created, else do
                 if (_attribute == -1)
                 {
-                    _attribute = __make_attribute__<typename Type::value_type>(arraylen);
-                }
-
-                H5Awrite(_attribute,
-                         HDFTypeFactory::type<typename Type::value_type>(arraylen),
-                         attribute_data.data());
-            }
-            else if constexpr (std::is_pointer_v<Type>)
-            {
-                if (_attribute == -1)
-                {
                     _attribute =
-                        __make_attribute__<typename HDFTypeFactory::result_type<Type>::type>(arraylen);
+                        __make_attribute__<typename HDFTypeFactory::result_type<typename Type::value_type>::type>(
+                            typelen);
                 }
 
                 H5Awrite(_attribute,
-                         HDFTypeFactory::type<typename HDFTypeFactory::result_type<Type>::type>(arraylen),
-                         attribute_data);
+                         HDFTypeFactory::type<typename HDFTypeFactory::result_type<typename Type::value_type>::type>(
+                             typelen),
+                         attribute_data.data());
             }
             else
             {
@@ -246,36 +268,78 @@ public:
 
                 if (_attribute == -1)
                 {
-                    _attribute = __make_attribute__<typename Type::value_type>(arraylen);
+                    _attribute =
+                        __make_attribute__<typename HDFTypeFactory::result_type<typename Type::value_type>::type>(
+                            typelen);
                 }
 
                 H5Awrite(_attribute,
-                         HDFTypeFactory::type<typename Type::value_type>(arraylen),
+                         HDFTypeFactory::type<typename HDFTypeFactory::result_type<typename Type::value_type>::type>(
+                             typelen),
                          buffer.data());
+            }
+        }
+        else if constexpr (std::is_pointer_v<Type>)
+        {
+            if constexpr (std::is_same_v<Type, const char*>)
+            {
+                auto len = std::strlen(attribute_data);
+                // check if attribute has been created, else do
+                if (_attribute == -1)
+                {
+                    _attribute = __make_attribute__<Type>(len);
+                }
+
+                H5Awrite(_attribute, HDFTypeFactory::type<Type>(len), attribute_data);
+            }
+            else
+            {
+                if (shape.size() == 0)
+                {
+                    throw std::runtime_error(
+                        "Attribute: " + _name +
+                        ","
+                        "The shape parameter has to be given for pointers "
+                        "because "
+                        "it cannot be determined automatically");
+                }
+                else
+                {
+                    _shape = shape;
+                }
+                using basetype = typename HDFTypeFactory::result_type<Type>::type;
+
+                if (_attribute == -1)
+                {
+                    _attribute = __make_attribute__<basetype>(typelen);
+                }
+
+                H5Awrite(_attribute, HDFTypeFactory::type<basetype>(typelen), attribute_data);
             }
         }
         else
         {
-            if constexpr (std::is_same_v<Type, std::string>)
+            if (shape.size() == 0)
             {
-                if (_attribute == -1)
-                {
-                    _attribute = __make_attribute__<Type>(attribute_data.size());
-                }
-                H5Awrite(_attribute, HDFTypeFactory::type<Type>(attribute_data.size()),
-                         attribute_data.c_str());
+                _shape = {1};
             }
-            else if constexpr (std::is_same_v<Type, const char*>)
+            else
             {
-                // check if attribute has been created, else do
+                _shape = shape;
+            }
+
+            if constexpr (std::is_same_v<typename HDFTypeFactory::result_type<Type>::type, std::string>)
+            {
                 if (_attribute == -1)
                 {
-                    _attribute = __make_attribute__<Type>(std::strlen(attribute_data));
+                    _attribute =
+                        __make_attribute__<typename HDFTypeFactory::result_type<Type>::type>(
+                            attribute_data.size());
                 }
-
                 H5Awrite(_attribute,
-                         HDFTypeFactory::type<Type>(std::strlen(attribute_data)),
-                         attribute_data);
+                         HDFTypeFactory::type<typename HDFTypeFactory::result_type<Type>::type>(
+                             attribute_data.size()),
+                         attribute_data.c_str());
             }
             else
             {
@@ -284,7 +348,9 @@ public:
                     _attribute = __make_attribute__<Type>();
                 }
 
-                H5Awrite(_attribute, HDFTypeFactory::type<Type>(), &attribute_data);
+                H5Awrite(_attribute,
+                         HDFTypeFactory::type<typename HDFTypeFactory::result_type<Type>::type>(),
+                         &attribute_data);
             }
         }
     }
@@ -302,20 +368,21 @@ public:
     void write(Iter begin,
                Iter end,
                Adaptor adaptor = [](auto& value) { return value; },
-               [[maybe_unused]] std::size_t arraylen = 0)
+               std::vector<hsize_t> shape = {},
+               [[maybe_unused]] std::size_t typelen = 0)
     {
         using Type = typename HDFTypeFactory::result_type<decltype(adaptor(*begin))>::type;
 
-        // if we copy only the content of [begin, end), then simple vector copy
-        // suffices
+        // if we copy only the content of [begin, end), then simple vector
+        // copy suffices
         if constexpr (std::is_same<Type, typename Iter::value_type>::value)
         {
-            write(std::vector<Type>(begin, end), arraylen);
+            write(std::vector<Type>(begin, end), typelen);
         }
         else
         {
             // buffer data, have to because we cannot write iterator ranges
-            write(HDFBufferFactory::buffer(begin, end, adaptor), arraylen);
+            write(HDFBufferFactory::buffer(begin, end, adaptor), shape, typelen);
         }
     }
 
@@ -333,7 +400,7 @@ public:
     HDFAttribute(const HDFAttribute& other)
         : _attribute(other._attribute),
           _name(other._name),
-          _size(other._size),
+          _shape(other._shape),
           _parent_object(other._parent_object)
     {
     }
@@ -346,7 +413,7 @@ public:
     HDFAttribute(HDFAttribute&& other)
         : _attribute(std::move(other._attribute)),
           _name(std::move(other._name)),
-          _size(std::move(other._size)),
+          _shape(std::move(other._shape)),
           _parent_object(std::move(other._parent_object))
     {
     }
@@ -361,7 +428,7 @@ public:
     {
         _attribute = other._attribute;
         _name = other._name;
-        _size = other._size;
+        _shape = other._shape;
         _parent_object = other._parent_object;
         return *this;
     }
@@ -376,7 +443,7 @@ public:
     {
         _attribute = std::move(other._attribute);
         _name = std::move(other._name);
-        _size = std::move(other._size);
+        _shape = std::move(other._shape);
         _parent_object = std::move(other._parent_object);
         return *this;
     }
@@ -403,10 +470,10 @@ public:
      */
 
     HDFAttribute(HDFObject& object, std::string name)
-        : _name(name), _size(1), _parent_object(object)
+        : _name(name), _shape(std::vector<hsize_t>()), _parent_object(object)
     {
-        // checks the validity and opens attribute if possible, else postphones
-        // until it is written
+        // checks the validity and opens attribute if possible, else
+        // postphones until it is written
         if (H5Iis_valid(_parent_object.get().get_id()) == false)
         {
             throw std::invalid_argument(

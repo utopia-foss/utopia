@@ -8,6 +8,11 @@ namespace Utopia
 {
 namespace DataIO
 {
+/**
+ * @brief Class which handles the conversion of C-types into hdf5types.
+ *
+ *
+ */
 class HDFTypeFactory
 {
 private:
@@ -33,7 +38,9 @@ public:
     template <typename T>
     struct result_type<T*>
     {
-        using type = T;
+        // recursion for getting the base type for
+        // multidim-pointers
+        using type = typename std::remove_all_extents<T>::type;
     };
 
     template <typename T>
@@ -51,15 +58,6 @@ public:
     template <typename T>
     static inline hid_t type([[maybe_unused]] std::size_t size = 0)
     {
-        if constexpr (std::is_reference<T>::value)
-        {
-            return type<std::remove_reference_t<T>>(size);
-        }
-        // exclude const char* which is a C stirng
-        if constexpr (std::is_pointer<T>::value && !std::is_same<T, const char*>::value)
-        {
-            return type<std::remove_pointer_t<T>>(size);
-        }
         // include const char* which is a  c-string
         if constexpr (is_container_type<T>::value)
         {
