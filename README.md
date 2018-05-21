@@ -67,8 +67,8 @@ Ubuntu is shipped with APT.
 
         brew update
         brew install boost cmake doxygen gcc pkg-config python
-        brew install yaml-cpp --cc=gcc-7
-        brew install hdf5 --cc=gcc-7
+        brew install yaml-cpp --cc=gcc-8
+        brew install hdf5 --cc=gcc-8
     
     __Notice:__ If you had `hdf5` or `yaml-cpp` already installed by Homebrew,
     make sure to `brew uninstall` them and then run the respective commands above.
@@ -80,8 +80,8 @@ Ubuntu is shipped with APT.
 4. __macOS only:__ Make sure that CMake uses the Homebrew GCC instead of
     the command line tools Clang:
 
-        export CC=gcc-7
-        export CXX=g++-7
+        export CC=gcc-8
+        export CXX=g++-8
     
     Notice that these commands only last for your current terminal session.
 
