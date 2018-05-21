@@ -42,6 +42,7 @@ int main()
     std::string attributename4 = "varlenattribute";
     std::string attributename5 = "charptrattribute";
     std::string attributename6 = "multidimattribute";
+    std::string attributename7 = "stringvectorattribute";
 
     ////////////////////////////////////////////////////////////////////////////
     // making expected data
@@ -92,26 +93,29 @@ int main()
         }
     }
 
+    // make string vector data written previously
+    // making data for attribute_7
+    std::vector<std::string> expected_stringvecdata{
+        attributename0, attributename1, attributename2, attributename3,
+        attributename4, attributename5, attributename6, attributename7};
+
     ////////////////////////////////////////////////////////////////////////////
     // make attributes
     ////////////////////////////////////////////////////////////////////////////
 
-    HDFAttribute<HDFGroup> attribute0(low_group, attributename0);
-    HDFAttribute<HDFGroup> attribute1(low_group, attributename1);
-    HDFAttribute<HDFGroup> attribute2(low_group, attributename2);
-    HDFAttribute<HDFGroup> attribute3(low_group, attributename3);
-    HDFAttribute<HDFGroup> attribute4(low_group, attributename4);
-    HDFAttribute<HDFGroup> attribute5(low_group, attributename5);
-    HDFAttribute<HDFGroup> attribute6(low_group, attributename6);
-    HDFAttribute<HDFGroup> attribute7(low_group, attributename1 + "_rvalue");
-    HDFAttribute<HDFGroup> attribute8(low_group, attributename2 + "_rvalue");
-    HDFAttribute<HDFGroup> attribute9(low_group, attributename3 + "_rvalue");
-    HDFAttribute<HDFGroup> attribute10(low_group, attributename4 + "_rvalue");
+    HDFAttribute attribute0(low_group, attributename0);
+    HDFAttribute attribute1(low_group, attributename1);
+    HDFAttribute attribute2(low_group, attributename2);
+    HDFAttribute attribute3(low_group, attributename3);
+    HDFAttribute attribute4(low_group, attributename4);
+    HDFAttribute attribute5(low_group, attributename5);
+    HDFAttribute attribute6(low_group, attributename6);
+    HDFAttribute attribute7(low_group, attributename7);
 
     ////////////////////////////////////////////////////////////////////////////
     // trying to read, using c++17 structured bindings
     ////////////////////////////////////////////////////////////////////////////
-    auto [shape0, read_structdata] = attribute0.read<double>();
+    auto [shape0, read_structdata] = attribute0.read<std::vector<double>>();
     assert(shape0.size() == 1);
     assert(shape0[0] == 100);
 
@@ -125,7 +129,7 @@ int main()
     assert(shape1[0] == 1);
     assert(read_string == expected_stringdata);
 
-    auto [shape2, read_vectordata] = attribute2.read<double>();
+    auto [shape2, read_vectordata] = attribute2.read<std::vector<double>>();
     assert(shape2.size() == 1);
     assert(shape2[0] == 20);
 
@@ -137,9 +141,10 @@ int main()
     auto [shape3, read_intdata] = attribute3.read<int>();
     assert(shape3.size() == 1);
     assert(shape3[0] == 1);
-    assert(read_intdata[0] == expected_intdata);
+    assert(read_intdata == expected_intdata);
 
-    auto [shape4, read_varlendata] = attribute4.read<std::vector<double>>();
+    auto [shape4, read_varlendata] =
+        attribute4.read<std::vector<std::vector<double>>>();
     assert(shape4.size() == 1);
     assert(shape4[0] == 5);
     for (std::size_t i = 0; i < 5; ++i)
@@ -156,7 +161,7 @@ int main()
     assert(shape5[0] == 1);
     assert(read_charptrdata == expected_charptrdata);
 
-    auto [shape6, read_multidimdata] = attribute6.read<int>();
+    auto [shape6, read_multidimdata] = attribute6.read<std::vector<int>>();
     assert(shape6.size() == 2);
     assert(shape6[0] = 20);
     assert(shape6[1] = 50);
@@ -170,5 +175,12 @@ int main()
         }
     }
 
+    auto [shape7, read_stringvecdata] = attribute7.read<std::vector<std::string>>();
+    assert(shape7.size() == 1);
+    assert(shape7[0] == 8);
+    for (std::size_t i = 0; i < 8; ++i)
+    {
+        assert(expected_stringvecdata[i] == read_stringvecdata[i]);
+    }
     return 0;
 }

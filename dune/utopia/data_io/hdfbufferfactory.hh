@@ -62,35 +62,33 @@ public:
 
         if constexpr (is_container_type<T>::value)
         {
-            if constexpr (std::is_same_v<T, std::string>)
+            // set up buffer
+
+            std::vector<hvl_t> data_buffer(std::distance(begin, end));
+
+            auto buffer_begin = data_buffer.begin();
+            for (; begin != end; ++begin, ++buffer_begin)
             {
-                // set up buffer
-
-                std::vector<const char*> data_buffer(std::distance(begin, end));
-
-                auto buffer_begin = data_buffer.begin();
-                for (auto it = begin; it != end; ++it, ++buffer_begin)
-                {
-                    *buffer_begin = convert_source(adaptor(*it));
-                }
-
-                return data_buffer;
+                *buffer_begin = convert_source(adaptor(*begin));
             }
-            else
-            {
-                // set up buffer
 
-                std::vector<hvl_t> data_buffer(std::distance(begin, end));
-
-                auto buffer_begin = data_buffer.begin();
-                for (; begin != end; ++begin, ++buffer_begin)
-                {
-                    *buffer_begin = convert_source(adaptor(*begin));
-                }
-
-                return data_buffer;
-            }
+            return data_buffer;
         }
+        else if constexpr (std::is_same_v<T, std::string>)
+        {
+            // set up buffer
+
+            std::vector<const char*> data_buffer(std::distance(begin, end));
+
+            auto buffer_begin = data_buffer.begin();
+            for (auto it = begin; it != end; ++it, ++buffer_begin)
+            {
+                *buffer_begin = convert_source(adaptor(*it));
+            }
+
+            return data_buffer;
+        }
+
         else
         {
             // set up buffer

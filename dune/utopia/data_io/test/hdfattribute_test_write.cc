@@ -34,6 +34,8 @@ int main()
     std::string attributename4 = "varlenattribute";
     std::string attributename5 = "charptrattribute";
     std::string attributename6 = "multidimattribute";
+    std::string attributename7 = "stringvectorattribute";
+
     // making struct data for attribute0
     std::vector<Datastruct> structdata(100);
     std::generate(structdata.begin(), structdata.end(), [&]() {
@@ -69,14 +71,20 @@ int main()
         }
     }
 
+    // making data for attribute_7
+    std::vector<std::string> stringvec{
+        attributename0, attributename1, attributename2, attributename3,
+        attributename4, attributename5, attributename6, attributename7};
+
     // make attributes
-    HDFAttribute<HDFGroup> attribute0(low_group, attributename0);
-    HDFAttribute<HDFGroup> attribute1(low_group, attributename1);
-    HDFAttribute<HDFGroup> attribute2(low_group, attributename2);
-    HDFAttribute<HDFGroup> attribute3(low_group, attributename3);
-    HDFAttribute<HDFGroup> attribute4(low_group, attributename4);
-    HDFAttribute<HDFGroup> attribute5(low_group, attributename5);
-    HDFAttribute<HDFGroup> attribute6(low_group, attributename6);
+    HDFAttribute attribute0(low_group, attributename0);
+    HDFAttribute attribute1(low_group, attributename1);
+    HDFAttribute attribute2(low_group, attributename2);
+    HDFAttribute attribute3(low_group, attributename3);
+    HDFAttribute attribute4(low_group, attributename4);
+    HDFAttribute attribute5(low_group, attributename5);
+    HDFAttribute attribute6(low_group, attributename6);
+    HDFAttribute attribute7(low_group, attributename7);
 
     // writing an element vector of struct
     attribute0.write(structdata.begin(), structdata.end(),
@@ -99,6 +107,9 @@ int main()
 
     // writing 2d attribute
     attribute6.write(arr, {20, 50});
+
+    // writing string vector data
+    attribute7.write(stringvec);
 
     return 0;
 }

@@ -115,7 +115,6 @@ struct is_container_type<T&&> : public is_container<T>
 {
 };
 
-// FIXME: tuple_for_each needed here!
 } // namespace DataIO
 } // namespace Utopia
 #endif

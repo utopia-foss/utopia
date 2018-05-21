@@ -127,6 +127,9 @@ public:
     auto read()
     {
         // FIXME: I do not currently like the approach taken here!
+        // FIXME: Find a way to retain the data's shape in the returned data
+        // FIXME: Find a way to get around the exceptions taken for the
+        //        fucking string data
         if (!H5Iis_valid(_attribute))
         {
             throw std::runtime_error(
@@ -135,8 +138,8 @@ public:
         }
 
         // get dataspace
-
         hid_t dspace = H5Aget_space(_attribute);
+
         // get shape
         _shape.resize(H5Sget_simple_extent_ndims(dspace));
         H5Sget_simple_extent_dims(dspace, _shape.data(), nullptr);
@@ -149,49 +152,104 @@ public:
             size *= value;
         }
 
+        // type to read in is a container type, which can hold containers
+        // themselvels or just plain types.
         if constexpr (is_container_type<Type>::value)
         {
-            // README: a distinction based on the container' s value_type could
-            // be put here which then would allow for a more intuitive usage of
-            // th e 'type template parameter' making data buffer
-            std::vector<typename HDFTypeFactory::result_type<Type>::type> buffer(size);
+            using value_type_1 =
+                typename HDFTypeFactory::result_type<typename Type::value_type>::type;
 
-            // get type the attribute has internally
-            hid_t type = H5Aget_type(_attribute);
-
-            // check if type is of variable length, and adjust
-            // read procedure accordingly
-
-            if (H5Tget_class(type) == H5T_VLEN)
+            // container of containers
+            if constexpr (is_container_type<value_type_1>::value)
             {
-                using basetype =
-                    typename HDFTypeFactory::result_type<typename Type::value_type>::type;
+                using value_type_2 =
+                    typename HDFTypeFactory::result_type<typename value_type_1::value_type>::type;
 
-                std::vector<hvl_t> temp_buffer(size);
-
-                H5Aread(_attribute, type, temp_buffer.data());
-
-                for (std::size_t i = 0; i < size; ++i)
+                // if containers inside are not vectors, throw exception, we
+                // cannot read into anything else
+                if constexpr (std::is_same_v<std::vector<value_type_2>, value_type_1> == false)
                 {
-                    buffer[i].resize(temp_buffer[i].len);
-                    for (std::size_t j = 0; j < temp_buffer[i].len; ++j)
+                    throw std::runtime_error(
+                        "Can only read attributes into vectors");
+                }
+                else // if we have vectors, the reading process is straight forward
+                {
+                    Type buffer(size);
+
+                    // get type the attribute has internally
+                    hid_t type = H5Aget_type(_attribute);
+
+                    // check if type is of variable length, and adjust
+                    // read procedure accordingly
+                    if (H5Tget_class(type) == H5T_VLEN)
                     {
-                        buffer[i][j] = static_cast<basetype*>(temp_buffer[i].p)[j];
+                        std::vector<hvl_t> temp_buffer(size);
+
+                        H5Aread(_attribute, type, temp_buffer.data());
+
+                        for (std::size_t i = 0; i < size; ++i)
+                        {
+                            buffer[i].resize(temp_buffer[i].len);
+                            for (std::size_t j = 0; j < temp_buffer[i].len; ++j)
+                            {
+                                buffer[i][j] =
+                                    static_cast<value_type_2*>(temp_buffer[i].p)[j];
+                            }
+                        }
+
+                        return std::make_tuple(_shape, buffer);
+                    }
+                    else // if not varlen, then use the read typesize and read directly.
+                    {
+                        auto typesize = H5Tget_size(type);
+                        for (auto& cont : buffer)
+                        {
+                            cont.resize(typesize);
+                        }
+                        H5Aread(_attribute, type, buffer.data());
+
+                        return std::make_tuple(_shape, buffer);
                     }
                 }
-
-                return std::make_tuple(_shape, buffer);
             }
             else
             {
-                auto typesize = H5Tget_size(type);
-                for (auto& cont : buffer)
+                if constexpr (std::is_same_v<std::vector<value_type_1>, Type> == false)
                 {
-                    cont.resize(typesize);
+                    throw std::runtime_error(
+                        "Can only read attributes into vectors");
                 }
-                H5Aread(_attribute, type, buffer.data());
+                else
+                {
+                    if constexpr (std::is_same_v<typename Type::value_type, std::string>)
+                    {
+                        std::vector<char*> tempbuffer(size);
 
-                return std::make_tuple(_shape, buffer);
+                        // get type the attribute has internally
+                        hid_t type = H5Aget_type(_attribute);
+
+                        H5Aread(_attribute, type, tempbuffer.data());
+
+                        // put into strings
+                        std::vector<std::string> buffer(size);
+                        for (std::size_t i = 0; i < size; ++i)
+                        {
+                            buffer[i] = tempbuffer[i];
+                        }
+                        // return
+                        return std::make_tuple(_shape, buffer);
+                    }
+                    else
+                    {
+                        Type buffer(size);
+
+                        // get type the attribute has internally
+                        hid_t type = H5Aget_type(_attribute);
+
+                        H5Aread(_attribute, type, buffer.data());
+                        return std::make_tuple(_shape, buffer);
+                    }
+                }
             }
         }
         else if constexpr (std::is_same_v<Type, std::string> ||
@@ -218,8 +276,8 @@ public:
             // get type the attribute has internally
             hid_t type = H5Aget_type(_attribute);
 
-            std::vector<Type> buffer(size);
-            H5Aread(_attribute, type, buffer.data());
+            Type buffer;
+            H5Aread(_attribute, type, &buffer);
             // return as tuple
             return std::make_tuple(_shape, buffer);
         }
@@ -264,9 +322,9 @@ public:
             // types. exclude however containers of containers because they
             // have to be buffered due to hdf5 internals
             if constexpr (std::is_same_v<Type, std::vector<typename Type::value_type>> &&
-                          !is_container_type<typename Type::value_type>::value)
+                          !is_container_type<typename Type::value_type>::value &&
+                          !std::is_same_v<typename Type::value_type, std::string>)
             {
-                // std::cout << "writing vector for " << _name << std::endl;
                 // std::cout << "of size: " << _size << std::endl;
                 // check if attribute has been created, else do
                 if (_attribute == -1)

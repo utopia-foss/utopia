@@ -131,11 +131,11 @@ void read_dataset_tests(HDFFile& file)
     std::string attr2 = "Second attribute to multirefdataset";
 
     HDFAttribute multirefattribute(multirefdataset, "Attribute1");
-    auto multirefattrdata1 = multirefattribute.read<std::string>();
+    auto [shape1, multirefattrdata1] = multirefattribute.read<std::string>();
     assert(multirefattrdata1 == attr1);
 
     HDFAttribute multirefattribute2(multirefdataset, "Attribute2");
-    auto multirefattrdata2 = multirefattribute2.read<std::string>();
+    auto [shape2, multirefattrdata2] = multirefattribute2.read<std::string>();
     assert(multirefattrdata2 == attr2);
 }
 
