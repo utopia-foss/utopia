@@ -112,10 +112,13 @@ public:
 
     /**
      * @brief Reads data from attribute, and returns the data and its shape in
-     *        the form of a hsize_t vector. N-dimensional data are read into
-     *        1d arrays, and the shape has to be used to regain the original
-     *        layout via index arithmetic. Will always return a vector of the
-     *        elements, even when only one element is in it.
+     *        the form of a hsize_t vector.
+     *
+     *        This function has two quirks:
+     *         - N-dimensional data are read into 1d arrays, and the shape has
+     *           to be used to regain the original layout via index arithmetic.
+     *         - The function will always return a vector of the elements,
+     *           even when only one element is in it.
      *
      * @tparam Type Type of the elements in the attribute
      * @return tuple containing (shape, data)
@@ -123,6 +126,7 @@ public:
     template <typename Type>
     auto read()
     {
+        // FIXME: I do not currently like the approach taken here!
         if (!H5Iis_valid(_attribute))
         {
             throw std::runtime_error(
@@ -147,7 +151,9 @@ public:
 
         if constexpr (is_container_type<Type>::value)
         {
-            // making data buffer
+            // README: a distinction based on the container' s value_type could
+            // be put here which then would allow for a more intuitive usage of
+            // th e 'type template parameter' making data buffer
             std::vector<typename HDFTypeFactory::result_type<Type>::type> buffer(size);
 
             // get type the attribute has internally
@@ -220,11 +226,18 @@ public:
     }
 
     /**
-     * @brief Function for writing data to the attribute
+     * @brief Function for writing data to the attribute.
      *
-     * @param attribute_data Data to write
-     * @param len of arrays if a container of arrays shall be written which are all the same length
-     * @param ptrlen arraysize in case a pointer is given to write
+     * @tparam Type  Automatically determined type of the data to write
+     * @param attribute_data  Data to write
+     * @param shape Layout of the data, i.e. {20, 50} would indicate a 2d array like int a[20][50];
+     *              The parameter has only to be given if the data to be written is given as
+     *               plain pointers, because the shape cannot be determined automatically then.
+     * @param typelen If the elements of the data to be written are arrays of equal length, and the data should be
+     *                written as 1d attribute, then we can give the length of the arrays
+     *                in order to speed up the memory allocation and avoid unecessary buffering.
+     *                This can be useful for grids for instance.
+     *
      */
     template <typename Type>
     void write(Type attribute_data,
