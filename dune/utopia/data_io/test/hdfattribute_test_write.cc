@@ -100,27 +100,5 @@ int main()
     // writing 2d attribute
     attribute6.write(arr, {20, 50});
 
-    // make attributes
-    HDFAttribute<HDFGroup> attribute7(low_group, attributename1 + "_rvalue");
-    HDFAttribute<HDFGroup> attribute8(low_group, attributename2 + "_rvalue");
-    HDFAttribute<HDFGroup> attribute9(low_group, attributename3 + "_rvalue");
-    HDFAttribute<HDFGroup> attribute10(low_group, attributename4 + "_rvalue");
-
-    // writing rvalue references
-    // writing a string
-    attribute7.write(std::string("this is an rvalue string"));
-
-    // writing vector
-    attribute8.write(std::vector<double>({dist(rng), dist(rng), dist(rng)}));
-
-    // writing a simple number
-    attribute9.write(21);
-
-    // writing a nested vector
-    attribute10.write(std::vector<std::vector<double>>{
-        {dist(rng), dist(rng), dist(rng)},
-        {dist(rng), dist(rng), dist(rng), dist(rng), dist(rng), dist(rng)},
-        {dist(rng), dist(rng), dist(rng), dist(rng), dist(rng)}});
-
     return 0;
 }

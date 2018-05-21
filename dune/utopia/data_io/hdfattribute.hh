@@ -114,10 +114,11 @@ public:
      * @brief Reads data from attribute, and returns the data and its shape in
      *        the form of a hsize_t vector. N-dimensional data are read into
      *        1d arrays, and the shape has to be used to regain the original
-     *        layout via index arithmetic
+     *        layout via index arithmetic. Will always return a vector of the
+     *        elements, even when only one element is in it.
      *
-     * @tparam Type Type into which the data shall be read
-     * @return tuple (shape, data)
+     * @tparam Type Type of the elements in the attribute
+     * @return tuple containing (shape, data)
      */
     template <typename Type>
     auto read()
@@ -129,38 +130,62 @@ public:
                 _name + "'");
         }
 
+        // get dataspace
+
+        hid_t dspace = H5Aget_space(_attribute);
+        // get shape
+        _shape.resize(H5Sget_simple_extent_ndims(dspace));
+        H5Sget_simple_extent_dims(dspace, _shape.data(), nullptr);
+        H5Sclose(dspace);
+
+        // make buffer large enough to read data
+        std::size_t size = 1;
+        for (auto& value : _shape)
+        {
+            size *= value;
+        }
+
         if constexpr (is_container_type<Type>::value)
         {
+            // making data buffer
+            std::vector<typename HDFTypeFactory::result_type<Type>::type> buffer(size);
+
             // get type the attribute has internally
             hid_t type = H5Aget_type(_attribute);
 
-            // get dataspace
-            hid_t dspace = H5Aget_space(_attribute);
+            // check if type is of variable length, and adjust
+            // read procedure accordingly
 
-            // get shape
-            _shape.resize(H5Sget_simple_extent_ndims(dspace));
-            H5Sget_simple_extent_dims(dspace, _shape, nullptr);
-
-            // make buffer large enough to read data
-            std::size_t size = 0;
-            for (auto& value : _shape)
+            if (H5Tget_class(type) == H5T_VLEN)
             {
-                size *= value;
-            }
+                using basetype =
+                    typename HDFTypeFactory::result_type<typename Type::value_type>::type;
 
-            // make a vector of the corresponding C type
-            std::vector<typename Type::value_type> buffer(size);
+                std::vector<hvl_t> temp_buffer(size);
 
-            // read data into it and return
-            H5Aread(_attribute, type, buffer.data());
+                H5Aread(_attribute, type, temp_buffer.data());
 
-            if constexpr (std::is_same_v<Type, decltype(buffer)>)
-            {
+                for (std::size_t i = 0; i < size; ++i)
+                {
+                    buffer[i].resize(temp_buffer[i].len);
+                    for (std::size_t j = 0; j < temp_buffer[i].len; ++j)
+                    {
+                        buffer[i][j] = static_cast<basetype*>(temp_buffer[i].p)[j];
+                    }
+                }
+
                 return std::make_tuple(_shape, buffer);
             }
             else
             {
-                return std::make_tuple(_shape, Type(buffer.begin(), buffer.end()));
+                auto typesize = H5Tget_size(type);
+                for (auto& cont : buffer)
+                {
+                    cont.resize(typesize);
+                }
+                H5Aread(_attribute, type, buffer.data());
+
+                return std::make_tuple(_shape, buffer);
             }
         }
         else if constexpr (std::is_same_v<Type, std::string> ||
@@ -170,21 +195,16 @@ public:
             hid_t type = H5Aget_type(_attribute);
 
             // get size type
-            auto size = H5Tget_size(type);
+            size = H5Tget_size(type);
 
-            // get dataspace
-            hid_t dspace = H5Aget_space(_attribute);
-
-            // get shape
-            _shape.resize(H5Sget_simple_extent_ndims(dspace));
-            H5Sget_simple_extent_dims(dspace, _shape, nullptr);
-
-            // buffer
+            // read data into it and return
             std::string buffer;
             buffer.resize(size);
-            // read data into it and return
 
+            // read data
             H5Aread(_attribute, type, buffer.data());
+
+            // return as tuple
             return std::make_tuple(_shape, buffer);
         }
         else
@@ -192,19 +212,9 @@ public:
             // get type the attribute has internally
             hid_t type = H5Aget_type(_attribute);
 
-            // get dataspace
-            hid_t dspace = H5Aget_space(_attribute);
-
-            // get shape
-            _shape.resize(H5Sget_simple_extent_ndims(dspace));
-            H5Sget_simple_extent_dims(dspace, _shape, nullptr);
-
-            // make buffer for corresponding c type
-            Type buffer;
-
-            // read data into it and return
-
-            H5Aread(_attribute, type, &buffer);
+            std::vector<Type> buffer(size);
+            H5Aread(_attribute, type, buffer.data());
+            // return as tuple
             return std::make_tuple(_shape, buffer);
         }
     }
@@ -284,6 +294,7 @@ public:
             if constexpr (std::is_same_v<Type, const char*>)
             {
                 auto len = std::strlen(attribute_data);
+                _shape = {1};
                 // check if attribute has been created, else do
                 if (_attribute == -1)
                 {
