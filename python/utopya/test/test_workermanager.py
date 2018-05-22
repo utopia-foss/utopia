@@ -88,15 +88,20 @@ def test_init():
     WorkerManager(num_workers=-1)
     WorkerManager(num_workers=1)
 
-    with pytest.warns(UserWarning):
+    with pytest.warns(UserWarning, match="Set WorkerManager to use more"):
         # too many workers
         WorkerManager(num_workers=1000)
 
-    with pytest.raises(ValueError):
-        # Negative
+    with pytest.raises(ValueError, match="Need positive integer"):
+        # Not positive
+        WorkerManager(num_workers=0)
+    
+    with pytest.raises(ValueError,
+                       match="Received invalid argument `num_workers`"):
+        # Too negative
         WorkerManager(num_workers=-1000)
     
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Need positive integer"):
         # not int
         WorkerManager(num_workers=1.23)
 
@@ -114,15 +119,12 @@ def test_add_tasks(wm, sleep_task):
     # This one should work
     wm.add_task(**sleep_task)
 
-    # Test that errors propagate through
-    with pytest.warns(UserWarning):
-        wm.add_task(setup_func=print, worker_kwargs=dict(foo="bar"))
-    
-    with pytest.warns(UserWarning):
+    # Test that warnings and errors propagate through    
+    with pytest.warns(UserWarning, match="`worker_kwargs` given but also"):
         wm.add_task(setup_kwargs=dict(foo="bar"),
                     worker_kwargs=dict(foo="bar"))
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Need either argument `setup_func`"):
         wm.add_task()
 
 def test_start_working(wm_with_tasks):
@@ -194,7 +196,7 @@ def test_timeout(wm, sleep_task):
         wm.start_working(timeout=-123.45)
 
     # Check if no WorkerManagerTotalTimeout is raised for a high timeout value
-    wm.start_working(timeout=1.7)
+    wm.start_working(timeout=23.4)
 
     # Add more asks
     for _ in range(3):

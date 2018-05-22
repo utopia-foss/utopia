@@ -7,7 +7,8 @@
 #include <iostream>
 using namespace Utopia::DataIO;
 
-int main() {
+int main()
+{
     // open a file
     HDFFile file("testfile.h5", "r");
 
@@ -17,14 +18,14 @@ int main() {
 
     // open attributes
     std::string attributename = "testattribute";
-    HDFAttribute<HDFGroup, std::string> attribute(low_group, attributename);
+    HDFAttribute<HDFGroup> attribute(low_group, attributename);
 
     std::string attributename2 = "testattribute2";
-    HDFAttribute<HDFGroup, int> attribute2(low_group2, "testattribute2");
+    HDFAttribute<HDFGroup> attribute2(low_group2, "testattribute2");
 
     // read stuff and test that it is tha same as in hdfattribute_test_write.cc
-    std::string read_attribute1 = attribute.read();
-    int read_attribute2 = attribute2.read();
+    std::string read_attribute1 = attribute.read<std::string>();
+    int read_attribute2 = attribute2.read<int>();
 
     std::string attribute_data1 = "this is a testing attribute";
     int attribute_data2 = 42;

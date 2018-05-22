@@ -1,13 +1,5 @@
 ---
-# Parameter Space
 parameter_space:
-  seed: 1337
-  models:
-    ca_geomorphology:
-      # rain rate
-      # erosion
-      #  ....
-    ca_vegetation:
-      # ..
-    abm_animals:
-      # ...
+  dummy:
+    seed: 1337
+  num_steps: 5

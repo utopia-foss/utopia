@@ -9,6 +9,7 @@ generate_model_info(
 )
 
 # Installations ...............................................................
+message(STATUS "")
 message(STATUS "Installing required Python packages ...")
 
 # Manually install dependencies for utopya, if they are not already satisfied
@@ -18,12 +19,19 @@ dune_python_find_package(PACKAGE paramspace
                          INTERPRETER ${DUNE_PYTHON_VIRTUALENV_EXECUTABLE})
 
 if(NOT DUNE_PYTHON_paramspace_FOUND)
-    python_install_package_remote(URL https://ts-gitlab.iup.uni-heidelberg.de/yunus/paramspace.git@releases/v1.0b
+    python_install_package_remote(URL ssh://git@ts-gitlab.iup.uni-heidelberg.de:10022/yunus/paramspace.git@releases/v1.0b
         TRUSTED_HOST ts-gitlab.iup.uni-heidelberg.de)
 endif()
 
-# deval
-# TODO
+# dantro
+dune_python_find_package(PACKAGE dantro
+                         VERSION 0.1b0 EXACT  # NOTE exact needed during beta
+                         INTERPRETER ${DUNE_PYTHON_VIRTUALENV_EXECUTABLE})
+
+if(NOT DUNE_PYTHON_dantro_FOUND)
+    python_install_package_remote(URL ssh://git@ts-gitlab.iup.uni-heidelberg.de:10022/utopia/dantro.git
+        TRUSTED_HOST ts-gitlab.iup.uni-heidelberg.de)
+endif()
 
 
 # Now, ready to install utopya
@@ -52,4 +60,4 @@ dune_python_add_test(NAME FRONTEND_utopya
                              --cov-report=term-missing
                      )
 
-message(STATUS "Python setup complete.")
+message(STATUS "Python setup complete.\n")

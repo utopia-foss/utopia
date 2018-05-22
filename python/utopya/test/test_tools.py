@@ -29,7 +29,7 @@ def test_read_yml(tmpdir):
     d = t.read_yml(READ_TEST_PATH)
 
     # An Exception should be raised when no file is found
-    bad_path = os.path.join(tmpdir.dirpath(), "not_existent_config.yml")
+    bad_path = tmpdir.join("not_existent_config.yml")
     with pytest.raises(FileNotFoundError):
         t.read_yml(bad_path)
 
@@ -64,12 +64,12 @@ def test_read_yml(tmpdir):
 def test_write_yml(testdict, tmpdir):
     """Testing if writing dicts to yaml is succesful."""
     # Write the test dictionary
-    path = os.path.join(tmpdir.dirpath(), "test.yml")
+    path = tmpdir.join("test.yml")
     t.write_yml(testdict, path=path)
 
     # Writing again should fail
     with pytest.raises(FileExistsError):
-        t.write_yml(testdict, path=os.path.join(tmpdir.dirpath(), "test.yml"))
+        t.write_yml(testdict, path=tmpdir.join("test.yml"))
 
     # Read in the file and assert equality between written and read file
     assert testdict == t.read_yml(path)
@@ -103,3 +103,36 @@ def test_recursive_update(testdict):
                             nothing=dict(some="thing"))
     assert d['nothing'] == dict(some="thing")
     assert d['more_nothing'] == "something"
+
+def test_format_time():
+    """Test the time formatting method"""
+    assert t.format_time(10) == "10s"
+    assert t.format_time(10.1) == "10s"
+    assert t.format_time(10.1, ms_precision=2) == "10.10s"
+    assert t.format_time(0.1) == "< 1s"
+    assert t.format_time(0.1, ms_precision=2) == "0.10s"
+    assert t.format_time(123) == "2m 3s"
+    assert t.format_time(123, ms_precision=2) == "2m 3s"
+    assert t.format_time(60*60*24 + 60*60*2 + 60*3 + 4) == "1d 2h 3m 4s"
+
+def test_fill_line():
+    """Tests the fill_line and center_in_line methods"""
+    # Shortcut for setting number of columns
+    fill = lambda *args, **kwargs: t.fill_line(*args, num_cols=10, **kwargs)
+
+    # Check that the expected number of characters are filled at the right spot
+    assert fill("foo") == "foo" + 7*" "
+    assert fill("foo", fill_char="-") == "foo" + 7*"-"
+    assert fill("foo", align='r') == 7*" " + "foo"
+    assert fill("foo", align='c') == "   foo    "
+    assert fill("foob", align='c') == "   foob   "
+
+    with pytest.raises(ValueError, match="length 1"):
+        fill("foo", fill_char="---")
+
+    with pytest.raises(ValueError, match="align argument 'bar' not supported"):
+        fill("foo", align='bar')
+
+    # The center_in_line method has a fill_char given and adds a spacing
+    assert t.center_in_line("foob", num_cols=10) == "·· foob ··"  # cdot!
+    assert t.center_in_line("foob", num_cols=10, spacing=2) == "·  foob  ·"

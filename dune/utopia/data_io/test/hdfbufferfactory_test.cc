@@ -26,9 +26,9 @@ int main() {
     k += "a";
   }
 
-    std::vector<int> plain_buffer = HDFBufferFactory::buffer<int>(
-        data.begin(), data.end(),
-        [](auto &complicated_value) { return complicated_value.a; });
+  std::vector<int> plain_buffer = HDFBufferFactory::buffer(
+      data.begin(), data.end(),
+      [](auto &complicated_value) { return complicated_value.a; });
 
   assert(plain_buffer.size() == data.size());
   for (std::size_t l = 0; l < data.size(); ++l) {
@@ -56,19 +56,18 @@ int main() {
         std::vector<int>(data_lists[i].begin(), data_lists[i].end());
   }
 
-  std::vector<hvl_t> complex_buffer =
-        HDFBufferFactory::buffer<std::vector<int>>(
-            data_vectors.begin(), data_vectors.end(),
-            [](auto &vector) -> std::vector<int> & { return vector; });
+  std::vector<hvl_t> complex_buffer = HDFBufferFactory::buffer(
+      data_vectors.begin(), data_vectors.end(),
+      [](auto &vector) -> std::vector<int> & { return vector; });
 
   assert(complex_buffer.size() == data_vectors.size());
   for (std::size_t l = 0; l < data_vectors.size(); ++l) {
-        assert(data_vectors[l].size() == complex_buffer[l].len);
-        for (std::size_t i = 0; i < data_vectors[i].size(); ++i) {
-            assert(data_vectors[l][i] ==
-                   reinterpret_cast<int *>(complex_buffer[l].p)[i]);
-        }
+    assert(data_vectors[l].size() == complex_buffer[l].len);
+    for (std::size_t i = 0; i < data_vectors[i].size(); ++i) {
+      assert(data_vectors[l][i] ==
+             reinterpret_cast<int *>(complex_buffer[l].p)[i]);
     }
+  }
 
   return 0;
 }
