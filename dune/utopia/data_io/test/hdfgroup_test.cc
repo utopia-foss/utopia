@@ -38,9 +38,12 @@ int main()
     auto testgroup = base_group->open_group("/testgroup1/dummygroup");
     auto testgroup2 = base_group->open_group("/testgroup1/dummygroup");
 
+    assert((*testgroup->get_referencecounter())[testgroup->get_address()] == 2);
+
     testgroup->add_attribute(
         "readme", "this group has been created for testing reference counter");
     testgroup->close();
+    assert((*testgroup->get_referencecounter())[testgroup->get_address()] == 1);
 
     // check now if stuff can be done with the group
     testgroup2->add_attribute(
