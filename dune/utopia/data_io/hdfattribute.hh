@@ -446,12 +446,12 @@ public:
         // copy suffices
         if constexpr (std::is_same<Type, typename Iter::value_type>::value)
         {
-            write(std::vector<Type>(begin, end), 0);
+            write(std::vector<Type>(begin, end));
         }
         else
         {
             // buffer data, have to because we cannot write iterator ranges
-            write(HDFBufferFactory::buffer(begin, end, adaptor), shape, 0);
+            write(HDFBufferFactory::buffer(begin, end, adaptor), shape);
         }
     }
 
