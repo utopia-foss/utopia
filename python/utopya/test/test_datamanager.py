@@ -95,13 +95,14 @@ def test_load_single(dm_after_single):
 
     # NOTE the lines below need to be adjusted if the dummy model changes
     # the way it writes output
-    dset = uni['data/data-1']
+    # FIXME re-enable once #100 is fixed
+    # dset = uni['data/data-1']
 
-    assert isinstance(dset, udc.NumpyDC)
+    # assert isinstance(dset, udc.NumpyDC)
 
-    assert dset.shape == (1000,)
-    assert dset.dtype is np.dtype("float64")
-    assert all([0 <= v <= 1 for v in dset.data.flat])
+    # assert dset.shape == (1000,)
+    # assert dset.dtype is np.dtype("float64")
+    # assert all([0 <= v <= 1 for v in dset.data.flat])
 
 
 def test_load_sweep(dm_after_sweep):
@@ -127,10 +128,11 @@ def test_load_sweep(dm_after_sweep):
     
         # NOTE the lines below need to be adjusted if the dummy model changes
         # the way it writes output
-        dset = uni['data/data-1']
+        # FIXME re-enable once #100 is fixed
+        # dset = uni['data/data-1']
 
-        assert isinstance(dset, udc.NumpyDC)
+        # assert isinstance(dset, udc.NumpyDC)
 
-        assert dset.shape == (1000,)
-        assert dset.dtype is np.dtype("float64")
-        assert all([0 <= v <= 1 for v in dset.data.flat])
+        # assert dset.shape == (1000,)
+        # assert dset.dtype is np.dtype("float64")
+        # assert all([0 <= v <= 1 for v in dset.data.flat])
