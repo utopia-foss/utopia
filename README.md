@@ -81,7 +81,7 @@ Ubuntu is shipped with APT.
     the command line tools Clang:
 
         export CC=gcc-7
-        export CXX=g++-8
+        export CXX=g++-7
     
     Notice that these commands only last for your current terminal session.
 
