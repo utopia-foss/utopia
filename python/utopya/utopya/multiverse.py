@@ -293,20 +293,42 @@ class Multiverse:
         # Those keys or values will throw errors once they are needed ...
 
         # Now perform the recursive update steps
+        # Start with the base configuration
         meta_tmp = base_cfg
         log.debug("Performing recursive updates to arrive at meta "
                   "configuration ...")
 
-        # User configuration, if given
+
+        # Update with user configuration, if given
         if user_cfg:
             log.debug("Updating with user configuration ...")
             meta_tmp = recursive_update(meta_tmp, user_cfg)
 
-        # Model configuration (always)
-        log.debug("Updating with model configuration ...")
-        meta_tmp = recursive_update(meta_tmp, model_cfg)
 
-        # Run configuration, if given
+        # Perform a few checks on the parameter space
+        # We can already be sure that the parameter_space key exists, because
+        # it is added as part of the base_cfg.
+        # Check that no key with the name of the model exists at this point
+        pspace = meta_tmp['parameter_space']
+        if self.model_name in pspace:
+            raise ValueError("There already is a key with model name ('{}')"
+                             "under the 'parameter_space' entry of the meta "
+                             "configuration! If this was part of your user "
+                             "configuration, you should remove it.")
+
+
+        # Adjust parameter space to include model configuration
+        # Unlike the other configuration files, this does not attach at
+        # root level of the meta configuration but parameter_space.<model_name>
+        # in order to allow it to be used as the default configuration for an
+        # _instance_ of that model.
+        log.debug("Updating parameter space with model configuration for "
+                  "model '%s' ...", self.model_name)
+        pspace[self.model_name] = model_cfg
+        # NOTE this works because meta_tmp is a dict and thus mutable :)
+
+
+        # On top of all of that: add the run configuration, if given
         if run_cfg:
             log.debug("Updating with run configuration ...")
             meta_tmp = recursive_update(meta_tmp, run_cfg)
