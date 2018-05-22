@@ -31,9 +31,14 @@ if __name__ == '__main__':
                              "is used in creation of the run directory path.")
     parser.add_argument('-d', '--debug',
                         default=0, action='count',
-                        help="Run the Multiverse in debug mode. This will "
-                             "lead to the run being aborted if a single "
-                             "simulation exits with a non-zero exit code.")
+                        help="This controls the value of the WorkerManager's "
+                             "`nonzero_exit_handling` flag. For -d, it is set "
+                             "to 'warn', where warnings about simulations "
+                             "ending with non-zero exit code are printed. "
+                             "For -dd, it is set to 'raise', which will end "
+                             "the run by terminating all active workers and "
+                             "exiting with the status code of the simulation "
+                             "that failed.")
 
     # CLI defined. Parse the arguments now.
     args = parser.parse_args()
