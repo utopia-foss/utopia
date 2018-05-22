@@ -797,7 +797,6 @@ public:
      */
     virtual ~HDFDataset()
     {
-        std::cout << "calling destructor of " << _name << std::endl;
         if (H5Iis_valid(_dataset))
         {
             if ((*_refcounts)[_address] == 1)

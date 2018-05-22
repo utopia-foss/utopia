@@ -320,9 +320,9 @@ public:
 
             // we can write directly if we have a plain vector, no nested or stringtype.
             if constexpr (std::is_same_v<Type, std::vector<value_type_1>> &&
-                          !is_container_type<value_type_1>::value)
+                          !is_container_type<value_type_1>::value &&
+                          !is_stringtype<value_type_1>::value)
             {
-                // std::cout << "of size: " << _size << std::endl;
                 // check if attribute has been created, else do
                 if (_attribute == -1)
                 {

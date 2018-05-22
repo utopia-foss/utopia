@@ -233,7 +233,6 @@ public:
           _path(path),
           _refcounts(std::make_shared<std::unordered_map<haddr_t, int>>()),
           _base_group(std::make_shared<HDFGroup>(*this, "/"))
-
     {
         // H5Eset_auto(0, 0, NULL);
 
@@ -246,7 +245,6 @@ public:
      */
     virtual ~HDFFile()
     {
-        std::cout << "_calling destructor of file: " << _path << std::endl;
         if (H5Iis_valid(_file))
         {
             H5Fflush(_file, H5F_SCOPE_GLOBAL);

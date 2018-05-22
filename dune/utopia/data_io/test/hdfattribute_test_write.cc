@@ -86,29 +86,21 @@ int main()
     HDFAttribute attribute6(low_group, attributename6);
     HDFAttribute attribute7(low_group, attributename7);
 
-    // writing an element vector of struct
     attribute0.write(structdata.begin(), structdata.end(),
                      [](auto& compound) { return compound.b; });
 
-    // writing a string
     attribute1.write(attribute_data1);
 
-    // writing vector
     attribute2.write(attribute_data2);
 
-    // writing a simple number
     attribute3.write(attribute_data3);
 
-    // writing a nested vector
     attribute4.write(attribute_data4);
 
-    // writing a char*
     attribute5.write("this is a char* attribute");
 
-    // writing 2d attribute
     attribute6.write(arr, {20, 50});
 
-    // writing string vector data
     attribute7.write(stringvec);
 
     return 0;
