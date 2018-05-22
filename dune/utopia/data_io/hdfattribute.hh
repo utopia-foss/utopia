@@ -299,8 +299,7 @@ public:
     {
         if (H5Iis_valid(_attribute))
         { // FIXME: add check to make sure that
-          // it is not
-          // more than once closed
+          // it is not closed more than once
             H5Aclose(_attribute);
         }
     }
