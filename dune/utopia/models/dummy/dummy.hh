@@ -31,29 +31,39 @@ public:
     using BCType = typename Base::BCType;
 
 private:
+    const std::string _name;
     Data _state;
     BCType _bc;
     Utopia::DataIO::Config _config;
-    std::mt19937 _rng;
-    DataIO::HDFFile _file;
+    std::shared_ptr<Utopia::DataIO::HDFGroup> _group;
+    std::shared_ptr<std::mt19937> _rng;
+
 
 public:
     /// Construct the dummy model with an initial state
     /** \param state Initial state of the model
      */
-    DummyModel (const Data& state, Utopia::DataIO::Config config):
+    DummyModel (const std::string name, const Data& state, 
+                Utopia::DataIO::Config &config,
+                std::shared_ptr<Utopia::DataIO::HDFGroup> group,
+                std::shared_ptr<std::mt19937> rng):
         Base(),
+        _name(name),
         _state(state),
         _bc(_state.size(), 1.0),
-        _config(config),
-        _rng(_config["seed"].as<int>()),
-        _file(_config["output_path"].as<std::string>(), "w")
+        _config(config[_name]),
+        _group(group->open_group(_name)),
+        _rng(rng)
     { }
 
     /// Iterate by one time step
     void perform_step ()
     {
-        auto gen = std::bind(std::uniform_real_distribution<>(), _rng);
+        // Communicate which iteration step is performed
+        std::cout << "  iteration step " << this->time << std::endl;
+
+        // Write some random numbers into the state vector
+        auto gen = std::bind(std::uniform_real_distribution<>(), *_rng);
         std::generate(_bc.begin(), _bc.end(), gen);
         std::transform(_state.begin(), _state.end(), _bc.begin(),
             _state.begin(),
@@ -61,13 +71,17 @@ public:
         );
     }
 
-    /// Do nothing for now
+    /// Write data into a datastep that corresponds to the current step
     void write_data ()
     {
+        // Generate the dataset name
         const std::string set_name = "data-" + std::to_string(this->time);
-        auto dataset = _file.get_basegroup()->open_dataset(set_name);
-        dataset->write(_state.begin(), _state.end(),
-            [](auto &value) { return value; });
+
+        // Open the dataset and write the state into it
+        // FIXME will be resolved with #100
+        // auto dataset = _group->open_dataset(set_name);
+        // dataset->write(_state.begin(), _state.end(),
+        //     [](auto &value) { return value; });
     }
 
     // Set model boundary condition
