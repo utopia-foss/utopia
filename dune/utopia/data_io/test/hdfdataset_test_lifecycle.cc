@@ -24,6 +24,16 @@ void assert_hdfdatasets(LHS& lhs, RHS& rhs)
     assert(lhs.get_referencecounter() == rhs.get_referencecounter());
     assert(lhs.get_parent() == rhs.get_parent());
     assert(lhs.get_rank() == rhs.get_rank());
+
+    // assert ranked members
+    for (std::size_t i = 0; i < lhs.get_rank(); ++i)
+    {
+        assert(lhs.get_extend()[i] == rhs.get_extend()[i]);
+        assert(lhs.get_capacity()[i] == rhs.get_capacity()[i]);
+        std::cerr << lhs.get_rank() << ","
+                  << lhs.get_extend()[i] << ","
+                  << rhs.get_extend()[i] << std::endl;
+    }
 }
 
 int main()
@@ -39,55 +49,27 @@ int main()
 
     assert((*first.get_referencecounter())[first.get_address()] == 1);
 
+    // copy constructor
     HDFDataset copied_first(first);
     assert((*copied_first.get_referencecounter())[copied_first.get_address()] == 2);
-
     assert_hdfdatasets(first, copied_first);
 
-    for (std::size_t i = 0; i < first.get_rank(); ++i)
-    {
-        assert(first.get_extend()[i] == copied_first.get_extend()[i]);
-        assert(first.get_capacity()[i] == copied_first.get_capacity()[i]);
-    }
-
+    // copy assignment
     auto second = first;
     assert((*second.get_referencecounter())[second.get_address()] == 3);
-
     assert_hdfdatasets(first, second);
 
-    for (std::size_t i = 0; i < first.get_rank(); ++i)
-    {
-        assert(first.get_extend()[i] == second.get_extend()[i]);
-        assert(first.get_capacity()[i] == second.get_capacity()[i]);
-    }
-
+    // move assignment
     auto crosscheck(first); // this is needed  for checks
     crosscheck.close();     // but let it not take part in refcount anymore
     auto moveassign_from_first = std::move(first);
     assert((*moveassign_from_first.get_referencecounter())[moveassign_from_first.get_address()] == 3);
     assert_hdfdatasets(crosscheck, moveassign_from_first);
 
-    for (std::size_t i = 0; i < crosscheck.get_rank(); ++i)
-    {
-        std::cerr << moveassign_from_first.get_rank() << ","
-                  << moveassign_from_first.get_extend()[i] << ","
-                  << crosscheck.get_extend()[i] << std::endl;
-        assert(crosscheck.get_extend()[i] == moveassign_from_first.get_extend()[i]);
-        assert(crosscheck.get_capacity()[i] == moveassign_from_first.get_capacity()[i]);
-    }
-
+    // move constructor
     HDFDataset moveconst_second(std::move(second));
-
     assert((*moveconst_second.get_referencecounter())[moveconst_second.get_address()] == 3);
     assert_hdfdatasets(crosscheck, moveconst_second);
 
-    for (std::size_t i = 0; i < crosscheck.get_rank(); ++i)
-    {
-        std::cerr << moveconst_second.get_rank() << ","
-                  << moveconst_second.get_extend()[i] << ","
-                  << crosscheck.get_extend()[i] << std::endl;
-        assert(crosscheck.get_extend()[i] == moveconst_second.get_extend()[i]);
-        assert(crosscheck.get_capacity()[i] == moveconst_second.get_capacity()[i]);
-    }
     return 0;
 }
