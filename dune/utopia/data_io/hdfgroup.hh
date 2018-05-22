@@ -258,6 +258,7 @@ public:
      */
     virtual ~HDFGroup()
     {
+        std::cout << "calling destructor of group " << _path << std::endl;
         if (H5Iis_valid(_group))
         {
             if ((*_refcounts)[_address] == 1)

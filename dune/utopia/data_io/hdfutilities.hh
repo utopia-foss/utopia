@@ -115,6 +115,27 @@ struct is_container_type<T&&> : public is_container<T>
 {
 };
 
+// check if we have stringlike types
+template <typename T>
+struct is_stringtype : public std::false_type
+{
+};
+
+template <>
+struct is_stringtype<std::string> : public std::true_type
+{
+};
+
+template <>
+struct is_stringtype<const char*> : public std::true_type
+{
+};
+
+template <>
+struct is_stringtype<char*> : public std::true_type
+{
+};
+
 } // namespace DataIO
 } // namespace Utopia
 #endif

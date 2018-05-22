@@ -246,6 +246,7 @@ public:
      */
     virtual ~HDFFile()
     {
+        std::cout << "_calling destructor of file: " << _path << std::endl;
         if (H5Iis_valid(_file))
         {
             H5Fflush(_file, H5F_SCOPE_GLOBAL);
