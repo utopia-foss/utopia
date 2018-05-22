@@ -1,16 +1,16 @@
 # The model configuration for the dummy model
 #
-# This file should ONLY contain model-specific configuration. It should specify
-# all available parameters and their default values.
-# These should be specified under the `parameter_space` key.
-#
-# This file should NOT be used to overwrite any other parts of the utopya
-# configuration.
+# This file should ONLY contain model-specific configuration and needs to be
+# written such that it can be used by _every_ model instance, regardless
+# of the level within a model hierarchy.
 # 
-# As this file is (usually) handled by the frontend, it is possible to use
-# yaml features like anchors, inheritance, ...
+# To that end, it needs to specify the parameters at the level of the instance
+# of a Model class.
+# 
+# This file is usually handled by the frontend: usage of advanced yaml features
+# like anchors and tags is supported.
+# Note, however, that this file should hold the _default_ values for a single
+# instance. Therefore, parameter sweeps should not be specified here!
 ---
-parameter_space:
-  num_steps: 5
-  dummy:
-    seed: 1337
+foo: bar
+spam: 1.23
