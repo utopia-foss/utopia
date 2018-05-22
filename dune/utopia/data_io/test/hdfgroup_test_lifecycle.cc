@@ -23,26 +23,27 @@ int main()
     HDFFile file("group_test_lifetime.h5", "w");
 
     HDFGroup first(file, "first");
-
     assert((*first.get_referencecounter())[first.get_address()] == 1);
 
+    // copy constructor
     HDFGroup copied_first(first);
     assert((*copied_first.get_referencecounter())[copied_first.get_address()] == 2);
     assert_hdfgroups(first, copied_first);
 
+    // copy assignment
     auto second = first;
     assert((*second.get_referencecounter())[second.get_address()] == 3);
     assert_hdfgroups(first, second);
 
+    // move assignment
     auto crosscheck(first); // this is needed  for checks
     crosscheck.close();     // but should  not take part in refcount anymore
     auto moveassign_from_first = std::move(first);
     assert((*moveassign_from_first.get_referencecounter())[moveassign_from_first.get_address()] == 3);
-
     assert_hdfgroups(crosscheck, moveassign_from_first);
 
+    // move constructor
     HDFGroup moveconst_second(std::move(second));
-
     assert((*moveconst_second.get_referencecounter())[moveconst_second.get_address()] == 3);
     assert_hdfgroups(crosscheck, moveconst_second);
 
