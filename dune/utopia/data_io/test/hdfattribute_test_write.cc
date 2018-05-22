@@ -26,7 +26,9 @@ int main()
     // make groups
     HDFGroup low_group = HDFGroup(*file.get_basegroup(), "/testgroup");
 
-    // adding attribute1
+    ////////////////////////////////////////////////////////////////////////////
+    // making attribute names
+    ////////////////////////////////////////////////////////////////////////////
     std::string attributename0 = "coupledattribute";
     std::string attributename1 = "stringattribute";
     std::string attributename2 = "vectorattribute";
@@ -77,13 +79,21 @@ int main()
         attributename4, attributename5, attributename6, attributename7};
 
     // make attributes
+
     HDFAttribute attribute0(low_group, attributename0);
+
     HDFAttribute attribute1(low_group, attributename1);
+
     HDFAttribute attribute2(low_group, attributename2);
+
     HDFAttribute attribute3(low_group, attributename3);
+
     HDFAttribute attribute4(low_group, attributename4);
+
     HDFAttribute attribute5(low_group, attributename5);
+
     HDFAttribute attribute6(low_group, attributename6);
+
     HDFAttribute attribute7(low_group, attributename7);
 
     attribute0.write(structdata.begin(), structdata.end(),

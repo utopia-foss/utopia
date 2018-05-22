@@ -85,6 +85,8 @@ void read(std::vector<Teststruct>& data)
 
     HDFAttribute attribute(*dataset1, "testattribute");
     auto [shape, read_attribute] = attribute.read<std::string>();
+    assert(shape.size() == 1);
+    assert(shape[0] == 1);
     assert(read_attribute == "this is an attribute to a double dataset");
 }
 

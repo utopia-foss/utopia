@@ -300,10 +300,6 @@ public:
     template <typename Type>
     void write(Type attribute_data, std::vector<hsize_t> shape = {})
     {
-        // using result_type = typename
-        // HDFTypeFactory::result_type<Type>::type; when stuff is vector
-        // string we can write directly, otherwise we have to buffer
-
         // check if we have a container. Writing containers requires further
         // t tests, plain old data can be written right away
         if constexpr (is_container_type<Type>::value) // container type
@@ -358,27 +354,28 @@ public:
         }
         else if constexpr (is_stringtype<Type>::value) // string type
         {
-            using basetype = typename HDFTypeFactory::result_type<Type>::type;
-
             auto len = 0;
+            const char* buffer = nullptr;
+            _shape = {1};
+
             if constexpr (std::is_pointer_v<Type>)
             {
                 len = std::strlen(attribute_data);
+                buffer = attribute_data;
             }
             else
             {
                 len = attribute_data.size();
+                buffer = attribute_data.c_str();
             }
 
-            _shape = {1};
             // check if attribute has been created, else do
             if (_attribute == -1)
             {
-                _attribute = __make_attribute__<basetype>(len);
+                _attribute = __make_attribute__<const char*>(len);
             }
-
             // use that strings store data in consecutive memory
-            H5Awrite(_attribute, HDFTypeFactory::type<basetype>(len), &attribute_data[0]);
+            H5Awrite(_attribute, HDFTypeFactory::type<const char*>(len), buffer);
         }
         else if constexpr (std::is_pointer_v<Type> && !is_stringtype<Type>::value) // pointer type
         {
@@ -547,7 +544,7 @@ public:
         {
             throw std::invalid_argument(
                 "parent_object of attribute " + _name +
-                "is invalid, has it been closed already?");
+                " is invalid, has it been closed already?");
         }
         else
         {
