@@ -524,13 +524,7 @@ class Multiverse:
 
             # Generate a path to the output hdf5 file and add it to the dict
             output_path = os.path.join(uni_dir, "data.h5")
-            
-            # FIXME this should actually not be saved under the key of the model name, but on the highest level of the generated configuration
-            if model_name not in uni_cfg:
-                # Need to create the high level entry
-                uni_cfg[model_name] = dict(output_path=output_path)
-            else:
-                uni_cfg[model_name]['output_path'] = output_path
+            uni_cfg['output_path'] = output_path
 
             # write essential part of config to file:
             uni_cfg_path = os.path.join(uni_dir, "config.yml")
