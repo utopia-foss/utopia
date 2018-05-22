@@ -125,6 +125,9 @@ def test_init():
     # Test initialisation with an (invalid) Reporter type
     with pytest.raises(TypeError, match="Need a WorkerManagerReporter"):
         WorkerManager(reporter='not_a_reporter')
+    # NOTE the tests with the actual WorkerManagerReporter can be found in
+    # test_reporter.py, as they require adequate initialisation arguments
+    # for which it would make no sense to make them available here
 
     # Test passing report specifications
     wm = WorkerManager(rf_spec=dict(foo='bar'))
