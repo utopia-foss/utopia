@@ -132,11 +132,15 @@ void read_dataset_tests(HDFFile& file)
 
     HDFAttribute multirefattribute(multirefdataset, "Attribute1");
     auto [shape1, multirefattrdata1] = multirefattribute.read<std::string>();
+    assert(shape1.size() == 1);
+    assert(shape1[0] == 1);
     assert(multirefattrdata1 == attr1);
 
     HDFAttribute multirefattribute2(multirefdataset, "Attribute2");
     auto [shape2, multirefattrdata2] = multirefattribute2.read<std::string>();
     assert(multirefattrdata2 == attr2);
+    assert(shape2.size() == 1);
+    assert(shape2[0] == 1);
 }
 
 int main()
