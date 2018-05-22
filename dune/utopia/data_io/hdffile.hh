@@ -153,24 +153,28 @@ public:
     }
 
     /**
+     * @brief Copy assignment operator, explicitly deleted, hence cannot be used.
+     *
+     * @param other
+     * @return HDFFile&
+     */
+    HDFFile& operator=(const HDFFile& other) = delete;
+
+    /**
      * @brief Move assigment operator
      *
      * @param rvalue reference to HDFFile object
      * @return HDFFile&
      */
-    HDFFile& operator=(HDFFile other)
-    {
-        this->swap(other);
-        return *this;
-    }
+    HDFFile& operator=(HDFFile&& other) = default;
 
-    HDFFile(const HDFFile& other)
-        : _file(other._file),
-          _path(other._path),
-          _refcounts(other._refcounts),
-          _base_group(other._base_group)
-    {
-    }
+    /**
+     * @brief Copy constructor. Explicitly deleted, hence cannot be used
+     *
+     * @param other
+     * @return HDFFile&
+     */
+    HDFFile(const HDFFile& other) = delete;
 
     /**
      * @brief Construct a new HDFFile object
