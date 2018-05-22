@@ -28,11 +28,11 @@ void assert_hdfdatasets(LHS& lhs, RHS& rhs)
     // assert ranked members
     for (std::size_t i = 0; i < lhs.get_rank(); ++i)
     {
-        assert(lhs.get_extend()[i] == rhs.get_extend()[i]);
-        assert(lhs.get_capacity()[i] == rhs.get_capacity()[i]);
         std::cerr << lhs.get_rank() << ","
                   << lhs.get_extend()[i] << ","
                   << rhs.get_extend()[i] << std::endl;
+        assert(lhs.get_extend()[i] == rhs.get_extend()[i]);
+        assert(lhs.get_capacity()[i] == rhs.get_capacity()[i]);
     }
 }
 
