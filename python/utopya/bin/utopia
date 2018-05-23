@@ -29,16 +29,14 @@ if __name__ == '__main__':
                         default=None, nargs='?',
                         help="Overwrites the `paths->model_note` entry which "
                              "is used in creation of the run directory path.")
-    parser.add_argument('-d', '--debug',
-                        default=0, action='count',
+    parser.add_argument('--sim-errors',
+                        default=None, nargs='?',
                         help="This controls the value of the WorkerManager's "
-                             "`nonzero_exit_handling` flag. For -d, it is set "
-                             "to 'warn', where warnings about simulations "
-                             "ending with non-zero exit code are printed. "
-                             "For -dd, it is set to 'raise', which will end "
-                             "the run by terminating all active workers and "
-                             "exiting with the status code of the simulation "
-                             "that failed.")
+                             "`nonzero_exit_handling` flag which controls how "
+                             "errors in simulations are handled. Allowed "
+                             "values are: 'ignore', 'warn', 'raise'. "
+                             "If not given, the default from the base config "
+                             "or (if set) the user configuration is used.")
 
     # CLI defined. Parse the arguments now.
     args = parser.parse_args()
@@ -51,10 +49,8 @@ if __name__ == '__main__':
         update_dict['paths'] = dict(model_note=args.note)
 
     # Set the WorkerManager's non-zero exit handling, if in debug mode
-    if args.debug == 1:
-        update_dict['worker_manager'] = dict(nonzero_exit_handling='warn')
-    elif args.debug > 1:
-        update_dict['worker_manager'] = dict(nonzero_exit_handling='raise')
+    if args.sim_errors:
+        update_dict['worker_manager'] = dict(nonzero_exit_handling=args.sim_errors)
 
     # Using the args, instantiate a Multiverse object
     mv = utopya.Multiverse(model_name=args.model_name,
