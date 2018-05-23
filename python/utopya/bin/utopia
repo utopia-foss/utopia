@@ -51,11 +51,10 @@ if __name__ == '__main__':
         update_dict['paths'] = dict(model_note=args.note)
 
     # Set the WorkerManager's non-zero exit handling, if in debug mode
-    if args.debug:
-        if args.debug == 1:
-            update_dict['worker_manager'] = dict(nonzero_exit_handling='warn')
-        else:
-            update_dict['worker_manager'] = dict(nonzero_exit_handling='raise')
+    if args.debug == 1:
+        update_dict['worker_manager'] = dict(nonzero_exit_handling='warn')
+    elif args.debug > 1:
+        update_dict['worker_manager'] = dict(nonzero_exit_handling='raise')
 
     # Using the args, instantiate a Multiverse object
     mv = utopya.Multiverse(model_name=args.model_name,
