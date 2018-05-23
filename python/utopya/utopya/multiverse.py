@@ -15,7 +15,7 @@ from utopya.datamanager import DataManager
 from utopya.workermanager import WorkerManager
 from utopya.task import enqueue_json
 from utopya.reporter import WorkerManagerReporter
-from utopya.tools import recursive_update, read_yml, write_yml
+from utopya.tools import recursive_update, read_yml, write_yml, load_model_cfg
 from utopya.info import MODELS
 
 # Configure and get logger
@@ -272,14 +272,8 @@ class Multiverse:
             user_cfg = None
 
         # Read in the configuration corresponding to the chosen model
-        # It is a file of format <model_name>_cfg.yml beside the binary
-        model_cfg_path = os.path.join(MODELS[self.model_name]['src_dir'],
-                                      self.model_name + "_cfg.yml")
-        model_cfg = read_yml(model_cfg_path,
-                             error_msg=("Could not locate model configuration "
-                                        "for '{}' model! Expected to find it "
-                                        "at: {}".format(self.model_name,
-                                                        model_cfg_path)))
+        model_cfg, model_cfg_path = load_model_cfg(self.model_name)
+        # NOTE that the model configuration attaches not at the root level!
 
         # Read in the run configuration
         if run_cfg_path:
