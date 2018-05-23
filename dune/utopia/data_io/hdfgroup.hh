@@ -21,7 +21,7 @@ protected:
     std::string _path;
     H5O_info_t _info;
     haddr_t _address;
-    std::shared_ptr<std::unordered_map<haddr_t, int>> _refcounts;
+    std::shared_ptr<std::unordered_map<haddr_t, int>> _referencecounter;
 
 public:
     /**
@@ -36,7 +36,7 @@ public:
         swap(_path, other._path);
         swap(_info, other._info);
         swap(_address, other._address);
-        swap(_refcounts, other._refcounts);
+        swap(_referencecounter, other._referencecounter);
     }
 
     /**
@@ -66,7 +66,7 @@ public:
      */
     auto get_referencecounter()
     {
-        return _refcounts;
+        return _referencecounter;
     }
 
     /**
@@ -128,15 +128,15 @@ public:
     {
         if (H5Iis_valid(_group))
         {
-            if ((*_refcounts)[_address] == 1)
+            if ((*_referencecounter)[_address] == 1)
             {
                 H5Gclose(_group);
                 _group = -1;
-                _refcounts->erase(_refcounts->find(_address));
+                _referencecounter->erase(_referencecounter->find(_address));
             }
             else
             {
-                (*_refcounts)[_address] -= 1;
+                (*_referencecounter)[_address] -= 1;
             }
         }
     }
@@ -194,9 +194,9 @@ public:
           _path(other._path),
           _info(other._info),
           _address(other._address),
-          _refcounts(other._refcounts)
+          _referencecounter(other._referencecounter)
     {
-        (*_refcounts)[_address] += 1;
+        (*_referencecounter)[_address] += 1;
     }
 
     /**
@@ -230,14 +230,14 @@ public:
      */
     template <typename HDFObject>
     HDFGroup(HDFObject& object, std::string name)
-        : _path(name), _refcounts(object.get_referencecounter())
+        : _path(name), _referencecounter(object.get_referencecounter())
     {
         if (H5Lexists(object.get_id(), _path.c_str(), H5P_DEFAULT) > 0)
         {
             _group = H5Gopen(object.get_id(), _path.c_str(), H5P_DEFAULT);
             H5Oget_info(_group, &_info);
             _address = _info.addr;
-            ++(*_refcounts)[_address];
+            ++(*_referencecounter)[_address];
         }
         else
         {
@@ -248,7 +248,7 @@ public:
 
             H5Oget_info(_group, &_info);
             _address = _info.addr;
-            (*_refcounts)[_address] = 1;
+            (*_referencecounter)[_address] = 1;
         }
     }
 
@@ -260,14 +260,14 @@ public:
     {
         if (H5Iis_valid(_group))
         {
-            if ((*_refcounts)[_address] == 1)
+            if ((*_referencecounter)[_address] == 1)
             {
                 H5Gclose(_group);
-                _refcounts->erase(_refcounts->find(_address));
+                _referencecounter->erase(_referencecounter->find(_address));
             }
             else
             {
-                --(*_refcounts)[_address];
+                --(*_referencecounter)[_address];
             }
         }
     }

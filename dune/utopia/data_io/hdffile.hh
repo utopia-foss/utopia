@@ -19,7 +19,7 @@ class HDFFile
 protected:
     hid_t _file;
     std::string _path;
-    std::shared_ptr<std::unordered_map<haddr_t, int>> _refcounts;
+    std::shared_ptr<std::unordered_map<haddr_t, int>> _referencecounter;
     std::shared_ptr<HDFGroup> _base_group;
 
 public:
@@ -35,7 +35,7 @@ public:
         swap(_file, other._file);
         swap(_path, other._path);
         swap(_base_group, other._base_group);
-        swap(_refcounts, other._refcounts);
+        swap(_referencecounter, other._referencecounter);
     }
 
     /**
@@ -59,7 +59,7 @@ public:
      */
     auto get_referencecounter()
     {
-        return _refcounts;
+        return _referencecounter;
     }
 
     /**
@@ -158,19 +158,26 @@ public:
      * @param rvalue reference to HDFFile object
      * @return HDFFile&
      */
-    HDFFile& operator=(HDFFile other)
+    HDFFile& operator=(HDFFile&& other)
     {
         this->swap(other);
         return *this;
     }
 
-    HDFFile(const HDFFile& other)
-        : _file(other._file),
-          _path(other._path),
-          _refcounts(other._refcounts),
-          _base_group(other._base_group)
-    {
-    }
+    /**
+     * @brief Copy assignment, explicitly deleted
+     *
+     * @param other
+     * @return HDFFile&
+     */
+    HDFFile& operator=(const HDFFile& other) = delete;
+
+    /**
+     * @brief Copy constructor, explicitly deleted
+     *
+     * @param other
+     */
+    HDFFile(const HDFFile& other) = delete;
 
     /**
      * @brief Construct a new HDFFile object
@@ -229,13 +236,13 @@ public:
               }
           }()),
           _path(path),
-          _refcounts(std::make_shared<std::unordered_map<haddr_t, int>>()),
+          _referencecounter(std::make_shared<std::unordered_map<haddr_t, int>>()),
           _base_group(std::make_shared<HDFGroup>(*this, "/"))
 
     {
         // H5Eset_auto(0, 0, NULL);
 
-        ++(*_refcounts)[_base_group->get_address()];
+        ++(*_referencecounter)[_base_group->get_address()];
     }
 
     /**

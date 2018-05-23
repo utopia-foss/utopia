@@ -124,7 +124,7 @@ private:
         // update info and add the new dataset to the reference counter
         H5Oget_info(_dataset, &_info);
         _address = _info.addr;
-        (*_refcounts)[_address] = 1;
+        (*_referencecounter)[_address] = 1;
     }
 
     // for writing a  dataset
@@ -244,7 +244,7 @@ protected:
     std::vector<hsize_t> _max_extend;
     H5O_info_t _info;
     haddr_t _address;
-    std::shared_ptr<std::unordered_map<haddr_t, int>> _refcounts;
+    std::shared_ptr<std::unordered_map<haddr_t, int>> _referencecounter;
 
 public:
     /**
@@ -284,7 +284,7 @@ public:
 
     auto get_referencecounter()
     {
-        return _refcounts;
+        return _referencecounter;
     }
 
     haddr_t get_address()
@@ -316,14 +316,14 @@ public:
     {
         if (H5Iis_valid(_dataset))
         {
-            if ((*_refcounts)[_address] == 1)
+            if ((*_referencecounter)[_address] == 1)
             {
                 H5Dclose(_dataset);
-                _refcounts->erase(_refcounts->find(_address));
+                _referencecounter->erase(_referencecounter->find(_address));
             }
             else
             {
-                --(*_refcounts)[_address];
+                --(*_referencecounter)[_address];
             }
         }
     }
@@ -344,7 +344,7 @@ public:
         swap(_max_extend, other._max_extend);
         swap(_info, other._info);
         swap(_address, other._address);
-        swap(_refcounts, other._refcounts);
+        swap(_referencecounter, other._referencecounter);
     }
 
     /**
@@ -729,9 +729,9 @@ public:
           _max_extend(other._max_extend),
           _info(other._info),
           _address(other._address),
-          _refcounts(other._refcounts)
+          _referencecounter(other._referencecounter)
     {
-        (*_refcounts)[_address] += 1;
+        (*_referencecounter)[_address] += 1;
     }
 
     /**
@@ -768,7 +768,7 @@ public:
           _rank(0),
           _extend({}),
           _max_extend({}),
-          _refcounts(parent_object.get_referencecounter())
+          _referencecounter(parent_object.get_referencecounter())
 
     {
         // try to find the dataset in the parent_object, open if it is
@@ -787,7 +787,7 @@ public:
 
             H5Oget_info(_dataset, &_info);
             _address = _info.addr;
-            (*_refcounts)[_address] += 1;
+            (*_referencecounter)[_address] += 1;
         }
     }
 
@@ -799,14 +799,14 @@ public:
     {
         if (H5Iis_valid(_dataset))
         {
-            if ((*_refcounts)[_address] == 1)
+            if ((*_referencecounter)[_address] == 1)
             {
                 H5Dclose(_dataset);
-                _refcounts->erase(_refcounts->find(_address));
+                _referencecounter->erase(_referencecounter->find(_address));
             }
             else
             {
-                --(*_refcounts)[_address];
+                --(*_referencecounter)[_address];
             }
         }
     }
