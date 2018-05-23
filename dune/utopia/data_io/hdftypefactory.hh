@@ -61,7 +61,7 @@ public:
             return type<std::remove_pointer_t<T>>(size);
         }
 
-        if constexpr (is_container_type<T>::value == true)
+        if constexpr (is_container_type<T>::value)
         {
             if constexpr (std::is_same<T, std::string>::value)
             {

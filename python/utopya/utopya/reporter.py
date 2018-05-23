@@ -7,7 +7,7 @@ from functools import partial
 from datetime import datetime as dt
 from datetime import timedelta
 from typing import Union, List, Callable, Dict
-from collections import OrderedDict
+from collections import OrderedDict, Counter
 
 import numpy as np
 
@@ -537,6 +537,7 @@ class WorkerManagerReporter(Reporter):
 
         # Attributes
         self.runtimes = []
+        self.exit_codes = Counter()
 
         log.debug("WorkerManagerReporter initialised.")
 
@@ -607,16 +608,22 @@ class WorkerManagerReporter(Reporter):
 
     # Methods working on data .................................................
 
-    def register_runtime(self, task):
-        """Given the task object, extracts the runtime and stores it.
+    def register_task(self, task):
+        """Given the task object, extracts and stores some information.
+
+        The information currently extracted is the run time and the exit code.
         
         This can be used as a callback function from a WorkerTask object.
         
         Args:
-            task (WorkerTask): The WorkerTask to extract the runtime from.
+            task (WorkerTask): The WorkerTask to extract information from.
         """
+        # Register the runtime
         if 'run_time' in task.profiling:
             self.runtimes.append(task.profiling['run_time'])
+
+        # Increment the counter belonging to this exit status
+        self.exit_codes[task.worker_status] += 1
 
     def calc_runtime_statistics(self, min_num: int=10) -> OrderedDict:
         """Calculates the current runtime statistics.

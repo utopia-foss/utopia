@@ -66,7 +66,7 @@ Ubuntu is shipped with APT.
     __macOS:__
 
         brew update
-        brew install boost cmake doxygen gcc pkg-config python
+        brew install boost cmake doxygen gcc@7 pkg-config python
         brew install yaml-cpp --cc=gcc-7
         brew install hdf5 --cc=gcc-7
     
