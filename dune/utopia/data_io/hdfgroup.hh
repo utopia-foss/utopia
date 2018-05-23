@@ -251,7 +251,6 @@ public:
             (*_referencecounter)[_address] = 1;
         }
     }
-}
 
     /**
      * @brief Destroy the HDFGroup object
