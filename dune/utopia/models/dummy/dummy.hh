@@ -71,7 +71,7 @@ public:
         );
     }
 
-    /// Write data into a datastep that corresponds to the current step
+    /// Write data into a dataset that corresponds to the current step
     void write_data ()
     {
         // Generate the dataset name
