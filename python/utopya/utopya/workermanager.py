@@ -605,6 +605,21 @@ class WorkerManager:
                 exceptions
         """
 
+        def log_task_stream(task: WorkerTask, *, num_entries: int, stream_name: str='out') -> None:
+            """Logs the last `num_entries` from the log of the `stream_name`
+            of the given WorkerTask object using log.error
+            """
+            # Get the stream and check if it is available
+            stream = task.streams.get(stream_name)
+            if not stream:
+                log.debug("No stream with name '%s' available.")
+                return
+
+            # Get lines and print stream using logging module
+            lines = stream['log'][-num_entries:]
+            log.error("Last ≤%d lines of combined stdout and stderr:\n"
+                      "\n  %s\n", num_entries, "\n  ".join(lines))
+
         if self.pending_exceptions.empty():
             log.debug("No exceptions pending.")
             return
@@ -622,15 +637,14 @@ class WorkerManager:
                           "raising!")
                 raise exc
             
-            # NOTE: can check for other exception types here, but might need
-            # some restructuring of the part below ...
+            # NOTE: can check for other exception types here, but will need
+            # restructuring/encapsulation of the part below ...
 
             log.debug("Handling %s ...", exc.__class__.__name__)
 
             # Else: add some custom exception handling for this exception type
             # distinguish different ways of handling these exceptions
             if self.nonzero_exit_handling == 'ignore':
-                # TODO
                 # Done here. Continue with the next exception
                 continue
 
@@ -644,15 +658,15 @@ class WorkerManager:
                         exc.task.name, exc.task.worker_status)
             
             if self.nonzero_exit_handling == 'warn':
+                # Print the last few lines of the error log
+                log_task_stream(exc.task, num_entries=5)
+
                 # Nothing else to do
                 continue
 
             # At this stage, 'raise' is the desired handling mode
-            # Show the log
-            if exc.task.streams.get('out'):
-                lines = exc.task.streams['out']['log'][-20:]
-                log.error("Last ≤20 lines of combined stdout and stderr:\n"
-                          "\n  %s\n", "\n  ".join(lines))
+            # Show more lines of the log
+            log_task_stream(exc.task, num_entries=20)
             
             # Inform about exiting
             log.critical("Action upon non-zero exit of a simulation is set "
