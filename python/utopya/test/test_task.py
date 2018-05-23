@@ -131,6 +131,9 @@ def test_workertask_streams(tmpdir):
         # Delay the while loop
         sleep(0.05)
 
+    # Add additional sleep to avoid any form of race condition
+    sleep(0.5)
+
     # Read a single line
     t.read_streams()
     assert len(t.streams['out']['log']) == 1

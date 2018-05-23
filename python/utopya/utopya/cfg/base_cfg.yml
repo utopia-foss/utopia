@@ -30,6 +30,10 @@ worker_manager:
   # delay between polls [seconds]
   poll_delay: 0.05
 
+  # how to react upon a simulation exiting with non-zero exit code
+  nonzero_exit_handling: warn
+  # can be: ignore, warn, raise
+
   # report format specifications at different points of the WM's operation
   rf_spec:
     while_working: while_working

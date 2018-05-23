@@ -53,11 +53,14 @@ class Multiverse:
                 path, see Multiverse.USER_CFG_SEARCH_PATH.
         """
         # Initialize empty attributes (partly property-managed)
+        self._meta_config = None
         self._model_name = None
         self._dirs = {}
 
         # Set the model name
         self.model_name = model_name
+        
+        log.info("Initializing Multiverse for '%s' model ...", self.model_name)
 
         # Save the model binary path and the configuration file
         self._model_binpath = MODELS[self.model_name]['binpath']
@@ -65,13 +68,16 @@ class Multiverse:
                   self.model_name, self.model_binpath)
 
         # Create meta configuration and list of used config files
-        self._meta_config = None
         files = self._create_meta_config(run_cfg_path=run_cfg_path,
                                          user_cfg_path=user_cfg_path,
                                          update_meta_cfg=update_meta_cfg)
+        
 
         # Create the run directory and write the meta configuration into it
         self._create_run_dir(**self.meta_config['paths'], cfg_parts=files)
+
+        # Provide some information
+        log.info("  Run directory:  %s", self.dirs['run'])
 
         # Create a data manager
         self._dm = DataManager(self.dirs['run'],
@@ -86,7 +92,7 @@ class Multiverse:
                                                report_dir=self.dirs['run'],
                                                **self.meta_config['reporter'])
 
-        log.info("Initialized Multiverse for model: '%s'", self.model_name)
+        log.info("Initialized Multiverse.")
 
     # Properties ..............................................................
 
@@ -178,9 +184,8 @@ class Multiverse:
         log.info("Adding task for simulation of a single universe ...")
         self._add_sim_task(uni_id=0, max_uni_id=0, uni_cfg=uni_cfg)
 
-        # Tell the WorkerManager to start working
+        # Tell the WorkerManager to start working (is a blocking call)
         self.wm.start_working(**self.meta_config['run_kwargs'])
-        # NOTE This is the blocking call
 
         log.info("Finished single universe run. Yay. :)")
 
@@ -207,7 +212,7 @@ class Multiverse:
                                uni_cfg=uni_cfg)
         log.info("Tasks added.")
 
-        # Now start working ...
+        # Tell the WorkerManager to start working (is a blocking call)
         self.wm.start_working(**self.meta_config['run_kwargs'])
 
         log.info("Finished Multiverse parameter sweep. Wohoo. :)")
@@ -318,8 +323,9 @@ class Multiverse:
                                         copy.deepcopy(update_meta_cfg))
             # NOTE using copy to make sure that usage of the dict will not interfere with the Multiverse's meta config
         
-        log.info("Loaded meta configuration. Storing it ...")
+        # Store it
         self.meta_config = meta_tmp
+        log.info("Loaded meta configuration.")
 
         # Prepare dict to store paths for config files in (for later backup)
         log.debug("Preparing dict of config parts ...")
