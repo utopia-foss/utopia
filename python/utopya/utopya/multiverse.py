@@ -268,12 +268,22 @@ class Multiverse:
                                 error_msg="Did not find user "
                                 "configuration at the specified "
                                 "path {}!".format(user_cfg_path))
+
+            # Check that it does not contain parameter_space
+            if 'parameter_space' in user_cfg:
+                raise ValueError("There was a 'parameter_space' key found in "
+                                 "the user configuration loaded from {}. You "
+                                 "need to remove it.".format(user_cfg_path))
+
         else:
             user_cfg = None
 
         # Read in the configuration corresponding to the chosen model
         model_cfg, model_cfg_path = load_model_cfg(self.model_name)
-        # NOTE that the model configuration attaches not at the root level!
+        # NOTE Unlike the other configuration files, this does not attach at
+        # root level of the meta configuration but parameter_space.<model_name>
+        # in order to allow it to be used as the default configuration for an
+        # _instance_ of that model.
 
         # Read in the run configuration
         if run_cfg_path:
@@ -292,35 +302,21 @@ class Multiverse:
         log.debug("Performing recursive updates to arrive at meta "
                   "configuration ...")
 
-
         # Update with user configuration, if given
         if user_cfg:
             log.debug("Updating with user configuration ...")
             meta_tmp = recursive_update(meta_tmp, user_cfg)
 
-
-        # Perform a few checks on the parameter space
-        # We can already be sure that the parameter_space key exists, because
-        # it is added as part of the base_cfg.
-        # Check that no key with the name of the model exists at this point
+        # In order to incorporate the model config, the parameter space is
+        # needed. We can already be sure that the parameter_space key exists,
+        # because it is added as part of the base_cfg.
         pspace = meta_tmp['parameter_space']
-        if self.model_name in pspace:
-            raise ValueError("There already is a key with model name ('{}')"
-                             "under the 'parameter_space' entry of the meta "
-                             "configuration! If this was part of your user "
-                             "configuration, you should remove it.")
-
 
         # Adjust parameter space to include model configuration
-        # Unlike the other configuration files, this does not attach at
-        # root level of the meta configuration but parameter_space.<model_name>
-        # in order to allow it to be used as the default configuration for an
-        # _instance_ of that model.
         log.debug("Updating parameter space with model configuration for "
                   "model '%s' ...", self.model_name)
         pspace[self.model_name] = model_cfg
         # NOTE this works because meta_tmp is a dict and thus mutable :)
-
 
         # On top of all of that: add the run configuration, if given
         if run_cfg:
