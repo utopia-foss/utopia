@@ -87,7 +87,6 @@ public:
                 }
                 else
                 {
-                    // std::cout << " making string datatype of size: " << size << std::endl;
                     hid_t type = H5Tcopy(H5T_C_S1);
                     H5Tset_size(type, size);
                     return type;

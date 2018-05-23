@@ -184,6 +184,7 @@ public:
 
     // default constructor
     HDFGroup() = default;
+
     /**
      * @brief Construct a new HDFGroup object
      *
