@@ -30,10 +30,11 @@ class WorkerManager:
             shown and the WorkerManager exits with the same exit code as the
             WorkerTask exited with.
         num_workers (int): The number of parallel workers
-        pending_exceptions (list): A list of Exception objects that will be
-            handled by the WorkerManager during working. This is the interface
-            that allows for other threads that have access to the WorkerManager
-            to add an exception and let it be handled in the main thread.
+        pending_exceptions (queue.Queue): A (FiFo) queue of Exception objects
+            that will be handled by the WorkerManager during working. This is
+            the interface that allows for other threads that have access to
+            the WorkerManager to add an exception and let it be handled in the
+            main thread.
         poll_delay (float): The delay (in s) after a poll
         reporter (WorkerManagerReporter): The associated reporter.
         rf_spec (dict): The report format specifications that are used
@@ -87,7 +88,7 @@ class WorkerManager:
         self._reporter = None
         self._num_finished_tasks = 0
         self._nonzero_exit_handling = None
-        self.pending_exceptions = []
+        self.pending_exceptions = queue.Queue()
 
         # Hand over arguments
         self.poll_delay = poll_delay
@@ -283,7 +284,7 @@ class WorkerManager:
             # pending exceptions
             if (self.nonzero_exit_handling != 'ignore'
                 and task.worker_status not in [0, None]):
-                self.pending_exceptions.append(WorkerTaskNonZeroExit(task))
+                self.pending_exceptions.put_nowait(WorkerTaskNonZeroExit(task))
 
         callbacks = dict(spawn=task_spawned,
                          finished=task_finished)
@@ -600,18 +601,19 @@ class WorkerManager:
             None
         
         Raises:
-            exc: The latest exception
+            exc: The exception that was added first to the queue of pending
+                exceptions
         """
 
-        if not self.pending_exceptions:
+        if self.pending_exceptions.empty():
             log.debug("No exceptions pending.")
             return
         # else: there was at least one exception
 
         # Go over all exceptions
-        while self.pending_exceptions:
-            # Get the latest one
-            exc = self.pending_exceptions.pop()
+        while not self.pending_exceptions.empty():
+            # Get one exception off the queue
+            exc = self.pending_exceptions.get_nowait()
 
             # Currently, only WorkerTaskNonZeroExit exceptions are handled here
             # If the type does not match, can directly raise it
