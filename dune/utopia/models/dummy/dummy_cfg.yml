@@ -9,8 +9,11 @@
 # 
 # This file is usually handled by the frontend: usage of advanced yaml features
 # like anchors and tags is supported.
+# 
 # Note, however, that this file should hold the _default_ values for a single
 # instance. Therefore, parameter sweeps should not be specified here!
+# Furthermore, if including other models' parameters via the `!model` tag, make
+# sure that no circular includes occur.
 ---
 foo: bar
 spam: 1.23
