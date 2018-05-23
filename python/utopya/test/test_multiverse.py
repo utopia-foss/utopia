@@ -48,7 +48,21 @@ def default_mv(mv_kwargs) -> Multiverse:
 
 def test_simple_init(mv_kwargs):
     """Tests whether initialisation works for all basic cases."""
+    # With the full set of arguments
     Multiverse(**mv_kwargs)
+
+    # Without the run configuration
+    mv_kwargs.pop('run_cfg_path')
+    mv_kwargs['update_meta_cfg']['paths']['model_note'] += "_wo_run_cfg"
+    Multiverse(**mv_kwargs)
+
+    # Suppressing the user config
+    mv_kwargs['user_cfg_path'] = False
+    mv_kwargs['update_meta_cfg']['paths']['model_note'] += "_wo_user_cfg"
+    Multiverse(**mv_kwargs)
+    # NOTE Without specifying a path, the search path will be used, which makes
+    # the results untestable and creates spurious folders for the user.
+    # Therefore, we cannot test for the case where no user config is given ...
 
 def test_invalid_model_name_and_operation(default_mv, mv_kwargs):
     """Tests for correct behaviour upon invalid model names"""
@@ -136,6 +150,13 @@ def test_run_sweep(mv_kwargs):
 
     # Print some info.
     print("Tasks: ", mv.wm.tasks)
+
+    # Without a ParamSpace object, no sweep should be possible
+    mv_kwargs['run_cfg_path'] = RUN_CFG_PATH
+    mv = Multiverse(**mv_kwargs)
+
+    with pytest.raises(TypeError, match="For performing parameter sweeps"):
+        mv.run_sweep()
 
 # Other tests -----------------------------------------------------------------
 
