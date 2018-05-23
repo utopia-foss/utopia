@@ -24,8 +24,23 @@ class WorkerManager:
     """The WorkerManager class manages WorkerTasks.
     
     Attributes:
+        nonzero_exit_handling (str): Stores the WorkerManager's behavior upon
+            a worker exiting with a non-zero exit code. For 'ignore', nothing
+            happens. For 'warn', a warning is printed. For 'raise', the log is
+            shown and the WorkerManager exits with the same exit code as the
+            WorkerTask exited with.
         num_workers (int): The number of parallel workers
-        poll_delay (float): The delay (in s) between after a poll
+        pending_exceptions (list): A list of Exception objects that will be
+            handled by the WorkerManager during working. This is the interface
+            that allows for other threads that have access to the WorkerManager
+            to add an exception and let it be handled in the main thread.
+        poll_delay (float): The delay (in s) after a poll
+        reporter (WorkerManagerReporter): The associated reporter.
+        rf_spec (dict): The report format specifications that are used
+            throughout the WorkerManager. These are invoked at different points
+            of the operation of the WorkerManager: while_working, after_work,
+            after_abort, task_spawn, task_finished
+        times (dict): Holds profiling information for the WorkerManager
     """
 
     def __init__(self, num_workers: Union[int, str]='auto', poll_delay: float=0.05, QueueCls=queue.Queue, reporter: WorkerManagerReporter=None, rf_spec: Dict[str, Union[str, List[str]]]=None, nonzero_exit_handling: str='ignore'):
@@ -54,7 +69,7 @@ class WorkerManager:
                 registered with the WorkerManagerReporter
             nonzero_exit_handling (str, optional): How to react if a WorkerTask
                 exits with a non-zero exit code. For 'ignore', nothing happens.
-                For 'warn', a warning is logged. For 'raise', the log is shown
+                For 'warn', a warning is printed. For 'raise', the log is shown
                 and the WorkerManager exits with the same exit code as the
                 WorkerTask exited with.
         
@@ -570,6 +585,16 @@ class WorkerManager:
     def _handle_pending_exceptions(self) -> None:
         """This method handles the list of pending exceptions during working,
         starting from the one added most recently.
+
+        As the WorkerManager occupies the main thread, it is difficult for
+        other threads to signal to the WorkerManager that an exception occured.
+        The pending_exceptions attribute allows such a handling; child threads
+        can just add an exception object to it and they get handled during
+        working of the WorkerManager.
+
+        Currently, this method only handles WorkerTaskNonZeroExit in a special
+        manner. It can however be extended in order to also handle other
+        exception types.
         
         Returns:
             None
@@ -588,12 +613,15 @@ class WorkerManager:
             # Get the latest one
             exc = self.pending_exceptions.pop()
 
-            # Only the WorkerTaskNonZeroExit exceptions are handled here
+            # Currently, only WorkerTaskNonZeroExit exceptions are handled here
             # If the type does not match, can directly raise it
             if not isinstance(exc, WorkerTaskNonZeroExit):
                 log.error("Encountered a pending exception that requires "
                           "raising!")
                 raise exc
+            
+            # NOTE: can check for other exception types here, but might need
+            # some restructuring of the part below ...
 
             log.debug("Handling %s ...", exc.__class__.__name__)
 
