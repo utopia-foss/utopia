@@ -1,9 +1,4 @@
-worker_manager:
-  num_workers: 3
-
-parameter_space: !pspace
-  num_steps: 5
-  dummy:
-    seed: !sweep
-      default: 1337
-      values: [23, 42, 665, 667]
+rain_mean: 10
+rain_var:  2
+growth:    0.1
+seeding:   0.2

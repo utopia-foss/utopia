@@ -15,10 +15,6 @@ int main (int argc, char** argv)
         const std::string config_file = argv[1];
         Utopia::DataIO::Config config(config_file);
 
-        double growth_rate = 0.1;
-        double seeding_rate = 0.2;
-        std::normal_distribution<> rain{10,2};
-        std::tuple<std::normal_distribution<>, double, double> bc = std::make_tuple(rain, growth_rate, seeding_rate);
         
         constexpr bool sync = true;
         using State = double;
@@ -29,7 +25,7 @@ int main (int argc, char** argv)
         auto cells = Utopia::Setup::create_cells_on_grid<sync, State, Tag>(grid, initial_state);
         auto manager = Utopia::Setup::create_manager_cells<true, true>(grid, cells);
 
-        Utopia::VegetationModel model(manager, bc);
+        Utopia::VegetationModel model(manager, config);
 
         for(int i = 0; i < config["num_steps"].as<int>(); ++i)
             model.iterate();

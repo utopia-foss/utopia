@@ -5,14 +5,16 @@
 
 int main(int argc, char *argv[])
 {
-    try {
+    //try {
+
         Dune::MPIHelper::instance(argc, argv);
 
-        double growth_rate = 0.1;
-        double seeding_rate = 0.2;
-        std::normal_distribution<> rain{10,2};
-        std::tuple<std::normal_distribution<>, double, double> bc = std::make_tuple(rain, growth_rate, seeding_rate);
+        std::cout << "Creating Config\n";
         
+        std::string config_filepath = "../../../../../dune/utopia/models/vegetation/vegetation_cfg.yml";
+        Utopia::DataIO::Config config(config_filepath);
+        
+        std::cout << "Creating manager\n";
         constexpr bool sync = true;
         using State = double;
         using Tag = Utopia::DefaultTag;
@@ -22,14 +24,16 @@ int main(int argc, char *argv[])
         auto cells = Utopia::Setup::create_cells_on_grid<sync, State, Tag>(grid, initial_state);
         auto manager = Utopia::Setup::create_manager_cells<true, true>(grid, cells);
 
-        Utopia::VegetationModel model(manager, bc);
+        std::cout << "Creating model\n";
+        Utopia::VegetationModel model(manager, config);
 
-        model.iterate();
+        for (int i = 0; i < 5; ++i)
+            model.perform_step();
 
         return 0;
-    }
-    catch(...){
-        std::cerr << "Exception thrown!" << std::endl;
-        return 1;
-    }
+    //}
+    //catch(...){
+    //    std::cerr << "Exception thrown!" << std::endl;
+    //    return 1;
+    //}
 }
