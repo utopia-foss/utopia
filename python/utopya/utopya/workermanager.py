@@ -396,6 +396,12 @@ class WorkerManager:
                 # Invoke the reporter, if available and not forwarding streams
                 if not forward_streams:
                     self._invoke_report('while_working')
+                # NOTE The reporter is not invoked when the streams are
+                # forwarded as they _might_ both compete for writing to the
+                # terminal, which would lead to flooding... This is a somewhat
+                # inelegant solution as the reporter format set for this step
+                # might perform a different action. If more frequent reporter
+                # invokation is desired, this part should be reworked.
 
                 # Gather the streams of all working workers
                 for task in self.active_tasks:
