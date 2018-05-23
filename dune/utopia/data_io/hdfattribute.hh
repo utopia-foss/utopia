@@ -34,7 +34,7 @@ private:
     {
         hid_t dspace = H5Screate_simple(1, &_size, nullptr);
 
-        hid_t atr = H5Acreate2(_parent_object.get_id(), _name.c_str(),
+        hid_t atr = H5Acreate2(_parent_object.get().get_id(), _name.c_str(),
                                HDFTypeFactory::type<result_type>(typesize),
                                dspace, H5P_DEFAULT, H5P_DEFAULT);
         H5Sclose(dspace);
@@ -63,7 +63,7 @@ protected:
      * @brief reference to id of parent object: dataset or group
      *
      */
-    HDFObject& _parent_object;
+    std::reference_wrapper<HDFObject> _parent_object;
 
 public:
     /**
@@ -92,7 +92,7 @@ public:
      */
     HDFObject& get_parent()
     {
-        return _parent_object;
+        return _parent_object.get();
     }
 
     /**
@@ -123,11 +123,12 @@ public:
         if (_attribute == -1)
         {
             throw std::runtime_error(
-                "trying to read a nonexstiant or closed attribute");
+                "trying to read a nonexstiant or closed attribute named '" +
+                _name + "'");
         }
-        if constexpr (is_container_type<Type>::value == true)
+        if constexpr (is_container_type<Type>::value)
         {
-            if constexpr (std::is_same_v<Type, std::string> == true)
+            if constexpr (std::is_same_v<Type, std::string>)
             {
                 // get type the attribute has internally
                 hid_t type = H5Aget_type(_attribute);
@@ -161,7 +162,8 @@ public:
             if (_attribute == -1)
             {
                 throw std::runtime_error(
-                    "trying to read a nonexstiant or closed attribute");
+                    "trying to read a nonexstiant or closed attribute named '" +
+                    _name + "'");
             }
             else
             {
@@ -192,7 +194,7 @@ public:
         // using result_type = typename HDFTypeFactory::result_type<Type>::type;
         // when stuff is vector string we can write directly, otherwise we
         // have to buffer
-        if constexpr (is_container_type<Type>::value == true)
+        if constexpr (is_container_type<Type>::value)
         {
             if (_attribute == -1)
             {
@@ -246,12 +248,19 @@ public:
           _parent_object(other._parent_object)
     {
     }
+
     /**
      * @brief Move constructor
      *
      * @param other
      */
-    HDFAttribute(HDFAttribute&& other) = delete;
+    HDFAttribute(HDFAttribute&& other)
+        : _attribute(std::move(other._attribute)),
+          _name(std::move(other._name)),
+          _size(std::move(other._size)),
+          _parent_object(std::move(other._parent_object))
+    {
+    }
 
     /**
      * @brief Assignment operator
@@ -259,18 +268,38 @@ public:
      * @param other
      * @return HDFAttribute&
      */
-    HDFAttribute& operator=(HDFAttribute&& other) = delete;
+    HDFAttribute& operator=(const HDFAttribute& other)
+    {
+        _attribute = other._attribute;
+        _name = other._name;
+        _size = other._size;
+        _parent_object = other._parent_object;
+        return *this;
+    }
+
+    /**
+     * @brief Move assignment operator
+     *
+     * @param other
+     * @return HDFAttribute&
+     */
+    HDFAttribute& operator=(HDFAttribute&& other)
+    {
+        _attribute = std::move(other._attribute);
+        _name = std::move(other._name);
+        _size = std::move(other._size);
+        _parent_object = std::move(other._parent_object);
+        return *this;
+    }
     /**
      * @brief Destructor
      *
      */
     virtual ~HDFAttribute()
     {
-        // if (H5Iis_valid(_attribute) > 0)
-        if (H5Iis_valid(_attribute) == 0)
+        if (H5Iis_valid(_attribute))
         { // FIXME: add check to make sure that
-          // it is not
-          // more than once closed
+          // it is not closed more than once
             H5Aclose(_attribute);
         }
     }
@@ -286,13 +315,24 @@ public:
     HDFAttribute(HDFObject& object, std::string name)
         : _name(name), _size(1), _parent_object(object)
     {
-        if (H5LTfind_attribute(object.get_id(), _name.c_str()) == 1)
-        { // attribute exists
-            _attribute = H5Aopen(object.get_id(), _name.c_str(), H5P_DEFAULT);
+        // checks the validity and opens attribute if possible, else postphones
+        // until it is written
+        if (H5Iis_valid(_parent_object.get().get_id()) == false)
+        {
+            throw std::invalid_argument(
+                "parent_object of attribute " + _name +
+                "is invalid, has it been closed already?");
         }
         else
-        { // attribute does not exist: make
-            _attribute = -1;
+        {
+            if (H5LTfind_attribute(object.get_id(), _name.c_str()) == 1)
+            { // attribute exists
+                _attribute = H5Aopen(object.get_id(), _name.c_str(), H5P_DEFAULT);
+            }
+            else
+            { // attribute does not exist: make
+                _attribute = -1;
+            }
         }
     }
 };
