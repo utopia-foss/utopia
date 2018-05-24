@@ -4,6 +4,7 @@
 #include <dune/utopia/base.hh>
 #include <dune/utopia/core/setup.hh>
 #include <dune/utopia/core/model.hh>
+#include <dune/utopia/core/apply.hh>
 
 #include <dune/utopia/data_io/config.hh>
 #include <dune/utopia/data_io/hdffile.hh>
@@ -11,13 +12,18 @@
 #include <dune/utopia/data_io/hdfdataset.hh>
 
 namespace Utopia {
+
+// TODO check the namespace the following are implemented in
+// Define the strategy enum
 enum Strategy{ S0, S1};
 
+// Define the state struct, consisting of strategy and payoff
 struct State {
     Strategy strategy;
     double payoff;
 };
 
+// Define the boundary type
 struct Boundary {};
 
 /// Define data types of SimpleEG model
@@ -93,13 +99,17 @@ public:
             auto rand_strat = std::bind(std::uniform_int_distribution<>(0, 1),
                                         *_rng);
 
-            // Go over all cells and set the strategy randomly
-            for (auto&& cell : _manager.cells())
-            {
-                // Determine and set the strategy: is S0 with p = 0.5
-                auto strat = rand_strat();
-                // cell->state().strategy = 
-            }
+            auto& cells = _manager.cells();
+            auto set_random_strategy = [&rand_strat](const auto cell) {
+                auto state = cell->state();
+                state.strategy = rand_strat();
+                state.payoff = 0.0;
+                return state;
+            };
+
+            // Apply the rule
+            apply_rule(set_random_strategy, cells);
+            
         } 
         else if (initial_state == "fraction")
         {
@@ -117,14 +127,6 @@ public:
         {
             std::runtime_error("`initial_state` parameter value '"
                                + initial_state + "' is not supported!");
-        }
-        // Done with setting the strategy
-
-        // Do all actions that are independent of initial_state parameter
-        // namely: set payoff to 0
-        for (auto&& cell : _manager.cells())
-        {
-            cell->state()->payoff = 0.0;
         }
 
         std::cout << "Cells initialized." << std::endl;
@@ -168,12 +170,17 @@ public:
 };
 
 
+// TODO is this general enough to move to another place maybe?
 /// Setup the grid manager
 template<bool periodic=true, class RNGType=std::mt19937>
 auto setup_manager(Utopia::DataIO::Config config, std::shared_ptr<RNGType> rng)
 {
-    // Extract grid size from config and create grid
+    // Extract grid size from config
     auto gsize = config["grid_size"].as<std::array<unsigned int, 2>>();
+    std::cout << "Creating grid of size " << gsize[0] << "x" << gsize[1]
+              << " ..." << std::endl;
+
+    // Create grid
     auto grid = Utopia::Setup::create_grid<2>(gsize);
 
     // Create cells on that grid
