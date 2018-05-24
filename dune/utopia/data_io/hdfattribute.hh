@@ -49,18 +49,6 @@ private:
     template <typename Type>
     herr_t __write_container__(Type attribute_data)
     {
-        // get the shape from the data. This function is written such
-        // that it writes always 1d, unless a pointer type with different
-        // shape is given.
-        if (shape.size() == 0)
-        {
-            _shape = {attribute_data.size()};
-        }
-        else
-        {
-            _shape = shape;
-        }
-
         using value_type_1 = typename Type::value_type;
 
         // we can write directly if we have a plain vector, no nested or stringtype.
@@ -91,10 +79,8 @@ private:
             }
 
             auto buffer = HDFBufferFactory::buffer(
-                std::begin(attribute_data),
-                std::end(attribute_data), [](auto& value) -> typename value_type_1& {
-                    return value;
-                });
+                std::begin(attribute_data), std::end(attribute_data),
+                [](auto& value) -> value_type_1& { return value; });
 
             return H5Awrite(
                 _attribute,
@@ -112,7 +98,6 @@ private:
         // to handle writing in a clearer way and with less code
         auto len = 0;
         const char* buffer = nullptr;
-        _shape = {1};
 
         if constexpr (std::is_pointer_v<Type>) // const char* or char* -> strlen needed
         {
@@ -137,22 +122,8 @@ private:
     // Function for writing pointer types, shape of the array has to be given
     // where shape means the same as in python
     template <typename Type>
-    herr_t __write_pointertype__(Type attribute_data, std::vector<hsize_t> shape)
+    herr_t __write_pointertype__(Type attribute_data)
     {
-        if (shape.size() == 0)
-        {
-            throw std::runtime_error(
-                "Attribute: " + _name +
-                ","
-                "The shape parameter has to be given for pointers "
-                "because "
-                "it cannot be determined automatically");
-        }
-        else
-        {
-            _shape = shape;
-        }
-
         // result types removes pointers, references, and qualifiers
         using basetype = typename HDFTypeFactory::result_type<Type>::type;
 
@@ -170,8 +141,6 @@ private:
     {
         // because we just write a scalar, the shape tells basically that
         // the attribute is pointlike: 1D and 1 entry.
-
-        _shape = {1};
 
         if (_attribute == -1)
         {
@@ -219,13 +188,13 @@ private:
 
                 // assume array data to always be varlen, because
                 // this project can write only varlen data
-                std::vector<hvl_t> temp_buffer(size);
+                std::vector<hvl_t> temp_buffer(buffer.size());
 
                 herr_t err = H5Aread(_attribute, type, temp_buffer.data());
 
                 // turn the varlen buffer into the desired type.
                 // Cumbersome, but necessary...
-                for (std::size_t i = 0; i < size; ++i)
+                for (std::size_t i = 0; i < buffer.size(); ++i)
                 {
                     buffer[i].resize(temp_buffer[i].len);
                     for (std::size_t j = 0; j < temp_buffer[i].len; ++j)
@@ -236,7 +205,7 @@ private:
 
                 // return shape and buffer. Expect to use structured bindings to
                 // extract that later
-                return err
+                return err;
             }
         }
         else // no nested container, but one containing simple types
@@ -260,12 +229,12 @@ private:
                     herr_t err = H5Aread(_attribute, type, temp_buffer.data());
 
                     // turn temp_buffer into the desired datatype and return
-                    for (std::size_t i = 0; i < size; ++i)
+                    for (std::size_t i = 0; i < buffer.size(); ++i)
                     {
                         buffer[i] = temp_buffer[i];
                     }
                     // return
-                    return err
+                    return err;
                 }
                 else // others are straight forward
                 {
@@ -287,11 +256,8 @@ private:
         // get type the attribute has internally
         hid_t type = H5Aget_type(_attribute);
 
-        // get size type
-        size = H5Tget_size(type);
-
-        // read data into it and return
-        buffer.resize(size);
+        // resize buffer to the size of the type
+        buffer.resize(H5Tget_size(type));
 
         // read data
         return H5Aread(_attribute, type, buffer.data());
@@ -300,14 +266,14 @@ private:
     // read pointertype. Either this is given by the user, or
     // it is assumed to be 1d, thereby flattening Nd attributes
     template <typename Type>
-    auto __read_pointertype__(Type buffer, std::vector<hsize_t> shape)
+    auto __read_pointertype__(Type buffer)
     {
         return H5Aread(_attribute, H5Aget_type(_attribute), buffer);
     }
 
     // read scalar type, trivial
     template <typename Type>
-    auto __read_scalartype__(Type buffer)
+    auto __read_scalartype__(Type& buffer)
     {
         return H5Aread(_attribute, H5Aget_type(_attribute), &buffer);
     }
@@ -429,6 +395,8 @@ public:
                 _name + "'");
         }
 
+        _shape = get_shape();
+
         // Read can only be done in 1d, and this loop takes care of
         // computing a 1d size which can accomodate all elements.
         // This is then passed to the container holding the elements in the end.
@@ -476,7 +444,7 @@ public:
         }
         else // reading scalar types is simple enough
         {
-            Type buffer;
+            Type buffer(0);
             herr_t err = __read_scalartype__(buffer);
             if (err < 0)
             {
@@ -570,6 +538,17 @@ public:
         // t tests, plain old data can be written right away
         if constexpr (is_container_type<Type>::value) // container type
         {
+            // get the shape from the data. This function is written such
+            // that it writes always 1d, unless a pointer type with different
+            // shape is given.
+            if (_shape.size() == 0)
+            {
+                _shape = {attribute_data.size()};
+            }
+            else
+            {
+                _shape = shape;
+            }
             herr_t err = __write_container__(attribute_data);
             if (err < 0)
             {
@@ -584,6 +563,7 @@ public:
         // so they have to be treated separatly
         else if constexpr (is_stringtype<Type>::value)
         {
+            _shape = {1};
             herr_t err = __write_stringtype__(attribute_data);
             if (err < 0)
             {
@@ -598,7 +578,21 @@ public:
         // even though const char* /char* are pointer types
         else if constexpr (std::is_pointer_v<Type> && !is_stringtype<Type>::value)
         {
-            herr_t err = __write_pointertype__(attribute_data, shape);
+            if (shape.size() == 0)
+            {
+                throw std::runtime_error(
+                    "Attribute: " + _name +
+                    ","
+                    "The shape parameter has to be given for pointers "
+                    "because "
+                    "it cannot be determined automatically");
+            }
+            else
+            {
+                _shape = shape;
+            }
+
+            herr_t err = __write_pointertype__(attribute_data);
             if (err < 0)
             {
                 throw std::runtime_error(
@@ -611,6 +605,7 @@ public:
         // plain scalar types are treated in a straight forward way
         else
         {
+            _shape = {1};
             herr_t err = __write_scalartype__(attribute_data);
             if (err < 0)
             {
