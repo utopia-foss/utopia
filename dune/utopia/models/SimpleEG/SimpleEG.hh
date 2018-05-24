@@ -67,20 +67,24 @@ public:
         _rng(rng),
         _manager(manager)
     {   
-        // Initialise cells
-        this->initialise_cells();
+        // Initialize cells
+        this->initialize_cells();
 
         // Setup the datasets
         setup_datasets();
     }
 
     /**
-     * @brief Initialise the cells
+     * @brief Initialize the cells
      * 
      */
-    void initialise_cells()
+    void initialize_cells()
     {
         std::string initial_state = _config["initial_state"].as<std::string>();
+
+        std::cout << "Initializing cells... initial_state: "
+                  << initial_state << std::endl;
+
         if (initial_state == "random")
         {
             std::uniform_int_distribution<> dist(0, 1);
@@ -89,8 +93,8 @@ public:
                 // int init_strategy = dist(_rng);
                 
                 // cell->state().strategy = init_strategy;
-                auto& state_struct = cell->state_new();
-                std::cout << state_struct.payoff << std::endl;
+                auto& state = cell->state_new();
+                // std::cout << state.payoff << std::endl;
                 // cell->state_new().payoff = 0.;
                 // std::cout << cell->state().payoff << std::endl;
 
@@ -112,7 +116,8 @@ public:
         }
         else
         {
-            std::runtime_error("The initial state is not a valid option!");
+            std::runtime_error("`initial_state` parameter value '"
+                               + initial_state + "' is not supported!");
         }
     }
 
