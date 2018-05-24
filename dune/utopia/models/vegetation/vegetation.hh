@@ -12,6 +12,11 @@
 
 namespace Utopia {
 
+//namespace DataIO {
+//template <typename T, std::size_t N>
+//struct is_container<Dune::FieldVector<T, N>> : public std::true_type {};
+//}
+
 /// Template declaration for model types extracted from Manager
 template<class Manager>
 using VegetationModelTypes = Utopia::ModelTypes<
@@ -41,20 +46,36 @@ private:
 
 public:
 
-    VegetationModel(Manager& manager, Utopia::DataIO::Config config):
+    VegetationModel(Utopia::DataIO::Config config):
         Base(),
-        _manager(manager),
         _t(0),
         _hdff("vegetation-test.h5", "w")
     {
-        std::cout << "Construction of vegetation ... ";
-        double rain_mean = config["rain_mean"].as<double>();
-        double rain_var = config["rain_var"].as<double>();
-        double growth = config["growth"].as<double>();
-        double seeding = config["seeding"].as<double>();
-        std::normal_distribution<> rain{rain_mean, rain_var};
-        _par = std::make_tuple(rain, growth, seeding);
+        std::cout << "Construction of vegetation ... \n";
+
+        std::normal_distribution<> rain{config["rain_mean"].as<double>(),
+                                        config["rain_var"].as<double>()};
+        _par = std::make_tuple(rain, 
+                               config["growth"].as<double>(), 
+                               config["seeding"].as<double>());
         //file.get_basegroup()->add_attribute("Metadatum1", "HelloWorld"); TODO later, add info about parameter as metadata
+        constexpr bool sync = true;
+        using State = double;
+        using Tag = Utopia::DefaultTag;
+        State initial_state = 0;
+        int grid_size = 4;
+        auto grid = Utopia::Setup::create_grid(grid_size);
+        auto cells = Utopia::Setup::create_cells_on_grid<sync, State, Tag>(grid, initial_state);
+        _manager = Utopia::Setup::create_manager_cells<true, true>(grid, cells);
+        auto dsetX = _hdff.open_dataset("positionX");
+        dsetX->write(_manager.cells().begin(),
+                _manager.cells().end(), 
+                [](const auto& cell) {return cell->position()[0];});
+        auto dsetY = _hdff.open_dataset("positionY");
+        dsetY->write(_manager.cells().begin(),
+                _manager.cells().end(), 
+                [](const auto& cell) {return cell->position()[1];});
+        write_data();
         std::cout << "complete!\n";
     }
 
@@ -66,7 +87,7 @@ public:
         // Growth + Seeding
         auto growth_seeding_rule = [this](const auto cell){
                 auto state = cell->state();
-                auto rain  = std::get<0>(_par)(*(this->_manager.rng()));
+                auto rain  = std::get<0>(_par)(*(_manager.rng()));
                 if (state != 0) {
                     auto growth = std::get<1>(_par);
                     return state + state*growth*(1 - state/rain); // Logistic growth

@@ -5,35 +5,27 @@
 
 int main(int argc, char *argv[])
 {
-    //try {
+    Dune::MPIHelper::instance(argc, argv);
 
-        Dune::MPIHelper::instance(argc, argv);
-
-        std::cout << "Creating Config\n";
+    std::cout << "Creating Config\n";
         
-        std::string config_filepath = "../../../../../dune/utopia/models/vegetation/vegetation_cfg.yml";
-        Utopia::DataIO::Config config(config_filepath);
+    std::string config_filepath = "../../../../../dune/utopia/models/vegetation/vegetation_cfg.yml";
+    Utopia::DataIO::Config config(config_filepath);
         
-        std::cout << "Creating manager\n";
-        constexpr bool sync = true;
-        using State = double;
-        using Tag = Utopia::DefaultTag;
-        State initial_state = 3.0;
-        int grid_size = 10;
-        auto grid = Utopia::Setup::create_grid(grid_size);
-        auto cells = Utopia::Setup::create_cells_on_grid<sync, State, Tag>(grid, initial_state);
-        auto manager = Utopia::Setup::create_manager_cells<true, true>(grid, cells);
+    std::cout << "Creating manager\n";
+    constexpr bool sync = true;
+    using State = double;
+    using Tag = Utopia::DefaultTag;
+    State initial_state = 0;
+    int grid_size = 4;
+    auto grid = Utopia::Setup::create_grid(grid_size);
+    auto cells = Utopia::Setup::create_cells_on_grid<sync, State, Tag>(grid, initial_state);
+    auto manager = Utopia::Setup::create_manager_cells<true, true>(grid, cells);
 
-        std::cout << "Creating model\n";
-        Utopia::VegetationModel model(manager, config);
+    std::cout << "Creating model\n";
+    Utopia::VegetationModel model(config);
 
-        for (int i = 0; i < 5; ++i)
-            model.perform_step();
-
-        return 0;
-    //}
-    //catch(...){
-    //    std::cerr << "Exception thrown!" << std::endl;
-    //    return 1;
-    //}
+    for (int i = 0; i < 500; ++i)
+         model.perform_step();
+    return 0;
 }
