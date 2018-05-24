@@ -159,4 +159,7 @@ plot_manager: {}
 # Parameter Space .............................................................
 # Only add values here that are independent of models.
 # For model-specific configuration, use the model configuration.
-parameter_space: {}
+parameter_space:
+  # Set a default PRNG seed and number of steps
+  seed: 42
+  num_steps: 3

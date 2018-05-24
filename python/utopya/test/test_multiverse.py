@@ -5,7 +5,7 @@ As the Multiverse will always generate a folder structure, it needs to be taken 
 
 import os
 import uuid
-import pkg_resources
+from pkg_resources import resource_filename
 
 import pytest
 
@@ -13,9 +13,10 @@ from utopya import Multiverse
 from utopya.multiverse import distribute_user_cfg
 
 # Get the test resources
-RUN_CFG_PATH = pkg_resources.resource_filename('test', 'cfg/run_cfg.yml')
-USER_CFG_PATH = pkg_resources.resource_filename('test', 'cfg/user_cfg.yml')
-SWEEP_CFG_PATH = pkg_resources.resource_filename('test', 'cfg/sweep_cfg.yml')
+RUN_CFG_PATH = resource_filename('test', 'cfg/run_cfg.yml')
+USER_CFG_PATH = resource_filename('test', 'cfg/user_cfg.yml')
+BAD_USER_CFG_PATH = resource_filename('test', 'cfg/bad_user_cfg.yml')
+SWEEP_CFG_PATH = resource_filename('test', 'cfg/sweep_cfg.yml')
 
 # Fixtures ----------------------------------------------------------------
 @pytest.fixture
@@ -48,7 +49,27 @@ def default_mv(mv_kwargs) -> Multiverse:
 
 def test_simple_init(mv_kwargs):
     """Tests whether initialisation works for all basic cases."""
+    # With the full set of arguments
     Multiverse(**mv_kwargs)
+
+    # Without the run configuration
+    mv_kwargs.pop('run_cfg_path')
+    mv_kwargs['update_meta_cfg']['paths']['model_note'] += "_wo_run_cfg"
+    Multiverse(**mv_kwargs)
+
+    # Suppressing the user config
+    mv_kwargs['user_cfg_path'] = False
+    mv_kwargs['update_meta_cfg']['paths']['model_note'] += "_wo_user_cfg"
+    Multiverse(**mv_kwargs)
+    # NOTE Without specifying a path, the search path will be used, which makes
+    # the results untestable and creates spurious folders for the user.
+    # Therefore, we cannot test for the case where no user config is given ...
+
+    # Test with a bad user config
+    mv_kwargs['user_cfg_path'] = BAD_USER_CFG_PATH
+    mv_kwargs['update_meta_cfg']['paths']['model_note'] = "bad_user_cfg"
+    with pytest.raises(ValueError, match="There was a 'parameter_space' key"):
+        Multiverse(**mv_kwargs)
 
 def test_invalid_model_name_and_operation(default_mv, mv_kwargs):
     """Tests for correct behaviour upon invalid model names"""
@@ -134,8 +155,13 @@ def test_run_sweep(mv_kwargs):
     # Run the sweep
     mv.run_sweep()
 
-    # Print some info.
-    print("Tasks: ", mv.wm.tasks)
+    # Without a ParamSpace object, no sweep should be possible
+    mv_kwargs['run_cfg_path'] = RUN_CFG_PATH
+    mv_kwargs['update_meta_cfg']['paths']['model_note'] = "_invalid_cfg"
+    mv = Multiverse(**mv_kwargs)
+
+    with pytest.raises(TypeError, match="For performing parameter sweeps"):
+        mv.run_sweep()
 
 # Other tests -----------------------------------------------------------------
 
