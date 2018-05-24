@@ -462,11 +462,12 @@ public:
      *         and has the correct shape!
      *
      * @tparam Type which can hold elements in the attribute and which will be returned
-     * @return tuple containing (shape, data read into buffer)
      */
     template <typename Type>
     void read(Type& buffer)
     {
+        _shape = get_shape();
+
         if (!H5Iis_valid(_attribute))
         {
             throw std::runtime_error(
@@ -497,7 +498,7 @@ public:
         }
         else if constexpr (std::is_pointer_v<Type> && !is_stringtype<Type>::value)
         {
-            // assumed to be of correct size and shape already!
+            std::cout << "reading pointer" << std::endl;
             herr_t err = __read_pointertype__(buffer);
 
             if (err < 0)

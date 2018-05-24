@@ -189,7 +189,7 @@ public:
      */
     HDFFile(std::string path, std::string access)
         : _file([&]() {
-              H5Eset_auto(0, 0, NULL);
+              //   H5Eset_auto(0, 0, NULL);
 
               if (access == "w")
               {

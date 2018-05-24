@@ -29,7 +29,7 @@ int main()
     // open a file
     HDFFile file("testfile.h5", "r");
     // make groups
-    HDFGroup low_group = HDFGroup(*file.get_basegroup(), "/testgroup");
+    HDFGroup low_group = *file.open_group("/testgroup");
 
     ////////////////////////////////////////////////////////////////////////////
     // making attribute names
@@ -181,6 +181,111 @@ int main()
     for (std::size_t i = 0; i < 8; ++i)
     {
         assert(expected_stringvecdata[i] == read_stringvecdata[i]);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // trying to read, using predefined buffers
+    // always like this: make buffer -> read -> assert correctness
+    ////////////////////////////////////////////////////////////////////////////
+
+    // attribute 0
+    std::vector<double> read_structdata2(100);
+
+    attribute0.read<std::vector<double>>(read_structdata2);
+
+    for (std::size_t i = 0; i < 100; ++i)
+    {
+        assert(std::abs(read_structdata2[i] - expected_structsubdata[i]) < 1e-16);
+    }
+
+    // attribute 1
+    std::string read_string2;
+    attribute1.read<std::string>(read_string2);
+
+    assert(read_string2 == expected_stringdata);
+
+    // attribute 2
+    std::vector<double> read_vectordata2(20);
+    attribute2.read<std::vector<double>>(read_vectordata2);
+
+    for (std::size_t i = 0; i < 20; ++i)
+    {
+        assert(std::abs(read_vectordata2[i] - expected_vectordata[i]) < 1e-16);
+    }
+
+    // attribute 3
+    int read_intdata2;
+    attribute3.read<int>(read_intdata2);
+
+    assert(read_intdata2 == expected_intdata);
+
+    // // attribute 4
+    // std::vector<std::vector<double>> read_varlendata2;
+    // attribute4.read<std::vector<std::vector<double>>>(read_varlendata2);
+
+    // for (std::size_t i = 0; i < 5; ++i)
+    // {
+    //     assert(read_varlendata2[i].size() == expected_varlendata[i].size());
+    //     for (std::size_t j = 0; j < expected_varlendata[i].size(); ++j)
+    //     {
+    //         assert(std::abs(read_varlendata[i][j] - expected_varlendata[i][j]) < 1e-16);
+    //     }
+    // }
+
+    // attribute 5
+    std::string read_charptrdata2;
+    attribute5.read<std::string>(read_charptrdata2);
+
+    assert(read_charptrdata2 == expected_charptrdata);
+
+    // attribute 6
+    std::vector<int> read_multidimdata2(20 * 50);
+    attribute6.read<std::vector<int>>(read_multidimdata2);
+
+    for (std::size_t i = 0; i < 20; ++i)
+    {
+        for (std::size_t j = 0; j < 50; ++j)
+        {
+            assert(read_multidimdata2[i * 50 + j] == expected_multidimdata[i][j]);
+        }
+    }
+
+    // attribute6 with pointer
+
+    // initialize pointer beforehand
+    // here a crappy trick is played to have a 2d array stored in a
+    // 1d contigous chunk
+    // taken from https://support.hdfgroup.org/ftp/HDF5/examples/misc-examples/h5_readdyn.c
+
+    int** read_multidimdata_ptr = new int*[20];
+    // int read_multidimdata_ptr[20][50]; // this is equivalent
+    read_multidimdata_ptr[0] = new int[20 * 50];
+
+    for (std::size_t i = 1; i < 20; i++)
+    {
+        read_multidimdata_ptr[i] = read_multidimdata_ptr[0] + i * 50;
+    }
+
+    auto start = &(read_multidimdata_ptr[0][0]);
+    attribute6.read(start);
+    for (std::size_t i = 0; i < 20; ++i)
+    {
+        for (std::size_t j = 0; j < 50; ++j)
+        {
+            assert(read_multidimdata_ptr[i][j] == expected_multidimdata[i][j]);
+        }
+    }
+
+    delete[] read_multidimdata_ptr;
+
+    // attribute 7
+    std::vector<std::string> read_stringvecdata2(8);
+
+    attribute7.read<std::vector<std::string>>(read_stringvecdata2);
+
+    for (std::size_t i = 0; i < 8; ++i)
+    {
+        assert(expected_stringvecdata[i] == read_stringvecdata2[i]);
     }
     return 0;
 }
