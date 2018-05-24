@@ -36,7 +36,7 @@ private:
     {
         hid_t dspace = H5Screate_simple(_shape.size(), _shape.data(), nullptr);
 
-        hid_t atr = H5Acreate2(_parent_object.get().get_id(), _name.c_str(),
+        hid_t atr = H5Acreate2(_parent_object->get_id(), _name.c_str(),
                                HDFTypeFactory::type<result_type>(typesize),
                                dspace, H5P_DEFAULT, H5P_DEFAULT);
         H5Sclose(dspace);
@@ -334,7 +334,7 @@ protected:
      * @brief reference to id of parent object: dataset or group
      *
      */
-    std::reference_wrapper<HDFObject> _parent_object;
+    HDFObject* _parent_object;
 
 public:
     /**
@@ -662,7 +662,7 @@ public:
      * @brief Default constructor, deleted because of reference member
      *
      */
-    HDFAttribute() = delete;
+    HDFAttribute() = default;
 
     /**
      * @brief Copy constructor
@@ -682,12 +682,9 @@ public:
      *
      * @param other
      */
-    HDFAttribute(HDFAttribute&& other)
-        : _attribute(std::move(other._attribute)),
-          _name(std::move(other._name)),
-          _shape(std::move(other._shape)),
-          _parent_object(std::move(other._parent_object))
+    HDFAttribute(HDFAttribute&& other) : HDFAttribute()
     {
+        this->swap(other);
     }
 
     /**
@@ -696,29 +693,12 @@ public:
      * @param other
      * @return HDFAttribute&
      */
-    HDFAttribute& operator=(const HDFAttribute& other)
+    HDFAttribute& operator=(HDFAttribute other)
     {
-        _attribute = other._attribute;
-        _name = other._name;
-        _shape = other._shape;
-        _parent_object = other._parent_object;
+        this->swap(other);
         return *this;
     }
 
-    /**
-     * @brief Move assignment operator
-     *
-     * @param other
-     * @return HDFAttribute&
-     */
-    HDFAttribute& operator=(HDFAttribute&& other)
-    {
-        _attribute = std::move(other._attribute);
-        _name = std::move(other._name);
-        _shape = std::move(other._shape);
-        _parent_object = std::move(other._parent_object);
-        return *this;
-    }
     /**
      * @brief Destructor
      *
@@ -742,11 +722,11 @@ public:
      */
 
     HDFAttribute(HDFObject& object, std::string name)
-        : _name(name), _shape(std::vector<hsize_t>()), _parent_object(object)
+        : _name(name), _shape(std::vector<hsize_t>()), _parent_object(&object)
     {
         // checks the validity and opens attribute if possible, else
         // postphones until it is written
-        if (H5Iis_valid(_parent_object.get().get_id()) == false)
+        if (H5Iis_valid(_parent_object->get_id()) == false)
         {
             throw std::invalid_argument(
                 "parent_object of attribute " + _name +
@@ -754,9 +734,9 @@ public:
         }
         else
         {
-            if (H5LTfind_attribute(object.get_id(), _name.c_str()) == 1)
+            if (H5LTfind_attribute(_parent_object->get_id(), _name.c_str()) == 1)
             { // attribute exists
-                _attribute = H5Aopen(object.get_id(), _name.c_str(), H5P_DEFAULT);
+                _attribute = H5Aopen(_parent_object->get_id(), _name.c_str(), H5P_DEFAULT);
             }
             else
             { // attribute does not exist: make
