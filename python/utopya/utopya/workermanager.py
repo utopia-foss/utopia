@@ -299,15 +299,13 @@ class WorkerManager:
         log.debug("Task %s (uid: %s) added.", task.name, task.uid)
         return task
 
-    def start_working(self, *, detach: bool=False, forward_streams: bool=False, timeout: float=None, stop_conditions: Sequence[StopCondition]=None, post_poll_func: Callable=None) -> None:
+    def start_working(self, *, detach: bool=False, timeout: float=None, stop_conditions: Sequence[StopCondition]=None, post_poll_func: Callable=None) -> None:
         """Upon call, all enqueued tasks will be worked on sequentially.
         
         Args:
             detach (bool, optional): If False (default), the WorkerManager
                 will block here, as it continuously polls the workers and
                 distributes tasks.
-            forward_streams (bool, optional): If True, workers' streams are
-                forwarded to stdout via the log module.
             timeout (float, optional): If given, the number of seconds this
                 work session is allowed to take. Workers will be aborted if
                 the number is exceeded. Note that this is not measured in CPU time, but the host systems wall time.
@@ -344,24 +342,16 @@ class WorkerManager:
                                       "detach the WorkerManager from the "
                                       "main thread.")
         
-        # Count the polls and save the time of the start of work
+        # Set some variables needed during the run
         poll_no = 0
-
+        wrote_to_stdout = False   # to determine whether to reduce reporting
+        reduce_reporting = False  # set to True once stdout was used
         self.times['start_working'] = dt.now()
 
         log.info("Starting to work ...")
-        log.debug("  Forwarding streams:  %s", forward_streams)
         log.debug("  Timeout:             now + %ss", timeout)
         log.debug("  Stop conditions:     %s", stop_conditions)
 
-        if forward_streams and self.reporter is not None:
-            # Set reporter to suppress carriage returns
-            self.reporter.suppress_cr = True
-            log.debug("WorkerTask streams are forwarded. Reporter was "
-                      "adjusted to not use carriage returns.")
-
-        # Enter the polling loop, where most of the time will be spent
-        
         # Start with the polling loop
         # Basically all working time will be spent in there ...
         try:
@@ -393,22 +383,26 @@ class WorkerManager:
                     # Also, the poll delay is usually not so large that there
                     # would be an issue with workers staying idle for too long.
 
-                # Invoke the reporter, if available and not forwarding streams
-                if not forward_streams:
-                    self._invoke_report('while_working')
-                # NOTE The reporter is not invoked when the streams are
-                # forwarded as they _might_ both compete for writing to the
-                # terminal, which would lead to flooding... This is a somewhat
-                # inelegant solution as the reporter format set for this step
-                # might perform a different action. If more frequent reporter
-                # invokation is desired, this part should be reworked.
-
-                # Gather the streams of all working workers
+                # Do stream-related actions for each task
                 for task in self.active_tasks:
+                    # Read the stream data
                     task.read_streams()
 
-                    if forward_streams:
-                        task.print_streams()
+                    # Forward it (if the tasks are configured to do so)
+                    wrote_to_stdout = task.forward_streams()
+                    # Return is used to determine whether to reduce reporting
+
+                # If reporting was not set to be reduced, report
+                if not reduce_reporting:
+                    # Check return value of task.forward_streams
+                    if wrote_to_stdout:
+                        # Yes. -> set flag and adjust reporter
+                        reduce_reporting = True
+                        if self.reporter:
+                            self.reporter.suppress_cr = True
+
+                    # Invoke the report
+                    self._invoke_report('while_working')
 
                 # Check stop conditions
                 if stop_conditions is not None:
@@ -416,9 +410,8 @@ class WorkerManager:
                     to_terminate = self._check_stop_conds(stop_conditions)
                     self._signal_workers(to_terminate, signal='SIGTERM')
 
-                # Poll the workers
+                # Poll the workers. (Will also remove no longer active workers)
                 self._poll_workers()
-                # NOTE this will also remove no longer active workers
 
                 # Call the post-poll function
                 if post_poll_func is not None:
@@ -435,8 +428,6 @@ class WorkerManager:
                 time.sleep(self.poll_delay)
 
             # Finished working
-            # Print remaining stream output
-
             # Handle any remaining pending exceptions
             self._handle_pending_exceptions()
 
