@@ -88,6 +88,7 @@ class WorkerManager:
         self._reporter = None
         self._num_finished_tasks = 0
         self._nonzero_exit_handling = None
+        self._suppress_rf_specs = []
         self.pending_exceptions = queue.Queue()
 
         # Hand over arguments
@@ -263,7 +264,24 @@ class WorkerManager:
         """
         # Prepare the callback functions needed by the reporter
         def task_spawned(task):
-            """Invokes the task_spawned report_spec"""
+            """Performs action after a task was spawned.
+
+            - checks if stream-forwarding was activated
+            - invokes the 'task_spawned' report specification
+            """
+            # As the task might have been configured to forward streams, it
+            # needs to be checked whether this would clash with the reporter's
+            # output to stdout.
+            # First, check if that was already taken care of
+            if self.reporter and not self.reporter.suppress_cr:
+                # Nope -> need to check if the task will forward streams
+                if task.streams.get('out') and task.streams['out']['forward']:
+                    # Yes -> need to suppress carriage returns by reporter and
+                    # reduce report invokations by the WorkerManager main loop
+                    self.reporter.suppress_cr = True
+                    self._suppress_rf_specs.append('while_working')
+
+            # Invoke the report
             self._invoke_report('task_spawned', force=True)
         
         def task_finished(task):
@@ -344,8 +362,6 @@ class WorkerManager:
         
         # Set some variables needed during the run
         poll_no = 0
-        wrote_to_stdout = False   # to determine whether to reduce reporting
-        reduce_reporting = False  # set to True once stdout was used
         self.times['start_working'] = dt.now()
 
         log.info("Starting to work ...")
@@ -385,24 +401,13 @@ class WorkerManager:
 
                 # Do stream-related actions for each task
                 for task in self.active_tasks:
-                    # Read the stream data
+                    # Read the streams and forward them (if the tasks were
+                    # configured to do so)
                     task.read_streams()
+                    task.forward_streams()
 
-                    # Forward it (if the tasks are configured to do so)
-                    wrote_to_stdout = task.forward_streams()
-                    # Return is used to determine whether to reduce reporting
-
-                # If reporting was not set to be reduced, report
-                if not reduce_reporting:
-                    # Check return value of task.forward_streams
-                    if wrote_to_stdout:
-                        # Yes. -> set flag and adjust reporter
-                        reduce_reporting = True
-                        if self.reporter:
-                            self.reporter.suppress_cr = True
-
-                    # Invoke the report
-                    self._invoke_report('while_working')
+                # Invoke a report
+                self._invoke_report('while_working')
 
                 # Check stop conditions
                 if stop_conditions is not None:
@@ -474,6 +479,12 @@ class WorkerManager:
     def _invoke_report(self, rf_spec_name: str, *args, **kwargs):
         """Helper function to invoke the reporter's report function"""
         if self.reporter is not None:
+            # Check whether to suppress this rf_spec
+            if (self._suppress_rf_specs
+                and rf_spec_name in self._suppress_rf_specs):
+                # Do not report this one
+                return
+
             # Resolve the spec name
             rfs = self.rf_spec[rf_spec_name]
             

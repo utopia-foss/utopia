@@ -334,9 +334,6 @@ class WorkerTask(Task):
         log.debug("Spawned worker process with PID %s.", proc.pid)
         # ... it is running now.
 
-        # If given, call the callback function
-        self._invoke_callback('spawn')
-
         # Associate the process with the task
         self.worker = proc
 
@@ -375,6 +372,9 @@ class WorkerTask(Task):
                 # Perform a format operation to generate the path
                 save_path = save_streams_to.format(name='out')
                 self.streams['out']['save_path'] = save_path
+
+        # If given, call the callback function
+        self._invoke_callback('spawn')
 
         return self.worker
 
