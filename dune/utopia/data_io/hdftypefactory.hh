@@ -76,8 +76,7 @@ public:
         }
         else
         {
-            if constexpr (std::is_same<T, std::string>::value ||
-                          std::is_same<T, const char*>::value)
+            if constexpr (is_stringtype<T>::value)
             {
                 if (size == 0)
                 {

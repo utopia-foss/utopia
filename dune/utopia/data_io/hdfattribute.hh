@@ -32,7 +32,7 @@ private:
      * @return hid_t
      */
     template <typename result_type>
-    hid_t __make_attribute__(hsize_t typesize = 0)
+    hid_t __create_attribute__(hsize_t typesize = 0)
     {
         hid_t dspace = H5Screate_simple(_shape.size(), _shape.data(), nullptr);
 
@@ -41,6 +41,275 @@ private:
                                dspace, H5P_DEFAULT, H5P_DEFAULT);
         H5Sclose(dspace);
         return atr;
+    }
+
+    // Function for writing containers as attribute.
+    // Only buffers if necessary, i.e. if non-vector containers or
+    // nested containers or containers of strings have to be written.
+    template <typename Type>
+    herr_t __write_container__(Type attribute_data)
+    {
+        // get the shape from the data. This function is written such
+        // that it writes always 1d, unless a pointer type with different
+        // shape is given.
+        if (shape.size() == 0)
+        {
+            _shape = {attribute_data.size()};
+        }
+        else
+        {
+            _shape = shape;
+        }
+
+        using value_type_1 = typename Type::value_type;
+
+        // we can write directly if we have a plain vector, no nested or stringtype.
+        if constexpr (std::is_same_v<Type, std::vector<value_type_1>> &&
+                      !is_container_type<value_type_1>::value &&
+                      !is_stringtype<value_type_1>::value)
+        {
+            // check if attribute has been created, else do
+            if (_attribute == -1)
+            {
+                _attribute =
+                    __create_attribute__<typename HDFTypeFactory::result_type<value_type_1>::type>(0);
+            }
+
+            return H5Awrite(
+                _attribute,
+                HDFTypeFactory::type<typename HDFTypeFactory::result_type<value_type_1>::type>(0),
+                attribute_data.data());
+        }
+        // when stringtype or containertype is stored in a container, then
+        // we have to buffer. bufferfactory handles how to do this in detail
+        else
+        {
+            if (_attribute == -1)
+            {
+                _attribute =
+                    __create_attribute__<typename HDFTypeFactory::result_type<value_type_1>::type>(0);
+            }
+
+            auto buffer = HDFBufferFactory::buffer(
+                std::begin(attribute_data),
+                std::end(attribute_data), [](auto& value) -> typename value_type_1& {
+                    return value;
+                });
+
+            return H5Awrite(
+                _attribute,
+                HDFTypeFactory::type<typename HDFTypeFactory::result_type<value_type_1>::type>(0),
+                buffer.data());
+        }
+    }
+
+    // Function for writing stringtypes, char*, const char*, std::string
+    template <typename Type>
+    herr_t __write_stringtype__(Type attribute_data)
+    {
+        // Since std::string cannot be written directly,
+        // (only const char*/char* can), a buffer pointer has been added
+        // to handle writing in a clearer way and with less code
+        auto len = 0;
+        const char* buffer = nullptr;
+        _shape = {1};
+
+        if constexpr (std::is_pointer_v<Type>) // const char* or char* -> strlen needed
+        {
+            len = std::strlen(attribute_data);
+            buffer = attribute_data;
+        }
+        else // simple for strings
+        {
+            len = attribute_data.size();
+            buffer = attribute_data.c_str();
+        }
+
+        // check if attribute has been created, else do
+        if (_attribute == -1)
+        {
+            _attribute = __create_attribute__<const char*>(len);
+        }
+        // use that strings store data in consecutive memory
+        return H5Awrite(_attribute, HDFTypeFactory::type<const char*>(len), buffer);
+    }
+
+    // Function for writing pointer types, shape of the array has to be given
+    // where shape means the same as in python
+    template <typename Type>
+    herr_t __write_pointertype__(Type attribute_data, std::vector<hsize_t> shape)
+    {
+        if (shape.size() == 0)
+        {
+            throw std::runtime_error(
+                "Attribute: " + _name +
+                ","
+                "The shape parameter has to be given for pointers "
+                "because "
+                "it cannot be determined automatically");
+        }
+        else
+        {
+            _shape = shape;
+        }
+
+        // result types removes pointers, references, and qualifiers
+        using basetype = typename HDFTypeFactory::result_type<Type>::type;
+
+        if (_attribute == -1)
+        {
+            _attribute = __create_attribute__<basetype>();
+        }
+
+        return H5Awrite(_attribute, HDFTypeFactory::type<basetype>(), attribute_data);
+    }
+
+    // function for writing a scalartype.
+    template <typename Type>
+    herr_t __write_scalartype__(Type attribute_data)
+    {
+        // because we just write a scalar, the shape tells basically that
+        // the attribute is pointlike: 1D and 1 entry.
+
+        _shape = {1};
+
+        if (_attribute == -1)
+        {
+            _attribute = __create_attribute__<Type>();
+        }
+
+        return H5Awrite(
+            _attribute,
+            HDFTypeFactory::type<typename HDFTypeFactory::result_type<Type>::type>(),
+            &attribute_data);
+    }
+
+    // Container reader.
+    // We could want to read into a predefined buffer for some reason (frequent
+    // reads), and thus this and the following functions expect an argument
+    // 'buffer' to store their data in. The function 'read(..)' is then
+    // overloaded to allow for automatic buffer creation or a buffer argument.
+    template <typename Type>
+    herr_t __read_container__(Type& buffer)
+    {
+        using value_type_1 =
+            typename HDFTypeFactory::result_type<typename Type::value_type>::type;
+
+        // when the value_type of Type is a container again, we want nested
+        // arrays basically. Therefore we have to check if the desired type Type
+        // is suitable to hold them, read the nested data into a hvl_t
+        // container, assuming that they are varlen because this is the more
+        // general case, and then turn them into the desired type again...
+        if constexpr (is_container_type<value_type_1>::value)
+        {
+            using value_type_2 =
+                typename HDFTypeFactory::result_type<typename value_type_1::value_type>::type;
+
+            // if containers inside are not vectors, throw exception, we
+            // cannot read into anything else
+            if constexpr (!std::is_same_v<std::vector<value_type_2>, value_type_1>)
+            {
+                throw std::runtime_error("Can only read data from " + _name +
+                                         " into vector containers!");
+            }
+            else // if we have vectors, the reading process is straight forward
+            {
+                // get type the attribute has internally
+                hid_t type = H5Aget_type(_attribute);
+
+                // assume array data to always be varlen, because
+                // this project can write only varlen data
+                std::vector<hvl_t> temp_buffer(size);
+
+                herr_t err = H5Aread(_attribute, type, temp_buffer.data());
+
+                // turn the varlen buffer into the desired type.
+                // Cumbersome, but necessary...
+                for (std::size_t i = 0; i < size; ++i)
+                {
+                    buffer[i].resize(temp_buffer[i].len);
+                    for (std::size_t j = 0; j < temp_buffer[i].len; ++j)
+                    {
+                        buffer[i][j] = static_cast<value_type_2*>(temp_buffer[i].p)[j];
+                    }
+                }
+
+                // return shape and buffer. Expect to use structured bindings to
+                // extract that later
+                return err
+            }
+        }
+        else // no nested container, but one containing simple types
+        {
+            if constexpr (!std::is_same_v<std::vector<value_type_1>, Type>)
+            {
+                throw std::runtime_error("Can only read data from " + _name +
+                                         " into vector containers!");
+            }
+            else
+            {
+                // when strings are desired to be stored as value_types of the
+                // container, we need to treat them a bit differently,
+                // because hdf5 cannot read directly to them.
+                if constexpr (is_stringtype<value_type_1>::value)
+                {
+                    // get type the attribute has internally
+                    hid_t type = H5Aget_type(_attribute);
+                    std::vector<char*> temp_buffer(buffer.size());
+
+                    herr_t err = H5Aread(_attribute, type, temp_buffer.data());
+
+                    // turn temp_buffer into the desired datatype and return
+                    for (std::size_t i = 0; i < size; ++i)
+                    {
+                        buffer[i] = temp_buffer[i];
+                    }
+                    // return
+                    return err
+                }
+                else // others are straight forward
+                {
+                    // get type the attribute has internally
+                    hid_t type = H5Aget_type(_attribute);
+
+                    return H5Aread(_attribute, type, buffer.data());
+                }
+            }
+        }
+    }
+
+    // read attirbute data which contains a single string.
+    // this is always read into std::strings, and hence
+    // we can use 'resize'
+    template <typename Type>
+    auto __read_stringtype__(Type& buffer)
+    {
+        // get type the attribute has internally
+        hid_t type = H5Aget_type(_attribute);
+
+        // get size type
+        size = H5Tget_size(type);
+
+        // read data into it and return
+        buffer.resize(size);
+
+        // read data
+        return H5Aread(_attribute, type, buffer.data());
+    }
+
+    // read pointertype. Either this is given by the user, or
+    // it is assumed to be 1d, thereby flattening Nd attributes
+    template <typename Type>
+    auto __read_pointertype__(Type buffer, std::vector<hsize_t> shape)
+    {
+        return H5Aread(_attribute, H5Aget_type(_attribute), buffer);
+    }
+
+    // read scalar type, trivial
+    template <typename Type>
+    auto __read_scalartype__(Type buffer)
+    {
+        return H5Aread(_attribute, H5Aget_type(_attribute), &buffer);
     }
 
 protected:
@@ -126,7 +395,7 @@ public:
      *        - if Type as a pointer type, it will return a shared_ptr, i.e. Type = double*, return will be std::shared_ptr<double>;
 
      *
-     * @tparam Type Type which can hold elements in the attribute and which will be returned
+     * @tparam Type which can hold elements in the attribute and which will be returned
      * @return tuple containing (shape, data)
      */
     template <typename Type>
@@ -143,15 +412,9 @@ public:
                 _name + "'");
         }
 
-        // get dataspace
-        hid_t dspace = H5Aget_space(_attribute);
-
-        // get shape
-        _shape.resize(H5Sget_simple_extent_ndims(dspace));
-        H5Sget_simple_extent_dims(dspace, _shape.data(), nullptr);
-        H5Sclose(dspace);
-
-        // make buffer large enough to read data
+        // Read can only be done in 1d, and this loop takes care of
+        // computing a 1d size which can accomodate all elements.
+        // This is then passed to the container holding the elements in the end.
         std::size_t size = 1;
         for (auto& value : _shape)
         {
@@ -162,124 +425,115 @@ public:
         // themselvels or just plain types.
         if constexpr (is_container_type<Type>::value)
         {
-            using value_type_1 =
-                typename HDFTypeFactory::result_type<typename Type::value_type>::type;
-
-            // container of containers
-            if constexpr (is_container_type<value_type_1>::value)
+            Type buffer(size);
+            herr_t err = __read_container__(buffer);
+            if (err < 0)
             {
-                using value_type_2 =
-                    typename HDFTypeFactory::result_type<typename value_type_1::value_type>::type;
-
-                // if containers inside are not vectors, throw exception, we
-                // cannot read into anything else
-                if constexpr (std::is_same_v<std::vector<value_type_2>, value_type_1> == false)
-                {
-                    throw std::runtime_error(
-                        "Can only read attributes into vectors");
-                }
-                else // if we have vectors, the reading process is straight forward
-                {
-                    Type buffer(size);
-
-                    // get type the attribute has internally
-                    hid_t type = H5Aget_type(_attribute);
-
-                    // assume array data to always be varlen, because
-                    // this project can write only varlen data
-                    std::vector<hvl_t> temp_buffer(size);
-
-                    H5Aread(_attribute, type, temp_buffer.data());
-
-                    for (std::size_t i = 0; i < size; ++i)
-                    {
-                        buffer[i].resize(temp_buffer[i].len);
-                        for (std::size_t j = 0; j < temp_buffer[i].len; ++j)
-                        {
-                            buffer[i][j] =
-                                static_cast<value_type_2*>(temp_buffer[i].p)[j];
-                        }
-                    }
-
-                    return std::make_tuple(_shape, buffer);
-                }
+                throw std::runtime_error("Error in reading data from " + _name +
+                                         " into container types");
             }
-            else // no nested container, but one containing simple types
+
+            return std::make_tuple(_shape, buffer);
+        }
+        else if constexpr (is_stringtype<Type>::value) // we can have string types too, i.e. char*, const char*, std::string
+        {
+            std::string buffer; // resized in __read_stringtype__ because this as a scalar
+            herr_t err = __read_stringtype__(buffer);
+            if (err < 0)
             {
-                if constexpr (!std::is_same_v<std::vector<value_type_1>, Type>)
-                {
-                    throw std::runtime_error(
-                        "Can only read attributes into vectors");
-                }
-                else
-                {
-                    // tread strings separatly again....
-                    if constexpr (is_stringtype<value_type_1>::value)
-                    {
-                        std::vector<char*> tempbuffer(size);
+                throw std::runtime_error("Error in reading data from " + _name +
+                                         " into stringtype");
+            }
+            return std::make_tuple(_shape, buffer);
+        }
+        else if constexpr (std::is_pointer_v<Type> && !is_stringtype<Type>::value)
+        {
+            auto buffer = std::make_shared<Type>(size);
+            herr_t err = __read_pointertype__(buffer.get());
+            if (err < 0)
+            {
+                throw std::runtime_error("Error in reading data from " + _name +
+                                         " into pointertype");
+            }
+            return std::make_tuple(_shape, buffer);
+        }
+        else // reading scalar types is simple enough
+        {
+            Type buffer;
+            herr_t err = __read_scalartype__(buffer);
+            if (err < 0)
+            {
+                throw std::runtime_error("Error in reading data from " + _name +
+                                         " into scalar");
+            }
+            return std::make_tuple(_shape, buffer);
+        }
+    }
 
-                        // get type the attribute has internally
-                        hid_t type = H5Aget_type(_attribute);
+    /**
+     * @brief Reads data from attribute into a predefined buffer, and returns the data
+     *         and its shape in the form of a hsize_t vector.
+     *         User is responsible for providing a buffer which can hold the data
+     *         and has the correct shape!
+     *
+     * @tparam Type which can hold elements in the attribute and which will be returned
+     * @return tuple containing (shape, data read into buffer)
+     */
 
-                        H5Aread(_attribute, type, tempbuffer.data());
+    template <typename Type>
+    void read(Type& buffer)
+    {
+        // FIXME: I do not currently like the approach taken here!
+        // FIXME: Find a way to retain the data's shape in the returned data
+        // FIXME: Find a way to get around the exceptions taken for the
+        //        fucking string data
+        if (!H5Iis_valid(_attribute))
+        {
+            throw std::runtime_error(
+                "trying to read a nonexstiant or closed attribute named '" +
+                _name + "'");
+        }
 
-                        // put into strings
-                        std::vector<std::string> buffer(size);
-                        for (std::size_t i = 0; i < size; ++i)
-                        {
-                            buffer[i] = tempbuffer[i];
-                        }
-                        // return
-                        return std::make_tuple(_shape, buffer);
-                    }
-                    else // others are straight forward
-                    {
-                        Type buffer(size);
-
-                        // get type the attribute has internally
-                        hid_t type = H5Aget_type(_attribute);
-
-                        H5Aread(_attribute, type, buffer.data());
-                        return std::make_tuple(_shape, buffer);
-                    }
-                }
+        // type to read in is a container type, which can hold containers
+        // themselvels or just plain types.
+        if constexpr (is_container_type<Type>::value)
+        {
+            herr_t err = __read_container__(buffer);
+            if (err < 0)
+            {
+                throw std::runtime_error("Error in reading data from " + _name +
+                                         " into container types");
             }
         }
         else if constexpr (is_stringtype<Type>::value) // we can have string types too, i.e. char*, const char*, std::string
         {
-            // get type the attribute has internally
-            hid_t type = H5Aget_type(_attribute);
-
-            // get size type
-            size = H5Tget_size(type);
-
-            // read data into it and return
-            std::string buffer;
-            buffer.resize(size);
-
-            // read data
-            H5Aread(_attribute, type, buffer.data());
-
-            // return as tuple
-            return std::make_tuple(_shape, buffer);
+            // resized in __read_stringtype__ because this as a scalar
+            herr_t err = __read_stringtype__(buffer);
+            if (err < 0)
+            {
+                throw std::runtime_error("Error in reading data from " + _name +
+                                         " into stringtype");
+            }
         }
-        // or pointers, where the user has to supply enough memory to store the data
         else if constexpr (std::is_pointer_v<Type> && !is_stringtype<Type>::value)
         {
-            hid_t type = H5Aget_type(_attribute);
-            auto buffer = std::make_shared<Type>(size);
-            H5Aread(_attribute, type, buffer.get());
-            return std::make_tuple(_shape, buffer);
-        }
-        else
-        {
-            // get type the attribute has internally
-            hid_t type = H5Aget_type(_attribute);
+            // assumed to be of correct size and shape already!
+            herr_t err = __read_pointertype__(buffer);
 
-            Type buffer;
-            H5Aread(_attribute, type, &buffer);
-            // return as tuple
-            return std::make_tuple(_shape, buffer);
+            if (err < 0)
+            {
+                throw std::runtime_error("Error in reading data from " + _name +
+                                         " into pointertype");
+            }
+        }
+        else // reading scalar types is simple enough
+        {
+            herr_t err = __read_scalartype__(buffer);
+            if (err < 0)
+            {
+                throw std::runtime_error("Error in reading data from " + _name +
+                                         " into scalar");
+            }
         }
     }
 
@@ -304,121 +558,56 @@ public:
         // t tests, plain old data can be written right away
         if constexpr (is_container_type<Type>::value) // container type
         {
-            using value_type_1 = typename Type::value_type;
-            if (shape.size() == 0)
-            {
-                _shape = {attribute_data.size()};
-            }
-            else
-            {
-                _shape = shape;
-            }
-
-            // we can write directly if we have a plain vector, no nested or stringtype.
-            if constexpr (std::is_same_v<Type, std::vector<value_type_1>> &&
-                          !is_container_type<value_type_1>::value &&
-                          !is_stringtype<value_type_1>::value)
-            {
-                // check if attribute has been created, else do
-                if (_attribute == -1)
-                {
-                    _attribute =
-                        __make_attribute__<typename HDFTypeFactory::result_type<value_type_1>::type>(0);
-                }
-
-                H5Awrite(_attribute,
-                         HDFTypeFactory::type<typename HDFTypeFactory::result_type<value_type_1>::type>(0),
-                         attribute_data.data());
-            }
-            else
-            {
-                // Have to buffer otherwise for hvl_t
-                auto buffer = HDFBufferFactory::buffer(
-                    std::begin(attribute_data),
-                    std::end(attribute_data), [](auto& value) -> typename Type::value_type& {
-                        return value;
-                    });
-
-                if (_attribute == -1)
-                {
-                    _attribute =
-                        __make_attribute__<typename HDFTypeFactory::result_type<typename Type::value_type>::type>(
-                            0);
-                }
-
-                H5Awrite(_attribute,
-                         HDFTypeFactory::type<typename HDFTypeFactory::result_type<typename Type::value_type>::type>(
-                             0),
-                         buffer.data());
-            }
-        }
-        else if constexpr (is_stringtype<Type>::value) // string type
-        {
-            auto len = 0;
-            const char* buffer = nullptr;
-            _shape = {1};
-
-            if constexpr (std::is_pointer_v<Type>)
-            {
-                len = std::strlen(attribute_data);
-                buffer = attribute_data;
-            }
-            else
-            {
-                len = attribute_data.size();
-                buffer = attribute_data.c_str();
-            }
-
-            // check if attribute has been created, else do
-            if (_attribute == -1)
-            {
-                _attribute = __make_attribute__<const char*>(len);
-            }
-            // use that strings store data in consecutive memory
-            H5Awrite(_attribute, HDFTypeFactory::type<const char*>(len), buffer);
-        }
-        else if constexpr (std::is_pointer_v<Type> && !is_stringtype<Type>::value) // pointer type
-        {
-            if (shape.size() == 0)
+            herr_t err = __write_container__(attribute_data);
+            if (err < 0)
             {
                 throw std::runtime_error(
-                    "Attribute: " + _name +
-                    ","
-                    "The shape parameter has to be given for pointers "
-                    "because "
-                    "it cannot be determined automatically");
+                    "An error occured while writing a containertype to "
+                    "attribute " +
+                    _name + "!");
             }
-
-            _shape = shape;
-
-            using basetype = typename HDFTypeFactory::result_type<Type>::type;
-
-            if (_attribute == -1)
-            {
-                _attribute = __make_attribute__<basetype>(0);
-            }
-
-            H5Awrite(_attribute, HDFTypeFactory::type<basetype>(0), attribute_data);
         }
-        else // plain type
+        // write string types, i.e. const char*, char*, std::string
+        // These are not containers but not normal scalars either,
+        // so they have to be treated separatly
+        else if constexpr (is_stringtype<Type>::value)
         {
-            if (shape.size() == 0)
+            herr_t err = __write_stringtype__(attribute_data);
+            if (err < 0)
             {
-                _shape = {1};
+                throw std::runtime_error(
+                    "An error occured while writing a stringtype to "
+                    "attribute " +
+                    _name + "!");
             }
-            else
+        }
+        // We can also write pointer types, but then the shape of the array
+        // has to be given explicitly. This does not handle stringtypes,
+        // even though const char* /char* are pointer types
+        else if constexpr (std::is_pointer_v<Type> && !is_stringtype<Type>::value)
+        {
+            herr_t err = __write_pointertype__(attribute_data, shape);
+            if (err < 0)
             {
-                _shape = shape;
+                throw std::runtime_error(
+                    "An error occured while writing a pointertype/plain array "
+                    "to "
+                    "attribute " +
+                    _name + "!");
             }
-
-            if (_attribute == -1)
+        }
+        // plain scalar types are treated in a straight forward way
+        else
+        {
+            herr_t err = __write_scalartype__(attribute_data);
+            if (err < 0)
             {
-                _attribute = __make_attribute__<Type>();
+                throw std::runtime_error(
+                    "An error occured while writing a scalar "
+                    "to "
+                    "attribute " +
+                    _name + "!");
             }
-
-            H5Awrite(_attribute,
-                     HDFTypeFactory::type<typename HDFTypeFactory::result_type<Type>::type>(),
-                     &attribute_data);
         }
     }
 
