@@ -363,7 +363,7 @@ public:
      */
     HDFObject& get_parent()
     {
-        return _parent_object.get();
+        return *_parent_object;
     }
 
     /**
@@ -496,14 +496,9 @@ public:
      * @tparam Type which can hold elements in the attribute and which will be returned
      * @return tuple containing (shape, data read into buffer)
      */
-
     template <typename Type>
     void read(Type& buffer)
     {
-        // FIXME: I do not currently like the approach taken here!
-        // FIXME: Find a way to retain the data's shape in the returned data
-        // FIXME: Find a way to get around the exceptions taken for the
-        //        fucking string data
         if (!H5Iis_valid(_attribute))
         {
             throw std::runtime_error(
@@ -633,9 +628,10 @@ public:
      *
      * @tparam Iter Iterator type
      * @tparam Adaptor Adaptor which allows for extraction of a value from compound types, i.e. classes or structs
-     * @param begin
-     * @param end
-     * @param adaptor
+     * @param begin Start of iterator range
+     * @param end End of iterator range
+     * @param adaptor Function which turns the elements of the iterator into the objects to be written.
+     *        Should (auto&) argument (simplest), but else must have (typename Iter::value_type&) argument
      */
     template <typename Iter, typename Adaptor>
     void write(Iter begin,
@@ -744,7 +740,21 @@ public:
             }
         }
     }
-}; // namespace DataIO
+};
+
+/**
+ * @brief Swaps the states of Attributes rhs and lhs.
+ *
+ * @tparam ParentObject1
+ * @tparam ParentObject2
+ * @param lhs First Attribute to swap
+ * @param rhs Second Attribute to swap
+ */
+template <typename ParentObject1, typename ParentObject2>
+void swap(HDFAttribute<ParentObject1>& lhs, HDFAttribute<ParentObject2>& rhs)
+{
+    lhs.swap(rhs);
+}
 
 } // namespace DataIO
 } // namespace Utopia
