@@ -8,15 +8,18 @@
 #include <stdexcept>
 #include <string>
 
-namespace Utopia {
-namespace DataIO {
+namespace Utopia
+{
+namespace DataIO
+{
 // forward declaration of HDFGroup -> exchange later for the real thing.
 
-class HDFFile {
+class HDFFile
+{
 protected:
     hid_t _file;
     std::string _path;
-
+    std::shared_ptr<std::unordered_map<haddr_t, int>> _referencecounter;
     std::shared_ptr<HDFGroup> _base_group;
 
 public:
@@ -25,20 +28,24 @@ public:
      *
      * @param other
      */
-    void swap(HDFFile &other) {
-        using Utopia::DataIO::swap;
+    void swap(HDFFile& other)
+    {
         using std::swap;
+        using Utopia::DataIO::swap;
         swap(_file, other._file);
         swap(_path, other._path);
         swap(_base_group, other._base_group);
+        swap(_referencecounter, other._referencecounter);
     }
 
     /**
      * @brief closes the hdffile
      *
      */
-    void close() {
-        if (H5Iis_valid(_file) == true) {
+    void close()
+    {
+        if (H5Iis_valid(_file))
+        {
             H5Fflush(_file, H5F_SCOPE_GLOBAL);
 
             H5Fclose(_file);
@@ -46,25 +53,44 @@ public:
     }
 
     /**
+     * @brief Get the referencecounter object
+     *
+     * @return auto
+     */
+    auto get_referencecounter()
+    {
+        return _referencecounter;
+    }
+
+    /**
      * @brief Get the id object
      *
      * @return hid_t
      */
-    hid_t get_id() { return _file; }
+    hid_t get_id()
+    {
+        return _file;
+    }
 
     /**
      * @brief Get the path object
      *
      * @return std::string
      */
-    std::string get_path() { return _path; }
+    std::string get_path()
+    {
+        return _path;
+    }
 
     /**
      * @brief Get the basegroup object via shared ptr
      *
      * @return std::shared_ptr<HDFGroup>
      */
-    std::shared_ptr<HDFGroup> get_basegroup() { return _base_group; }
+    std::shared_ptr<HDFGroup> get_basegroup()
+    {
+        return _base_group;
+    }
 
     /**
      * @brief Open group at path 'path', creating all intermediate objects in
@@ -73,8 +99,9 @@ public:
      * @param path
      * @return std::shared_ptr<HDFGroup>
      */
-    std::shared_ptr<HDFGroup> open_group(std::string &&path) {
-        return _base_group->open_group(std::forward<std::string &&>(path));
+    std::shared_ptr<HDFGroup> open_group(std::string&& path)
+    {
+        return _base_group->open_group(std::forward<std::string&&>(path));
     }
 
     /**
@@ -83,8 +110,9 @@ public:
      * @param path
      * @return std::shared_ptr<HDFDataset<HDFGroup>>
      */
-    std::shared_ptr<HDFDataset<HDFGroup>> open_dataset(std::string &&path) {
-        return _base_group->open_dataset(std::forward<std::string &&>(path));
+    std::shared_ptr<HDFDataset<HDFGroup>> open_dataset(std::string&& path)
+    {
+        return _base_group->open_dataset(std::forward<std::string&&>(path));
     }
     /**
      * @brief deletes the group pointed to by absolute path 'path'
@@ -92,16 +120,19 @@ public:
      * @param path absolute path to group to delete
      */
 
-    void delete_group(std::string &&path) {
-        _base_group->delete_group(std::forward<std::string &&>(path));
+    void delete_group(std::string&& path)
+    {
+        _base_group->delete_group(std::forward<std::string&&>(path));
     }
 
     /**
      * @brief Initiates an immediate write to disk of the data of the file
      *
      */
-    void flush() {
-        if (H5Iis_valid(_file) == true) {
+    void flush()
+    {
+        if (H5Iis_valid(_file))
+        {
             H5Fflush(_file, H5F_SCOPE_GLOBAL);
         }
     }
@@ -116,7 +147,10 @@ public:
      *
      * @param other rvalue reference to HDFFile object
      */
-    HDFFile(HDFFile &&other) : HDFFile() { this->swap(other); }
+    HDFFile(HDFFile&& other) : HDFFile()
+    {
+        this->swap(other);
+    }
 
     /**
      * @brief Move assigment operator
@@ -124,14 +158,26 @@ public:
      * @param rvalue reference to HDFFile object
      * @return HDFFile&
      */
-    HDFFile &operator=(HDFFile other) {
+    HDFFile& operator=(HDFFile&& other)
+    {
         this->swap(other);
         return *this;
     }
 
-    HDFFile(const HDFFile &other)
-        : _file(other._file), _path(other._path),
-          _base_group(other._base_group) {}
+    /**
+     * @brief Copy assignment, explicitly deleted
+     *
+     * @param other
+     * @return HDFFile&
+     */
+    HDFFile& operator=(const HDFFile& other) = delete;
+
+    /**
+     * @brief Copy constructor, explicitly deleted
+     *
+     * @param other
+     */
+    HDFFile(const HDFFile& other) = delete;
 
     /**
      * @brief Construct a new HDFFile object
@@ -146,47 +192,67 @@ public:
      */
     HDFFile(std::string path, std::string access)
         : _file([&]() {
-              if (access == "w") {
-                  return H5Fcreate(path.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT,
-                                   H5P_DEFAULT);
-              } else if (access == "r") {
+              if (access == "w")
+              {
+                  return H5Fcreate(path.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+              }
+              else if (access == "r")
+              {
                   return H5Fopen(path.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
-              } else if (access == "r+") {
+              }
+              else if (access == "r+")
+              {
                   return H5Fopen(path.c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
-
-              } else if (access == "x") {
-                  hid_t file = H5Fcreate(path.c_str(), H5F_ACC_EXCL,
-                                         H5P_DEFAULT, H5P_DEFAULT);
-                  if (file < 0) {
-                      throw std::runtime_error("tried to create an existing "
-                                               "file in non-truncate mode");
-
-                  } else {
+              }
+              else if (access == "x")
+              {
+                  hid_t file = H5Fcreate(path.c_str(), H5F_ACC_EXCL, H5P_DEFAULT, H5P_DEFAULT);
+                  if (file < 0)
+                  {
+                      throw std::runtime_error(
+                          "tried to create an existing "
+                          "file in non-truncate mode");
+                  }
+                  else
+                  {
                       return file;
                   }
-              } else if (access == "a") {
-                  hid_t file_test =
-                      H5Fopen(path.c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
-                  if (file_test < 0) {
-                      H5Fcreate(path.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT,
-                                H5P_DEFAULT);
+              }
+              else if (access == "a")
+              {
+                  hid_t file_test = H5Fopen(path.c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
+                  if (file_test < 0)
+                  {
+                      H5Fcreate(path.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
                   }
                   return file_test;
-
-              } else {
-                  throw std::invalid_argument("wrong type of access specifier, "
-                                              "see documentation for allowed "
-                                              "values");
+              }
+              else
+              {
+                  throw std::invalid_argument(
+                      "wrong type of access specifier, "
+                      "see documentation for allowed "
+                      "values");
               }
           }()),
-          _path(path), _base_group(std::make_shared<HDFGroup>(*this, "/")) {}
+          _path(path),
+          _referencecounter(std::make_shared<std::unordered_map<haddr_t, int>>()),
+          _base_group(std::make_shared<HDFGroup>(*this, "/"))
+
+    {
+        // H5Eset_auto(0, 0, NULL);
+
+        ++(*_referencecounter)[_base_group->get_address()];
+    }
 
     /**
      * @brief Destroy the HDFFile object
      *
      */
-    virtual ~HDFFile() {
-        if (H5Iis_valid(_file) == true) {
+    virtual ~HDFFile()
+    {
+        if (H5Iis_valid(_file))
+        {
             H5Fflush(_file, H5F_SCOPE_GLOBAL);
             H5Fclose(_file);
         }

@@ -29,19 +29,28 @@ if __name__ == '__main__':
                         default=None, nargs='?',
                         help="Overwrites the `paths->model_note` entry which "
                              "is used in creation of the run directory path.")
-    parser.add_argument('-v', '--verbose',
-                        default=0, action='count',
-                        help="(UNSUPPORTED) Sets the verbosity level of the "
-                             "frontend.")
+    parser.add_argument('--sim-errors',
+                        default=None, nargs='?',
+                        help="This controls the value of the WorkerManager's "
+                             "`nonzero_exit_handling` flag which controls how "
+                             "errors in simulations are handled. Allowed "
+                             "values are: 'ignore', 'warn', 'raise'. "
+                             "If not given, the default from the base config "
+                             "or (if set) the user configuration is used.")
 
     # CLI defined. Parse the arguments now.
     args = parser.parse_args()
 
-    # Check if the model_note was given
+    # Set an empty update dict. It will hold adjustments to the given configs
+    update_dict = {}
+
+    # If a model_note was given, add it to the paths
     if args.note:
-        update_dict = dict(paths=dict(model_note=args.note))
-    else:
-        update_dict = None
+        update_dict['paths'] = dict(model_note=args.note)
+
+    # Set the WorkerManager's non-zero exit handling, if in debug mode
+    if args.sim_errors:
+        update_dict['worker_manager'] = dict(nonzero_exit_handling=args.sim_errors)
 
     # Using the args, instantiate a Multiverse object
     mv = utopya.Multiverse(model_name=args.model_name,

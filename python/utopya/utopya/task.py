@@ -375,19 +375,22 @@ class WorkerTask(Task):
 
         return self.worker
 
-    def read_streams(self, stream_names: list='all', forward_streams: bool=False, max_num_reads: int=1, log_level: int=20) -> None:
+    def read_streams(self, stream_names: list='all', max_num_reads: int=1, forward_streams: bool=False, log_level: Union[int, None]=None) -> None:
         """Read the streams associated with this task's worker.
         
         Args:
             stream_names (list, optional): The list of stream names to read.
                 If 'all' (default), will read all streams.
-            forward_streams (bool, optional): Whether the read stream should be
-                forwarded to this module's log.info() function
             max_num_reads (int, optional): How many lines should be read from
                 the buffer. For -1, reads the whole buffer.
                 WARNING: Do not make this value too large as it could block the
                 whole reader thread of this worker.
-            log_level (int, optional): Level at which the stream gets logged
+            forward_streams (bool, optional): Whether the read stream should be
+                forwarded to this processes' stdout. The log_level argument
+                defines whether this happens via print or via the log module.
+            log_level (Union[int, None], optional): If None, will not use the
+                log module to forward the streams. If anything else, assumes
+                this is the level at which to log the stream.
         
         Returns:
             None: Description
@@ -411,9 +414,14 @@ class WorkerTask(Task):
                 else:
                     # got entry, do something with it
                     if forward_streams:
-                        # print it to the parent processe's stdout
-                        log.log(log_level, "  %s %s:   %s",
-                                self.name, stream_name, entry)
+                        if log_level is None:
+                            # print it to the parent process's stdout
+                            print("  {} {}:   {}"
+                                  "".format(self.name, stream_name, entry))
+                        else:
+                            # use the logging module
+                            log.log(log_level, "  %s %s:   %s",
+                                    self.name, stream_name, entry)
 
                     # Write to the stream's log
                     stream['log'].append(entry)
