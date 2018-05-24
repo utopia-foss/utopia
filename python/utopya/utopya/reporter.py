@@ -106,7 +106,7 @@ class Reporter:
     It needs to be subclassed in order to specialise its reporting functions.
     """
 
-    def __init__(self, *, report_formats: Union[List[str], Dict[str, dict]]=None, default_format: str=None, report_dir: str=None):
+    def __init__(self, *, report_formats: Union[List[str], Dict[str, dict]]=None, default_format: str=None, report_dir: str=None, suppress_cr: bool=False):
         """Initialize the Reporter for the WorkerManager.
         
         Args:
@@ -122,6 +122,9 @@ class Reporter:
                 of a report format.
             report_dir (str, optional): if reporting to a file; this is the
                 base directory that is reported to.
+            suppress_cr (bool, optional): Whether to suppress carriage return
+                characters in writers. This option is useful when the reporter
+                is not the only class that writes to a stream.
         """
 
         super().__init__()
@@ -129,6 +132,7 @@ class Reporter:
         # Initialise property-managed attributes
         self._report_formats = dict()
         self._default_format = None
+        self._suppress_cr = False
 
         # Ensure the report_formats argument is a dict
         if report_formats is None:
@@ -150,6 +154,9 @@ class Reporter:
             self.report_dir = os.path.expanduser(str(report_dir))
         else:
             self.report_dir = None
+
+        # Other attributes
+        self.suppress_cr = suppress_cr  # NOTE writers need to implement this
 
         log.debug("Reporter.__init__ finished.")
 
@@ -174,6 +181,30 @@ class Reporter:
         else:
             self._default_format = None
             log.debug("Unset default report format.")
+
+    @property
+    def suppress_cr(self) -> bool:
+        """Whether to suppress a carriage return. Objects using the reporter
+        can set this property to communicate that they will be putting content
+        into the stdout stream as well. The writers can check this property
+        and adjust their behaviour accordingly.
+        """
+        return self._suppress_cr
+
+    @suppress_cr.setter
+    def suppress_cr(self, val: bool):
+        """Set the suppress_cr property.
+
+        When setting this to True the first time, a linebreak is issued in
+        order to not overwrite any previously written lines that ended with
+        a carriage return character.
+        """
+        # Go to the next line
+        if val and not self.suppress_cr:
+            print("")
+
+        # Set the value
+        self._suppress_cr = val
 
     # Public API ..............................................................
 
@@ -416,6 +447,10 @@ class Reporter:
             flush (bool, optional): Whether to flush directly; default: True
             **print_kws: Other print function keyword arguments
         """
+        if self.suppress_cr and print_kws.get('end') == "\r":
+            # Enforce line feed
+            print_kws['end'] = "\n"
+
         print(s, flush=flush, **print_kws)
 
     def _write_to_stdout_noreturn(self, s: str, *, prepend="  "):
@@ -427,7 +462,10 @@ class Reporter:
                 the cursor might block this point of the terminal
             report_no (int, optional): accepted from ReportFormat call
         """
-        print(prepend + s, flush=True, end='\r')
+        if not self.suppress_cr:
+            print(prepend + s, flush=True, end='\r')
+        else:
+            print(prepend + s, flush=True, end='\n')
 
     def _write_to_log(self, s: str, *, lvl: int=10):
         """Writes the given string via the logging module.

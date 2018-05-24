@@ -350,8 +350,15 @@ class WorkerManager:
         self.times['start_working'] = dt.now()
 
         log.info("Starting to work ...")
-        log.debug("  Timeout:          now + %ss", timeout)
-        log.debug("  Stop conditions:  %s", stop_conditions)
+        log.debug("  Forwarding streams:  %s", forward_streams)
+        log.debug("  Timeout:             now + %ss", timeout)
+        log.debug("  Stop conditions:     %s", stop_conditions)
+
+        if forward_streams and self.reporter is not None:
+            # Set reporter to suppress carriage returns
+            self.reporter.suppress_cr = True
+            log.debug("WorkerTask streams are forwarded. Reporter was "
+                      "adjusted to not use carriage returns.")
 
         # Enter the polling loop, where most of the time will be spent
         
@@ -386,8 +393,15 @@ class WorkerManager:
                     # Also, the poll delay is usually not so large that there
                     # would be an issue with workers staying idle for too long.
 
-                # Invoke the reporter, if available
-                self._invoke_report('while_working')
+                # Invoke the reporter, if available and not forwarding streams
+                if not forward_streams:
+                    self._invoke_report('while_working')
+                # NOTE The reporter is not invoked when the streams are
+                # forwarded as they _might_ both compete for writing to the
+                # terminal, which would lead to flooding... This is a somewhat
+                # inelegant solution as the reporter format set for this step
+                # might perform a different action. If more frequent reporter
+                # invokation is desired, this part should be reworked.
 
                 # Gather the streams of all working workers
                 for task in self.active_tasks:
