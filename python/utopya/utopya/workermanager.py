@@ -405,7 +405,10 @@ class WorkerManager:
 
                 # Gather the streams of all working workers
                 for task in self.active_tasks:
-                    task.read_streams(forward_streams=forward_streams)
+                    task.read_streams()
+
+                    if forward_streams:
+                        task.print_streams()
 
                 # Check stop conditions
                 if stop_conditions is not None:
@@ -432,6 +435,7 @@ class WorkerManager:
                 time.sleep(self.poll_delay)
 
             # Finished working
+            # Print remaining stream output
 
             # Handle any remaining pending exceptions
             self._handle_pending_exceptions()

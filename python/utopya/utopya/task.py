@@ -10,7 +10,7 @@ import threading
 import subprocess
 import warnings
 import logging
-from typing import Callable, Union, Dict
+from typing import Callable, Union, Dict, List
 from typing.io import BinaryIO
 
 import numpy as np
@@ -349,9 +349,11 @@ class WorkerTask(Task):
             t.start()
 
             # Save the stream information in the WorkerTask object
+            # This includes two counters for the number of lines saved and
+            # printed, which are used by the save_ and print_streams methods
             self.streams['out'] = dict(queue=q, thread=t, log=[],
-                                       save=save_streams,
-                                       save_path=None)
+                                       save=save_streams, save_path=None,
+                                       lines_saved=0, lines_printed=0)
             # NOTE could have more streams here, but focus on stdout right now
 
             log.debug("Added thread to read worker %s's combined STDOUT and "
@@ -369,13 +371,9 @@ class WorkerTask(Task):
                 save_path = save_streams_to.format(name='out')
                 self.streams['out']['save_path'] = save_path
 
-                # Also create an entry to keep track of how many lines were
-                # already saved
-                self.streams['out']['lines_saved'] = 0
-
         return self.worker
 
-    def read_streams(self, stream_names: list='all', max_num_reads: int=1, forward_streams: bool=False, log_level: Union[int, None]=None) -> None:
+    def read_streams(self, stream_names: list='all', max_num_reads: int=1) -> None:
         """Read the streams associated with this task's worker.
         
         Args:
@@ -385,12 +383,6 @@ class WorkerTask(Task):
                 the buffer. For -1, reads the whole buffer.
                 WARNING: Do not make this value too large as it could block the
                 whole reader thread of this worker.
-            forward_streams (bool, optional): Whether the read stream should be
-                forwarded to this processes' stdout. The log_level argument
-                defines whether this happens via print or via the log module.
-            log_level (Union[int, None], optional): If None, will not use the
-                log module to forward the streams. If anything else, assumes
-                this is the level at which to log the stream.
         
         Returns:
             None: Description
@@ -412,18 +404,7 @@ class WorkerTask(Task):
                 except queue.Empty:
                     break
                 else:
-                    # got entry, do something with it
-                    if forward_streams:
-                        if log_level is None:
-                            # print it to the parent process's stdout
-                            print("  {} {}:   {}"
-                                  "".format(self.name, stream_name, entry))
-                        else:
-                            # use the logging module
-                            log.log(log_level, "  %s %s:   %s",
-                                    self.name, stream_name, entry)
-
-                    # Write to the stream's log
+                    # Got entry, write it to the stream's log
                     stream['log'].append(entry)
 
         if not self.streams:
@@ -516,6 +497,60 @@ class WorkerTask(Task):
 
             log.debug("Saved %d lines of stream '%s'.",
                       len(lines_to_save), stream_name)
+
+    def print_streams(self, stream_names: list='all', log_level: Union[int, None]=None) -> None:
+        """
+        Args:
+            stream_names (list, optional): The list of streams to print
+            log_level (Union[int, None], optional): If None, will not use the
+                log module to forward the streams. If anything else, assumes
+                this is the level at which to log the stream.
+        
+        Returns:
+            None
+        """
+
+        def print_lines(lines: List[str]):
+            """Prints the lines"""
+            prefix = "  {} {}: ".format(self.name, stream_name)
+
+            if log_level is None:
+                # print it to the parent process's stdout
+                for line in lines:
+                    print(prefix, line)
+            
+            else:
+                # use the logging module
+                for line in lines:
+                    log.log(log_level, "%s %s", prefix, line)
+
+        # Check whether there are streams that could be printed
+        if not self.streams:
+            # There are no streams to print
+            log.debug("No streams to print for WorkerTask '%s' (uid: %s).",
+                      self.name, self.uid)
+            return
+
+        elif stream_names == 'all':
+            # Gather list of stream names
+            stream_names = list(self.streams.keys())
+
+        # Go over all streams in the list
+        for stream_name in stream_names:
+            # Get stream; will raise KeyError if invalid
+            stream = self.streams[stream_name]
+            
+            # Determine lines to write and write them
+            lines = stream['log'][stream['lines_printed']:]
+            print_lines(lines)
+
+            # Increment counter
+            stream['lines_printed'] += len(lines)
+
+            log.debug("Printed %d lines for stream '%s' of WorkerTask '%s'.",
+                      len(lines), stream_name, self.name)
+
+        # Done.        
 
     def signal_worker(self, signal: Union[str, int]):
         """Sends a signal to this WorkerTask's worker.
