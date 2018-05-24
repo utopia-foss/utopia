@@ -380,6 +380,23 @@ public:
     }
 
     /**
+     * @brief Get the shape object
+     *
+     * @return std::vector<hsize_t>
+     */
+    auto get_shape()
+    {
+        // get dataspace: 'Form' of the data stored in the attribute
+        hid_t dspace = H5Aget_space(_attribute);
+
+        // get shape -> same thing as numpy array's shape
+        _shape.resize(H5Sget_simple_extent_ndims(dspace));
+        H5Sget_simple_extent_dims(dspace, _shape.data(), nullptr);
+        H5Sclose(dspace);
+        return _shape;
+    }
+
+    /**
      * @brief Reads data from attribute, and returns the data and its shape in
      *        the form of a hsize_t vector.
      *
