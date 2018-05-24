@@ -149,7 +149,7 @@ def test_add_tasks(wm, sleep_task):
 def test_start_working(wm_with_tasks):
     """Tests whether the start_working methods does what it should"""
     wm = wm_with_tasks
-    wm.start_working(forward_streams=True)
+    wm.start_working()
     # This will be blocking
 
     # Check that all tasks finished with exit status 0

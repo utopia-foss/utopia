@@ -184,16 +184,8 @@ class Multiverse:
         log.info("Adding task for simulation of a single universe ...")
         self._add_sim_task(uni_id=0, max_uni_id=0, uni_cfg=uni_cfg)
 
-        # Gather run_kwargs, effectively copying all immutables
-        rk = dict(**self.meta_config['run_kwargs'])
-
-        # Evaluate the non-boolean case of the forward_streams parameter
-        if rk.get('forward_streams') == 'in_single_run':
-            # Specifically set the flag, overwriting the previous value
-            rk['forward_streams'] = True
-
         # Tell the WorkerManager to start working (is a blocking call)
-        self.wm.start_working(**rk)
+        self.wm.start_working(**self.meta_config['run_kwargs'])
 
         log.info("Finished single universe run. Yay. :)")
 
@@ -220,16 +212,8 @@ class Multiverse:
                                uni_cfg=uni_cfg)
         log.info("Tasks added.")
 
-        # Gather run_kwargs, effectively copying all immutables
-        rk = dict(**self.meta_config['run_kwargs'])
-
-        # Evaluate the non-boolean case of the forward_streams parameter
-        if rk.get('forward_streams') == 'in_single_run':
-            # Specifically unset the flag, as this is not a single run
-            rk['forward_streams'] = False
-
         # Tell the WorkerManager to start working (is a blocking call)
-        self.wm.start_working(**rk)
+        self.wm.start_working(**self.meta_config['run_kwargs'])
 
         log.info("Finished Multiverse parameter sweep. Wohoo. :)")
 
@@ -569,12 +553,19 @@ class Multiverse:
                             uni_cfg=uni_cfg,
                             uni_basename=uni_basename)
 
+        # Process worker_kwargs
+        wk = self.meta_config.get('worker_kwargs')
+
+        if wk and wk.get('forward_streams') == 'in_single_run':
+            # Check for the max_uni_id as indicator for a single run
+            wk['forward_streams'] = bool(max_uni_id == 0)
+
         # Add a task to the worker manager
         self.wm.add_task(name=uni_basename,
                          priority=None,
                          setup_func=setup_universe,
                          setup_kwargs=setup_kwargs,
-                         worker_kwargs=self.meta_config.get('worker_kwargs'))
+                         worker_kwargs=wk)
 
         log.debug("Added simulation task for universe %d.", uni_id)
 

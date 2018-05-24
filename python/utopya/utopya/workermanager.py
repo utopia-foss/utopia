@@ -88,6 +88,7 @@ class WorkerManager:
         self._reporter = None
         self._num_finished_tasks = 0
         self._nonzero_exit_handling = None
+        self._suppress_rf_specs = []
         self.pending_exceptions = queue.Queue()
 
         # Hand over arguments
@@ -263,7 +264,24 @@ class WorkerManager:
         """
         # Prepare the callback functions needed by the reporter
         def task_spawned(task):
-            """Invokes the task_spawned report_spec"""
+            """Performs action after a task was spawned.
+
+            - checks if stream-forwarding was activated
+            - invokes the 'task_spawned' report specification
+            """
+            # As the task might have been configured to forward streams, it
+            # needs to be checked whether this would clash with the reporter's
+            # output to stdout.
+            # First, check if that was already taken care of
+            if self.reporter and not self.reporter.suppress_cr:
+                # Nope -> need to check if the task will forward streams
+                if task.streams.get('out') and task.streams['out']['forward']:
+                    # Yes -> need to suppress carriage returns by reporter and
+                    # reduce report invokations by the WorkerManager main loop
+                    self.reporter.suppress_cr = True
+                    self._suppress_rf_specs.append('while_working')
+
+            # Invoke the report
             self._invoke_report('task_spawned', force=True)
         
         def task_finished(task):
@@ -299,15 +317,13 @@ class WorkerManager:
         log.debug("Task %s (uid: %s) added.", task.name, task.uid)
         return task
 
-    def start_working(self, *, detach: bool=False, forward_streams: bool=False, timeout: float=None, stop_conditions: Sequence[StopCondition]=None, post_poll_func: Callable=None) -> None:
+    def start_working(self, *, detach: bool=False, timeout: float=None, stop_conditions: Sequence[StopCondition]=None, post_poll_func: Callable=None) -> None:
         """Upon call, all enqueued tasks will be worked on sequentially.
         
         Args:
             detach (bool, optional): If False (default), the WorkerManager
                 will block here, as it continuously polls the workers and
                 distributes tasks.
-            forward_streams (bool, optional): If True, workers' streams are
-                forwarded to stdout via the log module.
             timeout (float, optional): If given, the number of seconds this
                 work session is allowed to take. Workers will be aborted if
                 the number is exceeded. Note that this is not measured in CPU time, but the host systems wall time.
@@ -344,24 +360,14 @@ class WorkerManager:
                                       "detach the WorkerManager from the "
                                       "main thread.")
         
-        # Count the polls and save the time of the start of work
+        # Set some variables needed during the run
         poll_no = 0
-
         self.times['start_working'] = dt.now()
 
         log.info("Starting to work ...")
-        log.debug("  Forwarding streams:  %s", forward_streams)
         log.debug("  Timeout:             now + %ss", timeout)
         log.debug("  Stop conditions:     %s", stop_conditions)
 
-        if forward_streams and self.reporter is not None:
-            # Set reporter to suppress carriage returns
-            self.reporter.suppress_cr = True
-            log.debug("WorkerTask streams are forwarded. Reporter was "
-                      "adjusted to not use carriage returns.")
-
-        # Enter the polling loop, where most of the time will be spent
-        
         # Start with the polling loop
         # Basically all working time will be spent in there ...
         try:
@@ -393,19 +399,15 @@ class WorkerManager:
                     # Also, the poll delay is usually not so large that there
                     # would be an issue with workers staying idle for too long.
 
-                # Invoke the reporter, if available and not forwarding streams
-                if not forward_streams:
-                    self._invoke_report('while_working')
-                # NOTE The reporter is not invoked when the streams are
-                # forwarded as they _might_ both compete for writing to the
-                # terminal, which would lead to flooding... This is a somewhat
-                # inelegant solution as the reporter format set for this step
-                # might perform a different action. If more frequent reporter
-                # invokation is desired, this part should be reworked.
-
-                # Gather the streams of all working workers
+                # Do stream-related actions for each task
                 for task in self.active_tasks:
-                    task.read_streams(forward_streams=forward_streams)
+                    # Read the streams and forward them (if the tasks were
+                    # configured to do so)
+                    task.read_streams()
+                    task.forward_streams()
+
+                # Invoke a report
+                self._invoke_report('while_working')
 
                 # Check stop conditions
                 if stop_conditions is not None:
@@ -413,9 +415,8 @@ class WorkerManager:
                     to_terminate = self._check_stop_conds(stop_conditions)
                     self._signal_workers(to_terminate, signal='SIGTERM')
 
-                # Poll the workers
+                # Poll the workers. (Will also remove no longer active workers)
                 self._poll_workers()
-                # NOTE this will also remove no longer active workers
 
                 # Call the post-poll function
                 if post_poll_func is not None:
@@ -432,7 +433,6 @@ class WorkerManager:
                 time.sleep(self.poll_delay)
 
             # Finished working
-
             # Handle any remaining pending exceptions
             self._handle_pending_exceptions()
 
@@ -479,6 +479,12 @@ class WorkerManager:
     def _invoke_report(self, rf_spec_name: str, *args, **kwargs):
         """Helper function to invoke the reporter's report function"""
         if self.reporter is not None:
+            # Check whether to suppress this rf_spec
+            if (self._suppress_rf_specs
+                and rf_spec_name in self._suppress_rf_specs):
+                # Do not report this one
+                return
+
             # Resolve the spec name
             rfs = self.rf_spec[rf_spec_name]
             
@@ -623,11 +629,8 @@ class WorkerManager:
             """Logs the last `num_entries` from the log of the `stream_name`
             of the given WorkerTask object using log.error
             """
-            # Get the stream and check if it is available
-            stream = task.streams.get(stream_name)
-            if not stream:
-                log.debug("No stream with name '%s' available.")
-                return
+            # Get the stream
+            stream = task.streams[stream_name]
 
             # Get lines and print stream using logging module
             lines = stream['log'][-num_entries:]
@@ -663,8 +666,8 @@ class WorkerManager:
                 continue
 
             # else: will generate some log output, so need to adjust Reporter
-            # to not use CR values which mingle up the output
-            if self.reporter is not None:
+            # to not use CR characters which mingle up the output
+            if self.reporter:
                 self.reporter.suppress_cr = True
 
             # Generate a message

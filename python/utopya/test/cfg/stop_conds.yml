@@ -1,7 +1,5 @@
 ---
 run_kwargs:
-  forward_streams: true
-
   # A list of StopCondition objects to check during the run _for each worker_
   # The entries of the following list are OR-connected, i.e. it suffices that
   # one is fulfilled for the corresponding worker to be stopped
