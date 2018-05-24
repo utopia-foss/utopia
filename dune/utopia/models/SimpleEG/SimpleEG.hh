@@ -80,26 +80,25 @@ public:
      */
     void initialize_cells()
     {
+        // Extract the mode that determines the initial strategy
         std::string initial_state = _config["initial_state"].as<std::string>();
 
-        std::cout << "Initializing cells... initial_state: "
-                  << initial_state << std::endl;
+        std::cout << "Initializing cells (mode: '" << initial_state << "')"
+                  << std::endl;
 
+        // Distinguish according to the mode, which strategy to choose
         if (initial_state == "random")
         {
-            std::uniform_int_distribution<> dist(0, 1);
+            // Use a uniform int distribution for determining the state
+            auto rand_strat = std::bind(std::uniform_int_distribution<>(0, 1),
+                                        *_rng);
+
+            // Go over all cells and set the strategy randomly
             for (auto&& cell : _manager.cells())
             {
-                // int init_strategy = dist(_rng);
-                
-                // cell->state().strategy = init_strategy;
-                auto& state = cell->state_new();
-                // std::cout << state.payoff << std::endl;
-                // cell->state_new().payoff = 0.;
-                // std::cout << cell->state().payoff << std::endl;
-
-                // cell.state_new().strategy = init_strategy;
-                // cell.state_new().payoff = 0.;
+                // Determine and set the strategy: is S0 with p = 0.5
+                auto strat = rand_strat();
+                // cell->state().strategy = 
             }
         } 
         else if (initial_state == "fraction")
@@ -119,6 +118,17 @@ public:
             std::runtime_error("`initial_state` parameter value '"
                                + initial_state + "' is not supported!");
         }
+        // Done with setting the strategy
+
+        // Do all actions that are independent of initial_state parameter
+        // namely: set payoff to 0
+        for (auto&& cell : _manager.cells())
+        {
+            cell->state()->payoff = 0.0;
+        }
+
+        std::cout << "Cells initialized." << std::endl;
+
     }
 
     // Setup functions
