@@ -629,11 +629,8 @@ class WorkerManager:
             """Logs the last `num_entries` from the log of the `stream_name`
             of the given WorkerTask object using log.error
             """
-            # Get the stream and check if it is available
-            stream = task.streams.get(stream_name)
-            if not stream:
-                log.debug("No stream with name '%s' available.")
-                return
+            # Get the stream
+            stream = task.streams[stream_name]
 
             # Get lines and print stream using logging module
             lines = stream['log'][-num_entries:]
@@ -669,8 +666,8 @@ class WorkerManager:
                 continue
 
             # else: will generate some log output, so need to adjust Reporter
-            # to not use CR values which mingle up the output
-            if self.reporter is not None:
+            # to not use CR characters which mingle up the output
+            if self.reporter:
                 self.reporter.suppress_cr = True
 
             # Generate a message
