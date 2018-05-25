@@ -91,7 +91,7 @@ public:
         // Extract the mode that determines the initial strategy
         std::string initial_state = _config["initial_state"].as<std::string>();
 
-        std::cout << "Initializing cells (mode: '" << initial_state << "')"
+        std::cout << "Initializing cells in '" << initial_state << "' mode ..."
                   << std::endl;
 
         // Distinguish according to the mode, which strategy to choose
@@ -105,13 +105,13 @@ public:
             auto set_random_strategy = [&rand_strat](const auto cell) {
                 auto state = cell->state();
                 state.strategy = static_cast<Strategy>(rand_strat());
-                state.payoff = 0.0;
                 return state;
-            };
 
+                // NOTE that setting the payoff to zero is not needed as that
+                // is already done during initialization
+            };
             // Apply the rule
             apply_rule(set_random_strategy, cells);
-            
         } 
         else if (initial_state == "fraction")
         {
@@ -127,7 +127,7 @@ public:
         }
         else
         {
-            std::runtime_error("`initial_state` parameter value '"
+            Utopia::ValueError("`initial_state` parameter value '"
                                + initial_state + "' is not supported!");
         }
 
