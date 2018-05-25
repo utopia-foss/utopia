@@ -23,6 +23,9 @@ namespace Utopia {
 // does not derive from std::exception!
 
 /// The Utopia base exception class
+/** Meant to be subclassed in order to better specify the error kind.
+ *  This is based on stackoverflow.com/a/8152888/1827608
+ */
 class Exception: public std::exception
 {
 public:
