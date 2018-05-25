@@ -53,6 +53,9 @@ private:
     std::shared_ptr<std::mt19937> _rng;
     // Members of this model
     ManagerType _manager;
+    // Datasets
+    Utopia::DataIO::HDFDataset _dset_strategy;
+    Utopia::DataIO::HDFDataset _dset_payoff;
 
 
 public:
@@ -73,19 +76,20 @@ public:
         _config(config[_name]),
         _group(group->open_group(_name)),
         _rng(rng),
-        _manager(manager)
+        _manager(manager),
+        // datasets
+        _dset_strategy(*_group, "strategy"),
+        _dset_payoff(*_group, "payoff")
     {   
         // Initialize cells
         this->initialize_cells();
 
-        // Setup the datasets
-        setup_datasets();
+        // Write initial state
+        this->write_data();
     }
 
-    /**
-     * @brief Initialize the cells
-     * 
-     */
+    // Setup functions ........................................................
+    /// Initialize the cells according to `initial_state` config parameter
     void initialize_cells()
     {
         // Extract the mode that determines the initial strategy
@@ -135,16 +139,8 @@ public:
 
     }
 
-    // Setup functions
-    /// Setup datasets
-    void setup_datasets()
-    {
-        // TODO
-        // ...
-    }
 
-    /// Setup the datasets
-
+    // Runtime functions ......................................................
 
     /// Iterate single step
     void perform_step ()
@@ -156,8 +152,21 @@ public:
     /// Write data
     void write_data ()
     {
-        // TODO
-        // ...
+        std::cout << "Writing data for time step " << this->time << std::endl;
+        
+        // For the grid data, get the cells in order to iterate over them
+        auto cells = _manager.cells();
+
+        // Write the strategy dataset
+        // _dset_strategy.write(cells.begin(), cells.end(),
+        //                      [](auto& cell) { return cell.state().strategy }
+        //                      );
+
+        // // Write the payoff dataset
+        // _dset_payoff.write(cells.begin(), cells.end(),
+        //                    [](auto& cell) { return cell.state().payoff }
+        //                    );
+
     }
 
     // TODO Check what to do with the below methods
