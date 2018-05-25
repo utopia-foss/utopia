@@ -33,7 +33,6 @@ int main (int argc, char** argv)
 
         // Perform the iteration
         for (int i = 0; i < config["num_steps"].as<int>(); ++i) {
-            std::cout << "Iteration step: " << i << std::endl;
             model.iterate();
         }
 

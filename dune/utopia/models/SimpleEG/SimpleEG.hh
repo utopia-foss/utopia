@@ -186,6 +186,8 @@ public:
 template<bool periodic=true, unsigned int dim=2, class RNGType=std::mt19937>
 auto setup_manager(Utopia::DataIO::Config config, std::shared_ptr<RNGType> rng)
 {
+    std::cout << "Setting up grid manager ..." << std::endl;
+
     // Extract grid size from config
     auto gsize = config["grid_size"].as<std::array<unsigned int, dim>>();
 
@@ -207,6 +209,8 @@ auto setup_manager(Utopia::DataIO::Config config, std::shared_ptr<RNGType> rng)
 
     // Create the manager
     auto manager = Utopia::Setup::create_manager_cells<true, periodic>(grid, cells, rng);
+    
+    std::cout << "Grid manager initialized." << std::endl;
 
     return manager;
 }
