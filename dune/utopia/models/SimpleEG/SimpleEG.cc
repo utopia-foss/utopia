@@ -1,8 +1,8 @@
 #include <iostream>       // std::cout, std::endl
-#include <thread>         // std::this_thread::sleep_for
-#include <chrono>         // std::chrono::seconds
 
 #include "SimpleEG.hh"
+
+using namespace Utopia::SimpleEG;
 
 int main (int argc, char** argv)
 {
@@ -26,8 +26,9 @@ int main (int argc, char** argv)
 
         // Initialize the main model instance
         // The manager is created via a setup function
-        Utopia::SimpleEGModel model("SimpleEG", config, basegroup, rng,
-                                    Utopia::setup_manager<>(config["SimpleEG"], rng));
+        SimpleEGModel model("SimpleEG", config, basegroup, rng,
+                            setup_manager<>(config["SimpleEG"], rng)
+                            );
         // NOTE This already implements the new model interface
 
         // Perform the iteration

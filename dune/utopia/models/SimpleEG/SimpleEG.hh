@@ -13,9 +13,11 @@
 
 namespace Utopia {
 
+namespace SimpleEG {
+
 // TODO check the namespace the following are implemented in
 // Define the strategy enum
-enum Strategy{ S0, S1};
+enum Strategy : unsigned short int { S0=0, S1=1 };
 
 // Define the state struct, consisting of strategy and payoff
 struct State {
@@ -102,7 +104,7 @@ public:
             auto& cells = _manager.cells();
             auto set_random_strategy = [&rand_strat](const auto cell) {
                 auto state = cell->state();
-                state.strategy = rand_strat();
+                state.strategy = static_cast<Strategy>(rand_strat());
                 state.payoff = 0.0;
                 return state;
             };
@@ -170,21 +172,34 @@ public:
 };
 
 
-// TODO is this general enough to move to another place maybe?
-/// Setup the grid manager
-template<bool periodic=true, class RNGType=std::mt19937>
+// TODO could be made a bit more general and then used elsewhere? This would
+// predominantly require to find a convenient way to define the initial state?
+
+/// Setup the grid manager with an initial state
+/** \param config The top-level config node; 'grid_size' extracted from there
+  * \param rng The top-level RNG
+  */ 
+template<bool periodic=true, unsigned int dim=2, class RNGType=std::mt19937>
 auto setup_manager(Utopia::DataIO::Config config, std::shared_ptr<RNGType> rng)
 {
     // Extract grid size from config
-    auto gsize = config["grid_size"].as<std::array<unsigned int, 2>>();
-    std::cout << "Creating grid of size " << gsize[0] << "x" << gsize[1]
-              << " ..." << std::endl;
+    auto gsize = config["grid_size"].as<std::array<unsigned int, dim>>();
 
-    // Create grid
-    auto grid = Utopia::Setup::create_grid<2>(gsize);
+    // Inform about the size
+    std::cout << "Creating " << dim << "-dimensional grid of size: ";
+    for (const auto& dim_size : gsize) {
+        std::cout << dim_size << " ";
+    }
+    std::cout << std::endl;
 
-    // Create cells on that grid
-    auto cells = Utopia::Setup::create_cells_on_grid<true>(grid, 0.0);
+    // Create grid of that size
+    auto grid = Utopia::Setup::create_grid<dim>(gsize);
+
+    // Create the SimpleEG initial state: S0 and payoff 0.0
+    State state_0 = {static_cast<Strategy>(0), 0.0};
+
+    // Create cells on that grid, passing the initial state
+    auto cells = Utopia::Setup::create_cells_on_grid<true>(grid, state_0);
 
     // Create the manager
     auto manager = Utopia::Setup::create_manager_cells<true, periodic>(grid, cells, rng);
@@ -192,6 +207,7 @@ auto setup_manager(Utopia::DataIO::Config config, std::shared_ptr<RNGType> rng)
     return manager;
 }
 
+} // namespace SimpleEG
 
 } // namespace Utopia
 
