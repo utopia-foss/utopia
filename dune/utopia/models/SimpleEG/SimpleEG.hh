@@ -54,8 +54,8 @@ private:
     // Members of this model
     ManagerType _manager;
     // Datasets
-    Utopia::DataIO::HDFDataset _dset_strategy;
-    Utopia::DataIO::HDFDataset _dset_payoff;
+    std::shared_ptr<Utopia::DataIO::HDFDataset<Utopia::DataIO::HDFGroup>> _dset_strategy;
+    std::shared_ptr<Utopia::DataIO::HDFDataset<Utopia::DataIO::HDFGroup>> _dset_payoff;
 
 
 public:
@@ -78,8 +78,8 @@ public:
         _rng(rng),
         _manager(manager),
         // datasets
-        _dset_strategy(*_group, "strategy"),
-        _dset_payoff(*_group, "payoff")
+        _dset_strategy(_group->open_dataset("strategy")),
+        _dset_payoff(_group->open_dataset("payoff"))
     {   
         // Initialize cells
         this->initialize_cells();
@@ -157,15 +157,10 @@ public:
         // For the grid data, get the cells in order to iterate over them
         auto cells = _manager.cells();
 
-        // Write the strategy dataset
-        // _dset_strategy.write(cells.begin(), cells.end(),
-        //                      [](auto& cell) { return cell.state().strategy }
-        //                      );
-
-        // // Write the payoff dataset
-        // _dset_payoff.write(cells.begin(), cells.end(),
-        //                    [](auto& cell) { return cell.state().payoff }
-        //                    );
+        // payoffs
+        _dset_payoff->write(cells.begin(), cells.end(),
+                            [](auto& cell) { return cell->state().payoff; }
+                            );
 
     }
 
