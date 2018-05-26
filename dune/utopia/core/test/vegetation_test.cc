@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
     auto manager = Utopia::Setup::create_manager_cells<true, true>(grid, cells);
 
     std::cout << "Creating model\n";
-    Utopia::VegetationModel model(config);
+    Utopia::VegetationModel model(manager, config);
 
     for (int i = 0; i < 500; ++i)
          model.perform_step();

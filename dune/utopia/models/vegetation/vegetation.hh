@@ -46,8 +46,9 @@ private:
 
 public:
 
-    VegetationModel(Utopia::DataIO::Config config):
+    VegetationModel(Manager& manager, Utopia::DataIO::Config config):
         Base(),
+        _manager(manager),
         _t(0),
         _hdff("vegetation-test.h5", "w")
     {
@@ -59,14 +60,6 @@ public:
                                config["growth"].as<double>(), 
                                config["seeding"].as<double>());
         //file.get_basegroup()->add_attribute("Metadatum1", "HelloWorld"); TODO later, add info about parameter as metadata
-        constexpr bool sync = true;
-        using State = double;
-        using Tag = Utopia::DefaultTag;
-        State initial_state = 0;
-        int grid_size = 4;
-        auto grid = Utopia::Setup::create_grid(grid_size);
-        auto cells = Utopia::Setup::create_cells_on_grid<sync, State, Tag>(grid, initial_state);
-        _manager = Utopia::Setup::create_manager_cells<true, true>(grid, cells);
         auto dsetX = _hdff.open_dataset("positionX");
         dsetX->write(_manager.cells().begin(),
                 _manager.cells().end(), 
