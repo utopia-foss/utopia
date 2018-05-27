@@ -15,13 +15,16 @@ int main(int argc, char *argv[])
     auto grid  = Utopia::Setup::create_grid(100);
     auto cells = Utopia::Setup::create_cells_on_grid<sync, State, Tag>(grid, initial_state);
     auto mngr  = Utopia::Setup::create_manager_cells<true, true>(grid, cells);
-    std::normal_distribution<> rain{10,2};
+    //std::normal_distribution<> rain{1.5,1};
 
-    Utopia::GeomorphologyModel geomorphology(mngr, rain);
+    std::string config_filepath = "../../../../../dune/utopia/models/geomorphology/geomorphology_cfg.yml";
+    Utopia::DataIO::Config config(config_filepath);
+
+    Utopia::GeomorphologyModel geomorphology(mngr, config);
 
     assert(geomorphology.data().size() == 100*100);
 
-    for (int i = 0; i < 5; ++i)
+    for (int i = 0; i < 200; ++i)
          geomorphology.perform_step();
     return 0;
     
