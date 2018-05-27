@@ -12,11 +12,6 @@
 
 namespace Utopia {
 
-//namespace DataIO {
-//template <typename T, std::size_t N>
-//struct is_container<Dune::FieldVector<T, N>> : public std::true_type {};
-//}
-
 /// Template declaration for model types extracted from Manager
 template<class Manager>
 using VegetationModelTypes = Utopia::ModelTypes<
@@ -49,8 +44,8 @@ public:
     VegetationModel(Manager& manager, Utopia::DataIO::Config config):
         Base(),
         _manager(manager),
-        _t(0),
-        _hdff("vegetation-test.h5", "w")
+        _hdff("vegetation-test.h5", "w"),
+        _t(0)
     {
         std::cout << "Construction of vegetation ... \n";
 
