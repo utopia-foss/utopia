@@ -27,7 +27,6 @@ public:
         time(0)
     { }
 
-protected:
     /// Data type of the state
     using Data = typename ModelTypes::Data;
     /// Data type of the boundary condition
