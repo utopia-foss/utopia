@@ -4,9 +4,11 @@
 #include <dune/utopia/base.hh>
 #include <dune/utopia/core/model.hh>
 #include <dune/utopia/core/apply.hh>
-#include <dune/utopia/core/model.hh>
-#include <dune/utopia/core/model.hh>
-#include <dune/utopia/core/model.hh>
+
+#include <dune/utopia/data_io/config.hh>
+#include <dune/utopia/data_io/hdffile.hh>
+#include <dune/utopia/data_io/hdfgroup.hh>
+#include <dune/utopia/data_io/hdfdataset.hh>
 
 namespace Utopia {
 
@@ -30,6 +32,8 @@ public:
 private:
     Manager _manager;
     BCType _bc;
+    Utopia::DataIO::HDFFile _hdff;
+    std::size_t _t;
 
 public:
     /// Construct the model.
@@ -38,7 +42,9 @@ public:
     GeomorphologyModel (const Manager& manager, BCType bc):
         Base(),
         _manager(manager),
-        _bc(bc)
+        _bc(bc),
+        _t(0),
+        _hdff("geomorphology-test.h5", "w")
     {
         //initialize with an inclined plane
         /*auto set_inclined_plane = [this](const auto cell) {          
@@ -51,11 +57,22 @@ public:
             cells[i]->state_new()[0] = i % cells.size(); //create an inclined plane
             cells[i]->update();
         }
+        auto dsetX = _hdff.open_dataset("positionX");
+        dsetX->write(_manager.cells().begin(),
+                _manager.cells().end(), 
+                [](const auto& cell) {return cell->position()[0];});
+        auto dsetY = _hdff.open_dataset("positionY");
+        dsetY->write(_manager.cells().begin(),
+                _manager.cells().end(), 
+                [](const auto& cell) {return cell->position()[1];});
+        write_data();
     }
 
     /// Iterate one time step
     void perform_step ()
     {
+
+        ++_t;
         // let it rain
         auto rain = [this](const auto cell) {
             auto rain = _bc(*(_manager.rng()));
@@ -91,10 +108,23 @@ public:
         for (auto& cell : cells) {
             cell->update();
         }
+
+        write_data();
     }
 
-    /// Do nothing
-    void write_data () {}
+    void write_data () {
+        std::cout << "Writing data @ _t = " << _t << " ... ";
+        auto dsetH = _hdff.open_dataset("height@t="+std::to_string(_t));
+        dsetH->write(_manager.cells().begin(),
+                _manager.cells().end(), 
+                [](const auto cell){ return cell->state()[0]; });
+        auto dsetW = _hdff.open_dataset("watercontent@t="+std::to_string(_t));
+        dsetW->write(_manager.cells().begin(),
+                _manager.cells().end(), 
+                [](const auto cell){ return cell->state()[0]; });
+        std::cout << "complete!\n";
+    }
+
 
     /// Return const reference to cell container
     const Data& data () const { return _manager.cells(); }
