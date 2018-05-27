@@ -40,8 +40,8 @@ public:
     GeomorphologyModel (const Manager& manager, Utopia::DataIO::Config config):
         Base(),
         _manager(manager),
-        _t(0),
         _hdff(config["output_file"].as<std::string>(), "w"),
+        _t(0),
         _par{config["rain_mean"].as<double>(), config["rain_var"].as<double>()}
     {
         // Initialize altitude as an inclined plane
