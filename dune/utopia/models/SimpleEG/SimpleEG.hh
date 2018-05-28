@@ -156,12 +156,29 @@ public:
         
         // For the grid data, get the cells in order to iterate over them
         auto cells = _manager.cells();
+        unsigned int num_cells = std::distance(cells.begin(), cells.end());
+
+        // strategy
+        _dset_strategy->write(cells.begin(), cells.end(),
+                              [](auto& cell) {
+                                return static_cast<int>(cell->state().strategy);
+                              },
+                              2,              // rank
+                              {1, num_cells}, // extend of this entry
+                              {},             // max_size of the dataset
+                              1               // chunksize, for extension
+                              );
 
         // payoffs
-        _dset_payoff->write(cells.begin(), cells.end(),
-                            [](auto& cell) { return cell->state().payoff; }
-                            );
-
+        _dset_payoff->write(  cells.begin(), cells.end(),
+                              [](auto& cell) {
+                                return cell->state().payoff;
+                              },
+                              2,              // rank
+                              {1, num_cells}, // extend of this entry
+                              {},             // max_size of the dataset
+                              50              // chunksize, for extension
+                              );
     }
 
     // TODO Check what to do with the below methods
@@ -209,7 +226,7 @@ auto setup_manager(Utopia::DataIO::Config config, std::shared_ptr<RNGType> rng)
 
     // Create the manager
     auto manager = Utopia::Setup::create_manager_cells<true, periodic>(grid, cells, rng);
-    
+
     std::cout << "Grid manager initialized." << std::endl;
 
     return manager;
