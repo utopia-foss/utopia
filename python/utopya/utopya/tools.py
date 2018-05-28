@@ -49,10 +49,10 @@ def _expr_constructor(loader, node):
     expr_str = expr_str.replace(" ", "")
 
     # Parse some special strings
-    # FIXME these will cause errors if emitting again to C++
-    if expr_str in ['np.nan', 'nan', 'NaN']:
-        return np.nan
+    if expr_str in ['nan', 'NaN']:
+        return float("nan")
 
+    # NOTE these will cause errors if emitted file is not read by python!
     elif expr_str in ['np.inf', 'inf', 'INF']:
         return np.inf
 

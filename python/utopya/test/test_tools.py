@@ -46,7 +46,7 @@ def test_expr_constr():
     assert d['four'] == eval('1e-10') == 10.0**(-10)
     assert d['five'] == eval('1E10') == 10.0**10
     assert d['six'] == np.inf
-    assert d['seven'] == np.nan
+    assert np.isnan(d['seven'])
 
 
 def test_model_cfg_constructor():
