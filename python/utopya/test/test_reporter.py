@@ -381,6 +381,25 @@ def test_parse_times(rep):
                  end=None)
     assert pt(times=times)
 
+def test_suppress_cr(wm, tmpdir, capsys):
+    """Test whether the writers are able to suppress CR characters"""
+    rep = WorkerManagerReporter(wm, report_dir=tmpdir)
+    rep.suppress_cr = True
+
+    # This should have written a line break
+    captured = capsys.readouterr()
+    assert captured.out == "\n"
+
+    # Write more
+    rep._write_to_stdout("foo",)
+    rep._write_to_stdout("bar", end="\n")
+    rep._write_to_stdout("baz", end="\r")
+    rep._write_to_stdout_noreturn("spam", prepend="")
+
+    # Assert that no \r were written
+    captured = capsys.readouterr()
+    assert captured.out == "foo\nbar\nbaz\nspam\n"
+
 def test_write_to_file(wm, rf_dict, tmpdir):
     """Test writing to a file."""
     rep = WorkerManagerReporter(wm, report_dir=tmpdir)

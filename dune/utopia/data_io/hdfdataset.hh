@@ -7,6 +7,7 @@
 #include <hdf5.h>
 #include <hdf5_hl.h>
 #include <numeric>
+#include <unordered_map>
 namespace Utopia
 {
 namespace DataIO
@@ -76,10 +77,16 @@ private:
             {
                 _extend = extend;
             }
+
             if (max_size.size() == 0)
             {
                 _max_extend = std::vector<decltype(H5S_UNLIMITED)>(_rank, H5S_UNLIMITED);
             }
+            else
+            {
+                _max_extend = max_size;
+            }
+
             if (compress_level > 0)
             {
                 // compressed dataset: make a new dataset
@@ -103,6 +110,7 @@ private:
             {
                 _extend = extend;
             }
+
             if (max_size.size() == 0)
             {
                 _max_extend = _extend;
@@ -113,11 +121,13 @@ private:
             }
 
             // make dataset if necessary
-            if (_dataset == -1)
-            {
-                _dataset = __create_dataset_helper__<result_type>(chunksize, compress_level);
-            }
+            _dataset = __create_dataset_helper__<result_type>(chunksize, compress_level);
         }
+
+        // update info and add the new dataset to the reference counter
+        H5Oget_info(_dataset, &_info);
+        _address = _info.addr;
+        (*_referencecounter)[_address] = 1;
     }
 
     // for writing a  dataset
@@ -130,8 +140,6 @@ private:
         // buffering at first
         auto buffer =
             HDFBufferFactory::buffer(begin, end, std::forward<Adaptor&&>(adaptor));
-
-        // std::cout << "buffer test: " << buffer.back().len << std::endl;
 
         // write to buffer
         herr_t write_err = H5Dwrite(_dataset, HDFTypeFactory::type<result_type>(),
@@ -166,9 +174,9 @@ private:
     template <typename desired_type>
     auto __read_from_dataset__(hsize_t buffer_size, hid_t dspace, hid_t memspace)
     {
-        if constexpr (is_container<desired_type>::value == true)
+        if constexpr (is_container<desired_type>::value)
         {
-            if constexpr (std::is_same_v<std::string, desired_type> == true)
+            if constexpr (std::is_same_v<std::string, desired_type>)
             {
                 std::vector<const char*> buffer(buffer_size);
                 hid_t type = H5Dget_type(_dataset);
@@ -237,6 +245,9 @@ protected:
     hsize_t _rank;
     std::vector<hsize_t> _extend;
     std::vector<hsize_t> _max_extend;
+    H5O_info_t _info;
+    haddr_t _address;
+    std::shared_ptr<std::unordered_map<haddr_t, int>> _referencecounter;
 
 public:
     /**
@@ -274,6 +285,16 @@ public:
         return _dataset;
     }
 
+    auto get_referencecounter()
+    {
+        return _referencecounter;
+    }
+
+    haddr_t get_address()
+    {
+        return _address;
+    }
+
     /**
      * @brief add attribute to the dataset
      *
@@ -285,20 +306,28 @@ public:
     void add_attribute(std::string attribute_name, Attrdata attribute_data)
     {
         // make attribute and write
-
-        HDFAttribute<HDFDataset>(*this, attribute_name).write(attribute_data);
+        HDFAttribute attr(*this, attribute_name);
+        attr.write(attribute_data);
     }
+
     /**
      * @brief close the dataset
      *
      */
     void close()
     {
-        if (H5Iis_valid(_dataset) > 0)
+        if (H5Iis_valid(_dataset))
         {
-            H5Dclose(_dataset);
+            if ((*_referencecounter)[_address] == 1)
+            {
+                H5Dclose(_dataset);
+                _referencecounter->erase(_referencecounter->find(_address));
+            }
+            else
+            {
+                --(*_referencecounter)[_address];
+            }
         }
-        _dataset = -1;
     }
 
     /**
@@ -315,6 +344,9 @@ public:
         swap(_rank, other._rank);
         swap(_extend, other._extend);
         swap(_max_extend, other._max_extend);
+        swap(_info, other._info);
+        swap(_address, other._address);
+        swap(_referencecounter, other._referencecounter);
     }
 
     /**
@@ -366,7 +398,8 @@ public:
             if (H5Iis_valid(_dataset) == false)
             {
                 throw std::runtime_error(
-                    "dataset id invalid, has the dataset already been closed?");
+                    "Trying to create dataset named '" + _name +
+                    "' resulted in invalid id, check your arguments.");
             }
 
             // add attribute with dimensionality
@@ -394,7 +427,8 @@ public:
             if (H5Iis_valid(_dataset) == false)
             {
                 throw std::runtime_error(
-                    "dataset id invalid, has the dataset already been closed?");
+                    "Apparently existing dataset named '" + _name +
+                    "' invalid, has the dataset already been closed?");
             }
 
             // check if the dataset can be extended, i.e. if extend <
@@ -577,7 +611,8 @@ public:
         if (H5Iis_valid(_dataset) == false)
         {
             throw std::runtime_error(
-                "dataset id invalid, has the dataset already been closed?");
+                "dataset id of '" + _name +
+                "' invalid, has the dataset already been closed?");
         }
 
         // 1d dataset
@@ -693,8 +728,12 @@ public:
           _dataset(other._dataset),
           _rank(other._rank),
           _extend(other._extend),
-          _max_extend(other._max_extend)
+          _max_extend(other._max_extend),
+          _info(other._info),
+          _address(other._address),
+          _referencecounter(other._referencecounter)
     {
+        (*_referencecounter)[_address] += 1;
     }
 
     /**
@@ -730,7 +769,9 @@ public:
           _dataset(-1),
           _rank(0),
           _extend({}),
-          _max_extend({})
+          _max_extend({}),
+          _referencecounter(parent_object.get_referencecounter())
+
     {
         // try to find the dataset in the parent_object, open if it is
         // there, else postphone the dataset creation to the first write
@@ -745,6 +786,10 @@ public:
             _max_extend.resize(_rank);
             H5Sget_simple_extent_dims(dataspace, _extend.data(), _max_extend.data());
             H5Sclose(dataspace);
+
+            H5Oget_info(_dataset, &_info);
+            _address = _info.addr;
+            (*_referencecounter)[_address] += 1;
         }
     }
 
@@ -754,9 +799,17 @@ public:
      */
     virtual ~HDFDataset()
     {
-        if (H5Iis_valid(_dataset) == true)
+        if (H5Iis_valid(_dataset))
         {
-            H5Dclose(_dataset);
+            if ((*_referencecounter)[_address] == 1)
+            {
+                H5Dclose(_dataset);
+                _referencecounter->erase(_referencecounter->find(_address));
+            }
+            else
+            {
+                --(*_referencecounter)[_address];
+            }
         }
     }
 };
