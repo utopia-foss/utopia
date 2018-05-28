@@ -81,7 +81,7 @@ def _model_cfg_constructor(loader, node) -> dict:
     model_name = d.pop('model_name')
 
     # Load the corresponding model configuration
-    mcfg = load_model_cfg(model_name)
+    mcfg, _ = load_model_cfg(model_name)
 
     # Update the loaded config with the remaining keys
     mcfg = recursive_update(mcfg, d)

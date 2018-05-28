@@ -73,9 +73,9 @@ def test_model_cfg_constructor():
     d = t.yaml.load(tstr)
 
     # Assert correctness
-    d['model'] == dict(foo="baz", spam=1.23, level=0)
-    d['sub']['model1'] == dict(foo="bar", spam=2.34, level=1, num=1)
-    d['sub']['model2'] == dict(foo="bar", spam=1.23, level=1, num=2)
+    assert d['model'] == dict(foo="baz", spam=1.23, lvl=0)
+    assert d['sub']['model1'] == dict(foo="bar", spam=2.34, lvl=1, num=1)
+    assert d['sub']['model2'] == dict(foo="bar", spam=1.23, lvl=1, num=2)
 
     # It should fail without a model name
     with pytest.raises(KeyError, match="model_name"):
