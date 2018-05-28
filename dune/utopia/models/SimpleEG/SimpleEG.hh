@@ -166,7 +166,7 @@ public:
                               2,              // rank
                               {1, num_cells}, // extend of this entry
                               {},             // max_size of the dataset
-                              1               // chunksize, for extension
+                              8               // chunksize, for extension
                               );
 
         // payoffs
@@ -177,8 +177,13 @@ public:
                               2,              // rank
                               {1, num_cells}, // extend of this entry
                               {},             // max_size of the dataset
-                              50              // chunksize, for extension
+                              8               // chunksize, for extension
                               );
+
+        // TODO Find a reasonable chunksize, e.g. like h5py does?
+        // https://github.com/h5py/h5py/blob/5b77d54b4d0f47659b4e6f174cc1d001640dabdf/h5py/_hl/filters.py#L295
+        // Alternatively: pre-allocate the whole dataset size, knowing the
+        // number of columns (number of cells) and rows (num_steps)
     }
 
     // TODO Check what to do with the below methods
