@@ -33,6 +33,7 @@ def test_expr_constr():
         four:  !expr 1e-10
         five:  !expr 1E10
         six:   !expr inf
+        seven: !expr NaN
     """
 
     # Load the string using the tools module, where the constructor was added
@@ -45,6 +46,7 @@ def test_expr_constr():
     assert d['four'] == eval('1e-10') == 10.0**(-10)
     assert d['five'] == eval('1E10') == 10.0**10
     assert d['six'] == np.inf
+    assert d['seven'] == np.nan
 
 
 def test_model_cfg_constructor():
