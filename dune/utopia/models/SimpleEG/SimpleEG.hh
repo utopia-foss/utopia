@@ -161,7 +161,7 @@ public:
         // strategy
         _dset_strategy->write(cells.begin(), cells.end(),
                               [](auto& cell) {
-                                return static_cast<int>(cell->state().strategy);
+                                return static_cast<unsigned short int>(cell->state().strategy);
                               },
                               2,              // rank
                               {1, num_cells}, // extend of this entry
