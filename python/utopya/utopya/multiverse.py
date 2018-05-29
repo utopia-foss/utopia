@@ -323,6 +323,11 @@ class Multiverse:
                                         copy.deepcopy(update_meta_cfg))
             # NOTE using copy to make sure that usage of the dict will not interfere with the Multiverse's meta config
         
+        # Make `parameter_space` a ParamSpace object
+        pspace = meta_tmp['parameter_space']
+        meta_tmp['parameter_space'] = psp.ParamSpace(pspace)
+        log.debug("Converted parameter_space to ParamSpace object.")
+        
         # Store it
         self.meta_config = meta_tmp
         log.info("Loaded meta configuration.")
