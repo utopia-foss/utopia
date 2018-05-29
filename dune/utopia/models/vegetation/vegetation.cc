@@ -25,7 +25,7 @@ int main (int argc, char** argv)
         auto cells = Utopia::Setup::create_cells_on_grid<sync, State, Tag>(grid, initial_state);
         auto manager = Utopia::Setup::create_manager_cells<true, true>(grid, cells);
 
-        Utopia::VegetationModel model(manager, config);
+        Utopia::VegetationModel model(manager, config["vegetation"]);
 
         for(int i = 0; i < config["num_steps"].as<int>(); ++i)
             model.iterate();

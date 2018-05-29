@@ -1,4 +1,19 @@
-rain_mean: 10
-rain_var:  2
-growth:    0.1
-seeding:   0.2
+# The model configuration for the vegetation model
+#
+# This file should ONLY contain model-specific configuration. It should specify
+# all available parameters and their default values.
+# These should be specified under the `parameter_space` key.
+#
+# This file should NOT be used to overwrite any other parts of the utopya
+# configuration.
+# 
+# As this file is (usually) handled by the frontend, it is possible to use
+# yaml features like anchors, inheritance, ...
+---
+parameter_space:
+  num_steps: 5
+  vegetation:
+    rain_mean: 10
+    rain_var: 2
+    growth: 0.1
+    seeding: 0.2

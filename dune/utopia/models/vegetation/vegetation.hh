@@ -10,6 +10,9 @@
 #include <dune/utopia/data_io/hdfgroup.hh>
 #include <dune/utopia/data_io/hdfdataset.hh>
 
+#include <boost/lexical_cast.hpp>
+
+
 namespace Utopia {
 
 /// Template declaration for model types extracted from Manager
@@ -37,17 +40,16 @@ private:
     Manager _manager;
     Utopia::DataIO::HDFFile _hdff;
     Parameter _par;
-    std::size_t _t;
 
 public:
 
     VegetationModel(Manager& manager, Utopia::DataIO::Config config):
         Base(),
         _manager(manager),
-        _hdff("vegetation-test.h5", "w"),
-        _t(0)
+        _hdff(config["output_path"].as<std::string>(), "w")
     {
         std::cout << "Construction of vegetation ... \n";
+        std::cout << "Time is " << Base::time << "\n";
 
         std::normal_distribution<> rain{config["rain_mean"].as<double>(),
                                         config["rain_var"].as<double>()};
@@ -63,13 +65,14 @@ public:
         dsetY->write(_manager.cells().begin(),
                 _manager.cells().end(), 
                 [](const auto& cell) {return cell->position()[1];});
-        write_data();
+        std::cout << "Time is " << Base::time << "\n";
+        //write_data();
+        std::cout << "Time is " << Base::time << "\n";
         std::cout << "complete!\n";
     }
 
     void perform_step ()
     {
-        ++_t;
         std::cout << "Performing step ... ";
 
         // Growth + Seeding
@@ -86,12 +89,11 @@ public:
         };
         apply_rule(growth_seeding_rule, _manager.cells());
         std::cout << "complete!\n";
-        write_data();
     }
 
     void write_data () {
-        std::cout << "Writing data @ _t = " << _t << " ... ";
-        auto dset = _hdff.open_dataset("t="+std::to_string(_t));
+        std::cout << "Writing data @ _t = " << Base::time << " ... ";
+        auto dset = _hdff.open_dataset("plants@t="+boost::lexical_cast<std::string>(Base::time));
         dset->write(_manager.cells().begin(),
                 _manager.cells().end(), 
                 [](const auto cell){ return cell->state(); });
