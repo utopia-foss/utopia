@@ -1,6 +1,6 @@
 ---
 # Parameter Space
-parameter_space: !pspace
+parameter_space:
   simulation:
     # ...
     prng_seed: !sweep

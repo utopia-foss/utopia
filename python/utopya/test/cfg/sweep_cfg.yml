@@ -1,6 +1,6 @@
 # A test configuration that runs a parameter sweep over the seed
 ---
-parameter_space: !pspace
+parameter_space:
   dummy:
     seed: !sweep  # FIXME this should be on the top level
       default: 1337
