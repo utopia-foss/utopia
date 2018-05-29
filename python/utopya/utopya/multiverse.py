@@ -195,12 +195,11 @@ class Multiverse:
         # Get the parameter space from the config
         pspace = self.meta_config['parameter_space']
 
-        if not isinstance(pspace, psp.ParamSpace):
-            raise TypeError("For performing parameter sweeps, the run "
-                            "configuration needs to be initialized with a "
-                            "ParamSpace object at key `parameter_space`. "
-                            "If initializing via a YAML file, make sure to "
-                            "have added the `!pspace` tag to that key.")
+        if pspace.volume < 1:
+            raise ValueError("The parameter space has no sweeps configured! "
+                             "Refusing to run a sweep. You can either call "
+                             "the run_single method or add sweeps to your "
+                             "run configuration using the !sweep YAML tags.")
 
         log.info("Adding tasks for simulation of %d universes ...",
                  pspace.volume)
