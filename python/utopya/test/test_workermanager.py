@@ -7,7 +7,7 @@ import pkg_resources
 import numpy as np
 import pytest
 
-from utopya.workermanager import WorkerManager, WorkerManagerTotalTimeout
+from utopya.workermanager import WorkerManager, WorkerManagerTotalTimeout, WorkerTaskNonZeroExit
 from utopya.task import enqueue_lines, parse_json
 from utopya.tools import read_yml
 
@@ -84,6 +84,7 @@ def sc_run_kws():
 def test_init():
     """Tests whether initialisation succeeds"""
     # Test different `num_workers` arguments
+    WorkerManager()
     WorkerManager(num_workers='auto')
     WorkerManager(num_workers=-1)
     WorkerManager(num_workers=1)
@@ -114,6 +115,24 @@ def test_init():
         # small value
         WorkerManager(num_workers=1, poll_delay=0.001)
 
+    # Test initialisation with different nonzero_exit_handling values
+    WorkerManager(nonzero_exit_handling='ignore')
+    WorkerManager(nonzero_exit_handling='warn')
+    WorkerManager(nonzero_exit_handling='raise')
+    with pytest.raises(ValueError, match="`nonzero_exit_handling` needs to"):
+        WorkerManager(nonzero_exit_handling='invalid')
+
+    # Test initialisation with an (invalid) Reporter type
+    with pytest.raises(TypeError, match="Need a WorkerManagerReporter"):
+        WorkerManager(reporter='not_a_reporter')
+    # NOTE the tests with the actual WorkerManagerReporter can be found in
+    # test_reporter.py, as they require adequate initialisation arguments
+    # for which it would make no sense to make them available here
+
+    # Test passing report specifications
+    wm = WorkerManager(rf_spec=dict(foo='bar'))
+    assert wm.rf_spec['foo'] == 'bar'
+
 def test_add_tasks(wm, sleep_task):
     """Tests adding of tasks"""
     # This one should work
@@ -130,7 +149,7 @@ def test_add_tasks(wm, sleep_task):
 def test_start_working(wm_with_tasks):
     """Tests whether the start_working methods does what it should"""
     wm = wm_with_tasks
-    wm.start_working(forward_streams=True)
+    wm.start_working()
     # This will be blocking
 
     # Check that all tasks finished with exit status 0
@@ -144,6 +163,41 @@ def test_start_working(wm_with_tasks):
 
         with pytest.raises(RuntimeError):
             task.worker = "something"
+
+def test_nonzero_exit_handling(wm):
+    """Test that the non-zero exception handling works"""
+
+    # Work sequentially
+    wm.num_workers = 1
+
+    # Generate a failing task config
+    failing_task = dict(worker_kwargs=dict(args=("false",)))
+
+    # Test that with 'ignore', everything runs as expected
+    wm.nonzero_exit_handling = 'ignore'
+    wm.add_task(**failing_task)
+    wm.add_task(**failing_task)
+    wm.start_working()
+    assert wm.num_finished_tasks == 2
+
+    # Now run through 'warning' mode
+    wm.nonzero_exit_handling = 'warn'
+    wm.add_task(**failing_task)
+    wm.add_task(**failing_task)
+    wm.start_working()
+    assert wm.num_finished_tasks == 4
+
+    # Now run through 'raise' mode
+    wm.nonzero_exit_handling = 'raise'
+    wm.add_task(**failing_task)
+    wm.add_task(**failing_task)
+
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        wm.start_working()
+    
+    assert pytest_wrapped_e.type == SystemExit
+    assert pytest_wrapped_e.value.code == 1
+    assert wm.num_finished_tasks == 5
 
 def test_signal_workers(wm, sleep_task):
     """Tests the signalling of workers"""
