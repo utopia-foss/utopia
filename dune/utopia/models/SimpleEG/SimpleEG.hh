@@ -121,13 +121,46 @@ public:
         {
 
         }
-        else if (initial_state == "single_s0")
+        else if (initial_state == "single_s0" || initial_state == "single_s1")
         {
+            // Determine which strategy is the common default strategy 
+            // and which one is the single strategy in the center of the grid
+            Strategy default_strategy, single_strategy;
+            if (initial_state == "single_s0"){
+                default_strategy = S1;
+                single_strategy = S0;
+            }
+            else{
+                default_strategy = S0;
+                single_strategy = S1;
+            }
 
-        }
-        else if (initial_state == "single_s1")
-        {
+            auto& cells = _manager.cells();
+            auto grid_size = _config["grid_size"].as<std::pair<std::size_t, std::size_t>>();
 
+            auto set_initial_strategy = [&](const auto cell) {
+                // Get the position and state of the cell
+                auto position = cell->position();
+                auto state = cell->state();
+
+                // Set the initial startegy
+                if (position[0] != grid_size.first / 2 
+                        && position[1] != grid_size.first / 2){
+                    // Case: The cell is in the center of the grid
+                    state.strategy = static_cast<Strategy>(default_strategy);
+                }
+                else{
+                    // Case: The cell is not in the center of the grid
+                    auto state = cell->state();
+                    state.strategy = static_cast<Strategy>(single_strategy);
+                }
+                
+                // NOTE that the payoff is already initialized to zero
+                
+                return state;
+            };
+            // Apply the rule
+            apply_rule(set_initial_strategy, cells);
         }
         else
         {
