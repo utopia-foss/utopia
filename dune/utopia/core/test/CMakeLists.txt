@@ -20,7 +20,6 @@ set(TESTS_CORE
     simulation_test
     state_test
     tags_test
-    vegetation_test
     )
 
 # add CORE tests
