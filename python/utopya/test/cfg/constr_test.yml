@@ -1,3 +1,8 @@
+# This is a test file for testing YAML constructors
+#
+# NOTE The structure of this file does NOT reflect a valid structure of the
+#      meta configuration! It is merely used as an integration test of reading
+#      a yaml file with additional tags that trigger custom constructors
 ---
 # Parameter Space
 parameter_space: !pspace
@@ -18,6 +23,11 @@ parameter_space: !pspace
       abm_animals:
         more_stuff: !expr -inf
         # ...
+
+    some_model: !model
+      model_name: dummy
+      add_a_key: with some value
+      foo: change the value of this key
 
 run_kwargs:
   timeout: !expr inf  # timeout in seconds (for the whole simulation)
