@@ -119,7 +119,29 @@ public:
         } 
         else if (initial_state == "fraction")
         {
+            const auto s1_fraction = _config["s1_fraction"].as<double>();
 
+            // Use a uniform real distribution to determine the state
+            auto rand_proposal = std::bind(std::uniform_real_distribution<>(0., 1.),
+                                            *_rng);
+
+            auto& cells = _manager.cells();
+            auto set_fraction_strategy = [&rand_proposal,&s1_fraction](const auto cell){
+                auto state = cell->state();
+                if (rand_proposal() < s1_fraction){
+                    state.strategy = S1;
+                }
+                else {
+                    state.strategy = S0;
+                }
+
+                // NOTE that the payoff is already initialized to zero.
+
+                return state;
+            };
+
+            // Apply the rule
+            apply_rule(set_fraction_strategy, cells);
         }
         else if (initial_state == "single_s0" || initial_state == "single_s1")
         {
