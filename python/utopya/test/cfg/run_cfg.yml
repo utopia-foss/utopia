@@ -1,5 +1,7 @@
 ---
 parameter_space:
-  dummy:
-    seed: 1337
+  seed: 1337
   num_steps: 5
+
+  dummy: !model
+    model_name: dummy

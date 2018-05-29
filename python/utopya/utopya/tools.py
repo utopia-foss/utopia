@@ -7,7 +7,7 @@ import logging
 import collections
 import subprocess
 from datetime import timedelta
-from typing import Union
+from typing import Union, Tuple
 
 import yaml
 import numpy as np
@@ -15,6 +15,7 @@ import numpy as np
 import paramspace.yaml_constructors as psp_constrs
 
 import utopya.stopcond
+from utopya.info import MODELS
 
 # Local constants
 log = logging.getLogger(__name__)
@@ -48,10 +49,10 @@ def _expr_constructor(loader, node):
     expr_str = expr_str.replace(" ", "")
 
     # Parse some special strings
-    # FIXME these will cause errors if emitting again to C++
-    if expr_str in ['np.nan', 'nan', 'NaN']:
-        return np.nan
+    if expr_str in ['nan', 'NaN']:
+        return float("nan")
 
+    # NOTE these will cause errors if emitted file is not read by python!
     elif expr_str in ['np.inf', 'inf', 'INF']:
         return np.inf
 
@@ -65,8 +66,32 @@ def _expr_constructor(loader, node):
     # Try to eval
     return eval(expr_str)
 
+def _model_cfg_constructor(loader, node) -> dict:
+    """Custom yaml constructor for loading a model configuration file.
+
+    This extracts the `model_name` key, loads the corresponding model config
+    and then recursively updates the loaded config with the remaining keys
+    from that part of the configuration.
+    """
+    # Get a mapping from the node
+    d = loader.construct_mapping(node, deep=True)
+    # NOTE using the deep flag here to allow nested calls to this constructor
+
+    # Extract the model name
+    model_name = d.pop('model_name')
+
+    # Load the corresponding model configuration
+    mcfg, _ = load_model_cfg(model_name)
+
+    # Update the loaded config with the remaining keys
+    mcfg = recursive_update(mcfg, d)
+
+    # Return the updated dictionary
+    return mcfg
+
 # Add the constructors to the yaml module
 yaml.add_constructor(u'!expr', _expr_constructor)
+yaml.add_constructor(u'!model', _model_cfg_constructor)
 yaml.add_constructor(u'!stop-condition', utopya.stopcond.stop_cond_constructor)
 yaml.add_constructor(u'!sc-func', utopya.stopcond.sc_func_constructor)
 yaml.add_constructor(u'!sweep', psp_constrs.pdim_enabled_only)
@@ -103,7 +128,6 @@ def read_yml(path: str, *, error_msg: str=None) -> dict:
     # Everything ok, return the dict
     return d
 
-
 def write_yml(d: dict, *, path: str) -> None:
     """Write dict to yml file in path.
     
@@ -126,6 +150,42 @@ def write_yml(d: dict, *, path: str) -> None:
     # else: dump the dict into the config file
     with open(path, 'w') as ymlout:
         yaml.dump(d, ymlout, default_flow_style=False)
+
+def load_model_cfg(model_name: str) -> Tuple[dict, str]:
+    """Loads the model configuration for the given model name using the info
+    from the info module.
+    
+    The model configuration is a file named <model_name>_cfg.yml and resides
+    beside the source files.
+    
+    Args:
+        model_name (str): The name of the model to load
+    
+    Returns:
+        Tuple[dict, str]: The corresponding model configuration and the path
+            to the model configuration file
+    
+    Raises:
+        ValueError: model name not registered with info module
+    """
+    log.debug("Loading model configuration for '%s' model ...", model_name)
+
+    # Check the model name
+    if model_name not in MODELS:
+        raise ValueError("No '{}' model available! Model names registered "
+                         "with the info module are: {}"
+                         "".format(model_name, [k for k in MODELS.keys()]))
+
+    # Generate the path to the model configuration
+    path = os.path.join(MODELS[model_name]['src_dir'], model_name + "_cfg.yml")
+
+    # Read in the model configuration
+    mcfg = read_yml(path, error_msg=("Could not locate model configuration "
+                                     "for '{}' model! Expected to find it at: "
+                                     "{}".format(model_name, path)))
+
+    # And return it
+    return mcfg, path
 
 
 # working on dicts ------------------------------------------------------------
@@ -161,6 +221,7 @@ def recursive_update(d: dict, u: dict) -> dict:
 
     # Finished at this level; return updated dict
     return d
+
 
 # string formatting -----------------------------------------------------------
 
@@ -273,7 +334,6 @@ def fill_line(s: str, *, num_cols: int=TTY_COLS, fill_char: str=" ", align: str=
         return fill_str[:len(fill_str)//2] + s + fill_str[len(fill_str)//2:]
 
     raise ValueError("align argument '{}' not supported".format(align))
-
 
 def center_in_line(s: str, *, num_cols: int=TTY_COLS, fill_char: str="·", spacing: int=1) -> str:
     """Shortcut for a common fill_line use case.

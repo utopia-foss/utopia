@@ -135,4 +135,4 @@ test:models:
     # test the default model config
     - $RUN_IN_DUNE_ENV utopia dummy
     # test a configuration that allows a sweep
-    - $RUN_IN_DUNE_ENV utopia dummy $MODEL_DIR/dummy/test/dummy_cfg.yml --sweep --note sweep
+    - $RUN_IN_DUNE_ENV utopia dummy $MODEL_DIR/dummy/test/sweep.yml --sweep --note sweep

@@ -7,4 +7,9 @@ parameter_space:
       values: [23, 42, 665, 667]
 
   num_steps: 5
-  
+  seed: !sweep
+    default: 1337
+    values: [23, 42, 665, 667]
+    
+  dummy: !model
+    model_name: dummy  
