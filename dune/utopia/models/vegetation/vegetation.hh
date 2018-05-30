@@ -31,69 +31,80 @@ template<class Manager>
 class VegetationModel:
     public Model<VegetationModel<Manager>, VegetationModelTypes<Manager>>
 {
+
 public:
+
     using Data = typename Manager::Container;
     using Base = Model<VegetationModel<Manager>, VegetationModelTypes<Manager>>;
     using Parameter = std::tuple<std::normal_distribution<>, double, double>;
 
 private:
+
+    const std::string _name;
+    std::shared_ptr<Utopia::DataIO::HDFGroup> _group;
     Manager _manager;
-    Utopia::DataIO::HDFFile _hdff;
     Parameter _par;
 
 public:
 
-    VegetationModel(Manager& manager, Utopia::DataIO::Config config):
+    VegetationModel (const std::string name,
+                     Utopia::DataIO::Config config,
+                     std::shared_ptr<Utopia::DataIO::HDFGroup> group,
+                     Manager manager) :
         Base(),
-        _manager(manager),
-        _hdff(config["output_path"].as<std::string>(), "w")
+        _name(name),
+        _group(group->open_group(_name)),
+        _manager(manager)
     {
-        std::cout << "Construction of vegetation ... \n";
-        std::cout << "Time is " << Base::time << "\n";
 
+        // Initialize model parameters from config file
         std::normal_distribution<> rain{config["rain_mean"].as<double>(),
                                         config["rain_var"].as<double>()};
         _par = std::make_tuple(rain, 
                                config["growth"].as<double>(), 
                                config["seeding"].as<double>());
-        //file.get_basegroup()->add_attribute("Metadatum1", "HelloWorld"); TODO later, add info about parameter as metadata
-        auto dsetX = _hdff.open_dataset("positionX");
+
+        // Write constant values (such as positions of cells)
+        //file.get_basegroup()->add_attribute("Metadatum1", "HelloWorld"); 
+        // TODO later, add info about parameter as metadata
+        auto dsetX = _group->open_dataset("positionX");
         dsetX->write(_manager.cells().begin(),
                 _manager.cells().end(), 
                 [](const auto& cell) {return cell->position()[0];});
-        auto dsetY = _hdff.open_dataset("positionY");
+        auto dsetY = _group->open_dataset("positionY");
         dsetY->write(_manager.cells().begin(),
                 _manager.cells().end(), 
                 [](const auto& cell) {return cell->position()[1];});
-        std::cout << "Time is " << Base::time << "\n";
+
+        // Write initial values
+        // TODO later, as iterate function of base needs to be adapted
         //write_data();
-        std::cout << "Time is " << Base::time << "\n";
-        std::cout << "complete!\n";
     }
 
     void perform_step ()
     {
         std::cout << "Performing step ... ";
 
-        // Growth + Seeding
+        // Logistic growth + Seeding
         auto growth_seeding_rule = [this](const auto cell){
                 auto state = cell->state();
                 auto rain  = std::get<0>(_par)(*(_manager.rng()));
                 if (state != 0) {
                     auto growth = std::get<1>(_par);
-                    return state + state*growth*(1 - state/rain); // Logistic growth
+                    return state + state*growth*(1 - state/rain);
                 }
                 auto seeding = std::get<2>(_par);
                 return seeding*rain;
 
         };
         apply_rule(growth_seeding_rule, _manager.cells());
+
         std::cout << "complete!\n";
     }
 
     void write_data () {
         std::cout << "Writing data @ _t = " << Base::time << " ... ";
-        auto dset = _hdff.open_dataset("plants@t="+boost::lexical_cast<std::string>(Base::time));
+        auto dset = _group->open_dataset("plants@t="+boost::lexical_cast<std::string>(Base::time));
         dset->write(_manager.cells().begin(),
                 _manager.cells().end(), 
                 [](const auto cell){ return cell->state(); });
