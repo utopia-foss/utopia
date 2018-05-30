@@ -28,7 +28,8 @@ int main (int argc, char** argv)
 
         // Set the initial state, then create the model instance
         std::vector<double> state(1E3, 0.0);
-        Utopia::DummyModel model("dummy", state, config, basegroup, rng);
+        Utopia::DummyModel model("dummy", config, basegroup, rng,
+                                 state);
 
         // And iterate it for a number of steps
         auto num_steps = config["num_steps"].as<int>();

@@ -21,8 +21,7 @@ using DummyModelTypes = ModelTypes<
 /** Holds a vector of doubles and increments its entries by the boundary
  *  condition vector or 1 otherwise.
  */
-class DummyModel:
-    public Model<DummyModel, DummyModelTypes>
+class DummyModel : public Model<DummyModel, DummyModelTypes>
 {
 public:
     // convenience type definitions
@@ -31,29 +30,21 @@ public:
     using BCType = typename Base::BCType;
 
 private:
-    const std::string _name;
     Data _state;
     BCType _bc;
-    Utopia::DataIO::Config _config;
-    std::shared_ptr<Utopia::DataIO::HDFGroup> _group;
-    std::shared_ptr<std::mt19937> _rng;
-
 
 public:
     /// Construct the dummy model with an initial state
     /** \param state Initial state of the model
      */
-    DummyModel (const std::string name, const Data& state, 
-                Utopia::DataIO::Config &config,
-                std::shared_ptr<Utopia::DataIO::HDFGroup> group,
-                std::shared_ptr<std::mt19937> rng):
-        Base(),
-        _name(name),
+    DummyModel (const std::string name,
+                Utopia::DataIO::Config &cfg,
+                std::shared_ptr<Utopia::DataIO::HDFGroup> parent_group,
+                std::shared_ptr<RNG> rng,
+                const Data& state):
+        Base(name, cfg, parent_group, rng),
         _state(state),
-        _bc(_state.size(), 1.0),
-        _config(config[_name]),
-        _group(group->open_group(_name)),
-        _rng(rng)
+        _bc(_state.size(), 1.0)
     { }
 
     /// Iterate by one time step
@@ -63,11 +54,11 @@ public:
         std::cout << "  iteration step " << this->time << std::endl;
 
         // Write some random numbers into the state vector
-        auto gen = std::bind(std::uniform_real_distribution<>(), *_rng);
+        auto gen = std::bind(std::uniform_real_distribution<>(), *rng);
         std::generate(_bc.begin(), _bc.end(), gen);
-        std::transform(_state.begin(), _state.end(), _bc.begin(),
-            _state.begin(),
-            [](const auto a, const auto b) { return a + b; }
+        std::transform(_state.begin(), _state.end(),
+                       _bc.begin(), _state.begin(),
+                       [](const auto a, const auto b) { return a + b; }
         );
     }
 
@@ -78,7 +69,7 @@ public:
         const std::string set_name = "data-" + std::to_string(this->time);
 
         // Open the dataset and write the state into it
-        auto dataset = _group->open_dataset(set_name);
+        auto dataset = hdfgrp->open_dataset(set_name);
         dataset->write(_state.begin(), _state.end(),
             [](auto &value) { return value; });
     }
