@@ -11,8 +11,10 @@
 
 namespace Utopia {
 
+namespace Models {
+
 /// Define data types of dummy model
-using DummyModelTypes = ModelTypes<
+using DummyTypes = ModelTypes<
     std::vector<double>,
     std::vector<double>
 >;
@@ -21,11 +23,11 @@ using DummyModelTypes = ModelTypes<
 /** Holds a vector of doubles and increments its entries by the boundary
  *  condition vector or 1 otherwise.
  */
-class DummyModel : public Model<DummyModel, DummyModelTypes>
+class Dummy : public Model<Dummy, DummyTypes>
 {
 public:
     // convenience type definitions
-    using Base = Model<DummyModel, DummyModelTypes>;
+    using Base = Model<Dummy, DummyTypes>;
     using Data = typename Base::Data;
     using BCType = typename Base::BCType;
 
@@ -37,11 +39,12 @@ public:
     /// Construct the dummy model with an initial state
     /** \param state Initial state of the model
      */
-    DummyModel (const std::string name,
-                Utopia::DataIO::Config &cfg,
-                std::shared_ptr<Utopia::DataIO::HDFGroup> parent_group,
-                std::shared_ptr<RNG> rng,
-                const Data& state):
+    Dummy (const std::string name,
+           Config &cfg,
+           std::shared_ptr<DataGroup> parent_group,
+           std::shared_ptr<RNG> rng,
+           const Data& state)
+    :
         Base(name, cfg, parent_group, rng),
         _state(state),
         _bc(_state.size(), 1.0)
@@ -83,6 +86,8 @@ public:
     /// Return const reference to stored data
     const Data& data () const { return _state; }
 };
+
+} // namespace Models
 
 } // namespace Utopia
 
