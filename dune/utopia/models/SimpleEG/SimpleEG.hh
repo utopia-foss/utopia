@@ -57,6 +57,7 @@ private:
     std::shared_ptr<std::mt19937> _rng;
     // Members of this model
     ManagerType _manager;
+    std::vector<std::vector<double>> _ia_matrix;
     // Datasets
     std::shared_ptr<Utopia::DataIO::HDFDataset<Utopia::DataIO::HDFGroup>> _dset_strategy;
     std::shared_ptr<Utopia::DataIO::HDFDataset<Utopia::DataIO::HDFGroup>> _dset_payoff;
@@ -81,6 +82,7 @@ public:
         _group(group->open_group(_name)),
         _rng(rng),
         _manager(manager),
+        _ia_matrix(config["ia_matrix"].as<std::vector<std::vector<double>>>()),
         // datasets
         _dset_strategy(_group->open_dataset("strategy")),
         _dset_payoff(_group->open_dataset("payoff"))
@@ -204,21 +206,17 @@ public:
     /** @brief Iterate a single step
      *  @detail In the config, the following interaction matrix is stored:
      *                S0                 S1
-     *      S0 ( ia_matrix[0][0]  ia_matrix[0][1]  )
-     *      S1 ( ia_matrix[1][0]  ia_matrix[1][1]  )
+     *      S0 ( _ia_matrix[0][0]  _ia_matrix[0][1]  )
+     *      S1 ( _ia_matrix[1][0]  _ia_matrix[1][1]  )
      *
      * The interaction payoff is given from the perspective of the left-column-
      * strategy. E.g. if S0 interacts with S1, S0 receives the payoff given by
-     * ia_matrix[0][1] whereas S1 receives the payoff given by ia_matrix[1][0].
+     * _ia_matrix[0][1] whereas S1 receives the payoff given by _ia_matrix[1][0].
      */
     void perform_step ()
     {
-        // Get the interaction matrix
-        const auto ia_matrix = _config["ia_matrix"].as<std::vector<std::vector<double>>>();
-        // TODO if expensive, store this elseplace?
-
         // Define the interaction rule lambda function
-        auto interact = [this, &ia_matrix](const auto cell){
+        auto interact = [this](const auto cell){
             // Get the state of the Cell
             auto state = cell->state();
 
@@ -233,16 +231,16 @@ public:
             {
                 auto nb_state = nb->state();
                 if (state.strategy == S0 && nb_state.strategy == S0) {
-                    state.payoff += ia_matrix[0][0];
+                    state.payoff += _ia_matrix[0][0];
                 }
                 else if (state.strategy == S0 && nb_state.strategy == S1) {
-                    state.payoff += ia_matrix[0][1];
+                    state.payoff += _ia_matrix[0][1];
                 }
                 else if (state.strategy == S1 && nb_state.strategy == S0) {
-                    state.payoff += ia_matrix[1][0];
+                    state.payoff += _ia_matrix[1][0];
                 }
                 else if (state.strategy == S1 && nb_state.strategy == S1) {
-                    state.payoff += ia_matrix[1][1];
+                    state.payoff += _ia_matrix[1][1];
                 }
             }
             return state;
