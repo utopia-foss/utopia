@@ -246,8 +246,54 @@ public:
             return state;
         };
 
+        // Define the update rule lambda function
+        auto update = [this](const auto cell){
+            using CellType = typename decltype(_manager)::Cell;
+
+            // Get the state of the cell
+            auto state = cell->state();
+
+            // Set highest payoff in the neighborhood to zero
+            double highest_payoff = 0.;
+
+            // Store all neighboring cells with the highest payoff in this vector
+            std::vector<std::shared_ptr<CellType>> fittest_nbs; 
+            
+            // Loop through the neighbors and store all neighbors with the highest payoff
+            // NOTE that in most cases the vector will contain only one cell.
+            // NOTE that this implementation is probably not the most efficient one
+            //      but it guarantees to cope with spatial artifacts in certain parameter regimes
+            for (auto nb : MooreNeighbor::neighbors(cell, this->_manager)){
+                if (nb->state().payoff > highest_payoff){
+                    highest_payoff = nb->state().payoff;
+                    fittest_nbs.clear();
+                    fittest_nbs.push_back(nb);
+                }
+                else if (nb->state().payoff == highest_payoff){
+                    highest_payoff = nb->state().payoff;
+                    fittest_nbs.push_back(nb);
+                }
+            }
+
+            if (fittest_nbs.size() == 1){
+                // If there is only one fittest neighbor 
+                // update the cell's new state with the state of the fittest neighbor
+            }
+            else if (fittest_nbs.size() > 1){
+                // If there are multiple nbs with the same highest payoff
+                // chose randomly one of them to pass on its strategy
+            }
+            else{
+                // There is no fittest neighbor. This case should never occur
+                std::runtime_error("In the cell update, there is no fittest neighbor!");
+            }
+
+            return state;
+        };
+
         // Apply the rule to all cells
         apply_rule(interact, _manager.cells());
+        apply_rule(update, _manager.cells());
     }
 
     /// Write data
