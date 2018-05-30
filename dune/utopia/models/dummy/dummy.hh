@@ -51,13 +51,16 @@ public:
         // Initialise state and boundary condition members
         state(initial_state),
         bc(state.size(), 1.0)
-    { }
+    {
+        // Write initial state
+        this->write_data();
+    }
 
     /// Iterate by one time step
     void perform_step ()
     {
         // Communicate which iteration step is performed
-        std::cout << "  iteration step " << this->time << std::endl;
+        std::cout << "  Performing step " << this->time << " ..." << std::endl;
 
         // Write some random numbers into the state vector
         auto gen = std::bind(std::uniform_real_distribution<>(), *rng);

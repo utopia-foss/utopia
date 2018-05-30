@@ -94,12 +94,13 @@ public:
 
     // -- Default implementations -- //
 
-    /// Iterate one (time) step
-    /** Perform computation of one time step, increment time and write data
+    /// Iterate one (time) step of this model
+    /** Increment time, perform step, then write data
      */
     void iterate () {
-        perform_step();
+        // TODO add low-priority log messages here
         increment_time();
+        perform_step();
         write_data();
     }
 
