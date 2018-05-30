@@ -30,8 +30,11 @@ public:
     using Base = Model<Dummy, DummyTypes>;
 
 private:
-    Data _state;
-    BCType _bc;
+    /// The current state of the model
+    Data state;
+
+    /// The boundary conditions of the model
+    BCType bc;
 
 public:
     /// Construct the dummy model with an initial state
@@ -46,8 +49,8 @@ public:
         // Use the base constructor for the main parts
         Base(name, cfg, parent_group, rng),
         // Initialise state and boundary condition members
-        _state(initial_state),
-        _bc(_state.size(), 1.0)
+        state(initial_state),
+        bc(state.size(), 1.0)
     { }
 
     /// Iterate by one time step
@@ -58,9 +61,9 @@ public:
 
         // Write some random numbers into the state vector
         auto gen = std::bind(std::uniform_real_distribution<>(), *rng);
-        std::generate(_bc.begin(), _bc.end(), gen);
-        std::transform(_state.begin(), _state.end(),
-                       _bc.begin(), _state.begin(),
+        std::generate(bc.begin(), bc.end(), gen);
+        std::transform(state.begin(), state.end(),
+                       bc.begin(), state.begin(),
                        [](const auto a, const auto b) { return a + b; }
         );
     }
@@ -73,18 +76,18 @@ public:
 
         // Open the dataset and write the state into it
         auto dataset = hdfgrp->open_dataset(set_name);
-        dataset->write(_state.begin(), _state.end(),
+        dataset->write(state.begin(), state.end(),
             [](auto &value) { return value; });
     }
 
     // Set model boundary condition
-    void set_boundary_condition (const BCType& bc) { _bc = bc; }
+    void set_boundary_condition (const BCType& new_bc) { bc = new_bc; }
 
     /// Set model initial condition
-    void set_initial_condition (const Data& ic) { _state = ic; }
+    void set_initial_condition (const Data& ic) { state = ic; }
 
     /// Return const reference to stored data
-    const Data& data () const { return _state; }
+    const Data& data () const { return state; }
 };
 
 } // namespace Models
