@@ -26,10 +26,8 @@ using DummyTypes = ModelTypes<
 class Dummy : public Model<Dummy, DummyTypes>
 {
 public:
-    // convenience type definitions
+    /// The base model class
     using Base = Model<Dummy, DummyTypes>;
-    using Data = typename Base::Data;
-    using BCType = typename Base::BCType;
 
 private:
     Data _state;
@@ -37,16 +35,18 @@ private:
 
 public:
     /// Construct the dummy model with an initial state
-    /** \param state Initial state of the model
+    /** \param initial_state Initial state of the model
      */
     Dummy (const std::string name,
            Config &cfg,
            std::shared_ptr<DataGroup> parent_group,
            std::shared_ptr<RNG> rng,
-           const Data& state)
+           const Data& initial_state)
     :
+        // Use the base constructor for the main parts
         Base(name, cfg, parent_group, rng),
-        _state(state),
+        // Initialise state and boundary condition members
+        _state(initial_state),
         _bc(_state.size(), 1.0)
     { }
 
