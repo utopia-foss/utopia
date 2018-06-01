@@ -2,6 +2,21 @@
 
 #include "model_test.hh"
 
+/// clean up method that is performed after the tests
+void cleanup(Utopia::DataIO::HDFFile& tmpfile, std::string tmpfile_path) {
+    std::cout << "Cleaning up ..." << std::endl;
+
+    // close and remove the temporary file
+    tmpfile.close();
+    std::cout << "  tmpfile closed" << std::endl;
+
+    std::remove(tmpfile_path.c_str());
+    std::cout << "  tmpfile removed" << std::endl;
+
+    std::cout << "Cleanup finished." << std::endl;
+}
+
+
 int main(int argc, char *argv[])
 {
     try {
@@ -14,10 +29,10 @@ int main(int argc, char *argv[])
         std::cout << "Config loaded." << std::endl;
 
         // create a temporary file and get the basegroup
-        auto output_path = cfg["output_path"].as<std::string>();
-        std::cout << "  output_path: " << output_path << std::endl;
-        auto file = Utopia::DataIO::HDFFile(output_path, "w");
-        auto basegroup = file.get_basegroup();
+        auto tmpfile_path = cfg["output_path"].as<std::string>();
+        std::cout << "  output_path: " << tmpfile_path << std::endl;
+        auto tmpfile = Utopia::DataIO::HDFFile(tmpfile_path, "w");
+        auto basegroup = tmpfile.get_basegroup();
 
         // initialize an RNG
         auto seed = cfg["seed"].as<int>();
@@ -67,15 +82,20 @@ int main(int argc, char *argv[])
         state = std::vector<double>(1E6, 3.0);
         assert(compare_containers(model.data(), state));
 
-        std::cout << "All done. :)" << std::endl;
+        std::cout << "Tests successful. :)" << std::endl;
+
+        cleanup(tmpfile, tmpfile_path);
+
         return 0;
     }
     catch (std::exception& e) {
         std::cerr << e.what() << std::endl;
+        // NOTE cannot call cleanup here because the scope is not shared
         return 1;
     }
     catch (...) {
-        std::cout << "Failed!" << std::endl;
+        std::cout << "Exception occurred!" << std::endl;
+        // NOTE cannot call cleanup here because the scope is not shared
         return 1;
     }
 }
