@@ -13,9 +13,12 @@ int main(int argc, char *argv[])
 
         // initialize the actual model
         Utopia::DoNothingModel model("my_model", pp);
-        
-        std::cout << "Initialization complete." << std::endl;
-        return 0;
+        std::cout << "Initialization succeeded." << std::endl;
+
+        // clean up temporary file
+        pp.hdffile.close();
+        std::remove(pp.hdffile.get_path().c_str());
+        std::cout << "Temporary file removed." << std::endl;
     }
     catch (std::exception& e) {
         std::cerr << e.what() << std::endl;
@@ -25,4 +28,7 @@ int main(int argc, char *argv[])
         std::cout << "Exception occurred!" << std::endl;
         return 1;
     }
+
+    std::cout << "Test ran through." << std::endl;
+    return 0;
 }

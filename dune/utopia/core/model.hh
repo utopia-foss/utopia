@@ -101,7 +101,9 @@ public:
         hdfgrp(parent_group->open_group(this->name)),
         // the shared RNG can just be stored
         rng(shared_rng)
-    { }
+    {
+        // TODO add informative log messages here
+    }
 
 
     /// Construct model with information from parent model
@@ -126,7 +128,9 @@ public:
         cfg(parent_model.get_cfg()[this->name]),
         hdfgrp(parent_model.get_hdfgrp()->open_group(this->name)),
         rng(parent_model.get_rng())
-    { }
+    {
+        // TODO add informative log messages here
+    }
 
 
     // -- Getters -- //
@@ -224,8 +228,10 @@ protected:
     using DataGroup = Utopia::DataIO::HDFGroup;
 
     Config cfg;
-    DataFile hdffile;
     std::shared_ptr<RNG> rng;
+
+public:
+    DataFile hdffile;
 
 public:
     /// Constructor that only requires path to a config file
@@ -234,7 +240,7 @@ public:
     // Initialize the config node from the path to the config file
     cfg{cfg_path},
     // Create a file at the specified output path
-    hdffile{cfg["output_path"].as<std::string>(), "x"},
+    hdffile{cfg["output_path"].as<std::string>(), "w"},
     // Initialize the RNG from a seed
     rng(std::make_shared<RNG>(cfg["seed"].as<int>()))
     {
@@ -248,7 +254,7 @@ public:
     PseudoParent (const std::string cfg_path,
                   const std::string output_path,
                   const int seed=42,
-                  const std::string output_file_mode="a")
+                  const std::string output_file_mode="x")
     :
     // Initialize the config node from the path to the config file
     cfg{cfg_path},
@@ -272,11 +278,8 @@ public:
     Config get_cfg() {
         return this->cfg;
     }
-    
-    /// Return a pointer to the HDF file
-    std::shared_ptr<DataFile> get_hdffile() {
-        return this->hdffile;
-    }
+
+    // TODO add getter for hdffile (best: shared pointer to it)
     
     /// Return a pointer to the HDF basegroup
     std::shared_ptr<DataGroup> get_hdfgrp() {
