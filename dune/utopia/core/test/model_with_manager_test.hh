@@ -10,23 +10,24 @@
 #include <dune/utopia/data_io/hdfgroup.hh>
 #include <dune/utopia/data_io/hdfdataset.hh>
 
+
 /// Template declaration for model types extracted from Manager
 template<class Manager>
-using CoreModelTypes = Utopia::ModelTypes<
+using MngrModelTypes = Utopia::ModelTypes<
     typename Manager::Container,
     std::vector<bool>
 >;
 
-/// A very simple model implementing 
+/// A model that has a custom (and templated) Manager as as member
 template<class Manager>
-class CoreModel:
-    public Utopia::Model<CoreModel<Manager>, CoreModelTypes<Manager>>
+class MngrModel:
+    public Utopia::Model<MngrModel<Manager>, MngrModelTypes<Manager>>
 {
 private:
     Manager _manager;
 
 public:
-    using Base = Utopia::Model<CoreModel<Manager>, CoreModelTypes<Manager>>;
+    using Base = Utopia::Model<MngrModel<Manager>, MngrModelTypes<Manager>>;
     using Data = typename Manager::Container;
     using BCType = typename Base::BCType;
     using Config = typename Base::Config;
@@ -36,7 +37,7 @@ public:
     /// Construct the model.
     /** \param manager Manager for this model
      */
-    CoreModel (const std::string name,
+    MngrModel (const std::string name,
                Config &parent_cfg,
                std::shared_ptr<DataGroup> parent_group,
                std::shared_ptr<RNG> shared_rng,
@@ -81,17 +82,23 @@ public:
     }
 };
 
-/// Build the model!
-decltype(auto) setup_core_model_manager(const unsigned int grid_size)
+/// Setup the manager to be used with the model class
+/** It is this setup method that allows type deduction while instantiating
+ *  the templated model class.
+ */
+decltype(auto) setup_manager(const unsigned int grid_size)
 {
     // types for cells
     constexpr bool sync = false;
     using State = double;
     using Tag = Utopia::DefaultTag;
 
+    // create a grid, cells on it
     auto grid = Utopia::Setup::create_grid(grid_size);
     auto cells = Utopia::Setup::create_cells_on_grid<sync, State, Tag>(
         grid, 0.0);
+
+    // can now create and return a GridManager
     return Utopia::Setup::create_manager_cells<true, true>(grid, cells);
 }
 

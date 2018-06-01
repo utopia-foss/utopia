@@ -7,6 +7,3 @@ grid_size: 100
 
 test:
   foo: bar
-
-test_it:
-  foo: bar

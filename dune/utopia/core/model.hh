@@ -32,8 +32,10 @@ struct ModelTypes
 template<class Derived, typename ModelTypes>
 class Model
 {
-protected:
+public:
     // -- Data types uses throughout the model class -- //
+    // NOTE: these are also available to derived classes
+
     /// Data type of the state
     using Data = typename ModelTypes::Data;
     
@@ -49,12 +51,13 @@ protected:
     /// Data type of the shared RNG
     using RNG = typename ModelTypes::RNG;
 
+protected:
     // -- Member declarations -- //
     /// Model internal time stamp
     unsigned int time;
     
     /// Name of the model instance
-    const std::string name; // TODO check if it should really be const?
+    const std::string name;
 
     /// Config node belonging to this model instance
     Config cfg;
