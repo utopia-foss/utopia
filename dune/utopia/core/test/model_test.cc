@@ -81,14 +81,15 @@ int main(int argc, char *argv[])
         state = std::vector<double>(1E6, 3.0);
         assert(compare_containers(model.data(), state));
 
-        // reset states
+        // set state manually and assert it worked
         state = std::vector<double>(1E6, 1.0);
         model.set_initial_condition(state);
         assert(compare_containers(model.data(), state));
 
-        // check override of iterate function in model_it
+        // check override of iterate function in model_it, which was not
+        // iterated yet
         model_it.iterate();
-        state = std::vector<double>(1E6, 3.0);
+        state = std::vector<double>(1E6, 2.0);
         assert(compare_containers(model.data(), state));
 
         std::cout << "Tests successful. :)" << std::endl;
