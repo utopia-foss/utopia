@@ -1,13 +1,16 @@
 #ifndef HDFTYPEFACTORY_HH
 #define HDFTYPEFACTORY_HH
+
 #include "hdfutilities.hh"
 #include <hdf5.h>
 #include <hdf5_hl.h>
 #include <iostream>
+
 namespace Utopia
 {
 namespace DataIO
 {
+
 class HDFTypeFactory
 {
 private:
@@ -19,10 +22,11 @@ private:
 
 public:
     /**
-     * @brief struct for getting a plain type from a return type of a function
+     * @brief      struct for getting a plain type from a return type of a
+     *             function
      *
-     * @tparam T
-     * @tparam T
+     * @tparam     T     { description }
+     * @tparam     U     { description }
      */
     template <typename T, typename U = T>
     struct result_type
@@ -30,12 +34,25 @@ public:
         using type = T;
     };
 
+    /**
+     * @brief      struct for getting a plain type from a return type of a
+     *             function
+     *
+     * @tparam     T     { description }
+     */
     template <typename T>
     struct result_type<T*>
     {
         using type = T;
     };
 
+
+    /**
+     * @brief      struct for getting a plain type from a return type of a
+     *             function
+     *
+     * @tparam     T     { description }
+     */
     template <typename T>
     struct result_type<T&>
     {
@@ -43,10 +60,13 @@ public:
     };
 
     /**
-     * @brief returns a HDF5 type from a given C++ primitive type
+     * @brief      returns a HDF5 type from a given C++ primitive type
      *
-     * @tparam T
-     * @return hid_t
+     * @param[in]  size  The size
+     *
+     * @tparam     T     { description }
+     *
+     * @return     hid_t
      */
     template <typename T>
     static inline hid_t type([[maybe_unused]] std::size_t size = 0)
@@ -174,4 +194,5 @@ hid_t HDFTypeFactory::__get_type__<char>()
 
 } // namespace DataIO
 } // namespace Utopia
+
 #endif
