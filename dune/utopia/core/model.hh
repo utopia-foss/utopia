@@ -107,6 +107,12 @@ public:
         write_data();
     }
 
+    // -- Getters -- //
+
+    unsigned int get_time() {
+        return this->time;
+    }
+
     // -- User-defined implementations -- //
 
     /// Return const reference to stored data

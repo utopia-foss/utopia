@@ -78,16 +78,16 @@ int main(int argc, char *argv[])
         // Check that all models were iterated
         std::cout << "  Asserting correct iteration ..." << std::endl;
         // level 0
-        assert(root.time == 1);
+        assert(root.get_time() == 1);
         // level 1
-        assert(root.sub_one.time == 1);
-        assert(root.sub_another.time == 1);
+        assert(root.sub_one.get_time() == 1);
+        assert(root.sub_another.get_time() == 1);
         // level 2
-        assert(root.sub_one.lazy.time == 1);
-        assert(root.sub_another.sub_one.time == 1);
-        assert(root.sub_another.sub_lazy.time == 1);
+        assert(root.sub_one.lazy.get_time() == 1);
+        assert(root.sub_another.sub_one.get_time() == 1);
+        assert(root.sub_another.sub_lazy.get_time() == 1);
         // level 3
-        assert(root.sub_another.sub_one.lazy.time == 1);
+        assert(root.sub_another.sub_one.lazy.get_time() == 1);
         
         std::cout << "  correct" << std::endl;
 
