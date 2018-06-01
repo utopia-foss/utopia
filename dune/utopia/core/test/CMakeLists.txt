@@ -2,6 +2,7 @@
 file(COPY "square.msh" "cube.msh"
           "model_test.yml"
           "model_nested_test.yml"
+          "model_setup_test.yml"
           "model_with_manager_test.yml"
      DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
@@ -18,6 +19,7 @@ set(TESTS_CORE
     grid_test
     model_test
     model_nested_test
+    model_setup_test
     model_with_manager_test
     output_agent_test_gmsh
     output_agent_test_rect

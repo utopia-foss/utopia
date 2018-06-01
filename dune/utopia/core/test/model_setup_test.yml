@@ -1,0 +1,8 @@
+# Config file for the test of the PseudoModel for setup of model classes
+---
+seed: 42
+output_path: model_setup_test_tmpfile.h5
+num_steps: 3
+
+my_model:
+  foo: bar

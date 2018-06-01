@@ -2,9 +2,12 @@
 #define UTOPIA_MODEL_HH
 
 #include <dune/utopia/data_io/config.hh>
+#include <dune/utopia/data_io/hdffile.hh>
 #include <dune/utopia/data_io/hdfgroup.hh>
 
+
 namespace Utopia {
+
 
 /// Wrapper struct for defining base class data types
 /** \tparam DataType Type of the data the model operates on (state)
@@ -24,6 +27,7 @@ struct ModelTypes
     using Config = ConfigType;
     using DataGroup = DataGroupType;
 };
+
 
 /// Base class interface for Models using the CRT Pattern
 /** \tparam Derived Type of the derived model class
@@ -71,7 +75,7 @@ protected:
 public:
     // -- Constructors -- //
 
-    /// Base model constructor
+    /// Granular model constructor
     /** \detail creates an instance of model and extracts the relevant info
      *          from the passed arguments. This constructor should be used when
      *          initializing a model instance directly with all its parts.
@@ -100,8 +104,17 @@ public:
     { }
 
 
-    /// Model constructor via parent model
-    /**
+    /// Construct model with information from parent model
+    /** \detail creates an instance of model using the passed reference to the
+     *          parent model: extracts a 
+     *
+     *  \tparam ParentModel The parent model's type
+     *
+     *  \param name         The name of this model instance, ideally used only
+     *                      once on the current hierarchical level
+     *  \param parent_model The parent model object from which the
+     *                      corresponding config node, the group, and the RNG
+     *                      are extracted
      */
     template<class ParentModel>
     Model (const std::string name,
@@ -151,16 +164,24 @@ public:
         write_data();
     }
 
+
     // -- User-defined implementations -- //
 
     /// Perform the computation of a step
-    void perform_step () { impl().perform_step(); }
+    void perform_step ()
+    {
+        impl().perform_step();
+    }
     
     /// Write data
-    void write_data () { impl().write_data(); }
+    void write_data () {
+        impl().write_data();
+    }
 
     /// Return const reference to stored data
-    const Data& data () const { return impl().data(); }
+    const Data& data () const {
+        return impl().data();
+    }
     
     /// Set model boundary condition
     void set_boundary_condition (const BCType& bc)
@@ -186,6 +207,88 @@ protected:
     /// const cast to the derived interface
     const Derived& impl () const { return static_cast<const Derived&>(*this); }
 };
+
+
+/// A class to use at the top level of the model hierarchy as a mock parent
+/** \detail It is especially useful when desiring to use the model constructor
+ *          that uses a parent model.
+ *
+ *  \tparam RNG The RNG type to use 
+ */
+template<typename RNG=std::mt19937>
+class PseudoParent
+{
+protected:
+    using Config = Utopia::DataIO::Config;
+    using DataFile = Utopia::DataIO::HDFFile;
+    using DataGroup = Utopia::DataIO::HDFGroup;
+
+    Config cfg;
+    DataFile hdffile;
+    std::shared_ptr<RNG> rng;
+
+public:
+    /// Constructor that only requires path to a config file
+    PseudoParent (const std::string cfg_path)
+    :
+    // Initialize the config node from the path to the config file
+    cfg{cfg_path},
+    // Create a file at the specified output path
+    hdffile{cfg["output_path"].as<std::string>(), "x"},
+    // Initialize the RNG from a seed
+    rng(std::make_shared<RNG>(cfg["seed"].as<int>()))
+    {
+        std::cout << "Initialized pseudo parent from config file:  "
+                  << cfg_path << std::endl;
+        // TODO add some informative log messages here
+    }
+    
+
+    /// Constructor that allows granular control over config parameters
+    PseudoParent (const std::string cfg_path,
+                  const std::string output_path,
+                  const int seed=42,
+                  const std::string output_file_mode="a")
+    :
+    // Initialize the config node from the path to the config file
+    cfg{cfg_path},
+    // Create a file at the specified output path
+    hdffile{output_path, output_file_mode},
+    // Initialize the RNG from a seed
+    rng(std::make_shared<RNG>(seed))
+    {
+        std::cout << "Initialized pseudo parent." << std::endl
+                  << "  cfg_path:     " << cfg_path << std::endl
+                  << "  output_path:  " << output_path
+                  << "  (mode: " << output_file_mode << ")" << std::endl
+                  << "  seed:         " << seed << std::endl;
+        // TODO add some informative log messages here
+    }
+
+
+    // -- Getters -- //
+
+    /// Return the config node of the Pseudo model, i.e. the root node
+    Config get_cfg() {
+        return this->cfg;
+    }
+    
+    /// Return a pointer to the HDF file
+    std::shared_ptr<DataFile> get_hdffile() {
+        return this->hdffile;
+    }
+    
+    /// Return a pointer to the HDF basegroup
+    std::shared_ptr<DataGroup> get_hdfgrp() {
+        return this->hdffile.get_basegroup();
+    }
+    
+    /// Return a pointer to the RNG
+    std::shared_ptr<RNG> get_rng() {
+        return this->rng;
+    }
+};
+
 
 } // namespace Utopia
 

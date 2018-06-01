@@ -6,7 +6,7 @@
 
 namespace Utopia {
 
-/// Define data types for all three models
+/// Define data types for use in all models
 using CommonModelTypes = ModelTypes<
     std::vector<double>,
     std::vector<double>
