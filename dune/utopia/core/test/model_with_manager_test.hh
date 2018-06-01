@@ -1,9 +1,14 @@
-#ifndef UTOPIA_MODEL_TEST_MODEL_CORE_HH
-#define UTOPIA_MODEL_TEST_MODEL_CORE_HH
+#ifndef UTOPIA_MODEL_TEST_MODEL_WITH_MANAGER_HH
+#define UTOPIA_MODEL_TEST_MODEL_WITH_MANAGER_HH
 
 #include <dune/utopia/base.hh>
 #include <dune/utopia/core/setup.hh>
 #include <dune/utopia/core/model.hh>
+
+#include <dune/utopia/data_io/config.hh>
+#include <dune/utopia/data_io/hdffile.hh>
+#include <dune/utopia/data_io/hdfgroup.hh>
+#include <dune/utopia/data_io/hdfdataset.hh>
 
 /// Template declaration for model types extracted from Manager
 template<class Manager>
@@ -21,15 +26,23 @@ private:
     Manager _manager;
 
 public:
-    using Data = typename Manager::Container;
     using Base = Utopia::Model<CoreModel<Manager>, CoreModelTypes<Manager>>;
+    using Data = typename Manager::Container;
     using BCType = typename Base::BCType;
+    using Config = typename Base::Config;
+    using DataGroup = typename Base::DataGroup;
+    using RNG = typename Base::RNG;
 
     /// Construct the model.
     /** \param manager Manager for this model
      */
-    CoreModel (const Manager& manager):
-        Base(),
+    CoreModel (const std::string name,
+               Config &parent_cfg,
+               std::shared_ptr<DataGroup> parent_group,
+               std::shared_ptr<RNG> shared_rng,
+               const Manager& manager)
+    :
+        Base(name, parent_cfg, parent_group, shared_rng),
         _manager(manager)
     { }
 
@@ -69,7 +82,7 @@ public:
 };
 
 /// Build the model!
-decltype(auto) setup_model_core(const unsigned int grid_size)
+decltype(auto) setup_core_model_manager(const unsigned int grid_size)
 {
     // types for cells
     constexpr bool sync = false;
@@ -79,10 +92,7 @@ decltype(auto) setup_model_core(const unsigned int grid_size)
     auto grid = Utopia::Setup::create_grid(grid_size);
     auto cells = Utopia::Setup::create_cells_on_grid<sync, State, Tag>(
         grid, 0.0);
-    auto manager = Utopia::Setup::create_manager_cells<true, true>(grid, cells);
-
-    // class template argument deduction YESSSSS
-    return CoreModel(manager);
+    return Utopia::Setup::create_manager_cells<true, true>(grid, cells);
 }
 
-#endif // UTOPIA_MODEL_TEST_MODEL_CORE_HH
+#endif // UTOPIA_MODEL_TEST_MODEL_WITH_MANAGER_HH

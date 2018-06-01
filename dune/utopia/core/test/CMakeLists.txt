@@ -1,5 +1,6 @@
 # place mesh in build directory
-file(COPY "square.msh" "cube.msh" "model_test.yml" "model_core_test.yml"
+file(COPY "square.msh" "cube.msh"
+          "model_test.yml" "model_with_manager_test.yml"
      DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 # collect CORE tests
@@ -14,7 +15,7 @@ set(TESTS_CORE
     grid_cells_test_3d
     grid_test
     model_test
-    model_core_test
+    model_with_manager_test
     output_agent_test_gmsh
     output_agent_test_rect
     rng_test
