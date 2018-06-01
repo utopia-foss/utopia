@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
         // -- Setup model -- //
         // get the test config file (path is relative to executable!)
         std::cout << "Loading config ..." << std::endl;
-        Utopia::DataIO::Config cfg("model_with_manager_test.yml");
+        Utopia::DataIO::Config cfg("model_nested_test.yml");
         std::cout << "  Loaded." << std::endl;
 
         // create a temporary file and get the basegroup
@@ -49,12 +49,12 @@ int main(int argc, char *argv[])
         std::cout << "  RNG created" << std::endl;
 
         // create the model instances
-        std::cout << "Setting up model instances ..." << std::endl;
+        std::cout << "Initializing RootModel instance ..." << std::endl;
         
         // the test model
         Utopia::RootModel model("root", cfg, basegroup, rng);
         
-        std::cout << "Models initialized." << std::endl;
+        std::cout << "RootModel 'root' initialized." << std::endl;
 
         // -- Tests begin here -- //
         std::cout << "Commencing tests ..." << std::endl;

@@ -17,6 +17,37 @@ using CommonModelTypes = ModelTypes<
 /** This model is used to nest it multiple times within the RootModel class
  *  that is defined below
  */
+class DoNothingModel:
+    public Model<DoNothingModel, CommonModelTypes>
+{
+public:
+    /// The base model class
+    using Base = Model<DoNothingModel, CommonModelTypes>;
+
+    /// store the level as a member
+    const unsigned int level;
+
+public:
+    /// Constructor
+    DoNothingModel (const std::string name,
+               Config &parent_cfg,
+               std::shared_ptr<DataGroup> parent_group,
+               std::shared_ptr<RNG> shared_rng)
+    :
+        // Pass arguments to the base class constructor
+        Base(name, parent_cfg, parent_group, shared_rng),
+        level(cfg["level"].as<unsigned int>())
+    {
+        std::cout << "  DoNothingModel '" << name << "' initialized. "
+                  << "Level: " << level << std::endl;
+    }
+};
+
+
+/// Test model that is used within the nested models
+/** This model is used to nest it multiple times within the RootModel class
+ *  that is defined below
+ */
 class OneModel:
     public Model<OneModel, CommonModelTypes>
 {
@@ -24,8 +55,11 @@ public:
     /// The base model class
     using Base = Model<OneModel, CommonModelTypes>;
 
-private:
-    // no members needed here
+    /// store the level as a member
+    const unsigned int level;
+
+    /// submodel: DoNothingModel
+    DoNothingModel sub;
 
 public:
     /// Constructor
@@ -35,8 +69,13 @@ public:
                std::shared_ptr<RNG> shared_rng)
     :
         // Pass arguments to the base class constructor
-        Base(name, parent_cfg, parent_group, shared_rng)
-    { }
+        Base(name, parent_cfg, parent_group, shared_rng),
+        level(cfg["level"].as<unsigned int>()),
+        sub("lazy", cfg, hdfgrp, rng)
+    {
+        std::cout << "  OneModel '" << name << "' initialized. "
+                  << "Level: " << level << std::endl;
+    }
 };
 
 
@@ -51,8 +90,14 @@ public:
     /// The base model class
     using Base = Model<AnotherModel, CommonModelTypes>;
 
-private:
-    // no members needed here
+    /// store the level as a member
+    const unsigned int level;
+
+    /// submodel: One
+    OneModel sub_one;
+
+    /// submodel: DoNothing
+    DoNothingModel sub_lazy;
 
 public:
     /// Constructor
@@ -62,8 +107,14 @@ public:
                std::shared_ptr<RNG> shared_rng)
     :
         // Pass arguments to the base class constructor
-        Base(name, parent_cfg, parent_group, shared_rng)
-    { }
+        Base(name, parent_cfg, parent_group, shared_rng),
+        level(cfg["level"].as<unsigned int>()),
+        sub_one("one", cfg, hdfgrp, rng),
+        sub_lazy("lazy", cfg, hdfgrp, rng)
+    {
+        std::cout << "  AnotherModel '" << name << "' initialized. "
+                  << "Level: " << level << std::endl;
+    }
 };
 
 
@@ -75,8 +126,14 @@ public:
     /// The base model class
     using Base = Model<RootModel, CommonModelTypes>;
 
-private:
-    // no members needed here
+    /// store the level as a member
+    const unsigned int level;
+
+    /// submodel: OneModel
+    OneModel sub_one;
+
+    /// submodel: AnotherModel
+    AnotherModel sub_another;
 
 public:
     /// Create RootModel with initial state
@@ -86,8 +143,14 @@ public:
                std::shared_ptr<RNG> shared_rng)
     :
         // Initialize completely via parent class constructor
-        Base(name, parent_cfg, parent_group, shared_rng)
-    { }
+        Base(name, parent_cfg, parent_group, shared_rng),
+        level(cfg["level"].as<unsigned int>()),
+        sub_one("one", cfg, hdfgrp, rng),
+        sub_another("another", cfg, hdfgrp, rng)
+    {
+        std::cout << "  RootModel '" << name << "' initialized. "
+                  << "Level: " << level << std::endl;
+    }
 };
 
 
