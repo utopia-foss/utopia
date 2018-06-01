@@ -1,5 +1,5 @@
-#ifndef UTOPIA_TEST_MODEL_TEST_HH
-#define UTOPIA_TEST_MODEL_TEST_HH
+#ifndef UTOPIA_MODELS_DUMMY_HH
+#define UTOPIA_MODELS_DUMMY_HH
 
 #include <dune/utopia/base.hh>
 #include <dune/utopia/core/model.hh>
@@ -23,31 +23,30 @@ using DummyTypes = ModelTypes<
 /** Holds a vector of doubles and increments its entries by the boundary
  *  condition vector or 1 otherwise.
  */
-class Dummy : public Model<Dummy, DummyTypes>
+class Dummy:
+    public Model<Dummy, DummyTypes>
 {
 public:
     /// The base model class
     using Base = Model<Dummy, DummyTypes>;
 
-private:
     /// The current state of the model
     Data state;
 
     /// The boundary conditions of the model
     BCType bc;
 
-public:
     /// Construct the dummy model with an initial state
     /** \param initial_state Initial state of the model
      */
     Dummy (const std::string name,
-           Config &cfg,
+           Config &parent_cfg,
            std::shared_ptr<DataGroup> parent_group,
-           std::shared_ptr<RNG> rng,
+           std::shared_ptr<RNG> shared_rng,
            const Data& initial_state)
     :
         // Use the base constructor for the main parts
-        Base(name, cfg, parent_group, rng),
+        Base(name, parent_cfg, parent_group, shared_rng),
         // Initialise state and boundary condition members
         state(initial_state),
         bc(state.size(), 1.0)
@@ -97,4 +96,4 @@ public:
 
 } // namespace Utopia
 
-#endif // UTOPIA_TEST_MODEL_TEST_HH
+#endif // UTOPIA_MODELS_DUMMY_HH
