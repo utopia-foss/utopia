@@ -68,29 +68,39 @@ int main(int argc, char *argv[])
         std::cout << "Commencing tests ..." << std::endl;
 
         // assert initial state
+        std::cout << "  initial state" << std::endl;
         assert(compare_containers(model.data(), state));
+        std::cout << "  correct" << std::endl;
 
         // assert state after first iteration
+        std::cout << "  after one iteration" << std::endl;
         model.iterate();
         state = std::vector<double>(1E6, 1.0);
         assert(compare_containers(model.data(), state));
+        std::cout << "  correct" << std::endl;
 
         // set boundary conditions and check again
+        std::cout << "  setting boundary condition + iterate" << std::endl;
         model.set_boundary_condition(std::vector<double>(1E6, 2.0));
         model.iterate();
         state = std::vector<double>(1E6, 3.0);
         assert(compare_containers(model.data(), state));
+        std::cout << "  correct" << std::endl;
 
         // set state manually and assert it worked
+        std::cout << "  setting initial condition" << std::endl;
         state = std::vector<double>(1E6, 1.0);
         model.set_initial_condition(state);
         assert(compare_containers(model.data(), state));
+        std::cout << "  correct" << std::endl;
 
         // check override of iterate function in model_it, which was not
         // iterated yet
+        std::cout << "  iterate model with custom iterate method" << std::endl;
         model_it.iterate();
         state = std::vector<double>(1E6, 2.0);
-        assert(compare_containers(model.data(), state));
+        assert(compare_containers(model_it.data(), state));
+        std::cout << "  correct" << std::endl;
 
         std::cout << "Tests successful. :)" << std::endl;
 
