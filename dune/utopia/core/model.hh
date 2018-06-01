@@ -95,6 +95,14 @@ public:
         rng(shared_rng)
     { }
 
+
+    // -- Getters -- //
+
+    unsigned int get_time() {
+        return this->time;
+    }
+
+
     // -- Default implementations -- //
 
     /// Iterate one (time) step of this model
@@ -107,13 +115,13 @@ public:
         write_data();
     }
 
-    // -- Getters -- //
-
-    unsigned int get_time() {
-        return this->time;
-    }
-
     // -- User-defined implementations -- //
+
+    /// Perform the computation of a step
+    void perform_step () { impl().perform_step(); }
+    
+    /// Write data
+    void write_data () { impl().write_data(); }
 
     /// Return const reference to stored data
     const Data& data () const { return impl().data(); }
@@ -130,23 +138,17 @@ public:
         impl().set_initial_condition(ic);
     }
 
-    /// Perform the computation of a step
-    void perform_step () { impl().perform_step(); }
-    
-    /// Write data
-    void write_data () { impl().write_data(); }
-
 protected:
+    /// Increment time
+    /** \param dt Time increment
+     */
+    void increment_time (unsigned int dt=1) { time += dt; }
+
     /// cast to the derived class
     Derived& impl () { return static_cast<Derived&>(*this); }
     
     /// const cast to the derived interface
     const Derived& impl () const { return static_cast<const Derived&>(*this); }
-    
-    /// Increment time
-    /** \param dt Time increment
-     */
-    void increment_time (unsigned int dt=1) { time += dt; }
 };
 
 } // namespace Utopia
