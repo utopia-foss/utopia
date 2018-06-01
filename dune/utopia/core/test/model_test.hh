@@ -4,26 +4,31 @@
 #include <dune/utopia/base.hh>
 #include <dune/utopia/core/model.hh>
 
+#include <dune/utopia/data_io/config.hh>
+#include <dune/utopia/data_io/hdffile.hh>
+#include <dune/utopia/data_io/hdfgroup.hh>
+
 namespace Utopia {
 
 /// Define data types of dummy model
-using DummyModelTypes = ModelTypes<
+using TestModelTypes = ModelTypes<
     std::vector<double>,
     std::vector<double>
 >;
 
-/// Dummy model with simple update rule
+/// Test model with simple update rule
 /** Holds a vector of doubles and increments its entries by the boundary
  *  condition vector or 1 otherwise.
+ *  
+ *  This also tests whether inheritance from the base Model class works as
+ *  desired.
  */
-class DummyModel:
-    public Model<DummyModel, DummyModelTypes>
+class TestModel:
+    public Model<TestModel, TestModelTypes>
 {
 public:
-    // convenience type definitions
-    using Base = Model<DummyModel, DummyModelTypes>;
-    using Data = typename Base::Data;
-    using BCType = typename Base::BCType;
+    /// The base model class
+    using Base = Model<TestModel, TestModelTypes>;
 
 private:
     Data _state;
@@ -33,9 +38,16 @@ public:
     /// Construct the dummy model with an initial state
     /** \param state Initial state of the model
      */
-    DummyModel (const Data& state):
-        Base(),
-        _state(state),
+    TestModel (const std::string name,
+               Config &parent_cfg,
+               std::shared_ptr<DataGroup> parent_group,
+               std::shared_ptr<RNG> shared_rng,
+               const Data& initial_state)
+    :
+        // Pass arguments to the base class constructor
+        Base(name, parent_cfg, parent_group, shared_rng),
+        // Initialize state and boundary condition members
+        _state(initial_state),
         _bc(_state.size(), 1.0)
     { }
 
@@ -61,16 +73,25 @@ public:
     const Data& data () const { return _state; }
 };
 
-/// Dummy model checking if 'iterate' can be overridden
-class DummyModelWithIterate :
-    public DummyModel
+
+
+/// Test model checking if 'iterate' can be overwritten
+class TestModelWithIterate :
+    public TestModel
 {
 private:
-    using Data = DummyModel::Data;
+    using Data = TestModel::Data;
+
 public:
-    /// Create DummyModel with initial state
-    DummyModelWithIterate (const Data& state):
-        DummyModel(state)
+    /// Create TestModel with initial state
+    TestModelWithIterate (const std::string name,
+                          Config &parent_cfg,
+                          std::shared_ptr<DataGroup> parent_group,
+                          std::shared_ptr<RNG> shared_rng,
+                          const Data& initial_state)
+    :
+        // Initialize completely via parent class constructor
+        TestModel(name, parent_cfg, parent_group, shared_rng, initial_state)
     { }
 
     /// Iterate twice for checking this implementation
@@ -80,8 +101,8 @@ public:
     }
 };
 
-
 } // namespace Utopia
+
 
 /// Compare two containers
 template<typename A, typename B>

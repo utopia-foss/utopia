@@ -1,5 +1,6 @@
 # place mesh in build directory
-file(COPY "square.msh" "cube.msh" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY "square.msh" "cube.msh" "model_test.yml" "model_core_test.yml"
+     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 # collect CORE tests
 set(TESTS_CORE
