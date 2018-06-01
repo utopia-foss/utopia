@@ -111,26 +111,32 @@ public:
 
     /// Return const reference to stored data
     const Data& data () const { return impl().data(); }
+    
     /// Set model boundary condition
     void set_boundary_condition (const BCType& bc)
     {
         impl().set_boundary_condition(bc);
     }
+
     /// Set model initial condition
     void set_initial_condition (const Data& ic)
     {
         impl().set_initial_condition(ic);
     }
+
     /// Perform the computation of a step
     void perform_step () { impl().perform_step(); }
+    
     /// Write data
     void write_data () { impl().write_data(); }
 
 protected:
     /// cast to the derived class
     Derived& impl () { return static_cast<Derived&>(*this); }
+    
     /// const cast to the derived interface
     const Derived& impl () const { return static_cast<const Derived&>(*this); }
+    
     /// Increment time
     /** \param dt Time increment
      */

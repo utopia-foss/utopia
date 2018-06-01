@@ -52,16 +52,44 @@ int main(int argc, char *argv[])
         std::cout << "Initializing RootModel instance ..." << std::endl;
         
         // the test model
-        Utopia::RootModel model("root", cfg, basegroup, rng);
-        
+        Utopia::RootModel root("root", cfg, basegroup, rng);
+
         std::cout << "RootModel 'root' initialized." << std::endl;
+
+        /** Created model hierarchy:
+         *
+         *   0               Root
+         *                  /    \
+         *                 /      \
+         *   1          One        Another
+         *               |           |    \
+         *   2       DoNothing      One   DoNothing
+         *                           |
+         *   3                   DoNothing
+         */
 
         // -- Tests begin here -- //
         std::cout << "Commencing tests ..." << std::endl;
 
-        // model.iterate();
+        // Iterate model; should also iterate submodels
+        std::cout << "  Performing single iteration ..." << std::endl;
+        root.iterate();
 
-        // TODO assert all models were iterated
+        // Check that all models were iterated
+        std::cout << "  Asserting correct iteration ..." << std::endl;
+        // level 0
+        assert(root.time == 1);
+        // level 1
+        assert(root.sub_one.time == 1);
+        assert(root.sub_another.time == 1);
+        // level 2
+        assert(root.sub_one.lazy.time == 1);
+        assert(root.sub_another.sub_one.time == 1);
+        assert(root.sub_another.sub_lazy.time == 1);
+        // level 3
+        assert(root.sub_another.sub_one.lazy.time == 1);
+        
+        std::cout << "  correct" << std::endl;
 
         std::cout << "Tests successful. :)" << std::endl;
 

@@ -41,6 +41,13 @@ public:
         std::cout << "  DoNothingModel '" << name << "' initialized. "
                   << "Level: " << level << std::endl;
     }
+
+    /// Perform a single step (nothing to do here)
+    void perform_step () {}
+
+    /// Data write method (does nothing here)
+    void write_data () {}
+
 };
 
 
@@ -59,7 +66,7 @@ public:
     const unsigned int level;
 
     /// submodel: DoNothingModel
-    DoNothingModel sub;
+    DoNothingModel lazy;
 
 public:
     /// Constructor
@@ -71,11 +78,21 @@ public:
         // Pass arguments to the base class constructor
         Base(name, parent_cfg, parent_group, shared_rng),
         level(cfg["level"].as<unsigned int>()),
-        sub("lazy", cfg, hdfgrp, rng)
+        lazy("lazy", cfg, hdfgrp, rng)
     {
         std::cout << "  OneModel '" << name << "' initialized. "
                   << "Level: " << level << std::endl;
     }
+
+    /// Perform a single step, i.e.: iterate the submodels
+    void perform_step ()
+    {
+        lazy.iterate();
+    }
+
+    /// Data write method (does nothing here)
+    void write_data () {}
+
 };
 
 
@@ -115,6 +132,17 @@ public:
         std::cout << "  AnotherModel '" << name << "' initialized. "
                   << "Level: " << level << std::endl;
     }
+
+    /// Perform a single step, i.e.: iterate the submodels
+    void perform_step ()
+    {
+        sub_one.iterate();
+        sub_lazy.iterate();
+    }
+
+    /// Data write method (does nothing here)
+    void write_data () {}
+
 };
 
 
@@ -151,6 +179,17 @@ public:
         std::cout << "  RootModel '" << name << "' initialized. "
                   << "Level: " << level << std::endl;
     }
+
+    /// Perform a single step, i.e.: iterate the submodels
+    void perform_step ()
+    {
+        sub_one.iterate();
+        sub_another.iterate();
+    }
+
+    /// Data write method (does nothing here)
+    void write_data () {}
+
 };
 
 
