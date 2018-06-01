@@ -1,5 +1,7 @@
 #include <cassert>
 
+#include <dune/utopia/data_io/hdffile.hh>
+
 #include "model_test.hh"
 
 /// clean up method that is performed after the tests

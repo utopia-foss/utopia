@@ -1,3 +1,5 @@
+#include <dune/utopia/data_io/hdffile.hh>
+
 #include "model_with_manager_test.hh"
 
 /// clean up method that is performed after the tests

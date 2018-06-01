@@ -4,13 +4,10 @@
 #include <dune/utopia/base.hh>
 #include <dune/utopia/core/model.hh>
 
-#include <dune/utopia/data_io/config.hh>
-#include <dune/utopia/data_io/hdffile.hh>
-#include <dune/utopia/data_io/hdfgroup.hh>
 
 namespace Utopia {
 
-/// Define data types of dummy model
+/// Define data types for the test models
 using TestModelTypes = ModelTypes<
     std::vector<double>,
     std::vector<double>
@@ -35,7 +32,7 @@ private:
     BCType _bc;
 
 public:
-    /// Construct the dummy model with an initial state
+    /// Construct the test model with an initial state
     /** \param state Initial state of the model
      */
     TestModel (const std::string name,
