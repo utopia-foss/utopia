@@ -59,6 +59,7 @@ protected:
     /// Name of the model instance
     const std::string name;
 
+public:
     /// Config node belonging to this model instance
     Config cfg;
 
@@ -71,7 +72,8 @@ protected:
 public:
     /// Base model constructor
     /** \detail creates an instance of model and extracts the relevant info
-     *          from the passed arguments.
+     *          from the passed arguments. This constructor should be used when
+     *          initializing a model instance directly with all its parts.
      *
      *  \param name          The name of this model instance, ideally used only
      *                       once on the current hierarchical level
@@ -84,7 +86,8 @@ public:
     Model (const std::string name,
            Config &parent_cfg,
            std::shared_ptr<DataGroup> parent_group,
-           std::shared_ptr<RNG> shared_rng):
+           std::shared_ptr<RNG> shared_rng)
+    :
         time(0),
         name(name),
         // extract the relevant config by instance name
@@ -95,6 +98,21 @@ public:
         rng(shared_rng)
     { }
 
+
+    /// Model constructor via parent model
+    /**
+     */
+    template<class ParentModel>
+    Model (const std::string name,
+           ParentModel &parent_model)
+    :
+        time(0),
+        name(name),
+        //extract the other information from the parent model object
+        cfg(parent_model.cfg[this->name]),
+        hdfgrp(parent_model.hdfgrp->open_group(this->name)),
+        rng(parent_model.rng)
+    { }
 
     // -- Getters -- //
 
