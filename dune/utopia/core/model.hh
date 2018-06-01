@@ -59,7 +59,6 @@ protected:
     /// Name of the model instance
     const std::string name;
 
-public:
     /// Config node belonging to this model instance
     Config cfg;
 
@@ -70,6 +69,8 @@ public:
     std::shared_ptr<RNG> rng;
 
 public:
+    // -- Constructors -- //
+
     /// Base model constructor
     /** \detail creates an instance of model and extracts the relevant info
      *          from the passed arguments. This constructor should be used when
@@ -109,15 +110,32 @@ public:
         time(0),
         name(name),
         //extract the other information from the parent model object
-        cfg(parent_model.cfg[this->name]),
-        hdfgrp(parent_model.hdfgrp->open_group(this->name)),
-        rng(parent_model.rng)
+        cfg(parent_model.get_cfg()[this->name]),
+        hdfgrp(parent_model.get_hdfgrp()->open_group(this->name)),
+        rng(parent_model.get_rng())
     { }
+
 
     // -- Getters -- //
 
+    /// Return the current time of this model
     unsigned int get_time() {
         return this->time;
+    }
+
+    /// Return the config node of this model
+    Config get_cfg() {
+        return this->cfg;
+    }
+    
+    /// Return a pointer to the HDF group this model stores data in
+    std::shared_ptr<DataGroup> get_hdfgrp() {
+        return this->hdfgrp;
+    }
+    
+    /// Return a pointer to the shared RNG
+    std::shared_ptr<RNG> get_rng() {
+        return this->rng;
     }
 
 
