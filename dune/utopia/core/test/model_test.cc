@@ -25,19 +25,26 @@ int main(int argc, char *argv[])
         // -- Setup model -- //
         // get the test config file (path is relative to executable!)
         std::cout << "Loading config ..." << std::endl;
-        Utopia::DataIO::Config cfg("model_test.yml");
-        std::cout << "Config loaded." << std::endl;
+        Utopia::DataIO::Config cfg("model_with_manager_test.yml");
+        std::cout << "  Loaded." << std::endl;
 
         // create a temporary file and get the basegroup
+        std::cout << "Creating temporary output file ..." << std::endl;
         auto tmpfile_path = cfg["output_path"].as<std::string>();
         std::cout << "  output_path: " << tmpfile_path << std::endl;
+
         auto tmpfile = Utopia::DataIO::HDFFile(tmpfile_path, "w");
+        std::cout << "  file created" << std::endl;
         auto basegroup = tmpfile.get_basegroup();
+        std::cout << "  basegroup created" << std::endl;
 
         // initialize an RNG
+        std::cout << "Creating shared RNG ..." << std::endl;
         auto seed = cfg["seed"].as<int>();
         std::cout << "  seed: " << seed << std::endl;
+
         auto rng = std::make_shared<std::mt19937>(seed);
+        std::cout << "  RNG created" << std::endl;
 
         // initial state vector for both model instances
         std::vector<double> state(1E6, 0.0);
