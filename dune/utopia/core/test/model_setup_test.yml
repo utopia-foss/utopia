@@ -4,5 +4,11 @@ seed: 42
 output_path: model_setup_test_tmpfile.h5
 num_steps: 3
 
-my_model:
+model1:
+  foo: bar
+
+model2:
+  foo: bar
+
+model3:
   foo: bar
