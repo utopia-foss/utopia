@@ -8,7 +8,7 @@ model1:
   foo: bar
 
 model2:
-  foo: bar
+  bar: foo
 
 model3:
-  foo: bar
+  spam: eggs

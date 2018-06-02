@@ -223,24 +223,36 @@ template<typename RNG=std::mt19937>
 class PseudoParent
 {
 protected:
+    // Convenience type definitions
     using Config = Utopia::DataIO::Config;
-    using DataFile = Utopia::DataIO::HDFFile;
-    using DataGroup = Utopia::DataIO::HDFGroup;
+    using HDFFile = Utopia::DataIO::HDFFile;
+    using HDFGroup = Utopia::DataIO::HDFGroup;
 
+    /// The config node
     Config cfg;
+
+    /// Pointer to the HDF5 file where data is written to
+    std::shared_ptr<HDFFile> hdffile;
+
+    /// Pointer to a RNG that can be shared between models
     std::shared_ptr<RNG> rng;
 
 public:
-    DataFile hdffile;
-
-public:
     /// Constructor that only requires path to a config file
+    /** \detail From the config file, all necessary information is extracted,
+     *          i.e.: the path to the output file ('output_path') and the seed
+     *          of the shared RNG ('seed'). These keys have to be located at
+     *          the top level of the configuration file.
+     *
+     *  \param cfg_path The path to the YAML-formatted configuration file
+     */
     PseudoParent (const std::string cfg_path)
     :
     // Initialize the config node from the path to the config file
     cfg{cfg_path},
-    // Create a file at the specified output path
-    hdffile{cfg["output_path"].as<std::string>(), "w"},
+    // Create a file at the specified output path and store the shared pointer
+    hdffile(std::make_shared<HDFFile>(cfg["output_path"].as<std::string>(),
+                                      "w")),
     // Initialize the RNG from a seed
     rng(std::make_shared<RNG>(cfg["seed"].as<int>()))
     {
@@ -251,15 +263,21 @@ public:
     
 
     /// Constructor that allows granular control over config parameters
+    /**
+     *  \param cfg_path The path to the YAML-formatted configuration file
+     *  \param output_path Where the HDF5 file is to be located
+     *  \param seed The seed the RNG is initialized with (default: 42)
+     *  \param output_file_mode The access mode of the HDF5 file (default: w)
+     */
     PseudoParent (const std::string cfg_path,
                   const std::string output_path,
                   const int seed=42,
-                  const std::string output_file_mode="x")
+                  const std::string output_file_mode="w")
     :
     // Initialize the config node from the path to the config file
     cfg{cfg_path},
     // Create a file at the specified output path
-    hdffile{output_path, output_file_mode},
+    hdffile(std::make_shared<HDFFile>(output_path, output_file_mode)),
     // Initialize the RNG from a seed
     rng(std::make_shared<RNG>(seed))
     {
@@ -279,11 +297,14 @@ public:
         return this->cfg;
     }
 
-    // TODO add getter for hdffile (best: shared pointer to it)
+    /// Return a pointer to the HDF data file
+    std::shared_ptr<HDFFile> get_hdffile() {
+        return this->hdffile;
+    }
     
     /// Return a pointer to the HDF basegroup
-    std::shared_ptr<DataGroup> get_hdfgrp() {
-        return this->hdffile.get_basegroup();
+    std::shared_ptr<HDFGroup> get_hdfgrp() {
+        return this->hdffile->get_basegroup();
     }
     
     /// Return a pointer to the RNG
