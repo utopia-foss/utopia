@@ -214,10 +214,15 @@ protected:
 
 
 /// A class to use at the top level of the model hierarchy as a mock parent
-/** \detail It is especially useful when desiring to use the model constructor
- *          that uses a parent model.
+/** \detail It is especially useful when initializing a top-level model as then
+ *          the model constructor that expects a Model-class-like object can
+ *          be used.
+ *          This class also takes care to load and hold a configuration file,
+ *          to create a HDFFile for output, and to initialize a shared RNG. A
+ *          template parameter exists that allows customization of the RNG
+ *          class.
  *
- *  \tparam RNG The RNG type to use 
+ *  \tparam RNG The RNG type to use
  */
 template<typename RNG=std::mt19937>
 class PseudoParent
