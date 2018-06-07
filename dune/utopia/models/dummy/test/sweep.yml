@@ -1,0 +1,16 @@
+# A test configuration for a sweep of the dummy model
+---
+worker_manager:
+  num_workers: 2
+
+parameter_space:
+  num_steps: 5
+  
+  # Perform a sweep over the RNG seed
+  seed: !sweep
+    default: 1337
+    values: [23, 42, 665, 667]
+
+  # Load the default configuration via the yaml tag
+  dummy: !model
+    model_name: dummy

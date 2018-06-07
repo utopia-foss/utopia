@@ -1,5 +1,5 @@
 ---
-image: citcat/dune-env:latest
+image: ccees/utopia:bionic
 
 variables:
   PROCNUM: 2
@@ -49,8 +49,6 @@ build:main:
     paths:
       - $CI_PROJECT_DIR/build-cmake
     expire_in: 3 hours
-  tags:
-    - light
   script:
     - CMAKE_FLAGS="$CONFIG_FLAGS"
       ./dune-common/bin/dunecontrol --module=utopia configure
@@ -61,8 +59,6 @@ build:main:
 build:debug:
   stage: build
   allow_failure: true
-  tags:
-    - light
   script:
     - CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=Debug $CONFIG_FLAGS -DCMAKE_CXX_FLAGS_DEBUG='$CMAKE_CXX_FLAGS_DEBUG -Werror'"
       ./dune-common/bin/dunecontrol --only=utopia configure
@@ -76,8 +72,6 @@ build:models:
     paths:
       - $CI_PROJECT_DIR/build-cmake
     expire_in: 3 hours
-  tags:
-    - light
   script:
     - CMAKE_FLAGS="$CONFIG_FLAGS"
       ./dune-common/bin/dunecontrol --module=utopia configure
@@ -86,8 +80,6 @@ build:models:
 build:update-dune:
   stage: build
   allow_failure: true
-  tags:
-    - light
   script:
     - ./dune-common/bin/dunecontrol update
     - CMAKE_FLAGS="$CONFIG_FLAGS" MAKE_FLAGS="$MAKE_FLAGS_BUILD"
@@ -100,8 +92,6 @@ test:core:
   stage: test
   dependencies:
     - build:main
-  tags:
-    - light
   script:
     - ./dune-common/bin/dunecontrol --only=utopia make test_core
 
@@ -109,8 +99,6 @@ test:dataio:
   stage: test
   dependencies:
     - build:main
-  tags:
-    - light
   script:
     - ./dune-common/bin/dunecontrol --only=utopia make test_dataio
 
@@ -118,8 +106,6 @@ test:python:
   stage: test
   dependencies:
     - build:main
-  tags:
-    - light
   script:
     - ./dune-common/bin/dunecontrol --only=utopia configure
     - ./dune-common/bin/dunecontrol --only=utopia make test_python
@@ -128,11 +114,9 @@ test:models:
   stage: test
   dependencies:
     - build:models
-  tags:
-    - light
   script:
     - ./dune-common/bin/dunecontrol --only=utopia configure
     # test the default model config
     - $RUN_IN_DUNE_ENV utopia dummy
     # test a configuration that allows a sweep
-    - $RUN_IN_DUNE_ENV utopia dummy $MODEL_DIR/dummy/test/dummy_cfg.yml --sweep --note sweep
+    - $RUN_IN_DUNE_ENV utopia dummy $MODEL_DIR/dummy/test/sweep.yml --sweep --note sweep
