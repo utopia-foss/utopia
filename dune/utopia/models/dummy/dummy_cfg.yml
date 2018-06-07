@@ -1,19 +1,18 @@
 # The model configuration for the dummy model
 #
-# This file should ONLY contain model-specific configuration and needs to be
-# written such that it can be used by _every_ model instance, regardless
+# NOTE: This file should ONLY contain model-specific configuration and needs
+# to be written such that it can be used by _every_ model instance, regardless
 # of the level within a model hierarchy.
 # 
 # To that end, it needs to specify the parameters at the level of the instance
 # of a Model class.
+# It should NOT include anything that is related to a _run_ of a simulation.
+# Specifically: parameter sweeps should NEVER EVER be specified here! The place
+# to configure a sweep is in the run configuration.
 # 
-# This file is usually handled by the frontend: usage of advanced yaml features
-# like anchors and tags is supported.
-# 
-# Note, however, that this file should hold the _default_ values for a single
-# instance. Therefore, parameter sweeps should not be specified here!
-# Furthermore, if including other models' parameters via the `!model` tag, make
-# sure that no circular includes occur.
+# This file is handled by the frontend: usage of advanced yaml features like
+# anchors and tags is supported. However, if including other models' parameters
+# via the `!model` tag, make sure that no circular includes occur.
 ---
 foo: bar
 spam: 1.23

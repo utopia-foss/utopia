@@ -1,9 +1,9 @@
-# A test configuration for the dummy model
+# A test configuration for a sweep of the dummy model
 ---
 worker_manager:
   num_workers: 2
 
-parameter_space: !pspace
+parameter_space:
   num_steps: 5
   
   # Perform a sweep over the RNG seed

@@ -155,12 +155,13 @@ def test_run_sweep(mv_kwargs):
     # Run the sweep
     mv.run_sweep()
 
-    # Without a ParamSpace object, no sweep should be possible
+    # With a parameter space without volume, i.e. without any sweeps added,
+    # the sweep should not be possible
     mv_kwargs['run_cfg_path'] = RUN_CFG_PATH
     mv_kwargs['update_meta_cfg']['paths']['model_note'] = "_invalid_cfg"
     mv = Multiverse(**mv_kwargs)
 
-    with pytest.raises(TypeError, match="For performing parameter sweeps"):
+    with pytest.raises(ValueError, match="The parameter space has no sweeps"):
         mv.run_sweep()
 
 # Other tests -----------------------------------------------------------------

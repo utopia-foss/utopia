@@ -5,7 +5,7 @@
 #      a yaml file with additional tags that trigger custom constructors
 ---
 # Parameter Space
-parameter_space: !pspace
+parameter_space:
   simulation:
     # ...
     prng_seed: !sweep
