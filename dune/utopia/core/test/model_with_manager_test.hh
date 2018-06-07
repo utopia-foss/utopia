@@ -32,13 +32,12 @@ public:
     /// Construct the model.
     /** \param manager Manager for this model
      */
+    template<class ParentModel>
     MngrModel (const std::string name,
-               Config &parent_cfg,
-               std::shared_ptr<DataGroup> parent_group,
-               std::shared_ptr<RNG> shared_rng,
+               ParentModel &parent_model,
                const Manager& manager)
     :
-        Base(name, parent_cfg, parent_group, shared_rng),
+        Base(name, parent_model),
         _manager(manager)
     { }
 
