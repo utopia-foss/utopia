@@ -28,3 +28,7 @@ and pushes it to the Docker Hub again.
 
 If name or tag of the image change, do not forget to adapt the `DUNE_ENV_IMAGE`
 variable in the `gitlab-ci.yml`, telling the job which image to pull and push.
+
+You can also manually perform the update by calling
+
+    docker build --no-cache -f dune-env-update.dockerfile -t ccees/utopia:bionic .
