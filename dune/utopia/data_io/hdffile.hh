@@ -1,5 +1,6 @@
 #ifndef HDFFILE_HH
 #define HDFFILE_HH
+
 #include "hdfdataset.hh"
 #include "hdfgroup.hh"
 #include <hdf5.h>
@@ -24,9 +25,9 @@ protected:
 
 public:
     /**
-     * @brief Function for exchanging states
+     * @brief      Function for exchanging states
      *
-     * @param other
+     * @param      other  The other
      */
     void swap(HDFFile& other)
     {
@@ -39,23 +40,21 @@ public:
     }
 
     /**
-     * @brief closes the hdffile
-     *
+     * @brief      closes the hdffile
      */
     void close()
     {
         if (H5Iis_valid(_file))
         {
             H5Fflush(_file, H5F_SCOPE_GLOBAL);
-
             H5Fclose(_file);
         }
     }
 
     /**
-     * @brief Get the referencecounter object
+     * @brief      Get the referencecounter object
      *
-     * @return auto
+     * @return     auto
      */
     auto get_referencecounter()
     {
@@ -63,9 +62,9 @@ public:
     }
 
     /**
-     * @brief Get the id object
+     * @brief      Get the id object
      *
-     * @return hid_t
+     * @return     hid_t
      */
     hid_t get_id()
     {
@@ -73,9 +72,9 @@ public:
     }
 
     /**
-     * @brief Get the path object
+     * @brief      Get the path object
      *
-     * @return std::string
+     * @return     std::string
      */
     std::string get_path()
     {
@@ -83,9 +82,9 @@ public:
     }
 
     /**
-     * @brief Get the basegroup object via shared ptr
+     * @brief      Get the basegroup object via shared ptr
      *
-     * @return std::shared_ptr<HDFGroup>
+     * @return     std::shared_ptr<HDFGroup>
      */
     std::shared_ptr<HDFGroup> get_basegroup()
     {
@@ -93,11 +92,12 @@ public:
     }
 
     /**
-     * @brief Open group at path 'path', creating all intermediate objects in
-     * the path
+     * @brief      Open group at path 'path', creating all intermediate objects
+     *             in the path. Separation character is: /
      *
-     * @param path
-     * @return std::shared_ptr<HDFGroup>
+     * @param      path The path to the group
+     *
+     * @return     std::shared_ptr<HDFGroup>
      */
     std::shared_ptr<HDFGroup> open_group(std::string&& path)
     {
@@ -105,29 +105,29 @@ public:
     }
 
     /**
-     * @brief open dataset
+     * @brief      open dataset
      *
-     * @param path
-     * @return std::shared_ptr<HDFDataset<HDFGroup>>
+     * @param      path The path to the dataset
+     *
+     * @return     std::shared_ptr<HDFDataset<HDFGroup>>
      */
     std::shared_ptr<HDFDataset<HDFGroup>> open_dataset(std::string&& path)
     {
         return _base_group->open_dataset(std::forward<std::string&&>(path));
     }
-    /**
-     * @brief deletes the group pointed to by absolute path 'path'
-     *
-     * @param path absolute path to group to delete
-     */
 
+    /**
+     * @brief      deletes the group pointed to by absolute path 'path'
+     *
+     * @param      path  absolute path to the group to be deleted
+     */
     void delete_group(std::string&& path)
     {
         _base_group->delete_group(std::forward<std::string&&>(path));
     }
 
     /**
-     * @brief Initiates an immediate write to disk of the data of the file
-     *
+     * @brief      Initiates an immediate write to disk of the data of the file
      */
     void flush()
     {
@@ -138,14 +138,15 @@ public:
     }
 
     /**
-     * @brief Construct a new default HDFFile object
-     *
+     * @brief      Construct a new default HDFFile object
      */
     HDFFile() = default;
+    
     /**
-     * @brief Move constructor Construct a new HDFFile object via move semantics
+     * @brief      Move constructor Construct a new HDFFile object via move
+     *             semantics
      *
-     * @param other rvalue reference to HDFFile object
+     * @param      other  rvalue reference to HDFFile object
      */
     HDFFile(HDFFile&& other) : HDFFile()
     {
@@ -153,10 +154,11 @@ public:
     }
 
     /**
-     * @brief Move assigment operator
+     * @brief      Move assigment operator
      *
-     * @param rvalue reference to HDFFile object
-     * @return HDFFile&
+     * @param      other  reference to HDFFile object
+     *
+     * @return     HDFFile&
      */
     HDFFile& operator=(HDFFile&& other)
     {
@@ -165,89 +167,92 @@ public:
     }
 
     /**
-     * @brief Copy assignment, explicitly deleted
+     * @brief      Copy assignment, explicitly deleted
      *
-     * @param other
-     * @return HDFFile&
+     * @param      other  The other
+     *
+     * @return     HDFFile&
      */
     HDFFile& operator=(const HDFFile& other) = delete;
 
     /**
-     * @brief Copy constructor, explicitly deleted
+     * @brief      Copy constructor, explicitly deleted
      *
-     * @param other
+     * @param      other  The other
      */
     HDFFile(const HDFFile& other) = delete;
 
     /**
-     * @brief Construct a new HDFFile object
+     * @brief      Construct a new HDFFile object
      *
-     * @param path Path to the new file
-     * @param access Access specifier for the new file, can be:
-     *   r 	    Readonly, file must exist
-     *   r+ 	Read/write, file must exist
-     *   w 	    Create file, truncate if exists
-     *   x 	    Create file, fail if exists
-     *   a 	   Read/write if exists, create otherwise (default)
+     * @param      path    Path to the new file
+     * @param      access  Access specifier for the new file, possible values:
+     *                     'r' (readonly, file must exist), 'r+' (read/write,
+     *                     file must exist), 'w' (create file, truncate if
+     *                     exists), 'x' (create file, fail if exists), or 'a'
+     *                     (read/write if exists, create otherwise; default)
      */
     HDFFile(std::string path, std::string access)
-        : _file([&]() {
-              if (access == "w")
-              {
-                  return H5Fcreate(path.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-              }
-              else if (access == "r")
-              {
-                  return H5Fopen(path.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
-              }
-              else if (access == "r+")
-              {
-                  return H5Fopen(path.c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
-              }
-              else if (access == "x")
-              {
-                  hid_t file = H5Fcreate(path.c_str(), H5F_ACC_EXCL, H5P_DEFAULT, H5P_DEFAULT);
-                  if (file < 0)
-                  {
-                      throw std::runtime_error(
-                          "tried to create an existing "
-                          "file in non-truncate mode");
-                  }
-                  else
-                  {
-                      return file;
-                  }
-              }
-              else if (access == "a")
-              {
-                  hid_t file_test = H5Fopen(path.c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
-                  if (file_test < 0)
-                  {
-                      H5Fcreate(path.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-                  }
-                  return file_test;
-              }
-              else
-              {
-                  throw std::invalid_argument(
-                      "wrong type of access specifier, "
-                      "see documentation for allowed "
-                      "values");
-              }
-          }()),
-          _path(path),
-          _referencecounter(std::make_shared<std::unordered_map<haddr_t, int>>()),
-          _base_group(std::make_shared<HDFGroup>(*this, "/"))
+      : _file([&]() {
+            // Distinguish access modes
+            if (access == "w")
+            {
+                return H5Fcreate(path.c_str(), H5F_ACC_TRUNC,
+                                 H5P_DEFAULT, H5P_DEFAULT);
+            }
+            else if (access == "r")
+            {
+                return H5Fopen(path.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+            }
+            else if (access == "r+")
+            {
+                return H5Fopen(path.c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
+            }
+            else if (access == "x")
+            {
+                hid_t file = H5Fcreate(path.c_str(), H5F_ACC_EXCL,
+                                       H5P_DEFAULT, H5P_DEFAULT);
+                if (file < 0)
+                {
+                    throw std::runtime_error("File already exists (accces "
+                                             "mode 'x')! If you want to "
+                                             "truncate the file, choose the "
+                                             "appropriate mode.");
+                }
+                else
+                {
+                    return file;
+                }
+            }
+            else if (access == "a")
+            {
+                hid_t file_test = H5Fopen(path.c_str(), H5F_ACC_RDWR,
+                                          H5P_DEFAULT);
+                if (file_test < 0)
+                {
+                    H5Fcreate(path.c_str(), H5F_ACC_TRUNC,
+                              H5P_DEFAULT, H5P_DEFAULT);
+                }
+                return file_test;
+            }
+            else
+            {
+                throw std::invalid_argument("Illegal access mode: "
+                                            "'" + access + "'! "
+                                            "Allowed modes: w, r, r+, x, a");
+            }
 
+        }()), // end of setting value of _file member 
+        _path(path),
+        _referencecounter(std::make_shared<std::unordered_map<haddr_t,int>>()),
+        _base_group(std::make_shared<HDFGroup>(*this, "/"))
     {
         // H5Eset_auto(0, 0, NULL);
-
         ++(*_referencecounter)[_base_group->get_address()];
     }
 
     /**
-     * @brief Destroy the HDFFile object
-     *
+     * @brief      Destroy the HDFFile object
      */
     virtual ~HDFFile()
     {

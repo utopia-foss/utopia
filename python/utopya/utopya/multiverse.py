@@ -15,7 +15,7 @@ from utopya.datamanager import DataManager
 from utopya.workermanager import WorkerManager
 from utopya.task import enqueue_json
 from utopya.reporter import WorkerManagerReporter
-from utopya.tools import recursive_update, read_yml, write_yml
+from utopya.tools import recursive_update, read_yml, write_yml, load_model_cfg
 from utopya.info import MODELS
 
 # Configure and get logger
@@ -195,12 +195,11 @@ class Multiverse:
         # Get the parameter space from the config
         pspace = self.meta_config['parameter_space']
 
-        if not isinstance(pspace, psp.ParamSpace):
-            raise TypeError("For performing parameter sweeps, the run "
-                            "configuration needs to be initialized with a "
-                            "ParamSpace object at key `parameter_space`. "
-                            "If initializing via a YAML file, make sure to "
-                            "have added the `!pspace` tag to that key.")
+        if pspace.volume < 1:
+            raise ValueError("The parameter space has no sweeps configured! "
+                             "Refusing to run a sweep. You can either call "
+                             "the run_single method or add sweeps to your "
+                             "run configuration using the !sweep YAML tags.")
 
         log.info("Adding tasks for simulation of %d universes ...",
                  pspace.volume)
@@ -273,18 +272,22 @@ class Multiverse:
                                 error_msg="Did not find user "
                                 "configuration at the specified "
                                 "path {}!".format(user_cfg_path))
+
+            # Check that it does not contain parameter_space
+            if 'parameter_space' in user_cfg:
+                raise ValueError("There was a 'parameter_space' key found in "
+                                 "the user configuration loaded from {}. You "
+                                 "need to remove it.".format(user_cfg_path))
+
         else:
             user_cfg = None
 
         # Read in the configuration corresponding to the chosen model
-        # It is a file of format <model_name>_cfg.yml beside the binary
-        model_cfg_path = os.path.join(MODELS[self.model_name]['src_dir'],
-                                      self.model_name + "_cfg.yml")
-        model_cfg = read_yml(model_cfg_path,
-                             error_msg=("Could not locate model configuration "
-                                        "for '{}' model! Expected to find it "
-                                        "at: {}".format(self.model_name,
-                                                        model_cfg_path)))
+        model_cfg, model_cfg_path = load_model_cfg(self.model_name)
+        # NOTE Unlike the other configuration files, this does not attach at
+        # root level of the meta configuration but parameter_space.<model_name>
+        # in order to allow it to be used as the default configuration for an
+        # _instance_ of that model.
 
         # Read in the run configuration
         if run_cfg_path:
@@ -298,20 +301,28 @@ class Multiverse:
         # Those keys or values will throw errors once they are needed ...
 
         # Now perform the recursive update steps
+        # Start with the base configuration
         meta_tmp = base_cfg
         log.debug("Performing recursive updates to arrive at meta "
                   "configuration ...")
 
-        # User configuration, if given
+        # Update with user configuration, if given
         if user_cfg:
             log.debug("Updating with user configuration ...")
             meta_tmp = recursive_update(meta_tmp, user_cfg)
 
-        # Model configuration (always)
-        log.debug("Updating with model configuration ...")
-        meta_tmp = recursive_update(meta_tmp, model_cfg)
+        # In order to incorporate the model config, the parameter space is
+        # needed. We can already be sure that the parameter_space key exists,
+        # because it is added as part of the base_cfg.
+        pspace = meta_tmp['parameter_space']
 
-        # Run configuration, if given
+        # Adjust parameter space to include model configuration
+        log.debug("Updating parameter space with model configuration for "
+                  "model '%s' ...", self.model_name)
+        pspace[self.model_name] = model_cfg
+        # NOTE this works because meta_tmp is a dict and thus mutable :)
+
+        # On top of all of that: add the run configuration, if given
         if run_cfg:
             log.debug("Updating with run configuration ...")
             meta_tmp = recursive_update(meta_tmp, run_cfg)
@@ -322,6 +333,11 @@ class Multiverse:
             meta_tmp = recursive_update(meta_tmp,
                                         copy.deepcopy(update_meta_cfg))
             # NOTE using copy to make sure that usage of the dict will not interfere with the Multiverse's meta config
+        
+        # Make `parameter_space` a ParamSpace object
+        pspace = meta_tmp['parameter_space']
+        meta_tmp['parameter_space'] = psp.ParamSpace(pspace)
+        log.debug("Converted parameter_space to ParamSpace object.")
         
         # Store it
         self.meta_config = meta_tmp
@@ -508,13 +524,7 @@ class Multiverse:
 
             # Generate a path to the output hdf5 file and add it to the dict
             output_path = os.path.join(uni_dir, "data.h5")
-            
-            # FIXME this should actually not be saved under the key of the model name, but on the highest level of the generated configuration
-            if model_name not in uni_cfg:
-                # Need to create the high level entry
-                uni_cfg[model_name] = dict(output_path=output_path)
-            else:
-                uni_cfg[model_name]['output_path'] = output_path
+            uni_cfg['output_path'] = output_path
 
             # write essential part of config to file:
             uni_cfg_path = os.path.join(uni_dir, "config.yml")
