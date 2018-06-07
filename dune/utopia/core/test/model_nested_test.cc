@@ -65,6 +65,8 @@ int main(int argc, char *argv[])
         pp_file->close();
         std::remove(pp_file->get_path().c_str());
 
+        std::cout << "Temporary files removed." << std::endl;
+
         return 0;
     }
     catch (std::exception& e) {

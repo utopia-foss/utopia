@@ -35,14 +35,13 @@ public:
     /// Construct the test model with an initial state
     /** \param state Initial state of the model
      */
+    template<class ParentModel>
     TestModel (const std::string name,
-               Config &parent_cfg,
-               std::shared_ptr<DataGroup> parent_group,
-               std::shared_ptr<RNG> shared_rng,
+               ParentModel &parent_model,
                const Data& initial_state)
     :
         // Pass arguments to the base class constructor
-        Base(name, parent_cfg, parent_group, shared_rng),
+        Base(name, parent_model),
         // Initialize state and boundary condition members
         _state(initial_state),
         _bc(_state.size(), 1.0)
@@ -81,14 +80,13 @@ private:
 
 public:
     /// Create TestModel with initial state
+    template<class ParentModel>
     TestModelWithIterate (const std::string name,
-                          Config &parent_cfg,
-                          std::shared_ptr<DataGroup> parent_group,
-                          std::shared_ptr<RNG> shared_rng,
+                          ParentModel &parent,
                           const Data& initial_state)
     :
         // Initialize completely via parent class constructor
-        TestModel(name, parent_cfg, parent_group, shared_rng, initial_state)
+        TestModel(name, parent, initial_state)
     { }
 
     /// Iterate twice for checking this implementation
