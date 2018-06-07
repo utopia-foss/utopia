@@ -87,11 +87,9 @@ namespace Setup
     GridWrapper<Dune::UGGrid<dim>> read_gmsh (const std::string filename, const unsigned int refinement_level=0)
     {
         using Grid = Dune::UGGrid<dim>;
-        auto grid = std::make_shared<Grid>();
-
-        Dune::GridFactory<Grid> factory(grid.get());
-        Dune::GmshReader<Grid>::read(factory,filename);
-        factory.createGrid();
+        Dune::GridFactory<Grid> factory;
+        Dune::GmshReader<Grid>::read(factory, filename);
+        std::shared_ptr<Grid> grid(factory.createGrid());
 
         grid->globalRefine(refinement_level);
 
