@@ -93,6 +93,7 @@ def test_load_single(dm_after_single):
     # Check that the binary data is loaded as expected
     assert 'data' in uni
     assert 'data/dummy' in uni
+    assert len(uni['data/dummy']) == 5
 
     # Get the first dataset and check its content
     dset = uni['data/dummy/data-1']
@@ -100,7 +101,7 @@ def test_load_single(dm_after_single):
     assert isinstance(dset, udc.NumpyDC)
 
     assert dset.shape == (1000,)
-    assert dset.dtype is np.dtype("float64")
+    assert np.issubdtype(dset.dtype, float)
     assert all([0 <= v <= 1 for v in dset.data.flat])
 
 
@@ -125,6 +126,7 @@ def test_load_sweep(dm_after_sweep):
         # Check that the binary data is loaded as expected
         assert 'data' in uni
         assert 'data/dummy' in uni
+        assert len(uni['data/dummy']) == 5
     
         # Get the first dataset and check its content
         dset = uni['data/dummy/data-1']
@@ -132,5 +134,5 @@ def test_load_sweep(dm_after_sweep):
         assert isinstance(dset, udc.NumpyDC)
 
         assert dset.shape == (1000,)
-        assert dset.dtype is np.dtype("float64")
+        assert np.issubdtype(dset.dtype, float)
         assert all([0 <= v <= 1 for v in dset.data.flat])
