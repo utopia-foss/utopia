@@ -2,17 +2,20 @@
 image: ccees/utopia:bionic
 
 variables:
-  PROCNUM: 2
+  CPUS_MULTICORE: 3
+  CPUS_DIND: 3
   DUNE_CONTROL_PATH: /opt/dune:$CI_PROJECT_DIR  # such that DUNE finds Utopia
   RUN_IN_DUNE_ENV: $CI_PROJECT_DIR/build-cmake/run-in-dune-env
   CONFIG_FLAGS:
       -DDUNE_PYTHON_VIRTUALENV_SETUP=True
       -DDUNE_PYTHON_ALLOW_GET_PIP=True
   MAKE_FLAGS_BUILD:
-      -j $PROCNUM
+      -j $CPUS_MULTICORE
   MODEL_DIR: $CI_PROJECT_DIR/dune/utopia/models
+  DUNE_ENV_IMAGE: ccees/utopia:bionic
 
 stages:
+  - setup
   - build
   - test
 
@@ -40,6 +43,25 @@ before_script:
   - echo "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
   - chmod 644 ~/.ssh/known_hosts
   # - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config' # FIXME
+
+# Setup stage -----------------------------------------------------------------
+setup:update-dune:
+  stage: setup
+  tags:
+    - dind
+  image: docker:stable
+  services:
+    - docker:dind
+  variables:
+    DOCKER_DRIVER: overlay2
+  only:
+    - master
+  before_script:
+    - docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_PW
+  script:
+    - docker build --build-arg PROCNUM=$CPUS_DIND -f docker/dune-env-update.dockerfile -t $DUNE_ENV_IMAGE .
+    - docker push $DUNE_ENV_IMAGE
+
 
 # Build stage -----------------------------------------------------------------
 build:main:
