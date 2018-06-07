@@ -1,5 +1,6 @@
-FROM ubuntu:artful
-MAINTAINER Lukas Riedel
+FROM ubuntu:bionic
+LABEL maintainer="Lukas Riedel <lriedel@iup.uni-heidelberg.de>, \
+                  Yunus Sevinchan <ysevinch@iup.uni-heidelberg.de>"
 
 # install dependencies
 RUN apt-get update \
@@ -30,12 +31,14 @@ RUN curl https://pki.pca.dfn.de/uni-heidelberg-ca/pub/cacert/chain.txt \
     -o /usr/local/share/ca-certificates/uniheidelberg.crt \
     && update-ca-certificates
 
+# change working directory and clone DUNE dependencies
 WORKDIR /opt/dune
 RUN git clone https://gitlab.dune-project.org/core/dune-common.git
 RUN git clone https://gitlab.dune-project.org/core/dune-geometry.git
 RUN git clone https://gitlab.dune-project.org/core/dune-grid.git
 RUN git clone https://gitlab.dune-project.org/staging/dune-uggrid.git
 
+# build
 RUN CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=Release \\
     -DDUNE_PYTHON_VIRTUALENV_SETUP=True \\
     -DDUNE_PYTHON_ALLOW_GET_PIP=True" \

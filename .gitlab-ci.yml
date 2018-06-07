@@ -1,5 +1,5 @@
 ---
-image: citcat/dune-env:latest
+image: ccees/utopia:bionic
 
 variables:
   PROCNUM: 2
