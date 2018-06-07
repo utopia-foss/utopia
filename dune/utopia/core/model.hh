@@ -73,42 +73,11 @@ protected:
     std::shared_ptr<RNG> rng;
 
 public:
-    // -- Constructors -- //
+    // -- Constructor -- //
 
-    /// Granular model constructor
-    /** \detail creates an instance of model and extracts the relevant info
-     *          from the passed arguments. This constructor should be used when
-     *          initializing a model instance directly with all its parts.
-     *
-     *  \param name          The name of this model instance, ideally used only
-     *                       once on the current hierarchical level
-     *  \param parent_cfg    The parent config node. This node has to contain
-     *                       a key that matches the name of the instance
-     *  \param parent_group  The parent HDFGroup in which a new group with
-     *                       the name of the model instance is created
-     *  \param shared_rng    A pointer to the RNG object shared between models
-     */
-    Model (const std::string name,
-           Config &parent_cfg,
-           std::shared_ptr<DataGroup> parent_group,
-           std::shared_ptr<RNG> shared_rng)
-    :
-        time(0),
-        name(name),
-        // extract the relevant config by instance name
-        cfg(parent_cfg[this->name]),
-        // create a group with the instance name
-        hdfgrp(parent_group->open_group(this->name)),
-        // the shared RNG can just be stored
-        rng(shared_rng)
-    {
-        // TODO add informative log messages here
-    }
-
-
-    /// Construct model with information from parent model
-    /** \detail creates an instance of model using the passed reference to the
-     *          parent model: extracts a 
+    /// Constructor
+    /** \detail Uses information from a parent model to create an instance of
+     *          this model.
      *
      *  \tparam ParentModel The parent model's type
      *
