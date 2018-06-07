@@ -29,22 +29,6 @@ public:
 
 public:
     /// Constructor
-    DoNothingModel (const std::string name,
-                    Config &parent_cfg,
-                    std::shared_ptr<DataGroup> parent_group,
-                    std::shared_ptr<RNG> shared_rng)
-    :
-        // Pass arguments to the base class constructor
-        Base(name, parent_cfg, parent_group, shared_rng),
-        // Store level
-        level(cfg["level"].as<unsigned int>())
-    {
-        std::cout << "  DoNothingModel '" << name << "' initialized. "
-                  << "Level: " << level << std::endl;
-    }
-
-
-    /// Constructor
     template<class ParentModel>
     DoNothingModel (const std::string name,
                     ParentModel &parent_model)
@@ -54,7 +38,7 @@ public:
         // Store level
         level(cfg["level"].as<unsigned int>())
     {
-        std::cout << "  DoNothingModel '" << name << "' initialized via parent model. "
+        std::cout << "  DoNothingModel '" << name << "' initialized. "
                   << "Level: " << level << std::endl;
     }
 
@@ -86,13 +70,12 @@ public:
 
 public:
     /// Constructor
+    template<class ParentModel>
     OneModel (const std::string name,
-              Config &parent_cfg,
-              std::shared_ptr<DataGroup> parent_group,
-              std::shared_ptr<RNG> shared_rng)
+              ParentModel &parent_model)
     :
         // Pass arguments to the base class constructor
-        Base(name, parent_cfg, parent_group, shared_rng),
+        Base(name, parent_model),
         // Store level
         level(cfg["level"].as<unsigned int>()),
         // Submodel initialization
@@ -136,17 +119,16 @@ public:
 
 public:
     /// Constructor
+    template<class ParentModel>
     AnotherModel (const std::string name,
-                  Config &parent_cfg,
-                  std::shared_ptr<DataGroup> parent_group,
-                  std::shared_ptr<RNG> shared_rng)
+                  ParentModel &parent_model)
     :
         // Pass arguments to the base class constructor
-        Base(name, parent_cfg, parent_group, shared_rng),
+        Base(name, parent_model),
         // Store level
         level(cfg["level"].as<unsigned int>()),
         // Submodel initialization
-        sub_one("one", cfg, hdfgrp, rng),
+        sub_one("one", parent_model),
         sub_lazy("lazy", *this)
     {
         std::cout << "  AnotherModel '" << name << "' initialized. "
@@ -185,18 +167,17 @@ public:
 
 public:
     /// Create RootModel with initial state
+    template<class ParentModel>
     RootModel (const std::string name,
-               Config &parent_cfg,
-               std::shared_ptr<DataGroup> parent_group,
-               std::shared_ptr<RNG> shared_rng)
+               ParentModel &parent_model)
     :
         // Initialize completely via parent class constructor
-        Base(name, parent_cfg, parent_group, shared_rng),
+        Base(name, parent_model),
         // Store level
         level(cfg["level"].as<unsigned int>()),
         // Submodel initialization
-        sub_one("one", cfg, hdfgrp, rng),
-        sub_another("another", cfg, hdfgrp, rng)
+        sub_one("one", parent_model),
+        sub_another("another", parent_model)
     {
         std::cout << "  RootModel '" << name << "' initialized. "
                   << "Level: " << level << std::endl;
