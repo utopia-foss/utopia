@@ -17,20 +17,6 @@ public:
     /// The base model class
     using Base = Model<DoNothingModel, DoNothingModelType>;
 
-    /// Granular constructor
-    DoNothingModel (const std::string name,
-                    Config &parent_cfg,
-                    std::shared_ptr<DataGroup> parent_group,
-                    std::shared_ptr<RNG> shared_rng)
-    :
-        // Pass arguments to the base class constructor
-        Base(name, parent_cfg, parent_group, shared_rng)
-    {
-        std::cout << "DoNothingModel '" << name
-                  << "' initialized. " << std::endl;
-    }
-
-
     /// Constructor via parent model
     template<class ParentModel>
     DoNothingModel (const std::string name,
