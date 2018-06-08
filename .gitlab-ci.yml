@@ -2,17 +2,20 @@
 image: ccees/utopia:bionic
 
 variables:
-  PROCNUM: 2
+  CPUS_MULTICORE: 3
+  CPUS_DIND: 3
   DUNE_CONTROL_PATH: /opt/dune:$CI_PROJECT_DIR  # such that DUNE finds Utopia
   RUN_IN_DUNE_ENV: $CI_PROJECT_DIR/build-cmake/run-in-dune-env
   CONFIG_FLAGS:
       -DDUNE_PYTHON_VIRTUALENV_SETUP=True
       -DDUNE_PYTHON_ALLOW_GET_PIP=True
   MAKE_FLAGS_BUILD:
-      -j $PROCNUM
+      -j $CPUS_MULTICORE
   MODEL_DIR: $CI_PROJECT_DIR/dune/utopia/models
+  DUNE_ENV_IMAGE: ccees/utopia:bionic
 
 stages:
+  - setup
   - build
   - test
 
@@ -41,10 +44,35 @@ before_script:
   - chmod 644 ~/.ssh/known_hosts
   # - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config' # FIXME
 
+
+# Setup stage -----------------------------------------------------------------
+# Updates the docker image to be used for the build and test stages
+setup:update-dune:
+  stage: setup
+  tags:
+    - dind
+  image: docker:stable
+  services:
+    - docker:dind
+  variables:
+    # Use the driver recommended for DIND, see documentation:
+    # https://docs.gitlab.com/ee/ci/docker/using_docker_build.html#use-docker-in-docker-executor
+    DOCKER_DRIVER: overlay2
+  only:
+    - master
+  before_script:
+    - docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_PW
+  script:
+    - docker build --build-arg PROCNUM=$CPUS_DIND -f docker/dune-env-update.dockerfile -t $DUNE_ENV_IMAGE .
+    - docker push $DUNE_ENV_IMAGE
+
+
 # Build stage -----------------------------------------------------------------
-build:main:
+# Build the tests and the models
+# The artifacts of these jobs are needed in the test stage
+build:tests:
   stage: build
-  artifacts:
+  artifacts: &shared_artifacts
     name: "$CI_JOB_NAME"
     paths:
       - $CI_PROJECT_DIR/build-cmake
@@ -52,8 +80,15 @@ build:main:
   script:
     - CMAKE_FLAGS="$CONFIG_FLAGS"
       ./dune-common/bin/dunecontrol --module=utopia configure
-    - ./dune-common/bin/dunecontrol --only=utopia make doc
     - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD build_tests
+
+build:models:
+  stage: build
+  artifacts:
+    <<: *shared_artifacts
+  script:
+    - CMAKE_FLAGS="$CONFIG_FLAGS"
+      ./dune-common/bin/dunecontrol --module=utopia configure
     - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD all
 
 build:debug:
@@ -65,47 +100,28 @@ build:debug:
     - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD build_tests
     - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD all
 
-build:models:
-  stage: build
-  artifacts:
-    name: "$CI_JOB_NAME"
-    paths:
-      - $CI_PROJECT_DIR/build-cmake
-    expire_in: 3 hours
-  script:
-    - CMAKE_FLAGS="$CONFIG_FLAGS"
-      ./dune-common/bin/dunecontrol --module=utopia configure
-    - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD all
-
-build:update-dune:
-  stage: build
-  allow_failure: true
-  script:
-    - ./dune-common/bin/dunecontrol update
-    - CMAKE_FLAGS="$CONFIG_FLAGS" MAKE_FLAGS="$MAKE_FLAGS_BUILD"
-      ./dune-common/bin/dunecontrol --module=utopia all
-    - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD build_tests
-
 
 # Test stage ------------------------------------------------------------------
+# Using the artifacts of the build stage, executes tests of core, data i/o,
+# frontend, and models.
 test:core:
   stage: test
   dependencies:
-    - build:main
+    - build:tests
   script:
     - ./dune-common/bin/dunecontrol --only=utopia make test_core
 
 test:dataio:
   stage: test
   dependencies:
-    - build:main
+    - build:tests
   script:
     - ./dune-common/bin/dunecontrol --only=utopia make test_dataio
 
 test:python:
   stage: test
   dependencies:
-    - build:main
+    - build:models
   script:
     - ./dune-common/bin/dunecontrol --only=utopia configure
     - ./dune-common/bin/dunecontrol --only=utopia make test_python
