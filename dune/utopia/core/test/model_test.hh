@@ -37,7 +37,7 @@ public:
      */
     template<class ParentModel>
     TestModel (const std::string name,
-               ParentModel &parent_model,
+               const ParentModel &parent_model,
                const Data& initial_state)
     :
         // Pass arguments to the base class constructor

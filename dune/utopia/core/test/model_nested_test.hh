@@ -72,7 +72,7 @@ public:
     /// Constructor
     template<class ParentModel>
     OneModel (const std::string name,
-              ParentModel &parent_model)
+              const ParentModel &parent_model)
     :
         // Pass arguments to the base class constructor
         Base(name, parent_model),
@@ -121,7 +121,7 @@ public:
     /// Constructor
     template<class ParentModel>
     AnotherModel (const std::string name,
-                  ParentModel &parent_model)
+                  const ParentModel &parent_model)
     :
         // Pass arguments to the base class constructor
         Base(name, parent_model),
@@ -169,7 +169,7 @@ public:
     /// Create RootModel with initial state
     template<class ParentModel>
     RootModel (const std::string name,
-               ParentModel &parent_model)
+               const ParentModel &parent_model)
     :
         // Initialize completely via parent class constructor
         Base(name, parent_model),
