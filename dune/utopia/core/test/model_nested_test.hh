@@ -176,8 +176,8 @@ public:
         // Store level
         level(cfg["level"].as<unsigned int>()),
         // Submodel initialization
-        sub_one("one", parent_model),
-        sub_another("another", parent_model)
+        sub_one("one", *this),
+        sub_another("another", *this)
     {
         std::cout << "  RootModel '" << name << "' initialized. "
                   << "Level: " << level << std::endl;
