@@ -82,7 +82,7 @@ public:
     /// Create TestModel with initial state
     template<class ParentModel>
     TestModelWithIterate (const std::string name,
-                          ParentModel &parent,
+                          const ParentModel &parent,
                           const Data& initial_state)
     :
         // Initialize completely via parent class constructor

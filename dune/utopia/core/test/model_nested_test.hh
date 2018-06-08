@@ -31,7 +31,7 @@ public:
     /// Constructor
     template<class ParentModel>
     DoNothingModel (const std::string name,
-                    ParentModel &parent_model)
+                    const ParentModel &parent_model)
     :
         // Pass arguments to the base class constructor
         Base(name, parent_model),
