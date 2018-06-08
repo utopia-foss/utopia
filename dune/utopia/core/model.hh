@@ -67,10 +67,10 @@ protected:
     Config cfg;
 
     /// The HDF group this model instance should write its data to
-    std::shared_ptr<DataGroup> hdfgrp;
+    const std::shared_ptr<DataGroup> hdfgrp;
 
     /// The RNG shared between models
-    std::shared_ptr<RNG> rng;
+    const std::shared_ptr<RNG> rng;
 
 public:
     // -- Constructor -- //
@@ -89,7 +89,7 @@ public:
      */
     template<class ParentModel>
     Model (const std::string name,
-           ParentModel &parent_model)
+           const ParentModel &parent_model)
     :
         time(0),
         name(name),
@@ -105,22 +105,22 @@ public:
     // -- Getters -- //
 
     /// Return the current time of this model
-    unsigned int get_time() {
+    unsigned int get_time() const {
         return this->time;
     }
 
     /// Return the config node of this model
-    Config get_cfg() {
+    Config get_cfg() const {
         return this->cfg;
     }
     
     /// Return a pointer to the HDF group this model stores data in
-    std::shared_ptr<DataGroup> get_hdfgrp() {
+    std::shared_ptr<DataGroup> get_hdfgrp() const {
         return this->hdfgrp;
     }
     
     /// Return a pointer to the shared RNG
-    std::shared_ptr<RNG> get_rng() {
+    std::shared_ptr<RNG> get_rng() const {
         return this->rng;
     }
 
@@ -206,10 +206,10 @@ protected:
     Config cfg;
 
     /// Pointer to the HDF5 file where data is written to
-    std::shared_ptr<HDFFile> hdffile;
+    const std::shared_ptr<HDFFile> hdffile;
 
     /// Pointer to a RNG that can be shared between models
-    std::shared_ptr<RNG> rng;
+    const std::shared_ptr<RNG> rng;
 
 public:
     /// Constructor that only requires path to a config file
@@ -267,22 +267,22 @@ public:
     // -- Getters -- //
 
     /// Return the config node of the Pseudo model, i.e. the root node
-    Config get_cfg() {
+    Config get_cfg() const {
         return this->cfg;
     }
 
     /// Return a pointer to the HDF data file
-    std::shared_ptr<HDFFile> get_hdffile() {
+    std::shared_ptr<HDFFile> get_hdffile() const {
         return this->hdffile;
     }
     
     /// Return a pointer to the HDF basegroup
-    std::shared_ptr<HDFGroup> get_hdfgrp() {
+    std::shared_ptr<HDFGroup> get_hdfgrp() const {
         return this->hdffile->get_basegroup();
     }
     
     /// Return a pointer to the RNG
-    std::shared_ptr<RNG> get_rng() {
+    std::shared_ptr<RNG> get_rng() const {
         return this->rng;
     }
 };
