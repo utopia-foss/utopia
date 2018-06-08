@@ -39,14 +39,13 @@ public:
     /// Construct the dummy model with an initial state
     /** \param initial_state Initial state of the model
      */
+    template<class ParentModel>
     Dummy (const std::string name,
-           Config &parent_cfg,
-           std::shared_ptr<DataGroup> parent_group,
-           std::shared_ptr<RNG> shared_rng,
+           const ParentModel & parent_model,
            const Data& initial_state)
     :
         // Use the base constructor for the main parts
-        Base(name, parent_cfg, parent_group, shared_rng),
+        Base(name, parent_model),
         // Initialise state and boundary condition members
         state(initial_state),
         bc(state.size(), 1.0)
