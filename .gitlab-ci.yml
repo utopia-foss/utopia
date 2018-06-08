@@ -58,6 +58,8 @@ setup:update-dune:
     # Use the driver recommended for DIND, see documentation:
     # https://docs.gitlab.com/ee/ci/docker/using_docker_build.html#use-docker-in-docker-executor
     DOCKER_DRIVER: overlay2
+  only:
+    - master
   before_script:
     - docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_PW
   script:
