@@ -29,25 +29,26 @@ public:
      * @tparam T
      * @tparam T
      */
-    template <typename T, typename U = T>
+    template <typename T>
     struct result_type
     {
-        using type = T;
+        using type = remove_qualifier_t<T>;
     };
 
-    template <typename T>
-    struct result_type<T*>
-    {
-        // recursion for getting the base type for
-        // multidim-pointers
-        using type = typename std::remove_all_extents<T>::type;
-    };
+    // // this does not make very much sense here!
+    // template <typename T>
+    // struct result_type<T*>
+    // {
+    //     // recursion for getting the base type for
+    //     // multidim-pointers
+    //     using type = typename std::remove_all_extents<T>::type;
+    // };
 
-    template <typename T>
-    struct result_type<T&>
-    {
-        using type = T;
-    };
+    // template <typename T>
+    // struct result_type<T&>
+    // {
+    //     using type = T;
+    // };
 
     /**
      * @brief returns a HDF5 type from a given C++ primitive type
@@ -59,7 +60,7 @@ public:
     static inline hid_t type([[maybe_unused]] std::size_t size = 0)
     {
         // include const char* which is a  c-string
-        if constexpr (is_container_type<T>::value)
+        if constexpr (is_container_v<T>)
         {
             if (size == 0)
             {
@@ -74,27 +75,24 @@ public:
                 return type;
             }
         }
-        else
+        else if constexpr (is_string_v<T>)
         {
-            if constexpr (is_stringtype<T>::value)
+            if (size == 0)
             {
-                if (size == 0)
-                {
-                    hid_t type = H5Tcopy(H5T_C_S1);
-                    H5Tset_size(type, H5T_VARIABLE);
-                    return type;
-                }
-                else
-                {
-                    hid_t type = H5Tcopy(H5T_C_S1);
-                    H5Tset_size(type, size);
-                    return type;
-                }
+                hid_t type = H5Tcopy(H5T_C_S1);
+                H5Tset_size(type, H5T_VARIABLE);
+                return type;
             }
             else
             {
-                return __get_type__<T>();
+                hid_t type = H5Tcopy(H5T_C_S1);
+                H5Tset_size(type, size);
+                return type;
             }
+        }
+        else
+        {
+            return __get_type__<T>();
         }
     }
 };

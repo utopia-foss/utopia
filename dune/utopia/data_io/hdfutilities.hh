@@ -19,122 +19,182 @@ namespace Utopia
 {
 namespace DataIO
 {
-// prototype for determining if something is a container or not
+/**
+ * @brief Helper function for removing pointer qualifiers from a type recursivly
+ *        - recursion base case which provides a type equal to T
+ * @tparam T
+ * @tparam 0
+ */
+template <typename T, typename U = std::void_t<>>
+struct remove_pointer
+{
+    using type = T;
+};
+/**
+ * @brief Helper function for removing pointer qualifiers from a type recursivly
+ *        Provides a member type definition called 'type' which is equal to T
+ *        if the first template argument is of type T* or T** or T***...
+ * @tparam T
+ * @tparam 0
+ */
 
 template <typename T>
+struct remove_pointer<T, std::void_t<std::enable_if_t<std::is_pointer_v<T>, int>>>
+{
+    using type = typename remove_pointer<std::remove_pointer_t<T>>::type;
+};
+
+/**
+ * @brief Oveload of 'remove_pointer' metafunction for array types (stack allocated)
+ *
+ * @tparam T
+ */
+template <typename T>
+struct remove_pointer<T, std::void_t<std::enable_if_t<std::is_array_v<T>, int>>>
+{
+    using type = typename remove_pointer<std::remove_all_extents_t<T>>::type;
+};
+
+/**
+ * @brief Shorthand for 'typename remove_pointer<T>::type'
+ *
+ * @tparam T
+ */
+template <typename T>
+using remove_pointer_t = typename remove_pointer<T>::type;
+
+// remove qualifiers. FIXME: this is not optimal currently, because it does not
+// work recursivly
+
+/**
+ * @brief Function for removing the qualifiers from
+ *
+ * @tparam T
+ */
+template <typename T>
+struct remove_qualifier
+{
+    using type = std::remove_cv_t<remove_pointer_t<std::remove_reference_t<T>>>;
+};
+
+/**
+ * @brief Shorthand for 'typename remove_qualifier::value'
+ *
+ * @tparam T
+ */
+template <typename T>
+using remove_qualifier_t = typename remove_qualifier<T>::type;
+
+/**
+ * @brief Meta-function for checking if a type is a stringtype, that is
+ *        it is either std::string, const char* or char* - prototype
+ *
+ * @tparam T
+ */
+template <typename T>
+struct is_string_helper : public std::false_type
+{
+};
+
+/**
+ * @brief Specialization of 'is_string_helper' for std::string
+ *
+ * @tparam
+ */
+template <>
+struct is_string_helper<std::string> : public std::true_type
+{
+};
+
+/**
+ * @brief Specialization of is_string_helper for const char*
+ *
+ * @tparam
+ */
+template <>
+struct is_string_helper<const char*> : public std::true_type
+{
+};
+
+/**
+ * @brief Specialization of is_string_helper for char*
+ *
+ * @tparam
+ */
+template <>
+struct is_string_helper<char*> : public std::true_type
+{
+};
+
+/**
+ * @brief Metafunction for determining if a type is a string-like type, i.e.
+ *        std::string, const char*, char*
+ * @tparam T
+ */
+template <typename T>
+struct is_string : public is_string_helper<remove_qualifier_t<T>>
+{
+};
+
+/**
+ * @brief Overload of is_string for pure const char*, which would loose its
+ *        pointer qualifier if this was not provided
+ * @tparam
+ */
+template <>
+struct is_string<const char*> : public is_string_helper<const char*>
+{
+};
+
+/**
+ * @brief Overload of is_string for pure const char*, which would loose its
+ *        pointer qualifier if this was not provided
+ * @tparam
+ */
+template <>
+struct is_string<char*> : public is_string_helper<char*>
+{
+};
+
+/**
+ * @brief Shorthand for 'is_string<T>::value'
+ *
+ * @tparam T
+ */
+template <typename T>
+constexpr inline bool is_string_v = is_string<T>::value;
+
+/**
+ * @brief Metafunction for checking if a type is a containertype, which does
+ *        not include string types - prototype
+ *
+ * @tparam T
+ * @tparam std::void_t<>
+ */
+template <class T, class U = std::void_t<>>
 struct is_container : public std::false_type
 {
 };
 
-// providing specializations for stl containers
-// currently non provided for associative containers
-// FIXME: why does this even work with variadics??
-template <typename T, std::size_t N>
-struct is_container<std::array<T, N>> : public std::true_type
-{
-};
-
-template <typename... Args>
-struct is_container<std::vector<Args...>> : public std::true_type
-{
-};
-
-template <typename... Args>
-struct is_container<std::list<Args...>> : public std::true_type
-{
-};
-
-template <typename... Args>
-struct is_container<std::forward_list<Args...>> : public std::true_type
-{
-};
-
-template <typename... Args>
-struct is_container<std::deque<Args...>> : public std::true_type
-{
-};
-
-template <typename... Args>
-struct is_container<std::queue<Args...>> : public std::true_type
-{
-};
-
-template <typename... Args>
-struct is_container<std::priority_queue<Args...>> : public std::true_type
-{
-};
-
-template <typename... Args>
-struct is_container<std::stack<Args...>> : public std::true_type
-{
-};
-
-template <typename... Args>
-struct is_container<std::set<Args...>> : public std::true_type
-{
-};
-
-// template <typename... Args>
-// struct is_container<std::basic_string<Args...>> : public std::true_type {};
-
 /**
- * @brief wrapper for more simple usage of 'is_container'
+ * @brief Metafunction for checking if a type is a containertype, which does
+ *        not include string types
  *
  * @tparam T
  */
-template <typename T, typename U = T>
-struct is_container_type : public is_container<U>
-{
-};
-
-// specialization for reference types
 template <typename T>
-struct is_container_type<T&> : public is_container<T>
+struct is_container<T, std::void_t<typename remove_qualifier_t<T>::iterator, std::enable_if_t<!is_string_v<T>, int>>>
+    : public std::true_type
 {
 };
-// specialization for pointer types
+
+/**
+ * @brief Shorthand for 'is_container::value
+ *
+ * @tparam T
+ */
 template <typename T>
-struct is_container_type<T*> : public is_container<T>
-{
-};
-
-// specialization for const types
-template <typename T>
-struct is_container_type<const T&> : public is_container<T>
-{
-};
-// specialization for pointer types
-template <typename T>
-struct is_container_type<const T*> : public is_container<T>
-{
-};
-
-// specialization for rvalue refs
-template <typename T>
-struct is_container_type<T&&> : public is_container<T>
-{
-};
-
-// check if we have stringlike types
-template <typename T>
-struct is_stringtype : public std::false_type
-{
-};
-
-template <>
-struct is_stringtype<std::string> : public std::true_type
-{
-};
-
-template <>
-struct is_stringtype<const char*> : public std::true_type
-{
-};
-
-template <>
-struct is_stringtype<char*> : public std::true_type
-{
-};
+inline constexpr bool is_container_v = is_container<T>::value;
 
 } // namespace DataIO
 } // namespace Utopia

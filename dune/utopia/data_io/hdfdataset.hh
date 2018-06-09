@@ -171,7 +171,7 @@ private:
     template <typename desired_type>
     auto __read_from_dataset__(hsize_t buffer_size, hid_t dspace, hid_t memspace)
     {
-        if constexpr (is_container<desired_type>::value)
+        if constexpr (is_container_v<desired_type>)
         {
             std::vector<hvl_t> buffer(buffer_size);
             std::vector<desired_type> data(buffer_size);

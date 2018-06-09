@@ -53,8 +53,7 @@ private:
 
         // we can write directly if we have a plain vector, no nested or stringtype.
         if constexpr (std::is_same_v<Type, std::vector<value_type_1>> &&
-                      !is_container_type<value_type_1>::value &&
-                      !is_stringtype<value_type_1>::value)
+                      !is_container_v<value_type_1> && !is_string_v<value_type_1>)
         {
             // check if attribute has been created, else do
             if (_attribute == -1)
@@ -127,6 +126,9 @@ private:
         // result types removes pointers, references, and qualifiers
         using basetype = typename HDFTypeFactory::result_type<Type>::type;
 
+        std::cout << _name << ", type for pointer is  " << typeid(basetype).name()
+                  << ", int type is " << typeid(int).name() << std::endl;
+
         if (_attribute == -1)
         {
             _attribute = __create_attribute__<basetype>();
@@ -169,7 +171,7 @@ private:
         // is suitable to hold them, read the nested data into a hvl_t
         // container, assuming that they are varlen because this is the more
         // general case, and then turn them into the desired type again...
-        if constexpr (is_container_type<value_type_1>::value)
+        if constexpr (is_container_v<value_type_1>)
         {
             using value_type_2 =
                 typename HDFTypeFactory::result_type<typename value_type_1::value_type>::type;
@@ -220,7 +222,7 @@ private:
                 // when strings are desired to be stored as value_types of the
                 // container, we need to treat them a bit differently,
                 // because hdf5 cannot read directly to them.
-                if constexpr (is_stringtype<value_type_1>::value)
+                if constexpr (is_string_v<value_type_1>)
                 {
                     // get type the attribute has internally
                     hid_t type = H5Aget_type(_attribute);
@@ -408,7 +410,7 @@ public:
 
         // type to read in is a container type, which can hold containers
         // themselvels or just plain types.
-        if constexpr (is_container_type<Type>::value)
+        if constexpr (is_container_v<Type>)
         {
             Type buffer(size);
             herr_t err = __read_container__(buffer);
@@ -420,7 +422,7 @@ public:
 
             return std::make_tuple(_shape, buffer);
         }
-        else if constexpr (is_stringtype<Type>::value) // we can have string types too, i.e. char*, const char*, std::string
+        else if constexpr (is_string_v<Type>) // we can have string types too, i.e. char*, const char*, std::string
         {
             std::string buffer; // resized in __read_stringtype__ because this as a scalar
             herr_t err = __read_stringtype__(buffer);
@@ -429,9 +431,10 @@ public:
                 throw std::runtime_error("Error in reading data from " + _name +
                                          " into stringtype");
             }
+
             return std::make_tuple(_shape, buffer);
         }
-        else if constexpr (std::is_pointer_v<Type> && !is_stringtype<Type>::value)
+        else if constexpr (std::is_pointer_v<Type> && !is_string_v<Type>)
         {
             auto buffer = std::make_shared<Type>(size);
             herr_t err = __read_pointertype__(buffer.get());
@@ -477,7 +480,7 @@ public:
 
         // type to read in is a container type, which can hold containers
         // themselvels or just plain types.
-        if constexpr (is_container_type<Type>::value)
+        if constexpr (is_container_v<Type>)
         {
             herr_t err = __read_container__(buffer);
             if (err < 0)
@@ -486,7 +489,7 @@ public:
                                          " into container types");
             }
         }
-        else if constexpr (is_stringtype<Type>::value) // we can have string types too, i.e. char*, const char*, std::string
+        else if constexpr (is_string_v<Type>) // we can have string types too, i.e. char*, const char*, std::string
         {
             // resized in __read_stringtype__ because this as a scalar
             herr_t err = __read_stringtype__(buffer);
@@ -496,7 +499,7 @@ public:
                                          " into stringtype");
             }
         }
-        else if constexpr (std::is_pointer_v<Type> && !is_stringtype<Type>::value)
+        else if constexpr (std::is_pointer_v<Type> && !is_string_v<Type>)
         {
             std::cout << "reading pointer" << std::endl;
             herr_t err = __read_pointertype__(buffer);
@@ -537,7 +540,7 @@ public:
     {
         // check if we have a container. Writing containers requires further
         // t tests, plain old data can be written right away
-        if constexpr (is_container_type<Type>::value) // container type
+        if constexpr (is_container_v<Type>) // container type
         {
             // get the shape from the data. This function is written such
             // that it writes always 1d, unless a pointer type with different
@@ -562,7 +565,7 @@ public:
         // write string types, i.e. const char*, char*, std::string
         // These are not containers but not normal scalars either,
         // so they have to be treated separatly
-        else if constexpr (is_stringtype<Type>::value)
+        else if constexpr (is_string_v<Type>)
         {
             _shape = {1};
             herr_t err = __write_stringtype__(attribute_data);
@@ -577,7 +580,7 @@ public:
         // We can also write pointer types, but then the shape of the array
         // has to be given explicitly. This does not handle stringtypes,
         // even though const char* /char* are pointer types
-        else if constexpr (std::is_pointer_v<Type> && !is_stringtype<Type>::value)
+        else if constexpr (std::is_pointer_v<Type> && !is_string_v<Type>)
         {
             if (shape.size() == 0)
             {

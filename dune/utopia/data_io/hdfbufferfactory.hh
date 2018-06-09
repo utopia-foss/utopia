@@ -60,7 +60,7 @@ public:
     {
         using T = typename HDFTypeFactory::result_type<decltype(adaptor(*begin))>::type;
 
-        if constexpr (is_container_type<T>::value)
+        if constexpr (is_container_v<T>)
         {
             // set up buffer
 
