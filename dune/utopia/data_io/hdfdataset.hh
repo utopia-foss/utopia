@@ -8,6 +8,7 @@
 #include <hdf5.h>
 #include <hdf5_hl.h>
 #include <numeric>
+#include <cmath>
 #include <unordered_map>
 
 namespace Utopia
@@ -1005,7 +1006,7 @@ public:
             }
         }
     }
-};
+}; // end of HDFDataset class
 
 /**
  * @brief      Exchange state between lhs and rhs
@@ -1021,6 +1022,134 @@ void swap(HDFDataset<HDFObject>& lhs, HDFDataset<HDFObject>& rhs)
     lhs.swap(rhs);
 }
 
+
+
+/**
+ * @brief      Try to guess a good chunksize for a dataset
+ * @detail     This is based on the h5py method `guess_chunk` with the same
+ *             objective. It tries to guess an appropriate chunk layout for
+ *             for a dataset, using the current extend, the maximum extend,
+ *             and the size of each element (in bytes).
+ *             As in h5py, this method will allocate chunks only as large as
+ *             the set CHUNKSIZE_MAX. Chunks are generally close to some power-of-2
+ *             fraction of each axis, slightly favoring bigger values for the
+ *             last index.
+ *
+ * @param      extend       The current extend of the dataset
+ * @param      typesize     The size of each element in bytes
+ * @param      max_extend   The maximum extend the dataset can have (currently
+ *                          not taken into consideration for the calculation)
+ */
+// TODO not sure about the types here ... hsize_t really needed? const?
+const std::vector<hsize_t> guess_chunksize(std::vector<hsize_t> extend,
+                                           const hsize_t typesize,
+                                           [[maybe_unused]] const std::vector<hsize_t> max_extend = {})
+{    
+    // Define some constants
+    // TODO Better to define somewhere else?
+    // Factor by which chunks are adjusted
+    const unsigned int CHUNKSIZE_BASE = 16 * 1024;
+
+    // Soft lower and hard upper limit at 8k and 1M, respectively
+    const unsigned int CHUNKSIZE_MIN = 8 * 1024;
+    const unsigned int CHUNKSIZE_MAX = 1024 * 1024;
+
+
+    // Check that an extend is given; if not, the dataset is a scalar dataset
+    // which does not allow chunking anyway
+    auto rank = extend.size();
+    if (rank == 0) {
+        throw std::invalid_argument("Cannot guess chunksize for scalar "
+                                    "dataset!");
+    }
+
+    // Extend values can also be 0, indicating unlimited extend of that
+    // dimension. To not run into further problems, guess a value for those.
+    // h5py uses 1024 here, let's do the same
+    // TODO figure out why this specific value is used
+    std::replace(extend.begin(), extend.end(), 0, 1024);
+
+    // Determine the byte size of a dataset with this extend
+    auto bytes_dset = typesize * std::accumulate(extend.begin(), extend.end(),
+                                                 1, std::multiplies<>());
+    // NOTE The std::accumulate is used for calculating the product of entries
+
+    // ... and the target size of each chunk
+    double bytes_target = (CHUNKSIZE_BASE
+                           * std::pow(2, std::log10(bytes_dset / 1024.*1024)));
+    // NOTE this is a double as it is more convenient to calculate with ...
+
+    // Ensure the target chunk size is between CHUNKSIZE_MIN and CHUNKSIZE_MAX
+    // in order to not choose too large or too small chunks
+    if (bytes_target > CHUNKSIZE_MAX) {
+        bytes_target = CHUNKSIZE_MAX;
+    }
+    else if (bytes_target < CHUNKSIZE_MIN) {
+        bytes_target = CHUNKSIZE_MIN;
+    }
+
+    // Create the temporary target vector that will store the chunksize values.
+    // It starts with a copy of the extend values. After optimization, a const
+    // version of this is created and returned.
+    std::vector<hsize_t> _chunks(extend);
+
+    // ... and a variable that will store the size (in bytes) of this specific
+    // chunk configuration
+    unsigned int bytes_chunks;
+
+    /* Now optimize the chunks for each dimension by repeatedly looping over
+     * the vector and dividing the values by two (rounding up).
+     *
+     * The loop is left when the following condition is fulfilled:
+     *   smaller than target chunk size OR within 50% of target chunk size
+     *   AND
+     *   smaller than maximum chunk size
+     * 
+     * NOTE:
+     * Limit the optimization to 23 iterations per dimension; usually, we will
+     * leave the loop much earlier; the _mean_ extend of the dataset would have
+     * to be ~8M entries _per dimension_ to exhaust this optimization loop.
+     */
+    for (unsigned int i=0; i < 23 * rank; i++)
+    {
+        // With the current values of the chunks, calculate the chunk size
+        bytes_chunks = typesize * std::accumulate(_chunks.begin(),
+                                                  _chunks.end(),
+                                                  1, std::multiplies<>());
+
+        // Check the first break condition
+        // If close enough to target size, optimization is finished
+        if ((   bytes_chunks < bytes_target
+             || (std::abs(bytes_chunks - bytes_target) / bytes_target < 0.5))
+            && bytes_chunks < CHUNKSIZE_MAX)
+        {
+            break;
+        }
+
+        // Check the second break condition
+        // If chunk size in each dimension is 1, there can be no further
+        // optimization; this also means that the element size is larger than
+        // the maximum chunk size
+        if (std::accumulate(_chunks.begin(), _chunks.end(),
+                            1, std::multiplies<>()))
+        {
+            break;
+        }
+
+        // Divide the chunk size of the current axis by two, rounding upwards
+        _chunks[i % rank] = 1 + ((_chunks[i % rank] - 1) / 2);
+        // NOTE integer division fun; can do this because all are unsigned
+        // and the chunks entry is always nonzero
+    }
+
+    // Create a const version of the temporary chunks vector
+    const std::vector<hsize_t> chunks(_chunks);
+    // TODO is this the best way to do this?
+
+    return chunks;
+}
+
+
 } // namespace DataIO
 } // namespace Utopia
-#endif
+#endif // HDFDATASET_HH
