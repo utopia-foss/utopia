@@ -107,26 +107,6 @@ struct is_string_helper<std::string> : public std::true_type
 };
 
 /**
- * @brief Specialization of is_string_helper for const char*
- *
- * @tparam
- */
-template <>
-struct is_string_helper<const char*> : public std::true_type
-{
-};
-
-/**
- * @brief Specialization of is_string_helper for char*
- *
- * @tparam
- */
-template <>
-struct is_string_helper<char*> : public std::true_type
-{
-};
-
-/**
  * @brief Metafunction for determining if a type is a string-like type, i.e.
  *        std::string, const char*, char*
  * @tparam T
@@ -142,7 +122,7 @@ struct is_string : public is_string_helper<remove_qualifier_t<T>>
  * @tparam
  */
 template <>
-struct is_string<const char*> : public is_string_helper<const char*>
+struct is_string<const char*> : public std::true_type // is_string_helper<const char*>
 {
 };
 
@@ -152,7 +132,7 @@ struct is_string<const char*> : public is_string_helper<const char*>
  * @tparam
  */
 template <>
-struct is_string<char*> : public is_string_helper<char*>
+struct is_string<char*> : public std::true_type // public is_string_helper<char*>
 {
 };
 
