@@ -58,8 +58,7 @@ public:
     template <typename Iter, typename Adaptor>
     static auto buffer(Iter begin, Iter end, Adaptor&& adaptor)
     {
-        using T = typename HDFTypeFactory::result_type<decltype(adaptor(*begin))>::type;
-
+        using T = remove_qualifier_t<decltype(adaptor(*begin))>;
         if constexpr (is_container_v<T>)
         {
             // set up buffer

@@ -24,33 +24,6 @@ private:
 
 public:
     /**
-     * @brief struct for getting a plain type from a return type of a function
-     *
-     * @tparam T
-     * @tparam T
-     */
-    template <typename T>
-    struct result_type
-    {
-        using type = remove_qualifier_t<T>;
-    };
-
-    // // this does not make very much sense here!
-    // template <typename T>
-    // struct result_type<T*>
-    // {
-    //     // recursion for getting the base type for
-    //     // multidim-pointers
-    //     using type = typename std::remove_all_extents<T>::type;
-    // };
-
-    // template <typename T>
-    // struct result_type<T&>
-    // {
-    //     using type = T;
-    // };
-
-    /**
      * @brief returns a HDF5 type from a given C++ primitive type
      *
      * @tparam T

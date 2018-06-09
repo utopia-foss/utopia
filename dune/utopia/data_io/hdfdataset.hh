@@ -131,8 +131,7 @@ private:
     template <typename Iter, typename Adaptor>
     void __write_dataset__(Iter begin, Iter end, Adaptor&& adaptor, hid_t dspace, hid_t memspace)
     {
-        using result_type =
-            typename HDFTypeFactory::result_type<decltype(adaptor(*begin))>::type;
+        using result_type = remove_qualifier_t<decltype(adaptor(*begin))>;
         // now that the dataset has been made let us write to it
         // buffering at first
         auto buffer =
@@ -371,9 +370,7 @@ public:
                hsize_t chunksize = 0,
                hsize_t compress_level = 0)
     {
-        using result_type =
-            typename HDFTypeFactory::result_type<decltype(adaptor(*begin))>::type;
-
+        using result_type = remove_qualifier_t<decltype(adaptor(*begin))>;
         // get size of stuff to write
         hsize_t size = std::distance(begin, end);
         _rank = rank;

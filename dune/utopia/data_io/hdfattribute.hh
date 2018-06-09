@@ -50,7 +50,7 @@ private:
     herr_t __write_container__(Type attribute_data)
     {
         using value_type_1 = typename Type::value_type;
-
+        using base_type = remove_qualifier_t<value_type_1>;
         // we can write directly if we have a plain vector, no nested or stringtype.
         if constexpr (std::is_same_v<Type, std::vector<value_type_1>> &&
                       !is_container_v<value_type_1> && !is_string_v<value_type_1>)
@@ -58,14 +58,11 @@ private:
             // check if attribute has been created, else do
             if (_attribute == -1)
             {
-                _attribute =
-                    __create_attribute__<typename HDFTypeFactory::result_type<value_type_1>::type>(0);
+                _attribute = __create_attribute__<base_type>(0);
             }
 
-            return H5Awrite(
-                _attribute,
-                HDFTypeFactory::type<typename HDFTypeFactory::result_type<value_type_1>::type>(0),
-                attribute_data.data());
+            return H5Awrite(_attribute, HDFTypeFactory::type<base_type>(0),
+                            attribute_data.data());
         }
         // when stringtype or containertype is stored in a container, then
         // we have to buffer. bufferfactory handles how to do this in detail
@@ -73,18 +70,15 @@ private:
         {
             if (_attribute == -1)
             {
-                _attribute =
-                    __create_attribute__<typename HDFTypeFactory::result_type<value_type_1>::type>(0);
+                _attribute = __create_attribute__<base_type>(0);
             }
 
             auto buffer = HDFBufferFactory::buffer(
                 std::begin(attribute_data), std::end(attribute_data),
                 [](auto& value) -> value_type_1& { return value; });
 
-            return H5Awrite(
-                _attribute,
-                HDFTypeFactory::type<typename HDFTypeFactory::result_type<value_type_1>::type>(0),
-                buffer.data());
+            return H5Awrite(_attribute, HDFTypeFactory::type<base_type>(0),
+                            buffer.data());
         }
     }
 
@@ -124,8 +118,7 @@ private:
     herr_t __write_pointertype__(Type attribute_data)
     {
         // result types removes pointers, references, and qualifiers
-        using basetype = typename HDFTypeFactory::result_type<Type>::type;
-
+        using basetype = remove_qualifier_t<Type>;
         std::cout << _name << ", type for pointer is  " << typeid(basetype).name()
                   << ", int type is " << typeid(int).name() << std::endl;
 
@@ -143,16 +136,13 @@ private:
     {
         // because we just write a scalar, the shape tells basically that
         // the attribute is pointlike: 1D and 1 entry.
-
+        using basetype = remove_qualifier_t<Type>;
         if (_attribute == -1)
         {
             _attribute = __create_attribute__<Type>();
         }
 
-        return H5Awrite(
-            _attribute,
-            HDFTypeFactory::type<typename HDFTypeFactory::result_type<Type>::type>(),
-            &attribute_data);
+        return H5Awrite(_attribute, HDFTypeFactory::type<basetype>(), &attribute_data);
     }
 
     // Container reader.
@@ -163,8 +153,7 @@ private:
     template <typename Type>
     herr_t __read_container__(Type& buffer)
     {
-        using value_type_1 =
-            typename HDFTypeFactory::result_type<typename Type::value_type>::type;
+        using value_type_1 = remove_qualifier_t<typename Type::value_type>;
 
         // when the value_type of Type is a container again, we want nested
         // arrays basically. Therefore we have to check if the desired type Type
@@ -173,8 +162,7 @@ private:
         // general case, and then turn them into the desired type again...
         if constexpr (is_container_v<value_type_1>)
         {
-            using value_type_2 =
-                typename HDFTypeFactory::result_type<typename value_type_1::value_type>::type;
+            using value_type_2 = remove_qualifier_t<typename value_type_1::value_type>;
 
             // if containers inside are not vectors, throw exception, we
             // cannot read into anything else
@@ -638,8 +626,7 @@ public:
                Adaptor adaptor = [](auto& value) { return value; },
                std::vector<hsize_t> shape = {})
     {
-        using Type = typename HDFTypeFactory::result_type<decltype(adaptor(*begin))>::type;
-
+        using Type = remove_qualifier_t<decltype(adaptor(*begin))>;
         // if we copy only the content of [begin, end), then simple vector
         // copy suffices
         if constexpr (std::is_same<Type, typename Iter::value_type>::value)
