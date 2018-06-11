@@ -175,7 +175,7 @@ const std::vector<hsize_t>
     }
 
 
-    std::cout << "guessing chunksize for with the following parameters:"
+    std::cout << "guessing chunksize with the following parameters:"
               << std::endl;
     std::cout << "  typesize:          " << typesize << " B" << std::endl;
     std::cout << "  io_extend:         " << vec2str(io_extend) << std::endl;
@@ -227,16 +227,28 @@ const std::vector<hsize_t>
     bool fits_into_chunk = (bytes_io <= CHUNKSIZE_MAX);
     std::cout << "  fits into chunk?   " << fits_into_chunk << std::endl;
 
-    // If it does not fit into the chunk, need to start optimize here already
-    if (!fits_into_chunk) {
+    // If it does not fit into the chunk or if the maximum extend is not known,
+    // need to start optimize here already
+    if (!fits_into_chunk || !max_extend.size()) {
         __opt_chunks_naive(_chunks, bytes_io, typesize,
                            CHUNKSIZE_MAX, CHUNKSIZE_MIN, CHUNKSIZE_BASE);
     }
     // else: no need to optimize for a single write operation
 
 
-    // -- Take the max_extend into account -- //
-    // This is only possible if the current chunk size 
+    // -- If given, take the max_extend into account -- //
+    // This is only possible if the current chunk size is not already close to
+    // the upper limit, CHUNKSIZE_MAX
+    if (max_extend.size()
+        && (typesize * product(_chunks) <= CHUNKSIZE_MAX/2))
+    {
+        std::cout << "  can further optimize using max_extend info ..."
+                  << std::endl;
+
+        // Distinguish finite and infinite datasets
+
+    }
+    // else: no further optimization possible
 
 
 
