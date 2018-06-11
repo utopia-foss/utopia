@@ -4,6 +4,9 @@
 
 #include "dummy.hh"
 
+// Declare the model
+using DummyModel = Utopia::Models::Dummy;
+
 int main (int argc, char** argv)
 {
     try {
@@ -13,22 +16,12 @@ int main (int argc, char** argv)
         const std::string config_file = argv[1];
         Utopia::DataIO::Config config(config_file);
 
-        // Initialize the HDF file
-        auto output_path = config["output_path"].as<std::string>();
-        std::cout << "output_path: " << output_path << std::endl;
-        auto file = Utopia::DataIO::HDFFile(output_path, "w");
-
-        // ...and get the basegroup that this model will write into
-        auto basegroup = file.get_basegroup();
-
-        // Initialize the RNG
-        auto seed = config["seed"].as<int>();
-        std::cout << "seed: " << seed << std::endl;
-        auto rng = std::make_shared<std::mt19937>(seed);
+        // create PseudoParent, setting up the HDFFile and RNG
+        Utopia::PseudoParent pp(config_file);
 
         // Set the initial state, then create the model instance
         std::vector<double> state(1E3, 0.0);
-        Utopia::DummyModel model("dummy", state, config, basegroup, rng);
+        DummyModel model("dummy", pp, state);
 
         // And iterate it for a number of steps
         auto num_steps = config["num_steps"].as<int>();
