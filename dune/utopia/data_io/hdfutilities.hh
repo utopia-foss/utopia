@@ -19,6 +19,7 @@ namespace Utopia
 {
 namespace DataIO
 {
+    
 /**
  * @brief Helper function for removing pointer qualifiers from a type recursivly
  *        - recursion base case which provides a type equal to T
@@ -30,6 +31,7 @@ struct remove_pointer
 {
     using type = T;
 };
+
 /**
  * @brief Helper function for removing pointer qualifiers from a type recursivly
  *        Provides a member type definition called 'type' which is equal to T
@@ -37,7 +39,6 @@ struct remove_pointer
  * @tparam T
  * @tparam 0
  */
-
 template <typename T>
 struct remove_pointer<T, std::void_t<std::enable_if_t<std::is_pointer_v<T>, int>>>
 {

@@ -247,45 +247,80 @@ protected:
 
 public:
     /**
-     * @brief get a weak ptr to the parent_object
+     * @brief get a shared_ptr to the parent_object
      *
-     * @return std::weak_ptr<HDFObject>
+     * @return std::shared_ptr<HDFObject>
      */
     std::shared_ptr<HDFObject> get_parent()
     {
         return _parent_object;
     }
 
+    /**
+    * @brief get the name of the dataset 
+    * 
+    * @return std::string
+    */
     std::string get_name()
     {
         return _name;
     }
 
+    /**
+    * @brief get the rank of the dataset, i.e. the dimensionality
+    * 
+    * @return std::size_t
+    */
     std::size_t get_rank()
     {
         return _rank;
     }
 
+    /**
+    * @brief get the current extend of the dataset
+    * 
+    * @return std::vector<hsize_t>
+    */
     auto get_extend()
     {
         return _extend;
     }
 
+    /**
+    * @brief get the maximum extend of the dataset
+    * 
+    * @return std::vector<hsize_t>
+    */
     auto get_capacity()
     {
         return _max_extend;
     }
 
+    /**
+    * @brief get the current extend of the dataset
+    * 
+    * @return std::vector<hsize_t>
+    */
     hid_t get_id()
     {
         return _dataset;
     }
 
+    /**
+    * @brief get the reference counter map
+    * 
+    * @return std::map<haddr_t, int> 
+    */
     auto get_referencecounter()
     {
         return _refcounts;
     }
 
+    /**
+    * @brief get the address of the dataset in the underlying hdffile
+    * 
+    * @return haddr_t
+    */
     haddr_t get_address()
     {
         return _address;
