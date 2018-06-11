@@ -1031,19 +1031,24 @@ void swap(HDFDataset<HDFObject>& lhs, HDFDataset<HDFObject>& rhs)
  *             for a dataset, using the current extend, the maximum extend,
  *             and the size of each element (in bytes).
  *             As in h5py, this method will allocate chunks only as large as
- *             the set CHUNKSIZE_MAX. Chunks are generally close to some power-of-2
- *             fraction of each axis, slightly favoring bigger values for the
- *             last index.
+ *             the set CHUNKSIZE_MAX. Chunks are generally close to some
+ *             power-of-2 fraction of each axis, slightly favoring bigger
+ *             values for the last indices.
+ *             With a max_extend given, 
  *
- * @param      extend       The current extend of the dataset
  * @param      typesize     The size of each element in bytes
- * @param      max_extend   The maximum extend the dataset can have (currently
- *                          not taken into consideration for the calculation)
+ * @param      write_extend The extend of one write operation. The rank of the
+ *                          dataset is extracted from this parameter
+ * @param      max_extend   The maximum extend the dataset can have. If given,
+ *                          first the write_extend is used to determine the
+ *                          chunks along the major axis; then, max_extend is
+ *                          used to increase chunk sizes along the minor axes.
  */
-// TODO not sure about the types here ... hsize_t really needed? const?
-const std::vector<hsize_t> guess_chunksize(std::vector<hsize_t> extend,
-                                           const hsize_t typesize,
-                                           [[maybe_unused]] const std::vector<hsize_t> max_extend = {})
+// TODO is it reasonable to use const here?
+const std::vector<hsize_t>
+    guess_chunksize(const hsize_t typesize,
+                    const std::vector<hsize_t> write_extend,
+                    const std::vector<hsize_t> max_extend = {})
 {    
     // Define some constants
     // TODO Better to define somewhere else?
@@ -1054,10 +1059,15 @@ const std::vector<hsize_t> guess_chunksize(std::vector<hsize_t> extend,
     const unsigned int CHUNKSIZE_MIN = 8 * 1024;
     const unsigned int CHUNKSIZE_MAX = 1024 * 1024;
 
+    // Helper lambdas
+    // For calculating the product of vector entries
+    auto product = [](std::vector<hsize_t> &vec) {
+        return std::accumulate(vec.begin(), vec.end(), 1, std::multiplies<>());
+    };
 
     // Check that an extend is given; if not, the dataset is a scalar dataset
     // which does not allow chunking anyway
-    auto rank = extend.size();
+    auto rank = write_extend.size();
     if (rank == 0) {
         throw std::invalid_argument("Cannot guess chunksize for scalar "
                                     "dataset!");
@@ -1065,6 +1075,7 @@ const std::vector<hsize_t> guess_chunksize(std::vector<hsize_t> extend,
 
     std::cout << "guessing chunksize for:" << std::endl;
     std::cout << "  typesize:     " << typesize << std::endl;
+    std::cout << "  rank:         " << rank << std::endl;
 
     // For large typesizes, chunking makes no sense: a chunk needs to at least
     // extend to two elements which cannot be the case if the typesize (of a
@@ -1074,20 +1085,29 @@ const std::vector<hsize_t> guess_chunksize(std::vector<hsize_t> extend,
         return std::vector<hsize_t>(rank, 1);
     }
 
+    // Create non-const copies of the given arguments
+    std::vector<hsize_t> extd(write_extend);
+    std::vector<hsize_t> max_extd(max_extend);
+
     // Extend values can also be 0, indicating unlimited extend of that
     // dimension. To not run into further problems, guess a value for those.
     // h5py uses 1024 here, let's do the same
+    std::replace(extd.begin(), extd.end(), 0, 1024);
     // TODO figure out why this specific value is used
-    std::replace(extend.begin(), extend.end(), 0, 1024);
 
-    // Determine the byte size of a dataset with this extend
-    auto bytes_dset = typesize * std::accumulate(extend.begin(), extend.end(),
-                                                 1, std::multiplies<>());
+    if (max_extd.size()) {
+        std::replace(max_extd.begin(), max_extd.end(), 0, 1024);
+        // TODO what about H5S_UNLIMITED in max_extend?
+    }
+
+    // Determine the size (in bytes) of a write operation with this extend
+    auto bytes_extd = typesize * product(extd);
     // NOTE The std::accumulate is used for calculating the product of entries
 
-    // ... and the target size of each chunk
+    // Calculate the target chunksize: base * 2^log10(size/max_size)
     double bytes_target = (CHUNKSIZE_BASE
-                           * std::pow(2, std::log10(bytes_dset / 1024.*1024)));
+                           * std::pow(2,
+                                      std::log10(bytes_extd/(1024.*1024))));
     // NOTE this is a double as it is more convenient to calculate with ...
 
     // Ensure the target chunk size is between CHUNKSIZE_MIN and CHUNKSIZE_MAX
@@ -1099,13 +1119,13 @@ const std::vector<hsize_t> guess_chunksize(std::vector<hsize_t> extend,
         bytes_target = CHUNKSIZE_MIN;
     }
 
-    std::cout << "  bytes_dset:   " << bytes_dset << std::endl;
+    std::cout << "  bytes_extd:   " << bytes_extd << std::endl;
     std::cout << "  bytes_target: " << bytes_target << std::endl;
 
     // Create the temporary target vector that will store the chunksize values.
     // It starts with a copy of the extend values. After optimization, a const
     // version of this is created and returned.
-    std::vector<hsize_t> _chunks(extend);
+    std::vector<hsize_t> _chunks(extd);
 
     // ... and a variable that will store the size (in bytes) of this specific
     // chunk configuration
@@ -1129,9 +1149,7 @@ const std::vector<hsize_t> guess_chunksize(std::vector<hsize_t> extend,
     for (unsigned int i=0; i < 23 * rank; i++)
     {
         // With the current values of the chunks, calculate the chunk size
-        bytes_chunks = typesize * std::accumulate(_chunks.begin(),
-                                                  _chunks.end(),
-                                                  1, std::multiplies<>());
+        bytes_chunks = typesize * product(_chunks);
         std::cout << "  bytes_chunks: " << bytes_chunks;
 
         // If close enough to target size, optimization is finished
@@ -1149,6 +1167,8 @@ const std::vector<hsize_t> guess_chunksize(std::vector<hsize_t> extend,
         // NOTE integer division fun; can do this because all are unsigned
         // and the chunks entry is always nonzero
     }
+
+    // If the 
 
     // Create a const version of the temporary chunks vector
     const std::vector<hsize_t> chunks(_chunks);
