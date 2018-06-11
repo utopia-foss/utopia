@@ -460,13 +460,16 @@ public:
     template <typename Type>
     void read(Type& buffer)
     {
-        _shape = get_shape();
-
+        
         if (!H5Iis_valid(_attribute))
         {
             throw std::runtime_error(
                 "trying to read a nonexstiant or closed attribute named '" +
                 _name + "'");
+        }
+        
+        if(_shape.size() == 0){
+            _shape = get_shape();
         }
 
         // type to read in is a container type, which can hold containers
@@ -709,6 +712,7 @@ public:
     HDFAttribute(HDFObject& object, std::string name)
         : _name(name), _shape(std::vector<hsize_t>()), _parent_object(&object)
     {
+        
         // checks the validity and opens attribute if possible, else
         // postphones until it is written
         if (H5Iis_valid(_parent_object->get_id()) == false)
@@ -721,6 +725,7 @@ public:
         {
             if (H5LTfind_attribute(_parent_object->get_id(), _name.c_str()) == 1)
             { // attribute exists
+                _shape = get_shape();
                 _attribute = H5Aopen(_parent_object->get_id(), _name.c_str(), H5P_DEFAULT);
             }
             else
