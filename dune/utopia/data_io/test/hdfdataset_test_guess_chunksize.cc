@@ -98,7 +98,15 @@ int main(int argc, char *argv[])
         //    is room for further optimization
         assert_equal(guess_chunksize(1, {128 * 1024},
                                      {16 * 1024 * 1024}),
-                     {1024 * 1024});
+                     {1024 * 1024}); // FIXME not yet working
+
+        // Smaller, still fits CHUNKSIZE_MAX, not yet reached max_extend
+        // -> naive optimization, but fits I/O operation into chunk and there
+        //    is room for further optimization as there are probably many
+        //    write operations along the infinite axis
+        assert_equal(guess_chunksize(1, {1024 * 1024},
+                                     {0}), // max_extend given, but infinite
+                     {1024 * 1024}); // FIXME not yet working
 
 
         // End of tests.

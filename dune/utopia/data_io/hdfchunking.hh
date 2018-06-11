@@ -91,6 +91,85 @@ void __opt_chunks_naive(Cont &chunks,
 }
 
 
+/// Optimizes the chunks using the max_extend information
+template<typename Cont, typename IdxCont=std::vector<unsigned short>>
+void __opt_chunks_with_max_extend(Cont &chunks,
+                                  const Cont &max_extend,
+                                  const hsize_t typesize,
+                                  const unsigned int CHUNKSIZE_MAX)
+{
+    // Helper lambda for calculating the product of vector entries
+    auto product = [](const std::vector<hsize_t> vec) {
+        return std::accumulate(vec.begin(), vec.end(), 1, std::multiplies<>());
+    };
+
+    // Helper lambda to calculate diff between two vectors, a-b
+    auto diff = [](Cont &a, Cont &b) {
+        // Create the return vector
+        Cont _diff(a);
+
+        for (unsigned int i=0; i < _diff.size(); i++) {
+            _diff[i] -= b[i];
+        }
+        
+        return _diff;
+    };
+
+    // Helper lambda to find all indices of an element in a vector that matches
+    // the given predicate
+    IdxCont find_all_idcs = [](const Cont &vec, auto pred) {
+        // Create the return container
+        IdxCont idcs;
+
+        // Repeatedly start iterating over the vector until reached the end
+        auto iter = vec.begin();
+        while ((iter = std::find_if(iter, vec.end(), pred)) != vec.end())
+        {
+            // Add the value of the iterator to the indices vector
+            idcs.push_back(std::distance(vec.begin(), iter));
+
+            // Increment iterator to continue with next element
+            iter++;
+        }
+
+        return idcs;
+    };
+
+    // -- Parse axes -- //
+
+    // Available axes
+    IdxCont axes(chunks.size());
+    std::iota(axes.begin(), axes.end(), 0);
+
+    // Determine the infinite axes
+    auto axes_inf = find_all_idcs(max_extend,
+                                  [](auto extd){return extd == 0;});
+    // The chunk size along these axes should be as small as possible
+
+    // Determine the finite axes
+    auto axes_fin = find_all_idcs(max_extend,
+                                  [](auto extd){return extd != 0;});
+
+    // For finite axes, determine the diff between chunks and max_extend
+    Cont remainder(chunks.size(), -1);
+    for (auto idx: axes_fin) {
+        remainder[idx] = max_extend[idx] - chunks[idx];
+    }
+
+    // Among the finite axes, determine the axes that can still be filled,
+    // i.e. those where the chunk size does not reach the max_extend
+    IdxCont axes_fillable;
+    for (auto idx: axes_fin) {
+        if (remainder[idx]) {
+            
+        }
+    }
+
+    // -- Done -- //
+    return;
+}
+
+
 /**
  * @brief   Try to guess a good chunksize for a dataset
  * @detail  The premise is that a single write operation should be as fast
@@ -175,13 +254,12 @@ const std::vector<hsize_t>
     }
 
 
-    std::cout << "guessing chunksize with the following parameters:"
-              << std::endl;
-    std::cout << "  typesize:          " << typesize << " B" << std::endl;
+    std::cout << "Guessing appropriate chunk size using:" << std::endl;
     std::cout << "  io_extend:         " << vec2str(io_extend) << std::endl;
     std::cout << "  max_extend:        " << vec2str(max_extend) << std::endl;
     std::cout << "  rank:              " << rank << std::endl;
     std::cout << "  finite dset?       " << dset_finite << std::endl;
+    std::cout << "  typesize:          " << typesize << " B" << std::endl;
     std::cout << "  max. chunksize:    "
               << CHUNKSIZE_MAX/1024 << " kiB" << std::endl;
     std::cout << "  min. chunksize:    "
@@ -228,8 +306,8 @@ const std::vector<hsize_t>
     std::cout << "  fits into chunk?   " << fits_into_chunk << std::endl;
 
     // If it does not fit into the chunk or if the maximum extend is not known,
-    // need to start optimize here already
-    if (!fits_into_chunk || !max_extend.size()) {
+    // or if it is infinite, need to start optimize here already
+    if (!fits_into_chunk || !max_extend.size() || !dset_finite) {
         __opt_chunks_naive(_chunks, bytes_io, typesize,
                            CHUNKSIZE_MAX, CHUNKSIZE_MIN, CHUNKSIZE_BASE);
     }
@@ -245,8 +323,8 @@ const std::vector<hsize_t>
         std::cout << "  can further optimize using max_extend info ..."
                   << std::endl;
 
-        // Distinguish finite and infinite datasets
-
+        __opt_chunks_with_max_extend(_chunks, max_extend,
+                                     typesize, CHUNKSIZE_MAX);
     }
     // else: no further optimization possible
 
