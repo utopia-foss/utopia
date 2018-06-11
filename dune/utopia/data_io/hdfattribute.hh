@@ -342,6 +342,9 @@ public:
      */
     auto get_shape()
     {
+        if (!H5Iis_valid(_attribute)){
+            throw std::runtime_error("Trying to get shape from invalid attribute " + _name);
+        }
         // get dataspace: 'Form' of the data stored in the attribute
         hid_t dspace = H5Aget_space(_attribute);
 
