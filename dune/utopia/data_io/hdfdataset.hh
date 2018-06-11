@@ -1063,6 +1063,17 @@ const std::vector<hsize_t> guess_chunksize(std::vector<hsize_t> extend,
                                     "dataset!");
     }
 
+    std::cout << "guessing chunksize for:" << std::endl;
+    std::cout << "  typesize:     " << typesize << std::endl;
+
+    // For large typesizes, chunking makes no sense: a chunk needs to at least
+    // extend to two elements which cannot be the case if the typesize (of a
+    // single element) is larger than half the maximum chunksize
+    if (typesize > CHUNKSIZE_MAX / 2) {
+        std::cout << "  -> type size >= 1/2 max. chunksize" << std::endl;
+        return std::vector<hsize_t>(rank, 1);
+    }
+
     // Extend values can also be 0, indicating unlimited extend of that
     // dimension. To not run into further problems, guess a value for those.
     // h5py uses 1024 here, let's do the same
@@ -1088,6 +1099,9 @@ const std::vector<hsize_t> guess_chunksize(std::vector<hsize_t> extend,
         bytes_target = CHUNKSIZE_MIN;
     }
 
+    std::cout << "  bytes_dset:   " << bytes_dset << std::endl;
+    std::cout << "  bytes_target: " << bytes_target << std::endl;
+
     // Create the temporary target vector that will store the chunksize values.
     // It starts with a copy of the extend values. After optimization, a const
     // version of this is created and returned.
@@ -1095,7 +1109,7 @@ const std::vector<hsize_t> guess_chunksize(std::vector<hsize_t> extend,
 
     // ... and a variable that will store the size (in bytes) of this specific
     // chunk configuration
-    unsigned int bytes_chunks;
+    unsigned long int bytes_chunks;
 
     /* Now optimize the chunks for each dimension by repeatedly looping over
      * the vector and dividing the values by two (rounding up).
@@ -1104,39 +1118,33 @@ const std::vector<hsize_t> guess_chunksize(std::vector<hsize_t> extend,
      *   smaller than target chunk size OR within 50% of target chunk size
      *   AND
      *   smaller than maximum chunk size
+     * Also, if the typesize is larger 
      * 
      * NOTE:
      * Limit the optimization to 23 iterations per dimension; usually, we will
      * leave the loop much earlier; the _mean_ extend of the dataset would have
      * to be ~8M entries _per dimension_ to exhaust this optimization loop.
      */
+    std::cout << "optimization:" << std::endl;
     for (unsigned int i=0; i < 23 * rank; i++)
     {
         // With the current values of the chunks, calculate the chunk size
         bytes_chunks = typesize * std::accumulate(_chunks.begin(),
                                                   _chunks.end(),
                                                   1, std::multiplies<>());
+        std::cout << "  bytes_chunks: " << bytes_chunks;
 
-        // Check the first break condition
         // If close enough to target size, optimization is finished
-        if ((   bytes_chunks < bytes_target
+        if ((   bytes_chunks <= bytes_target
              || (std::abs(bytes_chunks - bytes_target) / bytes_target < 0.5))
-            && bytes_chunks < CHUNKSIZE_MAX)
+            && bytes_chunks <= CHUNKSIZE_MAX)
         {
-            break;
-        }
-
-        // Check the second break condition
-        // If chunk size in each dimension is 1, there can be no further
-        // optimization; this also means that the element size is larger than
-        // the maximum chunk size
-        if (std::accumulate(_chunks.begin(), _chunks.end(),
-                            1, std::multiplies<>()))
-        {
+            std::cout << "  -> close enough to target size now" << std::endl;
             break;
         }
 
         // Divide the chunk size of the current axis by two, rounding upwards
+        std::cout << "  -> reducing size of dim " << i%rank << std::endl;
         _chunks[i % rank] = 1 + ((_chunks[i % rank] - 1) / 2);
         // NOTE integer division fun; can do this because all are unsigned
         // and the chunks entry is always nonzero

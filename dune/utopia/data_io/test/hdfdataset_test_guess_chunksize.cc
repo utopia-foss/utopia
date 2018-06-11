@@ -49,9 +49,39 @@ int main(int argc, char *argv[])
         std::cout << std::endl << "Tests commencing ..." << std::endl;
 
         // Simple call
-        auto chunks = guess_chunksize({1, 2, 3},  1); // extend and typesize
-        assert_equal(chunks, {1, 2, 3});
+        auto c1 = guess_chunksize({1, 2, 3},  1); // extend and typesize
+        // Size is way below CHUNKSIZE_MIN -> single chunk of same size
+        assert_equal(c1, {1, 2, 3});
 
+        // Large 1D dataset with typesize 1
+        auto c2 = guess_chunksize({1024 * 1024}, 1); // 1M
+        // -> single 1M chunk
+        assert_equal(c2, {1024 * 1024});
+
+        // Large 1D dataset with larger typesize
+        auto c3 = guess_chunksize({1024 * 1024}, 8); // 8M
+        // -> eight 1M chunks
+        assert_equal(c3, {128 * 1024});
+
+        // Small 1D dataset with large typesize
+        auto c4 = guess_chunksize({4}, 1024*1024); // 4M
+        // -> four 1M chunks
+        assert_equal(c4, {1});
+        
+        // Small 1D dataset with very large typesize
+        auto c5 = guess_chunksize({4}, 1024*1024*1024); // 4G
+        // -> four 1G chunks; no other choice
+        assert_equal(c5, {1});
+
+        // Small 1D dataset with typesize just above the threshold to allow
+        // creation of a size-2 chunk
+        auto c6 = guess_chunksize({4}, 513*1024); // slightly above 2M
+        // -> four 513k chunks; no other choice
+        assert_equal(c6, {1});
+
+        // 2D, ...
+
+        // End of tests.
         std::cout << "Tests finished." << std::endl << std::endl;
 
 
