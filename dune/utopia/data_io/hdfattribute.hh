@@ -729,7 +729,6 @@ public:
         {
             if (H5LTfind_attribute(_parent_object->get_id(), _name.c_str()) == 1)
             { // attribute exists
-                std::cout << "attribute " << _name << " exists already" << std::endl;
                 _attribute = H5Aopen(_parent_object->get_id(), _name.c_str(), H5P_DEFAULT);
             }
             else
