@@ -1,3 +1,8 @@
+/**
+ * @brief This file provides a class for creating and managing HDF5 files.
+ *
+ * @file hdffile.hh
+ */
 #ifndef HDFFILE_HH
 #define HDFFILE_HH
 #include "hdfdataset.hh"

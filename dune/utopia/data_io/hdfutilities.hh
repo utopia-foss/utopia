@@ -1,3 +1,9 @@
+/**
+ * @brief This file provides metafunctions for automatically determining the
+ *        nature of a C/C++ type at compile time (container or not, string or
+ * not), and getting the base type of pointer and cv-qualified types.
+ * @file hdfutilities.hh
+ */
 #ifndef HDFUTILITIES_HH
 #define HDFUTILITIES_HH
 #include <array>
@@ -19,7 +25,6 @@ namespace Utopia
 {
 namespace DataIO
 {
-    
 /**
  * @brief Helper function for removing pointer qualifiers from a type recursivly
  *        - recursion base case which provides a type equal to T

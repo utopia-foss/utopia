@@ -2,8 +2,6 @@
  * @brief In this file the functionality of HDFFile is tested.
  *
  * @file hdffile_test.cc
- * @author Harald Mack
- * @date 2018-06-11
  */
 #include "../hdffile.hh"
 #include <cassert>

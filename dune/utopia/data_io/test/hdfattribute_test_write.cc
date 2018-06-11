@@ -2,8 +2,7 @@
  * @brief Tests writing different kinds of data to an Attribute to a HDFObject.
  *
  * @file hdfattribute_test_write.cc
- * @author Harald Mack
- * @date 2018-06-11
+
  */
 #include "../hdfattribute.hh"
 #include "../hdffile.hh"

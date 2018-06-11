@@ -2,8 +2,6 @@
  * @brief Tests writing of data to datasets for mulitple kinds of data
  *
  * @file hdfdataset_test_write.cc
- * @author Harald Mack
- * @date 2018-06-11
  */
 #include "../hdfdataset.hh"
 #include "../hdffile.hh"

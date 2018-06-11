@@ -1,3 +1,10 @@
+/**
+ * @brief This file implements a C++ class which wraps a C HDF5 attribute to
+ * a HDF5-object (group or dataset), and provides the necessary functionality
+ * to read from, write to and create such objects.
+ *
+ * @file hdfattribute.hh
+ */
 #ifndef HDFATTRIBUTE_HH
 #define HDFATTRIBUTE_HH
 #include "hdfbufferfactory.hh"
@@ -392,7 +399,7 @@ public:
 
         if (_shape.size() == 0)
         {
-            _shape = get_shape();
+            get_shape();
         }
 
         // Read can only be done in 1d, and this loop takes care of
@@ -474,7 +481,7 @@ public:
 
         if (_shape.size() == 0)
         {
-            _shape = get_shape();
+            get_shape();
         }
 
         // type to read in is a container type, which can hold containers
@@ -730,6 +737,8 @@ public:
             if (H5LTfind_attribute(_parent_object->get_id(), _name.c_str()) == 1)
             { // attribute exists
                 _attribute = H5Aopen(_parent_object->get_id(), _name.c_str(), H5P_DEFAULT);
+
+                get_shape();
             }
             else
             { // attribute does not exist: make

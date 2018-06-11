@@ -2,8 +2,7 @@
  * @brief Tests the functionality of HDFBufferfactory
  *
  * @file hdfbufferfactory_test.cc
- * @author Harald Mack
- * @date 2018-06-11
+
  */
 
 #include "../hdfbufferfactory.hh"

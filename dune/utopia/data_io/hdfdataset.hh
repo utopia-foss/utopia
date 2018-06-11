@@ -1,3 +1,9 @@
+/**
+ * @brief This is the central file of the HDF5 dataIO module of Utopia and
+ * provides a class for writing to, reading from and creating almost arbitrary
+ * data to a dataset in a HDF5 file.
+ * @file hdfdataset.hh
+ */
 #ifndef HDFDATASET_HH
 #define HDFDATASET_HH
 #include "hdfattribute.hh"
@@ -257,70 +263,70 @@ public:
     }
 
     /**
-    * @brief get the name of the dataset 
-    * 
-    * @return std::string
-    */
+     * @brief get the name of the dataset
+     *
+     * @return std::string
+     */
     std::string get_name()
     {
         return _name;
     }
 
     /**
-    * @brief get the rank of the dataset, i.e. the dimensionality
-    * 
-    * @return std::size_t
-    */
+     * @brief get the rank of the dataset, i.e. the dimensionality
+     *
+     * @return std::size_t
+     */
     std::size_t get_rank()
     {
         return _rank;
     }
 
     /**
-    * @brief get the current extend of the dataset
-    * 
-    * @return std::vector<hsize_t>
-    */
+     * @brief get the current extend of the dataset
+     *
+     * @return std::vector<hsize_t>
+     */
     auto get_extend()
     {
         return _extend;
     }
 
     /**
-    * @brief get the maximum extend of the dataset
-    * 
-    * @return std::vector<hsize_t>
-    */
+     * @brief get the maximum extend of the dataset
+     *
+     * @return std::vector<hsize_t>
+     */
     auto get_capacity()
     {
         return _max_extend;
     }
 
     /**
-    * @brief get the current extend of the dataset
-    * 
-    * @return std::vector<hsize_t>
-    */
+     * @brief get the current extend of the dataset
+     *
+     * @return std::vector<hsize_t>
+     */
     hid_t get_id()
     {
         return _dataset;
     }
 
     /**
-    * @brief get the reference counter map
-    * 
-    * @return std::map<haddr_t, int> 
-    */
+     * @brief get the reference counter map
+     *
+     * @return std::map<haddr_t, int>
+     */
     auto get_referencecounter()
     {
         return _refcounts;
     }
 
     /**
-    * @brief get the address of the dataset in the underlying hdffile
-    * 
-    * @return haddr_t
-    */
+     * @brief get the address of the dataset in the underlying hdffile
+     *
+     * @return haddr_t
+     */
     haddr_t get_address()
     {
         return _address;

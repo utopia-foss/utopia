@@ -1,3 +1,10 @@
+/**
+ * @brief This file provides a class for creating and managing groups in a
+ *        HDF5 file, which then can create other objects (groups and datasets)
+ *        inside of them.
+ *
+ * @file hdfgroup.hh
+ */
 #ifndef HDFGROUP_HH
 #define HDFGROUP_HH
 #include "hdfattribute.hh"
@@ -15,12 +22,15 @@ namespace DataIO
 class HDFFile;
 class HDFGroup
 {
-private:
 protected:
     hid_t _group;
+
     std::string _path;
+
     H5O_info_t _info;
+
     haddr_t _address;
+
     std::shared_ptr<std::unordered_map<haddr_t, int>> _refcounts;
 
 public:

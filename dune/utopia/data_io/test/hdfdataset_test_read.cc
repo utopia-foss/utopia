@@ -3,8 +3,6 @@
  *        Executing hdfdataset_test_write.cc is a prerequisite for this file
  *        to work
  * @file hdfdataset_test_read.cc
- * @author Harald Mack
- * @date 2018-06-11
  */
 #include "../hdfdataset.hh"
 #include "../hdffile.hh"

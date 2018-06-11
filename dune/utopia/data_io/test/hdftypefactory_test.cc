@@ -4,8 +4,6 @@
  *        HDF5 types.
  *
  * @file hdftypefactory_test.cc
- * @author Harald Mack
- * @date 2018-06-11
  */
 #include "../hdftypefactory.hh"
 #include <cassert>

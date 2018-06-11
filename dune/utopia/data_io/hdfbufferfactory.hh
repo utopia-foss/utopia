@@ -1,3 +1,10 @@
+/**
+ * @brief In this file, a class for automatically creating intermediate buffer
+ *        data structures between the user provided data and the file are
+ *        provided.
+ *
+ * @file hdfbufferfactory.hh
+ */
 #ifndef HDFBUFFERFACTORY_HH
 #define HDFBUFFERFACTORY_HH
 #include "hdftypefactory.hh"

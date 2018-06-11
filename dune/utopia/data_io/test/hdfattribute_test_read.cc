@@ -2,8 +2,6 @@
  * @brief Implements tests for reading different kinds of data from an
  * hdfattribute. hdfattribute_write.cc is a prerequisite to this
  * @file hdfattribute_test_read.cc
- * @author Harald Mack
- * @date 2018-06-11
  */
 #include "../hdfattribute.hh"
 #include "../hdffile.hh"

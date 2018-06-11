@@ -3,8 +3,6 @@
  *        by creating groups, checking if they exist independently,
  *        and adding attributes to them
  * @file hdfgroup_test.cc
- * @author Harald Mack
- * @date 2018-06-11
  */
 
 #include "../hdffile.hh"

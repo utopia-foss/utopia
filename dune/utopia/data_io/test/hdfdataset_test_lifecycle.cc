@@ -2,8 +2,6 @@
  * @brief Tests the constructors of HDFDataset and the associated reference counting.
  *
  * @file hdfdataset_test_lifecycle.cc
- * @author Harald Mack
- * @date 2018-06-11
  */
 #include "../hdfdataset.hh"
 #include "../hdffile.hh"

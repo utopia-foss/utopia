@@ -3,8 +3,6 @@
  *        implemented in hdfutilities.cc
  *
  * @file hdfutilities_test.cc
- * @author Harald Mack
- * @date 2018-06-11
  */
 #include "../hdfutilities.hh"
 #include <cassert>

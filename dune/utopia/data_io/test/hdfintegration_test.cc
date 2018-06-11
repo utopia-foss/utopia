@@ -3,8 +3,6 @@
  *        module work together as intended
  *
  * @file hdfintegration_test.cc
- * @author Harald Mack
- * @date 2018-06-11
  */
 #include "../hdfattribute.hh"
 #include "../hdfdataset.hh"

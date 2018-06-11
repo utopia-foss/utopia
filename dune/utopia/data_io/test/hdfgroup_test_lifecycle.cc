@@ -8,8 +8,6 @@
     decremented respectively
  *
  * @file hdfgroup_test_lifecycle.cc
- * @author Harald Mack
- * @date 2018-06-11
  */
 
 #include "../hdffile.hh"

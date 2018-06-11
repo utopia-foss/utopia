@@ -1,3 +1,9 @@
+/**
+ * @brief This file provides a class which is responsible for the automatic
+ *        conversion between C/C++ types and HDF5 type identifiers.
+ *
+ * @file hdftypefactory.hh
+ */
 #ifndef HDFTYPEFACTORY_HH
 #define HDFTYPEFACTORY_HH
 #include "hdfutilities.hh"
