@@ -262,7 +262,8 @@ public:
             // Loop through the neighbors and store all neighbors with the highest payoff
             // NOTE that in most cases the vector will contain only one cell.
             // NOTE that this implementation is probably not the most efficient one
-            //      but it guarantees to cope with spatial artifacts in certain parameter regimes
+            //      but it guarantees to cope with spatial artifacts in certain parameter regimes.
+            //      Any suggestions for a better approach?
             for (auto nb : MooreNeighbor::neighbors(cell, this->_manager)){
                 if (nb->state().payoff > highest_payoff){
                     highest_payoff = nb->state().payoff;
@@ -278,10 +279,13 @@ public:
             if (fittest_nbs.size() == 1){
                 // If there is only one fittest neighbor 
                 // update the cell's new state with the state of the fittest neighbor
+                state.strategy = fittest_nbs[0]->state().strategy;
             }
             else if (fittest_nbs.size() > 1){
                 // If there are multiple nbs with the same highest payoff
-                // chose randomly one of them to pass on its strategy
+                // choose randomly one of them to pass on its strategy
+                std::uniform_int_distribution<> dist(0, fittest_nbs.size() - 1);
+                state.strategy = fittest_nbs[dist(*_rng)]->state().strategy;
             }
             else{
                 // There is no fittest neighbor. This case should never occur
