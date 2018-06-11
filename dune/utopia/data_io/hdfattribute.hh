@@ -342,8 +342,10 @@ public:
      */
     auto get_shape()
     {
-        if (!H5Iis_valid(_attribute)){
-            throw std::runtime_error("Trying to get shape from invalid attribute " + _name);
+        if (!H5Iis_valid(_attribute))
+        {
+            throw std::runtime_error(
+                "Trying to get shape from invalid attribute " + _name);
         }
         // get dataspace: 'Form' of the data stored in the attribute
         hid_t dspace = H5Aget_space(_attribute);
@@ -388,7 +390,10 @@ public:
                 _name + "'");
         }
 
-        _shape = get_shape();
+        if (_shape.size() == 0)
+        {
+            _shape = get_shape();
+        }
 
         // Read can only be done in 1d, and this loop takes care of
         // computing a 1d size which can accomodate all elements.
@@ -460,15 +465,15 @@ public:
     template <typename Type>
     void read(Type& buffer)
     {
-        
         if (!H5Iis_valid(_attribute))
         {
             throw std::runtime_error(
                 "trying to read a nonexstiant or closed attribute named '" +
                 _name + "'");
         }
-        
-        if(_shape.size() == 0){
+
+        if (_shape.size() == 0)
+        {
             _shape = get_shape();
         }
 
@@ -712,7 +717,6 @@ public:
     HDFAttribute(HDFObject& object, std::string name)
         : _name(name), _shape(std::vector<hsize_t>()), _parent_object(&object)
     {
-        
         // checks the validity and opens attribute if possible, else
         // postphones until it is written
         if (H5Iis_valid(_parent_object->get_id()) == false)
@@ -725,7 +729,7 @@ public:
         {
             if (H5LTfind_attribute(_parent_object->get_id(), _name.c_str()) == 1)
             { // attribute exists
-                _shape = get_shape();
+                std::cout << "attribute " << _name << " exists already" << std::endl;
                 _attribute = H5Aopen(_parent_object->get_id(), _name.c_str(), H5P_DEFAULT);
             }
             else

@@ -1,3 +1,12 @@
+/**
+ * @brief In this file, the basic functionality of a HDFGroup is tested,
+ *        by creating groups, checking if they exist independently,
+ *        and adding attributes to them
+ * @file hdfgroup_test.cc
+ * @author Harald Mack
+ * @date 2018-06-11
+ */
+
 #include "../hdffile.hh"
 #include "../hdfgroup.hh"
 #include <cassert>
@@ -45,11 +54,17 @@ int main()
     testgroup->close();
     assert((*testgroup->get_referencecounter())[testgroup->get_address()] == 1);
 
+    // check if the attributes are there
+    assert(H5LTfind_attribute(testgroup->get_id(), "readme") == 1);
+
     // check now if stuff can be done with the group
     testgroup2->add_attribute(
         "readme2",
         "because usually opening two objects and closing one of them "
         "released the resources of the other, too!");
+
+    // check if the attributes are there
+    assert(H5LTfind_attribute(testgroup2->get_id(), "readme2") == 1);
 
     return 0;
 }
