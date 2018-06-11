@@ -161,10 +161,10 @@ int main()
         }
     }
 
-    // auto [shape5, read_charptrdata] = attribute5.read<const char*>();
-    // assert(shape5.size() == 1);
-    // assert(shape5[0] == 1);
-    // assert(read_charptrdata == expected_charptrdata);
+    auto [shape5, read_charptrdata] = attribute5.read<const char*>();
+    assert(shape5.size() == 1);
+    assert(shape5[0] == 1);
+    assert(read_charptrdata == expected_charptrdata);
 
     auto [shape6, read_multidimdata] = attribute6.read<std::vector<int>>();
     assert(shape6.size() == 2);
