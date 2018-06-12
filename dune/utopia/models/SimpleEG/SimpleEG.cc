@@ -2,37 +2,35 @@
 
 #include "SimpleEG.hh"
 
-using namespace Utopia::SimpleEG;
+using namespace Utopia::Models;
 
 int main (int argc, char** argv)
 {
     try {
         Dune::MPIHelper::instance(argc, argv);
 
-        // Load the config file
+        // -- Initialization -- //
+        // Get path to config file
         const std::string cfg_path = argv[1];
-        Utopia::DataIO::Config config(cfg_path);
 
-        // Initialize the HDF file
-        auto output_path = config["output_path"].as<std::string>();
-        auto file = Utopia::DataIO::HDFFile(output_path, "w");
+        // Initialize the pseudo parent of this model using that config
+        Utopia::PseudoParent pp(cfg_path);
 
-        // ...and get the basegroup that this model will write into
-        auto basegroup = file.get_basegroup();
-
-        // Initialize the RNG
-        auto seed = config["seed"].as<int>();
-        auto rng = std::make_shared<std::mt19937>(seed);
+        // Still need config for iteration and setup function
+        // FIXME ... there must be a nicer way! Let PP do the iteration and
+        //       let the setup function take the pseudo parent as argument?
+        auto cfg = pp.get_cfg();
 
         // Initialize the main model instance
-        // The manager is created via a setup function
-        SimpleEGModel model("SimpleEG", config, basegroup, rng,
-                            setup_manager<>(config["SimpleEG"], rng)
-                            );
-        // NOTE This already implements the new model interface
+        SimpleEGModel model("SimpleEG", pp,
+                            setup_manager<>(cfg["SimpleEG"], pp.get_rng()));
+        // NOTE The manager is created via a setup function
 
-        // Perform the iteration
-        for (int i = 0; i < config["num_steps"].as<int>(); ++i) {
+
+        // -- Iteration -- //
+        // Iterate now ...
+        for (unsigned int i = 0; i < cfg["num_steps"].as<unsigned int>(); i++)
+        {
             model.iterate();
         }
 

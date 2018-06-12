@@ -1,39 +1,39 @@
-#ifndef UTOPIA_TEST_MODEL_TEST_HH
-#define UTOPIA_TEST_MODEL_TEST_HH
+#ifndef UTOPIA_MODELS_SIMPLEEG_HH
+#define UTOPIA_MODELS_SIMPLEEG_HH
 
 #include <dune/utopia/base.hh>
 #include <dune/utopia/core/setup.hh>
 #include <dune/utopia/core/model.hh>
 #include <dune/utopia/core/apply.hh>
 
-#include <dune/utopia/data_io/config.hh>
-#include <dune/utopia/data_io/hdffile.hh>
-#include <dune/utopia/data_io/hdfgroup.hh>
-#include <dune/utopia/data_io/hdfdataset.hh>
-
 namespace Utopia {
 
-namespace SimpleEG {
+namespace Models { // TODO check if additional namespace might be good!
 
-// TODO check the namespace the following are implemented in
-// Define the strategy enum
+/// Strategy enum
 enum Strategy : unsigned short int { S0=0, S1=1 };
 
-// Define the state struct, consisting of strategy and payoff
+
+/// State struct for SimpleEG model, consisting of strategy and payoff
 struct State {
     Strategy strategy;
     double payoff;
 };
 
-// Define the boundary type
+
+/// Boundary condition type
 struct Boundary {};
+// TODO do we need this?
+
 
 // Alias the neighborhood classes
 using NextNeighbor = Utopia::Neighborhoods::NextNeighbor;
 using MooreNeighbor = Utopia::Neighborhoods::MooreNeighbor;
 
-/// Define data types of SimpleEG model
+
+/// Typehelper to define data types of SimpleEG model 
 using SimpleEGModelTypes = ModelTypes<State, Boundary>;
+
 
 /// Simple model of evolutionary games on grids
 /** ...
@@ -44,115 +44,55 @@ class SimpleEGModel:
     public Model<SimpleEGModel<ManagerType>, SimpleEGModelTypes>
 {
 public:
-    // convenience type definitions
+    /// The base model
     using Base = Model<SimpleEGModel<ManagerType>, SimpleEGModelTypes>;
+    
+    /// Data type of the state
     using Data = typename Base::Data;
+    
+    /// Data type of the boundary condition
     using BCType = typename Base::BCType;
+    
+    /// Data type that holds the configuration
+    using Config = typename Base::Config;
+    
+    /// Data type of the group to write model data to, holding datasets
+    using DataGroup = typename Base::DataGroup;
+    
+    /// Data type for a dataset
+    using DataSet = typename Base::DataSet;
+
+    /// Data type of the shared RNG
+    using RNG = typename Base::RNG;
 
 private:
-    // Base members
-    const std::string _name;
-    Utopia::DataIO::Config _config;
-    std::shared_ptr<Utopia::DataIO::HDFGroup> _group;
-    std::shared_ptr<std::mt19937> _rng;
+    // Base members: time, name, cfg, hdfgrp, rng
     // Members of this model
     ManagerType _manager;
     std::vector<std::vector<double>> _ia_matrix;
-    // Datasets
-    std::shared_ptr<Utopia::DataIO::HDFDataset<Utopia::DataIO::HDFGroup>> _dset_strategy;
-    std::shared_ptr<Utopia::DataIO::HDFDataset<Utopia::DataIO::HDFGroup>> _dset_payoff;
-
-    /// Extract the interaction matrix from the config file
-    /** In the model config file there are three different ways to characterize the interaction:
-     * 1) Explicitely setting the interaction matrix `ia_matrix`
-     *        S0      S1
-     *   S0 [ia_00  ia_01]
-     *   S1 [ia_10  ia_11]
-
-     * 2) Setting a benefit and cost pair `bc_pair`
-     *        S0    S1
-     *   S0 [b-c    -c]
-     *   S1 [b       0]
-     * 
-     * 3) Setting the benefit paramter `b` following the paper of Nowak&May1992
-     *        S0    S1
-     *   S0 [1       0]
-     *   S1 [b(>1)   0]
-     * 
-     * 
-     * If 1) is set, 2) and 3) will be ignored. The function returns the explicitely given ia_matrix.
-     * If 1) is not set, then the interaction matrix of 2) will be returned.
-     * If 2) and 3) are not set, then the interaction matrix of 3) will be returned.
-     * 
-     * @return std::vector<std::vector<double>> The interaction matrix
-     */
-    std::vector<std::vector<double>> extract_ia_matrix()
-    {
-        return _config["ia_matrix"].as<std::vector<std::vector<double>>>();
-        
-
-        // // NOTE: The part below should work, if the `Config` class is abandoned and the config is saved as a YAML::Node
-        // //          untill then, it is commented out
-
-        // Return the ia_matrix if it is explicitly given in the config
-        // if (_config["ia_matrix"]){
-        //     return _config["ia_matrix"].as<std::vector<std::vector<double>>>();
-        // }
-        // // If ia_matrix is not provided in the config, get the ia_matrix from the bc-pair
-        // else if (_config["bc_pair"]){
-        //     auto [b, c] = _config["bc_pair"].as<std::pair<double, double>>();
-        //     double ia_00 = b - c;
-        //     double ia_01 = -c;
-        //     double ia_10 = b;
-        //     double ia_11 = 0.;
-        //     std::vector row0 {ia_00, ia_10};
-        //     std::vector row1 {ia_10, ia_11};
-        //     std::vector<std::vector<double>> ia_matrix {row0, row1};
-        //     return ia_matrix;
-        // }
-        // // If both previous cases are not provided, then return the ia_matrix given by the paramter "b"
-        // // NOTE: There is no check for b>1 implemented here.
-        // else if (_config["b"]){
-        //     auto b = _config["b"].as<double>();
-        //     double ia_00 = 1;
-        //     double ia_01 = 0;
-        //     double ia_10 = b;
-        //     double ia_11 = 0.;
-        //     std::vector row0 {ia_00, ia_10};
-        //     std::vector row1 {ia_10, ia_11};
-        //     std::vector<std::vector<double>> ia_matrix {row0, row1};
-        //     return ia_matrix;
-        // }
-        // // Case where no interaction parameters are provided
-        // else{
-        //     std::runtime_error("The interaction matrix is not given!");
-        //     throw;
-        // }
-    }
+    // Pointers to datasets
+    std::shared_ptr<DataSet> _dset_strategy;
+    std::shared_ptr<DataSet> _dset_payoff;
 
 public:
     /// Construct the SimpleEG model
-    /** \param name Name of this model instance
-     *  \param config The corresponding config node
-     *  \param group The HDFGroup to write data to
+    /** \param name     Name of this model instance
+     *  \param parent   The parent model this model instance resides in
+     *  \param manager  The externally setup manager to use for this model
      */
+    template<class ParentModel>
     SimpleEGModel (const std::string name,
-                   Utopia::DataIO::Config &config,
-                   std::shared_ptr<Utopia::DataIO::HDFGroup> group,
-                   std::shared_ptr<std::mt19937> rng,
-                   ManagerType&& manager):
-        Base(),
-        // NOTE the following will need to be passed to the Base constructor
-        //      once the base Model class is adjusted
-        _name(name),
-        _config(config[_name]),
-        _group(group->open_group(_name)),
-        _rng(rng),
+                   ParentModel &parent,
+                   ManagerType&& manager)
+    :
+        // Initialize first via base model
+        Base(name, parent),
+        // Now initialize members specific to this class
         _manager(manager),
         _ia_matrix(this->extract_ia_matrix()),
         // datasets
-        _dset_strategy(_group->open_dataset("strategy")),
-        _dset_payoff(_group->open_dataset("payoff"))
+        _dset_strategy(this->hdfgrp->open_dataset("strategy")),
+        _dset_payoff(this->hdfgrp->open_dataset("payoff"))
     {   
         // Initialize cells
         this->initialize_cells();
@@ -166,7 +106,7 @@ public:
     void initialize_cells()
     {
         // Extract the mode that determines the initial strategy
-        std::string initial_state = _config["initial_state"].as<std::string>();
+        std::string initial_state = this->cfg["initial_state"].as<std::string>();
 
         std::cout << "Initializing cells in '" << initial_state << "' mode ..."
                   << std::endl;
@@ -176,7 +116,7 @@ public:
         {
             // Use a uniform int distribution for determining the state
             auto rand_strat = std::bind(std::uniform_int_distribution<>(0, 1),
-                                        *_rng);
+                                        *this->rng);
 
             auto& cells = _manager.cells();
             auto set_random_strategy = [&rand_strat](const auto cell) {
@@ -192,11 +132,11 @@ public:
         } 
         else if (initial_state == "fraction")
         {
-            const auto s1_fraction = _config["s1_fraction"].as<double>();
+            const auto s1_fraction = this->cfg["s1_fraction"].as<double>();
 
             // Use a uniform real distribution to determine the state
             auto rand_proposal = std::bind(std::uniform_real_distribution<>(0., 1.),
-                                            *_rng);
+                                            *this->rng);
 
             auto& cells = _manager.cells();
             auto set_fraction_strategy = [&rand_proposal,&s1_fraction](const auto cell){
@@ -231,7 +171,7 @@ public:
             }
 
             auto& cells = _manager.cells();
-            auto grid_size = _config["grid_size"].as<std::pair<std::size_t, std::size_t>>();
+            auto grid_size = this->cfg["grid_size"].as<std::pair<std::size_t, std::size_t>>();
 
             auto set_initial_strategy = [&](const auto cell) {
                 // Get the position and state of the cell
@@ -352,7 +292,7 @@ public:
                 // If there are multiple nbs with the same highest payoff
                 // choose randomly one of them to pass on its strategy
                 std::uniform_int_distribution<> dist(0, fittest_nbs.size() - 1);
-                state.strategy = fittest_nbs[dist(*_rng)]->state().strategy;
+                state.strategy = fittest_nbs[dist(*this->rng)]->state().strategy;
             }
             else{
                 // There is no fittest neighbor. This case should never occur
@@ -398,10 +338,7 @@ public:
                               8               // chunksize, for extension
                               );
 
-        // TODO Find a reasonable chunksize, e.g. like h5py does?
-        // https://github.com/h5py/h5py/blob/5b77d54b4d0f47659b4e6f174cc1d001640dabdf/h5py/_hl/filters.py#L295
-        // Alternatively: pre-allocate the whole dataset size, knowing the
-        // number of columns (number of cells) and rows (num_steps)
+        // TODO Once implemented, use the higher-level wrapper for writing data
     }
 
     // TODO Check what to do with the below methods
@@ -413,6 +350,76 @@ public:
 
     /// Return const reference to stored data
     // const Data& data () const { return _state; }
+
+private:
+    /// Extract the interaction matrix from the config file
+    /** In the model config file there are three different ways to specify
+     *  the interaction:
+     * 1) Explicitely setting the interaction matrix `ia_matrix`
+     *        S0      S1
+     *   S0 [ia_00  ia_01]
+     *   S1 [ia_10  ia_11]
+     *
+     * 2) Setting a benefit and cost pair `bc_pair`
+     *        S0    S1
+     *   S0 [b-c    -c]
+     *   S1 [b       0]
+     * 
+     * 3) Setting the benefit paramter `b` following the paper of Nowak&May1992
+     *        S0    S1
+     *   S0 [1       0]
+     *   S1 [b(>1)   0]
+     * 
+     * 
+     * If 1) is set, 2) and 3) will be ignored. The function returns the
+     * explicitely given ia_matrix.
+     * If 1) is not set, then the interaction matrix of 2) will be returned.
+     * If 2) and 3) are not set, the interaction matrix of 3) will be returned.
+     * 
+     * @return std::vector<std::vector<double>> The interaction matrix
+     */
+    std::vector<std::vector<double>> extract_ia_matrix()
+    {
+        return this->cfg["ia_matrix"].as<std::vector<std::vector<double>>>();
+        
+        // // NOTE: The part below should work, if the `Config` class is abandoned and the config is saved as a YAML::Node
+        // //          untill then, it is commented out
+
+        // Return the ia_matrix if it is explicitly given in the config
+        // if (this->cfg["ia_matrix"]){
+        //     return this->cfg["ia_matrix"].as<std::vector<std::vector<double>>>();
+        // }
+        // // If ia_matrix is not provided in the config, get the ia_matrix from the bc-pair
+        // else if (this->cfg["bc_pair"]){
+        //     auto [b, c] = this->cfg["bc_pair"].as<std::pair<double, double>>();
+        //     double ia_00 = b - c;
+        //     double ia_01 = -c;
+        //     double ia_10 = b;
+        //     double ia_11 = 0.;
+        //     std::vector row0 {ia_00, ia_10};
+        //     std::vector row1 {ia_10, ia_11};
+        //     std::vector<std::vector<double>> ia_matrix {row0, row1};
+        //     return ia_matrix;
+        // }
+        // // If both previous cases are not provided, then return the ia_matrix given by the paramter "b"
+        // // NOTE: There is no check for b>1 implemented here.
+        // else if (this->cfg["b"]){
+        //     auto b = this->cfg["b"].as<double>();
+        //     double ia_00 = 1;
+        //     double ia_01 = 0;
+        //     double ia_10 = b;
+        //     double ia_11 = 0.;
+        //     std::vector row0 {ia_00, ia_10};
+        //     std::vector row1 {ia_10, ia_11};
+        //     std::vector<std::vector<double>> ia_matrix {row0, row1};
+        //     return ia_matrix;
+        // }
+        // // Case where no interaction parameters are provided
+        // else{
+        //     std::runtime_error("The interaction matrix is not given!");
+        //     throw;
+        // }
+    }
 };
 
 
@@ -455,8 +462,8 @@ auto setup_manager(Utopia::DataIO::Config config, std::shared_ptr<RNGType> rng)
     return manager;
 }
 
-} // namespace SimpleEG
+} // namespace Models
 
 } // namespace Utopia
 
-#endif // UTOPIA_TEST_MODEL_TEST_HH
+#endif // UTOPIA_MODELS_SIMPLEEG_HH

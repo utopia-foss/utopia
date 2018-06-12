@@ -17,7 +17,8 @@ template<typename DataType,
          typename BoundaryConditionType,
          typename RNGType=std::mt19937,
          typename ConfigType=Utopia::DataIO::Config,
-         typename DataGroupType=Utopia::DataIO::HDFGroup
+         typename DataGroupType=Utopia::DataIO::HDFGroup,
+         typename DataSetType=Utopia::DataIO::HDFDataset<Utopia::DataIO::HDFGroup>
          >
 struct ModelTypes
 {
@@ -26,6 +27,7 @@ struct ModelTypes
     using RNG = RNGType;
     using Config = ConfigType;
     using DataGroup = DataGroupType;
+    using DataSet = DataSetType;
 };
 
 
@@ -49,8 +51,11 @@ public:
     /// Data type that holds the configuration
     using Config = typename ModelTypes::Config;
     
-    /// Data type that is used for writing data
+    /// Data type of the group to write model data to, holding datasets
     using DataGroup = typename ModelTypes::DataGroup;
+    
+    /// Data type for a dataset
+    using DataSet = typename ModelTypes::DataSet;
 
     /// Data type of the shared RNG
     using RNG = typename ModelTypes::RNG;
