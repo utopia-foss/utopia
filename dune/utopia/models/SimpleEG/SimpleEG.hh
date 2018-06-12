@@ -296,7 +296,8 @@ public:
             }
             else{
                 // There is no fittest neighbor. This case should never occur
-                std::runtime_error("In the cell update, there is no fittest neighbor!");
+                throw std::runtime_error("There was no fittest neighbor in "
+                                         "the cell update. Should not occur!");
             }
 
             return state;

@@ -46,6 +46,6 @@
 #include <dune/grid/io/file/vtk/vtksequencewriter.hh>
 
 // UTOPIA
-#include "core/exceptions.hh"
+// Can add headers that should always be available here
 
 #endif // UTOPIA_BASE_HH
