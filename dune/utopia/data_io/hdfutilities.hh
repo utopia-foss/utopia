@@ -6,6 +6,7 @@
  */
 #ifndef HDFUTILITIES_HH
 #define HDFUTILITIES_HH
+
 #include <array>
 #include <deque>
 #include <forward_list>
@@ -18,8 +19,8 @@
 #include <string>
 #include <vector>
 
-// function for determining if a type is a stl-container are provided here.
-// this is used if we wish to make hdf5 types for storing such data in an
+// Functions for determining if a type is an STL-container are provided here.
+// This is used if we wish to make hdf5 types for storing such data in an
 // hdf5 dataset.
 namespace Utopia
 {
@@ -145,7 +146,8 @@ struct is_string<char*> : public std::true_type // public is_string_helper<char*
 /**
  * @brief Shorthand for 'is_string<T>::value'
  *
- * @tparam T
+ * @tparam     T     { description }
+ * @tparam     U     { description }
  */
 template <typename T>
 constexpr inline bool is_string_v = is_string<T>::value;

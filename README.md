@@ -19,18 +19,18 @@ Follow the Step-by-step instructions below for building Utopia from source.
 | Software | Version | Comments |
 | ---------| ------- | -------- |
 | GCC | >= 7 | Full C++17 compiler support required |
-| [CMake](https://cmake.org/) | >= 3.1 | |
+| [CMake](https://cmake.org/) | >= 3.10 | |
 | pkg-config | | |
 | [HDF5](https://www.hdfgroup.org/solutions/hdf5/) | >= 1.10. | |
 | [yaml-cpp](https://github.com/jbeder/yaml-cpp) | >= 0.5.2 | |
-| [Boost](http://www.boost.org/) | >= 1.62 | |
+| [Boost](http://www.boost.org/) | >= 1.65 | |
 | [dune-common](https://gitlab.dune-project.org/core/dune-common) | master | |
 | [dune-geometry](https://gitlab.dune-project.org/core/dune-geometry) | master | |
 | [dune-grid](https://gitlab.dune-project.org/core/dune-grid) | master | |
 | [dune-uggrid](https://gitlab.dune-project.org/staging/dune-uggrid) | master | |
 | Python | >= 3.6 | Earlier Python3 versions _may_ work, but are not tested |
 | [paramspace](https://ts-gitlab.iup.uni-heidelberg.de/yunus/paramspace) | >= 1.0b | |
-| [dantro](https://ts-gitlab.iup.uni-heidelberg.de/utopia/dantro) | >= 0.1b | (soon) |
+| [dantro](https://ts-gitlab.iup.uni-heidelberg.de/utopia/dantro) | >= 0.1b |  |
 
 ### Recommended
 | Software | Version | Purpose |
@@ -45,13 +45,14 @@ Follow the Step-by-step instructions below for building Utopia from source.
 Install PSGraf according to its installation manual. When executing `dunecontrol`, append `CMAKE_FLAGS="-DPSGRAF_ROOT=<path/to/psgraf/build>"`. If PSGraf is found, the preprocessor macro `HAVE_PSGRAF` is set.
 
 ### Step-by-step Instructions
-These instructions are intended for 'clean' __Ubuntu__ or __macOS__ setups.
+These instructions are intended for 'clean' __Ubuntu__ (18.04) or __macOS__ setups.
+
 The main difference between the two systems are the package managers.
-On Mac, we recommend [Homebrew](https://brew.sh/). If you prefer to use [MacPorts](https://www.macports.org/),
-notice that some packages might need to be installed differently.
+On macOS, we recommend [Homebrew](https://brew.sh/).
+If you prefer to use [MacPorts](https://www.macports.org/), notice that some packages might need to be installed differently.
 Ubuntu is shipped with APT.
 
-1. __macOS__ users need to start by installing the Apple Command Line Tools by executing
+1. __macOS only:__ Start by installing the Apple Command Line Tools by executing
 
         xcode-select --install
 
@@ -66,7 +67,7 @@ Ubuntu is shipped with APT.
     __macOS:__
 
         brew update
-        brew install boost cmake doxygen gcc pkg-config python
+        brew install boost cmake doxygen gcc@7 pkg-config python
         brew install yaml-cpp --cc=gcc-7
         brew install hdf5 --cc=gcc-7
     
@@ -93,8 +94,8 @@ Ubuntu is shipped with APT.
             ./dune-common/bin/dunecontrol --module=utopia all
 
     Afterwards, reconfiguring and rebuilding can now also be done locally,
-    instead of calling `dunecontrol`. After entering the `utopia/build-cmake` directory,
-    you can call `cmake ..` or `make` directly.
+    instead of calling `dunecontrol`.
+    After entering the `utopia/build-cmake` directory, you can call `cmake ..` or `make` directly.
 
 
 #### Troubleshooting

@@ -44,6 +44,7 @@ int main()
     // test for reference counting and correct resource management
     auto testgroup = base_group->open_group("/testgroup1/dummygroup");
     auto testgroup2 = base_group->open_group("/testgroup1/dummygroup");
+    assert((*testgroup->get_referencecounter())[testgroup->get_address()] == 2);
 
     assert((*testgroup->get_referencecounter())[testgroup->get_address()] == 2);
 

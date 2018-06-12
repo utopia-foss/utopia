@@ -6,6 +6,7 @@
  */
 #ifndef HDFDATASET_HH
 #define HDFDATASET_HH
+
 #include "hdfattribute.hh"
 #include "hdfbufferfactory.hh"
 #include "hdftypefactory.hh"
@@ -19,32 +20,47 @@ namespace Utopia
 namespace DataIO
 {
 /**
- * @brief Class representing a HDFDataset, wich reads and writes data
- *        and attributes
+ * @brief      Class representing a HDFDataset, wich reads and writes data and
+ *             attributes
  *
- * @tparam HDFObject
+ * @tparam     HDFObject  The type of the parent object
  */
 template <class HDFObject>
 class HDFDataset
 {
 private:
-    // helper function for making a non compressed dataset
+    /**
+     * @brief      helper function for making a non compressed dataset
+     *
+     * @param      chunksize       The chunksize
+     * @param      compress_level  The compress level; only possible with a
+     *                             non-zero chunksize
+     *
+     * @tparam     Datatype        The data type stored in this dataset
+     *
+     * @return     The created dataset
+     */
     template <typename Datatype>
     hid_t __create_dataset_helper__(hsize_t chunksize, hsize_t compress_level)
     {
+        // create group property list and (potentially) intermediate groups
         hid_t group_plist = H5Pcreate(H5P_LINK_CREATE);
         H5Pset_create_intermediate_group(group_plist, 1);
 
+        // distinguish by chunksize; chunked dataset needed for compression
         if (chunksize > 0)
         {
             // create creation property list, set chunksize and compress level
             hid_t plist = H5Pcreate(H5P_DATASET_CREATE);
+
             std::vector<hsize_t> chunksizes(_rank, chunksize);
             H5Pset_chunk(plist, _rank, chunksizes.data());
+
             if (compress_level > 0)
             {
                 H5Pset_deflate(plist, compress_level);
             }
+
             // make dataspace
             hid_t dspace = H5Screate_simple(_rank, _extend.data(), _max_extend.data());
 
@@ -55,7 +71,7 @@ private:
         }
         else
         {
-            // create dataset right away
+            // can create the dataset right away
             return H5Dcreate(_parent_object->get_id(), _name.c_str(),
                              HDFTypeFactory::type<Datatype>(),
                              H5Screate_simple(_rank, _extend.data(), _max_extend.data()),
@@ -63,7 +79,22 @@ private:
         }
     }
 
-    // wrapper for creating a dataset given all parameters needed
+    /**
+     * @brief      wrapper for creating a dataset given all parameters needed
+     *
+     * @param      size            The (flattened) size of the dataset
+     * @param      rank            The rank (number of dimensions)
+     * @param      extend          The extend of the data to write; if zero,
+     *                             this will lead to the dataset size being
+     *                             extended. Note that extension is only
+     *                             possible with chunked data.
+     * @param      max_size        The maximum size of the dataset
+     * @param      chunksize       The chunksize
+     * @param      compress_level  The compress level; only available with
+     *                             non-zero chunksize
+     *
+     * @tparam     result_type     The type of the data stored in this dataset
+     */
     template <typename result_type>
     void __create_dataset__(hsize_t size,
                             hsize_t rank,
@@ -73,16 +104,20 @@ private:
                             hsize_t compress_level)
     {
         _rank = rank;
+
+        // Distinguish by chunksize
         if (chunksize > 0)
         {
             if (extend.size() == 0)
             {
+                // not given; create vector from size and rank
                 _extend = std::vector<hsize_t>(_rank, size);
             }
             else
             {
                 _extend = extend;
             }
+
             if (max_size.size() == 0)
             {
                 _max_extend = std::vector<decltype(H5S_UNLIMITED)>(_rank, H5S_UNLIMITED);
@@ -91,29 +126,31 @@ private:
             {
                 _max_extend = max_size;
             }
+
             if (compress_level > 0)
             {
-                // compressed dataset: make a new dataset
+                // make a new compressed dataset
                 _dataset = __create_dataset_helper__<result_type>(chunksize, compress_level);
             }
             else
             {
+                // make a new non-compressed dataset
                 _dataset = __create_dataset_helper__<result_type>(chunksize, compress_level);
             }
         }
         else
-        { // chunk size 0 implies non-extendable and non - compressed
-          // dataset
-          //
+        { // chunk size 0 implies non-extendable and non-compressed dataset
 
             if (extend.size() == 0)
             {
+                // not given; create vector from size and rank
                 _extend = std::vector<hsize_t>(_rank, size);
             }
             else
             {
                 _extend = extend;
             }
+
             if (max_size.size() == 0)
             {
                 _max_extend = _extend;
@@ -130,10 +167,22 @@ private:
         // update info and add the new dataset to the reference counter
         H5Oget_info(_dataset, &_info);
         _address = _info.addr;
-        (*_refcounts)[_address] = 1;
+        (*_referencecounter)[_address] = 1;
     }
 
-    // for writing a  dataset
+    /**
+     * @brief      For writing a dataset
+     * @details    This assumes that the dataset has already been created
+     *
+     * @param      begin      The begin of the iterator range
+     * @param      end        The end of the iterator range
+     * @param      adaptor    The adaptor to extract the data
+     * @param      dspace     The data space
+     * @param      memspace   The the memory space
+     *
+     * @tparam     Iter       The type of the iterator
+     * @tparam     Adaptor    The type of the adaptor
+     */
     template <typename Iter, typename Adaptor>
     void __write_dataset__(Iter begin, Iter end, Adaptor&& adaptor, hid_t dspace, hid_t memspace)
     {
@@ -148,11 +197,22 @@ private:
                                     memspace, dspace, H5P_DEFAULT, buffer.data());
         if (write_err < 0)
         {
-            throw std::runtime_error("writing to 1d dataset failed!");
+            throw std::runtime_error("Writing to 1D dataset failed!");
+            // FIXME Is this really only 1D?
+            // FIXME Could we add some info here, e.g. the name of the dataset?
         }
     }
 
-    // helper for selecting subset of dataset
+    /**
+     * @brief      Helper for selecting subset of dataset
+     *
+     * @param      offset  The offset
+     * @param      stride  The stride
+     * @param      block   The block
+     * @param      count   The count
+     *
+     * @return     the dataset subset vector, consisting of dspace and memspace
+     */
     std::vector<hid_t> __select_dataset_subset__(std::vector<hsize_t>& offset,
                                                  std::vector<hsize_t>& stride,
                                                  std::vector<hsize_t>& block,
@@ -167,12 +227,23 @@ private:
                                 stride.data(), count.data(), block.data());
         if (select_err < 0)
         {
-            throw std::runtime_error("1d hyperslab failed!");
+            throw std::runtime_error("Selecting 1D hyperslab failed!");
         }
+
         return {dspace, memspace};
     }
 
-    // overload for std::string
+    /**
+     * @brief      overload for reading std::string from dataset
+     *
+     * @param      buffer_size   The buffer size
+     * @param      dspace        The dspace
+     * @param      memspace      The memspace
+     *
+     * @tparam     desired_type  The desired return type
+     *
+     * @return     The data read from the dataset
+     */
     template <typename desired_type>
     auto __read_from_dataset__(hsize_t buffer_size, hid_t dspace, hid_t memspace)
     {
@@ -207,15 +278,21 @@ private:
         {
             if constexpr (std::is_same_v<std::string, desired_type>)
             {
+                // create the buffer
                 std::vector<const char*> buffer(buffer_size);
                 hid_t type = H5Dget_type(_dataset);
+
+                // read the data
                 herr_t read_err = H5Dread(_dataset, type, memspace, dspace,
                                           H5P_DEFAULT, buffer.data());
                 H5Tclose(type);
+
                 if (read_err < 0)
                 {
                     throw std::runtime_error("Error reading 1d dataset");
                 }
+
+                // fill the buffer
                 std::vector<std::string> data(buffer_size);
                 for (std::size_t i = 0; i < buffer_size; ++i)
                 {
@@ -231,6 +308,7 @@ private:
                 herr_t read_err = H5Dread(_dataset, type, memspace, dspace,
                                           H5P_DEFAULT, buffer.data());
                 H5Tclose(type);
+
                 if (read_err < 0)
                 {
                     throw std::runtime_error("Error reading 1d dataset");
@@ -249,7 +327,7 @@ protected:
     std::vector<hsize_t> _max_extend;
     H5O_info_t _info;
     haddr_t _address;
-    std::shared_ptr<std::unordered_map<haddr_t, int>> _refcounts;
+    std::shared_ptr<std::unordered_map<haddr_t, int>> _referencecounter;
 
 public:
     /**
@@ -319,7 +397,7 @@ public:
      */
     auto get_referencecounter()
     {
-        return _refcounts;
+        return _referencecounter;
     }
 
     /**
@@ -333,45 +411,44 @@ public:
     }
 
     /**
-     * @brief add attribute to the dataset
+     * @brief      add attribute to the dataset
      *
-     * @tparam Attrdata
-     * @param attribute_name
-     * @param attribute_data
+     * @param      attribute_name  The attribute name
+     * @param      attribute_data  The attribute data
+     *
+     * @tparam     Attrdata        The type of the attribute data
      */
     template <typename Attrdata>
     void add_attribute(std::string attribute_name, Attrdata attribute_data)
     {
         // make attribute and write
-
         HDFAttribute attr(*this, attribute_name);
         attr.write(attribute_data);
     }
 
     /**
-     * @brief close the dataset
-     *
+     * @brief      close the dataset
      */
     void close()
     {
         if (H5Iis_valid(_dataset))
         {
-            if ((*_refcounts)[_address] == 1)
+            if ((*_referencecounter)[_address] == 1)
             {
                 H5Dclose(_dataset);
-                _refcounts->erase(_refcounts->find(_address));
+                _referencecounter->erase(_referencecounter->find(_address));
             }
             else
             {
-                --(*_refcounts)[_address];
+                --(*_referencecounter)[_address];
             }
         }
     }
 
     /**
-     * @brief swap the state
+     * @brief      swap the state
      *
-     * @param other
+     * @param      other  The other
      */
     void swap(HDFDataset& other)
     {
@@ -384,22 +461,29 @@ public:
         swap(_max_extend, other._max_extend);
         swap(_info, other._info);
         swap(_address, other._address);
-        swap(_refcounts, other._refcounts);
+        swap(_referencecounter, other._referencecounter);
     }
 
     /**
-     * @brief Write data, extracting fields from complex data like structs via a
-     * adaptor function. Adds an attribute which contains rank and size of the
-     * data. If you wish to write vector containers, make sure that you do
-     * return a reference from adaptor!
+     * @brief      Write data, extracting fields from complex data like structs
+     *             via an adaptor function. Adds an attribute which contains
+     *             rank and size of the data. If you wish to write vector
+     *             containers, make sure that you do return a reference from
+     *             adaptor!
      *
-     * @tparam Iter
-     * @tparam Adaptor
-     * @param begin
-     * @param end
-     * @param adaptor
-     * @param chunksize
-     * @param compress_level
+     * @param      begin           The begin
+     * @param      end             The end
+     * @param      adaptor         The adaptor
+     * @param      rank            The rank. Defaults to 1
+     * @param      extend          The extend of the data to write
+     * @param      max_size        The maximum size of the dataset
+     * @param      chunksize       The chunksize; extension is only possible if
+     *                             a nonzero value is given here
+     * @param      compress_level  The compression level; only possible with
+     *                             nonzero chunksize
+     *
+     * @tparam     Iter            The type of the iterator
+     * @tparam     Adaptor         The type of the adaptor
      */
     template <typename Iter, typename Adaptor>
     void write(Iter begin,
@@ -420,13 +504,14 @@ public:
         if (_rank > 2)
         {
             throw std::runtime_error(
-                "ranks higher than 2 not supported currently");
+                "Cannot write dataset: Ranks higher than "
+                "2 are not supported currently!");
         }
 
         if (_dataset == -1)
-        { // dataset does not exist
+        { // dataset does not exist yet
 
-            // build a new dataset anda assign to _dataset member
+            // build a new dataset and assign to _dataset member
             __create_dataset__<result_type>(size, rank, extend, max_size,
                                             chunksize, compress_level);
 
@@ -434,25 +519,34 @@ public:
             if (H5Iis_valid(_dataset) == false)
             {
                 throw std::runtime_error(
-                    "Trying to create dataset named '" + _name +
-                    "' resulted in invalid id, check your arguments.");
+                    "Trying to create dataset named "
+                    "'" +
+                    _name +
+                    "' resulted in invalid "
+                    "ID! Check your arguments.");
             }
 
-            // add attribute with dimensionality
+            // gather data for dimensionality info: rank, extend, max_extend
+            // TODO see #119 for changes needed here
+            // https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/issues/119
             std::vector<hsize_t> dims(1 + _extend.size() + _max_extend.size());
             std::size_t i = 0;
             dims[i] = _rank;
             ++i;
+
             for (std::size_t j = 0; j < _extend.size(); ++j, ++i)
             {
                 dims[i] = _extend[j];
             }
+
             for (std::size_t j = 0; j < _max_extend.size(); ++j, ++i)
             {
                 dims[i] = _max_extend[i];
             }
 
+            // store the dimensionality info attribute
             add_attribute<std::vector<hsize_t>>("dimensionality info", dims);
+
             // write dataset
             __write_dataset__(begin, end, std::forward<Adaptor&&>(adaptor), H5S_ALL, H5S_ALL);
         }
@@ -462,31 +556,31 @@ public:
             // check validity of own dataset id
             if (H5Iis_valid(_dataset) == false)
             {
-                throw std::runtime_error(
-                    "Apparently existing dataset named '" + _name +
-                    "' invalid, has the dataset already been closed?");
+                throw std::runtime_error("Existing dataset '" + _name +
+                                         "' "
+                                         "has an invalid ID. Has the dataset "
+                                         "already been closed?");
             }
 
-            // check if the dataset can be extended, i.e. if extend <
-            // max_extend.
+            // check if dataset can be extended, i.e. if extend < max_extend.
             for (std::size_t i = 0; i < _rank; ++i)
             {
-                if (_extend[i] == _max_extend[i])
+                if ((_extend[i] == _max_extend[i]) && (_extend[i] != 0))
                 {
-                    if (_extend[i] != 0)
-                    {
-                        throw std::runtime_error("dataset cannot be extended");
-                    }
+                    throw std::runtime_error(
+                        "Dataset cannot be extended! Its "
+                        "extend reached max_extend. Did "
+                        "you set a nonzero chunksize?");
                 }
             }
 
-            //     // distinguish between ranks: treat 1d differently from nd
+            // distinguish between ranks: treat 1d differently from nd
             if (_rank == 1)
             {
-                /* if the dataset can be extended, then do so now:
-                 extend the first dimension in the dataspace, such
-                 that
-                  dataset before:
+                /* If the dataset can be extended, then do so now.
+                Extend the first dimension in the dataspace, such that:
+
+                dataset before:
 
                 dim0
                  |      +
@@ -494,7 +588,7 @@ public:
                  |      +
                  ν
 
-                  dataset after extend by size 2
+                dataset after extend by size 2
 
                 dim0
                  |      +
@@ -504,8 +598,9 @@ public:
                  |      +
                  ν
                 */
+
                 // get the offset, stride count and block vectors for selection
-                // hyperslab
+                // of the hyperslab
                 std::vector<hsize_t> offset = _extend;
                 std::vector<hsize_t> stride{1};
                 std::vector<hsize_t> count = offset;
@@ -518,32 +613,38 @@ public:
                 if (ext_err < 0)
                 {
                     throw std::runtime_error(
-                        "1d dataset could not be extended ");
+                        "1D dataset could not be "
+                        "extended!");
                 }
 
-                // add dimensionality attribute
-                // add attribute with dimensionality
+                // gather information for dimensionality info attribute
                 std::vector<hsize_t> dims(1 + _extend.size() + _max_extend.size());
                 std::size_t i = 0;
                 dims[i] = _rank;
                 ++i;
+
                 for (std::size_t j = 0; j < _extend.size(); ++j, ++i)
                 {
                     dims[i] = _extend[j];
                 }
+
                 for (std::size_t j = 0; j < _max_extend.size(); ++j, ++i)
                 {
                     dims[i] = _max_extend[i];
                 }
+
+                // add the attribute
                 add_attribute<std::vector<hsize_t>>("dimensionality info", dims);
 
+                // make subset selection and extract data and memory space
                 auto spaces = __select_dataset_subset__(offset, stride, block, count);
-
                 hid_t dspace = spaces[0];
                 hid_t memspace = spaces[1];
 
+                // and now: write the data
                 __write_dataset__(begin, end, std::forward<Adaptor&&>(adaptor),
                                   dspace, memspace);
+
                 // // buffering
                 // auto buffer = HDFBufferFactory::buffer<result_type>(
                 //     begin, end, std::forward<Adaptor &&>(adaptor));
@@ -559,9 +660,9 @@ public:
             else
             { // N- dimensional dataset
 
-                /* if the dataset can be extended, then do so now:
-                extend the first dimension in the dataspace, such
-                that
+                /* If the dataset can be extended, then do so now.
+                Extend the first dimension in the dataspace, such that:
+
                 dataset before:
 
                      dim1 ->
@@ -595,31 +696,36 @@ public:
                 herr_t ext_err = H5Dset_extent(_dataset, _extend.data());
                 if (ext_err < 0)
                 {
-                    throw std::runtime_error("nd enlargement failed");
+                    throw std::runtime_error(
+                        "ND dataset could not be "
+                        "extended!");
                 }
 
-                // add dimensionality attribute
-                // add attribute with dimensionality
+                // gather information for dimensionality info attribute
                 std::vector<hsize_t> dims(1 + _extend.size() + _max_extend.size());
                 std::size_t i = 0;
                 dims[i] = _rank;
                 ++i;
+
                 for (std::size_t j = 0; j < _extend.size(); ++j, ++i)
                 {
                     dims[i] = _extend[j];
                 }
+
                 for (std::size_t j = 0; j < _max_extend.size(); ++j, ++i)
                 {
                     dims[i] = _max_extend[i];
                 }
+
+                // store the attribute
                 add_attribute<std::vector<hsize_t>>("dimensionality info", dims);
 
-                // make subset selectiion
+                // make subset selection and extract data and memory space
                 auto spaces = __select_dataset_subset__(offset, stride, block, count);
-
                 hid_t dspace = spaces[0];
                 hid_t memspace = spaces[1];
 
+                // and write the dataset
                 __write_dataset__(begin, end, std::forward<Adaptor&&>(adaptor),
                                   dspace, memspace);
 
@@ -630,13 +736,16 @@ public:
     }
 
     /**
-     * @brief Read (a subset_of) a dataset. Flattens nd datasets
+     * @brief      Read (a subset_of) a dataset. Flattens nd datasets
      *
-     * @tparam result_type
-     * @param start
-     * @param end
-     * @param stride
-     * @return auto
+     * @param      start         The start. If not given, the entire dataset
+     *                           will be read.
+     * @param      end           The end
+     * @param      stride        The stride
+     *
+     * @tparam     desired_type  The desired return type
+     *
+     * @return     the read data
      */
     template <typename desired_type>
     auto read(std::vector<hsize_t> start = {},
@@ -646,16 +755,16 @@ public:
         // check if dataset id is ok
         if (H5Iis_valid(_dataset) == false)
         {
-            throw std::runtime_error(
-                "dataset id of '" + _name +
-                "' invalid, has the dataset already been closed?");
+            throw std::runtime_error("Existing dataset '" + _name +
+                                     "' has an "
+                                     "invalid ID. Has the dataset already "
+                                     "been closed?");
         }
 
         // 1d dataset
         if (_rank == 1)
         {
-            // assume that if start is empty, then the entire dataset should be
-            // read;
+            // assume that if start is empty, the entire dataset should be read
             if (start.size() == 0)
             {
                 return __read_from_dataset__<desired_type>(_extend[0], H5S_ALL, H5S_ALL);
@@ -665,7 +774,10 @@ public:
               // check that the arrays have the correct size:
                 if (start.size() != _rank || end.size() != _rank || stride.size() != _rank)
                 {
-                    throw std::invalid_argument("array sizes != rank");
+                    throw std::invalid_argument(
+                        "Cannot read dataset: start, "
+                        "end and/or stride size did "
+                        "not match the rank!");
                 }
                 // determine the count to be read
                 std::vector<hsize_t> count(start.size());
@@ -683,7 +795,7 @@ public:
                 // read
                 auto buffer = __read_from_dataset__<desired_type>(count[0], dspace, memspace);
 
-                // close memoryspace resources
+                // close memoryspace resources and return
                 H5Sclose(dspace);
                 H5Sclose(memspace);
 
@@ -691,9 +803,8 @@ public:
             }
         }
         else
-        { // N D dataset
-            // assume that if start is empty, then the entire  dataset should be
-            // read;
+        { // N-dimensional dataset
+            // assume that if start is empty, the entire dataset should be read
             if (start.size() == 0)
             {
                 // hid_t type = H5Dget_type(_dataset);
@@ -715,8 +826,11 @@ public:
                 if (start.size() != _rank || end.size() != _rank || stride.size() != _rank)
                 {
                     throw std::invalid_argument(
-                        "array arguments have to be the same size as rank");
+                        "Cannot read dataset: start, "
+                        "end and/or stride size did "
+                        "not match the rank!");
                 }
+
                 // determine the count to be read
                 std::vector<hsize_t> count(start.size());
                 for (std::size_t i = 0; i < start.size(); ++i)
@@ -725,16 +839,19 @@ public:
                 }
                 std::vector<hsize_t> block(count.size(), 1);
 
+                // select dataset subset to read
                 auto spaces = __select_dataset_subset__(start, stride, block, count);
-
                 hid_t dspace = spaces[0];
                 hid_t memspace = spaces[1];
+
+                // determine buffersize
                 std::size_t buffersize = 1;
                 for (std::size_t i = 0; i < _rank; ++i)
                 {
                     buffersize *= count[i];
                 }
 
+                // read
                 auto buffer =
                     __read_from_dataset__<desired_type>(buffersize, dspace, memspace);
 
@@ -748,15 +865,14 @@ public:
     }
 
     /**
-     * @brief default consturctor
-     *
+     * @brief      default consturctor
      */
     HDFDataset() = default;
 
     /**
-     * @brief Copy constructor
+     * @brief      Copy constructor
      *
-     * @param other
+     * @param      other  The other
      */
     HDFDataset(const HDFDataset& other)
         : _parent_object(other._parent_object),
@@ -767,15 +883,15 @@ public:
           _max_extend(other._max_extend),
           _info(other._info),
           _address(other._address),
-          _refcounts(other._refcounts)
+          _referencecounter(other._referencecounter)
     {
-        (*_refcounts)[_address] += 1;
+        (*_referencecounter)[_address] += 1;
     }
 
     /**
-     * @brief Move constructor
+     * @brief      Move constructor
      *
-     * @param other
+     * @param      other  The other
      */
     HDFDataset(HDFDataset&& other) : HDFDataset()
     {
@@ -783,10 +899,11 @@ public:
     }
 
     /**
-     * @brief Assignment operator
+     * @brief      Assignment operator
      *
-     * @param other
-     * @return HDFDataset&
+     * @param      other  The other
+     *
+     * @return     HDFDataset&
      */
     HDFDataset& operator=(HDFDataset other)
     {
@@ -794,10 +911,10 @@ public:
         return *this;
     }
     /**
-     * @brief Constructor
+     * @brief      Constructor
      *
-     * @param parent_object
-     * @param name
+     * @param      parent_object  The parent object
+     * @param      name           The name
      */
     HDFDataset(HDFObject& parent_object, std::string name)
         : _parent_object(std::make_shared<HDFObject>(parent_object)),
@@ -806,56 +923,61 @@ public:
           _rank(0),
           _extend({}),
           _max_extend({}),
-          _refcounts(parent_object.get_referencecounter())
+          _referencecounter(parent_object.get_referencecounter())
 
     {
-        // try to find the dataset in the parent_object, open if it is
-        // there, else postphone the dataset creation to the first write
+        // Try to find the dataset in the parent_object
+        // If it is there, open it.
+        // Else: postphone the dataset creation to the first write
         if (H5LTfind_dataset(_parent_object->get_id(), _name.c_str()) == 1)
-        {
+        { // dataset exists
+            // open it
             _dataset = H5Dopen(_parent_object->get_id(), _name.c_str(), H5P_DEFAULT);
-            // get dataspace and read out extend and max extend
+
+            // get dataspace and read out rank, extend, max_extend
             hid_t dataspace = H5Dget_space(_dataset);
 
             _rank = H5Sget_simple_extent_ndims(dataspace);
             _extend.resize(_rank);
             _max_extend.resize(_rank);
+
             H5Sget_simple_extent_dims(dataspace, _extend.data(), _max_extend.data());
             H5Sclose(dataspace);
 
+            // Update info and reference counter
             H5Oget_info(_dataset, &_info);
             _address = _info.addr;
-            (*_refcounts)[_address] += 1;
+            (*_referencecounter)[_address] += 1;
         }
     }
 
     /**
-     * @brief Destructor
-     *
+     * @brief      Destructor
      */
     virtual ~HDFDataset()
     {
         if (H5Iis_valid(_dataset))
         {
-            if ((*_refcounts)[_address] == 1)
+            if ((*_referencecounter)[_address] == 1)
             {
                 H5Dclose(_dataset);
-                _refcounts->erase(_refcounts->find(_address));
+                _referencecounter->erase(_referencecounter->find(_address));
             }
             else
             {
-                --(*_refcounts)[_address];
+                --(*_referencecounter)[_address];
             }
         }
     }
 };
 
 /**
- * @brief EXchange state between lhs and rhs
+ * @brief      Exchange state between lhs and rhs
  *
- * @tparam HDFObject
- * @param lhs
- * @param rhs
+ * @param      lhs        The left hand side
+ * @param      rhs        The right hand side
+ *
+ * @tparam     HDFObject  The type of the parent object
  */
 template <typename HDFObject>
 void swap(HDFDataset<HDFObject>& lhs, HDFDataset<HDFObject>& rhs)

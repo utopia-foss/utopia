@@ -22,21 +22,23 @@ namespace Utopia
 namespace DataIO
 {
 /**
- * @brief Class for hdf5 attribute, which can be attached to groups and
- * datasets.
-
+ * @brief      Class for hdf5 attribute, which can be attached to groups and
+ *             datasets.
+ *
+ * @tparam     HDFObject  the object class
  */
 template <typename HDFObject>
 class HDFAttribute
 {
 private:
-    // helper for making attribute
-
     /**
-     * @brief private helper function for creation of attribute
+     * @brief      private helper function for creation of attribute
      *
-     * @tparam result_type
-     * @return hid_t
+     * @param[in]  typesize     The typesize
+     *
+     * @tparam     result_type  Type of the resulting attribute
+     *
+     * @return     hid_t
      */
     template <typename result_type>
     hid_t __create_attribute__(hsize_t typesize = 0)
@@ -277,42 +279,38 @@ private:
 
 protected:
     /**
-     * @brief id of attribute itself
-     *
+     * @brief      ID of attribute itself
      */
     hid_t _attribute;
 
     /**
-     * @brief name of the attribute
-     *
+     * @brief      name of the attribute
      */
     std::string _name;
 
     /**
-     * @brief size of the attributes dataspace
-     *
+     * @brief      size of the attributes dataspace
      */
     std::vector<hsize_t> _shape;
     /**
-     * @brief reference to id of parent object: dataset or group
-     *
+     * @brief      reference to id of parent object: dataset or group
      */
     HDFObject* _parent_object;
 
 public:
     /**
-     * @brief Get underlying id of attribute
+     * @brief      Get underlying ID of attribute
      *
-     * @return hid_t underlying HDF5 id.
+     * @return     hid_t underlying HDF5 ID
      */
     hid_t get_id()
     {
         return _attribute;
     }
     /**
-     * @brief get Attribute name
+     * @brief      get attribute name
      *
-     * @return std::string
+     * @return     std::string the name of the attribute
      */
     std::string get_name()
     {
@@ -320,9 +318,9 @@ public:
     }
 
     /**
-     * @brief Get the hdf5 object to which the attribute belongs
+     * @brief      Get the hdf5 object to which the attribute belongs
      *
-     * @return weak pointer to HDFObject
+     * @return     weak pointer to HDFObject
      */
     HDFObject& get_parent()
     {
@@ -330,8 +328,7 @@ public:
     }
 
     /**
-     * @brief closes the attribute
-     *
+     * @brief      closes the attribute
      */
     void close()
     {
@@ -665,9 +662,9 @@ public:
     HDFAttribute() = default;
 
     /**
-     * @brief Copy constructor
+     * @brief      Copy constructor
      *
-     * @param other
+     * @param      other  The other
      */
     HDFAttribute(const HDFAttribute& other)
         : _attribute(other._attribute),
@@ -678,9 +675,9 @@ public:
     }
 
     /**
-     * @brief Move constructor
+     * @brief      Move constructor
      *
-     * @param other
+     * @param      other  The other
      */
     HDFAttribute(HDFAttribute&& other) : HDFAttribute()
     {
@@ -688,10 +685,11 @@ public:
     }
 
     /**
-     * @brief Assignment operator
+     * @brief      Assignment operator
      *
-     * @param other
-     * @return HDFAttribute&
+     * @param      other  The other
+     *
+     * @return     HDFAttribute&
      */
     HDFAttribute& operator=(HDFAttribute other)
     {
@@ -707,18 +705,17 @@ public:
     {
         if (H5Iis_valid(_attribute))
         { // FIXME: add check to make sure that
-          // it is not
-          // more than once closed
+          // it is not closed more than once
             H5Aclose(_attribute);
         }
     }
 
     /**
-     * @brief Constructor for attribute
+     * @brief      Constructor for attribute
      *
-     * @param object the object to create the attribute at
-     * @param name the name of the attribute
-     * @param size the size of the attribute if known, if unknown it is 1
+     * @param      object  the object to create the attribute at
+     * @param      name    the name of the attribute
+     * @param      size    the size of the attribute if known, else 1
      */
 
     HDFAttribute(HDFObject& object, std::string name)

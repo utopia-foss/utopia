@@ -7,18 +7,20 @@
  */
 #ifndef HDFBUFFERFACTORY_HH
 #define HDFBUFFERFACTORY_HH
+
 #include "hdftypefactory.hh"
 #include "hdfutilities.hh"
 #include <hdf5.h>
+
 namespace Utopia
 {
 namespace DataIO
 {
 /**
- * @brief Class which turns non-vector or plain-array containers into
- *        vectors. If the value_types are containers themselves, these are
- *        turned into vectors as well, because HDF5 cannot write something else.
- *
+ * @brief      Class which turns non-vector or plain-array containers into
+ *             vectors. If the value_types are containers themselves, these are
+ *             turned into vectors as well, because HDF5 cannot write something
+ *             else.
  */
 class HDFBufferFactory
 {
@@ -26,12 +28,14 @@ private:
 protected:
 public:
     /**
-     * @brief function for converting source data into varilble length type
+     * @brief      function for converting source data into variable length
+     *             type
      *
-     * @tparam T
-     * @tparam 0
-     * @param source
-     * @return auto
+     * @param      source  The source
+     *
+     * @tparam     T       the source type
+     *
+     * @return     auto
      */
     template <typename T>
     static auto convert_source(T& source)
@@ -50,17 +54,20 @@ public:
     }
 
     /**
-     * @brief static function for turning an iterator range with arbitrarty
-     *        datatypes into a vector of data as returned from 'adaptor'.
-     *        Version for non-container return types of 'adaptor'
+     * @brief      static function for turning an iterator range with
+     *             arbitrarty datatypes into a vector of data as returned from
+     *             'adaptor'. Version for non-container return types of
+     *             'adaptor'
      *
+     * @param      begin      start of raw data range
+     * @param      end        end of raw data range
+     * @param      adaptor    adaptor function-pointer/functor/lamdba...
      *
-     * @tparam Iter Iterator
-     * @tparam Adaptor function<some_type(typename Iterator::value_type)>
-     * @param begin start of raw data range
-     * @param end end of raw data range
-     * @param adaptor adaptor function-pointer/functor/lamdba...
-     * @return auto
+     * @tparam     Iter       Iterator
+     * @tparam     Adaptor    function<some_type(typename
+     *                        Iterator::value_type)>
+     *
+     * @return     auto       The data range buffered from the adaptor
      */
     template <typename Iter, typename Adaptor>
     static auto buffer(Iter begin, Iter end, Adaptor&& adaptor)
@@ -96,7 +103,7 @@ public:
         }
 
         else
-        {
+        { // not a container
             // set up buffer
             std::vector<T> data_buffer(std::distance(begin, end));
 
@@ -112,6 +119,5 @@ public:
 };
 
 } // namespace DataIO
-
 } // namespace Utopia
 #endif

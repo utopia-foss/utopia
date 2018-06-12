@@ -6,10 +6,12 @@
  */
 #ifndef HDFTYPEFACTORY_HH
 #define HDFTYPEFACTORY_HH
+
 #include "hdfutilities.hh"
 #include <hdf5.h>
 #include <hdf5_hl.h>
 #include <iostream>
+
 namespace Utopia
 {
 namespace DataIO
@@ -32,8 +34,11 @@ public:
     /**
      * @brief returns a HDF5 type from a given C++ primitive type
      *
-     * @tparam T
-     * @return hid_t
+     * @param[in]  size  The size
+     *
+     * @tparam     T     { description }
+     *
+     * @return     hid_t
      */
     template <typename T>
     static inline hid_t type([[maybe_unused]] std::size_t size = 0)
@@ -149,4 +154,5 @@ hid_t HDFTypeFactory::__get_type__<char>()
 
 } // namespace DataIO
 } // namespace Utopia
+
 #endif
