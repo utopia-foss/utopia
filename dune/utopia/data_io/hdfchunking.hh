@@ -4,11 +4,39 @@
 #include <hdf5.h>
 #include <numeric>
 #include <cmath>
-
 // TODO which of these includes are needed?
+
+/// Container that holds indices
+using IdxCont = std::vector<unsigned short>;
 
 namespace Utopia {
 namespace DataIO {
+
+// -- Helper functions -- //
+
+// TODO is there a better place to put this?
+/// Finds all indices of elements in a vector that matches the given predicate
+template<typename Cont, typename Predicate>
+IdxCont __find_all_idcs (Cont &vec, Predicate pred) {
+    // Create the return container
+    IdxCont idcs;
+
+    // Repeatedly start iterating over the vector until reached the end
+    auto iter = vec.begin();
+    while ((iter = std::find_if(iter, vec.end(), pred)) != vec.end())
+    {
+        // Add the value of the iterator to the indices vector
+        idcs.push_back(std::distance(vec.begin(), iter));
+
+        // Increment iterator to continue with next element
+        iter++;
+    }
+
+    return idcs;
+};
+
+
+// -- Optimization algorithms -- //
 
 /// Optimizes the chunks with a naive algorithm 
 template<typename Cont>
@@ -95,16 +123,16 @@ void __opt_chunks_naive(Cont &chunks,
 template<typename Cont, typename IdxCont=std::vector<unsigned short>>
 void __opt_chunks_with_max_extend(Cont &chunks,
                                   const Cont &max_extend,
-                                  const hsize_t typesize,
-                                  const unsigned int CHUNKSIZE_MAX)
+                                  [[maybe_unused]] const hsize_t typesize,
+                                  [[maybe_unused]] const unsigned int CHUNKSIZE_MAX)
 {
     // Helper lambda for calculating the product of vector entries
-    auto product = [](const std::vector<hsize_t> vec) {
+    [[maybe_unused]] auto product = [](const std::vector<hsize_t> vec) {
         return std::accumulate(vec.begin(), vec.end(), 1, std::multiplies<>());
     };
 
     // Helper lambda to calculate diff between two vectors, a-b
-    auto diff = [](Cont &a, Cont &b) {
+    [[maybe_unused]] auto diff = [](Cont &a, Cont &b) {
         // Create the return vector
         Cont _diff(a);
 
@@ -115,26 +143,6 @@ void __opt_chunks_with_max_extend(Cont &chunks,
         return _diff;
     };
 
-    // Helper lambda to find all indices of an element in a vector that matches
-    // the given predicate
-    IdxCont find_all_idcs = [](const Cont &vec, auto pred) {
-        // Create the return container
-        IdxCont idcs;
-
-        // Repeatedly start iterating over the vector until reached the end
-        auto iter = vec.begin();
-        while ((iter = std::find_if(iter, vec.end(), pred)) != vec.end())
-        {
-            // Add the value of the iterator to the indices vector
-            idcs.push_back(std::distance(vec.begin(), iter));
-
-            // Increment iterator to continue with next element
-            iter++;
-        }
-
-        return idcs;
-    };
-
     // -- Parse axes -- //
 
     // Available axes
@@ -142,13 +150,13 @@ void __opt_chunks_with_max_extend(Cont &chunks,
     std::iota(axes.begin(), axes.end(), 0);
 
     // Determine the infinite axes
-    auto axes_inf = find_all_idcs(max_extend,
-                                  [](auto extd){return extd == 0;});
+    auto axes_inf = __find_all_idcs(max_extend,
+                                    [](auto extd){return extd == 0;});
     // The chunk size along these axes should be as small as possible
 
     // Determine the finite axes
-    auto axes_fin = find_all_idcs(max_extend,
-                                  [](auto extd){return extd != 0;});
+    auto axes_fin = __find_all_idcs(max_extend,
+                                    [](auto extd){return extd != 0;});
 
     // For finite axes, determine the diff between chunks and max_extend
     Cont remainder(chunks.size(), -1);
@@ -158,10 +166,10 @@ void __opt_chunks_with_max_extend(Cont &chunks,
 
     // Among the finite axes, determine the axes that can still be filled,
     // i.e. those where the chunk size does not reach the max_extend
-    IdxCont axes_fillable;
+    [[maybe_unused]] IdxCont axes_fillable;
     for (auto idx: axes_fin) {
         if (remainder[idx]) {
-            
+            // TODO Continue here            
         }
     }
 
