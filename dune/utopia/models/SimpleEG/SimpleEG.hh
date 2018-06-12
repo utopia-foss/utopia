@@ -62,6 +62,73 @@ private:
     std::shared_ptr<Utopia::DataIO::HDFDataset<Utopia::DataIO::HDFGroup>> _dset_strategy;
     std::shared_ptr<Utopia::DataIO::HDFDataset<Utopia::DataIO::HDFGroup>> _dset_payoff;
 
+    /// Extract the interaction matrix from the config file
+    /** In the model config file there are three different ways to characterize the interaction:
+     * 1) Explicitely setting the interaction matrix `ia_matrix`
+     *        S0      S1
+     *   S0 [ia_00  ia_01]
+     *   S1 [ia_10  ia_11]
+
+     * 2) Setting a benefit and cost pair `bc_pair`
+     *        S0    S1
+     *   S0 [b-c    -c]
+     *   S1 [b       0]
+     * 
+     * 3) Setting the benefit paramter `b` following the paper of Nowak&May1992
+     *        S0    S1
+     *   S0 [1       0]
+     *   S1 [b(>1)   0]
+     * 
+     * 
+     * If 1) is set, 2) and 3) will be ignored. The function returns the explicitely given ia_matrix.
+     * If 1) is not set, then the interaction matrix of 2) will be returned.
+     * If 2) and 3) are not set, then the interaction matrix of 3) will be returned.
+     * 
+     * @return std::vector<std::vector<double>> The interaction matrix
+     */
+    std::vector<std::vector<double>> extract_ia_matrix()
+    {
+        return _config["ia_matrix"].as<std::vector<std::vector<double>>>();
+        
+
+        // // NOTE: The part below should work, if the `Config` class is abandoned and the config is saved as a YAML::Node
+        // //          untill then, it is commented out
+
+        // Return the ia_matrix if it is explicitly given in the config
+        // if (_config["ia_matrix"]){
+        //     return _config["ia_matrix"].as<std::vector<std::vector<double>>>();
+        // }
+        // // If ia_matrix is not provided in the config, get the ia_matrix from the bc-pair
+        // else if (_config["bc_pair"]){
+        //     auto [b, c] = _config["bc_pair"].as<std::pair<double, double>>();
+        //     double ia_00 = b - c;
+        //     double ia_01 = -c;
+        //     double ia_10 = b;
+        //     double ia_11 = 0.;
+        //     std::vector row0 {ia_00, ia_10};
+        //     std::vector row1 {ia_10, ia_11};
+        //     std::vector<std::vector<double>> ia_matrix {row0, row1};
+        //     return ia_matrix;
+        // }
+        // // If both previous cases are not provided, then return the ia_matrix given by the paramter "b"
+        // // NOTE: There is no check for b>1 implemented here.
+        // else if (_config["b"]){
+        //     auto b = _config["b"].as<double>();
+        //     double ia_00 = 1;
+        //     double ia_01 = 0;
+        //     double ia_10 = b;
+        //     double ia_11 = 0.;
+        //     std::vector row0 {ia_00, ia_10};
+        //     std::vector row1 {ia_10, ia_11};
+        //     std::vector<std::vector<double>> ia_matrix {row0, row1};
+        //     return ia_matrix;
+        // }
+        // // Case where no interaction parameters are provided
+        // else{
+        //     std::runtime_error("The interaction matrix is not given!");
+        //     throw;
+        // }
+    }
 
 public:
     /// Construct the SimpleEG model
@@ -82,7 +149,7 @@ public:
         _group(group->open_group(_name)),
         _rng(rng),
         _manager(manager),
-        _ia_matrix(config["ia_matrix"].as<std::vector<std::vector<double>>>()),
+        _ia_matrix(this->extract_ia_matrix()),
         // datasets
         _dset_strategy(_group->open_dataset("strategy")),
         _dset_payoff(_group->open_dataset("payoff"))
