@@ -174,20 +174,17 @@ public:
      *
      * @return     HDFFile&
      */
-    HDFFile& operator=(HDFFile&& other) = default;
+    HDFFile& operator=(HDFFile&& other)
+    {
+        this->swap(other);
+        return *this;
+    }
 
     /**
      * @brief Copy constructor. Explicitly deleted, hence cannot be used
      *
      * @param other
      * @return HDFFile&
-     */
-    HDFFile(const HDFFile& other) = delete;
-
-    /**
-     * @brief      Copy constructor, explicitly deleted
-     *
-     * @param      other  The other
      */
     HDFFile(const HDFFile& other) = delete;
 
