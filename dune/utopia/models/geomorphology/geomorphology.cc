@@ -1,7 +1,11 @@
-#include <dune/utopia/base.hh>
+#include <iostream>       // std::cout, std::endl
+#include <thread>         // std::this_thread::sleep_for
+#include <chrono>         // std::chrono::seconds
+
 #include <dune/utopia/core/setup.hh>
-#include <dune/utopia/models/geomorphology/geomorphology.hh>
-#include <cassert>
+#include <dune/utopia/data_io/config.hh>
+
+#include "geomorphology.hh"
 
 int main(int argc, char *argv[])
 {
@@ -25,7 +29,7 @@ int main(int argc, char *argv[])
         auto mngr  = Utopia::Setup::create_manager_cells<true, true>(grid, cells);
 
         // Create the model instance
-        Utopia::Models::Geomorphology model("geomorphology", pp, manager);
+        Utopia::Models::Geomorphology model("geomorphology", pp, mngr);
 
         // And iterate it for a number of steps
         auto num_steps = config["num_steps"].as<int>();

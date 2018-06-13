@@ -37,9 +37,10 @@ public:
     /// Construct the model.
     /** \param manager Manager for this model
      */
+    template<class ParentModel>
     Geomorphology (const std::string name,
-                const ParentModel & parent_model,
-                Manager _manager)
+                   const ParentModel & parent_model,
+                   Manager _manager)
     :
         // Use the base constructor for the main parts
         Base(name, parent_model),
@@ -59,11 +60,11 @@ public:
         }
 
         // Write initial condition and position of cells
-        auto dsetX = this->hdfgrp.open_dataset("positionX");
+        auto dsetX = this->hdfgrp->open_dataset("positionX");
         dsetX->write(manager.cells().begin(),
                 manager.cells().end(), 
                 [](const auto& cell) {return cell->position()[0];});
-        auto dsetY = this->hdfgrp.open_dataset("positionY");
+        auto dsetY = this->hdfgrp->open_dataset("positionY");
         dsetY->write(manager.cells().begin(),
                 manager.cells().end(), 
                 [](const auto& cell) {return cell->position()[1];});
@@ -119,11 +120,11 @@ public:
 
     void write_data () {
         std::cout << "Writing data @ _t = " << this->time << " ... ";
-        auto dsetH = this->hdfgrp.open_dataset("height@t="+std::to_string(this->time));
+        auto dsetH = this->hdfgrp->open_dataset("height@t="+std::to_string(this->time));
         dsetH->write(manager.cells().begin(),
                      manager.cells().end(), 
                      [](const auto cell){ return cell->state()[0]; });
-        auto dsetW = this->hdfgrp.open_dataset("watercontent@t="+std::to_string(this->time));
+        auto dsetW = this->hdfgrp->open_dataset("watercontent@t="+std::to_string(this->time));
         dsetW->write(manager.cells().begin(),
                      manager.cells().end(), 
                      [](const auto cell){ return cell->state()[1]; });
