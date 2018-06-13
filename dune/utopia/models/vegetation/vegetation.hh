@@ -15,105 +15,102 @@
 
 namespace Utopia {
 
-/// Template declaration for model types extracted from Manager
+namespace Models {
+
+/// Define data types of vegetation model
 template<class Manager>
-using VegetationModelTypes = Utopia::ModelTypes<
-    typename Manager::Container, // unused
-    std::tuple<std::normal_distribution<>, double, double> // probability distribution for rain, 
-                                                           // growth rate
-                                                           // seeding rate
-                                                           // seeding and rain use the same probability distribution at the moment
-                                                           // maybe change later...
+using VegetationTypes = Utopia::ModelTypes<
+    typename Manager::Container,           // unused
+    std::tuple<std::normal_distribution<>, // probability distribution for rain, 
+               double,                     // growth rate
+               double>                     // seeding rate
+    // seeding and rain use the same probability distribution at the moment
+    // maybe change later...
 >;
 
 /// A very simple vegetation model
 template<class Manager>
-class VegetationModel:
-    public Model<VegetationModel<Manager>, VegetationModelTypes<Manager>>
+class Vegetation:
+    public Model<Vegetation<Manager>, VegetationTypes<Manager>>
 {
-
 public:
 
-    using Data = typename Manager::Container;
-    using Base = Model<VegetationModel<Manager>, VegetationModelTypes<Manager>>;
-    using Parameter = std::tuple<std::normal_distribution<>, double, double>;
+    using Base = Model<Vegetation<Manager>, VegetationTypes<Manager>>;
+    using BCType = typename Base::BCType;
+    using Data = typename Base::Data;
 
-private:
+    Manager manager;
+    BCType bc;
 
-    const std::string _name;
-    std::shared_ptr<Utopia::DataIO::HDFGroup> _group;
-    Manager _manager;
-    Parameter _par;
-
-public:
-
-    VegetationModel (const std::string name,
-                     Utopia::DataIO::Config config,
-                     std::shared_ptr<Utopia::DataIO::HDFGroup> group,
-                     Manager manager) :
-        Base(),
-        _name(name),
-        _group(group->open_group(_name)),
-        _manager(manager)
+    template<class ParentModel>
+    Vegetation (const std::string name,
+                const ParentModel & parent_model,
+                Manager _manager) 
+    :
+        // Use the base constructor for the main parts
+        Base(name, parent_model),
+        // Initialise state and boundary condition members
+        manager(_manager)
     {
 
         // Initialize model parameters from config file
-        std::normal_distribution<> rain{config["rain_mean"].as<double>(),
-                                        config["rain_var"].as<double>()};
-        _par = std::make_tuple(rain, 
-                               config["growth"].as<double>(), 
-                               config["seeding"].as<double>());
+        std::normal_distribution<> rain{(this->cfg["rain_mean"]).as<double>(),
+                                        (this->cfg["rain_var"]).as<double>()};
+        //bc = std::make_tuple(rain, 
+        //                     this->cfg["growth"].as<double>(), 
+        //                     this->cfg["seeding"].as<double>());
+        std::normal_distribution<> rain{10.1,1.2};
+        bc = std::make_tuple(rain, 0.2, 0.2);
 
         // Write constant values (such as positions of cells)
-        //file.get_basegroup()->add_attribute("Metadatum1", "HelloWorld"); 
-        // TODO later, add info about parameter as metadata
-        auto dsetX = _group->open_dataset("positionX");
-        dsetX->write(_manager.cells().begin(),
-                _manager.cells().end(), 
-                [](const auto& cell) {return cell->position()[0];});
-        auto dsetY = _group->open_dataset("positionY");
-        dsetY->write(_manager.cells().begin(),
-                _manager.cells().end(), 
-                [](const auto& cell) {return cell->position()[1];});
+        // TODO add info about parameter as metadata
+        auto dsetX = this->hdfgrp->open_dataset("positionX");
+        dsetX->write(manager.cells().begin(),
+                    manager.cells().end(), 
+                    [](const auto& cell) {return cell->position()[0];});
+        auto dsetY = this->hdfgrp->open_dataset("positionY");
+        dsetY->write(manager.cells().begin(),
+                    manager.cells().end(), 
+                    [](const auto& cell) {return cell->position()[1];});
 
-        // Write initial values
-        // TODO later, as iterate function of base needs to be adapted
-        //write_data();
+        // Write initial state 
+        write_data();
     }
 
     void perform_step ()
     {
-        std::cout << "Performing step ... ";
+        // Communicate which iteration step is performed
+        std::cout << "  Performing step " << this->time << " ..." << std::endl;
 
-        // Logistic growth + Seeding
+        // Apply logistic growth and seeding
         auto growth_seeding_rule = [this](const auto cell){
                 auto state = cell->state();
-                auto rain  = std::get<0>(_par)(*(_manager.rng()));
+                auto rain  = std::get<0>(bc)(*(manager.rng()));
                 if (state != 0) {
-                    auto growth = std::get<1>(_par);
+                    auto growth = std::get<1>(bc);
                     return state + state*growth*(1 - state/rain);
                 }
-                auto seeding = std::get<2>(_par);
+                auto seeding = std::get<2>(bc);
                 return seeding*rain;
 
         };
-        apply_rule(growth_seeding_rule, _manager.cells());
-
-        std::cout << "complete!\n";
+        apply_rule(growth_seeding_rule, manager.cells());
     }
 
-    void write_data () {
+    void write_data () 
+    {
         std::cout << "Writing data @ _t = " << Base::time << " ... ";
-        auto dset = _group->open_dataset("plants@t="+boost::lexical_cast<std::string>(Base::time));
-        dset->write(_manager.cells().begin(),
-                _manager.cells().end(), 
-                [](const auto cell){ return cell->state(); });
-        std::cout << "complete!\n";
+        auto dset = this->hdfgrp->open_dataset("plants@t="+std::to_string(this->time));
+        dset->write(manager.cells().begin(),
+                    manager.cells().end(), 
+                    [](const auto cell){ return cell->state(); });
     }
 
-    const Data& data () const { return _manager.cells(); }
+    const Data& data () const { return manager.cells(); }
 
 };
+
+} // namespace Models
 
 } // namespace Utopia
 

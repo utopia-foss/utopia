@@ -10,24 +10,16 @@
 int main (int argc, char** argv)
 {
     try {
-
         Dune::MPIHelper::instance(argc, argv);
 
-        // Load the config file
-        const std::string cfg_path = argv[1];
-        Utopia::DataIO::Config config(cfg_path);
+        // Read in the config file
+        const std::string config_file = argv[1];
+        Utopia::DataIO::Config config(config_file);
 
-        // Initialize the HDF file
-        auto output_path = config["output_path"].as<std::string>();
-        auto file = Utopia::DataIO::HDFFile(output_path, "w");
+        // Create PseudoParent, setting up the HDFFile and RNG
+        Utopia::PseudoParent pp(config_file);
 
-        // ...and get the basegroup that this model will write into
-        auto basegroup = file.get_basegroup();
-
-        // Initialize the RNG
-        //auto seed = config["seed"].as<int>();
-        //auto rng = std::make_shared<std::mt19937>(seed);
-
+        // Create the manager instance
         constexpr bool sync = true;
         using State = double;
         using Tag = Utopia::DefaultTag;
@@ -35,16 +27,18 @@ int main (int argc, char** argv)
         auto grid = Utopia::Setup::create_grid(config["grid_size"].as<int>());
         auto cells = Utopia::Setup::create_cells_on_grid<sync, State, Tag>(grid, initial_state);
         auto manager = Utopia::Setup::create_manager_cells<true, true>(grid, cells);
-        std::cout << "Created Manager.\n";
 
-        Utopia::VegetationModel model("vegetation", 
-                                      config["vegetation"],
-                                      basegroup,
-                                      manager);
+        // Set the initial state, then create the model instance
+        Utopia::Models::Vegetation model("vegetation", pp, manager);
 
-        for(int i = 0; i < config["num_steps"].as<int>(); ++i)
+        // And iterate it for a number of steps
+        auto num_steps = config["num_steps"].as<int>();
+        std::cout << "num_steps: " << num_steps << std::endl;
+        std::cout << "Starting iteration ..." << std::endl;
+
+        for(int i = 0; i < num_steps; ++i) {
             model.iterate();
-        std::cout << "Finished iterating.\n";
+        }
 
         // Sleep (to be read by frontend)
         unsigned int sleep_time = 300; // in milliseconds
