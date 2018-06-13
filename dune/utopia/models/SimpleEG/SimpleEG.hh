@@ -106,7 +106,7 @@ public:
     void initialize_cells()
     {
         // Extract the mode that determines the initial strategy
-        std::string initial_state = this->cfg["initial_state"].as<std::string>();
+        std::string initial_state = this->cfg["initial_state"].template as<std::string>();
 
         std::cout << "Initializing cells in '" << initial_state << "' mode ..."
                   << std::endl;
@@ -132,7 +132,7 @@ public:
         } 
         else if (initial_state == "fraction")
         {
-            const auto s1_fraction = this->cfg["s1_fraction"].as<double>();
+            const auto s1_fraction = this->cfg["s1_fraction"].template as<double>();
 
             // Use a uniform real distribution to determine the state
             auto rand_proposal = std::bind(std::uniform_real_distribution<>(0., 1.),
@@ -171,7 +171,7 @@ public:
             }
 
             auto& cells = _manager.cells();
-            auto grid_size = this->cfg["grid_size"].as<std::pair<std::size_t, std::size_t>>();
+            auto grid_size = this->cfg["grid_size"].template as<std::pair<std::size_t, std::size_t>>();
 
             auto set_initial_strategy = [&](const auto cell) {
                 // Get the position and state of the cell
@@ -199,8 +199,9 @@ public:
         }
         else
         {
-            Utopia::ValueError("`initial_state` parameter value '"
-                               + initial_state + "' is not supported!");
+            throw std::invalid_argument("`initial_state` parameter with value "
+                                        "'" + initial_state + "' is not "
+                                        "supported!");
         }
 
         std::cout << "Cells initialized." << std::endl;
@@ -381,7 +382,7 @@ private:
      */
     std::vector<std::vector<double>> extract_ia_matrix()
     {
-        return this->cfg["ia_matrix"].as<std::vector<std::vector<double>>>();
+        return this->cfg["ia_matrix"].template as<std::vector<std::vector<double>>>();
         
         // // NOTE: The part below should work, if the `Config` class is abandoned and the config is saved as a YAML::Node
         // //          untill then, it is commented out
