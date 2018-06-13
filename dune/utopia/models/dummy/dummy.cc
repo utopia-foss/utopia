@@ -4,21 +4,33 @@
 
 #include "dummy.hh"
 
+// Declare the model
+using DummyModel = Utopia::Models::Dummy;
+
 int main (int argc, char** argv)
 {
     try {
         Dune::MPIHelper::instance(argc, argv);
 
+        // Read in the config file
         const std::string config_file = argv[1];
         Utopia::DataIO::Config config(config_file);
 
-        // const unsigned int steps = std::stoi(argv[2]);
+        // create PseudoParent, setting up the HDFFile and RNG
+        Utopia::PseudoParent pp(config_file);
 
+        // Set the initial state, then create the model instance
         std::vector<double> state(1E3, 0.0);
-        Utopia::DummyModel model(state, config["dummy"]);
+        DummyModel model("dummy", pp, state);
 
-        for(int i = 0; i < config["num_steps"].as<int>(); ++i)
+        // And iterate it for a number of steps
+        auto num_steps = config["num_steps"].as<int>();
+        std::cout << "num_steps: " << num_steps << std::endl;
+        std::cout << "Starting iteration ..." << std::endl;
+
+        for(int i = 0; i < num_steps; ++i) {
             model.iterate();
+        }
 
         // Sleep (to be read by frontend)
         unsigned int sleep_time = 300; // in milliseconds

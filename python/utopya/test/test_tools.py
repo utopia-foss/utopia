@@ -3,6 +3,7 @@ import os
 import copy
 from pkg_resources import resource_filename
 
+import numpy as np
 import pytest
 
 import utopya.tools as t
@@ -21,7 +22,73 @@ def testdict():
                 nothing=None, more_nothing=None)
 
 
-# Tests -----------------------------------------------------------------------
+# Test YAML constructors ------------------------------------------------------
+
+def test_expr_constr():
+    """Tests the expression constructor"""
+    tstr = """
+        one:   !expr 1*2*3
+        two:   !expr 9 / 2
+        three: !expr 2**4
+        four:  !expr 1e-10
+        five:  !expr 1E10
+        six:   !expr inf
+        seven: !expr NaN
+    """
+
+    # Load the string using the tools module, where the constructor was added
+    d = t.yaml.load(tstr)
+
+    # Assert correctness
+    assert d['one'] == 1 * 2 * 3
+    assert d['two'] == 9 / 2
+    assert d['three'] == 2**4
+    assert d['four'] == eval('1e-10') == 10.0**(-10)
+    assert d['five'] == eval('1E10') == 10.0**10
+    assert d['six'] == np.inf
+    assert np.isnan(d['seven'])
+
+
+def test_model_cfg_constructor():
+    """Tests the expression constructor"""
+    tstr = """
+        model: !model
+          model_name: dummy
+          foo: baz
+          lvl: 0
+
+        sub:
+          model1: !model
+            model_name: dummy
+            spam: 2.34
+            lvl: 1
+            num: 1
+
+          model2: !model
+            model_name: dummy
+            lvl: 1
+            num: 2
+    """
+    # TODO once there are more models, add nesting here
+
+    # Load the string using the tools module, where the constructor was added
+    d = t.yaml.load(tstr)
+
+    # Assert correctness
+    assert d['model'] == dict(foo="baz", spam=1.23, lvl=0)
+    assert d['sub']['model1'] == dict(foo="bar", spam=2.34, lvl=1, num=1)
+    assert d['sub']['model2'] == dict(foo="bar", spam=1.23, lvl=1, num=2)
+
+    # It should fail without a model name
+    with pytest.raises(KeyError, match="model_name"):
+        t.yaml.load("model: !model {}")
+    
+    # ... or with an invalid model name
+    with pytest.raises(ValueError, match="No 'invalid' model"):
+        t.yaml.load("model: !model {model_name: invalid}")
+
+
+# Function tests --------------------------------------------------------------
 
 def test_read_yml(tmpdir):
     """Testing if previously written file can be read."""
@@ -73,6 +140,25 @@ def test_write_yml(testdict, tmpdir):
 
     # Read in the file and assert equality between written and read file
     assert testdict == t.read_yml(path)
+
+
+def test_load_model_cfg():
+    """Tests the loading of model configurations by name"""
+    # Load the dummy configuration, for testing
+    mcfg, path = t.load_model_cfg('dummy')
+
+    # Assert correct types
+    assert isinstance(mcfg, dict)
+    assert isinstance(path, str)
+
+    # Assert expected content
+    assert mcfg['foo'] == 'bar'
+    assert mcfg['spam'] == 1.23
+    assert os.path.isfile(path)
+
+    # Test with invalid name
+    with pytest.raises(ValueError, match="No 'invalid' model available!"):
+        t.load_model_cfg('invalid')
 
 
 def test_recursive_update(testdict):
