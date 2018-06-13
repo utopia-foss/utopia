@@ -57,8 +57,7 @@ void __opt_chunks_naive(Cont &chunks,
 
     // Calculate the target chunksize. Formula:  base * 2^log10(size/max_size)
     double bytes_target = (CHUNKSIZE_BASE
-                           * std::pow(2,
-                                      std::log10(bytes_io/CHUNKSIZE_MAX)));
+                           * std::pow(2, std::log10(bytes_io/CHUNKSIZE_MAX)));
     // NOTE this is a double as it is more convenient to calculate with ...
 
     // Ensure the target chunk size is between CHUNKSIZE_MIN and CHUNKSIZE_MAX
@@ -123,16 +122,22 @@ void __opt_chunks_naive(Cont &chunks,
 template<typename Cont, typename IdxCont=std::vector<unsigned short>>
 void __opt_chunks_with_max_extend(Cont &chunks,
                                   const Cont &max_extend,
-                                  [[maybe_unused]] const hsize_t typesize,
-                                  [[maybe_unused]] const unsigned int CHUNKSIZE_MAX)
+                                  const hsize_t typesize,
+                                  const unsigned int CHUNKSIZE_MAX,
+                                  const bool optimize_inf_axes=true)
 {
     // Helper lambda for calculating the product of vector entries
-    [[maybe_unused]] auto product = [](const std::vector<hsize_t> vec) {
+    auto product = [](const std::vector<hsize_t> vec) {
         return std::accumulate(vec.begin(), vec.end(), 1, std::multiplies<>());
     };
 
+    // Helper lambda for calculating bytesize of current chunks configuration
+    auto bytes_chunks = [&]() {
+        return typesize * product(chunks);
+    }
+
     // Helper lambda to calculate diff between two vectors, a-b
-    [[maybe_unused]] auto diff = [](Cont &a, Cont &b) {
+    auto diff = [](Cont &a, Cont &b) {
         // Create the return vector
         Cont _diff(a);
 
@@ -145,18 +150,23 @@ void __opt_chunks_with_max_extend(Cont &chunks,
 
     // -- Parse axes -- //
 
-    // Available axes
+    // Create a container with the available axes indices
     IdxCont axes(chunks.size());
     std::iota(axes.begin(), axes.end(), 0);
-
-    // Determine the infinite axes
-    auto axes_inf = __find_all_idcs(max_extend,
-                                    [](auto extd){return extd == 0;});
-    // The chunk size along these axes should be as small as possible
 
     // Determine the finite axes
     auto axes_fin = __find_all_idcs(max_extend,
                                     [](auto extd){return extd != 0;});
+    // Ideally, an integer multiple of the chunk size along these axis should
+    // be equal to the maximum extend
+
+    // Determine the infinite axes
+    auto axes_inf = __find_all_idcs(max_extend,
+                                    [](auto extd){return extd == 0;});
+    // As the final extend along these axes is not known, we can not make a
+    // good guess for these. Instead, we should use the leverage we have for
+    // optimizing the chunk size along the finite axes. The infinite axes will
+    // thus, most likely, end up with shorter chunk sizes.
 
     // For finite axes, determine the diff between chunks and max_extend
     Cont remainder(chunks.size(), -1);
@@ -166,14 +176,46 @@ void __opt_chunks_with_max_extend(Cont &chunks,
 
     // Among the finite axes, determine the axes that can still be filled,
     // i.e. those where the chunk size does not reach the max_extend
-    [[maybe_unused]] IdxCont axes_fillable;
+    IdxCont axes_fillable;
     for (auto idx: axes_fin) {
-        if (remainder[idx]) {
-            // TODO Continue here            
+        if (remainder[idx] > 0) {
+            axes_fillable.push_back(idx);
         }
     }
 
-    // -- Done -- //
+
+    // -- Optimization of finite (and still fillable) axes -- //
+
+    if (axes_fillable.size()) {
+        std::cout << "  => optimizing " << axes_fillable.size()
+                  << " finite axes where max_extend is not yet reached ..."
+                  << std::endl;
+
+        // Loop over all fillable axes and
+
+    }
+    else {
+        std::cout << "  => chunks of all finite axes already fill max_extend"
+                  << std::endl;
+
+    }
+
+
+    // -- Optimization of infinite axes -- //
+
+    if (optimize_inf_axes && axes_inf.size()) {
+        std::cout << "  => optimizing " << axes_inf.size()
+                  << " infinite axes ..." << std::endl;
+
+    }
+    else {
+        std::cout << "  => no infinite axes to optimize (or disabled)"
+                  << std::endl;
+
+    }
+
+
+    // -- Done. -- //
     return;
 }
 
@@ -240,7 +282,15 @@ const std::vector<hsize_t>
         throw std::invalid_argument("Cannot guess chunksize for scalar "
                                     "dataset!");
     }
-    
+
+    // Check if io_extend has no illegal values (<=0) // TODO valid assumption?
+    for (auto val: io_extend) {
+        if (val <= 0) {
+            throw std::invalid_argument("Argument 'io_extend' contained "
+                                        "illegal (zero or negative) value(s)! "
+                                        "io_extend: " + vec2str(io_extend));
+        }
+    }
 
     // Find out if the max_extend is given
     if (max_extend.size()) {
