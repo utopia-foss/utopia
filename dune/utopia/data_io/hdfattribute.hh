@@ -485,6 +485,19 @@ public:
         // themselvels or just plain types.
         if constexpr (is_container_v<Type>)
         {
+            // needed to make sure that the buffer has the correct size
+
+            std::size_t size = 1;
+            for (auto& value : _shape)
+            {
+                size *= value;
+            }
+
+            if (buffer.size() != size)
+            {
+                buffer.resize(size);
+            }
+
             herr_t err = __read_container__(buffer);
             if (err < 0)
             {

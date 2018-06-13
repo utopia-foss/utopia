@@ -224,18 +224,18 @@ int main()
 
     assert(read_intdata2 == expected_intdata);
 
-    // // attribute 4
-    // std::vector<std::vector<double>> read_varlendata2;
-    // attribute4.read<std::vector<std::vector<double>>>(read_varlendata2);
+    // attribute 4
+    std::vector<std::vector<double>> read_varlendata2;
+    attribute4.read<std::vector<std::vector<double>>>(read_varlendata2);
 
-    // for (std::size_t i = 0; i < 5; ++i)
-    // {
-    //     assert(read_varlendata2[i].size() == expected_varlendata[i].size());
-    //     for (std::size_t j = 0; j < expected_varlendata[i].size(); ++j)
-    //     {
-    //         assert(std::abs(read_varlendata[i][j] - expected_varlendata[i][j]) < 1e-16);
-    //     }
-    // }
+    for (std::size_t i = 0; i < 5; ++i)
+    {
+        assert(read_varlendata2[i].size() == expected_varlendata[i].size());
+        for (std::size_t j = 0; j < expected_varlendata[i].size(); ++j)
+        {
+            assert(std::abs(read_varlendata[i][j] - expected_varlendata[i][j]) < 1e-16);
+        }
+    }
 
     // attribute 5
     std::string read_charptrdata2;
