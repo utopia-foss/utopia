@@ -1,10 +1,9 @@
 #ifndef UTOPIA_MODEL_HH
 #define UTOPIA_MODEL_HH
 
-#include <dune/utopia/data_io/config.hh>
 #include <dune/utopia/data_io/hdffile.hh>
 #include <dune/utopia/data_io/hdfgroup.hh>
-
+#include <dune/utopia/core/types.hh>
 
 namespace Utopia {
 

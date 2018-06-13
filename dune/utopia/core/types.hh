@@ -1,6 +1,7 @@
 #ifndef TYPES_HH
 #define TYPES_HH
 
+#include "yaml-cpp/yaml.h"
 namespace Utopia
 {
     
@@ -56,6 +57,11 @@ template<class Container>
 using entity_t = typename Container::value_type::element_type;
 
 } // namespace impl 
+
+namespace DataIO{
+    /// Type of the configuration
+    typedef YAML::Node Config;
+}
 
 } // namespace Utopia
 
