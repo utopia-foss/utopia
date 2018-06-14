@@ -25,16 +25,18 @@ class ModelTest:
     which test should be carried out.
     """
 
-    def __init__(self, model_name: str):
+    def __init__(self, model_name: str, sim_errors: str='raise'):
         """Initialize the ModelTest for the given model name
         
         Args:
             model_name (str): Name of the model to test
+            sim_errors (str, optional): Whether to raise errors from Multiverse
+        
+        Raises:
+            ValueError: If no test directory exists corresponding to model_name
         """
-        # Set property-managed attributes
+        # Store model name
         self._model_name = None
-
-        # Carry over arguments
         self.model_name = model_name
 
         # Find the test directory corresponding to this model
@@ -48,6 +50,9 @@ class ModelTest:
         # Need a container of Multiverse's and temporary output directories
         # such that they do not go out of scope
         self._mvs = []
+
+        # Store exit handling value
+        self._sim_errors = sim_errors
 
 
     # Properties ..............................................................
@@ -121,6 +126,13 @@ class ModelTest:
             update_meta_cfg['paths'] = dict(out_dir=tmpdir.name)
         else:
             update_meta_cfg['paths']['out_dir'] = tmpdir.name
+
+        # Also set the exit handling value
+        _se = self._sim_errors
+        if 'worker_manager' not in update_meta_cfg:
+            update_meta_cfg['worker_manager'] = dict(nonzero_exit_handling=_se)
+        else:
+            update_meta_cfg['worker_manager']['nonzero_exit_handling'] = _se
 
         # Create the Multiverse
         mv = utopya.Multiverse(model_name=self.model_name,
