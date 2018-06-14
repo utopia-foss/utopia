@@ -45,7 +45,8 @@ void __opt_chunks_target(Cont &chunks,
                          double bytes_target,
                          const hsize_t typesize,
                          const unsigned int CHUNKSIZE_MAX,
-                         const unsigned int CHUNKSIZE_MIN)
+                         const unsigned int CHUNKSIZE_MIN,
+                         const bool larger_high_dims)
 {
     // Helper lambda for calculating bytesize of a chunks configuration
     auto bytes = [&typesize](Cont c) {
@@ -100,6 +101,11 @@ void __opt_chunks_target(Cont &chunks,
         // Calculate the dimension this iteration belongs to
         auto dim = i % rank;
 
+        // If high dimensions should be favoured, count backwards
+        if (larger_high_dims) {
+            dim = (rank - 1) - dim;
+        }
+
         // With the current values of the chunks, calculate the chunk size
         bytes_chunks = bytes(chunks);
         std::cout << "    chunk size:      " << bytes_chunks
@@ -122,6 +128,14 @@ void __opt_chunks_target(Cont &chunks,
             chunks[dim] = chunks[dim] * 2;
         }
         else {
+            // Skip the reduction if this is the last dim and it should not be
+            // reduced
+            if (rank > 1 && larger_high_dims && (dim == rank - 1)) {
+                std::cout << "  -> dim " << dim
+                          << " is highest; skipping reduction" << std::endl;
+                continue;
+            }
+
             // Divide the chunk size of the current dim by two, ceiling
             std::cout << "  -> reducing size of dim " << dim << std::endl;
             chunks[dim] = 1 + ((chunks[dim] - 1) / 2);
@@ -141,7 +155,7 @@ void __opt_chunks_with_max_extend(Cont &chunks,
                                   const hsize_t typesize,
                                   const unsigned int CHUNKSIZE_MAX,
                                   const bool opt_inf_dims,
-                                  const bool opt_high_dims_first)
+                                  const bool larger_high_dims)
 {
     // Helper lambda for calculating bytesize of a chunks configuration
     auto bytes = [&typesize](Cont c) {
@@ -186,7 +200,7 @@ void __opt_chunks_with_max_extend(Cont &chunks,
     }
 
     // Check if to reverse index containers to favour higher dims
-    if (opt_high_dims_first) {
+    if (larger_high_dims) {
         // Reverse all index containers
         std::reverse(dims_fillable.begin(), dims_fillable.end());
         std::reverse(dims_fin.begin(), dims_fin.end());
@@ -340,7 +354,7 @@ const Cont guess_chunksize(const hsize_t typesize,
                            Cont max_extend = {},
                            const bool avoid_low_chunksize = true,
                            const bool opt_inf_dims = true,
-                           const bool opt_high_dims_first = true,
+                           const bool larger_high_dims = true,
                            const unsigned int CHUNKSIZE_MAX = 1048576,  // 1M
                            const unsigned int CHUNKSIZE_MIN = 8192,     // 8k
                            const unsigned int CHUNKSIZE_BASE = 262144)  // 256k
@@ -482,7 +496,8 @@ const Cont guess_chunksize(const hsize_t typesize,
                      "I/O operation ..." << std::endl;
 
         __opt_chunks_target(_chunks, CHUNKSIZE_MAX, // <- target value
-                            typesize, CHUNKSIZE_MAX, CHUNKSIZE_MIN);
+                            typesize, CHUNKSIZE_MAX, CHUNKSIZE_MIN,
+                            larger_high_dims);
         // NOTE this relies on _chunks == io_extend
     }
     else if (   all_dims_inf && avoid_low_chunksize
@@ -491,8 +506,12 @@ const Cont guess_chunksize(const hsize_t typesize,
         // The I/O operation _does_ fit into a chunk, but the dataset is
         // infinite in _all directions_ and small chunksizes can be very
         // inefficient -> optimize towards some base value
+        std::cout << "  enlarging chunksize to be closer to base chunksize ..."
+                  << std::endl;
+
         __opt_chunks_target(_chunks, CHUNKSIZE_BASE, // <- target value
-                            typesize, CHUNKSIZE_MAX, CHUNKSIZE_MIN);
+                            typesize, CHUNKSIZE_MAX, CHUNKSIZE_MIN,
+                            larger_high_dims);
     }
     // else: no other optimization towards a target size make sense
 
@@ -507,7 +526,7 @@ const Cont guess_chunksize(const hsize_t typesize,
 
         __opt_chunks_with_max_extend(_chunks, max_extend,
                                      typesize, CHUNKSIZE_MAX,
-                                     opt_inf_dims, opt_high_dims_first);
+                                     opt_inf_dims, larger_high_dims);
     }
     // else: no further optimization possible
 
