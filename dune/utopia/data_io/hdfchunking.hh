@@ -98,14 +98,6 @@ void __opt_chunks_target(Cont &chunks,
      */
     for (unsigned short i=0; i < 23 * rank; i++)
     {
-        // Calculate the dimension this iteration belongs to
-        auto dim = i % rank;
-
-        // If high dimensions should be favoured, count backwards
-        if (larger_high_dims) {
-            dim = (rank - 1) - dim;
-        }
-
         // With the current values of the chunks, calculate the chunk size
         bytes_chunks = bytes(chunks);
         std::cout << "    chunk size:      " << bytes_chunks
@@ -121,24 +113,39 @@ void __opt_chunks_target(Cont &chunks,
         }
         // else: not yet close enough
 
+        // Calculate the dimension this iteration belongs to
+        auto dim = i % rank;
+
         // Adjust the chunksize towards the target size
-        if (bytes_chunks < bytes_target) {            
+        if (bytes_chunks < bytes_target) {
+            // If high dimensions should be favoured, change the dim to work on
+            if (larger_high_dims) {
+                dim = (rank - 1) - dim;
+            }
+
             // Multiply by two
             std::cout << "  -> increasing size of dim " << dim << std::endl;
             chunks[dim] = chunks[dim] * 2;
         }
         else {
-            // Skip the reduction if this is the last dim and it should not be
-            // reduced
-            if (rank > 1 && larger_high_dims && (dim == rank - 1)) {
-                std::cout << "  -> dim " << dim
-                          << " is highest; skipping reduction" << std::endl;
-                continue;
+            if (larger_high_dims && rank > 1) {
+                // Stay on low dimensions one step longer // TODO generalise!
+                if (dim > 0) {
+                    dim--;
+                }
+
+                // Skip the reduction if this is the last dim and it should
+                // not be reduced
+                if (dim == rank - 1) {
+                    std::cout << "  -> dim " << dim << " is highest; "
+                              << "skipping reduction" << std::endl;
+                    continue;
+                }
             }
 
-            // Divide the chunk size of the current dim by two, ceiling
+            // Divide the chunk size of the current dim by two
             std::cout << "  -> reducing size of dim " << dim << std::endl;
-            chunks[dim] = 1 + ((chunks[dim] - 1) / 2);
+            chunks[dim] = 1 + ((chunks[dim] - 1) / 2);  // ceiling!
             // NOTE integer division fun; can do this because all are unsigned
             // and the chunks entry is always nonzero
         }
@@ -184,18 +191,12 @@ void __opt_chunks_with_max_extend(Cont &chunks,
     // optimizing the chunk size along the finite dims. The infinite dims will
     // thus, most likely, end up with shorter chunk sizes.
 
-    // For finite dims, determine the diff between chunks and max_extend
-    Cont remainder(chunks.size(), -1);
-    for (auto idx: dims_fin) {
-        remainder[idx] = max_extend[idx] - chunks[idx];
-    }
-
     // Among the finite dims, determine the dims that can still be filled,
     // i.e. those where the chunk size does not reach the max_extend
     IdxCont dims_fillable;
-    for (auto idx: dims_fin) {
-        if (remainder[idx] > 0) {
-            dims_fillable.push_back(idx);
+    for (auto dim: dims_fin) {
+        if (max_extend[dim] > chunks[dim]) {
+            dims_fillable.push_back(dim);
         }
     }
 
@@ -223,6 +224,13 @@ void __opt_chunks_with_max_extend(Cont &chunks,
 
         // Loop over the fillable dims indices
         for (auto dim: dims_fillable) {
+            // Check if there is still potential for optimization
+            // NOTE this could be more thorough
+            if (bytes(chunks) == CHUNKSIZE_MAX) {
+                std::cout << "    reached maximum chunk size" << std::endl;
+                break;
+            }
+
             // Check if the max_extend is an integer multiple of the chunksize
             if (max_extend[dim] % chunks[dim] == 0) {
                 // Find the divisor
@@ -262,15 +270,29 @@ void __opt_chunks_with_max_extend(Cont &chunks,
                     chunks[dim] = chunks[dim] * factor;
                 }
             }
+            else {
+                // Not divisible. Check if the max_extend could be reached w/o
+                // exceeding the max chunksize
+                double factor = (float) max_extend[dim] / (float) chunks[dim];
 
-            // WIP Do other stuff, perhaps
-
-            // Check if there is still potential for optimization
-            // NOTE this could be more thorough
-            if (bytes(chunks) == CHUNKSIZE_MAX) {
-                std::cout << "    reached maximum chunk size" << std::endl;
-                break;
+                if (factor * bytes(chunks) <= CHUNKSIZE_MAX) {
+                    // Yep. Just extend this dimension to the max_extend, done.
+                    std::cout << "    dim " << dim << " can be filled "
+                              << "completely. "
+                              << "(difference: " << max_extend[dim]-chunks[dim]
+                              << ", factor: " << factor << ")" << std::endl;
+                    chunks[dim] = max_extend[dim];
+                }
+                else {
+                    // Cannot further extend.
+                    std::cout << "    dim " << dim << " cannot be extended to "
+                              << "fill max_extend without exceeding maximum "
+                              << "chunksize! "
+                              << "(difference: " << max_extend[dim]-chunks[dim]
+                              << ", factor: " << factor << ")" << std::endl;
+                }
             }
+            // Done with this index
         }
     }
 
@@ -418,10 +440,10 @@ const Cont guess_chunksize(const hsize_t typesize,
                        == max_extend.end()); // i.e., no "0" found
 
         // Or even all are infinitely long
-        all_dims_inf = false;
+        all_dims_inf = true;
         for (auto l: max_extend) {
-            if (l == 0) {
-                all_dims_inf = true;
+            if (l != 0) {
+                all_dims_inf = false;
                 break;
             }
         }
@@ -518,9 +540,9 @@ const Cont guess_chunksize(const hsize_t typesize,
 
     // -- If given, take the max_extend into account -- //
 
-    // This is only possible if the current chunk size is not already close to
-    // half the upper limit, CHUNKSIZE_MAX
-    if (max_extend.size() && (bytes(_chunks) <= CHUNKSIZE_MAX/2)) {
+    // This is only possible if the current chunk size is not already above the
+    // upper limit, CHUNKSIZE_MAX
+    if (max_extend.size() && (bytes(_chunks) < CHUNKSIZE_MAX)) {
         std::cout << "  can (potentially) optimize using max_extend info ..."
                   << std::endl;
 

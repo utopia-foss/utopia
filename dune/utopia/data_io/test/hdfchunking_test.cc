@@ -159,18 +159,56 @@ int main(int argc, char *argv[])
                                      true, false), // avoid_low, opt_inf
                      {345 * 1024});                       // 345k
 
-        // 2D dataset, io_extend smaller, max_extend > max chunksize
+        // 3D dataset, io_extend smaller, max_extend > max chunksize
+        // -> extend last axes first
+        assert_equal(guess_chunksize(1, {1, 128, 128},    // 16k
+                                     {1024, 1024, 1024}), // 1G
+                     {1, 1024, 1024});                    // 1M
+
+        // 3D dataset, 2 io_extend dims fit max_extend
         // -> extend first axis as far as possible
         assert_equal(guess_chunksize(1, {1, 512, 512},    // 256k
                                      {512, 512, 512}),    // 128M
                      {4, 512, 512});                      // 1M
 
         // ... with other (rather unfortunate) values
-        // -> optimize for io_extend to fit in
+        // -> optimize for last axes
         assert_equal(guess_chunksize(1, {1, 123, 456},    // ~54k
-                                     {512, 512, 512}),    // max_extend
-                     {16, 123, 456});                     // ~880k
-        // TODO there is room for improvement here! better: {4, 512, 512}
+                                     {512, 512, 512}),    // 128M
+                     {4, 512, 512});                      // 1M
+
+        // ... should fail for some axes, if filling up would mean exceeding
+        // the maximum chunk size
+        assert_equal(guess_chunksize(1, {11, 81, 999},    // ~869k
+                                     {13, 100, 1024}),    // 1300k
+                     {11, 81, 1024});                     // ~912k
+
+        // 3D dataset, io_extend < max. chunksize, inf in first dim
+        // -> extend first axis
+        // specifically: do not optimize towards target size!
+        assert_equal(guess_chunksize(1, {1, 128, 128},    // 16k
+                                     {0, 128, 128}),      // inf
+                     {64, 128, 128});                     // 1M
+
+        // 3D dataset, io_extend > max. chunksize, inf in first dim
+        // -> split io_extend into two chunks
+        assert_equal(guess_chunksize(1, {2, 1024, 1024},  // 2M
+                                     {0, 1024, 1024}),    // inf
+                     {1, 1024, 1024});                    // 1M
+        
+        // ... same with factor 3
+        // -> split io_extend into three chunks
+        assert_equal(guess_chunksize(1, {3, 1024, 1024},  // 3M
+                                     {0, 1024, 1024}),    // inf
+                     {1, 1024, 1024});                    // 1M
+        
+        // ... and factor 5
+        // -> split io_extend into 6 chunks
+        assert_equal(guess_chunksize(1, {5, 1024, 1024},  // 5M
+                                     {0, 1024, 1024}),    // inf
+                     {2, 512, 1024});                     // 1M
+        // NOTE this is not optimal, {1, 1024, 1024} would be ...
+        //      currently, 6 instead of 5 chunks are used per write operation
 
         // End of tests.
         std::cout << "Tests finished." << std::endl << std::endl;
