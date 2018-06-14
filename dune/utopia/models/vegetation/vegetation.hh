@@ -10,8 +10,6 @@
 #include <dune/utopia/data_io/hdfgroup.hh>
 #include <dune/utopia/data_io/hdfdataset.hh>
 
-#include <boost/lexical_cast.hpp>
-
 
 namespace Utopia {
 
@@ -33,7 +31,6 @@ template<class Manager>
 class Vegetation:
     public Model<Vegetation<Manager>, VegetationTypes<Manager>>
 {
-
 public:
 
     using Base = Model<Vegetation<Manager>, VegetationTypes<Manager>>;
@@ -81,7 +78,7 @@ public:
     void perform_step ()
     {
         // Communicate which iteration step is performed
-        std::cout << "  Performing step " << this->time << " ..." << std::endl;
+        std::cout << "  Performing step @ t = " << this->time << " ...";
 
         // Apply logistic growth and seeding
         auto growth_seeding_rule = [this](const auto cell){
@@ -100,7 +97,7 @@ public:
 
     void write_data () 
     {
-        std::cout << "Writing data @ _t = " << Base::time << " ... ";
+        std::cout << "Writing data @ t = " << this->time << " ... " << std::endl;
         auto dset = this->hdfgrp->open_dataset("plants@t="+std::to_string(this->time));
         dset->write(manager.cells().begin(),
                     manager.cells().end(), 
