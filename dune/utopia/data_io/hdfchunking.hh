@@ -38,14 +38,15 @@ IdxCont __find_all_idcs (Cont &vec, Predicate pred) {
 
 // -- Optimization algorithms -- //
 
-/// Optimizes the chunks with a naive algorithm 
+/// Optimizes the chunks along all axes to find a good default
+// TODO doxygen
 template<typename Cont>
-void __opt_chunks_naive(Cont &chunks,
-                        hsize_t bytes_io,
-                        const hsize_t typesize,
-                        const unsigned int CHUNKSIZE_MAX,
-                        const unsigned int CHUNKSIZE_MIN,
-                        const unsigned int CHUNKSIZE_BASE)
+void __opt_chunks(Cont &chunks,
+                  const hsize_t bytes_io,
+                  const hsize_t typesize,
+                  const unsigned int CHUNKSIZE_MAX,
+                  const unsigned int CHUNKSIZE_MIN,
+                  const unsigned int CHUNKSIZE_BASE)
 {
     // Helper lambda for calculating bytesize of a chunks configuration
     auto bytes = [&typesize](Cont c) {
@@ -320,7 +321,8 @@ void __opt_chunks_with_max_extend(Cont &chunks,
  *                          dataset has no maximum extend given
  */
 // TODO use log messages instead of std::cout
-// TODO update documentation
+// TODO update documentation; make sure it's clear that max_extend opt is only
+//      used when max_extend is given -- but then optimizes infinite axes!
 // TODO is it reasonable to use const here?
 template<typename Cont=std::vector<hsize_t>>
 const Cont guess_chunksize(const hsize_t typesize,
@@ -393,7 +395,6 @@ const Cont guess_chunksize(const hsize_t typesize,
     else {
         // Have to assume the max_extend is infinite in all directions
         dset_finite = false;
-        Cont max_extend(rank, 0);
     }
 
 
@@ -436,7 +437,7 @@ const Cont guess_chunksize(const hsize_t typesize,
 
     // -- Optimize for one I/O operation fitting into chunk -- //
 
-    // Create the temporary target vector that will store the chunksize values.
+    // Create the temporary container that will store the chunksize values.
     // It starts with a copy of the extend values for I/O operations.
     Cont _chunks(io_extend);
 
@@ -449,11 +450,12 @@ const Cont guess_chunksize(const hsize_t typesize,
     bool fits_into_chunk = (bytes_io <= CHUNKSIZE_MAX);
     std::cout << "  fits into chunk?   " << fits_into_chunk << std::endl;
 
-    // If it does not fit into the chunk or if the maximum extend is not known,
-    // or if it is infinite, need to start optimize here already
-    if (!fits_into_chunk || !max_extend.size() || !dset_finite) {
-        __opt_chunks_naive(_chunks, bytes_io, typesize,
-                           CHUNKSIZE_MAX, CHUNKSIZE_MIN, CHUNKSIZE_BASE);
+    // Optimization is necessary in the following cases:
+    //      The I/O operation does not fit into a single chunk
+    //  AND either no max_extend was given or a not-finite one was given
+    if (!fits_into_chunk && (!max_extend.size() || !dset_finite)) {
+        __opt_chunks(_chunks, bytes_io, typesize,
+                     CHUNKSIZE_MAX, CHUNKSIZE_MIN, CHUNKSIZE_BASE);
     }
     // else: no need to optimize for a single write operation
 

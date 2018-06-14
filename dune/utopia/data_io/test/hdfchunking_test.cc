@@ -47,12 +47,12 @@ int main(int argc, char *argv[])
                      {1, 2, 3});
 
         // Large 1D dataset with typesize 1, no max_extend
-        // -> naive optimization
+        // -> fit I/O operation into maximum chunksize
         assert_equal(guess_chunksize(1, {1024 * 1024}), // 1M
-                     {128 * 1024});
+                     {1024 * 1024});
 
         // Large 1D dataset with larger typesize, still no max_extend
-        // -> naive optimization, smaller chunks due to higher typesize
+        // -> I/O will not fit into single chunk -> use optimization
         assert_equal(guess_chunksize(8, {1024 * 1024}), // 8M
                      {32 * 1024});
 
@@ -73,12 +73,13 @@ int main(int argc, char *argv[])
                      {1});
 
         // 2D dataset that has long rows
-        // -> naive optimization
+        // -> fits into chunk
         assert_equal(guess_chunksize(8, {1, 2048}), // 16k
-                     {1, 1024});
+                     {1, 2048});
 
 
         // -- With max_extend -- //
+        // If the max_extend is given, another optimization is possible
 
         // Fits CHUNKSIZE_MAX, already reached max_extend
         // -> skip naive optimization, fits I/O operation into chunk, done
@@ -99,7 +100,7 @@ int main(int argc, char *argv[])
         //    cover to the whole dataset.
         assert_equal(guess_chunksize(1, {128 * 1024},
                                      {1 * 1024 * 1024}),
-                     {1024 * 1024}); // WIP
+                     {1024 * 1024});
 
         // Smaller, still fits CHUNKSIZE_MAX, not yet reached max_extend
         // -> skip naive optimization, fits I/O operation into chunk, but there
@@ -107,7 +108,7 @@ int main(int argc, char *argv[])
         //    exactly 16 chunks in.
         assert_equal(guess_chunksize(1, {128 * 1024},
                                      {16 * 1024 * 1024}),
-                     {1024 * 1024}); // WIP
+                     {1024 * 1024});
 
         // Smaller, still fits CHUNKSIZE_MAX, not yet reached max_extend
         // -> naive optimization, but fits I/O operation into chunk and there
@@ -115,7 +116,7 @@ int main(int argc, char *argv[])
         //    write operations along the infinite axis
         assert_equal(guess_chunksize(1, {1024 * 1024},
                                      {0}), // max_extend given, but infinite
-                     {1024 * 1024}); // WIP
+                     {1024 * 1024});
 
 
         // End of tests.
