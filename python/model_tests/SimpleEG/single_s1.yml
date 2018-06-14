@@ -1,0 +1,18 @@
+# Test that initialization with single s1 in the center works
+---
+parameter_space:
+  num_steps: 0
+
+  SimpleEG: !model
+    model_name: SimpleEG
+
+    # Grid parameters
+    grid_size: [63, 63]
+
+    # Initial state
+    initial_state: single_s1   # can be: random, fraction, single_s0, single_s1
+    # Explanation:
+    #   - random:             each strategy occurs with probability 0.5
+    #   - fraction:           s1_fraction of all cells have strategy 1
+    #   - single_s0:          single cell at the center has strategy 0
+    #   - single_s1:          single cell at the center has strategy 1

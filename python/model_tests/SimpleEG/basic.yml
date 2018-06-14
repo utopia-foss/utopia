@@ -1,0 +1,10 @@
+# Test the basics, using all default values
+---
+perform_sweep: false
+
+parameter_space:
+  num_steps: 3
+  seed: 42
+
+  SimpleEG: !model
+    model_name: SimpleEG
