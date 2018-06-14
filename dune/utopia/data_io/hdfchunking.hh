@@ -47,10 +47,12 @@ void __opt_chunks_naive(Cont &chunks,
                         const unsigned int CHUNKSIZE_MIN,
                         const unsigned int CHUNKSIZE_BASE)
 {
-    // Helper lambda for calculating the product of vector entries
-    auto product = [](const std::vector<hsize_t> vec) {
-        return std::accumulate(vec.begin(), vec.end(), 1, std::multiplies<>());
+    // Helper lambda for calculating bytesize of a chunks configuration
+    auto bytes = [&typesize](Cont c) {
+        return typesize * std::accumulate(c.begin(), c.end(),
+                                          1, std::multiplies<>());
     };
+
 
     // Calculate the rank
     auto rank = chunks.size();
@@ -75,7 +77,7 @@ void __opt_chunks_naive(Cont &chunks,
 
     // ... and a variable that will store the size (in bytes) of this specific
     // chunk configuration
-    unsigned long int bytes_chunks;
+    size_t bytes_chunks;
 
     /* Now optimize the chunks for each dimension by repeatedly looping over
      * the vector and dividing the values by two (rounding up).
@@ -91,10 +93,13 @@ void __opt_chunks_naive(Cont &chunks,
      * to be ~8M entries _per dimension_ to exhaust this optimization loop.
      */
     std::cout << "  => starting naive optimization ..." << std::endl;
-    for (unsigned int i=0; i < 23 * rank; i++)
+    for (unsigned short i=0; i < 23 * rank; i++)
     {
+        // Calculate the dimension this iteration belongs to
+        auto dim = i % rank;
+
         // With the current values of the chunks, calculate the chunk size
-        bytes_chunks = typesize * product(chunks);
+        bytes_chunks = bytes(chunks);
         std::cout << "    chunk size:      " << bytes_chunks
                   << " B  (" << bytes_chunks/1024 << " kiB) ";
 
@@ -107,9 +112,9 @@ void __opt_chunks_naive(Cont &chunks,
             break;
         }
 
-        // Divide the chunk size of the current axis by two, rounding upwards
-        std::cout << "  -> reducing size of dim " << i%rank << std::endl;
-        chunks[i % rank] = 1 + ((chunks[i % rank] - 1) / 2);
+        // Divide the chunk size of the current dim by two, rounding upwards
+        std::cout << "  -> reducing size of dim " << dim << std::endl;
+        chunks[dim] = 1 + ((chunks[dim] - 1) / 2);
         // NOTE integer division fun; can do this because all are unsigned
         // and the chunks entry is always nonzero
     }
@@ -118,104 +123,175 @@ void __opt_chunks_naive(Cont &chunks,
 }
 
 
-/// Optimizes the chunks using the max_extend information
+/// Optimizes the chunks using the max_extend information, favouring last dims
 template<typename Cont, typename IdxCont=std::vector<unsigned short>>
 void __opt_chunks_with_max_extend(Cont &chunks,
                                   const Cont &max_extend,
                                   const hsize_t typesize,
                                   const unsigned int CHUNKSIZE_MAX,
-                                  const bool optimize_inf_axes=true)
+                                  const bool opt_inf_dims,
+                                  const bool opt_high_dims_first)
 {
-    // Helper lambda for calculating the product of vector entries
-    auto product = [](const std::vector<hsize_t> vec) {
-        return std::accumulate(vec.begin(), vec.end(), 1, std::multiplies<>());
+    // Helper lambda for calculating bytesize of a chunks configuration
+    auto bytes = [&typesize](Cont c) {
+        return typesize * std::accumulate(c.begin(), c.end(),
+                                          1, std::multiplies<>());
     };
 
-    // Helper lambda for calculating bytesize of current chunks configuration
-    auto bytes_chunks = [&]() {
-        return typesize * product(chunks);
-    }
 
-    // Helper lambda to calculate diff between two vectors, a-b
-    auto diff = [](Cont &a, Cont &b) {
-        // Create the return vector
-        Cont _diff(a);
+    // -- Parse dims and prepare algorithm -- //
 
-        for (unsigned int i=0; i < _diff.size(); i++) {
-            _diff[i] -= b[i];
-        }
-        
-        return _diff;
-    };
+    // Create a container with the available dims indices
+    IdxCont dims(chunks.size());
+    std::iota(dims.begin(), dims.end(), 0);
 
-    // -- Parse axes -- //
-
-    // Create a container with the available axes indices
-    IdxCont axes(chunks.size());
-    std::iota(axes.begin(), axes.end(), 0);
-
-    // Determine the finite axes
-    auto axes_fin = __find_all_idcs(max_extend,
+    // Determine the finite dims
+    auto dims_fin = __find_all_idcs(max_extend,
                                     [](auto extd){return extd != 0;});
-    // Ideally, an integer multiple of the chunk size along these axis should
+    // Ideally, an integer multiple of the chunk size along this dim should
     // be equal to the maximum extend
 
-    // Determine the infinite axes
-    auto axes_inf = __find_all_idcs(max_extend,
+    // Determine the infinite dims
+    auto dims_inf = __find_all_idcs(max_extend,
                                     [](auto extd){return extd == 0;});
-    // As the final extend along these axes is not known, we can not make a
+    // As the final extend along these dims is not known, we can not make a
     // good guess for these. Instead, we should use the leverage we have for
-    // optimizing the chunk size along the finite axes. The infinite axes will
+    // optimizing the chunk size along the finite dims. The infinite dims will
     // thus, most likely, end up with shorter chunk sizes.
 
-    // For finite axes, determine the diff between chunks and max_extend
+    // For finite dims, determine the diff between chunks and max_extend
     Cont remainder(chunks.size(), -1);
-    for (auto idx: axes_fin) {
+    for (auto idx: dims_fin) {
         remainder[idx] = max_extend[idx] - chunks[idx];
     }
 
-    // Among the finite axes, determine the axes that can still be filled,
+    // Among the finite dims, determine the dims that can still be filled,
     // i.e. those where the chunk size does not reach the max_extend
-    IdxCont axes_fillable;
-    for (auto idx: axes_fin) {
+    IdxCont dims_fillable;
+    for (auto idx: dims_fin) {
         if (remainder[idx] > 0) {
-            axes_fillable.push_back(idx);
+            dims_fillable.push_back(idx);
+        }
+    }
+
+    // Check if to reverse index containers to favour higher dims
+    if (opt_high_dims_first) {
+        // Reverse all index containers
+        std::reverse(dims_fillable.begin(), dims_fillable.end());
+        std::reverse(dims_fin.begin(), dims_fin.end());
+        std::reverse(dims_inf.begin(), dims_inf.end());
+
+        // NOTE do not actually _need_ to reverse the finite dims container,
+        // doing it only for consistency.
+    }
+
+
+    // -- Optimization of finite (and still fillable) dims -- //
+
+    if (!dims_fillable.size()) {
+        std::cout << "  no finite dims available to optimize" << std::endl;
+    }
+    else {
+        std::cout << "  => optimizing " << dims_fillable.size()
+                  << " finite dim(s) where max_extend is not yet reached ..."
+                  << std::endl;
+
+        // Loop over the fillable dims indices
+        for (auto dim: dims_fillable) {
+            // Check if the max_extend is an integer multiple of the chunksize
+            if (max_extend[dim] % chunks[dim] == 0) {
+                // Find the divisor
+                size_t factor = max_extend[dim] / chunks[dim];
+
+                // It might fit in completely ...
+                if (factor * bytes(chunks) <= CHUNKSIZE_MAX) {
+                    // It does. Adjust chunks and continue with next dim
+                    std::cout << "    dim " << dim << " can be filled "
+                              << "completely. Factor: " << factor << std::endl;
+                    chunks[dim] = chunks[dim] * factor;
+                    continue;
+                }
+                // else: would not fit in completely
+
+                // Starting from the largest possible factor, find the largest
+                // integer divisor of the original factor, i.e.: one that will
+                // also completely cover the max_extend
+                for (size_t div=(CHUNKSIZE_MAX / bytes(chunks));
+                     div >= 1; div--) {
+                    // Check if it is an integer divisor
+                    if (factor % div == 0) {
+                        // Yes! The _new_ factor is now this value
+                        factor = div;
+                        break;
+                    }
+                }
+                // NOTE Covers the edge case of max. factor == 1: the loop will
+                // perform only one iteration and resulting factor will be 1,
+                // leading (effectively) to no scaling.
+
+                // Scale the chunksize with this factor
+                if (factor > 1) {
+                    std::cout << "    dim " << dim << ": scaling with factor "
+                              << factor << " ..." << std::endl;
+
+                    chunks[dim] = chunks[dim] * factor;
+                }
+            }
+
+            // WIP Do other stuff, perhaps
+
+            // Check if there is still potential for optimization
+            // NOTE this could be more thorough
+            if (bytes(chunks) == CHUNKSIZE_MAX) {
+                std::cout << "    reached maximum chunk size" << std::endl;
+                break;
+            }
         }
     }
 
 
-    // -- Optimization of finite (and still fillable) axes -- //
+    // -- Optimization of infinite dims -- //
 
-    if (axes_fillable.size()) {
-        std::cout << "  => optimizing " << axes_fillable.size()
-                  << " finite axes where max_extend is not yet reached ..."
+    if (!opt_inf_dims) {
+        std::cout << "  optimization of infinite dims disabled" << std::endl;
+    }
+    else if (!dims_inf.size()) {
+        std::cout << "  no infinite dims available to optimize" << std::endl;
+    }
+    else if (bytes(chunks) == CHUNKSIZE_MAX) {
+        std::cout << "  cannot further optimize using infinite dims"
                   << std::endl;
-
-        // Loop over all fillable axes and
-
     }
     else {
-        std::cout << "  => chunks of all finite axes already fill max_extend"
-                  << std::endl;
+        std::cout << "  => optimizing " << dims_inf.size()
+                  << " infinite dim(s) to fill max chunksize ..." << std::endl;
+        
+        // Loop over indices of inf. dims
+        // NOTE Depending on the chunk sizes, this might only have an effect
+        //      on the first index considered ... but that's fine for now.
+        for (auto dim: dims_inf) {            
+            // Calculate the factor to make the chunk as big as possible
+            size_t factor = CHUNKSIZE_MAX / bytes(chunks); // rounding down
 
-    }
+            // If large enough, scale it by that factor
+            if (factor > 1) {
+                std::cout << "    dim " << dim << ": scaling with factor "
+                          << factor << " ..." << std::endl;
 
-
-    // -- Optimization of infinite axes -- //
-
-    if (optimize_inf_axes && axes_inf.size()) {
-        std::cout << "  => optimizing " << axes_inf.size()
-                  << " infinite axes ..." << std::endl;
-
-    }
-    else {
-        std::cout << "  => no infinite axes to optimize (or disabled)"
-                  << std::endl;
+                chunks[dim] = chunks[dim] * factor;
+            }
+        }
 
     }
 
 
     // -- Done. -- //
+    // Check if everything went fine (only a safeguard ...)
+    if (bytes(chunks) > CHUNKSIZE_MAX) {
+        throw std::runtime_error("Calculated chunks exceed CHUNKSIZE_MAX! "
+                                 "This should not have happened!");
+    }
+
     return;
 }
 
@@ -233,7 +309,7 @@ void __opt_chunks_with_max_extend(Cont &chunks,
  *                          algorithm is written to make an I/O operation of
  *                          this extend use as few chunks as possible.
  * @param   max_extend      The maximum extend the dataset can have. If given,
- *                          the chunk size is increased along the open axes to
+ *                          the chunk size is increased along the open dims to
  *                          spread evenly and fill the max_extend as best as
  *                          as possible.
  * @param   CHUNKSIZE_MAX   largest chunksize; should not exceed 1MiB too much,
@@ -244,19 +320,24 @@ void __opt_chunks_with_max_extend(Cont &chunks,
  *                          dataset has no maximum extend given
  */
 // TODO use log messages instead of std::cout
+// TODO update documentation
 // TODO is it reasonable to use const here?
-const std::vector<hsize_t>
-    guess_chunksize(const hsize_t typesize,
-                    const std::vector<hsize_t> io_extend,
-                    const std::vector<hsize_t> max_extend = {},
-                    const unsigned int CHUNKSIZE_MAX = 1048576,  // 1M
-                    const unsigned int CHUNKSIZE_MIN = 8192,     // 8k
-                    const unsigned int CHUNKSIZE_BASE = 131072)  // 128k
+template<typename Cont=std::vector<hsize_t>>
+const Cont guess_chunksize(const hsize_t typesize,
+                           const Cont io_extend,
+                           Cont max_extend = {},
+                           const bool opt_inf_dims = true,
+                           const bool opt_high_dims_first = true,
+                           const unsigned int CHUNKSIZE_MAX = 1048576,  // 1M
+                           const unsigned int CHUNKSIZE_MIN = 8192,     // 8k
+                           const unsigned int CHUNKSIZE_BASE = 131072)  // 128k
 {
-    // -- Initialisations -- //
-    // Helper lambda for calculating the product of vector entries
-    auto product = [](const std::vector<hsize_t> vec) {
-        return std::accumulate(vec.begin(), vec.end(), 1, std::multiplies<>());
+    // -- Initialisation -- //
+
+    // Helper lambda for calculating bytesize of a chunks configuration
+    auto bytes = [&typesize](Cont c) {
+        return typesize * std::accumulate(c.begin(), c.end(),
+                                          1, std::multiplies<>());
     };
 
     // Helper lambda for string representation of vectors
@@ -268,9 +349,6 @@ const std::vector<hsize_t>
         s << ")";
         return s.str();
     };
-
-    // Selected variable initialisations
-    bool dset_finite;
 
 
     // -- Check correctness of arguments and extract some info -- //
@@ -292,7 +370,9 @@ const std::vector<hsize_t>
         }
     }
 
-    // Find out if the max_extend is given
+    // Find out if the max_extend is given and determine whether dset is finite
+    bool dset_finite;
+
     if (max_extend.size()) {
         // Is given, yes
 
@@ -309,6 +389,11 @@ const std::vector<hsize_t>
         dset_finite = (std::find(max_extend.begin(), max_extend.end(), 0)
                        == max_extend.end());
         // TODO Check if H5S_UNLIMITED is a valid value in max_extend?
+    }
+    else {
+        // Have to assume the max_extend is infinite in all directions
+        dset_finite = false;
+        Cont max_extend(rank, 0);
     }
 
 
@@ -333,18 +418,19 @@ const std::vector<hsize_t>
     // than half the maximum chunksize.
     if (typesize > CHUNKSIZE_MAX / 2) {
         std::cout << "  -> type size >= 1/2 max. chunksize" << std::endl;
-        return std::vector<hsize_t>(rank, 1);
+        return Cont(rank, 1);
     }
 
 
-    // For a (maximally extended) dataset that is smaller than CHUNKSIZE_MAX,
-    // can only have (and only need) a single chunk
-    if (max_extend.size()
-        && (typesize * product(max_extend) < CHUNKSIZE_MAX))
+    // For a finite dataset, that would fit into CHUNKSIZE_MAX when maximally
+    // extended can only have (and only need!) a single chunk
+    if (dset_finite
+        && max_extend.size()
+        && (bytes(max_extend) <= CHUNKSIZE_MAX))
     {
         std::cout << "  -> maximally extended dataset will fit into one chunk"
                   << std::endl;
-        return std::vector<hsize_t>(max_extend);
+        return Cont(max_extend);
     }
 
 
@@ -352,10 +438,10 @@ const std::vector<hsize_t>
 
     // Create the temporary target vector that will store the chunksize values.
     // It starts with a copy of the extend values for I/O operations.
-    std::vector<hsize_t> _chunks(io_extend);
+    Cont _chunks(io_extend);
 
     // Determine the size (in bytes) of a write operation with this extend
-    auto bytes_io = typesize * product(io_extend);
+    auto bytes_io = bytes(io_extend);
     std::cout << "  I/O op. size:      " << bytes_io
               << " B  (" << bytes_io/1024 << " kiB) " << std::endl;
 
@@ -374,15 +460,14 @@ const std::vector<hsize_t>
 
     // -- If given, take the max_extend into account -- //
     // This is only possible if the current chunk size is not already close to
-    // the upper limit, CHUNKSIZE_MAX
-    if (max_extend.size()
-        && (typesize * product(_chunks) <= CHUNKSIZE_MAX/2))
-    {
-        std::cout << "  can further optimize using max_extend info ..."
+    // half the upper limit, CHUNKSIZE_MAX
+    if (max_extend.size() && (bytes(_chunks) <= CHUNKSIZE_MAX/2)) {
+        std::cout << "  can (potentially) optimize using max_extend info ..."
                   << std::endl;
 
         __opt_chunks_with_max_extend(_chunks, max_extend,
-                                     typesize, CHUNKSIZE_MAX);
+                                     typesize, CHUNKSIZE_MAX,
+                                     opt_inf_dims, opt_high_dims_first);
     }
     // else: no further optimization possible
 
@@ -391,7 +476,7 @@ const std::vector<hsize_t>
     // -- Done. -- //
 
     // Create a const version of the temporary chunks vector
-    const std::vector<hsize_t> chunks(_chunks);
+    const Cont chunks(_chunks);
     // TODO is this the best way to do this?
 
     return chunks;

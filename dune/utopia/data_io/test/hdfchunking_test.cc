@@ -95,10 +95,19 @@ int main(int argc, char *argv[])
 
         // Smaller, still fits CHUNKSIZE_MAX, not yet reached max_extend
         // -> skip naive optimization, fits I/O operation into chunk, but there
-        //    is room for further optimization
+        //    is room for further optimization: can extend chunk to 1M to
+        //    cover to the whole dataset.
+        assert_equal(guess_chunksize(1, {128 * 1024},
+                                     {1 * 1024 * 1024}),
+                     {1024 * 1024}); // WIP
+
+        // Smaller, still fits CHUNKSIZE_MAX, not yet reached max_extend
+        // -> skip naive optimization, fits I/O operation into chunk, but there
+        //    is room for further optimization: can extend chunks to 1M to fit
+        //    exactly 16 chunks in.
         assert_equal(guess_chunksize(1, {128 * 1024},
                                      {16 * 1024 * 1024}),
-                     {1024 * 1024}); // FIXME not yet working
+                     {1024 * 1024}); // WIP
 
         // Smaller, still fits CHUNKSIZE_MAX, not yet reached max_extend
         // -> naive optimization, but fits I/O operation into chunk and there
@@ -106,7 +115,7 @@ int main(int argc, char *argv[])
         //    write operations along the infinite axis
         assert_equal(guess_chunksize(1, {1024 * 1024},
                                      {0}), // max_extend given, but infinite
-                     {1024 * 1024}); // FIXME not yet working
+                     {1024 * 1024}); // WIP
 
 
         // End of tests.
