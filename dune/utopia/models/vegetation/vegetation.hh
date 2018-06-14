@@ -33,6 +33,7 @@ template<class Manager>
 class Vegetation:
     public Model<Vegetation<Manager>, VegetationTypes<Manager>>
 {
+
 public:
 
     using Base = Model<Vegetation<Manager>, VegetationTypes<Manager>>;
@@ -54,13 +55,13 @@ public:
     {
 
         // Initialize model parameters from config file
-        std::normal_distribution<> rain{(this->cfg["rain_mean"]).as<double>(),
-                                        (this->cfg["rain_var"]).as<double>()};
-        //bc = std::make_tuple(rain, 
-        //                     this->cfg["growth"].as<double>(), 
-        //                     this->cfg["seeding"].as<double>());
-        std::normal_distribution<> rain{10.1,1.2};
-        bc = std::make_tuple(rain, 0.2, 0.2);
+        std::normal_distribution<> rain{this->cfg["rain_mean"].template as<double>(),
+                                        this->cfg["rain_var"].template as<double>()};
+        bc = std::make_tuple(rain, 
+                             this->cfg["growth"].template as<double>(), 
+                             this->cfg["seeding"].template as<double>());
+        //std::normal_distribution<> rain{10.1,1.2};
+        //bc = std::make_tuple(rain, 0.2, 0.2);
 
         // Write constant values (such as positions of cells)
         // TODO add info about parameter as metadata
