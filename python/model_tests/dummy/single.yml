@@ -1,0 +1,10 @@
+# Test single run of dummy model
+---
+perform_sweep: false
+
+parameter_space:
+  num_steps: 3
+  seed: 42
+
+  dummy: !model
+    model_name: dummy
