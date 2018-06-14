@@ -41,12 +41,11 @@ IdxCont __find_all_idcs (Cont &vec, Predicate pred) {
 /// Optimizes the chunks along all axes to find a good default
 // TODO doxygen
 template<typename Cont>
-void __opt_chunks(Cont &chunks,
-                  const hsize_t bytes_io,
-                  const hsize_t typesize,
-                  const unsigned int CHUNKSIZE_MAX,
-                  const unsigned int CHUNKSIZE_MIN,
-                  const unsigned int CHUNKSIZE_BASE)
+void __opt_chunks_target(Cont &chunks,
+                         double bytes_target,
+                         const hsize_t typesize,
+                         const unsigned int CHUNKSIZE_MAX,
+                         const unsigned int CHUNKSIZE_MIN)
 {
     // Helper lambda for calculating bytesize of a chunks configuration
     auto bytes = [&typesize](Cont c) {
@@ -55,45 +54,47 @@ void __opt_chunks(Cont &chunks,
     };
 
 
-    // Calculate the rank
-    auto rank = chunks.size();
-
-    // Calculate the target chunksize. Formula:  base * 2^log10(size/max_size)
-    double bytes_target = (CHUNKSIZE_BASE
-                           * std::pow(2, std::log10(bytes_io/CHUNKSIZE_MAX)));
-    // NOTE this is a double as it is more convenient to calculate with ...
+    std::cout << "  => starting optimization towards target size: "
+              << bytes_target << " B  (" << bytes_target/1024 << " kiB) ..."
+              << std::endl;
 
     // Ensure the target chunk size is between CHUNKSIZE_MIN and CHUNKSIZE_MAX
     // in order to not choose too large or too small chunks
     if (bytes_target > CHUNKSIZE_MAX) {
         bytes_target = CHUNKSIZE_MAX;
+
+        std::cout << "    target size too large. New target size: "
+                  << bytes_target << " B  (" << bytes_target/1024 << " kiB) "
+                  << std::endl;
     }
     else if (bytes_target < CHUNKSIZE_MIN) {
         bytes_target = CHUNKSIZE_MIN;
+
+        std::cout << "    target size too small. New target size: "
+                  << bytes_target << " B (" << bytes_target/1024 << " kiB) "
+                  << std::endl;
     }
-
-    std::cout << "  target chunk size: " << bytes_target
-              << "  (" << bytes_target/1024 << " kiB) " << std::endl;
-
 
     // ... and a variable that will store the size (in bytes) of this specific
     // chunk configuration
     size_t bytes_chunks;
 
+    // Calculate the rank (need it to know iteration -> dim mapping)
+    auto rank = chunks.size();
+
     /* Now optimize the chunks for each dimension by repeatedly looping over
      * the vector and dividing the values by two (rounding up).
      *
      * The loop is left when the following condition is fulfilled:
-     *   smaller than target chunk size OR within 50% of target chunk size
+     *   within 50% of target chunk size
      *   AND
-     *   smaller than maximum chunk size
+     *   within bounds of minimum and maximum chunk size
      * 
      * NOTE:
      * Limit the optimization to 23 iterations per dimension; usually, we will
      * leave the loop much earlier; the _mean_ extend of the dataset would have
      * to be ~8M entries _per dimension_ to exhaust this optimization loop.
      */
-    std::cout << "  => starting naive optimization ..." << std::endl;
     for (unsigned short i=0; i < 23 * rank; i++)
     {
         // Calculate the dimension this iteration belongs to
@@ -105,19 +106,28 @@ void __opt_chunks(Cont &chunks,
                   << " B  (" << bytes_chunks/1024 << " kiB) ";
 
         // If close enough to target size, optimization is finished
-        if ((   bytes_chunks <= bytes_target
-             || (std::abs(bytes_chunks - bytes_target) / bytes_target < 0.5))
-            && bytes_chunks <= CHUNKSIZE_MAX)
+        if (   (std::abs(bytes_chunks - bytes_target) / bytes_target < 0.5)
+            && bytes_chunks <= CHUNKSIZE_MAX
+            && bytes_chunks >= CHUNKSIZE_MIN)
         {
             std::cout << "  -> close enough to target size" << std::endl;
             break;
         }
+        // else: not yet close enough
 
-        // Divide the chunk size of the current dim by two, rounding upwards
-        std::cout << "  -> reducing size of dim " << dim << std::endl;
-        chunks[dim] = 1 + ((chunks[dim] - 1) / 2);
-        // NOTE integer division fun; can do this because all are unsigned
-        // and the chunks entry is always nonzero
+        // Adjust the chunksize towards the target size
+        if (bytes_chunks < bytes_target) {            
+            // Multiply by two
+            std::cout << "  -> increasing size of dim " << dim << std::endl;
+            chunks[dim] = chunks[dim] * 2;
+        }
+        else {
+            // Divide the chunk size of the current dim by two, ceiling
+            std::cout << "  -> reducing size of dim " << dim << std::endl;
+            chunks[dim] = 1 + ((chunks[dim] - 1) / 2);
+            // NOTE integer division fun; can do this because all are unsigned
+            // and the chunks entry is always nonzero
+        }
     }
 
     return;
@@ -321,18 +331,19 @@ void __opt_chunks_with_max_extend(Cont &chunks,
  *                          dataset has no maximum extend given
  */
 // TODO use log messages instead of std::cout
-// TODO update documentation; make sure it's clear that max_extend opt is only
+// TODO update doxygen; make sure it's clear that max_extend opt is only
 //      used when max_extend is given -- but then optimizes infinite axes!
 // TODO is it reasonable to use const here?
 template<typename Cont=std::vector<hsize_t>>
 const Cont guess_chunksize(const hsize_t typesize,
                            const Cont io_extend,
                            Cont max_extend = {},
+                           const bool avoid_low_chunksize = true,
                            const bool opt_inf_dims = true,
                            const bool opt_high_dims_first = true,
                            const unsigned int CHUNKSIZE_MAX = 1048576,  // 1M
                            const unsigned int CHUNKSIZE_MIN = 8192,     // 8k
-                           const unsigned int CHUNKSIZE_BASE = 131072)  // 128k
+                           const unsigned int CHUNKSIZE_BASE = 262144)  // 256k
 {
     // -- Initialisation -- //
 
@@ -374,6 +385,7 @@ const Cont guess_chunksize(const hsize_t typesize,
 
     // Find out if the max_extend is given and determine whether dset is finite
     bool dset_finite;
+    bool all_dims_inf;
 
     if (max_extend.size()) {
         // Is given, yes
@@ -389,12 +401,23 @@ const Cont guess_chunksize(const hsize_t typesize,
 
         // Need to check whether any dataset dimension can be infinitely long
         dset_finite = (std::find(max_extend.begin(), max_extend.end(), 0)
-                       == max_extend.end());
-        // TODO Check if H5S_UNLIMITED is a valid value in max_extend?
+                       == max_extend.end()); // i.e., no "0" found
+
+        // Or even all are infinitely long
+        all_dims_inf = false;
+        for (auto l: max_extend) {
+            if (l == 0) {
+                all_dims_inf = true;
+                break;
+            }
+        }
+        
+        // TODO Check if H5S_UNLIMITED could be a valid value in max_extend?
     }
     else {
         // Have to assume the max_extend is infinite in all directions
         dset_finite = false;
+        all_dims_inf = true;
     }
 
 
@@ -403,6 +426,7 @@ const Cont guess_chunksize(const hsize_t typesize,
     std::cout << "  max_extend:        " << vec2str(max_extend) << std::endl;
     std::cout << "  rank:              " << rank << std::endl;
     std::cout << "  finite dset?       " << dset_finite << std::endl;
+    std::cout << "  all dims infinite? " << all_dims_inf << std::endl;
     std::cout << "  typesize:          " << typesize << " B" << std::endl;
     std::cout << "  max. chunksize:    "
               << CHUNKSIZE_MAX/1024 << " kiB" << std::endl;
@@ -450,17 +474,31 @@ const Cont guess_chunksize(const hsize_t typesize,
     bool fits_into_chunk = (bytes_io <= CHUNKSIZE_MAX);
     std::cout << "  fits into chunk?   " << fits_into_chunk << std::endl;
 
-    // Optimization is necessary in the following cases:
-    //      The I/O operation does not fit into a single chunk
-    //  AND either no max_extend was given or a not-finite one was given
-    if (!fits_into_chunk && (!max_extend.size() || !dset_finite)) {
-        __opt_chunks(_chunks, bytes_io, typesize,
-                     CHUNKSIZE_MAX, CHUNKSIZE_MIN, CHUNKSIZE_BASE);
+    // Do we need to optimize?
+    if (!fits_into_chunk) {
+        // The I/O operation does not fit into a chunk
+        // Aim to fit the I/O operation into the chunk -> target: max chunksize
+        std::cout << "  trying to use the fewest possible chunks for a single "
+                     "I/O operation ..." << std::endl;
+
+        __opt_chunks_target(_chunks, CHUNKSIZE_MAX, // <- target value
+                            typesize, CHUNKSIZE_MAX, CHUNKSIZE_MIN);
+        // NOTE this relies on _chunks == io_extend
     }
-    // else: no need to optimize for a single write operation
+    else if (   all_dims_inf && avoid_low_chunksize
+             && bytes(_chunks) < CHUNKSIZE_BASE)
+    {
+        // The I/O operation _does_ fit into a chunk, but the dataset is
+        // infinite in _all directions_ and small chunksizes can be very
+        // inefficient -> optimize towards some base value
+        __opt_chunks_target(_chunks, CHUNKSIZE_BASE, // <- target value
+                            typesize, CHUNKSIZE_MAX, CHUNKSIZE_MIN);
+    }
+    // else: no other optimization towards a target size make sense
 
 
     // -- If given, take the max_extend into account -- //
+
     // This is only possible if the current chunk size is not already close to
     // half the upper limit, CHUNKSIZE_MAX
     if (max_extend.size() && (bytes(_chunks) <= CHUNKSIZE_MAX/2)) {

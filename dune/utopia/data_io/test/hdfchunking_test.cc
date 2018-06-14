@@ -39,12 +39,18 @@ int main(int argc, char *argv[])
 
         std::cout << std::endl << "Tests commencing ..." << std::endl;
 
+
         // -- Without max_extend -- //
 
-        // Simple call: typesize, write_extend, [max_extend]
-        // Size is way below CHUNKSIZE_MIN -> single chunk of same size
+        // Very small 3D dataset without max_extend
+        // -> I/O fits into chunk, but dataset is infinite and below base
+        //    chunksize -> will optimize towards base chunksize
         assert_equal(guess_chunksize(1, {1, 2, 3}), // 6 Bytes total size
-                     {1, 2, 3});
+                     {32, 64, 96}); // 192 kiB, close to base chunksize
+
+        // Again, without that optimization
+        assert_equal(guess_chunksize(1, {1, 2, 3}, {}, false),
+                     {1, 2, 3}); // stays the same
 
         // Large 1D dataset with typesize 1, no max_extend
         // -> fit I/O operation into maximum chunksize
@@ -54,7 +60,7 @@ int main(int argc, char *argv[])
         // Large 1D dataset with larger typesize, still no max_extend
         // -> I/O will not fit into single chunk -> use optimization
         assert_equal(guess_chunksize(8, {1024 * 1024}), // 8M
-                     {32 * 1024});
+                     {128 * 1024});
 
         // Small 1D dataset with large typesize, no_
         // -> four 1M chunks; no other choice
@@ -73,9 +79,13 @@ int main(int argc, char *argv[])
                      {1});
 
         // 2D dataset that has long rows
-        // -> fits into chunk
+        // -> fits into chunk, but is infinite -> further optimization
         assert_equal(guess_chunksize(8, {1, 2048}), // 16k
-                     {1, 2048});
+                     {4, 8192}); // 256 kiB (base chunksize)
+
+        // Again, without optimization
+        assert_equal(guess_chunksize(8, {1, 2048}, {}, false), // 16k
+                     {1, 2048}); // stays the same
 
 
         // -- With max_extend -- //
