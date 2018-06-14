@@ -1,3 +1,8 @@
+/**
+ * @brief This file provides a class for creating and managing HDF5 files.
+ *
+ * @file hdffile.hh
+ */
 #ifndef HDFFILE_HH
 #define HDFFILE_HH
 
@@ -8,6 +13,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 
 namespace Utopia
 {
@@ -141,7 +147,7 @@ public:
      * @brief      Construct a new default HDFFile object
      */
     HDFFile() = default;
-    
+
     /**
      * @brief      Move constructor Construct a new HDFFile object via move
      *             semantics
@@ -154,7 +160,15 @@ public:
     }
 
     /**
-     * @brief      Move assigment operator
+     * @brief Copy assignment operator, explicitly deleted, hence cannot be used.
+     *
+     * @param other
+     * @return HDFFile&
+     */
+    HDFFile& operator=(const HDFFile& other) = delete;
+
+    /**
+     * @brief Move assigment operator
      *
      * @param      other  reference to HDFFile object
      *
@@ -167,18 +181,10 @@ public:
     }
 
     /**
-     * @brief      Copy assignment, explicitly deleted
+     * @brief Copy constructor. Explicitly deleted, hence cannot be used
      *
-     * @param      other  The other
-     *
-     * @return     HDFFile&
-     */
-    HDFFile& operator=(const HDFFile& other) = delete;
-
-    /**
-     * @brief      Copy constructor, explicitly deleted
-     *
-     * @param      other  The other
+     * @param other
+     * @return HDFFile&
      */
     HDFFile(const HDFFile& other) = delete;
 
@@ -193,59 +199,55 @@ public:
      *                     (read/write if exists, create otherwise; default)
      */
     HDFFile(std::string path, std::string access)
-      : _file([&]() {
-            // Distinguish access modes
-            if (access == "w")
-            {
-                return H5Fcreate(path.c_str(), H5F_ACC_TRUNC,
-                                 H5P_DEFAULT, H5P_DEFAULT);
-            }
-            else if (access == "r")
-            {
-                return H5Fopen(path.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
-            }
-            else if (access == "r+")
-            {
-                return H5Fopen(path.c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
-            }
-            else if (access == "x")
-            {
-                hid_t file = H5Fcreate(path.c_str(), H5F_ACC_EXCL,
-                                       H5P_DEFAULT, H5P_DEFAULT);
-                if (file < 0)
-                {
-                    throw std::runtime_error("File already exists (accces "
-                                             "mode 'x')! If you want to "
-                                             "truncate the file, choose the "
-                                             "appropriate mode.");
-                }
-                else
-                {
-                    return file;
-                }
-            }
-            else if (access == "a")
-            {
-                hid_t file_test = H5Fopen(path.c_str(), H5F_ACC_RDWR,
-                                          H5P_DEFAULT);
-                if (file_test < 0)
-                {
-                    H5Fcreate(path.c_str(), H5F_ACC_TRUNC,
-                              H5P_DEFAULT, H5P_DEFAULT);
-                }
-                return file_test;
-            }
-            else
-            {
-                throw std::invalid_argument("Illegal access mode: "
-                                            "'" + access + "'! "
-                                            "Allowed modes: w, r, r+, x, a");
-            }
+        : _file([&]() {
+              //   H5Eset_auto(0, 0, NULL);
 
-        }()), // end of setting value of _file member 
-        _path(path),
-        _referencecounter(std::make_shared<std::unordered_map<haddr_t,int>>()),
-        _base_group(std::make_shared<HDFGroup>(*this, "/"))
+              if (access == "w")
+              {
+                  return H5Fcreate(path.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+              }
+              else if (access == "r")
+              {
+                  return H5Fopen(path.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+              }
+              else if (access == "r+")
+              {
+                  return H5Fopen(path.c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
+              }
+              else if (access == "x")
+              {
+                  hid_t file = H5Fcreate(path.c_str(), H5F_ACC_EXCL, H5P_DEFAULT, H5P_DEFAULT);
+                  if (file < 0)
+                  {
+                      throw std::runtime_error(
+                          "tried to create an existing "
+                          "file in non-truncate mode");
+                  }
+                  else
+                  {
+                      return file;
+                  }
+              }
+              else if (access == "a")
+              {
+                  hid_t file_test = H5Fopen(path.c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
+                  if (file_test < 0)
+                  {
+                      H5Fcreate(path.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+                  }
+                  return file_test;
+              }
+              else
+              {
+                  throw std::invalid_argument(
+                      "wrong type of access specifier, "
+                      "see documentation for allowed "
+                      "values");
+              }
+          }()),
+          _path(path),
+          _referencecounter(std::make_shared<std::unordered_map<haddr_t, int>>()),
+          _base_group(std::make_shared<HDFGroup>(*this, "/"))
     {
         // H5Eset_auto(0, 0, NULL);
         ++(*_referencecounter)[_base_group->get_address()];

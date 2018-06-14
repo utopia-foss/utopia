@@ -49,15 +49,22 @@ dune_python_install_package(PATH utopya
 # TODO add linker target here
 
 # Tests .......................................................................
-message(STATUS "Adding test_python target ...")
+message(STATUS "Adding test_python targets ...")
 
-# Add pytest commands via dune
-dune_python_add_test(NAME FRONTEND_utopya
+# Add test for utopya
+dune_python_add_test(NAME utopya
                      COMMAND ${CMAKE_BINARY_DIR}/run-in-dune-env
                              python -m pytest 
                              ${CMAKE_CURRENT_SOURCE_DIR}/utopya/test/ -v
                              --cov=${CMAKE_CURRENT_SOURCE_DIR}/utopya/utopya/
                              --cov-report=term-missing
+                     )
+
+# Add tests for models # FIXME not accessible via `make test_models`
+dune_python_add_test(NAME models
+                     COMMAND ${CMAKE_BINARY_DIR}/run-in-dune-env
+                             python -m pytest -v
+                             ${CMAKE_CURRENT_SOURCE_DIR}/model_tests/
                      )
 
 message(STATUS "Python setup complete.\n")

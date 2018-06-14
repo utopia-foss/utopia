@@ -19,7 +19,7 @@ stages:
   - build
   - test
 
-before_script:
+before_script:  # TODO move this to where it is needed: build jobs
   ## Enter dune directory
   - cd /opt/dune
   ##
@@ -43,7 +43,6 @@ before_script:
   - echo "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
   - chmod 644 ~/.ssh/known_hosts
   # - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config' # FIXME
-
 
 # Setup stage -----------------------------------------------------------------
 # Updates the docker image to be used for the build and test stages
@@ -118,15 +117,16 @@ test:dataio:
   script:
     - ./dune-common/bin/dunecontrol --only=utopia make test_dataio
 
-test:python:
+test:utopya:
   stage: test
   dependencies:
     - build:models
   script:
     - ./dune-common/bin/dunecontrol --only=utopia configure
     - ./dune-common/bin/dunecontrol --only=utopia make test_python
+    # FIXME should be accessible via test_utopya
 
-test:models:
+test:cli:
   stage: test
   dependencies:
     - build:models
@@ -136,6 +136,17 @@ test:models:
     - $RUN_IN_DUNE_ENV utopia dummy
     # test a configuration that allows a sweep
     - $RUN_IN_DUNE_ENV utopia dummy $MODEL_DIR/dummy/test/sweep.yml --sweep --note sweep
-    # test the other models
+
+test:models:
+  stage: test
+  dependencies:
+    - build:models
+  script:
+    # - ./dune-common/bin/dunecontrol --only=utopia configure
+    # - ./dune-common/bin/dunecontrol --only=utopia make test_models
+    # FIXME should be accessible via dunecontrol and target test_models
+    # Workaround: # FIXME remove
+    - $RUN_IN_DUNE_ENV python -m pytest -v $CI_PROJECT_DIR/python/model_tests
+    # Also test each model via the CLI
+    - $RUN_IN_DUNE_ENV utopia dummy
     - $RUN_IN_DUNE_ENV utopia SimpleEG
-    # - $RUN_IN_DUNE_ENV utopia SimpleEG $MODEL_DIR/SimpleEG/test/SimpleEG_cfg.yml --sweep --note sweep # TODO re-enable
