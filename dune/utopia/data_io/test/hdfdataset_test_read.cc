@@ -1,3 +1,9 @@
+/**
+ * @brief Tests reading of data from datasets for mulitple kinds of data.
+ *        Executing hdfdataset_test_write.cc is a prerequisite for this file
+ *        to work
+ * @file hdfdataset_test_read.cc
+ */
 #include "../hdfdataset.hh"
 #include "../hdffile.hh"
 #include "../hdfgroup.hh"
@@ -131,12 +137,16 @@ void read_dataset_tests(HDFFile& file)
     std::string attr2 = "Second attribute to multirefdataset";
 
     HDFAttribute multirefattribute(multirefdataset, "Attribute1");
-    auto multirefattrdata1 = multirefattribute.read<std::string>();
+    auto [shape1, multirefattrdata1] = multirefattribute.read<std::string>();
+    assert(shape1.size() == 1);
+    assert(shape1[0] == 1);
     assert(multirefattrdata1 == attr1);
 
     HDFAttribute multirefattribute2(multirefdataset, "Attribute2");
-    auto multirefattrdata2 = multirefattribute2.read<std::string>();
+    auto [shape2, multirefattrdata2] = multirefattribute2.read<std::string>();
     assert(multirefattrdata2 == attr2);
+    assert(shape2.size() == 1);
+    assert(shape2[0] == 1);
 }
 
 int main()

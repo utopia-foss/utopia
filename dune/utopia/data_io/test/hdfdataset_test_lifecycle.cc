@@ -1,3 +1,8 @@
+/**
+ * @brief Tests the constructors of HDFDataset and the associated reference counting.
+ *
+ * @file hdfdataset_test_lifecycle.cc
+ */
 #include "../hdfdataset.hh"
 #include "../hdffile.hh"
 #include "../hdfgroup.hh"
@@ -15,7 +20,7 @@ using namespace Utopia::DataIO;
  *  \tparam RHS Right hand side dataset type
  *  Template parameters are necessary because HDFDataset is a template
  */
-template<class LHS, class RHS>
+template <class LHS, class RHS>
 void assert_hdfdatasets(LHS& lhs, RHS& rhs)
 {
     assert(lhs.get_name() == rhs.get_name());
@@ -28,8 +33,7 @@ void assert_hdfdatasets(LHS& lhs, RHS& rhs)
     // assert ranked members
     for (std::size_t i = 0; i < lhs.get_rank(); ++i)
     {
-        std::cerr << lhs.get_rank() << ","
-                  << lhs.get_extend()[i] << ","
+        std::cerr << lhs.get_rank() << "," << lhs.get_extend()[i] << ","
                   << rhs.get_extend()[i] << std::endl;
         assert(lhs.get_extend()[i] == rhs.get_extend()[i]);
         assert(lhs.get_capacity()[i] == rhs.get_capacity()[i]);
