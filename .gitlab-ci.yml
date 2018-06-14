@@ -123,7 +123,8 @@ test:utopya:
     - build:models
   script:
     - ./dune-common/bin/dunecontrol --only=utopia configure
-    - ./dune-common/bin/dunecontrol --only=utopia make test_utopya
+    - ./dune-common/bin/dunecontrol --only=utopia make test_python
+    # FIXME should be accessible via test_utopya
 
 test:cli:
   stage: test
@@ -141,8 +142,11 @@ test:models:
   dependencies:
     - build:models
   script:
-    - ./dune-common/bin/dunecontrol --only=utopia configure
-    - ./dune-common/bin/dunecontrol --only=utopia make test_models
+    # - ./dune-common/bin/dunecontrol --only=utopia configure
+    # - ./dune-common/bin/dunecontrol --only=utopia make test_models
+    # FIXME should be accessible via dunecontrol and target test_models
+    # Workaround: # FIXME remove
+    - $RUN_IN_DUNE_ENV python -m pytest -v $CI_PROJECT_DIR/python/model_tests
     # Also test each model via the CLI
     - $RUN_IN_DUNE_ENV utopia dummy
     - $RUN_IN_DUNE_ENV utopia SimpleEG
