@@ -149,4 +149,3 @@ test:models:
     - $RUN_IN_DUNE_ENV python -m pytest -v $CI_PROJECT_DIR/python/model_tests
     # Also test each model via the CLI
     - $RUN_IN_DUNE_ENV utopia dummy
-    - $RUN_IN_DUNE_ENV utopia SimpleEG
