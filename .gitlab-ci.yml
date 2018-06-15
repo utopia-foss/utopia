@@ -142,7 +142,7 @@ test:models:
   dependencies:
     - build:models
   script:
-    # - ./dune-common/bin/dunecontrol --only=utopia configure
+    - ./dune-common/bin/dunecontrol --only=utopia configure
     # - ./dune-common/bin/dunecontrol --only=utopia make test_models
     # FIXME should be accessible via dunecontrol and target test_models
     # Workaround: # FIXME remove
