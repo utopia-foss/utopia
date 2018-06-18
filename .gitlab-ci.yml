@@ -115,7 +115,6 @@ prep:update-dune: &update
   script:
     - docker build -f docker/dune4utopia-update.dockerfile
       --build-arg BASE_IMAGE=$DUNE_IMAGE
-      --build-arg DUNE_VERSION=$DUNE_VERSION
       --build-arg PROCNUM=$CPUS_DIND
       -t $DUNE_IMAGE .
     - docker push $DUNE_IMAGE
@@ -125,7 +124,6 @@ prep:update-dune-clang:
   script:
     - docker build -f docker/dune4utopia-update.dockerfile
       --build-arg BASE_IMAGE=${DUNE_IMAGE}-clang
-      --build-arg DUNE_VERSION=$DUNE_VERSION
       --build-arg CC=clang
       --build-arg CXX=clang++
       --build-arg PROCNUM=$CPUS_DIND
