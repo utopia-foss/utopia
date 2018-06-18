@@ -77,7 +77,6 @@ setup:dune4utopia: &setup
   stage: setup
   only:
     - web  # can only activate this via web interface: "run pipeline"
-    - build-utopia-with-clang  # FIXME remove once merged!
   tags:
     - dind
   image: docker:stable
