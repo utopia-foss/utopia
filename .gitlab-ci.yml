@@ -153,7 +153,10 @@ build:debug: &build_debug
   <<: *ssh_access
   allow_failure: true
   script:
-    - CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=Debug $CONFIG_FLAGS -DCMAKE_CXX_FLAGS_DEBUG='$CMAKE_CXX_FLAGS_DEBUG -Werror'"
+    - CMAKE_FLAGS="
+      -DCMAKE_BUILD_TYPE=Debug
+      $CONFIG_FLAGS
+      -DCMAKE_CXX_FLAGS_DEBUG='$CMAKE_CXX_FLAGS_DEBUG -Werror'"
       ./dune-common/bin/dunecontrol --only=utopia configure
     - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD build_tests
     - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD all
@@ -162,7 +165,12 @@ build:debug-clang:
   <<: *build_debug
   image: ${DUNE_IMAGE}-clang
   script:
-    - CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=Debug $CONFIG_FLAGS -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_CXX_FLAGS_DEBUG='$CMAKE_CXX_FLAGS_DEBUG -Werror'"
+    - CMAKE_FLAGS="
+      -DCMAKE_BUILD_TYPE=Debug
+      $CONFIG_FLAGS
+      -DCMAKE_C_COMPILER=clang
+      -DCMAKE_CXX_COMPILER=clang++
+      -DCMAKE_CXX_FLAGS_DEBUG='$CMAKE_CXX_FLAGS_DEBUG -Werror'"
       ./dune-common/bin/dunecontrol --only=utopia configure
     - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD build_tests
     - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD all
@@ -187,6 +195,8 @@ test:core:
   stage: test
   dependencies:
     - build:main
+  before_script:
+    - cd /opt/dune
   script:
     - ./dune-common/bin/dunecontrol --only=utopia make test_core
 
@@ -194,6 +204,8 @@ test:dataio:
   stage: test
   dependencies:
     - build:main
+  before_script:
+    - cd /opt/dune
   script:
     - ./dune-common/bin/dunecontrol --only=utopia make test_dataio
 
