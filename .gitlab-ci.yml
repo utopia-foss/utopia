@@ -13,7 +13,7 @@ variables:
 
   # Variables needed for docker image deployment
   # The image to use is based on the currently selected DUNE version
-  DUNE_VERSION: 2.6
+  DUNE_VERSION: "2.6"
   DUNE_IMAGE_NAME: ccees/dune4utopia
   DUNE_IMAGE: ${DUNE_IMAGE_NAME}:${DUNE_VERSION}
 
