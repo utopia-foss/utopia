@@ -15,7 +15,7 @@ variables:
   # The image to use is based on the currently selected DUNE version
   DUNE_VERSION: "2.6"
   DUNE_IMAGE_NAME: ccees/dune4utopia
-  DUNE_IMAGE: ${DUNE_IMAGE_NAME}:${DUNE_VERSION}
+  DUNE_IMAGE: "${DUNE_IMAGE_NAME}:${DUNE_VERSION}"
 
   # Shortcut variables for certain commands
   DUNE_CONTROL_PATH: /opt/dune:$CI_PROJECT_DIR  # such that DUNE finds Utopia
@@ -161,6 +161,11 @@ build:debug: &build_debug
 build:debug-clang:
   <<: *build_debug
   image: ${DUNE_IMAGE}-clang
+  script:
+    - CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=Debug $CONFIG_FLAGS -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_CXX_FLAGS_DEBUG='$CMAKE_CXX_FLAGS_DEBUG -Werror'"
+      ./dune-common/bin/dunecontrol --only=utopia configure
+    - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD build_tests
+    - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD all
 
 build:models:
   stage: build
