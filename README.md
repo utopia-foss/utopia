@@ -19,7 +19,7 @@ Follow the step-by-step instructions below for building Utopia from source.
 | Software | Version | Comments |
 | ---------| ------- | -------- |
 | GCC | >= 7 | Full C++17 compiler support required |
-| _or:_ clang | >= 5 | Full C++17 compiler support required |
+| _or:_ clang | >= 6 | Full C++17 compiler support required |
 | _or:_ Apple LLVM | >= 9 | Full C++17 compiler support required |
 | [CMake](https://cmake.org/) | >= 3.10 | |
 | pkg-config | | |
