@@ -2,7 +2,7 @@
 
 import pytest
 
-from ..testtools import *
+from utopya.testtools import ModelTest
 
 # Configure the ModelTest class for dummy
 mtc = ModelTest("dummy")
@@ -25,3 +25,4 @@ def test_single():
     assert len(mv.dm) > 0
 
     # TODO add more assertions here
+    

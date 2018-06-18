@@ -1,20 +1,17 @@
-"""tools that help testing models"""
+"""Tools that help testing models"""
 
 import os
 import logging
 from tempfile import TemporaryDirectory
 
 import py
-import pytest
 from pkg_resources import resource_filename
 
-import utopya
-import utopya.info
+from utopya import Multiverse
+from utopya.info import MODELS
 
+# Get a logger
 log = logging.getLogger(__name__)
-
-# pytest fixtures -------------------------------------------------------------
-
 
 # The model test class --------------------------------------------------------
 
@@ -40,11 +37,13 @@ class ModelTest:
         self.model_name = model_name
 
         # Find the test directory corresponding to this model
+        # TODO find a better way than to hard-code `model_tests` here
         test_dir = py.path.local(resource_filename("model_tests", model_name))
         if not test_dir.exists() or not test_dir.isdir():
             raise ValueError("No test directory for model '{}' found in "
                              "model_tests! Expected a directory at {}!"
                              "".format(self.model_name, test_dir))
+
         self._test_dir = test_dir
 
         # Need a container of Multiverse's and temporary output directories
@@ -65,11 +64,11 @@ class ModelTest:
     @model_name.setter
     def model_name(self, model_name: str):
         """Checks if the model name is valid, then sets it and makes it read-only."""
-        if model_name not in utopya.info.MODELS:
+        if model_name not in MODELS:
             raise ValueError("No such model '{}' available.\n"
                              "Available models: {}"
                              "".format(model_name,
-                                       ", ".join(utopya.info.MODELS.keys())))
+                                       ", ".join(MODELS.keys())))
         
         elif self.model_name:
             raise RuntimeError("A ModelTest's associated model cannot be "
@@ -108,14 +107,14 @@ class ModelTest:
 
         return str(cfg_path)
     
-    def create_mv(self, run_cfg_path=None, **update_meta_cfg) -> utopya.Multiverse:
+    def create_mv(self, run_cfg_path=None, **update_meta_cfg) -> Multiverse:
         """Creates a Multiverse for this model using the default model config
         
         Args:
             **update_meta_cfg: Can be used to update the meta configuration
         
         Returns:
-            utopya.Multiverse: The created Multiverse object
+            Multiverse: The created Multiverse object
         """
 
         # Use update_meta_cfg to pass a unique temporary directory as out_dir
@@ -135,15 +134,14 @@ class ModelTest:
             update_meta_cfg['worker_manager']['nonzero_exit_handling'] = _se
 
         # Create the Multiverse
-        mv = utopya.Multiverse(model_name=self.model_name,
-                               run_cfg_path=None,
-                               update_meta_cfg=update_meta_cfg)
+        mv = Multiverse(model_name=self.model_name,
+                        run_cfg_path=None, update_meta_cfg=update_meta_cfg)
 
         # Store it, then return
         self._store_mv(mv, out_dir=tmpdir)
         return mv
     
-    def create_mv_from_cfg(self, cfg_name: str, **update_meta_cfg) -> utopya.Multiverse:
+    def create_mv_from_cfg(self, cfg_name: str, **update_meta_cfg) -> Multiverse:
         """Creates a Multiverse for this model using a test config file as run
         configuration.
         
@@ -153,13 +151,13 @@ class ModelTest:
             **update_meta_cfg: Can be used to update the meta configuration
         
         Returns:
-            utopya.Multiverse: The created Multiverse object
+            Multiverse: The created Multiverse object
         """
         return self.create_mv(run_cfg_path=self.get_cfg_by_name(cfg_name),
                               update_meta_cfg=update_meta_cfg)
 
     # Private methods .........................................................
 
-    def _store_mv(self, mv: utopya.Multiverse, **kwargs) -> None:
+    def _store_mv(self, mv: Multiverse, **kwargs) -> None:
         """Stores a created Multiverse object and all the kwargs in a dict"""
         self._mvs.append(dict(mv=mv, **kwargs)) 
