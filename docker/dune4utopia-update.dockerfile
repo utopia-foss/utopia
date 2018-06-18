@@ -4,6 +4,13 @@
 # Add arguments used for selecting which image is to be updated
 ARG BASE_IMAGE
 
+# Now select the image that is to be used as the basis
+FROM ${BASE_IMAGE}
+
+# Maintainer info
+LABEL maintainer="Lukas Riedel <lriedel@iup.uni-heidelberg.de>, \
+                  Yunus Sevinchan <ysevinch@iup.uni-heidelberg.de>"
+
 # Define docker build arguments
 # Number of cores for parallel builds
 ARG PROCNUM=1
@@ -11,13 +18,6 @@ ARG PROCNUM=1
 # Compilers to be used
 ARG CC=gcc
 ARG CXX=g++
-
-# Now select the image that is to be used as the basis
-FROM ${BASE_IMAGE}
-
-# Maintainer info
-LABEL maintainer="Lukas Riedel <lriedel@iup.uni-heidelberg.de>, \
-                  Yunus Sevinchan <ysevinch@iup.uni-heidelberg.de>"
 
 # Update all dependencies installed via apt
 RUN apt-get clean && apt-get update && apt-get upgrade -y && apt-get clean
