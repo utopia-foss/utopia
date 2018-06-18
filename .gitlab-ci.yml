@@ -1,8 +1,23 @@
+# Continuous Integration of Utopia
+#
+# This CI does the following:
+#   - Automatically deploy and update a DUNE-based docker image for testing
+#   - Build Utopia using gcc and clang
+#   - Test Utopia (using the results of the gcc build)
 ---
-image: ccees/utopia:bionic
-
 variables:
+  # Setting number of processes
   PROCNUM: 2
+  CPUS_MULTICORE: 4
+  CPUS_DIND: 3
+
+  # Variables needed for docker image deployment
+  # The image to use is based on the currently selected DUNE version
+  DUNE_VERSION: 2.6
+  DUNE_IMAGE_NAME: ccees/dune4utopia
+  DUNE_IMAGE: ${DUNE_IMAGE_NAME}:${DUNE_VERSION}
+
+  # Shortcut variables for certain commands
   DUNE_CONTROL_PATH: /opt/dune:$CI_PROJECT_DIR  # such that DUNE finds Utopia
   RUN_IN_DUNE_ENV: $CI_PROJECT_DIR/build-cmake/run-in-dune-env
   CONFIG_FLAGS:
@@ -12,38 +27,117 @@ variables:
       -j $PROCNUM
   MODEL_DIR: $CI_PROJECT_DIR/dune/utopia/models
 
+# Define the image to use as base for all stages
+# NOTE that some jobs overwrite this setting locally
+image: ${DUNE_IMAGE}
+
+# Define the four stages of this CI, of which 'setup' is ran only manually and
+# 'prep' only runs in the master branch.
 stages:
+  - setup
+  - prep
   - build
   - test
 
-before_script:
-  ## Enter dune directory
-  - cd /opt/dune
-  ##
-  ## For outside dependencies, use the "Utopia CI" deploy key
-  ## Instructions:
-  ##   https://docs.gitlab.com/ce/ci/ssh_keys/
-  ## Run ssh-agent (inside the build environment)
-  - eval $(ssh-agent -s)
-  ##
-  ## Add the SSH key stored in SSH_PRIVATE_KEY variable to the agent store
-  ## We're using tr to fix line endings which makes ed25519 keys work
-  ## without extra base64 encoding.
-  ## https://gitlab.com/gitlab-examples/ssh-private-key/issues/1#note_48526556
-  - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
-  ##
-  ## Create the SSH directory and give it the right permissions
-  - mkdir -p ~/.ssh
-  - chmod 700 ~/.ssh
-  ## 
-  ## Add the known hosts lists to ensure this ssh connection is the right one
-  - echo "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
-  - chmod 644 ~/.ssh/known_hosts
-  # - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config' # FIXME
+# Template definitions ........................................................
+
+# To install the python environment, dunecontrol needs access to external but
+# private repositories; by adding a deploy key to selected jobs, the pull
+# from these repositories becomes possible
+.ssh-access: &ssh_access
+  before_script:
+    ## Enter dune directory
+    - cd /opt/dune
+    ##
+    ## For outside dependencies, use the "Utopia CI" deploy key
+    ## Instructions:
+    ##   https://docs.gitlab.com/ce/ci/ssh_keys/
+    ## Run ssh-agent (inside the build environment)
+    - eval $(ssh-agent -s)
+    ##
+    ## Add the SSH key stored in SSH_PRIVATE_KEY variable to the agent store
+    ## We're using tr to fix line endings which makes ed25519 keys work
+    ## without extra base64 encoding.
+    ## https://gitlab.com/gitlab-examples/ssh-private-key/issues/1#note_48526556
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
+    ##
+    ## Create the SSH directory and give it the right permissions
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    ## 
+    ## Add the known hosts lists to ensure this ssh connection is the right one
+    - echo "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+    # - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config' # FIXME turn this on again
+
+
+# Setup stage -----------------------------------------------------------------
+
+setup:dune4utopia: &setup
+  stage: setup
+  only:
+    - web  # can only activate this via web interface: "run pipeline"
+  tags:
+    - dind
+  image: docker:stable
+  services:
+    - docker:dind
+  variables:
+    DOCKER_DRIVER: overlay2
+  before_script:
+    - docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_PW
+    # NOTE Both variables here are secret and protected variables
+  script:
+    - docker build -f docker/dune4utopia.dockerfile
+      --build-arg PROCNUM=$CPUS_DIND
+      -t $DUNE_IMAGE .
+    - docker push $DUNE_IMAGE
+
+setup:dune4utopia-clang:
+  <<: *setup
+  script:
+    - docker build -f docker/dune4utopia.dockerfile
+      --build-arg CC=clang
+      --build-arg CXX=clang++
+      --build-arg PROCNUM=$CPUS_DIND
+      -t ${DUNE_IMAGE}-clang .
+    - docker push ${DUNE_IMAGE}-clang
+
+
+# Preparation of DUNE environment ---------------------------------------------
+
+prep:update-dune: &update
+  <<: *setup
+  stage: prep
+  only:
+    - master
+    - build-utopia-with-clang  # FIXME remove once merged!
+  script:
+    - docker build -f docker/dune4utopia-update.dockerfile
+      --build-arg BASE_IMAGE=$DUNE_IMAGE
+      --build-arg DUNE_VERSION=$DUNE_VERSION
+      --build-arg PROCNUM=$CPUS_DIND
+      -t $DUNE_IMAGE .
+    - docker push $DUNE_IMAGE
+
+prep:update-dune-clang:
+  <<: *update
+  script:
+    - docker build -f docker/dune4utopia-update.dockerfile
+      --build-arg BASE_IMAGE=${DUNE_IMAGE}-clang
+      --build-arg DUNE_VERSION=$DUNE_VERSION
+      --build-arg CC=clang
+      --build-arg CXX=clang++
+      --build-arg PROCNUM=$CPUS_DIND
+      -t ${DUNE_IMAGE}-clang .
+    - docker push ${DUNE_IMAGE}-clang
+
 
 # Build stage -----------------------------------------------------------------
+
 build:main:
   stage: build
+  <<: *ssh_access
   artifacts:
     name: "$CI_JOB_NAME"
     paths:
@@ -56,8 +150,9 @@ build:main:
     - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD build_tests
     - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD all
 
-build:debug:
+build:debug: &build_debug
   stage: build
+  <<: *ssh_access
   allow_failure: true
   script:
     - CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=Debug $CONFIG_FLAGS -DCMAKE_CXX_FLAGS_DEBUG='$CMAKE_CXX_FLAGS_DEBUG -Werror'"
@@ -65,8 +160,13 @@ build:debug:
     - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD build_tests
     - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD all
 
+build:debug-clang:
+  <<: *build_debug
+  image: ${DUNE_IMAGE}-clang
+
 build:models:
   stage: build
+  <<: *ssh_access
   artifacts:
     name: "$CI_JOB_NAME"
     paths:
@@ -77,17 +177,9 @@ build:models:
       ./dune-common/bin/dunecontrol --module=utopia configure
     - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD all
 
-build:update-dune:
-  stage: build
-  allow_failure: true
-  script:
-    - ./dune-common/bin/dunecontrol update
-    - CMAKE_FLAGS="$CONFIG_FLAGS" MAKE_FLAGS="$MAKE_FLAGS_BUILD"
-      ./dune-common/bin/dunecontrol --module=utopia all
-    - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD build_tests
-
 
 # Test stage ------------------------------------------------------------------
+
 test:core:
   stage: test
   dependencies:
@@ -104,6 +196,7 @@ test:dataio:
 
 test:python:
   stage: test
+  <<: *ssh_access
   dependencies:
     - build:main
   script:
@@ -112,6 +205,7 @@ test:python:
 
 test:models:
   stage: test
+  <<: *ssh_access
   dependencies:
     - build:models
   script:
