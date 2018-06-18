@@ -13,12 +13,14 @@ Utopia is a DUNE module and thus relies on the [DUNE Buildsystem](https://www.du
 
     ./dune-common/bin/dunecontrol --module=utopia all
 
-Follow the Step-by-step instructions below for building Utopia from source.
+Follow the step-by-step instructions below for building Utopia from source.
 
 ### Dependencies
 | Software | Version | Comments |
 | ---------| ------- | -------- |
 | GCC | >= 7 | Full C++17 compiler support required |
+| _or:_ clang | >= 5 | Full C++17 compiler support required |
+| _or:_ Apple LLVM | >= 9 | Full C++17 compiler support required |
 | [CMake](https://cmake.org/) | >= 3.10 | |
 | pkg-config | | |
 | [HDF5](https://www.hdfgroup.org/solutions/hdf5/) | >= 1.10. | |
@@ -67,26 +69,14 @@ Ubuntu is shipped with APT.
     __macOS:__
 
         brew update
-        brew install boost cmake doxygen gcc@7 pkg-config python
-        brew install yaml-cpp --cc=gcc-7
-        brew install hdf5 --cc=gcc-7
-    
-    __Notice:__ If you had `hdf5` or `yaml-cpp` already installed by Homebrew,
-    make sure to `brew uninstall` them and then run the respective commands above.
+        brew install boost cmake doxygen gcc@7 pkg-config python yaml-cpp hdf5
 
 3. Use [`git clone`](https://git-scm.com/docs/git-clone) to clone the
     DUNE repositories listed above into a suitable folder on your machine.
-    Make sure to [`git checkout`](https://git-scm.com/docs/git-checkout) the correct branches (see the dependency list above).
+    Make sure to [`git checkout`](https://git-scm.com/docs/git-checkout)
+    the correct branches (see the dependency list above).
 
-4. __macOS only:__ Make sure that CMake uses the Homebrew GCC instead of
-    the command line tools Clang:
-
-        export CC=gcc-7
-        export CXX=g++-7
-    
-    Notice that these commands only last for your current terminal session.
-
-5. Configure and build DUNE and Utopia by executing the `dunecontrol` script:
+4. Configure and build DUNE and Utopia by executing the `dunecontrol` script:
 
         CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=Release \
             -DDUNE_PYTHON_VIRTUALENV_SETUP=True \
@@ -94,8 +84,8 @@ Ubuntu is shipped with APT.
             ./dune-common/bin/dunecontrol --module=utopia all
 
     Afterwards, reconfiguring and rebuilding can now also be done locally,
-    instead of calling `dunecontrol`.
-    After entering the `utopia/build-cmake` directory, you can call `cmake ..` or `make` directly.
+    instead of calling `dunecontrol`: after entering the `utopia/build-cmake`
+    directory, you can call `cmake ..` or `make` directly.
 
 
 #### Troubleshooting
