@@ -64,12 +64,12 @@ Ubuntu is shipped with APT.
 
         apt update
         apt install cmake doxygen gcc g++ gfortran git libboost-dev \
-            libhdf5-dev libyaml-cpp-dev pkg-config python3-dev
+            libhdf5-dev libyaml-cpp-dev pkg-config python3-dev python3-pip
     
     __macOS:__
 
         brew update
-        brew install boost cmake doxygen gcc@7 pkg-config python yaml-cpp hdf5
+        brew install boost cmake doxygen gcc pkg-config python yaml-cpp hdf5
 
 3. Use [`git clone`](https://git-scm.com/docs/git-clone) to clone the
     DUNE repositories listed above into a suitable folder on your machine.
