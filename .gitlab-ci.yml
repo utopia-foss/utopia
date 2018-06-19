@@ -135,6 +135,7 @@ test:models:
     - ./dune-common/bin/dunecontrol --only=utopia make test_models
     # Also test each model via the CLI
     - $RUN_IN_DUNE_ENV utopia dummy
+    - $RUN_IN_DUNE_ENV utopia SimpleEG
     # TODO add calls for all models here
     # TODO find an automatic way to do this
 
