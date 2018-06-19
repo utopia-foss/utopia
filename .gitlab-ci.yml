@@ -7,7 +7,6 @@
 ---
 variables:
   # Setting number of processes
-  PROCNUM: 2
   CPUS_MULTICORE: 4
   CPUS_DIND: 3
 
@@ -24,7 +23,7 @@ variables:
       -DDUNE_PYTHON_VIRTUALENV_SETUP=True
       -DDUNE_PYTHON_ALLOW_GET_PIP=True
   MAKE_FLAGS_BUILD:
-      -j $PROCNUM
+      # none for now
   MODEL_DIR: $CI_PROJECT_DIR/dune/utopia/models
 
 # Define the image to use as base for all stages
