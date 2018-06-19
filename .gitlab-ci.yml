@@ -22,8 +22,7 @@ variables:
   CONFIG_FLAGS:
       -DDUNE_PYTHON_VIRTUALENV_SETUP=True
       -DDUNE_PYTHON_ALLOW_GET_PIP=True
-  MAKE_FLAGS_BUILD:
-      # none for now
+  MAKE_FLAGS_BUILD: "" # none for now
   MODEL_DIR: $CI_PROJECT_DIR/dune/utopia/models
 
 # Define the image to use as base for all stages
