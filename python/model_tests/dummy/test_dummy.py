@@ -61,5 +61,15 @@ def test_output():
         
         # Check the shape content of each dataset
         for dset_name, dset in data.items():
+            # Assert dataset shape is correct
             assert dset.shape == (1000,)
-            assert 0.45 <= np.mean(dset.data) <= 0.55
+
+            # Get the step
+            step = int(dset_name[5:])
+
+            # Assert correctness of data, depending on step
+            assert step*0.4 <= np.mean(dset) <= step*0.6
+            # NOTE the dummy model adds random numbers between 0 and 1 to its
+            # state vector each time step, thus increasing the mean by 0.5
+            # each time step. With a state vector of length 1000, the mean
+            # should thus always be within these limits.
