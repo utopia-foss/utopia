@@ -180,6 +180,8 @@ build:debug-clang:
       -DCMAKE_CXX_COMPILER=clang++
       -DCMAKE_CXX_FLAGS_DEBUG='$CMAKE_CXX_FLAGS_DEBUG -Werror'"
       ./dune-common/bin/dunecontrol --only=utopia configure
+    - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD build_tests
+    - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD all
 
 # Test stage ------------------------------------------------------------------
 # Using the artifacts of the build stage, executes tests of core, data i/o,
