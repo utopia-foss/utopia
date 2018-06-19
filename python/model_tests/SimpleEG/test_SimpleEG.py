@@ -76,6 +76,27 @@ def test_initial_state_random():
         assert 0.45 <= s1_fraction <= 0.55  # TODO values ok?
 
 
+    # Test again for another probability value
+    s1_prob = 0.2
+    mv = mtc.create_mv_from_cfg("initial_state.yml",
+                                **model_cfg(initial_state='random',
+                                            s1_prob=s1_prob))
+
+    # Run the simulation (initial step only) and load data
+    mv.run_sweep()
+    mv.dm.load_from_cfg(print_tree=True)
+
+    for uni in mv.dm['uni'].values():
+        data = uni['data']['SimpleEG']
+
+        # All payoffs should be zero
+        assert not np.any(data['payoff'])
+
+        # Calculate fraction and compare to desired probability
+        s1_fraction = np.sum(data['strategy'])/data['strategy'].shape[1]
+        assert s1_prob - 0.05 <= s1_fraction <= s1_prob + 0.05
+
+
 def test_initial_state_fraction():
     """Test that the initial state is set according to a fraction"""
     # Set the fraction to test
@@ -97,7 +118,10 @@ def test_initial_state_fraction():
         # All payoffs should be zero
         assert not np.any(data['payoff'])
 
-        # The fraction of s1 strategy
+        # Print the data (useful if something fails)
+        print(data['strategy'].data)
+
+        # Count the cells with strategy 1
         num_s1 = np.sum(data['strategy'])
         assert num_s1 == int(s1_fraction * data['strategy'].shape[1])  # floor
 
