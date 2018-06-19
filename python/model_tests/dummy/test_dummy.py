@@ -3,6 +3,7 @@
 import pytest
 
 from utopya.testtools import ModelTest
+from utopya.tools import read_yml
 
 # Configure the ModelTest class for dummy
 mtc = ModelTest("dummy", test_file=__file__)
@@ -27,12 +28,16 @@ def test_basics():
 
     # Assert that data was loaded, i.e. that data was written
     assert len(mv.dm)
-    
+
     
 def test_output(): 
     """Test that the output structure is correct"""
     # Create a Multiverse using a specific run configuration
     mv = mtc.create_mv_from_cfg("output.yml")
+    cfg = read_yml(mtc.get_file_path("output.yml"))
+
+    print(cfg)
+    print(mv.meta_config['parameter_space']._init_dict)
 
     # Run a simulation
     mv.run_sweep()

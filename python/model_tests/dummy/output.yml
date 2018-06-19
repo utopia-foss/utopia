@@ -5,7 +5,7 @@ parameter_space:
   
   seed: !sweep
     default: 42
-    range: 4
+    range: [4]
 
   dummy: !model
     model_name: dummy
