@@ -132,24 +132,28 @@ class ModelTest:
 
         # Use update_meta_cfg to pass a unique temporary directory as out_dir
         tmpdir = TemporaryDirectory(prefix=self.model_name,
-                                    suffix="mv_no{}".format(len(self._mvs)))
+                                    suffix="_mv{}".format(len(self._mvs)))
         
         if 'paths' not in update_meta_cfg:
             update_meta_cfg['paths'] = dict(out_dir=tmpdir.name)
         else:
             update_meta_cfg['paths']['out_dir'] = tmpdir.name
 
-        # Also set the exit handling value
+        # Also set the exit handling value, if not already set
         _se = self._sim_errors
+
         if 'worker_manager' not in update_meta_cfg:
             update_meta_cfg['worker_manager'] = dict(nonzero_exit_handling=_se)
+
         elif 'nonzero_exit_handling' not in update_meta_cfg['worker_manager']:
             update_meta_cfg['worker_manager']['nonzero_exit_handling'] = _se
+
         # else: entry was already set; don't set it again
 
         # Create the Multiverse
         mv = Multiverse(model_name=self.model_name,
-                        run_cfg_path=None, update_meta_cfg=update_meta_cfg)
+                        run_cfg_path=run_cfg_path,
+                        update_meta_cfg=update_meta_cfg)
 
         # Store it, then return
         self._store_mv(mv, out_dir=tmpdir)
