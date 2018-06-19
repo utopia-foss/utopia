@@ -444,23 +444,22 @@ private:
 /** \param config The top-level config node; 'grid_size' extracted from there
   * \param rng The top-level RNG
   */ 
-template<bool periodic=true, unsigned int dim=2, class RNGType=std::mt19937>
+template<bool periodic=true, class RNGType=std::mt19937>
 auto setup_manager(Utopia::DataIO::Config config, std::shared_ptr<RNGType> rng)
 {
     std::cout << "Setting up grid manager ..." << std::endl;
 
     // Extract grid size from config
-    auto gsize = config["grid_size"].as<std::array<unsigned int, dim>>();
+    auto gsize = config["grid_size"].template as<std::pair<unsigned int, unsigned int>>();
+    // FIXME this should be an array! But leads to errors in pipeline ...
 
     // Inform about the size
-    std::cout << "Creating " << dim << "-dimensional grid of size: ";
-    for (const auto& dim_size : gsize) {
-        std::cout << dim_size << " ";
-    }
-    std::cout << std::endl;
+    std::cout << "Creating 2-dimensional grid of size: "
+              << gsize.first << "x" << gsize.second 
+              << std::endl;
 
     // Create grid of that size
-    auto grid = Utopia::Setup::create_grid<dim>(gsize);
+    auto grid = Utopia::Setup::create_grid<2>({gsize.first, gsize.second});
 
     // Create the SimpleEG initial state: S0 and payoff 0.0
     State state_0 = {static_cast<Strategy>(0), 0.0};
