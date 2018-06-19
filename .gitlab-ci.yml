@@ -123,8 +123,20 @@ test:utopya:
     - build:models
   script:
     - ./dune-common/bin/dunecontrol --only=utopia configure
-    - ./dune-common/bin/dunecontrol --only=utopia make test_python
-    # FIXME should be accessible via test_utopya
+    - ./dune-common/bin/dunecontrol --only=utopia make test_utopya
+
+test:models:
+  stage: test
+  dependencies:
+    - build:models
+  script:
+    - ./dune-common/bin/dunecontrol --only=utopia configure
+    # Test all models using the testing framework
+    - ./dune-common/bin/dunecontrol --only=utopia make test_models
+    # Also test each model via the CLI
+    - $RUN_IN_DUNE_ENV utopia dummy
+    # TODO add calls for all models here
+    # TODO find an automatic way to do this
 
 test:cli:
   stage: test
@@ -132,21 +144,9 @@ test:cli:
     - build:models
   script:
     - ./dune-common/bin/dunecontrol --only=utopia configure
-    # test the default model config
+    # Test the CLI with the dummy model and its default configuration
     - $RUN_IN_DUNE_ENV utopia dummy
-    # test a configuration that allows a sweep
+    # Test passing a custom run configuration and performing a sweep
     - $RUN_IN_DUNE_ENV utopia dummy $MODEL_DIR/dummy/test/sweep.yml --sweep --note sweep
-
-test:models:
-  stage: test
-  dependencies:
-    - build:models
-  script:
-    # - ./dune-common/bin/dunecontrol --only=utopia configure
-    # - ./dune-common/bin/dunecontrol --only=utopia make test_models
-    # FIXME should be accessible via dunecontrol and target test_models
-    # Workaround: # FIXME remove
-    - $RUN_IN_DUNE_ENV python -m pytest -v $CI_PROJECT_DIR/python/model_tests
-    # Also test each model via the CLI
-    - $RUN_IN_DUNE_ENV utopia dummy
-    - $RUN_IN_DUNE_ENV utopia SimpleEG
+    # TODO perhaps move the dummy test file to a better location?
+    # TODO add more tests here for other features of the CLI
