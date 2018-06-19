@@ -91,7 +91,35 @@ class ModelTest:
 
 
     # Public methods ..........................................................
-    
+
+    def get_file_path(self, rel_path: str) -> str:
+        """Returns the absolute path of the file that can be found relative to
+        the test directory of this ModelTest class instance.
+        
+        Args:
+            rel_path (str): The relative path of the file
+        
+        Returns:
+            str: The absolute path to the file
+        
+        Raises:
+            FileNotFoundError: If the desired file could not be found
+            ValueError: If no test_file was given during initialisation
+        """
+        if not self.test_dir:
+            raise ValueError("No test directory associated with this "
+                             "ModelTest; pass one during initialization to be "
+                             "able to generate absolute paths.")
+
+        abs_path = self.test_dir.join(rel_path)
+
+        if not abs_path.exists() or not abs_path.isfile():
+            raise FileNotFoundError("No file '{}' found relative to test "
+                                    "directory! Expected a file at: {}"
+                                    "".format(rel_path, abs_path))
+
+        return str(abs_path)
+
     def create_mv(self, run_cfg_path=None, **update_meta_cfg) -> Multiverse:
         """Creates a Multiverse for this model using the default model config
         
@@ -125,46 +153,20 @@ class ModelTest:
         # Store it, then return
         self._store_mv(mv, out_dir=tmpdir)
         return mv
-    
-    def get_cfg_by_name(self, cfg_name: str) -> str:
-        """Returns the path of the *.yml config file with the given name from
-        the test directory
-        
-        Args:
-            cfg_name (str): The name of the config file to look for in the
-                test directory. Required extension is *.yml!
-        
-        Returns:
-            str: The absolute path to the config file
-        
-        Raises:
-            FileNotFoundError: If the desired file could 
-        """
-        if not self.test_dir:
-            raise ValueError("No test directory associated with this "
-                             "ModelTest! Cannot get a config by name!")
 
-        cfg_path = self.test_dir.join(cfg_name+".yml")
-
-        if not cfg_path.exists() or not cfg_path.isfile():
-            raise FileNotFoundError("No config file found by name '{}' at {}!"
-                                    "".format(cfg_name, cfg_path))
-
-        return str(cfg_path)
-
-    def create_mv_from_cfg(self, cfg_name: str, **update_meta_cfg) -> Multiverse:
+    def create_mv_from_cfg(self, cfg_file: str, **update_meta_cfg) -> Multiverse:
         """Creates a Multiverse for this model using a test config file as run
         configuration.
         
         Args:
-            cfg_name (str): Name of the *.yml config file to use as the run
+            cfg_file (str): Relative path to the config file to use as the run
                 configuration of this Multiverse.
             **update_meta_cfg: Can be used to update the meta configuration
         
         Returns:
             Multiverse: The created Multiverse object
         """
-        return self.create_mv(run_cfg_path=self.get_cfg_by_name(cfg_name),
+        return self.create_mv(run_cfg_path=self.get_file_path(cfg_file),
                               **update_meta_cfg)
 
     # Private methods .........................................................

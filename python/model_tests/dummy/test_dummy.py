@@ -15,7 +15,7 @@ mtc = ModelTest("dummy", test_file=__file__)
 
 def test_single():
     """Test initialisation"""
-    mv = mtc.create_mv_from_cfg("single")
+    mv = mtc.create_mv_from_cfg("single.yml")
     mv.run()
 
     # Load data using data manager

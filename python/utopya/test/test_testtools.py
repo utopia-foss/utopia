@@ -37,34 +37,34 @@ def test_init():
     # No Multiverse's should be stored
     assert not mtc._mvs
 
-def test_get_cfg_by_name():
+def test_get_file_path():
     """Test the method to get a config by name"""
     # Get the paths of config files of other tests
     mtc = tt.ModelTest("dummy", test_file=__file__)
 
-    assert mtc.get_cfg_by_name("cfg/run_cfg")
+    assert mtc.get_file_path("cfg/run_cfg.yml")
 
-    with pytest.raises(FileNotFoundError, match="No config file found by"):
-        mtc.get_cfg_by_name("non-existing-config-file")
+    with pytest.raises(FileNotFoundError, match="No file 'non-existing-file'"):
+        mtc.get_file_path("non-existing-file")
 
     # It should not work without a test_file being passed during init
     mtc2 = tt.ModelTest("dummy")
 
     with pytest.raises(ValueError):
-        mtc2.get_cfg_by_name("foo")
+        mtc2.get_file_path("foo")
 
 def test_create_mv():
     """Tests the creation of Multiverses using the ModelTest class"""
     mtc = tt.ModelTest("dummy", test_file=__file__)
 
     # Basic initialization
-    mv1 = mtc.create_mv_from_cfg("cfg/run_cfg")
+    mv1 = mtc.create_mv_from_cfg("cfg/run_cfg.yml")
     assert isinstance(mv1, utopya.Multiverse)
 
     # Pass some more information to the function to call other branches of the
     # function where arguments are inserted (nonzero exit handling and the
     # temporary file path)
-    mv2 = mtc.create_mv_from_cfg("cfg/run_cfg",
+    mv2 = mtc.create_mv_from_cfg("cfg/run_cfg.yml",
                                  worker_manager=dict(num_workers=1),
                                  paths=dict(model_note="foo"))
     assert isinstance(mv2, utopya.Multiverse)
@@ -73,7 +73,7 @@ def test_create_mv():
 def test_tmpdir_is_tmp():
     """This test is to assert that the temporary directory is really temporary"""
     mtc = tt.ModelTest("dummy", test_file=__file__)
-    mv = mtc.create_mv_from_cfg("cfg/run_cfg")
+    mv = mtc.create_mv_from_cfg("cfg/run_cfg.yml")
 
     # Extract the path to the temporary directory and assert it was created
     tmpdir_path = mtc._mvs[0]['out_dir'].name
