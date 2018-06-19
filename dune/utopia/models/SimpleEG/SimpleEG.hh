@@ -167,7 +167,21 @@ public:
             }
 
             auto& cells = _manager.cells();
+
+            // Get the grid size and perform checks on it
             auto grid_size = this->cfg["grid_size"].template as<std::pair<std::size_t, std::size_t>>();
+            // TODO Check with Benni: why pair?!
+
+            if ((grid_size.first % 2 == 0) || (grid_size.second % 2 == 0)) {
+                throw std::invalid_argument("Need odd values for grid_size to "
+                                            "calculate central cell for "
+                                            "setting initial state to '"
+                                            + initial_state + "'!");
+            }
+            // FIXME This is rather fragile. Better approach: calculate the
+            //       central point (here!) and find the cell beneath that
+            //       point, setting it to single_strategy.
+            //       Use rule application to set default_strategy.
 
             auto set_initial_strategy = [&](const auto cell) {
                 // Get the state of this cell
@@ -176,9 +190,8 @@ public:
                 // Get the position
                 auto pos = cell->position();
                 // NOTE  Careful! Is a Dune::FieldVector<double, 2>
-                //       Thus, need to do float calculations.
-                // FIXME This leads to _no_ central cell for even grid_size
-                //       dimensions
+                //       Thus, need to do float calculations. The case with
+                //       even grid_size extensions is caught above
 
                 // Set the initial strategy depending on pos in the grid
                 if (   pos[0] == (float) grid_size.first  / 2 
