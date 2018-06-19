@@ -168,7 +168,7 @@ public:
             // TODO would be much nicer to have a range based for loop over a shuffled container without needing a copy of it...
             // For now, do it with a while loop and random index access
 
-            // TODO can add some logic here to make more clever assignments
+            // TODO can add some logic here to make more clever assignments, i.e. starting out with all S1 if the number to set is higher than half ...
 
             // Need a counter of cells that were set to S1
             std::size_t num_set = 0;
