@@ -44,9 +44,9 @@ class ModelTest:
         if test_file:
             test_dir = py.path.local(os.path.dirname(test_file))
             if not test_dir.exists() or not test_dir.isdir():
-                raise ValueError("Could not extract a directory from the "
-                                 "given `test_file` '{}'. Does it exist?"
-                                 "".format(test_file))
+                raise ValueError("Could not extract a valid directory path "
+                                 "from the given `test_file` '{}'. Does it "
+                                 "exist?".format(test_file))
             self._test_dir = test_dir
 
         else:
@@ -70,16 +70,17 @@ class ModelTest:
     @model_name.setter
     def model_name(self, model_name: str):
         """Checks if the model name is valid, then sets it and makes it read-only."""
-        if model_name not in MODELS:
+        if self.model_name:
+            raise RuntimeError("A ModelTest's associated model cannot be "
+                               "changed!")
+        
+        elif model_name not in MODELS:
             raise ValueError("No such model '{}' available.\n"
                              "Available models: {}"
                              "".format(model_name,
                                        ", ".join(MODELS.keys())))
         
-        elif self.model_name:
-            raise RuntimeError("A ModelTest's associated model cannot be "
-                               "changed!")
-
+        # All checks ok, set value
         self._model_name = model_name
         log.debug("Set model_name:  %s", model_name)
 
@@ -145,7 +146,7 @@ class ModelTest:
 
         cfg_path = self.test_dir.join(cfg_name+".yml")
 
-        if not cfg_path.exists() and cfg_path.isfile():
+        if not cfg_path.exists() or not cfg_path.isfile():
             raise FileNotFoundError("No config file found by name '{}' at {}!"
                                     "".format(cfg_name, cfg_path))
 
@@ -164,7 +165,7 @@ class ModelTest:
             Multiverse: The created Multiverse object
         """
         return self.create_mv(run_cfg_path=self.get_cfg_by_name(cfg_name),
-                              update_meta_cfg=update_meta_cfg)
+                              **update_meta_cfg)
 
     # Private methods .........................................................
 
