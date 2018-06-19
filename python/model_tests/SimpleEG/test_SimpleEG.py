@@ -17,7 +17,7 @@ mtc = ModelTest("SimpleEG", test_file=__file__)
 
 # Helpers ---------------------------------------------------------------------
 
-def update_model_cfg(**kwargs) -> dict:
+def model_cfg(**kwargs) -> dict:
     """Creates a dict that can update the config of the SimpleEG model"""
     return dict(parameter_space=dict(SimpleEG=dict(**kwargs)))
 
@@ -48,7 +48,7 @@ def test_initial_state_random():
     """
     # Use the config file for common settings, change via additional kwargs
     mv = mtc.create_mv_from_cfg("initial_state.yml",
-                                **update_model_cfg(initial_state='random'))
+                                **model_cfg(initial_state='random'))
 
     # Run the simulation (initial step only)
     mv.run_sweep()
@@ -83,8 +83,8 @@ def test_initial_state_fraction():
 
     # Use the config file for common settings, change via additional kwargs
     mv = mtc.create_mv_from_cfg("initial_state.yml",
-                                **update_model_cfg(initial_state='fraction',
-                                                   s1_fraction=s1_fraction))
+                                **model_cfg(initial_state='fraction',
+                                            s1_fraction=s1_fraction))
 
     # Run the simulation (initial step only) and load data
     mv.run_sweep()
@@ -104,17 +104,15 @@ def test_initial_state_fraction():
 
 def test_initial_state_single(): 
     """Test that the initial state are """
-    # Use the config file for common settings, change via additional kwargs
     # Create a few Multiverses with different initial states
     mvs = []
 
+    # Use the config file for common settings, change via additional kwargs
     mvs.append(mtc.create_mv_from_cfg("initial_state.yml",
-                                      **update_model_cfg(initial_state='single_s0')))
+                                      **model_cfg(initial_state='single_s0')))
 
     mvs.append(mtc.create_mv_from_cfg("initial_state.yml",
-                                      **update_model_cfg(initial_state='single_s1')))
-
-    # TODO add test for even grid_size extensions
+                                      **model_cfg(initial_state='single_s1')))
 
     # For all: Run the simulations (initial step only) and load the data
     for mv in mvs:
@@ -127,30 +125,51 @@ def test_initial_state_single():
         # Get the data
         data = uni['data']['SimpleEG']
 
-        # All payoffs should be zero
-        assert not np.any(data['payoff'])
-
-        # Find out what the strategy ought to be
-        if uni['cfg']['SimpleEG']['initial_state'] == "single_s0":
-            c_strategy = 0
-        else:
-            c_strategy = 1
-
-        # Calculate the index of the central cell (integer divison!)
+        # Get the grid size
         grid_size = uni['cfg']['SimpleEG']['grid_size']
+
+        # For even grid sizes, this should fail
+        if (grid_size[0] % 2 == 0) or (grid_size[1] % 2 == 0):
+            # Check that no data was written
+            assert not len(data)
+
+            # Cannot continue
+            continue
+
+        # For others, calculate the central cell (integer division!)
         c_idx = (grid_size[0]//2) * grid_size[1] + grid_size[1]//2
 
         # Check the center cell strategy
         print(data['strategy'].data)
-        assert data['strategy'][0, c_idx] == c_strategy
 
-        # Check that all others have the other strategy
-        if c_strategy == 0:
-            # All strategy 1 except central cell
-            sum_total = grid_size[0] * grid_size[1] - 1
+        # Check the data, depending on what the strategy ought to be
+        if uni['cfg']['SimpleEG']['initial_state'] == "single_s0":
+            # Central 0, all others 1
+            assert data['strategy'][0, c_idx] == 0
+            assert np.sum(data['strategy']) == grid_size[0] * grid_size[1] - 1
         
         else:
-            # All strategy 0 except central cell
-            sum_total = 1
+            # Central 1, all others 0
+            assert data['strategy'][0, c_idx] == 1
+            assert np.sum(data['strategy']) == 1
+        
+        # Finally, all payoffs should be zero
+        assert not np.any(data['payoff'])
 
-        assert np.sum(data['strategy']) == sum_total
+
+    # Create a few more Multiverses; these should fail due to at least one
+    # grid_size extension being an even value, where no central cell can be
+    # calculated ...
+    mv = mtc.create_mv_from_cfg("initial_state.yml",
+                                perform_sweep=False,
+                                **model_cfg(initial_state='single_s0',
+                                            grid_size=[10, 10]))
+    with pytest.raises(SystemExit, match="1"):
+        mv.run()
+
+    mv = mtc.create_mv_from_cfg("initial_state.yml",
+                                perform_sweep=False,
+                                **model_cfg(initial_state='single_s0',
+                                            grid_size=[10, 11]))
+    with pytest.raises(SystemExit, match="1"):
+            mv.run()
