@@ -18,6 +18,7 @@ variables:
 
   # Shortcut variables for certain commands
   DUNE_CONTROL_PATH: /opt/dune:$CI_PROJECT_DIR  # such that DUNE finds Utopia
+  DUNECTRL: ./dune-common/bin/dunecontrol
   RUN_IN_DUNE_ENV: $CI_PROJECT_DIR/build-cmake/run-in-dune-env
   CONFIG_FLAGS:
       -DDUNE_PYTHON_VIRTUALENV_SETUP=True
@@ -141,9 +142,8 @@ build:tests:
       - $CI_PROJECT_DIR/build-cmake
     expire_in: 3 hours
   script:
-    - CMAKE_FLAGS="$CONFIG_FLAGS"
-      ./dune-common/bin/dunecontrol --module=utopia configure
-    - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD build_tests
+    - CMAKE_FLAGS="$CONFIG_FLAGS" $DUNECTRL --module=utopia configure
+    - $DUNECTRL --only=utopia make $MAKE_FLAGS_BUILD build_tests
 
 build:models:
   stage: build
@@ -151,9 +151,8 @@ build:models:
   artifacts:
     <<: *shared_artifacts
   script:
-    - CMAKE_FLAGS="$CONFIG_FLAGS"
-      ./dune-common/bin/dunecontrol --module=utopia configure
-    - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD all
+    - CMAKE_FLAGS="$CONFIG_FLAGS" $DUNECTRL --module=utopia configure
+    - $DUNECTRL --only=utopia make $MAKE_FLAGS_BUILD all
 
 # Build in debug mode, once with gcc and once with clang
 build:debug: &build_debug
@@ -165,9 +164,9 @@ build:debug: &build_debug
       -DCMAKE_BUILD_TYPE=Debug
       $CONFIG_FLAGS
       -DCMAKE_CXX_FLAGS_DEBUG='$CMAKE_CXX_FLAGS_DEBUG -Werror'"
-      ./dune-common/bin/dunecontrol --only=utopia configure
-    - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD build_tests
-    - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD all
+      $DUNECTRL --only=utopia configure
+    - $DUNECTRL --only=utopia make $MAKE_FLAGS_BUILD build_tests
+    - $DUNECTRL --only=utopia make $MAKE_FLAGS_BUILD all
 
 build:debug-clang:
   <<: *build_debug
@@ -179,9 +178,9 @@ build:debug-clang:
       -DCMAKE_C_COMPILER=clang
       -DCMAKE_CXX_COMPILER=clang++
       -DCMAKE_CXX_FLAGS_DEBUG='$CMAKE_CXX_FLAGS_DEBUG -Werror'"
-      ./dune-common/bin/dunecontrol --only=utopia configure
-    - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD build_tests
-    - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD all
+      $DUNECTRL --only=utopia configure
+    - $DUNECTRL --only=utopia make $MAKE_FLAGS_BUILD build_tests
+    - $DUNECTRL --only=utopia make $MAKE_FLAGS_BUILD all
 
 # Test stage ------------------------------------------------------------------
 # Using the artifacts of the build stage, executes tests of core, data i/o,
@@ -193,12 +192,12 @@ test:core: &test_core
   before_script:
     - cd /opt/dune
   script:
-    - ./dune-common/bin/dunecontrol --only=utopia make test_core
+    - $DUNECTRL --only=utopia make test_core
 
 test:dataio:
   <<: *test_core
   script:
-    - ./dune-common/bin/dunecontrol --only=utopia make test_dataio
+    - $DUNECTRL --only=utopia make test_dataio
 
 test:python:
   stage: test
@@ -206,8 +205,8 @@ test:python:
   dependencies:
     - build:models
   script:
-    - ./dune-common/bin/dunecontrol --only=utopia configure
-    - ./dune-common/bin/dunecontrol --only=utopia make test_python
+    - $DUNECTRL --only=utopia configure
+    - $DUNECTRL --only=utopia make test_python
 
 test:models:
   stage: test
@@ -215,7 +214,7 @@ test:models:
   dependencies:
     - build:models
   script:
-    - ./dune-common/bin/dunecontrol --only=utopia configure
+    - $DUNECTRL --only=utopia configure
     # test the default model config
     - $RUN_IN_DUNE_ENV utopia dummy
     # test a configuration that allows a sweep
