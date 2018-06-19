@@ -1,0 +1,11 @@
+# Test a run of the dummy model where output is generated
+---
+parameter_space:
+  num_steps: 100
+  
+  seed: !sweep
+    default: 42
+    range: 4
+
+  dummy: !model
+    model_name: dummy

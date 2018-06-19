@@ -1,14 +1,14 @@
-"""Tests of the output of the dummy model"""
+"""Tests of the output of the CopyMe model"""
 
 import pytest
 
 from utopya.testtools import ModelTest
 
-# Configure the ModelTest class for dummy
-mtc = ModelTest("dummy", test_file=__file__)
+# Configure the ModelTest class
+mtc = ModelTest("dummy", test_file=__file__) # TODO set model name here!
 
 # Fixtures --------------------------------------------------------------------
-# Define fixtures
+# Define fixtures here
 
 
 # Tests -----------------------------------------------------------------------
@@ -27,17 +27,24 @@ def test_basics():
 
     # Assert that data was loaded, i.e. that data was written
     assert len(mv.dm)
-    
-    
-def test_output(): 
-    """Test that the output structure is correct"""
-    # Create a Multiverse using a specific run configuration
-    mv = mtc.create_mv_from_cfg("output.yml")
 
-    # Run a simulation
-    mv.run_sweep()
+    # TODO Add more assertions below ...
+
+
+# Example for another test function. If you want to use it, remove the
+# decorator, rename it to be more descriptive, and adjust the docstring
+@pytest.mark.skip()
+def test_advanced_stuff(): 
+    """Test that ... TODO"""
+    # Create a Multiverse using a specific run configuration
+    mv = mtc.create_mv_from_cfg("advanced.yml")
+    # TODO rename the file to match the name of the test it is used in
+
+    # Run a simulation (here: a sweep, as configured by `perform_sweep` entry)
+    mv.run()
 
     # Load data
     mv.dm.load_from_cfg(print_tree=True)
 
     # TODO add assertions below ...
+

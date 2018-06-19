@@ -143,8 +143,9 @@ class ModelTest:
         _se = self._sim_errors
         if 'worker_manager' not in update_meta_cfg:
             update_meta_cfg['worker_manager'] = dict(nonzero_exit_handling=_se)
-        else:
+        elif 'nonzero_exit_handling' not in update_meta_cfg['worker_manager']:
             update_meta_cfg['worker_manager']['nonzero_exit_handling'] = _se
+        # else: entry was already set; don't set it again
 
         # Create the Multiverse
         mv = Multiverse(model_name=self.model_name,
