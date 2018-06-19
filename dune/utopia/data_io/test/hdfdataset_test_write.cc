@@ -1,3 +1,8 @@
+/**
+ * @brief Tests writing of data to datasets for mulitple kinds of data
+ *
+ * @file hdfdataset_test_write.cc
+ */
 #include "../hdfdataset.hh"
 #include "../hdffile.hh"
 #include "../hdfgroup.hh"

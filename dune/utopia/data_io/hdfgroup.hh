@@ -1,3 +1,10 @@
+/**
+ * @brief This file provides a class for creating and managing groups in a
+ *        HDF5 file, which then can create other objects (groups and datasets)
+ *        inside of them.
+ *
+ * @file hdfgroup.hh
+ */
 #ifndef HDFGROUP_HH
 #define HDFGROUP_HH
 
@@ -13,16 +20,17 @@ namespace Utopia
 {
 namespace DataIO
 {
-
 class HDFFile;
 
 class HDFGroup
 {
-private:
 protected:
     hid_t _group;
+
     std::string _path;
+
     H5O_info_t _info;
+
     haddr_t _address;
     std::shared_ptr<std::unordered_map<haddr_t, int>> _referencecounter;
 
@@ -94,19 +102,18 @@ public:
         // if information is succesfully retrieved print out the information
         if (err < 0)
         {
-            throw std::runtime_error("Getting group information by calling "
-                                     "H5Gget_info failed!");
+            throw std::runtime_error(
+                "Getting group information by calling "
+                "H5Gget_info failed!");
         }
 
         std::cout << "Group information:" << std::endl
                   << "- Group id: " << _group << std::endl
                   << "- Group path: " << _path << std::endl
                   << "- Number of links in group: " << info.nlinks << std::endl
-                  << "- Current max. creation order value: "
-                     << info.max_corder << std::endl
-                  << "- Mounted files on the group: "
-                     << info.mounted << std::endl;
-    
+                  << "- Current max. creation order value: " << info.max_corder
+                  << std::endl
+                  << "- Mounted files on the group: " << info.mounted << std::endl;
     }
 
     /**
@@ -120,8 +127,7 @@ public:
     template <typename Attrdata>
     void add_attribute(std::string name, Attrdata attribute_data)
     {
-        HDFAttribute<HDFGroup>(*this,
-                               std::forward<std::string&&>(name)).write(attribute_data);
+        HDFAttribute<HDFGroup>(*this, std::forward<std::string&&>(name)).write(attribute_data);
     }
 
     /**
@@ -185,8 +191,8 @@ public:
             status = H5Ldelete(_group, path.c_str(), H5P_DEFAULT);
             if (status < 0)
             {
-                throw std::runtime_error("Deletion of group at path '"
-                                         + path + "' failed! Wrong path?");
+                throw std::runtime_error("Deletion of group at path '" + path +
+                                         "' failed! Wrong path?");
             }
         }
         // group does not exist, do nothing
@@ -196,6 +202,7 @@ public:
      * @brief      Default constructor
      */
     HDFGroup() = default;
+
     /**
      * @brief      Construct a new HDFGroup object
      *
@@ -244,8 +251,7 @@ public:
      */
     template <typename HDFObject>
     HDFGroup(HDFObject& object, std::string name)
-        : _path(name),
-          _referencecounter(object.get_referencecounter())
+        : _path(name), _referencecounter(object.get_referencecounter())
     {
         if (H5Lexists(object.get_id(), _path.c_str(), H5P_DEFAULT) > 0)
         {

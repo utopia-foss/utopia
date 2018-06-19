@@ -1,5 +1,5 @@
-#ifndef UTOPIA_TEST_MODEL_TEST_HH
-#define UTOPIA_TEST_MODEL_TEST_HH
+#ifndef UTOPIA_MODELS_DUMMY_HH
+#define UTOPIA_MODELS_DUMMY_HH
 
 #include <dune/utopia/base.hh>
 #include <dune/utopia/core/model.hh>
@@ -11,8 +11,10 @@
 
 namespace Utopia {
 
+namespace Models {
+
 /// Define data types of dummy model
-using DummyModelTypes = ModelTypes<
+using DummyTypes = ModelTypes<
     std::vector<double>,
     std::vector<double>
 >;
@@ -21,53 +23,49 @@ using DummyModelTypes = ModelTypes<
 /** Holds a vector of doubles and increments its entries by the boundary
  *  condition vector or 1 otherwise.
  */
-class DummyModel:
-    public Model<DummyModel, DummyModelTypes>
+class Dummy:
+    public Model<Dummy, DummyTypes>
 {
 public:
-    // convenience type definitions
-    using Base = Model<DummyModel, DummyModelTypes>;
-    using Data = typename Base::Data;
-    using BCType = typename Base::BCType;
+    /// The base model class
+    using Base = Model<Dummy, DummyTypes>;
 
-private:
-    const std::string _name;
-    Data _state;
-    BCType _bc;
-    Utopia::DataIO::Config _config;
-    std::shared_ptr<Utopia::DataIO::HDFGroup> _group;
-    std::shared_ptr<std::mt19937> _rng;
+    /// The current state of the model
+    Data state;
 
+    /// The boundary conditions of the model
+    BCType bc;
 
-public:
     /// Construct the dummy model with an initial state
-    /** \param state Initial state of the model
+    /** \param initial_state Initial state of the model
      */
-    DummyModel (const std::string name, const Data& state, 
-                Utopia::DataIO::Config &config,
-                std::shared_ptr<Utopia::DataIO::HDFGroup> group,
-                std::shared_ptr<std::mt19937> rng):
-        Base(),
-        _name(name),
-        _state(state),
-        _bc(_state.size(), 1.0),
-        _config(config[_name]),
-        _group(group->open_group(_name)),
-        _rng(rng)
-    { }
+    template<class ParentModel>
+    Dummy (const std::string name,
+           const ParentModel & parent_model,
+           const Data& initial_state)
+    :
+        // Use the base constructor for the main parts
+        Base(name, parent_model),
+        // Initialise state and boundary condition members
+        state(initial_state),
+        bc(state.size(), 1.0)
+    {
+        // Write initial state
+        this->write_data();
+    }
 
     /// Iterate by one time step
     void perform_step ()
     {
         // Communicate which iteration step is performed
-        std::cout << "  iteration step " << this->time << std::endl;
+        std::cout << "  Performing step " << this->time << " ..." << std::endl;
 
         // Write some random numbers into the state vector
-        auto gen = std::bind(std::uniform_real_distribution<>(), *_rng);
-        std::generate(_bc.begin(), _bc.end(), gen);
-        std::transform(_state.begin(), _state.end(), _bc.begin(),
-            _state.begin(),
-            [](const auto a, const auto b) { return a + b; }
+        auto gen = std::bind(std::uniform_real_distribution<>(), *rng);
+        std::generate(bc.begin(), bc.end(), gen);
+        std::transform(state.begin(), state.end(),
+                       bc.begin(), state.begin(),
+                       [](const auto a, const auto b) { return a + b; }
         );
     }
 
@@ -78,21 +76,23 @@ public:
         const std::string set_name = "data-" + std::to_string(this->time);
 
         // Open the dataset and write the state into it
-        auto dataset = _group->open_dataset(set_name);
-        dataset->write(_state.begin(), _state.end(),
+        auto dataset = hdfgrp->open_dataset(set_name);
+        dataset->write(state.begin(), state.end(),
             [](auto &value) { return value; });
     }
 
     // Set model boundary condition
-    void set_boundary_condition (const BCType& bc) { _bc = bc; }
+    void set_boundary_condition (const BCType& new_bc) { bc = new_bc; }
 
     /// Set model initial condition
-    void set_initial_condition (const Data& ic) { _state = ic; }
+    void set_initial_condition (const Data& ic) { state = ic; }
 
     /// Return const reference to stored data
-    const Data& data () const { return _state; }
+    const Data& data () const { return state; }
 };
+
+} // namespace Models
 
 } // namespace Utopia
 
-#endif // UTOPIA_TEST_MODEL_TEST_HH
+#endif // UTOPIA_MODELS_DUMMY_HH

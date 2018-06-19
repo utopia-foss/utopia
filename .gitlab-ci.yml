@@ -24,6 +24,7 @@ variables:
       -DDUNE_PYTHON_ALLOW_GET_PIP=True
   MAKE_FLAGS_BUILD: "" # none for now
   MODEL_DIR: $CI_PROJECT_DIR/dune/utopia/models
+  DUNE_ENV_IMAGE: ccees/utopia:bionic
 
 # Define the image to use as base for all stages
 # NOTE that some jobs overwrite this setting locally
@@ -129,11 +130,12 @@ prep:update-dune-clang:
 
 
 # Build stage -----------------------------------------------------------------
-
-build:main:
+# Build the tests and the models
+# The artifacts of the tests and models jobs are needed in the test stage
+build:tests:
   stage: build
   <<: *ssh_access
-  artifacts:
+  artifacts: &shared_artifacts
     name: "$CI_JOB_NAME"
     paths:
       - $CI_PROJECT_DIR/build-cmake
@@ -141,10 +143,19 @@ build:main:
   script:
     - CMAKE_FLAGS="$CONFIG_FLAGS"
       ./dune-common/bin/dunecontrol --module=utopia configure
-    - ./dune-common/bin/dunecontrol --only=utopia make doc
     - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD build_tests
+
+build:models:
+  stage: build
+  <<: *ssh_access
+  artifacts:
+    <<: *shared_artifacts
+  script:
+    - CMAKE_FLAGS="$CONFIG_FLAGS"
+      ./dune-common/bin/dunecontrol --module=utopia configure
     - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD all
 
+# Build in debug mode, once with gcc and once with clang
 build:debug: &build_debug
   stage: build
   <<: *ssh_access
@@ -169,38 +180,21 @@ build:debug-clang:
       -DCMAKE_CXX_COMPILER=clang++
       -DCMAKE_CXX_FLAGS_DEBUG='$CMAKE_CXX_FLAGS_DEBUG -Werror'"
       ./dune-common/bin/dunecontrol --only=utopia configure
-    - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD build_tests
-    - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD all
-
-build:models:
-  stage: build
-  <<: *ssh_access
-  artifacts:
-    name: "$CI_JOB_NAME"
-    paths:
-      - $CI_PROJECT_DIR/build-cmake
-    expire_in: 3 hours
-  script:
-    - CMAKE_FLAGS="$CONFIG_FLAGS"
-      ./dune-common/bin/dunecontrol --module=utopia configure
-    - ./dune-common/bin/dunecontrol --only=utopia make $MAKE_FLAGS_BUILD all
-
 
 # Test stage ------------------------------------------------------------------
-
+# Using the artifacts of the build stage, executes tests of core, data i/o,
+# frontend, and models.
 test:core:
   stage: test
   dependencies:
-    - build:main
-  before_script:
-    - cd /opt/dune
+    - build:tests
   script:
     - ./dune-common/bin/dunecontrol --only=utopia make test_core
 
 test:dataio:
   stage: test
   dependencies:
-    - build:main
+    - build:tests
   before_script:
     - cd /opt/dune
   script:
@@ -210,7 +204,7 @@ test:python:
   stage: test
   <<: *ssh_access
   dependencies:
-    - build:main
+    - build:models
   script:
     - ./dune-common/bin/dunecontrol --only=utopia configure
     - ./dune-common/bin/dunecontrol --only=utopia make test_python

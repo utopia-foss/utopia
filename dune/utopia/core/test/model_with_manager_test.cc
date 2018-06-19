@@ -1,4 +1,6 @@
-#include "model_core_test.hh"
+#include <dune/utopia/data_io/hdffile.hh>
+
+#include "model_with_manager_test.hh"
 
 
 int main(int argc, char *argv[])
@@ -6,10 +8,34 @@ int main(int argc, char *argv[])
     try {
         Dune::MPIHelper::instance(argc, argv);
 
-        auto model_core = setup_model_core(100);
+        // -- Setup model -- //
+        // create a pseudo parent
+        std::cout << "Initializing pseudo parent ..." << std::endl;
+
+        Utopia::PseudoParent pp("model_with_manager_test.yml");
+
+        // extract the config
+        // FIXME adjust setup to make this unnecessary
+        auto cfg = pp.get_cfg();
+
+        // create the manager with a certain grid size using a setup function
+        std::cout << "Creating GridManager ..." << std::endl;
+        auto grid_size = cfg["grid_size"].as<int>();
+        std::cout << "  grid_size: " << grid_size << std::endl;
+        
+        auto manager = setup_manager(grid_size);
+        std::cout << "  manager created" << std::endl;
+
+        // class template argument deduction YESSSSS
+        std::cout << "Initializing model ..." << std::endl;
+        MngrModel model("test", pp, manager);
+
+        
+        // --- Tests begin here --- //
+        std::cout << "Commencing tests ..." << std::endl;
 
         // check initial condition
-        const auto& cells = model_core.data();
+        const auto& cells = model.data();
         assert(all_of(cells.begin(), cells.end(),
             [](const auto cell){ return cell->state() == 0.0; })
         );
@@ -18,7 +44,7 @@ int main(int argc, char *argv[])
         );
 
         // check application
-        model_core.perform_step();
+        model.perform_step();
         assert(all_of(cells.begin(), cells.end(),
             [](const auto cell){ return cell->state() == 4.0; })
         );
@@ -42,7 +68,7 @@ int main(int argc, char *argv[])
         );
 
         // apply initial condition
-        model_core.set_initial_condition(init);
+        model.set_initial_condition(init);
         init.clear();
         assert(all_of(cells.begin(), cells.end(),
             [](const auto cell){ return cell->state() == 0.0; })
@@ -51,7 +77,20 @@ int main(int argc, char *argv[])
             [](const auto cell){ return cell->is_tagged; })
         );
 
+        std::cout << "Tests successful. :)" << std::endl;
+
+        // Cleanup
+        auto pp_file = pp.get_hdffile();
+        pp_file->close();
+        std::remove(pp_file->get_path().c_str());
+
+        std::cout << "Temporary files removed." << std::endl;
+        
         return 0;
+    }
+    catch (std::exception& e) {
+        std::cerr << e.what() << std::endl;
+        return 1;
     }
     catch(...){
         std::cerr << "Exception thrown!" << std::endl;
