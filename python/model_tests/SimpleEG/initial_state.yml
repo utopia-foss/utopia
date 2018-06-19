@@ -17,4 +17,4 @@ parameter_space:
     model_name: SimpleEG
 
     # Work on a smaller grid size
-    grid_size: [15, 15]
+    grid_size: [21, 21]
