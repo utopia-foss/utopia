@@ -112,6 +112,7 @@ public:
                   << std::endl;
 
         // Distinguish according to the mode, which strategy to choose
+        // NOTE that the payoff is already initialized to zero.
         if (initial_state == "random")
         {
             // Use a uniform int distribution for determining the state
@@ -123,9 +124,6 @@ public:
                 auto state = cell->state();
                 state.strategy = static_cast<Strategy>(rand_strat());
                 return state;
-
-                // NOTE that setting the payoff to zero is not needed as that
-                // is already done during initialization
             };
             // Apply the rule
             apply_rule(set_random_strategy, cells);
@@ -135,8 +133,8 @@ public:
             const auto s1_fraction = this->cfg["s1_fraction"].template as<double>();
 
             // Use a uniform real distribution to determine the state
-            auto rand_proposal = std::bind(std::uniform_real_distribution<>(0., 1.),
-                                            *this->rng);
+            auto rand_proposal = std::bind(std::uniform_real_distribution<>(),
+                                           *this->rng);
 
             auto& cells = _manager.cells();
             auto set_fraction_strategy = [&rand_proposal,&s1_fraction](const auto cell){
@@ -147,8 +145,6 @@ public:
                 else {
                     state.strategy = S0;
                 }
-
-                // NOTE that the payoff is already initialized to zero.
 
                 return state;
             };
@@ -161,11 +157,11 @@ public:
             // Determine which strategy is the common default strategy 
             // and which one is the single strategy in the center of the grid
             Strategy default_strategy, single_strategy;
-            if (initial_state == "single_s0"){
+            if (initial_state == "single_s0") {
                 default_strategy = S1;
                 single_strategy = S0;
             }
-            else{
+            else {
                 default_strategy = S0;
                 single_strategy = S1;
             }
@@ -174,23 +170,26 @@ public:
             auto grid_size = this->cfg["grid_size"].template as<std::pair<std::size_t, std::size_t>>();
 
             auto set_initial_strategy = [&](const auto cell) {
-                // Get the position and state of the cell
-                auto position = cell->position();
+                // Get the state of this cell
                 auto state = cell->state();
 
-                // Set the initial startegy
-                if (position[0] != grid_size.first / 2 
-                        && position[1] != grid_size.first / 2){
-                    // Case: The cell is in the center of the grid
-                    state.strategy = static_cast<Strategy>(default_strategy);
-                }
-                else{
-                    // Case: The cell is not in the center of the grid
-                    auto state = cell->state();
+                // Get the position
+                auto pos = cell->position();
+                // NOTE  Careful! Is a Dune::FieldVector<double, 2>
+                //       Thus, need to do float calculations.
+                // FIXME This leads to _no_ central cell for even grid_size
+                //       dimensions
+
+                // Set the initial strategy depending on pos in the grid
+                if (   pos[0] == (float) grid_size.first  / 2 
+                    && pos[1] == (float) grid_size.second / 2) {
+                    // The cell _is_ in the center of the grid
                     state.strategy = static_cast<Strategy>(single_strategy);
                 }
-                
-                // NOTE that the payoff is already initialized to zero
+                else {
+                    // The cell _is not_ in the center of the grid
+                    state.strategy = static_cast<Strategy>(default_strategy);
+                }
                 
                 return state;
             };
