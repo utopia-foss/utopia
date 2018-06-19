@@ -111,7 +111,6 @@ prep:update-dune: &update
   stage: prep
   only:
     - master
-    - build-utopia-with-clang  # FIXME remove once merged!
   script:
     - docker build -f docker/dune4utopia-update.dockerfile
       --build-arg BASE_IMAGE=$DUNE_IMAGE
