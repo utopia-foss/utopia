@@ -160,16 +160,16 @@ def test_initial_state_single():
     # Create a few more Multiverses; these should fail due to at least one
     # grid_size extension being an even value, where no central cell can be
     # calculated ...
-    mv = mtc.create_mv_from_cfg("initial_state.yml",
-                                perform_sweep=False,
-                                **model_cfg(initial_state='single_s0',
-                                            grid_size=[10, 10]))
     with pytest.raises(SystemExit, match="1"):
-        mv.run()
+        mtc.create_mv_from_cfg("initial_state.yml",
+                               perform_sweep=False,
+                               **model_cfg(initial_state='single_s0',
+                                           grid_size=[10, 10])
+                               ).run()
 
-    mv = mtc.create_mv_from_cfg("initial_state.yml",
-                                perform_sweep=False,
-                                **model_cfg(initial_state='single_s0',
-                                            grid_size=[10, 11]))
     with pytest.raises(SystemExit, match="1"):
-            mv.run()
+        mtc.create_mv_from_cfg("initial_state.yml",
+                               perform_sweep=False,
+                               **model_cfg(initial_state='single_s0',
+                                           grid_size=[10, 10])
+                               ).run()
