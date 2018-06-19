@@ -5,7 +5,7 @@ import pytest
 from utopya.testtools import ModelTest
 
 # Configure the ModelTest class for dummy
-mtc = ModelTest("dummy")
+mtc = ModelTest("dummy", test_file=__file__)
 
 # Fixtures --------------------------------------------------------------------
 # Define fixtures

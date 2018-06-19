@@ -3,6 +3,7 @@
 import os
 import logging
 from tempfile import TemporaryDirectory
+from typing import Union
 
 import py
 from pkg_resources import resource_filename
@@ -13,7 +14,7 @@ from utopya.info import MODELS
 # Get a logger
 log = logging.getLogger(__name__)
 
-# The model test class --------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 class ModelTest:
     """A class to use for testing Utopia models.
@@ -22,29 +23,34 @@ class ModelTest:
     which test should be carried out.
     """
 
-    def __init__(self, model_name: str, sim_errors: str='raise'):
+    def __init__(self, model_name: str, *, test_file: str=None, sim_errors: str='raise'):
         """Initialize the ModelTest for the given model name
         
         Args:
             model_name (str): Name of the model to test
+            test_file (str): The file this ModelTest is used in. If given,
+                will look for config files relative to the folder this file is
+                located in.
             sim_errors (str, optional): Whether to raise errors from Multiverse
         
         Raises:
-            ValueError: If no test directory exists corresponding to model_name
+            ValueError: If the directory extracted from test_file is invalid
         """
         # Store model name
         self._model_name = None
         self.model_name = model_name
 
-        # Find the test directory corresponding to this model
-        # TODO find a better way than to hard-code `model_tests` here
-        test_dir = py.path.local(resource_filename("model_tests", model_name))
-        if not test_dir.exists() or not test_dir.isdir():
-            raise ValueError("No test directory for model '{}' found in "
-                             "model_tests! Expected a directory at {}!"
-                             "".format(self.model_name, test_dir))
+        # Check if a test_file was given to use for determining the test_dir
+        if test_file:
+            test_dir = py.path.local(os.path.dirname(test_file))
+            if not test_dir.exists() or not test_dir.isdir():
+                raise ValueError("Could not extract a directory from the "
+                                 "given `test_file` '{}'. Does it exist?"
+                                 "".format(test_file))
+            self._test_dir = test_dir
 
-        self._test_dir = test_dir
+        else:
+            self._test_dir = None
 
         # Need a container of Multiverse's and temporary output directories
         # such that they do not go out of scope
@@ -78,34 +84,12 @@ class ModelTest:
         log.debug("Set model_name:  %s", model_name)
 
     @property
-    def test_dir(self) -> py.path.local:
+    def test_dir(self) -> Union[py.path.local, None]:
         """Returns the path to the test directory (as py.path.local object)"""
         return self._test_dir
 
 
     # Public methods ..........................................................
-
-    def get_cfg_by_name(self, cfg_name: str) -> str:
-        """Returns the path of the *.yml config file with the given name from
-        the test directory
-        
-        Args:
-            cfg_name (str): The name of the config file to look for in the
-                test directory. Required extension is *.yml!
-        
-        Returns:
-            str: The absolute path to the config file
-        
-        Raises:
-            FileNotFoundError: If the desired file could 
-        """
-        cfg_path = self.test_dir.join(cfg_name+".yml")
-
-        if not cfg_path.exists() and cfg_path.isfile():
-            raise FileNotFoundError("No config file found by name '{}' at {}!"
-                                    "".format(cfg_name, cfg_path))
-
-        return str(cfg_path)
     
     def create_mv(self, run_cfg_path=None, **update_meta_cfg) -> Multiverse:
         """Creates a Multiverse for this model using the default model config
@@ -141,6 +125,32 @@ class ModelTest:
         self._store_mv(mv, out_dir=tmpdir)
         return mv
     
+    def get_cfg_by_name(self, cfg_name: str) -> str:
+        """Returns the path of the *.yml config file with the given name from
+        the test directory
+        
+        Args:
+            cfg_name (str): The name of the config file to look for in the
+                test directory. Required extension is *.yml!
+        
+        Returns:
+            str: The absolute path to the config file
+        
+        Raises:
+            FileNotFoundError: If the desired file could 
+        """
+        if not self.test_dir:
+            raise ValueError("No test directory associated with this "
+                             "ModelTest! Cannot get a config by name!")
+
+        cfg_path = self.test_dir.join(cfg_name+".yml")
+
+        if not cfg_path.exists() and cfg_path.isfile():
+            raise FileNotFoundError("No config file found by name '{}' at {}!"
+                                    "".format(cfg_name, cfg_path))
+
+        return str(cfg_path)
+
     def create_mv_from_cfg(self, cfg_name: str, **update_meta_cfg) -> Multiverse:
         """Creates a Multiverse for this model using a test config file as run
         configuration.
