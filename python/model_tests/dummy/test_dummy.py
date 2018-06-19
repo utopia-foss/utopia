@@ -1,5 +1,7 @@
 """Tests of the output of the dummy model"""
 
+import numpy as np
+
 import pytest
 
 from utopya.testtools import ModelTest
@@ -45,4 +47,19 @@ def test_output():
     # Load data
     mv.dm.load_from_cfg(print_tree=True)
 
-    # TODO add assertions below ...
+    # Assert that four runs finished successfully
+    assert len(mv.dm['uni']) == 4
+
+    # For each universe, iterate over the output data and assert the shape
+    # and the content of the output data
+    for uni_no, uni in mv.dm['uni'].items():
+        # Get the data
+        data = uni['data']['dummy']
+
+        # Assert correct length (100 steps + initial state)
+        assert len(data) == 101
+        
+        # Check the shape content of each dataset
+        for dset_name, dset in data.items():
+            assert dset.shape == (1000,)
+            assert 0.45 <= np.mean(dset.data) <= 0.55
