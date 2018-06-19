@@ -19,6 +19,37 @@ Here, "model name" refers to the _exact_ name of the target for your model.
 Note the `TODO` comments throughout the copied files; make sure to follow those instructions.
 
 
+## How to run model tests
+
+There are two ways to run the model tests:
+
+#### Via the build system
+The build system creates a custom target to run all model tests:
+
+```
+cd build-cmake
+cmake ..
+make test_models
+```
+
+#### Via `pytest`
+
+Configure and enter the virtual environment:
+```
+cd build-cmake
+cmake ..
+source ./activate
+```
+
+Then, with `(dune-env)` prefix in the shell:
+```
+cd ../python
+python -m pytest -v model_tests/
+```
+
+Or, for testing only a single model, adjust the path accordingly to point to that model's test directory.
+
+
 ## Basic structure of the model tests
 
 The tests conducted here are all carried out using `utopya`, i.e. the frontend of Utopia.
