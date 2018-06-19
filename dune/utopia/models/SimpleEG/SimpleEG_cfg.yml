@@ -21,9 +21,10 @@ periodic: true          # false: cells at boundary have fewer neighbors
 
 # Initial state
 initial_state: random   # can be: random, fraction, single_s0, single_s1
+s1_prob: 0.5            # only used for 'random' initial state
 s1_fraction: 0.5        # only used for 'fraction' initial state
 # Explanation:
-#   - random:             each strategy occurs with probability 0.5
+#   - random:             strategy 1 occurs with probability s1_prob
 #   - fraction:           s1_fraction of all cells have strategy 1
 #   - single_s0:          single cell at the center has strategy 0
 #   - single_s1:          single cell at the center has strategy 1

@@ -115,42 +115,82 @@ public:
         // NOTE that the payoff is already initialized to zero.
         if (initial_state == "random")
         {
-            // Use a uniform int distribution for determining the state
-            auto rand_strat = std::bind(std::uniform_int_distribution<>(0, 1),
-                                        *this->rng);
+            // Get the threshold probability value
+            const auto s1_prob = this->cfg["s1_prob"].template as<double>();   
 
-            auto& cells = _manager.cells();
-            auto set_random_strategy = [&rand_strat](const auto cell) {
+            // Use a uniform real distribution for random numbers
+            auto rand = std::bind(std::uniform_real_distribution<>(),
+                                  *this->rng);
+
+            // Define the update rule
+            auto set_random_strategy = [&rand, &s1_prob](const auto cell) {
+                // Get the state
                 auto state = cell->state();
-                state.strategy = static_cast<Strategy>(rand_strat());
+
+                // Draw a random number and compare it to the threshold
+                if (rand() < s1_prob) {
+                    // Use strategy 1
+                    state.strategy = Strategy::S1;
+                }
+                else {
+                    // Use strategy 0
+                    state.strategy = Strategy::S0;
+                }
+
                 return state;
             };
-            // Apply the rule
-            apply_rule(set_random_strategy, cells);
+            
+            // Apply the rule to all cells
+            apply_rule(set_random_strategy, _manager.cells());
         } 
         else if (initial_state == "fraction")
         {
+            // Get the value for the fraction of cells to have strategy 1
             const auto s1_fraction = this->cfg["s1_fraction"].template as<double>();
 
-            // Use a uniform real distribution to determine the state
-            auto rand_proposal = std::bind(std::uniform_real_distribution<>(),
-                                           *this->rng);
+            if (s1_fraction > 1. || s1_fraction < 0.) {
+                throw std::invalid_argument("Need `s1_fraction` in [0, 1], "
+                                            "but got value: "
+                                            + std::to_string(s1_fraction));
+            }
 
+            // Get the cells container
             auto& cells = _manager.cells();
-            auto set_fraction_strategy = [&rand_proposal,&s1_fraction](const auto cell){
-                auto state = cell->state();
-                if (rand_proposal() < s1_fraction){
-                    state.strategy = S1;
-                }
-                else {
-                    state.strategy = S0;
-                }
 
-                return state;
-            };
+            // Calculate the number of cells that should have that strategy
+            const auto num_cells = cells.size();
+            const std::size_t num_s1 = s1_fraction * num_cells;
+            // NOTE this is a flooring calculation!
 
-            // Apply the rule
-            apply_rule(set_fraction_strategy, cells);
+            std::cout << "Cells with strategy 1: " << num_s1
+                      << " of " << num_cells << std::endl;
+
+            // TODO would be much nicer to have a range based for loop over a shuffled container without needing a copy of it...
+            // For now, do it with a while loop and random index access
+
+            // TODO can add some logic here to make more clever assignments
+
+            // Need a counter of cells that were set to S1
+            std::size_t num_set = 0;
+
+            auto rand_idx = std::bind(std::uniform_int_distribution<>(0, num_cells-1), *this->rng);
+
+            // Make num_s1 cells use strategy 1
+            while (num_set < num_s1) {
+                // Get a random cell
+                auto& cell = cells[rand_idx()];
+
+                // Check if it already has strategy 1.
+                if (cell->state().strategy == Strategy::S1) {
+                    // Already has strategy 1, don't set it again
+                    continue;
+                }
+                // else: has strategy 0 -> set to S1 and increment counter
+                cell->state_new().strategy = Strategy::S1;
+                cell->update();
+
+                num_set++;
+            }
         }
         else if (initial_state == "single_s0" || initial_state == "single_s1")
         {
@@ -168,6 +208,7 @@ public:
 
             auto& cells = _manager.cells();
 
+            // TODO use grid extensions here, not a config parameter!
             // Get the grid size and perform checks on it
             auto grid_size = this->cfg["grid_size"].template as<std::pair<std::size_t, std::size_t>>();
             // TODO Check with Benni: why pair?!
