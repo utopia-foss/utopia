@@ -186,19 +186,17 @@ build:debug-clang:
 # Test stage ------------------------------------------------------------------
 # Using the artifacts of the build stage, executes tests of core, data i/o,
 # frontend, and models.
-test:core:
-  stage: test
-  dependencies:
-    - build:tests
-  script:
-    - ./dune-common/bin/dunecontrol --only=utopia make test_core
-
-test:dataio:
+test:core: &test_core
   stage: test
   dependencies:
     - build:tests
   before_script:
     - cd /opt/dune
+  script:
+    - ./dune-common/bin/dunecontrol --only=utopia make test_core
+
+test:dataio:
+  <<: *test_core
   script:
     - ./dune-common/bin/dunecontrol --only=utopia make test_dataio
 
