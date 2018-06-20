@@ -79,7 +79,6 @@ private:
     // -- Temporary objects -- //
     /// A container to temporarily accumulate the fittest neighbour cells in
     CellContainer<typename ManagerType::Cell> _fittest_nbs;
-    // TODO check if it is ok to write this
     
     // -- Datasets -- //
     std::shared_ptr<DataSet> _dset_strategy;
@@ -507,16 +506,15 @@ private:
 
 
 /// Setup the grid manager with an initial state
-/** \param cfg       The config node for the SimpleEG model; 'grid_size'
-  *                  extracted from there
+/** \param cfg       The config node for the SimpleEG model; keys `grid_size`
+  *                  and `periodic` extracted from there
   * \param rng       The shared pointer to the shared RNG, made available also
   *                  to the grid manager
   *
-  * \tparam periodic Whether the grid should be periodic or not
   * \tparam Config   The Config type
   * \tparam RNGType  Type of the RNG to use in the grid manager
   */ 
-template<bool periodic=true, class Config, class RNGType>
+template<class Config, class RNGType>
 auto setup_manager(Config cfg, std::shared_ptr<RNGType> rng)
 {
     std::cout << "Setting up grid manager ..." << std::endl;
@@ -537,12 +535,22 @@ auto setup_manager(Config cfg, std::shared_ptr<RNGType> rng)
     // Create cells on that grid, passing the initial state
     auto cells = Utopia::Setup::create_cells_on_grid<true>(grid, state_0);
 
-    // Create the manager
-    auto manager = Utopia::Setup::create_manager_cells<true, periodic>(grid, cells, rng);
-
-    std::cout << "Grid manager initialized." << std::endl;
-
-    return manager;
+    // Depending on the config value, create either a GridManager with periodic
+    // or with non-periodic boundary conditions
+    if (cfg["periodic"].template as<bool>()) {
+        std::cout << "Initializing GridManager with periodic boundary "
+                     "conditions ...." << std::endl;
+        return Utopia::Setup::create_manager_cells<true, true>(grid,
+                                                               cells,
+                                                               rng);
+    }
+    else {
+        std::cout << "Initializing GridManager with fixed boundary "
+                     "conditions ..." << std::endl;
+        return Utopia::Setup::create_manager_cells<true, false>(grid,
+                                                                cells,
+                                                                rng);        
+    }
 }
 
 
