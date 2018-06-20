@@ -225,10 +225,9 @@ public:
     // Initialize the config node from the path to the config file
     cfg{cfg_path},
     // Create a file at the specified output path and store the shared pointer
-    hdffile(std::make_shared<HDFFile>(cfg["output_path"].as<std::string>(),
-                                      "w")),
+    hdffile(std::make_shared<HDFFile>(cfg["output_path"].template as<std::string>(), "w")),
     // Initialize the RNG from a seed
-    rng(std::make_shared<RNG>(cfg["seed"].as<int>()))
+    rng(std::make_shared<RNG>(cfg["seed"].template as<int>()))
     {
         std::cout << "Initialized pseudo parent from config file:  "
                   << cfg_path << std::endl;
