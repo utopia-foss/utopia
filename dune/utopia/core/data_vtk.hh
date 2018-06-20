@@ -17,6 +17,9 @@ public:
     /// Default constructor
     GridDataAdaptor () = default;
 
+    /// Default destructor
+    virtual ~GridDataAdaptor () = default;
+
     /// Update the local data before printout.
     virtual void update_data () = 0;
 };
@@ -262,7 +265,7 @@ public:
             const auto& ref = Dune::ReferenceElements<Coord,dim>
                 ::general(geo.type());
             const auto count = std::count_if(agents.begin(), agents.end(),
-                [&cell, &geo, &ref](const auto agent){
+                [&geo, &ref](const auto agent){
                     // transformation to element local coordinates
                     const auto pos_local = geo.local(agent->position());
                     return ref.checkInside(pos_local);
