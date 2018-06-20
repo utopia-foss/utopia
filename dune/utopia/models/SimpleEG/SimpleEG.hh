@@ -5,6 +5,7 @@
 #include <dune/utopia/core/setup.hh>
 #include <dune/utopia/core/model.hh>
 #include <dune/utopia/core/apply.hh>
+#include <dune/utopia/core/types.hh>
 
 namespace Utopia {
 
@@ -67,10 +68,20 @@ public:
 
 private:
     // Base members: time, name, cfg, hdfgrp, rng
-    // Members of this model
+
+    // -- Members of this model -- //
+    /// The grid manager
     ManagerType _manager;
+
+    /// The interaction matrix (extracted during initialization)
     std::vector<std::vector<double>> _ia_matrix;
-    // Pointers to datasets
+
+    // -- Temporary objects -- //
+    /// A container to temporarily accumulate the fittest neighbour cells in
+    CellContainer<typename ManagerType::Cell> _fittest_nbs;
+    // TODO check if it is ok to write this
+    
+    // -- Datasets -- //
     std::shared_ptr<DataSet> _dset_strategy;
     std::shared_ptr<DataSet> _dset_payoff;
 
@@ -90,6 +101,7 @@ public:
         // Now initialize members specific to this class
         _manager(manager),
         _ia_matrix(this->extract_ia_matrix()),
+        _fittest_nbs(),
         // datasets
         _dset_strategy(this->hdfgrp->open_dataset("strategy")),
         _dset_payoff(this->hdfgrp->open_dataset("payoff"))
@@ -99,6 +111,8 @@ public:
 
         // Write initial state
         this->write_data();
+
+        // Create
     }
 
     // Setup functions ........................................................
@@ -311,46 +325,53 @@ public:
 
         // Define the update rule lambda function
         auto update = [this](const auto cell){
-            using CellType = typename decltype(_manager)::Cell;
+            // Update procedure is as follows:
+            // Loop through the neighbors and store all neighbors with the
+            // highest payoff.
+            // Use the member _fittest_nbs for this, such that the vector does
+            // not need to be recreated for each cell.
+
+            // NOTE In most cases the vector will contain only one cell.
+            //      However, there are parameter regimes where multiple cells
+            //      can have the same payoff; this approach copes with spatial
+            //      artefacts regardless of the parameter regime and 
 
             // Get the state of the cell
             auto state = cell->state();
 
-            // Set highest payoff in the neighborhood to zero
-            double highest_payoff = 0.;
-
-            // Store all neighboring cells with the highest payoff in this vector
-            std::vector<std::shared_ptr<CellType>> fittest_nbs; 
+            // Set highest payoff in the neighborhood to negative infinity
+            double highest_payoff = - INFINITY;
+            // NOTE This will trigger clearing of _fittest_nbs container
+            //      upon first loop iteration
             
-            // Loop through the neighbors and store all neighbors with the highest payoff
-            // NOTE that in most cases the vector will contain only one cell.
-            // NOTE that this implementation is probably not the most efficient one
-            //      but it guarantees to cope with spatial artifacts in certain parameter regimes.
-            //      Any suggestions for a better approach?
+            // Iterate over neighbours of this cell:
             for (auto nb : MooreNeighbor::neighbors(cell, this->_manager)){
-                if (nb->state().payoff > highest_payoff){
+                if (nb->state().payoff > highest_payoff) {
+                    // Found a new highest payoff
                     highest_payoff = nb->state().payoff;
-                    fittest_nbs.clear();
-                    fittest_nbs.push_back(nb);
+                    _fittest_nbs.clear();
+                    _fittest_nbs.push_back(nb);
                 }
-                else if (nb->state().payoff == highest_payoff){
-                    highest_payoff = nb->state().payoff;
-                    fittest_nbs.push_back(nb);
+                else if (nb->state().payoff == highest_payoff) {
+                    // Have a payoff equal to that of another cell
+                    _fittest_nbs.push_back(nb);
                 }
+                // else: payoff was below highest payoff
             }
 
-            if (fittest_nbs.size() == 1){
-                // If there is only one fittest neighbor 
-                // update the cell's new state with the state of the fittest neighbor
-                state.strategy = fittest_nbs[0]->state().strategy;
+            // Now, update the strategy according to the fittest neighbour
+            if (_fittest_nbs.size() == 1) {
+                // Only one fittest neighbour. -> The state of the current cell
+                // is updated with that of the fittest neighbour.
+                state.strategy = _fittest_nbs[0]->state().strategy;
             }
-            else if (fittest_nbs.size() > 1){
-                // If there are multiple nbs with the same highest payoff
-                // choose randomly one of them to pass on its strategy
-                std::uniform_int_distribution<> dist(0, fittest_nbs.size() - 1);
-                state.strategy = fittest_nbs[dist(*this->rng)]->state().strategy;
+            else if (_fittest_nbs.size() > 1) {
+                // There are multiple nbs with the same (highest) payoff.
+                // -> Choose randomly one of them to pass on its strategy
+                std::uniform_int_distribution<> dist(0, _fittest_nbs.size()-1);
+                state.strategy = _fittest_nbs[dist(*this->rng)]->state().strategy;
             }
-            else{
+            else {
                 // There is no fittest neighbor. This case should never occur
                 throw std::runtime_error("There was no fittest neighbor in "
                                          "the cell update. Should not occur!");
