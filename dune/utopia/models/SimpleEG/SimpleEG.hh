@@ -359,10 +359,11 @@ public:
             return state;
         };
 
-        // Apply the rule to all cells
+        // Apply the rules to all cells
         apply_rule(interact, _manager.cells());
         apply_rule(update, _manager.cells());
     }
+
 
     /// Write data
     void write_data ()
@@ -398,15 +399,19 @@ public:
         // TODO Once implemented, use the higher-level wrapper for writing data
     }
 
+
     // TODO Check what to do with the below methods
     /// Set model boundary condition
     // void set_boundary_condition (const BCType& bc) { _bc = bc; }
 
+
     /// Set model initial condition
     // void set_initial_condition (const Data& ic) { _state = ic; }
 
+
     /// Return const reference to stored data
     // const Data& data () const { return _state; }
+
 
 private:
     /// Extract the interaction matrix from the config file
@@ -480,29 +485,30 @@ private:
 };
 
 
-// TODO could be made a bit more general and then used elsewhere? This would
-// predominantly require to find a convenient way to define the initial state?
-
 /// Setup the grid manager with an initial state
-/** \param config The top-level config node; 'grid_size' extracted from there
-  * \param rng The top-level RNG
+/** \param cfg       The config node for the SimpleEG model; 'grid_size'
+  *                  extracted from there
+  * \param rng       The shared pointer to the shared RNG, made available also
+  *                  to the grid manager
+  *
+  * \tparam periodic Whether the grid should be periodic or not
+  * \tparam Config   The Config type
+  * \tparam RNGType  Type of the RNG to use in the grid manager
   */ 
-template<bool periodic=true, class RNGType=std::mt19937>
-auto setup_manager(Utopia::DataIO::Config config, std::shared_ptr<RNGType> rng)
+template<bool periodic=true, class Config, class RNGType>
+auto setup_manager(Config cfg, std::shared_ptr<RNGType> rng)
 {
     std::cout << "Setting up grid manager ..." << std::endl;
 
     // Extract grid size from config
-    auto gsize = config["grid_size"].template as<std::pair<unsigned int, unsigned int>>();
-    // FIXME this should be an array! But leads to errors in pipeline ...
+    const auto gsize = cfg["grid_size"].template as<std::array<unsigned int, 2>>();
 
     // Inform about the size
     std::cout << "Creating 2-dimensional grid of size: "
-              << gsize.first << "x" << gsize.second 
-              << std::endl;
+              << gsize[0] << " x " << gsize[1] << std::endl;
 
     // Create grid of that size
-    auto grid = Utopia::Setup::create_grid<2>({gsize.first, gsize.second});
+    auto grid = Utopia::Setup::create_grid<2>(gsize);
 
     // Create the SimpleEG initial state: S0 and payoff 0.0
     State state_0 = {static_cast<Strategy>(0), 0.0};
@@ -518,8 +524,7 @@ auto setup_manager(Utopia::DataIO::Config config, std::shared_ptr<RNGType> rng)
     return manager;
 }
 
+
 } // namespace Models
-
 } // namespace Utopia
-
 #endif // UTOPIA_MODELS_SIMPLEEG_HH
