@@ -1,35 +1,43 @@
-#ifndef UTOPIA_MODEL_TEST_MODEL_CORE_HH
-#define UTOPIA_MODEL_TEST_MODEL_CORE_HH
+#ifndef UTOPIA_MODEL_TEST_MODEL_WITH_MANAGER_HH
+#define UTOPIA_MODEL_TEST_MODEL_WITH_MANAGER_HH
 
 #include <dune/utopia/base.hh>
 #include <dune/utopia/core/setup.hh>
 #include <dune/utopia/core/model.hh>
 
+
 /// Template declaration for model types extracted from Manager
 template<class Manager>
-using CoreModelTypes = Utopia::ModelTypes<
+using MngrModelTypes = Utopia::ModelTypes<
     typename Manager::Container,
     std::vector<bool>
 >;
 
-/// A very simple model implementing 
+/// A model that has a custom (and templated) Manager as as member
 template<class Manager>
-class CoreModel:
-    public Utopia::Model<CoreModel<Manager>, CoreModelTypes<Manager>>
+class MngrModel:
+    public Utopia::Model<MngrModel<Manager>, MngrModelTypes<Manager>>
 {
 private:
     Manager _manager;
 
 public:
+    using Base = Utopia::Model<MngrModel<Manager>, MngrModelTypes<Manager>>;
     using Data = typename Manager::Container;
-    using Base = Utopia::Model<CoreModel<Manager>, CoreModelTypes<Manager>>;
     using BCType = typename Base::BCType;
+    using Config = typename Base::Config;
+    using DataGroup = typename Base::DataGroup;
+    using RNG = typename Base::RNG;
 
     /// Construct the model.
     /** \param manager Manager for this model
      */
-    CoreModel (const Manager& manager):
-        Base(),
+    template<class ParentModel>
+    MngrModel (const std::string name,
+               ParentModel &parent_model,
+               const Manager& manager)
+    :
+        Base(name, parent_model),
         _manager(manager)
     { }
 
@@ -54,7 +62,7 @@ public:
     const Data& data () const { return _manager.cells(); }
 
     // Set model boundary condition
-    void set_boundary_condition (const BCType& bc) { }
+    void set_boundary_condition ([[maybe_unused]] const BCType& bc) { }
 
     /// Set model initial condition
     void set_initial_condition (const Data& container) {
@@ -68,21 +76,24 @@ public:
     }
 };
 
-/// Build the model!
-decltype(auto) setup_model_core(const unsigned int grid_size)
+/// Setup the manager to be used with the model class
+/** It is this setup method that allows type deduction while instantiating
+ *  the templated model class.
+ */
+decltype(auto) setup_manager(const unsigned int grid_size)
 {
     // types for cells
     constexpr bool sync = false;
     using State = double;
     using Tag = Utopia::DefaultTag;
 
+    // create a grid, cells on it
     auto grid = Utopia::Setup::create_grid(grid_size);
     auto cells = Utopia::Setup::create_cells_on_grid<sync, State, Tag>(
         grid, 0.0);
-    auto manager = Utopia::Setup::create_manager_cells<true, true>(grid, cells);
 
-    // class template argument deduction YESSSSS
-    return CoreModel(manager);
+    // can now create and return a GridManager
+    return Utopia::Setup::create_manager_cells<true, true>(grid, cells);
 }
 
-#endif // UTOPIA_MODEL_TEST_MODEL_CORE_HH
+#endif // UTOPIA_MODEL_TEST_MODEL_WITH_MANAGER_HH

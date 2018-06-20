@@ -1,3 +1,10 @@
+/**
+ * @brief In this file, a class for automatically creating intermediate buffer
+ *        data structures between the user provided data and the file are
+ *        provided.
+ *
+ * @file hdfbufferfactory.hh
+ */
 #ifndef HDFBUFFERFACTORY_HH
 #define HDFBUFFERFACTORY_HH
 
@@ -9,7 +16,6 @@ namespace Utopia
 {
 namespace DataIO
 {
-
 /**
  * @brief      Class which turns non-vector or plain-array containers into
  *             vectors. If the value_types are containers themselves, these are
@@ -66,41 +72,36 @@ public:
     template <typename Iter, typename Adaptor>
     static auto buffer(Iter begin, Iter end, Adaptor&& adaptor)
     {
-        using T = typename HDFTypeFactory::result_type<decltype(adaptor(*begin))>::type;
-
-        // Distinguish data types
-        if constexpr (is_container_type<T>::value)
+        using T = remove_qualifier_t<decltype(adaptor(*begin))>;
+        if constexpr (is_container_v<T>)
         {
-            // Distinguish string and other container types
-            if constexpr (std::is_same_v<T, std::string>)
+            // set up buffer
+
+            std::vector<hvl_t> data_buffer(std::distance(begin, end));
+
+            auto buffer_begin = data_buffer.begin();
+            for (; begin != end; ++begin, ++buffer_begin)
             {
-                // set up buffer
-                std::vector<const char*> data_buffer(std::distance(begin, end));
-
-                // Fill the buffer with converted source data
-                auto buffer_begin = data_buffer.begin();
-                for (auto it = begin; it != end; ++it, ++buffer_begin)
-                {
-                    *buffer_begin = convert_source(adaptor(*it));
-                }
-
-                return data_buffer;
+                *buffer_begin = convert_source(adaptor(*begin));
             }
-            else
-            {
-                // set up buffer
-                std::vector<hvl_t> data_buffer(std::distance(begin, end));
 
-                // Fill the buffer with converted source data
-                auto buffer_begin = data_buffer.begin();
-                for (; begin != end; ++begin, ++buffer_begin)
-                {
-                    *buffer_begin = convert_source(adaptor(*begin));
-                }
-
-                return data_buffer;
-            }
+            return data_buffer;
         }
+        else if constexpr (std::is_same_v<T, std::string>)
+        {
+            // set up buffer
+
+            std::vector<const char*> data_buffer(std::distance(begin, end));
+
+            auto buffer_begin = data_buffer.begin();
+            for (auto it = begin; it != end; ++it, ++buffer_begin)
+            {
+                *buffer_begin = convert_source(adaptor(*it));
+            }
+
+            return data_buffer;
+        }
+
         else
         { // not a container
             // set up buffer

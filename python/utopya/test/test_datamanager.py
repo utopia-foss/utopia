@@ -93,7 +93,7 @@ def test_load_single(dm_after_single):
     # Check that the binary data is loaded as expected
     assert 'data' in uni
     assert 'data/dummy' in uni
-    assert len(uni['data/dummy']) == 5
+    assert len(uni['data/dummy']) == 6
 
     # Get the first dataset and check its content
     dset = uni['data/dummy/data-1']
@@ -126,7 +126,7 @@ def test_load_sweep(dm_after_sweep):
         # Check that the binary data is loaded as expected
         assert 'data' in uni
         assert 'data/dummy' in uni
-        assert len(uni['data/dummy']) == 5
+        assert len(uni['data/dummy']) == 6
     
         # Get the first dataset and check its content
         dset = uni['data/dummy/data-1']

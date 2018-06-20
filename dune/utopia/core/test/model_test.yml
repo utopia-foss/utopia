@@ -1,0 +1,7 @@
+---
+seed: 42
+output_path: model_test_tmpfile.h5
+num_steps: 3
+
+test:
+  foo: bar
