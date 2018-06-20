@@ -70,6 +70,24 @@ def test_create_mv():
     assert isinstance(mv2, utopya.Multiverse)
     assert mv2.wm.num_workers == 1
 
+def test_create_run_load():
+    """Tests the chained version of create_mv"""
+    mtc = tt.ModelTest("dummy", test_file=__file__)
+
+    # Run with different arguments:
+    # Without
+    mtc.create_run_load()
+
+    # With cfg_file
+    mtc.create_run_load(cfg_file="cfg/run_cfg.yml")
+    
+    # With run_cfg_path
+    mtc.create_run_load(run_cfg_path=str(mtc.test_dir.join("cfg/run_cfg.yml")))
+
+    # With both
+    with pytest.raises(ValueError, match="Can only pass either"):
+        mtc.create_run_load(cfg_file="foo", run_cfg_path="bar")
+
 def test_tmpdir_is_tmp():
     """This test is to assert that the temporary directory is really temporary"""
     mtc = tt.ModelTest("dummy", test_file=__file__)
