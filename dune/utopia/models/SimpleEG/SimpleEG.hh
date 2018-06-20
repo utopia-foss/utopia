@@ -208,13 +208,15 @@ public:
 
             auto& cells = _manager.cells();
 
-            // TODO use grid extensions here, not a config parameter!
-            // Get the grid size and perform checks on it
-            auto grid_size = this->cfg["grid_size"].template as<std::pair<std::size_t, std::size_t>>();
-            // TODO Check with Benni: why pair?!
+            // Get the grid extensions and perform checks on it
+            auto grid_ext = _manager.extensions();
+            // NOTE It is more robust to use the grid extensions than using the
+            //      values stored in cfg["grid_size"].
 
-            if ((grid_size.first % 2 == 0) || (grid_size.second % 2 == 0)) {
-                throw std::invalid_argument("Need odd values for grid_size to "
+            // For now, need to throw an error for non-odd-valued grid_ext
+            if (!(   (std::fmod(grid_ext[0], 2) != 0.)
+                  && (std::fmod(grid_ext[1], 2) != 0.))) {
+                throw std::invalid_argument("Need odd grid extensions to "
                                             "calculate central cell for "
                                             "setting initial state to '"
                                             + initial_state + "'!");
@@ -235,8 +237,8 @@ public:
                 //       even grid_size extensions is caught above
 
                 // Set the initial strategy depending on pos in the grid
-                if (   pos[0] == (float) grid_size.first  / 2 
-                    && pos[1] == (float) grid_size.second / 2) {
+                if (   pos[0] == grid_ext[0] / 2 
+                    && pos[1] == grid_ext[1] / 2) {
                     // The cell _is_ in the center of the grid
                     state.strategy = static_cast<Strategy>(single_strategy);
                 }
