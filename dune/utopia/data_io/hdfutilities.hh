@@ -46,7 +46,7 @@ struct remove_pointer
  * @tparam 0
  */
 template <typename T>
-struct remove_pointer<T, std::void_t<std::enable_if_t<std::is_pointer_v<T>, int>>>
+struct remove_pointer<T, std::enable_if_t<std::is_pointer_v<T>, std::void_t<>>>
 {
     using type = typename remove_pointer<std::remove_pointer_t<T>>::type;
 };
@@ -57,7 +57,7 @@ struct remove_pointer<T, std::void_t<std::enable_if_t<std::is_pointer_v<T>, int>
  * @tparam T
  */
 template <typename T>
-struct remove_pointer<T, std::void_t<std::enable_if_t<std::is_array_v<T>, int>>>
+struct remove_pointer<T, std::enable_if_t<std::is_array_v<T>, std::void_t<>>>
 {
     using type = typename remove_pointer<std::remove_all_extents_t<T>>::type;
 };

@@ -62,7 +62,7 @@ public:
     const Data& data () const { return _manager.cells(); }
 
     // Set model boundary condition
-    void set_boundary_condition (const BCType& bc) { }
+    void set_boundary_condition ([[maybe_unused]] const BCType& bc) { }
 
     /// Set model initial condition
     void set_initial_condition (const Data& container) {
