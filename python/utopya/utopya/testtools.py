@@ -3,12 +3,12 @@
 import os
 import logging
 from tempfile import TemporaryDirectory
-from typing import Union
+from typing import Union, Tuple
 
 import py
 from pkg_resources import resource_filename
 
-from utopya import Multiverse
+from utopya import Multiverse, DataManager
 from utopya.info import MODELS
 
 # Get a logger
@@ -120,7 +120,7 @@ class ModelTest:
 
         return str(abs_path)
 
-    def create_mv(self, run_cfg_path=None, **update_meta_cfg) -> Multiverse:
+    def create_mv(self, run_cfg_path: str=None, **update_meta_cfg) -> Multiverse:
         """Creates a Multiverse for this model using the default model config
         
         Args:
@@ -173,6 +173,41 @@ class ModelTest:
         """
         return self.create_mv(run_cfg_path=self.get_file_path(cfg_file),
                               **update_meta_cfg)
+
+    def create_run_load(self, *, cfg_file: str=None, run_cfg_path: str=None, print_tree: bool=True, **update_meta_cfg) -> Tuple[Multiverse, DataManager]:
+        """Chains the create_mv, mv.run, and mv.dm.load_from_cfg
+        methods together and returns a (Multiverse, DataManager) tuple.
+        
+        Args:
+            cfg_file (str, optional): The name of the config file to use.
+            run_cfg_path (str, optional): The path of the run_cfg to use. Can
+                not be passed if cfg_file argument evaluates to True.
+            print_tree (bool, optional): Whether to print the loaded data tree
+            **update_meta_cfg: Arguments passed to the create_mv function
+        
+        Raises:
+            ValueError: If both cfg_file and run_cfg_path were given
+        """
+
+        # Check arguments, then create Multiverse
+        if cfg_file and run_cfg_path:
+            raise ValueError("Can only pass either arguments `cfg_file` OR "
+                             "`run_cfg_path`, got both.")
+
+        elif cfg_file:
+            mv = self.create_mv_from_cfg(cfg_file, **update_meta_cfg)
+
+        else:
+            mv = self.create_mv(run_cfg_path)
+
+        # Run the simulation
+        mv.run()
+
+        # Now, load the data into the data manager
+        mv.dm.load_from_cfg(print_tree=print_tree)
+
+        return mv, mv.dm
+
 
     # Private methods .........................................................
 
