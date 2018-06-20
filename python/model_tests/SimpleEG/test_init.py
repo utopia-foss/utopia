@@ -16,6 +16,7 @@ mtc = ModelTest("SimpleEG", test_file=__file__)
 
 
 # Helpers ---------------------------------------------------------------------
+# NOTE These helpers are also imported by other test modules for SimpleEG
 
 def model_cfg(**kwargs) -> dict:
     """Creates a dict that can update the config of the SimpleEG model"""

@@ -1,7 +1,7 @@
 # Config for testing the different initial states of the model
 #
 # NOTE that this sets only the common values; the changes are set via passing
-#      additional keys to the the ModelTest.create_mv_from_cfg method
+#      additional keys to the the ModelTest.create_run_load method
 ---
 parameter_space:
   # Disable steps; not needed

@@ -1,0 +1,46 @@
+# Config for testing that the model does not remain static
+#
+# Of course, this is only valid for some parameters and (in some regimes) for
+# a finite number of iteration steps.
+#
+# NOTE that this sets only the common values; the changes are set via passing
+#      additional keys to the the ModelTest.create_run_load method
+---
+perform_sweep: true
+
+parameter_space:
+  # Do a number of steps
+  num_steps: 10 # FIXME should test for higher number of time steps
+
+  # Set a fixed seed
+  seed: 42
+
+  # Load the default model config
+  SimpleEG: !model
+    model_name: SimpleEG
+
+    # Choose a smaller grid size to speed up tests
+    grid_size: [23, 23]
+    # -> for single_s1, need ext//2 time steps to reach borders
+
+    # Sweep over initial states
+    initial_state: !sweep
+      default: random
+      values:
+        - single_s1
+        - random
+        - fraction
+        # TODO add more here?!
+
+    # Choose a low number of s1 strategy cells (here, defectors)
+    s1_prob: 0.1
+    s1_fraction: 0.02
+    # FIXME somehow, higher _fraction_ causes faster convergence, s1_prob not.
+    #       Is this an error or a feature?!
+
+    # Test for different ia_matrix values
+    ia_matrix: !sweep
+      default: [[1, 2], [3, 4]]
+      values:
+        - [[1, 0], [1.9, 0]] # same as b = 1.9
+        # TODO add more here
