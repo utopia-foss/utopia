@@ -186,6 +186,7 @@ build:debug-clang:
 # frontend, and models.
 test:core: &test_core
   stage: test
+  <<: *ssh_access
   dependencies:
     - build:tests
   before_script:
