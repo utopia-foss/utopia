@@ -1,4 +1,4 @@
-"""Tests of the output of the SimpleEG model"""
+"""Tests of the initialisation of the SimpleEG model"""
 
 from itertools import chain
 
@@ -27,17 +27,10 @@ def model_cfg(**kwargs) -> dict:
 def test_basics():
     """Test the most basic features of the model, e.g. that it runs"""
     # Create a Multiverse using the default model configuration
-    mv = mtc.create_mv()
-
-    # Run a single simulation
-    mv.run_single()
-
-    # Load data using the DataManager
-    mv.dm.load_from_cfg(print_tree=True)
-    # The `print_tree` flag creates output of which data was loaded
+    mv, dm = mtc.create_run_load()
 
     # Assert that data was loaded, i.e. that data was written
-    assert len(mv.dm)
+    assert len(dm)
 
 
 def test_initial_state_random(): 
@@ -47,17 +40,12 @@ def test_initial_state_random():
     the other tests.
     """
     # Use the config file for common settings, change via additional kwargs
-    mv = mtc.create_mv_from_cfg("initial_state.yml",
-                                **model_cfg(initial_state='random'))
-
-    # Run the simulation (initial step only)
-    mv.run_sweep()
-
-    # Load data
-    mv.dm.load_from_cfg(print_tree=True)
+    mv, dm = mtc.create_run_load(cfg_file="initial_state.yml",
+                                 perform_sweep=True,
+                                 **model_cfg(initial_state='random'))
 
     # For all universes, perform checks on the payoff and strategy data
-    for uni in mv.dm['uni'].values():
+    for uni in dm['uni'].values():
         data = uni['data']['SimpleEG']
 
         # Get the grid size
@@ -78,15 +66,12 @@ def test_initial_state_random():
 
     # Test again for another probability value
     s1_prob = 0.2
-    mv = mtc.create_mv_from_cfg("initial_state.yml",
-                                **model_cfg(initial_state='random',
-                                            s1_prob=s1_prob))
+    mv, dm = mtc.create_run_load(cfg_file="initial_state.yml",
+                                 perform_sweep=True,
+                                 **model_cfg(initial_state='random',
+                                             s1_prob=s1_prob))
 
-    # Run the simulation (initial step only) and load data
-    mv.run_sweep()
-    mv.dm.load_from_cfg(print_tree=True)
-
-    for uni in mv.dm['uni'].values():
+    for uni in dm['uni'].values():
         data = uni['data']['SimpleEG']
 
         # All payoffs should be zero
@@ -103,16 +88,13 @@ def test_initial_state_fraction():
     s1_fraction = 0.1
 
     # Use the config file for common settings, change via additional kwargs
-    mv = mtc.create_mv_from_cfg("initial_state.yml",
-                                **model_cfg(initial_state='fraction',
-                                            s1_fraction=s1_fraction))
-
-    # Run the simulation (initial step only) and load data
-    mv.run_sweep()
-    mv.dm.load_from_cfg(print_tree=True)
+    mv, dm = mtc.create_run_load(cfg_file="initial_state.yml",
+                                 perform_sweep=True,
+                                 **model_cfg(initial_state='fraction',
+                                             s1_fraction=s1_fraction))
 
     # For all universes, check that the fraction is met
-    for uni in mv.dm['uni'].values():
+    for uni in dm['uni'].values():
         data = uni['data']['SimpleEG']
 
         # All payoffs should be zero
@@ -128,24 +110,18 @@ def test_initial_state_fraction():
 
 def test_initial_state_single(): 
     """Test that the initial state are """
-    # Create a few Multiverses with different initial states
-    mvs = []
+    # Create a few Multiverses with different initial states and store the
+    # resulting DataManagers
+    dms = []
 
-    # Use the config file for common settings, change via additional kwargs
-    mvs.append(mtc.create_mv_from_cfg("initial_state.yml",
-                                      **model_cfg(initial_state='single_s0')))
-
-    mvs.append(mtc.create_mv_from_cfg("initial_state.yml",
-                                      **model_cfg(initial_state='single_s1')))
-
-    # For all: Run the simulations (initial step only) and load the data
-    for mv in mvs:
-        mv.run()
-        mv.dm.load_from_cfg(print_tree=True)
+    for initial_state in ['single_s0', 'single_s1']:
+        _, dm = mtc.create_run_load(cfg_file="initial_state.yml",
+                                    **model_cfg(initial_state=initial_state))
+        dms.append(dm)
 
     # For all multiverses, go over all universes and check that all cells are
     # of the desired strategy
-    for uni in chain(*[mv.dm['uni'].values() for mv in mvs]):
+    for uni in chain(*[dm['uni'].values() for dm in dms]):
         # Get the data
         data = uni['data']['SimpleEG']
 
@@ -185,14 +161,14 @@ def test_initial_state_single():
     # grid_size extension being an even value, where no central cell can be
     # calculated ...
     with pytest.raises(SystemExit, match="1"):
-        mtc.create_mv_from_cfg("initial_state.yml",
+        mtc.create_mv_from_cfg(cfg_file="initial_state.yml",
                                perform_sweep=False,
                                **model_cfg(initial_state='single_s0',
                                            grid_size=[10, 10])
                                ).run()
 
     with pytest.raises(SystemExit, match="1"):
-        mtc.create_mv_from_cfg("initial_state.yml",
+        mtc.create_mv_from_cfg(cfg_file="initial_state.yml",
                                perform_sweep=False,
                                **model_cfg(initial_state='single_s0',
                                            grid_size=[10, 10])
