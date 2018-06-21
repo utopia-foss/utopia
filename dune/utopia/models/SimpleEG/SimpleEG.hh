@@ -514,7 +514,7 @@ private:
   * \tparam Config   The Config type
   * \tparam RNGType  Type of the RNG to use in the grid manager
   */ 
-template<class Config, class RNGType>
+template<bool periodic=true, class Config, class RNGType>
 auto setup_manager(Config cfg, std::shared_ptr<RNGType> rng)
 {
     std::cout << "Setting up grid manager ..." << std::endl;
@@ -535,22 +535,19 @@ auto setup_manager(Config cfg, std::shared_ptr<RNGType> rng)
     // Create cells on that grid, passing the initial state
     auto cells = Utopia::Setup::create_cells_on_grid<true>(grid, state_0);
 
-    // Depending on the config value, create either a GridManager with periodic
-    // or with non-periodic boundary conditions
-    if (cfg["periodic"].template as<bool>()) {
+    // Create the grid manager, passing the template argument
+    if (periodic) {
         std::cout << "Initializing GridManager with periodic boundary "
                      "conditions ...." << std::endl;
-        return Utopia::Setup::create_manager_cells<true, true>(grid,
-                                                               cells,
-                                                               rng);
     }
     else {
         std::cout << "Initializing GridManager with fixed boundary "
                      "conditions ..." << std::endl;
-        return Utopia::Setup::create_manager_cells<true, false>(grid,
-                                                                cells,
-                                                                rng);        
     }
+    
+    return Utopia::Setup::create_manager_cells<true, periodic>(grid,
+                                                               cells,
+                                                               rng);
 }
 
 
