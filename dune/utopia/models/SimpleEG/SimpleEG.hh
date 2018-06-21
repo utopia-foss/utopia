@@ -511,10 +511,11 @@ private:
   * \param rng       The shared pointer to the shared RNG, made available also
   *                  to the grid manager
   *
+  * \tparam periodic Whether the grid should be periodic or not
   * \tparam Config   The Config type
   * \tparam RNGType  Type of the RNG to use in the grid manager
   */ 
-template<bool periodic=true, class Config, class RNGType>
+template<bool periodic, class Config, class RNGType>
 auto setup_manager(Config cfg, std::shared_ptr<RNGType> rng)
 {
     std::cout << "Setting up grid manager ..." << std::endl;
