@@ -22,27 +22,27 @@ int main (int argc, char** argv)
         // Initialize the main model instance with different template arguments
         // and then iterate it ...
         // FIXME stop it with teh copy-pasta! Can't we do this in a better way?
-        if (cfg["SimpleEG"]["periodic"].as<bool>()) {
+        // if (cfg["SimpleEG"]["periodic"].as<bool>()) {
             // Periodic grid
             SimpleEGModel model("SimpleEG", pp,
-                                setup_manager<true>(cfg["SimpleEG"],
+                                setup_manager(cfg["SimpleEG"],
                                                     pp.get_rng()));
 
             for (std::size_t i = 0; i<cfg["num_steps"].as<std::size_t>(); i++){
                 model.iterate();
             }
 
-        }
-        else {
-            // Non-periodic grid
-            SimpleEGModel model("SimpleEG", pp,
-                                setup_manager<false>(cfg["SimpleEG"],
-                                                     pp.get_rng()));
+        // }
+        // else {
+        //     // Non-periodic grid
+        //     SimpleEGModel model("SimpleEG", pp,
+        //                         setup_manager<false>(cfg["SimpleEG"],
+        //                                              pp.get_rng()));
 
-            for (std::size_t i = 0; i<cfg["num_steps"].as<std::size_t>(); i++){
-                model.iterate();
-            }
-        }
+        //     for (std::size_t i = 0; i<cfg["num_steps"].as<std::size_t>(); i++){
+        //         model.iterate();
+        //     }
+        // }
 
         std::cout << "Done." << std::endl;
 
