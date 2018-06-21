@@ -521,14 +521,15 @@ auto setup_manager(Config cfg, std::shared_ptr<RNGType> rng)
     std::cout << "Setting up grid manager ..." << std::endl;
 
     // Extract grid size from config
-    const auto gsize = cfg["grid_size"].template as<std::array<unsigned int, 2>>();
+    const auto gsize = cfg["grid_size"].template as<std::vector<unsigned int>>();
+    // FIXME dirty! But using std::array somehow leads to forward declaration error in yaml-cpp < 0.6 … -.-
 
     // Inform about the size
     std::cout << "Creating 2-dimensional grid of size: "
               << gsize[0] << " x " << gsize[1] << std::endl;
 
     // Create grid of that size
-    auto grid = Utopia::Setup::create_grid<2>(gsize);
+    auto grid = Utopia::Setup::create_grid<2>({{gsize[0], gsize[1]}});
 
     // Create the SimpleEG initial state: S0 and payoff 0.0
     State state_0 = {static_cast<Strategy>(0), 0.0};
