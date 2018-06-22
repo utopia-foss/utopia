@@ -74,32 +74,41 @@ mtc = ModelTest("dummy", test_file=__file__)
 def test_basics():
     """Test the most basic features of the model"""
     # Create a Multiverse from the shared ModelTest class
-    mv = mtc.create_mv_from_cfg("basics.yml")
+    mv = mtc.create_mv()
+    # NOTE This uses the default model config to initialize the Multiverse
 
     # Run the simulation
     mv.run()
 
-    # ...
+    # Load the data
+    mv.dm.load_from_cfg(print_tree=True)
+    # NOTE print_tree prints a visual representation of the loaded data tree
+    #      to stdout and is helpful to get an idea of which data is available
+
+    # Perform tests ...
 
 def test_advanced_stuff():
     """Test advanced model behaviour"""
     # Create a Multiverse from the shared ModelTest class
-    mv = mtc.create_mv_from_cfg("advanced.yml")
+    mv, dm = mtc.create_run_load(from_cfg="advanced.yml")
+    # NOTE this is a shortcut to directly create the Multiverse, run a
+    #      simulation, and let it be loaded by the DataManager. Return values
+    #      are the Multiverse and the DataManager instances.
 
-    # Run the simulation
-    mv.run()
-
-    # ...
+    # Perform tests ...
+    assert len(dm)
 ```
 
 Now, this will have created two `Multiverse` instances from different config files.
 Note that you can also create more than one `Multiverse` within a single test; just take care that your tests are neither too long nor too short.
 
 #### Handy commands
-* `mtc.get_file_path(rel_path)` returns the path to a file relative to the directory the test file (`__file__`) is in
-* You can also call the `mtc.create_mv` method to create a `Multiverse` using the `run_cfg_path`.
-* You can pass `update_meta_cfg` arguments as keyword arguments to both `create_mv` and `create_mv_from_cfg`.
-* By default, failing simulations raise an error. To adjust this, you can set the `sim_errors` key during initialization of `ModelTest`.
+* `mtc.get_file_path(rel_path)` returns the path to a file relative to the directory the test file (`__file__`) is in.
+* You can pass `update_meta_cfg` arguments as keyword arguments to `create_mv`.
+* By default, failing simulations raise an error, leading to `SystemExit`. To adjust this, you can set the `sim_errors` key during initialization of `ModelTest`. Also, you can use the `with pytest.raises(SystemExit):` environment to test for these errors.
+* The `create_run_load` chains the creation of a `Multiverse`, running a simulation, and loading the data. You can pass the `perform_sweep` flag to `create_run_load` to configure whether a single run or a parameter sweep should be performed.
+
+You can also check the already implemented model tests, e.g. for the `dummy` model, to get an idea of how to use the `DataManager`.
 
 #### _Further reading:_ Internal workings
 * Data output of the created `Multiverse` instances is written to a temporary directory
