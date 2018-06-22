@@ -120,15 +120,31 @@ class ModelTest:
 
         return str(abs_path)
 
-    def create_mv(self, run_cfg_path: str=None, **update_meta_cfg) -> Multiverse:
-        """Creates a Multiverse for this model using the default model config
+    def create_mv(self, *, from_cfg: str=None, run_cfg_path: str=None, **update_meta_cfg) -> Multiverse:
+        """Creates a Multiverse for this model.
+        
+        If both
         
         Args:
+            from_cfg (str, optional): The name of the config file (relative to
+                the test directory) to be used.
+            run_cfg_path (str, optional): The path of the run_cfg to use. Can
+                not be passed if from_cfg argument evaluates to True.
             **update_meta_cfg: Can be used to update the meta configuration
         
         Returns:
             Multiverse: The created Multiverse object
         """
+
+        # Check arguments
+        if from_cfg and run_cfg_path:
+            raise ValueError("Can only pass either argument `from_cfg` OR "
+                             "`run_cfg_path`, but got both!")
+
+        elif from_cfg:
+            # Use the config file in the test directory as run_cfg_path
+            run_cfg_path = self.get_file_path(from_cfg)
+
 
         # Use update_meta_cfg to pass a unique temporary directory as out_dir
         tmpdir = TemporaryDirectory(prefix=self.model_name,
@@ -159,46 +175,26 @@ class ModelTest:
         self._store_mv(mv, out_dir=tmpdir)
         return mv
 
-    def create_mv_from_cfg(self, cfg_file: str, **update_meta_cfg) -> Multiverse:
-        """Creates a Multiverse for this model using a test config file as run
-        configuration.
-        
-        Args:
-            cfg_file (str): Relative path to the config file to use as the run
-                configuration of this Multiverse.
-            **update_meta_cfg: Can be used to update the meta configuration
-        
-        Returns:
-            Multiverse: The created Multiverse object
-        """
-        return self.create_mv(run_cfg_path=self.get_file_path(cfg_file),
-                              **update_meta_cfg)
-
-    def create_run_load(self, *, cfg_file: str=None, run_cfg_path: str=None, print_tree: bool=True, **update_meta_cfg) -> Tuple[Multiverse, DataManager]:
+    def create_run_load(self, *, from_cfg: str=None, run_cfg_path: str=None, print_tree: bool=True, **update_meta_cfg) -> Tuple[Multiverse, DataManager]:
         """Chains the create_mv, mv.run, and mv.dm.load_from_cfg
         methods together and returns a (Multiverse, DataManager) tuple.
         
         Args:
-            cfg_file (str, optional): The name of the config file to use.
+            from_cfg (str, optional): The name of the config file (relative to
+                the test directory) to be used.
             run_cfg_path (str, optional): The path of the run_cfg to use. Can
-                not be passed if cfg_file argument evaluates to True.
+                not be passed if from_cfg argument evaluates to True.
             print_tree (bool, optional): Whether to print the loaded data tree
             **update_meta_cfg: Arguments passed to the create_mv function
         
         Raises:
-            ValueError: If both cfg_file and run_cfg_path were given
+            ValueError: If both from_cfg and run_cfg_path were given
         """
 
-        # Check arguments, then create Multiverse
-        if cfg_file and run_cfg_path:
-            raise ValueError("Can only pass either arguments `cfg_file` OR "
-                             "`run_cfg_path`, got both.")
-
-        elif cfg_file:
-            mv = self.create_mv_from_cfg(cfg_file, **update_meta_cfg)
-
-        else:
-            mv = self.create_mv(run_cfg_path)
+        # Create Multiverse
+        mv = self.create_mv(from_cfg=from_cfg,
+                            run_cfg_path=run_cfg_path,
+                            **update_meta_cfg)
 
         # Run the simulation
         mv.run()
