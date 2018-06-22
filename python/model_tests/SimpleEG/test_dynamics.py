@@ -40,3 +40,23 @@ def test_nonstatic():
             assert np.all(abs_diff_sum)
 
             print("  Check. :)\n")
+
+
+def specific_scenario():
+    mv, dm = mtc.create_run_load(cfg_file="specific_scenario.yml").run()
+
+    ### Check specific values 
+    ## First iteration
+    # The centred cell should have a payoff 8*2 and keep strategy S1
+    
+    # Its neighbors should have a payoff 7*1 + 1*0.1 and change their strategy to S1
+
+    ## Second iteration
+    # The centred cell should have a payoff 8*0.2 and keep strategy S1
+    
+    # Its neighbors in the corners should have a payoff 3*0.2 + 5*2 and change their strategy to S0
+
+    # Its neighbors on the side should have a payoff 5*0.2 + 3*2 and keep their strategy to S1
+
+
+    print(dm['uni']['data']['SimpleEG'])
