@@ -10,7 +10,7 @@ namespace DataIO
 {
     
     /// Type of the configuration
-    using Config = class YAML::Node;
+    using Config = YAML::Node;
 
 } // namespace DataIO
 
