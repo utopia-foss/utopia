@@ -1,3 +1,9 @@
+/**
+ * @brief This file implements tests for checking if the parts of the  dataio
+ *        module work together as intended
+ *
+ * @file hdfintegration_test.cc
+ */
 #include "../hdfattribute.hh"
 #include "../hdfdataset.hh"
 #include "../hdffile.hh"
@@ -20,11 +26,10 @@ void write(std::vector<Teststruct>& data)
     HDFFile file("integrationtest_file.h5", "w");
 
     // open file and read
-    auto group = file.get_basegroup()
-                     ->open_group("first_deeper")
-                     ->open_group("second_deeper/third_deeper");
+    auto group = file.get_basegroup()->open_group(
+        "first_deeper/second_deeper/third_deeper");
 
-    auto dataset = group->open_dataset("dataset");
+    auto dataset = group->open_dataset("dataset1");
     dataset->write(data.begin(), data.end(), [](auto& value) { return value.x; });
     // std::string attrdata = "this is a testattribute";
     dataset->add_attribute(
@@ -35,6 +40,7 @@ void write(std::vector<Teststruct>& data)
     auto dataset2 = group->open_dataset("dataset2");
     dataset2->write(data.begin(), data.end(),
                     [](auto& value) -> std::string& { return value.y; });
+
     dataset2->add_attribute("stringattribute",
                             "this is an attribute to std::string");
 
@@ -50,21 +56,22 @@ void read(std::vector<Teststruct>& data)
 {
     HDFFile file("integrationtest_file.h5", "r");
 
-    auto group = file.open_group("/first_deeper/second_deeper/third_deeper");
-    auto dataset = group->open_dataset("dataset");
+    // open file and read
+    auto group = file.get_basegroup()->open_group(
+        "first_deeper/second_deeper/third_deeper");
 
-    auto values = dataset->read<double>();
+    auto dataset1 = group->open_dataset("dataset1");
+    auto dataset2 = group->open_dataset("dataset2");
+    auto dataset3 = group->open_dataset("dataset3");
 
-    HDFAttribute attribute(*dataset, "testattribute");
-    auto read_attribute = attribute.read<std::string>();
-    assert(read_attribute == "this is an attribute to a double dataset");
+    auto values = dataset1->read<double>();
+
     assert(values.size() == data.size());
     for (std::size_t i = 0; i < data.size(); ++i)
     {
         assert(std::abs(values[i] - data[i].x) < 1e-16);
     }
 
-    auto dataset2 = group->open_dataset("dataset2");
     auto read_data = dataset2->read<std::string>();
     assert(read_data.size() == data.size());
     for (std::size_t i = 0; i < read_data.size(); ++i)
@@ -72,9 +79,8 @@ void read(std::vector<Teststruct>& data)
         assert(std::string(read_data[i]) == data[i].y);
     }
 
-    auto dataset3 = group->open_dataset("dataset3");
     auto read_data_int = dataset3->read<std::vector<int>>();
-    for (std::size_t i = 0; i < read_data.size(); ++i)
+    for (std::size_t i = 0; i < read_data_int.size(); ++i)
     {
         assert(read_data_int[i].size() == data[i].z.size());
         for (std::size_t j = 0; j < data[i].z.size(); ++j)
@@ -82,7 +88,14 @@ void read(std::vector<Teststruct>& data)
             assert(read_data_int[i][j] == data[i].z[j]);
         }
     }
+
+    HDFAttribute attribute(*dataset1, "testattribute");
+    auto [shape, read_attribute] = attribute.read<std::string>();
+    assert(shape.size() == 1);
+    assert(shape[0] == 1);
+    assert(read_attribute == "this is an attribute to a double dataset");
 }
+
 int main()
 {
     // H5Eset_auto(error_stack, NULL, NULL); // turn off automatic error
