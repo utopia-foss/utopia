@@ -3,6 +3,7 @@
 
 #include <dune/utopia/data_io/hdffile.hh>
 #include <dune/utopia/data_io/hdfgroup.hh>
+#include <dune/utopia/data_io/types.hh>
 #include <dune/utopia/core/types.hh>
 #include "yaml-cpp/yaml.h"
 
