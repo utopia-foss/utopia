@@ -15,11 +15,12 @@ message(STATUS "Installing required Python packages ...")
 # Manually install dependencies for utopya, if they are not already satisfied
 # paramspace
 dune_python_find_package(PACKAGE paramspace
-                         VERSION 1.0b0 EXACT  # NOTE exact needed during beta
+                         VERSION 1.0
                          INTERPRETER ${DUNE_PYTHON_VIRTUALENV_EXECUTABLE})
 
 if(NOT DUNE_PYTHON_paramspace_FOUND)
-    python_install_package_remote(URL ssh://git@ts-gitlab.iup.uni-heidelberg.de:10022/yunus/paramspace.git@releases/v1.0b
+    # install from current _master_ branch
+    python_install_package_remote(URL ssh://git@ts-gitlab.iup.uni-heidelberg.de:10022/yunus/paramspace.git
         TRUSTED_HOST ts-gitlab.iup.uni-heidelberg.de)
 endif()
 
@@ -29,7 +30,9 @@ dune_python_find_package(PACKAGE dantro
                          INTERPRETER ${DUNE_PYTHON_VIRTUALENV_EXECUTABLE})
 
 if(NOT DUNE_PYTHON_dantro_FOUND)
-    python_install_package_remote(URL ssh://git@ts-gitlab.iup.uni-heidelberg.de:10022/utopia/dantro.git
+    # install from current _master_ branch
+    python_install_package_remote(
+        URL ssh://git@ts-gitlab.iup.uni-heidelberg.de:10022/utopia/dantro.git
         TRUSTED_HOST ts-gitlab.iup.uni-heidelberg.de)
 endif()
 
