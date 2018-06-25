@@ -462,45 +462,40 @@ private:
      */
     std::vector<std::vector<double>> extract_ia_matrix()
     {
-        return this->cfg["ia_matrix"].template as<std::vector<std::vector<double>>>();
-        
-        // // NOTE: The part below should work, if the `Config` class is abandoned and the config is saved as a YAML::Node
-        // //          untill then, it is commented out
-
         // Return the ia_matrix if it is explicitly given in the config
-        // if (this->cfg["ia_matrix"]){
-        //     return this->cfg["ia_matrix"].as<std::vector<std::vector<double>>>();
-        // }
-        // // If ia_matrix is not provided in the config, get the ia_matrix from the bc-pair
-        // else if (this->cfg["bc_pair"]){
-        //     auto [b, c] = this->cfg["bc_pair"].as<std::pair<double, double>>();
-        //     double ia_00 = b - c;
-        //     double ia_01 = -c;
-        //     double ia_10 = b;
-        //     double ia_11 = 0.;
-        //     std::vector row0 {ia_00, ia_10};
-        //     std::vector row1 {ia_10, ia_11};
-        //     std::vector<std::vector<double>> ia_matrix {row0, row1};
-        //     return ia_matrix;
-        // }
-        // // If both previous cases are not provided, then return the ia_matrix given by the paramter "b"
-        // // NOTE: There is no check for b>1 implemented here.
-        // else if (this->cfg["b"]){
-        //     auto b = this->cfg["b"].as<double>();
-        //     double ia_00 = 1;
-        //     double ia_01 = 0;
-        //     double ia_10 = b;
-        //     double ia_11 = 0.;
-        //     std::vector row0 {ia_00, ia_10};
-        //     std::vector row1 {ia_10, ia_11};
-        //     std::vector<std::vector<double>> ia_matrix {row0, row1};
-        //     return ia_matrix;
-        // }
-        // // Case where no interaction parameters are provided
-        // else{
-        //     std::runtime_error("The interaction matrix is not given!");
-        //     throw;
-        // }
+        if (this->cfg["ia_matrix"]){
+            return this->cfg["ia_matrix"].template as<std::vector<std::vector<double>>>();
+        }
+        // If ia_matrix is not provided in the config, get the ia_matrix from the bc-pair
+        else if (this->cfg["bc_pair"]){
+            auto [b, c] = this->cfg["bc_pair"].template as<std::pair<double, double>>();
+            double ia_00 = b - c;
+            double ia_01 = -c;
+            double ia_10 = b;
+            double ia_11 = 0.;
+            std::vector row0 {ia_00, ia_10};
+            std::vector row1 {ia_01, ia_11};
+            std::vector<std::vector<double>> ia_matrix {row0, row1};
+            return ia_matrix;
+        }
+        // If both previous cases are not provided, then return the ia_matrix given by the paramter "b"
+        // NOTE: There is no check for b>1 implemented here.
+        else if (this->cfg["b"]){
+            auto b = this->cfg["b"].template as<double>();
+            double ia_00 = 1;
+            double ia_01 = 0;
+            double ia_10 = b;
+            double ia_11 = 0.;
+            std::vector row0 {ia_00, ia_10};
+            std::vector row1 {ia_01, ia_11};
+            std::vector<std::vector<double>> ia_matrix {row0, row1};
+            return ia_matrix;
+        }
+        // Case where no interaction parameters are provided
+        else{
+            std::runtime_error("The interaction matrix is not given!");
+            throw;
+        }
     }
 };
 
