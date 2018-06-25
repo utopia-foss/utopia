@@ -78,7 +78,7 @@ private:
 
     // -- Temporary objects -- //
     /// A container to temporarily accumulate the fittest neighbour cells in
-    CellContainer<typename ManagerType::Cell> _fittest_nbs;
+    CellContainer<typename ManagerType::Cell> _fittest_cell_in_nbhood;
     
     // -- Datasets -- //
     std::shared_ptr<DataSet> _dset_strategy;
@@ -100,7 +100,7 @@ public:
         // Now initialize members specific to this class
         _manager(manager),
         _ia_matrix(this->extract_ia_matrix()),
-        _fittest_nbs(),
+        _fittest_cell_in_nbhood(),
         // datasets
         _dset_strategy(this->hdfgrp->open_dataset("strategy")),
         _dset_payoff(this->hdfgrp->open_dataset("payoff"))
@@ -327,7 +327,7 @@ public:
             // Update procedure is as follows:
             // Loop through the neighbors and store all neighbors with the
             // highest payoff.
-            // Use the member _fittest_nbs for this, such that the vector does
+            // Use the member _fittest_cell_in_nbhood for this, such that the vector does
             // not need to be recreated for each cell.
 
             // NOTE In most cases the vector will contain only one cell.
@@ -338,37 +338,37 @@ public:
             // Get the state of the cell
             auto state = cell->state();
 
-            // Set highest payoff in the neighborhood to negative infinity
-            double highest_payoff = - INFINITY;
-            // NOTE This will trigger clearing of _fittest_nbs container
-            //      upon first loop iteration
+            // Set highest payoff in the neighborhood to the cell's payoff
+            double highest_payoff = state.payoff;
+            _fittest_cell_in_nbhood.clear();
+            _fittest_cell_in_nbhood.push_back(cell);
             
             // Iterate over neighbours of this cell:
             for (auto nb : MooreNeighbor::neighbors(cell, this->_manager)){
                 if (nb->state().payoff > highest_payoff) {
                     // Found a new highest payoff
                     highest_payoff = nb->state().payoff;
-                    _fittest_nbs.clear();
-                    _fittest_nbs.push_back(nb);
+                    _fittest_cell_in_nbhood.clear();
+                    _fittest_cell_in_nbhood.push_back(nb);
                 }
                 else if (nb->state().payoff == highest_payoff) {
                     // Have a payoff equal to that of another cell
-                    _fittest_nbs.push_back(nb);
+                    _fittest_cell_in_nbhood.push_back(nb);
                 }
                 // else: payoff was below highest payoff
             }
 
             // Now, update the strategy according to the fittest neighbour
-            if (_fittest_nbs.size() == 1) {
+            if (_fittest_cell_in_nbhood.size() == 1) {
                 // Only one fittest neighbour. -> The state of the current cell
                 // is updated with that of the fittest neighbour.
-                state.strategy = _fittest_nbs[0]->state().strategy;
+                state.strategy = _fittest_cell_in_nbhood[0]->state().strategy;
             }
-            else if (_fittest_nbs.size() > 1) {
+            else if (_fittest_cell_in_nbhood.size() > 1) {
                 // There are multiple nbs with the same (highest) payoff.
                 // -> Choose randomly one of them to pass on its strategy
-                std::uniform_int_distribution<> dist(0, _fittest_nbs.size()-1);
-                state.strategy = _fittest_nbs[dist(*this->rng)]->state().strategy;
+                std::uniform_int_distribution<> dist(0, _fittest_cell_in_nbhood.size()-1);
+                state.strategy = _fittest_cell_in_nbhood[dist(*this->rng)]->state().strategy;
             }
             else {
                 // There is no fittest neighbor. This case should never occur
