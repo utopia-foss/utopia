@@ -52,7 +52,6 @@ def test_specific_scenario():
     # Create a multiverse, run a single univers and save the data in the DataManager dm
     mv, dm = mtc.create_run_load(cfg_file="specific_scenario.yml", perform_sweep=False)
 
-    # payoff = dm['uni']['0']['data']['SimpleEG']['payoff'].reshape(11,11,11)
     payoff = dm['uni']['0']['data']['SimpleEG']['payoff'].reshape(11,11,11)
     strategy = dm['uni']['0']['data']['SimpleEG']['strategy'].reshape(11,11,11)
 
@@ -96,3 +95,28 @@ def test_specific_scenario():
                 else:
                     assert_eq(p2[5+dx][5+dy], 3.*0.2 + 5.*2.)
                     assert_eq(s2[5+dx][5+dy], 1)
+
+
+def test_macroscopic_values():
+    """Test macroscopic values taken and adapted from Nowak & May 1992"""
+    # Create a multiverse, run a single univers and save the data in the data manager dm
+    mv, dm = mtc.create_run_load(cfg_file="macroscopic_value.yml", perform_sweep=False)
+
+    # Get the strategy
+    strategy = dm['uni']['0']['data']['SimpleEG']['strategy']
+    
+    # Get the grid_size
+    cfg = dm['uni']['0']['cfg']['SimpleEG']
+    grid_size = cfg['grid_size']
+
+    # Calculate the frequency of S0 and S1 for the last five time steps
+    counts = [np.bincount(strategy[i]) for i in [-1, -2, -3, -4, -5]]
+    frequency = [c / (grid_size[0] * grid_size[1]) for c in counts]
+
+    # Assert that the frequency of S0 (here: cooperators) is around 0.41+-0.2
+    for f in frequency:
+        assert_eq(f[0], 0.41, epsilon=0.1)
+    # NOTE: In the paper of Nowak & May 1992 the final frequency is at about 0.31.
+    #       However, they have self-interactions included we do not want to have.
+    #       Nevertherless, this test should check whether a rather stable final frequency
+    #       is reached and does not change a lot within the last five time steps
