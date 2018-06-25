@@ -14,10 +14,12 @@ int main (int argc, char** argv)
 
         // Read in the config file
         const std::string config_file = argv[1];
-        Utopia::DataIO::Config config(config_file);
 
         // create PseudoParent, setting up the HDFFile and RNG
         Utopia::PseudoParent pp(config_file);
+
+        // get the config from the PseudoParent
+        auto config = pp.get_cfg();
 
         // Set the initial state, then create the model instance
         std::vector<double> state(1E3, 0.0);
