@@ -419,10 +419,6 @@ public:
         // TODO Once implemented, use the higher-level wrapper for writing data
     }
 
-    std::vector<std::vector<double>> get_ia_matrix const()
-    {
-        return _ia_matrix;
-    }
 
     // TODO Check what to do with the below methods
     /// Set model boundary condition
