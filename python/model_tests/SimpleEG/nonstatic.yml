@@ -42,5 +42,5 @@ parameter_space:
     ia_matrix: !sweep
       default: [[1, 2], [3, 4]]
       values:
-        - [[1, 0], [1.9, 0]] # same as b = 1.9
+        - [[1, 0], [1.6, 0]] # same as b = 1.9
         # TODO add more here

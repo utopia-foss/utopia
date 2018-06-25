@@ -42,7 +42,7 @@ def test_nonstatic():
 
             # Assert that all elements are non-zero, i.e. that the sum of the
             # absolute differences in each cell were non-zero for each step
-            # assert np.all(abs_diff_sum)
+            assert np.all(abs_diff_sum)
 
             print("  Check. :)\n")
 
@@ -55,9 +55,6 @@ def test_specific_scenario():
     # payoff = dm['uni']['0']['data']['SimpleEG']['payoff'].reshape(11,11,11)
     payoff = dm['uni']['0']['data']['SimpleEG']['payoff'].reshape(11,11,11)
     strategy = dm['uni']['0']['data']['SimpleEG']['strategy'].reshape(11,11,11)
-
-    print(payoff[0])
-    print(strategy[0])
 
     ### Check specific values 
     ## First iteration
@@ -82,8 +79,6 @@ def test_specific_scenario():
     ## Second iteration
     p2 = payoff[2]
     s2 = strategy[2]
-    print(p2)
-    print(s2)
 
     # The centred cell should have a payoff 8*0.2 and keep strategy S1
     assert_eq(p2[5][5], 8*0.2)
