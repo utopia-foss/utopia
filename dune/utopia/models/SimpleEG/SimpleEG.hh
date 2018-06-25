@@ -419,6 +419,10 @@ public:
         // TODO Once implemented, use the higher-level wrapper for writing data
     }
 
+    std::vector<std::vector<double>> get_ia_matrix const()
+    {
+        return _ia_matrix;
+    }
 
     // TODO Check what to do with the below methods
     /// Set model boundary condition
@@ -456,7 +460,7 @@ private:
      * If 1) is set, 2) and 3) will be ignored. The function returns the
      * explicitely given ia_matrix.
      * If 1) is not set, then the interaction matrix of 2) will be returned.
-     * If 2) and 3) are not set, the interaction matrix of 3) will be returned.
+     * If 1) and 2) are not set, the interaction matrix of 3) will be returned.
      * 
      * @return std::vector<std::vector<double>> The interaction matrix
      */
