@@ -111,6 +111,9 @@ public:
         // Write initial state
         this->write_data();
 
+        // Write _ia_matrix in hdfgrp attribute
+        this->hdfgrp->add_attribute("ia_matrix", _ia_matrix);
+
         // Create
     }
 
