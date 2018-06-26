@@ -476,8 +476,8 @@ private:
             double ia_01 = -c;
             double ia_10 = b;
             double ia_11 = 0.;
-            std::vector row0 {ia_00, ia_10};
-            std::vector row1 {ia_01, ia_11};
+            std::vector row0 {ia_00, ia_01};
+            std::vector row1 {ia_10, ia_11};
             std::vector<std::vector<double>> ia_matrix {row0, row1};
             return ia_matrix;
         }
@@ -489,8 +489,8 @@ private:
             double ia_01 = 0;
             double ia_10 = b;
             double ia_11 = 0.;
-            std::vector row0 {ia_00, ia_10};
-            std::vector row1 {ia_01, ia_11};
+            std::vector row0 {ia_00, ia_01};
+            std::vector row1 {ia_10, ia_11};
             std::vector<std::vector<double>> ia_matrix {row0, row1};
             return ia_matrix;
         }
