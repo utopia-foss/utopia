@@ -22,6 +22,24 @@ def model_cfg(**kwargs) -> dict:
     """Creates a dict that can update the config of the SimpleEG model"""
     return dict(parameter_space=dict(SimpleEG=dict(**kwargs)))
 
+def ia_matrix_from_b(b):
+    """Creates an interaction matrix from the benefit parameter b"""
+    return [[1, 0], [b, 0]]
+
+def ia_matrix_from_bc(*, b, c):
+    """Creates an itneraction matrix from a bc-pair"""
+    return [[b-c, -c], [b, 0]]
+
+def assert_eq(a, b, *, epsilon=1e-6):
+    """Assert that two quantities are equal within a numerical epsilon range"""
+    assert(np.absolute(a-b) < epsilon)
+
+def check_ia_matrices(m1, m2):
+    """Check that the matrix elements are equal"""
+    assert_eq(m1[0][0], m2[0][0])
+    assert_eq(m1[0][1], m2[0][1])
+    assert_eq(m1[1][0], m2[1][0])
+    assert_eq(m1[1][1], m2[1][1])
 
 # Tests -----------------------------------------------------------------------
 
@@ -174,3 +192,56 @@ def test_initial_state_single():
                                **model_cfg(initial_state='single_s0',
                                            grid_size=[10, 10])
                                ).run()
+
+def test_ia_matrix_extraction():
+    """Test that the ia_matrix is extracted correctly from the config"""
+    
+    # Test all possible combinations
+    # 
+    # The different yaml configuration files provide the following different cases:
+    #   0:        ia_matrix: [[1, 2], [3, 4]]
+    #   1:        bc_pair: [4, 5]
+    #   2:        b: 1.9
+    #   3:        b: 1.9
+    #             bc_pair: [4, 5]
+    #   4:        b: 1.9
+    #             ia_matrix: [[1, 2], [3, 4]]
+    #   5:        ia_matrix: [[1, 2], [3, 4]]
+    #             bc_pair: [4, 5]
+    #   6:        b: 1.9
+    #             bc_pair: [4, 5]
+    #             ia_matrix: [[1, 2], [3, 4]]
+    #   7:        -
+    #
+    # The default parameter is: b=1.6
+
+    # Define the interaction matrices
+    m = []
+    m.append([[1,2],[3,4]])                 # case 0 
+    m.append(ia_matrix_from_bc(b=4,c=5))    # case 1
+    m.append(ia_matrix_from_b(1.9))         # case 2
+    m.append(ia_matrix_from_bc(b=4,c=5))    # case 3
+    m.append([[1,2],[3,4]])                 # case 4  
+    m.append([[1,2],[3,4]])                 # case 5 
+    m.append([[1,2],[3,4]])                 # case 6
+    m.append(ia_matrix_from_b(1.6))         # case 7
+
+    # Create 8 multiverses with all possible combinations of providing an ia_matrix 
+    # and save the data managers in a list
+    dms = []
+    
+    # Create, run, and lad the multiverses
+    for i in np.arange(0,8):
+        _, dm = mtc.create_run_load(cfg_file="ia_matrix_case{}.yml".format(i))
+
+        dms.append(dm)
+
+    # For each universe, check whether the used interaction matrices are correct
+    for i, dm in enumerate(dms):
+        # Get the interaction matrix from the simulation run
+        dm_grp = dm['uni']['0']['data']['SimpleEG']
+        ia_matrix = dm_grp.attrs['ia_matrix']
+        
+        # Check whether the ia_matrix that should be used and the one actually used 
+        # in the simulation are equal
+        check_ia_matrices(m[i],ia_matrix)
