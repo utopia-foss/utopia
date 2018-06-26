@@ -324,10 +324,14 @@ class WorkerTask(Task):
         # Done with the checks now.
         # Spawn the child process with the given arguments
         log.debug("Spawning worker process with args:\n  %s", args)
-        proc = subprocess.Popen(args,
-                                bufsize=1, # line buffered
-                                stdout=stdout, stderr=stderr,
-                                **popen_kwargs)
+        try:
+            proc = subprocess.Popen(args,
+                                    bufsize=1, # line buffered
+                                    stdout=stdout, stderr=stderr,
+                                    **popen_kwargs)
+        except FileNotFoundError as err:
+            raise FileNotFoundError("Could not find command to execute! Did "
+                                    "you build your binary?") from err
 
         # Save the approximate creation time (as soon as possible)
         self.profiling['create_time'] = time.time()
