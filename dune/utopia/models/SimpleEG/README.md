@@ -50,7 +50,8 @@ This section provides a few crucial implementation details.
 
 In contrast to the implementation of Nowak & May 1992, this model excludes self-interactions. This means that, in this model, a player does not play against itself. 
 
-This difference leads to diverging parameter regimes
+This leads to difficulties in comparing the parameter regimes of the [Nowak1992] paper with the parameter regimes obtained with this model. However, qualitatively the same behaviors can be observed - only for slightly shifted parameters.
+<!-- Better check this! --> 
 
 ### Interaction Matrix
 
@@ -113,7 +114,7 @@ _NOTE_: Its quite difficult to adapt the notation of Friedman&Barry2016 to our n
 
 ##### Type 1: Hawk-Dove game (HD game)
 $w_1, w_2 >0$
-
+<!-- Perhaps small reference that EGT started with this one, due to May.--> 
 ##### Type 2: Coordination game (CO game)
 $w_1, w_2 <0$
 also known as snow-drift game
