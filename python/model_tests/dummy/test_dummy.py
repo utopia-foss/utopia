@@ -5,7 +5,6 @@ import numpy as np
 import pytest
 
 from utopya.testtools import ModelTest
-from utopya.tools import read_yml
 
 # Configure the ModelTest class for dummy
 mtc = ModelTest("dummy", test_file=__file__)
@@ -24,9 +23,10 @@ def test_basics():
     # Run a single simulation
     mv.run_single()
 
-    # Load data using the DataManager
+    # Load data using the DataManager and the default load configuration
     mv.dm.load_from_cfg(print_tree=True)
     # The `print_tree` flag creates output of which data was loaded
+    # NOTE can also use a shortcut to do all of the above, see test_output
 
     # Assert that data was loaded, i.e. that data was written
     assert len(mv.dm)
@@ -34,37 +34,34 @@ def test_basics():
     
 def test_output(): 
     """Test that the output structure is correct"""
-    # Create a Multiverse using a specific run configuration
-    mv = mtc.create_mv_from_cfg("output.yml")
-    cfg = read_yml(mtc.get_file_path("output.yml"))
+    # Create a Multiverse and let it run
+    mv, dm = mtc.create_run_load(from_cfg="output.yml", perform_sweep=True)
 
-    print(cfg)
-    print(mv.meta_config['parameter_space']._init_dict)
+    # Get the meta-config from the DataManager
+    mcfg = dm['cfg']['meta']
+    print("meta config: ", mcfg)
 
-    # Run a simulation
-    mv.run_sweep()
-
-    # Load data
-    mv.dm.load_from_cfg(print_tree=True)
-
-    # Assert that four runs finished successfully
-    assert len(mv.dm['uni']) == 4
+    # Assert that four runs finished successfully, as configured
+    assert len(dm['uni']) == mcfg['parameter_space'].volume
 
     # For each universe, iterate over the output data and assert the shape
     # and the content of the output data
-    for uni_no, uni in mv.dm['uni'].items():
+    for uni_no, uni in dm['uni'].items():
         # Get the data
         data = uni['data']['dummy']
 
+        # Get the config of this universe
+        uni_cfg = uni['cfg']
+
         # Assert correct length (100 steps + initial state)
-        assert len(data) == 101
+        assert len(data) == uni_cfg['num_steps'] + 1
         
         # Check the shape content of each dataset
         for dset_name, dset in data.items():
             # Assert dataset shape is correct
-            assert dset.shape == (1000,)
+            assert dset.shape == (1000,)  # NOTE: hard-coded
 
-            # Get the step
+            # Get the step from the dataset name (e.g., "data-42")
             step = int(dset_name[5:])
 
             # Assert correctness of data, depending on step

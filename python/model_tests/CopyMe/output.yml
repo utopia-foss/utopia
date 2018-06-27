@@ -1,7 +1,7 @@
-# Configuration file used to test advanced model behaviour
+# Configuration file used to test that the output of the model is correct
 
 # TODO specify what this config file intends to test here
-# TODO rename this file to match the intended test purpose
+# TODO rename this file to match the intended test purpose more explicitly
 ---
 perform_sweep: true
 
