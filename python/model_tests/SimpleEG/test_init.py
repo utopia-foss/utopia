@@ -59,7 +59,7 @@ def test_initial_state_random():
     the other tests.
     """
     # Use the config file for common settings, change via additional kwargs
-    mv, dm = mtc.create_run_load(cfg_file="initial_state.yml",
+    mv, dm = mtc.create_run_load(from_cfg="initial_state.yml",
                                  perform_sweep=True,
                                  **model_cfg(initial_state='random'))
 
@@ -85,7 +85,7 @@ def test_initial_state_random():
 
     # Test again for another probability value
     s1_prob = 0.2
-    mv, dm = mtc.create_run_load(cfg_file="initial_state.yml",
+    mv, dm = mtc.create_run_load(from_cfg="initial_state.yml",
                                  perform_sweep=True,
                                  **model_cfg(initial_state='random',
                                              s1_prob=s1_prob))
@@ -107,7 +107,7 @@ def test_initial_state_fraction():
     s1_fraction = 0.1
 
     # Use the config file for common settings, change via additional kwargs
-    mv, dm = mtc.create_run_load(cfg_file="initial_state.yml",
+    mv, dm = mtc.create_run_load(from_cfg="initial_state.yml",
                                  perform_sweep=True,
                                  **model_cfg(initial_state='fraction',
                                              s1_fraction=s1_fraction))
@@ -134,7 +134,7 @@ def test_initial_state_single():
     dms = []
 
     for initial_state in ['single_s0', 'single_s1']:
-        _, dm = mtc.create_run_load(cfg_file="initial_state.yml",
+        _, dm = mtc.create_run_load(from_cfg="initial_state.yml",
                                     **model_cfg(initial_state=initial_state))
         dms.append(dm)
 
@@ -180,18 +180,18 @@ def test_initial_state_single():
     # grid_size extension being an even value, where no central cell can be
     # calculated ...
     with pytest.raises(SystemExit, match="1"):
-        mtc.create_mv_from_cfg(cfg_file="initial_state.yml",
-                               perform_sweep=False,
-                               **model_cfg(initial_state='single_s0',
-                                           grid_size=[10, 10])
-                               ).run()
+        mtc.create_run_load(from_cfg="initial_state.yml",
+                            perform_sweep=False,
+                            **model_cfg(initial_state='single_s0',
+                                        grid_size=[10, 10])
+                            )
 
     with pytest.raises(SystemExit, match="1"):
-        mtc.create_mv_from_cfg(cfg_file="initial_state.yml",
-                               perform_sweep=False,
-                               **model_cfg(initial_state='single_s0',
-                                           grid_size=[10, 10])
-                               ).run()
+        mtc.create_run_load(from_cfg="initial_state.yml",
+                            perform_sweep=False,
+                            **model_cfg(initial_state='single_s0',
+                                        grid_size=[10, 10])
+                            )
 
 def test_ia_matrix_extraction():
     """Test that the ia_matrix is extracted correctly from the config"""
@@ -232,7 +232,7 @@ def test_ia_matrix_extraction():
     
     # Create, run, and lad the multiverses
     for i in np.arange(0,8):
-        _, dm = mtc.create_run_load(cfg_file="ia_matrix_case{}.yml".format(i))
+        _, dm = mtc.create_run_load(from_cfg="ia_matrix_case{}.yml".format(i))
 
         dms.append(dm)
 
