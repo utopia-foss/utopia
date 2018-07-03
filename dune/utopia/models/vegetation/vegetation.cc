@@ -3,7 +3,7 @@
 #include <chrono>         // std::chrono::seconds
 
 #include <dune/utopia/core/setup.hh>
-#include <dune/utopia/data_io/config.hh>
+#include <dune/utopia/data_io/types.hh>
 
 #include "vegetation.hh"
 

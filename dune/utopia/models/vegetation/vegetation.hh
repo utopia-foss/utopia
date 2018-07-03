@@ -5,7 +5,6 @@
 #include <dune/utopia/core/model.hh>
 #include <dune/utopia/core/apply.hh>
 
-#include <dune/utopia/data_io/config.hh>
 #include <dune/utopia/data_io/hdffile.hh>
 #include <dune/utopia/data_io/hdfgroup.hh>
 #include <dune/utopia/data_io/hdfdataset.hh>
