@@ -20,12 +20,16 @@ variables:
   DUNE_CONTROL_PATH: /opt/dune:$CI_PROJECT_DIR  # such that DUNE finds Utopia
   DUNECTRL: ./dune-common/bin/dunecontrol
   RUN_IN_DUNE_ENV: $CI_PROJECT_DIR/build-cmake/run-in-dune-env
+  ENTER_DUNE_ENV: source $CI_PROJECT_DIR/build-cmake/activate
+
+  # Flags
   CONFIG_FLAGS:
       -DDUNE_PYTHON_VIRTUALENV_SETUP=True
       -DDUNE_PYTHON_ALLOW_GET_PIP=True
   MAKE_FLAGS_BUILD: "" # none for now
+
+  # Directories
   MODEL_DIR: $CI_PROJECT_DIR/dune/utopia/models
-  DUNE_ENV_IMAGE: ccees/utopia:bionic
 
 # Define the image to use as base for all stages
 # NOTE that some jobs overwrite this setting locally
@@ -218,7 +222,8 @@ test:models:
     # Test all models using the testing framework
     - $DUNECTRL --only=utopia make test_models
     # Also test each model via the CLI
-    - $RUN_IN_DUNE_ENV utopia dummy
+    - $ENTER_DUNE_ENV
+    - utopia run dummy
     # TODO add calls for all models here
     # TODO find an automatic way to do this
 
@@ -229,9 +234,10 @@ test:cli:
     - build:models
   script:
     - $DUNECTRL --only=utopia configure
+    - $ENTER_DUNE_ENV
     # Test the CLI with the dummy model and its default configuration
-    - $RUN_IN_DUNE_ENV utopia dummy
+    - utopia run dummy
     # Test passing a custom run configuration and performing a sweep
-    - $RUN_IN_DUNE_ENV utopia dummy $MODEL_DIR/dummy/test/sweep.yml --sweep --note sweep
+    - utopia run dummy $MODEL_DIR/dummy/test/sweep.yml --sweep --note sweep
     # TODO perhaps move the dummy test file to a better location?
     # TODO add more tests here for other features of the CLI
