@@ -1,8 +1,4 @@
-file(COPY config_test.yaml DESTINATION .)
-
-
 set(TESTS_DATAIO
-    config_test
     hdfbufferfactory_test
     hdftypefactory_test
     hdffile_test
@@ -14,6 +10,7 @@ set(TESTS_DATAIO
     hdfdataset_test_read
     hdfintegration_test
     hdfgroup_test
+    hdfutilities_test
     )
 
 # add DATAIO tests

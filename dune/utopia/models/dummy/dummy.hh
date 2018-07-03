@@ -4,7 +4,6 @@
 #include <dune/utopia/base.hh>
 #include <dune/utopia/core/model.hh>
 
-#include <dune/utopia/data_io/config.hh>
 #include <dune/utopia/data_io/hdffile.hh>
 #include <dune/utopia/data_io/hdfgroup.hh>
 #include <dune/utopia/data_io/hdfdataset.hh>
@@ -67,6 +66,9 @@ public:
                        bc.begin(), state.begin(),
                        [](const auto a, const auto b) { return a + b; }
         );
+        // NOTE this increments each entry in the state vector by a random
+        // number between 0 and 1, writing the result to the state. Thus, the
+        // mean value of the state increases by 0.5 for each performed step
     }
 
     /// Write data into a dataset that corresponds to the current step

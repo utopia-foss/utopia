@@ -324,10 +324,14 @@ class WorkerTask(Task):
         # Done with the checks now.
         # Spawn the child process with the given arguments
         log.debug("Spawning worker process with args:\n  %s", args)
-        proc = subprocess.Popen(args,
-                                bufsize=1, # line buffered
-                                stdout=stdout, stderr=stderr,
-                                **popen_kwargs)
+        try:
+            proc = subprocess.Popen(args,
+                                    bufsize=1, # line buffered
+                                    stdout=stdout, stderr=stderr,
+                                    **popen_kwargs)
+        except FileNotFoundError as err:
+            raise FileNotFoundError("Could not find command to execute! Did "
+                                    "you build your binary?") from err
 
         # Save the approximate creation time (as soon as possible)
         self.profiling['create_time'] = time.time()
@@ -736,9 +740,20 @@ def parse_json(line: str) -> Union[dict, str]:
     """
     try:
         return json.loads(line, encoding='utf8')
-    except json.JSONDecodeError:
-        # Failed to do that. Just return the unparsed line
-        return line
+    
+    except (json.JSONDecodeError, TypeError) as err:
+        # One of the expected errors occured
+        log.debug("%s: %s for line '%s'.", err.__class__.__name__, err, line)
+        
+        # Just return it as the string representation
+        return str(line)
+
+    except Exception as err:
+        # Failed to do that for another reason; be more verbose about it
+        log.error("%s: %s for line '%s'.", err.__class__.__name__, err, line)
+
+        # Still return the string representation
+        return str(line)
 
 def enqueue_json(*, queue: queue.Queue, stream: BinaryIO, parse_func: Callable=parse_json) -> None:
     """Wrapper function for enqueue_lines with parse_json set as parse_func."""

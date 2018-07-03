@@ -1,3 +1,9 @@
+/**
+ * @brief This file provides a class which is responsible for the automatic
+ *        conversion between C/C++ types and HDF5 type identifiers.
+ *
+ * @file hdftypefactory.hh
+ */
 #ifndef HDFTYPEFACTORY_HH
 #define HDFTYPEFACTORY_HH
 
@@ -10,7 +16,11 @@ namespace Utopia
 {
 namespace DataIO
 {
-
+/**
+ * @brief Class which handles the conversion of C-types into hdf5types.
+ *
+ *
+ */
 class HDFTypeFactory
 {
 private:
@@ -22,45 +32,7 @@ private:
 
 public:
     /**
-     * @brief      struct for getting a plain type from a return type of a
-     *             function
-     *
-     * @tparam     T     { description }
-     * @tparam     U     { description }
-     */
-    template <typename T, typename U = T>
-    struct result_type
-    {
-        using type = T;
-    };
-
-    /**
-     * @brief      struct for getting a plain type from a return type of a
-     *             function
-     *
-     * @tparam     T     { description }
-     */
-    template <typename T>
-    struct result_type<T*>
-    {
-        using type = T;
-    };
-
-
-    /**
-     * @brief      struct for getting a plain type from a return type of a
-     *             function
-     *
-     * @tparam     T     { description }
-     */
-    template <typename T>
-    struct result_type<T&>
-    {
-        using type = T;
-    };
-
-    /**
-     * @brief      returns a HDF5 type from a given C++ primitive type
+     * @brief returns a HDF5 type from a given C++ primitive type
      *
      * @param[in]  size  The size
      *
@@ -71,47 +43,35 @@ public:
     template <typename T>
     static inline hid_t type([[maybe_unused]] std::size_t size = 0)
     {
-        if constexpr (std::is_reference_v<T>)
+        // include const char* which is a  c-string
+        if constexpr (is_container_v<T>)
         {
-            return type<std::remove_reference_t<T>>(size);
-        }
-
-        if constexpr (std::is_pointer_v<T>)
-        {
-            return type<std::remove_pointer_t<T>>(size);
-        }
-
-        if constexpr (is_container_type<T>::value)
-        {
-            if constexpr (std::is_same<T, std::string>::value)
+            if (size == 0)
             {
-                if (size == 0)
-                {
-                    hid_t type = H5Tcopy(H5T_C_S1);
-                    H5Tset_size(type, H5T_VARIABLE);
-                    return type;
-                }
-                else
-                {
-                    hid_t type = H5Tcopy(H5T_C_S1);
-                    H5Tset_size(type, size);
-                    return type;
-                }
+                return H5Tvlen_create(__get_type__<typename T::value_type>());
             }
             else
             {
-                if (size == 0)
-                {
-                    return H5Tvlen_create(__get_type__<typename T::value_type>());
-                }
-                else
-                {
-                    hsize_t dim[1] = {size};
-                    hid_t type = H5Tarray_create(
-                        __get_type__<typename T::value_type>(), 1, dim);
+                hsize_t dim[1] = {size};
+                hid_t type =
+                    H5Tarray_create(__get_type__<typename T::value_type>(), 1, dim);
 
-                    return type;
-                }
+                return type;
+            }
+        }
+        else if constexpr (is_string_v<T>)
+        {
+            if (size == 0)
+            {
+                hid_t type = H5Tcopy(H5T_C_S1);
+                H5Tset_size(type, H5T_VARIABLE);
+                return type;
+            }
+            else
+            {
+                hid_t type = H5Tcopy(H5T_C_S1);
+                H5Tset_size(type, size);
+                return type;
             }
         }
         else

@@ -86,7 +86,7 @@ void visual_check (const ID id, const M1 &m1, const M2 &m2, const std::string pr
 
 /// Assure that periodic grid has the correct Neighbor count
 template<class NBClass, int nb_count, typename Manager>
-constexpr void check_grid_neighbors_count (const Manager& manager)
+void check_grid_neighbors_count (const Manager& manager)
 {
     bool exception = false;
 
@@ -186,7 +186,13 @@ void cells_on_grid_test (const unsigned int cells_per_dim)
     // check that neighbor count is correct everywhere on periodic grids
     check_grid_neighbors_count<NextNeighbor, 2*dim>(m3);
 
-    const int moore_nb_count = std::pow(3, dim) - 1;
-    check_grid_neighbors_count<MooreNeighbor, moore_nb_count>(m3);
-
+    if (dim==2) {
+        check_grid_neighbors_count<MooreNeighbor, 8>(m3);
+    }
+    else if (dim == 3) {
+        check_grid_neighbors_count<MooreNeighbor, 26>(m3);
+    }
+    else {
+        DUNE_THROW(Dune::IOError, "This test only supports dim=2 and dim=3.");
+    }
 }
