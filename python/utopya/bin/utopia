@@ -13,6 +13,8 @@ subparsers = parser.add_subparsers(dest='mode',
                                    title="commands")
 p_run  = subparsers.add_parser('run',
                                help="perform a simulation run")
+p_cfg  = subparsers.add_parser('config',
+                               help="set user-specific config options")
 
 # subcommand: run .............................................................
 p_run.add_argument('model_name',
@@ -46,6 +48,14 @@ p_run.add_argument('--sim-errors',
                         "(if set) the user configuration is used.") 
 # TODO make possible to set simulation steps here
 
+# subcommand: config ..........................................................
+p_cfg.add_argument('--deploy',
+                   action='store_true',
+                   help="Deploy the user config file (all entries disabled) "
+                        "to ~/.config/utopia/user_cfg.yml, asking for further "
+                        "action if a file already exists at that location.")
+# TODO add --get and --set to easily manipulate entries
+
 # subcommand: TODO ............................................................
 # ...
 
@@ -56,9 +66,19 @@ args = parser.parse_args()
 # -----------------------------------------------------------------------------
 # If continuing further, need utopya
 import utopya
+import utopya.cltools
 
 
 if __name__ == '__main__':
+    # Config subcommand .......................................................
+    if args.mode == 'config':
+        if args.deploy:
+            utopya.cltools.deploy_user_cfg()
+
+        # End here.
+        sys.exit()
+
+
     # Prepare Multiverse ......................................................
     # Set an empty update dict. It will hold adjustments to the given configs
     update_dict = {}
