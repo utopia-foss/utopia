@@ -235,6 +235,8 @@ test:cli:
   script:
     - $DUNECTRL --only=utopia configure
     - $ENTER_DUNE_ENV
+    # Test deployment of user configuration
+    - utopia config --deploy
     # Test the CLI with the dummy model and its default configuration
     - utopia run dummy
     # Test passing a custom run configuration and performing a sweep

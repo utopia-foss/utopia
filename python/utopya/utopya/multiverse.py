@@ -21,6 +21,7 @@ from utopya.info import MODELS
 # Configure and get logger
 log = logging.getLogger(__name__)
 
+# -----------------------------------------------------------------------------
 
 class Multiverse:
     """The Multiverse is where everything is orchestrated.
@@ -274,7 +275,7 @@ class Multiverse:
                                 "path {}!".format(user_cfg_path))
 
             # Check that it does not contain parameter_space
-            if 'parameter_space' in user_cfg:
+            if user_cfg and 'parameter_space' in user_cfg:
                 raise ValueError("There was a 'parameter_space' key found in "
                                  "the user configuration loaded from {}. You "
                                  "need to remove it.".format(user_cfg_path))
@@ -573,37 +574,3 @@ class Multiverse:
 
         log.debug("Added simulation task for universe %d.", uni_id)
 
-
-# -----------------------------------------------------------------------------
-# Others
-
-def distribute_user_cfg(user_cfg_path: str=Multiverse.USER_CFG_SEARCH_PATH):
-    """Distributes a copy of the base config to the user config search path of the Multiverse class."""
-    # Get the class constants for the base config
-    base_cfg_path = Multiverse.BASE_CFG_PATH
-
-    # Ensure the given path is a string (and not a path-like object)
-    user_cfg_path = str(user_cfg_path)
-
-    # Check if a user config already exists
-    if os.path.isfile(user_cfg_path):
-        # There already is one. Ask if this should be overwritten...
-        print("A user config already exists at "+str(user_cfg_path))
-        if input("Replace with base config? [y, N]  ").lower() in ['yes', 'y']:
-            # Delete the file
-            os.remove(user_cfg_path)
-            print("")
-
-        else:
-            # Abort here
-            print("Not distributing user config ...")
-            return
-    
-    # At this point, can assume that it is desired to write the file and there is no other file there
-    # Make sure that the folder exists
-    os.makedirs(os.path.dirname(user_cfg_path), exist_ok=True)
-
-    # Copy the file to where it should be
-    copyfile(base_cfg_path, user_cfg_path)
-
-    print("Distributed user configuration to {}\n".format(user_cfg_path))
