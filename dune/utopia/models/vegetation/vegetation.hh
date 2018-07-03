@@ -57,8 +57,6 @@ public:
         bc = std::make_tuple(rain, 
                              this->cfg["growth"].template as<double>(), 
                              this->cfg["seeding"].template as<double>());
-        //std::normal_distribution<> rain{10.1,1.2};
-        //bc = std::make_tuple(rain, 0.2, 0.2);
 
         // Write constant values (such as positions of cells)
         // TODO add info about parameter as metadata
@@ -104,8 +102,31 @@ public:
                     [](const auto cell){ return cell->state(); });
     }
 
+    /// Return const reference to stored data
     const Data& data () const { return manager.cells(); }
+    
+    /// Set model boundary condition
+    void set_boundary_condition (const BCType& new_bc) { bc = new_bc; }
 
+    /// Set model initial condition
+    void set_initial_condition (const Data& ic) {
+        auto cells = manager.cells();
+        for (auto ci : cells) {
+            // Find cell in ic with same coordinates
+            for (auto cj : ic) {
+                std::cout << "  Comparing cell " << ci->id() << " against " << cj->id();
+                if (ci->position() == cj->position()) {
+                    // Copy cell content
+                    ci->state_new() = cj->state();
+                    std::cout << " - same position!";
+                }
+                std::cout << std::endl;
+            }
+        }
+        for_each(cells.begin(), cells.end(),
+            [](const auto& cell){ cell->update(); }
+        );
+    }
 };
 
 } // namespace Models

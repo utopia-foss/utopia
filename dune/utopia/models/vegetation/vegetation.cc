@@ -40,6 +40,21 @@ int main (int argc, char** argv)
             model.iterate();
         }
 
+        // Test set_boundary_condition
+        std::cout << "Testing set_boundary_condition ..." << std::endl;
+        std::normal_distribution<> rain{10.1,1.2};
+        auto bc = std::make_tuple(rain, 0.2, 0.2);
+        model.set_boundary_condition(bc);
+
+        // Test data
+        std::cout << "Testing get data ..." << std::endl;
+        auto d = model.data();
+
+        // Test set_initial_condition
+        std::cout << "Testing set_initial_condition ..." << std::endl;
+        model.set_initial_condition(d);
+        
+
         // Sleep (to be read by frontend)
         unsigned int sleep_time = 300; // in milliseconds
         unsigned int num_sleeps = 3;
