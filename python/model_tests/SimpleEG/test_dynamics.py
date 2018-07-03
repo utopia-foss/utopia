@@ -20,7 +20,7 @@ def assert_eq(a, b, *, epsilon=1e-6):
 
 def test_nonstatic():
     """Check that a randomly initialized grid generates non-static output."""
-    mv, dm = mtc.create_run_load(cfg_file="nonstatic.yml")
+    mv, dm = mtc.create_run_load(from_cfg="nonstatic.yml")
 
     for uni_name, uni in dm['uni'].items():
         # For debugging, print the IA matrix value
@@ -50,7 +50,7 @@ def test_nonstatic():
 def test_specific_scenario():
     """Test a specific case of the SimpleEG model"""
     # Create a multiverse, run a single univers and save the data in the DataManager dm
-    mv, dm = mtc.create_run_load(cfg_file="specific_scenario.yml", perform_sweep=False)
+    mv, dm = mtc.create_run_load(from_cfg="specific_scenario.yml", perform_sweep=False)
 
     payoff = dm['uni']['0']['data']['SimpleEG']['payoff'].reshape(11,11,11)
     strategy = dm['uni']['0']['data']['SimpleEG']['strategy'].reshape(11,11,11)
@@ -100,7 +100,7 @@ def test_specific_scenario():
 def test_macroscopic_values():
     """Test macroscopic values taken and adapted from Nowak & May 1992"""
     # Create a multiverse, run a single univers and save the data in the data manager dm
-    mv, dm = mtc.create_run_load(cfg_file="macroscopic_value.yml", perform_sweep=False)
+    mv, dm = mtc.create_run_load(from_cfg="macroscopic_value.yml", perform_sweep=False)
 
     # Get the strategy
     strategy = dm['uni']['0']['data']['SimpleEG']['strategy']

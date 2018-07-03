@@ -58,15 +58,15 @@ def test_create_mv():
     mtc = tt.ModelTest("dummy", test_file=__file__)
 
     # Basic initialization
-    mv1 = mtc.create_mv_from_cfg("cfg/run_cfg.yml")
+    mv1 = mtc.create_mv(from_cfg="cfg/run_cfg.yml")
     assert isinstance(mv1, utopya.Multiverse)
 
     # Pass some more information to the function to call other branches of the
     # function where arguments are inserted (nonzero exit handling and the
     # temporary file path)
-    mv2 = mtc.create_mv_from_cfg("cfg/run_cfg.yml",
-                                 worker_manager=dict(num_workers=1),
-                                 paths=dict(model_note="foo"))
+    mv2 = mtc.create_mv(from_cfg="cfg/run_cfg.yml",
+                        worker_manager=dict(num_workers=1),
+                        paths=dict(model_note="foo"))
     assert isinstance(mv2, utopya.Multiverse)
     assert mv2.wm.num_workers == 1
 
@@ -78,20 +78,20 @@ def test_create_run_load():
     # Without
     mtc.create_run_load()
 
-    # With cfg_file
-    mtc.create_run_load(cfg_file="cfg/run_cfg.yml")
+    # With a config file in the test directory
+    mtc.create_run_load(from_cfg="cfg/run_cfg.yml")
     
     # With run_cfg_path
     mtc.create_run_load(run_cfg_path=str(mtc.test_dir.join("cfg/run_cfg.yml")))
 
     # With both
     with pytest.raises(ValueError, match="Can only pass either"):
-        mtc.create_run_load(cfg_file="foo", run_cfg_path="bar")
+        mtc.create_run_load(from_cfg="foo", run_cfg_path="bar")
 
 def test_tmpdir_is_tmp():
     """This test is to assert that the temporary directory is really temporary"""
     mtc = tt.ModelTest("dummy", test_file=__file__)
-    mv = mtc.create_mv_from_cfg("cfg/run_cfg.yml")
+    mv = mtc.create_mv(from_cfg="cfg/run_cfg.yml")
 
     # Extract the path to the temporary directory and assert it was created
     tmpdir_path = mtc._mvs[0]['out_dir'].name
