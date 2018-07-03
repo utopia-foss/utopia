@@ -14,7 +14,9 @@ include_directories(${YAML_CPP_INCLUDE_DIR})
 list(APPEND DUNE_LIBS ${YAML_CPP_LIBRARIES})
 
 # SPDLOG
-find_package(spdlog 0.16.3 REQUIRED CONFIG)
+# Notice: Ubuntu Bionic includes 0.16.3 but its version string is 0.16.2
+# I guess this is a bug of this particular version
+find_package(spdlog 0.16.2 REQUIRED CONFIG)
 
 # File for module specific CMake tests.
 if(NOT PSGRAF_ROOT)
