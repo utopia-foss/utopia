@@ -9,7 +9,7 @@ int main(int argc, char** argv)
         Dune::MPIHelper::instance(argc,argv);
 
         // create two grids
-        auto rect_2d = Utopia::Setup::create_grid({100,100},{1.0,1.0});
+        auto rect_2d = Utopia::Setup::create_grid({{100, 100}}, {{1.0, 1.0}});
 
         // structured yasp grid
         auto agents = Utopia::Setup::create_agents_on_grid(rect_2d,100,0);

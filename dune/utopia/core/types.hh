@@ -1,5 +1,5 @@
-#ifndef TYPES_HH
-#define TYPES_HH
+#ifndef UTOPIA_CORE_TYPES_HH
+#define UTOPIA_CORE_TYPES_HH
 
 namespace Utopia
 {
@@ -59,4 +59,4 @@ using entity_t = typename Container::value_type::element_type;
 
 } // namespace Utopia
 
-#endif // TYPES_HH
+#endif // UTOPIA_CORE_TYPES_HH

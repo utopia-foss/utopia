@@ -5,9 +5,8 @@
 
 class Serial
 {
-private:
+public:
     friend class boost::serialization::access;
-    int number;
 };
 
 int main ()

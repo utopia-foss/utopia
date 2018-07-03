@@ -1,3 +1,9 @@
+/**
+ * @brief This is the central file of the HDF5 dataIO module of Utopia and
+ * provides a class for writing to, reading from and creating almost arbitrary
+ * data to a dataset in a HDF5 file.
+ * @file hdfdataset.hh
+ */
 #ifndef HDFDATASET_HH
 #define HDFDATASET_HH
 
@@ -9,12 +15,10 @@
 #include <hdf5_hl.h>
 #include <numeric>
 #include <unordered_map>
-
 namespace Utopia
 {
 namespace DataIO
 {
-
 /**
  * @brief      Class representing a HDFDataset, wich reads and writes data and
  *             attributes
@@ -58,8 +62,7 @@ private:
             }
 
             // make dataspace
-            hid_t dspace = H5Screate_simple(_rank, _extend.data(),
-                                            _max_extend.data());
+            hid_t dspace = H5Screate_simple(_rank, _extend.data(), _max_extend.data());
 
             // create dataset and return
             return H5Dcreate(_parent_object->get_id(), _name.c_str(),
@@ -71,8 +74,7 @@ private:
             // can create the dataset right away
             return H5Dcreate(_parent_object->get_id(), _name.c_str(),
                              HDFTypeFactory::type<Datatype>(),
-                             H5Screate_simple(_rank, _extend.data(),
-                                              _max_extend.data()),
+                             H5Screate_simple(_rank, _extend.data(), _max_extend.data()),
                              group_plist, H5P_DEFAULT, H5P_DEFAULT);
         }
     }
@@ -182,26 +184,17 @@ private:
      * @tparam     Adaptor    The type of the adaptor
      */
     template <typename Iter, typename Adaptor>
-    void __write_dataset__(Iter begin,
-                           Iter end,
-                           Adaptor&& adaptor,
-                           hid_t dspace,
-                           hid_t memspace)
+    void __write_dataset__(Iter begin, Iter end, Adaptor&& adaptor, hid_t dspace, hid_t memspace)
     {
-        using result_type =
-            typename HDFTypeFactory::result_type<decltype(adaptor(*begin))>::type;
+        using result_type = remove_qualifier_t<decltype(adaptor(*begin))>;
+        // now that the dataset has been made let us write to it
+        // buffering at first
+        auto buffer =
+            HDFBufferFactory::buffer(begin, end, std::forward<Adaptor&&>(adaptor));
 
-        // First, create the buffer
-        auto buffer = HDFBufferFactory::buffer(begin, end,
-                                               std::forward<Adaptor&&>(adaptor)
-                                               );
-
-        // Now, write to the buffer
-        herr_t write_err = H5Dwrite(_dataset,
-                                    HDFTypeFactory::type<result_type>(),
-                                    memspace, dspace,
-                                    H5P_DEFAULT, buffer.data());
-
+        // write to buffer
+        herr_t write_err = H5Dwrite(_dataset, HDFTypeFactory::type<result_type>(),
+                                    memspace, dspace, H5P_DEFAULT, buffer.data());
         if (write_err < 0)
         {
             throw std::runtime_error("Writing to 1D dataset failed!");
@@ -229,12 +222,9 @@ private:
         hid_t dspace = H5Dget_space(_dataset);
         hid_t memspace = H5Screate_simple(_rank, count.data(), NULL);
 
-        herr_t select_err = H5Sselect_hyperslab(dspace,
-                                                H5S_SELECT_SET,
-                                                offset.data(),
-                                                stride.data(),
-                                                count.data(),
-                                                block.data());
+        herr_t select_err =
+            H5Sselect_hyperslab(dspace, H5S_SELECT_SET, offset.data(),
+                                stride.data(), count.data(), block.data());
         if (select_err < 0)
         {
             throw std::runtime_error("Selecting 1D hyperslab failed!");
@@ -255,11 +245,36 @@ private:
      * @return     The data read from the dataset
      */
     template <typename desired_type>
-    auto __read_from_dataset__(hsize_t buffer_size,
-                               hid_t dspace,
-                               hid_t memspace)
+    auto __read_from_dataset__(hsize_t buffer_size, hid_t dspace, hid_t memspace)
     {
-        if constexpr (is_container<desired_type>::value)
+        if constexpr (is_container_v<desired_type>)
+        {
+            std::vector<hvl_t> buffer(buffer_size);
+            std::vector<desired_type> data(buffer_size);
+
+            hid_t type = H5Dget_type(_dataset);
+            herr_t read_err = H5Dread(_dataset, type, memspace, dspace,
+                                      H5P_DEFAULT, buffer.data());
+            H5Tclose(type);
+            if (read_err < 0)
+            {
+                throw std::runtime_error("Error reading 1d dataset");
+            }
+            for (std::size_t i = 0; i < buffer_size; ++i)
+            {
+                data[i].resize(buffer[i].len);
+                auto ptr =
+                    static_cast<typename desired_type::value_type*>(buffer[i].p);
+
+                for (std::size_t j = 0; j < buffer[i].len; ++j)
+                {
+                    data[i][j] = ptr[j];
+                }
+            }
+
+            return data;
+        }
+        else
         {
             if constexpr (std::is_same_v<std::string, desired_type>)
             {
@@ -287,12 +302,8 @@ private:
                 return data;
             }
             else
-            { // container was not a std::string
-                // create the buffer
-                std::vector<hvl_t> buffer(buffer_size);
-                std::vector<desired_type> data(buffer_size);
-
-                // Read the data
+            {
+                std::vector<desired_type> buffer(buffer_size);
                 hid_t type = H5Dget_type(_dataset);
                 herr_t read_err = H5Dread(_dataset, type, memspace, dspace,
                                           H5P_DEFAULT, buffer.data());
@@ -302,41 +313,8 @@ private:
                 {
                     throw std::runtime_error("Error reading 1d dataset");
                 }
-
-                // fill the buffer, static-casting to the desired type
-                for (std::size_t i = 0; i < buffer_size; ++i)
-                {
-                    data[i].resize(buffer[i].len);
-                    auto ptr = static_cast<typename desired_type::value_type*>(
-                        buffer[i].p);
-
-                    for (std::size_t j = 0; j < buffer[i].len; ++j)
-                    {
-                        data[i][j] = ptr[j];
-                    }
-                }
-
-                return data;
+                return buffer;
             }
-        }
-        else
-        { // desired type is not a container
-            // create a buffer
-            std::vector<desired_type> buffer(buffer_size);
-            hid_t type = H5Dget_type(_dataset);
-
-            // read the data directly into the buffer
-            herr_t read_err = H5Dread(_dataset, type, memspace, dspace,
-                                      H5P_DEFAULT, buffer.data());
-            H5Tclose(type);
-
-            if (read_err < 0)
-            {
-                throw std::runtime_error("Error reading 1d dataset");
-            }
-
-            // can directly return the buffer here
-            return buffer;
         }
     }
 
@@ -353,9 +331,9 @@ protected:
 
 public:
     /**
-     * @brief      get a weak ptr to the parent_object
+     * @brief get a shared_ptr to the parent_object
      *
-     * @return     std::weak_ptr<HDFObject>
+     * @return std::shared_ptr<HDFObject>
      */
     std::shared_ptr<HDFObject> get_parent()
     {
@@ -363,75 +341,69 @@ public:
     }
 
     /**
-     * @brief      get the dataset name
+     * @brief get the name of the dataset
      *
-     * @return     the dataset name
+     * @return std::string
      */
     std::string get_name()
     {
         return _name;
     }
 
-
     /**
-     * @brief      get the dataset rank
+     * @brief get the rank of the dataset, i.e. the dimensionality
      *
-     * @return     the dataset rank
+     * @return std::size_t
      */
     std::size_t get_rank()
     {
         return _rank;
     }
 
-
     /**
-     * @brief      get the current dataset extend
+     * @brief get the current extend of the dataset
      *
-     * @return     the dataset extend
+     * @return std::vector<hsize_t>
      */
     auto get_extend()
     {
         return _extend;
     }
 
-
     /**
-     * @brief      get the dataset capacity, i.e. the maximum extend
+     * @brief get the maximum extend of the dataset
      *
-     * @return     the dataset capacity
+     * @return std::vector<hsize_t>
      */
     auto get_capacity()
     {
         return _max_extend;
     }
 
-
     /**
-     * @brief      get the dataset ID
+     * @brief get the current extend of the dataset
      *
-     * @return     the dataset ID
+     * @return std::vector<hsize_t>
      */
     hid_t get_id()
     {
         return _dataset;
     }
 
-
     /**
-     * @brief      get the reference counter
+     * @brief get the reference counter map
      *
-     * @return     the reference counter
+     * @return std::map<haddr_t, int>
      */
     auto get_referencecounter()
     {
         return _referencecounter;
     }
 
-
     /**
-     * @brief      get the address of the dataset
+     * @brief get the address of the dataset in the underlying hdffile
      *
-     * @return     the address of the dataset
+     * @return haddr_t
      */
     haddr_t get_address()
     {
@@ -523,9 +495,7 @@ public:
                hsize_t chunksize = 0,
                hsize_t compress_level = 0)
     {
-        using result_type =
-            typename HDFTypeFactory::result_type<decltype(adaptor(*begin))>::type;
-
+        using result_type = remove_qualifier_t<decltype(adaptor(*begin))>;
         // get size of stuff to write
         hsize_t size = std::distance(begin, end);
         _rank = rank;
@@ -533,8 +503,9 @@ public:
         // currently not supported rank -> throw error
         if (_rank > 2)
         {
-            throw std::runtime_error("Cannot write dataset: Ranks higher than "
-                                     "2 are not supported currently!");
+            throw std::runtime_error(
+                "Cannot write dataset: Ranks higher than "
+                "2 are not supported currently!");
         }
 
         if (_dataset == -1)
@@ -547,9 +518,12 @@ public:
             // check validity of own dataset id
             if (H5Iis_valid(_dataset) == false)
             {
-                throw std::runtime_error("Trying to create dataset named "
-                                         "'" + _name + "' resulted in invalid "
-                                         "ID! Check your arguments.");
+                throw std::runtime_error(
+                    "Trying to create dataset named "
+                    "'" +
+                    _name +
+                    "' resulted in invalid "
+                    "ID! Check your arguments.");
             }
 
             // gather data for dimensionality info: rank, extend, max_extend
@@ -572,10 +546,9 @@ public:
 
             // store the dimensionality info attribute
             add_attribute<std::vector<hsize_t>>("dimensionality info", dims);
-            
+
             // write dataset
-            __write_dataset__(begin, end, std::forward<Adaptor&&>(adaptor),
-                              H5S_ALL, H5S_ALL);
+            __write_dataset__(begin, end, std::forward<Adaptor&&>(adaptor), H5S_ALL, H5S_ALL);
         }
         else
         { // dataset does exist
@@ -583,7 +556,8 @@ public:
             // check validity of own dataset id
             if (H5Iis_valid(_dataset) == false)
             {
-                throw std::runtime_error("Existing dataset '" + _name + "' "
+                throw std::runtime_error("Existing dataset '" + _name +
+                                         "' "
                                          "has an invalid ID. Has the dataset "
                                          "already been closed?");
             }
@@ -593,9 +567,10 @@ public:
             {
                 if ((_extend[i] == _max_extend[i]) && (_extend[i] != 0))
                 {
-                    throw std::runtime_error("Dataset cannot be extended! Its "
-                                             "extend reached max_extend. Did "
-                                             "you set a nonzero chunksize?");
+                    throw std::runtime_error(
+                        "Dataset cannot be extended! Its "
+                        "extend reached max_extend. Did "
+                        "you set a nonzero chunksize?");
                 }
             }
 
@@ -623,7 +598,7 @@ public:
                  |      +
                  ν
                 */
-                
+
                 // get the offset, stride count and block vectors for selection
                 // of the hyperslab
                 std::vector<hsize_t> offset = _extend;
@@ -637,8 +612,9 @@ public:
                 herr_t ext_err = H5Dset_extent(_dataset, _extend.data());
                 if (ext_err < 0)
                 {
-                    throw std::runtime_error("1D dataset could not be "
-                                             "extended!");
+                    throw std::runtime_error(
+                        "1D dataset could not be "
+                        "extended!");
                 }
 
                 // gather information for dimensionality info attribute
@@ -661,15 +637,14 @@ public:
                 add_attribute<std::vector<hsize_t>>("dimensionality info", dims);
 
                 // make subset selection and extract data and memory space
-                auto spaces = __select_dataset_subset__(offset, stride,
-                                                        block, count);
+                auto spaces = __select_dataset_subset__(offset, stride, block, count);
                 hid_t dspace = spaces[0];
                 hid_t memspace = spaces[1];
 
                 // and now: write the data
                 __write_dataset__(begin, end, std::forward<Adaptor&&>(adaptor),
                                   dspace, memspace);
-                
+
                 // // buffering
                 // auto buffer = HDFBufferFactory::buffer<result_type>(
                 //     begin, end, std::forward<Adaptor &&>(adaptor));
@@ -687,7 +662,7 @@ public:
 
                 /* If the dataset can be extended, then do so now.
                 Extend the first dimension in the dataspace, such that:
-                
+
                 dataset before:
 
                      dim1 ->
@@ -721,8 +696,9 @@ public:
                 herr_t ext_err = H5Dset_extent(_dataset, _extend.data());
                 if (ext_err < 0)
                 {
-                    throw std::runtime_error("ND dataset could not be "
-                                             "extended!");
+                    throw std::runtime_error(
+                        "ND dataset could not be "
+                        "extended!");
                 }
 
                 // gather information for dimensionality info attribute
@@ -742,12 +718,10 @@ public:
                 }
 
                 // store the attribute
-                add_attribute<std::vector<hsize_t>>("dimensionality info",
-                                                    dims);
+                add_attribute<std::vector<hsize_t>>("dimensionality info", dims);
 
                 // make subset selection and extract data and memory space
-                auto spaces = __select_dataset_subset__(offset, stride,
-                                                        block, count);
+                auto spaces = __select_dataset_subset__(offset, stride, block, count);
                 hid_t dspace = spaces[0];
                 hid_t memspace = spaces[1];
 
@@ -781,7 +755,8 @@ public:
         // check if dataset id is ok
         if (H5Iis_valid(_dataset) == false)
         {
-            throw std::runtime_error("Existing dataset '" + _name + "' has an "
+            throw std::runtime_error("Existing dataset '" + _name +
+                                     "' has an "
                                      "invalid ID. Has the dataset already "
                                      "been closed?");
         }
@@ -792,19 +767,17 @@ public:
             // assume that if start is empty, the entire dataset should be read
             if (start.size() == 0)
             {
-                return __read_from_dataset__<desired_type>(_extend[0],
-                                                           H5S_ALL, H5S_ALL);
+                return __read_from_dataset__<desired_type>(_extend[0], H5S_ALL, H5S_ALL);
             }
             else
             { // read a subset determined by start end stride
               // check that the arrays have the correct size:
-                if (   start.size()  != _rank
-                    || end.size()    != _rank
-                    || stride.size() != _rank)
+                if (start.size() != _rank || end.size() != _rank || stride.size() != _rank)
                 {
-                    throw std::invalid_argument("Cannot read dataset: start, "
-                                                "end and/or stride size did "
-                                                "not match the rank!");
+                    throw std::invalid_argument(
+                        "Cannot read dataset: start, "
+                        "end and/or stride size did "
+                        "not match the rank!");
                 }
                 // determine the count to be read
                 std::vector<hsize_t> count(start.size());
@@ -815,15 +788,12 @@ public:
                 std::vector<hsize_t> block(count.size(), 1);
 
                 // select dataset subset to read
-                auto spaces = __select_dataset_subset__(start, stride,
-                                                        block, count);
+                auto spaces = __select_dataset_subset__(start, stride, block, count);
                 hid_t dspace = spaces[0];
                 hid_t memspace = spaces[1];
 
                 // read
-                auto buffer = __read_from_dataset__<desired_type>(count[0],
-                                                                  dspace,
-                                                                  memspace);
+                auto buffer = __read_from_dataset__<desired_type>(count[0], dspace, memspace);
 
                 // close memoryspace resources and return
                 H5Sclose(dspace);
@@ -848,19 +818,17 @@ public:
                     buffersize *= _extend[i];
                 }
 
-                return __read_from_dataset__<desired_type>(buffersize,
-                                                           H5S_ALL, H5S_ALL);
+                return __read_from_dataset__<desired_type>(buffersize, H5S_ALL, H5S_ALL);
             }
             else
             { // read a subset determined by start end stride
                 // check that the arrays have the correct size:
-                if (   start.size()  != _rank
-                    || end.size()    != _rank
-                    || stride.size() != _rank)
+                if (start.size() != _rank || end.size() != _rank || stride.size() != _rank)
                 {
-                    throw std::invalid_argument("Cannot read dataset: start, "
-                                                "end and/or stride size did "
-                                                "not match the rank!");
+                    throw std::invalid_argument(
+                        "Cannot read dataset: start, "
+                        "end and/or stride size did "
+                        "not match the rank!");
                 }
 
                 // determine the count to be read
@@ -872,8 +840,7 @@ public:
                 std::vector<hsize_t> block(count.size(), 1);
 
                 // select dataset subset to read
-                auto spaces = __select_dataset_subset__(start, stride,
-                                                        block, count);
+                auto spaces = __select_dataset_subset__(start, stride, block, count);
                 hid_t dspace = spaces[0];
                 hid_t memspace = spaces[1];
 
@@ -885,9 +852,8 @@ public:
                 }
 
                 // read
-                auto buffer = __read_from_dataset__<desired_type>(buffersize,
-                                                                  dspace,
-                                                                  memspace);
+                auto buffer =
+                    __read_from_dataset__<desired_type>(buffersize, dspace, memspace);
 
                 // close memoryspace resources
                 H5Sclose(dspace);
@@ -966,8 +932,7 @@ public:
         if (H5LTfind_dataset(_parent_object->get_id(), _name.c_str()) == 1)
         { // dataset exists
             // open it
-            _dataset = H5Dopen(_parent_object->get_id(), _name.c_str(),
-                               H5P_DEFAULT);
+            _dataset = H5Dopen(_parent_object->get_id(), _name.c_str(), H5P_DEFAULT);
 
             // get dataspace and read out rank, extend, max_extend
             hid_t dataspace = H5Dget_space(_dataset);
@@ -976,8 +941,7 @@ public:
             _extend.resize(_rank);
             _max_extend.resize(_rank);
 
-            H5Sget_simple_extent_dims(dataspace, _extend.data(),
-                                      _max_extend.data());
+            H5Sget_simple_extent_dims(dataspace, _extend.data(), _max_extend.data());
             H5Sclose(dataspace);
 
             // Update info and reference counter

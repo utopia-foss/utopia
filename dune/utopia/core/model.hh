@@ -1,10 +1,11 @@
 #ifndef UTOPIA_MODEL_HH
 #define UTOPIA_MODEL_HH
 
-#include <dune/utopia/data_io/config.hh>
 #include <dune/utopia/data_io/hdffile.hh>
 #include <dune/utopia/data_io/hdfgroup.hh>
-
+#include <dune/utopia/data_io/types.hh>
+#include <dune/utopia/core/types.hh>
+#include <yaml-cpp/yaml.h>
 
 namespace Utopia {
 
@@ -223,12 +224,11 @@ public:
     PseudoParent (const std::string cfg_path)
     :
     // Initialize the config node from the path to the config file
-    cfg{cfg_path},
+    cfg(YAML::LoadFile(cfg_path)),
     // Create a file at the specified output path and store the shared pointer
-    hdffile(std::make_shared<HDFFile>(cfg["output_path"].as<std::string>(),
-                                      "w")),
+    hdffile(std::make_shared<HDFFile>(cfg["output_path"].template as<std::string>(), "w")),
     // Initialize the RNG from a seed
-    rng(std::make_shared<RNG>(cfg["seed"].as<int>()))
+    rng(std::make_shared<RNG>(cfg["seed"].template as<int>()))
     {
         std::cout << "Initialized pseudo parent from config file:  "
                   << cfg_path << std::endl;
@@ -249,7 +249,7 @@ public:
                   const std::string output_file_mode="w")
     :
     // Initialize the config node from the path to the config file
-    cfg{cfg_path},
+    cfg(YAML::LoadFile(cfg_path)),
     // Create a file at the specified output path
     hdffile(std::make_shared<HDFFile>(output_path, output_file_mode)),
     // Initialize the RNG from a seed

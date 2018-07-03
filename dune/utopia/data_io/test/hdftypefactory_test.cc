@@ -1,3 +1,10 @@
+/**
+ * @brief Tests for the functionality of hdftypefactory are implemented here.
+ *        It is checked if C types are mapped to their corresponding
+ *        HDF5 types.
+ *
+ * @file hdftypefactory_test.cc
+ */
 #include "../hdftypefactory.hh"
 #include <cassert>
 #include <hdf5.h>
@@ -5,7 +12,8 @@
 
 using namespace Utopia;
 using namespace Utopia::DataIO;
-int main() {
+int main()
+{
     // sample test for primitive types
 
     // int

@@ -4,7 +4,7 @@
 from setuptools import setup
 
 # Dependency lists
-INSTALL_DEPS = ['numpy>=1.13', 'PyYAML>=3.12', 'paramspace>=1.0b']
+INSTALL_DEPS = ['numpy>=1.13', 'PyYAML==3.12', 'paramspace>=1.0']
 TEST_DEPS    = ['pytest>=3.4.0', 'pytest-cov>=2.5.1']
 
 setup(name='utopya',
@@ -20,9 +20,5 @@ setup(name='utopya',
       tests_require=TEST_DEPS,
       test_suite='py.test',
       extras_require=dict(test_deps=TEST_DEPS),
-      scripts=['bin/utopia'], # installs this into the virtual env!
-      entry_points = {
-          'console_scripts': [
-              'utopia_distribute_user_cfg = utopya.multiverse:distribute_user_cfg'
-          ]}
+      scripts=['bin/utopia']
       )

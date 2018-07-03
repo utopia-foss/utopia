@@ -10,7 +10,6 @@ from pkg_resources import resource_filename
 import pytest
 
 from utopya import Multiverse
-from utopya.multiverse import distribute_user_cfg
 
 # Get the test resources
 RUN_CFG_PATH = resource_filename('test', 'cfg/run_cfg.yml')
@@ -163,28 +162,3 @@ def test_run_sweep(mv_kwargs):
 
     with pytest.raises(ValueError, match="The parameter space has no sweeps"):
         mv.run_sweep()
-
-# Other tests -----------------------------------------------------------------
-
-def test_distribute_user_cfg(tmpdir, monkeypatch):
-    """Tests whether user configuration distribution works as desired."""
-    # Create a path for the user config test file; needs to be str-cast to
-    # allow python < 3.6 implementation of os.path
-    test_path = str(tmpdir.join("my_user_cfg.yml"))
-
-    # Execute the distribute function with this path and assert it worked
-    distribute_user_cfg(user_cfg_path=test_path)
-    assert os.path.isfile(test_path)
-
-    # monkeypatch the "input" function, so that it returns "y" or "no".
-    # This simulates the user entering something in the terminal
-    # yes-case
-    monkeypatch.setattr('builtins.input', lambda x: "y")
-    distribute_user_cfg(user_cfg_path=test_path)
-
-    # no-case
-    monkeypatch.setattr('builtins.input', lambda x: "n")
-    distribute_user_cfg(user_cfg_path=test_path)
-
-
-# Helpers ---------------------------------------------------------------------
