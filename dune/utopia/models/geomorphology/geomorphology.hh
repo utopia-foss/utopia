@@ -5,7 +5,6 @@
 #include <dune/utopia/core/model.hh>
 #include <dune/utopia/core/apply.hh>
 
-#include <dune/utopia/data_io/config.hh>
 #include <dune/utopia/data_io/hdffile.hh>
 #include <dune/utopia/data_io/hdfgroup.hh>
 #include <dune/utopia/data_io/hdfdataset.hh>
@@ -23,11 +22,11 @@ using GeomorphologyTypes = Utopia::ModelTypes<
 
 template<class Manager>
 class Geomorphology:
-    public Utopia::Model<Geomorphology<Manager>, GeomorphologyTypes<Manager>>
+    public Model<Geomorphology<Manager>, GeomorphologyTypes<Manager>>
 {
 public:
 
-    using Base = Utopia::Model<Geomorphology<Manager>, GeomorphologyTypes<Manager>>;
+    using Base = Model<Geomorphology<Manager>, GeomorphologyTypes<Manager>>;
     using BCType = typename Base::BCType;
     using Data = typename Base::Data;
 
@@ -39,14 +38,14 @@ public:
      */
     template<class ParentModel>
     Geomorphology (const std::string name,
-                   const ParentModel & parent_model,
+                   const ParentModel& parent_model,
                    Manager _manager)
     :
         // Use the base constructor for the main parts
         Base(name, parent_model),
         // Initialise the manager
         manager(_manager),
-        bc{this->cfg["rain_mean"].as<double>(), this->cfg["rain_var"].as<double>()}
+        bc{this->cfg["rain_mean"].template as<double>(), this->cfg["rain_var"].template as<double>()}
     {
         // Initialize altitude as an inclined plane
         /*auto set_inclined_plane = [this](const auto cell) {          
@@ -142,6 +141,7 @@ public:
     void set_initial_condition (const Data& container) { }
 };
 
+} // namespace Models
 
 } // namespace Utopia
 
