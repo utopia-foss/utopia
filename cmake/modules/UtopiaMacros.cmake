@@ -13,6 +13,9 @@ find_package(yaml-cpp 0.5.2 REQUIRED)
 include_directories(${YAML_CPP_INCLUDE_DIR})
 list(APPEND DUNE_LIBS ${YAML_CPP_LIBRARIES})
 
+# SPDLOG
+find_package(spdlog 0.16.3 REQUIRED CONFIG)
+
 # File for module specific CMake tests.
 if(NOT PSGRAF_ROOT)
 	set(PSGRAF_ROOT)

@@ -27,6 +27,7 @@ RUN apt-get update \
         git \
         libboost-dev \
         libhdf5-dev \
+        libspdlog-dev \
         libyaml-cpp-dev \
         locales \
         pkg-config \

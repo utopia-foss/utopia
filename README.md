@@ -25,6 +25,7 @@ Follow the step-by-step instructions below for building Utopia from source.
 | pkg-config | | |
 | [HDF5](https://www.hdfgroup.org/solutions/hdf5/) | >= 1.10. | |
 | [yaml-cpp](https://github.com/jbeder/yaml-cpp) | >= 0.5.2 | |
+| [spdlog](https://github.com/gabime/spdlog) | >= 0.16.3 | |
 | [Boost](http://www.boost.org/) | >= 1.65 | |
 | [dune-common](https://gitlab.dune-project.org/core/dune-common) | master | |
 | [dune-geometry](https://gitlab.dune-project.org/core/dune-geometry) | master | |
