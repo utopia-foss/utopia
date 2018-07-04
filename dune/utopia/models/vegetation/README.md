@@ -15,7 +15,7 @@ So far, the only driver for a change in the plant bio-mass is rainfall, implemen
 
 In each time step, the plant bio-mass on a cell is increased according to a logistic growth model. Let $`m_{t,i}`$ be the plant bio-mass on cell $`i`$ at time $`t`$ and $`r_{t,i}`$ the rainfall at time $`t`$ onto cell $`i`$. The plant bio-mass at time $`t+1`$ is then determined as
 
-$`m_{t+1,i} = m_{t,i} + m_{t,i} \cdot g \cdot (1 - m_{t,i}/r_{t,i} `$.
+$`m_{t+1,i} = m_{t,i} + m_{t,i} \cdot g \cdot (1 - m_{t,i}/r_{t,i})`$.
 
 ## Seeding process
 
@@ -32,4 +32,4 @@ The current default parameters (as defined in the file `vegetation_cfg.yml`) are
 * $`g = 0.1`$
 * $`s = 0.2`$
 
-For these parameters and a grid size of 10x10 the system takes roughly 50 time steps to reach a dynamic equilibrium, in which the plant bio-mass on all cells fluctuates around $`9.5`$.
+For these parameters and a grid size of $`10 \times 10`$ the system takes roughly $`50`$ time steps to reach a dynamic equilibrium, in which the plant bio-mass on all cells fluctuates around $`9.5`$.
