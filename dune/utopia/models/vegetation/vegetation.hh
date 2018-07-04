@@ -47,7 +47,7 @@ private:
     BCType _bc;
     
     /// Dataset 
-    std::shared_ptr<DataSet> _dset_plant_density;
+    std::shared_ptr<DataSet> _dset_plant_mass;
 
 public:
 
@@ -68,7 +68,7 @@ public:
         _manager(manager),
 
         // Open dataset for output of cell states 
-        _dset_plant_density(this->hdfgrp->open_dataset("plant_density"))
+        _dset_plant_mass(this->hdfgrp->open_dataset("plant_mass"))
     {
         // Initialize model parameters from config file
         std::normal_distribution<> rain{this->cfg["rain_mean"].template as<double>(),
@@ -103,9 +103,9 @@ public:
 
     /// Iterate a single step
     /** For each cell, a random gauss-distributed number is drawn that 
-     *  represents the rainfall onto that cell. If the plant density at that 
+     *  represents the rainfall onto that cell. If the plant bio-mass at that 
      *  cell is already non-zero, it is increased according to a logistic growth
-     *  model. If it is zero, than the plant density is set proportional to the 
+     *  model. If it is zero, than the plant bio-mass is set proportional to the 
      *  seeding rate and the amount of rain.
      */
     void perform_step ()
@@ -128,7 +128,7 @@ public:
         apply_rule(growth_seeding_rule, _manager.cells());
     }
 
-    /// Write the cell states (aka plant density)
+    /// Write the cell states (aka plant bio-mass)
     void write_data () 
     {
         std::cout << "Writing data @ t = " << this->time << " ... " << std::endl;
@@ -136,7 +136,7 @@ public:
         auto cells = _manager.cells();
         unsigned int num_cells = std::distance(cells.begin(), cells.end());
 
-        _dset_plant_density->write(cells.begin(), cells.end(),
+        _dset_plant_mass->write(cells.begin(), cells.end(),
                               [](auto& cell) { return cell->state(); },
                               2,              // rank
                               {1, num_cells}, // extend of this entry
