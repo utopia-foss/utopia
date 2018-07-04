@@ -81,5 +81,15 @@ int main()
     assert((*moveconst_second.get_referencecounter())[moveconst_second.get_address()] == 3);
     assert_hdfgroups(crosscheck, moveconst_second);
 
+    // check open method
+    HDFGroup opened_group;
+    while (H5Iis_valid(moveconst_second.get_id()))
+    {
+        moveconst_second.close();
+    }
+    assert(!H5Iis_valid(moveconst_second.get_id()));
+    opened_group.open(*file.get_basegroup(), "first");
+    // moveconst_second.get_path()); assert(H5Iis_valid(opened_group.get_id()));
+
     return 0;
 }

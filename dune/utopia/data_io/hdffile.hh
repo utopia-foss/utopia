@@ -58,6 +58,100 @@ public:
     }
 
     /**
+     * @brief Open a file at location 'path' with access specifier 'access'.
+     *        Keep in mind that if the object refers to another file, it has to
+     *        be closed first before opening another.
+     *
+     * @param path Path to open the file at
+     * @param      access  Access specifier for the new file, possible values:
+     *                     'r' (readonly, file must exist), 'r+' (read/write,
+     *                     file must exist), 'w' (create file, truncate if
+     *                     exists), 'x' (create file, fail if exists), or 'a'
+     *                     (read/write if exists, create otherwise; default)
+     */
+    void open(std::string path, std::string access)
+    {
+        if (H5Iis_valid(_file))
+        {
+            throw std::runtime_error(
+                "File still bound to another HDF5 file when trying to call "
+                "'open'");
+        }
+
+        if (access == "w")
+        {
+            _file = H5Fcreate(path.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+
+            if (_file < 0)
+            {
+                throw std::runtime_error(
+                    "File creation failed with access specifier w");
+            }
+        }
+        else if (access == "r")
+        {
+            _file = H5Fopen(path.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+
+            if (_file < 0)
+            {
+                throw std::runtime_error(
+                    "File creation failed with access specifier w");
+            }
+        }
+        else if (access == "r+")
+        {
+            _file = H5Fopen(path.c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
+
+            if (_file < 0)
+            {
+                throw std::runtime_error(
+                    "File creation failed with access specifier w");
+            }
+        }
+        else if (access == "x")
+        {
+            _file = H5Fcreate(path.c_str(), H5F_ACC_EXCL, H5P_DEFAULT, H5P_DEFAULT);
+            if (_file < 0)
+            {
+                throw std::runtime_error(
+                    "File creation failed with access specifier x");
+            }
+        }
+        else if (access == "a")
+        {
+            hid_t file_test = H5Fopen(path.c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
+
+            if (file_test < 0)
+            {
+                file_test = H5Fcreate(path.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+            }
+
+            if (_file < 0)
+            {
+                throw std::runtime_error(
+                    "File creation failed with access specifier w");
+            }
+            else
+            {
+                _file = file_test;
+            }
+        }
+        else
+        {
+            throw std::invalid_argument(
+                "wrong type of access specifier, "
+                "see documentation for allowed "
+                "values");
+        }
+
+        _path = path;
+
+        _referencecounter = std::make_shared<std::unordered_map<haddr_t, int>>();
+        _base_group = std::make_shared<HDFGroup>(*this, "/");
+        ++(*_referencecounter)[_base_group->get_address()];
+    }
+
+    /**
      * @brief      Get the referencecounter object
      *
      * @return     auto
@@ -205,52 +299,72 @@ public:
               if (access == "w")
               {
                   return H5Fcreate(path.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+                  if (_file < 0)
+                  {
+                      throw std::runtime_error(
+                          "File creation failed with access specifier w");
+                  }
               }
               else if (access == "r")
               {
                   return H5Fopen(path.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+                  if (_file < 0)
+                  {
+                      throw std::runtime_error(
+                          "File creation failed with access specifier r");
+                  }
               }
               else if (access == "r+")
               {
                   return H5Fopen(path.c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
+                  if (_file < 0)
+                  {
+                      throw std::runtime_error(
+                          "File creation failed with access specifier r+");
+                  }
               }
               else if (access == "x")
               {
                   hid_t file = H5Fcreate(path.c_str(), H5F_ACC_EXCL, H5P_DEFAULT, H5P_DEFAULT);
-                  if (file < 0)
+                  if (_file < 0)
                   {
                       throw std::runtime_error(
-                          "tried to create an existing "
-                          "file in non-truncate mode");
+                          "File creation failed with access specifier x");
                   }
-                  else
-                  {
-                      return file;
-                  }
+                  return file;
               }
               else if (access == "a")
               {
                   hid_t file_test = H5Fopen(path.c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
                   if (file_test < 0)
                   {
-                      H5Fcreate(path.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+                      file_test = H5Fcreate(path.c_str(), H5F_ACC_TRUNC,
+                                            H5P_DEFAULT, H5P_DEFAULT);
+
+                      if (_file < 0)
+                      {
+                          throw std::runtime_error(
+                              "File creation failed with access specifier a");
+                      }
                   }
                   return file_test;
               }
               else
               {
                   throw std::invalid_argument(
-                      "wrong type of access specifier, "
+                      "Wrong type of access specifier, "
                       "see documentation for allowed "
                       "values");
               }
-          }()),
-          _path(path),
-          _referencecounter(std::make_shared<std::unordered_map<haddr_t, int>>()),
-          _base_group(std::make_shared<HDFGroup>(*this, "/"))
+          }())
     {
-        // H5Eset_auto(0, 0, NULL);
-        ++(*_referencecounter)[_base_group->get_address()];
+        if (H5Iis_valid(_file))
+        {
+            _path = path;
+            _referencecounter = std::make_shared<std::unordered_map<haddr_t, int>>();
+            _base_group = std::make_shared<HDFGroup>(*this, "/");
+            ++(*_referencecounter)[_base_group->get_address()];
+        }
     }
 
     /**

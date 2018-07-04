@@ -31,8 +31,8 @@ Follow the step-by-step instructions below for building Utopia from source.
 | [dune-grid](https://gitlab.dune-project.org/core/dune-grid) | master | |
 | [dune-uggrid](https://gitlab.dune-project.org/staging/dune-uggrid) | master | |
 | Python | >= 3.6 | Earlier Python3 versions _may_ work, but are not tested |
-| [paramspace](https://ts-gitlab.iup.uni-heidelberg.de/yunus/paramspace) | >= 1.0 | |
-| [dantro](https://ts-gitlab.iup.uni-heidelberg.de/utopia/dantro) | >= 0.1b |  |
+| [paramspace](https://ts-gitlab.iup.uni-heidelberg.de/yunus/paramspace) | >= 1.0.1 | |
+| [dantro](https://ts-gitlab.iup.uni-heidelberg.de/utopia/dantro) | >= 0.1 |  |
 
 ### Recommended
 | Software | Version | Purpose |

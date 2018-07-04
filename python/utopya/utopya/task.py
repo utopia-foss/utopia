@@ -643,12 +643,14 @@ class WorkerTask(Task):
 # -----------------------------------------------------------------------------
 
 class TaskList:
-    """The TaskList stores Task objects in it, ensuring that none is in there twice.
+    """The TaskList stores Task objects in it, ensuring that none is in there
+    twice and allows to lock it to prevent adding new tasks.
     """
 
     def __init__(self):
         """Initialize an empty TaskList."""
         self._l = []
+        self._locked = False
 
     def __len__(self) -> int:
         """The length of the TaskList."""
@@ -673,10 +675,28 @@ class TaskList:
         """Tests for equality of the task list by forwarding to _l attribute"""
         return bool(self._l == other)
 
+    def lock(self):
+        """If called, the TaskList becomes locked and allows no further calls
+        to the append method.
+        """
+        self._locked = True
+
     def append(self, val: Task):
-        """Append a Task object to this TaskList"""
+        """Append a Task object to this TaskList
         
-        if not isinstance(val, Task):
+        Args:
+            val (Task): The task to add
+        
+        Raises:
+            RuntimeError: If TaskList object was locked
+            TypeError: Tried to add a non-Task type object
+            ValueError: Task already added to this TaskList
+        """
+        
+        if self._locked:
+            raise RuntimeError("TaskList locked! Cannot append further tasks.")
+        
+        elif not isinstance(val, Task):
             raise TypeError("TaskList can only be filled with "
                             "Task objects, got object of type {}, "
                             "value {}".format(type(val), val))
@@ -685,7 +705,7 @@ class TaskList:
                              "to this TaskList, cannot be added "
                              "again.".format(val.name, val.uid))
 
-        # Everything ok, append the object
+        # else: Everything ok, append the object
         self._l.append(val)
 
 # -----------------------------------------------------------------------------
@@ -706,19 +726,20 @@ def enqueue_lines(*, queue: queue.Queue, stream: BinaryIO, parse_func: Callable=
         parse_func = lambda line: line
 
     # Read the lines and put them into the queue
-    for line in iter(stream.readline, b''): # <-- thread waits here for new lines, without idle looping
+    for line in iter(stream.readline, b''): # <-- thread waits here for new
+                                            #     lines, without idle looping
         # Got a line (byte-string, assumed utf8-encoded)
-        # Try to decode and strip newline
         try:
+            # Try to decode and strip newline
             line = line.decode('utf8').rstrip()
+
         except UnicodeDecodeError:
             # Remains a bytestring
             pass
-        else:
-            # Could decode. Pass to parse function
-            line = parse_func(line)
 
-        # Send it through the parse function
+        # else: could decode
+
+        # Send it through the parse function and add it to the queue
         queue.put_nowait(parse_func(line))
 
     # Everything read. Close the stream
@@ -739,7 +760,7 @@ def parse_json(line: str) -> Union[dict, str]:
         Union[dict, str]: Either the decoded json, or, if that failed, the str
     """
     try:
-        return json.loads(line, encoding='utf8')
+        d = json.loads(line, encoding='utf8')
     
     except (json.JSONDecodeError, TypeError) as err:
         # One of the expected errors occured
@@ -754,6 +775,11 @@ def parse_json(line: str) -> Union[dict, str]:
 
         # Still return the string representation
         return str(line)
+
+    # Could load it. Still check, if it is a dictionary. If not, return as str
+    if isinstance(d, dict):
+        return d
+    return str(d)
 
 def enqueue_json(*, queue: queue.Queue, stream: BinaryIO, parse_func: Callable=parse_json) -> None:
     """Wrapper function for enqueue_lines with parse_json set as parse_func."""

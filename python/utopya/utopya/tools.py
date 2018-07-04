@@ -176,8 +176,8 @@ def load_model_cfg(model_name: str) -> Tuple[dict, str]:
                          "with the info module are: {}"
                          "".format(model_name, [k for k in MODELS.keys()]))
 
-    # Generate the path to the model configuration
-    path = os.path.join(MODELS[model_name]['src_dir'], model_name + "_cfg.yml")
+    # Get the path to the model configuration
+    path = MODELS[model_name]['model_cfg']
 
     # Read in the model configuration
     mcfg = read_yml(path, error_msg=("Could not locate model configuration "

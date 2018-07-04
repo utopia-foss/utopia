@@ -167,7 +167,7 @@ class ModelTest:
         # Create the Multiverse
         mv = Multiverse(model_name=self.model_name,
                         run_cfg_path=run_cfg_path,
-                        update_meta_cfg=update_meta_cfg)
+                        **update_meta_cfg)
 
         # Store it, then return
         self._store_mv(mv, out_dir=tmpdir)

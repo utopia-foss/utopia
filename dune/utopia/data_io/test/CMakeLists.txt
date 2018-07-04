@@ -4,6 +4,7 @@ set(TESTS_DATAIO
     hdffile_test
     hdfattribute_test_read
     hdfattribute_test_write
+    hdfattribute_test_lifecycle
     hdfdataset_test_lifecycle
     hdfgroup_test_lifecycle
     hdfdataset_test_write

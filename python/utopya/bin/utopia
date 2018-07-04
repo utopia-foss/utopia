@@ -5,42 +5,101 @@ import sys
 import argparse
 import warnings
 
-import utopya
+# Define the CLI
+parser = argparse.ArgumentParser(description="Command line access to Utopia.")
+
+# Add sub-parsers to allow sub-commands
+subparsers = parser.add_subparsers(dest='mode',
+                                   title="commands")
+p_run  = subparsers.add_parser('run',
+                               help="perform a simulation run")
+p_cfg  = subparsers.add_parser('config',
+                               help="set user-specific config options")
+
+# subcommand: run .............................................................
+p_run.add_argument('model_name',
+                   help="Name of the model to run")
+p_run.add_argument('run_cfg_path',
+                   default=None, nargs='?',
+                   help="Path to the run configuration. If not given, the "
+                        "default model configuration is used.")
+
+# single or sweep?
+p_run.add_argument('-s', '--single',
+                   action='store_true',
+                   help="If given, forces a single simulation.")
+p_run.add_argument('-p', '--sweep',
+                   action='store_true',
+                   help="If given, forces a parameter sweep. Is ignored, if "
+                        "the --single flag was also given.")
+
+# updating meta configuration
+p_run.add_argument('--note',
+                   default=None, nargs='?',
+                   help="Overwrites the `paths->model_note` entry which is "
+                        "used in creation of the run directory path.")
+p_run.add_argument('--sim-errors',
+                   default=None, nargs='?',
+                   help="Controls the value of the WorkerManager's "
+                        "`nonzero_exit_handling` flag which defines how "
+                        "errors in simulations are handled. Allowed values "
+                        "are: 'ignore', 'warn', 'raise'. "
+                        "If not given, the default from the base config or "
+                        "(if set) the user configuration is used.") 
+# TODO make possible to set simulation steps here
+
+# plotting after the run
+p_run.add_argument('--no-plot',
+                   action='store_true',
+                   help="If set, no plots will be created. Note that plotting "
+                        "capabilities via the Multiverse or the CLI are not "
+                        "yet implemented, thus you will have to do the plots "
+                        "manually if you pass this option.") # TODO implement
+p_run.add_argument('--plots-cfg',
+                   default=None, nargs='?',
+                   help="If given, uses the plots configuration file found "
+                        "at this path instead of the defaults of the model.")
+p_run.add_argument('--plot-only',
+                   default=None, nargs='*',
+                   help="If given, will plot only those entries of the plot "
+                        "configuration that match the names given here.")
+
+
+# subcommand: config ..........................................................
+p_cfg.add_argument('--deploy',
+                   action='store_true',
+                   help="Deploy the user config file (all entries disabled) "
+                        "to ~/.config/utopia/user_cfg.yml, asking for further "
+                        "action if a file already exists at that location.")
+# TODO add --get and --set to easily manipulate entries
+
+
+# subcommand: TODO ............................................................
+# ...
+
+
+
+# CLI defined now. Parse the arguments...
+args = parser.parse_args()
+
 
 # -----------------------------------------------------------------------------
+# If continuing further, need utopya
+import utopya
+import utopya.cltools
+
+
 if __name__ == '__main__':
-    # Define the CLI
-    parser = argparse.ArgumentParser(description='Perform a Utopia run.',
-                                     epilog="And that's how you use utopia.")
-    parser.add_argument('model_name',
-                        help="The name of the model to run")
-    parser.add_argument('run_cfg_path',
-                        default=None, nargs='?',
-                        help="The path to the run configuration. Needs to be "
-                             "given unless --no-run-cfg is also set.")
-    parser.add_argument('-s', '--single',
-                        default=None, action='store_true',
-                        help="If given, forces a single simulation.")
-    parser.add_argument('-p', '--sweep',
-                        default=None, action='store_true',
-                        help="If given, forces a parameter sweep. Is ignored, "
-                             "if the --single argument was also given.")
-    parser.add_argument('--note',
-                        default=None, nargs='?',
-                        help="Overwrites the `paths->model_note` entry which "
-                             "is used in creation of the run directory path.")
-    parser.add_argument('--sim-errors',
-                        default=None, nargs='?',
-                        help="This controls the value of the WorkerManager's "
-                             "`nonzero_exit_handling` flag which controls how "
-                             "errors in simulations are handled. Allowed "
-                             "values are: 'ignore', 'warn', 'raise'. "
-                             "If not given, the default from the base config "
-                             "or (if set) the user configuration is used.")
+    # Config subcommand .......................................................
+    if args.mode == 'config':
+        if args.deploy:
+            utopya.cltools.deploy_user_cfg()
 
-    # CLI defined. Parse the arguments now.
-    args = parser.parse_args()
+        # End here.
+        sys.exit()
 
+
+    # Prepare Multiverse ......................................................
     # Set an empty update dict. It will hold adjustments to the given configs
     update_dict = {}
 
@@ -55,19 +114,41 @@ if __name__ == '__main__':
     # Using the args, instantiate a Multiverse object
     mv = utopya.Multiverse(model_name=args.model_name,
                            run_cfg_path=args.run_cfg_path,
-                           update_meta_cfg=update_dict)
+                           **update_dict)
+    
+    
+    # Perform the run .........................................................
+    if args.mode in ['run']:
+        if args.single:
+            if args.sweep:
+                warnings.warn("Received both --single and --sweep command "
+                              "line arguments; will perform a single "
+                              "simulation.",
+                              UserWarning)
+                # TODO use utopya-specific warning class
 
-    if args.single:
-        if args.sweep:
-            warnings.warn("Received both --single and --sweep arguments; will "
-                          "perform a single simulation.",
-                          UserWarning)
+            mv.run_single()
 
-        mv.run_single()
+        elif args.sweep:
+            mv.run_sweep()
 
-    elif args.sweep:
-        mv.run_sweep()
+        else:
+            mv.run()
 
-    else:
-        mv.run()
-        
+
+    # Loading an Utopia run ...................................................
+    # Only need to continue if plots are to be created
+    if args.no_plot:
+        sys.exit()
+
+    # Tell the DataManager to load
+    mv.dm.load_from_cfg(print_tree=True)
+    # NOTE This will load the data using the utopya default configuration
+
+
+    # Plotting ................................................................
+    # Tell the PlotManager to plot
+    mv.pm.plot_from_cfg(plots_cfg=args.plots_cfg, plot_only=args.plot_only)
+    # NOTE If plots_cfg was not given, this uses the plot configuration that
+    #      belongs to the model. If it is given, the configuration is loaded
+    #      from the given file path.
