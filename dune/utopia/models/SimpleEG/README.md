@@ -16,17 +16,17 @@ The world is a regular square grid of cells. Each cell represents one player^1 t
 The payoff, a player receives from a single game, is encoded in the interaction matrix:
 <!--
 ```math
-W = \bordermatrix{~ & S_0 & S_1 \\
-                  S_0 & w_{S_0S_0} & w_{S_0S_1} \\
-                  S_1 & w_{S_1S_0} & w_{S_1S_1} \\}
+W = \bordermatrix{~ & S_0 & S_1 \cr
+                  S_0 & w_{S_0S_0} & w_{S_0S_1} \cr
+                  S_1 & w_{S_1S_0} & w_{S_1S_1} \cr}
 ```-->
+<!--Would be nice, if this would work, but stupid markdown does not cope with the complicated standard latex command 'bordermatrix'-->
 
-|   	|  $`S_0`$ 	|   $`S_1`$	|
-|------|-----|------|
-|   **$`S_0`$**	|  $`w_{S_0S_0}`$ 	|   $`w_{S_0S_1}`$	|
-|   **$`S_1`$**	|  $`w_{S_1S_0}`$ 	|   $`w_{S_1S_1}`$	|
+```math
+\begin{bmatrix}w_{S_0S_0} & w_{S_0S_1} \cr w_{S_1S_0} & w_{S_1S_1} \end{bmatrix}
+```
 
-$`S_0`$ and $`S_1`$ denote the two different possible strategies.[^2] The matrix entries $`w_{ij}`$ define the payoff a player with strategy $`S_i`$ receives from a game played against a player with strategy $`S_j`$.
+$`S_0`$ and $`S_1`$ denote the two different possible strategies.^2 The matrix entries $`w_{S_iS_j}`$ define the payoff a player with strategy $`S_i`$ receives from a game played against a player with strategy $`S_j`$.
 
 
 ^2 In the case of a Prisoner's Dilemma these strategies correspond to cooperation ($`S_0 = C`$) and defection ($`S_1 = D`$). Here, we want to be able to model all kind of two-dimensional two-player games. That's why we chose the more general nomenclature.
@@ -80,7 +80,7 @@ The interaction matrices of the individual options are collected here:
 	
 | Setting the benefit `b` | Setting the benefit-cost-pair `bc-pair`  | Setting a general interaction matrix `ia_matrix` |
 | -------- | -------- | -------- |
-| 	$`W = \begin{matrix}{~ & S_0=C & S_1=D \cr S_0=C & 1 & 0 \cr S_1=D & b & 0 \end{matrix}`$ | $`W = \bordermatrix{~ & S_0=C & S_1=D \cr S_0=C & b-c & -c \cr S_1=D & b & 0 }`$ | $` W = \bordermatrix{~ & S_0 & S_1 \cr S_0 & w_{S_0S_0} & w_{S_0S_1} \cr S_1 & w_{S_1S_0} & w_{S_1S_1} }`$  |
+| 	$`\begin{bmatrix} 1 & 0 \\ b & 0 \end{bmatrix}`$ | $`\begin{bmatrix} b-c & -c \cr b & 0 \end{bmatrix}`$ | $` \begin{bmatrix}w_{S_0S_0} & w_{S_0S_1} \cr w_{S_1S_0} & w_{S_1S_1} \end{bmatrix}`$  |
 
 The algorithm is designed such that if an interaction matrix is provided in the configuration file the interaction matrix will define the game, even if `b` or `bc-pair` are also provided. If there is no interaction matrix, but a `bc-pair` provided, the interaction matrix will be derived from it, even if `b` is set. `b` is used only if none of the other options is provided.
 
@@ -98,9 +98,10 @@ For a more basic and general introduction on evolutionary game theory, the reade
 Linear two-player, two-strategy interactions can be classified into one of four different games according to Friedman & Barry (2016) determined by their interaction matrix. A general interaction matrix has the form:
 
 ```math
-W = \bordermatrix{~ & S_0 & S_1 \cr
-                  S_0 & w_{S_0S_0} & w_{S_0S_1} \cr
-                  S_1 & w_{S_1S_0} & w_{S_1S_1} \cr}
+W = \begin{bmatrix}
+w_{S_0S_0} & w_{S_0S_1} \cr
+w_{S_1S_0} & w_{S_1S_1}
+\end{bmatrix}
 ```
 
 It is useful to define the quantity $`a_x`$ with $`x \in \{ 0, 1\}`$, which describes the payoff advantage of $`S0`$ over $`S1`$ in a game against $S1$ if the strategy space is two dimensional:
@@ -143,9 +144,10 @@ The Prisoner's Dilemma is arguably the most famous social dilemma. The standard 
 To put it in the standard parameter set, a two dimensional interaction matrix of the form 
 
 ```math
-W = \bordermatrix{~ & C & D \\
-	               C & R & S \\
-   	           D & T & P \\}
+W = \begin{bmatrix}
+R & S \\
+T & P 
+\end{bmatrix}
 ```
 
 defines a Prisoner's Dilemma if the parameters have the following relation: T (temptation) > R (reward) > P (punishment) > S (sucker's payoff). This formulation is equivalent to the condition: $`a_1, < 0 < a_2 `$. 
