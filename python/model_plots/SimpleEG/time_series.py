@@ -1,4 +1,4 @@
-"""Dummy-model specific plot function for the state"""
+"""SimpleEG-model specific plot function for time-series"""
 from typing import Union
 
 import numpy as np
