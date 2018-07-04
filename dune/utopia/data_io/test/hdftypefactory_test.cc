@@ -8,7 +8,9 @@
 #include "../hdftypefactory.hh"
 #include <cassert>
 #include <hdf5.h>
+#include <list>
 #include <string>
+#include <vector>
 
 using namespace Utopia;
 using namespace Utopia::DataIO;

@@ -54,11 +54,11 @@ reporter:
       write_to: stdout_noreturn       # The writer to use
       min_report_intv: 0.5            # Required time (in s) between writes
       # All further kwargs on this level are passed to the parser
-      show_times: True
+      show_times: true
 
     after_work:
       parser: progress_bar
-      show_times: True
+      show_times: true
       write_to: stdout_noreturn
 
   # Can define a default format to use
@@ -202,7 +202,21 @@ data_manager:
 # Plot Manager ................................................................
 # The PlotManager, also from the dantro package, supplies plotting capabilities
 # using the data in the DataManager.
-plot_manager: {}
+plot_manager:
+  # Save the plots to the same directory as that of the data manager
+  out_dir: ""
+  # TODO check if reasonable decision
+
+  # Save all plot configurations alongside the plots
+  save_plot_cfg: true
+
+  # As default, use the external plot creator
+  default_creator: external
+  
+  # Creator initialization arguments
+  creator_init_kwargs:
+    # For the Utopia-specific external plot creator: none yet.
+    external: {}
 
 
 # Parameter Space .............................................................

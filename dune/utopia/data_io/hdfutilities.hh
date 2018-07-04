@@ -7,17 +7,8 @@
 #ifndef HDFUTILITIES_HH
 #define HDFUTILITIES_HH
 
-#include <array>
-#include <deque>
-#include <forward_list>
-#include <iostream>
-#include <list>
-#include <map>
-#include <queue>
-#include <set>
-#include <stack>
 #include <string>
-#include <vector>
+#include <type_traits>
 
 // Functions for determining if a type is an STL-container are provided here.
 // This is used if we wish to make hdf5 types for storing such data in an
