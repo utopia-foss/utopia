@@ -136,7 +136,7 @@ public:
 
             // Use a uniform real distribution for random numbers
             auto rand = std::bind(std::uniform_real_distribution<>(),
-                                  *this->rng);
+                                  std::ref(*this->rng));
 
             // Define the update rule
             auto set_random_strategy = [&rand, &s1_prob](const auto cell) {
@@ -189,7 +189,7 @@ public:
             // Need a counter of cells that were set to S1
             std::size_t num_set = 0;
 
-            auto rand_idx = std::bind(std::uniform_int_distribution<>(0, num_cells-1), *this->rng);
+            auto rand_idx = std::bind(std::uniform_int_distribution<>(0, num_cells-1), std::ref(*this->rng));
 
             // Make num_s1 cells use strategy 1
             while (num_set < num_s1) {
