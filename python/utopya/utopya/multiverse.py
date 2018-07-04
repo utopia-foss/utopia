@@ -13,6 +13,7 @@ import paramspace as psp
 
 from utopya.datamanager import DataManager
 from utopya.workermanager import WorkerManager
+from utopya.plotting import PlotManager
 from utopya.task import enqueue_json
 from utopya.reporter import WorkerManagerReporter
 from utopya.tools import recursive_update, read_yml, write_yml, load_model_cfg
@@ -89,9 +90,14 @@ class Multiverse:
         self._wm = WorkerManager(**self.meta_config['worker_manager'])
 
         # Instantiate the Reporter
-        self._reporter = WorkerManagerReporter(self._wm,
+        self._reporter = WorkerManagerReporter(self.wm,
                                                report_dir=self.dirs['run'],
                                                **self.meta_config['reporter'])
+
+        # And instantiate the PlotManager with the model-specific plot config
+        self._pm = PlotManager(dm=self.dm,
+                               plots_cfg=MODELS[self.model_name]['plots_cfg'],
+                               **self.meta_config['plot_manager'])
 
         log.info("Initialized Multiverse.")
 
@@ -152,6 +158,11 @@ class Multiverse:
     def wm(self) -> WorkerManager:
         """The Multiverse's WorkerManager."""
         return self._wm
+
+    @property
+    def pm(self) -> PlotManager:
+        """The Multiverse's PlotManager."""
+        return self._pm
 
     # Public methods ..........................................................
     # TODO the run methods should only be allowed to run once!
