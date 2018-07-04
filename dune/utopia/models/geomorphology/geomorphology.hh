@@ -5,7 +5,6 @@
 #include <dune/utopia/core/model.hh>
 #include <dune/utopia/core/apply.hh>
 
-#include <dune/utopia/data_io/hdffile.hh>
 #include <dune/utopia/data_io/hdfgroup.hh>
 #include <dune/utopia/data_io/hdfdataset.hh>
 
@@ -13,86 +12,123 @@ namespace Utopia {
 
 namespace Models {
 
-/// Define data types of vegetation model
+/// Define data type and boundary condition type of geomorphology model
 template<class Manager>
-using GeomorphologyTypes = Utopia::ModelTypes<
-    typename Manager::Container,
-    std::normal_distribution<> // rain
->;
+using DataType = typename Manager::Container;
 
+using Rain = std::normal_distribution<>;
+
+template<class Manager>
+using GeomorphologyTypes = ModelTypes<DataType<Manager>, Rain>;
+
+/// A very simple geomorphology model
 template<class Manager>
 class Geomorphology:
     public Model<Geomorphology<Manager>, GeomorphologyTypes<Manager>>
 {
 public:
 
+    /// Type helpers
     using Base = Model<Geomorphology<Manager>, GeomorphologyTypes<Manager>>;
     using BCType = typename Base::BCType;
     using Data = typename Base::Data;
+    using DataSet = DataIO::HDFDataset<DataIO::HDFGroup>;
 
-    Manager manager;
-    BCType bc;
+private:
 
-    /// Construct the model.
-    /** \param manager Manager for this model
+    /// The grid manager
+    Manager _manager;
+
+    /// The boundary conditions (aka parameters) of the model
+    BCType _bc;
+
+    /// Dataset 
+    std::shared_ptr<DataSet> _dset_water_content;
+
+public:
+
+    /// Construct the Geomorphology model
+    /** \param name     Name of this model instance
+     *  \param parent   The parent model this model instance resides in
+     *  \param manager  The externally setup manager to use for this model
      */
     template<class ParentModel>
     Geomorphology (const std::string name,
                    const ParentModel& parent_model,
-                   Manager _manager)
+                   Manager manager)
     :
-        // Use the base constructor for the main parts
+        // Construct the base class
         Base(name, parent_model),
-        // Initialise the manager
-        manager(_manager),
-        bc{this->cfg["rain_mean"].template as<double>(), this->cfg["rain_var"].template as<double>()}
-    {
-        // Initialize altitude as an inclined plane
-        /*auto set_inclined_plane = [this](const auto cell) {          
-            return 1.0;
-        };
-        apply_rule(set_inclined_plane, manager.cells());*/ 
-        //apply_rule doesnt really work here...
-        for (auto cell : manager.cells()) {
-            cell->state_new()[0] = cell->position()[1];
-            cell->update();
-        }
 
-        // Write initial condition and position of cells
-        auto dsetX = this->hdfgrp->open_dataset("positionX");
-        dsetX->write(manager.cells().begin(),
-                manager.cells().end(), 
-                [](const auto& cell) {return cell->position()[0];});
-        auto dsetY = this->hdfgrp->open_dataset("positionY");
-        dsetY->write(manager.cells().begin(),
-                manager.cells().end(), 
-                [](const auto& cell) {return cell->position()[1];});
+        // Initialise the reference to the Manager object
+        _manager(manager),
+
+        // Open dataset for output of cell states 
+        _dset_water_content(this->hdfgrp->open_dataset("water_content")),
+
+        // Initialize model parameters from config file
+        _bc{this->cfg["rain_mean"].template as<double>(), 
+            this->cfg["rain_var"].template as<double>()}
+    {
+        // Initialize altitude as an inclined plane (by making use of coordinates)
+        auto set_inclined_plane = [this](const auto cell) {   
+            auto state = cell->state();
+            state[0] = cell->position()[1]; 
+            return state;       
+        };
+        apply_rule(set_inclined_plane, manager.cells()); 
+
+        // Add the model parameters as attributes
+        this->hdfgrp->add_attribute("rain_mean", 
+                                    this->cfg["rain_mean"].template as<double>());
+        this->hdfgrp->add_attribute("rain_var", 
+                                    this->cfg["rain_var"].template as<double>());
+
+        // Write the cell coordinates
+        auto dsetX = this->hdfgrp->open_dataset("coordinates_x");
+        dsetX->write(_manager.cells().begin(),
+                    _manager.cells().end(), 
+                    [](const auto& cell) {return cell->position()[0];});
+        auto dsetY = this->hdfgrp->open_dataset("coordinates_y");
+        dsetY->write(_manager.cells().begin(),
+                    _manager.cells().end(), 
+                    [](const auto& cell) {return cell->position()[1];});
+
+        // Write cell height 
+        auto dsetH = this->hdfgrp->open_dataset("height");
+        dsetH->write(_manager.cells().begin(),
+                    _manager.cells().end(), 
+                    [](const auto& cell) {return cell->state()[0];});
+
+        // Write initial state 
         write_data();
     }
 
-    /// Iterate one time step
+    /// Iterate a single step
     void perform_step ()
     {
+        // Communicate which iteration step is performed
+        std::cout << "  Performing step @ t = " << this->time << " ...";
 
-        // let it rain
+        // Let it rain
         auto rain = [this](const auto cell) {
-            auto rain = bc(*(manager.rng()));
+            auto rain = _bc(*(_manager.rng()));
             auto state = cell->state();
             state[1] += rain; 
             return state;
         };
-        apply_rule(rain, manager.cells());
+        apply_rule(rain, _manager.cells());
 
-        // reset state_new of cells
-        auto& cells = manager.cells();
+        // Reset state_new of cells
+        auto& cells = _manager.cells();
         for (auto& cell : cells) {
             cell->state_new()[1] = 0;
         }
 
-        // waterflow  
+        // Waterflow  
         for (auto& cell : cells) {
             //find lowest neighbour
-            auto neighbors = Neighborhoods::NextNeighbor::neighbors(cell, manager);
+            auto neighbors = Neighborhoods::NextNeighbor::neighbors(cell, _manager);
             auto l_neighbor = neighbors[0];
             double min_height = l_neighbor->state()[0];
             for (auto n : neighbors) {
@@ -111,34 +147,55 @@ public:
             }
         }
 
-        // update cells
+        // Update cells
         for (auto& cell : cells) {
             cell->update();
         }
     }
 
+    /// Write the cell states (aka water content)
+    /** The cell height is currently not written out as in the current implementation 
+     *  it does not change over time (erosion is not yet included).
+     */
     void write_data () {
-        std::cout << "Writing data @ _t = " << this->time << " ... ";
-        auto dsetH = this->hdfgrp->open_dataset("height@t="+std::to_string(this->time));
-        dsetH->write(manager.cells().begin(),
-                     manager.cells().end(), 
-                     [](const auto cell){ return cell->state()[0]; });
-        auto dsetW = this->hdfgrp->open_dataset("watercontent@t="+std::to_string(this->time));
-        dsetW->write(manager.cells().begin(),
-                     manager.cells().end(), 
-                     [](const auto cell){ return cell->state()[1]; });
-        std::cout << "complete!\n";
+
+        std::cout << "Writing data @ t = " << this->time << " ... " << std::endl;
+
+        auto cells = _manager.cells();
+        unsigned int num_cells = std::distance(cells.begin(), cells.end());
+
+        _dset_water_content->write(cells.begin(), cells.end(),
+                              [](auto& cell) { return cell->state()[1]; },
+                              2,              // rank
+                              {1, num_cells}, // extend of this entry
+                              {},             // max_size of the dataset
+                              8               // chunksize, for extension
+                              );
     }
 
-
     /// Return const reference to cell container
-    const Data& data () const { return manager.cells(); }
+    const Data& data () const { return _manager.cells(); }
 
-    // Set model boundary condition
-    void set_boundary_condition (const BCType& bc) { }
+    /// Set model boundary condition
+    void set_boundary_condition (const BCType& new_bc) { _bc = new_bc; }
 
     /// Set model initial condition
-    void set_initial_condition (const Data& container) { }
+    void set_initial_condition (const Data& ic) {
+        auto cells = _manager.cells();
+        for (auto ci : cells) {
+            // Find cell in ic with same coordinates
+            for (auto cj : ic) {
+                if (ci->position() == cj->position()) {
+                    // Copy cell content
+                    ci->state_new() = cj->state();
+                }
+                std::cout << std::endl;
+            }
+        }
+        for_each(cells.begin(), cells.end(),
+            [](const auto& cell){ cell->update(); }
+        );
+    }
 };
 
 } // namespace Models

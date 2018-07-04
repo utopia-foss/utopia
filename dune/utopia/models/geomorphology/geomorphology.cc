@@ -13,11 +13,11 @@ int main(int argc, char *argv[])
         Dune::MPIHelper::instance(argc, argv);
 
         // Read in the config file
-        const std::string config_file = argv[1];
-        Utopia::DataIO::Config config(config_file);
+        //const std::string config_file = argv[1];
 
-        // create PseudoParent, setting up the HDFFile and RNG
-        Utopia::PseudoParent pp(config_file);
+        // Create PseudoParent and get a config file reference
+        Utopia::PseudoParent pp(argv[1]);
+        auto config = pp.get_cfg();
 
         // Create the manager instance
         constexpr bool sync = true;
