@@ -1,7 +1,3 @@
-#include <iostream>       // std::cout, std::endl
-#include <thread>         // std::this_thread::sleep_for
-#include <chrono>         // std::chrono::seconds
-
 #include <dune/utopia/core/setup.hh>
 #include <dune/utopia/data_io/types.hh>
 
@@ -11,9 +7,6 @@ int main(int argc, char *argv[])
 {
     try {
         Dune::MPIHelper::instance(argc, argv);
-
-        // Read in the config file
-        //const std::string config_file = argv[1];
 
         // Create PseudoParent and get a config file reference
         Utopia::PseudoParent pp(argv[1]);
@@ -39,17 +32,6 @@ int main(int argc, char *argv[])
         for(int i = 0; i < num_steps; ++i) {
             model.iterate();
         }
-
-        // Sleep (to be read by frontend)
-        unsigned int sleep_time = 300; // in milliseconds
-        unsigned int num_sleeps = 3;
-
-        for (unsigned int i = 0; i < num_sleeps; ++i) {
-            std::cout << "Sleep #" << (i+1) << " ..." << std::endl;
-            std::this_thread::sleep_for(std::chrono::milliseconds(sleep_time));
-        }
-
-        std::cout << "All done." << std::endl << "Really." << std::endl;
 
         return 0;
     }
