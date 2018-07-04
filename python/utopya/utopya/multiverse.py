@@ -41,17 +41,17 @@ class Multiverse:
     BASE_CFG_PATH = resource_filename('utopya', 'cfg/base_cfg.yml')
     USER_CFG_SEARCH_PATH = os.path.expanduser("~/.config/utopia/user_cfg.yml")
 
-    def __init__(self, *, model_name: str, run_cfg_path: str=None, update_meta_cfg: dict=None, user_cfg_path: str=None):
+    def __init__(self, *, model_name: str, run_cfg_path: str=None, user_cfg_path: str=None, **update_meta_cfg):
         """Initialize the Multiverse.
         
         Args:
             model_name (str): A valid name of Utopia model
             run_cfg_path (str, optional): The path to the run configuration.
-            update_meta_cfg (dict, optional): Can be used to update the meta
-                config that is generated from the run_cfg and user_cfg.
             user_cfg_path (str, optional): If given, this is used to update the
                 base configuration. If None, will look for it in the default
                 path, see Multiverse.USER_CFG_SEARCH_PATH.
+            **update_meta_cfg: Can be used to update the meta configuration
+                generated from 
         """
         # Initialize empty attributes (partly property-managed)
         self._meta_config = None

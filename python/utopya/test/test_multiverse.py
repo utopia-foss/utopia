@@ -33,7 +33,7 @@ def mv_kwargs(tmpdir) -> dict:
     return dict(model_name="dummy",
                 run_cfg_path=RUN_CFG_PATH,
                 user_cfg_path=USER_CFG_PATH,
-                update_meta_cfg=dict(paths=unique_paths))
+                paths=unique_paths)
 
 @pytest.fixture
 def default_mv(mv_kwargs) -> Multiverse:
@@ -53,12 +53,12 @@ def test_simple_init(mv_kwargs):
 
     # Without the run configuration
     mv_kwargs.pop('run_cfg_path')
-    mv_kwargs['update_meta_cfg']['paths']['model_note'] += "_wo_run_cfg"
+    mv_kwargs['paths']['model_note'] += "_wo_run_cfg"
     Multiverse(**mv_kwargs)
 
     # Suppressing the user config
     mv_kwargs['user_cfg_path'] = False
-    mv_kwargs['update_meta_cfg']['paths']['model_note'] += "_wo_user_cfg"
+    mv_kwargs['paths']['model_note'] += "_wo_user_cfg"
     Multiverse(**mv_kwargs)
     # NOTE Without specifying a path, the search path will be used, which makes
     # the results untestable and creates spurious folders for the user.
@@ -66,7 +66,7 @@ def test_simple_init(mv_kwargs):
 
     # Test with a bad user config
     mv_kwargs['user_cfg_path'] = BAD_USER_CFG_PATH
-    mv_kwargs['update_meta_cfg']['paths']['model_note'] = "bad_user_cfg"
+    mv_kwargs['paths']['model_note'] = "bad_user_cfg"
     with pytest.raises(ValueError, match="There was a 'parameter_space' key"):
         Multiverse(**mv_kwargs)
 
@@ -157,7 +157,7 @@ def test_run_sweep(mv_kwargs):
     # With a parameter space without volume, i.e. without any sweeps added,
     # the sweep should not be possible
     mv_kwargs['run_cfg_path'] = RUN_CFG_PATH
-    mv_kwargs['update_meta_cfg']['paths']['model_note'] = "_invalid_cfg"
+    mv_kwargs['paths']['model_note'] = "_invalid_cfg"
     mv = Multiverse(**mv_kwargs)
 
     with pytest.raises(ValueError, match="The parameter space has no sweeps"):
