@@ -181,7 +181,8 @@ public:
             std::cout << "Cells with strategy 1: " << num_s1
                       << " of " << num_cells << std::endl;
 
-            // TODO can add some logic here to make more clever assignments, i.e. starting out with all S1 if the number to set is higher than half ...
+            // OPTIONAL TODO can add some logic here to make more clever assignments, 
+            // i.e. starting out with all S1 if the number to set is higher than half ...
 
             // Need a counter of cells that were set to S1
             std::size_t num_set = 0;
@@ -220,12 +221,12 @@ public:
             // and which one is the single strategy in the center of the grid
             Strategy default_strategy, single_strategy;
             if (initial_state == "single_s0") {
-                default_strategy = S1;
-                single_strategy = S0;
+                default_strategy = Strategy::S1;
+                single_strategy = Strategy::S0;
             }
             else {
-                default_strategy = S0;
-                single_strategy = S1;
+                default_strategy = Strategy::S0;
+                single_strategy = Strategy::S1;
             }
 
             auto& cells = _manager.cells();
@@ -262,11 +263,11 @@ public:
                 if (   pos[0] == grid_ext[0] / 2 
                     && pos[1] == grid_ext[1] / 2) {
                     // The cell _is_ in the center of the grid
-                    state.strategy = static_cast<Strategy>(single_strategy);
+                    state.strategy = single_strategy;
                 }
                 else {
                     // The cell _is not_ in the center of the grid
-                    state.strategy = static_cast<Strategy>(default_strategy);
+                    state.strategy = default_strategy;
                 }
                 
                 return state;
