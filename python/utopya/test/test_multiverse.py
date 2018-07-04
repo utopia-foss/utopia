@@ -109,7 +109,7 @@ def test_create_run_dir(default_mv):
     mv = default_mv
 
     # Reconstruct path from meta-config to have a parameter to compare to
-    out_dir = str(mv.meta_config['paths']['out_dir'])  # need for python < 3.6
+    out_dir = str(mv.meta_cfg['paths']['out_dir'])  # need str for python < 3.6
     path_base = os.path.join(out_dir, mv.model_name)
 
     # get all folders in the output dir
