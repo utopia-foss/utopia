@@ -78,6 +78,16 @@ public:
                              this->cfg["growth"].template as<double>(), 
                              this->cfg["seeding"].template as<double>());
 
+        // Add the model parameters as attributes
+        this->hdfgrp->add_attribute("rain_mean", 
+                                    this->cfg["rain_mean"].template as<double>());
+        this->hdfgrp->add_attribute("rain_var", 
+                                    this->cfg["rain_var"].template as<double>());
+        this->hdfgrp->add_attribute("growth", 
+                                    this->cfg["growth"].template as<double>());
+        this->hdfgrp->add_attribute("seeding", 
+                                    this->cfg["seeding"].template as<double>());
+
         // Write the cell coordinates
         auto dsetX = this->hdfgrp->open_dataset("coordinates_x");
         dsetX->write(_manager.cells().begin(),
