@@ -1,2 +1,21 @@
 # This defines the default plots for the SimpleEG model
 ---
+
+# plot the frequency of the strategy S0
+frequency_S0:
+  creator: external
+
+  module: model_plots.SimpleEG
+  plot_func: frequency
+
+  uni: 0
+  strategy: S0
+
+frequencies:
+  creator: external
+
+  module: model_plots.SimpleEG
+  plot_func: frequency
+
+  uni: 0
+  strategy: [S0, S1]
