@@ -14,17 +14,17 @@ int main (int argc, char** argv)
 
         // Read in the config file
         const std::string config_file = argv[1];
-        Utopia::DataIO::Config config(config_file);
 
-        // Create PseudoParent, setting up the HDFFile and RNG
+        // Create PseudoParent
         Utopia::PseudoParent pp(config_file);
+        auto config = pp.get_cfg();
 
         // Create the manager instance
         constexpr bool sync = true;
         using State = double;
         using Tag = Utopia::DefaultTag;
         State initial_state = 0.0;
-        auto grid = Utopia::Setup::create_grid(config["grid_size"].as<int>());
+        auto grid = Utopia::Setup::create_grid(config["grid_size"].template as<int>());
         auto cells = Utopia::Setup::create_cells_on_grid<sync, State, Tag>(grid, initial_state);
         auto manager = Utopia::Setup::create_manager_cells<true, true>(grid, cells);
 
@@ -41,7 +41,7 @@ int main (int argc, char** argv)
         }
 
         // Test set_boundary_condition
-        std::cout << "Testing set_boundary_condition ..." << std::endl;
+        /*std::cout << "Testing set_boundary_condition ..." << std::endl;
         std::normal_distribution<> rain{10.1,1.2};
         auto bc = std::make_tuple(rain, 0.2, 0.2);
         model.set_boundary_condition(bc);
@@ -52,7 +52,7 @@ int main (int argc, char** argv)
 
         // Test set_initial_condition
         std::cout << "Testing set_initial_condition ..." << std::endl;
-        model.set_initial_condition(d);
+        model.set_initial_condition(d);*/
         
 
         // Sleep (to be read by frontend)
