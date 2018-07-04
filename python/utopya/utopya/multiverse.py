@@ -404,7 +404,7 @@ class Multiverse:
         out_dir = os.path.expanduser(str(out_dir))
         run_dir = os.path.join(out_dir,
                                self.model_name,
-                               time.strftime("%Y%m%d-%H%M%S"))
+                               time.strftime("%y%m%d-%H%M%S"))
 
         # Append a model note, if needed
         if model_note:
