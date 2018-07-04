@@ -14,12 +14,17 @@ The world is a regular square grid of cells. Each cell represents one player^1 t
 ### The Game – The Gain
 
 The payoff, a player receives from a single game, is encoded in the interaction matrix:
-
+<!--
 ```math
 W = \bordermatrix{~ & S_0 & S_1 \\
                   S_0 & w_{S_0S_0} & w_{S_0S_1} \\
                   S_1 & w_{S_1S_0} & w_{S_1S_1} \\}
-```
+```-->
+
+|   	|  $`S_0`$ 	|   $`S_1`$	|
+|------|-----|------|
+|   **$`S_0`$**	|  $`w_{S_0S_0}`$ 	|   $`w_{S_0S_1}`$	|
+|   **$`S_1`$**	|  $`w_{S_1S_0}`$ 	|   $`w_{S_1S_1}`$	|
 
 $`S_0`$ and $`S_1`$ denote the two different possible strategies.[^2] The matrix entries $`w_{ij}`$ define the payoff a player with strategy $`S_i`$ receives from a game played against a player with strategy $`S_j`$.
 
@@ -75,7 +80,7 @@ The interaction matrices of the individual options are collected here:
 	
 | Setting the benefit `b` | Setting the benefit-cost-pair `bc-pair`  | Setting a general interaction matrix `ia_matrix` |
 | -------- | -------- | -------- |
-| 	$`W = \bordermatrix{~ & S_0=C & S_1=D \cr S_0=C & 1 & 0 \cr S_1=D & b & 0 \cr}`$ | $`W = \bordermatrix{~ & S_0=C & S_1=D \cr S_0=C & b-c & -c \cr S_1=D & b & 0 \cr}`$ | $` W = \bordermatrix{~ & S_0 & S_1 \cr S_0 & w_{S_0S_0} & w_{S_0S_1} \cr S_1 & w_{S_1S_0} & w_{S_1S_1} \cr}`$  |
+| 	$`W = \begin{matrix}{~ & S_0=C & S_1=D \cr S_0=C & 1 & 0 \cr S_1=D & b & 0 \end{matrix}`$ | $`W = \bordermatrix{~ & S_0=C & S_1=D \cr S_0=C & b-c & -c \cr S_1=D & b & 0 }`$ | $` W = \bordermatrix{~ & S_0 & S_1 \cr S_0 & w_{S_0S_0} & w_{S_0S_1} \cr S_1 & w_{S_1S_0} & w_{S_1S_1} }`$  |
 
 The algorithm is designed such that if an interaction matrix is provided in the configuration file the interaction matrix will define the game, even if `b` or `bc-pair` are also provided. If there is no interaction matrix, but a `bc-pair` provided, the interaction matrix will be derived from it, even if `b` is set. `b` is used only if none of the other options is provided.
 
