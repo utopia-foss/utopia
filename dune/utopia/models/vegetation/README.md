@@ -32,4 +32,4 @@ The current default parameters (as defined in the file `vegetation_cfg.yml`) are
 * $`g = 0.1`$
 * $`s = 0.2`$
 
-For these parameters and a grid size of 10x10 the system takes roughly 50 time steps to reach a dynamic equilibrium, in which the plant bio-mass on all cells fluctuates around $`9.5`$.
+For these parameters and a grid size of $`10 \times 10`$ the system takes roughly $`50`$ time steps to reach a dynamic equilibrium, in which the plant bio-mass on all cells fluctuates around $`9.5`$.
