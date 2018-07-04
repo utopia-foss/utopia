@@ -48,6 +48,23 @@ p_run.add_argument('--sim-errors',
                         "(if set) the user configuration is used.") 
 # TODO make possible to set simulation steps here
 
+# plotting after the run
+p_run.add_argument('--no-plot',
+                   action='store_true',
+                   help="If set, no plots will be created. Note that plotting "
+                        "capabilities via the Multiverse or the CLI are not "
+                        "yet implemented, thus you will have to do the plots "
+                        "manually if you pass this option.") # TODO implement
+p_run.add_argument('--plots-cfg',
+                   default=None, nargs='?',
+                   help="If given, uses the plots configuration file found "
+                        "at this path instead of the defaults of the model.")
+p_run.add_argument('--plot-only',
+                   default=None, nargs='*',
+                   help="If given, will plot only those entries of the plot "
+                        "configuration that match the names given here.")
+
+
 # subcommand: config ..........................................................
 p_cfg.add_argument('--deploy',
                    action='store_true',
@@ -56,10 +73,13 @@ p_cfg.add_argument('--deploy',
                         "action if a file already exists at that location.")
 # TODO add --get and --set to easily manipulate entries
 
+
 # subcommand: TODO ............................................................
 # ...
 
-# CLI defined. Parse the arguments now.
+
+
+# CLI defined now. Parse the arguments...
 args = parser.parse_args()
 
 
@@ -114,11 +134,21 @@ if __name__ == '__main__':
 
         else:
             mv.run()
-            
+
 
     # Loading an Utopia run ...................................................
-    # TODO
+    # Only need to continue if plots are to be created
+    if args.no_plot:
+        sys.exit()
+
+    # Tell the DataManager to load
+    mv.dm.load_from_cfg(print_tree=True)
+    # NOTE This will load the data using the utopya default configuration
 
 
     # Plotting ................................................................
-    # TODO
+    # Tell the PlotManager to plot
+    mv.pm.plot_from_cfg(plots_cfg=args.plots_cfg, plot_only=args.plot_only)
+    # NOTE If plots_cfg was not given, this uses the plot configuration that
+    #      belongs to the model. If it is given, the configuration is loaded
+    #      from the given file path.
