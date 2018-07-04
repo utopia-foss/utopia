@@ -1,3 +1,2 @@
-output_file: "geomorphology.h5"
 rain_mean: 1.5
 rain_var:  1
