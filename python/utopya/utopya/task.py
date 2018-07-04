@@ -726,19 +726,20 @@ def enqueue_lines(*, queue: queue.Queue, stream: BinaryIO, parse_func: Callable=
         parse_func = lambda line: line
 
     # Read the lines and put them into the queue
-    for line in iter(stream.readline, b''): # <-- thread waits here for new lines, without idle looping
+    for line in iter(stream.readline, b''): # <-- thread waits here for new
+                                            #     lines, without idle looping
         # Got a line (byte-string, assumed utf8-encoded)
-        # Try to decode and strip newline
         try:
+            # Try to decode and strip newline
             line = line.decode('utf8').rstrip()
+
         except UnicodeDecodeError:
             # Remains a bytestring
             pass
-        else:
-            # Could decode. Pass to parse function
-            line = parse_func(line)
 
-        # Send it through the parse function
+        # else: could decode
+
+        # Send it through the parse function and add it to the queue
         queue.put_nowait(parse_func(line))
 
     # Everything read. Close the stream
@@ -759,7 +760,7 @@ def parse_json(line: str) -> Union[dict, str]:
         Union[dict, str]: Either the decoded json, or, if that failed, the str
     """
     try:
-        return json.loads(line, encoding='utf8')
+        d = json.loads(line, encoding='utf8')
     
     except (json.JSONDecodeError, TypeError) as err:
         # One of the expected errors occured
@@ -774,6 +775,11 @@ def parse_json(line: str) -> Union[dict, str]:
 
         # Still return the string representation
         return str(line)
+
+    # Could load it. Still check, if it is a dictionary. If not, return as str
+    if isinstance(d, dict):
+        return d
+    return str(d)
 
 def enqueue_json(*, queue: queue.Queue, stream: BinaryIO, parse_func: Callable=parse_json) -> None:
     """Wrapper function for enqueue_lines with parse_json set as parse_func."""
