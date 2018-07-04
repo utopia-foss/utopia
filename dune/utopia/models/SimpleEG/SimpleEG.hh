@@ -7,6 +7,8 @@
 #include <dune/utopia/core/apply.hh>
 #include <dune/utopia/core/types.hh>
 
+#include <functional>
+
 namespace Utopia {
 
 namespace Models { // TODO check if additional namespace might be good!
@@ -51,6 +53,9 @@ public:
     /// Data type of the state
     using Data = typename Base::Data;
     
+    /// Cell type
+    using CellType = typename ManagerType::Cell;
+
     /// Data type of the boundary condition
     using BCType = typename Base::BCType;
     
@@ -83,6 +88,95 @@ private:
     // -- Datasets -- //
     std::shared_ptr<DataSet> _dset_strategy;
     std::shared_ptr<DataSet> _dset_payoff;
+
+    /// Define the interaction between players
+    std::function<State(std::shared_ptr<CellType>)> _interaction = [this](const auto cell){
+        // Get the state of the Cell
+        auto state = cell->state();
+
+        // First, reset payoff to zero
+        state.payoff = 0.;
+
+        // Go through neighboing cells, look at their strategies and add
+        // the corresponding payoff only to the current cell's payoff.
+        // NOTE: adding the corresponding payoff to the neighboring cell
+        // would lead to payoffs being added multiple times!
+        for (auto nb : MooreNeighbor::neighbors(cell, this->_manager))
+        {
+            auto nb_state = nb->state();
+            if (state.strategy == S0 && nb_state.strategy == S0) {
+                state.payoff += _ia_matrix[0][0];
+            }
+            else if (state.strategy == S0 && nb_state.strategy == S1) {
+                state.payoff += _ia_matrix[0][1];
+            }
+            else if (state.strategy == S1 && nb_state.strategy == S0) {
+                state.payoff += _ia_matrix[1][0];
+            }
+            else if (state.strategy == S1 && nb_state.strategy == S1) {
+                state.payoff += _ia_matrix[1][1];
+            }
+        }
+        return state;
+    };
+
+    /// Define the update rule 
+    std::function<State(std::shared_ptr<CellType>)> _update = [this](const auto cell){
+        // Update procedure is as follows:
+        // Loop through the neighbors and store all neighbors with the
+        // highest payoff.
+        // Use the member _fittest_cell_in_nbhood for this, such that the vector does
+        // not need to be recreated for each cell.
+
+        // NOTE In most cases the vector will contain only one cell.
+        //      However, there are parameter regimes where multiple cells
+        //      can have the same payoff; this approach copes with spatial
+        //      artefacts regardless of the parameter regime and 
+
+        // Get the state of the cell
+        auto state = cell->state();
+
+        // Set highest payoff in the neighborhood to the cell's payoff
+        double highest_payoff = state.payoff;
+        _fittest_cell_in_nbhood.clear();
+        _fittest_cell_in_nbhood.push_back(cell);
+        
+        // Iterate over neighbours of this cell:
+        for (auto nb : MooreNeighbor::neighbors(cell, this->_manager)){
+            if (nb->state().payoff > highest_payoff) {
+                // Found a new highest payoff
+                highest_payoff = nb->state().payoff;
+                _fittest_cell_in_nbhood.clear();
+                _fittest_cell_in_nbhood.push_back(nb);
+            }
+            else if (nb->state().payoff == highest_payoff) {
+                // Have a payoff equal to that of another cell
+                _fittest_cell_in_nbhood.push_back(nb);
+            }
+            // else: payoff was below highest payoff
+        }
+
+        // Now, update the strategy according to the fittest neighbour
+        if (_fittest_cell_in_nbhood.size() == 1) {
+            // Only one fittest neighbour. -> The state of the current cell
+            // is updated with that of the fittest neighbour.
+            state.strategy = _fittest_cell_in_nbhood[0]->state().strategy;
+        }
+        else if (_fittest_cell_in_nbhood.size() > 1) {
+            // There are multiple nbs with the same (highest) payoff.
+            // -> Choose randomly one of them to pass on its strategy
+            std::uniform_int_distribution<> dist(0, _fittest_cell_in_nbhood.size()-1);
+            state.strategy = _fittest_cell_in_nbhood[dist(*this->rng)]->state().strategy;
+        }
+        else {
+            // There is no fittest neighbor. This case should never occur
+            throw std::runtime_error("There was no fittest neighbor in "
+                                        "the cell update. Should not occur!");
+        }
+
+        return state;
+    };
+
 
 public:
     /// Construct the SimpleEG model
@@ -301,97 +395,9 @@ public:
      */
     void perform_step ()
     {
-        // Define the interaction rule lambda function
-        auto interact = [this](const auto cell){
-            // Get the state of the Cell
-            auto state = cell->state();
-
-            // First, reset payoff to zero
-            state.payoff = 0.;
-
-            // Go through neighboing cells, look at their strategies and add
-            // the corresponding payoff only to the current cell's payoff.
-            // NOTE: adding the corresponding payoff to the neighboring cell
-            // would lead to payoffs being added multiple times!
-            for (auto nb : MooreNeighbor::neighbors(cell, this->_manager))
-            {
-                auto nb_state = nb->state();
-                if (state.strategy == S0 && nb_state.strategy == S0) {
-                    state.payoff += _ia_matrix[0][0];
-                }
-                else if (state.strategy == S0 && nb_state.strategy == S1) {
-                    state.payoff += _ia_matrix[0][1];
-                }
-                else if (state.strategy == S1 && nb_state.strategy == S0) {
-                    state.payoff += _ia_matrix[1][0];
-                }
-                else if (state.strategy == S1 && nb_state.strategy == S1) {
-                    state.payoff += _ia_matrix[1][1];
-                }
-            }
-            return state;
-        };
-
-        // Define the update rule lambda function
-        auto update = [this](const auto cell){
-            // Update procedure is as follows:
-            // Loop through the neighbors and store all neighbors with the
-            // highest payoff.
-            // Use the member _fittest_cell_in_nbhood for this, such that the vector does
-            // not need to be recreated for each cell.
-
-            // NOTE In most cases the vector will contain only one cell.
-            //      However, there are parameter regimes where multiple cells
-            //      can have the same payoff; this approach copes with spatial
-            //      artefacts regardless of the parameter regime and 
-
-            // Get the state of the cell
-            auto state = cell->state();
-
-            // Set highest payoff in the neighborhood to the cell's payoff
-            double highest_payoff = state.payoff;
-            _fittest_cell_in_nbhood.clear();
-            _fittest_cell_in_nbhood.push_back(cell);
-            
-            // Iterate over neighbours of this cell:
-            for (auto nb : MooreNeighbor::neighbors(cell, this->_manager)){
-                if (nb->state().payoff > highest_payoff) {
-                    // Found a new highest payoff
-                    highest_payoff = nb->state().payoff;
-                    _fittest_cell_in_nbhood.clear();
-                    _fittest_cell_in_nbhood.push_back(nb);
-                }
-                else if (nb->state().payoff == highest_payoff) {
-                    // Have a payoff equal to that of another cell
-                    _fittest_cell_in_nbhood.push_back(nb);
-                }
-                // else: payoff was below highest payoff
-            }
-
-            // Now, update the strategy according to the fittest neighbour
-            if (_fittest_cell_in_nbhood.size() == 1) {
-                // Only one fittest neighbour. -> The state of the current cell
-                // is updated with that of the fittest neighbour.
-                state.strategy = _fittest_cell_in_nbhood[0]->state().strategy;
-            }
-            else if (_fittest_cell_in_nbhood.size() > 1) {
-                // There are multiple nbs with the same (highest) payoff.
-                // -> Choose randomly one of them to pass on its strategy
-                std::uniform_int_distribution<> dist(0, _fittest_cell_in_nbhood.size()-1);
-                state.strategy = _fittest_cell_in_nbhood[dist(*this->rng)]->state().strategy;
-            }
-            else {
-                // There is no fittest neighbor. This case should never occur
-                throw std::runtime_error("There was no fittest neighbor in "
-                                         "the cell update. Should not occur!");
-            }
-
-            return state;
-        };
-
         // Apply the rules to all cells
-        apply_rule(interact, _manager.cells());
-        apply_rule(update, _manager.cells());
+        apply_rule(_interaction, _manager.cells());
+        apply_rule(_update, _manager.cells());
     }
 
 
@@ -470,7 +476,7 @@ private:
      * 
      * @return std::vector<std::vector<double>> The interaction matrix
      */
-    std::vector<std::vector<double>> extract_ia_matrix()
+    std::vector<std::vector<double>> extract_ia_matrix() const
     {
         // Return the ia_matrix if it is explicitly given in the config
         if (this->cfg["ia_matrix"]){
