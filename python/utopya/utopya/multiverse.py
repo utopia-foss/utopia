@@ -97,7 +97,7 @@ class Multiverse:
         # And instantiate the PlotManager with the model-specific plot config
         self._pm = PlotManager(dm=self.dm,
                                plots_cfg=MODELS[self.model_name]['plots_cfg'],
-                               **self.meta_config['plot_manager'])
+                               **self.meta_cfg['plot_manager'])
 
         log.info("Initialized Multiverse.")
 
