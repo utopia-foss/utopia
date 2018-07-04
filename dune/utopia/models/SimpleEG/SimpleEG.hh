@@ -79,7 +79,7 @@ private:
     ManagerType _manager;
 
     /// The interaction matrix (extracted during initialization)
-    std::vector<std::vector<double>> _ia_matrix;
+    const std::vector<std::vector<double>> _ia_matrix;
 
     // -- Temporary objects -- //
     /// A container to temporarily accumulate the fittest neighbour cells in
@@ -323,10 +323,10 @@ public:
                 single_strategy = Strategy::S1;
             }
 
-            auto& cells = _manager.cells();
+            const auto& cells = _manager.cells();
 
             // Get the grid extensions and perform checks on it
-            auto grid_ext = _manager.extensions();
+            const auto& grid_ext = _manager.extensions();
             // NOTE It is more robust to use the grid extensions than using the
             //      values stored in cfg["grid_size"].
 
@@ -348,7 +348,7 @@ public:
                 auto state = cell->state();
 
                 // Get the position
-                auto pos = cell->position();
+                const auto& pos = cell->position();
                 // NOTE  Careful! Is a Dune::FieldVector<double, 2>
                 //       Thus, need to do float calculations. The case with
                 //       even grid_size extensions is caught above
@@ -408,7 +408,7 @@ public:
         
         // For the grid data, get the cells in order to iterate over them
         auto cells = _manager.cells();
-        unsigned int num_cells = std::distance(cells.begin(), cells.end());
+        const unsigned int num_cells = std::distance(cells.begin(), cells.end());
 
         // strategy
         _dset_strategy->write(cells.begin(), cells.end(),
@@ -476,7 +476,7 @@ private:
      * 
      * @return std::vector<std::vector<double>> The interaction matrix
      */
-    std::vector<std::vector<double>> extract_ia_matrix() const
+    const std::vector<std::vector<double>> extract_ia_matrix() const
     {
         // Return the ia_matrix if it is explicitly given in the config
         if (this->cfg["ia_matrix"]){
@@ -485,26 +485,26 @@ private:
         // If ia_matrix is not provided in the config, get the ia_matrix from the bc-pair
         else if (this->cfg["bc_pair"]){
             auto [b, c] = this->cfg["bc_pair"].template as<std::pair<double, double>>();
-            double ia_00 = b - c;
-            double ia_01 = -c;
-            double ia_10 = b;
-            double ia_11 = 0.;
-            std::vector row0 {ia_00, ia_01};
-            std::vector row1 {ia_10, ia_11};
-            std::vector<std::vector<double>> ia_matrix {row0, row1};
+            const double ia_00 = b - c;
+            const double ia_01 = -c;
+            const double ia_10 = b;
+            const double ia_11 = 0.;
+            const std::vector row0 {ia_00, ia_01};
+            const std::vector row1 {ia_10, ia_11};
+            const std::vector<std::vector<double>> ia_matrix {row0, row1};
             return ia_matrix;
         }
         // If both previous cases are not provided, then return the ia_matrix given by the paramter "b"
         // NOTE: There is no check for b>1 implemented here.
         else if (this->cfg["b"]){
             auto b = this->cfg["b"].template as<double>();
-            double ia_00 = 1;
-            double ia_01 = 0;
-            double ia_10 = b;
-            double ia_11 = 0.;
-            std::vector row0 {ia_00, ia_01};
-            std::vector row1 {ia_10, ia_11};
-            std::vector<std::vector<double>> ia_matrix {row0, row1};
+            const double ia_00 = 1;
+            const double ia_01 = 0;
+            const double ia_10 = b;
+            const double ia_11 = 0.;
+            const std::vector row0 {ia_00, ia_01};
+            const std::vector row1 {ia_10, ia_11};
+            const std::vector<std::vector<double>> ia_matrix {row0, row1};
             return ia_matrix;
         }
         // Case where no interaction parameters are provided
