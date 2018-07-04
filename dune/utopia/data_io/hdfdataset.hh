@@ -62,7 +62,8 @@ private:
             }
 
             // make dataspace
-            hid_t dspace = H5Screate_simple(_rank, _extend.data(), _max_extend.data());
+            hid_t dspace =
+                H5Screate_simple(_rank, _current_extend.data(), _max_extend.data());
 
             // create dataset and return
             return H5Dcreate(_parent_object->get_id(), _name.c_str(),
@@ -72,13 +73,14 @@ private:
         else
         {
             // can create the dataset right away
-            return H5Dcreate(_parent_object->get_id(), _name.c_str(),
-                             HDFTypeFactory::type<Datatype>(),
-                             H5Screate_simple(_rank, _extend.data(), _max_extend.data()),
-                             group_plist, H5P_DEFAULT, H5P_DEFAULT);
+            return H5Dcreate(
+                _parent_object->get_id(), _name.c_str(), HDFTypeFactory::type<Datatype>(),
+                H5Screate_simple(_rank, _current_extend.data(), _max_extend.data()),
+                group_plist, H5P_DEFAULT, H5P_DEFAULT);
         }
     }
 
+    // FIXME: this is shit wrt size, use a _shape array
     /**
      * @brief      wrapper for creating a dataset given all parameters needed
      *
@@ -111,11 +113,11 @@ private:
             if (extend.size() == 0)
             {
                 // not given; create vector from size and rank
-                _extend = std::vector<hsize_t>(_rank, size);
+                _current_extend = std::vector<hsize_t>(_rank, size);
             }
             else
             {
-                _extend = extend;
+                _current_extend = extend;
             }
 
             if (max_size.size() == 0)
@@ -144,16 +146,16 @@ private:
             if (extend.size() == 0)
             {
                 // not given; create vector from size and rank
-                _extend = std::vector<hsize_t>(_rank, size);
+                _current_extend = std::vector<hsize_t>(_rank, size);
             }
             else
             {
-                _extend = extend;
+                _current_extend = extend;
             }
 
             if (max_size.size() == 0)
             {
-                _max_extend = _extend;
+                _max_extend = _current_extend;
             }
             else
             {
@@ -319,14 +321,58 @@ private:
     }
 
 protected:
-    std::shared_ptr<HDFObject> _parent_object;
+    /**
+     * @brief
+     *
+     */
+    HDFObject* _parent_object;
+
+    /**
+     * @brief
+     *
+     */
     std::string _name;
+
+    /**
+     * @brief
+     *
+     */
     hid_t _dataset;
+
+    /**
+     * @brief
+     *
+     */
     hsize_t _rank;
-    std::vector<hsize_t> _extend;
+
+    /**
+     * @brief
+     *
+     */
+    std::vector<hsize_t> _current_extend;
+
+    /**
+     * @brief
+     *
+     */
     std::vector<hsize_t> _max_extend;
+
+    /**
+     * @brief
+     *
+     */
     H5O_info_t _info;
+
+    /**
+     * @brief
+     *
+     */
     haddr_t _address;
+
+    /**
+     * @brief
+     *
+     */
     std::shared_ptr<std::unordered_map<haddr_t, int>> _referencecounter;
 
 public:
@@ -335,9 +381,9 @@ public:
      *
      * @return std::shared_ptr<HDFObject>
      */
-    std::shared_ptr<HDFObject> get_parent()
+    HDFObject& get_parent()
     {
-        return _parent_object;
+        return *_parent_object;
     }
 
     /**
@@ -365,9 +411,9 @@ public:
      *
      * @return std::vector<hsize_t>
      */
-    auto get_extend()
+    auto get_current_extend()
     {
-        return _extend;
+        return _current_extend;
     }
 
     /**
@@ -446,6 +492,51 @@ public:
     }
 
     /**
+     * @brief Open a dataset in 'parent_object' with name 'name'.
+     *        Do not forget to close it first if it was open before.
+     *
+     * @param parent_object
+     * @param name
+     */
+    void open(HDFObject& parent_object, std::string name)
+    {
+        _parent_object = &parent_object;
+        _name = name;
+        _referencecounter = parent_object.get_referencecounter();
+        _rank = 0;
+        _current_extend = {};
+        _max_extend = {};
+        // Try to find the dataset in the parent_object
+        // If it is there, open it.
+        // Else: postphone the dataset creation to the first write
+        if (H5LTfind_dataset(_parent_object->get_id(), _name.c_str()) == 1)
+        { // dataset exists
+            // open it
+            _dataset = H5Dopen(_parent_object->get_id(), _name.c_str(), H5P_DEFAULT);
+
+            // get dataspace and read out rank, extend, max_current_extend
+            hid_t dataspace = H5Dget_space(_dataset);
+
+            _rank = H5Sget_simple_extent_ndims(dataspace);
+            _current_extend.resize(_rank);
+            _max_extend.resize(_rank);
+
+            H5Sget_simple_extent_dims(dataspace, _current_extend.data(),
+                                      _max_extend.data());
+            H5Sclose(dataspace);
+
+            // Update info and reference counter
+            H5Oget_info(_dataset, &_info);
+            _address = _info.addr;
+            (*_referencecounter)[_address] += 1;
+        }
+        else
+        {
+            _dataset = -1;
+        }
+    }
+
+    /**
      * @brief      swap the state
      *
      * @param      other  The other
@@ -457,7 +548,7 @@ public:
         swap(_name, other._name);
         swap(_dataset, other._dataset);
         swap(_rank, other._rank);
-        swap(_extend, other._extend);
+        swap(_current_extend, other._current_extend);
         swap(_max_extend, other._max_extend);
         swap(_info, other._info);
         swap(_address, other._address);
@@ -526,17 +617,17 @@ public:
                     "ID! Check your arguments.");
             }
 
-            // gather data for dimensionality info: rank, extend, max_extend
+            // gather data for dimensionality info: rank, extend, max_current_extend
             // TODO see #119 for changes needed here
             // https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/issues/119
-            std::vector<hsize_t> dims(1 + _extend.size() + _max_extend.size());
+            std::vector<hsize_t> dims(1 + _current_extend.size() + _max_extend.size());
             std::size_t i = 0;
             dims[i] = _rank;
             ++i;
 
-            for (std::size_t j = 0; j < _extend.size(); ++j, ++i)
+            for (std::size_t j = 0; j < _current_extend.size(); ++j, ++i)
             {
-                dims[i] = _extend[j];
+                dims[i] = _current_extend[j];
             }
 
             for (std::size_t j = 0; j < _max_extend.size(); ++j, ++i)
@@ -562,14 +653,14 @@ public:
                                          "already been closed?");
             }
 
-            // check if dataset can be extended, i.e. if extend < max_extend.
+            // check if dataset can be extended, i.e. if extend < max_current_extend.
             for (std::size_t i = 0; i < _rank; ++i)
             {
-                if ((_extend[i] == _max_extend[i]) && (_extend[i] != 0))
+                if ((_current_extend[i] == _max_extend[i]) && (_current_extend[i] != 0))
                 {
                     throw std::runtime_error(
                         "Dataset cannot be extended! Its "
-                        "extend reached max_extend. Did "
+                        "extend reached max_current_extend. Did "
                         "you set a nonzero chunksize?");
                 }
             }
@@ -601,15 +692,15 @@ public:
 
                 // get the offset, stride count and block vectors for selection
                 // of the hyperslab
-                std::vector<hsize_t> offset = _extend;
+                std::vector<hsize_t> offset = _current_extend;
                 std::vector<hsize_t> stride{1};
                 std::vector<hsize_t> count = offset;
                 std::vector<hsize_t> block{1};
 
                 // make dataset larger
-                _extend[0] += size;
+                _current_extend[0] += size;
 
-                herr_t ext_err = H5Dset_extent(_dataset, _extend.data());
+                herr_t ext_err = H5Dset_extent(_dataset, _current_extend.data());
                 if (ext_err < 0)
                 {
                     throw std::runtime_error(
@@ -618,14 +709,15 @@ public:
                 }
 
                 // gather information for dimensionality info attribute
-                std::vector<hsize_t> dims(1 + _extend.size() + _max_extend.size());
+                std::vector<hsize_t> dims(1 + _current_extend.size() +
+                                          _max_extend.size());
                 std::size_t i = 0;
                 dims[i] = _rank;
                 ++i;
 
-                for (std::size_t j = 0; j < _extend.size(); ++j, ++i)
+                for (std::size_t j = 0; j < _current_extend.size(); ++j, ++i)
                 {
-                    dims[i] = _extend[j];
+                    dims[i] = _current_extend[j];
                 }
 
                 for (std::size_t j = 0; j < _max_extend.size(); ++j, ++i)
@@ -680,20 +772,20 @@ public:
                 */
 
                 // get some stuff we need for the hyperslab selection later
-                std::vector<hsize_t> offset = _extend;
-                std::vector<hsize_t> stride(_extend.size(), 1);
+                std::vector<hsize_t> offset = _current_extend;
+                std::vector<hsize_t> stride(_current_extend.size(), 1);
                 std::vector<hsize_t> count = offset;
                 std::vector<hsize_t> block(extend.size(), 1);
                 count[0] = 1; // such that we add one more 'slice'
 
                 // extend
-                _extend[0] += 1; // add one more slice
+                _current_extend[0] += 1; // add one more slice
                 for (std::size_t i = 1; i < offset.size(); ++i)
                 {
                     offset[i] = 0;
                 }
 
-                herr_t ext_err = H5Dset_extent(_dataset, _extend.data());
+                herr_t ext_err = H5Dset_extent(_dataset, _current_extend.data());
                 if (ext_err < 0)
                 {
                     throw std::runtime_error(
@@ -702,14 +794,15 @@ public:
                 }
 
                 // gather information for dimensionality info attribute
-                std::vector<hsize_t> dims(1 + _extend.size() + _max_extend.size());
+                std::vector<hsize_t> dims(1 + _current_extend.size() +
+                                          _max_extend.size());
                 std::size_t i = 0;
                 dims[i] = _rank;
                 ++i;
 
-                for (std::size_t j = 0; j < _extend.size(); ++j, ++i)
+                for (std::size_t j = 0; j < _current_extend.size(); ++j, ++i)
                 {
-                    dims[i] = _extend[j];
+                    dims[i] = _current_extend[j];
                 }
 
                 for (std::size_t j = 0; j < _max_extend.size(); ++j, ++i)
@@ -767,7 +860,8 @@ public:
             // assume that if start is empty, the entire dataset should be read
             if (start.size() == 0)
             {
-                return __read_from_dataset__<desired_type>(_extend[0], H5S_ALL, H5S_ALL);
+                return __read_from_dataset__<desired_type>(_current_extend[0],
+                                                           H5S_ALL, H5S_ALL);
             }
             else
             { // read a subset determined by start end stride
@@ -815,7 +909,7 @@ public:
                 std::size_t buffersize = 1;
                 for (std::size_t i = 0; i < _rank; ++i)
                 {
-                    buffersize *= _extend[i];
+                    buffersize *= _current_extend[i];
                 }
 
                 return __read_from_dataset__<desired_type>(buffersize, H5S_ALL, H5S_ALL);
@@ -879,7 +973,7 @@ public:
           _name(other._name),
           _dataset(other._dataset),
           _rank(other._rank),
-          _extend(other._extend),
+          _current_extend(other._current_extend),
           _max_extend(other._max_extend),
           _info(other._info),
           _address(other._address),
@@ -917,11 +1011,11 @@ public:
      * @param      name           The name
      */
     HDFDataset(HDFObject& parent_object, std::string name)
-        : _parent_object(std::make_shared<HDFObject>(parent_object)),
+        : _parent_object(&parent_object),
           _name(name),
           _dataset(-1),
           _rank(0),
-          _extend({}),
+          _current_extend({}),
           _max_extend({}),
           _referencecounter(parent_object.get_referencecounter())
 
@@ -934,14 +1028,15 @@ public:
             // open it
             _dataset = H5Dopen(_parent_object->get_id(), _name.c_str(), H5P_DEFAULT);
 
-            // get dataspace and read out rank, extend, max_extend
+            // get dataspace and read out rank, extend, max_current_extend
             hid_t dataspace = H5Dget_space(_dataset);
 
             _rank = H5Sget_simple_extent_ndims(dataspace);
-            _extend.resize(_rank);
+            _current_extend.resize(_rank);
             _max_extend.resize(_rank);
 
-            H5Sget_simple_extent_dims(dataspace, _extend.data(), _max_extend.data());
+            H5Sget_simple_extent_dims(dataspace, _current_extend.data(),
+                                      _max_extend.data());
             H5Sclose(dataspace);
 
             // Update info and reference counter

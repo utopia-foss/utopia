@@ -193,9 +193,8 @@ test:core: &test_core
   <<: *ssh_access
   dependencies:
     - build:tests
-  before_script:
-    - cd /opt/dune
   script:
+    - cd /opt/dune
     - $DUNECTRL --only=utopia make test_core
 
 test:dataio:

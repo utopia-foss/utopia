@@ -12,28 +12,46 @@ using namespace Utopia::DataIO;
 // testing opening
 int file_open_tester()
 {
-    auto file1 = std::make_shared<HDFFile>("hdf5testfile.h5", "w");
-    auto file2 = std::make_shared<HDFFile>("hdf5testfile.h5", "r");
-    auto file3 = std::make_shared<HDFFile>("hdf5testfile.h5", "r+");
     bool caught = false;
     try
     {
-        HDFFile file4("hdf5testfile.h5", "x");
+        HDFFile file1("hdf5testfile.h5", "w");
+
+        HDFFile file2("hdf5testfile.h5", "r");
+        HDFFile file3("hdf5testfile.h5", "r+");
     }
     catch (const std::exception& e)
     {
         caught = true;
         std::cerr << e.what() << std::endl;
     }
+    if (!caught)
+    {
+        return -1;
+    }
+    caught = false;
+    HDFFile file4("hdf5testfile_test.h5", "w");
+    file4.close();
+    try
+    {
+        HDFFile file4("hdf5testfile_test.h5", "x");
+    }
+    catch (const std::exception& e)
+    {
+        caught = true;
+        std::cerr << e.what() << std::endl;
+    }
+
     if (caught == false)
     {
         return -1;
     }
-    auto file5 = std::make_shared<HDFFile>("hdftestfile.h5", "a");
     caught = false;
+    HDFFile file5("hdf5testfile_test.h5", "a");
+
     try
     {
-        HDFFile("hdftestfile.h5", "n");
+        HDFFile file6("hdf5testfile_test.h5", "grrr");
     }
     catch (const std::exception& e)
     {
@@ -50,13 +68,13 @@ int file_open_tester()
 // testing functionality
 int file_func_tester()
 {
-    auto file = std::make_shared<HDFFile>("hdf5testfile_func.h5", "w");
+    HDFFile file("hdf5testfile_func.h5", "w");
 
     // check that group opening works
-    auto testgroup2 = file->open_group("/testgroup1/testgroup2");
-    file->close();
-    file = std::make_shared<HDFFile>("hdf5testfile_func.h5", "r+");
-    hid_t group_test = H5Gopen(file->get_id(), "/testgroup1/testgroup2", H5P_DEFAULT);
+    auto testgroup2 = file.open_group("/testgroup1/testgroup2");
+    file.close();
+    file = HDFFile("hdf5testfile_func.h5", "r+");
+    hid_t group_test = H5Gopen(file.get_id(), "/testgroup1/testgroup2", H5P_DEFAULT);
 
     if (group_test < 0)
     {
@@ -65,14 +83,14 @@ int file_func_tester()
     }
     H5Gclose(group_test);
 
-    file->delete_group("/testgroup1/testgroup2");
-    hid_t group_test2 = H5Gopen(file->get_id(), "/testgroup1/testgroup2", H5P_DEFAULT);
+    file.delete_group("/testgroup1/testgroup2");
+    hid_t group_test2 = H5Gopen(file.get_id(), "/testgroup1/testgroup2", H5P_DEFAULT);
 
     // group may not exist anymore
     assert(group_test2 < 0);
 
     // check base group stuff
-    auto basegroup = file->get_basegroup();
+    auto basegroup = file.get_basegroup();
     assert(basegroup->get_path() == "/");
 
     return 0;

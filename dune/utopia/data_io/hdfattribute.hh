@@ -1,3 +1,4 @@
+
 /**
  * @brief This file implements a C++ class which wraps a C HDF5 attribute to
  * a HDF5-object (group or dataset), and provides the necessary functionality
@@ -101,7 +102,8 @@ private:
         auto len = 0;
         const char* buffer = nullptr;
 
-        if constexpr (std::is_pointer_v<Type>) // const char* or char* -> strlen needed
+        if constexpr (std::is_pointer_v<Type>) // const char* or char* -> strlen
+                                               // needed
         {
             len = std::strlen(attribute_data);
             buffer = attribute_data;
@@ -298,6 +300,15 @@ protected:
     HDFObject* _parent_object;
 
 public:
+    void swap(HDFAttribute& other)
+    {
+        using std::swap;
+        swap(_attribute, other._attribute);
+        swap(_name, other._name);
+        swap(_shape, other._shape);
+        swap(_parent_object, other._parent_object);
+    }
+
     /**
      * @brief      Get underlying ID of attribute
      *
@@ -362,6 +373,40 @@ public:
     }
 
     /**
+     * @brief Open a new attribute on HDFObject 'parent' with name 'name'
+     *
+     * @param parent HDFObject to open the attribute on
+     * @param name  The attribute's name
+     */
+    void open(HDFObject& parent, std::string name)
+    {
+        // update members
+        _parent_object = &parent;
+        _name = name;
+
+        // open
+        if (H5Iis_valid(_parent_object->get_id()) == false)
+        {
+            throw std::invalid_argument(
+                "parent_object of attribute " + _name +
+                " is invalid, has it been closed already?");
+        }
+        else
+        {
+            if (H5LTfind_attribute(_parent_object->get_id(), _name.c_str()) == 1)
+            { // attribute exists
+                _attribute = H5Aopen(_parent_object->get_id(), _name.c_str(), H5P_DEFAULT);
+
+                get_shape();
+            }
+            else
+            { // attribute does not exist: make
+                _attribute = -1;
+            }
+        }
+    }
+
+    /**
      * @brief Reads data from attribute, and returns the data and its shape in
      *        the form of a hsize_t vector.
      *
@@ -371,13 +416,17 @@ public:
      *
      *        Depending on the type 'Type', the data will be returned as:
      *        - if Type is a container other than vector: Will throw runtime_error
-     *        - if Type is a vector or vector of vectors: Will return this, filled with data
-     *        - if Type is a stringtype, i.e. char*, const char*, std::string: Will return std::string
+     *        - if Type is a vector or vector of vectors: Will return this, filled
+     with data
+     *        - if Type is a stringtype, i.e. char*, const char*, std::string:
+     Will return std::string
      *        - if Type is a plain type, will return plain type
-     *        - if Type as a pointer type, it will return a shared_ptr, i.e. Type = double*, return will be std::shared_ptr<double>;
+     *        - if Type as a pointer type, it will return a shared_ptr, i.e. Type
+     = double*, return will be std::shared_ptr<double>;
 
      *
-     * @tparam Type which can hold elements in the attribute and which will be returned
+     * @tparam Type which can hold elements in the attribute and which will be
+     returned
      * @return tuple containing (shape, data)
      */
     template <typename Type>
@@ -389,9 +438,13 @@ public:
         //        fucking string data
         if (!H5Iis_valid(_attribute))
         {
-            throw std::runtime_error(
-                "trying to read a nonexstiant or closed attribute named '" +
-                _name + "'");
+            open(*_parent_object, _name);
+            if (!H5Iis_valid(_attribute))
+            {
+                throw std::runtime_error(
+                    "trying to read a nonexstiant attribute named '" + _name +
+                    "'");
+            }
         }
 
         if (_shape.size() == 0)
@@ -422,7 +475,9 @@ public:
 
             return std::make_tuple(_shape, buffer);
         }
-        else if constexpr (is_string_v<Type>) // we can have string types too, i.e. char*, const char*, std::string
+        else if constexpr (is_string_v<Type>) // we can have string types too,
+                                              // i.e. char*, const char*,
+                                              // std::string
         {
             std::string buffer; // resized in __read_stringtype__ because this as a scalar
             herr_t err = __read_stringtype__(buffer);
@@ -459,21 +514,25 @@ public:
     }
 
     /**
-     * @brief Reads data from attribute into a predefined buffer, and returns the data
-     *         and its shape in the form of a hsize_t vector.
-     *         User is responsible for providing a buffer which can hold the data
-     *         and has the correct shape!
+     * @brief Reads data from attribute into a predefined buffer, and returns the
+     * data and its shape in the form of a hsize_t vector. User is responsible for
+     * providing a buffer which can hold the data and has the correct shape!
      *
-     * @tparam Type which can hold elements in the attribute and which will be returned
+     * @tparam Type which can hold elements in the attribute and which will be
+     * returned
      */
     template <typename Type>
     void read(Type& buffer)
     {
         if (!H5Iis_valid(_attribute))
         {
-            throw std::runtime_error(
-                "trying to read a nonexstiant or closed attribute named '" +
-                _name + "'");
+            open(*_parent_object, _name);
+            if (!H5Iis_valid(_attribute))
+            {
+                throw std::runtime_error(
+                    "trying to read a nonexstiant attribute named '" + _name +
+                    "'");
+            }
         }
 
         if (_shape.size() == 0)
@@ -505,7 +564,9 @@ public:
                                          " into container types");
             }
         }
-        else if constexpr (is_string_v<Type>) // we can have string types too, i.e. char*, const char*, std::string
+        else if constexpr (is_string_v<Type>) // we can have string types too,
+                                              // i.e. char*, const char*,
+                                              // std::string
         {
             // resized in __read_stringtype__ because this as a scalar
             herr_t err = __read_stringtype__(buffer);
@@ -542,13 +603,14 @@ public:
      *
      * @tparam Type  Automatically determined type of the data to write
      * @param attribute_data  Data to write
-     * @param shape Layout of the data, i.e. {20, 50} would indicate a 2d array like int a[20][50];
-     *              The parameter has only to be given if the data to be written is given as
-     *               plain pointers, because the shape cannot be determined automatically then.
-     * @param typelen If the elements of the data to be written are arrays of equal length, and the data should be
-     *                written as 1d attribute, then we can give the length of the arrays
-     *                in order to speed up the memory allocation and avoid unecessary buffering.
-     *                This can be useful for grids for instance.
+     * @param shape Layout of the data, i.e. {20, 50} would indicate a 2d array
+     * like int a[20][50]; The parameter has only to be given if the data to be
+     * written is given as plain pointers, because the shape cannot be determined
+     * automatically then.
+     * @param typelen If the elements of the data to be written are arrays of
+     * equal length, and the data should be written as 1d attribute, then we can
+     * give the length of the arrays in order to speed up the memory allocation
+     * and avoid unecessary buffering. This can be useful for grids for instance.
      *
      */
     template <typename Type>
@@ -556,6 +618,12 @@ public:
     {
         // check if we have a container. Writing containers requires further
         // t tests, plain old data can be written right away
+
+        if (!H5Iis_valid(_attribute))
+        {
+            open(*_parent_object, _name);
+        }
+
         if constexpr (is_container_v<Type>) // container type
         {
             // get the shape from the data. This function is written such
@@ -642,11 +710,13 @@ public:
      * @brief Function for writing data to the attribute
      *
      * @tparam Iter Iterator type
-     * @tparam Adaptor Adaptor which allows for extraction of a value from compound types, i.e. classes or structs
+     * @tparam Adaptor Adaptor which allows for extraction of a value from
+     * compound types, i.e. classes or structs
      * @param begin Start of iterator range
      * @param end End of iterator range
-     * @param adaptor Function which turns the elements of the iterator into the objects to be written.
-     *        Should (auto&) argument (simplest), but else must have (typename Iter::value_type&) argument
+     * @param adaptor Function which turns the elements of the iterator into the
+     * objects to be written. Should (auto&) argument (simplest), but else must
+     * have (typename Iter::value_type&) argument
      */
     template <typename Iter, typename Adaptor>
     void write(Iter begin,

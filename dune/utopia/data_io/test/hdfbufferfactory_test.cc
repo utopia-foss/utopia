@@ -9,6 +9,7 @@
 #include "../hdfgroup.hh"
 #include <cassert>
 #include <hdf5.h>
+#include <list>
 #include <string>
 #include <vector>
 

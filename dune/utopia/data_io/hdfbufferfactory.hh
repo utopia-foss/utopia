@@ -11,6 +11,7 @@
 #include "hdftypefactory.hh"
 #include "hdfutilities.hh"
 #include <hdf5.h>
+#include <vector>
 
 namespace Utopia
 {
