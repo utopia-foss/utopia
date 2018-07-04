@@ -177,18 +177,55 @@ def test_tasklist(tasks):
     assert ("foo",) not in tasks
     assert all([task in tasks for task in tasks])
 
-# Additional functions Test from task.py tests --------------------------------
+    # Check that locking is possible and prevents appending
+    tasks.lock()
+    with pytest.raises(RuntimeError, match="TaskList locked!"):
+        tasks.append(Task(name="poor little task that won't get added"))
 
-def test_enque_lines_unicode():
-    # only testing the inner block of the function, the error is raised later from put_noawait()
-    # valid unicode utf8
-    with pytest.raises(TypeError):
-        enqueue_lines(queue=queue.Queue, stream=io.BytesIO(bytes('hello', 'utf-8')))
-    # non valid unicode utf8
-    with pytest.raises(TypeError):
-        enqueue_lines(queue=queue.Queue, stream=io.BytesIO(bytes('hello', 'utf-32')))
+# Additional functions in tasks module ----------------------------------------
 
-def test_enque_json():
-    # only testing the wrapper, the error is raised later from put_noawait() in enqueue_lines
-    with pytest.raises(TypeError):
-        enqueue_json(queue=queue.Queue, stream=io.BytesIO(bytes('hello', 'utf-8')))
+def test_enqueue_lines():
+    """Test the enqueue lines method"""
+    # Create a queue to add to and check the output in
+    q = queue.Queue()
+
+    # Test a working example
+    enqueue_lines(queue=q,
+                  stream=io.BytesIO(bytes("hello", 'utf-8')))
+    assert q.get_nowait() == "hello"
+
+    # Test passing a custom parse function
+    enqueue_lines(queue=q,
+                  stream=io.BytesIO(bytes("hello yourself", 'utf-8')),
+                  parse_func=lambda s: s + "!")
+    assert q.get_nowait() == "hello yourself!"
+
+    # should not fail with bad encoding either, just remain bytestring
+    enqueue_lines(queue=q,
+                  stream=io.BytesIO(bytes("hellö", 'latin-1')))
+    assert q.get_nowait() == bytes("hellö", 'latin-1')
+
+    # integer parsable should remain strings
+    enqueue_lines(queue=q,
+                  stream=io.BytesIO(bytes("1", 'latin-1')))
+    assert q.get_nowait() == "1"
+
+def test_enqueue_json():
+    """Test the enqueue json method"""
+    # Create a queue to add to and check the output in
+    q = queue.Queue()
+
+    # Working example
+    enqueue_json(queue=q,
+                 stream=io.BytesIO(bytes("{\"foo\": 123}", 'utf-8')))
+    assert q.get_nowait() == dict(foo=123)
+    
+    # Something integer-parsable (but not json) should remain string
+    enqueue_json(queue=q,
+                 stream=io.BytesIO(bytes("1", 'utf-8')))
+    assert q.get_nowait() == "1"
+
+    # Invalid json should be returned as string
+    enqueue_json(queue=q,
+                 stream=io.BytesIO(bytes("{\"foo\": 123, invalid}", 'utf-8')))
+    assert q.get_nowait() == "{\"foo\": 123, invalid}"

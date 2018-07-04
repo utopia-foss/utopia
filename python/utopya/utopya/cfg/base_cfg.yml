@@ -54,11 +54,11 @@ reporter:
       write_to: stdout_noreturn       # The writer to use
       min_report_intv: 0.5            # Required time (in s) between writes
       # All further kwargs on this level are passed to the parser
-      show_times: True
+      show_times: true
 
     after_work:
       parser: progress_bar
-      show_times: True
+      show_times: true
       write_to: stdout_noreturn
 
   # Can define a default format to use

@@ -114,7 +114,7 @@ if __name__ == '__main__':
     # Using the args, instantiate a Multiverse object
     mv = utopya.Multiverse(model_name=args.model_name,
                            run_cfg_path=args.run_cfg_path,
-                           update_meta_cfg=update_dict)
+                           **update_dict)
     
     
     # Perform the run .........................................................
