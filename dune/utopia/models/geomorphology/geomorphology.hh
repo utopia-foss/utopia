@@ -127,24 +127,23 @@ public:
 
         // Waterflow  
         for (auto& cell : cells) {
-            //find lowest neighbour
+            // Find lowest neighbour
             auto neighbors = Neighborhoods::NextNeighbor::neighbors(cell, _manager);
             auto l_neighbor = neighbors[0];
-            double min_height = l_neighbor->state()[0];
-            for (auto n : neighbors) {
-                if (n->state()[0] < min_height) {
-                    l_neighbor = n;
-                    min_height = l_neighbor->state()[0];
-                }
+            for (auto neighbor : neighbors) {
+                if (neighbor->state()[0] < l_neighbor->state()[0]) 
+                    l_neighbor = neighbor;
             }
-            // model boundary as a sink
-            if (l_neighbor->is_boundary()) {
-                l_neighbor->state_new()[1] = 0;
-            }
-            // put watercontent from cell to l_neighbor
+            // Put watercontent from cell to l_neighbor
             else {
                 l_neighbor->state_new()[1] += cell->state()[1];
             }
+        }
+
+        // Remove water from boundary cells (sinks)
+        for (auto& cell : cells) {
+            if (cell->is_boundary())
+                cell->state_new()[1] = 0;
         }
 
         // Update cells
