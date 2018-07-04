@@ -643,12 +643,14 @@ class WorkerTask(Task):
 # -----------------------------------------------------------------------------
 
 class TaskList:
-    """The TaskList stores Task objects in it, ensuring that none is in there twice.
+    """The TaskList stores Task objects in it, ensuring that none is in there
+    twice and allows to lock it to prevent adding new tasks.
     """
 
     def __init__(self):
         """Initialize an empty TaskList."""
         self._l = []
+        self._locked = False
 
     def __len__(self) -> int:
         """The length of the TaskList."""
@@ -673,10 +675,28 @@ class TaskList:
         """Tests for equality of the task list by forwarding to _l attribute"""
         return bool(self._l == other)
 
+    def lock(self):
+        """If called, the TaskList becomes locked and allows no further calls
+        to the append method.
+        """
+        self._locked = True
+
     def append(self, val: Task):
-        """Append a Task object to this TaskList"""
+        """Append a Task object to this TaskList
         
-        if not isinstance(val, Task):
+        Args:
+            val (Task): The task to add
+        
+        Raises:
+            RuntimeError: If TaskList object was locked
+            TypeError: Tried to add a non-Task type object
+            ValueError: Task already added to this TaskList
+        """
+        
+        if self._locked:
+            raise RuntimeError("TaskList locked! Cannot append further tasks.")
+        
+        elif not isinstance(val, Task):
             raise TypeError("TaskList can only be filled with "
                             "Task objects, got object of type {}, "
                             "value {}".format(type(val), val))
@@ -685,7 +705,7 @@ class TaskList:
                              "to this TaskList, cannot be added "
                              "again.".format(val.name, val.uid))
 
-        # Everything ok, append the object
+        # else: Everything ok, append the object
         self._l.append(val)
 
 # -----------------------------------------------------------------------------

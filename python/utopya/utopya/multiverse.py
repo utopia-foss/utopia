@@ -154,11 +154,14 @@ class Multiverse:
         return self._wm
 
     # Public methods ..........................................................
-    # TODO the run methods should only be allowed to run once!
 
     def run(self):
         """Starts a Utopia run. Whether this will be a single simulation or
-        a Parameter sweep is decided by the contents of the meta_cfg."""
+        a Parameter sweep is decided by the contents of the meta_cfg.
+
+        Note that (currently) each Multiverse instance can _not_ perform
+        multiple runs!
+        """
         log.info("Preparing to run Multiverse ...")
 
         # Depending on the configuration, the corresponding methods can already be called.
@@ -168,7 +171,11 @@ class Multiverse:
             self.run_single()
     
     def run_single(self):
-        """Runs a single simulation."""
+        """Runs a single simulation.
+
+        Note that (currently) each Multiverse instance can _not_ perform
+        multiple runs!
+        """
 
         # Get the parameter space from the config
         pspace = self.meta_config['parameter_space']
@@ -185,13 +192,20 @@ class Multiverse:
         log.info("Adding task for simulation of a single universe ...")
         self._add_sim_task(uni_id=0, max_uni_id=0, uni_cfg=uni_cfg)
 
+        # Prevent adding further tasks to disallow further runs
+        self.wm.tasks.lock()
+
         # Tell the WorkerManager to start working (is a blocking call)
         self.wm.start_working(**self.meta_config['run_kwargs'])
 
         log.info("Finished single universe run. Yay. :)")
 
     def run_sweep(self):
-        """Runs a parameter sweep."""
+        """Runs a parameter sweep.
+
+        Note that (currently) each Multiverse instance can _not_ perform
+        multiple runs!
+        """
         
         # Get the parameter space from the config
         pspace = self.meta_config['parameter_space']
@@ -211,6 +225,9 @@ class Multiverse:
             self._add_sim_task(uni_id=uni_id, max_uni_id=max_uni_id,
                                uni_cfg=uni_cfg)
         log.info("Tasks added.")
+
+        # Prevent adding further tasks to disallow further runs
+        self.wm.tasks.lock()
 
         # Tell the WorkerManager to start working (is a blocking call)
         self.wm.start_working(**self.meta_config['run_kwargs'])
@@ -565,12 +582,21 @@ class Multiverse:
             # Check for the max_uni_id as indicator for a single run
             wk['forward_streams'] = bool(max_uni_id == 0)
 
-        # Add a task to the worker manager
-        self.wm.add_task(name=uni_basename,
-                         priority=None,
-                         setup_func=setup_universe,
-                         setup_kwargs=setup_kwargs,
-                         worker_kwargs=wk)
+        # Try to add a task to the worker manager
+        try:
+            self.wm.add_task(name=uni_basename,
+                             priority=None,
+                             setup_func=setup_universe,
+                             setup_kwargs=setup_kwargs,
+                             worker_kwargs=wk)
+
+        except RuntimeError as err:
+            # Task list was locked, probably due to a run already having taken
+            # place...
+            raise RuntimeError("Could not add simulation task for universe "
+                               "'{}'! Did you already perform a run with this "
+                               "Multiverse?"
+                               "".format(uni_basename)) from err
 
         log.debug("Added simulation task for universe %d.", uni_id)
 
