@@ -65,30 +65,17 @@ This leads to difficulties in comparing the parameter regimes of Nowak & May (19
 
 The interaction matrix that defines the interaction between the players can be provided in three different ways:
 
-1. _Setting the benefaction `b`_: If we presuppose a simple Prisoner's Dilemma interaction, we can derive a complete interaction matrix just with one parameter $`b (>1)`$, which determines the benefit a defector gets from playing against a cooperator. The interaction matrix then has the following form:
+1. _Setting the benefit `b`_: If we presuppose a simple Prisoner's Dilemma interaction, we can derive a complete interaction matrix just with one parameter $`b (>1)`$, which determines the benefit a defector gets from playing against a cooperator. This simple parametrization is the one used in Nowak & May (1992).
 
-   ```math
-	W = \bordermatrix{~ & S_0=C & S_1=D \cr
-   		               S_0=C & 1 & 0 \cr
-       	           S_1=D & b & 0 \cr}
-	```
-This simple parametrization is the one used in Nowak & May (1992).
+2. _Setting the benefit-cost pair `bc-pair`_: A Prisoner's Dilemma can also be defined by the two parameters $`b`$ and $`c`$ with $`b>c`$. $`b`$ encodes the benefit a player gets from a cooperative opponent and $`c`$ encodes the cost a cooperator pays for cooperating with the opponent. 
 
-2. _Setting the benefit-cost pair `bc-pair`_: A Prisoner's Dilemma can also be defined by the two parameters $`b`$ and $`c`$ with $`b>c`$. $`b`$ encodes the benefit a player gets from a cooperative opponent and $`c`$ encodes the cost a cooperator pays for cooperating with the opponent. With this, the interaction matrix has the following form:
+3. _Setting a general interaction matrix `ia_matrix`_: The first two options only define different parameterizations of the Prisoner's Dilemma. However, it is possible to model all other possible linear two-strategy two-player interactions by setting all matrix elements explicitly. With the right choice of parameters, one can for example model a Hawk-Dove games, a Coordination Games, or a Laiséz-Faire game. For more details on these games and their definitions see the theory section below. 
 
-	```math
-	W = \bordermatrix{~ & S_0=C & S_1=D \cr
-	                  S_0=C & b-c & -c \cr
-	                  S_1=D & b & 0 \cr}
-	```
-
-3. _Setting a general interaction matrix `ia_matrix`_: The first two options only define different parameterizations of the Prisoner's Dilemma. However, it is possible to model all other possible linear two-strategy two-player interactions by setting all matrix elements explicitly. With the right choice of parameters, one can for example model a Hawk-Dove games, a Coordination Games, or a Laiséz-Faire game. For more details on these games and their definitions see the theory section below. A general interaction matrix has the following form:
-
-	```math
-	W = \bordermatrix{~ & S_0 & S_1 \cr
-	                  S_0 & w_{S_0S_0} & w_{S_0S_1} \cr
-	                  S_1 & w_{S_1S_0} & w_{S_1S_1} \cr}
-	```
+The interaction matrices of the individual options are collected here:
+	
+| Setting the benefit `b` | Setting the benefit-cost-pair `bc-pair`  | Setting a general interaction matrix `ia_matrix` |
+| -------- | -------- | -------- |
+| 	$`W = \bordermatrix{~ & S_0=C & S_1=D \cr S_0=C & 1 & 0 \cr S_1=D & b & 0 \cr}`$ | $`W = \bordermatrix{~ & S_0=C & S_1=D \cr S_0=C & b-c & -c \cr S_1=D & b & 0 \cr}`$ | $` W = \bordermatrix{~ & S_0 & S_1 \cr S_0 & w_{S_0S_0} & w_{S_0S_1} \cr S_1 & w_{S_1S_0} & w_{S_1S_1} \cr}`$  |
 
 The algorithm is designed such that if an interaction matrix is provided in the configuration file the interaction matrix will define the game, even if `b` or `bc-pair` are also provided. If there is no interaction matrix, but a `bc-pair` provided, the interaction matrix will be derived from it, even if `b` is set. `b` is used only if none of the other options is provided.
 
