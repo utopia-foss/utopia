@@ -17,7 +17,7 @@ int main (int argc, char** argv)
 
         // Still need config for iteration and setup function
         // FIXME ... there must be a nicer way!
-        auto cfg = pp.get_cfg();
+        const auto& cfg = pp.get_cfg();
 
         // Initialize the main model instance with different template arguments
         // and then iterate it ...

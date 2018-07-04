@@ -543,7 +543,7 @@ auto setup_manager(Config cfg, std::shared_ptr<RNGType> rng)
     auto grid = Utopia::Setup::create_grid<2>({{gsize[0], gsize[1]}});
 
     // Create the SimpleEG initial state: S0 and payoff 0.0
-    State state_0 = {static_cast<Strategy>(0), 0.0};
+    State state_0 = {Strategy::S0, 0.0};
 
     // Create cells on that grid, passing the initial state
     auto cells = Utopia::Setup::create_cells_on_grid<true>(grid, state_0);
