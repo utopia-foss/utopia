@@ -17,7 +17,8 @@ int main (int argc, char** argv)
         using State = double;
         using Tag = Utopia::DefaultTag;
         State initial_state = 0.0;
-        auto grid = Utopia::Setup::create_grid(config["grid_size"].template as<int>());
+        int grid_size = config["vegetation"]["grid_size"].template as<int>();
+        auto grid = Utopia::Setup::create_grid(grid_size);
         auto cells = Utopia::Setup::create_cells_on_grid<sync, State, Tag>(grid, initial_state);
         auto manager = Utopia::Setup::create_manager_cells<true, true>(grid, cells);
 
