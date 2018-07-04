@@ -1,6 +1,7 @@
 #include <cassert>
 
 #include <dune/utopia/data_io/hdffile.hh>
+#include <dune/utopia/core/logging.hh>
 
 #include "model_nested_test.hh"
 
@@ -16,12 +17,15 @@ int main(int argc, char *argv[])
 
         Utopia::PseudoParent pp("model_nested_test.yml");
 
+        // get the logger that was created by the pseudo parent
+        auto log = spdlog::get(Utopia::log_core);
+
         // create the model instances
-        std::cout << "Initializing RootModel instance ..." << std::endl;
+        log->debug("Initializing RootModel instance ...");
         
         Utopia::RootModel root("root", pp);
 
-        std::cout << "RootModel 'root' initialized." << std::endl;
+        log->debug("RootModel 'root' initialized.");
 
         /** Created model hierarchy:
          *
@@ -36,14 +40,14 @@ int main(int argc, char *argv[])
          */
 
         // -- Tests begin here -- //
-        std::cout << "Commencing tests ..." << std::endl;
+        log->debug("Commencing tests ...");
 
         // Iterate model; should also iterate submodels
-        std::cout << "  Performing single iteration ..." << std::endl;
+        log->debug("  Performing single iteration ...");
         root.iterate();
 
         // Check that all models were iterated
-        std::cout << "  Asserting correct iteration ..." << std::endl;
+        log->debug("  Asserting correct iteration ...");
         // level 0
         assert(root.get_time() == 1);
         // level 1
@@ -55,17 +59,23 @@ int main(int argc, char *argv[])
         assert(root.sub_another.sub_lazy.get_time() == 1);
         // level 3
         assert(root.sub_another.sub_one.lazy.get_time() == 1);
-        
-        std::cout << "  correct" << std::endl;
 
-        std::cout << "Tests successful. :)" << std::endl;
+        // check log level propagation
+        assert(root.get_logger()->level() == spdlog::level::debug);
+        assert(root.sub_another.get_logger()->level() == spdlog::level::debug);
+        assert(root.sub_one.get_logger()->level() == spdlog::level::trace);
+        assert(root.sub_one.lazy.get_logger()->level() == spdlog::level::trace);
+
+        log->debug("  correct");
+
+        log->info("Tests successful. :)");
 
         // Cleanup
         auto pp_file = pp.get_hdffile();
         pp_file->close();
         std::remove(pp_file->get_path().c_str());
 
-        std::cout << "Temporary files removed." << std::endl;
+        log->debug("Temporary files removed.");
 
         return 0;
     }
