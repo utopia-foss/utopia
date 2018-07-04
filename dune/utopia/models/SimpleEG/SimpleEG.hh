@@ -281,8 +281,6 @@ public:
             // Need a counter of cells that were set to S1
             std::size_t num_set = 0;
 
-            auto rand_idx = std::bind(std::uniform_int_distribution<>(0, num_cells-1), std::ref(*this->rng));
-
             // Get the cells...
             auto random_cells = _manager.cells();
 
