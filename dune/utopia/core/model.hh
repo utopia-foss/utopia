@@ -5,6 +5,8 @@
 #include <dune/utopia/data_io/hdfgroup.hh>
 #include <dune/utopia/data_io/types.hh>
 #include <dune/utopia/core/types.hh>
+#include <dune/utopia/core/logging.hh>
+#include "spdlog/spdlog.h"
 #include <yaml-cpp/yaml.h>
 
 namespace Utopia {
@@ -67,6 +69,9 @@ protected:
     /// Config node belonging to this model instance
     Config cfg;
 
+    /// The (model) logger
+    const std::shared_ptr<spdlog::logger> log;
+
     /// The HDF group this model instance should write its data to
     const std::shared_ptr<DataGroup> hdfgrp;
 
@@ -85,8 +90,8 @@ public:
      *  \param name         The name of this model instance, ideally used only
      *                      once on the current hierarchical level
      *  \param parent_model The parent model object from which the
-     *                      corresponding config node, the group, and the RNG
-     *                      are extracted
+     *                      corresponding config node, the group, the RNG,
+     *                      and the parent log level are extracted.
      */
     template<class ParentModel>
     Model (const std::string name,
@@ -96,9 +101,17 @@ public:
         name(name),
         //extract the other information from the parent model object
         cfg(parent_model.get_cfg()[this->name]),
-        hdfgrp(parent_model.get_hdfgrp()->open_group(this->name)),
+        log(spdlog::stdout_color_mt(parent_model.get_logger()->name() + "."
+                                    + this->name)),
+        hdfgrp( parent_model.get_hdfgrp()->open_group(this->name)),
         rng(parent_model.get_rng())
     {
+        log->set_level(parent_model.get_logger()->level());
+        if (cfg["log_level"]) {
+            log->set_level(spdlog::level::from_str(
+                cfg["log_level"].template as<std::string>()
+            ));
+        }
         // TODO add informative log messages here
     }
 
@@ -125,6 +138,10 @@ public:
         return this->rng;
     }
 
+    /// Return a pointer to the logger of this model
+    std::shared_ptr<spdlog::logger> get_logger() const {
+        return log;
+    }
 
     // -- Default implementations -- //
 
@@ -212,6 +229,12 @@ protected:
     /// Pointer to a RNG that can be shared between models
     const std::shared_ptr<RNG> rng;
 
+    /// Pointer to the logger of this (pseudo) model
+    /** Required for passing on the logging level if unspecified for the
+     *  respective model
+     */
+    const std::shared_ptr<spdlog::logger> log;
+
 public:
     /// Constructor that only requires path to a config file
     /** \detail From the config file, all necessary information is extracted,
@@ -228,11 +251,13 @@ public:
     // Create a file at the specified output path and store the shared pointer
     hdffile(std::make_shared<HDFFile>(cfg["output_path"].template as<std::string>(), "w")),
     // Initialize the RNG from a seed
-    rng(std::make_shared<RNG>(cfg["seed"].template as<int>()))
+    rng(std::make_shared<RNG>(cfg["seed"].template as<int>())),
+    log(Utopia::init_logger("root", spdlog::level::warn, false))
     {
-        std::cout << "Initialized pseudo parent from config file:  "
-                  << cfg_path << std::endl;
-        // TODO add some informative log messages here
+        setup_loggers(); // global loggers
+        set_log_level(); // this log level
+
+        log->info("Initialized pseudo parent from config file: {}", cfg_path);
     }
     
 
@@ -253,14 +278,17 @@ public:
     // Create a file at the specified output path
     hdffile(std::make_shared<HDFFile>(output_path, output_file_mode)),
     // Initialize the RNG from a seed
-    rng(std::make_shared<RNG>(seed))
+    rng(std::make_shared<RNG>(seed)),
+    log(Utopia::init_logger("root", spdlog::level::warn, false))
     {
-        std::cout << "Initialized pseudo parent." << std::endl
-                  << "  cfg_path:     " << cfg_path << std::endl
-                  << "  output_path:  " << output_path
-                  << "  (mode: " << output_file_mode << ")" << std::endl
-                  << "  seed:         " << seed << std::endl;
-        // TODO add some informative log messages here
+        setup_loggers(); // global loggers
+        set_log_level(); // this log level
+
+        log->info("Initialized pseudo parent.");
+        log->debug("  cfg_path:      {}", cfg_path);
+        log->debug("  output_path:   {}", output_path);
+        log->debug("  (mode: {})", output_file_mode);
+        log->debug("  seed:          {}", seed);
     }
 
 
@@ -284,6 +312,32 @@ public:
     /// Return a pointer to the RNG
     std::shared_ptr<RNG> get_rng() const {
         return this->rng;
+    }
+
+    /// Return a pointer to the logger of this model
+    std::shared_ptr<spdlog::logger> get_logger() const {
+        return log;
+    }
+
+private:
+
+    /// Set up the global loggers with levels specified in the config file
+    void setup_loggers () const
+    {
+        Utopia::setup_loggers(
+            spdlog::level::from_str(
+                cfg["log_levels"]["core"].template as<std::string>()),
+            spdlog::level::from_str(
+                cfg["log_levels"]["data_io"].template as<std::string>())
+        );
+    }
+
+    /// Set the log level for the pseudo parent from the base_cfg
+    void set_log_level () const
+    {
+        log->set_level(spdlog::level::from_str(
+                cfg["log_levels"]["model"].template as<std::string>()
+        ));
     }
 };
 

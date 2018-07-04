@@ -223,6 +223,17 @@ parameter_space:
   # By default, perform only three steps
   num_steps: 3
 
+  # The default logging levels
+  log_levels:
+    # level for I/O operations
+    data_io: warning
+    # level for backend internal operations
+    core: warning
+    # level for all models, if not specified otherwise in the run cfg
+    # NOTE The level is propagated hierarchically, with models 'inheriting' the
+    #      log level of their parents if they don't receive a custom level.
+    model: info
+
   # The path to the config file to load
   # output_path: /abs/path/to/uni<#>/cfg.yml
   # NOTE This entry is always added by the frontend. Depending on which
