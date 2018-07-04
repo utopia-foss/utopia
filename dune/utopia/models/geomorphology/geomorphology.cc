@@ -17,7 +17,8 @@ int main(int argc, char *argv[])
         using State = std::array<double, 2>; //height, watercontent
         using Tag = Utopia::DefaultTag;
         State init_state = {0.0, 0.0};
-        auto grid  = Utopia::Setup::create_grid(config["grid_size"].as<int>());
+        int grid_size = config["geomorphology"]["grid_size"].as<int>();
+        auto grid  = Utopia::Setup::create_grid(grid_size);
         auto cells = Utopia::Setup::create_cells_on_grid<sync, State, Tag>(grid, init_state);
         auto mngr  = Utopia::Setup::create_manager_cells<true, true>(grid, cells);
 
