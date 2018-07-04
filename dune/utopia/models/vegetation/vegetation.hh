@@ -14,16 +14,17 @@ namespace Utopia {
 
 namespace Models {
 
-/// Define data types of vegetation model
+/// Define data type and boundary condition type of vegetation model
 template<class Manager>
-using VegetationTypes = Utopia::ModelTypes<
-    typename Manager::Container,           // unused
-    std::tuple<std::normal_distribution<>, // probability distribution for rain, 
-               double,                     // growth rate
-               double>                     // seeding rate
-    // seeding and rain use the same probability distribution at the moment
-    // maybe change later...
->;
+using DataType = typename Manager::Container;
+
+using Rain = std::normal_distribution<>;
+using GrowthRate = double;
+using SeedingRate = double;
+using BoundaryConditionType = std::tuple<Rain, GrowthRate, SeedingRate>;
+
+template<class Manager>
+using VegetationTypes = ModelTypes<DataType<Manager>, BoundaryConditionType>;
 
 /// A very simple vegetation model
 template<class Manager>
@@ -32,46 +33,72 @@ class Vegetation:
 {
 public:
 
+    /// Type helpers
     using Base = Model<Vegetation<Manager>, VegetationTypes<Manager>>;
     using BCType = typename Base::BCType;
     using Data = typename Base::Data;
+    using DataSet = DataIO::HDFDataset<DataIO::HDFGroup>;
 
-    Manager manager;
-    BCType bc;
+private:
 
+    /// The grid manager
+    Manager _manager;
+
+    /// The boundary conditions (aka parameters) of the model
+    BCType _bc;
+    
+    /// Dataset 
+    std::shared_ptr<DataSet> _dset_plant_density;
+
+public:
+
+    /// Construct the Vegetation model
+    /** \param name     Name of this model instance
+     *  \param parent   The parent model this model instance resides in
+     *  \param manager  The externally setup manager to use for this model
+     */
     template<class ParentModel>
     Vegetation (const std::string name,
                 const ParentModel & parent_model,
-                Manager _manager) 
+                Manager manager) 
     :
-        // Use the base constructor for the main parts
+        // Construct the base class
         Base(name, parent_model),
-        // Initialise state and boundary condition members
-        manager(_manager)
-    {
 
+        // Initialise the reference to the Manager object
+        _manager(manager),
+
+        // Open dataset for output of cell states 
+        _dset_plant_density(this->hdfgrp->open_dataset("plant_density"))
+    {
         // Initialize model parameters from config file
         std::normal_distribution<> rain{this->cfg["rain_mean"].template as<double>(),
                                         this->cfg["rain_var"].template as<double>()};
-        bc = std::make_tuple(rain, 
+        _bc = std::make_tuple(rain, 
                              this->cfg["growth"].template as<double>(), 
                              this->cfg["seeding"].template as<double>());
 
-        // Write constant values (such as positions of cells)
-        // TODO add info about parameter as metadata
-        auto dsetX = this->hdfgrp->open_dataset("positionX");
-        dsetX->write(manager.cells().begin(),
-                    manager.cells().end(), 
+        // Write the cell coordinates
+        auto dsetX = this->hdfgrp->open_dataset("coordinates_x");
+        dsetX->write(_manager.cells().begin(),
+                    _manager.cells().end(), 
                     [](const auto& cell) {return cell->position()[0];});
-        auto dsetY = this->hdfgrp->open_dataset("positionY");
-        dsetY->write(manager.cells().begin(),
-                    manager.cells().end(), 
+        auto dsetY = this->hdfgrp->open_dataset("coordinates_y");
+        dsetY->write(_manager.cells().begin(),
+                    _manager.cells().end(), 
                     [](const auto& cell) {return cell->position()[1];});
 
         // Write initial state 
         write_data();
     }
 
+    /// Iterate a single step
+    /** For each cell, a random gauss-distributed number is drawn that 
+     *  represents the rainfall onto that cell. If the plant density at that 
+     *  cell is already non-zero, it is increased according to a logistic growth
+     *  model. If it is zero, than the plant density is set proportional to the 
+     *  seeding rate and the amount of rain.
+     */
     void perform_step ()
     {
         // Communicate which iteration step is performed
@@ -80,44 +107,50 @@ public:
         // Apply logistic growth and seeding
         auto growth_seeding_rule = [this](const auto cell){
                 auto state = cell->state();
-                auto rain  = std::get<0>(bc)(*(manager.rng()));
+                auto rain  = std::get<0>(_bc)(*(_manager.rng()));
                 if (state != 0) {
-                    auto growth = std::get<1>(bc);
+                    auto growth = std::get<1>(_bc);
                     return state + state*growth*(1 - state/rain);
                 }
-                auto seeding = std::get<2>(bc);
+                auto seeding = std::get<2>(_bc);
                 return seeding*rain;
 
         };
-        apply_rule(growth_seeding_rule, manager.cells());
+        apply_rule(growth_seeding_rule, _manager.cells());
     }
 
+    /// Write the cell states (aka plant density)
     void write_data () 
     {
         std::cout << "Writing data @ t = " << this->time << " ... " << std::endl;
-        auto dset = this->hdfgrp->open_dataset("plants@t="+std::to_string(this->time));
-        dset->write(manager.cells().begin(),
-                    manager.cells().end(), 
-                    [](const auto cell){ return cell->state(); });
+
+        auto cells = _manager.cells();
+        unsigned int num_cells = std::distance(cells.begin(), cells.end());
+
+        _dset_plant_density->write(cells.begin(), cells.end(),
+                              [](auto& cell) { return cell->state(); },
+                              2,              // rank
+                              {1, num_cells}, // extend of this entry
+                              {},             // max_size of the dataset
+                              8               // chunksize, for extension
+                              );
     }
 
     /// Return const reference to stored data
-    const Data& data () const { return manager.cells(); }
+    const Data& data () const { return _manager.cells(); }
     
     /// Set model boundary condition
-    void set_boundary_condition (const BCType& new_bc) { bc = new_bc; }
+    void set_boundary_condition (const BCType& new_bc) { _bc = new_bc; }
 
     /// Set model initial condition
     void set_initial_condition (const Data& ic) {
-        auto cells = manager.cells();
+        auto cells = _manager.cells();
         for (auto ci : cells) {
             // Find cell in ic with same coordinates
             for (auto cj : ic) {
-                std::cout << "  Comparing cell " << ci->id() << " against " << cj->id();
                 if (ci->position() == cj->position()) {
                     // Copy cell content
                     ci->state_new() = cj->state();
-                    std::cout << " - same position!";
                 }
                 std::cout << std::endl;
             }
