@@ -4,16 +4,18 @@ This is a model of simple evolutionary games (on regular grids). It is based on 
 
 ## Fundamentals
 
-The world is a regular square grid of cells. Each cell represents one player^1 that possesses two internal properties: a strategy and a payoff. The strategy -- in the following denoted by $`S_i`$, where $`i`$ denotes a specific strategy from the set of all possible strategies -- determines how the player interacts with its neighbors. Thus, the basic interaction is pair-wise. However, the neighborhood of a player, which is defined through the grid, consists of multiple players, such that that per iteration step multiple games are played. The resulting gain from the individual games are summed up and stored as the player's payoff.
+The world is a regular square grid of cells. Each cell represents one player^1 that possesses two internal properties: a strategy and a payoff. The strategy – in the following denoted by $`S_i`$, where $`i`$ denotes a specific strategy from the set of all possible strategies – determines how the player interacts with its neighbors. Thus, the basic interaction is pair-wise.
+However, the neighborhood of a player, which is defined through the grid, consists of multiple players, such that that multiple games are played per iteration step.
+The resulting gain from the individual games are summed up and stored as each player's payoff.
 
 
-^1 In evolutionary game theory models, interacting entities are normally called players. This model is, at its current state, a pure evolutionary game model, therefore we will speak of players. However, if more complexity is introduced, e.g. by coupling this model with other models the entities should be referred to as the more general agents.
+^1 In evolutionary game theory models, interacting entities are normally called players. This model is, in its current state, a pure evolutionary game model, therefore we will speak of "players". However, if more complexity is introduced, e.g. by coupling this model with other models, the entities should be referred to by the more general term "agents".
 <!-- Do we want to have this footnote? If yes, smaller font for footnotes? Perhaps link to agent definition in Kurt's Script? --> 
 
 
 ### The Game – The Gain
 
-The payoff, a player receives from a single game, is encoded in the interaction matrix:
+The payoff a player receives from a single game is encoded in the interaction matrix:
 <!--
 ```math
 W = \bordermatrix{~ & S_0 & S_1 \cr
@@ -23,13 +25,13 @@ W = \bordermatrix{~ & S_0 & S_1 \cr
 <!--Would be nice, if this would work, but stupid markdown does not cope with the complicated standard latex command 'bordermatrix'-->
 
 ```math
-\begin{bmatrix}w_{S_0S_0} & w_{S_0S_1} \cr w_{S_1S_0} & w_{S_1S_1} \end{bmatrix}
+\begin{pmatrix}w_{00} & w_{01} \cr w_{10} & w_{11} \end{pmatrix}
 ```
 
-$`S_0`$ and $`S_1`$ denote the two different possible strategies.^2 The matrix entries $`w_{S_iS_j}`$ define the payoff a player with strategy $`S_i`$ receives from a game played against a player with strategy $`S_j`$.
+The matrix element $`w_{ij}`$ denotes the payoff a player with strategy $`S_i`$ receives when playing against a player with strategy $`S_j`$.
+The two possible strategies in these games are $`S_0`$ and $`S_1`$.^2
 
-
-^2 In the case of a Prisoner's Dilemma these strategies correspond to cooperation ($`S_0 = C`$) and defection ($`S_1 = D`$). Here, we want to be able to model all kind of two-dimensional two-player games. That's why we chose the more general nomenclature.
+^2 In the case of a Prisoner's Dilemma these strategies correspond to cooperation ($`S_0 = C`$) and defection ($`S_1 = D`$). Here, we want to be able to model all kind of two-dimensional two-player games, hence the more general nomenclature.
 
 ### The Neighborhood – Just Look Around
 
@@ -46,7 +48,7 @@ If more than one player has the highest fitness in a neighborhood, one of these 
 
 ### Iteration Step – Time in Steps 
 
-An interaction step consists of two steps:
+An interaction step consists of two stages:
 
 1. _Play the games_: Every player plays with all players in her neighborhood the game defined by the interaction matrix. The payoffs of the games are summed up and stored as a property of the players.
 
@@ -61,9 +63,9 @@ This section provides a few important implementation details.
 
 ### Interaction: Differences to Nowak & May (1992)
 
-In contrast to the implementation of Nowak & May (1992), this model excludes self-interactions. This means that a player does not play against itself in this model.
+In contrast to the implementation of Nowak & May (1992), this model excludes self-interactions. This means that a player does not play against herself in this model.
 
-This leads to difficulties in comparing the parameter regimes of Nowak & May (1992) with the parameter regimes obtained in this model. However, qualitatively the same system regimes can be observed for slightly different parameters.
+This leads to difficulties in comparing the parameter regimes found by Nowak & May (1992) with the parameter regimes obtained in this model. However, qualitatively the same system regimes can be observed for slightly different parameters.
 <!-- Better check this again! --> 
 
 ### Interaction Matrix
@@ -80,11 +82,11 @@ The interaction matrices of the individual options are collected here:
 	
 | Setting the benefit `b` | Setting the benefit-cost-pair `bc-pair`  | Setting a general interaction matrix `ia_matrix` |
 | -------- | -------- | -------- |
-| 	$`\begin{bmatrix} 1 & 0 \\ b & 0 \end{bmatrix}`$ | $`\begin{bmatrix} b-c & -c \cr b & 0 \end{bmatrix}`$ | $` \begin{bmatrix}w_{S_0S_0} & w_{S_0S_1} \cr w_{S_1S_0} & w_{S_1S_1} \end{bmatrix}`$  |
+| 	$`\begin{pmatrix} 1 & 0 \\ b & 0 \end{pmatrix}`$ | $`\begin{pmatrix} b-c & -c \cr b & 0 \end{pmatrix}`$ | $` \begin{pmatrix}w_{S_0S_0} & w_{S_0S_1} \cr w_{S_1S_0} & w_{S_1S_1} \end{pmatrix}`$  |
 
 The algorithm is designed such that if an interaction matrix is provided in the configuration file the interaction matrix will define the game, even if `b` or `bc-pair` are also provided. If there is no interaction matrix, but a `bc-pair` provided, the interaction matrix will be derived from it, even if `b` is set. `b` is used only if none of the other options is provided.
 
-## Simulation Results -- A Selection Process
+## Simulation Results – A Selection Process
 
 TODO
 
@@ -98,16 +100,16 @@ For a more basic and general introduction on evolutionary game theory, the reade
 Linear two-player, two-strategy interactions can be classified into one of four different games according to Friedman & Barry (2016) determined by their interaction matrix. A general interaction matrix has the form:
 
 ```math
-W = \begin{bmatrix}
+W = \begin{pmatrix}
 w_{S_0S_0} & w_{S_0S_1} \cr
 w_{S_1S_0} & w_{S_1S_1}
-\end{bmatrix}
+\end{pmatrix}
 ```
 
-It is useful to define the quantity $`a_x`$ with $`x \in \{ 0, 1\}`$, which describes the payoff advantage of $`S0`$ over $`S1`$ in a game against $S1$ if the strategy space is two dimensional:
+It is useful to define the quantity $`a_x`$ with $`x \in \{ 0, 1\}`$, which describes the payoff advantage of $`S_0`$ over $`S_1`$ in a game against $`S_1`$ if the strategy space is two dimensional:
 
 ```math
-a_x = w_{S_xS_x} - w_{S_x\bar{S_x}}
+a_x = w_{S_x\bar{S_x}} - w_{\bar{S_x}\bar{S_x}}
 ```
 
 where $`\bar{S_x}`$ is the complementary strategy of $`S_x`$.
@@ -115,18 +117,18 @@ From a more biological perspective, it can be interpreted as the fitness advanta
 
 ##### Type 1: Hawk-Dove game (HD game): $`a_1, a_2 >0`$
 
-In this parameter regime, the game has the characteristics of a _Hawk-Dove game_. It is also known as the _game of chicken_ of _snowdrift game_. 
+In this parameter regime, the game has the characteristics of a _Hawk-Dove game_. It is also known as the _game of chicken_ or _snowdrift game_. 
 We describe its logic using the Hawk-Dove picture, although the same situation can be adapted to a multitude of situations that can be found in a multitude of areas such as biology or even international politics. This game was also used in the foundation of evolutionary game theory in the paper of May & Price (1973).
 
-In a Hawk-Dove game two players compete for a resource that cannot be split up. They can choose between two strategies: thread displays (Dove) or attack (Hawk). If both choose the Hawk strategy they attack each other and fight until one of them is injured and the other wins. If one player behaves as a Hawk and the other one as a Dove the Hawk defeats the Dove. If both players choose Dove, they both get a small benefit. However, the payoff is smaller than for a Hawk playing against a Dove.
+In a Hawk-Dove game two players compete for a resource that cannot be split up. They can choose between two strategies: threat displays (Dove) or attack (Hawk). If both choose the Hawk strategy they attack each other and fight until one of them is injured and the other wins. If one player behaves as a Hawk and the other one as a Dove the Hawk defeats the Dove. If both players choose Dove, they both get a small benefit. However, the payoff is smaller than for a Hawk playing against a Dove.
 
 If the parameters are chosen such that the relation $`a_1, a_2 >0`$ is met, the game is a version of a Hawk-Dove game. Varying the parameters varies the relation of the outcomes from the individual strategies in the games, their qualitative outcome, however, does not change.
 
 ##### Type 2: Coordination game (CO game): $`a_1, a_2 <0`$
 
 This game is perhaps best explained using Jean-Jacques Rousseau's _Discourse on the Origin and Basis of Inequality Among Men_ (1754):
+
 > If it was a matter of hunting a deer, everyone well realized that he must remain faithful to his post; but if a hare happened to pass within reach of  one  of  them,  we  cannot  doubt  that  he  would  have  gone off in pursuit of it without scruple.
->
 
 Extracting the underlying nature of the interaction: All players profit most, if they work for a common aim, but single players can get distracted by easier achievable goals with smaller returns. There is a steady state – all cooperating – which is however unstable to some kind.
 
@@ -144,10 +146,10 @@ The Prisoner's Dilemma is arguably the most famous social dilemma. The standard 
 To put it in the standard parameter set, a two dimensional interaction matrix of the form 
 
 ```math
-W = \begin{bmatrix}
+W = \begin{pmatrix}
 R & S \\
 T & P 
-\end{bmatrix}
+\end{pmatrix}
 ```
 
 defines a Prisoner's Dilemma if the parameters have the following relation: T (temptation) > R (reward) > P (punishment) > S (sucker's payoff). This formulation is equivalent to the condition: $`a_1, < 0 < a_2 `$. 
