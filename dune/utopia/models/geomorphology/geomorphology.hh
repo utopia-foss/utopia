@@ -135,9 +135,7 @@ public:
                     l_neighbor = neighbor;
             }
             // Put watercontent from cell to l_neighbor
-            else {
-                l_neighbor->state_new()[1] += cell->state()[1];
-            }
+            l_neighbor->state_new()[1] += cell->state()[1];
         }
 
         // Remove water from boundary cells (sinks)
