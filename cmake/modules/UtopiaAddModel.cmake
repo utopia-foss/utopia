@@ -16,6 +16,16 @@ function(add_model target_name)
     # register regularly
     add_executable(${target_name} ${ARGN})
 
+    # Add explicit includes and compile definitions
+    target_include_directories(${target_name}
+        PUBLIC
+            spdlog
+    )
+    target_compile_definitions(${target_name}
+        PRIVATE
+            $<$<CONFIG:Debug>:SPDLOG_TRACE_ON>
+    )
+
     # the rest of this function is to relay information to the utopya package
     # add name to target list
     set(UTOPIA_MODEL_TARGETS ${UTOPIA_MODEL_TARGETS} ${target_name}

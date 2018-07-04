@@ -16,6 +16,12 @@ set(TESTS_DATAIO
 # add DATAIO tests
 foreach(test ${TESTS_DATAIO})
     dune_add_test(NAME DATAIO_${test} SOURCES ${test}.cc)
+    # Add spdlog includes and compile definition for trace macro
+    target_include_directories(DATAIO_${test} PUBLIC spdlog)
+    target_compile_definitions(DATAIO_${test}
+        PRIVATE
+            $<$<CONFIG:Debug>:SPDLOG_TRACE_ON>
+    )
 endforeach(test)
 
 # no matter how ctest is called, make sure of dependencies between these tests

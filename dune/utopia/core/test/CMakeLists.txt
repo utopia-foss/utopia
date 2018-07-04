@@ -32,6 +32,12 @@ set(TESTS_CORE
 # add CORE tests
 foreach(test ${TESTS_CORE})
     dune_add_test(NAME CORE_${test} SOURCES ${test}.cc)
+    # Add spdlog includes and compile definition for trace macro
+    target_include_directories(CORE_${test} PUBLIC spdlog)
+    target_compile_definitions(CORE_${test}
+        PRIVATE
+            $<$<CONFIG:Debug>:SPDLOG_TRACE_ON>
+    )
 endforeach(test)
 
 # add EPSWriter test and link to PSGraf library
