@@ -72,13 +72,13 @@ def test_simple_init(mv_kwargs):
 
 def test_invalid_model_name_and_operation(default_mv, mv_kwargs):
     """Tests for correct behaviour upon invalid model names"""
-    # Try to change the model name
-    with pytest.raises(RuntimeError):
+    # Try to change the model name although it was already set
+    with pytest.raises(RuntimeError, match="A Multiverse's associated"):
         default_mv.model_name = "dummy"
 
     # Try to instantiate with invalid model name
     mv_kwargs['model_name'] = "invalid_model_RandomShit_bgsbjkbkfvwuRfopiwehGP"
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="No such model 'invalid_model_Ran"):
         Multiverse(**mv_kwargs)
 
 def test_config_handling(mv_kwargs):
@@ -129,20 +129,22 @@ def test_detect_doubled_folders(mv_kwargs):
 
     # create output folders again
     # expect error due to existing folders
-    with pytest.raises(RuntimeError):
+    with pytest.raises(RuntimeError, match="Simulation directory already"):
         # And another one, that will also create a directory
         Multiverse(**mv_kwargs)
         Multiverse(**mv_kwargs)
-        # NOTE this test assumes that the two calls are so close to each other that the timestamp is the same, that's why there are two calls so that the latest the second call should raise such an error
+        # NOTE this test assumes that the two calls are so close to each other
+        #      that the timestamp is the same, that's why there are two calls
+        #      so that the latest the second call should raise such an error
 
 # Simulation tests ------------------------------------------------------------
 
 def test_run_single(default_mv):
     """Tests a run with a single simulation"""
+    # Run a single simulation using the default multiverse
     default_mv.run_single()
-    print("Tasks: ", default_mv.wm.tasks)
 
-    # Test that the universe directory was created
+    # Test that the universe directory was created as proxy of run finished
     assert os.path.isdir(os.path.join(default_mv.dirs['universes'], 'uni0'))
 
 def test_run_sweep(mv_kwargs):
@@ -162,3 +164,13 @@ def test_run_sweep(mv_kwargs):
 
     with pytest.raises(ValueError, match="The parameter space has no sweeps"):
         mv.run_sweep()
+
+def test_multiple_runs_not_allowed(mv_kwargs):
+    """Assert that multiple runs are prohibited"""
+    # Create Multiverse and run
+    mv = Multiverse(**mv_kwargs)
+    mv.run_single()
+
+    # Another run should not be possible
+    with pytest.raises(RuntimeError, match="Could not add simulation task"):
+        mv.run_single()

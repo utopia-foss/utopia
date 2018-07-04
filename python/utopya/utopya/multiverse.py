@@ -428,6 +428,7 @@ class Multiverse:
         # Recursively create the whole path to the simulation directory
         try:
             os.makedirs(run_dir)
+            
         except OSError as err:
             raise RuntimeError("Simulation directory already exists. This "
                                "should not have happened and is probably due "
