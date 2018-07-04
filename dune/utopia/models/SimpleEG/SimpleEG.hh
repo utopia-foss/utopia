@@ -181,9 +181,6 @@ public:
             std::cout << "Cells with strategy 1: " << num_s1
                       << " of " << num_cells << std::endl;
 
-            // TODO would be much nicer to have a range based for loop over a shuffled container without needing a copy of it...
-            // For now, do it with a while loop and random index access
-
             // TODO can add some logic here to make more clever assignments, i.e. starting out with all S1 if the number to set is higher than half ...
 
             // Need a counter of cells that were set to S1
@@ -191,21 +188,30 @@ public:
 
             auto rand_idx = std::bind(std::uniform_int_distribution<>(0, num_cells-1), std::ref(*this->rng));
 
+            // Get the cells...
+            auto random_cells = _manager.cells();
+
+            // ... and shuffle them
+            std::shuffle(random_cells.begin(), random_cells.end(), *this->rng);
+
             // Make num_s1 cells use strategy 1
-            while (num_set < num_s1) {
-                // Get a random cell
-                auto& cell = cells[rand_idx()];
+            for (auto&& cell : random_cells){
+                // If the desired number of cells using strategy 1 is not yet reached change another cell's strategy
+                if (num_set < num_s1) {
 
-                // Check if it already has strategy 1.
-                if (cell->state().strategy == Strategy::S1) {
-                    // Already has strategy 1, don't set it again
-                    continue;
+                    // Check if it already has strategy 1.
+                    if (cell->state().strategy == Strategy::S1) {
+                        // Already has strategy 1, don't set it again
+                        continue;
+                    }
+                    // else: has strategy 0 -> set to S1 and increment counter
+                    cell->state_new().strategy = Strategy::S1;
+                    cell->update();
+
+                    num_set++;
                 }
-                // else: has strategy 0 -> set to S1 and increment counter
-                cell->state_new().strategy = Strategy::S1;
-                cell->update();
-
-                num_set++;
+                // Break, if fraction of strategy 1 is reached
+                else break;
             }
         }
         else if (initial_state == "single_s0" || initial_state == "single_s1")
