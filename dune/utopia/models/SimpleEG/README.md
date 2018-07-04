@@ -82,7 +82,7 @@ The interaction matrices of the individual options are collected here:
 	
 | Setting the benefit `b` | Setting the benefit-cost-pair `bc-pair`  | Setting a general interaction matrix `ia_matrix` |
 | -------- | -------- | -------- |
-| 	$`\begin{pmatrix} 1 & 0 \\ b & 0 \end{pmatrix}`$ | $`\begin{pmatrix} b-c & -c \cr b & 0 \end{pmatrix}`$ | $` \begin{pmatrix}w_{S_0S_0} & w_{S_0S_1} \cr w_{S_1S_0} & w_{S_1S_1} \end{pmatrix}`$  |
+| 	$`\begin{pmatrix} 1 & 0 \\ b & 0 \end{pmatrix}`$ | $`\begin{pmatrix} b-c & -c \cr b & 0 \end{pmatrix}`$ | $` \begin{pmatrix}w_{00} & w_{01} \cr w_{10} & w_{11} \end{pmatrix}`$  |
 
 The algorithm is designed such that if an interaction matrix is provided in the configuration file the interaction matrix will define the game, even if `b` or `bc-pair` are also provided. If there is no interaction matrix, but a `bc-pair` provided, the interaction matrix will be derived from it, even if `b` is set. `b` is used only if none of the other options is provided.
 
@@ -101,8 +101,8 @@ Linear two-player, two-strategy interactions can be classified into one of four 
 
 ```math
 W = \begin{pmatrix}
-w_{S_0S_0} & w_{S_0S_1} \cr
-w_{S_1S_0} & w_{S_1S_1}
+w_{00} & w_{01} \cr
+w_{10} & w_{11}
 \end{pmatrix}
 ```
 
