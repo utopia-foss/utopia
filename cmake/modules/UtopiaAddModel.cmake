@@ -16,6 +16,21 @@ function(add_model target_name)
     # register regularly
     add_executable(${target_name} ${ARGN})
 
+    # add dependencies explicitly
+    target_include_directories(${target_name}
+        # register as system headers (compilers might ignore warnings)
+        SYSTEM
+        # register as private headers (not propagated to dependent targets,
+        # but these executables should have none).
+        PRIVATE
+            spdlog
+            yaml-cpp
+    )
+    target_link_libraries(${target_name}
+        spdlog
+        yaml-cpp
+    )
+
     # the rest of this function is to relay information to the utopya package
     # add name to target list
     set(UTOPIA_MODEL_TARGETS ${UTOPIA_MODEL_TARGETS} ${target_name}
