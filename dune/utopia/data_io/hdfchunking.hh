@@ -94,7 +94,7 @@ void __opt_chunks_target(Cont &chunks,
 
     // Check the case of typesize larger than CHUNKSIZE_MAX; cannot do anything
     // in that case -> safer to throw an exception.
-    if (typesize > bytes_target) {
+    if (typesize > CHUNKSIZE_MAX) {
         throw std::invalid_argument("Cannot use __opt_chunks_target with a "
                                     "typesize larger than CHUNKSIZE_MAX!");
     }
@@ -226,7 +226,7 @@ void __opt_chunks_with_max_extend(Cont &chunks,
 
     // Check the case of typesize larger than CHUNKSIZE_MAX; cannot do anything
     // in that case -> safer to throw an exception.
-    if (typesize > bytes_target) {
+    if (typesize > CHUNKSIZE_MAX) {
         throw std::invalid_argument("Cannot use __opt_chunks_with_max_extend "
                                     "with a typesize larger than "
                                     "CHUNKSIZE_MAX!");
