@@ -1,6 +1,23 @@
+# This file provides the basic configuration for the utopya Multiverse
+#
+# It is read in by the Multiverse during initialization and is subsequently
+# updated by other configuration files to generate the meta configuration of
+# the Multiverse, which determines all details of how a run is performed.
+#
+# The top-level keys here are used to configure different parts of Multiverse:
+#   - properties of the Multiverse itself: `paths`, `perform_sweep`
+#   - properties of attributes: `worker_manager`, `run_kwargs`, ...
+#   - and the parameter space that is passed on to the model instance
+#
+# NOTE that this configuration file documents some features in the comments.
+#      This cannot be exhaustive. Check the docstrings of the functions for
+#      further information.
+#      Also, this file is used for deployment of the user configuration (with
+#      this header section removed).
 ---
 # Multiverse configuration ....................................................
 # Output paths
+# These are passed to Multiverse._create_run_dir
 paths:
   # base output directory
   out_dir: ~/utopia_output
@@ -17,33 +34,65 @@ paths:
   backup_involved_cfg_files: true
 
 # Whether to perfom a parameter sweep
+# Is evaluated by the Multiverse.run method
 perform_sweep: false
-# NOTE This will be ignored if run_single or run_sweep are called directly
+# NOTE This will be ignored if run_single or run_sweep are called directly.
+#      Also, the `parameter_space` key (see below) will need to span at least
+#      a volume of 1 in order to be sweep-able.
+
+
+# Reporter ....................................................................
+# The Multiverse owns a Reporter object to report on the progress of the
+# WorkerManager. Part of its configuration happens using its init kwargs, which
+# are defined in the following.
+# The rest of the configuration happens on the WorkerManager-side (see there).
+reporter:
+  # Define report formats, which are accessible, e.g. from the WorkerManager
+  report_formats:
+    while_working:  # This is the name of the report format specification
+      parser: progress_bar            # The parser to use
+      write_to: stdout_noreturn       # The writer to use
+      min_report_intv: 0.5            # Required time (in s) between writes
+      # All further kwargs on this level are passed to the parser
+      show_times: true
+
+    after_work:
+      parser: progress_bar
+      show_times: true
+      write_to: stdout_noreturn
+
+  # Can define a default format to use
+  # default_format: ~
 
 
 # Worker Manager ..............................................................
+# Initialization arguments for the WorkerManager
 worker_manager:
-  # specify how many processes work in parallel
-  # auto : number of processor cores. For values <= 0: #CPUs - num_workers
+  # Specify how many processes work in parallel
   num_workers: auto
+  # can be: an int, 'auto' (== #CPUs). For values <= 0: #CPUs - num_workers
 
-  # delay between polls [seconds]
+  # Delay between polls [seconds]
   poll_delay: 0.05
+  # NOTE: If this value is too low, the main thread becomes very busy.
+  #       If this value is too high, the log output from simulations is not
+  #       read from the line buffer frequently enough.
 
-  # how to react upon a simulation exiting with non-zero exit code
+  # How to react upon a simulation exiting with non-zero exit code
   nonzero_exit_handling: warn
   # can be: ignore, warn, raise
+  # raise will lead to a SystemExit with the error code of the simulation
 
-  # report format specifications at different points of the WM's operation
+  # Report format specifications at different points of the WM's operation
+  # These report formats were defined in the reporter and can be referred to
+  # by name here. They can also be lists, if multiple report formats should
+  # be invoked.
   rf_spec:
     while_working: while_working
     task_spawned: while_working
     task_finished: while_working
     after_work: after_work
     after_abort: after_work
-  # These entries can also be lists, leading to multiple reports being invoked
-  # in the specified format.
-  # To add report formats, specify them under reporter.report_formats
 
 
 # Configuration for the WorkerManager.start_working method
@@ -51,7 +100,7 @@ run_kwargs:
   # Total timeout (in s) of a run; to ignore, set to ~
   timeout: ~
 
-  # A list of StopCondition objects to check during the run _for each worker_
+  # A list of StopCondition objects to check during the run _for each worker_.
   # The entries of the following list are OR-connected, i.e. it suffices that
   # one is fulfilled for the corresponding worker to be stopped
   stop_conditions: ~
@@ -67,6 +116,7 @@ run_kwargs:
     #       # will look for utopya.stopcond._sc_timeout_wall method
     #       seconds: !expr 60*10
     #       # further arguments to utopya.stopcond._sc_timeout_wall
+  # NOTE: Currently, the only `func_name` available is 'timeout_wall'.
 
 
 # The defaults for the worker_kwargs
@@ -74,6 +124,8 @@ run_kwargs:
 worker_kwargs:
   # Whether to save the streams of each Universe to a log file
   save_streams: true
+  # This file is saved only after the WorkerTask has finished in order to
+  # reduce I/O operations on files
   
   # Whether to forward the streams to stdout
   forward_streams: 'in_single_run'
@@ -85,22 +137,12 @@ worker_kwargs:
   # Changes to entries below here have not been tested!
   popen_kwargs: {}
 
-# Reporter ....................................................................
-reporter:
-  report_formats:
-    while_working:
-      parser: progress_bar
-      show_times: True
-      write_to: stdout_noreturn
-      min_report_intv: 0.5
-
-    after_work:
-      parser: progress_bar
-      show_times: True
-      write_to: stdout_noreturn
-
 
 # Data Manager ................................................................
+# The DataManager takes care of loading the data into a tree-like structure
+# after the simulations are finished.
+# It is based on the DataManager class from the dantro package. See there for
+# full documentation.
 data_manager:
   # Where to create the output directory for this DataManager, relative to
   # the run directory of the Multiverse.
@@ -108,18 +150,20 @@ data_manager:
   # The {date:} placeholder is replaced by the current timestamp such that
   # future DataManager instances that operate on the same data directory do
   # not create collisions.
+  # Directories are created recursively, if they do not exist.
 
   # Supply a default load configuration for the DataManager
+  # This can then be invoked using the dm.load_from_cfg() method.
   load_cfg:
     # Load the frontend configuration files from the config/ directory
     # Each file refers to a level of the configuration that is supplied to
     # the Multiverse: base <- user <- model <- run <- update
     cfg:
-      loader: yaml
-      glob_str: 'config/*.yml'
-      required: true
-      path_regex: config/(\w+)_cfg.yml
-      target_path: cfg/{match:}
+      loader: yaml                          # The loader function to use
+      glob_str: 'config/*.yml'              # Which files to load
+      required: true                        # Whether these files are required
+      path_regex: config/(\w+)_cfg.yml      # Extract info from the file path
+      target_path: cfg/{match:}             # ...and use in target path
 
     # Load the configuration files that are generated for _each_ simulation
     # These hold all information that is available to a single simulation and
@@ -156,13 +200,52 @@ data_manager:
 
 
 # Plot Manager ................................................................
-plot_manager: {}
+# The PlotManager, also from the dantro package, supplies plotting capabilities
+# using the data in the DataManager.
+plot_manager:
+  # Save the plots to the same directory as that of the data manager
+  out_dir: ""
+  # TODO check if reasonable decision
+
+  # Save all plot configurations alongside the plots
+  save_plot_cfg: true
+
+  # As default, use the external plot creator
+  default_creator: external
+  
+  # Creator initialization arguments
+  creator_init_kwargs:
+    # For the Utopia-specific external plot creator: none yet.
+    external: {}
 
 
 # Parameter Space .............................................................
-# Only add values here that are independent of models.
-# For model-specific configuration, use the model configuration.
+# Only entries below this one will be available to the Utopia model binaries.
+#
+# The content of the `parameter_space` level is parsed by the frontend and then
+# dumped to a file, the path to which is passed to the binary as positional
+# argument.
+#
+# IMPORTANT: In order to remain general, neither the base nor the user config
+#            should add any model-specific content here. This is either done
+#            semi-automatically in the 
+#
 parameter_space:
-  # Set a default PRNG seed and number of steps
+  # Set a default PRNG seed
   seed: 42
+
+  # By default, perform only three steps
   num_steps: 3
+
+  # The path to the config file to load
+  # output_path: /abs/path/to/uni<#>/cfg.yml
+  # NOTE This entry is always added by the frontend. Depending on which
+  #      universe is to be simulated, the <#> is set.
+
+  # Below here, the model configuration starts, i.e. the config that is used by
+  # a model instance. To add it
+  # <model_name>: !model
+    # model_name: <model_name>  # which model's default config to add here
+    # ... will be added here
+  # NOTE This entry is added to the parameter space, if no run configuration is
+  #      made available to the Multiverse.

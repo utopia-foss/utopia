@@ -1,0 +1,8 @@
+# This is your Utopia user configuration
+#
+# You can use it to define user- and/or machine-specific settings that will
+# always be loaded when a meta configuration is created.
+#
+# IMPORTANT: Do _not_ set more entries here than absolutely necessary, as it
+#            might interfere with future changes to utopya's base configuration
+---

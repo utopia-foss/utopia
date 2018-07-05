@@ -73,7 +73,7 @@ void write_dataset_onedimensional(HDFFile& file)
     H5Dclose(dummy_dset2);
     name.pop_back(); // get rid of superfluous \0 hdf5 writes in there
     std::string dsetname =
-        testdataset2.get_parent()->get_path() + "/" + testdataset2.get_name();
+        testdataset2.get_parent().get_path() + "/" + testdataset2.get_name();
     // check if name is correct
     assert(name == dsetname);
 

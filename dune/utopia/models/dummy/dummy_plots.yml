@@ -1,0 +1,33 @@
+# Default plots for the dummy model
+---
+initial_state_uni0: &state0
+  # Use the external plot creator
+  creator: external
+  module: .basic
+  plot_func: lineplot
+
+  # Select the universe to plot the data from
+  uni: 0
+
+  # Select the dataset
+  y: dummy/data-0
+
+states: !pspace
+  <<: *state0
+  
+  y: !pdim
+    default: dummy/data-0
+    values:
+      - dummy/data-0
+      - dummy/data-1
+      - dummy/data-2
+      - dummy/data-3
+
+state_mean:
+  creator: external
+
+  # Use the dummy-specific plot function
+  module: model_plots.dummy
+  plot_func: state_mean
+
+  uni: 0

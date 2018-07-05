@@ -16,16 +16,24 @@ variables:
   DUNE_IMAGE_NAME: ccees/dune4utopia
   DUNE_IMAGE: "${DUNE_IMAGE_NAME}:${DUNE_VERSION}"
 
+  # Shortcuts for directories
+  MODEL_SRC: $CI_PROJECT_DIR/dune/utopia/models
+  MODEL_TESTS: $CI_PROJECT_DIR/python/model_tests
+
   # Shortcut variables for certain commands
   DUNE_CONTROL_PATH: /opt/dune:$CI_PROJECT_DIR  # such that DUNE finds Utopia
   DUNECTRL: ./dune-common/bin/dunecontrol
   RUN_IN_DUNE_ENV: $CI_PROJECT_DIR/build-cmake/run-in-dune-env
+  ENTER_DUNE_ENV: source $CI_PROJECT_DIR/build-cmake/activate
+
+  # Flags
   CONFIG_FLAGS:
       -DDUNE_PYTHON_VIRTUALENV_SETUP=True
       -DDUNE_PYTHON_ALLOW_GET_PIP=True
   MAKE_FLAGS_BUILD: "" # none for now
+
+  # Directories
   MODEL_DIR: $CI_PROJECT_DIR/dune/utopia/models
-  DUNE_ENV_IMAGE: ccees/utopia:bionic
 
 # Define the image to use as base for all stages
 # NOTE that some jobs overwrite this setting locally
@@ -69,7 +77,6 @@ stages:
     - echo "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
     # - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config' # FIXME turn this on again
-
 
 # Setup stage -----------------------------------------------------------------
 
@@ -187,11 +194,11 @@ build:debug-clang:
 # frontend, and models.
 test:core: &test_core
   stage: test
+  <<: *ssh_access
   dependencies:
     - build:tests
-  before_script:
-    - cd /opt/dune
   script:
+    - cd /opt/dune
     - $DUNECTRL --only=utopia make test_core
 
 test:dataio:
@@ -199,14 +206,14 @@ test:dataio:
   script:
     - $DUNECTRL --only=utopia make test_dataio
 
-test:python:
+test:utopya:
   stage: test
   <<: *ssh_access
   dependencies:
     - build:models
   script:
     - $DUNECTRL --only=utopia configure
-    - $DUNECTRL --only=utopia make test_python
+    - $DUNECTRL --only=utopia make test_utopya
 
 test:models:
   stage: test
@@ -215,7 +222,48 @@ test:models:
     - build:models
   script:
     - $DUNECTRL --only=utopia configure
-    # test the default model config
-    - $RUN_IN_DUNE_ENV utopia dummy
-    # test a configuration that allows a sweep
-    - $RUN_IN_DUNE_ENV utopia dummy $MODEL_DIR/dummy/test/sweep.yml --sweep --note sweep
+    # Test all models using the testing framework
+    - $DUNECTRL --only=utopia make test_models
+    # Also test each model via the CLI
+    - $ENTER_DUNE_ENV
+    - utopia run dummy
+    # TODO add calls for all models here
+    # TODO find an automatic way to do this, perhaps via a --test flag?
+
+test:cli:
+  stage: test
+  <<: *ssh_access
+  dependencies:
+    - build:models
+  artifacts:
+    name: utopia_output
+    paths:
+      - $CI_PROJECT_DIR/utopia_output/
+    expire_in: 1h
+  script:
+    - $DUNECTRL --only=utopia configure
+    # Now, enter the virtual environment and test the CLI
+    - $ENTER_DUNE_ENV
+    #
+    # Test deployment of user configuration
+    - utopia config --deploy
+    # Adjust the user configuration to store to a local directory
+    - "echo \"\npaths: {out_dir: ${CI_PROJECT_DIR}/utopia_output}\"
+       > $HOME/.config/utopia/user_cfg.yml"
+    # FIXME Ugly. Once available, use the utopia config CLI to set this value
+    #
+    # Test the CLI with the dummy model and its default configuration
+    - utopia run dummy
+    # Test passing a custom run configuration and performing a sweep
+    - utopia run dummy $MODEL_TESTS/dummy/sweep.yml --sweep --note sweep
+    # Test setting the number of steps (negative should fail)
+    - utopia run dummy --num-steps 1 --no-plot
+    - if utopia run dummy --num-steps -1; then exit 1; else exit 0; fi
+    #
+    # Test the plotting capabilities
+    - utopia run dummy --note plt0 --no-plot
+    - utopia run dummy --note plt1
+    - utopia run dummy --note plt2 --plot-only states
+    - utopia run dummy --note plt3 --plots-cfg $MODEL_SRC/dummy/dummy_plots.yml
+    #
+    # TODO add more tests here for other features of the CLI

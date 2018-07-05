@@ -10,7 +10,6 @@ from pkg_resources import resource_filename
 import pytest
 
 from utopya import Multiverse
-from utopya.multiverse import distribute_user_cfg
 
 # Get the test resources
 RUN_CFG_PATH = resource_filename('test', 'cfg/run_cfg.yml')
@@ -34,7 +33,7 @@ def mv_kwargs(tmpdir) -> dict:
     return dict(model_name="dummy",
                 run_cfg_path=RUN_CFG_PATH,
                 user_cfg_path=USER_CFG_PATH,
-                update_meta_cfg=dict(paths=unique_paths))
+                paths=unique_paths)
 
 @pytest.fixture
 def default_mv(mv_kwargs) -> Multiverse:
@@ -54,12 +53,12 @@ def test_simple_init(mv_kwargs):
 
     # Without the run configuration
     mv_kwargs.pop('run_cfg_path')
-    mv_kwargs['update_meta_cfg']['paths']['model_note'] += "_wo_run_cfg"
+    mv_kwargs['paths']['model_note'] += "_wo_run_cfg"
     Multiverse(**mv_kwargs)
 
     # Suppressing the user config
     mv_kwargs['user_cfg_path'] = False
-    mv_kwargs['update_meta_cfg']['paths']['model_note'] += "_wo_user_cfg"
+    mv_kwargs['paths']['model_note'] += "_wo_user_cfg"
     Multiverse(**mv_kwargs)
     # NOTE Without specifying a path, the search path will be used, which makes
     # the results untestable and creates spurious folders for the user.
@@ -67,19 +66,19 @@ def test_simple_init(mv_kwargs):
 
     # Test with a bad user config
     mv_kwargs['user_cfg_path'] = BAD_USER_CFG_PATH
-    mv_kwargs['update_meta_cfg']['paths']['model_note'] = "bad_user_cfg"
+    mv_kwargs['paths']['model_note'] = "bad_user_cfg"
     with pytest.raises(ValueError, match="There was a 'parameter_space' key"):
         Multiverse(**mv_kwargs)
 
 def test_invalid_model_name_and_operation(default_mv, mv_kwargs):
     """Tests for correct behaviour upon invalid model names"""
-    # Try to change the model name
-    with pytest.raises(RuntimeError):
+    # Try to change the model name although it was already set
+    with pytest.raises(RuntimeError, match="A Multiverse's associated"):
         default_mv.model_name = "dummy"
 
     # Try to instantiate with invalid model name
     mv_kwargs['model_name'] = "invalid_model_RandomShit_bgsbjkbkfvwuRfopiwehGP"
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="No such model 'invalid_model_Ran"):
         Multiverse(**mv_kwargs)
 
 def test_config_handling(mv_kwargs):
@@ -110,7 +109,7 @@ def test_create_run_dir(default_mv):
     mv = default_mv
 
     # Reconstruct path from meta-config to have a parameter to compare to
-    out_dir = str(mv.meta_config['paths']['out_dir'])  # need for python < 3.6
+    out_dir = str(mv.meta_cfg['paths']['out_dir'])  # need str for python < 3.6
     path_base = os.path.join(out_dir, mv.model_name)
 
     # get all folders in the output dir
@@ -130,20 +129,22 @@ def test_detect_doubled_folders(mv_kwargs):
 
     # create output folders again
     # expect error due to existing folders
-    with pytest.raises(RuntimeError):
+    with pytest.raises(RuntimeError, match="Simulation directory already"):
         # And another one, that will also create a directory
         Multiverse(**mv_kwargs)
         Multiverse(**mv_kwargs)
-        # NOTE this test assumes that the two calls are so close to each other that the timestamp is the same, that's why there are two calls so that the latest the second call should raise such an error
+        # NOTE this test assumes that the two calls are so close to each other
+        #      that the timestamp is the same, that's why there are two calls
+        #      so that the latest the second call should raise such an error
 
 # Simulation tests ------------------------------------------------------------
 
 def test_run_single(default_mv):
     """Tests a run with a single simulation"""
+    # Run a single simulation using the default multiverse
     default_mv.run_single()
-    print("Tasks: ", default_mv.wm.tasks)
 
-    # Test that the universe directory was created
+    # Test that the universe directory was created as proxy of run finished
     assert os.path.isdir(os.path.join(default_mv.dirs['universes'], 'uni0'))
 
 def test_run_sweep(mv_kwargs):
@@ -158,33 +159,18 @@ def test_run_sweep(mv_kwargs):
     # With a parameter space without volume, i.e. without any sweeps added,
     # the sweep should not be possible
     mv_kwargs['run_cfg_path'] = RUN_CFG_PATH
-    mv_kwargs['update_meta_cfg']['paths']['model_note'] = "_invalid_cfg"
+    mv_kwargs['paths']['model_note'] = "_invalid_cfg"
     mv = Multiverse(**mv_kwargs)
 
     with pytest.raises(ValueError, match="The parameter space has no sweeps"):
         mv.run_sweep()
 
-# Other tests -----------------------------------------------------------------
+def test_multiple_runs_not_allowed(mv_kwargs):
+    """Assert that multiple runs are prohibited"""
+    # Create Multiverse and run
+    mv = Multiverse(**mv_kwargs)
+    mv.run_single()
 
-def test_distribute_user_cfg(tmpdir, monkeypatch):
-    """Tests whether user configuration distribution works as desired."""
-    # Create a path for the user config test file; needs to be str-cast to
-    # allow python < 3.6 implementation of os.path
-    test_path = str(tmpdir.join("my_user_cfg.yml"))
-
-    # Execute the distribute function with this path and assert it worked
-    distribute_user_cfg(user_cfg_path=test_path)
-    assert os.path.isfile(test_path)
-
-    # monkeypatch the "input" function, so that it returns "y" or "no".
-    # This simulates the user entering something in the terminal
-    # yes-case
-    monkeypatch.setattr('builtins.input', lambda x: "y")
-    distribute_user_cfg(user_cfg_path=test_path)
-
-    # no-case
-    monkeypatch.setattr('builtins.input', lambda x: "n")
-    distribute_user_cfg(user_cfg_path=test_path)
-
-
-# Helpers ---------------------------------------------------------------------
+    # Another run should not be possible
+    with pytest.raises(RuntimeError, match="Could not add simulation task"):
+        mv.run_single()
