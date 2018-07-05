@@ -53,6 +53,7 @@ IdxCont __find_all_idcs (Cont &vec, Predicate pred) {
  *
  */ 
 
+
 /**
  * @brief   Optimizes the chunks along all axes to find a good default
  * @detail  This algorithm is only aware of the current size of the chunks and
@@ -95,7 +96,7 @@ void __opt_chunks_target(Cont &chunks,
     // in that case -> safer to throw an exception.
     if (typesize > bytes_target) {
         throw std::invalid_argument("Cannot use __opt_chunks_target with a "
-                                    "typesize larger than CHUNKSIZE_MAX! ");
+                                    "typesize larger than CHUNKSIZE_MAX!");
     }
 
     std::cout << "  => starting optimization towards target size: "
@@ -198,7 +199,17 @@ void __opt_chunks_target(Cont &chunks,
 }
 
 
-/// Optimizes the chunks using the max_extend information, favouring last dims
+/**
+ * @brief   Optimize chunk sizes using max_extend information
+ * @detail  This algorithm is aware of the maximum extend of a dataset and can
+ *          use that information during optimization, aiming to increase the
+ *          size of the chunks towards CHUNKSIZE_MAX as far as possible without
+ *          going beyond max_extend.
+ *          It distinguishes between dimensions that have a finite extend and
+ *          those that can grow to H5S_UNLIMITED, i.e. "infinite" extend.
+ *          First, the aim is to cover the finite dimensions. If after that
+ *          there is still ... TODO continue here
+ */
 template<typename Cont, typename IdxCont=std::vector<unsigned short>>
 void __opt_chunks_with_max_extend(Cont &chunks,
                                   const Cont &max_extend,
@@ -213,6 +224,13 @@ void __opt_chunks_with_max_extend(Cont &chunks,
                                           1, std::multiplies<>());
     };
 
+    // Check the case of typesize larger than CHUNKSIZE_MAX; cannot do anything
+    // in that case -> safer to throw an exception.
+    if (typesize > bytes_target) {
+        throw std::invalid_argument("Cannot use __opt_chunks_with_max_extend "
+                                    "with a typesize larger than "
+                                    "CHUNKSIZE_MAX!");
+    }
 
     // -- Parse dims and prepare algorithm -- //
 
