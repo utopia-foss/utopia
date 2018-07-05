@@ -17,19 +17,22 @@ set(TESTS_DATAIO
 # add DATAIO tests
 foreach(test ${TESTS_DATAIO})
     dune_add_test(NAME DATAIO_${test} SOURCES ${test}.cc)
-    # add dependencies explicitly
-    target_include_directories(DATAIO_${test}
-        # register as system headers (compilers might ignore warnings)
-        SYSTEM
-        # register as private headers (not propagated to dependent targets,
-        # but these executables should have none).
-        PRIVATE
-            spdlog
-            yaml-cpp
-    )
+
+    # link library targets
     target_link_libraries(DATAIO_${test}
         spdlog
         yaml-cpp
+    )
+
+    # yaml-cpp does not export interface include dirs
+    # NOTE This should be reported as bug or patched via MR in the yaml-cpp
+    #      repository. See https://pabloariasal.github.io/2018/02/19/its-time-to-do-cmake-right/
+    #      as a reference on how to do that.
+    target_include_directories(DATAIO_${test}
+        # register as system headers (compilers might ignore warnings)
+        SYSTEM
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/vendor/plugins/yaml-cpp/include/
     )
 endforeach(test)
 
