@@ -2,9 +2,6 @@
 #define HDFCHUNKING_HH
 
 #include <hdf5.h>
-#include <numeric>
-#include <cmath>
-// TODO which of these includes are needed?
 
 /// Container that holds indices
 using IdxCont = std::vector<unsigned short>;
@@ -14,8 +11,16 @@ namespace DataIO {
 
 // -- Helper functions -- //
 
-// TODO is there a better place to put this?
-/// Finds all indices of elements in a vector that matches the given predicate
+/**
+ * @brief   Finds all indices of elements in a vector that matches the given
+ *          predicate
+ *
+ * @param   vec       The object to find the indices in
+ * @param   pred      The predicate to determine the indices to be found
+ *
+ * @tparam  Cont      The container type
+ * @tparam  Predicate The predicate type
+ */
 template<typename Cont, typename Predicate>
 IdxCont __find_all_idcs (Cont &vec, Predicate pred) {
     // Create the return container
@@ -37,9 +42,41 @@ IdxCont __find_all_idcs (Cont &vec, Predicate pred) {
 
 
 // -- Optimization algorithms -- //
+// TODO write doc:
+/**  \page opt_chunksize Algorithms for optimizing chunk size
+ *
+ * \section idea The general idea
+ *
+ *
+ * \section implementation Implementation
+ *
+ *
+ */ 
 
-/// Optimizes the chunks along all axes to find a good default
-// TODO doxygen
+/**
+ * @brief   Optimizes the chunks along all axes to find a good default
+ * @detail  This algorithm is only aware of the current size of the chunks and
+ *          the target byte size of a chunk. Given that information, it either
+ *          tries to reduce the extend of chunk dimensions, or enlarge it. To
+ *          do that, it iterates over all chunk dimensions and either doubles
+ *          the extend or halves it. Once within 50% of the target byte size,
+ *          the algorithm stops.
+ *          Also, it takes care to remain within the bounds of CHUNKSIZE_MAX
+ *          and CHUNKSIZE_MIN. If a target byte size outside of these bounds is
+ *          given, it will adjust it accordingly. For a typesize larger than
+ *          CHUNKSIZE_MAX, this algorithm cannot perform any reasonable actions
+ *          and will throw an exception; this case should be handled outside of
+ *          this function!
+ *
+ * @param   chunks           The current chunk values that are to be optimized
+ * @param   bytes_target     Which byte size to optimize the chunks to
+ * @param   typesize         The byte size of a single entry, needed to
+ *                           calculate the total bytesize of a whole chunk
+ * @param   CHUNKSIZE_MAX    The maximum allowed bytesize of a chunk
+ * @param   CHUNKSIZE_MIN    The minimum allowed bytesize of a chunk
+ * @param   larger_high_dims If true, dimensions with high indices will be
+ *                           favoured for enlarging chunks
+ */
 template<typename Cont>
 void __opt_chunks_target(Cont &chunks,
                          double bytes_target,
@@ -54,6 +91,12 @@ void __opt_chunks_target(Cont &chunks,
                                           1, std::multiplies<>());
     };
 
+    // Check the case of typesize larger than CHUNKSIZE_MAX; cannot do anything
+    // in that case -> safer to throw an exception.
+    if (typesize > bytes_target) {
+        throw std::invalid_argument("Cannot use __opt_chunks_target with a "
+                                    "typesize larger than CHUNKSIZE_MAX! ");
+    }
 
     std::cout << "  => starting optimization towards target size: "
               << bytes_target << " B  (" << bytes_target/1024 << " kiB) ..."
@@ -342,6 +385,8 @@ void __opt_chunks_with_max_extend(Cont &chunks,
     return;
 }
 
+
+// -- Methods that should be publicly used -- //
 
 /**
  * @brief   Try to guess a good chunksize for a dataset
