@@ -441,8 +441,9 @@ void __opt_chunks_with_max_extend(Cont &chunks,
  * @param   max_extend      The maximum extend the dataset can have. If given,
  *                          the chunk size is increased along the open dims to
  *                          spread evenly and fill the max_extend as best as
- *                          as possible.
- * @param   CHUNKSIZE_MAX   largest chunksize; should not exceed 1MiB too much,
+ *                          as possible. If _not_ given, the max_extend will
+ *                          be assumed to be the same as the io_extend.
+ * @param   CHUNKSIZE_MAX   Largest chunksize; should not exceed 1MiB too much,
  *                          or, more precisely: should fit into the chunk cache
  *                          which (by default) is 1MiB large 
  * @param   CHUNKSIZE_MIN   smallest chunksize; should be above a few KiB
@@ -452,7 +453,6 @@ void __opt_chunks_with_max_extend(Cont &chunks,
 // TODO use log messages instead of std::cout
 // TODO update doxygen; make sure it's clear that max_extend opt is only
 //      used when max_extend is given -- but then optimizes infinite axes!
-// TODO is it reasonable to use const here?
 template<typename Cont=std::vector<hsize_t>>
 const Cont guess_chunksize(const hsize_t typesize,
                            const Cont io_extend,
@@ -464,7 +464,7 @@ const Cont guess_chunksize(const hsize_t typesize,
                            const unsigned int CHUNKSIZE_MIN = 8192,     // 8k
                            const unsigned int CHUNKSIZE_BASE = 262144)  // 256k
 {
-    // -- Initialisation -- //
+    // -- Helpers -- //
 
     // Helper lambda for calculating bytesize of a chunks configuration
     auto bytes = [&typesize](Cont c) {
@@ -485,7 +485,7 @@ const Cont guess_chunksize(const hsize_t typesize,
 
     // -- Check correctness of arguments and extract some info -- //
     // Get the rank
-    auto rank = io_extend.size();
+    unsigned short rank = io_extend.size();
 
     // For scalar datasets, chunking is not available
     if (rank == 0) {
@@ -493,7 +493,7 @@ const Cont guess_chunksize(const hsize_t typesize,
                                     "dataset!");
     }
 
-    // Check if io_extend has no illegal values (<=0) // TODO valid assumption?
+    // Check if io_extend has no illegal values (<=0)
     for (auto val: io_extend) {
         if (val <= 0) {
             throw std::invalid_argument("Argument 'io_extend' contained "
@@ -506,38 +506,57 @@ const Cont guess_chunksize(const hsize_t typesize,
     bool dset_finite;
     bool all_dims_inf;
 
-    if (max_extend.size()) {
-        // Is given, yes
-
+    if (max_extend.size()) { // Yes, was given
+        // Need to check that the max_extend values are ok
         // Check that it matches the rank
         if (max_extend.size() != rank) {
             throw std::invalid_argument("Argument 'max_extend' does not have "
                                         "the same dimensionality as the rank "
-                                        "of this dataset, as extracted from "
-                                        "the io_extend argument.");
-            // TODO add information on rank
+                                        "of this dataset (as extracted from "
+                                        "the 'io_extend' argument).");
         }
 
+        // And that all values are valid, i.e. larger than corresp. io_extend
+        for (unsigned short i=0; i < rank; i++) {
+            if (max_extend[i] < io_extend[i]) {
+                throw std::invalid_argument("Index " + std::to_string(i)
+                                            + " of argument 'max_extend' was "
+                                            "smaller than the corresponding "
+                                            "io_extend value! "
+                                            + std::to_string(max_extend[i])
+                                            + " < "
+                                            + std::to_string(io_extend[i]));
+            }
+        }
+        // max_extend content is valid now
+
+        // Now extract information on the properties of max_extend
         // Need to check whether any dataset dimension can be infinitely long
-        dset_finite = (std::find(max_extend.begin(), max_extend.end(), 0)
-                       == max_extend.end()); // i.e., no "0" found
+        dset_finite = (std::find(max_extend.begin(), max_extend.end(),
+                                 H5S_UNLIMITED)
+                       == max_extend.end()); // i.e., H5S_UNLIMITED _not_ found
 
         // Or even all are infinitely long
         all_dims_inf = true;
-        for (auto l: max_extend) {
-            if (l != 0) {
+        for (auto ext: max_extend) {
+            if (ext < H5S_UNLIMITED) {
+                // This one is not infinite
                 all_dims_inf = false;
                 break;
             }
         }
-        
-        // TODO Check if H5S_UNLIMITED could be a valid value in max_extend?
     }
-    else {
-        // Have to assume the max_extend is infinite in all directions
-        dset_finite = false;
-        all_dims_inf = true;
+    else { // max_extend not given
+        // Have to assume the max_extend is the same as the io_extend
+        // Thus, the properties are known:
+        dset_finite = true;
+        all_dims_inf = false;
+
+        // Set the values to those of io_extend
+        max_extend.insert(max_extend.begin(),
+                          io_extend.begin(), io_extend.end());
     }
+    // NOTE max_extend is now a vector of same rank as io_extend
 
 
     std::cout << "Guessing appropriate chunk size using:" << std::endl;
@@ -565,20 +584,16 @@ const Cont guess_chunksize(const hsize_t typesize,
         return Cont(rank, 1);
     }
 
-
     // For a finite dataset, that would fit into CHUNKSIZE_MAX when maximally
-    // extended can only have (and only need!) a single chunk
-    if (dset_finite
-        && max_extend.size()
-        && (bytes(max_extend) <= CHUNKSIZE_MAX))
-    {
+    // extended, we can only have (and only need!) a single chunk
+    if (dset_finite && (bytes(max_extend) <= CHUNKSIZE_MAX)) {
         std::cout << "  -> maximally extended dataset will fit into one chunk"
                   << std::endl;
         return Cont(max_extend);
     }
 
 
-    // -- Optimize for one I/O operation fitting into chunk -- //
+    // -- Step 1: Optimize for one I/O operation fitting into chunk -- //
 
     // Create the temporary container that will store the chunksize values.
     // It starts with a copy of the extend values for I/O operations.
@@ -594,7 +609,8 @@ const Cont guess_chunksize(const hsize_t typesize,
     std::cout << "  fits into chunk?   " << fits_into_chunk << std::endl;
 
     // Do we need to optimize?
-    if (!fits_into_chunk) {
+    if (!fits_into_chunk)
+    {
         // The I/O operation does not fit into a chunk
         // Aim to fit the I/O operation into the chunk -> target: max chunksize
         std::cout << "  trying to use the fewest possible chunks for a single "
@@ -603,7 +619,10 @@ const Cont guess_chunksize(const hsize_t typesize,
         __opt_chunks_target(_chunks, CHUNKSIZE_MAX, // <- target value
                             typesize, CHUNKSIZE_MAX, CHUNKSIZE_MIN,
                             larger_high_dims);
-        // NOTE this relies on _chunks == io_extend
+        // NOTE The algorithm is also able to _increase_ the chunk size in
+        //      certain dimensions. However, with _chunks == io_extend and the
+        //      knowledge that the current bytesize of _chunks is above the
+        //      maximum size, the chunk extensions will only be _reduced_.
     }
     else if (   all_dims_inf && avoid_low_chunksize
              && bytes(_chunks) < CHUNKSIZE_BASE)
@@ -617,15 +636,26 @@ const Cont guess_chunksize(const hsize_t typesize,
         __opt_chunks_target(_chunks, CHUNKSIZE_BASE, // <- target value
                             typesize, CHUNKSIZE_MAX, CHUNKSIZE_MIN,
                             larger_high_dims);
+        // NOTE There is no issue with going beyond the maximum chunksize here
     }
     // else: no other optimization towards a target size make sense
 
 
-    // -- If given, take the max_extend into account -- //
+    // To be on the safe side: Check that _chunks did not exceed max_extend
+    for (unsigned short i=0; i < rank; i++) {
+        if (_chunks[i] > max_extend[i]) {
+            // TODO add warning here? But don't throw...
+            _chunks[i] = max_extend[i];
+        }
+    }
+
+
+
+    // -- Step 2: Optimize by taking the max_extend into account -- //
 
     // This is only possible if the current chunk size is not already above the
-    // upper limit, CHUNKSIZE_MAX
-    if (max_extend.size() && (bytes(_chunks) < CHUNKSIZE_MAX)) {
+    // upper limit, CHUNKSIZE_MAX, and the max_extend is not already reached
+    if ((bytes(_chunks) < CHUNKSIZE_MAX) && (_chunks != max_extend)) {
         std::cout << "  can (potentially) optimize using max_extend info ..."
                   << std::endl;
 
@@ -639,10 +669,8 @@ const Cont guess_chunksize(const hsize_t typesize,
 
     // -- Done. -- //
 
-    // Create a const version of the temporary chunks vector
+    // Create a const version of the temporary chunks vector and return it
     const Cont chunks(_chunks);
-    // TODO is this the best way to do this?
-
     return chunks;
 }
 
