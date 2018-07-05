@@ -24,7 +24,7 @@ Follow the step-by-step instructions below for building Utopia from source.
 | [CMake](https://cmake.org/) | >= 3.10 | |
 | pkg-config | | |
 | [HDF5](https://www.hdfgroup.org/solutions/hdf5/) | >= 1.10. | |
-| [yaml-cpp](https://github.com/jbeder/yaml-cpp) | >= 0.5.2 | |
+| [yaml-cpp](https://github.com/jbeder/yaml-cpp) | 0.6.2 | Included as submodule |
 | [Boost](http://www.boost.org/) | >= 1.65 | |
 | [dune-common](https://gitlab.dune-project.org/core/dune-common) | master | |
 | [dune-geometry](https://gitlab.dune-project.org/core/dune-geometry) | master | |
