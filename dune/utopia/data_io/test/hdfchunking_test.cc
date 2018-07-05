@@ -43,13 +43,9 @@ int main(int argc, char *argv[])
         // -- Without max_extend -- //
 
         // Very small 3D dataset without max_extend
-        // -> I/O fits into chunk, but dataset is infinite and below base
-        //    chunksize -> will optimize towards base chunksize
+        // -> I/O fits into chunk and dataset is finite
+        // -> will have a single chunk of io_extend
         assert_equal(guess_chunksize(1, {1, 2, 3}), // 6 Bytes total size
-                     {32, 64, 96}); // 192k, close enough to base chunksize
-
-        // Again, without that optimization
-        assert_equal(guess_chunksize(1, {1, 2, 3}, {}, false),
                      {1, 2, 3}); // stays the same
 
         // Large 1D dataset with typesize 1, no max_extend
@@ -79,28 +75,85 @@ int main(int argc, char *argv[])
                      {1});
 
         // 2D dataset that has long rows
-        // -> fits into chunk, but is infinite -> further optimization
+        // -> fits into chunk, and is finite -> no further optimization
         assert_equal(guess_chunksize(8, {1, 2048}), // 16k
-                     {4, 8192}); // 256k == base chunksize
-
-        // Again, without optimization
-        assert_equal(guess_chunksize(8, {1, 2048}, {}, false), // 16k
                      {1, 2048}); // stays the same
 
+
+
+        // -- With all infinite max_extend values -- //
+        // Shortcut
+        auto INF = H5S_UNLIMITED;
+
+        // Very small 3D dataset with infinite max_extend
+        // -> I/O fits into chunk, but dataset is infinite and below base
+        //    chunksize -> will optimize towards base chunksize
+        assert_equal(guess_chunksize(1, {1, 2, 3}, // 6 Bytes total size
+                                     {INF, INF, INF}),
+                     {32, 64, 96}); // 192k, close enough to base
+
+        // Again, without the 'opt_inf_dims' optimization
+        assert_equal(guess_chunksize(1, {1, 2, 3},
+                                     {INF, INF, INF}, false),
+                     {1, 2, 3}); // stays the same
+
+
+        // 1D, io_extend fits, max_extend infinite
+        // -> not below base chunksize; nothing to do
+        assert_equal(guess_chunksize(1, {1024 * 1024},    // 1M
+                                     {INF}),              // inf
+                     {1024 * 1024});                      // 1M
+        
+        // 1D, io_extend smaller, max_extend inf
+        // -> below max. chunksize -> optimize towards base
+        assert_equal(guess_chunksize(1, {128 * 1024},     // 128k
+                                     {INF}),              // inf
+                     {256 * 1024});                       // 256M
+        
+        // 1D, io_extend smaller, max_extend inf, opt_inf_dims disabled
+        // -> below base. chunksize -> do nothing
+        assert_equal(guess_chunksize(1, {128 * 1024},     // 128k
+                                     {INF},               // inf
+                                     false),              // opt_inf
+                     {128 * 1024});                       // 128k
+        
+        // 1D, io_extend smaller, max_extend inf, opt_inf_dims disabled
+        // -> above base. chunksize -> do nothing
+        assert_equal(guess_chunksize(1, {345 * 1024},     // 345k
+                                     {INF},               // inf
+                                     true),               // opt_inf
+                     {345 * 1024});                       // 345k
+
+
         // Tests whether dimensions get optimized in the right order
-        assert_equal(guess_chunksize(1, {8, 8, 8, 8, 8}), // 32k
+        assert_equal(guess_chunksize(1, {8, 8, 8, 8, 8}, // 32k
+                                     {INF, INF, INF, INF, INF}),
                      {8, 8, 16, 16, 16}); // 256k, last axes first
 
         // Tests whether dimensions get optimized in the right order
-        assert_equal(guess_chunksize(1, {50, 50, 50}), // 125k
+        assert_equal(guess_chunksize(1, {50, 50, 50}, // 125k
+                                     {INF, INF, INF}),
                      {50, 50, 100}); // 250k, last axes first
 
         // ... unless the chunksize is already >= base chunksize
-        assert_equal(guess_chunksize(1, {64, 64, 64}), // 256k == base
+        assert_equal(guess_chunksize(1, {64, 64, 64}, // 256k == base
+                                     {INF, INF, INF}),
                      {64, 64, 64}); // stays the same
 
+        // 2D dataset that has long rows
+        // -> fits into chunk, but is infinite -> further optimization
+        assert_equal(guess_chunksize(8, {1, 2048},        // 16k
+                                     {INF, INF}),
+                     {4, 8192}); // 256k == base chunksize
 
-        // -- With max_extend -- //
+        // Again, but without optimization
+        assert_equal(guess_chunksize(8, {1, 2048}, {}, false), // 16k
+                     {1, 2048}); // stays the same
+
+
+
+
+        // -- With finite max_extend -- //
 
         // 1D, io_extend fits, already reaching max_extend
         // -> no optimization needed
@@ -133,32 +186,6 @@ int main(int argc, char *argv[])
                                      {16 * 1024 * 1024}), // 16M
                      {1024 * 1024});                      // 1M
 
-        // 1D, io_extend fits, max_extend infinite
-        // -> not below base chunksize; nothing to do
-        assert_equal(guess_chunksize(1, {1024 * 1024},    // 1M
-                                     {0}),                // inf
-                     {1024 * 1024});                      // 1M
-        
-        // 1D, io_extend smaller, max_extend inf
-        // -> below max. chunksize -> optimize towards that
-        assert_equal(guess_chunksize(1, {128 * 1024},     // 128k
-                                     {0}),                // inf
-                     {1024 * 1024});                      // 1M
-        
-        // 1D, io_extend smaller, max_extend inf, opt_inf_dims disabled
-        // -> below base. chunksize -> optimize towards base
-        assert_equal(guess_chunksize(1, {128 * 1024},     // 128k
-                                     {0},                 // inf
-                                     true, false), // avoid_low, opt_inf
-                     {256 * 1024});                       // 256k
-        
-        // 1D, io_extend smaller, max_extend inf, opt_inf_dims disabled
-        // -> above base. chunksize -> do nothing
-        assert_equal(guess_chunksize(1, {345 * 1024},     // 345k
-                                     {0},                 // inf
-                                     true, false), // avoid_low, opt_inf
-                     {345 * 1024});                       // 345k
-
         // 3D dataset, io_extend smaller, max_extend > max chunksize
         // -> extend last axes first
         assert_equal(guess_chunksize(1, {1, 128, 128},    // 16k
@@ -183,29 +210,32 @@ int main(int argc, char *argv[])
                                      {13, 100, 1024}),    // 1300k
                      {11, 81, 1024});                     // ~912k
 
+
+        // -- Mixed finite and infinite max_extend values -- //
+
         // 3D dataset, io_extend < max. chunksize, inf in first dim
         // -> extend first axis
         // specifically: do not optimize towards target size!
         assert_equal(guess_chunksize(1, {1, 128, 128},    // 16k
-                                     {0, 128, 128}),      // inf
+                                     {INF, 128, 128}),    // inf, fin, fin
                      {64, 128, 128});                     // 1M
 
         // 3D dataset, io_extend > max. chunksize, inf in first dim
         // -> split io_extend into two chunks
         assert_equal(guess_chunksize(1, {2, 1024, 1024},  // 2M
-                                     {0, 1024, 1024}),    // inf
+                                     {INF, 1024, 1024}),  // inf, fin, fin
                      {1, 1024, 1024});                    // 1M
         
         // ... same with factor 3
         // -> split io_extend into three chunks
         assert_equal(guess_chunksize(1, {3, 1024, 1024},  // 3M
-                                     {0, 1024, 1024}),    // inf
+                                     {INF, 1024, 1024}),  // inf, fin, fin
                      {1, 1024, 1024});                    // 1M
         
         // ... and factor 5
         // -> split io_extend into 6 chunks
         assert_equal(guess_chunksize(1, {5, 1024, 1024},  // 5M
-                                     {0, 1024, 1024}),    // inf
+                                     {INF, 1024, 1024}),  // inf, fin, fin
                      {2, 512, 1024});                     // 1M
         // NOTE this is not optimal, {1, 1024, 1024} would be ...
         //      currently, 6 instead of 5 chunks are used per write operation

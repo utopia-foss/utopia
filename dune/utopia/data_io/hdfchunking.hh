@@ -248,13 +248,13 @@ void __opt_chunks_with_max_extend(Cont &chunks,
 
     // Determine the finite dims
     auto dims_fin = __find_all_idcs(max_extend,
-                                    [](auto extd){return extd != 0;});
+                                    [](auto l){return l != H5S_UNLIMITED;});
     // Ideally, an integer multiple of the chunk size along this dim should
     // be equal to the maximum extend
 
     // Determine the infinite dims
     auto dims_inf = __find_all_idcs(max_extend,
-                                    [](auto extd){return extd == 0;});
+                                    [](auto l){return l == H5S_UNLIMITED;});
     // As the final extend along these dims is not known, we can not make a
     // good guess for these. Instead, we should use the leverage we have for
     // optimizing the chunk size along the finite dims. The infinite dims will
@@ -443,6 +443,8 @@ void __opt_chunks_with_max_extend(Cont &chunks,
  *                          spread evenly and fill the max_extend as best as
  *                          as possible. If _not_ given, the max_extend will
  *                          be assumed to be the same as the io_extend.
+ * @param   opt_inf_dims    TODO
+ * @param   larger_high_dims TODO
  * @param   CHUNKSIZE_MAX   Largest chunksize; should not exceed 1MiB too much,
  *                          or, more precisely: should fit into the chunk cache
  *                          which (by default) is 1MiB large 
@@ -457,7 +459,6 @@ template<typename Cont=std::vector<hsize_t>>
 const Cont guess_chunksize(const hsize_t typesize,
                            const Cont io_extend,
                            Cont max_extend = {},
-                           const bool avoid_low_chunksize = true,
                            const bool opt_inf_dims = true,
                            const bool larger_high_dims = true,
                            const unsigned int CHUNKSIZE_MAX = 1048576,  // 1M
@@ -560,17 +561,19 @@ const Cont guess_chunksize(const hsize_t typesize,
 
 
     std::cout << "Guessing appropriate chunk size using:" << std::endl;
-    std::cout << "  io_extend:         " << vec2str(io_extend) << std::endl;
-    std::cout << "  max_extend:        " << vec2str(max_extend) << std::endl;
-    std::cout << "  rank:              " << rank << std::endl;
-    std::cout << "  finite dset?       " << dset_finite << std::endl;
-    std::cout << "  all dims infinite? " << all_dims_inf << std::endl;
-    std::cout << "  typesize:          " << typesize << " B" << std::endl;
-    std::cout << "  max. chunksize:    "
+    std::cout << "  io_extend:           " << vec2str(io_extend) << std::endl;
+    std::cout << "  max_extend:          " << vec2str(max_extend) << std::endl;
+    std::cout << "  rank:                " << rank << std::endl;
+    std::cout << "  finite dset?         " << dset_finite << std::endl;
+    std::cout << "  all dims infinite?   " << all_dims_inf << std::endl;
+    std::cout << "  optimize inf. dims?  " << opt_inf_dims << std::endl;
+    std::cout << "  larger high dims?    " << larger_high_dims << std::endl;
+    std::cout << "  typesize:            " << typesize << " B" << std::endl;
+    std::cout << "  max. chunksize:      "
               << CHUNKSIZE_MAX/1024 << " kiB" << std::endl;
-    std::cout << "  min. chunksize:    "
+    std::cout << "  min. chunksize:      "
               << CHUNKSIZE_MIN/1024 << " kiB" << std::endl;
-    std::cout << "  base chunksize:    "
+    std::cout << "  base chunksize:      "
               << CHUNKSIZE_BASE/1024 << " kiB" << std::endl;
 
 
@@ -624,7 +627,7 @@ const Cont guess_chunksize(const hsize_t typesize,
         //      knowledge that the current bytesize of _chunks is above the
         //      maximum size, the chunk extensions will only be _reduced_.
     }
-    else if (   all_dims_inf && avoid_low_chunksize
+    else if (   all_dims_inf && opt_inf_dims
              && bytes(_chunks) < CHUNKSIZE_BASE)
     {
         // The I/O operation _does_ fit into a chunk, but the dataset is
@@ -654,8 +657,11 @@ const Cont guess_chunksize(const hsize_t typesize,
     // -- Step 2: Optimize by taking the max_extend into account -- //
 
     // This is only possible if the current chunk size is not already above the
-    // upper limit, CHUNKSIZE_MAX, and the max_extend is not already reached
-    if ((bytes(_chunks) < CHUNKSIZE_MAX) && (_chunks != max_extend)) {
+    // upper limit, CHUNKSIZE_MAX, and the max_extend is not already reached.
+    // Also, it should not be enabled if all dims are infinite and the 
+    if (   !(opt_inf_dims && all_dims_inf)
+        && (_chunks != max_extend) && (bytes(_chunks) < CHUNKSIZE_MAX))
+    {
         std::cout << "  can (potentially) optimize using max_extend info ..."
                   << std::endl;
 
