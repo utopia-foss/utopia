@@ -1,3 +1,6 @@
 [submodule "vendor/plugins/spdlog"]
 	path = vendor/plugins/spdlog
 	url = https://github.com/gabime/spdlog.git
+[submodule "vendor/plugins/yaml-cpp"]
+	path = vendor/plugins/yaml-cpp
+	url = https://github.com/jbeder/yaml-cpp.git
