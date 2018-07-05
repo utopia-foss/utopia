@@ -42,17 +42,6 @@ IdxCont __find_all_idcs (Cont &vec, Predicate pred) {
 
 
 // -- Optimization algorithms -- //
-// TODO write doc:
-/**  \page opt_chunksize Algorithms for optimizing chunk size
- *
- * \section idea The general idea
- *
- *
- * \section implementation Implementation
- *
- *
- */ 
-
 
 /**
  * @brief   Optimizes the chunks along all axes to find a good default
@@ -76,7 +65,7 @@ IdxCont __find_all_idcs (Cont &vec, Predicate pred) {
  * @param   CHUNKSIZE_MAX    The maximum allowed bytesize of a chunk
  * @param   CHUNKSIZE_MIN    The minimum allowed bytesize of a chunk
  * @param   larger_high_dims If true, dimensions with high indices will be
- *                           favoured for enlarging chunks
+ *                           favoured for enlarging chunk extend in that dim
  */
 template<typename Cont>
 void __opt_chunks_target(Cont &chunks,
@@ -204,11 +193,30 @@ void __opt_chunks_target(Cont &chunks,
  * @detail  This algorithm is aware of the maximum extend of a dataset and can
  *          use that information during optimization, aiming to increase the
  *          size of the chunks towards CHUNKSIZE_MAX as far as possible without
- *          going beyond max_extend.
- *          It distinguishes between dimensions that have a finite extend and
- *          those that can grow to H5S_UNLIMITED, i.e. "infinite" extend.
- *          First, the aim is to cover the finite dimensions. If after that
- *          there is still ... TODO continue here
+ *          going beyond max_extend. The paradigm here is that the _number_ of
+ *          chunks needed for read/write operations should be minimized while
+ *          trying to keep a chunk's byte size below a certain value.
+ *          The algorithm distinguishes between dimensions that have a finite
+ *          extend and those that can grow to H5S_UNLIMITED, i.e. "infinite"
+ *          extend.
+ *          First, the aim is to try to cover the max_extend in the finite
+ *          dimensions. It checks if an integer multiple is needed to reach the
+ *          maximum extend.
+ *          If, after that, the target CHUNKSIZE_MAX is not yet reached and
+ *          the opt_inf_dims flag is set, the chunk sizes in the unlimited
+ *          dimensions are extended as far as possible, assuming that they
+ *          were chosen unlimited because they _will_ be filled at some point
+ *          and larger chunk sizes will reduce the _number_ of chunks needed
+ *          during read/write operations.
+ *          
+ * @param   chunks           The current chunk values that are to be optimized
+ * @param   max_extend       The maximum extend of the dataset
+ * @param   typesize         The byte size of a single entry, needed to
+ *                           calculate the total bytesize of a whole chunk
+ * @param   CHUNKSIZE_MAX    The maximum allowed bytesize of a chunk
+ * @param   opt_inf_dims     Whether to optimize the infinite dimensions or not
+ * @param   larger_high_dims If true, dimensions with high indices will be
+ *                           favoured for enlarging chunk extend in that dim
  */
 template<typename Cont, typename IdxCont=std::vector<unsigned short>>
 void __opt_chunks_with_max_extend(Cont &chunks,
@@ -404,7 +412,19 @@ void __opt_chunks_with_max_extend(Cont &chunks,
 }
 
 
-// -- Methods that should be publicly used -- //
+// -- The actual guess_chunksize method, publicly used -- //
+
+// TODO write doc page:
+/**  \page opt_chunksize Algorithms for optimizing chunk size
+ *
+ * \section idea The general idea
+ *
+ *
+ * \section implementation Implementation
+ *
+ *
+ */ 
+
 
 /**
  * @brief   Try to guess a good chunksize for a dataset
