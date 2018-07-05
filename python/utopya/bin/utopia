@@ -45,8 +45,10 @@ p_run.add_argument('--sim-errors',
                         "errors in simulations are handled. Allowed values "
                         "are: 'ignore', 'warn', 'raise'. "
                         "If not given, the default from the base config or "
-                        "(if set) the user configuration is used.") 
-# TODO make possible to set simulation steps here
+                        "(if set) the user configuration is used.")
+p_run.add_argument('--num-steps',
+                   default=None, nargs='?', type=int,
+                   help="Sets the number of simulation steps to this value.")
 
 # plotting after the run
 p_run.add_argument('--no-plot',
@@ -111,6 +113,15 @@ if __name__ == '__main__':
     if args.sim_errors:
         update_dict['worker_manager'] = dict(nonzero_exit_handling=args.sim_errors)
 
+    # Set number of simulation steps
+    if args.num_steps:
+        if args.num_steps < 0:
+            raise ValueError("Argument --num-steps needs to be positive, was "
+                             "{}.".format(args.num_steps))
+        update_dict['parameter_space'] = dict(num_steps=args.num_steps)
+
+
+    # Preparations finished now
     # Using the args, instantiate a Multiverse object
     mv = utopya.Multiverse(model_name=args.model_name,
                            run_cfg_path=args.run_cfg_path,
