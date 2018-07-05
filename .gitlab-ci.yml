@@ -47,7 +47,6 @@ image: ${DUNE_IMAGE}
 stages:
   - setup
   - prep
-  - build-submodules
   - build
   - test
 
@@ -141,43 +140,17 @@ prep:update-dune-clang:
     - docker push ${DUNE_IMAGE}-clang
 
 
-# Intermittent Build-Submodules stage -----------------------------------------
-# Build the submodule targets here for efficiency
-# The artifacts are needed in the build stage
-build-submodules:all:
-  stage: build-submodules
-  <<: *ssh_access
-  artifacts: &shared_artifacts
-    name: "$CI_JOB_NAME"
-    paths:
-      - $CI_PROJECT_DIR/build-cmake
-    expire_in: 3 hours
-  script:
-    - CMAKE_FLAGS="$CONFIG_FLAGS" $DUNECTRL --module=utopia configure
-    - $DUNECTRL --only=utopia make $MAKE_FLAGS_BUILD yaml-cpp
-
-
-build-submodules:all-clang:
-  stage: build-submodules
-  <<: *ssh_access
-  artifacts: 
-    <<: *shared_artifacts
-  script:
-    - CMAKE_FLAGS="$CONFIG_FLAGS
-      -DCMAKE_C_COMPILER=clang
-      -DCMAKE_CXX_COMPILER=clang++"
-      $DUNECTRL --module=utopia configure
-    - $DUNECTRL --only=utopia make $MAKE_FLAGS_BUILD yaml-cpp
-
-
 # Build stage -----------------------------------------------------------------
 # Build the tests and the models
 # The artifacts of the tests and models jobs are needed in the test stage
 build:tests:
   stage: build
   <<: *ssh_access
-  artifacts:
-    <<: *shared_artifacts
+  artifacts: &shared_artifacts
+    name: "$CI_JOB_NAME"
+    paths:
+      - $CI_PROJECT_DIR/build-cmake
+    expire_in: 3 hours
   script:
     - CMAKE_FLAGS="$CONFIG_FLAGS" $DUNECTRL --module=utopia configure
     - $DUNECTRL --only=utopia make $MAKE_FLAGS_BUILD build_tests
