@@ -15,6 +15,22 @@ Utopia is a DUNE module and thus relies on the [DUNE Buildsystem](https://www.du
 
 Follow the step-by-step instructions below for building Utopia from source.
 
+### Submodules
+Utopia packs a set of third-party-packages as
+[Git Submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules).
+When cloning Utopia, use the `--recurse-submodules` option to automatically
+clone the submodule repositories:
+
+    git clone --recurse-submodules https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia.git
+
+After performing an update of the code base using `git pull`, or checking out a
+new branch with `git checkout`, you need to update the submodules' tree
+explicitly by calling
+
+    git submodule update
+
+This will perform a `git checkout` of the specified commit in all submodules.
+
 ### Dependencies
 | Software | Version | Comments |
 | ---------| ------- | -------- |
