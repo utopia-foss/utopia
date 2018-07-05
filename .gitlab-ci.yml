@@ -157,6 +157,19 @@ build-submodules:all:
     - $DUNECTRL --only=utopia make $MAKE_FLAGS_BUILD yaml-cpp
 
 
+build-submodules:all-clang:
+  stage: build-submodules
+  <<: *ssh_access
+  artifacts: 
+    <<: *shared_artifacts
+  script:
+    - CMAKE_FLAGS="$CONFIG_FLAGS
+      -DCMAKE_C_COMPILER=clang
+      -DCMAKE_CXX_COMPILER=clang++"
+      $DUNECTRL --module=utopia configure
+    - $DUNECTRL --only=utopia make $MAKE_FLAGS_BUILD yaml-cpp
+
+
 # Build stage -----------------------------------------------------------------
 # Build the tests and the models
 # The artifacts of the tests and models jobs are needed in the test stage
