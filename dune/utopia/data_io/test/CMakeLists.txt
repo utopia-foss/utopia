@@ -17,6 +17,20 @@ set(TESTS_DATAIO
 # add DATAIO tests
 foreach(test ${TESTS_DATAIO})
     dune_add_test(NAME DATAIO_${test} SOURCES ${test}.cc)
+    # add dependencies explicitly
+    target_include_directories(DATAIO_${test}
+        # register as system headers (compilers might ignore warnings)
+        SYSTEM
+        # register as private headers (not propagated to dependent targets,
+        # but these executables should have none).
+        PRIVATE
+            spdlog
+            yaml-cpp
+    )
+    target_link_libraries(DATAIO_${test}
+        spdlog
+        yaml-cpp
+    )
 endforeach(test)
 
 # no matter how ctest is called, make sure of dependencies between these tests

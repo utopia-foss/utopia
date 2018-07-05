@@ -32,6 +32,20 @@ set(TESTS_CORE
 # add CORE tests
 foreach(test ${TESTS_CORE})
     dune_add_test(NAME CORE_${test} SOURCES ${test}.cc)
+    # add dependencies explicitly
+    target_include_directories(CORE_${test}
+        # register as system headers (compilers might ignore warnings)
+        SYSTEM
+        # register as private headers (not propagated to dependent targets,
+        # but these executables should have none).
+        PRIVATE
+            spdlog
+            yaml-cpp
+    )
+    target_link_libraries(CORE_${test}
+        spdlog
+        yaml-cpp
+    )
 endforeach(test)
 
 # add EPSWriter test and link to PSGraf library
