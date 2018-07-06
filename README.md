@@ -15,6 +15,29 @@ Utopia is a DUNE module and thus relies on the [DUNE Buildsystem](https://www.du
 
 Follow the step-by-step instructions below for building Utopia from source.
 
+### Cloning the repository
+Utopia packs a set of third-party-packages as
+[Git Submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules).
+Thus, when cloning Utopia, use the `--recurse-submodules` option to automatically
+clone the submodule repositories:
+
+    git clone --recurse-submodules https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia.git
+
+#### Submodules troubleshooting
+If you already cloned the main repository but from a point where the submodules
+were not yet present, you need to pull the submodules using:
+
+    git submodule update --init --recursive
+
+After performing an update of the code base using `git pull`, or checking out a
+new branch with `git checkout`, you need to update the submodules' tree
+explicitly by calling
+
+    git submodule update
+
+This will perform a `git checkout` of the specified commit in all submodules.
+
+
 ### Dependencies
 | Software | Version | Comments |
 | ---------| ------- | -------- |
@@ -24,7 +47,7 @@ Follow the step-by-step instructions below for building Utopia from source.
 | [CMake](https://cmake.org/) | >= 3.10 | |
 | pkg-config | | |
 | [HDF5](https://www.hdfgroup.org/solutions/hdf5/) | >= 1.10. | |
-| [yaml-cpp](https://github.com/jbeder/yaml-cpp) | >= 0.5.2 | |
+| [yaml-cpp](https://github.com/jbeder/yaml-cpp) | 0.6.2 | Included as submodule |
 | [Boost](http://www.boost.org/) | >= 1.65 | |
 | [dune-common](https://gitlab.dune-project.org/core/dune-common) | master | |
 | [dune-geometry](https://gitlab.dune-project.org/core/dune-geometry) | master | |

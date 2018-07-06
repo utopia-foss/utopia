@@ -35,6 +35,9 @@ variables:
   # Directories
   MODEL_DIR: $CI_PROJECT_DIR/dune/utopia/models
 
+  # Load submodules and submodules of submodules by default
+  GIT_SUBMODULE_STRATEGY: recursive
+
 # Define the image to use as base for all stages
 # NOTE that some jobs overwrite this setting locally
 image: ${DUNE_IMAGE}
@@ -256,6 +259,9 @@ test:cli:
     - utopia run dummy
     # Test passing a custom run configuration and performing a sweep
     - utopia run dummy $MODEL_TESTS/dummy/sweep.yml --sweep --note sweep
+    # Test setting the number of steps (negative should fail)
+    - utopia run dummy --num-steps 1 --no-plot
+    - if utopia run dummy --num-steps -1; then exit 1; else exit 0; fi
     #
     # Test the plotting capabilities
     - utopia run dummy --note plt0 --no-plot
