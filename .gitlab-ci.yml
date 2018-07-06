@@ -16,6 +16,10 @@ variables:
   DUNE_IMAGE_NAME: ccees/dune4utopia
   DUNE_IMAGE: "${DUNE_IMAGE_NAME}:${DUNE_VERSION}"
 
+  # Shortcuts for directories
+  MODEL_SRC: $CI_PROJECT_DIR/dune/utopia/models
+  MODEL_TESTS: $CI_PROJECT_DIR/python/model_tests
+
   # Shortcut variables for certain commands
   DUNE_CONTROL_PATH: /opt/dune:$CI_PROJECT_DIR  # such that DUNE finds Utopia
   DUNECTRL: ./dune-common/bin/dunecontrol
@@ -30,6 +34,9 @@ variables:
 
   # Directories
   MODEL_DIR: $CI_PROJECT_DIR/dune/utopia/models
+
+  # Load submodules and submodules of submodules by default
+  GIT_SUBMODULE_STRATEGY: recursive
 
 # Define the image to use as base for all stages
 # NOTE that some jobs overwrite this setting locally
@@ -193,9 +200,8 @@ test:core: &test_core
   <<: *ssh_access
   dependencies:
     - build:tests
-  before_script:
-    - cd /opt/dune
   script:
+    - cd /opt/dune
     - $DUNECTRL --only=utopia make test_core
 
 test:dataio:
@@ -225,21 +231,42 @@ test:models:
     - $ENTER_DUNE_ENV
     - utopia run dummy
     # TODO add calls for all models here
-    # TODO find an automatic way to do this
+    # TODO find an automatic way to do this, perhaps via a --test flag?
 
 test:cli:
   stage: test
   <<: *ssh_access
   dependencies:
     - build:models
+  artifacts:
+    name: utopia_output
+    paths:
+      - $CI_PROJECT_DIR/utopia_output/
+    expire_in: 1h
   script:
     - $DUNECTRL --only=utopia configure
+    # Now, enter the virtual environment and test the CLI
     - $ENTER_DUNE_ENV
+    #
     # Test deployment of user configuration
     - utopia config --deploy
+    # Adjust the user configuration to store to a local directory
+    - "echo \"\npaths: {out_dir: ${CI_PROJECT_DIR}/utopia_output}\"
+       > $HOME/.config/utopia/user_cfg.yml"
+    # FIXME Ugly. Once available, use the utopia config CLI to set this value
+    #
     # Test the CLI with the dummy model and its default configuration
     - utopia run dummy
     # Test passing a custom run configuration and performing a sweep
-    - utopia run dummy $MODEL_DIR/dummy/test/sweep.yml --sweep --note sweep
-    # TODO perhaps move the dummy test file to a better location?
+    - utopia run dummy $MODEL_TESTS/dummy/sweep.yml --sweep --note sweep
+    # Test setting the number of steps (negative should fail)
+    - utopia run dummy --num-steps 1 --no-plot
+    - if utopia run dummy --num-steps -1; then exit 1; else exit 0; fi
+    #
+    # Test the plotting capabilities
+    - utopia run dummy --note plt0 --no-plot
+    - utopia run dummy --note plt1
+    - utopia run dummy --note plt2 --plot-only states
+    - utopia run dummy --note plt3 --plots-cfg $MODEL_SRC/dummy/dummy_plots.yml
+    #
     # TODO add more tests here for other features of the CLI

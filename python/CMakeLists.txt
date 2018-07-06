@@ -15,7 +15,7 @@ message(STATUS "Installing required Python packages ...")
 # Manually install dependencies for utopya, if they are not already satisfied
 # paramspace
 dune_python_find_package(PACKAGE paramspace
-                         VERSION 1.0
+                         VERSION 1.0.1
                          INTERPRETER ${DUNE_PYTHON_VIRTUALENV_EXECUTABLE})
 
 if(NOT DUNE_PYTHON_paramspace_FOUND)
@@ -26,7 +26,7 @@ endif()
 
 # dantro
 dune_python_find_package(PACKAGE dantro
-                         VERSION 0.1b0 EXACT  # NOTE exact needed during beta
+                         VERSION 0.1.0-rc.5  # TODO use 0.1.0 once released!
                          INTERPRETER ${DUNE_PYTHON_VIRTUALENV_EXECUTABLE})
 
 if(NOT DUNE_PYTHON_dantro_FOUND)

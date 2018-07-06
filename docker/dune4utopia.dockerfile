@@ -27,7 +27,6 @@ RUN apt-get update \
         git \
         libboost-dev \
         libhdf5-dev \
-        libyaml-cpp-dev \
         locales \
         pkg-config \
         python3-dev \
