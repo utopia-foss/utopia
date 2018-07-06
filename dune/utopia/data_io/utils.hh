@@ -3,16 +3,17 @@
 
 #include <boost/core/demangle.hpp>
 #include <yaml-cpp/yaml.h>
-#include "types.hh"
 
 namespace Utopia {
-namespace DataIO {
+// NOTE This is not inside the Utopia::DataIO namespace to make include more
+//      convenient.
+
 
 // -- Config access convenience functions -- //
 
 /// General config access via template parameter
 template<class ReturnType>
-const ReturnType as_(Config node) {
+const ReturnType as_(DataIO::Config node) {
     // Try reading
     try {
         return node.template as<ReturnType>();
@@ -65,33 +66,32 @@ const ReturnType as_(Config node) {
 // -- Shortcuts -- //
 
 /// Shortcut to retrieve an entry as double
-double as_double(Config node) {
+double as_double(DataIO::Config node) {
     return as_<double>(node);
 }
 
 /// Shortcut to retrieve an entry as bool
-bool as_bool(Config node) {
+bool as_bool(DataIO::Config node) {
     return as_<bool>(node);
 }
 
 /// Shortcut to retrieve an entry as std::string
-const std::string as_str(Config node) {
+const std::string as_str(DataIO::Config node) {
     return as_<std::string>(node);
 }
 
 /// Shortcut to retrieve an entry as std::vector
 template<typename T>
-const std::vector<T> as_vector(Config node) {
+const std::vector<T> as_vector(DataIO::Config node) {
     return as_<std::vector<T>>(node);
 }
 
 /// Shortcut to retrieve an entry as std::array
 template<typename T, std::size_t len>
-const std::array<T, len> as_array(Config node) {
+const std::array<T, len> as_array(DataIO::Config node) {
     return as_<std::array<T, len>>(node);
 }
 
-
-} // namespace DataIO
-} // namespace Utopia
+// }
+}
 #endif // DATAIO_UTILS_HH

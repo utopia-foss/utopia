@@ -9,7 +9,6 @@
 #include <dune/utopia/data_io/hdfdataset.hh>
 
 namespace Utopia {
-
 namespace Models {
 
 /// Define data types of dummy model

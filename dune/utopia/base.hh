@@ -45,7 +45,9 @@
 #include <dune/grid/common/mcmgmapper.hh>
 #include <dune/grid/io/file/vtk/vtksequencewriter.hh>
 
-// // UTOPIA I/O
-// #include "data_io/config.hh"
+// UTOPIA -- available to all
+#include "core/types.hh"
+#include "data_io/types.hh"
+#include "data_io/utils.hh"
 
 #endif // UTOPIA_BASE_HH

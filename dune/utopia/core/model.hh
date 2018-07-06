@@ -3,8 +3,6 @@
 
 #include <dune/utopia/data_io/hdffile.hh>
 #include <dune/utopia/data_io/hdfgroup.hh>
-#include <dune/utopia/data_io/types.hh>
-#include <dune/utopia/core/types.hh>
 #include <yaml-cpp/yaml.h>
 
 namespace Utopia {
@@ -226,9 +224,9 @@ public:
     // Initialize the config node from the path to the config file
     cfg(YAML::LoadFile(cfg_path)),
     // Create a file at the specified output path and store the shared pointer
-    hdffile(std::make_shared<HDFFile>(cfg["output_path"].template as<std::string>(), "w")),
+    hdffile(std::make_shared<HDFFile>(as_str(cfg["output_path"]), "w")),
     // Initialize the RNG from a seed
-    rng(std::make_shared<RNG>(cfg["seed"].template as<int>()))
+    rng(std::make_shared<RNG>(as_<int>(cfg["seed"])))
     {
         std::cout << "Initialized pseudo parent from config file:  "
                   << cfg_path << std::endl;

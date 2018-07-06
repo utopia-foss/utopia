@@ -3,6 +3,10 @@
 #include <chrono>         // std::chrono::seconds
 
 #include "dummy.hh"
+#include "../../data_io/utils.hh"
+
+// Always use the Utopia namespace
+using namespace Utopia;
 
 // Declare the model
 using DummyModel = Utopia::Models::Dummy;
@@ -19,14 +23,14 @@ int main (int argc, char** argv)
         Utopia::PseudoParent pp(config_file);
 
         // get the config from the PseudoParent
-        auto config = pp.get_cfg();
+        auto cfg = pp.get_cfg();
 
         // Set the initial state, then create the model instance
         std::vector<double> state(1E3, 0.0);
         DummyModel model("dummy", pp, state);
 
         // And iterate it for a number of steps
-        auto num_steps = config["num_steps"].as<int>();
+        auto num_steps = as_<int>(cfg["num_steps"]);
         std::cout << "num_steps: " << num_steps << std::endl;
         std::cout << "Starting iteration ..." << std::endl;
 
@@ -34,7 +38,7 @@ int main (int argc, char** argv)
             model.iterate();
         }
 
-        // Sleep (to be read by frontend)
+        // Sleep (to be read by frontend for testing purposes)
         unsigned int sleep_time = 300; // in milliseconds
         unsigned int num_sleeps = 3;
 
@@ -44,7 +48,6 @@ int main (int argc, char** argv)
         }
 
         std::cout << "All done." << std::endl << "Really." << std::endl;
-
         return 0;
     }
     catch (std::exception& e) {
