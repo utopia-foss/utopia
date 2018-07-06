@@ -3,7 +3,6 @@
 #include <chrono>         // std::chrono::seconds
 
 #include "dummy.hh"
-#include "../../data_io/utils.hh"
 
 // Always use the Utopia namespace
 using namespace Utopia;

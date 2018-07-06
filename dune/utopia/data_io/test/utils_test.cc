@@ -5,19 +5,19 @@
 
 #include <dune/utopia/data_io/utils.hh>
 
-bool str_found(std::string search, std::string find) {
-    return search.find(find) != std::string::npos;
+using namespace Utopia;
+
+
+/// Helper function to check for match in string s
+bool str_found(std::string s, std::string match) {
+    return s.find(match) != std::string::npos;
 }
 
-
-int main()
-{
+int main() {
     try {
-        using namespace Utopia::DataIO;
-
         std::cout << "Loading test config file..." << std::endl;
         auto cfg = YAML::LoadFile("utils_test.yml");
-        std::cout << "  Loaded" << std::endl << std::endl;
+        std::cout << "  Loaded." << std::endl << std::endl;
 
 
 
