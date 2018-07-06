@@ -5,6 +5,11 @@
 
 #include <dune/utopia/data_io/utils.hh>
 
+bool str_found(std::string search, std::string find) {
+    return search.find(find) != std::string::npos;
+}
+
+
 int main()
 {
     try {
@@ -42,8 +47,9 @@ int main()
             std::cout << "  Got error message: " << e_msg << std::endl;
             
             // check message includes line information
-            assert(e_msg.find("yaml-cpp: error at line") >= 0);
-            assert(e_msg.find("matches the desired type conversion") >= 0);
+            assert(str_found(e_msg, "yaml-cpp: error at line"));
+            assert(str_found(e_msg, "matches the desired type conversion"));
+            assert(str_found(e_msg, "The value of the node is:  bar"));
         }
         catch (...) {
             std::cerr << "Wrong exception type thrown!" << std::endl;
@@ -61,8 +67,8 @@ int main()
             std::cout << "  Got error message: " << e_msg << std::endl;
 
             // check the error message hints at the zombie node
-            assert(e_msg.find("yaml-cpp: error at line") == -1); // no mark!
-            assert(e_msg.find("Perhaps the node was a zombie?") >= 0);
+            assert(!str_found(e_msg, "yaml-cpp: error at line")); // no mark
+            assert(str_found(e_msg, "Perhaps the node was a zombie?"));
         }
         catch (...) {
             std::cerr << "Wrong exception type thrown!" << std::endl;

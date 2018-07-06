@@ -33,14 +33,16 @@ ReturnType as_(Config node) {
             e_msg << "Could not read from config; got "
                   << boost::core::demangle(typeid(e).name()) << "! "
                   << "Check that the corresponding line of the config file "
-                     "matches the desired type conversion."
+                     "matches the desired type conversion. "
+                     "The value of the node is:  "
+                  << YAML::Dump(node)
                   << std::endl;
         }
         else {
             e_msg << "Could not read from config; got "
                   << boost::core::demangle(typeid(e).name()) << "! "
                   << "Perhaps the node was a zombie? Check that the key you "
-                     "are trying to create a node from actually exists."
+                     "are trying to create a node with actually exists."
                   << std::endl;
         }
 
