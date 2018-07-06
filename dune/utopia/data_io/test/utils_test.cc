@@ -31,6 +31,15 @@ int main()
         assert(as_bool(cfg["a_bool"]));
         assert(as_<int>(cfg["an_int"]) == 42);
 
+        // vector
+        std::vector vec({1, 2, 3});
+        assert(as_<std::vector<int>>(cfg["a_vector"]) == vec);
+        
+        // array
+        std::array<std::array<int,2>,2> a1({{{{1, 2}}, {{3, 4}}}});
+        auto a2 = as_<std::array<std::array<int,2>,2>>(cfg["an_array"]);
+        assert(a1 == a2);
+        // assert(as_<std::array<std::array<int,2>,2>>(cfg["an_array"]) == arr);
         
         // -- Assert that exceptions are raised -- //
         std::cout << std::endl

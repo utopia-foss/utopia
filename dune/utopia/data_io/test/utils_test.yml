@@ -6,3 +6,12 @@ spam: eggs
 an_int: 42
 a_double: 3.14159
 a_bool: true
+
+a_vector:
+  - 1
+  - 2
+  - 3
+
+an_array:
+  - [1, 2]
+  - [3, 4]

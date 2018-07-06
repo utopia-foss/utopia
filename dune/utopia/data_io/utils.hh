@@ -11,17 +11,13 @@ namespace DataIO {
 // -- Config access convenience functions -- //
 
 /// General config access via template parameter
-template<typename ReturnType>
+template<class ReturnType>
 ReturnType as_(Config node) {
-
-    // TODO If there is a good way, try to check if the node is a zombie before
-    //      attempting to read!
-
     // Try reading
     try {
         return node.template as<ReturnType>();
     }
-    // Did not work -> try to give a reasonable error message
+    // Did not work -> try to give a understandable error message
     catch (YAML::BadConversion& e) {
         // Due to the node being a zombie, e.g. b/c key was missing, or an
         // actual bad type conversion...
