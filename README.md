@@ -23,6 +23,12 @@ clone the submodule repositories:
 
     git clone --recurse-submodules https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia.git
 
+#### Submodules troubleshooting
+If you already cloned the main repository but from a point where the submodules
+were not yet present, you need to pull the submodules using:
+
+    git submodule update --init --recursive
+
 After performing an update of the code base using `git pull`, or checking out a
 new branch with `git checkout`, you need to update the submodules' tree
 explicitly by calling
@@ -30,6 +36,7 @@ explicitly by calling
     git submodule update
 
 This will perform a `git checkout` of the specified commit in all submodules.
+
 
 ### Dependencies
 | Software | Version | Comments |
