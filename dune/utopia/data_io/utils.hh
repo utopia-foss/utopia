@@ -13,8 +13,9 @@ namespace DataIO {
 /// General config access via template parameter
 template<typename ReturnType>
 ReturnType as_(Config node) {
-    // Check if the node is valid
-    // TODO
+
+    // TODO If there is a good way, try to check if the node is a zombie before
+    //      attempting to read!
 
     // Try reading
     try {
@@ -22,14 +23,31 @@ ReturnType as_(Config node) {
     }
     // Did not work -> try to give a reasonable error message
     catch (YAML::BadConversion& e) {
-        // Probably due to the node being a zombie, e.g. b/c key was missing
-        std::cerr << "Could not read from config due to a "
-                  << boost::core::demangle(typeid(e).name()) << "! "
-                  << "Is conversion possible? Does the node even exist?"
-                  << std::endl;
+        // Due to the node being a zombie, e.g. b/c key was missing, or an
+        // actual bad type conversion...
+        std::stringstream e_msg;
 
-        // Re-throw the original exception
-        throw;
+        // Create an error message depending on whether there is a mark; if
+        // there is none, it is indicative of the node being a zombie...
+        if (!node.Mark().is_null()) {
+            e_msg << "Could not read from config; got "
+                  << boost::core::demangle(typeid(e).name()) << "! "
+                  << "Check that the corresponding line of the config file "
+                     "matches the desired type conversion."
+                  << std::endl;
+        }
+        else {
+            e_msg << "Could not read from config; got "
+                  << boost::core::demangle(typeid(e).name()) << "! "
+                  << "Perhaps the node was a zombie? Check that the key you "
+                     "are trying to create a node from actually exists."
+                  << std::endl;
+        }
+
+        // Re-throw with the custom error message
+        throw YAML::Exception(node.Mark(), e_msg.str());
+        // NOTE Mark() provides the line and column in the config file; the
+        //      error message is created depending on whether the mark was null
     }
     catch (std::exception& e) {
         // This should catch all other exceptions thrown by yaml-cpp
