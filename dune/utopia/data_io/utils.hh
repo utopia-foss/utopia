@@ -12,7 +12,7 @@ namespace DataIO {
 
 /// General config access via template parameter
 template<class ReturnType>
-ReturnType as_(Config node) {
+const ReturnType as_(Config node) {
     // Try reading
     try {
         return node.template as<ReturnType>();
@@ -62,6 +62,8 @@ ReturnType as_(Config node) {
     }
 }
 
+// -- Shortcuts -- //
+
 /// Shortcut to retrieve an entry as double
 double as_double(Config node) {
     return as_<double>(node);
@@ -73,8 +75,20 @@ bool as_bool(Config node) {
 }
 
 /// Shortcut to retrieve an entry as std::string
-std::string as_str(Config node) {
+const std::string as_str(Config node) {
     return as_<std::string>(node);
+}
+
+/// Shortcut to retrieve an entry as std::vector
+template<typename T>
+const std::vector<T> as_vector(Config node) {
+    return as_<std::vector<T>>(node);
+}
+
+/// Shortcut to retrieve an entry as std::array
+template<typename T, std::size_t len>
+const std::array<T, len> as_array(Config node) {
+    return as_<std::array<T, len>>(node);
 }
 
 

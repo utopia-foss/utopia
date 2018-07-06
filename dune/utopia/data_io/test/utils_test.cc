@@ -19,6 +19,8 @@ int main()
         auto cfg = YAML::LoadFile("utils_test.yml");
         std::cout << "  Loaded" << std::endl << std::endl;
 
+
+
         // -- Tests -- //
         std::cout << "Commencing tests ..." << std::endl;
 
@@ -34,13 +36,19 @@ int main()
         // vector
         std::vector vec({1, 2, 3});
         assert(as_<std::vector<int>>(cfg["a_vector"]) == vec);
+        assert(as_vector<int>(cfg["a_vector"]) == vec);
         
         // array
         std::array<std::array<int,2>,2> a1({{{{1, 2}}, {{3, 4}}}});
+
         auto a2 = as_<std::array<std::array<int,2>,2>>(cfg["an_array"]);
         assert(a1 == a2);
-        // assert(as_<std::array<std::array<int,2>,2>>(cfg["an_array"]) == arr);
         
+        auto a3 = as_array<std::array<int,2>,2>(cfg["an_array"]);
+        assert(a1 == a3);
+        
+
+
         // -- Assert that exceptions are raised -- //
         std::cout << std::endl
                   <<"Checking for correct exceptions being thrown ..."
@@ -83,6 +91,8 @@ int main()
             std::cerr << "Wrong exception type thrown!" << std::endl;
             return 1;
         }
+
+
 
         std::cout << "Tests successful." << std::endl;
         return 0;
