@@ -1,0 +1,4 @@
+# Test configuration for utils_test
+---
+foo: bar
+spam: eggs
