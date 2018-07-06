@@ -16,7 +16,7 @@ bool str_found(std::string s, std::string match) {
 int main() {
     try {
         std::cout << "Loading test config file..." << std::endl;
-        auto cfg = YAML::LoadFile("utils_test.yml");
+        auto cfg = YAML::LoadFile("cfg_utils_test.yml");
         std::cout << "  Loaded." << std::endl << std::endl;
 
 
