@@ -3,7 +3,7 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include <dune/utopia/data_io/utils.hh>
+#include <dune/utopia/data_io/cfg_utils.hh>
 
 using namespace Utopia;
 
