@@ -190,13 +190,13 @@ def test_initial_state_single():
         mtc.create_run_load(from_cfg="initial_state.yml",
                             perform_sweep=False,
                             **model_cfg(initial_state='single_s0',
-                                        grid_size=[10, 10])
+                                        grid_size=[10, 11])
                             )
 
 def test_ia_matrix_extraction():
     """Test that the ia_matrix is extracted correctly from the config"""
     
-    # Test all possible combinations
+    # Test all possible combinations of specifying input parameters
     # The different yaml config files provide the following different cases:
     #   0:        ia_matrix: [[1, 2], [3, 4]]
     #   1:        bc_pair: [4, 5]
@@ -215,32 +215,23 @@ def test_ia_matrix_extraction():
     # The default parameter is: b = 1.58
 
     # Define the interaction matrix values to test against
-    m = []
-    m.append([[1,2],[3,4]])                 # case 0 
-    m.append(ia_matrix_from_bc(b=4,c=5))    # case 1
-    m.append(ia_matrix_from_b(1.9))         # case 2
-    m.append(ia_matrix_from_bc(b=4,c=5))    # case 3
-    m.append([[1,2],[3,4]])                 # case 4  
-    m.append([[1,2],[3,4]])                 # case 5 
-    m.append([[1,2],[3,4]])                 # case 6
-    m.append(ia_matrix_from_b(1.58))        # case 7
+    ia_matrices = []
+    ia_matrices.append([[1,2],[3,4]])                 # case 0 
+    ia_matrices.append(ia_matrix_from_bc(b=4,c=5))    # case 1
+    ia_matrices.append(ia_matrix_from_b(1.9))         # case 2
+    ia_matrices.append(ia_matrix_from_bc(b=4,c=5))    # case 3
+    ia_matrices.append([[1,2],[3,4]])                 # case 4  
+    ia_matrices.append([[1,2],[3,4]])                 # case 5 
+    ia_matrices.append([[1,2],[3,4]])                 # case 6
+    ia_matrices.append(ia_matrix_from_b(1.58))        # case 7
 
-    # Create 8 multiverses with all possible combinations of providing an
-    # ia_matrix and save the corresponding data managers in a list
-    dms = []
-    
-    # Create, run, and lad the multiverses
-    for i in range(8):
+    # For each of these cases, create, run, and load a Multiverse; then test
+    # against the expected ia_matrices above.
+    for i, expected_matrix in enumerate(ia_matrices):
         _, dm = mtc.create_run_load(from_cfg="ia_matrix_case{}.yml".format(i))
 
-        dms.append(dm)
-
-    # For each data manager, check whether the ia_matrices are correct
-    for i, dm in enumerate(dms):
         # Get the interaction matrix from the data attributes
         grp = dm['uni']['0']['data']['SimpleEG']
-        ia_matrix = grp.attrs['ia_matrix']
         
-        # Check whether the ia_matrix that should be used and the one actually
-        # used in the simulation are equal
-        check_ia_matrices(m[i], ia_matrix)
+        # Now, check whether the ia_matrix is correct
+        check_ia_matrices(grp.attrs['ia_matrix'], expected_matrix)
