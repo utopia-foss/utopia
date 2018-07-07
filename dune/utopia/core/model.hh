@@ -106,13 +106,19 @@ public:
         hdfgrp( parent_model.get_hdfgrp()->open_group(this->name)),
         rng(parent_model.get_rng())
     {
-        log->set_level(parent_model.get_logger()->level());
+        // Set this model instance's log level
         if (cfg["log_level"]) {
-            log->set_level(spdlog::level::from_str(
-                cfg["log_level"].template as<std::string>()
-            ));
+            // Via value given in configuration
+            auto lvl =  cfg["log_level"].template as<std::string>();
+            log->debug("Setting log level to '{}' ...", lvl);
+            log->set_level(spdlog::level::from_str(lvl));
         }
-        // TODO add informative log messages here
+        else {
+            // No config value given; use the level of the parent's logger
+            log->set_level(parent_model.get_logger()->level());
+        }
+
+        // TODO add other informative log messages here?
     }
 
 
@@ -149,10 +155,11 @@ public:
     /** Increment time, perform step, then write data
      */
     void iterate () {
-        // TODO add low-priority log messages here
         increment_time();
         perform_step();
         write_data();
+        log->info("Finished iteration: {:8d}", this->time);
+        // TODO add max_time information, once available
     }
 
 
@@ -252,12 +259,14 @@ public:
     hdffile(std::make_shared<HDFFile>(cfg["output_path"].template as<std::string>(), "w")),
     // Initialize the RNG from a seed
     rng(std::make_shared<RNG>(cfg["seed"].template as<int>())),
+    // And initialize the root logger at warning level
     log(Utopia::init_logger("root", spdlog::level::warn, false))
     {
         setup_loggers(); // global loggers
         set_log_level(); // this log level
 
-        log->info("Initialized pseudo parent from config file: {}", cfg_path);
+        log->info("Initialized PseudoParent from config file:\n  {}",
+                  cfg_path);
     }
     
 
@@ -279,15 +288,16 @@ public:
     hdffile(std::make_shared<HDFFile>(output_path, output_file_mode)),
     // Initialize the RNG from a seed
     rng(std::make_shared<RNG>(seed)),
+    // And initialize the root logger at warning level
     log(Utopia::init_logger("root", spdlog::level::warn, false))
     {
         setup_loggers(); // global loggers
         set_log_level(); // this log level
 
-        log->info("Initialized pseudo parent.");
+        log->info("Initialized PseudoParent with the following parameters:");
         log->debug("  cfg_path:      {}", cfg_path);
-        log->debug("  output_path:   {}", output_path);
-        log->debug("  (mode: {})", output_file_mode);
+        log->debug("  output_path:   {} (mode: {})",
+                   output_path, output_file_mode);
         log->debug("  seed:          {}", seed);
     }
 

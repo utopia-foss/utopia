@@ -56,9 +56,6 @@ public:
     /// Iterate by one time step
     void perform_step ()
     {
-        // Communicate which iteration step is performed
-        std::cout << "  Performing step " << this->time << " ..." << std::endl;
-
         // Write some random numbers into the state vector
         auto gen = std::bind(std::uniform_real_distribution<>(), *rng);
         std::generate(bc.begin(), bc.end(), gen);
