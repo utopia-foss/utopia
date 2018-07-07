@@ -4,6 +4,7 @@ set(TESTS_DATAIO
     hdffile_test
     hdfattribute_test_read
     hdfattribute_test_write
+    hdfattribute_test_lifecycle
     hdfdataset_test_lifecycle
     hdfgroup_test_lifecycle
     hdfdataset_test_write
@@ -16,11 +17,22 @@ set(TESTS_DATAIO
 # add DATAIO tests
 foreach(test ${TESTS_DATAIO})
     dune_add_test(NAME DATAIO_${test} SOURCES ${test}.cc)
-    # Add spdlog includes and compile definition for trace macro
-    target_include_directories(DATAIO_${test} PUBLIC spdlog)
-    target_compile_definitions(DATAIO_${test}
+
+    # link library targets
+    target_link_libraries(DATAIO_${test}
+        spdlog
+        yaml-cpp
+    )
+
+    # yaml-cpp does not export interface include dirs
+    # NOTE This should be reported as bug or patched via MR in the yaml-cpp
+    #      repository. See https://pabloariasal.github.io/2018/02/19/its-time-to-do-cmake-right/
+    #      as a reference on how to do that.
+    target_include_directories(DATAIO_${test}
+        # register as system headers (compilers might ignore warnings)
+        SYSTEM
         PRIVATE
-            $<$<CONFIG:Debug>:SPDLOG_TRACE_ON>
+            ${PROJECT_SOURCE_DIR}/vendor/plugins/yaml-cpp/include/
     )
 endforeach(test)
 

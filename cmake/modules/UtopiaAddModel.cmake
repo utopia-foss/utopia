@@ -16,14 +16,21 @@ function(add_model target_name)
     # register regularly
     add_executable(${target_name} ${ARGN})
 
-    # Add explicit includes and compile definitions
-    target_include_directories(${target_name}
-        PUBLIC
-            spdlog
+    # link library targets
+    target_link_libraries(${target_name}
+        spdlog
+        yaml-cpp
     )
-    target_compile_definitions(${target_name}
+
+    # yaml-cpp does not export interface include dirs
+    # NOTE This should be reported as bug or patched via MR in the yaml-cpp
+    #      repository. See https://pabloariasal.github.io/2018/02/19/its-time-to-do-cmake-right/
+    #      as a reference on how to do that.
+    target_include_directories(${target_name}
+        # register as system headers (compilers might ignore warnings)
+        SYSTEM
         PRIVATE
-            $<$<CONFIG:Debug>:SPDLOG_TRACE_ON>
+            ${PROJECT_SOURCE_DIR}/vendor/plugins/yaml-cpp/include/
     )
 
     # the rest of this function is to relay information to the utopya package

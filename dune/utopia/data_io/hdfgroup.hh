@@ -20,8 +20,6 @@ namespace Utopia
 {
 namespace DataIO
 {
-class HDFFile;
-
 class HDFGroup
 {
 protected:
@@ -32,6 +30,9 @@ protected:
     H5O_info_t _info;
 
     haddr_t _address;
+
+    HDFGroup* _parent;
+
     std::shared_ptr<std::unordered_map<haddr_t, int>> _referencecounter;
 
 public:
@@ -47,7 +48,18 @@ public:
         swap(_path, other._path);
         swap(_info, other._info);
         swap(_address, other._address);
+        swap(_parent, other._parent);
         swap(_referencecounter, other._referencecounter);
+    }
+
+    /**
+     * @brief Get the parent object
+     *
+     * @return HDFGroup&
+     */
+    HDFGroup& get_parent()
+    {
+        return *_parent;
     }
 
     /**
@@ -127,7 +139,7 @@ public:
     template <typename Attrdata>
     void add_attribute(std::string name, Attrdata attribute_data)
     {
-        HDFAttribute<HDFGroup>(*this, std::forward<std::string&&>(name)).write(attribute_data);
+        HDFAttribute<HDFGroup>(*this, name).write(attribute_data);
     }
 
     /**
@@ -147,6 +159,64 @@ public:
             {
                 (*_referencecounter)[_address] -= 1;
             }
+        }
+    }
+
+    /**
+     * @brief Bind the object to a new HDF5 Group, either opening existing or
+     * creating a new one at path 'path' in the HDF5 group 'parent'.
+     *
+     * @param parent
+     * @param path
+     */
+    template <typename HDFObject>
+    void open(HDFObject& parent, std::string path)
+    {
+        _path = path;
+        _info = H5O_info_t();
+        _address = 0;
+        if constexpr (std::is_same_v<HDFObject, HDFGroup>)
+        {
+            _parent = &parent;
+        }
+        else
+        {
+            _parent = parent.get_basegroup().get();
+        }
+
+        _referencecounter = parent.get_referencecounter();
+
+        if (H5Lexists(_parent->get_id(), _path.c_str(), H5P_DEFAULT) > 0)
+        {
+            // open the already existing group
+            _group = H5Gopen(_parent->get_id(), _path.c_str(), H5P_DEFAULT);
+
+            if (_group < 0)
+            {
+                throw std::runtime_error("Group opening for path" + path +
+                                         " failed");
+            }
+
+            H5Oget_info(_group, &_info);
+            _address = _info.addr;
+            ++(*_referencecounter)[_address];
+        }
+        else
+        { // group does not exist yet
+            // create the group and intermediates
+            hid_t group_plist = H5Pcreate(H5P_LINK_CREATE);
+            H5Pset_create_intermediate_group(group_plist, 1);
+            _group = H5Gcreate(_parent->get_id(), _path.c_str(), group_plist,
+                               H5P_DEFAULT, H5P_DEFAULT);
+            if (_group < 0)
+            {
+                throw std::runtime_error("Group creation for path" + path +
+                                         " failed");
+            }
+            // get info and update reference counter
+            H5Oget_info(_group, &_info);
+            _address = _info.addr;
+            (*_referencecounter)[_address] = 1;
         }
     }
 
@@ -244,19 +314,37 @@ public:
     /**
      * @brief      Construct a new HDFGroup object
      *
-     * @param      object     The parent object
+     * @param      parent     The parent group to create or open the group in
      * @param      name       The name of the group
      *
      * @tparam     HDFObject  { description }
      */
     template <typename HDFObject>
-    HDFGroup(HDFObject& object, std::string name)
-        : _path(name), _referencecounter(object.get_referencecounter())
+    HDFGroup(HDFObject& parent, std::string path)
+        : _path(path),
+          _parent([&]() {
+              if constexpr (std::is_same_v<HDFObject, HDFGroup>)
+              {
+                  return &parent;
+              }
+              else
+              {
+                  return parent.get_basegroup().get();
+              }
+          }()),
+          _referencecounter(parent.get_referencecounter())
     {
-        if (H5Lexists(object.get_id(), _path.c_str(), H5P_DEFAULT) > 0)
+        if (H5Lexists(parent.get_id(), _path.c_str(), H5P_DEFAULT) > 0)
         {
             // open the already existing group
-            _group = H5Gopen(object.get_id(), _path.c_str(), H5P_DEFAULT);
+            _group = H5Gopen(parent.get_id(), _path.c_str(), H5P_DEFAULT);
+
+            if (_group < 0)
+            {
+                throw std::runtime_error("Group opening for path" + path +
+                                         " failed");
+            }
+
             H5Oget_info(_group, &_info);
             _address = _info.addr;
             ++(*_referencecounter)[_address];
@@ -266,9 +354,13 @@ public:
             // create the group and intermediates
             hid_t group_plist = H5Pcreate(H5P_LINK_CREATE);
             H5Pset_create_intermediate_group(group_plist, 1);
-            _group = H5Gcreate(object.get_id(), _path.c_str(), group_plist,
+            _group = H5Gcreate(parent.get_id(), _path.c_str(), group_plist,
                                H5P_DEFAULT, H5P_DEFAULT);
-
+            if (_group < 0)
+            {
+                throw std::runtime_error("Group creation for path" + path +
+                                         " failed");
+            }
             // get info and update reference counter
             H5Oget_info(_group, &_info);
             _address = _info.addr;

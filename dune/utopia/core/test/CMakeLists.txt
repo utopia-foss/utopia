@@ -1,4 +1,4 @@
-# place mesh in build directory
+# place files in build directory
 file(COPY "square.msh" "cube.msh"
           "model_test.yml"
           "model_nested_test.yml"
@@ -32,11 +32,22 @@ set(TESTS_CORE
 # add CORE tests
 foreach(test ${TESTS_CORE})
     dune_add_test(NAME CORE_${test} SOURCES ${test}.cc)
-    # Add spdlog includes and compile definition for trace macro
-    target_include_directories(CORE_${test} PUBLIC spdlog)
-    target_compile_definitions(CORE_${test}
+
+    # link library targets
+    target_link_libraries(CORE_${test}
+        spdlog
+        yaml-cpp
+    )
+
+    # yaml-cpp does not export interface include dirs
+    # NOTE This should be reported as bug or patched via MR in the yaml-cpp
+    #      repository. See https://pabloariasal.github.io/2018/02/19/its-time-to-do-cmake-right/
+    #      as a reference on how to do that.
+    target_include_directories(CORE_${test}
+        # register as system headers (compilers might ignore warnings)
+        SYSTEM
         PRIVATE
-            $<$<CONFIG:Debug>:SPDLOG_TRACE_ON>
+            ${PROJECT_SOURCE_DIR}/vendor/plugins/yaml-cpp/include/
     )
 endforeach(test)
 

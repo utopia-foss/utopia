@@ -27,15 +27,15 @@ void assert_hdfdatasets(LHS& lhs, RHS& rhs)
     assert(lhs.get_id() == rhs.get_id());
     assert(lhs.get_address() == rhs.get_address());
     assert(lhs.get_referencecounter() == rhs.get_referencecounter());
-    assert(lhs.get_parent() == rhs.get_parent());
+    assert(&lhs.get_parent() == &rhs.get_parent());
     assert(lhs.get_rank() == rhs.get_rank());
 
     // assert ranked members
     for (std::size_t i = 0; i < lhs.get_rank(); ++i)
     {
-        std::cerr << lhs.get_rank() << "," << lhs.get_extend()[i] << ","
-                  << rhs.get_extend()[i] << std::endl;
-        assert(lhs.get_extend()[i] == rhs.get_extend()[i]);
+        std::cerr << lhs.get_rank() << "," << lhs.get_current_extend()[i] << ","
+                  << rhs.get_current_extend()[i] << std::endl;
+        assert(lhs.get_current_extend()[i] == rhs.get_current_extend()[i]);
         assert(lhs.get_capacity()[i] == rhs.get_capacity()[i]);
     }
 }
@@ -75,5 +75,15 @@ int main()
     assert((*moveconst_second.get_referencecounter())[moveconst_second.get_address()] == 3);
     assert_hdfdatasets(crosscheck, moveconst_second);
 
+    // test open method
+    while (H5Iis_valid(moveconst_second.get_id()))
+    {
+        moveconst_second.close();
+    }
+    assert(H5Iis_valid(moveconst_second.get_id()) == false);
+
+    HDFDataset<HDFGroup> opened_dataset;
+    opened_dataset.open(moveconst_second.get_parent(), moveconst_second.get_name());
+    assert(H5Iis_valid(opened_dataset.get_id()) == true);
     return 0;
 }
