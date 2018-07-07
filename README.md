@@ -24,11 +24,6 @@ clone the submodule repositories:
     git clone --recurse-submodules https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia.git
 
 #### Submodules troubleshooting
-If you already cloned the main repository but from a point where the submodules
-were not yet present, you need to pull the submodules using:
-
-    git submodule update --init --recursive
-
 After performing an update of the code base using `git pull`, or checking out a
 new branch with `git checkout`, you need to update the submodules' tree
 explicitly by calling
@@ -36,6 +31,11 @@ explicitly by calling
     git submodule update
 
 This will perform a `git checkout` of the specified commit in all submodules.
+
+If you already cloned the main repository but from a point where the submodules
+were not yet present, you need to pull the submodules for the first time using:
+
+    git submodule update --init --recursive
 
 
 ### Dependencies
@@ -48,21 +48,31 @@ This will perform a `git checkout` of the specified commit in all submodules.
 | pkg-config | | |
 | [HDF5](https://www.hdfgroup.org/solutions/hdf5/) | >= 1.10. | |
 | [yaml-cpp](https://github.com/jbeder/yaml-cpp) | 0.6.2 | Included as submodule |
+| [spdlog](https://github.com/gabime/spdlog) | >= 0.17.0 | Included as submodule |
 | [Boost](http://www.boost.org/) | >= 1.65 | |
 | [dune-common](https://gitlab.dune-project.org/core/dune-common) | master | |
 | [dune-geometry](https://gitlab.dune-project.org/core/dune-geometry) | master | |
 | [dune-grid](https://gitlab.dune-project.org/core/dune-grid) | master | |
 | [dune-uggrid](https://gitlab.dune-project.org/staging/dune-uggrid) | master | |
-| Python | >= 3.6 | Earlier Python3 versions _may_ work, but are not tested |
-| [paramspace](https://ts-gitlab.iup.uni-heidelberg.de/yunus/paramspace) | >= 1.0.1 | |
-| [dantro](https://ts-gitlab.iup.uni-heidelberg.de/utopia/dantro) | >= 0.1 |  |
 
-### Recommended
+#### Python
+Utopia's frontend, `utopya`, uses Python >= 3.6 and some custom packages.
+Earlier Python versions _might_ work, but are not tested.
+
+| Software | Version | Purpose |
+| ---------| ------- | ------- |
+| [paramspace](https://ts-gitlab.iup.uni-heidelberg.de/yunus/paramspace) | >= 1.0.1 | Makes parameter sweeps easy |
+| [dantro](https://ts-gitlab.iup.uni-heidelberg.de/utopia/dantro) | >= 0.1 | A data loading and plotting framework |
+
+If you have ssh-keys configured to access this GitLab, these packages and their dependencies will automatically be installed into a virtual environment.
+If not, please see the troubleshooting section in the step-by-step instructions.
+
+#### Recommended
 | Software | Version | Purpose |
 | ---------| ------- | ------- |
 | [doxygen](http://www.stack.nl/~dimitri/doxygen/) | >= 1.8.14 | Builds the code documentation upon installation |
 
-### Optional Packages
+#### Optional Packages
 | Software | Version | Purpose |
 | -------- | ------- | ------- |
 | [PSGraf](https://ts-gitlab.iup.uni-heidelberg.de/tools/psgraf)| master | Data visualization on the fly |
