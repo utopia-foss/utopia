@@ -31,9 +31,8 @@ s1_fraction: 0.5        # only used for 'fraction' initial state
 # NOTE for the single-cell modes, both grid extensions need to be odd-valued
 
 # Defining the interaction matrix through the benefit b:
-b: 1.58               # ignored if either ia_matrix or bc_pair is given
+b: 1.58                 # ignored if either ia_matrix or bc_pair is given
 
 # The following parameters can also be given
-# They will always result in a Prisoners' Dillema situation
 # bc_pair: [1, 0]       # ignored if ia_matrix is given
 # ia_matrix: [[1, 2], [3, 4]]

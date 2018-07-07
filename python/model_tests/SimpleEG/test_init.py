@@ -32,7 +32,7 @@ def ia_matrix_from_bc(*, b, c):
 
 def assert_eq(a, b, *, epsilon=1e-6):
     """Assert that two quantities are equal within a numerical epsilon range"""
-    assert(np.absolute(a-b) < epsilon)
+    assert(abs(a-b) < epsilon)
 
 def check_ia_matrices(m1, m2):
     """Check that the matrix elements are equal"""
@@ -197,8 +197,7 @@ def test_ia_matrix_extraction():
     """Test that the ia_matrix is extracted correctly from the config"""
     
     # Test all possible combinations
-    # 
-    # The different yaml configuration files provide the following different cases:
+    # The different yaml config files provide the following different cases:
     #   0:        ia_matrix: [[1, 2], [3, 4]]
     #   1:        bc_pair: [4, 5]
     #   2:        b: 1.9
@@ -213,9 +212,9 @@ def test_ia_matrix_extraction():
     #             ia_matrix: [[1, 2], [3, 4]]
     #   7:        -
     #
-    # The default parameter is: b=1.6
+    # The default parameter is: b = 1.58
 
-    # Define the interaction matrices
+    # Define the interaction matrix values to test against
     m = []
     m.append([[1,2],[3,4]])                 # case 0 
     m.append(ia_matrix_from_bc(b=4,c=5))    # case 1
@@ -224,24 +223,24 @@ def test_ia_matrix_extraction():
     m.append([[1,2],[3,4]])                 # case 4  
     m.append([[1,2],[3,4]])                 # case 5 
     m.append([[1,2],[3,4]])                 # case 6
-    m.append(ia_matrix_from_b(1.6))         # case 7
+    m.append(ia_matrix_from_b(1.58))        # case 7
 
-    # Create 8 multiverses with all possible combinations of providing an ia_matrix 
-    # and save the data managers in a list
+    # Create 8 multiverses with all possible combinations of providing an
+    # ia_matrix and save the corresponding data managers in a list
     dms = []
     
     # Create, run, and lad the multiverses
-    for i in np.arange(0,8):
+    for i in range(8):
         _, dm = mtc.create_run_load(from_cfg="ia_matrix_case{}.yml".format(i))
 
         dms.append(dm)
 
-    # For each universe, check whether the used interaction matrices are correct
+    # For each data manager, check whether the ia_matrices are correct
     for i, dm in enumerate(dms):
-        # Get the interaction matrix from the simulation run
-        dm_grp = dm['uni']['0']['data']['SimpleEG']
-        ia_matrix = dm_grp.attrs['ia_matrix']
+        # Get the interaction matrix from the data attributes
+        grp = dm['uni']['0']['data']['SimpleEG']
+        ia_matrix = grp.attrs['ia_matrix']
         
-        # Check whether the ia_matrix that should be used and the one actually used 
-        # in the simulation are equal
-        check_ia_matrices(m[i],ia_matrix)
+        # Check whether the ia_matrix that should be used and the one actually
+        # used in the simulation are equal
+        check_ia_matrices(m[i], ia_matrix)
