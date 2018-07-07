@@ -35,6 +35,9 @@ variables:
   # Directories
   MODEL_DIR: $CI_PROJECT_DIR/dune/utopia/models
 
+  # Load submodules and submodules of submodules by default
+  GIT_SUBMODULE_STRATEGY: recursive
+
 # Define the image to use as base for all stages
 # NOTE that some jobs overwrite this setting locally
 image: ${DUNE_IMAGE}
