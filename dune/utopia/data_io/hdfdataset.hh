@@ -191,17 +191,45 @@ private:
         using result_type = remove_qualifier_t<decltype(adaptor(*begin))>;
         // now that the dataset has been made let us write to it
         // buffering at first
-        auto buffer =
-            HDFBufferFactory::buffer(begin, end, std::forward<Adaptor&&>(adaptor));
-
-        // write to buffer
-        herr_t write_err = H5Dwrite(_dataset, HDFTypeFactory::type<result_type>(),
-                                    memspace, dspace, H5P_DEFAULT, buffer.data());
-        if (write_err < 0)
+        if constexpr (is_container_v<result_type>)
         {
-            throw std::runtime_error("Writing to 1D dataset failed!");
-            // FIXME Is this really only 1D?
-            // FIXME Could we add some info here, e.g. the name of the dataset?
+            // make an intermediate buffer which then can be turned into hvl_t.
+            std::vector<result_type> temp(std::distance(begin, end));
+            std::generate(temp.begin(), temp.end(),
+                          [&begin, &adaptor]() { return adaptor(*(begin++)); });
+
+            // then turn this temporary buffer into a hvl_t thing, then write.
+            auto buffer = HDFBufferFactory::buffer(
+                temp.begin(), temp.end(),
+                [](auto& val) -> result_type& { return val; });
+
+            // write to buffer
+            herr_t write_err =
+                H5Dwrite(_dataset, HDFTypeFactory::type<result_type>(),
+                         memspace, dspace, H5P_DEFAULT, buffer.data());
+            if (write_err < 0)
+            {
+                throw std::runtime_error("Writing to 1D dataset failed!");
+                // FIXME Is this really only 1D?
+                // FIXME Could we add some info here, e.g. the name of the dataset?
+            }
+        }
+        else
+        {
+            auto buffer = HDFBufferFactory::buffer(
+                begin, end, std::forward<Adaptor&&>(adaptor));
+
+            // write to buffer
+            herr_t write_err =
+                H5Dwrite(_dataset, HDFTypeFactory::type<result_type>(),
+                         memspace, dspace, H5P_DEFAULT, buffer.data());
+
+            if (write_err < 0)
+            {
+                throw std::runtime_error("Writing to 1D dataset failed!");
+                // FIXME Is this really only 1D?
+                // FIXME Could we add some info here, e.g. the name of the dataset?
+            }
         }
     }
 

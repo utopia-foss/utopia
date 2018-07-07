@@ -9,11 +9,21 @@
 #include <cassert>
 #include <cmath>
 #include <cstdio>
+#include <fstream>
 #include <iostream>
+#include <random>
 #include <string>
 #include <vector>
 
 using namespace Utopia::DataIO;
+
+// used for testing rvalue container returning adaptors
+struct Point
+{
+    double x;
+    double y;
+    double z;
+};
 
 // helper function for making a non compressed dataset
 template <typename Datatype>
@@ -92,14 +102,14 @@ void write_dataset_onedimensional(HDFFile& file)
     testdataset2.write(data.begin(), data.end(),
                        [](auto& value) { return value; });
 
-    HDFDataset<HDFGroup> compressed_dataset(testgroup1, "compressed_dataset");
+    HDFDataset compressed_dataset(testgroup1, "compressed_dataset");
     compressed_dataset.write(data.begin(), data.end(),
                              [](auto& value) { return value; }, 1,
                              {data.size()}, {}, 20, 5);
 
     compressed_dataset.close();
 
-    HDFDataset<HDFGroup> compressed_dataset2(testgroup1, "compressed_dataset");
+    HDFDataset compressed_dataset2(testgroup1, "compressed_dataset");
 
     for (auto& value : data)
     {
@@ -111,7 +121,7 @@ void write_dataset_onedimensional(HDFFile& file)
     // 1d dataset variable length
     std::vector<std::vector<double>> data_2d(100, std::vector<double>(10, 3.16));
 
-    HDFDataset<HDFGroup> varlen_dataset(testgroup1, "varlendataset");
+    HDFDataset varlen_dataset(testgroup1, "varlendataset");
     varlen_dataset.write(
         data_2d.begin(), data_2d.end(),
         [](auto& value) -> std::vector<double>& { return value; }, 1, {100});
@@ -151,6 +161,15 @@ void write_dataset_onedimensional(HDFFile& file)
                            [](auto& value) { return value; }, 1, {100}, {}, 50);
     std::string attr2 = "Second attribute to multirefdataset";
     multirefdataset2.add_attribute("Attribute2", attr2);
+
+    std::vector<Point> points(100, Point{3., 4., 5.});
+
+    // writing rvalue to dataset
+    HDFDataset rvaluedataset(*file.get_basegroup(), "/rvalueset");
+
+    rvaluedataset.write(points.begin(), points.end(), [](auto& pt) {
+        return std::vector<double>{pt.x, pt.y, pt.z};
+    });
 }
 
 void write_dataset_multidimensional(HDFFile& file)

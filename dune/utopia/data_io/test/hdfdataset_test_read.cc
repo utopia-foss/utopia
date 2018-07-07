@@ -10,11 +10,18 @@
 #include <cassert>
 #include <cmath>
 #include <cstdio>
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
 
 using namespace Utopia::DataIO;
+struct Point
+{
+    double x;
+    double y;
+    double z;
+};
 
 void read_dataset_tests(HDFFile& file)
 {
@@ -22,14 +29,17 @@ void read_dataset_tests(HDFFile& file)
     HDFGroup testgroup2(*file.get_basegroup(), "/testgroup2");
     HDFGroup multidimgroup(*file.get_basegroup(), "/multi_dim_data");
 
-    HDFDataset<HDFGroup> testdataset(testgroup2, "testdataset");
-    HDFDataset<HDFGroup> testdataset2(testgroup1, "testdataset2");
-    HDFDataset<HDFGroup> compressed_dataset(testgroup1, "compressed_dataset");
-    HDFDataset<HDFGroup> multidimdataset(multidimgroup, "multiddim_dataset");
-    HDFDataset<HDFGroup> multidimdataset_compressed(
-        multidimgroup, "multiddim_dataset_compressed");
-    HDFDataset<HDFGroup> multidimdataset_extendable(
-        multidimgroup, "multiddim_dataset_extendable");
+    HDFDataset testdataset(testgroup2, "testdataset");
+    HDFDataset testdataset2(testgroup1, "testdataset2");
+    HDFDataset compressed_dataset(testgroup1, "compressed_dataset");
+    HDFDataset multidimdataset(multidimgroup, "multiddim_dataset");
+    HDFDataset multidimdataset_compressed(multidimgroup,
+                                          "multiddim_dataset_compressed");
+    HDFDataset multidimdataset_extendable(multidimgroup,
+                                          "multiddim_dataset_extendable");
+
+    HDFDataset rvaluedataset(*file.get_basegroup(), "rvalueset");
+    HDFDataset varlen_dataset(testgroup1, "varlendataset");
 
     // read entire 1d dataset
     std::vector<double> data(100, 3.14);
@@ -147,6 +157,34 @@ void read_dataset_tests(HDFFile& file)
     assert(multirefattrdata2 == attr2);
     assert(shape2.size() == 1);
     assert(shape2[0] == 1);
+
+    // read from varlendataset
+    std::vector<std::vector<double>> data_2d(100, std::vector<double>(10, 3.16));
+
+    auto varlendata = varlen_dataset.read<std::vector<double>>();
+    assert(varlendata.size() == 100);
+    for (std::size_t l = 0; l < 100; ++l)
+    {
+        assert(varlendata[l].size() == 10);
+        for (std::size_t k = 0; k < 10; ++k)
+        {
+            assert(std::abs(varlendata[l][k] - 3.16) < 1e-16);
+        }
+    }
+
+    // read from rvalue dataset
+    std::vector<Point> points(100, Point{3., 4., 5.});
+
+    auto ptvec = rvaluedataset.read<std::vector<double>>();
+
+    assert(ptvec.size() == 100);
+    for (std::size_t l = 0; l < 100; ++l)
+    {
+        assert(ptvec[l].size() == 3);
+        assert(std::abs(points[l].x - ptvec[l][0]) < 1e-16);
+        assert(std::abs(points[l].y - ptvec[l][1]) < 1e-16);
+        assert(std::abs(points[l].z - ptvec[l][2]) < 1e-16);
+    }
 }
 
 int main()
