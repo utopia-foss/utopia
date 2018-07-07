@@ -54,16 +54,25 @@ were not yet present, you need to pull the submodules for the first time using:
 | [dune-geometry](https://gitlab.dune-project.org/core/dune-geometry) | master | |
 | [dune-grid](https://gitlab.dune-project.org/core/dune-grid) | master | |
 | [dune-uggrid](https://gitlab.dune-project.org/staging/dune-uggrid) | master | |
-| Python | >= 3.6 | Earlier Python3 versions _may_ work, but are not tested |
-| [paramspace](https://ts-gitlab.iup.uni-heidelberg.de/yunus/paramspace) | >= 1.0.1 | |
-| [dantro](https://ts-gitlab.iup.uni-heidelberg.de/utopia/dantro) | >= 0.1 |  |
 
-### Recommended
+#### Python
+Utopia's frontend, `utopya`, uses Python >= 3.6 and some custom packages.
+Earlier Python versions _might_ work, but are not tested.
+
+| Software | Version | Purpose |
+| ---------| ------- | ------- |
+| [paramspace](https://ts-gitlab.iup.uni-heidelberg.de/yunus/paramspace) | >= 1.0.1 | Makes parameter sweeps easy |
+| [dantro](https://ts-gitlab.iup.uni-heidelberg.de/utopia/dantro) | >= 0.1 | A data loading and plotting framework |
+
+If you have ssh-keys configured to access this GitLab, these packages and their dependencies will automatically be installed into a virtual environment.
+If not, please see the troubleshooting section in the step-by-step instructions.
+
+#### Recommended
 | Software | Version | Purpose |
 | ---------| ------- | ------- |
 | [doxygen](http://www.stack.nl/~dimitri/doxygen/) | >= 1.8.14 | Builds the code documentation upon installation |
 
-### Optional Packages
+#### Optional Packages
 | Software | Version | Purpose |
 | -------- | ------- | ------- |
 | [PSGraf](https://ts-gitlab.iup.uni-heidelberg.de/tools/psgraf)| master | Data visualization on the fly |
