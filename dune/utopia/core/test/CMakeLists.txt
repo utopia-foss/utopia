@@ -35,10 +35,10 @@ foreach(test ${TESTS_CORE})
 endforeach(test)
 
 # add EPSWriter test and link to PSGraf library
-if(PSGRAF_FOUND)
-    dune_add_test(NAME CORE_output_epswriter_test SOURCES output_epswriter_test.cc)
-    target_link_libraries(output_epswriter_test ${PSGRAF_LIBRARIES})
-endif()
+#if(PSGRAF_FOUND)
+#    dune_add_test(NAME CORE_output_epswriter_test SOURCES output_epswriter_test.cc)
+#    target_link_libraries(output_epswriter_test ${PSGRAF_LIBRARIES})
+#endif()
 
 # add custom target for 'CORE' prefix
 add_custom_target(test_core

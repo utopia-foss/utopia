@@ -733,8 +733,19 @@ public:
         }
         else
         {
-            // buffer data, have to because we cannot write iterator ranges
-            write(HDFBufferFactory::buffer(begin, end, adaptor), shape);
+            // intermediate buffer step to be sure we have lvalues
+            // std::vector<Type> buff;
+            // buff.reserve(std::distance(begin, end));
+            // for (; begin != end; ++begin)
+            // {
+            //     buff.push_back(adaptor(*begin));
+            // }
+
+            std::vector<Type> buff(std::distance(begin, end));
+            std::generate(buff.begin(), buff.end(),
+                          [&begin, &adaptor]() { return adaptor(*(begin++)); });
+
+            write(buff, shape);
         }
     }
 
