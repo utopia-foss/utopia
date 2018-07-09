@@ -14,6 +14,13 @@ namespace Utopia {
 // -- Config access convenience functions -- //
 
 /// General config access via template parameter
+/** This function is a wrapper for the yaml-cpp `YAML::Node::as` fuction with
+ *  helpful error messages.
+ *  \tparam ReturnType The type to evaluate from the YAML::Node
+ *  \param node The configuration node to evaluate
+ *  \return The value of the node cast to ReturnType
+ *  \throw YAML::Exception On bad conversions or non-existent nodes
+ */
 template<typename ReturnType>
 ReturnType as_(const Utopia::DataIO::Config& node) {
     // Try reading
@@ -70,28 +77,28 @@ ReturnType as_(const Utopia::DataIO::Config& node) {
 
 // -- Shortcuts -- //
 
-/// Shortcut to retrieve an entry as double
+/// Shortcut to retrieve a config entry as double
 double as_double(const Utopia::DataIO::Config& node) {
     return as_<double>(node);
 }
 
-/// Shortcut to retrieve an entry as bool
+/// Shortcut to retrieve a config entry as bool
 bool as_bool(const Utopia::DataIO::Config& node) {
     return as_<bool>(node);
 }
 
-/// Shortcut to retrieve an entry as std::string
+/// Shortcut to retrieve a config entry as std::string
 std::string as_str(const Utopia::DataIO::Config& node) {
     return as_<std::string>(node);
 }
 
-/// Shortcut to retrieve an entry as std::vector
+/// Shortcut to retrieve a config entry as std::vector
 template<typename T>
 std::vector<T> as_vector(const Utopia::DataIO::Config& node) {
     return as_<std::vector<T>>(node);
 }
 
-/// Shortcut to retrieve an entry as std::array
+/// Shortcut to retrieve a config entry as std::array
 template<typename T, std::size_t len>
 std::array<T, len> as_array(const Utopia::DataIO::Config& node) {
     return as_<std::array<T, len>>(node);
