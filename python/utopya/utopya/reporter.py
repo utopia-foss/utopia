@@ -890,10 +890,9 @@ class WorkerManagerReporter(Reporter):
         Returns:
             str: The multi-line simulation report
         """
-
-        rtstats = self.calc_runtime_statistics(min_num=min_num)
-
+        # List that contains the parts that will be written
         parts = []
+        
         # Add header 
         parts.append("Runtime Statistics")
         parts.append("------------------")
@@ -904,6 +903,9 @@ class WorkerManagerReporter(Reporter):
         parts.append("  # universes:     {}".format(len(self.runtimes)))
         parts.append("")
 
+        # Calculate the runtime statistics and add them to the parts
+        rtstats = self.calc_runtime_statistics(min_num=min_num)
+        
         if rtstats is not None:
 
             parts += [fstr.format(k=k, v=tools.format_time(v, ms_precision=1))
