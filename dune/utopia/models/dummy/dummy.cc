@@ -1,4 +1,3 @@
-#include <iostream>       // std::cout, std::endl
 #include <thread>         // std::this_thread::sleep_for
 #include <chrono>         // std::chrono::seconds
 
@@ -30,9 +29,10 @@ int main (int argc, char** argv)
 
         // And iterate it for a number of steps
         auto num_steps = as_<int>(cfg["num_steps"]);
-        std::cout << "num_steps: " << num_steps << std::endl;
-        std::cout << "Starting iteration ..." << std::endl;
+        pp.get_logger()->info("num_steps: {}", num_steps);
+        pp.get_logger()->info("Starting model iteration ...");
 
+        // TODO use future pseudo parent features for iteration
         for(int i = 0; i < num_steps; ++i) {
             model.iterate();
         }
@@ -42,11 +42,13 @@ int main (int argc, char** argv)
         unsigned int num_sleeps = 3;
 
         for (unsigned int i = 0; i < num_sleeps; ++i) {
-            std::cout << "Sleep #" << (i+1) << " ..." << std::endl;
+            pp.get_logger()->info("Sleep #{}", i+1);
             std::this_thread::sleep_for(std::chrono::milliseconds(sleep_time));
         }
 
-        std::cout << "All done." << std::endl << "Really." << std::endl;
+        // Test messages needed to assert that all output is read by frontend:
+        pp.get_logger()->info("All done.");
+        pp.get_logger()->info("Really.");
         return 0;
     }
     catch (std::exception& e) {
