@@ -36,7 +36,7 @@ public:
         // Pass arguments to the base class constructor
         Base(name, parent_model),
         // Store level
-        level(cfg["level"].as<unsigned int>())
+        level(as_<unsigned short>(cfg["level"]))
     {
         std::cout << "  DoNothingModel '" << name << "' initialized. "
                   << "Level: " << level << std::endl;
@@ -77,7 +77,7 @@ public:
         // Pass arguments to the base class constructor
         Base(name, parent_model),
         // Store level
-        level(cfg["level"].as<unsigned int>()),
+        level(as_<unsigned short>(cfg["level"])),
         // Submodel initialization
         lazy("lazy", *this)
     {
@@ -126,7 +126,7 @@ public:
         // Pass arguments to the base class constructor
         Base(name, parent_model),
         // Store level
-        level(cfg["level"].as<unsigned int>()),
+        level(as_<unsigned short>(cfg["level"])),
         // Submodel initialization
         sub_one("one", parent_model),
         sub_lazy("lazy", *this)
@@ -174,7 +174,7 @@ public:
         // Initialize completely via parent class constructor
         Base(name, parent_model),
         // Store level
-        level(cfg["level"].as<unsigned int>()),
+        level(as_<unsigned short>(cfg["level"])),
         // Submodel initialization
         sub_one("one", *this),
         sub_another("another", *this)

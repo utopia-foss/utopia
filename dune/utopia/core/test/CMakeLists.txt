@@ -1,4 +1,4 @@
-# place mesh in build directory
+# place mesh and config files in build directory
 file(COPY "square.msh" "cube.msh"
           "model_test.yml"
           "model_nested_test.yml"
