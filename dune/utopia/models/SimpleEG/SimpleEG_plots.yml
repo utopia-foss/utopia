@@ -21,17 +21,6 @@ frequencies:
   uni: 0
   strategy: [S0, S1]
 
-# # plot the spatial development in the CA of the strategy
-# frequencies:
-#   creator: external
-
-#   module: model_plots.SimpleEG
-#   plot_func: ca_development
-
-#   uni: 0
-#   quantity: strategy
-
-
 # plot the spatial development in the CA of the strategy
 strategy:
   creator: external
@@ -41,17 +30,19 @@ strategy:
   plot_func: grid_animation
 
   uni: 0
-  # to_plot:
-  #   strategy:
-  #     cmap: viridis
-  #     range: [0, 1]
+  to_plot:
+    strategy:
+      cmap: viridis
+      limits: [0, 1]
+      title: 'Strategy'
       
-  #   payoff: 
-  #     cmap: viridis
-  #     range: [0, 1]
-  properties: [strategy]
-  cmaps: [viridis]
-  rngs: [[0, 1]]
+    payoff: 
+      cmap: inferno
+      limits: [0, 12]
+      title: 'Payoff'
+  # properties: [strategy]
+  # cmaps: [viridis]
+  # rngs: [[0, 1]]
   
   # Video options
   fps: 1
