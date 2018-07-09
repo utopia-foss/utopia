@@ -632,7 +632,7 @@ class WorkerManagerReporter(Reporter):
             OrderedDict: name of the calculated statistic and its value, i.e.
                 the runtime in seconds
         """
-        if len(self.runtimes) <= min_num:
+        if len(self.runtimes) < min_num:
             # Only calculate if there is enough data
             return None
         
@@ -855,7 +855,7 @@ class WorkerManagerReporter(Reporter):
 
     # Multi-line parsers . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
-    def _parse_runtime_stats(self, fstr: str="  {k:<13s} {v:}", join_char="\n", report_no: int=None) -> str:
+    def _parse_runtime_stats(self, *, fstr: str="  {k:<13s} {v:}", join_char="\n", report_no: int=None) -> str:
         """Parses the runtime statistics dict into a multiline string
         
         Args:
@@ -876,3 +876,40 @@ class WorkerManagerReporter(Reporter):
 
         return join_char.join(parts)
 
+    def _parse_sim_report(self, *, fstr: str="  {k:<13s} {v:}", min_num: int=1, report_no: int=None) -> str:
+        """Parses the report of the simulation into a multiline string
+        
+        Keyword Arguments:
+            fstr (str, optional): The format string to use. Gets passed the
+                keys 'k' and 'v' where k is the name of the entry and v its
+                value.
+            min_num (int, optional): The minimum number of runs 
+                before the simulation report is generated.
+            report_no (int, optional): Passed by ReportFormat call
+        
+        Returns:
+            str: The multi-line simulation report
+        """
+
+        rtstats = self.calc_runtime_statistics(min_num=min_num)
+
+        parts = []
+        # Add header 
+        parts.append("Runtime Statistics")
+        parts.append("------------------")
+        parts.append("")
+        parts.append("This report contains the runtime statistics of a multiverse simulation run.")
+        parts.append("The statistics is calculated from universe run times.")
+        parts.append("")
+        parts.append("  # universes:     {}".format(len(self.runtimes)))
+        parts.append("")
+
+        if rtstats is not None:
+
+            parts += [fstr.format(k=k, v=tools.format_time(v, ms_precision=1))
+                    for k, v in rtstats.items()]
+
+            return " \n".join(parts)
+
+        else:
+            return "No simulation report generated because no runtime statistics was calculated."
