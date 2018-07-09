@@ -61,6 +61,14 @@ reporter:
       show_times: true
       write_to: stdout_noreturn
 
+    # Creates a report file containing runtime statistics
+    report_file:
+      parser: sim_report
+      write_to: 
+        file: 
+          path: _report.txt
+      min_report_intv: 10     # update the file if min_report_intv seconds have passed.
+
   # Can define a default format to use
   # default_format: ~
 
@@ -90,9 +98,9 @@ worker_manager:
   rf_spec:
     while_working: while_working
     task_spawned: while_working
-    task_finished: while_working
-    after_work: after_work
-    after_abort: after_work
+    task_finished: [while_working, report_file]
+    after_work: [after_work, report_file]
+    after_abort: [after_work, report_file]
 
 
 # Configuration for the WorkerManager.start_working method
@@ -128,7 +136,7 @@ worker_kwargs:
   # reduce I/O operations on files
   
   # Whether to forward the streams to stdout
-  forward_streams: 'in_single_run'
+  forward_streams: in_single_run
   # can be: true, false, or 'in_single_run' (print only in single runs)
 
   # The log level at which the streams should be forwarded to stdout
