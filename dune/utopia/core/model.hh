@@ -3,7 +3,7 @@
 
 #include <dune/utopia/data_io/hdffile.hh>
 #include <dune/utopia/data_io/hdfgroup.hh>
-#include <yaml-cpp/yaml.h>
+#include <dune/utopia/data_io/cfg_utils.hh>
 
 namespace Utopia {
 

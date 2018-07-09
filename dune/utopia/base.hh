@@ -47,7 +47,5 @@
 
 // UTOPIA
 #include "core/types.hh"
-#include "data_io/types.hh"
-#include "data_io/cfg_utils.hh"
 
 #endif // UTOPIA_BASE_HH
