@@ -72,12 +72,7 @@ If not, please see the troubleshooting section in the step-by-step instructions.
 | ---------| ------- | ------- |
 | [doxygen](http://www.stack.nl/~dimitri/doxygen/) | >= 1.8.14 | Builds the code documentation upon installation |
 
-#### Optional Packages
-| Software | Version | Purpose |
-| -------- | ------- | ------- |
-| [PSGraf](https://ts-gitlab.iup.uni-heidelberg.de/tools/psgraf)| master | Data visualization on the fly |
 
-Install PSGraf according to its installation manual. When executing `dunecontrol`, append `CMAKE_FLAGS="-DPSGRAF_ROOT=<path/to/psgraf/build>"`. If PSGraf is found, the preprocessor macro `HAVE_PSGRAF` is set.
 
 ### Step-by-step Instructions
 These instructions are intended for 'clean' __Ubuntu__ (18.04) or __macOS__ setups.
