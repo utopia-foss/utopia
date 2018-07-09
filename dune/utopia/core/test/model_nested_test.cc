@@ -43,11 +43,11 @@ int main(int argc, char *argv[])
         log->debug("Commencing tests ...");
 
         // Iterate model; should also iterate submodels
-        log->debug("  Performing single iteration ...");
+        log->debug("Performing single iteration ...");
         root.iterate();
 
         // Check that all models were iterated
-        log->debug("  Asserting correct iteration ...");
+        log->debug("Asserting correct iteration ...");
         // level 0
         assert(root.get_time() == 1);
         // level 1
@@ -65,8 +65,6 @@ int main(int argc, char *argv[])
         assert(root.sub_another.get_logger()->level() == spdlog::level::debug);
         assert(root.sub_one.get_logger()->level() == spdlog::level::trace);
         assert(root.sub_one.lazy.get_logger()->level() == spdlog::level::trace);
-
-        log->debug("  correct");
 
         log->info("Tests successful. :)");
 
