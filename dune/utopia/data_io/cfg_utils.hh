@@ -6,9 +6,6 @@
 
 #include "types.hh"
 
-// Declare the class for the config nodes
-using Config = Utopia::DataIO::Config;
-
 
 namespace Utopia {
 // NOTE This is not inside the Utopia::DataIO namespace to make includes more
@@ -18,7 +15,7 @@ namespace Utopia {
 
 /// General config access via template parameter
 template<typename ReturnType>
-const ReturnType as_(Config node) {
+ReturnType as_(const Utopia::DataIO::Config& node) {
     // Try reading
     try {
         return node.template as<ReturnType>();
@@ -74,29 +71,29 @@ const ReturnType as_(Config node) {
 // -- Shortcuts -- //
 
 /// Shortcut to retrieve an entry as double
-double as_double(Config node) {
+double as_double(const Utopia::DataIO::Config& node) {
     return as_<double>(node);
 }
 
 /// Shortcut to retrieve an entry as bool
-bool as_bool(Config node) {
+bool as_bool(const Utopia::DataIO::Config& node) {
     return as_<bool>(node);
 }
 
 /// Shortcut to retrieve an entry as std::string
-const std::string as_str(Config node) {
+std::string as_str(const Utopia::DataIO::Config& node) {
     return as_<std::string>(node);
 }
 
 /// Shortcut to retrieve an entry as std::vector
 template<typename T>
-const std::vector<T> as_vector(Config node) {
+std::vector<T> as_vector(const Utopia::DataIO::Config& node) {
     return as_<std::vector<T>>(node);
 }
 
 /// Shortcut to retrieve an entry as std::array
 template<typename T, std::size_t len>
-const std::array<T, len> as_array(Config node) {
+std::array<T, len> as_array(const Utopia::DataIO::Config& node) {
     return as_<std::array<T, len>>(node);
 }
 
