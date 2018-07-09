@@ -45,8 +45,27 @@ p_run.add_argument('--sim-errors',
                         "errors in simulations are handled. Allowed values "
                         "are: 'ignore', 'warn', 'raise'. "
                         "If not given, the default from the base config or "
-                        "(if set) the user configuration is used.") 
-# TODO make possible to set simulation steps here
+                        "(if set) the user configuration is used.")
+p_run.add_argument('--num-steps',
+                   default=None, nargs='?', type=int,
+                   help="Sets the number of simulation steps to this value.")
+
+# plotting after the run
+p_run.add_argument('--no-plot',
+                   action='store_true',
+                   help="If set, no plots will be created. Note that plotting "
+                        "capabilities via the Multiverse or the CLI are not "
+                        "yet implemented, thus you will have to do the plots "
+                        "manually if you pass this option.") # TODO implement
+p_run.add_argument('--plots-cfg',
+                   default=None, nargs='?',
+                   help="If given, uses the plots configuration file found "
+                        "at this path instead of the defaults of the model.")
+p_run.add_argument('--plot-only',
+                   default=None, nargs='*',
+                   help="If given, will plot only those entries of the plot "
+                        "configuration that match the names given here.")
+
 
 # subcommand: config ..........................................................
 p_cfg.add_argument('--deploy',
@@ -56,10 +75,13 @@ p_cfg.add_argument('--deploy',
                         "action if a file already exists at that location.")
 # TODO add --get and --set to easily manipulate entries
 
+
 # subcommand: TODO ............................................................
 # ...
 
-# CLI defined. Parse the arguments now.
+
+
+# CLI defined now. Parse the arguments...
 args = parser.parse_args()
 
 
@@ -91,10 +113,19 @@ if __name__ == '__main__':
     if args.sim_errors:
         update_dict['worker_manager'] = dict(nonzero_exit_handling=args.sim_errors)
 
+    # Set number of simulation steps
+    if args.num_steps:
+        if args.num_steps < 0:
+            raise ValueError("Argument --num-steps needs to be positive, was "
+                             "{}.".format(args.num_steps))
+        update_dict['parameter_space'] = dict(num_steps=args.num_steps)
+
+
+    # Preparations finished now
     # Using the args, instantiate a Multiverse object
     mv = utopya.Multiverse(model_name=args.model_name,
                            run_cfg_path=args.run_cfg_path,
-                           update_meta_cfg=update_dict)
+                           **update_dict)
     
     
     # Perform the run .........................................................
@@ -114,11 +145,21 @@ if __name__ == '__main__':
 
         else:
             mv.run()
-            
+
 
     # Loading an Utopia run ...................................................
-    # TODO
+    # Only need to continue if plots are to be created
+    if args.no_plot:
+        sys.exit()
+
+    # Tell the DataManager to load
+    mv.dm.load_from_cfg(print_tree=True)
+    # NOTE This will load the data using the utopya default configuration
 
 
     # Plotting ................................................................
-    # TODO
+    # Tell the PlotManager to plot
+    mv.pm.plot_from_cfg(plots_cfg=args.plots_cfg, plot_only=args.plot_only)
+    # NOTE If plots_cfg was not given, this uses the plot configuration that
+    #      belongs to the model. If it is given, the configuration is loaded
+    #      from the given file path.

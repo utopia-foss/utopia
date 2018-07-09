@@ -2,11 +2,12 @@
 side of utopia, e.g. information on which model targets are available and what
 the paths to their source and binary directories are.
 
-Note that this is not a usual python module, but is merely used to hold this
-information data and make it easily accessible to utopya.
+Note that this is not a usual python module, but is merely used to receive and
+parse information and make it easily accessible to other utopya modules.
 """
 
 import os
+import glob
 
 # Begin of CMake configured variables .........................................
 _LAST_CONFIG_TIME = "@CURRENT_TIME@"
@@ -57,7 +58,34 @@ def parse_model_info() -> dict:
                          src_dir=os.path.join(src_dir, sd))
                   for t, bp, sd in zip(targets, rel_bin_paths, rel_src_paths)}
 
+    # Extend model information
+    for target, _info in model_info.items():
+        # Get the source directory
+        src_dir = _info['src_dir']
+
+        # Add keys for certain additional files
+        for key, suffix, required in [("model_cfg", "_cfg.yml", True),
+                                      ("plots_cfg", "_plots.yml", False),
+                                      ]:
+            # Generate the path to search for the file at
+            path = os.path.join(src_dir, target + suffix)
+
+            # Check if it exists
+            if os.path.exists(path):
+                # Yes. Add the path to the dict
+                _info[key] = path
+
+            elif required:
+                # Nope, but was required. Raise an error.
+                raise FileNotFoundError("For target '{}', could not find "
+                                        "required '{}' file at: {}"
+                                        "".format(target, key, path))
+
+            else:
+                # Does not exist, but is not required either. Still add the key
+                _info[key] = None
+
     return model_info
 
-# Now declare those variables that are 
+# Make the model information available to other modules via:
 MODELS = parse_model_info()

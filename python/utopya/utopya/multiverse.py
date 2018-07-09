@@ -13,6 +13,7 @@ import paramspace as psp
 
 from utopya.datamanager import DataManager
 from utopya.workermanager import WorkerManager
+from utopya.plotting import PlotManager
 from utopya.task import enqueue_json
 from utopya.reporter import WorkerManagerReporter
 from utopya.tools import recursive_update, read_yml, write_yml, load_model_cfg
@@ -32,7 +33,7 @@ class Multiverse:
     Attributes:
         BASE_CFG_PATH (str): The path to the base configuration, supplied with
             the utopya package
-        meta_config (dict): The parsed Multiverse meta-configuration. All
+        meta_cfg (dict): The parsed Multiverse meta-configuration. All
             further arguments are extracted from this dict.
         model_name (str): The model name associated with this Multiverse
         USER_CFG_SEARCH_PATH (str): The path at which a user config is expected
@@ -41,20 +42,20 @@ class Multiverse:
     BASE_CFG_PATH = resource_filename('utopya', 'cfg/base_cfg.yml')
     USER_CFG_SEARCH_PATH = os.path.expanduser("~/.config/utopia/user_cfg.yml")
 
-    def __init__(self, *, model_name: str, run_cfg_path: str=None, update_meta_cfg: dict=None, user_cfg_path: str=None):
+    def __init__(self, *, model_name: str, run_cfg_path: str=None, user_cfg_path: str=None, **update_meta_cfg):
         """Initialize the Multiverse.
         
         Args:
             model_name (str): A valid name of Utopia model
             run_cfg_path (str, optional): The path to the run configuration.
-            update_meta_cfg (dict, optional): Can be used to update the meta
-                config that is generated from the run_cfg and user_cfg.
             user_cfg_path (str, optional): If given, this is used to update the
                 base configuration. If None, will look for it in the default
                 path, see Multiverse.USER_CFG_SEARCH_PATH.
+            **update_meta_cfg: Can be used to update the meta configuration
+                generated from 
         """
         # Initialize empty attributes (partly property-managed)
-        self._meta_config = None
+        self._meta_cfg = None
         self._model_name = None
         self._dirs = {}
 
@@ -69,13 +70,13 @@ class Multiverse:
                   self.model_name, self.model_binpath)
 
         # Create meta configuration and list of used config files
-        files = self._create_meta_config(run_cfg_path=run_cfg_path,
-                                         user_cfg_path=user_cfg_path,
-                                         update_meta_cfg=update_meta_cfg)
-        
+        files = self._create_meta_cfg(run_cfg_path=run_cfg_path,
+                                      user_cfg_path=user_cfg_path,
+                                      update_meta_cfg=update_meta_cfg)
+        # NOTE this already stores it in self._meta_cfg
 
         # Create the run directory and write the meta configuration into it
-        self._create_run_dir(**self.meta_config['paths'], cfg_parts=files)
+        self._create_run_dir(**self.meta_cfg['paths'], cfg_parts=files)
 
         # Provide some information
         log.info("  Run directory:  %s", self.dirs['run'])
@@ -83,15 +84,20 @@ class Multiverse:
         # Create a data manager
         self._dm = DataManager(self.dirs['run'],
                                name=self.model_name + "_data",
-                               **self.meta_config['data_manager'])
+                               **self.meta_cfg['data_manager'])
 
         # Create a WorkerManager instance and pass the reporter to it
-        self._wm = WorkerManager(**self.meta_config['worker_manager'])
+        self._wm = WorkerManager(**self.meta_cfg['worker_manager'])
 
         # Instantiate the Reporter
-        self._reporter = WorkerManagerReporter(self._wm,
+        self._reporter = WorkerManagerReporter(self.wm,
                                                report_dir=self.dirs['run'],
-                                               **self.meta_config['reporter'])
+                                               **self.meta_cfg['reporter'])
+
+        # And instantiate the PlotManager with the model-specific plot config
+        self._pm = PlotManager(dm=self.dm,
+                               plots_cfg=MODELS[self.model_name]['plots_cfg'],
+                               **self.meta_cfg['plot_manager'])
 
         log.info("Initialized Multiverse.")
 
@@ -123,20 +129,9 @@ class Multiverse:
         return self._model_binpath
 
     @property
-    def meta_config(self) -> dict:
+    def meta_cfg(self) -> dict:
         """The meta configuration."""
-        return self._meta_config
-
-    @meta_config.setter
-    def meta_config(self, d: dict) -> None:
-        """Set the meta configuration dict."""
-        if self._meta_config:
-            raise RuntimeError("Metaconfig can only be set once.")
-
-        elif not isinstance(d, dict):
-            raise TypeError("Can only interpret dictionary input for"
-                            " Metaconfig but {} was given".format(type(d)))
-        self._meta_config = d
+        return self._meta_cfg
 
     @property
     def dirs(self) -> dict:
@@ -153,25 +148,37 @@ class Multiverse:
         """The Multiverse's WorkerManager."""
         return self._wm
 
+    @property
+    def pm(self) -> PlotManager:
+        """The Multiverse's PlotManager."""
+        return self._pm
+
     # Public methods ..........................................................
-    # TODO the run methods should only be allowed to run once!
 
     def run(self):
         """Starts a Utopia run. Whether this will be a single simulation or
-        a Parameter sweep is decided by the contents of the meta_cfg."""
+        a parameter sweep is decided by the contents of the meta config.
+
+        Note that (currently) each Multiverse instance can _not_ perform
+        multiple runs!
+        """
         log.info("Preparing to run Multiverse ...")
 
         # Depending on the configuration, the corresponding methods can already be called.
-        if self.meta_config.get('perform_sweep'):
+        if self.meta_cfg.get('perform_sweep'):
             self.run_sweep()
         else:
             self.run_single()
     
     def run_single(self):
-        """Runs a single simulation."""
+        """Runs a single simulation.
+
+        Note that (currently) each Multiverse instance can _not_ perform
+        multiple runs!
+        """
 
         # Get the parameter space from the config
-        pspace = self.meta_config['parameter_space']
+        pspace = self.meta_cfg['parameter_space']
         
         # If this is a ParamSpace, we need to retrieve the default point
         if isinstance(pspace, psp.ParamSpace):
@@ -185,16 +192,23 @@ class Multiverse:
         log.info("Adding task for simulation of a single universe ...")
         self._add_sim_task(uni_id=0, max_uni_id=0, uni_cfg=uni_cfg)
 
+        # Prevent adding further tasks to disallow further runs
+        self.wm.tasks.lock()
+
         # Tell the WorkerManager to start working (is a blocking call)
-        self.wm.start_working(**self.meta_config['run_kwargs'])
+        self.wm.start_working(**self.meta_cfg['run_kwargs'])
 
         log.info("Finished single universe run. Yay. :)")
 
     def run_sweep(self):
-        """Runs a parameter sweep."""
+        """Runs a parameter sweep.
+
+        Note that (currently) each Multiverse instance can _not_ perform
+        multiple runs!
+        """
         
         # Get the parameter space from the config
-        pspace = self.meta_config['parameter_space']
+        pspace = self.meta_cfg['parameter_space']
 
         if pspace.volume < 1:
             raise ValueError("The parameter space has no sweeps configured! "
@@ -212,14 +226,17 @@ class Multiverse:
                                uni_cfg=uni_cfg)
         log.info("Tasks added.")
 
+        # Prevent adding further tasks to disallow further runs
+        self.wm.tasks.lock()
+
         # Tell the WorkerManager to start working (is a blocking call)
-        self.wm.start_working(**self.meta_config['run_kwargs'])
+        self.wm.start_working(**self.meta_cfg['run_kwargs'])
 
         log.info("Finished Multiverse parameter sweep. Wohoo. :)")
 
     # "Private" methods .......................................................
 
-    def _create_meta_config(self, *, run_cfg_path: str, user_cfg_path: str, update_meta_cfg: dict) -> dict:
+    def _create_meta_cfg(self, *, run_cfg_path: str, user_cfg_path: str, update_meta_cfg: dict) -> dict:
         """Create the meta configuration from several parts and store it.
         
         The final configuration dict is built from up to five components,
@@ -233,7 +250,7 @@ class Multiverse:
             5. update: if given, this dict can be used for a last update step
 
         The resulting configuration is the meta configuration and is stored
-        to the `meta_config` attribute.
+        to the `meta_cfg` attribute.
 
         The parts are recorded in the `cfg_parts` dict and returned.
         
@@ -341,7 +358,7 @@ class Multiverse:
         log.debug("Converted parameter_space to ParamSpace object.")
         
         # Store it
-        self.meta_config = meta_tmp
+        self._meta_cfg = meta_tmp
         log.info("Loaded meta configuration.")
 
         # Prepare dict to store paths for config files in (for later backup)
@@ -398,7 +415,7 @@ class Multiverse:
         out_dir = os.path.expanduser(str(out_dir))
         run_dir = os.path.join(out_dir,
                                self.model_name,
-                               time.strftime("%Y%m%d-%H%M%S"))
+                               time.strftime("%y%m%d-%H%M%S"))
 
         # Append a model note, if needed
         if model_note:
@@ -411,6 +428,7 @@ class Multiverse:
         # Recursively create the whole path to the simulation directory
         try:
             os.makedirs(run_dir)
+
         except OSError as err:
             raise RuntimeError("Simulation directory already exists. This "
                                "should not have happened and is probably due "
@@ -428,7 +446,7 @@ class Multiverse:
                   self._dirs)
 
         # Write the meta config to the config directory.
-        write_yml(self.meta_config,
+        write_yml(self.meta_cfg,
                   path=os.path.join(self.dirs['config'], "meta_cfg.yml"))
         log.debug("Wrote meta configuration to config directory.")
 
@@ -559,18 +577,27 @@ class Multiverse:
                             uni_basename=uni_basename)
 
         # Process worker_kwargs
-        wk = self.meta_config.get('worker_kwargs')
+        wk = self.meta_cfg.get('worker_kwargs')
 
         if wk and wk.get('forward_streams') == 'in_single_run':
             # Check for the max_uni_id as indicator for a single run
             wk['forward_streams'] = bool(max_uni_id == 0)
 
-        # Add a task to the worker manager
-        self.wm.add_task(name=uni_basename,
-                         priority=None,
-                         setup_func=setup_universe,
-                         setup_kwargs=setup_kwargs,
-                         worker_kwargs=wk)
+        # Try to add a task to the worker manager
+        try:
+            self.wm.add_task(name=uni_basename,
+                             priority=None,
+                             setup_func=setup_universe,
+                             setup_kwargs=setup_kwargs,
+                             worker_kwargs=wk)
+
+        except RuntimeError as err:
+            # Task list was locked, probably due to a run already having taken
+            # place...
+            raise RuntimeError("Could not add simulation task for universe "
+                               "'{}'! Did you already perform a run with this "
+                               "Multiverse?"
+                               "".format(uni_basename)) from err
 
         log.debug("Added simulation task for universe %d.", uni_id)
 
