@@ -6,7 +6,6 @@
 #include <dune/utopia/data_io/types.hh>
 #include <dune/utopia/core/types.hh>
 #include <dune/utopia/core/logging.hh>
-#include "spdlog/spdlog.h"
 #include <yaml-cpp/yaml.h>
 
 namespace Utopia {

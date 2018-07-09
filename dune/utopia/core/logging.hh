@@ -2,7 +2,7 @@
 #define UTOPIA_CORE_LOGGING_HH
 
 #include <string>
-#include "spdlog/spdlog.h"
+#include <spdlog/spdlog.h>
 
 #include <dune/utopia/data_io/types.hh>
 
