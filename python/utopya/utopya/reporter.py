@@ -890,6 +890,12 @@ class WorkerManagerReporter(Reporter):
         Returns:
             str: The multi-line simulation report
         """
+        # Calculate the runtime statistics and add them to the parts
+        rtstats = self.calc_runtime_statistics(min_num=min_num)
+
+        if rtstats is None:
+            return "No simulation report generated because no runtime statistics was calculated."
+
         # List that contains the parts that will be written
         parts = []
         
@@ -900,18 +906,11 @@ class WorkerManagerReporter(Reporter):
         parts.append("This report contains the runtime statistics of a multiverse simulation run.")
         parts.append("The statistics is calculated from universe run times.")
         parts.append("")
-        parts.append("  # universes:     {}".format(len(self.runtimes)))
+        parts.append("  # universes:  {}".format(len(self.runtimes)))
         parts.append("")
+    
+        parts += [fstr.format(k=k, v=tools.format_time(v, ms_precision=1))
+                for k, v in rtstats.items()]
 
-        # Calculate the runtime statistics and add them to the parts
-        rtstats = self.calc_runtime_statistics(min_num=min_num)
-        
-        if rtstats is not None:
-
-            parts += [fstr.format(k=k, v=tools.format_time(v, ms_precision=1))
-                    for k, v in rtstats.items()]
-
-            return " \n".join(parts)
-
-        else:
-            return "No simulation report generated because no runtime statistics was calculated."
+        return " \n".join(parts)
+      

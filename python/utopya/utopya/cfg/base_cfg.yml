@@ -61,12 +61,13 @@ reporter:
       show_times: true
       write_to: stdout_noreturn
 
+    # Creates a report file containing runtime statistics
     report_file:
       parser: sim_report
       write_to: 
         file: 
           path: _report.txt
-      min_report_intv: 0.2
+      min_report_intv: 10     # update the file if min_report_intv seconds have passed.
 
   # Can define a default format to use
   # default_format: ~
