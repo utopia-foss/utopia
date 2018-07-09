@@ -45,27 +45,20 @@ def grid_animation( dm: DataManager,
                                                            'artist' : 'Utopia',
                                                            'comment' : 'This is a comment'})
     
-    # Get the number of properties to plot
-    num_properties = len(properties)
-
     # Set plot parameters
     rcParams.update({'font.size': 20})
-    rcParams['figure.figsize'] = (6.0*num_properties, 5.0)
+    rcParams['figure.figsize'] = (6.0*len(properties), 5.0)
 
     # Create figure
-    fig, axs = plt.subplots(1,num_properties)
+    fig, axs = plt.subplots(1,len(properties))
 
-    # Need this line so that the loop can be run even if there is only one properties
-    if num_properties == 1 : axs = [axs] 
+    # Assert that the loop can be run even if there is only one property
+    if len(properties) == 1 :
+         axs = [axs] 
 
-    # Extract the data of the strategies in the CA
-    data_1d = {}
-    for p in properties:
-        data_1d[p] = grp[p]
-    
-    data = {}
-    for key, value in data_1d.items():
-        data[key] = np.reshape(value, new_shape)
+    # Extract the data of the strategies in the CA    
+    data_1d = {p: grp[p] for p in properties}
+    data = {k: np.reshape(v, new_shape) for k,v in data_1d.items()}
 
     with writer.saving(fig, out_path, dpi=dpi):
 
@@ -74,10 +67,10 @@ def grid_animation( dm: DataManager,
             for t in range(steps):
                 cbs = []
                 # iterate over all properties
-                for j in range(num_properties):
+                for j in range(len(properties)):
                     axs[j].cla()
                     
-                    if num_properties == 1:
+                    if len(properties) == 1:
                         im = axs[j].imshow(d[t], cmap=cmaps[j], animated=True, origin='lower', vmin=rngs[j][0], vmax=rngs[j][1])
                     else:
                         im = axs[j].imshow(d[t], cmap=cmaps[j], animated=True, origin='lower', vmin=rngs[j][0], vmax=rngs[j][1])
@@ -89,5 +82,5 @@ def grid_animation( dm: DataManager,
                 writer.grab_frame()
                 
                 # clean up the colorbars (needed to prevent the colorbars from piling up from frame to frame)
-                for j in range(num_properties) :
+                for j in range(len(properties)) :
                     cbs[j].remove()
