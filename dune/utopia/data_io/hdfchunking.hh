@@ -422,7 +422,7 @@ void __opt_chunks_with_max_extend(Cont &chunks,
 // TODO write doc page:
 /**  \page opt_chunksize Algorithms for optimizing chunk size
  *
- * \section idea The general idea
+ * \section idea The general idea of these algorithms is that 
  *
  *
  * \section implementation Implementation
@@ -448,16 +448,25 @@ void __opt_chunks_with_max_extend(Cont &chunks,
  *                          spread evenly and fill the max_extend as best as
  *                          as possible. If _not_ given, the max_extend will
  *                          be assumed to be the same as the io_extend.
- * @param   opt_inf_dims    TODO
- * @param   larger_high_dims TODO
+ * @param   opt_inf_dims    Whether to optimize unlimited dimensions or not. If
+ *                          set, and there is still room left to optimize after
+ *                          the finite dimensions have been extended, the
+ *                          chunks in the unlimited dimensions are extended as
+ *                          far as possible.
+ * @param   larger_high_dims If set, dimensions with higher indices are
+ *                          favourable enlarged and less favourable reduced.
+ *                          This can be useful if it is desired to keep these
+ *                          dimensions together, e.g. because they are written
+ *                          close to each other (e.g., as inner part of a loop)
  * @param   CHUNKSIZE_MAX   Largest chunksize; should not exceed 1MiB too much,
  *                          or, more precisely: should fit into the chunk cache
  *                          which (by default) is 1MiB large 
  * @param   CHUNKSIZE_MIN   smallest chunksize; should be above a few KiB
  * @param   CHUNKSIZE_BASE  base factor for creating target chunksize if the
- *                          dataset has no maximum extend given
+ *                          dataset has no maximum extend given; this is used
+ *                          for calculating a target size when optimizing
+ *                          datasets that are unlimited in all dimensions.
  */
-// TODO use log messages instead of std::cout
 // TODO update doxygen; make sure it's clear that max_extend opt is only
 //      used when max_extend is given -- but then optimizes infinite axes!
 template<typename Cont=std::vector<hsize_t>>
