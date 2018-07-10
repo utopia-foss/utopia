@@ -1,12 +1,11 @@
 #ifndef UTOPIA_MODEL_HH
 #define UTOPIA_MODEL_HH
 
-#include <boost/range/irange.hpp>
-
 #include <dune/utopia/data_io/hdffile.hh>
 #include <dune/utopia/data_io/hdfgroup.hh>
 #include <dune/utopia/data_io/cfg_utils.hh>
 #include <dune/utopia/core/logging.hh>
+
 
 namespace Utopia {
 
@@ -18,13 +17,15 @@ namespace Utopia {
  *  \tparam ConfigType            The class to use for reading the config
  *  \tparam DataGroupType         The data group class to store datasets in
  *  \tparam DataSetType           The data group class to store data in
+ *  \tparam TimeType              The type to use for the time members
  */
 template<typename DataType,
          typename BoundaryConditionType,
          typename RNGType=std::mt19937,
          typename ConfigType=Utopia::DataIO::Config,
          typename DataGroupType=Utopia::DataIO::HDFGroup,
-         typename DataSetType=Utopia::DataIO::HDFDataset<Utopia::DataIO::HDFGroup>
+         typename DataSetType=Utopia::DataIO::HDFDataset<Utopia::DataIO::HDFGroup>,
+         typename TimeType=std::size_t
          >
 struct ModelTypes
 {
@@ -34,6 +35,7 @@ struct ModelTypes
     using Config = ConfigType;
     using DataGroup = DataGroupType;
     using DataSet = DataSetType;
+    using Time = TimeType;
 };
 
 
@@ -66,10 +68,16 @@ public:
     /// Data type of the shared RNG
     using RNG = typename ModelTypes::RNG;
 
+    /// Data type for the model time
+    using Time = typename ModelTypes::Time;
+
 protected:
     // -- Member declarations -- //
-    /// Model internal time stamp
-    std::size_t _time;
+    /// Model-internal current time stamp
+    Time _time;
+
+    /// Model-internal maximum time stamp
+    const Time _time_max;
     
     /// Name of the model instance
     const std::string _name;
@@ -106,6 +114,7 @@ public:
            const ParentModel &parent_model)
     :
         _time(0),
+        _time_max(parent_model.get_time_max()),
         _name(name),
         //extract the other information from the parent model object
         _cfg(parent_model.get_cfg()[_name]),
@@ -133,8 +142,13 @@ public:
     // -- Getters -- //
 
     /// Return the current time of this model
-    std::size_t get_time() const {
+    Time get_time() const {
         return _time;
+    }
+
+    /// Return the maximum time possible for this model
+    Time get_time_max() const {
+        return _time_max;
     }
 
     /// Return the config node of this model
@@ -157,16 +171,27 @@ public:
         return _log;
     }
 
+
     // -- Default implementations -- //
 
     /// Iterate one (time) step of this model
-    /** Increment time, perform step, then write data
+    /** @detail Increment time, perform step, then write data
      */
     void iterate () {
         perform_step();
         increment_time();
         write_data();
-        _log->info("Finished iteration: {:8d}", _time);
+        _log->debug("Finished iteration: {:8d} / {:8d}", _time, _time_max);
+    }
+
+    /// Run the model from the current time to the maximum time
+    /** @detail This repeatedly calls the iterate method, which increments time
+      *
+      */
+    void run () {
+        while (_time < _time_max) {
+            iterate();
+        }
     }
 
 
@@ -199,9 +224,11 @@ public:
 
 protected:
     /// Increment time
-    /** \param dt Time increment
+    /** \param dt Time increment, defaults to 1
      */
-    void increment_time (std::size_t dt=1) { _time += dt; }
+    void increment_time (Time dt=1) {
+        _time += dt;
+    }
 
     /// cast to the derived class
     Derived& impl () { return static_cast<Derived&>(*this); }
@@ -230,6 +257,7 @@ protected:
     using Config = Utopia::DataIO::Config;
     using HDFFile = Utopia::DataIO::HDFFile;
     using HDFGroup = Utopia::DataIO::HDFGroup;
+    using Time = std::size_t;
 
     /// The config node
     const Config _cfg;
@@ -334,39 +362,12 @@ public:
         return _log;
     }
 
-
-
-    // -- Model iteration -- //
-
-    /// The number of steps the PseudoParent was configured to run for
-    template<typename T=std::size_t>
-    std::size_t num_steps() const {
-        return as_<T>(_cfg["num_steps"]);
-    }
-
-
-    /// Iterate a given model for the configured number of steps
-    /** @detail This is a convenience function to use for running a single
-     *          model. Using it, explicit access and extraction of the
-     *          `num_steps` parameter from the configuration is avoided.
-     *
-     * @param   model   The Model-derived class instance to call `iterate` on,
-     *                  `num_steps` times.
+    /// The maximum time value as it can be found in the config
+    /** @detail Currently, this reads the `num_steps` key, but this might be
+     *          changed in the future to allow continuous time steps.
      */
-    template<typename Model>
-    void run(Model model) {
-        // Get number of steps and inform about it
-        auto num_steps = this->num_steps<std::size_t>();
-        _log->info("Iterating model for {} steps ...", num_steps);
-
-        // Perform the iteration
-        for (auto i : boost::irange(static_cast<std::size_t>(0), num_steps)) {
-            _log->info("Commencing iteration: {:8d}", i + 1);
-            // TODO add max_time information, once available
-            model.iterate();
-        }
-
-        _log->info("Model iteration finished.");
+    Time get_time_max() const {
+        return as_<Time>(_cfg["num_steps"]);
     }
 
 

@@ -23,7 +23,7 @@ int main (int argc, char** argv)
         DummyModel model("dummy", pp, state);
 
         // ... now use the PseudoParent to perform the iteration
-        pp.run(model);
+        model.run();
 
         // -- Model iteration finished. -- //
 
