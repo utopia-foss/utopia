@@ -33,8 +33,8 @@ inline std::shared_ptr<spdlog::logger> init_logger (
         logger = spdlog::stdout_color_mt(name);
     }
     else {
-        logger->debug("Skipping initialization of logger '{}' because "
-                      "it already exists.", name);
+        logger->warn("Skipping initialization of logger '{}' because "
+                     "it already exists.", name);
     }
     logger->set_level(level);
     return logger;
