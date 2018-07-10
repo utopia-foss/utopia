@@ -54,7 +54,7 @@ public:
     void perform_step ()
     {
         // Write some random numbers into the state vector
-        auto gen = std::bind(std::uniform_real_distribution<>(), *rng);
+        auto gen = std::bind(std::uniform_real_distribution<>(), *this->_rng);
         std::generate(bc.begin(), bc.end(), gen);
         std::transform(state.begin(), state.end(),
                        bc.begin(), state.begin(),
@@ -69,10 +69,10 @@ public:
     void write_data ()
     {
         // Generate the dataset name
-        const std::string set_name = "data-" + std::to_string(this->time);
+        const std::string dset_name = "data-" + std::to_string(this->_time);
 
         // Open the dataset and write the state into it
-        auto dataset = hdfgrp->open_dataset(set_name);
+        auto dataset = this->_hdfgrp->open_dataset(dset_name);
         dataset->write(state.begin(), state.end(),
             [](auto &value) { return value; });
     }
