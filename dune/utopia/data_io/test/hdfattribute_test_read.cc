@@ -49,6 +49,7 @@ int main()
     std::string attributename6 = "multidimattribute";
     std::string attributename7 = "stringvectorattribute";
     std::string attributename8 = "rvalueattribute";
+    std::string attributename9 = "constsize_array_attribute";
 
     ////////////////////////////////////////////////////////////////////////////
     // making expected data
@@ -128,7 +129,7 @@ int main()
     HDFAttribute attribute6(low_group, attributename6);
     HDFAttribute attribute7(low_group, attributename7);
     HDFAttribute attribute8(low_group, attributename8);
-
+    HDFAttribute attribute9(low_group, attributename9);
     ////////////////////////////////////////////////////////////////////////////
     // trying to read, using c++17 structured bindings
     ////////////////////////////////////////////////////////////////////////////
@@ -316,5 +317,15 @@ int main()
         assert(std::abs(expected_rv_data[i][1] - read_rv_data[i][1]) < 1e-16);
     }
 
+    // attribute 9
+    std::vector<std::array<double, 2>> read_arr_data(expected_rv_data.size(),
+                                                     std::array<double, 2>());
+
+    attribute9.read(read_arr_data);
+    for (std::size_t i = 0; i < 100; ++i)
+    {
+        assert(std::abs(expected_rv_data[i][0] - read_arr_data[i][0]) < 1e-16);
+        assert(std::abs(expected_rv_data[i][1] - read_arr_data[i][1]) < 1e-16);
+    }
     return 0;
 }

@@ -1,6 +1,7 @@
 /**
  * @brief Tests writing different kinds of data to an Attribute to a HDFObject.
- *
+ *        The correctness is mostly checked after reading the data back in
+ *        in hdfattribute_test_read
  * @file hdfattribute_test_write.cc
 
  */
@@ -9,6 +10,7 @@
 #include "../hdfgroup.hh"
 #include <cassert>
 #include <fstream>
+#include <hdf5.h>
 #include <iostream>
 #include <random>
 #include <string>
@@ -45,7 +47,7 @@ int main()
     std::string attributename6 = "multidimattribute";
     std::string attributename7 = "stringvectorattribute";
     std::string attributename8 = "rvalueattribute";
-
+    std::string attributename9 = "constsize_array_attribute";
     // making struct data for attribute0
     std::vector<Datastruct> structdata(100);
     std::generate(structdata.begin(), structdata.end(), [&]() {
@@ -105,6 +107,8 @@ int main()
 
     HDFAttribute attribute8(low_group, attributename8);
 
+    HDFAttribute attribute9(low_group, attributename9);
+
     // write to each attribute
 
     // extract field from struct
@@ -136,5 +140,22 @@ int main()
     attribute8.write(structdata.begin(), structdata.end(), [](auto& compound) {
         return std::vector<double>{static_cast<double>(compound.a), compound.b};
     });
+
+    // write array generated in adaptor which then should use
+    // constsize hdf5 array types instead of hvl_t
+    attribute9.write(structdata.begin(), structdata.end(), [](auto& compound) {
+        return std::array<double, 2>{static_cast<double>(compound.a), compound.b};
+    });
+
+    // check tha the hdf5 array type is correctly build.
+    hid_t attr9 = attribute9.get_id();
+    hid_t attr9t = H5Aget_type(attr9);
+    auto tdim = H5Tget_array_ndims(attr9t);
+    std::vector<hsize_t> dims;
+    dims.reserve(5);
+    auto tsize = H5Tget_array_dims(attr9, dims.data());
+    assert(tdim == 1);
+    assert(tsize == 2);
+
     return 0;
 }
