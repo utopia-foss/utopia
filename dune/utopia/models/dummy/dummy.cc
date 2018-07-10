@@ -3,41 +3,33 @@
 
 #include "dummy.hh"
 
-// Always use the Utopia namespace
-using namespace Utopia;
 
 // Declare the model
-using DummyModel = Utopia::Models::Dummy;
+using DummyModel = Utopia::Models::Dummy::Dummy;
 
 int main (int argc, char** argv)
 {
     try {
         Dune::MPIHelper::instance(argc, argv);
 
-        // Read in the config file
-        const std::string config_file = argv[1];
 
-        // create PseudoParent, setting up the HDFFile and RNG
-        Utopia::PseudoParent pp(config_file);
+        // -- Model definition and iteration -- //
 
-        // get the config from the PseudoParent
-        auto cfg = pp.get_cfg();
+        // Create PseudoParent from config file, setting up the HDFFile and RNG
+        Utopia::PseudoParent pp(argv[1]);
 
         // Set the initial state, then create the model instance
         std::vector<double> state(1E3, 0.0);
         DummyModel model("dummy", pp, state);
 
-        // And iterate it for a number of steps
-        auto num_steps = as_<int>(cfg["num_steps"]);
-        pp.get_logger()->info("num_steps: {}", num_steps);
-        pp.get_logger()->info("Starting model iteration ...");
+        // ... now use the PseudoParent to perform the iteration
+        model.run();
 
-        // TODO use future pseudo parent features for iteration
-        for(int i = 0; i < num_steps; ++i) {
-            model.iterate();
-        }
+        // -- Model iteration finished. -- //
 
-        // Sleep (to be read by frontend for testing purposes)
+
+        // The following is only for testing! (To be read by frontend)
+        // TODO check whether this is still relevant
         unsigned int sleep_time = 300; // in milliseconds
         unsigned int num_sleeps = 3;
 

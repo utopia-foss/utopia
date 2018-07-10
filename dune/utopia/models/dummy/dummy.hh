@@ -7,6 +7,7 @@
 
 namespace Utopia {
 namespace Models {
+namespace Dummy {
 
 /// Define data types of dummy model
 using DummyTypes = ModelTypes<
@@ -26,10 +27,10 @@ public:
     using Base = Model<Dummy, DummyTypes>;
 
     /// The current state of the model
-    Data state;
+    Data _state;
 
     /// The boundary conditions of the model
-    BCType bc;
+    BCType _bc;
 
     /// Construct the dummy model with an initial state
     /** \param initial_state Initial state of the model
@@ -42,52 +43,53 @@ public:
         // Use the base constructor for the main parts
         Base(name, parent_model),
         // Initialise state and boundary condition members
-        state(initial_state),
-        bc(state.size(), 1.0)
+        _state(initial_state),
+        _bc(_state.size(), 1.0)
     {
         // Write initial state
         this->write_data();
     }
 
     /// Iterate by one time step
-    void perform_step ()
-    {
+    /** @detail This writes random numbers into the state vector, incrementing
+     *          the already existing ones. Thus, with numbers between 0 and 1,
+     *          the mean value of the state increases by 0.5 for each
+     *          performed step.
+     */
+    void perform_step () {
         // Write some random numbers into the state vector
-        auto gen = std::bind(std::uniform_real_distribution<>(), *rng);
-        std::generate(bc.begin(), bc.end(), gen);
-        std::transform(state.begin(), state.end(),
-                       bc.begin(), state.begin(),
+        auto gen = std::bind(std::uniform_real_distribution<>(), *this->_rng);
+        std::generate(_bc.begin(), _bc.end(), gen);
+        std::transform(_state.begin(), _state.end(),
+                       _bc.begin(), _state.begin(),
                        [](const auto a, const auto b) { return a + b; }
         );
-        // NOTE this increments each entry in the state vector by a random
-        // number between 0 and 1, writing the result to the state. Thus, the
-        // mean value of the state increases by 0.5 for each performed step
     }
 
     /// Write data into a dataset that corresponds to the current step
-    void write_data ()
-    {
+    void write_data () {
         // Generate the dataset name
-        const std::string set_name = "data-" + std::to_string(this->time);
+        const std::string dset_name = "data-" + std::to_string(this->_time);
+        // FIXME this should use dataset extensions!
 
         // Open the dataset and write the state into it
-        auto dataset = hdfgrp->open_dataset(set_name);
-        dataset->write(state.begin(), state.end(),
-            [](auto &value) { return value; });
+        auto dataset = this->_hdfgrp->open_dataset(dset_name);
+        dataset->write(_state.begin(), _state.end(),
+                       [](auto &value) { return value; });
     }
 
     // Set model boundary condition
-    void set_boundary_condition (const BCType& new_bc) { bc = new_bc; }
+    void set_boundary_condition (const BCType& new_bc) { _bc = new_bc; }
 
     /// Set model initial condition
-    void set_initial_condition (const Data& ic) { state = ic; }
+    void set_initial_condition (const Data& ic) { _state = ic; }
 
     /// Return const reference to stored data
-    const Data& data () const { return state; }
+    const Data& data () const { return _state; }
 };
 
+} // namespace Dummy
 } // namespace Models
-
 } // namespace Utopia
 
 #endif // UTOPIA_MODELS_DUMMY_HH
