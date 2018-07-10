@@ -126,7 +126,7 @@ public:
         // Set this model instance's log level
         if (_cfg["log_level"]) {
             // Via value given in configuration
-            auto lvl =  as_str(_cfg["log_level"]);
+            const auto lvl = as_str(_cfg["log_level"]);
             _log->debug("Setting log level to '{}' ...", lvl);
             _log->set_level(spdlog::level::from_str(lvl));
         }
@@ -230,7 +230,7 @@ protected:
     /// Increment time
     /** \param dt Time increment, defaults to 1
      */
-    void increment_time (Time dt=1) {
+    void increment_time (const Time dt=1) {
         _time += dt;
     }
 
