@@ -152,8 +152,8 @@ public:
     /** Increment time, perform step, then write data
      */
     void iterate () {
-        increment_time();
         perform_step();
+        increment_time();
         write_data();
         log->info("Finished iteration: {:8d}", this->time);
         // TODO add max_time information, once available
