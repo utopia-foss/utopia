@@ -5,3 +5,8 @@ num_steps: 3
 
 test:
   foo: bar
+
+log_levels:
+  core: debug
+  model: debug
+  data_io: debug

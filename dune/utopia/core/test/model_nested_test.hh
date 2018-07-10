@@ -36,10 +36,9 @@ public:
         // Pass arguments to the base class constructor
         Base(name, parent_model),
         // Store level
-        level(cfg["level"].as<unsigned int>())
+        level(as_<unsigned short>(cfg["level"]))
     {
-        std::cout << "  DoNothingModel '" << name << "' initialized. "
-                  << "Level: " << level << std::endl;
+        this->log->info("DoNothingModel initialized. Level: {}", level);
     }
 
     /// Perform a single step (nothing to do here)
@@ -77,12 +76,11 @@ public:
         // Pass arguments to the base class constructor
         Base(name, parent_model),
         // Store level
-        level(cfg["level"].as<unsigned int>()),
+        level(as_<unsigned short>(cfg["level"])),
         // Submodel initialization
         lazy("lazy", *this)
     {
-        std::cout << "  OneModel '" << name << "' initialized. "
-                  << "Level: " << level << std::endl;
+        this->log->info("OneModel initialized. Level: {}", level);
     }
 
     /// Perform a single step, i.e.: iterate the submodels
@@ -126,13 +124,12 @@ public:
         // Pass arguments to the base class constructor
         Base(name, parent_model),
         // Store level
-        level(cfg["level"].as<unsigned int>()),
+        level(as_<unsigned short>(cfg["level"])),
         // Submodel initialization
-        sub_one("one", parent_model),
+        sub_one("one", *this),
         sub_lazy("lazy", *this)
     {
-        std::cout << "  AnotherModel '" << name << "' initialized. "
-                  << "Level: " << level << std::endl;
+        this->log->info("AnotherModel initialized. Level: {}", level);
     }
 
     /// Perform a single step, i.e.: iterate the submodels
@@ -174,13 +171,12 @@ public:
         // Initialize completely via parent class constructor
         Base(name, parent_model),
         // Store level
-        level(cfg["level"].as<unsigned int>()),
+        level(as_<unsigned short>(cfg["level"])),
         // Submodel initialization
         sub_one("one", *this),
         sub_another("another", *this)
     {
-        std::cout << "  RootModel '" << name << "' initialized. "
-                  << "Level: " << level << std::endl;
+       this->log->info("RootModel initialized. Level: {}", level);
     }
 
     /// Perform a single step, i.e.: iterate the submodels
