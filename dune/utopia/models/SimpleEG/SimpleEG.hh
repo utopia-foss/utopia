@@ -81,14 +81,18 @@ private:
     /// The interaction matrix (extracted during initialization)
     const std::vector<std::vector<double>> _ia_matrix;
 
+
     // -- Temporary objects -- //
     /// A container to temporarily accumulate the fittest neighbour cells in
     CellContainer<typename ManagerType::Cell> _fittest_cell_in_nbhood;
+
     
     // -- Datasets -- //
     std::shared_ptr<DataSet> _dset_strategy;
     std::shared_ptr<DataSet> _dset_payoff;
 
+
+    // -- Rule functions -- //
     /// Define the interaction between players
     std::function<State(std::shared_ptr<CellType>)> _interaction = [this](const auto cell){
         // Get the state of the Cell
