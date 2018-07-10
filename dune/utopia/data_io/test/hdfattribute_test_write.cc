@@ -151,11 +151,10 @@ int main()
     hid_t attr9 = attribute9.get_id();
     hid_t attr9t = H5Aget_type(attr9);
     auto tdim = H5Tget_array_ndims(attr9t);
-    std::vector<hsize_t> dims;
-    dims.reserve(5);
-    auto tsize = H5Tget_array_dims(attr9, dims.data());
+    hsize_t dims[1] = {0}; // insert wrong number deliberatly
+    H5Tget_array_dims(attr9t, dims);
     assert(tdim == 1);
-    assert(tsize == 2);
+    assert(dims[0] == 2);
 
     return 0;
 }

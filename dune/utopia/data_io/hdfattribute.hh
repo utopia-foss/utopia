@@ -81,10 +81,10 @@ private:
         {
             // if we want to write std::arrays then we can use
             // fixed size array types. Else we use variable length arrays.
-            if constexpr (is_array_like_v<result_type>)
+            if constexpr (is_array_like_v<value_type_1>)
             {
-                constexpr std::size_t s = std::tuple_size<result_type>::value;
-                if (attribute == -1)
+                constexpr std::size_t s = std::tuple_size<value_type_1>::value;
+                if (_attribute == -1)
                 {
                     _attribute = __create_attribute__<base_type>(s);
                 }
@@ -151,8 +151,8 @@ private:
     {
         // result types removes pointers, references, and qualifiers
         using basetype = remove_qualifier_t<Type>;
-        std::cout << _name << ", type for pointer is  " << typeid(basetype).name()
-                  << ", int type is " << typeid(int).name() << std::endl;
+        // std::cout << _name << ", type for pointer is  " << typeid(basetype).name()
+        //   << ", int type is " << typeid(int).name() << std::endl;
 
         if (_attribute == -1)
         {
@@ -196,20 +196,14 @@ private:
         {
             using value_type_2 = remove_qualifier_t<typename value_type_1::value_type>;
 
-            // if containers inside are not vectors, throw exception, we
-            // cannot read into anything else
-            if constexpr (!std::is_same_v<std::vector<value_type_2>, value_type_1>)
-            {
-                throw std::runtime_error("Can only read data from " + _name +
-                                         " into vector containers!");
-            }
-
             // if we have nested containers of depth larger than 2, throw a
             // runtime error because we cannot handle this
-            if constexpr (is_container_v<value_type2>)
+            if constexpr (is_container_v<value_type_2>)
             {
-                throw std::runtime_error("Attribute " + _name + " cannot read into nested 
-                                        container with a nesting depth  > 2");
+                throw std::runtime_error(
+                    "Cannot read data into nested containers with depth > 3 in "
+                    "attribute " +
+                    _name + " into vector containers!");
             }
 
             // everything is fine.
@@ -222,7 +216,7 @@ private:
             // has always the same length, otherwise she does not
             // know and thus it is assumed that the data is variable
             // length.
-            if (is_array_like_v<value_type1>)
+            if constexpr (is_array_like_v<value_type_1>)
             {
                 return H5Aread(_attribute, type, buffer.data());
             }
@@ -617,7 +611,6 @@ public:
         }
         else if constexpr (std::is_pointer_v<Type> && !is_string_v<Type>)
         {
-            std::cout << "reading pointer" << std::endl;
             herr_t err = __read_pointertype__(buffer);
 
             if (err < 0)

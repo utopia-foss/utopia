@@ -83,6 +83,7 @@ public:
                 {
                     *buffer_begin = adaptor(*begin);
                 }
+                return data_buffer;
             }
             else
             {
