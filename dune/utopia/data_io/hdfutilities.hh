@@ -196,6 +196,9 @@ template <typename T>
 struct is_array_like<T, std::void_t<decltype(std::tuple_size<T>::value)>> : std::true_type
 {
 };
+// FIXME Using tuple_size here is not optimal, but it gives a unique
+//       representation of the tuple
+// See:  https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/merge_requests/109/diffs#note_11774
 
 /**
  * @brief Shorthand for is_array_like

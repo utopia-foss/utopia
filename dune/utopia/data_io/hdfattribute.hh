@@ -188,8 +188,8 @@ private:
         using value_type_1 = remove_qualifier_t<typename Type::value_type>;
 
         // when the value_type of Type is a container again, we want nested
-        // arrays basically. Therefore we have to check if the desired type Type
-        // is suitable to hold them, read the nested data into a hvl_t
+        // arrays basically. Therefore we have to check if the desired type
+        // Type is suitable to hold them, read the nested data into a hvl_t
         // container, assuming that they are varlen because this is the more
         // general case, and then turn them into the desired type again...
         if constexpr (is_container_v<value_type_1>)
@@ -198,12 +198,12 @@ private:
 
             // if we have nested containers of depth larger than 2, throw a
             // runtime error because we cannot handle this
+            // TODO extend this to work more generally
             if constexpr (is_container_v<value_type_2>)
             {
                 throw std::runtime_error(
-                    "Cannot read data into nested containers with depth > 3 in "
-                    "attribute " +
-                    _name + " into vector containers!");
+                    "Cannot read data into nested containers with depth > 3 "
+                    "in attribute " + _name + " into vector containers!");
             }
 
             // everything is fine.
@@ -237,8 +237,8 @@ private:
                     }
                 }
 
-                // return shape and buffer. Expect to use structured bindings to
-                // extract that later
+                // return shape and buffer. Expect to use structured bindings
+                // to extract that later
                 return err;
             }
         }
