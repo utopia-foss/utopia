@@ -189,9 +189,13 @@ public:
       *
       */
     void run () {
+        _log->info("Running model from current time  {}  to time  {}  ...",
+                   _time, _time_max);
+
         while (_time < _time_max) {
             iterate();
         }
+        _log->info("Run finished. Current time:  {}", _time);
     }
 
 
