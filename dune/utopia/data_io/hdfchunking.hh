@@ -3,11 +3,15 @@
 
 #include <hdf5.h>
 
-/// Container that holds indices
-using IdxCont = std::vector<unsigned short>;
+#include <dune/utopia/core/logging.hh>
+
 
 namespace Utopia {
 namespace DataIO {
+
+/// Container that holds indices
+using IdxCont = std::vector<unsigned short>;
+
 
 // -- Helper functions -- //
 
@@ -484,6 +488,13 @@ const Cont guess_chunksize(const hsize_t typesize,
     };
 
 
+    // -- Logging -- //
+    // Set up, if it does not already exist
+    // TODO check if this makes sense
+    Utopia::setup_loggers();
+    auto log = spdlog::get("data_io");
+
+
     // -- Check correctness of arguments and extract some info -- //
     // Get the rank
     unsigned short rank = io_extend.size();
@@ -560,21 +571,20 @@ const Cont guess_chunksize(const hsize_t typesize,
     // NOTE max_extend is now a vector of same rank as io_extend
 
 
-    std::cout << "Guessing appropriate chunk size using:" << std::endl;
-    std::cout << "  io_extend:           " << vec2str(io_extend) << std::endl;
-    std::cout << "  max_extend:          " << vec2str(max_extend) << std::endl;
-    std::cout << "  rank:                " << rank << std::endl;
-    std::cout << "  finite dset?         " << dset_finite << std::endl;
-    std::cout << "  all dims infinite?   " << all_dims_inf << std::endl;
-    std::cout << "  optimize inf. dims?  " << opt_inf_dims << std::endl;
-    std::cout << "  larger high dims?    " << larger_high_dims << std::endl;
-    std::cout << "  typesize:            " << typesize << " B" << std::endl;
-    std::cout << "  max. chunksize:      "
-              << CHUNKSIZE_MAX/1024 << " kiB" << std::endl;
-    std::cout << "  min. chunksize:      "
-              << CHUNKSIZE_MIN/1024 << " kiB" << std::endl;
-    std::cout << "  base chunksize:      "
-              << CHUNKSIZE_BASE/1024 << " kiB" << std::endl;
+    log->info("Guessing appropriate chunk size for io_extend '{}' and "
+              "max_extend '{}' ...", vec2str(io_extend), vec2str(max_extend));
+    log->debug("rank:                {}", rank);
+    log->debug("finite dset?         {}", dset_finite);
+    log->debug("all dims infinite?   {}", all_dims_inf);
+    log->debug("optimize inf dims?   {}", opt_inf_dims);
+    log->debug("larger high dims?    {}", larger_high_dims);
+    log->debug("typesize:            {}", typesize);
+    log->debug("max. chunksize:      {:7d} ({:.1f} kiB)",
+               CHUNKSIZE_MAX, CHUNKSIZE_MAX/1024);
+    log->debug("min. chunksize:      {:7d} ({:.1f} kiB)",
+               CHUNKSIZE_MIN, CHUNKSIZE_MIN/1024);
+    log->debug("base chunksize:      {:7d} ({:.1f} kiB)",
+               CHUNKSIZE_BASE, CHUNKSIZE_BASE/1024);
 
 
     // -- For the simple cases, evaluate the chunksize directly -- //
@@ -583,20 +593,23 @@ const Cont guess_chunksize(const hsize_t typesize,
     // Chunks that extend to more than one element require a typesize smaller
     // than half the maximum chunksize.
     if (typesize > CHUNKSIZE_MAX / 2) {
-        std::cout << "  -> type size >= 1/2 max. chunksize" << std::endl;
+        log->debug("Type size >= 1/2 max. chunksize -> Each cell needs to be "
+                   "its own chunk.");
         return Cont(rank, 1);
     }
 
     // For a finite dataset, that would fit into CHUNKSIZE_MAX when maximally
     // extended, we can only have (and only need!) a single chunk
     if (dset_finite && (bytes(max_extend) <= CHUNKSIZE_MAX)) {
-        std::cout << "  -> maximally extended dataset will fit into one chunk"
-                  << std::endl;
+        log->debug("Maximally extended dataset fits will fit into single "
+                   "chunk.")
         return Cont(max_extend);
     }
 
 
     // -- Step 1: Optimize for one I/O operation fitting into chunk -- //
+    log->debug("Cannot apply simple optimizations. Try to fit single I/O "
+               "operation into a chunk ...")
 
     // Create the temporary container that will store the chunksize values.
     // It starts with a copy of the extend values for I/O operations.
@@ -604,20 +617,18 @@ const Cont guess_chunksize(const hsize_t typesize,
 
     // Determine the size (in bytes) of a write operation with this extend
     auto bytes_io = bytes(io_extend);
-    std::cout << "  I/O op. size:      " << bytes_io
-              << " B  (" << bytes_io/1024 << " kiB) " << std::endl;
+    log->debug("I/O operation size:  {:7d} ({:.1f} kiB)",
+               bytes_io, bytes_io/1024);
 
-    // Determine if an I/O operation fits into a single chunk
-    bool fits_into_chunk = (bytes_io <= CHUNKSIZE_MAX);
-    std::cout << "  fits into chunk?   " << fits_into_chunk << std::endl;
 
-    // Do we need to optimize?
-    if (!fits_into_chunk)
-    {
-        // The I/O operation does not fit into a chunk
+    // Determine if an I/O operation fits into a single chunk, then decide on
+    // how to optimize accordingly
+    if (bytes_io > CHUNKSIZE_MAX) {
+        // The I/O operation does _not_ fit into a chunk
         // Aim to fit the I/O operation into the chunk -> target: max chunksize
-        std::cout << "  trying to use the fewest possible chunks for a single "
-                     "I/O operation ..." << std::endl;
+        log->debug("Single I/O operation does not fit into chunk.");
+        log->debug("Trying to use the fewest possible chunks for a single "
+                   "I/O operation ...");
 
         __opt_chunks_target(_chunks, CHUNKSIZE_MAX, // <- target value
                             typesize, CHUNKSIZE_MAX, CHUNKSIZE_MIN,
@@ -628,26 +639,30 @@ const Cont guess_chunksize(const hsize_t typesize,
         //      maximum size, the chunk extensions will only be _reduced_.
     }
     else if (   all_dims_inf && opt_inf_dims
-             && bytes(_chunks) < CHUNKSIZE_BASE)
-    {
+             && bytes(_chunks) < CHUNKSIZE_BASE) {
         // The I/O operation _does_ fit into a chunk, but the dataset is
         // infinite in _all directions_ and small chunksizes can be very
         // inefficient -> optimize towards some base value
-        std::cout << "  enlarging chunksize to be closer to base chunksize ..."
-                  << std::endl;
+        log->debug("Single I/O operation does fit into chunk.");
+        log->debug("Optimizing chunks in unlimited dimensions to be closer "
+                   "to base chunksize ...");
 
         __opt_chunks_target(_chunks, CHUNKSIZE_BASE, // <- target value
                             typesize, CHUNKSIZE_MAX, CHUNKSIZE_MIN,
                             larger_high_dims);
         // NOTE There is no issue with going beyond the maximum chunksize here
     }
-    // else: no other optimization towards a target size make sense
+    else {
+        // no other optimization towards a target size make sense
+        log->debug("Single I/O operation does fit into a chunk.");
+    }
 
 
     // To be on the safe side: Check that _chunks did not exceed max_extend
     for (unsigned short i=0; i < rank; i++) {
         if (_chunks[i] > max_extend[i]) {
-            // TODO add warning here? But don't throw...
+            log->warning("Optimization led to chunks larger than max_extend. "
+                         "This should not have happened!");
             _chunks[i] = max_extend[i];
         }
     }
@@ -662,8 +677,8 @@ const Cont guess_chunksize(const hsize_t typesize,
     if (   !(opt_inf_dims && all_dims_inf)
         && (_chunks != max_extend) && (bytes(_chunks) < CHUNKSIZE_MAX))
     {
-        std::cout << "  can (potentially) optimize using max_extend info ..."
-                  << std::endl;
+        log->debug("Have max_extend information and can (potentially) use it "
+                   "to optimize chunk extensions.")
 
         __opt_chunks_with_max_extend(_chunks, max_extend,
                                      typesize, CHUNKSIZE_MAX,
