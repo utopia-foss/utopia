@@ -25,7 +25,7 @@ public:
     using Base = Model<DoNothingModel, CommonModelTypes>;
 
     /// store the level as a member
-    const unsigned int level;
+    const unsigned int _level;
 
 public:
     /// Constructor
@@ -36,9 +36,9 @@ public:
         // Pass arguments to the base class constructor
         Base(name, parent_model),
         // Store level
-        level(as_<unsigned short>(cfg["level"]))
+        _level(as_<unsigned short>(this->_cfg["level"]))
     {
-        this->log->info("DoNothingModel initialized. Level: {}", level);
+        this->_log->info("DoNothingModel initialized. Level: {}", _level);
     }
 
     /// Perform a single step (nothing to do here)
@@ -62,7 +62,7 @@ public:
     using Base = Model<OneModel, CommonModelTypes>;
 
     /// store the level as a member
-    const unsigned int level;
+    const unsigned int _level;
 
     /// submodel: DoNothingModel
     DoNothingModel lazy;
@@ -76,11 +76,11 @@ public:
         // Pass arguments to the base class constructor
         Base(name, parent_model),
         // Store level
-        level(as_<unsigned short>(cfg["level"])),
+        _level(as_<unsigned short>(this->_cfg["level"])),
         // Submodel initialization
         lazy("lazy", *this)
     {
-        this->log->info("OneModel initialized. Level: {}", level);
+        this->_log->info("OneModel initialized. Level: {}", _level);
     }
 
     /// Perform a single step, i.e.: iterate the submodels
@@ -107,7 +107,7 @@ public:
     using Base = Model<AnotherModel, CommonModelTypes>;
 
     /// store the level as a member
-    const unsigned int level;
+    const unsigned int _level;
 
     /// submodel: One
     OneModel sub_one;
@@ -124,12 +124,12 @@ public:
         // Pass arguments to the base class constructor
         Base(name, parent_model),
         // Store level
-        level(as_<unsigned short>(cfg["level"])),
+        _level(as_<unsigned short>(this->_cfg["level"])),
         // Submodel initialization
         sub_one("one", *this),
         sub_lazy("lazy", *this)
     {
-        this->log->info("AnotherModel initialized. Level: {}", level);
+        this->_log->info("AnotherModel initialized. Level: {}", _level);
     }
 
     /// Perform a single step, i.e.: iterate the submodels
@@ -154,7 +154,7 @@ public:
     using Base = Model<RootModel, CommonModelTypes>;
 
     /// store the level as a member
-    const unsigned int level;
+    const unsigned int _level;
 
     /// submodel: OneModel
     OneModel sub_one;
@@ -171,12 +171,12 @@ public:
         // Initialize completely via parent class constructor
         Base(name, parent_model),
         // Store level
-        level(as_<unsigned short>(cfg["level"])),
+        _level(as_<unsigned short>(this->_cfg["level"])),
         // Submodel initialization
         sub_one("one", *this),
         sub_another("another", *this)
     {
-       this->log->info("RootModel initialized. Level: {}", level);
+       this->_log->info("RootModel initialized. Level: {}", _level);
     }
 
     /// Perform a single step, i.e.: iterate the submodels

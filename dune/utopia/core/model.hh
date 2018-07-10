@@ -167,7 +167,6 @@ public:
         increment_time();
         write_data();
         _log->info("Finished iteration: {:8d}", _time);
-        // TODO add max_time information, once available
     }
 
 
@@ -362,7 +361,8 @@ public:
 
         // Perform the iteration
         for (auto i : boost::irange(static_cast<std::size_t>(0), num_steps)) {
-            _log->debug("Commencing iteration: {:8d}", i + 1);
+            _log->info("Commencing iteration: {:8d}", i + 1);
+            // TODO add max_time information, once available
             model.iterate();
         }
 
