@@ -9,9 +9,6 @@
 namespace Utopia {
 namespace DataIO {
 
-/// Container that holds indices
-using IdxCont = std::vector<unsigned short>;
-
 
 // -- Helper functions -- //
 
@@ -25,7 +22,9 @@ using IdxCont = std::vector<unsigned short>;
  * @tparam  Cont      The container type
  * @tparam  Predicate The predicate type
  */
-template<typename Cont, typename Predicate>
+template<typename Cont,
+         typename Predicate,
+         typename IdxCont=std::vector<unsigned short>>
 IdxCont __find_all_idcs (Cont &vec, Predicate pred) {
     // Create the return container
     IdxCont idcs;
@@ -70,14 +69,16 @@ IdxCont __find_all_idcs (Cont &vec, Predicate pred) {
  * @param   CHUNKSIZE_MIN    The minimum allowed bytesize of a chunk
  * @param   larger_high_dims If true, dimensions with high indices will be
  *                           favoured for enlarging chunk extend in that dim
+ * @param   log              The logger object to use
  */
-template<typename Cont>
+template<typename Cont, typename Logger>
 void __opt_chunks_target(Cont &chunks,
                          double bytes_target,
                          const hsize_t typesize,
                          const unsigned int CHUNKSIZE_MAX,
                          const unsigned int CHUNKSIZE_MIN,
-                         const bool larger_high_dims)
+                         const bool larger_high_dims,
+                         Logger log)
 {
     // Helper lambda for calculating bytesize of a chunks configuration
     auto bytes = [&typesize](Cont c) {
@@ -92,30 +93,27 @@ void __opt_chunks_target(Cont &chunks,
                                     "typesize larger than CHUNKSIZE_MAX!");
     }
 
-    std::cout << "  => starting optimization towards target size: "
-              << bytes_target << " B  (" << bytes_target/1024 << " kiB) ..."
-              << std::endl;
+    log->debug("Starting optimization towards target size:"
+               "  {:7d}B  ({:.1f} kiB)", bytes_target, bytes_target/1024);
 
     // Ensure the target chunk size is between CHUNKSIZE_MIN and CHUNKSIZE_MAX
     // in order to not choose too large or too small chunks
     if (bytes_target > CHUNKSIZE_MAX) {
         bytes_target = CHUNKSIZE_MAX;
 
-        std::cout << "    target size too large. New target size: "
-                  << bytes_target << " B  (" << bytes_target/1024 << " kiB) "
-                  << std::endl;
+        log->debug("Target size too large! New target size:"
+                   "  {:7d}B  ({:.1f} kiB)", bytes_target, bytes_target/1024);
     }
     else if (bytes_target < CHUNKSIZE_MIN) {
         bytes_target = CHUNKSIZE_MIN;
 
-        std::cout << "    target size too small. New target size: "
-                  << bytes_target << " B (" << bytes_target/1024 << " kiB) "
-                  << std::endl;
+        log->debug("Target size too small! New target size:"
+                   "  {:7d}B  ({:.1f} kiB)", bytes_target, bytes_target/1024);
     }
 
     // ... and a variable that will store the size (in bytes) of this specific
     // chunk configuration
-    size_t bytes_chunks;
+    std::size_t bytes_chunks;
 
     // Calculate the rank (need it to know iteration -> dim mapping)
     auto rank = chunks.size();
@@ -137,15 +135,16 @@ void __opt_chunks_target(Cont &chunks,
     {
         // With the current values of the chunks, calculate the chunk size
         bytes_chunks = bytes(chunks);
-        std::cout << "    chunk size:      " << bytes_chunks
-                  << " B  (" << bytes_chunks/1024 << " kiB) ";
+        
+        log->debug("Chunk size:"
+                   "  {:7d}B  ({:.1f} kiB)", bytes_chunks, bytes_chunks/1024);
 
         // If close enough to target size, optimization is finished
         if (   (std::abs(bytes_chunks - bytes_target) / bytes_target < 0.5)
             && bytes_chunks <= CHUNKSIZE_MAX
             && bytes_chunks >= CHUNKSIZE_MIN)
         {
-            std::cout << "  -> close enough to target size" << std::endl;
+            log->debug("Close enough to target size now.");
             break;
         }
         // else: not yet close enough
@@ -161,7 +160,7 @@ void __opt_chunks_target(Cont &chunks,
             }
 
             // Multiply by two
-            std::cout << "  -> increasing size of dim " << dim << std::endl;
+            log->debug("Doubling extend of chunk dimension {} ...", dim);
             chunks[dim] = chunks[dim] * 2;
         }
         else {
@@ -174,14 +173,14 @@ void __opt_chunks_target(Cont &chunks,
                 // Skip the reduction if this is the last dim and it should
                 // not be reduced
                 if (dim == rank - 1) {
-                    std::cout << "  -> dim " << dim << " is highest; "
-                              << "skipping reduction" << std::endl;
+                    log->debug("Skipping reduction of chunk dimension {}, "
+                               "because it is the highest ...", dim);
                     continue;
                 }
             }
 
             // Divide the chunk size of the current dim by two
-            std::cout << "  -> reducing size of dim " << dim << std::endl;
+            log->debug("Halving extend of chunk dimension {} ...", dim);
             chunks[dim] = 1 + ((chunks[dim] - 1) / 2);  // ceiling!
             // NOTE integer division fun; can do this because all are unsigned
             // and the chunks entry is always nonzero
@@ -221,14 +220,18 @@ void __opt_chunks_target(Cont &chunks,
  * @param   opt_inf_dims     Whether to optimize the infinite dimensions or not
  * @param   larger_high_dims If true, dimensions with high indices will be
  *                           favoured for enlarging chunk extend in that dim
+ * @param   log              The logger object to use
  */
-template<typename Cont, typename IdxCont=std::vector<unsigned short>>
+template<typename Cont,
+         typename Logger,
+         typename IdxCont=std::vector<unsigned short>>
 void __opt_chunks_with_max_extend(Cont &chunks,
                                   const Cont &max_extend,
                                   const hsize_t typesize,
                                   const unsigned int CHUNKSIZE_MAX,
                                   const bool opt_inf_dims,
-                                  const bool larger_high_dims)
+                                  const bool larger_high_dims,
+                                  Logger log)
 {
     // Helper lambda for calculating bytesize of a chunks configuration
     auto bytes = [&typesize](Cont c) {
@@ -288,19 +291,18 @@ void __opt_chunks_with_max_extend(Cont &chunks,
     // -- Optimization of finite (and still fillable) dims -- //
 
     if (!dims_fillable.size()) {
-        std::cout << "  no finite dims available to optimize" << std::endl;
+        log->debug("No finite dimensions available to optimize.");
     }
     else {
-        std::cout << "  => optimizing " << dims_fillable.size()
-                  << " finite dim(s) where max_extend is not yet reached ..."
-                  << std::endl;
+        log->debug("Optimizing {} finite dimension(s) where max_extend is not "
+                   "yet reached ...", dims_fillable.size());
 
         // Loop over the fillable dims indices
         for (auto dim: dims_fillable) {
             // Check if there is still potential for optimization
             // NOTE this could be more thorough
             if (bytes(chunks) == CHUNKSIZE_MAX) {
-                std::cout << "    reached maximum chunk size" << std::endl;
+                log->debug("Reached maximum chunksize.");
                 break;
             }
 
@@ -312,8 +314,8 @@ void __opt_chunks_with_max_extend(Cont &chunks,
                 // It might fit in completely ...
                 if (factor * bytes(chunks) <= CHUNKSIZE_MAX) {
                     // It does. Adjust chunks and continue with next dim
-                    std::cout << "    dim " << dim << " can be filled "
-                              << "completely. Factor: " << factor << std::endl;
+                    log->debug("Dimension {} can be filled completely. "
+                               "Factor: {}", dim, factor);
                     chunks[dim] = chunks[dim] * factor;
                     continue;
                 }
@@ -337,8 +339,8 @@ void __opt_chunks_with_max_extend(Cont &chunks,
 
                 // Scale the chunksize with this factor
                 if (factor > 1) {
-                    std::cout << "    dim " << dim << ": scaling with factor "
-                              << factor << " ..." << std::endl;
+                    log->debug("Scaling dimension {} with factor {} ...",
+                               dim, factor);
 
                     chunks[dim] = chunks[dim] * factor;
                 }
@@ -350,19 +352,19 @@ void __opt_chunks_with_max_extend(Cont &chunks,
 
                 if (factor * bytes(chunks) <= CHUNKSIZE_MAX) {
                     // Yep. Just extend this dimension to the max_extend, done.
-                    std::cout << "    dim " << dim << " can be filled "
-                              << "completely. "
-                              << "(difference: " << max_extend[dim]-chunks[dim]
-                              << ", factor: " << factor << ")" << std::endl;
+                    log->debug("Dimension {} can be filled completely. "
+                               "(difference: {:.2e}, factor: {:.2e})",
+                               dim, max_extend[dim]-chunks[dim], factor);
+
                     chunks[dim] = max_extend[dim];
                 }
                 else {
                     // Cannot further extend.
-                    std::cout << "    dim " << dim << " cannot be extended to "
-                              << "fill max_extend without exceeding maximum "
-                              << "chunksize! "
-                              << "(difference: " << max_extend[dim]-chunks[dim]
-                              << ", factor: " << factor << ")" << std::endl;
+                    log->debug("Dimension {} cannot be extended to fill "
+                               "max_extend without exceeding maximum "
+                               "chunksize! "
+                               "(difference: {:.2e}, factor: {:.2e})",
+                               dim, max_extend[dim]-chunks[dim], factor);
                 }
             }
             // Done with this index
@@ -373,18 +375,17 @@ void __opt_chunks_with_max_extend(Cont &chunks,
     // -- Optimization of infinite dims -- //
 
     if (!opt_inf_dims) {
-        std::cout << "  optimization of infinite dims disabled" << std::endl;
+        log->debug("Optimization of unlimited dimensions is disabled.");
     }
     else if (!dims_inf.size()) {
-        std::cout << "  no infinite dims available to optimize" << std::endl;
+        log->debug("No unlimited dimensions available to optimize.");
     }
     else if (bytes(chunks) == CHUNKSIZE_MAX) {
-        std::cout << "  cannot further optimize using infinite dims"
-                  << std::endl;
+        log->debug("Cannot further optimize using unlimited dimensions.");
     }
     else {
-        std::cout << "  => optimizing " << dims_inf.size()
-                  << " infinite dim(s) to fill max chunksize ..." << std::endl;
+        log->debug("Optimizing {} unlimited dimension(s) to fill the maximum "
+                   "chunk size ...", dims_inf.size());
         
         // Loop over indices of inf. dims
         // NOTE Depending on the chunk sizes, this might only have an effect
@@ -395,8 +396,8 @@ void __opt_chunks_with_max_extend(Cont &chunks,
 
             // If large enough, scale it by that factor
             if (factor > 1) {
-                std::cout << "    dim " << dim << ": scaling with factor "
-                          << factor << " ..." << std::endl;
+                log->debug("Scaling dimension {} with factor {} ...",
+                           dim, factor);
 
                 chunks[dim] = chunks[dim] * factor;
             }
@@ -489,9 +490,8 @@ const Cont guess_chunksize(const hsize_t typesize,
 
 
     // -- Logging -- //
-    // Set up, if it does not already exist
-    // TODO check if this makes sense
-    Utopia::setup_loggers();
+    // Get a logger to use here; note that it needs to have been set up outside
+    // of here beforehand!
     auto log = spdlog::get("data_io");
 
 
@@ -602,14 +602,14 @@ const Cont guess_chunksize(const hsize_t typesize,
     // extended, we can only have (and only need!) a single chunk
     if (dset_finite && (bytes(max_extend) <= CHUNKSIZE_MAX)) {
         log->debug("Maximally extended dataset fits will fit into single "
-                   "chunk.")
+                   "chunk.");
         return Cont(max_extend);
     }
 
 
     // -- Step 1: Optimize for one I/O operation fitting into chunk -- //
     log->debug("Cannot apply simple optimizations. Try to fit single I/O "
-               "operation into a chunk ...")
+               "operation into a chunk ...");
 
     // Create the temporary container that will store the chunksize values.
     // It starts with a copy of the extend values for I/O operations.
@@ -632,7 +632,7 @@ const Cont guess_chunksize(const hsize_t typesize,
 
         __opt_chunks_target(_chunks, CHUNKSIZE_MAX, // <- target value
                             typesize, CHUNKSIZE_MAX, CHUNKSIZE_MIN,
-                            larger_high_dims);
+                            larger_high_dims, log);
         // NOTE The algorithm is also able to _increase_ the chunk size in
         //      certain dimensions. However, with _chunks == io_extend and the
         //      knowledge that the current bytesize of _chunks is above the
@@ -649,7 +649,7 @@ const Cont guess_chunksize(const hsize_t typesize,
 
         __opt_chunks_target(_chunks, CHUNKSIZE_BASE, // <- target value
                             typesize, CHUNKSIZE_MAX, CHUNKSIZE_MIN,
-                            larger_high_dims);
+                            larger_high_dims, log);
         // NOTE There is no issue with going beyond the maximum chunksize here
     }
     else {
@@ -661,8 +661,8 @@ const Cont guess_chunksize(const hsize_t typesize,
     // To be on the safe side: Check that _chunks did not exceed max_extend
     for (unsigned short i=0; i < rank; i++) {
         if (_chunks[i] > max_extend[i]) {
-            log->warning("Optimization led to chunks larger than max_extend. "
-                         "This should not have happened!");
+            log->warn("Optimization led to chunks larger than max_extend. "
+                      "This should not have happened!");
             _chunks[i] = max_extend[i];
         }
     }
@@ -678,11 +678,11 @@ const Cont guess_chunksize(const hsize_t typesize,
         && (_chunks != max_extend) && (bytes(_chunks) < CHUNKSIZE_MAX))
     {
         log->debug("Have max_extend information and can (potentially) use it "
-                   "to optimize chunk extensions.")
+                   "to optimize chunk extensions.");
 
         __opt_chunks_with_max_extend(_chunks, max_extend,
                                      typesize, CHUNKSIZE_MAX,
-                                     opt_inf_dims, larger_high_dims);
+                                     opt_inf_dims, larger_high_dims, log);
     }
     // else: no further optimization possible
 

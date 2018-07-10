@@ -10,6 +10,7 @@
 
 using namespace Utopia::DataIO;
 
+
 template<typename T>
 void assert_equal(const std::vector<T> a, const std::vector<T> b) {
     // Evaluate whether equal
@@ -32,12 +33,20 @@ void assert_equal(const std::vector<T> a, const std::vector<T> b) {
     assert(equal);
 }
 
+
 int main(int argc, char *argv[])
 {
     try {
         Dune::MPIHelper::instance(argc, argv);
 
+        std::cout << std::endl << "Setting up loggers ..." << std::endl;
+        Utopia::setup_loggers();
+        spdlog::get("data_io")->set_level(spdlog::level::debug);
+        std::cout << "Loggers created and adjusted." << std::endl;
+        
+
         std::cout << std::endl << "Tests commencing ..." << std::endl;
+
 
 
         // -- Without max_extend -- //
