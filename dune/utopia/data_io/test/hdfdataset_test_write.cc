@@ -170,6 +170,13 @@ void write_dataset_onedimensional(HDFFile& file)
     rvaluedataset.write(points.begin(), points.end(), [](auto& pt) {
         return std::vector<double>{pt.x, pt.y, pt.z};
     });
+
+    HDFDataset fixedsizearr_dataset(*file.get_basegroup(),
+                                    "/fixedsize_array_set");
+
+    fixedsizearr_dataset.write(points.begin(), points.end(), [](auto& pt) {
+        return std::array<double, 3>{pt.x, pt.y, pt.z};
+    });
 }
 
 void write_dataset_multidimensional(HDFFile& file)

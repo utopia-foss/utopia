@@ -40,7 +40,8 @@ void read_dataset_tests(HDFFile& file)
 
     HDFDataset rvaluedataset(*file.get_basegroup(), "rvalueset");
     HDFDataset varlen_dataset(testgroup1, "varlendataset");
-
+    HDFDataset fixedsizearr_dataset(*file.get_basegroup(),
+                                    "fixedsize_array_set");
     // read entire 1d dataset
     std::vector<double> data(100, 3.14);
     for (std::size_t i = 0; i < data.size(); ++i)
@@ -184,6 +185,17 @@ void read_dataset_tests(HDFFile& file)
         assert(std::abs(points[l].x - ptvec[l][0]) < 1e-16);
         assert(std::abs(points[l].y - ptvec[l][1]) < 1e-16);
         assert(std::abs(points[l].z - ptvec[l][2]) < 1e-16);
+    }
+
+    auto arrvec = fixedsizearr_dataset.read<std::array<double, 3>>();
+
+    assert(arrvec.size() == 100);
+    for (std::size_t l = 0; l < 100; ++l)
+    {
+        assert(arrvec[l].size() == 3);
+        assert(std::abs(points[l].x - arrvec[l][0]) < 1e-16);
+        assert(std::abs(points[l].y - arrvec[l][1]) < 1e-16);
+        assert(std::abs(points[l].z - arrvec[l][2]) < 1e-16);
     }
 }
 
