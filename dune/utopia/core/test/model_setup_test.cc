@@ -2,6 +2,7 @@
 
 #include "model_setup_test.hh"
 
+using namespace Utopia;
 
 int main(int argc, char *argv[])
 {
@@ -13,16 +14,16 @@ int main(int argc, char *argv[])
         std::cout << "Initializing pseudo parents..." << std::endl;
         
         // only via config file:
-        Utopia::PseudoParent pp1("model_setup_test.yml");
+        PseudoParent pp1("model_setup_test.yml");
         
         // more granular:
-        Utopia::PseudoParent pp2("model_setup_test.yml",         // config
+        PseudoParent pp2("model_setup_test.yml",                 // config
                                  "model_setup_test_tmpfile2.h5", // output
                                  23,                             // seed
                                  "w");                           // access mode
         
         // custom RNG via class template deduction
-        Utopia::PseudoParent<std::ranlux48_base>                 // RNG class
+        PseudoParent<std::ranlux48_base>                         // RNG class
                              pp3("model_setup_test.yml",         // config
                                  "model_setup_test_tmpfile3.h5", // output
                                  42,                             // seed
@@ -34,9 +35,9 @@ int main(int argc, char *argv[])
 
         // initialize the actual models using the different pseudo parents
         std::cout << "Initializing models via pseudo parents ..." << std::endl;
-        Utopia::DoNothingModel model1("model1", pp1);
-        Utopia::DoNothingModel model2("model2", pp2);
-        Utopia::DoNothingModel model3("model3", pp2);
+        DoNothingModel model1("model1", pp1);
+        DoNothingModel model2("model2", pp2);
+        DoNothingModel model3("model3", pp2);
 
         std::cout << "Initialization of models via pseudo parents succeeded."
                   << std::endl << std::endl;
@@ -46,9 +47,9 @@ int main(int argc, char *argv[])
         std::cout << "Performing tests ..." << std::endl;
 
         // Is the config read in correctly?
-        assert(model1.get_cfg()["foo"].as<std::string>() == "bar");
-        assert(model2.get_cfg()["bar"].as<std::string>() == "foo");
-        assert(model3.get_cfg()["spam"].as<std::string>() == "eggs");
+        assert(as_str(model1.get_cfg()["foo"]) == "bar");
+        assert(as_str(model2.get_cfg()["bar"]) == "foo");
+        assert(as_str(model3.get_cfg()["spam"]) == "eggs");
 
         std::cout << "Tests finished." << std::endl << std::endl;
 
