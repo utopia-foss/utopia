@@ -2,6 +2,7 @@
 
 #include "model_with_manager_test.hh"
 
+using namespace Utopia;
 
 int main(int argc, char *argv[])
 {
@@ -20,7 +21,7 @@ int main(int argc, char *argv[])
 
         // create the manager with a certain grid size using a setup function
         std::cout << "Creating GridManager ..." << std::endl;
-        auto grid_size = cfg["grid_size"].as<int>();
+        auto grid_size = as_<int>(cfg["grid_size"]);
         std::cout << "  grid_size: " << grid_size << std::endl;
         
         auto manager = setup_manager(grid_size);
