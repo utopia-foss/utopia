@@ -12,14 +12,19 @@ namespace Utopia {
 
 
 /// Wrapper struct for defining base class data types
-/** \tparam DataType Type of the data the model operates on (state)
+/** \tparam DataType              Type of the data the model operates on
  *  \tparam BoundaryConditionType Data type of the boundary condition
+ *  \tparam RNGType               The RNG class to use
+ *  \tparam ConfigType            The class to use for reading the config
+ *  \tparam DataGroupType         The data group class to store datasets in
+ *  \tparam DataSetType           The data group class to store data in
  */
 template<typename DataType,
          typename BoundaryConditionType,
          typename RNGType=std::mt19937,
          typename ConfigType=Utopia::DataIO::Config,
-         typename DataGroupType=Utopia::DataIO::HDFGroup
+         typename DataGroupType=Utopia::DataIO::HDFGroup,
+         typename DataSetType=Utopia::DataIO::HDFDataset<Utopia::DataIO::HDFGroup>
          >
 struct ModelTypes
 {
@@ -28,6 +33,7 @@ struct ModelTypes
     using RNG = RNGType;
     using Config = ConfigType;
     using DataGroup = DataGroupType;
+    using DataSet = DataSetType;
 };
 
 
@@ -51,8 +57,11 @@ public:
     /// Data type that holds the configuration
     using Config = typename ModelTypes::Config;
     
-    /// Data type that is used for writing data
+    /// Data type that is used for storing datasets
     using DataGroup = typename ModelTypes::DataGroup;
+    
+    /// Data type that is used for storing data
+    using DataSet = typename ModelTypes::DataSet;
 
     /// Data type of the shared RNG
     using RNG = typename ModelTypes::RNG;
@@ -66,7 +75,7 @@ protected:
     const std::string name;
 
     /// Config node belonging to this model instance
-    Config cfg;
+    const Config cfg;
 
     /// The (model) logger
     const std::shared_ptr<spdlog::logger> log;
@@ -227,7 +236,7 @@ protected:
     using HDFGroup = Utopia::DataIO::HDFGroup;
 
     /// The config node
-    Config cfg;
+    const Config cfg;
 
     /// Pointer to the HDF5 file where data is written to
     const std::shared_ptr<HDFFile> hdffile;
@@ -314,7 +323,7 @@ public:
         return this->hdffile;
     }
     
-    /// Return a pointer to the HDF basegroup
+    /// Return a pointer to the HDF group, which is the base group of the file
     std::shared_ptr<HDFGroup> get_hdfgrp() const {
         return this->hdffile->get_basegroup();
     }
