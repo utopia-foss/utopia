@@ -69,7 +69,7 @@ public:
 protected:
     // -- Member declarations -- //
     /// Model internal time stamp
-    unsigned int _time; // FIXME use unsigned long or larger!
+    std::size_t _time;
     
     /// Name of the model instance
     const std::string _name;
@@ -133,7 +133,7 @@ public:
     // -- Getters -- //
 
     /// Return the current time of this model
-    unsigned int get_time() const {
+    std::size_t get_time() const {
         return _time;
     }
 
@@ -201,7 +201,7 @@ protected:
     /// Increment time
     /** \param dt Time increment
      */
-    void increment_time (unsigned int dt=1) { _time += dt; }
+    void increment_time (std::size_t dt=1) { _time += dt; }
 
     /// cast to the derived class
     Derived& impl () { return static_cast<Derived&>(*this); }
