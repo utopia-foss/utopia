@@ -7,6 +7,7 @@
 
 namespace Utopia {
 namespace Models {
+namespace Dummy {
 
 /// Define data types of dummy model
 using DummyTypes = ModelTypes<
@@ -86,8 +87,8 @@ public:
     const Data& data () const { return state; }
 };
 
+} // namespace Dummy
 } // namespace Models
-
 } // namespace Utopia
 
 #endif // UTOPIA_MODELS_DUMMY_HH

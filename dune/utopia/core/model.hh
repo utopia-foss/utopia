@@ -1,6 +1,8 @@
 #ifndef UTOPIA_MODEL_HH
 #define UTOPIA_MODEL_HH
 
+#include <boost/range/irange.hpp>
+
 #include <dune/utopia/data_io/hdffile.hh>
 #include <dune/utopia/data_io/hdfgroup.hh>
 #include <dune/utopia/data_io/cfg_utils.hh>
@@ -262,8 +264,8 @@ public:
         setup_loggers(); // global loggers
         set_log_level(); // this log level
 
-        log->info("Initialized PseudoParent from config file:\n  {}",
-                  cfg_path);
+        log->info("Initialized PseudoParent from config file");
+        log->debug("cfg_path:      {}", cfg_path);
     }
     
 
@@ -291,12 +293,13 @@ public:
         setup_loggers(); // global loggers
         set_log_level(); // this log level
 
-        log->info("Initialized PseudoParent with the following parameters:");
+        log->info("Initialized PseudoParent from parameters");
         log->debug("cfg_path:      {}", cfg_path);
-        log->debug("output_path:   {} (mode: {})",
+        log->debug("output_path:   {}  (mode: {})",
                    output_path, output_file_mode);
         log->debug("seed:          {}", seed);
     }
+
 
 
     // -- Getters -- //
@@ -325,6 +328,45 @@ public:
     std::shared_ptr<spdlog::logger> get_logger() const {
         return log;
     }
+
+
+
+    // -- Model iteration -- //
+
+    /// The number of steps the PseudoParent was configured to run for
+    template<typename T=std::size_t>
+    std::size_t num_steps() const {
+        return as_<T>(this->cfg["num_steps"]);
+    }
+
+
+    /// Iterate a given model for the configured number of steps
+    /** @detail This is a convenience function to use for running a single
+     *          model. Using it, explicit access and extraction of the
+     *          `num_steps` parameter from the configuration is avoided.
+     *
+     * @param   model   The Model-derived class instance to call `iterate` on,
+     *                  `num_steps` times.
+     */
+    template<typename Model>
+    void run(Model model) {
+        // Get number of steps and inform about it
+        auto num_steps = this->num_steps<std::size_t>();
+        this->get_logger()->info("Iterating model for {} steps ...",
+                                 num_steps);
+
+        // Perform the iteration
+        for (auto step : boost::irange(static_cast<std::size_t>(0),
+                                       num_steps)) {
+            this->get_logger()->debug("Commencing iteration: {:8d}", step + 1);
+            model.iterate();
+        }
+
+        this->get_logger()->info("Model iteration finished.");
+    }
+
+
+
 
 private:
 
