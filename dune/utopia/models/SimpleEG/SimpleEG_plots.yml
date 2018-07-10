@@ -32,12 +32,12 @@ strategy:
   uni: 0
   to_plot:
     strategy:
-      cmap: viridis
+      cmap: RdYlBu
       limits: [0, 1]
       title: 'Strategy'
       
     payoff: 
-      cmap: inferno
+      cmap: viridis
       limits: [0, 12]
       title: 'Payoff'
 

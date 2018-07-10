@@ -8,8 +8,6 @@ from matplotlib import rcParams
 
 from utopya import DataManager
 
-# from ..tools import save_and_close
-
 # -----------------------------------------------------------------------------
 
 class FileWriterContextManager():
@@ -23,7 +21,6 @@ class FileWriterContextManager():
 
     def __exit__(self, *args):
         plt.close(self.fig)
-
 
 class FileWriter():
     """The FileWriter class yields functionality to save individual frames."""
