@@ -40,11 +40,14 @@ strategy:
       cmap: inferno
       limits: [0, 12]
       title: 'Payoff'
-  # properties: [strategy]
-  # cmaps: [viridis]
-  # rngs: [[0, 1]]
-  
+
   # Video options
+  writer: frames
   fps: 1
   step_size: 1
   dpi: 100
+
+  frames: 
+    name_padding: 5
+    format: 'png'
+    dpi: 100
