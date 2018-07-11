@@ -211,9 +211,15 @@ public:
      *
      * @return     std::shared_ptr<HDFDataset<HDFGroup>>
      */
-    std::shared_ptr<HDFDataset<HDFGroup>> open_dataset(std::string&& path)
+    template <typename Adaptor>
+    std::shared_ptr<HDFDataset<HDFGroup, Adaptor>> open_dataset(std::string path,
+                                                                Adaptor&& adaptor,
+                                                                std::size_t rank,
+                                                                std::vector<hsize_t> capacity,
+                                                                std::vector<hsize_t> chunksizes,
+                                                                std::size_t compresslevel)
     {
-        return _base_group->open_dataset(std::forward<std::string&&>(path));
+        return _base_group.open_dataset(path, adaptor, rank, capacity, chunksizes, compresslevel);
     }
 
     /**
