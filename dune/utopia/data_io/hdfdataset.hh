@@ -909,10 +909,10 @@ public:
               std::vector<hsize_t> end = {},
               std::vector<hsize_t> stride = {})
     {
-        if (_rank == 0)
-        {
-            throw std::runtime_error("Rank of dataset " + _path + " is zero!");
-        }
+        // if (_rank == 0)
+        // {
+        //     throw std::runtime_error("Rank of dataset " + _path + " is zero!");
+        // }
         // check if dataset id is ok
         if (H5Iis_valid(_dataset) == false)
         {
