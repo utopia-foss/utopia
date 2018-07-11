@@ -240,16 +240,14 @@ public:
      *
      * @return     A std::shared_ptr pointing at the newly created dataset
      */
-    template <typename Adaptor>
-    std::shared_ptr<HDFDataset<HDFGroup, Adaptor>> open_dataset(std::string path,
-                                                                Adaptor&& adaptor,
-                                                                std::size_t rank,
-                                                                std::vector<hsize_t> capacity,
-                                                                std::vector<hsize_t> chunksizes,
-                                                                std::size_t compresslevel)
+    std::shared_ptr<HDFDataset<HDFGroup>> open_dataset(std::string path,
+                                                       std::size_t rank,
+                                                       std::vector<hsize_t> capacity,
+                                                       std::vector<hsize_t> chunksizes,
+                                                       std::size_t compresslevel)
     {
         return std::make_shared<HDFDataset<HDFGroup>>(
-            *this, path, adaptor, rank, capacty, chunksizes, compresslevel);
+            *this, path, rank, capacity, chunksizes, compresslevel);
     }
 
     /**

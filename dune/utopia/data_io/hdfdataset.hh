@@ -25,7 +25,7 @@ namespace DataIO
  *
  * @tparam     HDFObject  The type of the parent object
  */
-template <class HDFObject, class Adaptor>
+template <class HDFObject>
 class HDFDataset
 {
 private:
@@ -40,7 +40,7 @@ private:
      *
      * @return     The created dataset
      */
-    template <typepath Datatype>
+    template <typename Datatype>
     hid_t __create_dataset_helper__(std::size_t typesize)
     {
         // create group property list and (potentially) intermediate groups
@@ -53,7 +53,7 @@ private:
             // create creation property list, set chunksize and compress level
             hid_t plist = H5Pcreate(H5P_DATASET_CREATE);
 
-            H5Pset_chunk(plist, _rank, _chunk_sizes.data());
+            H5Pset_chunk(plist, _rank, _chunksizes.data());
 
             if (_compress_level > 0)
             {
@@ -97,7 +97,7 @@ private:
      *
      * @tparam     result_type     The type of the data stored in this dataset
      */
-    template <typepath result_type>
+    template <typename result_type>
     void __create_dataset__()
     {
         std::size_t typesize = 0;
@@ -128,8 +128,8 @@ private:
      * @tparam     Iter       The type of the iterator
      * @tparam     Adaptor    The type of the adaptor
      */
-    template <typepath Iter>
-    void __write_dataset__(Iter begin, Iter end, hid_t dspace, hid_t memspace)
+    template <typename Iter, typename Adaptor>
+    void __write_dataset__(Iter begin, Iter end, Adaptor&& adaptor, hid_t dspace, hid_t memspace)
     {
         using result_type = remove_qualifier_t<decltype(adaptor(*begin))>;
         // now that the dataset has been made let us write to it
@@ -138,8 +138,9 @@ private:
         {
             // make an intermediate buffer which then can be turned into hvl_t.
             std::vector<result_type> temp(std::distance(begin, end));
-            std::generate(temp.begin(), temp.end(),
-                          [this, &begin]() { return _adaptor(*(begin++)); });
+            std::generate(temp.begin(), temp.end(), [this, &begin, &adaptor]() {
+                return adaptor(*(begin++));
+            });
 
             // then turn this temporary buffer into a hvl_t thing, then write.
             auto buffer = HDFBufferFactory::buffer(
@@ -179,7 +180,7 @@ private:
         }
         else
         {
-            auto buffer = HDFBufferFactory::buffer(begin, end, _adaptor);
+            auto buffer = HDFBufferFactory::buffer(begin, end, adaptor);
 
             // write to buffer
             herr_t write_err =
@@ -236,7 +237,7 @@ private:
      *
      * @return     The data read from the dataset
      */
-    template <typepath desired_type>
+    template <typename desired_type>
     auto __read_from_dataset__(hsize_t buffer_size, hid_t dspace, hid_t memspace)
     {
         if constexpr (is_container_v<desired_type>)
@@ -270,7 +271,7 @@ private:
                 for (std::size_t i = 0; i < buffer_size; ++i)
                 {
                     data[i].resize(buffer[i].len);
-                    auto ptr = static_cast<typepath desired_type::value_type*>(
+                    auto ptr = static_cast<typename desired_type::value_type*>(
                         buffer[i].p);
 
                     for (std::size_t j = 0; j < buffer[i].len; ++j)
@@ -337,12 +338,6 @@ protected:
      * @brief
      *
      */
-    Adaptor _adaptor;
-
-    /**
-     * @brief
-     *
-     */
     std::string _path;
 
     /**
@@ -373,7 +368,7 @@ protected:
      * @brief
      *
      */
-    std::vector<hsize_t> _chunk_sizes;
+    std::vector<hsize_t> _chunksizes;
 
     /**
      * @brief
@@ -421,16 +416,6 @@ public:
     }
 
     /**
-     * @brief Get the adaptor functor/function
-     *
-     * @return Adaptor
-     */
-    Adaptor get_adaptor()
-    {
-        return _adaptor;
-    }
-
-    /**
      * @brief get the rank of the dataset, i.e. the dimensionality
      *
      * @return std::size_t
@@ -467,7 +452,7 @@ public:
      */
     auto get_chunksizes()
     {
-        return _chunk_sizes;
+        return _chunksizes;
     }
 
     /**
@@ -475,7 +460,7 @@ public:
      *
      * @return auto
      */
-    auto get_compress_level()
+    auto get_compresslevel()
     {
         return _compress_level;
     }
@@ -518,7 +503,7 @@ public:
      *
      * @tparam     Attrdata        The type of the attribute data
      */
-    template <typepath Attrdata>
+    template <typename Attrdata>
     void add_attribute(std::string attribute_path, Attrdata attribute_data)
     {
         // make attribute and write
@@ -537,10 +522,12 @@ public:
             {
                 H5Dclose(_dataset);
                 _referencecounter->erase(_referencecounter->find(_address));
+                _dataset = -1;
             }
             else
             {
                 --(*_referencecounter)[_address];
+                _dataset = -1;
             }
         }
     }
@@ -560,20 +547,18 @@ public:
      */
     void open(HDFObject& parent_object,
               std::string path,
-              Adaptor&& adaptor,
               hsize_t rank,
               std::vector<hsize_t> capacity,
-              std::vector<hsize_t> chunksize,
+              std::vector<hsize_t> chunksizes,
               hsize_t compress_level)
     {
         _parent_object = &parent_object;
-        _adaptor = adaptor;
         _path = path;
         _referencecounter = parent_object.get_referencecounter();
         _rank = rank;
         _current_extend = {};
         _capacity = capacity;
-        _chunk_sizes = chunksizes;
+        _chunksizes = chunksizes;
         _compress_level = compress_level;
         // Try to find the dataset in the parent_object
         // If it is there, open it.
@@ -601,6 +586,7 @@ public:
         }
         else
         {
+            std::cout << "not found dataset " << _path << std::endl;
             _dataset = -1;
         }
     }
@@ -614,16 +600,15 @@ public:
      * @param path The path of the dataset in the parent_object
      * @param rank The number of dimensions of the dataset
      */
-    void open(HDFObject& parent_object, std::string path, Adaptor&& adaptor, hsize_t rank)
+    void open(HDFObject& parent_object, std::string path, hsize_t rank)
     {
         _parent_object = &parent_object;
-        _adaptor = adaptor;
         _path = path;
         _referencecounter = parent_object.get_referencecounter();
         _rank = rank;
         _current_extend = {};
         _capacity = {};
-        _chunk_sizes = {};
+        _chunksizes = {};
         _compress_level = 0;
         // Try to find the dataset in the parent_object
         // If it is there, open it.
@@ -665,12 +650,11 @@ public:
         using std::swap;
         swap(_parent_object, other._parent_object);
         swap(_path, other._path);
-        swap(_adaptor, other._adaptor);
         swap(_dataset, other._dataset);
         swap(_rank, other._rank);
         swap(_current_extend, other._current_extend);
         swap(_capacity, other._capacity);
-        swap(_chunk_sizes, other._chunk_sizes);
+        swap(_chunksizes, other._chunksizes);
         swap(_compress_level, other._compress_level);
         swap(_info, other._info);
         swap(_address, other._address);
@@ -698,16 +682,16 @@ public:
      * @tparam     Iter            The type of the iterator
      * @tparam     Adaptor         The type of the adaptor
      */
-    template <typepath Iter>
-    void write(Iter begin, Iter end)
-    //    Adaptor&& adaptor,
+    template <typename Iter, typename Adaptor>
+    void write(Iter begin, Iter end, Adaptor&& adaptor)
+    //    Adaptor adaptor,
     //    hsize_t rank = 1,
     //    std::vector<hsize_t> extend = {},
     //    std::vector<hsize_t> capacity = {},
     //    hsize_t chunksize = 0,
     //    hsize_t compress_level = 0)
     {
-        using result_type = remove_qualifier_t<decltype(_adaptor(*begin))>;
+        using result_type = remove_qualifier_t<decltype(adaptor(*begin))>;
 
         // get size of stuff to write
         hsize_t size = std::distance(begin, end);
@@ -769,7 +753,7 @@ public:
             add_attribute<std::vector<hsize_t>>("dimensionality info", dims);
 
             // write dataset
-            __write_dataset__(begin, end, , H5S_ALL, H5S_ALL);
+            __write_dataset__(begin, end, std::forward<Adaptor&&>(adaptor), H5S_ALL, H5S_ALL);
         }
         else
         { // dataset does exist
@@ -863,7 +847,8 @@ public:
                 hid_t memspace = spaces[1];
 
                 // and now: write the data
-                __write_dataset__(begin, end, dspace, memspace);
+                __write_dataset__(begin, end, std::forward<Adaptor&&>(adaptor),
+                                  dspace, memspace);
 
                 // // buffering
                 // auto buffer = HDFBufferFactory::buffer<result_type>(
@@ -903,7 +888,7 @@ public:
                 std::vector<hsize_t> offset = _current_extend;
                 std::vector<hsize_t> stride(_current_extend.size(), 1);
                 std::vector<hsize_t> count = offset;
-                std::vector<hsize_t> block(extend.size(), 1);
+                std::vector<hsize_t> block(_current_extend.size(), 1);
                 count[0] = 1; // such that we add one more 'slice'
 
                 // extend
@@ -946,7 +931,8 @@ public:
                 hid_t memspace = spaces[1];
 
                 // and write the dataset
-                __write_dataset__(begin, end, dspace, memspace);
+                __write_dataset__(begin, end, std::forward<Adaptor&&>(adaptor),
+                                  dspace, memspace);
 
                 H5Sclose(memspace);
                 H5Sclose(dspace);
@@ -966,7 +952,7 @@ public:
      *
      * @return     the read data
      */
-    template <typepath desired_type>
+    template <typename desired_type>
     auto read(std::vector<hsize_t> start = {},
               std::vector<hsize_t> end = {},
               std::vector<hsize_t> stride = {})
@@ -1096,13 +1082,12 @@ public:
      */
     HDFDataset(const HDFDataset& other)
         : _parent_object(other._parent_object),
-          _adaptor(other._adaptor),
           _path(other._path),
           _dataset(other._dataset),
           _rank(other._rank),
           _current_extend(other._current_extend),
           _capacity(other._capacity),
-          _chunk_sizes(other._chunk_sizes),
+          _chunksizes(other._chunksizes),
           _compress_level(other._compress_level),
           _info(other._info),
           _address(other._address),
@@ -1148,19 +1133,18 @@ public:
      * @param compress_level The compression level to use
      */
     HDFDataset(HDFObject& parent_object,
-               Adaptor&& adaptor,
                std::string path,
                hsize_t rank,
                std::vector<hsize_t> capacity,
-               hsize_t chunksize,
+               std::vector<hsize_t> chunksizes,
                hsize_t compress_level)
         : _parent_object(&parent_object),
-          _adaptor(adaptor),
           _path(path),
           _dataset(-1),
-          _rank(0),
+          _rank(rank),
           _current_extend({}),
           _capacity(capacity),
+          _chunksizes(chunksizes),
           _compress_level(compress_level),
           _referencecounter(parent_object.get_referencecounter())
 
@@ -1199,14 +1183,14 @@ public:
      * @param path The path of the dataset in the parent_object
      * @param rank The number of dimensions of the dataset
      */
-    HDFDataset(HDFObject& parent_object, Adaptor&& adaptor, std::string path, hsize_t rank)
+    HDFDataset(HDFObject& parent_object, std::string path, hsize_t rank)
         : _parent_object(&parent_object),
-          _adaptor(adaptor),
           _path(path),
           _dataset(-1),
           _rank(rank),
           _current_extend({}),
           _capacity({}),
+          _chunksizes({}),
           _compress_level(0),
           _referencecounter(parent_object.get_referencecounter())
 
@@ -1265,8 +1249,8 @@ public:
  *
  * @tparam     HDFObject  The type of the parent object
  */
-template <typepath HDFObject, typepath Adaptor>
-void swap(HDFDataset<HDFObject, Adaptor>& lhs, HDFDataset<HDFObject, Adaptor>& rhs)
+template <typename HDFObject>
+void swap(HDFDataset<HDFObject>& lhs, HDFDataset<HDFObject>& rhs)
 {
     lhs.swap(rhs);
 }

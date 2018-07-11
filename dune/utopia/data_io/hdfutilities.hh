@@ -8,8 +8,10 @@
 #define HDFUTILITIES_HH
 
 #include <array>
+#include <functional>
 #include <string>
 #include <type_traits>
+
 // Functions for determining if a type is an STL-container are provided here.
 // This is used if we wish to make hdf5 types for storing such data in an
 // hdf5 dataset.
@@ -198,7 +200,7 @@ struct is_array_like<T, std::void_t<decltype(std::tuple_size<T>::value)>> : std:
 };
 // FIXME Using tuple_size here is not optimal, but it gives a unique
 //       representation of the tuple
-// See:  https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/merge_requests/109/diffs#note_11774
+// See: https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/merge_requests/109/diffs#note_11774
 
 /**
  * @brief Shorthand for is_array_like

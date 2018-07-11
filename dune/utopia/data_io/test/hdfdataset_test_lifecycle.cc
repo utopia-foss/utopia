@@ -68,7 +68,7 @@ bool operator==(HDFGroup& a, HDFGroup& b)
 template <class LHS, class RHS>
 void assert_hdfdatasets(LHS& lhs, RHS& rhs)
 {
-    assert(lhs.get_name() == rhs.get_name());
+    assert(lhs.get_path() == rhs.get_path());
     assert(lhs.get_id() == rhs.get_id());
     assert(lhs.get_address() == rhs.get_address());
     assert(lhs.get_referencecounter() == rhs.get_referencecounter());
@@ -85,17 +85,15 @@ int main()
 {
     HDFFile file("dataset_test_lifetime.h5", "w");
 
-    HDFGroup lifecyclegroup(*file.get_basegroup(), "livecycletest");
+    HDFGroup lifecyclegroup(*file.get_basegroup(), "lifecycletest");
     std::vector<int> data(100, 42);
 
-    HDFDataset first(lifecyclegroup, [](auto& value) { return value; }, "first",
-                     3, {100, 120, 140}, {10, 20, 20}, 5);
+    HDFDataset first(lifecyclegroup, "first", 1, {100}, {10}, 5);
 
-    HDFDataset first_simple(lifecyclegroup, [](auto& value) { return value; },
-                            "first", 3);
+    HDFDataset first_simple(lifecyclegroup, "first_simple", 1);
 
-    first.write(data.begin(), data.end());
-    first_simple.write(data.begin(), data.end());
+    first.write(data.begin(), data.end(), [](int& value) { return value; });
+    first_simple.write(data.begin(), data.end(), [](int& value) { return value; });
 
     assert(H5Iis_valid(first.get_id()));
     assert(H5Iis_valid(first_simple.get_id()));
@@ -116,39 +114,27 @@ int main()
 
     // move assignment
     auto crosscheck(first); // this is needed  for checks
-    crosscheck.close();     // but let it not take part in refcount anymore
     auto moveassign_from_first = std::move(first);
-    assert((*moveassign_from_first.get_referencecounter())[moveassign_from_first.get_address()] == 3);
+    assert((*moveassign_from_first.get_referencecounter())[moveassign_from_first.get_address()] == 4);
     assert_hdfdatasets(crosscheck, moveassign_from_first);
 
     // move constructor
     auto moveconst_second(std::move(second));
-    assert((*moveconst_second.get_referencecounter())[moveconst_second.get_address()] == 3);
+    assert((*moveconst_second.get_referencecounter())[moveconst_second.get_address()] == 4);
     assert_hdfdatasets(crosscheck, moveconst_second);
 
+    // lifecyclegroup.close();
+    // file.close();
+    // file.open("dataset_test_lifetime.h5", "r+");
+    // lifecyclegroup.open(*file.get_basegroup(), "lifecycletest");
     // test open method
-    while (H5Iis_valid(moveconst_second.get_id()))
-    {
-        moveconst_second.close();
-    }
-    assert(H5Iis_valid(moveconst_second.get_id()) == false);
-
-    HDFDataset<HDFGroup, std::function<int(int&)>> opened_dataset;
-    opened_dataset.open(moveconst_second.get_parent(), moveconst_second.get_name(),
-                        [](auto& value) { return value; }, 3, {100, 120, 140},
-                        {10, 20, 20}, 5);
+    HDFDataset<HDFGroup> opened_dataset;
+    opened_dataset.open(lifecyclegroup, "first", 1, {100}, {10}, 5);
     assert(H5Iis_valid(opened_dataset.get_id()) == true);
 
     // test simple open method
-    while (H5Iis_valid(first_simple.get_id()))
-    {
-        first_simple.close();
-    }
-    assert(H5Iis_valid(first_simple.get_id()) == false);
-
-    HDFDataset<HDFGroup, std::function<int(int&)>> opened_dataset_simple;
-    opened_dataset_simple.open(first_simple.get_parent(), first_simple.get_name(),
-                               [](auto& value) { return value; }, 3);
+    HDFDataset<HDFGroup> opened_dataset_simple;
+    opened_dataset_simple.open(lifecyclegroup, "first_simple", 3);
     assert(H5Iis_valid(opened_dataset_simple.get_id()) == true);
     return 0;
 }
