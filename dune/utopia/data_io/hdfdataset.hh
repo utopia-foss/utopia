@@ -328,69 +328,58 @@ private:
     }
 
 protected:
-    /**
-     * @brief
-     *
+    /*
+     *  Pointer to the parent object of the dataset
      */
     HDFObject* _parent_object;
 
-    /**
-     * @brief
-     *
+    /*
+     *  path relative to the parent object
      */
     std::string _path;
 
-    /**
-     * @brief
-     *
+    /*
+     *  dataset id
      */
     hid_t _dataset;
 
-    /**
-     * @brief
-     *
+    /*
+     *  number of dimensions of the dataset
      */
     hsize_t _rank;
 
-    /**
-     * @brief
-     *
+    /*
+     *  the currently occupied size of the dataset in number of elements
      */
     std::vector<hsize_t> _current_extend;
 
-    /**
-     * @brief
-     *
+    /*
+     *   the maximum number of elements which can be stored in the dataset
      */
     std::vector<hsize_t> _capacity;
 
-    /**
-     * @brief
-     *
+    /*
+     *  the chunksizes per dimensions if dataset is extendible or compressed
      */
     std::vector<hsize_t> _chunksizes;
 
-    /**
-     * @brief
-     *
+    /*
+     *  the level of compression, 0 to 10
      */
     std::size_t _compress_level;
 
-    /**
-     * @brief
-     *
+    /*
+     *  the info struct used to get the address of the dataset
      */
     H5O_info_t _info;
 
-    /**
-     * @brief
-     *
+    /*
+     *  the address of the dataset in the file, a unique value given by the hdf5 lib
      */
     haddr_t _address;
 
-    /**
-     * @brief
-     *
+    /*
+     *  Pointer to underlying file's referencecounter
      */
     std::shared_ptr<std::unordered_map<haddr_t, int>> _referencecounter;
 
@@ -543,7 +532,7 @@ public:
      *                 H5S_UNLIMITED if unlimited size is desired. Then you have
      *                 to give chunksizes.
      * @param chunksize The chunksizes in each dimension to use
-     * @param compress_level The compression level to use
+     * @param compress_level The compression level to use, 0 to 10 (0 = no compression, 10 highest compression)
      */
     void open(HDFObject& parent_object,
               std::string path,
@@ -675,7 +664,7 @@ public:
             if (H5Iis_valid(_dataset) == false)
             {
                 throw std::runtime_error(
-                    "Trying to create dataset pathd "
+                    "Trying to create dataset at path "
                     "'" +
                     _path +
                     "' resulted in invalid "
