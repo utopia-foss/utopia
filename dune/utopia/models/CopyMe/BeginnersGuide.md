@@ -23,3 +23,7 @@ Congratulations, you have build a new model! :) So now, just one thing remains:
 Your next guide will be the `MyModelWorksGuide.md` guide. It contains information what requirements your code must fulfill such that it can be accepted as a model within _Utopia_, e.g. that it can be merged into _Utopia_'s master branch. 
 
 Have fun implementing your model! :) 
+
+
+## Additional notes 
+- how to use spdlog
