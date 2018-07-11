@@ -2,49 +2,35 @@
 
 #include "SimpleEG.hh"
 
-using namespace Utopia::Models;
+using namespace Utopia::Models::SimpleEG;
 
 int main (int argc, char** argv)
 {
     try {
         Dune::MPIHelper::instance(argc, argv);
 
-        // Get path to config file
-        const std::string cfg_path = argv[1];
 
-        // Initialize the pseudo parent of this model using that config
-        Utopia::PseudoParent pp(cfg_path);
-
-        // Still need config for iteration and setup function
-        // FIXME ... there must be a nicer way!
-        const auto& cfg = pp.get_cfg();
+        // Initialize the PseudoParent from config file path
+        Utopia::PseudoParent pp(argv[1]);
 
         // Initialize the main model instance with different template arguments
-        // and then iterate it ...
-        // FIXME stop it with teh copy-pasta! Can't we do this in a better way?
-        if (cfg["SimpleEG"]["periodic"].as<bool>()) {
+        // and then iterate it ... Need separate cases for this.
+        // TODO find a better way to check for this argument?!
+        if (Utopia::as_bool(pp.get_cfg()["SimpleEG"]["periodic"])) {
             // Periodic grid
             SimpleEGModel model("SimpleEG", pp,
-                                setup_manager<true>(cfg["SimpleEG"],
-                                                    pp.get_rng()));
+                                setup_manager<true>("SimpleEG", pp));
 
-            for (std::size_t i = 0; i<cfg["num_steps"].as<std::size_t>(); i++){
-                model.iterate();
-            }
+            model.run();
 
         }
         else {
             // Non-periodic grid
             SimpleEGModel model("SimpleEG", pp,
-                                setup_manager<false>(cfg["SimpleEG"],
-                                                     pp.get_rng()));
+                                setup_manager<false>("SimpleEG", pp));
 
-            for (std::size_t i = 0; i<cfg["num_steps"].as<std::size_t>(); i++){
-                model.iterate();
-            }
+            model.run();
         }
-
-        std::cout << "Done." << std::endl;
 
         return 0;
     }

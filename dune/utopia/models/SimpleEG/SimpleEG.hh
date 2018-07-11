@@ -10,8 +10,8 @@
 #include <functional>
 
 namespace Utopia {
-
-namespace Models { // TODO check if additional namespace might be good!
+namespace Models {
+namespace SimpleEG {
 
 /// Strategy enum
 enum Strategy : unsigned short int { S0=0, S1=1 };
@@ -71,6 +71,9 @@ public:
     /// Data type of the shared RNG
     using RNG = typename Base::RNG;
 
+    /// Type of the interaction matrix
+    using IAMatrixType = typename std::array<std::array<double,2>,2>;
+
 private:
     // Base members: time, name, cfg, hdfgrp, rng
 
@@ -79,7 +82,7 @@ private:
     ManagerType _manager;
 
     /// The interaction matrix (extracted during initialization)
-    const std::vector<std::vector<double>> _ia_matrix;
+    const IAMatrixType _ia_matrix;
 
 
     // -- Temporary objects -- //
@@ -170,7 +173,7 @@ private:
             // There are multiple nbs with the same (highest) payoff.
             // -> Choose randomly one of them to pass on its strategy
             std::uniform_int_distribution<> dist(0, _fittest_cell_in_nbhood.size()-1);
-            state.strategy = _fittest_cell_in_nbhood[dist(*this->rng)]->state().strategy;
+            state.strategy = _fittest_cell_in_nbhood[dist(*this->_rng)]->state().strategy;
         }
         else {
             // There is no fittest neighbor. This case should never occur
@@ -200,8 +203,8 @@ public:
         _ia_matrix(this->extract_ia_matrix()),
         _fittest_cell_in_nbhood(),
         // datasets
-        _dset_strategy(this->hdfgrp->open_dataset("strategy")),
-        _dset_payoff(this->hdfgrp->open_dataset("payoff"))
+        _dset_strategy(this->_hdfgrp->open_dataset("strategy")),
+        _dset_payoff(this->_hdfgrp->open_dataset("payoff"))
     {   
         // Initialize cells
         this->initialize_cells();
@@ -210,7 +213,7 @@ public:
         this->write_data();
 
         // Write _ia_matrix in hdfgrp attribute
-        this->hdfgrp->add_attribute("ia_matrix", _ia_matrix);
+        this->_hdfgrp->add_attribute("ia_matrix", _ia_matrix);
 
         // Create
     }
@@ -220,21 +223,20 @@ public:
     void initialize_cells()
     {
         // Extract the mode that determines the initial strategy
-        std::string initial_state = this->cfg["initial_state"].template as<std::string>();
+        auto initial_state = as_str(this->_cfg["initial_state"]);
 
-        std::cout << "Initializing cells in '" << initial_state << "' mode ..."
-                  << std::endl;
+        this->_log->info("Initializing cells in '{}' mode ...", initial_state);
 
         // Distinguish according to the mode, which strategy to choose
         // NOTE that the payoff is already initialized to zero.
         if (initial_state == "random")
         {
             // Get the threshold probability value
-            const auto s1_prob = this->cfg["s1_prob"].template as<double>();   
+            const auto s1_prob = as_double(this->_cfg["s1_prob"]);
 
             // Use a uniform real distribution for random numbers
             auto rand = std::bind(std::uniform_real_distribution<>(),
-                                  std::ref(*this->rng));
+                                  std::ref(*this->_rng));
 
             // Define the update rule
             auto set_random_strategy = [&rand, &s1_prob](const auto cell) {
@@ -260,7 +262,7 @@ public:
         else if (initial_state == "fraction")
         {
             // Get the value for the fraction of cells to have strategy 1
-            const auto s1_fraction = this->cfg["s1_fraction"].template as<double>();
+            const auto s1_fraction = as_double(this->_cfg["s1_fraction"]);
 
             if (s1_fraction > 1. || s1_fraction < 0.) {
                 throw std::invalid_argument("Need `s1_fraction` in [0, 1], "
@@ -276,8 +278,8 @@ public:
             const std::size_t num_s1 = s1_fraction * num_cells;
             // NOTE this is a flooring calculation!
 
-            std::cout << "Cells with strategy 1: " << num_s1
-                      << " of " << num_cells << std::endl;
+            this->_log->debug("Cells with strategy 1:  {} of {}",
+                              num_s1, num_cells);
 
             // OPTIONAL TODO can add some logic here to make more clever assignments, 
             // i.e. starting out with all S1 if the number to set is higher than half ...
@@ -289,7 +291,7 @@ public:
             auto random_cells = _manager.cells();
 
             // ... and shuffle them
-            std::shuffle(random_cells.begin(), random_cells.end(), *this->rng);
+            std::shuffle(random_cells.begin(), random_cells.end(), *this->_rng);
 
             // Make num_s1 cells use strategy 1
             for (auto&& cell : random_cells){
@@ -405,9 +407,7 @@ public:
 
     /// Write data
     void write_data ()
-    {
-        std::cout << "Writing data for time step " << this->time << std::endl;
-        
+    {   
         // For the grid data, get the cells in order to iterate over them
         auto cells = _manager.cells();
         const unsigned int num_cells = std::distance(cells.begin(), cells.end());
@@ -476,88 +476,96 @@ private:
      * If 1) is not set, then the interaction matrix of 2) will be returned.
      * If 1) and 2) are not set, the interaction matrix of 3) will be returned.
      * 
-     * @return std::vector<std::vector<double>> The interaction matrix
+     * @return IAMatrixType The interaction matrix
      */
-    const std::vector<std::vector<double>> extract_ia_matrix() const
+    const IAMatrixType extract_ia_matrix() const
     {
         // Return the ia_matrix if it is explicitly given in the config
-        if (this->cfg["ia_matrix"]){
-            return this->cfg["ia_matrix"].template as<std::vector<std::vector<double>>>();
+        if (this->_cfg["ia_matrix"]) {
+            return as_<IAMatrixType>(this->_cfg["ia_matrix"]);
         }
-        // If ia_matrix is not provided in the config, get the ia_matrix from the bc-pair
-        else if (this->cfg["bc_pair"]){
-            auto [b, c] = this->cfg["bc_pair"].template as<std::pair<double, double>>();
+        else if (this->_cfg["bc_pair"]) {
+            // If ia_matrix is not provided in the config, get the ia_matrix
+            // from the bc-pair
+
+            const auto [b, c] = as_<std::pair<double, double>>(this->_cfg["bc_pair"]);
             const double ia_00 = b - c;
             const double ia_01 = -c;
             const double ia_10 = b;
             const double ia_11 = 0.;
-            const std::vector row0 {ia_00, ia_01};
-            const std::vector row1 {ia_10, ia_11};
-            const std::vector<std::vector<double>> ia_matrix {row0, row1};
+            const std::array<double,2> row0({{ia_00, ia_01}});
+            const std::array<double,2> row1({{ia_10, ia_11}});
+            const IAMatrixType ia_matrix({{row0, row1}});
+
             return ia_matrix;
         }
-        // If both previous cases are not provided, then return the ia_matrix given by the paramter "b"
-        // NOTE: There is no check for b>1 implemented here.
-        else if (this->cfg["b"]){
-            auto b = this->cfg["b"].template as<double>();
+        else if (this->_cfg["b"]) {
+            // If both previous cases are not provided, then return the
+            // ia_matrix given by the paramter "b"
+
+            // NOTE: There is no check for b>1 implemented here.
+            const auto b = as_double(this->_cfg["b"]);
             const double ia_00 = 1;
             const double ia_01 = 0;
             const double ia_10 = b;
             const double ia_11 = 0.;
-            const std::vector row0 {ia_00, ia_01};
-            const std::vector row1 {ia_10, ia_11};
-            const std::vector<std::vector<double>> ia_matrix {row0, row1};
+            const std::array<double,2> row0({{ia_00, ia_01}});
+            const std::array<double,2> row1({{ia_10, ia_11}});
+            const IAMatrixType ia_matrix({{row0, row1}});
+
             return ia_matrix;
         }
-        // Case where no interaction parameters are provided
-        else{
-            std::runtime_error("The interaction matrix is not given!");
-            throw;
-        }
+
+        // If we reach this point, not enough parameters were provided
+        throw std::invalid_argument("The interaction matrix is not given!");
     }
 };
 
 
 /// Setup the grid manager with an initial state
-/** \param cfg       The config node for the SimpleEG model; keys `grid_size`
-  *                  and `periodic` extracted from there
-  * \param rng       The shared pointer to the shared RNG, made available also
-  *                  to the grid manager
+/** \param name          TODO
+  * \param parent_model  TODO
   *
-  * \tparam periodic Whether the grid should be periodic
-  * \tparam Config   The Config type
-  * \tparam RNGType  Type of the RNG to use in the grid manager
+  * \tparam periodic     Whether the grid should be periodic
+  * \tparam ParentModel  The parent model type
   */ 
-template<bool periodic=true, class Config, class RNGType>
-auto setup_manager(Config cfg, std::shared_ptr<RNGType> rng)
+template<bool periodic=true, typename ParentModel>
+auto setup_manager(std::string name, ParentModel& parent_model)
 {
-    std::cout << "Setting up grid manager ..." << std::endl;
+    // Get the logger... and use it :)
+    auto log = parent_model.get_logger();
+    log->info("Setting up '{}' model ...", name);
+
+    // Get the configuration and the rng
+    auto cfg = parent_model.get_cfg()[name];
+    auto rng = parent_model.get_rng();
 
     // Extract grid size from config
-    const auto gsize = cfg["grid_size"].template as<std::vector<unsigned int>>();
-    // FIXME dirty! But using std::array somehow leads to forward declaration error in yaml-cpp < 0.6 … -.-
+    const auto gsize = as_array<unsigned int, 2>(cfg["grid_size"]);
 
     // Inform about the size
-    std::cout << "Creating 2-dimensional grid of size: "
-              << gsize[0] << " x " << gsize[1] << std::endl;
+    log->info("Creating 2-dimensional grid of size: {} x {} ...",
+              gsize[0], gsize[1]);
 
     // Create grid of that size
-    auto grid = Utopia::Setup::create_grid<2>({{gsize[0], gsize[1]}});
+    // auto grid = Utopia::Setup::create_grid<2>({{gsize[0], gsize[1]}});
+    auto grid = Utopia::Setup::create_grid<2>(gsize);
 
     // Create the SimpleEG initial state: S0 and payoff 0.0
     State state_0 = {Strategy::S0, 0.0};
+    // TODO make state_0 configurable?
 
     // Create cells on that grid, passing the initial state
     auto cells = Utopia::Setup::create_cells_on_grid<true>(grid, state_0);
 
     // Create the grid manager, passing the template argument
     if (periodic) {
-        std::cout << "Initializing GridManager with periodic boundary "
-                     "conditions ...." << std::endl;
+        log->info("Now initializing GridManager with periodic boundary "
+                  "conditions ...");
     }
     else {
-        std::cout << "Initializing GridManager with fixed boundary "
-                     "conditions ..." << std::endl;
+        log->info("Now initializing GridManager with fixed boundary "
+                  "conditions ...");
     }
     
     return Utopia::Setup::create_manager_cells<true, periodic>(grid,
@@ -566,6 +574,7 @@ auto setup_manager(Config cfg, std::shared_ptr<RNGType> rng)
 }
 
 
+} // namespace SimpleEG
 } // namespace Models
 } // namespace Utopia
 #endif // UTOPIA_MODELS_SIMPLEEG_HH
