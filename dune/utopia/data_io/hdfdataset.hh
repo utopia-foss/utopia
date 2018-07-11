@@ -59,16 +59,10 @@ private:
             {
                 H5Pset_deflate(plist, _compress_level);
             }
-            std::cout << _path << std::endl;
-            for (std::size_t i = 0; i < _rank; ++i)
-            {
-                std::cout << "current size: " << _current_extend[i]
-                          << ", capacity: " << _capacity[i] << std::endl;
-            }
+
             // make dataspace
             hid_t dspace =
                 H5Screate_simple(_rank, _current_extend.data(), _capacity.data());
-            std::cout << "dspace ready" << std::endl;
             // create dataset and return
             return H5Dcreate(_parent_object->get_id(), _path.c_str(),
                              HDFTypeFactory::type<Datatype>(typesize), dspace,
@@ -76,16 +70,9 @@ private:
         }
         else
         {
-            std::cout << _path << std::endl;
-            for (std::size_t i = 0; i < _rank; ++i)
-            {
-                std::cout << "current size: " << _current_extend[i]
-                          << ", capacity: " << _capacity[i] << std::endl;
-            }
             // make dataspace
             hid_t dspace =
                 H5Screate_simple(_rank, _current_extend.data(), _capacity.data());
-            std::cout << "dspace ready" << std::endl;
 
             // can create the dataset right away
             return H5Dcreate(_parent_object->get_id(), _path.c_str(),
@@ -599,7 +586,6 @@ public:
         }
         else
         {
-            std::cout << "not found dataset " << _path << std::endl;
             _dataset = -1;
         }
     }
