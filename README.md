@@ -191,4 +191,6 @@ Available testing groups:
 | ----- | ---- |
 | `core` | Backend functions for models |
 | `dataio` | Backend functions for reading config files and writing data |
-| `python` | Frontend functions for managing simulations and analyzing data |
+| `utopya` | Frontend package for performing simulations, reading and analyzing data |
+| `models` | Models tests (implemented in `python/model_tests`) |
+| `python` | All python tests |

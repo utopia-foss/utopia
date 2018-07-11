@@ -61,6 +61,7 @@ private:
     {
         using value_type_1 = typename Type::value_type;
         using base_type = remove_qualifier_t<value_type_1>;
+
         // we can write directly if we have a plain vector, no nested or stringtype.
         if constexpr (std::is_same_v<Type, std::vector<value_type_1>> &&
                       !is_container_v<value_type_1> && !is_string_v<value_type_1>)
@@ -78,17 +79,37 @@ private:
         // we have to buffer. bufferfactory handles how to do this in detail
         else
         {
-            if (_attribute == -1)
+            // if we want to write std::arrays then we can use
+            // fixed size array types. Else we use variable length arrays.
+            if constexpr (is_array_like_v<value_type_1>)
             {
-                _attribute = __create_attribute__<base_type>(0);
+                constexpr std::size_t s = std::tuple_size<value_type_1>::value;
+                if (_attribute == -1)
+                {
+                    _attribute = __create_attribute__<base_type>(s);
+                }
+
+                auto buffer = HDFBufferFactory::buffer(
+                    std::begin(attribute_data), std::end(attribute_data),
+                    [](auto& value) -> value_type_1& { return value; });
+
+                return H5Awrite(_attribute, HDFTypeFactory::type<base_type>(s),
+                                buffer.data());
             }
+            else
+            {
+                if (_attribute == -1)
+                {
+                    _attribute = __create_attribute__<base_type>();
+                }
 
-            auto buffer = HDFBufferFactory::buffer(
-                std::begin(attribute_data), std::end(attribute_data),
-                [](auto& value) -> value_type_1& { return value; });
+                auto buffer = HDFBufferFactory::buffer(
+                    std::begin(attribute_data), std::end(attribute_data),
+                    [](auto& value) -> value_type_1& { return value; });
 
-            return H5Awrite(_attribute, HDFTypeFactory::type<base_type>(0),
-                            buffer.data());
+                return H5Awrite(_attribute, HDFTypeFactory::type<base_type>(0),
+                                buffer.data());
+            }
         }
     }
 
@@ -130,8 +151,8 @@ private:
     {
         // result types removes pointers, references, and qualifiers
         using basetype = remove_qualifier_t<Type>;
-        std::cout << _name << ", type for pointer is  " << typeid(basetype).name()
-                  << ", int type is " << typeid(int).name() << std::endl;
+        // std::cout << _name << ", type for pointer is  " << typeid(basetype).name()
+        //   << ", int type is " << typeid(int).name() << std::endl;
 
         if (_attribute == -1)
         {
@@ -167,28 +188,40 @@ private:
         using value_type_1 = remove_qualifier_t<typename Type::value_type>;
 
         // when the value_type of Type is a container again, we want nested
-        // arrays basically. Therefore we have to check if the desired type Type
-        // is suitable to hold them, read the nested data into a hvl_t
+        // arrays basically. Therefore we have to check if the desired type
+        // Type is suitable to hold them, read the nested data into a hvl_t
         // container, assuming that they are varlen because this is the more
         // general case, and then turn them into the desired type again...
         if constexpr (is_container_v<value_type_1>)
         {
             using value_type_2 = remove_qualifier_t<typename value_type_1::value_type>;
 
-            // if containers inside are not vectors, throw exception, we
-            // cannot read into anything else
-            if constexpr (!std::is_same_v<std::vector<value_type_2>, value_type_1>)
+            // if we have nested containers of depth larger than 2, throw a
+            // runtime error because we cannot handle this
+            // TODO extend this to work more generally
+            if constexpr (is_container_v<value_type_2>)
             {
-                throw std::runtime_error("Can only read data from " + _name +
-                                         " into vector containers!");
+                throw std::runtime_error(
+                    "Cannot read data into nested containers with depth > 3 "
+                    "in attribute " + _name + " into vector containers!");
             }
-            else // if we have vectors, the reading process is straight forward
-            {
-                // get type the attribute has internally
-                hid_t type = H5Aget_type(_attribute);
 
-                // assume array data to always be varlen, because
-                // this project can write only varlen data
+            // everything is fine.
+
+            // get type the attribute has internally
+            hid_t type = H5Aget_type(_attribute);
+
+            // check if type given in the buffer is std::array.
+            // If it is, the user knew that the data stored there
+            // has always the same length, otherwise she does not
+            // know and thus it is assumed that the data is variable
+            // length.
+            if constexpr (is_array_like_v<value_type_1>)
+            {
+                return H5Aread(_attribute, type, buffer.data());
+            }
+            else
+            {
                 std::vector<hvl_t> temp_buffer(buffer.size());
 
                 herr_t err = H5Aread(_attribute, type, temp_buffer.data());
@@ -204,8 +237,8 @@ private:
                     }
                 }
 
-                // return shape and buffer. Expect to use structured bindings to
-                // extract that later
+                // return shape and buffer. Expect to use structured bindings
+                // to extract that later
                 return err;
             }
         }
@@ -578,7 +611,6 @@ public:
         }
         else if constexpr (std::is_pointer_v<Type> && !is_string_v<Type>)
         {
-            std::cout << "reading pointer" << std::endl;
             herr_t err = __read_pointertype__(buffer);
 
             if (err < 0)
@@ -733,8 +765,19 @@ public:
         }
         else
         {
-            // buffer data, have to because we cannot write iterator ranges
-            write(HDFBufferFactory::buffer(begin, end, adaptor), shape);
+            // intermediate buffer step to be sure we have lvalues
+            // std::vector<Type> buff;
+            // buff.reserve(std::distance(begin, end));
+            // for (; begin != end; ++begin)
+            // {
+            //     buff.push_back(adaptor(*begin));
+            // }
+
+            std::vector<Type> buff(std::distance(begin, end));
+            std::generate(buff.begin(), buff.end(),
+                          [&begin, &adaptor]() { return adaptor(*(begin++)); });
+
+            write(buff, shape);
         }
     }
 

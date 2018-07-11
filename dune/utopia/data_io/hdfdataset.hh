@@ -41,7 +41,7 @@ private:
      * @return     The created dataset
      */
     template <typename Datatype>
-    hid_t __create_dataset_helper__(hsize_t chunksize, hsize_t compress_level)
+    hid_t __create_dataset_helper__(hsize_t chunksize, hsize_t compress_level, std::size_t typesize)
     {
         // create group property list and (potentially) intermediate groups
         hid_t group_plist = H5Pcreate(H5P_LINK_CREATE);
@@ -67,14 +67,15 @@ private:
 
             // create dataset and return
             return H5Dcreate(_parent_object->get_id(), _name.c_str(),
-                             HDFTypeFactory::type<Datatype>(), dspace,
+                             HDFTypeFactory::type<Datatype>(typesize), dspace,
                              group_plist, plist, H5P_DEFAULT);
         }
         else
         {
             // can create the dataset right away
             return H5Dcreate(
-                _parent_object->get_id(), _name.c_str(), HDFTypeFactory::type<Datatype>(),
+                _parent_object->get_id(), _name.c_str(),
+                HDFTypeFactory::type<Datatype>(typesize),
                 H5Screate_simple(_rank, _current_extend.data(), _max_extend.data()),
                 group_plist, H5P_DEFAULT, H5P_DEFAULT);
         }
@@ -106,6 +107,11 @@ private:
                             hsize_t compress_level)
     {
         _rank = rank;
+        std::size_t s = 0;
+        if constexpr (is_container_v<result_type> and is_array_like_v<result_type>)
+        {
+            s = std::tuple_size<result_type>::value;
+        }
 
         // Distinguish by chunksize
         if (chunksize > 0)
@@ -132,12 +138,14 @@ private:
             if (compress_level > 0)
             {
                 // make a new compressed dataset
-                _dataset = __create_dataset_helper__<result_type>(chunksize, compress_level);
+                _dataset = __create_dataset_helper__<result_type>(
+                    chunksize, compress_level, s);
             }
             else
             {
                 // make a new non-compressed dataset
-                _dataset = __create_dataset_helper__<result_type>(chunksize, compress_level);
+                _dataset = __create_dataset_helper__<result_type>(
+                    chunksize, compress_level, s);
             }
         }
         else
@@ -163,7 +171,7 @@ private:
             }
 
             // make dataset if necessary
-            _dataset = __create_dataset_helper__<result_type>(chunksize, compress_level);
+            _dataset = __create_dataset_helper__<result_type>(chunksize, compress_level, s);
         }
 
         // update info and add the new dataset to the reference counter
@@ -191,17 +199,64 @@ private:
         using result_type = remove_qualifier_t<decltype(adaptor(*begin))>;
         // now that the dataset has been made let us write to it
         // buffering at first
-        auto buffer =
-            HDFBufferFactory::buffer(begin, end, std::forward<Adaptor&&>(adaptor));
-
-        // write to buffer
-        herr_t write_err = H5Dwrite(_dataset, HDFTypeFactory::type<result_type>(),
-                                    memspace, dspace, H5P_DEFAULT, buffer.data());
-        if (write_err < 0)
+        if constexpr (is_container_v<result_type>)
         {
-            throw std::runtime_error("Writing to 1D dataset failed!");
-            // FIXME Is this really only 1D?
-            // FIXME Could we add some info here, e.g. the name of the dataset?
+            // make an intermediate buffer which then can be turned into hvl_t.
+            std::vector<result_type> temp(std::distance(begin, end));
+            std::generate(temp.begin(), temp.end(),
+                          [&begin, &adaptor]() { return adaptor(*(begin++)); });
+
+            // then turn this temporary buffer into a hvl_t thing, then write.
+            auto buffer = HDFBufferFactory::buffer(
+                temp.begin(), temp.end(),
+                [](auto& val) -> result_type& { return val; });
+
+            if constexpr (is_array_like_v<result_type>)
+            {
+                constexpr std::size_t s = std::tuple_size<result_type>::value;
+                // write to buffer
+                herr_t write_err =
+                    H5Dwrite(_dataset, HDFTypeFactory::type<result_type>(s),
+                             memspace, dspace, H5P_DEFAULT, buffer.data());
+                if (write_err < 0)
+                {
+                    throw std::runtime_error(
+                        "Writing to 1D fixed length array dataset failed in "
+                        "dataset" +
+                        _name);
+                }
+            }
+            else
+            {
+                // write to buffer
+                herr_t write_err =
+                    H5Dwrite(_dataset, HDFTypeFactory::type<result_type>(),
+                             memspace, dspace, H5P_DEFAULT, buffer.data());
+                if (write_err < 0)
+                {
+                    throw std::runtime_error(
+                        "Writing to 1D variable len dataset failed in "
+                        "dataset" +
+                        _name);
+                }
+            }
+        }
+        else
+        {
+            auto buffer = HDFBufferFactory::buffer(
+                begin, end, std::forward<Adaptor&&>(adaptor));
+
+            // write to buffer
+            herr_t write_err =
+                H5Dwrite(_dataset, HDFTypeFactory::type<result_type>(),
+                         memspace, dspace, H5P_DEFAULT, buffer.data());
+
+            if (write_err < 0)
+            {
+                throw std::runtime_error("Writing to 1D dataset failed!");
+                // FIXME Is this really only 1D?
+                // FIXME Could we add some info here, e.g. the name of the dataset?
+            }
         }
     }
 
@@ -251,30 +306,46 @@ private:
     {
         if constexpr (is_container_v<desired_type>)
         {
-            std::vector<hvl_t> buffer(buffer_size);
             std::vector<desired_type> data(buffer_size);
 
-            hid_t type = H5Dget_type(_dataset);
-            herr_t read_err = H5Dread(_dataset, type, memspace, dspace,
-                                      H5P_DEFAULT, buffer.data());
-            H5Tclose(type);
-            if (read_err < 0)
+            if constexpr (is_array_like_v<desired_type>)
             {
-                throw std::runtime_error("Error reading 1d dataset");
-            }
-            for (std::size_t i = 0; i < buffer_size; ++i)
-            {
-                data[i].resize(buffer[i].len);
-                auto ptr =
-                    static_cast<typename desired_type::value_type*>(buffer[i].p);
-
-                for (std::size_t j = 0; j < buffer[i].len; ++j)
+                hid_t type = H5Dget_type(_dataset);
+                herr_t read_err = H5Dread(_dataset, type, memspace, dspace,
+                                          H5P_DEFAULT, data.data());
+                H5Tclose(type);
+                if (read_err < 0)
                 {
-                    data[i][j] = ptr[j];
+                    throw std::runtime_error("Error reading 1d dataset");
                 }
+                return data;
             }
+            else
+            {
+                std::vector<hvl_t> buffer(buffer_size);
 
-            return data;
+                hid_t type = H5Dget_type(_dataset);
+                herr_t read_err = H5Dread(_dataset, type, memspace, dspace,
+                                          H5P_DEFAULT, buffer.data());
+                H5Tclose(type);
+                if (read_err < 0)
+                {
+                    throw std::runtime_error("Error reading 1d dataset");
+                }
+                for (std::size_t i = 0; i < buffer_size; ++i)
+                {
+                    data[i].resize(buffer[i].len);
+                    auto ptr = static_cast<typename desired_type::value_type*>(
+                        buffer[i].p);
+
+                    for (std::size_t j = 0; j < buffer[i].len; ++j)
+                    {
+                        data[i][j] = ptr[j];
+                    }
+                }
+
+                return data;
+            }
         }
         else
         {
