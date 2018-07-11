@@ -328,58 +328,58 @@ private:
     }
 
 protected:
-    /*
-     *  Pointer to the parent object of the dataset
+    /**
+     *  @brief Pointer to the parent object of the dataset
      */
     HDFObject* _parent_object;
 
-    /*
-     *  path relative to the parent object
+    /**
+     *  @brief path relative to the parent object
      */
     std::string _path;
 
-    /*
-     *  dataset id
+    /**
+     *  @brief dataset id
      */
     hid_t _dataset;
 
-    /*
-     *  number of dimensions of the dataset
+    /**
+     *  @brief number of dimensions of the dataset
      */
     hsize_t _rank;
 
-    /*
-     *  the currently occupied size of the dataset in number of elements
+    /**
+     *  @brief the currently occupied size of the dataset in number of elements
      */
     std::vector<hsize_t> _current_extend;
 
-    /*
-     *   the maximum number of elements which can be stored in the dataset
+    /**
+     * @brief  the maximum number of elements which can be stored in the dataset
      */
     std::vector<hsize_t> _capacity;
 
-    /*
-     *  the chunksizes per dimensions if dataset is extendible or compressed
+    /**
+     * @brief the chunksizes per dimensions if dataset is extendible or compressed
      */
     std::vector<hsize_t> _chunksizes;
 
-    /*
-     *  the level of compression, 0 to 10
+    /**
+     * @brief the level of compression, 0 to 10
      */
     std::size_t _compress_level;
 
-    /*
-     *  the info struct used to get the address of the dataset
+    /**
+     * @brief the info struct used to get the address of the dataset
      */
     H5O_info_t _info;
 
-    /*
-     *  the address of the dataset in the file, a unique value given by the hdf5 lib
+    /**
+     * @brief the address of the dataset in the file, a unique value given by the hdf5 lib
      */
     haddr_t _address;
 
-    /*
-     *  Pointer to underlying file's referencecounter
+    /**
+     * @brief Pointer to underlying file's referencecounter
      */
     std::shared_ptr<std::unordered_map<haddr_t, int>> _referencecounter;
 
