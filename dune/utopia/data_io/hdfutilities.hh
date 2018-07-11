@@ -8,7 +8,6 @@
 #define HDFUTILITIES_HH
 
 #include <array>
-#include <functional>
 #include <string>
 #include <type_traits>
 
