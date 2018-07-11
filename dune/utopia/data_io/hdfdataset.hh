@@ -911,7 +911,7 @@ public:
     {
         if (_rank == 0)
         {
-            throw std::runtime_error("Rank of dataset " + _path);
+            throw std::runtime_error("Rank of dataset " + _path + " is zero!");
         }
         // check if dataset id is ok
         if (H5Iis_valid(_dataset) == false)
