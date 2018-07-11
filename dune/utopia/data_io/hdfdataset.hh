@@ -59,11 +59,16 @@ private:
             {
                 H5Pset_deflate(plist, _compress_level);
             }
-
+            std::cout << _path << std::endl;
+            for (std::size_t i = 0; i < _rank; ++i)
+            {
+                std::cout << "current size: " << _current_extend[i]
+                          << ", capacity: " << _capacity[i] << std::endl;
+            }
             // make dataspace
             hid_t dspace =
                 H5Screate_simple(_rank, _current_extend.data(), _capacity.data());
-
+            std::cout << "dspace ready" << std::endl;
             // create dataset and return
             return H5Dcreate(_parent_object->get_id(), _path.c_str(),
                              HDFTypeFactory::type<Datatype>(typesize), dspace,
@@ -71,12 +76,21 @@ private:
         }
         else
         {
+            std::cout << _path << std::endl;
+            for (std::size_t i = 0; i < _rank; ++i)
+            {
+                std::cout << "current size: " << _current_extend[i]
+                          << ", capacity: " << _capacity[i] << std::endl;
+            }
+            // make dataspace
+            hid_t dspace =
+                H5Screate_simple(_rank, _current_extend.data(), _capacity.data());
+            std::cout << "dspace ready" << std::endl;
+
             // can create the dataset right away
-            return H5Dcreate(
-                _parent_object->get_id(), _path.c_str(),
-                HDFTypeFactory::type<Datatype>(typesize),
-                H5Screate_simple(_rank, _current_extend.data(), _capacity.data()),
-                group_plist, H5P_DEFAULT, H5P_DEFAULT);
+            return H5Dcreate(_parent_object->get_id(), _path.c_str(),
+                             HDFTypeFactory::type<Datatype>(typesize), dspace,
+                             group_plist, H5P_DEFAULT, H5P_DEFAULT);
         }
     }
 
@@ -138,9 +152,8 @@ private:
         {
             // make an intermediate buffer which then can be turned into hvl_t.
             std::vector<result_type> temp(std::distance(begin, end));
-            std::generate(temp.begin(), temp.end(), [this, &begin, &adaptor]() {
-                return adaptor(*(begin++));
-            });
+            std::generate(temp.begin(), temp.end(),
+                          [&begin, &adaptor]() { return adaptor(*(begin++)); });
 
             // then turn this temporary buffer into a hvl_t thing, then write.
             auto buffer = HDFBufferFactory::buffer(
@@ -547,10 +560,10 @@ public:
      */
     void open(HDFObject& parent_object,
               std::string path,
-              hsize_t rank,
-              std::vector<hsize_t> capacity,
-              std::vector<hsize_t> chunksizes,
-              hsize_t compress_level)
+              hsize_t rank = 1,
+              std::vector<hsize_t> capacity = {},
+              std::vector<hsize_t> chunksizes = {},
+              hsize_t compress_level = 0)
     {
         _parent_object = &parent_object;
         _path = path;
@@ -587,55 +600,6 @@ public:
         else
         {
             std::cout << "not found dataset " << _path << std::endl;
-            _dataset = -1;
-        }
-    }
-
-    /**
-     * @brief Simplified version of 'open', which initializes current_extend,
-     *        capacity, chunk_sizes and compress_level to empty or zero respectively.
-     *
-     * @param parent_object The HDFGroup/HDFFile into which the dataset shall be created
-     * @param adaptor The function which makes the data to be written from given iterators
-     * @param path The path of the dataset in the parent_object
-     * @param rank The number of dimensions of the dataset
-     */
-    void open(HDFObject& parent_object, std::string path, hsize_t rank)
-    {
-        _parent_object = &parent_object;
-        _path = path;
-        _referencecounter = parent_object.get_referencecounter();
-        _rank = rank;
-        _current_extend = {};
-        _capacity = {};
-        _chunksizes = {};
-        _compress_level = 0;
-        // Try to find the dataset in the parent_object
-        // If it is there, open it.
-        // Else: postphone the dataset creation to the first write
-        if (H5LTfind_dataset(_parent_object->get_id(), _path.c_str()) == 1)
-        { // dataset exists
-            // open it
-            _dataset = H5Dopen(_parent_object->get_id(), _path.c_str(), H5P_DEFAULT);
-
-            // get dataspace and read out rank, extend, max_current_extend
-            hid_t dataspace = H5Dget_space(_dataset);
-
-            _rank = H5Sget_simple_extent_ndims(dataspace);
-            _current_extend.resize(_rank);
-            _capacity.resize(_rank);
-
-            H5Sget_simple_extent_dims(dataspace, _current_extend.data(),
-                                      _capacity.data());
-            H5Sclose(dataspace);
-
-            // Update info and reference counter
-            H5Oget_info(_dataset, &_info);
-            _address = _info.addr;
-            (*_referencecounter)[_address] += 1;
-        }
-        else
-        {
             _dataset = -1;
         }
     }
@@ -698,7 +662,8 @@ public:
 
         if (_current_extend.size() == 0)
         {
-            _current_extend = std::vector<hsize_t>(_rank, size);
+            _current_extend = std::vector<hsize_t>(_rank, 1);
+            _current_extend[_rank - 1] = size;
         }
 
         if (_capacity.size() == 0)
@@ -773,7 +738,8 @@ public:
                 if ((_current_extend[i] == _capacity[i]) && (_current_extend[i] != 0))
                 {
                     throw std::runtime_error(
-                        "Dataset cannot be extended! Its "
+                        "Dataset " + _path +
+                        " cannot be extended! Its "
                         "extend reached max_current_extend. Did "
                         "you set a nonzero chunksize?");
                 }
@@ -957,6 +923,10 @@ public:
               std::vector<hsize_t> end = {},
               std::vector<hsize_t> stride = {})
     {
+        if (_rank == 0)
+        {
+            throw std::runtime_error("Rank of dataset " + _path);
+        }
         // check if dataset id is ok
         if (H5Iis_valid(_dataset) == false)
         {
@@ -977,7 +947,7 @@ public:
             }
             else
             { // read a subset determined by start end stride
-              // check that the arrays have the correct size:
+                // check that the arrays have the correct size:
                 if (start.size() != _rank || end.size() != _rank || stride.size() != _rank)
                 {
                     throw std::invalid_argument(
@@ -1134,10 +1104,10 @@ public:
      */
     HDFDataset(HDFObject& parent_object,
                std::string path,
-               hsize_t rank,
-               std::vector<hsize_t> capacity,
-               std::vector<hsize_t> chunksizes,
-               hsize_t compress_level)
+               hsize_t rank = 1,
+               std::vector<hsize_t> capacity = {},
+               std::vector<hsize_t> chunksizes = {},
+               hsize_t compress_level = 0)
         : _parent_object(&parent_object),
           _path(path),
           _dataset(-1),
@@ -1146,52 +1116,6 @@ public:
           _capacity(capacity),
           _chunksizes(chunksizes),
           _compress_level(compress_level),
-          _referencecounter(parent_object.get_referencecounter())
-
-    {
-        // Try to find the dataset in the parent_object
-        // If it is there, open it.
-        // Else: postphone the dataset creation to the first write
-        if (H5LTfind_dataset(_parent_object->get_id(), _path.c_str()) == 1)
-        { // dataset exists
-            // open it
-            _dataset = H5Dopen(_parent_object->get_id(), _path.c_str(), H5P_DEFAULT);
-
-            // get dataspace and read out rank, extend, max_current_extend
-            hid_t dataspace = H5Dget_space(_dataset);
-
-            _rank = H5Sget_simple_extent_ndims(dataspace);
-            _current_extend.resize(_rank);
-            _capacity.resize(_rank);
-
-            H5Sget_simple_extent_dims(dataspace, _current_extend.data(),
-                                      _capacity.data());
-            H5Sclose(dataspace);
-
-            // Update info and reference counter
-            H5Oget_info(_dataset, &_info);
-            _address = _info.addr;
-            (*_referencecounter)[_address] += 1;
-        }
-    }
-
-    /**
-     * @brief Simplified constructor, which initializes current_extend, capacity, compress_level
-     *        to zero, thus giving a dataset into which data can be written once.
-     * @param parent_object The HDFGroup/HDFFile into which the dataset shall be created
-     * @param adaptor The function which makes the data to be written from given iterators
-     * @param path The path of the dataset in the parent_object
-     * @param rank The number of dimensions of the dataset
-     */
-    HDFDataset(HDFObject& parent_object, std::string path, hsize_t rank)
-        : _parent_object(&parent_object),
-          _path(path),
-          _dataset(-1),
-          _rank(rank),
-          _current_extend({}),
-          _capacity({}),
-          _chunksizes({}),
-          _compress_level(0),
           _referencecounter(parent_object.get_referencecounter())
 
     {

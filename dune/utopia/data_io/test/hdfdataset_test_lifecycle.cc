@@ -90,7 +90,7 @@ int main()
 
     HDFDataset first(lifecyclegroup, "first", 1, {100}, {10}, 5);
 
-    HDFDataset first_simple(lifecyclegroup, "first_simple", 1);
+    HDFDataset first_simple(lifecyclegroup, "first_simple");
 
     first.write(data.begin(), data.end(), [](int& value) { return value; });
     first_simple.write(data.begin(), data.end(), [](int& value) { return value; });
@@ -134,7 +134,7 @@ int main()
 
     // test simple open method
     HDFDataset<HDFGroup> opened_dataset_simple;
-    opened_dataset_simple.open(lifecyclegroup, "first_simple", 3);
+    opened_dataset_simple.open(lifecyclegroup, "first_simple");
     assert(H5Iis_valid(opened_dataset_simple.get_id()) == true);
     return 0;
 }
