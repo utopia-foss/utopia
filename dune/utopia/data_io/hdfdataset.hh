@@ -1191,7 +1191,7 @@ public:
     }
 
     template <typename T>
-    void write(T& data)
+    void write(T&& data)
     {
         // check if write can be made
         if (_rank == 0)
@@ -1218,15 +1218,17 @@ public:
             {
                 // update current extend. This contains some parts for ND
                 // support, but at the moment only 2d is supported for writing.
+                hsize_t datarank = 0;
+                std::vector<hsize_t> sizes;
                 _current_extend = std::vector<hsize_t>(_rank, 0);
                 if constexpr (is_container_v<T>)
                 {
-                    auto [datarank, sizes] = container_properties<T>(data);
+                    [ datarank, sizes ] = container_properties<T>(data);
                 }
                 else
                 {
-                    hsize_t datarank = 1;
-                    std::vector<hsize_t> sizes = {1};
+                    datarank = 1;
+                    sizes = {1};
                 }
 
                 // add 'size' to the last 'datarank' many entries of
