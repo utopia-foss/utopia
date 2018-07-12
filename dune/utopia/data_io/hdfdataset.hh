@@ -1191,7 +1191,7 @@ public:
     }
 
     template <typename T>
-    void write(const T& data)
+    void write(T& data)
     {
         // check if write can be made
         if (_rank == 0)
@@ -1199,89 +1199,45 @@ public:
             throw std::runtime_error("Rank of dataset " + _path + " is zero!");
         }
 
-        // size to add to current extend is always one, only when
-        // we have a container to write do we have a bigger size
-        hsize_t size = 1;
-        if constexpr (is_container_v<T>)
+        if (_rank > 2)
         {
-            size = data.size();
+            throw std::runtime_error("Currently only rank <= 2 is supported");
         }
 
         // dataset does not yet exist
         if (_dataset == -1)
         {
-            // update current extend
-            if (_current_extend.size() == 0)
+            // check compatability of data and adjust _current_extend
+            if (_datarank > _rank)
             {
-                _current_extend = std::vector<hsize_t>(_rank, 1);
-                _current_extend[_rank - 1] = size;
+                throw std::runtime_error(
+                    "In dataset: " + _path +
+                    " Rank of data cannot be larger than rank of dataset");
             }
-
-            // decide on wether we have a container...
-            if constexpr (is_container_v<T>)
-            {
-                __write_containertype__(data);
-            }
-            // ... or a string
-            else if constexpr (is_stringtype_v<T>)
-            {
-                __write_stringtype__(data);
-            }
-            // ... or a non-string pointer (mind const char* !)
-            else if constexpr (std::is_pointer_v<Type> && !is_string_v<Type>)
-            {
-                __write_pointertype__(data);
-            }
-            // ... or finally a scalar
             else
             {
-                __write_scalartype__(data);
+                // update current extend. This contains some parts for ND
+                // support, but at the moment only 2d is supported for writing.
+                _current_extend = std::vector<hsize_t>(_rank, 0);
+                if constexpr (is_container_v<T>)
+                {
+                    auto [datarank, sizes] = container_properties<T>(data);
+                }
+                else
+                {
+                    hsize_t datarank = 1;
+                    std::vector<hsize_t> sizes = {1};
+                }
+
+                // add 'size' to the last 'datarank' many entries of
+                // _current_extend
+                std::size_t i = _rank - datarank;
+                std::size_t j = 0;
+                for (; i < _rank; ++i, ++j)
+                {
+                    _current_extend[i] += sizes[j];
+                }
             }
-        }
-        // dataset does exist
-        else
-        {
-            // check dataset is not exhausted
-            if (_current_extend == _capacity)
-            {
-                throw std::runtime_error("Dataset " + _path +
-                                         " has reached its capacity");
-            }
-
-            // delegate appending to the append function, appending to the
-            // current end and using a stride of 1 into each dimension, i.e.
-            // writing densely.
-            append(data, _current_extend, std::vector<hsize_t>(_rank, 1));
-        }
-    }
-
-    template <typename T>
-    void write(T&& data)
-    {
-        // check if write can be made
-        if (_rank == 0)
-        {
-            throw std::runtime_error("Rank of dataset " + _path + " is zero!");
-        }
-
-        // size to add to current extend is always one, only when
-        // we have a container to write do we have a bigger size
-        hsize_t size = 1;
-        if constexpr (is_container_v<T>)
-        {
-            size = data.size();
-        }
-
-        // dataset does not yet exist
-        if (_dataset == -1)
-        {
-            // update current extend
-            if (_current_extend.size() == 0)
-            {
-                _current_extend = std::vector<hsize_t>(_rank, 1);
-                _current_extend[_rank - 1] = size;
-            }
-
             // decide on wether we have a container...
             if constexpr (is_container_v<T>)
             {
@@ -1330,6 +1286,27 @@ public:
                 "Trying to append dataset " + _path +
                 " which is invalid, has it already been closed?");
         }
+
+        // decide on wether we have a container...
+        if constexpr (is_container_v<T>)
+        {
+            __append_containertype__(data);
+        }
+        // ... or a string
+        else if constexpr (is_stringtype_v<T>)
+        {
+            __append_stringtype__(data);
+        }
+        // ... or a non-string pointer (mind const char* !)
+        else if constexpr (std::is_pointer_v<Type> && !is_string_v<Type>)
+        {
+            __append_pointertype__(data);
+        }
+        // ... or finally a scalar
+        else
+        {
+            __append_scalartype__(data);
+        }
     }
 
     template <typename T>
@@ -1340,6 +1317,27 @@ public:
             throw std::runtime_error(
                 "Trying to append dataset " + _path +
                 " which is invalid, has it already been closed?");
+        }
+
+        // decide on wether we have a container...
+        if constexpr (is_container_v<T>)
+        {
+            __append_containertype__(std::forward<T&&>(data));
+        }
+        // ... or a string
+        else if constexpr (is_stringtype_v<T>)
+        {
+            __append_stringtype__(std::forward<T&&>(data));
+        }
+        // ... or a non-string pointer (mind const char* !)
+        else if constexpr (std::is_pointer_v<Type> && !is_string_v<Type>)
+        {
+            __append_pointertype__(std::forward<T&&>(data));
+        }
+        // ... or finally a scalar
+        else
+        {
+            __append_scalartype__(std::forward<T&&>(data));
         }
     }
 

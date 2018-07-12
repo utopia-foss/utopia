@@ -255,7 +255,8 @@ bool operator==(Container<T>& lhs, Container<T>& rhs)
 }
 
 /**
- * @brief find_rank recursion base case: returns zero if T is no container or pointer
+ * @brief find_rank recursion base case: returns zero if T is no container or
+ * pointer
  *
  * @tparam T Type to get rank for
  * @return constexpr std::size_t 0
@@ -298,8 +299,53 @@ inline constexpr std::size_t find_rank()
  *
  * @tparam T Type to get rank for
  */
-template <typename T, std::enable_if_t<is_container_v<T> or std::is_pointer_v<T>, int> = 0>
+template <typename T>
 inline constexpr std::size_t find_rank_v = find_rank<T>();
+
+/**
+ * @brief Base function for recursion for finding the sizes of a nested container
+ *
+ * @tparam T automatically determined
+ * @param object (nested) container for which the sizes are to be determined
+ * @param loc pointer to a random access container/pointer where the size of the
+ *            current dimension should be written to.
+ */
+template <typename T, std::enable_if_t<!is_container_v<typename T::value_type>, int> = 0>
+inline void find_sizes(T& object, std::size_t* loc)
+{
+    *loc = object.size();
+}
+
+/**
+ * @brief Function for recursivly finding the sizes of nested containers
+ *
+ * @tparam T automatically determined
+ * @param object (nested) container for which the sizes are to be determined
+ * @param loc pointer to a random access container/pointer where the size of the
+ *            current dimension should be written to.
+ */
+template <typename T, std::enable_if_t<is_container_v<T> and is_container_v<typename T::value_type>, int> = 0>
+inline void find_sizes(T& object, std::size_t* loc)
+{
+    *loc = object.size();
+    find_sizes(object[0], loc + 1);
+}
+
+/**
+ * @brief Get the container properties as a tuple of (rank, vector of sizes for each dimension).
+ *
+ * @tparam T automatically determined
+ * @param object (nested) container for which the sizes are to be determined
+ * @return auto  tuple of (rank, vector of sizes for each dimension)
+ */
+template <typename T>
+auto container_properties(T& object)
+{
+    auto r = find_rank_v<T>;
+    std::vector<std::size_t> sizes(r);
+    find_sizes(object, sizes.data());
+    return std::make_tuple(r, sizes);
+}
 
 } // namespace DataIO
 } // namespace Utopia
