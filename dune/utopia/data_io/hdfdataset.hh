@@ -32,7 +32,11 @@ private:
     /**
      * @brief      helper function for making a non compressed dataset
      *
-     * @param      typesize The size of the type to store in bytes
+     * @param      typesize Size of the C type to write in bytes
+     *
+     * @tparam     Datatype        The data type stored in this dataset
+     *
+     * @return     The created dataset
      */
     template <typename Datatype>
     hid_t __create_dataset_helper__(std::size_t typesize)
@@ -78,6 +82,7 @@ private:
     /**
      * @brief      wrapper for creating a dataset given all parameters needed
      *
+     * @tparam     result_type     The type of the data stored in this dataset
      */
     template <typename result_type>
     void __create_dataset__()
@@ -310,68 +315,57 @@ private:
 
 protected:
     /**
-     * @brief
-     *
+     *  @brief Pointer to the parent object of the dataset
      */
     HDFObject* _parent_object;
 
     /**
-     * @brief
-     *
+     *  @brief path relative to the parent object
      */
     std::string _path;
 
     /**
-     * @brief
-     *
+     *  @brief dataset id
      */
     hid_t _dataset;
 
     /**
-     * @brief
-     *
+     *  @brief number of dimensions of the dataset
      */
     hsize_t _rank;
 
     /**
-     * @brief
-     *
+     *  @brief the currently occupied size of the dataset in number of elements
      */
     std::vector<hsize_t> _current_extend;
 
     /**
-     * @brief
-     *
+     * @brief  the maximum number of elements which can be stored in the dataset
      */
     std::vector<hsize_t> _capacity;
 
     /**
-     * @brief
-     *
+     * @brief the chunksizes per dimensions if dataset is extendible or compressed
      */
     std::vector<hsize_t> _chunksizes;
 
     /**
-     * @brief
-     *
+     * @brief the level of compression, 0 to 10
      */
     std::size_t _compress_level;
 
     /**
-     * @brief
-     *
+     * @brief the info struct used to get the address of the dataset
      */
     H5O_info_t _info;
 
     /**
-     * @brief
-     *
+     * @brief the address of the dataset in the file, a unique value given by the hdf5 lib
      */
     haddr_t _address;
 
     /**
-     * @brief
-     *
+     * @brief Pointer to underlying file's referencecounter
      */
     std::shared_ptr<std::unordered_map<haddr_t, int>> _referencecounter;
 
@@ -524,7 +518,7 @@ public:
      *                 H5S_UNLIMITED if unlimited size is desired. Then you have
      *                 to give chunksizes.
      * @param chunksize The chunksizes in each dimension to use
-     * @param compress_level The compression level to use
+     * @param compress_level The compression level to use, 0 to 10 (0 = no compression, 10 highest compression)
      */
     void open(HDFObject& parent_object,
               std::string path,
@@ -656,7 +650,7 @@ public:
             if (H5Iis_valid(_dataset) == false)
             {
                 throw std::runtime_error(
-                    "Trying to create dataset pathd "
+                    "Trying to create dataset at path "
                     "'" +
                     _path +
                     "' resulted in invalid "
@@ -750,9 +744,9 @@ public:
                 herr_t ext_err = H5Dset_extent(_dataset, _current_extend.data());
                 if (ext_err < 0)
                 {
-                    throw std::runtime_error(
-                        "1D dataset could not be "
-                        "extended!");
+                    throw std::runtime_error("1D dataset " + _path +
+                                             "could not be "
+                                             "extended!");
                 }
 
                 // gather information for dimensionality info attribute
@@ -834,9 +828,9 @@ public:
                 herr_t ext_err = H5Dset_extent(_dataset, _current_extend.data());
                 if (ext_err < 0)
                 {
-                    throw std::runtime_error(
-                        "ND dataset could not be "
-                        "extended!");
+                    throw std::runtime_error("ND dataset " + _path +
+                                             " could not be "
+                                             "extended!");
                 }
 
                 // gather information for dimensionality info attribute
@@ -968,10 +962,10 @@ public:
                 // check that the arrays have the correct size:
                 if (start.size() != _rank || end.size() != _rank || stride.size() != _rank)
                 {
-                    throw std::invalid_argument(
-                        "Cannot read dataset: start, "
-                        "end and/or stride size did "
-                        "not match the rank!");
+                    throw std::invalid_argument("Cannot read dataset " + _path +
+                                                ": start, "
+                                                "end and/or stride size did "
+                                                "not match the rank!");
                 }
 
                 // determine the count to be read
