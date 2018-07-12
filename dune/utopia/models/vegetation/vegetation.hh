@@ -112,9 +112,6 @@ public:
      */
     void perform_step ()
     {
-        // Communicate which iteration step is performed
-        std::cout << "  Performing step @ t = " << this->_time << " ...";
-
         // Apply logistic growth and seeding
         auto growth_seeding_rule = [this](const auto cell){
                 auto state = cell->state();
@@ -133,8 +130,6 @@ public:
     /// Write the cell states (aka plant bio-mass)
     void write_data () 
     {
-        std::cout << "Writing data @ t = " << this->_time << " ... " << std::endl;
-
         auto cells = _manager.cells();
         unsigned int num_cells = std::distance(cells.begin(), cells.end());
 
