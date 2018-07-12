@@ -68,31 +68,31 @@ public:
         _manager(manager),
 
         // Open dataset for output of cell states 
-        _dset_plant_mass(this->hdfgrp->open_dataset("plant_mass"))
+        _dset_plant_mass(this->_hdfgrp->open_dataset("plant_mass"))
     {
         // Initialize model parameters from config file
-        std::normal_distribution<> rain{this->cfg["rain_mean"].template as<double>(),
-                                        this->cfg["rain_var"].template as<double>()};
+        std::normal_distribution<> rain{this->_cfg["rain_mean"].template as<double>(),
+                                        this->_cfg["rain_var"].template as<double>()};
         _bc = std::make_tuple(rain, 
-                             this->cfg["growth"].template as<double>(), 
-                             this->cfg["seeding"].template as<double>());
+                             this->_cfg["growth"].template as<double>(),
+                             this->_cfg["seeding"].template as<double>());
 
         // Add the model parameters as attributes
-        this->hdfgrp->add_attribute("rain_mean", 
-                                    this->cfg["rain_mean"].template as<double>());
-        this->hdfgrp->add_attribute("rain_var", 
-                                    this->cfg["rain_var"].template as<double>());
-        this->hdfgrp->add_attribute("growth", 
-                                    this->cfg["growth"].template as<double>());
-        this->hdfgrp->add_attribute("seeding", 
-                                    this->cfg["seeding"].template as<double>());
+        this->_hdfgrp->add_attribute("rain_mean",
+                                    this->_cfg["rain_mean"].template as<double>());
+        this->_hdfgrp->add_attribute("rain_var",
+                                    this->_cfg["rain_var"].template as<double>());
+        this->_hdfgrp->add_attribute("growth",
+                                    this->_cfg["growth"].template as<double>());
+        this->_hdfgrp->add_attribute("seeding",
+                                    this->_cfg["seeding"].template as<double>());
 
         // Write the cell coordinates
-        auto dsetX = this->hdfgrp->open_dataset("coordinates_x");
+        auto dsetX = this->_hdfgrp->open_dataset("coordinates_x");
         dsetX->write(_manager.cells().begin(),
                     _manager.cells().end(), 
                     [](const auto& cell) {return cell->position()[0];});
-        auto dsetY = this->hdfgrp->open_dataset("coordinates_y");
+        auto dsetY = this->_hdfgrp->open_dataset("coordinates_y");
         dsetY->write(_manager.cells().begin(),
                     _manager.cells().end(), 
                     [](const auto& cell) {return cell->position()[1];});
@@ -111,7 +111,7 @@ public:
     void perform_step ()
     {
         // Communicate which iteration step is performed
-        std::cout << "  Performing step @ t = " << this->time << " ...";
+        std::cout << "  Performing step @ t = " << this->_time << " ...";
 
         // Apply logistic growth and seeding
         auto growth_seeding_rule = [this](const auto cell){
@@ -131,7 +131,7 @@ public:
     /// Write the cell states (aka plant bio-mass)
     void write_data () 
     {
-        std::cout << "Writing data @ t = " << this->time << " ... " << std::endl;
+        std::cout << "Writing data @ t = " << this->_time << " ... " << std::endl;
 
         auto cells = _manager.cells();
         unsigned int num_cells = std::distance(cells.begin(), cells.end());
