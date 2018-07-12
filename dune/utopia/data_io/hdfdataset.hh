@@ -32,9 +32,7 @@ private:
     /**
      * @brief      helper function for making a non compressed dataset
      *
-     * @param      chunksize       The chunksize
-     * @param      compress_level  The compress level; only possible
-     * with a non-zero chunksize
+     * @param      typesize Size of the C type to write in bytes
      *
      * @tparam     Datatype        The data type stored in this dataset
      *
@@ -84,17 +82,6 @@ private:
     // FIXME: this is shit wrt size, use a _shape array
     /**
      * @brief      wrapper for creating a dataset given all parameters needed
-     *
-     * @param      size            The (flattened) size of the dataset
-     * @param      rank            The rank (number of dimensions)
-     * @param      extend          The extend of the data to write; if zero,
-     *                             this will lead to the dataset size being
-     *                             extended. Note that extension is only
-     *                             possible with chunked data.
-     * @param      capacity        The maximum size of the dataset
-     * @param      chunksize       The chunksize
-     * @param      compress_level  The compress level; only available with
-     *                             non-zero chunksize
      *
      * @tparam     result_type     The type of the data stored in this dataset
      */
@@ -557,7 +544,7 @@ public:
             // open it
             _dataset = H5Dopen(_parent_object->get_id(), _path.c_str(), H5P_DEFAULT);
 
-            // get dataspace and read out rank, extend, max_current_extend
+            // get dataspace and read out rank, extend, capacity
             hid_t dataspace = H5Dget_space(_dataset);
 
             _rank = H5Sget_simple_extent_ndims(dataspace);
@@ -671,7 +658,7 @@ public:
                     "ID! Check your arguments.");
             }
 
-            // gather data for dimensionality info: rank, extend, max_current_extend
+            // gather data for dimensionality info: rank, extend, capacity
             // TODO see #119 for changes needed here
             // https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/issues/119
             std::vector<hsize_t> dims(1 + _current_extend.size() + _capacity.size());
@@ -707,16 +694,14 @@ public:
                                          "already been closed?");
             }
 
-            // check if dataset can be extended, i.e. if extend < max_current_extend.
+            // check if dataset can be extended, i.e. if extend < capacity.
             for (std::size_t i = 0; i < _rank; ++i)
             {
                 if ((_current_extend[i] == _capacity[i]) && (_current_extend[i] != 0))
                 {
-                    throw std::runtime_error(
-                        "Dataset " + _path +
-                        " cannot be extended! Its "
-                        "extend reached max_current_extend. Did "
-                        "you set a nonzero chunksize?");
+                    throw std::runtime_error("Dataset " + _path +
+                                             " cannot be extended! Its "
+                                             "extend reached capacity");
                 }
             }
 
@@ -758,9 +743,9 @@ public:
                 herr_t ext_err = H5Dset_extent(_dataset, _current_extend.data());
                 if (ext_err < 0)
                 {
-                    throw std::runtime_error(
-                        "1D dataset could not be "
-                        "extended!");
+                    throw std::runtime_error("1D dataset " + _path +
+                                             "could not be "
+                                             "extended!");
                 }
 
                 // gather information for dimensionality info attribute
@@ -842,9 +827,9 @@ public:
                 herr_t ext_err = H5Dset_extent(_dataset, _current_extend.data());
                 if (ext_err < 0)
                 {
-                    throw std::runtime_error(
-                        "ND dataset could not be "
-                        "extended!");
+                    throw std::runtime_error("ND dataset " + _path +
+                                             " could not be "
+                                             "extended!");
                 }
 
                 // gather information for dimensionality info attribute
@@ -898,10 +883,6 @@ public:
               std::vector<hsize_t> end = {},
               std::vector<hsize_t> stride = {})
     {
-        // if (_rank == 0)
-        // {
-        //     throw std::runtime_error("Rank of dataset " + _path + " is zero!");
-        // }
         // check if dataset id is ok
         if (H5Iis_valid(_dataset) == false)
         {
@@ -910,7 +891,10 @@ public:
                                      "invalid ID. Has the dataset already "
                                      "been closed?");
         }
-
+        if (_rank == 0)
+        {
+            throw std::runtime_error("Rank of dataset " + _path + " is zero!");
+        }
         // 1d dataset
         if (_rank == 1)
         {
@@ -976,10 +960,10 @@ public:
                 // check that the arrays have the correct size:
                 if (start.size() != _rank || end.size() != _rank || stride.size() != _rank)
                 {
-                    throw std::invalid_argument(
-                        "Cannot read dataset: start, "
-                        "end and/or stride size did "
-                        "not match the rank!");
+                    throw std::invalid_argument("Cannot read dataset " + _path +
+                                                ": start, "
+                                                "end and/or stride size did "
+                                                "not match the rank!");
                 }
 
                 // determine the count to be read
@@ -1102,7 +1086,7 @@ public:
             // open it
             _dataset = H5Dopen(_parent_object->get_id(), _path.c_str(), H5P_DEFAULT);
 
-            // get dataspace and read out rank, extend, max_current_extend
+            // get dataspace and read out rank, extend, capacity
             hid_t dataspace = H5Dget_space(_dataset);
 
             _rank = H5Sget_simple_extent_ndims(dataspace);
