@@ -16,22 +16,16 @@ int main (int argc, char** argv)
         using State = double;
         using Tag = Utopia::DefaultTag;
         State initial_state = 0.0;
-        int grid_size = config["vegetation"]["grid_size"].template as<int>();
+        int grid_size = Utopia::as_<int>(config["vegetation"]["grid_size"]);
         auto grid = Utopia::Setup::create_grid(grid_size);
         auto cells = Utopia::Setup::create_cells_on_grid<sync, State, Tag>(grid, initial_state);
         auto manager = Utopia::Setup::create_manager_cells<true, true>(grid, cells);
 
         // Set the initial state, then create the model instance
-        Utopia::Models::Vegetation model("vegetation", pp, manager);
+        Utopia::Models::Vegetation::Vegetation model("vegetation", pp, manager);
 
-        // And iterate it for a number of steps
-        auto num_steps = config["num_steps"].as<int>();
-        std::cout << "num_steps: " << num_steps << std::endl;
-        std::cout << "Starting iteration ..." << std::endl;
-
-        for(int i = 0; i < num_steps; ++i) {
-            model.iterate();
-        }
+        // Just run!
+        model.run();
 
         return 0;
     }

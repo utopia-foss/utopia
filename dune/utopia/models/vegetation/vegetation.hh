@@ -13,6 +13,8 @@ namespace Utopia {
 
 namespace Models {
 
+namespace Vegetation {
+
 /// Define data type and boundary condition type of vegetation model
 template<class Manager>
 using DataType = typename Manager::Container;
@@ -71,21 +73,21 @@ public:
         _dset_plant_mass(this->_hdfgrp->open_dataset("plant_mass"))
     {
         // Initialize model parameters from config file
-        std::normal_distribution<> rain{this->_cfg["rain_mean"].template as<double>(),
-                                        this->_cfg["rain_var"].template as<double>()};
+        std::normal_distribution<> rain{as_double(this->_cfg["rain_mean"]),
+                                        as_double(this->_cfg["rain_var"])};
         _bc = std::make_tuple(rain, 
-                             this->_cfg["growth"].template as<double>(),
-                             this->_cfg["seeding"].template as<double>());
+                              as_double(this->_cfg["growth"]),
+                              as_double(this->_cfg["seeding"]));
 
         // Add the model parameters as attributes
         this->_hdfgrp->add_attribute("rain_mean",
-                                    this->_cfg["rain_mean"].template as<double>());
+                                     as_double(this->_cfg["rain_mean"]));
         this->_hdfgrp->add_attribute("rain_var",
-                                    this->_cfg["rain_var"].template as<double>());
+                                     as_double(this->_cfg["rain_var"]));
         this->_hdfgrp->add_attribute("growth",
-                                    this->_cfg["growth"].template as<double>());
+                                     as_double(this->_cfg["growth"]));
         this->_hdfgrp->add_attribute("seeding",
-                                    this->_cfg["seeding"].template as<double>());
+                                     as_double(this->_cfg["seeding"]));
 
         // Write the cell coordinates
         auto dsetX = this->_hdfgrp->open_dataset("coordinates_x");
@@ -170,8 +172,8 @@ public:
     }
 };
 
+} // namespace Vegetation
 } // namespace Models
-
 } // namespace Utopia
 
 #endif // VEGETATION_HH
