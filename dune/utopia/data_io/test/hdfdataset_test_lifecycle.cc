@@ -20,38 +20,6 @@ using namespace Utopia::DataIO;
  *  \tparam RHS Right hand side dataset type
  *  Template parameters are necessary because HDFDataset is a template
  */
-template <typename T>
-bool operator==(std::vector<T>& a, std::vector<T>& b)
-{
-    if (a.size() == b.size())
-    {
-        return false;
-    }
-    else
-    {
-        if (std::is_floating_point<T>::value)
-        {
-            for (std::size_t i = 0; i < a.size(); ++i)
-            {
-                if (std::abs((a[i] - b[i]) / max(a[i], b[i])) < 1e-16)
-                {
-                    return false;
-                }
-            }
-        }
-        else
-        {
-            for (std::size_t i = 0; i < a.size(); ++i)
-            {
-                if (a[i] != b[i])
-                {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-}
 
 bool operator==(HDFGroup& a, HDFGroup& b)
 {

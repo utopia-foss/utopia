@@ -103,6 +103,38 @@ private:
     }
 
     /**
+     * @brief Opens an existing dataset based on the classes parameters
+     *
+     */
+    void __open_dataset__()
+    {
+        // open it
+        _dataset = H5Dopen(_parent_object->get_id(), _path.c_str(), H5P_DEFAULT);
+
+        // get dataspace and read out rank, extend, capacity
+        hid_t dataspace = H5Dget_space(_dataset);
+
+        _rank = H5Sget_simple_extent_ndims(dataspace);
+        _current_extend.resize(_rank);
+        _capacity.resize(_rank);
+
+        H5Sget_simple_extent_dims(dataspace, _current_extend.data(), _capacity.data());
+        H5Sclose(dataspace);
+
+        // Update info and reference counter
+        H5Oget_info(_dataset, &_info);
+        _address = _info.addr;
+        (*_referencecounter)[_address] += 1;
+    }
+
+    void __add_topology_attributes__()
+    {
+        add_attribute("current_extend", _current_extend);
+        add_attribute("capacity", _capacity);
+        add_attribute("rank", _rank);
+    }
+
+    /**
      * @brief      For writing a dataset
      * @details    This assumes that the dataset has already been created
      *
@@ -311,6 +343,180 @@ private:
                 return buffer;
             }
         }
+    }
+
+    template <typename T>
+    void __write_scalartype__(T data)
+    {
+        if (_rank == 1)
+        {
+        }
+        else
+        {
+        }
+    }
+
+    template <typename T>
+    void __write_containertype__(T&& data)
+    {
+        if (_rank == 1)
+        {
+        }
+        else
+        {
+        }
+    }
+
+    template <typename Type>
+    void __write_stringtype__(Type&& data)
+    {
+        if (_rank == 1)
+        {
+        }
+        else
+        {
+        }
+    }
+
+    template <typename T>
+    void __write_pointertype__(T data)
+    {
+        if (_rank == 1)
+        {
+        }
+        else
+        {
+        }
+    }
+
+    template <typename T>
+    void __append_scalartype__(T data)
+    {
+        if (_rank == 1)
+        {
+        }
+        else
+        {
+        }
+    }
+
+    template <typename T>
+    void __append_containertype__(T&& data)
+    {
+        if (_rank == 1)
+        {
+        }
+        else
+        {
+        }
+    }
+
+    template <typename T>
+    void __append_stringtype__(T&& data)
+    {
+        if (_rank == 1)
+        {
+        }
+        else
+        {
+        }
+    }
+
+    template <typename T>
+    void __append_pointertype__(T data)
+    {
+        if (_rank == 1)
+        {
+        }
+        else
+        {
+        }
+    }
+
+    template <typename T>
+    void __write_containertype__(const T& data)
+    {
+        if (_rank == 1)
+        {
+        }
+        else
+        {
+        }
+    }
+
+    template <typename T>
+    void __write_stringtype__(const T& data)
+    {
+        if (_rank == 1)
+        {
+        }
+        else
+        {
+        }
+    }
+
+    template <typename T>
+    void __append_scalartype__(T data)
+    {
+        if (_rank == 1)
+        {
+        }
+        else
+        {
+        }
+    }
+
+    template <typename T>
+    void __append_containertype__(const T& data)
+    {
+        if (_rank == 1)
+        {
+        }
+        else
+        {
+        }
+    }
+
+    template <typename T>
+    void __append_stringtype__(const T& data)
+    {
+        if (_rank == 1)
+        {
+        }
+        else
+        {
+        }
+    }
+
+    template <typename T>
+    void __append_pointertype__(T data)
+    {
+        if (_rank == 1)
+        {
+        }
+        else
+        {
+        }
+    }
+
+    template <typename T>
+    auto __read_scalartype__()
+    {
+    }
+
+    template <typename T>
+    auto __read_containertype__()
+    {
+    }
+
+    template <typename T>
+    auto __read_stringtype__()
+    {
+    }
+
+    template <typename T>
+    auto __read_pointertype__()
+    {
     }
 
 protected:
@@ -540,24 +746,7 @@ public:
         // Else: postphone the dataset creation to the first write
         if (H5LTfind_dataset(_parent_object->get_id(), _path.c_str()) == 1)
         { // dataset exists
-            // open it
-            _dataset = H5Dopen(_parent_object->get_id(), _path.c_str(), H5P_DEFAULT);
-
-            // get dataspace and read out rank, extend, capacity
-            hid_t dataspace = H5Dget_space(_dataset);
-
-            _rank = H5Sget_simple_extent_ndims(dataspace);
-            _current_extend.resize(_rank);
-            _capacity.resize(_rank);
-
-            H5Sget_simple_extent_dims(dataspace, _current_extend.data(),
-                                      _capacity.data());
-            H5Sclose(dataspace);
-
-            // Update info and reference counter
-            H5Oget_info(_dataset, &_info);
-            _address = _info.addr;
-            (*_referencecounter)[_address] += 1;
+            __open_dataset__();
         }
         else
         {
@@ -1001,6 +1190,159 @@ public:
         }
     }
 
+    template <typename T>
+    void write(const T& data)
+    {
+        // check if write can be made
+        if (_rank == 0)
+        {
+            throw std::runtime_error("Rank of dataset " + _path + " is zero!");
+        }
+
+        // size to add to current extend is always one, only when
+        // we have a container to write do we have a bigger size
+        hsize_t size = 1;
+        if constexpr (is_container_v<T>)
+        {
+            size = data.size();
+        }
+
+        // dataset does not yet exist
+        if (_dataset == -1)
+        {
+            // update current extend
+            if (_current_extend.size() == 0)
+            {
+                _current_extend = std::vector<hsize_t>(_rank, 1);
+                _current_extend[_rank - 1] = size;
+            }
+
+            // decide on wether we have a container...
+            if constexpr (is_container_v<T>)
+            {
+                __write_containertype__(data);
+            }
+            // ... or a string
+            else if constexpr (is_stringtype_v<T>)
+            {
+                __write_stringtype__(data);
+            }
+            // ... or a non-string pointer (mind const char* !)
+            else if constexpr (std::is_pointer_v<Type> && !is_string_v<Type>)
+            {
+                __write_pointertype__(data);
+            }
+            // ... or finally a scalar
+            else
+            {
+                __write_scalartype__(data);
+            }
+        }
+        // dataset does exist
+        else
+        {
+            // check dataset is not exhausted
+            if (_current_extend == _capacity)
+            {
+                throw std::runtime_error("Dataset " + _path +
+                                         " has reached its capacity");
+            }
+
+            // delegate appending to the append function, appending to the
+            // current end and using a stride of 1 into each dimension, i.e.
+            // writing densely.
+            append(data, _current_extend, std::vector<hsize_t>(_rank, 1));
+        }
+    }
+
+    template <typename T>
+    void write(T&& data)
+    {
+        // check if write can be made
+        if (_rank == 0)
+        {
+            throw std::runtime_error("Rank of dataset " + _path + " is zero!");
+        }
+
+        // size to add to current extend is always one, only when
+        // we have a container to write do we have a bigger size
+        hsize_t size = 1;
+        if constexpr (is_container_v<T>)
+        {
+            size = data.size();
+        }
+
+        // dataset does not yet exist
+        if (_dataset == -1)
+        {
+            // update current extend
+            if (_current_extend.size() == 0)
+            {
+                _current_extend = std::vector<hsize_t>(_rank, 1);
+                _current_extend[_rank - 1] = size;
+            }
+
+            // decide on wether we have a container...
+            if constexpr (is_container_v<T>)
+            {
+                __write_containertype__(data);
+            }
+            // ... or a string
+            else if constexpr (is_stringtype_v<T>)
+            {
+                __write_stringtype__(data);
+            }
+            // ... or a non-string pointer (mind const char* !)
+            else if constexpr (std::is_pointer_v<Type> && !is_string_v<Type>)
+            {
+                __write_pointertype__(data);
+            }
+            // ... or finally a scalar
+            else
+            {
+                __write_scalartype__(data);
+            }
+        }
+        // dataset does exist
+        else
+        {
+            // check dataset is not exhausted
+            if (_current_extend == _capacity)
+            {
+                throw std::runtime_error("Dataset " + _path +
+                                         " has reached its capacity");
+            }
+
+            // delegate appending to the append function, appending to the
+            // current end and using a stride of 1 into each dimension, i.e.
+            // writing densely.
+            append(std::forward<T&&>(data), _current_extend,
+                   std::vector<hsize_t>(_rank, 1));
+        }
+    }
+
+    template <typename T>
+    void append(const T& data, std::vector<hsize_t> offset, std::vector<hsize_t> stride)
+    {
+        if (!H5Iis_valid(_dataset))
+        {
+            throw std::runtime_error(
+                "Trying to append dataset " + _path +
+                " which is invalid, has it already been closed?");
+        }
+    }
+
+    template <typename T>
+    void append(T&& data, std::vector<hsize_t> offset, std::vector<hsize_t> stride)
+    {
+        if (!H5Iis_valid(_dataset))
+        {
+            throw std::runtime_error(
+                "Trying to append dataset " + _path +
+                " which is invalid, has it already been closed?");
+        }
+    }
+
     /**
      * @brief      default consturctor
      */
@@ -1080,30 +1422,7 @@ public:
           _referencecounter(parent_object.get_referencecounter())
 
     {
-        // Try to find the dataset in the parent_object
-        // If it is there, open it.
-        // Else: postphone the dataset creation to the first write
-        if (H5LTfind_dataset(_parent_object->get_id(), _path.c_str()) == 1)
-        { // dataset exists
-            // open it
-            _dataset = H5Dopen(_parent_object->get_id(), _path.c_str(), H5P_DEFAULT);
-
-            // get dataspace and read out rank, extend, capacity
-            hid_t dataspace = H5Dget_space(_dataset);
-
-            _rank = H5Sget_simple_extent_ndims(dataspace);
-            _current_extend.resize(_rank);
-            _capacity.resize(_rank);
-
-            H5Sget_simple_extent_dims(dataspace, _current_extend.data(),
-                                      _capacity.data());
-            H5Sclose(dataspace);
-
-            // Update info and reference counter
-            H5Oget_info(_dataset, &_info);
-            _address = _info.addr;
-            (*_referencecounter)[_address] += 1;
-        }
+        __open_dataset__();
     }
 
     /**
@@ -1111,18 +1430,7 @@ public:
      */
     virtual ~HDFDataset()
     {
-        if (H5Iis_valid(_dataset))
-        {
-            if ((*_referencecounter)[_address] == 1)
-            {
-                H5Dclose(_dataset);
-                _referencecounter->erase(_referencecounter->find(_address));
-            }
-            else
-            {
-                --(*_referencecounter)[_address];
-            }
-        }
+        close();
     }
 };
 
