@@ -13,12 +13,32 @@ To avoid problems, go chronologically through the following sections.
     - [ ] Within the `utopia/dune/utopia/models/MyFancyModel/` directory, there is another `CMakeLists.txt` file. Open it and change the line `add_model(CopyMe CopyMe.cc)` to `add_model(MyFancyModel MyFancyModel.cc)`. With this command you tell `CMake` that you include a new model should be added.
 - [ ] Open the file `MyFancyModel.cc` in the `utopia/dune/utopia/models/MyFancyModel/` directory and do the following:
   - [ ] Throughout the file replace all `CopyMe`'s by `MyFancyModel`'s.
+- [ ] Open the file `MyFancyModel.hh` in the `utopia/dune/utopia/models/MyFancyModel/` directory and do the following:
+  - [ ] Throughout the file replace all `CopyMe`'s by `MyFancyModel`'s.
+  - [ ] Throughout the file replace all `COPYME`'s by `MYFANCYMODEL`'s.
 
 
 - [ ] Set up the testing framework
 
 - [ ] Set up the plotting framework
 
+
+### Adapting your code 
+Depending on what model you want to implement, you probably can delete some provided functions that are commented out.
+- [ ] All variables, functions, etc. that are just there to show how you would use and implement them are denoted with the prefix 'some_' or '_some', e.g. '_some_variable', 'some_function', 'some_interaction', ...
+If you write your model, you should change these.
+
+- [ ] Feel free to remove anything, you do not need.
+### Remarks to Building a Model
+
+### Further reading
+If you want to know more about how to actually build a model you can have a look at the following rather simple models:
+
+1. SimpleEG: A simple evolutionary game model with cells on a grid
+2. MovingAgents: A simple model with agents that move on a grid
+3. ...
+
+You can have a look at these models and modularly select what you want to have included in your model, if needed.
 
 
 Congratulations, you have build a new model! :) So now, just one thing remains:
