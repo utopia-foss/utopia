@@ -5,6 +5,9 @@ This is the beginner's guide for creating a new model in _Utopia_. If you go thr
 To avoid problems, go chronologically through the following sections.
 
 ### Setting Up The Infrastructure
+
+We assume that you want to build your own model which will be called `MyFancyModel`. Probably, you will give it a more suited name. So, keep in mind to replace every instance of `MyFancyModel` with you actual model name. If you follow all the steps explained in the following, you will end up with your own utopia model.
+
 - [ ] Copy the `CopyMe` directory inside of the model directory and paste it inside of the model directory. Rename the directory for example to `MyFancyModel`. 
 (Remark to the naming convention: Your model name should consist of words that start with Capital Letters and are `DirectlyConcatenatedWithoutSeparatingSymbols`)
 - [ ] Rename all files such that all `CopyMe`s are replaced by `MyFancyModel`s
@@ -19,9 +22,12 @@ To avoid problems, go chronologically through the following sections.
 
 
 - [ ] Set up the testing framework
+  - [ ] Move to the directory `utopia/python/model_tests`, copy the `CopyMe` directory and rename it to `MyFancyModel`. Be sure that there is a file named `__init__.py` inside the directory. 
+
+
 
 - [ ] Set up the plotting framework
-
+  - [ ] Move to the directory `utopia/python/model_plots`
 
 ### Adapting your code 
 Depending on what model you want to implement, you probably can delete some provided functions that are commented out.
