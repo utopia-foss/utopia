@@ -241,13 +241,12 @@ public:
      * @return     A std::shared_ptr pointing at the newly created dataset
      */
     std::shared_ptr<HDFDataset<HDFGroup>> open_dataset(std::string path,
-                                                       std::size_t rank = 1,
                                                        std::vector<hsize_t> capacity = {},
                                                        std::vector<hsize_t> chunksizes = {},
                                                        std::size_t compresslevel = 0)
     {
         return std::make_shared<HDFDataset<HDFGroup>>(
-            *this, path, rank, capacity, chunksizes, compresslevel);
+            *this, path, capacity, chunksizes, compresslevel);
     }
 
     /**
