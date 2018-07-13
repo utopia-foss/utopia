@@ -209,6 +209,232 @@ struct is_array_like<T, std::void_t<decltype(std::tuple_size<T>::value)>> : std:
 template <typename T>
 inline constexpr bool is_array_like_v = is_array_like<T>::value;
 
+/**
+ * @brief Checks equality of two containers: equal size and equal elements
+ *
+ * @tparam Container automatically determined
+ * @param lhs container to compare
+ * @param rhs container to compare
+ * @return true when lhs == rhs
+ * @return false otherwise
+ */
+template <template <typename...> class Container, typename T>
+bool operator==(const Container<T>& lhs, const Container<T>& rhs)
+{
+    if (lhs.size() == rhs.size())
+    {
+        return false;
+    }
+    else
+    {
+        auto lhs_begin = lhs.begin();
+        auto rhs_begin = rhs.begin();
+        if (std::is_floating_point<T>::value)
+        {
+            for (; lhs_begin != lhs.end(); ++lhs_begin, ++rhs_begin)
+            {
+                if (std::abs((*lhs_begin - *rhs_begin) / max(*lhs_begin, *rhs_begin)) < 1e-16)
+                {
+                    return false;
+                }
+            }
+        }
+        else
+        {
+            for (; lhs_begin != lhs.end(); ++lhs_begin, ++rhs_begin)
+            {
+                if (*lhs_begin != *rhs_begin)
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+}
+
+/**
+ * @brief Checks equality of two containers: equal size and equal elements
+ *
+ * @tparam Container automatically determined
+ * @param lhs container to compare
+ * @param rhs container to compare
+ * @return true when lhs == rhs
+ * @return false otherwise
+ */
+template <template <typename...> class Container, typename T>
+bool operator==(Container<T>&& lhs, Container<T>&& rhs)
+{
+    if (lhs.size() == rhs.size())
+    {
+        return false;
+    }
+    else
+    {
+        auto lhs_begin = lhs.begin();
+        auto rhs_begin = rhs.begin();
+        if (std::is_floating_point<T>::value)
+        {
+            for (; lhs_begin != lhs.end(); ++lhs_begin, ++rhs_begin)
+            {
+                if (std::abs((*lhs_begin - *rhs_begin) / max(*lhs_begin, *rhs_begin)) < 1e-16)
+                {
+                    return false;
+                }
+            }
+        }
+        else
+        {
+            for (; lhs_begin != lhs.end(); ++lhs_begin, ++rhs_begin)
+            {
+                if (*lhs_begin != *rhs_begin)
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+}
+
+/**
+ * @brief find_rank recursion base case: returns zero if T is no container or
+ * pointer
+ *
+ * @tparam T Type to get rank for
+ * @return constexpr std::size_t 0
+ */
+template <typename T, std::enable_if_t<!is_container_v<T> and !std::is_pointer_v<T>, int> = 0>
+inline constexpr hsize_t find_rank()
+{
+    return 0;
+}
+
+/**
+ * @brief Get the rank of a pointer or nested container:
+ *        T = double*** -> find_rank<T>() = 3
+ *
+ *
+ * @tparam T Type to get rank for
+ * @return constexpr std::size_t the dimension of the object
+ */
+template <typename T, std::enable_if_t<is_container_v<T>, int> = 0>
+inline constexpr hsize_t find_rank()
+{
+    return 1 + find_rank<typename T::value_type>();
+}
+
+/**
+ * @brief Get the rank of a pointer or nested container:
+ *        T = double*** -> find_rank<T>() = 3
+ *
+ * @tparam T Type to get rank for
+ * @return constexpr std::size_t
+ */
+template <typename T, std::enable_if_t<std::is_pointer_v<T>, int> = 0>
+inline constexpr hsize_t find_rank()
+{
+    return 1 + find_rank<std::remove_pointer_t<T>>();
+}
+
+/**
+ * @brief shorthand for find_rank
+ *
+ * @tparam T Type to get rank for
+ */
+template <typename T>
+inline constexpr hsize_t find_rank_v = find_rank<T>();
+
+/**
+ * @brief Base function for recursion for finding the sizes of a nested container
+ *
+ * @tparam T automatically determined
+ * @param object (nested) container for which the sizes are to be determined
+ * @param loc pointer to a random access container/pointer where the size of the
+ *            current dimension should be written to.
+ */
+template <typename T, std::enable_if_t<!is_container_v<typename T::value_type>, int> = 0>
+inline void find_sizes(T&& object, hsize_t* loc)
+{
+    *loc = object.size();
+}
+
+/**
+ * @brief Function for recursivly finding the sizes of nested containers
+ *
+ * @tparam T automatically determined
+ * @param object (nested) container for which the sizes are to be determined
+ * @param loc pointer to a random access container/pointer where the size of the
+ *            current dimension should be written to.
+ */
+template <typename T, std::enable_if_t<is_container_v<T> and is_container_v<typename T::value_type>, int> = 0>
+inline void find_sizes(T&& object, hsize_t* loc)
+{
+    *loc = object.size();
+    find_sizes(object[0], loc + 1);
+}
+
+/**
+ * @brief Get the container properties as a tuple of (rank, vector of sizes for each dimension).
+ *
+ * @tparam T automatically determined
+ * @param object (nested) container for which the sizes are to be determined
+ * @return auto  tuple of (rank, vector of sizes for each dimension)
+ */
+template <typename T>
+auto container_properties(T&& object)
+{
+    auto r = find_rank_v<remove_qualifier_t<T>>;
+    std::vector<hsize_t> sizes(r);
+    find_sizes(object, sizes.data());
+    return std::make_tuple(r, sizes);
+}
+
+/**
+ * @brief Base function for recursion for finding the sizes of a nested container
+ *
+ * @tparam T automatically determined
+ * @param object (nested) container for which the sizes are to be determined
+ * @param loc pointer to a random access container/pointer where the size of the
+ *            current dimension should be written to.
+ */
+template <typename T, std::enable_if_t<!is_container_v<typename T::value_type>, int> = 0>
+inline void find_sizes(const T& object, std::size_t* loc)
+{
+    *loc = object.size();
+}
+
+/**
+ * @brief Function for recursivly finding the sizes of nested containers
+ *
+ * @tparam T automatically determined
+ * @param object (nested) container for which the sizes are to be determined
+ * @param loc pointer to a random access container/pointer where the size of the
+ *            current dimension should be written to.
+ */
+template <typename T, std::enable_if_t<is_container_v<T> and is_container_v<typename T::value_type>, int> = 0>
+inline void find_sizes(const T& object, std::size_t* loc)
+{
+    *loc = object.size();
+    find_sizes(object[0], loc + 1);
+}
+
+/**
+ * @brief Get the container properties as a tuple of (rank, vector of sizes for each dimension).
+ *
+ * @tparam T automatically determined
+ * @param object (nested) container for which the sizes are to be determined
+ * @return auto  tuple of (rank, vector of sizes for each dimension)
+ */
+template <typename T>
+auto container_properties(const T& object)
+{
+    auto r = find_rank_v<remove_qualifier_t<T>>;
+    std::vector<std::size_t> sizes(r);
+    find_sizes(object, sizes.data());
+    return std::make_tuple(r, sizes);
+}
+
 } // namespace DataIO
 } // namespace Utopia
 #endif
