@@ -29,7 +29,7 @@ void write(std::vector<Teststruct>& data)
     auto group = file.get_basegroup()->open_group(
         "first_deeper/second_deeper/third_deeper");
 
-    auto dataset = group->open_dataset("dataset1");
+    auto dataset = group->open_dataset("dataset1", {data.size()});
     dataset->write(data.begin(), data.end(), [](auto& value) { return value.x; });
     // std::string attrdata = "this is a testattribute";
     dataset->add_attribute(
@@ -37,14 +37,14 @@ void write(std::vector<Teststruct>& data)
         std::string("this is an attribute to a double dataset"));
 
     // write variable length string
-    auto dataset2 = group->open_dataset("dataset2");
+    auto dataset2 = group->open_dataset("dataset2", {data.size()});
     dataset2->write(data.begin(), data.end(),
                     [](auto& value) -> std::string& { return value.y; });
 
     dataset2->add_attribute("stringattribute",
                             "this is an attribute to std::string");
 
-    auto dataset3 = group->open_dataset("dataset3");
+    auto dataset3 = group->open_dataset("dataset3", {data.size()});
     dataset3->write(data.begin(), data.end(),
                     [](auto& value) -> std::vector<int>& { return value.z; });
 

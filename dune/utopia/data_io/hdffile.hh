@@ -212,12 +212,11 @@ public:
      * @return     std::shared_ptr<HDFDataset<HDFGroup>>
      */
     std::shared_ptr<HDFDataset<HDFGroup>> open_dataset(std::string path,
-                                                       std::size_t rank = 1,
                                                        std::vector<hsize_t> capacity = {},
                                                        std::vector<hsize_t> chunksizes = {},
                                                        std::size_t compresslevel = 0)
     {
-        return _base_group->open_dataset(path, rank, capacity, chunksizes, compresslevel);
+        return _base_group->open_dataset(path, capacity, chunksizes, compresslevel);
     }
 
     /**
