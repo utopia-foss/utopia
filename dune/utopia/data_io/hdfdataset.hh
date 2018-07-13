@@ -103,6 +103,38 @@ private:
     }
 
     /**
+     * @brief Opens an existing dataset based on the classes parameters
+     *
+     */
+    void __open_dataset__()
+    {
+        // open it
+        _dataset = H5Dopen(_parent_object->get_id(), _path.c_str(), H5P_DEFAULT);
+
+        // get dataspace and read out rank, extend, capacity
+        hid_t dataspace = H5Dget_space(_dataset);
+
+        _rank = H5Sget_simple_extent_ndims(dataspace);
+        _current_extend.resize(_rank);
+        _capacity.resize(_rank);
+
+        H5Sget_simple_extent_dims(dataspace, _current_extend.data(), _capacity.data());
+        H5Sclose(dataspace);
+
+        // Update info and reference counter
+        H5Oget_info(_dataset, &_info);
+        _address = _info.addr;
+        (*_referencecounter)[_address] += 1;
+    }
+
+    void __add_topology_attributes__()
+    {
+        add_attribute("current_extend", _current_extend);
+        add_attribute("capacity", _capacity);
+        add_attribute("rank", _rank);
+    }
+
+    /**
      * @brief      For writing a dataset
      * @details    This assumes that the dataset has already been created
      *
@@ -537,24 +569,7 @@ public:
         // Else: postphone the dataset creation to the first write
         if (H5LTfind_dataset(_parent_object->get_id(), _path.c_str()) == 1)
         { // dataset exists
-            // open it
-            _dataset = H5Dopen(_parent_object->get_id(), _path.c_str(), H5P_DEFAULT);
-
-            // get dataspace and read out rank, extend, capacity
-            hid_t dataspace = H5Dget_space(_dataset);
-
-            _rank = H5Sget_simple_extent_ndims(dataspace);
-            _current_extend.resize(_rank);
-            _capacity.resize(_rank);
-
-            H5Sget_simple_extent_dims(dataspace, _current_extend.data(),
-                                      _capacity.data());
-            H5Sclose(dataspace);
-
-            // Update info and reference counter
-            H5Oget_info(_dataset, &_info);
-            _address = _info.addr;
-            (*_referencecounter)[_address] += 1;
+            __open_dataset__();
         }
         else
         {
@@ -1103,18 +1118,7 @@ public:
      */
     virtual ~HDFDataset()
     {
-        if (H5Iis_valid(_dataset))
-        {
-            if ((*_referencecounter)[_address] == 1)
-            {
-                H5Dclose(_dataset);
-                _referencecounter->erase(_referencecounter->find(_address));
-            }
-            else
-            {
-                --(*_referencecounter)[_address];
-            }
-        }
+        close();
     }
 };
 
