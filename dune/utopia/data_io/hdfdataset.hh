@@ -728,7 +728,6 @@ public:
      */
     void open(HDFObject& parent_object,
               std::string path,
-              hsize_t rank = 1,
               std::vector<hsize_t> capacity = {},
               std::vector<hsize_t> chunksizes = {},
               hsize_t compress_level = 0)
@@ -736,11 +735,9 @@ public:
         _parent_object = &parent_object;
         _path = path;
         _referencecounter = parent_object.get_referencecounter();
-        _rank = rank;
+
         _current_extend = {};
-        _capacity = capacity;
-        _chunksizes = chunksizes;
-        _compress_level = compress_level;
+
         // Try to find the dataset in the parent_object
         // If it is there, open it.
         // Else: postphone the dataset creation to the first write
@@ -750,6 +747,31 @@ public:
         }
         else
         {
+            if (capacity.size() == 0)
+            {
+                if (chunksizes.size() == 0)
+                {
+                    throw std::runtime_error(
+                        "In trying to create dataset " + path +
+                        ": chunksizes have to be given when "
+                        "not giving an explicit capacity!");
+                }
+                else
+                {
+                    _rank = chunksizes.size();
+                    _chunksizes = chunksizes;
+                    _capacity = std::vector<hsize_t>(_rank, H5S_UNLIMITED);
+                }
+            }
+            else
+            {
+                _capacity = capacity;
+                _chunksizes = chunksizes;
+                _rank = _capacity.size();
+            }
+
+            _compress_level = compress_level;
+
             _dataset = -1;
         }
     }
@@ -798,28 +820,11 @@ public:
      */
     template <typename Iter, typename Adaptor>
     void write(Iter begin, Iter end, Adaptor&& adaptor)
-    //    Adaptor adaptor,
-    //    hsize_t rank = 1,
-    //    std::vector<hsize_t> extend = {},
-    //    std::vector<hsize_t> capacity = {},
-    //    hsize_t chunksize = 0,
-    //    hsize_t compress_level = 0)
     {
         using result_type = remove_qualifier_t<decltype(adaptor(*begin))>;
 
         // get size of stuff to write
         hsize_t size = std::distance(begin, end);
-
-        if (_current_extend.size() == 0)
-        {
-            _current_extend = std::vector<hsize_t>(_rank, 1);
-            _current_extend[_rank - 1] = size;
-        }
-
-        if (_capacity.size() == 0)
-        {
-            _capacity = _current_extend;
-        }
 
         // currently not supported rank -> throw error
         if (_rank > 2)
@@ -831,6 +836,25 @@ public:
 
         if (_dataset == -1)
         { // dataset does not exist yet
+
+            // set current extend
+            _current_extend = std::vector<hsize_t>(_rank, 1);
+            _current_extend[_rank - 1] = size;
+
+            // set capacity
+            if (_capacity.size() == 0)
+            {
+                _capacity = _current_extend;
+            }
+            else
+            {
+                if (!(_capacity == _current_extend) and _chunksizes.size() == 0)
+                {
+                    throw std::runtime_error(
+                        "The provision of chunksizes is mandatory if dataset " +
+                        _path + " shall be extendible.");
+                }
+            }
 
             // build a new dataset and assign to _dataset member
             __create_dataset__<result_type>();
@@ -1100,10 +1124,10 @@ public:
                 // check that the arrays have the correct size:
                 if (start.size() != _rank || end.size() != _rank || stride.size() != _rank)
                 {
-                    throw std::invalid_argument(
-                        "Cannot read dataset: start, "
-                        "end and/or stride size did "
-                        "not match the rank!");
+                    throw std::invalid_argument("Cannot read dataset " + _path +
+                                                ": start, "
+                                                "end and/or stride size did "
+                                                "not match the rank!");
                 }
                 // determine the count to be read
                 std::vector<hsize_t> count(start.size());
@@ -1407,22 +1431,13 @@ public:
      */
     HDFDataset(HDFObject& parent_object,
                std::string path,
-               hsize_t rank = 1,
                std::vector<hsize_t> capacity = {},
                std::vector<hsize_t> chunksizes = {},
                hsize_t compress_level = 0)
-        : _parent_object(&parent_object),
-          _path(path),
-          _dataset(-1),
-          _rank(rank),
-          _current_extend({}),
-          _capacity(capacity),
-          _chunksizes(chunksizes),
-          _compress_level(compress_level),
-          _referencecounter(parent_object.get_referencecounter())
+        : _referencecounter(parent_object.get_referencecounter())
 
     {
-        __open_dataset__();
+        open(parent_object, path, capacity, chunksizes, compress_level);
     }
 
     /**

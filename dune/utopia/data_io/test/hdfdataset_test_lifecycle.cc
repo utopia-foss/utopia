@@ -56,9 +56,9 @@ int main()
     HDFGroup lifecyclegroup(*file.get_basegroup(), "lifecycletest");
     std::vector<int> data(100, 42);
 
-    HDFDataset first(lifecyclegroup, "first", 1, {100}, {10}, 5);
+    HDFDataset first(lifecyclegroup, "first", {100}, {10}, 5);
 
-    HDFDataset first_simple(lifecyclegroup, "first_simple");
+    HDFDataset first_simple(lifecyclegroup, "first_simple", {}, {10});
 
     first.write(data.begin(), data.end(), [](int& value) { return value; });
     first_simple.write(data.begin(), data.end(), [](int& value) { return value; });
@@ -97,7 +97,7 @@ int main()
     // lifecyclegroup.open(*file.get_basegroup(), "lifecycletest");
     // test open method
     HDFDataset<HDFGroup> opened_dataset;
-    opened_dataset.open(lifecyclegroup, "first", 1, {100}, {10}, 5);
+    opened_dataset.open(lifecyclegroup, "first", {100}, {10}, 5);
     assert(H5Iis_valid(opened_dataset.get_id()) == true);
 
     // test simple open method
