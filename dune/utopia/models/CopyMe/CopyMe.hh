@@ -237,7 +237,6 @@ public:
     {   
         // For the grid data, get the cells in order to iterate over them
         auto cells = _manager.cells();
-        const unsigned int num_cells = std::distance(cells.begin(), cells.end());
 
         // some_state
         _dset_some_state->write(cells.begin(), cells.end(),
