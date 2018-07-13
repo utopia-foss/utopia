@@ -184,8 +184,6 @@ public:
 
         // Write initial state
         this->write_data();
-
-        // Create
     }
 
     // Setup functions ........................................................
@@ -241,7 +239,7 @@ public:
         // some_state
         _dset_some_state->write(cells.begin(), cells.end(),
                               [](auto& cell) {
-                                return static_cast<unsigned short int>(cell->state().some_state);
+                                return cell->state().some_state;
                               },
                               2,              // rank
                               {1, num_cells}, // extend of this entry
@@ -260,6 +258,7 @@ public:
                               8               // chunksize, for extension
                               );
 
+        this->_log->debug("Data written");
         // TODO Once implemented, use the higher-level wrapper for writing data
     }
 };
