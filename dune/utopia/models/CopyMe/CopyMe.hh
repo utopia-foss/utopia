@@ -90,7 +90,7 @@ private:
 
     // -- Rule functions -- //
     /// Define some initial state for all cells
-    std::function<State(std::shared_ptr<CellType>)> _set_initial_state_A = [this](const auto cell){
+    std::function<State(std::shared_ptr<CellType>)> _set_initial_state_A = [](const auto cell){
         // Get the state of the Cell
         auto state = cell->state();
 
@@ -104,7 +104,7 @@ private:
 
 
     /// Define some initial state for all cells
-    std::function<State(std::shared_ptr<CellType>)> _set_initial_state_B = [this](const auto cell){
+    std::function<State(std::shared_ptr<CellType>)> _set_initial_state_B = [](const auto cell){
         // Get the state of the Cell
         auto state = cell->state();
 
@@ -237,32 +237,24 @@ public:
         const unsigned int num_cells = std::distance(cells.begin(), cells.end());
 
 
-        // for (auto&& cell : cells){
-        //     this->_log->info((cell)->state().some_state);
-        //     this->_log->info((cell)->state().some_trait);
-        // }
+        for (auto&& cell : cells){
+            this->_log->info((cell)->state().some_state);
+            this->_log->info((cell)->state().some_trait);
+        }
 
 
         // some_state
         _dset_some_state->write(cells.begin(), cells.end(),
                               [](auto& cell) {
                                 return cell->state().some_state;
-                              },
-                              2,              // rank
-                              {1, num_cells}, // extend of this entry
-                              {},             // max_size of the dataset
-                              8               // chunksize, for extension
+                              }
                               );
 
         // some_trait
         _dset_some_trait->write(  cells.begin(), cells.end(),
                               [](auto& cell) {
                                 return cell->state().some_trait;
-                              },
-                              2,              // rank
-                              {1, num_cells}, // extend of this entry
-                              {},             // max_size of the dataset
-                              8               // chunksize, for extension
+                              }
                               );
 
         this->_log->debug("Data written");
