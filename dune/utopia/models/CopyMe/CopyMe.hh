@@ -181,7 +181,7 @@ public:
         // create datasets
         _dset_some_state(this->_hdfgrp->open_dataset("some_state", {H5S_UNLIMITED}, {10})),
         _dset_some_trait(this->_hdfgrp->open_dataset("some_trait", {H5S_UNLIMITED}, {10}))        
-    {   
+    {
         // Initialize cells
         this->initialize_cells();
 
