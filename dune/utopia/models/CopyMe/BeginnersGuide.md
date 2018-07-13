@@ -20,14 +20,18 @@ We assume that you want to build your own model which will be called `MyFancyMod
   - [ ] Throughout the file replace all `CopyMe`'s by `MyFancyModel`'s.
   - [ ] Throughout the file replace all `COPYME`'s by `MYFANCYMODEL`'s.
 
-
+#### The Testing Framework
 - [ ] Set up the testing framework
   - [ ] Move to the directory `utopia/python/model_tests`, copy the `CopyMe` directory and rename it to `MyFancyModel`. Be sure that there is a file named `__init__.py` inside the directory. 
+  - [ ] Inside the created `MyFancyModel` directory, rename the `test_CopyMe.py` file to `test_MyFancyModel.py`.
 
+In this `test_MyFancyModel.py` file you can add tests to your model. Keep in mind to remove the provided example tests if you remove unneeded parts of the former `CopyMe` model.
 
-
+#### The Plotting Framework
 - [ ] Set up the plotting framework
-  - [ ] Move to the directory `utopia/python/model_plots`
+  - [ ] Move to the directory `utopia/python/model_plots`, copy the `CopyMe` directory and rename it to `MyFancyModel`. Be sure that there is a file named `__init__.py` inside the directory.
+
+The `some_state.py` script is provided to show you how a model specific plotting script could look like. Remember to remove it (comment it out) if you start removing or changing parts of the former `CopyMe` model code.
 
 ### Adapting your code 
 Depending on what model you want to implement, you probably can delete some provided functions that are commented out.
@@ -35,17 +39,31 @@ Depending on what model you want to implement, you probably can delete some prov
 If you write your model, you should change these.
 
 - [ ] Feel free to remove anything, you do not need.
-### Remarks to Building a Model
 
-### Further reading
-If you want to know more about how to actually build a model you can have a look at the following rather simple models:
+- [ ] Keep in mind to accordingly adapt the plotting and testing functions.
+
+### Inspiration From Other Models
+If you want to learn more about the capabilities of Utopia and how models can look like, we recommend that you have a look at the already implemented models, e.g.:
 
 1. SimpleEG: A simple evolutionary game model with cells on a grid
 2. MovingAgents: A simple model with agents that move on a grid
-3. ...
 
-You can have a look at these models and modularly select what you want to have included in your model, if needed.
+### Some Final Remarks and Advices
 
+#### `log->debug` instead of `std::cout`
+
+If you are used to writing `C++` code you probably often use `std::cout` to print information or to debug your code. We advice you to use the functionality of `spdlog` if you work with _Utopia_. This has at least two advantages:
+
+1. If you run your model, your information is stored in a `out.log` for each universe, so you can have a look at the logger information later.
+2. If you do big parameter sweeps, your terminal will not be flooded with information.
+
+As a rough guideline:
+- Use `log->info("Some info")` for information that is not repetitive, e.g. not inside a loop, and contains rather general information.
+- Use `log->debug("Some more detailed info, e.g. for helping you debug")` 
+
+More information about how to use `spdlog` and what functionality is provided can be found [here](https://github.com/gabime/spdlog).
+
+### Finished! 
 
 Congratulations, you have build a new model! :) So now, just one thing remains:
 
@@ -54,7 +72,3 @@ Congratulations, you have build a new model! :) So now, just one thing remains:
 Your next guide will be the `MyModelWorksGuide.md` guide. It contains information what requirements your code must fulfill such that it can be accepted as a model within _Utopia_, e.g. that it can be merged into _Utopia_'s master branch. 
 
 Have fun implementing your model! :) 
-
-
-## Additional notes 
-- how to use spdlog
