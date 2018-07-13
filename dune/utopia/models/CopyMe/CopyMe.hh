@@ -177,7 +177,10 @@ public:
         Base(name, parent),
         // Now initialize members specific to this class
         _manager(manager),
-        _some_parameter(as_double(this->_cfg["some_parameter"]))
+        _some_parameter(as_double(this->_cfg["some_parameter"])),
+        // create datasets
+        _dset_some_state(this->_hdfgrp->open_dataset("some_state", {H5S_UNLIMITED}, {10})),
+        _dset_some_trait(this->_hdfgrp->open_dataset("some_trait", {H5S_UNLIMITED}, {10}))        
     {   
         // Initialize cells
         this->initialize_cells();
@@ -236,20 +239,6 @@ public:
         auto cells = _manager.cells();
         const unsigned int num_cells = std::distance(cells.begin(), cells.end());
 
-        // Currently in there for debugging reasons. 
-        // This works but writing data (below) yields a segmentation fault
-        int counter = 0;
-        for (auto&& cell : cells){
-            cell->state().some_state;
-            cell->state().some_trait;
-            counter++;
-            if (counter == 441){
-                this->_log->info(cell->state().some_state);
-                this->_log->info(cell->state().some_trait);
-            }
-        }
-        
-        // TODO: Data writing currently produces a segmentation fault! 
         // some_state
         _dset_some_state->write(cells.begin(), cells.end(),
                               [](auto& cell) {
