@@ -96,6 +96,19 @@ void write_dataset_onedimensional(HDFFile& file)
     // test write: most simple case
     testdataset.write(data.begin(), data.end(), [](auto& value) { return value; });
 
+    // write extendable dataset
+    HDFDataset extendable_dataset(testgroup1, "extendable_dataset", {H5S_UNLIMITED}, {10});
+
+    extendable_dataset.write(data.begin(), data.end(),
+                             [](auto& value) { return value; });
+
+    extendable_dataset.close();
+    file.flush();
+
+    extendable_dataset.open(testgroup1, "extendable_dataset");
+    extendable_dataset.write(data.begin(), data.end(),
+                             [](auto& value) { return value; });
+
     for (auto& value : data)
     {
         value = 6.28;

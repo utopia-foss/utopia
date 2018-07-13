@@ -42,6 +42,9 @@ void read_dataset_tests(HDFFile& file)
     HDFDataset varlen_dataset(testgroup1, "varlendataset");
     HDFDataset fixedsizearr_dataset(*file.get_basegroup(),
                                     "fixedsize_array_set");
+
+    HDFDataset extendable_dataset(testgroup1, "extendable_dataset");
+
     // read entire 1d dataset
     std::vector<double> data(100, 3.14);
     for (std::size_t i = 0; i < data.size(); ++i)
@@ -55,6 +58,18 @@ void read_dataset_tests(HDFFile& file)
     {
         assert(std::abs(data[i] - read_data[i]) < 1e-16);
     }
+
+    auto read_data_ext = extendable_dataset.read<double>();
+    assert(2 * data.size() == read_data_ext.size());
+    for (std::size_t i = 0; i < data.size(); ++i)
+    {
+        assert(std::abs(data[i] - read_data_ext[i]) < 1e-16);
+    }
+    for (std::size_t i = data.size(); i < 2 * data.size(); ++i)
+    {
+        assert(std::abs(data[i] - read_data_ext[i]) < 1e-16);
+    }
+
     // read subset of 1d set
     hsize_t start = 10;
     hsize_t end = 40;

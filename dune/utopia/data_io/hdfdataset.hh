@@ -79,6 +79,7 @@ private:
         }
     }
 
+    // FIXME: this is shit wrt size, use a _shape array
     /**
      * @brief      wrapper for creating a dataset given all parameters needed
      *
@@ -100,38 +101,6 @@ private:
         H5Oget_info(_dataset, &_info);
         _address = _info.addr;
         (*_referencecounter)[_address] = 1;
-    }
-
-    /**
-     * @brief Opens an existing dataset based on the classes parameters
-     *
-     */
-    void __open_dataset__()
-    {
-        // open it
-        _dataset = H5Dopen(_parent_object->get_id(), _path.c_str(), H5P_DEFAULT);
-
-        // get dataspace and read out rank, extend, capacity
-        hid_t dataspace = H5Dget_space(_dataset);
-
-        _rank = H5Sget_simple_extent_ndims(dataspace);
-        _current_extend.resize(_rank);
-        _capacity.resize(_rank);
-
-        H5Sget_simple_extent_dims(dataspace, _current_extend.data(), _capacity.data());
-        H5Sclose(dataspace);
-
-        // Update info and reference counter
-        H5Oget_info(_dataset, &_info);
-        _address = _info.addr;
-        (*_referencecounter)[_address] += 1;
-    }
-
-    void __add_topology_attributes__()
-    {
-        add_attribute("current_extend", _current_extend);
-        add_attribute("capacity", _capacity);
-        add_attribute("rank", _rank);
     }
 
     /**
@@ -569,7 +538,24 @@ public:
         // Else: postphone the dataset creation to the first write
         if (H5LTfind_dataset(_parent_object->get_id(), _path.c_str()) == 1)
         { // dataset exists
-            __open_dataset__();
+            // open it
+            _dataset = H5Dopen(_parent_object->get_id(), _path.c_str(), H5P_DEFAULT);
+
+            // get dataspace and read out rank, extend, capacity
+            hid_t dataspace = H5Dget_space(_dataset);
+
+            _rank = H5Sget_simple_extent_ndims(dataspace);
+            _current_extend.resize(_rank);
+            _capacity.resize(_rank);
+
+            H5Sget_simple_extent_dims(dataspace, _current_extend.data(),
+                                      _capacity.data());
+            H5Sclose(dataspace);
+
+            // Update info and reference counter
+            H5Oget_info(_dataset, &_info);
+            _address = _info.addr;
+            (*_referencecounter)[_address] += 1;
         }
         else
         {
@@ -667,19 +653,11 @@ public:
             _current_extend = std::vector<hsize_t>(_rank, 1);
             _current_extend[_rank - 1] = size;
 
-            // set capacity
-            if (_capacity.size() == 0)
+            if (!(_capacity == _current_extend) and _chunksizes.size() == 0)
             {
-                _capacity = _current_extend;
-            }
-            else
-            {
-                if (!(_capacity == _current_extend) and _chunksizes.size() == 0)
-                {
-                    throw std::runtime_error(
-                        "The provision of chunksizes is mandatory if dataset " +
-                        _path + " shall be extendible.");
-                }
+                throw std::runtime_error(
+                    "The provision of chunksizes is mandatory if dataset " +
+                    _path + " shall be extendible.");
             }
 
             // build a new dataset and assign to _dataset member
@@ -737,11 +715,9 @@ public:
             {
                 if ((_current_extend[i] == _capacity[i]) && (_current_extend[i] != 0))
                 {
-                    throw std::runtime_error(
-                        "Dataset " + _path +
-                        " cannot be extended! Its "
-                        "extend reached capacity. Make larger, or set the size "
-                        "to unlimited and give a chunksize to avoid this");
+                    throw std::runtime_error("Dataset " + _path +
+                                             " cannot be extended! Its "
+                                             "extend reached capacity");
                 }
             }
 
@@ -931,7 +907,6 @@ public:
                                      "invalid ID. Has the dataset already "
                                      "been closed?");
         }
-        // check if rank is zero ->bad
         if (_rank == 0)
         {
             throw std::runtime_error("Rank of dataset " + _path + " is zero!");
@@ -1118,7 +1093,18 @@ public:
      */
     virtual ~HDFDataset()
     {
-        close();
+        if (H5Iis_valid(_dataset))
+        {
+            if ((*_referencecounter)[_address] == 1)
+            {
+                H5Dclose(_dataset);
+                _referencecounter->erase(_referencecounter->find(_address));
+            }
+            else
+            {
+                --(*_referencecounter)[_address];
+            }
+        }
     }
 };
 
