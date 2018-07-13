@@ -627,6 +627,7 @@ public:
             _current_extend[_rank - 1] = size;
         }
 
+        // if capacity is still empty, then it is so intentionally.
         if (_capacity.size() == 0)
         {
             _capacity = _current_extend;
