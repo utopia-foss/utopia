@@ -21,10 +21,7 @@ set(TESTS_CORE
     model_nested_test
     model_setup_test
     model_with_manager_test
-    output_agent_test_gmsh
-    output_agent_test_rect
     rng_test
-    simulation_test
     state_test
     tags_test
     )

@@ -20,8 +20,8 @@ namespace Utopia
 namespace DataIO
 {
 /**
- * @brief      Class representing a HDFDataset, wich reads and writes data and
- *             attributes
+ * @brief      Class representing a HDFDataset, wich reads and writes
+ * data and attributes
  *
  * @tparam     HDFObject  The type of the parent object
  */
@@ -32,52 +32,50 @@ private:
     /**
      * @brief      helper function for making a non compressed dataset
      *
-     * @param      chunksize       The chunksize
-     * @param      compress_level  The compress level; only possible with a
-     *                             non-zero chunksize
+     * @param      typesize Size of the C type to write in bytes
      *
      * @tparam     Datatype        The data type stored in this dataset
      *
      * @return     The created dataset
      */
     template <typename Datatype>
-    hid_t __create_dataset_helper__(hsize_t chunksize, hsize_t compress_level, std::size_t typesize)
+    hid_t __create_dataset_helper__(std::size_t typesize)
     {
         // create group property list and (potentially) intermediate groups
         hid_t group_plist = H5Pcreate(H5P_LINK_CREATE);
         H5Pset_create_intermediate_group(group_plist, 1);
 
         // distinguish by chunksize; chunked dataset needed for compression
-        if (chunksize > 0)
+        if (_chunksizes.size() > 0)
         {
             // create creation property list, set chunksize and compress level
             hid_t plist = H5Pcreate(H5P_DATASET_CREATE);
 
-            std::vector<hsize_t> chunksizes(_rank, chunksize);
-            H5Pset_chunk(plist, _rank, chunksizes.data());
+            H5Pset_chunk(plist, _rank, _chunksizes.data());
 
-            if (compress_level > 0)
+            if (_compress_level > 0)
             {
-                H5Pset_deflate(plist, compress_level);
+                H5Pset_deflate(plist, _compress_level);
             }
 
             // make dataspace
             hid_t dspace =
-                H5Screate_simple(_rank, _current_extend.data(), _max_extend.data());
-
+                H5Screate_simple(_rank, _current_extend.data(), _capacity.data());
             // create dataset and return
-            return H5Dcreate(_parent_object->get_id(), _name.c_str(),
+            return H5Dcreate(_parent_object->get_id(), _path.c_str(),
                              HDFTypeFactory::type<Datatype>(typesize), dspace,
                              group_plist, plist, H5P_DEFAULT);
         }
         else
         {
+            // make dataspace
+            hid_t dspace =
+                H5Screate_simple(_rank, _current_extend.data(), _capacity.data());
+
             // can create the dataset right away
-            return H5Dcreate(
-                _parent_object->get_id(), _name.c_str(),
-                HDFTypeFactory::type<Datatype>(typesize),
-                H5Screate_simple(_rank, _current_extend.data(), _max_extend.data()),
-                group_plist, H5P_DEFAULT, H5P_DEFAULT);
+            return H5Dcreate(_parent_object->get_id(), _path.c_str(),
+                             HDFTypeFactory::type<Datatype>(typesize), dspace,
+                             group_plist, H5P_DEFAULT, H5P_DEFAULT);
         }
     }
 
@@ -85,94 +83,19 @@ private:
     /**
      * @brief      wrapper for creating a dataset given all parameters needed
      *
-     * @param      size            The (flattened) size of the dataset
-     * @param      rank            The rank (number of dimensions)
-     * @param      extend          The extend of the data to write; if zero,
-     *                             this will lead to the dataset size being
-     *                             extended. Note that extension is only
-     *                             possible with chunked data.
-     * @param      max_size        The maximum size of the dataset
-     * @param      chunksize       The chunksize
-     * @param      compress_level  The compress level; only available with
-     *                             non-zero chunksize
-     *
      * @tparam     result_type     The type of the data stored in this dataset
      */
     template <typename result_type>
-    void __create_dataset__(hsize_t size,
-                            hsize_t rank,
-                            std::vector<hsize_t> extend,
-                            std::vector<hsize_t> max_size,
-                            hsize_t chunksize,
-                            hsize_t compress_level)
+    void __create_dataset__()
     {
-        _rank = rank;
-        std::size_t s = 0;
+        std::size_t typesize = 0;
         if constexpr (is_container_v<result_type> and is_array_like_v<result_type>)
         {
-            s = std::tuple_size<result_type>::value;
+            typesize = std::tuple_size<result_type>::value;
         }
 
-        // Distinguish by chunksize
-        if (chunksize > 0)
-        {
-            if (extend.size() == 0)
-            {
-                // not given; create vector from size and rank
-                _current_extend = std::vector<hsize_t>(_rank, size);
-            }
-            else
-            {
-                _current_extend = extend;
-            }
-
-            if (max_size.size() == 0)
-            {
-                _max_extend = std::vector<decltype(H5S_UNLIMITED)>(_rank, H5S_UNLIMITED);
-            }
-            else
-            {
-                _max_extend = max_size;
-            }
-
-            if (compress_level > 0)
-            {
-                // make a new compressed dataset
-                _dataset = __create_dataset_helper__<result_type>(
-                    chunksize, compress_level, s);
-            }
-            else
-            {
-                // make a new non-compressed dataset
-                _dataset = __create_dataset_helper__<result_type>(
-                    chunksize, compress_level, s);
-            }
-        }
-        else
-        { // chunk size 0 implies non-extendable and non-compressed dataset
-
-            if (extend.size() == 0)
-            {
-                // not given; create vector from size and rank
-                _current_extend = std::vector<hsize_t>(_rank, size);
-            }
-            else
-            {
-                _current_extend = extend;
-            }
-
-            if (max_size.size() == 0)
-            {
-                _max_extend = _current_extend;
-            }
-            else
-            {
-                _max_extend = max_size;
-            }
-
-            // make dataset if necessary
-            _dataset = __create_dataset_helper__<result_type>(chunksize, compress_level, s);
-        }
+        // make a new non-compressed dataset
+        _dataset = __create_dataset_helper__<result_type>(typesize);
 
         // update info and add the new dataset to the reference counter
         H5Oget_info(_dataset, &_info);
@@ -221,9 +144,10 @@ private:
                 if (write_err < 0)
                 {
                     throw std::runtime_error(
-                        "Writing to 1D fixed length array dataset failed in "
+                        "Writing to 1D fixed length array dataset "
+                        "failed in "
                         "dataset" +
-                        _name);
+                        _path);
                 }
             }
             else
@@ -237,14 +161,13 @@ private:
                     throw std::runtime_error(
                         "Writing to 1D variable len dataset failed in "
                         "dataset" +
-                        _name);
+                        _path);
                 }
             }
         }
         else
         {
-            auto buffer = HDFBufferFactory::buffer(
-                begin, end, std::forward<Adaptor&&>(adaptor));
+            auto buffer = HDFBufferFactory::buffer(begin, end, adaptor);
 
             // write to buffer
             herr_t write_err =
@@ -255,7 +178,7 @@ private:
             {
                 throw std::runtime_error("Writing to 1D dataset failed!");
                 // FIXME Is this really only 1D?
-                // FIXME Could we add some info here, e.g. the name of the dataset?
+                // FIXME Could we add some info here, e.g. the path of the dataset?
             }
         }
     }
@@ -393,56 +316,57 @@ private:
 
 protected:
     /**
-     * @brief
-     *
+     *  @brief Pointer to the parent object of the dataset
      */
     HDFObject* _parent_object;
 
     /**
-     * @brief
-     *
+     *  @brief path relative to the parent object
      */
-    std::string _name;
+    std::string _path;
 
     /**
-     * @brief
-     *
+     *  @brief dataset id
      */
     hid_t _dataset;
 
     /**
-     * @brief
-     *
+     *  @brief number of dimensions of the dataset
      */
     hsize_t _rank;
 
     /**
-     * @brief
-     *
+     *  @brief the currently occupied size of the dataset in number of elements
      */
     std::vector<hsize_t> _current_extend;
 
     /**
-     * @brief
-     *
+     * @brief  the maximum number of elements which can be stored in the dataset
      */
-    std::vector<hsize_t> _max_extend;
+    std::vector<hsize_t> _capacity;
 
     /**
-     * @brief
-     *
+     * @brief the chunksizes per dimensions if dataset is extendible or compressed
+     */
+    std::vector<hsize_t> _chunksizes;
+
+    /**
+     * @brief the level of compression, 0 to 10
+     */
+    std::size_t _compress_level;
+
+    /**
+     * @brief the info struct used to get the address of the dataset
      */
     H5O_info_t _info;
 
     /**
-     * @brief
-     *
+     * @brief the address of the dataset in the file, a unique value given by the hdf5 lib
      */
     haddr_t _address;
 
     /**
-     * @brief
-     *
+     * @brief Pointer to underlying file's referencecounter
      */
     std::shared_ptr<std::unordered_map<haddr_t, int>> _referencecounter;
 
@@ -458,13 +382,13 @@ public:
     }
 
     /**
-     * @brief get the name of the dataset
+     * @brief get the path of the dataset
      *
      * @return std::string
      */
-    std::string get_name()
+    std::string get_path()
     {
-        return _name;
+        return _path;
     }
 
     /**
@@ -494,7 +418,27 @@ public:
      */
     auto get_capacity()
     {
-        return _max_extend;
+        return _capacity;
+    }
+
+    /**
+     * @brief Get the chunksizes vector
+     *
+     * @return auto
+     */
+    auto get_chunksizes()
+    {
+        return _chunksizes;
+    }
+
+    /**
+     * @brief Get the compress level object
+     *
+     * @return auto
+     */
+    auto get_compresslevel()
+    {
+        return _compress_level;
     }
 
     /**
@@ -530,16 +474,16 @@ public:
     /**
      * @brief      add attribute to the dataset
      *
-     * @param      attribute_name  The attribute name
+     * @param      attribute_path  The attribute path
      * @param      attribute_data  The attribute data
      *
      * @tparam     Attrdata        The type of the attribute data
      */
     template <typename Attrdata>
-    void add_attribute(std::string attribute_name, Attrdata attribute_data)
+    void add_attribute(std::string attribute_path, Attrdata attribute_data)
     {
         // make attribute and write
-        HDFAttribute attr(*this, attribute_name);
+        HDFAttribute attr(*this, attribute_path);
         attr.write(attribute_data);
     }
 
@@ -554,46 +498,61 @@ public:
             {
                 H5Dclose(_dataset);
                 _referencecounter->erase(_referencecounter->find(_address));
+                _dataset = -1;
             }
             else
             {
                 --(*_referencecounter)[_address];
+                _dataset = -1;
             }
         }
     }
 
     /**
-     * @brief Open a dataset in 'parent_object' with name 'name'.
-     *        Do not forget to close it first if it was open before.
+     * @brief Open the dataset in parent_object with relative path 'path'.
      *
-     * @param parent_object
-     * @param name
+     * @param parent_object The HDFGroup/HDFFile into which the dataset shall be created
+     * @param adaptor The function which makes the data to be written from given iterators
+     * @param path The path of the dataset in the parent_object
+     * @param rank The number of dimensions of the dataset
+     * @param capacity The maximum size of the dataset in each dimension. Give
+     *                 H5S_UNLIMITED if unlimited size is desired. Then you have
+     *                 to give chunksizes.
+     * @param chunksize The chunksizes in each dimension to use
+     * @param compress_level The compression level to use, 0 to 10 (0 = no compression, 10 highest compression)
      */
-    void open(HDFObject& parent_object, std::string name)
+    void open(HDFObject& parent_object,
+              std::string path,
+              hsize_t rank = 1,
+              std::vector<hsize_t> capacity = {},
+              std::vector<hsize_t> chunksizes = {},
+              hsize_t compress_level = 0)
     {
         _parent_object = &parent_object;
-        _name = name;
+        _path = path;
         _referencecounter = parent_object.get_referencecounter();
-        _rank = 0;
+        _rank = rank;
         _current_extend = {};
-        _max_extend = {};
+        _capacity = capacity;
+        _chunksizes = chunksizes;
+        _compress_level = compress_level;
         // Try to find the dataset in the parent_object
         // If it is there, open it.
         // Else: postphone the dataset creation to the first write
-        if (H5LTfind_dataset(_parent_object->get_id(), _name.c_str()) == 1)
+        if (H5LTfind_dataset(_parent_object->get_id(), _path.c_str()) == 1)
         { // dataset exists
             // open it
-            _dataset = H5Dopen(_parent_object->get_id(), _name.c_str(), H5P_DEFAULT);
+            _dataset = H5Dopen(_parent_object->get_id(), _path.c_str(), H5P_DEFAULT);
 
-            // get dataspace and read out rank, extend, max_current_extend
+            // get dataspace and read out rank, extend, capacity
             hid_t dataspace = H5Dget_space(_dataset);
 
             _rank = H5Sget_simple_extent_ndims(dataspace);
             _current_extend.resize(_rank);
-            _max_extend.resize(_rank);
+            _capacity.resize(_rank);
 
             H5Sget_simple_extent_dims(dataspace, _current_extend.data(),
-                                      _max_extend.data());
+                                      _capacity.data());
             H5Sclose(dataspace);
 
             // Update info and reference counter
@@ -608,7 +567,7 @@ public:
     }
 
     /**
-     * @brief      swap the state
+     * @brief      swap the state of the objects
      *
      * @param      other  The other
      */
@@ -616,21 +575,23 @@ public:
     {
         using std::swap;
         swap(_parent_object, other._parent_object);
-        swap(_name, other._name);
+        swap(_path, other._path);
         swap(_dataset, other._dataset);
         swap(_rank, other._rank);
         swap(_current_extend, other._current_extend);
-        swap(_max_extend, other._max_extend);
+        swap(_capacity, other._capacity);
+        swap(_chunksizes, other._chunksizes);
+        swap(_compress_level, other._compress_level);
         swap(_info, other._info);
         swap(_address, other._address);
         swap(_referencecounter, other._referencecounter);
     }
 
     /**
-     * @brief      Write data, extracting fields from complex data like structs
-     *             via an adaptor function. Adds an attribute which contains
-     *             rank and size of the data. If you wish to write vector
-     *             containers, make sure that you do return a reference from
+     * @brief      Write data, extracting fields from complex data like
+     * structs via an adaptor function. Adds an attribute which contains
+     *             rank and size of the data. If you wish to write
+     * vector containers, make sure that you do return a reference from
      *             adaptor!
      *
      * @param      begin           The begin
@@ -638,29 +599,39 @@ public:
      * @param      adaptor         The adaptor
      * @param      rank            The rank. Defaults to 1
      * @param      extend          The extend of the data to write
-     * @param      max_size        The maximum size of the dataset
-     * @param      chunksize       The chunksize; extension is only possible if
-     *                             a nonzero value is given here
-     * @param      compress_level  The compression level; only possible with
-     *                             nonzero chunksize
+     * @param      capacity        The maximum size of the dataset
+     * @param      chunksize       The chunksize; extension is only
+     * possible if a nonzero value is given here
+     * @param      compress_level  The compression level; only possible
+     * with nonzero chunksize
      *
      * @tparam     Iter            The type of the iterator
      * @tparam     Adaptor         The type of the adaptor
      */
     template <typename Iter, typename Adaptor>
-    void write(Iter begin,
-               Iter end,
-               Adaptor&& adaptor,
-               hsize_t rank = 1,
-               std::vector<hsize_t> extend = {},
-               std::vector<hsize_t> max_size = {},
-               hsize_t chunksize = 0,
-               hsize_t compress_level = 0)
+    void write(Iter begin, Iter end, Adaptor&& adaptor)
+    //    Adaptor adaptor,
+    //    hsize_t rank = 1,
+    //    std::vector<hsize_t> extend = {},
+    //    std::vector<hsize_t> capacity = {},
+    //    hsize_t chunksize = 0,
+    //    hsize_t compress_level = 0)
     {
         using result_type = remove_qualifier_t<decltype(adaptor(*begin))>;
+
         // get size of stuff to write
         hsize_t size = std::distance(begin, end);
-        _rank = rank;
+
+        if (_current_extend.size() == 0)
+        {
+            _current_extend = std::vector<hsize_t>(_rank, 1);
+            _current_extend[_rank - 1] = size;
+        }
+
+        if (_capacity.size() == 0)
+        {
+            _capacity = _current_extend;
+        }
 
         // currently not supported rank -> throw error
         if (_rank > 2)
@@ -674,24 +645,23 @@ public:
         { // dataset does not exist yet
 
             // build a new dataset and assign to _dataset member
-            __create_dataset__<result_type>(size, rank, extend, max_size,
-                                            chunksize, compress_level);
+            __create_dataset__<result_type>();
 
             // check validity of own dataset id
             if (H5Iis_valid(_dataset) == false)
             {
                 throw std::runtime_error(
-                    "Trying to create dataset named "
+                    "Trying to create dataset at path "
                     "'" +
-                    _name +
+                    _path +
                     "' resulted in invalid "
                     "ID! Check your arguments.");
             }
 
-            // gather data for dimensionality info: rank, extend, max_current_extend
+            // gather data for dimensionality info: rank, extend, capacity
             // TODO see #119 for changes needed here
             // https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/issues/119
-            std::vector<hsize_t> dims(1 + _current_extend.size() + _max_extend.size());
+            std::vector<hsize_t> dims(1 + _current_extend.size() + _capacity.size());
             std::size_t i = 0;
             dims[i] = _rank;
             ++i;
@@ -701,9 +671,9 @@ public:
                 dims[i] = _current_extend[j];
             }
 
-            for (std::size_t j = 0; j < _max_extend.size(); ++j, ++i)
+            for (std::size_t j = 0; j < _capacity.size(); ++j, ++i)
             {
-                dims[i] = _max_extend[i];
+                dims[i] = _capacity[i];
             }
 
             // store the dimensionality info attribute
@@ -718,21 +688,20 @@ public:
             // check validity of own dataset id
             if (H5Iis_valid(_dataset) == false)
             {
-                throw std::runtime_error("Existing dataset '" + _name +
+                throw std::runtime_error("Existing dataset '" + _path +
                                          "' "
                                          "has an invalid ID. Has the dataset "
                                          "already been closed?");
             }
 
-            // check if dataset can be extended, i.e. if extend < max_current_extend.
+            // check if dataset can be extended, i.e. if extend < capacity.
             for (std::size_t i = 0; i < _rank; ++i)
             {
-                if ((_current_extend[i] == _max_extend[i]) && (_current_extend[i] != 0))
+                if ((_current_extend[i] == _capacity[i]) && (_current_extend[i] != 0))
                 {
-                    throw std::runtime_error(
-                        "Dataset cannot be extended! Its "
-                        "extend reached max_current_extend. Did "
-                        "you set a nonzero chunksize?");
+                    throw std::runtime_error("Dataset " + _path +
+                                             " cannot be extended! Its "
+                                             "extend reached capacity");
                 }
             }
 
@@ -761,8 +730,8 @@ public:
                  ν
                 */
 
-                // get the offset, stride count and block vectors for selection
-                // of the hyperslab
+                // get the offset, stride count and block vectors for
+                // selection of the hyperslab
                 std::vector<hsize_t> offset = _current_extend;
                 std::vector<hsize_t> stride{1};
                 std::vector<hsize_t> count = offset;
@@ -774,14 +743,13 @@ public:
                 herr_t ext_err = H5Dset_extent(_dataset, _current_extend.data());
                 if (ext_err < 0)
                 {
-                    throw std::runtime_error(
-                        "1D dataset could not be "
-                        "extended!");
+                    throw std::runtime_error("1D dataset " + _path +
+                                             "could not be "
+                                             "extended!");
                 }
 
                 // gather information for dimensionality info attribute
-                std::vector<hsize_t> dims(1 + _current_extend.size() +
-                                          _max_extend.size());
+                std::vector<hsize_t> dims(1 + _current_extend.size() + _capacity.size());
                 std::size_t i = 0;
                 dims[i] = _rank;
                 ++i;
@@ -791,9 +759,9 @@ public:
                     dims[i] = _current_extend[j];
                 }
 
-                for (std::size_t j = 0; j < _max_extend.size(); ++j, ++i)
+                for (std::size_t j = 0; j < _capacity.size(); ++j, ++i)
                 {
-                    dims[i] = _max_extend[i];
+                    dims[i] = _capacity[i];
                 }
 
                 // add the attribute
@@ -846,7 +814,7 @@ public:
                 std::vector<hsize_t> offset = _current_extend;
                 std::vector<hsize_t> stride(_current_extend.size(), 1);
                 std::vector<hsize_t> count = offset;
-                std::vector<hsize_t> block(extend.size(), 1);
+                std::vector<hsize_t> block(_current_extend.size(), 1);
                 count[0] = 1; // such that we add one more 'slice'
 
                 // extend
@@ -859,14 +827,13 @@ public:
                 herr_t ext_err = H5Dset_extent(_dataset, _current_extend.data());
                 if (ext_err < 0)
                 {
-                    throw std::runtime_error(
-                        "ND dataset could not be "
-                        "extended!");
+                    throw std::runtime_error("ND dataset " + _path +
+                                             " could not be "
+                                             "extended!");
                 }
 
                 // gather information for dimensionality info attribute
-                std::vector<hsize_t> dims(1 + _current_extend.size() +
-                                          _max_extend.size());
+                std::vector<hsize_t> dims(1 + _current_extend.size() + _capacity.size());
                 std::size_t i = 0;
                 dims[i] = _rank;
                 ++i;
@@ -876,9 +843,9 @@ public:
                     dims[i] = _current_extend[j];
                 }
 
-                for (std::size_t j = 0; j < _max_extend.size(); ++j, ++i)
+                for (std::size_t j = 0; j < _capacity.size(); ++j, ++i)
                 {
-                    dims[i] = _max_extend[i];
+                    dims[i] = _capacity[i];
                 }
 
                 // store the attribute
@@ -902,8 +869,8 @@ public:
     /**
      * @brief      Read (a subset_of) a dataset. Flattens nd datasets
      *
-     * @param      start         The start. If not given, the entire dataset
-     *                           will be read.
+     * @param      start         The start. If not given, the entire
+     * dataset will be read.
      * @param      end           The end
      * @param      stride        The stride
      *
@@ -919,12 +886,15 @@ public:
         // check if dataset id is ok
         if (H5Iis_valid(_dataset) == false)
         {
-            throw std::runtime_error("Existing dataset '" + _name +
+            throw std::runtime_error("Existing dataset '" + _path +
                                      "' has an "
                                      "invalid ID. Has the dataset already "
                                      "been closed?");
         }
-
+        if (_rank == 0)
+        {
+            throw std::runtime_error("Rank of dataset " + _path + " is zero!");
+        }
         // 1d dataset
         if (_rank == 1)
         {
@@ -936,7 +906,7 @@ public:
             }
             else
             { // read a subset determined by start end stride
-              // check that the arrays have the correct size:
+                // check that the arrays have the correct size:
                 if (start.size() != _rank || end.size() != _rank || stride.size() != _rank)
                 {
                     throw std::invalid_argument(
@@ -975,8 +945,8 @@ public:
                 // hid_t type = H5Dget_type(_dataset);
 
                 // make a buffer and read
-                // this is a 1d data which contains the multi - dimensional
-                // stuff in a flattened version
+                // this is a 1d data which contains the multi -
+                // dimensional stuff in a flattened version
                 std::size_t buffersize = 1;
                 for (std::size_t i = 0; i < _rank; ++i)
                 {
@@ -990,10 +960,10 @@ public:
                 // check that the arrays have the correct size:
                 if (start.size() != _rank || end.size() != _rank || stride.size() != _rank)
                 {
-                    throw std::invalid_argument(
-                        "Cannot read dataset: start, "
-                        "end and/or stride size did "
-                        "not match the rank!");
+                    throw std::invalid_argument("Cannot read dataset " + _path +
+                                                ": start, "
+                                                "end and/or stride size did "
+                                                "not match the rank!");
                 }
 
                 // determine the count to be read
@@ -1041,11 +1011,13 @@ public:
      */
     HDFDataset(const HDFDataset& other)
         : _parent_object(other._parent_object),
-          _name(other._name),
+          _path(other._path),
           _dataset(other._dataset),
           _rank(other._rank),
           _current_extend(other._current_extend),
-          _max_extend(other._max_extend),
+          _capacity(other._capacity),
+          _chunksizes(other._chunksizes),
+          _compress_level(other._compress_level),
           _info(other._info),
           _address(other._address),
           _referencecounter(other._referencecounter)
@@ -1075,39 +1047,54 @@ public:
         this->swap(other);
         return *this;
     }
+
     /**
-     * @brief      Constructor
+     * @brief Construct a new HDFDataset object
      *
-     * @param      parent_object  The parent object
-     * @param      name           The name
+     * @param parent_object The HDFGroup/HDFFile into which the dataset shall be created
+     * @param adaptor The function which makes the data to be written from given iterators
+     * @param path The path of the dataset in the parent_object
+     * @param rank The number of dimensions of the dataset
+     * @param capacity The maximum size of the dataset in each dimension. Give
+     *                 H5S_UNLIMITED if unlimited size is desired. Then you have
+     *                 to give chunksizes.
+     * @param chunksize The chunksizes in each dimension to use
+     * @param compress_level The compression level to use
      */
-    HDFDataset(HDFObject& parent_object, std::string name)
+    HDFDataset(HDFObject& parent_object,
+               std::string path,
+               hsize_t rank = 1,
+               std::vector<hsize_t> capacity = {},
+               std::vector<hsize_t> chunksizes = {},
+               hsize_t compress_level = 0)
         : _parent_object(&parent_object),
-          _name(name),
+          _path(path),
           _dataset(-1),
-          _rank(0),
+          _rank(rank),
           _current_extend({}),
-          _max_extend({}),
+          _capacity(capacity),
+          _chunksizes(chunksizes),
+          _compress_level(compress_level),
           _referencecounter(parent_object.get_referencecounter())
 
     {
         // Try to find the dataset in the parent_object
         // If it is there, open it.
         // Else: postphone the dataset creation to the first write
-        if (H5LTfind_dataset(_parent_object->get_id(), _name.c_str()) == 1)
+        if (H5LTfind_dataset(_parent_object->get_id(), _path.c_str()) == 1)
         { // dataset exists
             // open it
-            _dataset = H5Dopen(_parent_object->get_id(), _name.c_str(), H5P_DEFAULT);
+            _dataset = H5Dopen(_parent_object->get_id(), _path.c_str(), H5P_DEFAULT);
 
-            // get dataspace and read out rank, extend, max_current_extend
+            // get dataspace and read out rank, extend, capacity
             hid_t dataspace = H5Dget_space(_dataset);
 
             _rank = H5Sget_simple_extent_ndims(dataspace);
             _current_extend.resize(_rank);
-            _max_extend.resize(_rank);
+            _capacity.resize(_rank);
 
             H5Sget_simple_extent_dims(dataspace, _current_extend.data(),
-                                      _max_extend.data());
+                                      _capacity.data());
             H5Sclose(dataspace);
 
             // Update info and reference counter
