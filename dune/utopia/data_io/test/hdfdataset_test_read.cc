@@ -61,13 +61,18 @@ void read_dataset_tests(HDFFile& file)
 
     auto read_data_ext = extendable_dataset.read<double>();
     assert(2 * data.size() == read_data_ext.size());
+    std::cout << read_data_ext.size() << std::endl;
     for (std::size_t i = 0; i < data.size(); ++i)
     {
+        std::cout << i << "," << data[i] << "," << read_data_ext[i] << std::endl;
+
         assert(std::abs(data[i] - read_data_ext[i]) < 1e-16);
     }
     for (std::size_t i = data.size(); i < 2 * data.size(); ++i)
     {
-        assert(std::abs(data[i] - read_data_ext[i]) < 1e-16);
+        std::cout << i << "," << data[i - data.size()] << ","
+                  << read_data_ext[i] << std::endl;
+        assert(std::abs(data[i - data.size()] - read_data_ext[i]) < 1e-16);
     }
 
     // read subset of 1d set
