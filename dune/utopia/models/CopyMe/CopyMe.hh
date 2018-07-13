@@ -236,6 +236,13 @@ public:
         auto cells = _manager.cells();
         const unsigned int num_cells = std::distance(cells.begin(), cells.end());
 
+
+        // for (auto&& cell : cells){
+        //     this->_log->info((cell)->state().some_state);
+        //     this->_log->info((cell)->state().some_trait);
+        // }
+
+
         // some_state
         _dset_some_state->write(cells.begin(), cells.end(),
                               [](auto& cell) {
