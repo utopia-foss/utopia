@@ -1,7 +1,6 @@
 #include <cassert>
 #include <dune/utopia/base.hh>
 #include <dune/utopia/core/setup.hh>
-#include <dune/utopia/core/data_vtk.hh>
 
 template<typename Grid, typename CellContainer>
 void assert_cells_on_grid(std::shared_ptr<Grid> grid, CellContainer& cells)
@@ -57,33 +56,6 @@ void check_grid_neighbors_count (const Manager& manager)
     }
 }
 
-/// Mark neighbors of a cell and cell itself for visual testing
-template<typename NB, class Cell, class Manager>
-void mark_neighbors (const std::shared_ptr<Cell> cell, const Manager &mngr, const int increment=1)
-{
-    cell->state_new() -= increment;
-    cell->update();
-    const auto neighbors = NB::neighbors(cell, mngr);
-    for (unsigned int i = 0; i<neighbors.size(); ++i) {
-        neighbors[i]->state_new() += increment;
-        neighbors[i]->update();
-    }
-}
-
-/// Plot a visual of the neighborhood of a cell
-template<typename NB, typename ID, class M1, class M2>
-void visual_check (const ID id, const M1 &m1, const M2 &m2, const std::string prefix)
-{
-    // Mark neighbors of the given cell id
-    mark_neighbors<NB>(m1.cells()[id], m1, 1);
-    mark_neighbors<NB>(m2.cells()[id], m2, 2);
-
-    // Write out both grids
-    auto vtkwriter = Utopia::Output::create_vtk_writer(m1.grid(), prefix);
-    vtkwriter->add_adaptor(Utopia::Output::vtk_output_cell_state(m1.cells()));
-    vtkwriter->write(0);
-}
-
 /// Assure that periodic grid has the correct Neighbor count
 template<class NBClass, int nb_count, typename Manager>
 void check_grid_neighbors_count (const Manager& manager)
@@ -120,9 +92,6 @@ void compare_neighborhoods (const M1& m1, const M2& m2, const std::string comp_c
             std::cerr << "Mismatch of neighborhood size for " << comp_case
                       << " and cell with index " << i << ": "
                       << nb1.size() << " != "  << nb2.size() << std::endl;
-            
-            visual_check<NBClass>(i, m1, m2, comp_case);
-            std::cerr << "Visual check output generated." << std::endl;
 
             std::cerr << "Cell indices in m1 neighborhood:" << std::endl;
             for (auto&& cell : nb1) { std::cerr << " " << cell->id(); }

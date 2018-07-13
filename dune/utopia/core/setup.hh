@@ -7,7 +7,6 @@
 #include <dune/utopia/core/cell.hh>
 #include <dune/utopia/core/agent.hh>
 #include <dune/utopia/core/grid.hh>
-#include <dune/utopia/core/simulation.hh>
 
 namespace Utopia
 {
@@ -34,7 +33,7 @@ auto determine_extensions (const std::shared_ptr<Grid> grid)
     return ret;
 }
     
-/// Functions for building objects and setting up a simulation
+/// Convenience functions for building managed structures
 namespace Setup
 {
     /// Create a GridManager from a grid and a CellContainer
@@ -98,21 +97,6 @@ namespace Setup
 
         GridWrapper<Grid> gw = {grid, determine_extensions(grid), cells};
         return gw;
-    }
-
-    /// Create a simulation object from a grid and a set of cells
-    /** This function places the data inside a SimulationWrapper for
-     *  convenience and sets up a simulation from this wrapper.
-     *  The individuals container is replaced by the
-     *  Utopia::EmptyContainer template.
-     *  \param grid Shared pointer to the grid from which the cells were built
-     *  \param cells Cell container
-     *  \return Simulation object
-     */
-    template<class GridManager>
-    auto create_sim (GridManager& manager) -> Utopia::Simulation<GridManager>
-    {
-        return Utopia::Simulation<GridManager>(manager);
     }
 
     /// Build a rectangular grid.
