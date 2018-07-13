@@ -193,8 +193,7 @@ private:
      *
      * @return     the dataset subset vector, consisting of dspace and memspace
      */
-    std::vector<hid_t> __select_dataset_subset__(std::vector<hsize_t>& offset,
-                                                 std::vector<hsize_t>& stride,
+    std::vector<hid_t> __select_dataset_subset__(std::vector<hsize_t>& stride,
                                                  std::vector<hsize_t>& block,
                                                  std::vector<hsize_t>& count)
     {
@@ -203,7 +202,7 @@ private:
         hid_t memspace = H5Screate_simple(_rank, count.data(), NULL);
 
         herr_t select_err =
-            H5Sselect_hyperslab(dspace, H5S_SELECT_SET, offset.data(),
+            H5Sselect_hyperslab(dspace, H5S_SELECT_SET, _offset.data(),
                                 stride.data(), count.data(), block.data());
         if (select_err < 0)
         {
@@ -314,6 +313,251 @@ private:
         }
     }
 
+    template <typename T>
+    herr_t __write_container__(T&& data, hid_t memspace, hid_t filespace)
+    {
+        using value_type_1 = typename T::value_type;
+        using base_type = remove_qualifier_t<value_type_1>;
+
+        // we can write directly if we have a plain vector, no nested or stringtype.
+        if constexpr (std::is_same_v<T, std::vector<value_type_1>> &&
+                      !is_container_v<value_type_1> && !is_string_v<value_type_1>)
+        {
+            // check if attribute has been created, else do
+            if (_dataset == -1)
+            {
+                _dataset = __create_dataset__<base_type>(0);
+            }
+
+            return H5Dwrite(_dataset, HDFTypeFactory::type<base_type>(0),
+                            memspace, filespace, H5P_DEFAULT, data.data());
+        }
+        // when stringtype or containertype is stored in a container, then
+        // we have to buffer. bufferfactory handles how to do this in detail
+        else
+        {
+            // if we want to write std::arrays then we can use
+            // fixed size array types. Else we use variable length arrays.
+            if constexpr (is_array_like_v<value_type_1>)
+            {
+                constexpr std::size_t s = std::tuple_size<value_type_1>::value;
+                if (_dataset == -1)
+                {
+                    _dataset = __create_dataset__<base_type>(s);
+                }
+
+                auto buffer = HDFBufferFactory::buffer(
+                    std::begin(data), std::end(data),
+                    [](auto& value) -> value_type_1& { return value; });
+
+                return H5Dwrite(_dataset, HDFTypeFactory::type<base_type>(s),
+                                memspace, filespace, H5P_DEFAULT, buffer.data());
+            }
+            else
+            {
+                if (_dataset == -1)
+                {
+                    _dataset = __create_dataset__<base_type>();
+                }
+
+                auto buffer = HDFBufferFactory::buffer(
+                    std::begin(data), std::end(data),
+                    [](auto& value) -> value_type_1& { return value; });
+
+                return H5Dwrite(_dataset, HDFTypeFactory::type<base_type>(0),
+                                memspace, filespace, H5P_DEFAULT, buffer.data());
+            }
+        }
+    }
+
+    template <typename T>
+    herr_t __write_container__(const T& data, hid_t memspace, hid_t filespace)
+    {
+        using value_type_1 = typename T::value_type;
+        using base_type = remove_qualifier_t<value_type_1>;
+
+        // we can write directly if we have a plain vector, no nested or stringtype.
+        if constexpr (std::is_same_v<T, std::vector<value_type_1>> &&
+                      !is_container_v<value_type_1> && !is_string_v<value_type_1>)
+        {
+            // check if attribute has been created, else do
+            if (_dataset == -1)
+            {
+                _dataset = __create_dataset__<base_type>(0);
+            }
+
+            return H5Dwrite(_dataset, HDFTypeFactory::type<base_type>(0),
+                            memspace, filespace, H5P_DEFAULT, data.data());
+        }
+        // when stringtype or containertype is stored in a container, then
+        // we have to buffer. bufferfactory handles how to do this in detail
+        else
+        {
+            // if we want to write std::arrays then we can use
+            // fixed size array types. Else we use variable length arrays.
+            if constexpr (is_array_like_v<value_type_1>)
+            {
+                constexpr std::size_t s = std::tuple_size<value_type_1>::value;
+                if (_dataset == -1)
+                {
+                    _dataset = __create_dataset__<base_type>(s);
+                }
+
+                auto buffer = HDFBufferFactory::buffer(
+                    std::begin(data), std::end(data),
+                    [](auto& value) -> value_type_1& { return value; });
+
+                return H5Dwrite(_dataset, HDFTypeFactory::type<base_type>(s),
+                                memspace, filespace, H5P_DEFAULT, buffer.data());
+            }
+            else
+            {
+                if (_dataset == -1)
+                {
+                    _dataset = __create_dataset__<base_type>();
+                }
+
+                auto buffer = HDFBufferFactory::buffer(
+                    std::begin(data), std::end(data),
+                    [](auto& value) -> value_type_1& { return value; });
+
+                return H5Dwrite(_dataset, HDFTypeFactory::type<base_type>(0),
+                                memspace, filespace, H5P_DEFAULT, buffer.data());
+            }
+        }
+    }
+
+    // Function for writing stringtypes, char*, const char*, std::string
+    template <typename T>
+    herr_t __write_stringtype__(T&& data, hid_t memspace, hid_t filespace)
+    {
+        // Since std::string cannot be written directly,
+        // (only const char*/char* can), a buffer pointer has been added
+        // to handle writing in a clearer way and with less code
+        auto len = 0;
+        const char* buffer = nullptr;
+
+        if constexpr (std::is_pointer_v<T>) // const char* or char* -> strlen
+                                            // needed
+        {
+            len = std::strlen(data);
+            buffer = data;
+        }
+        else // simple for strings
+        {
+            len = data.size();
+            buffer = data.c_str();
+        }
+
+        // check if attribute has been created, else do
+        if (_dataset == -1)
+        {
+            _dataset = __create_dataset__<const char*>(len);
+        }
+        // use that strings store data in consecutive memory
+        return H5Dwrite(_dataset, HDFTypeFactory::type<const char*>(len),
+                        memspace, filespace, H5P_DEFAULT, buffer);
+    }
+
+    template <typename T>
+    herr_t __write_stringtype__(const T& data, hid_t memspace, hid_t filespace)
+    {
+        // Since std::string cannot be written directly,
+        // (only const char*/char* can), a buffer pointer has been added
+        // to handle writing in a clearer way and with less code
+        auto len = 0;
+        const char* buffer = nullptr;
+
+        if constexpr (std::is_pointer_v<T>) // const char* or char* -> strlen
+                                            // needed
+        {
+            len = std::strlen(data);
+            buffer = data;
+        }
+        else // simple for strings
+        {
+            len = data.size();
+            buffer = data.c_str();
+        }
+
+        // check if attribute has been created, else do
+        if (_dataset == -1)
+        {
+            _dataset = __create_dataset__<const char*>(len);
+        }
+        // use that strings store data in consecutive memory
+        return H5Dwrite(_dataset, HDFTypeFactory::type<const char*>(len),
+                        memspace, filespace, H5P_DEFAULT, buffer);
+    }
+
+    // Function for writing pointer types, shape of the array has to be given
+    // where shape means the same as in python
+    template <typename T>
+    herr_t __write_pointertype__(T&& data, hid_t memspace, hid_t filespace)
+    {
+        // result types removes pointers, references, and qualifiers
+        using basetype = remove_qualifier_t<T>;
+        // std::cout << _name << ", type for pointer is  " << typeid(basetype).name()
+        //   << ", int type is " << typeid(int).name() << std::endl;
+
+        if (_dataset == -1)
+        {
+            _dataset = __create_dataset__<basetype>();
+        }
+
+        return H5Dwrite(_dataset, HDFTypeFactory::type<basetype>(), memspace,
+                        filespace, H5P_DEFAULT, data);
+    }
+
+    template <typename T>
+    herr_t __write_pointertype__(const T& data, hid_t memspace, hid_t filespace)
+    {
+        // result types removes pointers, references, and qualifiers
+        using basetype = remove_qualifier_t<T>;
+        // std::cout << _name << ", type for pointer is  " << typeid(basetype).name()
+        //   << ", int type is " << typeid(int).name() << std::endl;
+
+        if (_dataset == -1)
+        {
+            _dataset = __create_dataset__<basetype>();
+        }
+
+        return H5Dwrite(_dataset, HDFTypeFactory::type<basetype>(), memspace,
+                        filespace, H5P_DEFAULT, data);
+    }
+
+    // function for writing a scalartype.
+    template <typename T>
+    herr_t __write_scalartype__(T&& data, hid_t memspace, hid_t filespace)
+    {
+        // because we just write a scalar, the shape tells basically that
+        // the attribute is pointlike: 1D and 1 entry.
+        using basetype = remove_qualifier_t<T>;
+        if (_dataset == -1)
+        {
+            _dataset = __create_dataset__<T>();
+        }
+
+        return H5Dwrite(_dataset, HDFTypeFactory::type<basetype>(), memspace,
+                        filespace, H5P_DEFAULT, &data);
+    }
+
+    // function for writing a scalartype.
+    template <typename T>
+    herr_t __write_scalartype__(const T& data, hid_t memspace, hid_t filespace)
+    {
+        // because we just write a scalar, the shape tells basically that
+        // the attribute is pointlike: 1D and 1 entry.
+        using basetype = remove_qualifier_t<T>;
+        if (_dataset == -1)
+        {
+            _dataset = __create_dataset__<T>();
+        }
+
+        return H5Dwrite(_dataset, HDFTypeFactory::type<basetype>(), memspace,
+                        filespace, H5P_DEFAULT, &data);
+    }
+
 protected:
     /**
      *  @brief Pointer to the parent object of the dataset
@@ -349,6 +593,8 @@ protected:
      * @brief the chunksizes per dimensions if dataset is extendible or compressed
      */
     std::vector<hsize_t> _chunksizes;
+
+    std::vector<hsize_t> _offset;
 
     /**
      * @brief the level of compression, 0 to 10
@@ -411,6 +657,10 @@ public:
         return _current_extend;
     }
 
+    auto get_offset()
+    {
+        return _offset;
+    }
     /**
      * @brief get the maximum extend of the dataset
      *
@@ -475,16 +725,16 @@ public:
      * @brief      add attribute to the dataset
      *
      * @param      attribute_path  The attribute path
-     * @param      attribute_data  The attribute data
+     * @param      data  The attribute data
      *
      * @tparam     Attrdata        The type of the attribute data
      */
     template <typename Attrdata>
-    void add_attribute(std::string attribute_path, Attrdata attribute_data)
+    void add_attribute(std::string attribute_path, Attrdata data)
     {
         // make attribute and write
         HDFAttribute attr(*this, attribute_path);
-        attr.write(attribute_data);
+        attr.write(data);
     }
 
     /**
@@ -547,6 +797,39 @@ public:
             _rank = H5Sget_simple_extent_ndims(dataspace);
             _current_extend.resize(_rank);
             _capacity.resize(_rank);
+            _offset = _current_extend;
+
+            // if the end of a row has been reached, then set the offset
+            // to the beginning of the next:
+            // all arrays [lines, columns]
+            /*
+                current extend describes:
+                ********************** filled
+                **********************
+                **********************
+                **********************
+                ----------------------
+                ----------------------  still available
+
+
+                then offset shall describe the x below:
+                **********************
+                **********************
+                **********************
+                **********************
+                x---------------------
+                ----------------------
+
+                from which we can go on writing
+            */
+            if (_rank > 1)
+            {
+                if (_current_extend[0] == _capacity[0])
+                {
+                    _offset[0] += 1;
+                    _offset[1] = 0;
+                }
+            }
 
             H5Sget_simple_extent_dims(dataspace, _current_extend.data(),
                                       _capacity.data());
@@ -573,6 +856,7 @@ public:
                     _rank = chunksizes.size();
                     _chunksizes = chunksizes;
                     _capacity = std::vector<hsize_t>(_rank, H5S_UNLIMITED);
+                    _offset = std::vector<hsize_t>(_rank, 0);
                 }
             }
             else
@@ -580,6 +864,7 @@ public:
                 _capacity = capacity;
                 _chunksizes = chunksizes;
                 _rank = _capacity.size();
+                _offset = std::vector<hsize_t>(_rank, 0);
             }
 
             _compress_level = compress_level;
@@ -603,6 +888,7 @@ public:
         swap(_current_extend, other._current_extend);
         swap(_capacity, other._capacity);
         swap(_chunksizes, other._chunksizes);
+        swap(_offset, other._offset);
         swap(_compress_level, other._compress_level);
         swap(_info, other._info);
         swap(_address, other._address);
@@ -1015,6 +1301,372 @@ public:
         }
     }
 
+    template <typename T>
+    void write(const T& data, [[maybe_unused]] std::vector<hsize_t> shape)
+    {
+        if (_dataset == -1)
+        {
+            if (_rank > 2)
+            {
+                throw std::runtime_error("Rank > 2 not supported");
+            }
+
+            _current_extend.resize(_rank);
+            if constexpr (is_container_v<T>)
+            {
+                _current_extend[_rank - 1] = data.size();
+            }
+            if constexpr (std::is_pointer_v<T> and !is_string_v<T>)
+            {
+                if (_shape.size() == 0)
+                {
+                    throw std::runtime_error(
+                        "Dataset " + _path +
+                        ": shape has to be given explicitly when writing "
+                        "pointer types");
+                }
+                for (std::size_t i = 0; i < _rank; ++i)
+                {
+                    _current_extend[i] == shape[i];
+                }
+            }
+            else
+            {
+                _current_extend[_rank - 1] = 1;
+            }
+
+            if constexpr (is_container_v<T>)
+            {
+                herr_t err = __write_container__(data, H5S_ALL, H5S_ALL);
+                if (err < 0)
+                {
+                    throw std::runtime_error("Dataset " + _path +
+                                             ": Error in writing container");
+                }
+            }
+            else if constexpr (is_string_v<T>)
+            {
+                herr_t err = __write_stringtype__(data, H5S_ALL, H5S_ALL);
+                if (err < 0)
+                {
+                    throw std::runtime_error("Dataset " + _path +
+                                             ": Error in writing string");
+                }
+            }
+            else if constexpr (std::is_pointer_v<T> and !is_string_v<T>)
+            {
+                herr_t err = __write_pointertype__data, H5S_ALL, H5S_ALL);
+                if (err < 0)
+                {
+                    throw std::runtime_error("Dataset " + _path +
+                                             ": Error in writing pointer");
+                }
+            }
+            else
+            {
+                herr_t err = __write_scalartype__(data, H5S_ALL, H5S_ALL);
+                if (err < 0)
+                {
+                    throw std::runtime_error("Dataset " + _path +
+                                             ": Error in writing scalar");
+                }
+            }
+        }
+        else
+        {
+            if (_capacity == _current_extend)
+            {
+                throw std::runtime_error("Dataset " + _path +
+                                         ": Error, dataset cannot be extended "
+                                         "because it reached its capacity");
+            }
+            else
+            {
+                // if data is a container, then we have to add its size to
+                // extend, if it is a pointer, we have to add the pointers
+                // shape, else we have to add 1 because we either write
+                // a single scalar or string
+                if constexpr (is_container_v<T>)
+                {
+                    if (_rank == 1)
+                    {
+                        _current_extend[0] += data.size();
+                    }
+                    else
+                    {
+                        _current_extend[0] += 1;
+                    }
+                }
+                if constexpr (std::is_pointer_v<T> and !is_string_v<T>)
+                {
+                    if (_shape.size() == 0)
+                    {
+                        throw std::runtime_error(
+                            "Dataset " + _path +
+                            ": shape has to be given explicitly when writing "
+                            "pointer types");
+                    }
+                    for (std::size_t i = 0; i < _rank; ++i)
+                    {
+                        _current_extend[i] == shape[i];
+                    }
+                }
+                else
+                {
+                    if (_rank == 1)
+                    {
+                        // if rank is one we can only extend into one direction
+                        _current_extend[0] += 1;
+                    }
+                    else
+                    {
+                        // first fill row, then column wise increase
+                        if (_current_extend[0] < _capacity[0])
+                        {
+                            _current_extend[0] += 1;
+                        }
+                        // if row is full, start a new one
+                        else
+                        {
+                            _current_extend[1] += 1;
+                        }
+                    }
+                }
+
+                // set offset array
+                _offset = _current_extend;
+                if (_rank > 1)
+                {
+                    if (_current_extend[0] == _capacity[0])
+                    {
+                        _offset[0] += 1;
+                        _offset[1] = 0;
+                    }
+                }
+            }
+
+            if constexpr (is_container_v<T>)
+            {
+                herr_t err = __write_container__(data, memspace, filespace);
+                if (err < 0)
+                {
+                    throw std::runtime_error("Dataset " + _path +
+                                             ": Error in appending container");
+                }
+            }
+            else if constexpr (is_string_v<T>)
+            {
+                herr_t err = __write_stringtype__(data, memspace, filespace);
+                if (err < 0)
+                {
+                    throw std::runtime_error("Dataset " + _path +
+                                             ": Error in appending string");
+                }
+            }
+            else if constexpr (std::is_pointer_v<T> and !is_string_v<T>)
+            {
+                herr_t err = __write_pointertype__(data, memspace, filespace);
+                if (err < 0)
+                {
+                    throw std::runtime_error("Dataset " + _path +
+                                             ": Error in appending pointer");
+                }
+            }
+            else
+            {
+                herr_t err = __write_scalartype__(data, memspace, filespace);
+                if (err < 0)
+                {
+                    throw std::runtime_error("Dataset " + _path +
+                                             ": Error in appending scalar");
+                }
+            }
+        }
+    }
+
+    void write(T&& data, [[maybe_unused]] std::vector<hsize_t> shape = {})
+    {
+        if (_dataset == -1)
+        {
+            if (_rank > 2)
+            {
+                throw std::runtime_error("Rank > 2 not supported");
+            }
+
+            _current_extend.resize(_rank);
+            if constexpr (is_container_v<T>)
+            {
+                _current_extend[_rank - 1] = data.size();
+            }
+            if constexpr (std::is_pointer_v<T> and !is_string_v<T>)
+            {
+                if (_shape.size() == 0)
+                {
+                    throw std::runtime_error(
+                        "Dataset " + _path +
+                        ": shape has to be given explicitly when writing "
+                        "pointer types");
+                }
+                for (std::size_t i = 0; i < _rank; ++i)
+                {
+                    _current_extend[i] == shape[i];
+                }
+            }
+            else
+            {
+                _current_extend[_rank - 1] = 1;
+            }
+
+            if constexpr (is_container_v<T>)
+            {
+                herr_t err = __write_container__(std::forward<T&&>(data), H5S_ALL, H5S_ALL);
+                if (err < 0)
+                {
+                    throw std::runtime_error("Dataset " + _path +
+                                             ": Error in writing container");
+                }
+            }
+            else if constexpr (is_string_v<T>)
+            {
+                herr_t err = __write_stringtype__(std::forward<T&&>(data), H5S_ALL, H5S_ALL);
+                if (err < 0)
+                {
+                    throw std::runtime_error("Dataset " + _path +
+                                             ": Error in writing string");
+                }
+            }
+            else if constexpr (std::is_pointer_v<T> and !is_string_v<T>)
+            {
+                herr_t err = __write_pointertype__(std::foward<T&&>(data), H5S_ALL, H5S_ALL);
+                if (err < 0)
+                {
+                    throw std::runtime_error("Dataset " + _path +
+                                             ": Error in writing pointer");
+                }
+            }
+            else
+            {
+                herr_t err = __write_scalartype__(std::forward<T&&>(data), H5S_ALL, H5S_ALL);
+                if (err < 0)
+                {
+                    throw std::runtime_error("Dataset " + _path +
+                                             ": Error in writing scalar");
+                }
+            }
+        }
+        else
+        {
+            if (_capacity == _current_extend)
+            {
+                throw std::runtime_error("Dataset " + _path +
+                                         ": Error, dataset cannot be extended "
+                                         "because it reached its capacity");
+            }
+            else
+            {
+                // if data is a container, then we have to add its size to
+                // extend, if it is a pointer, we have to add the pointers
+                // shape, else we have to add 1 because we either write
+                // a single scalar or string
+                if constexpr (is_container_v<T>)
+                {
+                    if (_rank == 1)
+                    {
+                        _current_extend[0] += data.size();
+                    }
+                    else
+                    {
+                        _current_extend[0] += 1;
+                    }
+                }
+                if constexpr (std::is_pointer_v<T> and !is_string_v<T>)
+                {
+                    if (_shape.size() == 0)
+                    {
+                        throw std::runtime_error(
+                            "Dataset " + _path +
+                            ": shape has to be given explicitly when writing "
+                            "pointer types");
+                    }
+                    for (std::size_t i = 0; i < _rank; ++i)
+                    {
+                        _current_extend[i] == shape[i];
+                    }
+                }
+                else
+                {
+                    if (_rank == 1)
+                    {
+                        // if rank is one we can only extend into one direction
+                        _current_extend[0] += 1;
+                    }
+                    else
+                    {
+                        // first fill row, then column wise increase
+                        if (_current_extend[0] < _capacity[0])
+                        {
+                            _current_extend[0] += 1;
+                        }
+                        // if row is full, start a new one
+                        else
+                        {
+                            _current_extend[1] += 1;
+                        }
+                    }
+                }
+
+                // set offset array
+                _offset = _current_extend;
+                if (_rank > 1)
+                {
+                    if (_current_extend[0] == _capacity[0])
+                    {
+                        _offset[0] += 1;
+                        _offset[1] = 0;
+                    }
+                }
+            }
+
+            if constexpr (is_container_v<T>)
+            {
+                herr_t err = __write_container__(std::forward<T&&>(data), memspace, filespace);
+                if (err < 0)
+                {
+                    throw std::runtime_error("Dataset " + _path +
+                                             ": Error in appending container");
+                }
+            }
+            else if constexpr (is_string_v<T>)
+            {
+                herr_t err = __write_stringtype__(std::forward<T&&>(data), memspace, filespace);
+                if (err < 0)
+                {
+                    throw std::runtime_error("Dataset " + _path +
+                                             ": Error in appending string");
+                }
+            }
+            else if constexpr (std::is_pointer_v<T> and !is_string_v<T>)
+            {
+                herr_t err = __write_pointertype__(std::forward<T&&>(data),
+                                                   memspace, filespace);
+                if (err < 0)
+                {
+                    throw std::runtime_error("Dataset " + _path +
+                                             ": Error in appending pointer");
+                }
+            }
+            else
+            {
+                herr_t err = __write_scalartype__(std::forward<T&&>(data), memspace, filespace);
+                if (err < 0)
+                {
+                    throw std::runtime_error("Dataset " + _path +
+                                             ": Error in appending scalar");
+                }
+            }
+        }
+    }
+
     /**
      * @brief      default consturctor
      */
@@ -1033,6 +1685,7 @@ public:
           _current_extend(other._current_extend),
           _capacity(other._capacity),
           _chunksizes(other._chunksizes),
+          _offset(other._offset),
           _compress_level(other._compress_level),
           _info(other._info),
           _address(other._address),
@@ -1093,18 +1746,7 @@ public:
      */
     virtual ~HDFDataset()
     {
-        if (H5Iis_valid(_dataset))
-        {
-            if ((*_referencecounter)[_address] == 1)
-            {
-                H5Dclose(_dataset);
-                _referencecounter->erase(_referencecounter->find(_address));
-            }
-            else
-            {
-                --(*_referencecounter)[_address];
-            }
-        }
+        close();
     }
 };
 
