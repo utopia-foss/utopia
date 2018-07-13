@@ -66,7 +66,7 @@ void write_dataset_onedimensional(HDFFile& file)
     // Test for constructor
 
     // nothing happend until now
-    HDFDataset testdataset(testgroup2, "testdataset", 1);
+    HDFDataset testdataset(testgroup2, "testdataset", {100});
     assert(testdataset.get_id() == -1);
 
     // make a dummy dataset to which later will be written
@@ -74,7 +74,7 @@ void write_dataset_onedimensional(HDFFile& file)
         testgroup1.get_id(), "/testgroup1/testdataset2", 1, {100}, {H5S_UNLIMITED}, 50);
     H5Dclose(dummy_dset);
     // open dataset again
-    HDFDataset testdataset2(testgroup1, "testdataset2");
+    HDFDataset testdataset2(testgroup1, "testdataset2"); // exists, nothing needed
     hid_t dummy_dset2 = H5Dopen(file.get_id(), "/testgroup1/testdataset2", H5P_DEFAULT);
     // get its name
     std::string name;
@@ -103,14 +103,14 @@ void write_dataset_onedimensional(HDFFile& file)
     testdataset2.write(data.begin(), data.end(),
                        [](auto& value) { return value; });
 
-    HDFDataset compressed_dataset(testgroup1, "compressed_dataset", 1,
+    HDFDataset compressed_dataset(testgroup1, "compressed_dataset",
                                   {5 * data.size()}, {10}, 5);
     compressed_dataset.write(data.begin(), data.end(),
                              [](auto& value) { return value; });
 
     compressed_dataset.close();
 
-    HDFDataset compressed_dataset2(testgroup1, "compressed_dataset", 1,
+    HDFDataset compressed_dataset2(testgroup1, "compressed_dataset",
                                    {5 * data.size()}, {10}, 5);
 
     for (auto& value : data)
@@ -123,15 +123,14 @@ void write_dataset_onedimensional(HDFFile& file)
     // 1d dataset variable length
     std::vector<std::vector<double>> data_2d(100, std::vector<double>(10, 3.16));
 
-    HDFDataset varlen_dataset(testgroup1, "varlendataset");
+    HDFDataset varlen_dataset(testgroup1, "varlendataset", {}, {20});
     varlen_dataset.write(
         data_2d.begin(), data_2d.end(),
         [](auto& value) -> std::vector<double>& { return value; });
 
     // multiple objects refer to the same dataset
     HDFGroup multirefgroup(*file.get_basegroup(), "multiref_test");
-    HDFDataset multirefdataset1(multirefgroup, "multirefdataset", 1,
-                                {5 * data.size()}, {20});
+    HDFDataset multirefdataset1(multirefgroup, "multirefdataset", {5 * data.size()}, {20});
 
     data = std::vector<double>(100, 3.14);
     for (std::size_t i = 0; i < data.size(); ++i)
@@ -146,8 +145,7 @@ void write_dataset_onedimensional(HDFFile& file)
     std::string attr1 = "First attribute to multiple reference dataset";
     multirefdataset1.add_attribute("Attribute1", attr1);
 
-    HDFDataset multirefdataset2(multirefgroup, "multirefdataset", 1,
-                                {5 * data.size()}, {20});
+    HDFDataset multirefdataset2(multirefgroup, "multirefdataset", {5 * data.size()}, {20});
 
     assert((*multirefdataset1.get_referencecounter())[multirefdataset1.get_address()] == 2);
     assert((*multirefdataset2.get_referencecounter())[multirefdataset1.get_address()] == 2);
@@ -170,14 +168,14 @@ void write_dataset_onedimensional(HDFFile& file)
     std::vector<Point> points(100, Point{3., 4., 5.});
 
     // writing rvalue to dataset
-    HDFDataset rvaluedataset(*file.get_basegroup(), "/rvalueset");
+    HDFDataset rvaluedataset(*file.get_basegroup(), "/rvalueset", {points.size()});
 
     rvaluedataset.write(points.begin(), points.end(), [](auto& pt) {
         return std::vector<double>{pt.x, pt.y, pt.z};
     });
 
     HDFDataset fixedsizearr_dataset(*file.get_basegroup(),
-                                    "/fixedsize_array_set");
+                                    "/fixedsize_array_set", {points.size()});
 
     fixedsizearr_dataset.write(points.begin(), points.end(), [](auto& pt) {
         return std::array<double, 3>{pt.x, pt.y, pt.z};
@@ -190,12 +188,13 @@ void write_dataset_multidimensional(HDFFile& file)
     HDFGroup multidimgroup(*file.get_basegroup(), "/multi_dim_data");
     std::vector<double> data(100, 2.718);
 
-    HDFDataset multidimdataset(multidimgroup, "multiddim_dataset", 2);
+    HDFDataset multidimdataset(multidimgroup, "multiddim_dataset", {1, 100});
     multidimdataset.write(data.begin(), data.end(),
                           [](auto& value) { return value; });
 
     HDFDataset multidimdataset_compressed(
-        multidimgroup, "multiddim_dataset_compressed", 2, {2, 100}, {1, 10}, 5);
+        multidimgroup, "multiddim_dataset_compressed",
+        {H5S_UNLIMITED, H5S_UNLIMITED}, {1, 10}, 5);
 
     std::for_each(data.begin(), data.end(),
                   [](auto& value) { return value += 1; });
@@ -205,8 +204,8 @@ void write_dataset_multidimensional(HDFFile& file)
     multidimdataset.close();
 
     HDFDataset multidimdataset_extendable(
-        multidimgroup, "multiddim_dataset_extendable", 2,
-        {H5S_UNLIMITED, H5S_UNLIMITED}, {1, 10}, 5);
+        multidimgroup, "multiddim_dataset_extendable", {H5S_UNLIMITED, H5S_UNLIMITED},
+        {1, 10}); // same as default for {H5S_UNLIMITED,H5S_UNLIMITED}
 
     double writeval = 100;
     for (std::size_t i = 0; i < data.size(); ++i)
