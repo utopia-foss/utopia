@@ -30,8 +30,8 @@ template <typename Datatype>
 hid_t make_dataset_for_tests(hid_t id,
                              std::string _name,
                              hsize_t _rank,
-                             std::vector<hsize_t> _extend,
-                             std::vector<hsize_t> _max_extend,
+                             std::vector<hsize_t> _extent,
+                             std::vector<hsize_t> _max_extent,
                              hsize_t chunksize)
 {
     if (chunksize > 0)
@@ -41,7 +41,7 @@ hid_t make_dataset_for_tests(hid_t id,
         H5Pset_chunk(plist, _rank, &chunksize);
 
         // make dataspace
-        hid_t dspace = H5Screate_simple(_rank, _extend.data(), _max_extend.data());
+        hid_t dspace = H5Screate_simple(_rank, _extent.data(), _max_extent.data());
 
         // create dataset and return
         return H5Dcreate(id, _name.c_str(), HDFTypeFactory::type<Datatype>(),
@@ -52,7 +52,7 @@ hid_t make_dataset_for_tests(hid_t id,
         // create dataset right away
 
         return H5Dcreate(id, _name.c_str(), HDFTypeFactory::type<Datatype>(),
-                         H5Screate_simple(_rank, _extend.data(), _max_extend.data()),
+                         H5Screate_simple(_rank, _extent.data(), _max_extent.data()),
                          H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     }
 }
@@ -216,8 +216,8 @@ void write_dataset_multidimensional(HDFFile& file)
 
     multidimdataset.close();
 
-    HDFDataset multidimdataset_extendable(
-        multidimgroup, "multiddim_dataset_extendable", {H5S_UNLIMITED, H5S_UNLIMITED},
+    HDFDataset multidimdataset_extentable(
+        multidimgroup, "multiddim_dataset_extentable", {H5S_UNLIMITED, H5S_UNLIMITED},
         {1, 10}); // same as default for {H5S_UNLIMITED,H5S_UNLIMITED}
 
     double writeval = 100;
@@ -227,13 +227,13 @@ void write_dataset_multidimensional(HDFFile& file)
         writeval += 1;
     }
 
-    multidimdataset_extendable.write(data.begin(), data.end(),
+    multidimdataset_extentable.write(data.begin(), data.end(),
                                      [](auto& value) { return value; });
 
-    multidimdataset_extendable.close();
+    multidimdataset_extentable.close();
 
     HDFDataset multidimdataset_reopened(multidimgroup,
-                                        "multiddim_dataset_extendable");
+                                        "multiddim_dataset_extentable");
 
     double value = 200;
     for (std::size_t i = 0; i < data.size(); ++i)

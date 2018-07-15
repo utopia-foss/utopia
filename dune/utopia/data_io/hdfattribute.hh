@@ -846,29 +846,9 @@ public:
      */
 
     HDFAttribute(HDFObject& object, std::string name)
-        : _name(name), _shape(std::vector<hsize_t>()), _parent_object(&object)
+        : _shape(std::vector<hsize_t>())
     {
-        // checks the validity and opens attribute if possible, else
-        // postphones until it is written
-        if (H5Iis_valid(_parent_object->get_id()) == false)
-        {
-            throw std::invalid_argument(
-                "parent_object of attribute " + _name +
-                " is invalid, has it been closed already?");
-        }
-        else
-        {
-            if (H5LTfind_attribute(_parent_object->get_id(), _name.c_str()) == 1)
-            { // attribute exists
-                _attribute = H5Aopen(_parent_object->get_id(), _name.c_str(), H5P_DEFAULT);
-
-                get_shape();
-            }
-            else
-            { // attribute does not exist: make
-                _attribute = -1;
-            }
-        }
+        open(object, name);
     }
 };
 

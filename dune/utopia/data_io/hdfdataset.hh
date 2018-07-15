@@ -16,6 +16,7 @@
 #include <numeric>
 #include <unordered_map>
 #include <utility>
+
 namespace Utopia
 {
 namespace DataIO
@@ -62,7 +63,7 @@ private:
 
             // make dataspace
             hid_t dspace =
-                H5Screate_simple(_rank, _current_extend.data(), _capacity.data());
+                H5Screate_simple(_rank, _current_extent.data(), _capacity.data());
             // create dataset and return
             dset = H5Dcreate(_parent_object->get_id(), _path.c_str(),
                              HDFTypeFactory::type<Datatype>(typesize), dspace,
@@ -72,7 +73,7 @@ private:
         {
             // make dataspace
             hid_t dspace =
-                H5Screate_simple(_rank, _current_extend.data(), _capacity.data());
+                H5Screate_simple(_rank, _current_extent.data(), _capacity.data());
 
             // can create the dataset right away
             dset = H5Dcreate(_parent_object->get_id(), _path.c_str(),
@@ -120,7 +121,7 @@ private:
     void __add_topology_attributes__()
     {
         add_attribute("rank", _rank);
-        add_attribute("current_extent", _current_extend);
+        add_attribute("current_extent", _current_extent);
         add_attribute("capacity", _capacity);
     }
 
@@ -313,6 +314,142 @@ private:
                         filespace, H5P_DEFAULT, &data);
     }
 
+    // Container reader.
+    // We could want to read into a predefined buffer for some reason (frequent
+    // reads), and thus this and the following functions expect an argument
+    // 'buffer' to store their data in. The function 'read(..)' is then
+    // overloaded to allow for automatic buffer creation or a buffer argument.
+    template <typename Type>
+    herr_t __read_container__(Type& buffer)
+    {
+        using value_type_1 = remove_qualifier_t<typename Type::value_type>;
+
+        // when the value_type of Type is a container again, we want nested
+        // arrays basically. Therefore we have to check if the desired type
+        // Type is suitable to hold them, read the nested data into a hvl_t
+        // container, assuming that they are varlen because this is the more
+        // general case, and then turn them into the desired type again...
+        if constexpr (is_container_v<value_type_1>)
+        {
+            using value_type_2 = remove_qualifier_t<typename value_type_1::value_type>;
+
+            // if we have nested containers of depth larger than 2, throw a
+            // runtime error because we cannot handle this
+            // TODO extend this to work more generally
+            if constexpr (is_container_v<value_type_2>)
+            {
+                throw std::runtime_error(
+                    "Cannot read data into nested containers with depth > 3 "
+                    "in attribute " +
+                    _name + " into vector containers!");
+            }
+
+            // everything is fine.
+
+            // get type the attribute has internally
+            hid_t type = H5Aget_type(_dataset);
+
+            // check if type given in the buffer is std::array.
+            // If it is, the user knew that the data stored there
+            // has always the same length, otherwise she does not
+            // know and thus it is assumed that the data is variable
+            // length.
+            if constexpr (is_array_like_v<value_type_1>)
+            {
+                return H5Dread(_dataset, type, buffer.data());
+            }
+            else
+            {
+                std::vector<hvl_t> temp_buffer(buffer.size());
+
+                herr_t err = H5Dread(_dataset, type, temp_buffer.data());
+
+                // turn the varlen buffer into the desired type.
+                // Cumbersome, but necessary...
+                for (std::size_t i = 0; i < buffer.size(); ++i)
+                {
+                    buffer[i].resize(temp_buffer[i].len);
+                    for (std::size_t j = 0; j < temp_buffer[i].len; ++j)
+                    {
+                        buffer[i][j] = static_cast<value_type_2*>(temp_buffer[i].p)[j];
+                    }
+                }
+
+                // return shape and buffer. Expect to use structured bindings
+                // to extract that later
+                return err;
+            }
+        }
+        else // no nested container, but one containing simple types
+        {
+            if constexpr (!std::is_same_v<std::vector<value_type_1>, Type>)
+            {
+                throw std::runtime_error("Can only read data from " + _name +
+                                         " into vector containers!");
+            }
+            else
+            {
+                // when strings are desired to be stored as value_types of the
+                // container, we need to treat them a bit differently,
+                // because hdf5 cannot read directly to them.
+                if constexpr (is_string_v<value_type_1>)
+                {
+                    // get type the attribute has internally
+                    hid_t type = H5Dget_type(_dataset);
+                    std::vector<char*> temp_buffer(buffer.size());
+
+                    herr_t err = H5Dread(_dataset, type, temp_buffer.data());
+
+                    // turn temp_buffer into the desired datatype and return
+                    for (std::size_t i = 0; i < buffer.size(); ++i)
+                    {
+                        buffer[i] = temp_buffer[i];
+                    }
+                    // return
+                    return err;
+                }
+                else // others are straight forward
+                {
+                    // get type the attribute has internally
+                    hid_t type = H5Dget_type(_dataset);
+
+                    return H5Dread(_dataset, type, buffer.data());
+                }
+            }
+        }
+    }
+
+    // read attirbute data which contains a single string.
+    // this is always read into std::strings, and hence
+    // we can use 'resize'
+    template <typename Type>
+    auto __read_stringtype__(Type& buffer)
+    {
+        // get type the attribute has internally
+        hid_t type = H5Dget_type(_dataset);
+
+        // resize buffer to the size of the type
+        buffer.resize(H5Tget_size(type));
+
+        // read data
+        return H5Dread(_dataset, type, buffer.data());
+    }
+
+    // read pointertype. Either this is given by the user, or
+    // it is assumed to be 1d, thereby flattening Nd attributes
+    template <typename Type>
+    auto __read_pointertype__(Type buffer)
+    {
+        return H5Dread(_dataset, H5Dget_type(_dataset), buffer);
+    }
+
+    // read scalar type, trivial
+    template <typename Type>
+    auto __read_scalartype__(Type& buffer)
+    {
+        return H5Dread(_dataset, H5Dget_type(_dataset), &buffer);
+    }
+
 protected:
     /**
      *  @brief Pointer to the parent object of the dataset
@@ -337,7 +474,7 @@ protected:
     /**
      *  @brief the currently occupied size of the dataset in number of elements
      */
-    std::vector<hsize_t> _current_extend;
+    std::vector<hsize_t> _current_extent;
 
     /**
      * @brief  the maximum number of elements which can be stored in the dataset
@@ -349,7 +486,17 @@ protected:
      */
     std::vector<hsize_t> _chunksizes;
 
+    /**
+     * @brief offset of the data
+     *
+     */
     std::vector<hsize_t> _offset;
+
+    /**
+     * @brief buffer for extent update
+     *
+     */
+    std::vector<hsize_t> _new_extent;
 
     /**
      * @brief the level of compression, 0 to 10
@@ -407,9 +554,9 @@ public:
      *
      * @return std::vector<hsize_t>
      */
-    auto get_current_extend()
+    auto get_current_extent()
     {
-        return _current_extend;
+        return _current_extent;
     }
 
     /**
@@ -540,9 +687,8 @@ public:
         _parent_object = &parent_object;
         _path = path;
         _referencecounter = parent_object.get_referencecounter();
-
-        _current_extend = std::vector<hsize_t>(_rank, 0);
-
+        _current_extent = std::vector<hsize_t>(_rank, 0);
+        _new_extent = std::vector<hsize_t>(_rank, 0);
         // Try to find the dataset in the parent_object
         // If it is there, open it.
         // Else: postphone the dataset creation to the first write
@@ -555,9 +701,9 @@ public:
             hid_t dataspace = H5Dget_space(_dataset);
 
             _rank = H5Sget_simple_extent_ndims(dataspace);
-            _current_extend.resize(_rank);
+            _current_extent.resize(_rank);
             _capacity.resize(_rank);
-            _offset = _current_extend;
+            _offset = _current_extent;
 
             // if the end of a row has been reached, then set the offset
             // to the beginning of the next:
@@ -584,14 +730,14 @@ public:
             */
             if (_rank > 1)
             {
-                if (_current_extend[0] == _capacity[0])
+                if (_current_extent[0] == _capacity[0])
                 {
                     _offset[0] += 1;
                     _offset[1] = 0;
                 }
             }
 
-            H5Sget_simple_extent_dims(dataspace, _current_extend.data(),
+            H5Sget_simple_extent_dims(dataspace, _current_extent.data(),
                                       _capacity.data());
             H5Sclose(dataspace);
 
@@ -645,10 +791,11 @@ public:
         swap(_path, other._path);
         swap(_dataset, other._dataset);
         swap(_rank, other._rank);
-        swap(_current_extend, other._current_extend);
+        swap(_current_extent, other._current_extent);
         swap(_capacity, other._capacity);
         swap(_chunksizes, other._chunksizes);
         swap(_offset, other._offset);
+        swap(_new_extent, other._new_extent);
         swap(_compress_level, other._compress_level);
         swap(_info, other._info);
         swap(_address, other._address);
@@ -681,27 +828,27 @@ public:
                  Get current extend.
                  If is container:
                     if 1d:
-                        current_extend = data.size()
+                        current_extent = data.size()
                     else:
-                        current_extend = {1, data.size()}, i.e one line in matrix
+                        current_extent = {1, data.size()}, i.e one line in matrix
 
                 if pointer:
-                    current_extend is shape
+                    current_extent is shape
                 if string or scalar:
-                    current_extend is 1
+                    current_extent is 1
             */
-            _current_extend.resize(_rank);
+            _current_extent.resize(_rank);
 
             if constexpr (is_container_v<T>)
             {
                 if (_rank == 1)
                 {
-                    _current_extend[_rank - 1] = data.size();
+                    _current_extent[_rank - 1] = data.size();
                 }
                 else
                 {
-                    _current_extend[0] = 1;
-                    _current_extend[1] = data.size();
+                    _current_extent[0] = 1;
+                    _current_extent[1] = data.size();
                 }
             }
 
@@ -714,32 +861,32 @@ public:
                         ": shape has to be given explicitly when writing "
                         "pointer types");
                 }
-                _current_extend = shape;
+                _current_extent = shape;
             }
             else
             {
-                _current_extend[_rank - 1] = 1;
+                _current_extent[_rank - 1] = 1;
             }
         }
         else
         {
             /*
             if dataset does  exist:
-                make new_extent array equalling current_extent, leave current_extent
+                make _new_extent array equalling current_extent, leave current_extent
                  If is container:
                     if 1d:
-                        new_extent = current_extend + data.size()
+                        _new_extent = current_extent + data.size()
                     else:
-                        new_extent = {current_extent[0]+1, current_extent[1]}, i.e one new line in matrix
+                        _new_extent = {current_extent[0]+1, current_extent[1]}, i.e one new line in matrix
 
                 if pointer:
-                    current_extend += shape
+                    current_extent += shape
                 if string or scalar:
-                    current_extend += 1
+                    current_extent += 1
 
 
                 offset = current_extent
-                buf if 2d and current_extend[1]==capacity[1](end of line):
+                buf if 2d and current_extent[1]==capacity[1](end of line):
                     offset = {current_extent[0]+1, 0};
 
                 count = {1, data.size} if 2d, {data.size()} if 1d
@@ -750,9 +897,8 @@ public:
                 write
             */
             // make a temporary for new extent
-            std::vector<hsize_t> new_extent = _current_extend;
 
-            if (_capacity == _current_extend)
+            if (_capacity == _current_extent)
             {
                 throw std::runtime_error("Dataset " + _path +
                                          ": Error, dataset cannot be extended "
@@ -761,11 +907,11 @@ public:
             else
             {
                 // set offset array
-                _offset = _current_extend;
+                _offset = _current_extent;
 
                 if (_rank > 1)
                 {
-                    if (_current_extend[1] == _capacity[1])
+                    if (_current_extent[1] == _capacity[1])
                     {
                         _offset[1] = 0;
                     }
@@ -780,11 +926,11 @@ public:
                 {
                     if (_rank == 1)
                     {
-                        new_extent[0] += data.size();
+                        _new_extent[0] += data.size();
                     }
                     else
                     {
-                        new_extent[0] += 1;
+                        _new_extent[0] += 1;
                     }
                 }
                 else if constexpr (std::is_pointer_v<T> and !is_string_v<T>)
@@ -799,7 +945,7 @@ public:
 
                     for (std::size_t i = 0; i < _rank; ++i)
                     {
-                        new_extent[i] += shape[i];
+                        _new_extent[i] += shape[i];
                     }
                 }
                 else
@@ -807,19 +953,19 @@ public:
                     if (_rank == 1)
                     {
                         // if rank is one we can only extend into one direction
-                        new_extent[0] += 1;
+                        _new_extent[0] += 1;
                     }
                     else
                     {
                         // first fill row, then column wise increase
-                        if (_current_extend[0] < _capacity[0])
+                        if (_current_extent[0] < _capacity[0])
                         {
-                            new_extent[0] += 1;
+                            _new_extent[0] += 1;
                         }
                         // if row is full, start a new one
                         else
                         {
-                            new_extent[1] += 1;
+                            _new_extent[1] += 1;
                         }
                     }
                 }
@@ -851,18 +997,18 @@ public:
             // extent the dataset
             for (std::size_t i = 0; i < _rank; ++i)
             {
-                if (new_extent[i] > _capacity[i])
+                if (_new_extent[i] > _capacity[i])
                 {
-                    throw std::runtime_error(
-                        "Dataset " + _path +
-                        ": Cannot append data, new_extent larger than capacity "
-                        "in dimension " +
-                        std::to_string(i));
+                    throw std::runtime_error("Dataset " + _path +
+                                             ": Cannot append data, "
+                                             "_new_extent larger than capacity "
+                                             "in dimension " +
+                                             std::to_string(i));
                 }
             }
 
             // extend the dataset to the new size
-            herr_t err = H5Dset_extent(_dataset, new_extent.data());
+            herr_t err = H5Dset_extent(_dataset, _new_extent.data());
 
             if (err < 0)
             {
@@ -875,7 +1021,7 @@ public:
             filespace = filesmemspace.first;
             memspace = filesmemspace.second;
 
-            _current_extend = new_extent;
+            _current_extent = _new_extent;
         }
 
         if constexpr (is_container_v<T>)
@@ -945,27 +1091,27 @@ public:
                  Get current extend.
                  If is container:
                     if 1d:
-                        current_extend = data.size()
+                        current_extent = data.size()
                     else:
-                        current_extend = {1, data.size()}, i.e one line in matrix
+                        current_extent = {1, data.size()}, i.e one line in matrix
 
                 if pointer:
-                    current_extend is shape
+                    current_extent is shape
                 if string or scalar:
-                    current_extend is 1
+                    current_extent is 1
             */
-            _current_extend.resize(_rank);
+            _current_extent.resize(_rank);
 
             if constexpr (is_container_v<T>)
             {
                 if (_rank == 1)
                 {
-                    _current_extend[_rank - 1] = data.size();
+                    _current_extent[_rank - 1] = data.size();
                 }
                 else
                 {
-                    _current_extend[0] = 1;
-                    _current_extend[1] = data.size();
+                    _current_extent[0] = 1;
+                    _current_extent[1] = data.size();
                 }
             }
 
@@ -978,32 +1124,32 @@ public:
                         ": shape has to be given explicitly when writing "
                         "pointer types");
                 }
-                _current_extend = shape;
+                _current_extent = shape;
             }
             else
             {
-                _current_extend[_rank - 1] = 1;
+                _current_extent[_rank - 1] = 1;
             }
         }
         else
         {
             /*
             if dataset does  exist:
-                make new_extent array equalling current_extent, leave current_extent
+                make _new_extent array equalling current_extent, leave current_extent
                  If is container:
                     if 1d:
-                        new_extent = current_extend + data.size()
+                        _new_extent = current_extent + data.size()
                     else:
-                        new_extent = {current_extent[0]+1, current_extent[1]}, i.e one new line in matrix
+                        _new_extent = {current_extent[0]+1, current_extent[1]}, i.e one new line in matrix
 
                 if pointer:
-                    current_extend += shape
+                    current_extent += shape
                 if string or scalar:
-                    current_extend += 1
+                    current_extent += 1
 
 
                 offset = current_extent
-                buf if 2d and current_extend[1]==capacity[1](end of line):
+                buf if 2d and current_extent[1]==capacity[1](end of line):
                     offset = {current_extent[0]+1, 0};
 
                 count = {1, data.size} if 2d, {data.size()} if 1d
@@ -1014,9 +1160,9 @@ public:
                 write
             */
             // make a temporary for new extent
-            std::vector<hsize_t> new_extent = _current_extend;
+            std::vector<hsize_t> _new_extent = _current_extent;
 
-            if (_capacity == _current_extend)
+            if (_capacity == _current_extent)
             {
                 throw std::runtime_error("Dataset " + _path +
                                          ": Error, dataset cannot be extended "
@@ -1025,11 +1171,11 @@ public:
             else
             {
                 // set offset array
-                _offset = _current_extend;
+                _offset = _current_extent;
 
                 if (_rank > 1)
                 {
-                    if (_current_extend[1] == _capacity[1])
+                    if (_current_extent[1] == _capacity[1])
                     {
                         _offset[1] = 0;
                     }
@@ -1044,11 +1190,11 @@ public:
                 {
                     if (_rank == 1)
                     {
-                        new_extent[0] += data.size();
+                        _new_extent[0] += data.size();
                     }
                     else
                     {
-                        new_extent[0] += 1;
+                        _new_extent[0] += 1;
                     }
                 }
                 else if constexpr (std::is_pointer_v<T> and !is_string_v<T>)
@@ -1063,7 +1209,7 @@ public:
 
                     for (std::size_t i = 0; i < _rank; ++i)
                     {
-                        new_extent[i] += shape[i];
+                        _new_extent[i] += shape[i];
                     }
                 }
                 else
@@ -1071,19 +1217,19 @@ public:
                     if (_rank == 1)
                     {
                         // if rank is one we can only extend into one direction
-                        new_extent[0] += 1;
+                        _new_extent[0] += 1;
                     }
                     else
                     {
                         // first fill row, then column wise increase
-                        if (_current_extend[0] < _capacity[0])
+                        if (_current_extent[0] < _capacity[0])
                         {
-                            new_extent[0] += 1;
+                            _new_extent[0] += 1;
                         }
                         // if row is full, start a new one
                         else
                         {
-                            new_extent[1] += 1;
+                            _new_extent[1] += 1;
                         }
                     }
                 }
@@ -1115,18 +1261,18 @@ public:
             // extent the dataset
             for (std::size_t i = 0; i < _rank; ++i)
             {
-                if (new_extent[i] > _capacity[i])
+                if (_new_extent[i] > _capacity[i])
                 {
-                    throw std::runtime_error(
-                        "Dataset " + _path +
-                        ": Cannot append data, new_extent larger than capacity "
-                        "in dimension " +
-                        std::to_string(i));
+                    throw std::runtime_error("Dataset " + _path +
+                                             ": Cannot append data, "
+                                             "_new_extent larger than capacity "
+                                             "in dimension " +
+                                             std::to_string(i));
                 }
             }
 
             // extend the dataset to the new size
-            herr_t err = H5Dset_extent(_dataset, new_extent.data());
+            herr_t err = H5Dset_extent(_dataset, _new_extent.data());
 
             if (err < 0)
             {
@@ -1139,7 +1285,7 @@ public:
             filespace = filesmemspace.first;
             memspace = filesmemspace.second;
 
-            _current_extend = new_extent;
+            _current_extent = _new_extent;
         }
 
         // everything is prepared, we can write the data
@@ -1216,6 +1362,16 @@ public:
         }
     }
 
+    template <typename T>
+    void read(T& buffer)
+    {
+    }
+
+    template <typename T>
+    T read(std::vector<hsize_t> shape)
+    {
+    }
+
     /**
      * @brief      default consturctor
      */
@@ -1231,10 +1387,11 @@ public:
           _path(other._path),
           _dataset(other._dataset),
           _rank(other._rank),
-          _current_extend(other._current_extend),
+          _current_extent(other._current_extent),
           _capacity(other._capacity),
           _chunksizes(other._chunksizes),
           _offset(other._offset),
+          _new_extent(other._new_extent),
           _compress_level(other._compress_level),
           _info(other._info),
           _address(other._address),

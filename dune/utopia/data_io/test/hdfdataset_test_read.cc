@@ -35,8 +35,8 @@ void read_dataset_tests(HDFFile& file)
     HDFDataset multidimdataset(multidimgroup, "multiddim_dataset");
     HDFDataset multidimdataset_compressed(multidimgroup,
                                           "multiddim_dataset_compressed");
-    HDFDataset multidimdataset_extendable(multidimgroup,
-                                          "multiddim_dataset_extendable");
+    HDFDataset multidimdataset_extentable(multidimgroup,
+                                          "multiddim_dataset_extentable");
 
     HDFDataset rvaluedataset(*file.get_basegroup(), "rvalueset");
     HDFDataset varlen_dataset(testgroup1, "varlendataset");
@@ -123,7 +123,7 @@ void read_dataset_tests(HDFFile& file)
     end2d = {2, 50};
     stride2d = {1, 5};
     auto read_subset2d_2 =
-        multidimdataset_extendable.read<double>(start2d, end2d, stride2d);
+        multidimdataset_extentable.read<double>(start2d, end2d, stride2d);
     // test that the data is correctly read
     j = 0;
     for (std::size_t i = 5; i < end2d[1]; i += 5, ++j)

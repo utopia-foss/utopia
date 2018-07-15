@@ -76,7 +76,7 @@ void assert_hdfdatasets(LHS& lhs, RHS& rhs)
     assert(lhs.get_parent() == rhs.get_parent());
     assert(lhs.get_rank() == rhs.get_rank());
     assert(lhs.get_capacity() == rhs.get_capacity());
-    assert(lhs.get_current_extend() == rhs.get_current_extend());
+    assert(lhs.get_current_extent() == rhs.get_current_extent());
     assert(lhs.get_chunksizes() == rhs.get_chunksizes());
     assert(lhs.get_compresslevel() == rhs.get_compresslevel());
 }
