@@ -96,26 +96,43 @@ private:
      *
      * @return     the dataset subset vector, consisting of dspace and memspace
      */
-    std::pair<hid_t, hid_t> __select_dataset_subset__(std::vector<hsize_t> offset,
-                                                      std::vector<hsize_t> stride,
-                                                      std::vector<hsize_t> block,
-                                                      std::vector<hsize_t> count)
+    std::pair<hid_t, hid_t> __select_dataset_subset__(std::vector<hsize_t> count)
     {
         // select the new slab we just added for writing.
-        hid_t dspace = H5Dget_space(_dataset);
+        hid_t filespace = H5Dget_space(_dataset);
         hid_t memspace = H5Screate_simple(_rank, count.data(), NULL);
 
-        herr_t select_err =
-            H5Sselect_hyperslab(dspace, H5S_SELECT_SET, offset.data(),
-                                stride.data(), count.data(), block.data());
+        herr_t select_err = H5Sselect_hyperslab(
+            filespace, H5S_SELECT_SET, _offset.data(), NULL, count.data(), NULL);
+
         if (select_err < 0)
         {
             throw std::runtime_error("Selecting 1D hyperslab failed!");
         }
 
-        return {dspace, memspace};
+        return {filespace, memspace};
     }
 
+    /**
+     * @brief Adds attributes for rank, current_extent and capacity
+     *
+     */
+    void __add_topology_attributes__()
+    {
+        add_attribute("rank", _rank);
+        add_attribute("current_extent", _current_extend);
+        add_attribute("capacity", _capacity);
+    }
+
+    /**
+     * @brief Writes containers to the dataset
+     *
+     * @tparam T automatically determined
+     * @param data data to write, can contain almost everything, also other containers
+     * @param memspace memory dataspace
+     * @param filespace file dataspace: how the data shall be represented in the file
+     * @return herr_t status variable indicating if write was successful or not
+     */
     template <typename T>
     herr_t __write_container__(T&& data, hid_t memspace, hid_t filespace)
     {
@@ -131,7 +148,6 @@ private:
             {
                 _dataset = __create_dataset__<base_type>(0);
             }
-
             return H5Dwrite(_dataset, HDFTypeFactory::type<base_type>(0),
                             memspace, filespace, H5P_DEFAULT, data.data());
         }
@@ -153,11 +169,20 @@ private:
                 std::begin(data), std::end(data),
                 [](auto& value) -> value_type_1& { return value; });
 
-            return H5Dwrite(_dataset, HDFTypeFactory::type<base_type>(0),
+            return H5Dwrite(_dataset, HDFTypeFactory::type<base_type>(typesize),
                             memspace, filespace, H5P_DEFAULT, buffer.data());
         }
     }
 
+    /**
+     * @brief Writes containers to the dataset
+     *
+     * @tparam T automatically determined
+     * @param data data to write, can contain almost everything, also other containers
+     * @param memspace memory dataspace
+     * @param filespace file dataspace: how the data shall be represented in the file
+     * @return herr_t status variable indicating if write was successful or not
+     */
     template <typename T>
     herr_t __write_container__(const T& data, hid_t memspace, hid_t filespace)
     {
@@ -195,12 +220,19 @@ private:
                 std::begin(data), std::end(data),
                 [](auto& value) -> value_type_1& { return value; });
 
-            return H5Dwrite(_dataset, HDFTypeFactory::type<base_type>(0),
+            return H5Dwrite(_dataset, HDFTypeFactory::type<base_type>(typesize),
                             memspace, filespace, H5P_DEFAULT, buffer.data());
         }
     }
 
-    // Function for writing stringtypes, char*, const char*, std::string
+    /**
+     * @brief writes stringtypes
+     *
+     * @param data data to write, (const) char* or std::string
+     * @param memspace memory dataspace
+     * @param filespace file dataspace: how the data shall be represented in the file
+     * @return herr_t status variable indicating if write was successful or not
+     */
     template <typename T>
     herr_t __write_stringtype__(T data, hid_t memspace, hid_t filespace)
     {
@@ -232,15 +264,21 @@ private:
                         memspace, filespace, H5P_DEFAULT, buffer);
     }
 
-    // Function for writing pointer types, shape of the array has to be given
-    // where shape means the same as in python
+    /**
+     * @brief Writes pointers, shape is like numpy shape arg
+     *
+     * @tparam T automatically determined
+     * @param data data to write. Can contain only plain old data
+     * @param data data to write
+     * @param memspace memory dataspace
+     * @param filespace file dataspace: how the data shall be represented in the file
+     * @return herr_t status variable indicating if write was successful or not
+     */
     template <typename T>
     herr_t __write_pointertype__(T data, hid_t memspace, hid_t filespace)
     {
         // result types removes pointers, references, and qualifiers
         using basetype = remove_qualifier_t<T>;
-        // std::cout << _name << ", type for pointer is  " << typeid(basetype).name()
-        //   << ", int type is " << typeid(int).name() << std::endl;
 
         if (_dataset == -1)
         {
@@ -251,7 +289,15 @@ private:
                         filespace, H5P_DEFAULT, data);
     }
 
-    // function for writing a scalartype.
+    /**
+     * @brief Writes simple scalars, which are not pointers, containers or strings
+     *
+     * @tparam T automatically determined
+     * @param data data to write
+     * @param memspace  memory data space
+     * @param filespace dataspace representing the shape of the data in memory
+     * @return herr_t status telling if write was successul, < 0 if not.
+     */
     template <typename T>
     herr_t __write_scalartype__(T data, hid_t memspace, hid_t filespace)
     {
@@ -366,6 +412,11 @@ public:
         return _current_extend;
     }
 
+    /**
+     * @brief Get the offset object
+     *
+     * @return std::vector<hsize_t>
+     */
     auto get_offset()
     {
         return _offset;
@@ -490,7 +541,7 @@ public:
         _path = path;
         _referencecounter = parent_object.get_referencecounter();
 
-        _current_extend = {};
+        _current_extend = std::vector<hsize_t>(_rank, 0);
 
         // Try to find the dataset in the parent_object
         // If it is there, open it.
@@ -604,21 +655,41 @@ public:
         swap(_referencecounter, other._referencecounter);
     }
 
+    /**
+     * @brief Writes data of arbitrary type
+     *
+     * @tparam T automatically determined
+     * @param data data to write
+     * @param shape shape array, only useful currently if pointer data given
+     */
     template <typename T>
     void write(const T& data, [[maybe_unused]] std::vector<hsize_t> shape)
     {
-    }
-
-    template <typename T>
-    void write(T&& data, [[maybe_unused]] std::vector<hsize_t> shape = {})
-    {
+        // dataset does not yet exist
+        hid_t memspace = H5S_ALL;
+        hid_t filespace = H5S_ALL;
         if (_dataset == -1)
         {
+            // current limitation removed in future
             if (_rank > 2)
             {
                 throw std::runtime_error("Rank > 2 not supported");
             }
 
+            /*
+            if dataset does not yet exist
+                 Get current extend.
+                 If is container:
+                    if 1d:
+                        current_extend = data.size()
+                    else:
+                        current_extend = {1, data.size()}, i.e one line in matrix
+
+                if pointer:
+                    current_extend is shape
+                if string or scalar:
+                    current_extend is 1
+            */
             _current_extend.resize(_rank);
 
             if constexpr (is_container_v<T>)
@@ -643,55 +714,44 @@ public:
                         ": shape has to be given explicitly when writing "
                         "pointer types");
                 }
-                for (std::size_t i = 0; i < _rank; ++i)
-                {
-                    _current_extend[i] = shape[i];
-                }
+                _current_extend = shape;
             }
             else
             {
                 _current_extend[_rank - 1] = 1;
             }
-
-            if constexpr (is_container_v<T>)
-            {
-                herr_t err = __write_container__(std::forward<T&&>(data), H5S_ALL, H5S_ALL);
-                if (err < 0)
-                {
-                    throw std::runtime_error("Dataset " + _path +
-                                             ": Error in writing container");
-                }
-            }
-            else if constexpr (is_string_v<T>)
-            {
-                herr_t err = __write_stringtype__(std::forward<T&&>(data), H5S_ALL, H5S_ALL);
-                if (err < 0)
-                {
-                    throw std::runtime_error("Dataset " + _path +
-                                             ": Error in writing string");
-                }
-            }
-            else if constexpr (std::is_pointer_v<T> and !is_string_v<T>)
-            {
-                herr_t err = __write_pointertype__(std::forward<T&&>(data), H5S_ALL, H5S_ALL);
-                if (err < 0)
-                {
-                    throw std::runtime_error("Dataset " + _path +
-                                             ": Error in writing pointer");
-                }
-            }
-            else
-            {
-                herr_t err = __write_scalartype__(std::forward<T&&>(data), H5S_ALL, H5S_ALL);
-                if (err < 0)
-                {
-                    throw std::runtime_error("Dataset " + _path +
-                                             ": Error in writing scalar");
-                }
-            }
         }
         else
         {
+            /*
+            if dataset does  exist:
+                make new_extent array equalling current_extent, leave current_extent
+                 If is container:
+                    if 1d:
+                        new_extent = current_extend + data.size()
+                    else:
+                        new_extent = {current_extent[0]+1, current_extent[1]}, i.e one new line in matrix
+
+                if pointer:
+                    current_extend += shape
+                if string or scalar:
+                    current_extend += 1
+
+
+                offset = current_extent
+                buf if 2d and current_extend[1]==capacity[1](end of line):
+                    offset = {current_extent[0]+1, 0};
+
+                count = {1, data.size} if 2d, {data.size()} if 1d
+
+                then extent data,
+                select newly added line
+                update current_ex
+                write
+            */
+            // make a temporary for new extent
+            std::vector<hsize_t> new_extent = _current_extend;
+
             if (_capacity == _current_extend)
             {
                 throw std::runtime_error("Dataset " + _path +
@@ -702,11 +762,11 @@ public:
             {
                 // set offset array
                 _offset = _current_extend;
+
                 if (_rank > 1)
                 {
-                    if (_current_extend[0] == _capacity[0])
+                    if (_current_extend[1] == _capacity[1])
                     {
-                        _offset[0] += 1;
                         _offset[1] = 0;
                     }
                 }
@@ -715,18 +775,19 @@ public:
                 // extend, if it is a pointer, we have to add the pointers
                 // shape, else we have to add 1 because we either write
                 // a single scalar or string
+
                 if constexpr (is_container_v<T>)
                 {
                     if (_rank == 1)
                     {
-                        _current_extend[0] += data.size();
+                        new_extent[0] += data.size();
                     }
                     else
                     {
-                        _current_extend[0] += 1;
+                        new_extent[0] += 1;
                     }
                 }
-                if constexpr (std::is_pointer_v<T> and !is_string_v<T>)
+                else if constexpr (std::is_pointer_v<T> and !is_string_v<T>)
                 {
                     if (shape.size() == 0)
                     {
@@ -735,9 +796,10 @@ public:
                             ": shape has to be given explicitly when writing "
                             "pointer types");
                     }
+
                     for (std::size_t i = 0; i < _rank; ++i)
                     {
-                        _current_extend[i] = shape[i];
+                        new_extent[i] += shape[i];
                     }
                 }
                 else
@@ -745,94 +807,412 @@ public:
                     if (_rank == 1)
                     {
                         // if rank is one we can only extend into one direction
-                        _current_extend[0] += 1;
+                        new_extent[0] += 1;
                     }
                     else
                     {
                         // first fill row, then column wise increase
                         if (_current_extend[0] < _capacity[0])
                         {
-                            _current_extend[0] += 1;
+                            new_extent[0] += 1;
                         }
                         // if row is full, start a new one
                         else
                         {
-                            _current_extend[1] += 1;
+                            new_extent[1] += 1;
                         }
                     }
                 }
             }
-
             // select counts for dataset
             // this has to be generalized and refactored
             std::vector<hsize_t> counts(_rank, 0);
-            // rank is 1
-            if (_rank == 1)
+            if constexpr (is_container_v<T>)
             {
-                if constexpr (is_container_v<T>)
+                if (_rank == 1)
                 {
-                    counts[0] = data.size();
+                    counts = {data.size()};
                 }
                 else
                 {
-                    counts[0] = 1;
+                    counts = {1, data.size()};
                 }
             }
-            // rank is 2
+            // when is pointer, the counts are given by shape
+            else if constexpr (std::is_pointer_v<T> and !is_string_v<T>)
+            {
+                counts = shape;
+            }
             else
             {
-                if constexpr (is_container_v<T>)
+                counts = {1};
+            }
+
+            // extent the dataset
+            for (std::size_t i = 0; i < _rank; ++i)
+            {
+                if (new_extent[i] > _capacity[i])
                 {
-                    counts[0] = 1;
-                    counts[1] = data.size();
-                }
-                else
-                {
-                    counts = std::vector<hsize_t>(_rank, 1);
+                    throw std::runtime_error(
+                        "Dataset " + _path +
+                        ": Cannot append data, new_extent larger than capacity "
+                        "in dimension " +
+                        std::to_string(i));
                 }
             }
 
-            auto [memspace, filespace] =
-                __select_dataset_subset__(_offset, std::vector<hsize_t>(_rank, 1),
-                                          std::vector<hsize_t>(_rank, 1), counts);
+            // extend the dataset to the new size
+            herr_t err = H5Dset_extent(_dataset, new_extent.data());
+
+            if (err < 0)
+            {
+                throw std::runtime_error(
+                    "Dataset " + _path +
+                    ": Error when trying to increase extent");
+            }
+
+            auto filesmemspace = __select_dataset_subset__(counts);
+            filespace = filesmemspace.first;
+            memspace = filesmemspace.second;
+
+            _current_extend = new_extent;
+        }
+
+        if constexpr (is_container_v<T>)
+        {
+            herr_t err = __write_container__(data, memspace, filespace);
+            if (err < 0)
+            {
+                throw std::runtime_error("Dataset " + _path +
+                                         ": Error in appending container");
+            }
+        }
+        else if constexpr (is_string_v<T>)
+        {
+            herr_t err = __write_stringtype__(data, memspace, filespace);
+            if (err < 0)
+            {
+                throw std::runtime_error("Dataset " + _path +
+                                         ": Error in appending string");
+            }
+        }
+        else if constexpr (std::is_pointer_v<T> and !is_string_v<T>)
+        {
+            herr_t err = __write_pointertype__(data, memspace, filespace);
+            if (err < 0)
+            {
+                throw std::runtime_error("Dataset " + _path +
+                                         ": Error in appending pointer");
+            }
+        }
+        else
+        {
+            herr_t err = __write_scalartype__(data, memspace, filespace);
+            if (err < 0)
+            {
+                throw std::runtime_error("Dataset " + _path +
+                                         ": Error in appending scalar");
+            }
+        }
+
+        __add_topology_attributes__();
+    }
+
+    /**
+     * @brief Writes data of arbitrary type
+     *
+     * @tparam T automatically determined
+     * @param data data to write
+     * @param shape shape array, only useful currently if pointer data given
+     */
+    template <typename T>
+    void write(T&& data, [[maybe_unused]] std::vector<hsize_t> shape = {})
+    {
+        // dataset does not yet exist
+        hid_t memspace = H5S_ALL;
+        hid_t filespace = H5S_ALL;
+
+        if (_dataset == -1)
+        {
+            // current limitation removed in future
+            if (_rank > 2)
+            {
+                throw std::runtime_error("Rank > 2 not supported");
+            }
+
+            /*
+            if dataset does not yet exist
+                 Get current extend.
+                 If is container:
+                    if 1d:
+                        current_extend = data.size()
+                    else:
+                        current_extend = {1, data.size()}, i.e one line in matrix
+
+                if pointer:
+                    current_extend is shape
+                if string or scalar:
+                    current_extend is 1
+            */
+            _current_extend.resize(_rank);
 
             if constexpr (is_container_v<T>)
             {
-                herr_t err = __write_container__(std::forward<T&&>(data), memspace, filespace);
-                if (err < 0)
+                if (_rank == 1)
                 {
-                    throw std::runtime_error("Dataset " + _path +
-                                             ": Error in appending container");
+                    _current_extend[_rank - 1] = data.size();
+                }
+                else
+                {
+                    _current_extend[0] = 1;
+                    _current_extend[1] = data.size();
                 }
             }
-            else if constexpr (is_string_v<T>)
-            {
-                herr_t err = __write_stringtype__(std::forward<T&&>(data), memspace, filespace);
-                if (err < 0)
-                {
-                    throw std::runtime_error("Dataset " + _path +
-                                             ": Error in appending string");
-                }
-            }
+
             else if constexpr (std::is_pointer_v<T> and !is_string_v<T>)
             {
-                herr_t err = __write_pointertype__(std::forward<T&&>(data),
-                                                   memspace, filespace);
-                if (err < 0)
+                if (shape.size() == 0)
                 {
-                    throw std::runtime_error("Dataset " + _path +
-                                             ": Error in appending pointer");
+                    throw std::runtime_error(
+                        "Dataset " + _path +
+                        ": shape has to be given explicitly when writing "
+                        "pointer types");
                 }
+                _current_extend = shape;
             }
             else
             {
-                herr_t err = __write_scalartype__(std::forward<T&&>(data), memspace, filespace);
-                if (err < 0)
+                _current_extend[_rank - 1] = 1;
+            }
+        }
+        else
+        {
+            /*
+            if dataset does  exist:
+                make new_extent array equalling current_extent, leave current_extent
+                 If is container:
+                    if 1d:
+                        new_extent = current_extend + data.size()
+                    else:
+                        new_extent = {current_extent[0]+1, current_extent[1]}, i.e one new line in matrix
+
+                if pointer:
+                    current_extend += shape
+                if string or scalar:
+                    current_extend += 1
+
+
+                offset = current_extent
+                buf if 2d and current_extend[1]==capacity[1](end of line):
+                    offset = {current_extent[0]+1, 0};
+
+                count = {1, data.size} if 2d, {data.size()} if 1d
+
+                then extent data,
+                select newly added line
+                update current_ex
+                write
+            */
+            // make a temporary for new extent
+            std::vector<hsize_t> new_extent = _current_extend;
+
+            if (_capacity == _current_extend)
+            {
+                throw std::runtime_error("Dataset " + _path +
+                                         ": Error, dataset cannot be extended "
+                                         "because it reached its capacity");
+            }
+            else
+            {
+                // set offset array
+                _offset = _current_extend;
+
+                if (_rank > 1)
                 {
-                    throw std::runtime_error("Dataset " + _path +
-                                             ": Error in appending scalar");
+                    if (_current_extend[1] == _capacity[1])
+                    {
+                        _offset[1] = 0;
+                    }
+                }
+
+                // if data is a container, then we have to add its size to
+                // extend, if it is a pointer, we have to add the pointers
+                // shape, else we have to add 1 because we either write
+                // a single scalar or string
+
+                if constexpr (is_container_v<T>)
+                {
+                    if (_rank == 1)
+                    {
+                        new_extent[0] += data.size();
+                    }
+                    else
+                    {
+                        new_extent[0] += 1;
+                    }
+                }
+                else if constexpr (std::is_pointer_v<T> and !is_string_v<T>)
+                {
+                    if (shape.size() == 0)
+                    {
+                        throw std::runtime_error(
+                            "Dataset " + _path +
+                            ": shape has to be given explicitly when writing "
+                            "pointer types");
+                    }
+
+                    for (std::size_t i = 0; i < _rank; ++i)
+                    {
+                        new_extent[i] += shape[i];
+                    }
+                }
+                else
+                {
+                    if (_rank == 1)
+                    {
+                        // if rank is one we can only extend into one direction
+                        new_extent[0] += 1;
+                    }
+                    else
+                    {
+                        // first fill row, then column wise increase
+                        if (_current_extend[0] < _capacity[0])
+                        {
+                            new_extent[0] += 1;
+                        }
+                        // if row is full, start a new one
+                        else
+                        {
+                            new_extent[1] += 1;
+                        }
+                    }
                 }
             }
+            // select counts for dataset
+            // this has to be generalized and refactored
+            std::vector<hsize_t> counts(_rank, 0);
+            if constexpr (is_container_v<T>)
+            {
+                if (_rank == 1)
+                {
+                    counts = {data.size()};
+                }
+                else
+                {
+                    counts = {1, data.size()};
+                }
+            }
+            // when is pointer, the counts are given by shape
+            else if constexpr (std::is_pointer_v<T> and !is_string_v<T>)
+            {
+                counts = shape;
+            }
+            else
+            {
+                counts = {1};
+            }
+
+            // extent the dataset
+            for (std::size_t i = 0; i < _rank; ++i)
+            {
+                if (new_extent[i] > _capacity[i])
+                {
+                    throw std::runtime_error(
+                        "Dataset " + _path +
+                        ": Cannot append data, new_extent larger than capacity "
+                        "in dimension " +
+                        std::to_string(i));
+                }
+            }
+
+            // extend the dataset to the new size
+            herr_t err = H5Dset_extent(_dataset, new_extent.data());
+
+            if (err < 0)
+            {
+                throw std::runtime_error(
+                    "Dataset " + _path +
+                    ": Error when trying to increase extent");
+            }
+
+            auto filesmemspace = __select_dataset_subset__(counts);
+            filespace = filesmemspace.first;
+            memspace = filesmemspace.second;
+
+            _current_extend = new_extent;
+        }
+
+        // everything is prepared, we can write the data
+        if constexpr (is_container_v<T>)
+        {
+            herr_t err = __write_container__(std::forward<T&&>(data), memspace, filespace);
+            if (err < 0)
+            {
+                throw std::runtime_error("Dataset " + _path +
+                                         ": Error in appending container");
+            }
+        }
+        else if constexpr (is_string_v<T>)
+        {
+            herr_t err = __write_stringtype__(std::forward<T&&>(data), memspace, filespace);
+            if (err < 0)
+            {
+                throw std::runtime_error("Dataset " + _path +
+                                         ": Error in appending string");
+            }
+        }
+        else if constexpr (std::is_pointer_v<T> and !is_string_v<T>)
+        {
+            herr_t err = __write_pointertype__(std::forward<T&&>(data), memspace, filespace);
+            if (err < 0)
+            {
+                throw std::runtime_error("Dataset " + _path +
+                                         ": Error in appending pointer");
+            }
+        }
+        else
+        {
+            herr_t err = __write_scalartype__(std::forward<T&&>(data), memspace, filespace);
+            if (err < 0)
+            {
+                throw std::runtime_error("Dataset " + _path +
+                                         ": Error in appending scalar");
+            }
+        }
+
+        __add_topology_attributes__();
+    }
+
+    /**
+     * @brief Write function for writing iterator ranges [start, end), in accordance with respective stl pattern
+     *
+     * @tparam Iter automatically determined
+     * @tparam Adaptor automatically determined
+     * @param begin start iterator of range to write
+     * @param end end iteator of range to write
+     * @param adaptor Modifier function which takes a reference of type Iter::value_type and returns some arbitrary type,
+     *                from which a buffer is made which then is written to the dataset. This hence determines what
+     *                is written to the dataset
+     */
+    template <typename Iter, typename Adaptor>
+    void write(Iter begin, Iter end, Adaptor&& adaptor)
+    {
+        using Type = remove_qualifier_t<decltype(adaptor(*begin))>;
+        // if we copy only the content of [begin, end), then simple vector
+        // copy suffices
+        if constexpr (std::is_same<Type, typename Iter::value_type>::value)
+        {
+            auto buff = std::vector<Type>(begin, end);
+
+            write(std::move(std::vector<Type>(begin, end)));
+        }
+        else
+        {
+            std::vector<Type> buff(std::distance(begin, end));
+            std::generate(buff.begin(), buff.end(),
+                          [&begin, &adaptor]() { return adaptor(*(begin++)); });
+
+            write(std::move(buff));
         }
     }
 
@@ -917,7 +1297,7 @@ public:
     {
         close();
     }
-};
+}; // namespace DataIO
 
 /**
  * @brief      Exchange state between lhs and rhs

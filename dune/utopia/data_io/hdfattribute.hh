@@ -203,7 +203,8 @@ private:
             {
                 throw std::runtime_error(
                     "Cannot read data into nested containers with depth > 3 "
-                    "in attribute " + _name + " into vector containers!");
+                    "in attribute " +
+                    _name + " into vector containers!");
             }
 
             // everything is fine.
@@ -754,7 +755,7 @@ public:
     void write(Iter begin,
                Iter end,
                Adaptor adaptor = [](auto& value) { return value; },
-               std::vector<hsize_t> shape = {})
+               [[maybe_unused]] std::vector<hsize_t> shape = {})
     {
         using Type = remove_qualifier_t<decltype(adaptor(*begin))>;
         // if we copy only the content of [begin, end), then simple vector

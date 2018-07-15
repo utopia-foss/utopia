@@ -8,6 +8,7 @@
 #define HDFUTILITIES_HH
 
 #include <array>
+#include <iostream>
 #include <string>
 #include <type_traits>
 
@@ -209,6 +210,26 @@ struct is_array_like<T, std::void_t<decltype(std::tuple_size<T>::value)>> : std:
 template <typename T>
 inline constexpr bool is_array_like_v = is_array_like<T>::value;
 
+/**
+ * @brief Output operator for containers
+ *
+ * @tparam T automatically determined
+ * @param os outstream to use
+ * @param v container to put out
+ * @return std::ostream& outstream used
+ */
+
+template <template <typename...> class Container, class T, std::enable_if_t<is_container_v<Container<T>>, int> = 0>
+inline std::ostream& operator<<(std::ostream& os, const Container<T>& v)
+{
+    os << "[";
+    for (typename Container<T>::iterator ii = v.begin(); ii != v.end(); ++ii)
+    {
+        os << " " << *ii;
+    }
+    os << " ]";
+    return os;
+}
 } // namespace DataIO
 } // namespace Utopia
 #endif
