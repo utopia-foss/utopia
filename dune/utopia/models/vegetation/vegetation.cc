@@ -1,5 +1,4 @@
 #include <dune/utopia/core/setup.hh>
-#include <dune/utopia/data_io/types.hh>
 
 #include "vegetation.hh"
 
