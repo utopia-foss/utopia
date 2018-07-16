@@ -484,15 +484,16 @@ void __opt_chunks_with_max_extend(Cont &chunks,
  *                          for calculating a target size when optimizing
  *                          datasets that are unlimited in all dimensions.
  */
+// NOTE Could include compression level here in the future
 template<typename Cont=std::vector<hsize_t>>
-const Cont guess_chunksize(const hsize_t typesize,
-                           const Cont io_extend,
-                           Cont max_extend = {},
-                           const bool opt_inf_dims = true,
-                           const bool larger_high_dims = true,
-                           const unsigned int CHUNKSIZE_MAX = 1048576,  // 1M
-                           const unsigned int CHUNKSIZE_MIN = 8192,     // 8k
-                           const unsigned int CHUNKSIZE_BASE = 262144)  // 256k
+const Cont calc_chunksize(const hsize_t typesize,
+                          const Cont io_extend,
+                          Cont max_extend = {},
+                          const bool opt_inf_dims = true,
+                          const bool larger_high_dims = true,
+                          const unsigned int CHUNKSIZE_MAX = 1048576,  // 1M
+                          const unsigned int CHUNKSIZE_MIN = 8192,     // 8k
+                          const unsigned int CHUNKSIZE_BASE = 262144)  // 256k
 {
     // -- Helpers -- //
 
@@ -601,7 +602,7 @@ const Cont guess_chunksize(const hsize_t typesize,
     // NOTE max_extend is now a vector of same rank as io_extend
 
 
-    log->info("Guessing appropriate chunk size for io_extend {} and "
+    log->info("Calculating optimal chunk size for io_extend {} and "
               "max_extend {} ...", vec2str(io_extend), vec2str(max_extend));
     log->debug("rank:                {}", rank);
     log->debug("finite dset?         {}", dset_finite);
@@ -724,7 +725,7 @@ const Cont guess_chunksize(const hsize_t typesize,
     // Create a const version of the temporary chunks vector
     const Cont chunks(_chunks);
 
-    log->info("Chunk size after optimization:  {}", vec2str(chunks));
+    log->info("Optimized chunk size:  {}", vec2str(chunks));
     return chunks;
 }
 
