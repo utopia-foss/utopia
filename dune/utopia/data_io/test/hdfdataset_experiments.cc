@@ -11,7 +11,8 @@ struct Point
     double y;
     double z;
 };
-int main()
+
+void write()
 {
     // make data used later
 
@@ -36,7 +37,6 @@ int main()
     HDFFile file("testfile.h5", "w");
     auto contset = file.open_dataset("/containerdataset", {100}, {5});
     auto contcontset = file.open_dataset("/containercontainerdataset", {100}, {5});
-
     auto stringset = file.open_dataset("/stringdataset", {100}, {5});
     auto ptrset = file.open_dataset("/pointerdataset", {100}, {5});
     auto scalarset = file.open_dataset("/scalardataset", {100}, {5});
@@ -52,7 +52,7 @@ int main()
 
     stringset->write(std::string("niggastring"));
 
-    for (std::size_t i = 0; i < 10; ++i)
+    for (std::size_t i = 0; i < 25; ++i)
     {
         stringset->write(std::to_string(i));
     }
@@ -86,5 +86,44 @@ int main()
 
     adapteddataset->write(points.begin(), points.end(),
                           [](auto& pt) { return pt.z; });
+}
+
+void read()
+{
+    HDFFile file("testfile.h5", "r");
+    auto contset = file.open_dataset("containerdataset");
+    auto contcontset = file.open_dataset("containercontainerdataset");
+    auto stringset = file.open_dataset("stringdataset");
+    auto ptrset = file.open_dataset("pointerdataset");
+    auto scalarset = file.open_dataset("scalardataset");
+    auto twoDdataset = file.open_dataset("2ddataset");
+    auto adapteddataset = file.open_dataset("adapteddataset");
+
+    auto [shape, data] = contset->read<std::vector<double>>();
+    std::cout << shape << std::endl;
+    std::cout << data << std::endl;
+
+    auto [shape2, data2] = contcontset->read<std::vector<std::array<int, 4>>>();
+
+    std::cout << shape2 << std::endl;
+    std::cout << data2 << std::endl;
+
+    auto [shape3, data3] = stringset->read<std::vector<std::string>>();
+    for (auto& str : data3)
+    {
+        if (str != "")
+        {
+            std::cout << str << ",";
+        }
+    }
+    std::cout << std::endl;
+
+    auto [shape4, data4] = stringset->read<std::string>();
+    std::cout << data4 << std::endl;
+}
+int main()
+{
+    write();
+    read();
     return 0;
 }

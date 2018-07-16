@@ -14,6 +14,7 @@
 #include <hdf5.h>
 #include <hdf5_hl.h>
 #include <numeric>
+#include <sstream>
 #include <unordered_map>
 #include <utility>
 
@@ -320,7 +321,7 @@ private:
     // 'buffer' to store their data in. The function 'read(..)' is then
     // overloaded to allow for automatic buffer creation or a buffer argument.
     template <typename Type>
-    herr_t __read_container__(Type& buffer)
+    herr_t __read_container__(Type& buffer, hid_t memspace, hid_t filespace)
     {
         using value_type_1 = remove_qualifier_t<typename Type::value_type>;
 
@@ -329,7 +330,7 @@ private:
         // Type is suitable to hold them, read the nested data into a hvl_t
         // container, assuming that they are varlen because this is the more
         // general case, and then turn them into the desired type again...
-        if constexpr (is_container_v<value_type_1>)
+        if constexpr (is_container_v<value_type_1> || is_string_v<value_type_1>)
         {
             using value_type_2 = remove_qualifier_t<typename value_type_1::value_type>;
 
@@ -339,83 +340,130 @@ private:
             if constexpr (is_container_v<value_type_2>)
             {
                 throw std::runtime_error(
-                    "Cannot read data into nested containers with depth > 3 "
+                    "Dataset" + _path +
+                    ": Cannot read data into nested containers with depth > 3 "
                     "in attribute " +
-                    _name + " into vector containers!");
+                    _path + " into vector containers!");
+            }
+            else if constexpr (!std::is_same_v<std::vector<value_type_1>, Type>)
+            {
+                throw std::runtime_error("Dataset" + _path +
+                                         ": Can only read data"
+                                         " into vector containers!");
             }
 
             // everything is fine.
 
             // get type the attribute has internally
-            hid_t type = H5Aget_type(_dataset);
+            hid_t type = H5Dget_type(_dataset);
 
             // check if type given in the buffer is std::array.
             // If it is, the user knew that the data stored there
             // has always the same length, otherwise she does not
             // know and thus it is assumed that the data is variable
             // length.
-            if constexpr (is_array_like_v<value_type_1>)
+            if (H5Tget_class(type) == H5T_ARRAY)
             {
-                return H5Dread(_dataset, type, buffer.data());
+                // check if std::array is given as value_type,
+                // if not adjust sizes
+                if constexpr (!is_array_like_v<value_type_1>)
+                {
+                    // if yes, throw exception is size is insufficient because
+                    // the size cannot be adjusted
+
+                    throw std::invalid_argument(
+                        "Dataset " + _path +
+                        ": Cannot read into container of non std::arrays "
+                        "when data type in file is fixed array type");
+                }
+
+                return H5Dread(_dataset, type, memspace, filespace, H5P_DEFAULT,
+                               buffer.data());
             }
-            else
+            else if (H5Tget_class(type) == H5T_STRING)
             {
+                if constexpr (!is_string_v<value_type_1>)
+                {
+                    throw std::invalid_argument(
+                        "Dataset " + _path +
+                        ": Can only read stringdata into string elements");
+                }
+                else
+                {
+                    // get type the dataset has internally
+                    hid_t type = H5Dget_type(_dataset);
+
+                    // get size of the type, set up intermediate string buffer,
+                    // adjust its size
+                    auto s = H5Tget_size(type) / sizeof(char);
+                    std::string temp_buffer;
+
+                    temp_buffer.resize(buffer.size() * s);
+
+                    // actual read
+                    herr_t err = H5Dread(_dataset, type, memspace, filespace,
+                                         H5P_DEFAULT, &temp_buffer[0]);
+
+                    // content of dataset is now one consectuive line of stuff
+                    // in temp_buffer. Use read size s to cut out the strings
+                    // we want.
+                    // definitly not elegant and fast, but strings are ugly
+                    // to work with in general, and this is the most simple
+                    // solution I can currently come up with
+                    std::size_t i = 0;
+                    std::size_t buffidx = 0;
+                    while (i < temp_buffer.size())
+                    {
+                        buffer[buffidx] = temp_buffer.substr(i, s);
+                        i += s;
+                        buffidx += 1;
+                    }
+
+                    // return
+                    return err;
+                }
+            }
+            // vriable length arrays
+            else if (H5Tget_class(type) == H5T_VLEN)
+            {
+                // if
                 std::vector<hvl_t> temp_buffer(buffer.size());
 
-                herr_t err = H5Dread(_dataset, type, temp_buffer.data());
+                herr_t err = H5Dread(_dataset, type, memspace, filespace,
+                                     H5P_DEFAULT, temp_buffer.data());
 
                 // turn the varlen buffer into the desired type.
                 // Cumbersome, but necessary...
+
                 for (std::size_t i = 0; i < buffer.size(); ++i)
                 {
-                    buffer[i].resize(temp_buffer[i].len);
+                    if constexpr (!is_array_like_v<value_type_1>)
+                    {
+                        buffer[i].resize(temp_buffer[i].len);
+                    }
                     for (std::size_t j = 0; j < temp_buffer[i].len; ++j)
                     {
                         buffer[i][j] = static_cast<value_type_2*>(temp_buffer[i].p)[j];
                     }
                 }
-
-                // return shape and buffer. Expect to use structured bindings
-                // to extract that later
                 return err;
-            }
-        }
-        else // no nested container, but one containing simple types
-        {
-            if constexpr (!std::is_same_v<std::vector<value_type_1>, Type>)
-            {
-                throw std::runtime_error("Can only read data from " + _name +
-                                         " into vector containers!");
             }
             else
             {
-                // when strings are desired to be stored as value_types of the
-                // container, we need to treat them a bit differently,
-                // because hdf5 cannot read directly to them.
-                if constexpr (is_string_v<value_type_1>)
-                {
-                    // get type the attribute has internally
-                    hid_t type = H5Dget_type(_dataset);
-                    std::vector<char*> temp_buffer(buffer.size());
-
-                    herr_t err = H5Dread(_dataset, type, temp_buffer.data());
-
-                    // turn temp_buffer into the desired datatype and return
-                    for (std::size_t i = 0; i < buffer.size(); ++i)
-                    {
-                        buffer[i] = temp_buffer[i];
-                    }
-                    // return
-                    return err;
-                }
-                else // others are straight forward
-                {
-                    // get type the attribute has internally
-                    hid_t type = H5Dget_type(_dataset);
-
-                    return H5Dread(_dataset, type, buffer.data());
-                }
+                throw std::runtime_error(
+                    "Dataset " + _path +
+                    ": Unknown kind of datatype in dataset when requesting to "
+                    "read into container");
             }
+        }
+
+        else // no nested container or container of strings, but one containing simple types
+        {
+            // get type the attribute has internally
+            hid_t type = H5Dget_type(_dataset);
+
+            return H5Dread(_dataset, type, memspace, filespace, H5P_DEFAULT,
+                           buffer.data());
         }
     }
 
@@ -423,24 +471,22 @@ private:
     // this is always read into std::strings, and hence
     // we can use 'resize'
     template <typename Type>
-    auto __read_stringtype__(Type& buffer)
+    auto __read_stringtype__(Type& buffer, hid_t memspace, hid_t filespace)
     {
-        // get type the attribute has internally
         hid_t type = H5Dget_type(_dataset);
 
-        // resize buffer to the size of the type
-        buffer.resize(H5Tget_size(type));
-
+        buffer.resize(buffer.size() * H5Tget_size(type));
         // read data
-        return H5Dread(_dataset, type, buffer.data());
+        return H5Dread(_dataset, type, memspace, filespace, H5P_DEFAULT, buffer.data());
     }
 
     // read pointertype. Either this is given by the user, or
     // it is assumed to be 1d, thereby flattening Nd attributes
     template <typename Type>
-    auto __read_pointertype__(Type buffer)
+    auto __read_pointertype__(Type buffer, hid_t memspace, hid_t filespace)
     {
-        return H5Dread(_dataset, H5Dget_type(_dataset), buffer);
+        return H5Dread(_dataset, H5Dget_type(_dataset), memspace, filespace,
+                       H5P_DEFAULT, buffer);
     }
 
     // read scalar type, trivial
@@ -705,38 +751,6 @@ public:
             _capacity.resize(_rank);
             _offset = _current_extent;
 
-            // if the end of a row has been reached, then set the offset
-            // to the beginning of the next:
-            // all arrays [lines, columns]
-            /*
-                current extend describes:
-                ********************** filled
-                **********************
-                **********************
-                **********************
-                ----------------------
-                ----------------------  still available
-
-
-                then offset shall describe the x below:
-                **********************
-                **********************
-                **********************
-                **********************
-                x---------------------
-                ----------------------
-
-                from which we can go on writing
-            */
-            if (_rank > 1)
-            {
-                if (_current_extent[0] == _capacity[0])
-                {
-                    _offset[0] += 1;
-                    _offset[1] = 0;
-                }
-            }
-
             H5Sget_simple_extent_dims(dataspace, _current_extent.data(),
                                       _capacity.data());
             H5Sclose(dataspace);
@@ -750,20 +764,10 @@ public:
         {
             if (capacity.size() == 0)
             {
-                if (chunksizes.size() == 0)
-                {
-                    throw std::runtime_error(
-                        "In trying to create dataset " + path +
-                        ": chunksizes have to be given when "
-                        "not giving an explicit capacity!");
-                }
-                else
-                {
-                    _rank = chunksizes.size();
-                    _chunksizes = chunksizes;
-                    _capacity = std::vector<hsize_t>(_rank, H5S_UNLIMITED);
-                    _offset = std::vector<hsize_t>(_rank, 0);
-                }
+                _rank = chunksizes.size();
+                _chunksizes = chunksizes;
+                _capacity = std::vector<hsize_t>(_rank, H5S_UNLIMITED);
+                _offset = std::vector<hsize_t>(_rank, 0);
             }
             else
             {
@@ -866,6 +870,17 @@ public:
             else
             {
                 _current_extent[_rank - 1] = 1;
+            }
+
+            if (!(_current_extent == _capacity))
+            {
+                if (_chunksizes.size() == 0)
+                {
+                    throw std::runtime_error(
+                        "Dataset " + _path +
+                        ": Chunksizes have to be given when capacity and data "
+                        "to write have different number of elements");
+                }
             }
         }
         else
@@ -1362,14 +1377,92 @@ public:
         }
     }
 
-    template <typename T>
-    void read(T& buffer)
+    /**
+     * @brief Read data into predefined buffer. Assumes that this buffer has the
+     *        correct size already, because it is previously known.
+     * @tparam Basic_type: The basic type which is stored in the dataset, e.g. double
+     * @param buffer Data object to read data into
+     * @param shape  Shape of the data to use
+     */
+    template <typename Type>
+    auto read([[maybe_unused]] std::vector<hsize_t> shape = {})
     {
-    }
+        if (!H5Iis_valid(_dataset))
+        {
+            throw std::runtime_error("Dataset " + _path +
+                                     ": Dataset id is invalid");
+        }
 
-    template <typename T>
-    T read(std::vector<hsize_t> shape)
-    {
+        // Read can only be done in 1d, and this loop takes care of
+        // computing a 1d size which can accomodate all elements.
+        // This is then passed to the container holding the elements in the end.
+        hid_t filespace = H5S_ALL;
+        hid_t memspace = H5S_ALL;
+
+        std::cout << "current extent: " << _current_extent << std::endl;
+
+        std::size_t size = 1;
+        for (auto& s : _current_extent)
+        {
+            size *= s;
+        }
+        // type to read in is a container type, which can hold containers
+        // themselvels or just plain types.
+        if constexpr (is_container_v<Type>)
+        {
+            Type buffer(size);
+            herr_t err = __read_container__(buffer, memspace, filespace);
+            if (err < 0)
+            {
+                throw std::runtime_error("Dataset " + _path +
+                                         ": Error reading container type ");
+            }
+            return std::make_tuple(_current_extent, buffer);
+        }
+        else if constexpr (is_string_v<Type>) // we can have string types too,
+                                              // i.e. char*, const char*,
+                                              // std::string
+        {
+            std::string buffer; // resized in __read_stringtype__ because this as a scalar
+            buffer.resize(size);
+            herr_t err = __read_stringtype__(buffer, memspace, filespace);
+            if (err < 0)
+            {
+                throw std::runtime_error("Dataset " + _path +
+                                         ": Error reading string type ");
+            }
+
+            return std::make_tuple(_current_extent, buffer);
+        }
+        else if constexpr (std::is_pointer_v<Type> && !is_string_v<Type>)
+        {
+            if (shape.size() == 0)
+            {
+                throw std::invalid_argument(
+                    "Dataset " + _path +
+                    ": Giving the shape of the plain C array or pointer to "
+                    "read data to is mandatory");
+            }
+            auto buffer = std::make_shared<Type>(size);
+            herr_t err = __read_pointertype__(buffer, memspace, filespace);
+            if (err < 0)
+            {
+                std::runtime_error("Dataset " + _path +
+                                   ": Error reading pointer type ");
+            }
+            return std::make_tuple(shape, buffer);
+        }
+        else // reading scalar types is simple enough
+        {
+            Type buffer(0);
+            herr_t err = __read_scalartype__(buffer, memspace, filespace);
+            if (err < 0)
+            {
+                std::runtime_error("Dataset " + _path +
+                                   ": Error reading scalar type ");
+            }
+            return std::make_tuple(_current_extent, buffer);
+        }
     }
 
     /**
