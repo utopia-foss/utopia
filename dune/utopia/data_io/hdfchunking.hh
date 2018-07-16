@@ -505,10 +505,16 @@ const Cont guess_chunksize(const hsize_t typesize,
     // Helper lambda for string representation of vectors
     auto vec2str = [](const std::vector<hsize_t> vec) {
         std::stringstream s;
-        s << "( ";
-        for (auto element: vec)
-            s << element << " ";
-        s << ")";
+        s << "{ ";
+        for (auto &extd: vec) {
+            if (extd < H5S_UNLIMITED) {
+                s << extd << " ";
+            }
+            else {
+                s << "∞ ";
+            }
+        }
+        s << "}";
         return s.str();
     };
 
@@ -595,8 +601,8 @@ const Cont guess_chunksize(const hsize_t typesize,
     // NOTE max_extend is now a vector of same rank as io_extend
 
 
-    log->info("Guessing appropriate chunk size for io_extend '{}' and "
-              "max_extend '{}' ...", vec2str(io_extend), vec2str(max_extend));
+    log->info("Guessing appropriate chunk size for io_extend {} and "
+              "max_extend {} ...", vec2str(io_extend), vec2str(max_extend));
     log->debug("rank:                {}", rank);
     log->debug("finite dset?         {}", dset_finite);
     log->debug("all dims infinite?   {}", all_dims_inf);
@@ -715,8 +721,10 @@ const Cont guess_chunksize(const hsize_t typesize,
 
     // -- Done. -- //
 
-    // Create a const version of the temporary chunks vector and return it
+    // Create a const version of the temporary chunks vector
     const Cont chunks(_chunks);
+
+    log->info("Chunk size after optimization:  {}", vec2str(chunks));
     return chunks;
 }
 
