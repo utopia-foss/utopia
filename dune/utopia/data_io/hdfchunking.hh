@@ -419,15 +419,32 @@ void __opt_chunks_with_max_extend(Cont &chunks,
 
 // -- The actual guess_chunksize method, publicly used -- //
 
-// TODO write doc page:
 /**  \page opt_chunksize Algorithms for optimizing chunk size
  *
- * \section idea The general idea of these algorithms is that 
+ * \section idea General idea
+ * The general idea of these algorithms is that in order for I/O operations to
+ * be fast, a reasonable chunk size needs to be given. Given the information
+ * known about the data to be written, an algorithm should automatically
+ * determine an optimal size for the chunks.
+ * What is optimal in the case of HDF5? Two main factors determine the speed
+ * of I/O operations in HDF5: the number of chunk lookups necessary and the
+ * size of the chunks. If either of the two is too large, performance suffers.
+ * To that end, these algorithms try to make the chunks as large as possible
+ * while staying below an upper limit, CHUNKSIZE_MAX, which -- per default --
+ * corresponds to the default size of the HDF5 chunk cache.
+ *
+ * Note that the algorithms prioritize single I/O operations, such that writing
+ * is easy. Depending on the shape of your data and how you want to _read_ it,
+ * this might not be ideal. For those cases, it might be more reasonable to
+ * specify the chunk sizes manually.
  *
  *
  * \section implementation Implementation
- *
- *
+ * The implementation is done via a main handler method, `guess_chunksize`
+ * and two helper methods, which implement the algorithms.
+ * The main method checks arguments and determines which algorithms can and
+ * need be applied. The helper methods then carry out the optimization, working
+ * on a common `chunks` container. 
  */ 
 
 
@@ -467,8 +484,6 @@ void __opt_chunks_with_max_extend(Cont &chunks,
  *                          for calculating a target size when optimizing
  *                          datasets that are unlimited in all dimensions.
  */
-// TODO update doxygen; make sure it's clear that max_extend opt is only
-//      used when max_extend is given -- but then optimizes infinite axes!
 template<typename Cont=std::vector<hsize_t>>
 const Cont guess_chunksize(const hsize_t typesize,
                            const Cont io_extend,
@@ -682,7 +697,8 @@ const Cont guess_chunksize(const hsize_t typesize,
 
     // This is only possible if the current chunk size is not already above the
     // upper limit, CHUNKSIZE_MAX, and the max_extend is not already reached.
-    // Also, it should not be enabled if all dims are infinite and the 
+    // Also, it should not be enabled if the optimization towards unlimited
+    // dimensions was already performed
     if (   !(opt_inf_dims && all_dims_inf)
         && (_chunks != max_extend) && (bytes(_chunks) < CHUNKSIZE_MAX))
     {
