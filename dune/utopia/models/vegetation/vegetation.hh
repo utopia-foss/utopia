@@ -136,13 +136,8 @@ public:
         auto cells = _manager.cells();
         unsigned int num_cells = std::distance(cells.begin(), cells.end());
 
-        _dset_plant_mass->write(cells.begin(), cells.end(),
-                              [](auto& cell) { return cell->state(); },
-                              2,              // rank
-                              {1, num_cells}, // extend of this entry
-                              {},             // max_size of the dataset
-                              8               // chunksize, for extension
-                              );
+        _dset_plant_mass->write(cells.begin(), cells.end(), 
+                                [](auto& cell) { return cell->state(); } );
     }
 
     /// Return const reference to stored data
