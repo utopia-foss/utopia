@@ -110,9 +110,6 @@ public:
      */
     void perform_step ()
     {
-        // Communicate which iteration step is performed
-        std::cout << "  Performing step @ t = " << this->_time << " ...";
-
         // Apply logistic growth and seeding
         auto growth_seeding_rule = [this](const auto cell){
                 auto state = cell->state();

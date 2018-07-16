@@ -26,9 +26,6 @@ int main (int argc, char** argv)
 
         // And iterate it for a number of steps
         auto num_steps = config["num_steps"].as<int>();
-        std::cout << "num_steps: " << num_steps << std::endl;
-        std::cout << "Starting iteration ..." << std::endl;
-
         for(int i = 0; i < num_steps; ++i) {
             model.iterate();
         }
