@@ -7,6 +7,7 @@
 #ifndef HDFUTILITIES_HH
 #define HDFUTILITIES_HH
 
+#include <array>
 #include <string>
 #include <type_traits>
 
@@ -43,6 +44,14 @@ struct remove_pointer<T, std::enable_if_t<std::is_pointer_v<T>, std::void_t<>>>
 };
 
 /**
+ * @brief Shorthand for 'typename remove_pointer<T>::type'
+ *
+ * @tparam T
+ */
+template <typename T>
+using remove_pointer_t = typename remove_pointer<T>::type;
+
+/**
  * @brief Oveload of 'remove_pointer' metafunction for array types (stack allocated)
  *
  * @tparam T
@@ -52,14 +61,6 @@ struct remove_pointer<T, std::enable_if_t<std::is_array_v<T>, std::void_t<>>>
 {
     using type = typename remove_pointer<std::remove_all_extents_t<T>>::type;
 };
-
-/**
- * @brief Shorthand for 'typename remove_pointer<T>::type'
- *
- * @tparam T
- */
-template <typename T>
-using remove_pointer_t = typename remove_pointer<T>::type;
 
 // remove qualifiers. FIXME: this is not optimal currently, because it does not
 // work recursivly
@@ -137,8 +138,7 @@ struct is_string<char*> : public std::true_type // public is_string_helper<char*
 /**
  * @brief Shorthand for 'is_string<T>::value'
  *
- * @tparam     T     { description }
- * @tparam     U     { description }
+
  */
 template <typename T>
 constexpr inline bool is_string_v = is_string<T>::value;
@@ -174,6 +174,40 @@ struct is_container<T, std::void_t<typename remove_qualifier_t<T>::iterator, std
  */
 template <typename T>
 inline constexpr bool is_container_v = is_container<T>::value;
+
+/**
+ * @brief Prototype for is_array_like
+ *
+ * @tparam T
+ * @tparam std::void_t<>
+ */
+template <typename T, typename U = std::void_t<>>
+struct is_array_like : std::false_type
+{
+};
+
+/**
+ * @brief Metafunction for checking if a container is a std::array
+ *        by checking if std::tuple_size can be applied to it.
+ *
+ *
+ * @tparam T
+ */
+template <typename T>
+struct is_array_like<T, std::void_t<decltype(std::tuple_size<T>::value)>> : std::true_type
+{
+};
+// FIXME Using tuple_size here is not optimal, but it gives a unique
+//       representation of the tuple
+// See: https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/merge_requests/109/diffs#note_11774
+
+/**
+ * @brief Shorthand for is_array_like
+ *
+ * @tparam T
+ */
+template <typename T>
+inline constexpr bool is_array_like_v = is_array_like<T>::value;
 
 } // namespace DataIO
 } // namespace Utopia

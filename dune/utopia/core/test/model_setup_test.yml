@@ -12,3 +12,8 @@ model2:
 
 model3:
   spam: eggs
+
+log_levels:
+  core: debug
+  model: debug
+  data_io: debug
