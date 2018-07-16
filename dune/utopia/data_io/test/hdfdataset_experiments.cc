@@ -1,8 +1,9 @@
 #include "../hdfdataset.hh"
 #include "../hdffile.hh"
 #include "../hdfgroup.hh"
+#include <chrono>
 #include <iostream>
-
+using namespace std::literals::chrono_literals;
 using namespace Utopia::DataIO;
 // used for testing rvalue container returning adaptors
 struct Point
@@ -42,6 +43,8 @@ void write()
     auto scalarset = file.open_dataset("/scalardataset", {100}, {5});
     auto twoDdataset = file.open_dataset("/2ddataset", {10, 100}, {1, 5});
     auto adapteddataset = file.open_dataset("/adapteddataset", {500}, {50});
+    auto largedataset1 = file.open_dataset("/largedataset1", {400000});
+    auto largedataset2 = file.open_dataset("/largedataset2", {400000});
 
     contset->write(std::vector<double>(10, 3.14));
     contset->write(std::vector<double>(10, 6.28));
@@ -86,18 +89,38 @@ void write()
 
     adapteddataset->write(points.begin(), points.end(),
                           [](auto& pt) { return pt.z; });
+
+    std::vector<double> largevec(400000, 3.1415);
+
+    std::chrono::high_resolution_clock clock;
+
+    auto start = clock.now();
+    largedataset1->write(largevec);
+    auto end = clock.now();
+    std::cout << "lvalue: "
+              << std::chrono::duration_cast<std::chrono::duration<double>>(end - start)
+                     .count()
+              << std::endl;
+
+    start = clock.now();
+    largedataset2->write(std::move(largevec));
+    end = clock.now();
+    std::cout << "rvalue: "
+              << std::chrono::duration_cast<std::chrono::duration<double>>(end - start)
+                     .count()
+              << std::endl;
 }
 
 void read()
 {
     HDFFile file("testfile.h5", "r");
-    auto contset = file.open_dataset("containerdataset");
-    auto contcontset = file.open_dataset("containercontainerdataset");
-    auto stringset = file.open_dataset("stringdataset");
-    auto ptrset = file.open_dataset("pointerdataset");
-    auto scalarset = file.open_dataset("scalardataset");
-    auto twoDdataset = file.open_dataset("2ddataset");
-    auto adapteddataset = file.open_dataset("adapteddataset");
+    auto contset = file.open_dataset("/containerdataset");
+    auto contcontset = file.open_dataset("/containercontainerdataset");
+    auto stringset = file.open_dataset("/stringdataset");
+    auto ptrset = file.open_dataset("/pointerdataset");
+    auto scalarset = file.open_dataset("/scalardataset");
+    auto twoDdataset = file.open_dataset("/2ddataset");
+    auto adapteddataset = file.open_dataset("/adapteddataset");
 
     auto [shape, data] = contset->read<std::vector<double>>();
     std::cout << shape << std::endl;

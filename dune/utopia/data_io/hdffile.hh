@@ -216,7 +216,8 @@ public:
                                                        std::vector<hsize_t> chunksizes = {},
                                                        std::size_t compresslevel = 0)
     {
-        return _base_group->open_dataset(path, capacity, chunksizes, compresslevel);
+        return _base_group->open_dataset(path.substr(1, path.size() - 1),
+                                         capacity, chunksizes, compresslevel);
     }
 
     /**

@@ -158,6 +158,7 @@ public:
             else
             {
                 (*_referencecounter)[_address] -= 1;
+                _group = -1;
             }
         }
     }
@@ -325,51 +326,8 @@ public:
      */
     template <typename HDFObject>
     HDFGroup(HDFObject& parent, std::string path)
-        : _path(path),
-          _parent([&]() {
-              if constexpr (std::is_same_v<HDFObject, HDFGroup>)
-              {
-                  return &parent;
-              }
-              else
-              {
-                  return parent.get_basegroup().get();
-              }
-          }()),
-          _referencecounter(parent.get_referencecounter())
     {
-        if (H5Lexists(parent.get_id(), _path.c_str(), H5P_DEFAULT) > 0)
-        {
-            // open the already existing group
-            _group = H5Gopen(parent.get_id(), _path.c_str(), H5P_DEFAULT);
-
-            if (_group < 0)
-            {
-                throw std::runtime_error("Group opening for path" + path +
-                                         " failed");
-            }
-
-            H5Oget_info(_group, &_info);
-            _address = _info.addr;
-            ++(*_referencecounter)[_address];
-        }
-        else
-        { // group does not exist yet
-            // create the group and intermediates
-            hid_t group_plist = H5Pcreate(H5P_LINK_CREATE);
-            H5Pset_create_intermediate_group(group_plist, 1);
-            _group = H5Gcreate(parent.get_id(), _path.c_str(), group_plist,
-                               H5P_DEFAULT, H5P_DEFAULT);
-            if (_group < 0)
-            {
-                throw std::runtime_error("Group creation for path " + path +
-                                         " failed");
-            }
-            // get info and update reference counter
-            H5Oget_info(_group, &_info);
-            _address = _info.addr;
-            (*_referencecounter)[_address] = 1;
-        }
+        open(parent, path);
     }
 
     /**
@@ -377,18 +335,7 @@ public:
      */
     virtual ~HDFGroup()
     {
-        if (H5Iis_valid(_group))
-        {
-            if ((*_referencecounter)[_address] == 1)
-            {
-                H5Gclose(_group);
-                _referencecounter->erase(_referencecounter->find(_address));
-            }
-            else
-            {
-                --(*_referencecounter)[_address];
-            }
-        }
+        close();
     }
 }; // namespace Utopia
 
