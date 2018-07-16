@@ -131,12 +131,7 @@ public:
     /// Write the cell states (aka plant bio-mass)
     void write_data () 
     {
-        std::cout << "Writing data @ t = " << this->_time << " ... " << std::endl;
-
-        auto cells = _manager.cells();
-        unsigned int num_cells = std::distance(cells.begin(), cells.end());
-
-        _dset_plant_mass->write(cells.begin(), cells.end(), 
+        _dset_plant_mass->write(_manager.cells().begin(), _manager.cells().end(), 
                                 [](auto& cell) { return cell->state(); } );
     }
 
