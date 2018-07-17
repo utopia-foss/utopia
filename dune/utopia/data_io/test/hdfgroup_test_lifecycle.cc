@@ -27,7 +27,7 @@ void assert_hdfgroups(HDFGroup& lhs, HDFGroup& rhs)
     assert(lhs.get_path() == rhs.get_path());
     assert(lhs.get_id() == rhs.get_id());
     assert(lhs.get_address() == rhs.get_address());
-    assert(lhs.get_referencecounter() == rhs.get_referencecounter());
+    assert(lhs.get_referencecounter().get() == rhs.get_referencecounter().get());
 }
 
 int main()
@@ -48,7 +48,8 @@ int main()
     assert(first.get_path() == copied_first.get_path());
     assert(first.get_id() == copied_first.get_id());
     assert(first.get_address() == copied_first.get_address());
-    assert(first.get_referencecounter() == copied_first.get_referencecounter());
+    assert(first.get_referencecounter().get() ==
+           copied_first.get_referencecounter().get());
 
     // copy assignment
     auto second = first;

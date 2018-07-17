@@ -350,37 +350,47 @@ private:
                 }
                 else
                 {
-                    // get type the dataset has internally
-                    hid_t type = H5Dget_type(_dataset);
-
-                    // get size of the type, set up intermediate string buffer,
-                    // adjust its size
-                    auto s = H5Tget_size(type) / sizeof(char);
-                    std::string temp_buffer;
-
-                    temp_buffer.resize(buffer.size() * s);
-
-                    // actual read
-                    herr_t err = H5Dread(_dataset, type, memspace, filespace,
-                                         H5P_DEFAULT, &temp_buffer[0]);
-
-                    // content of dataset is now one consectuive line of stuff
-                    // in temp_buffer. Use read size s to cut out the strings
-                    // we want.
-                    // definitly not elegant and fast, but strings are ugly
-                    // to work with in general, and this is the most simple
-                    // solution I can currently come up with
-                    std::size_t i = 0;
-                    std::size_t buffidx = 0;
-                    while (i < temp_buffer.size())
+                    hid_t vlentype = H5Tcopy(H5T_C_S1);
+                    H5Tset_size(vlentype, H5T_VARIABLE);
+                    if (H5Tequal(vlentype, type))
                     {
-                        buffer[buffidx] = temp_buffer.substr(i, s);
-                        i += s;
-                        buffidx += 1;
+                        throw std::runtime_error("fucking varlenstring");
                     }
+                    else
+                    {
+                        std::cout << "reading srting type" << std::endl;
+                        // get type the dataset has internally
+                        hid_t type = H5Dget_type(_dataset);
 
-                    // return
-                    return err;
+                        // get size of the type, set up intermediate string
+                        // buffer, adjust its size
+                        auto s = H5Tget_size(type) / sizeof(char);
+                        std::string temp_buffer;
+
+                        temp_buffer.resize(buffer.size() * s);
+
+                        // actual read
+                        herr_t err = H5Dread(_dataset, type, memspace, filespace,
+                                             H5P_DEFAULT, &temp_buffer[0]);
+
+                        // content of dataset is now one consectuive line of
+                        // stuff in temp_buffer. Use read size s to cut out the
+                        // strings we want. definitly not elegant and fast, but
+                        // strings are ugly to work with in general, and this is
+                        // the most simple solution I can currently come up with
+
+                        std::size_t i = 0;
+                        std::size_t buffidx = 0;
+                        while (i < temp_buffer.size())
+                        {
+                            buffer[buffidx] = temp_buffer.substr(i, s);
+                            i += s;
+                            buffidx += 1;
+                        }
+
+                        // return
+                        return err;
+                    }
                 }
             }
             // variable length arrays
@@ -1092,7 +1102,6 @@ public:
         }
 
         // variables needed for reading
-
         std::vector<hsize_t> readshape; // shape vector for read, either _current_extent or another shape
         hid_t filespace = 0;
         hid_t memspace = 0;

@@ -64,7 +64,7 @@ void read(std::vector<Teststruct>& data)
     auto dataset2 = group->open_dataset("dataset2");
     auto dataset3 = group->open_dataset("dataset3");
 
-    auto values = dataset1->read<double>();
+    auto [shape1, values] = dataset1->read<std::vector<double>>();
 
     assert(values.size() == data.size());
     for (std::size_t i = 0; i < data.size(); ++i)
@@ -72,14 +72,16 @@ void read(std::vector<Teststruct>& data)
         assert(std::abs(values[i] - data[i].x) < 1e-16);
     }
 
-    auto read_data = dataset2->read<std::string>();
-    assert(read_data.size() == data.size());
-    for (std::size_t i = 0; i < read_data.size(); ++i)
+    auto [shape2, read_stringdata] = dataset2->read<std::vector<std::string>>();
+    assert(read_stringdata.size() == data.size());
+    std::cout << shape2 << std::endl;
+    std::cout << read_stringdata << std::endl;
+    for (std::size_t i = 0; i < read_stringdata.size(); ++i)
     {
-        assert(std::string(read_data[i]) == data[i].y);
+        assert(std::string(read_stringdata[i]) == data[i].y);
     }
 
-    auto read_data_int = dataset3->read<std::vector<int>>();
+    auto [shape3, read_data_int] = dataset3->read<std::vector<std::vector<int>>>();
     for (std::size_t i = 0; i < read_data_int.size(); ++i)
     {
         assert(read_data_int[i].size() == data[i].z.size());
@@ -90,9 +92,9 @@ void read(std::vector<Teststruct>& data)
     }
 
     HDFAttribute attribute(*dataset1, "testattribute");
-    auto [shape, read_attribute] = attribute.read<std::string>();
-    assert(shape.size() == 1);
-    assert(shape[0] == 1);
+    auto [shape_attr, read_attribute] = attribute.read<std::string>();
+    assert(shape_attr.size() == 1);
+    assert(shape_attr[0] == 1);
     assert(read_attribute == "this is an attribute to a double dataset");
 }
 

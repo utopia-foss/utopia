@@ -67,7 +67,6 @@ void write_dataset_onedimensional(HDFFile& file)
 
     // nothing happend until now
     HDFDataset testdataset(testgroup2, "testdataset", {100});
-    assert(testdataset.get_id() == -1);
 
     // make a dummy dataset to which later will be written
     hid_t dummy_dset = make_dataset_for_tests<double>(
@@ -96,153 +95,153 @@ void write_dataset_onedimensional(HDFFile& file)
     // test write: most simple case
     testdataset.write(data.begin(), data.end(), [](auto& value) { return value; });
 
-    // write extendable dataset
-    HDFDataset extendable_dataset(testgroup1, "extendable_dataset", {H5S_UNLIMITED}, {10});
+    //     // write extendable dataset
+    //     HDFDataset extendable_dataset(testgroup1, "extendable_dataset", {H5S_UNLIMITED}, {10});
 
-    extendable_dataset.write(data.begin(), data.end(),
-                             [](auto& value) { return value; });
+    //     extendable_dataset.write(data.begin(), data.end(),
+    //                              [](auto& value) { return value; });
 
-    extendable_dataset.close();
-    file.flush();
+    //     extendable_dataset.close();
+    //     file.flush();
 
-    extendable_dataset.open(testgroup1, "extendable_dataset");
-    extendable_dataset.write(data.begin(), data.end(),
-                             [](auto& value) { return value; });
+    //     extendable_dataset.open(testgroup1, "extendable_dataset");
+    //     extendable_dataset.write(data.begin(), data.end(),
+    //                              [](auto& value) { return value; });
 
-    for (auto& value : data)
-    {
-        value = 6.28;
-    }
-    testdataset2.write(data.begin(), data.end(),
-                       [](auto& value) { return value; });
+    //     for (auto& value : data)
+    //     {
+    //         value = 6.28;
+    //     }
+    //     testdataset2.write(data.begin(), data.end(),
+    //                        [](auto& value) { return value; });
 
-    HDFDataset compressed_dataset(testgroup1, "compressed_dataset",
-                                  {5 * data.size()}, {10}, 5);
-    compressed_dataset.write(data.begin(), data.end(),
-                             [](auto& value) { return value; });
+    //     HDFDataset compressed_dataset(testgroup1, "compressed_dataset",
+    //                                   {5 * data.size()}, {10}, 5);
+    //     compressed_dataset.write(data.begin(), data.end(),
+    //                              [](auto& value) { return value; });
 
-    compressed_dataset.close();
+    //     compressed_dataset.close();
 
-    HDFDataset compressed_dataset2(testgroup1, "compressed_dataset",
-                                   {5 * data.size()}, {10}, 5);
+    //     HDFDataset compressed_dataset2(testgroup1, "compressed_dataset",
+    //                                    {5 * data.size()}, {10}, 5);
 
-    for (auto& value : data)
-    {
-        value = 3.14 / 2;
-    }
-    compressed_dataset2.write(data.begin(), data.end(),
-                              [](auto& value) { return value; });
+    //     for (auto& value : data)
+    //     {
+    //         value = 3.14 / 2;
+    //     }
+    //     compressed_dataset2.write(data.begin(), data.end(),
+    //                               [](auto& value) { return value; });
 
-    // 1d dataset variable length
-    std::vector<std::vector<double>> data_2d(100, std::vector<double>(10, 3.16));
+    //     // 1d dataset variable length
+    //     std::vector<std::vector<double>> data_2d(100, std::vector<double>(10, 3.16));
 
-    HDFDataset varlen_dataset(testgroup1, "varlendataset", {}, {20});
-    varlen_dataset.write(
-        data_2d.begin(), data_2d.end(),
-        [](auto& value) -> std::vector<double>& { return value; });
+    //     HDFDataset varlen_dataset(testgroup1, "varlendataset", {}, {20});
+    //     varlen_dataset.write(
+    //         data_2d.begin(), data_2d.end(),
+    //         [](auto& value) -> std::vector<double>& { return value; });
 
-    // multiple objects refer to the same dataset
-    HDFGroup multirefgroup(*file.get_basegroup(), "multiref_test");
-    HDFDataset multirefdataset1(multirefgroup, "multirefdataset", {5 * data.size()}, {20});
+    //     // multiple objects refer to the same dataset
+    //     HDFGroup multirefgroup(*file.get_basegroup(), "multiref_test");
+    //     HDFDataset multirefdataset1(multirefgroup, "multirefdataset", {5 * data.size()}, {20});
 
-    data = std::vector<double>(100, 3.14);
-    for (std::size_t i = 0; i < data.size(); ++i)
-    {
-        data[i] += i;
-    }
+    //     data = std::vector<double>(100, 3.14);
+    //     for (std::size_t i = 0; i < data.size(); ++i)
+    //     {
+    //         data[i] += i;
+    //     }
 
-    // write some stuff to multirefdataset1
-    multirefdataset1.write(data.begin(), data.end(),
-                           [](auto& value) { return value; });
+    //     // write some stuff to multirefdataset1
+    //     multirefdataset1.write(data.begin(), data.end(),
+    //                            [](auto& value) { return value; });
 
-    std::string attr1 = "First attribute to multiple reference dataset";
-    multirefdataset1.add_attribute("Attribute1", attr1);
+    //     std::string attr1 = "First attribute to multiple reference dataset";
+    //     multirefdataset1.add_attribute("Attribute1", attr1);
 
-    HDFDataset multirefdataset2(multirefgroup, "multirefdataset", {5 * data.size()}, {20});
+    //     HDFDataset multirefdataset2(multirefgroup, "multirefdataset", {5 * data.size()}, {20});
 
-    assert((*multirefdataset1.get_referencecounter())[multirefdataset1.get_address()] == 2);
-    assert((*multirefdataset2.get_referencecounter())[multirefdataset1.get_address()] == 2);
+    //     assert((*multirefdataset1.get_referencecounter())[multirefdataset1.get_address()] == 2);
+    //     assert((*multirefdataset2.get_referencecounter())[multirefdataset1.get_address()] == 2);
 
-    multirefdataset1.close();
+    //     multirefdataset1.close();
 
-    assert((*multirefdataset2.get_referencecounter())[multirefdataset1.get_address()] == 1);
-    assert((*multirefdataset1.get_referencecounter())[multirefdataset1.get_address()] == 1);
+    //     assert((*multirefdataset2.get_referencecounter())[multirefdataset1.get_address()] == 1);
+    //     assert((*multirefdataset1.get_referencecounter())[multirefdataset1.get_address()] == 1);
 
-    for (std::size_t i = 0; i < data.size(); ++i)
-    {
-        data[i] += i + 100;
-    }
-    // write some stuff to multirefdataset2
-    multirefdataset2.write(data.begin(), data.end(),
-                           [](auto& value) { return value; });
-    std::string attr2 = "Second attribute to multirefdataset";
-    multirefdataset2.add_attribute("Attribute2", attr2);
+    //     for (std::size_t i = 0; i < data.size(); ++i)
+    //     {
+    //         data[i] += i + 100;
+    //     }
+    //     // write some stuff to multirefdataset2
+    //     multirefdataset2.write(data.begin(), data.end(),
+    //                            [](auto& value) { return value; });
+    //     std::string attr2 = "Second attribute to multirefdataset";
+    //     multirefdataset2.add_attribute("Attribute2", attr2);
 
-    std::vector<Point> points(100, Point{3., 4., 5.});
+    //     std::vector<Point> points(100, Point{3., 4., 5.});
 
-    // writing rvalue to dataset
-    HDFDataset rvaluedataset(*file.get_basegroup(), "/rvalueset", {points.size()});
+    //     // writing rvalue to dataset
+    //     HDFDataset rvaluedataset(*file.get_basegroup(), "/rvalueset", {points.size()});
 
-    rvaluedataset.write(points.begin(), points.end(), [](auto& pt) {
-        return std::vector<double>{pt.x, pt.y, pt.z};
-    });
+    //     rvaluedataset.write(points.begin(), points.end(), [](auto& pt) {
+    //         return std::vector<double>{pt.x, pt.y, pt.z};
+    //     });
 
-    HDFDataset fixedsizearr_dataset(*file.get_basegroup(),
-                                    "/fixedsize_array_set", {points.size()});
+    //     HDFDataset fixedsizearr_dataset(*file.get_basegroup(),
+    //                                     "/fixedsize_array_set", {points.size()});
 
-    fixedsizearr_dataset.write(points.begin(), points.end(), [](auto& pt) {
-        return std::array<double, 3>{pt.x, pt.y, pt.z};
-    });
-}
+    //     fixedsizearr_dataset.write(points.begin(), points.end(), [](auto& pt) {
+    //         return std::array<double, 3>{pt.x, pt.y, pt.z};
+    //     });
+    // }
 
-void write_dataset_multidimensional(HDFFile& file)
-{
-    std::cout << "multidim datatest" << std::endl;
-    HDFGroup multidimgroup(*file.get_basegroup(), "/multi_dim_data");
-    std::vector<double> data(100, 2.718);
+    // void write_dataset_multidimensional(HDFFile& file)
+    // {
+    //     std::cout << "multidim datatest" << std::endl;
+    //     HDFGroup multidimgroup(*file.get_basegroup(), "/multi_dim_data");
+    //     std::vector<double> data(100, 2.718);
 
-    HDFDataset multidimdataset(multidimgroup, "multiddim_dataset", {1, 100});
-    multidimdataset.write(data.begin(), data.end(),
-                          [](auto& value) { return value; });
+    //     HDFDataset multidimdataset(multidimgroup, "multiddim_dataset", {1,
+    //     100}); multidimdataset.write(data.begin(), data.end(),
+    //                           [](auto& value) { return value; });
 
-    HDFDataset multidimdataset_compressed(
-        multidimgroup, "multiddim_dataset_compressed",
-        {H5S_UNLIMITED, H5S_UNLIMITED}, {1, 10}, 5);
+    //     HDFDataset multidimdataset_compressed(
+    //         multidimgroup, "multiddim_dataset_compressed",
+    //         {H5S_UNLIMITED, H5S_UNLIMITED}, {1, 10}, 5);
 
-    std::for_each(data.begin(), data.end(),
-                  [](auto& value) { return value += 1; });
-    multidimdataset_compressed.write(data.begin(), data.end(),
-                                     [](auto& value) { return value; });
+    //     std::for_each(data.begin(), data.end(),
+    //                   [](auto& value) { return value += 1; });
+    //     multidimdataset_compressed.write(data.begin(), data.end(),
+    //                                      [](auto& value) { return value; });
 
-    multidimdataset.close();
+    //     multidimdataset.close();
 
-    HDFDataset multidimdataset_extentable(
-        multidimgroup, "multiddim_dataset_extentable", {H5S_UNLIMITED, H5S_UNLIMITED},
-        {1, 10}); // same as default for {H5S_UNLIMITED,H5S_UNLIMITED}
+    //     HDFDataset multidimdataset_extentable(
+    //         multidimgroup, "multiddim_dataset_extentable", {H5S_UNLIMITED, H5S_UNLIMITED},
+    //         {1, 10}); // same as default for {H5S_UNLIMITED,H5S_UNLIMITED}
 
-    double writeval = 100;
-    for (std::size_t i = 0; i < data.size(); ++i)
-    {
-        data[i] = writeval;
-        writeval += 1;
-    }
+    //     double writeval = 100;
+    //     for (std::size_t i = 0; i < data.size(); ++i)
+    //     {
+    //         data[i] = writeval;
+    //         writeval += 1;
+    //     }
 
-    multidimdataset_extentable.write(data.begin(), data.end(),
-                                     [](auto& value) { return value; });
+    //     multidimdataset_extentable.write(data.begin(), data.end(),
+    //                                      [](auto& value) { return value; });
 
-    multidimdataset_extentable.close();
+    //     multidimdataset_extentable.close();
 
-    HDFDataset multidimdataset_reopened(multidimgroup,
-                                        "multiddim_dataset_extentable");
+    //     HDFDataset multidimdataset_reopened(multidimgroup,
+    //                                         "multiddim_dataset_extentable");
 
-    double value = 200;
-    for (std::size_t i = 0; i < data.size(); ++i)
-    {
-        data[i] = value;
-        value += 1;
-    }
-    multidimdataset_reopened.write(data.begin(), data.end(),
-                                   [](auto& value) { return value; });
+    //     double value = 200;
+    //     for (std::size_t i = 0; i < data.size(); ++i)
+    //     {
+    //         data[i] = value;
+    //         value += 1;
+    //     }
+    //     multidimdataset_reopened.write(data.begin(), data.end(),
+    //                                    [](auto& value) { return value; });
 }
 
 int main()
@@ -251,7 +250,7 @@ int main()
 
     write_dataset_onedimensional(file);
 
-    write_dataset_multidimensional(file);
+    // write_dataset_multidimensional(file);
 
     return 0;
 }

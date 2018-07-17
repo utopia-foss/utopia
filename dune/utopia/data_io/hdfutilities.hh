@@ -366,7 +366,10 @@ auto container_properties(const T& object)
  * @return true lhs==rhs
  * @return false lhs!=rhs, i.e. at least one element is unequal or size is unequal
  */
-template <template <typename...> class Container1, template <typename...> class Container2, class T>
+template <template <typename...> class Container1,
+          template <typename...> class Container2,
+          class T,
+          std::enable_if_t<is_container_v<Container1<T>> and is_container_v<Container2<T>>, int> = 0>
 inline bool operator==(const Container1<T>& lhs, const Container2<T>& rhs)
 {
     if (lhs.size() != rhs.size())
@@ -411,7 +414,10 @@ inline bool operator==(const Container1<T>& lhs, const Container2<T>& rhs)
  * @return true lhs==rhs
  * @return false lhs!=rhs, i.e. at least one element is unequal or size is unequal
  */
-template <template <typename...> class Container1, template <typename...> class Container2, class T>
+template <template <typename...> class Container1,
+          template <typename...> class Container2,
+          class T,
+          std::enable_if_t<is_container_v<Container1<T>> and is_container_v<Container2<T>>, int> = 0>
 inline bool operator==(Container1<T>&& lhs, Container2<T>&& rhs)
 {
     if (lhs.size() != rhs.size())

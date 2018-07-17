@@ -6,6 +6,8 @@
 #include "../hdfdataset.hh"
 #include "../hdffile.hh"
 #include "../hdfgroup.hh"
+#include "../hdfutilities.hh"
+
 #include <cassert>
 #include <cmath>
 #include <cstdio>
@@ -14,44 +16,6 @@
 #include <vector>
 
 using namespace Utopia::DataIO;
-
-/// Assert that two Dataset instances have the same public members
-/** \tparam LHS Left hand side dataset type
- *  \tparam RHS Right hand side dataset type
- *  Template parameters are necessary because HDFDataset is a template
- */
-template <typename T>
-bool operator==(std::vector<T>& a, std::vector<T>& b)
-{
-    if (a.size() == b.size())
-    {
-        return false;
-    }
-    else
-    {
-        if (std::is_floating_point<T>::value)
-        {
-            for (std::size_t i = 0; i < a.size(); ++i)
-            {
-                if (std::abs((a[i] - b[i]) / max(a[i], b[i])) < 1e-16)
-                {
-                    return false;
-                }
-            }
-        }
-        else
-        {
-            for (std::size_t i = 0; i < a.size(); ++i)
-            {
-                if (a[i] != b[i])
-                {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-}
 
 bool operator==(HDFGroup& a, HDFGroup& b)
 {
@@ -71,7 +35,7 @@ void assert_hdfdatasets(LHS& lhs, RHS& rhs)
     assert(lhs.get_path() == rhs.get_path());
     assert(lhs.get_id() == rhs.get_id());
     assert(lhs.get_address() == rhs.get_address());
-    assert(lhs.get_referencecounter() == rhs.get_referencecounter());
+    assert(lhs.get_referencecounter().get() == rhs.get_referencecounter().get());
     assert(&lhs.get_parent() == &rhs.get_parent());
     assert(lhs.get_parent() == rhs.get_parent());
     assert(lhs.get_rank() == rhs.get_rank());
@@ -85,7 +49,7 @@ int main()
 {
     HDFFile file("dataset_test_lifetime.h5", "w");
 
-    HDFGroup lifecyclegroup(*file.get_basegroup(), "lifecycletest");
+    HDFGroup lifecyclegroup(file, "/lifecycletest");
     std::vector<int> data(100, 42);
 
     HDFDataset first(lifecyclegroup, "first", {100}, {10}, 5);
