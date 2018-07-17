@@ -98,18 +98,29 @@ private:
      *
      * @return     the dataset subset vector, consisting of dspace and memspace
      */
-    std::pair<hid_t, hid_t> __select_dataset_subset__(std::vector<hsize_t> count)
+    std::pair<hid_t, hid_t> __select_dataset_subset__(std::vector<hsize_t> count,
+                                                      std::vector<hsize_t> stride = {})
     {
         // select the new slab we just added for writing.
         hid_t filespace = H5Dget_space(_dataset);
+
         hid_t memspace = H5Screate_simple(_rank, count.data(), NULL);
-
-        herr_t select_err = H5Sselect_hyperslab(
-            filespace, H5S_SELECT_SET, _offset.data(), NULL, count.data(), NULL);
-
-        if (select_err < 0)
+        herr_t err = 0;
+        if (stride.size() == 0)
         {
-            throw std::runtime_error("Selecting 1D hyperslab failed!");
+            err = H5Sselect_hyperslab(filespace, H5S_SELECT_SET, _offset.data(),
+                                      NULL, count.data(), NULL);
+        }
+        else
+        {
+            err = H5Sselect_hyperslab(filespace, H5S_SELECT_SET, _offset.data(),
+                                      stride.data(), count.data(), NULL);
+        }
+
+        if (err < 0)
+        {
+            throw std::runtime_error("Dataset " + _path +
+                                     ": Selecting hyperslab failed!");
         }
 
         return {filespace, memspace};
@@ -372,7 +383,7 @@ private:
                     return err;
                 }
             }
-            // vriable length arrays
+            // variable length arrays
             else if (H5Tget_class(type) == H5T_VLEN)
             {
                 // if
@@ -408,11 +419,8 @@ private:
 
         else // no nested container or container of strings, but one containing simple types
         {
-            // get type the attribute has internally
-            hid_t type = H5Dget_type(_dataset);
-
-            return H5Dread(_dataset, type, memspace, filespace, H5P_DEFAULT,
-                           buffer.data());
+            return H5Dread(_dataset, H5Dget_type(_dataset), memspace, filespace,
+                           H5P_DEFAULT, buffer.data());
         }
     }
 
@@ -440,9 +448,10 @@ private:
 
     // read scalar type, trivial
     template <typename Type>
-    auto __read_scalartype__(Type& buffer)
+    auto __read_scalartype__(Type& buffer, hid_t memspace, hid_t filespace)
     {
-        return H5Dread(_dataset, H5Dget_type(_dataset), &buffer);
+        return H5Dread(_dataset, H5Dget_type(_dataset), memspace, filespace,
+                       H5P_DEFAULT, &buffer);
     }
 
 protected:
@@ -972,10 +981,15 @@ public:
                     ": Error when trying to increase extent");
             }
 
+            // get size
+            hsize_t size = 1;
+            for (auto& s : counts)
+            {
+                size *= s;
+            }
+
             // get file and memory spaces which represent the selection to write at
-            auto filesmemspace = __select_dataset_subset__(counts);
-            filespace = filesmemspace.first;
-            memspace = filesmemspace.second;
+            std::tie(filespace, memspace) = __select_dataset_subset__(counts);
 
             _current_extent = _new_extent;
         }
@@ -1055,17 +1069,21 @@ public:
     }
 
     /**
-     * @brief Read data into predefined buffer. Assumes that this buffer has the
-     *        correct size already, because it is previously known.
-     * @tparam Basic_type: The basic type which is stored in the dataset, e.g. double
-     * @param buffer Data object to read data into
-     * @param shape  Shape of the data to use
+     * @brief  Read (a subset of ) a dataset into a buffer of type 'Type'.
+     *         Type gives the type of the buffer to read, and currently only
+     *         1d reads are supported, so ND dataset of double has to be read
+     *         into a 1d buffer containing doubles of size = product of dimenions of datasets.
+     *
+     * @tparam Type  Type to read to.
+     * @param start  offset to start reading from (inclusive)
+     * @param end    where to stop reading (exclusive)
+     * @param stride stride to use when reading -> like numpy stride
+     * @return auto  Buffer of type 'Type' containing read elements
      */
     template <typename Type>
-    auto read([[maybe_unused]] std::vector<hsize_t> offset = {},
-              [[maybe_unused]] std::vector<hsize_t> stride = {},
-              [[maybe_unused]] std::vector<hsize_t> count = {},
-              [[maybe_unused]] std::vector<hsize_t> shape = {})
+    auto read([[maybe_unused]] std::vector<hsize_t> start = {},
+              [[maybe_unused]] std::vector<hsize_t> end = {},
+              [[maybe_unused]] std::vector<hsize_t> stride = {})
     {
         if (!H5Iis_valid(_dataset))
         {
@@ -1073,17 +1091,62 @@ public:
                                      ": Dataset id is invalid");
         }
 
-        // Read can only be done in 1d, and this loop takes care of
-        // computing a 1d size which can accomodate all elements.
-        // This is then passed to the container holding the elements in the end.
-        hid_t filespace = H5S_ALL;
-        hid_t memspace = H5S_ALL;
+        // variables needed for reading
 
+        std::vector<hsize_t> readshape; // shape vector for read, either _current_extent or another shape
+        hid_t filespace = 0;
+        hid_t memspace = 0;
         std::size_t size = 1;
-        for (auto& s : _current_extent)
+
+        // read entire dataset
+        if (start.size() == 0)
         {
-            size *= s;
+            readshape = _current_extent;
+            filespace = H5S_ALL;
+            memspace = H5S_ALL;
+
+            // make flattened size of data to read
+            for (auto& s : readshape)
+            {
+                size *= s;
+            }
         }
+        // read [start, end) with steps given by stride in each dimension
+        else
+        {
+            // throw error if ranks and shape sizes do not match
+            if (start.size() != _rank or end.size() != _rank or stride.size() != _rank)
+            {
+                throw std::invalid_argument("Dataset " + _path +
+                                            ": start, end, stride have to be "
+                                            "same size as dataset rank");
+            }
+
+            // set offset of current array to start
+            _offset = start;
+
+            // make count vector
+            // exploit that hsize_t((end-start)/stride) cuts off decimal
+            // places and thus results in floor((end-start)/stride) always.
+            std::vector<hsize_t> count(start.size());
+
+            // build the count array -> how many elements to read in each dimension
+            for (std::size_t i = 0; i < _rank; ++i)
+            {
+                count[i] = (end[i] - start[i]) / stride[i];
+            }
+
+            for (auto& s : count)
+            {
+                size *= s;
+            }
+
+            readshape = count;
+            std::tie(filespace, memspace) = __select_dataset_subset__(count, stride);
+        }
+
+        // Below the actual reading happens
+
         // type to read in is a container type, which can hold containers
         // themselvels or just plain types.
         if constexpr (is_container_v<Type>)
@@ -1095,7 +1158,7 @@ public:
                 throw std::runtime_error("Dataset " + _path +
                                          ": Error reading container type ");
             }
-            return std::make_tuple(_current_extent, buffer);
+            return std::make_tuple(readshape, buffer);
         }
         else if constexpr (is_string_v<Type>) // we can have string types too,
                                               // i.e. char*, const char*,
@@ -1110,25 +1173,18 @@ public:
                                          ": Error reading string type ");
             }
 
-            return std::make_tuple(_current_extent, buffer);
+            return std::make_tuple(readshape, buffer);
         }
         else if constexpr (std::is_pointer_v<Type> && !is_string_v<Type>)
         {
-            if (shape.size() == 0)
-            {
-                throw std::invalid_argument(
-                    "Dataset " + _path +
-                    ": Giving the shape of the plain C array or pointer to "
-                    "read data to is mandatory");
-            }
             auto buffer = std::make_shared<Type>(size);
-            herr_t err = __read_pointertype__(buffer, memspace, filespace);
+            herr_t err = __read_pointertype__(buffer.get(), memspace, filespace);
             if (err < 0)
             {
                 std::runtime_error("Dataset " + _path +
                                    ": Error reading pointer type ");
             }
-            return std::make_tuple(shape, buffer);
+            return std::make_tuple(readshape, buffer);
         }
         else // reading scalar types is simple enough
         {
@@ -1139,7 +1195,7 @@ public:
                 std::runtime_error("Dataset " + _path +
                                    ": Error reading scalar type ");
             }
-            return std::make_tuple(_current_extent, buffer);
+            return std::make_tuple(readshape, buffer);
         }
     }
 
