@@ -725,9 +725,9 @@ public:
     {
         _parent_object = &parent_object;
         _path = path;
+        _compress_level = compress_level; // no way to read it from dataset?
         _referencecounter = parent_object.get_referencecounter();
-        _current_extent = std::vector<hsize_t>(_rank, 0);
-        _new_extent = std::vector<hsize_t>(_rank, 0);
+
         // Try to find the dataset in the parent_object
         // If it is there, open it.
         // Else: postphone the dataset creation to the first write
@@ -735,18 +735,34 @@ public:
         { // dataset exists
             // open it
             _dataset = H5Dopen(_parent_object->get_id(), _path.c_str(), H5P_DEFAULT);
-
             // get dataspace and read out rank, extend, capacity
             hid_t dataspace = H5Dget_space(_dataset);
-
             _rank = H5Sget_simple_extent_ndims(dataspace);
-            _current_extent.resize(_rank);
-            _capacity.resize(_rank);
-            _offset = _current_extent;
+            _current_extent.resize(_rank, 0);
+            _capacity.resize(_rank, 0);
+            _chunksizes.resize(_rank, 0);
+            // get chunksizes
+            hid_t creation_plist = H5Dget_create_plist(_dataset);
+            hid_t layout = H5Pget_layout(creation_plist);
+            if (layout == H5D_CHUNKED)
+            {
+                herr_t err = H5Pget_chunk(creation_plist, _rank, _chunksizes.data());
 
+                if (err < 0)
+                {
+                    throw std::runtime_error(
+                        "Dataset " + _path +
+                        ": Error in reading out chunksizes while opening.");
+                }
+            }
+            H5Pclose(creation_plist);
+
+            // get topology of dataset
             H5Sget_simple_extent_dims(dataspace, _current_extent.data(),
                                       _capacity.data());
             H5Sclose(dataspace);
+
+            _offset = _current_extent;
 
             // Update info and reference counter
             H5Oget_info(_dataset, &_info);
@@ -906,6 +922,8 @@ public:
             else
             {
                 // set offset array
+                // this is needed because multiple writes one after the other could
+                // occur without intermediate close and reopen (which would set _offset correctly)
                 _offset = _current_extent;
 
                 if (_rank > 1)

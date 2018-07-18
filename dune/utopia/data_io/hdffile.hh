@@ -198,9 +198,9 @@ public:
      *
      * @return     std::shared_ptr<HDFGroup>
      */
-    std::shared_ptr<HDFGroup> open_group(std::string&& path)
+    std::shared_ptr<HDFGroup> open_group(std::string path)
     {
-        return _base_group->open_group(std::forward<std::string&&>(path));
+        return _base_group->open_group(path);
     }
 
     /**
@@ -305,11 +305,7 @@ public:
      */
     virtual ~HDFFile()
     {
-        if (H5Iis_valid(_file))
-        {
-            H5Fflush(_file, H5F_SCOPE_GLOBAL);
-            H5Fclose(_file);
-        }
+        close();
     }
 };
 } // namespace DataIO

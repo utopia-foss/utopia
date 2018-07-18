@@ -8,14 +8,12 @@
 #include "../hdffile.hh"
 #include "../hdfgroup.hh"
 #include <cassert>
-#include <cmath>
-#include <cstdio>
-#include <fstream>
+#include <chrono>
 #include <iostream>
-#include <string>
-#include <vector>
-
+#include <thread>
 using namespace Utopia::DataIO;
+using hsizevec = std::vector<hsize_t>;
+
 struct Point
 {
     double x;
@@ -23,201 +21,283 @@ struct Point
     double z;
 };
 
-void read_dataset_tests(HDFFile& file)
-{
-    HDFGroup testgroup1(*file.get_basegroup(), "/testgroup1");
-    HDFGroup testgroup2(*file.get_basegroup(), "/testgroup2");
-    HDFGroup multidimgroup(*file.get_basegroup(), "/multi_dim_data");
-
-    HDFDataset testdataset(testgroup2, "testdataset");
-    HDFDataset testdataset2(testgroup1, "testdataset2");
-    HDFDataset compressed_dataset(testgroup1, "compressed_dataset");
-    HDFDataset multidimdataset(multidimgroup, "multiddim_dataset");
-    HDFDataset multidimdataset_compressed(multidimgroup,
-                                          "multiddim_dataset_compressed");
-    HDFDataset multidimdataset_extentable(multidimgroup,
-                                          "multiddim_dataset_extentable");
-
-    HDFDataset rvaluedataset(*file.get_basegroup(), "rvalueset");
-    HDFDataset varlen_dataset(testgroup1, "varlendataset");
-    HDFDataset fixedsizearr_dataset(*file.get_basegroup(),
-                                    "fixedsize_array_set");
-
-    HDFDataset extendable_dataset(testgroup1, "extendable_dataset");
-
-    // read entire 1d dataset
-    std::vector<double> data(100, 3.14);
-    for (std::size_t i = 0; i < data.size(); ++i)
-    {
-        data[i] += i;
-    }
-
-    auto [shape1, read_data] = testdataset.read<std::vector<double>>();
-
-    assert(data.size() == read_data.size());
-    for (std::size_t i = 0; i < data.size(); ++i)
-    {
-        assert(std::abs(data[i] - read_data[i]) < 1e-16);
-    }
-
-    // auto [shape2, read_data_ext] = extendable_dataset.read<double>();
-    // assert(2 * data.size() == read_data_ext.size());
-    // for (std::size_t i = 0; i < data.size(); ++i)
-    // {
-    //     assert(std::abs(data[i] - read_data_ext[i]) < 1e-16);
-    // }
-    // for (std::size_t i = data.size(); i < 2 * data.size(); ++i)
-    // {
-    //     assert(std::abs(data[i - data.size()] - read_data_ext[i]) < 1e-16);
-    // }
-
-    // // read subset of 1d set
-    // hsize_t start = 10;
-    // hsize_t end = 40;
-    // hsize_t stride = 2;
-    // auto [shape3, read_subset] = testdataset.read<double>({start}, {end}, {stride});
-    // std::size_t j = 0;
-    // for (std::size_t i = start; i < end; i += 2, ++j)
-    // {
-    //     assert(std::abs(read_subset[j] - data[i]) < 1e-16);
-    // }
-
-    // // read entire 2d dataset, flattened
-    // std::vector<double> flat_2d(200);
-    // std::vector<double> twod(100, 2.718);
-    // std::vector<double> twod_comp(100, 3.718);
-
-    // double writeval = 100;
-    // for (std::size_t i = 0; i < 100; ++i)
-    // {
-    //     flat_2d[i] = writeval;
-    //     writeval += 1;
-    // }
-
-    // double value = 200;
-    // for (std::size_t i = 100; i < 200; ++i)
-    // {
-    //     flat_2d[i] = value;
-    //     value += 1;
-    // }
-    // auto [shape4, multidim_simplebuffer] = multidimdataset.read<double>();
-
-    // assert(twod.size() == multidim_simplebuffer.size());
-    // for (std::size_t i = 0; i < twod.size(); ++i)
-    // {
-    //     assert(std::abs(multidim_simplebuffer[i] - twod[i]) < 1e-16);
-    // }
-
-    // // read subset from 1 line 2d set
-    // std::vector<hsize_t> start2d = {0, 10};
-    // std::vector<hsize_t> end2d = {1, 40};
-    // std::vector<hsize_t> stride2d = {1, 2};
-    // auto [shape5, read_subset2d] = multidimdataset.read<double>(start2d,
-    // end2d, stride2d); j = 0;
-    // // read subset from 2 line 2d set
-
-    // for (std::size_t i = start; i < end; i += 2, ++j)
-    // {
-    //     assert(std::abs(read_subset2d[j] - twod[i]) < 1e-16);
-    // }
-    // start2d = {0, 5};
-    // end2d = {2, 50};
-    // stride2d = {1, 5};
-    // auto [shape6, read_subset2d_2] =
-    //     multidimdataset_extentable.read<double>(start2d, end2d, stride2d);
-    // // test that the data is correctly read
-    // j = 0;
-    // for (std::size_t i = 5; i < end2d[1]; i += 5, ++j)
-    // {
-    //     assert(std::abs(read_subset2d_2[j] - flat_2d[i]) < 1e-16);
-    // }
-    // for (std::size_t i = 100 + start2d[1]; i < 100 + end2d[1]; i += 5, ++j)
-    // {
-    //     assert(std::abs(read_subset2d_2[j] - flat_2d[i]) < 1e-16);
-    // }
-
-    // data = std::vector<double>(100, 3.14);
-    // for (std::size_t i = 0; i < data.size(); ++i)
-    // {
-    //     data[i] += i;
-    // }
-    // // check that multirefdataset worked as expected
-    // HDFGroup multirefgroup(*file.get_basegroup(), "multiref_test");
-    // HDFDataset multirefdataset(multirefgroup, "multirefdataset");
-
-    // std::vector<double> multirefdata(200, 3.14);
-    // for (std::size_t i = 0; i < 200; ++i)
-    // {
-    //     multirefdata[i] += i;
-    // }
-
-    // auto [shape7, datavector] = multirefdataset.read<double>();
-
-    // assert(datavector.size() == multirefdata.size());
-
-    // for (std::size_t i = multirefdata.size(); i < multirefdata.size(); ++i)
-    // {
-    //     assert(std::abs(datavector[i] - multirefdata[i]) < 1e-16);
-    // }
-    // std::string attr1 = "First attribute to multiple reference dataset";
-
-    // std::string attr2 = "Second attribute to multirefdataset";
-
-    // HDFAttribute multirefattribute(multirefdataset, "Attribute1");
-    // auto [shape1, multirefattrdata1] = multirefattribute.read<std::string>();
-    // assert(shape1.size() == 1);
-    // assert(shape1[0] == 1);
-    // assert(multirefattrdata1 == attr1);
-
-    // HDFAttribute multirefattribute2(multirefdataset, "Attribute2");
-    // auto [shape2, multirefattrdata2] =
-    // multirefattribute2.read<std::string>(); assert(multirefattrdata2 ==
-    // attr2); assert(shape2.size() == 1); assert(shape2[0] == 1);
-
-    // // read from varlendataset
-    // std::vector<std::vector<double>> data_2d(100, std::vector<double>(10, 3.16));
-
-    // auto [shape8, varlendata] = varlen_dataset.read<std::vector<double>>();
-    // assert(varlendata.size() == 100);
-    // for (std::size_t l = 0; l < 100; ++l)
-    // {
-    //     assert(varlendata[l].size() == 10);
-    //     for (std::size_t k = 0; k < 10; ++k)
-    //     {
-    //         assert(std::abs(varlendata[l][k] - 3.16) < 1e-16);
-    //     }
-    // }
-
-    // // read from rvalue dataset
-    // std::vector<Point> points(100, Point{3., 4., 5.});
-
-    // auto [shape9, ptvec] = rvaluedataset.read<std::vector<double>>();
-
-    // assert(ptvec.size() == 100);
-    // for (std::size_t l = 0; l < 100; ++l)
-    // {
-    //     assert(ptvec[l].size() == 3);
-    //     assert(std::abs(points[l].x - ptvec[l][0]) < 1e-16);
-    //     assert(std::abs(points[l].y - ptvec[l][1]) < 1e-16);
-    //     assert(std::abs(points[l].z - ptvec[l][2]) < 1e-16);
-    // }
-
-    // auto [shape10, arrvec] = fixedsizearr_dataset.read<std::array<double, 3>>();
-
-    // assert(arrvec.size() == 100);
-    // for (std::size_t l = 0; l < 100; ++l)
-    // {
-    //     assert(arrvec[l].size() == 3);
-    //     assert(std::abs(points[l].x - arrvec[l][0]) < 1e-16);
-    //     assert(std::abs(points[l].y - arrvec[l][1]) < 1e-16);
-    //     assert(std::abs(points[l].z - arrvec[l][2]) < 1e-16);
-    // }
-}
-
 int main()
 {
-    HDFFile file("dataset_test.h5", "r");
-    read_dataset_tests(file);
+    ///////////////////////////////////////////////////////////////////////////
+    ////////////////////// MAKE FILE, OPEN DATASETS  //////////////////////////
+    ///////////////////////////////////////////////////////////////////////////
+
+    HDFFile file("datatset_testfile.h5", "r");
+    auto contset = file.open_dataset("/containerdataset");
+    auto nestedcontset = file.open_dataset("/containercontainerdataset");
+    auto stringset = file.open_dataset("/stringdataset");
+    auto ptrset = file.open_dataset("/pointerdataset");
+    auto scalarset = file.open_dataset("/scalardataset");
+    auto twoDdataset = file.open_dataset("/2ddataset");
+    auto adapteddataset = file.open_dataset("/adapteddataset");
+
+    // check that parameters are read out correctly
+    assert(contset->get_capacity() == hsizevec{100});
+    assert(nestedcontset->get_capacity() == hsizevec{100});
+    assert(stringset->get_capacity() == hsizevec{100});
+    assert(ptrset->get_capacity() == hsizevec{100});
+    assert(scalarset->get_capacity() == hsizevec{100});
+    assert(twoDdataset->get_capacity() == (hsizevec{10, 100}));
+    assert(adapteddataset->get_capacity() == (hsizevec{3, 100}));
+
+    assert(contset->get_current_extent() == hsizevec{30});
+    assert(nestedcontset->get_current_extent() == hsizevec{40});
+    assert(stringset->get_current_extent() == hsizevec{26});
+    assert(ptrset->get_current_extent() == hsizevec{15});
+    assert(scalarset->get_current_extent() == hsizevec{5});
+    assert(twoDdataset->get_current_extent() == (hsizevec{6, 100}));
+    assert(adapteddataset->get_current_extent() == (hsizevec{3, 100}));
+
+    // offset should be at end of data currently contained
+    assert(contset->get_offset() == hsizevec{30});
+    assert(nestedcontset->get_offset() == hsizevec{40});
+    assert(stringset->get_offset() == hsizevec{26});
+    assert(ptrset->get_offset() == hsizevec{15});
+    assert(scalarset->get_offset() == hsizevec{5});
+    assert(twoDdataset->get_offset() == (hsizevec{6, 100}));
+    assert(adapteddataset->get_offset() == (hsizevec{3, 100}));
+
+    ///////////////////////////////////////////////////////////////////////////
+    ////////////////////// MAKE EXPECTED DATA TO TEST AGAINST  ////////////////
+    ///////////////////////////////////////////////////////////////////////////
+    // ... for simple container
+    std::vector<double> contdata;
+    contdata.insert(contdata.begin(), 10, 3.14);
+    contdata.insert(contdata.begin() + 10, 10, 6.28);
+    contdata.insert(contdata.begin() + 20, 10, 9.42);
+
+    std::vector<double> partial_contdata(10);
+    std::size_t j = 0;
+    for (std::size_t i = 5; i < 25; i += 2, ++j)
+    {
+        partial_contdata[j] = contdata[i];
+    }
+
+    // ... for nested container
+    std::array<int, 4> arr{{0, 1, 2, 3}};
+    std::array<int, 4> arr2{{4, 5, 6, 7}};
+
+    std::vector<std::array<int, 4>> nestedcontdata(20, arr);
+    nestedcontdata.insert(nestedcontdata.begin() + 20, 20, arr2);
+
+    std::vector<std::array<int, 4>> partial_nestedcontdata(10);
+    j = 0;
+    for (std::size_t i = 0; i < 30; i += 3, ++j)
+    {
+        partial_nestedcontdata[j] = nestedcontdata[i];
+    }
+
+    // ... for 2d dataset
+    std::vector<std::vector<double>> twoddata(6, std::vector<double>());
+    for (std::size_t i = 0; i < 6; ++i)
+    {
+        twoddata[i].insert(twoddata[i].begin(), 100, i);
+    }
+
+    std::vector<std::vector<double>> partial_twoddata(2, std::vector<double>());
+    for (std::size_t i = 0; i < 2; ++i)
+    {
+        partial_twoddata[i].insert(partial_twoddata[i].begin(), 50, i + 2);
+    }
+    // ... for stringdata
+    std::vector<std::string> stringcontainerdata{
+        "niggastring", "0",  "1",  "2",  "3",  "4",  "5",  "6",  "7",
+        "8",           "9",  "10", "11", "12", "13", "14", "15", "16",
+        "17",          "18", "19", "20", "21", "22", "23", "24"};
+
+    for (auto& val : stringcontainerdata)
+    {
+        val.resize(11); // complete size
+    }
+
+    // ... for stringdata read into one single string
+    std::string onestringdata;
+    for (auto& str : stringcontainerdata)
+    {
+        onestringdata += str;
+    }
+
+    // ... for pointer dataset
+    std::vector<double> ptrdata{3.14, 3.14, 3.14, 3.14, 3.14, 6.28, 6.28, 6.28,
+                                6.28, 6.28, 9.42, 9.42, 9.42, 9.42, 9.42};
+
+    std::vector<double> partial_ptrdata(7);
+    for (std::size_t i = 0; i < 7; ++i)
+    {
+        partial_ptrdata[i] = ptrdata[i + 5];
+    }
+
+    // ... for adaptedset
+    std::vector<Point> adapteddata(100);
+    for (int i = 0; i < 100; ++i)
+    {
+        adapteddata[i].x = 3.14;
+        adapteddata[i].y = 3.14 + 1;
+        adapteddata[i].z = 3.14 + 2;
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    ///////////////////// FULL READING TAKES PLACE NOW ////////////////////////
+    ///////////////////////////////////////////////////////////////////////////
+
+    // README: as we tested offset mechanics already, and offset is not needed
+    // for reading an entire dataset, the value offset is not tested here
+    // as it does not change when reading an entire dataset
+
+    // read simple container data
+    auto [contshape, read_contdata] = contset->read<std::vector<double>>();
+    assert(contshape.size() == 1);
+    assert(contshape[0] = 30);
+    assert(contdata == read_contdata);
+
+    // read nested container data
+    auto [nestedcontshape, read_nestedcontdata] =
+        nestedcontset->read<std::vector<std::array<int, 4>>>();
+    assert(nestedcontshape.size() == 1);
+    assert(nestedcontshape[0] = 40);
+    assert(read_nestedcontdata.size() == 40);
+    assert(nestedcontdata == read_nestedcontdata);
+
+    // read stringdataset
+    auto [stringcontainershape, read_stringcontainerdata] =
+        stringset->read<std::vector<std::string>>();
+    assert(stringcontainershape.size() == 1);
+    assert(stringcontainershape[0] == stringcontainerdata.size());
+
+    assert(read_stringcontainerdata == stringcontainerdata);
+
+    // read everything into one string
+    auto [onestringshape, read_onestringdata] = stringset->read<std::string>();
+
+    assert(onestringshape.size() == 1);
+    assert(onestringshape[0] == stringcontainershape[0]);
+    assert(read_onestringdata == onestringdata);
+
+    // read everything into a pointer -> this returns a smartpointer.
+    auto [ptrshape, read_ptrdata] = ptrset->read<double*>({}, {}, {});
+    assert(ptrshape.size() == 1);
+    assert(ptrshape[0] = 15);
+    for (std::size_t i = 0; i < ptrshape[0]; ++i)
+    {
+        assert(std::abs(ptrdata[i] - read_ptrdata.get()[i]) < 1e-16);
+    }
+
+    // read 2d dataset
+    auto [twodshape, read_twoddata] = twoDdataset->read<std::vector<double>>();
+    assert(twodshape.size() == 2);
+    assert(twodshape[0] == 6);
+    assert(twodshape[1] == 100);
+    assert(read_twoddata.size() == 600);
+    for (std::size_t i = 0; i < 6; ++i)
+    {
+        for (std::size_t j = 0; j < 100; ++j)
+        {
+            assert(std::abs(twoddata[i][j] - read_twoddata[i * 100 + j]) < 1e-16);
+        }
+    }
+
+    // read adaptedset
+    auto [adaptedshape, read_adaptedata] = adapteddataset->read<std::vector<double>>();
+    assert(adaptedshape.size() == 2);
+    assert(adaptedshape[0] == 3);
+    assert(adaptedshape[1] == 100);
+    for (std::size_t i = 0; i < 100; ++i)
+    {
+        assert(std::abs(adapteddata[i].x - read_adaptedata[i]) < 1e-16);
+    }
+    for (std::size_t i = 0; i < 100; ++i)
+    {
+        assert(std::abs(adapteddata[i].y - read_adaptedata[100 + i]) < 1e-16);
+    }
+    for (std::size_t i = 0; i < 100; ++i)
+    {
+        assert(std::abs(adapteddata[i].z - read_adaptedata[2 * 100 + i]) < 1e-16);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    /////////////////// PARTIAL READING TAKES PLACE NOW ////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+
+    // README: offset is used in partial reads, and hence its value has to be
+    // tested again (should equal start always)
+
+    // README: below numpy slice notation is used in comments, at least for 1d
+
+    // read [5:25:2] from container dataset
+    auto [partial_contshape, read_partial_contdata] =
+        contset->read<std::vector<double>>({5}, {25}, {2});
+
+    assert(contset->get_offset() == hsizevec{5});
+    assert(partial_contshape.size() == 1);
+    assert(partial_contshape[0] = 20);
+    assert(read_partial_contdata == partial_contdata);
+
+    // read subset from nested containerdata
+    auto [partial_nestedcontshape, read_partial_nestedcontdata] =
+        nestedcontset->read<std::vector<std::array<int, 4>>>({0}, {30}, {3});
+
+    assert(nestedcontset->get_offset() == hsizevec{0});
+    assert(partial_nestedcontshape.size() == 1);
+    assert(partial_nestedcontshape[0] == 10);
+    assert(partial_nestedcontshape[0] == read_partial_nestedcontdata.size());
+    assert(partial_nestedcontdata == read_partial_nestedcontdata);
+
+    // read subset from 2d array: [[2,0]:[4, 100]:[1,2]]
+    auto [partial2dshape, read_partial2ddata] =
+        twoDdataset->read<std::vector<double>>({2, 0}, {4, 100}, {1, 2});
+
+    assert(twoDdataset->get_offset() == (hsizevec{2, 0}));
+    assert(partial2dshape.size() == 2);
+    assert(partial2dshape[0] == 2);
+    assert(partial2dshape[1] == 50);
+    assert(read_partial2ddata.size() == partial2dshape[0] * partial2dshape[1]);
+
+    for (std::size_t i = 0; i < 2; ++i)
+    {
+        for (std::size_t j = 0; j < 50; ++j)
+        {
+            assert(std::abs(partial_twoddata[i][j] - read_partial2ddata[i * 50 + j]) < 1e-16);
+        }
+    }
+
+    // read [2:3:1] -> single value from scalardataset
+    auto [partial_scalarshape, read_partialscalardata] =
+        scalarset->read<int>({2}, {3}, {1});
+
+    assert(scalarset->get_offset() == hsizevec{2});
+
+    assert(partial_scalarshape.size() == 1);
+    assert(partial_scalarshape[0] == 1);
+    assert(read_partialscalardata == 2);
+
+    // read [5:12:1] from pointerdataset
+    auto [partial_ptrshape, read_partial_ptrdata] =
+        ptrset->read<double*>({5}, {12}, {1});
+
+    assert(ptrset->get_offset() == hsizevec{5});
+
+    assert(partial_ptrshape.size() == 1);
+    assert(partial_ptrshape[0] == 7);
+    assert(partial_ptrdata.size() == partial_ptrshape[0]);
+
+    for (std::size_t i = 0; i < partial_ptrshape[0]; ++i)
+    {
+        assert(std::abs(partial_ptrdata[i] - read_partial_ptrdata.get()[i]) < 1e-16);
+    }
+
+    // read a single string from stringdataset
+    auto [singlestringshape, singlestring] =
+        stringset->read<std::string>({3}, {4}, {1});
+
+    assert(stringset->get_offset() == hsizevec{3});
+    assert(singlestringshape.size() == 1);
+    assert(singlestringshape[0] == 1);
+    assert(singlestring == stringcontainerdata[3]); // reuse value from stringcontainerdata
 
     return 0;
 }

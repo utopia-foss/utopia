@@ -139,14 +139,13 @@ public:
             if ((*_referencecounter)[_address] == 1)
             {
                 H5Gclose(_group);
-                _group = -1;
                 _referencecounter->erase(_referencecounter->find(_address));
             }
             else
             {
                 (*_referencecounter)[_address] -= 1;
-                _group = -1;
             }
+            _group = -1;
         }
     }
 

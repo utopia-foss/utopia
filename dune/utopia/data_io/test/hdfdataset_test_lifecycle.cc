@@ -13,9 +13,12 @@
 #include <cstdio>
 #include <iostream>
 #include <string>
+#include <thread>
 #include <vector>
 
 using namespace Utopia::DataIO;
+using namespace std::literals::chrono_literals;
+using hsizevec = std::vector<hsize_t>;
 
 bool operator==(HDFGroup& a, HDFGroup& b)
 {
@@ -87,18 +90,27 @@ int main()
     assert((*moveconst_second.get_referencecounter())[moveconst_second.get_address()] == 4);
     assert_hdfdatasets(crosscheck, moveconst_second);
 
-    // lifecyclegroup.close();
-    // file.close();
-    // file.open("dataset_test_lifetime.h5", "r+");
-    // lifecyclegroup.open(*file.get_basegroup(), "lifecycletest");
+    lifecyclegroup.close();
+    file.close();
+    file.open("dataset_test_lifetime.h5", "r+");
+    lifecyclegroup.open(file, "/lifecycletest");
+
     // test open method
     HDFDataset<HDFGroup> opened_dataset;
-    opened_dataset.open(lifecyclegroup, "first", {100}, {10}, 5);
+    opened_dataset.open(lifecyclegroup, "first");
     assert(H5Iis_valid(opened_dataset.get_id()) == true);
+    assert(opened_dataset.get_current_extent() == hsizevec{100});
+    std::cout << opened_dataset.get_chunksizes() << std::endl;
+    assert(opened_dataset.get_chunksizes() == hsizevec{10});
+    assert(opened_dataset.get_capacity() == hsizevec{100});
 
     // test simple open method
     HDFDataset<HDFGroup> opened_dataset_simple;
     opened_dataset_simple.open(lifecyclegroup, "first_simple");
     assert(H5Iis_valid(opened_dataset_simple.get_id()) == true);
+    assert(opened_dataset_simple.get_current_extent() == hsizevec{100});
+    assert(opened_dataset_simple.get_chunksizes() == hsizevec{10});
+    assert(opened_dataset_simple.get_capacity() == hsizevec{H5S_UNLIMITED});
+
     return 0;
 }
