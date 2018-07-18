@@ -350,18 +350,43 @@ private:
                 }
                 else
                 {
+                    /*
+                     * we have two possibilities, which have to be treated sparatly,
+                     * thanks to fucking hdf5 being the most crappy designed library
+                     * I ever came accross:
+                     * 1): dataset contains variable length strings
+                     * 2): dataset contains fixed size strings
+                     *
+                     * logic:
+                     *       - check if we have a stringtype
+                     *       - make a variable length stringtype
+                     *       - check if the type of the dataset is  varlen string
+                     *           - yes:
+                     *               - read into char** buffer,
+                     *               - then put into container<std::string>
+                     *           - no:
+                     *               - get size of type
+                     *               - make string (=> char array) of size bufferlen*typesize
+                     *               - read into it
+                     *               - split the long string each typesize chars -> get entries
+                     *               - put them into final buffer
+                     * Mind that the buffer is preallocated to the correct size
+                     */
                     hid_t vlentype = H5Tcopy(H5T_C_S1);
                     H5Tset_size(vlentype, H5T_VARIABLE);
                     if (H5Tequal(vlentype, type))
                     {
-                        throw std::runtime_error("fucking varlenstring");
+                        std::vector<char*> temp_buffer(buffer.size());
+                        herr_t err = H5Dread(_dataset, type, memspace, filespace,
+                                             H5P_DEFAULT, &temp_buffer[0]);
+
+                        auto tb = temp_buffer.begin();
+                        std::generate(buffer.begin(), buffer.end(),
+                                      [&tb]() { return *(tb++); });
+                        return err;
                     }
                     else
                     {
-                        std::cout << "reading srting type" << std::endl;
-                        // get type the dataset has internally
-                        hid_t type = H5Dget_type(_dataset);
-
                         // get size of the type, set up intermediate string
                         // buffer, adjust its size
                         auto s = H5Tget_size(type) / sizeof(char);

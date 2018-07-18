@@ -74,8 +74,6 @@ void read(std::vector<Teststruct>& data)
 
     auto [shape2, read_stringdata] = dataset2->read<std::vector<std::string>>();
     assert(read_stringdata.size() == data.size());
-    std::cout << shape2 << std::endl;
-    std::cout << read_stringdata << std::endl;
     for (std::size_t i = 0; i < read_stringdata.size(); ++i)
     {
         assert(std::string(read_stringdata[i]) == data[i].y);
