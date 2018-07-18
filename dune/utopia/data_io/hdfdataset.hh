@@ -1211,8 +1211,11 @@ public:
         }
         else if constexpr (std::is_pointer_v<Type> && !is_string_v<Type>)
         {
-            auto buffer = std::make_shared<Type>(size);
+            std::shared_ptr<remove_qualifier_t<Type>> buffer(
+                new remove_qualifier_t<Type>[size]);
+
             herr_t err = __read_pointertype__(buffer.get(), memspace, filespace);
+
             if (err < 0)
             {
                 std::runtime_error("Dataset " + _path +

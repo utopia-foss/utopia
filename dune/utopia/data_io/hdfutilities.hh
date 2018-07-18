@@ -227,36 +227,50 @@ template <template <typename...> class Container1,
           std::enable_if_t<is_container_v<Container1<T>> and is_container_v<Container2<T>>, int> = 0>
 inline bool operator==(const Container1<T>& lhs, const Container2<T>& rhs)
 {
-    if (lhs.size() != rhs.size())
-    {
-        return false;
-    }
-    else
+    if constexpr (is_container_v<T>)
     {
         auto lb = lhs.begin();
         auto rb = rhs.begin();
-        if constexpr (std::is_floating_point_v<T>)
+        bool eq = true;
+        for (; lb != lhs.end(); ++lb, ++rb)
         {
-            for (; lb != lhs.end(); ++lb, ++rb)
-            {
-                if (std::fabs(*lb - *rb) / (std::fabs(std::max(*lb, *rb))) > 1e-16)
-                {
-                    return false;
-                }
-            }
+            eq = (*lb == *rb);
+        }
+        return eq;
+    }
+    else
+    {
+        if (lhs.size() != rhs.size())
+        {
+            return false;
         }
         else
         {
-            for (; lb != lhs.end(); ++lb, ++rb)
+            auto lb = lhs.begin();
+            auto rb = rhs.begin();
+            if constexpr (std::is_floating_point_v<T>)
             {
-                if (*lb != *rb)
+                for (; lb != lhs.end(); ++lb, ++rb)
                 {
-                    return false;
+                    if (std::fabs(*lb - *rb) / (std::fabs(std::max(*lb, *rb))) > 1e-16)
+                    {
+                        return false;
+                    }
+                }
+            }
+            else
+            {
+                for (; lb != lhs.end(); ++lb, ++rb)
+                {
+                    if (*lb != *rb)
+                    {
+                        return false;
+                    }
                 }
             }
         }
+        return true;
     }
-    return true;
 }
 
 /**
@@ -275,36 +289,50 @@ template <template <typename...> class Container1,
           std::enable_if_t<is_container_v<Container1<T>> and is_container_v<Container2<T>>, int> = 0>
 inline bool operator==(Container1<T>&& lhs, Container2<T>&& rhs)
 {
-    if (lhs.size() != rhs.size())
-    {
-        return false;
-    }
-    else
+    if constexpr (is_container_v<T>)
     {
         auto lb = lhs.begin();
         auto rb = rhs.begin();
-        if constexpr (std::is_floating_point_v<T>)
+        bool eq = true;
+        for (; lb != lhs.end(); ++lb, ++rb)
         {
-            for (; lb != lhs.end(); ++lb, ++rb)
-            {
-                if (std::fabs(*lb - *rb) / (std::fabs(std::max(*lb, *rb))) > 1e-16)
-                {
-                    return false;
-                }
-            }
+            eq = (*lb == *rb);
+        }
+        return eq;
+    }
+    else
+    {
+        if (lhs.size() != rhs.size())
+        {
+            return false;
         }
         else
         {
-            for (; lb != lhs.end(); ++lb, ++rb)
+            auto lb = lhs.begin();
+            auto rb = rhs.begin();
+            if constexpr (std::is_floating_point_v<T>)
             {
-                if (*lb != *rb)
+                for (; lb != lhs.end(); ++lb, ++rb)
                 {
-                    return false;
+                    if (std::fabs(*lb - *rb) / (std::fabs(std::max(*lb, *rb))) > 1e-16)
+                    {
+                        return false;
+                    }
+                }
+            }
+            else
+            {
+                for (; lb != lhs.end(); ++lb, ++rb)
+                {
+                    if (*lb != *rb)
+                    {
+                        return false;
+                    }
                 }
             }
         }
+        return true;
     }
-    return true;
 }
 
 /**
