@@ -65,6 +65,7 @@ void read(std::vector<Teststruct>& data)
     auto dataset3 = group->open_dataset("dataset3");
 
     auto [shape1, values] = dataset1->read<std::vector<double>>();
+    assert(shape1 == std::vector<hsize_t>{data.size()});
 
     assert(values.size() == data.size());
     for (std::size_t i = 0; i < data.size(); ++i)
@@ -73,6 +74,8 @@ void read(std::vector<Teststruct>& data)
     }
 
     auto [shape2, read_stringdata] = dataset2->read<std::vector<std::string>>();
+    assert(shape2 == std::vector<hsize_t>{data.size()});
+
     assert(read_stringdata.size() == data.size());
     for (std::size_t i = 0; i < read_stringdata.size(); ++i)
     {
@@ -80,6 +83,8 @@ void read(std::vector<Teststruct>& data)
     }
 
     auto [shape3, read_data_int] = dataset3->read<std::vector<std::vector<int>>>();
+    assert(shape3 == std::vector<hsize_t>{data.size()});
+
     for (std::size_t i = 0; i < read_data_int.size(); ++i)
     {
         assert(read_data_int[i].size() == data[i].z.size());
