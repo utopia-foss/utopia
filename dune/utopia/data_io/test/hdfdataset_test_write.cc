@@ -10,6 +10,7 @@
 #include "../hdfdataset.hh"
 #include "../hdffile.hh"
 #include "../hdfgroup.hh"
+#include <cassert>
 #include <chrono>
 #include <iostream>
 #include <thread>
