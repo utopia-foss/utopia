@@ -25,7 +25,7 @@ namespace DataIO {
 template<typename Cont,
          typename Predicate,
          typename IdxCont=std::vector<unsigned short>>
-IdxCont __find_all_idcs (Cont &vec, Predicate pred) {
+IdxCont find_all_idcs (Cont &vec, Predicate pred) {
     // Create the return container
     IdxCont idcs;
 
@@ -72,13 +72,13 @@ IdxCont __find_all_idcs (Cont &vec, Predicate pred) {
  * @param   log              The logger object to use
  */
 template<typename Cont, typename Logger>
-void __opt_chunks_target(Cont &chunks,
-                         double bytes_target,
-                         const hsize_t typesize,
-                         const unsigned int CHUNKSIZE_MAX,
-                         const unsigned int CHUNKSIZE_MIN,
-                         const bool larger_high_dims,
-                         Logger log)
+void opt_chunks_target(Cont &chunks,
+                       double bytes_target,
+                       const hsize_t typesize,
+                       const unsigned int CHUNKSIZE_MAX,
+                       const unsigned int CHUNKSIZE_MIN,
+                       const bool larger_high_dims,
+                       Logger log)
 {
     // Helper lambda for calculating bytesize of a chunks configuration
     auto bytes = [&typesize](Cont c) {
@@ -89,7 +89,7 @@ void __opt_chunks_target(Cont &chunks,
     // Check the case of typesize larger than CHUNKSIZE_MAX; cannot do anything
     // in that case -> safer to throw an exception.
     if (typesize > CHUNKSIZE_MAX) {
-        throw std::invalid_argument("Cannot use __opt_chunks_target with a "
+        throw std::invalid_argument("Cannot use opt_chunks_target with a "
                                     "typesize larger than CHUNKSIZE_MAX!");
     }
 
@@ -183,7 +183,7 @@ void __opt_chunks_target(Cont &chunks,
             log->debug("Halving extend of chunk dimension {} ...", dim);
             chunks[dim] = 1 + ((chunks[dim] - 1) / 2);  // ceiling!
             // NOTE integer division fun; can do this because all are unsigned
-            // and the chunks entry is always nonzero
+            //      and the chunks entry is always nonzero
         }
     }
 
@@ -225,13 +225,13 @@ void __opt_chunks_target(Cont &chunks,
 template<typename Cont,
          typename Logger,
          typename IdxCont=std::vector<unsigned short>>
-void __opt_chunks_with_max_extend(Cont &chunks,
-                                  const Cont &max_extend,
-                                  const hsize_t typesize,
-                                  const unsigned int CHUNKSIZE_MAX,
-                                  const bool opt_inf_dims,
-                                  const bool larger_high_dims,
-                                  Logger log)
+void opt_chunks_with_max_extend(Cont &chunks,
+                                const Cont &max_extend,
+                                const hsize_t typesize,
+                                const unsigned int CHUNKSIZE_MAX,
+                                const bool opt_inf_dims,
+                                const bool larger_high_dims,
+                                Logger log)
 {
     // Helper lambda for calculating bytesize of a chunks configuration
     auto bytes = [&typesize](Cont c) {
@@ -242,7 +242,7 @@ void __opt_chunks_with_max_extend(Cont &chunks,
     // Check the case of typesize larger than CHUNKSIZE_MAX; cannot do anything
     // in that case -> safer to throw an exception.
     if (typesize > CHUNKSIZE_MAX) {
-        throw std::invalid_argument("Cannot use __opt_chunks_with_max_extend "
+        throw std::invalid_argument("Cannot use opt_chunks_with_max_extend "
                                     "with a typesize larger than "
                                     "CHUNKSIZE_MAX!");
     }
@@ -254,14 +254,14 @@ void __opt_chunks_with_max_extend(Cont &chunks,
     std::iota(dims.begin(), dims.end(), 0);
 
     // Determine the finite dims
-    auto dims_fin = __find_all_idcs(max_extend,
-                                    [](auto l){return l != H5S_UNLIMITED;});
+    auto dims_fin = find_all_idcs(max_extend,
+                                  [](auto l){return l != H5S_UNLIMITED;});
     // Ideally, an integer multiple of the chunk size along this dim should
     // be equal to the maximum extend
 
     // Determine the infinite dims
-    auto dims_inf = __find_all_idcs(max_extend,
-                                    [](auto l){return l == H5S_UNLIMITED;});
+    auto dims_inf = find_all_idcs(max_extend,
+                                  [](auto l){return l == H5S_UNLIMITED;});
     // As the final extend along these dims is not known, we can not make a
     // good guess for these. Instead, we should use the leverage we have for
     // optimizing the chunk size along the finite dims. The infinite dims will
@@ -479,10 +479,15 @@ void __opt_chunks_with_max_extend(Cont &chunks,
  *                          or, more precisely: should fit into the chunk cache
  *                          which (by default) is 1MiB large 
  * @param   CHUNKSIZE_MIN   smallest chunksize; should be above a few KiB
- * @param   CHUNKSIZE_BASE  base factor for creating target chunksize if the
- *                          dataset has no maximum extend given; this is used
- *                          for calculating a target size when optimizing
- *                          datasets that are unlimited in all dimensions.
+ * @param   CHUNKSIZE_BASE  base factor for the target chunksize (in bytes) if
+ *                          the max_extend is unlimited in all dimensions and
+ *                          opt_inf_dims is activated. This value is not used
+ *                          in any other scenario.
+ *
+ * @tparam  Cont            The type of the container holding the io_extend,
+ *                          max_extend, and the returned chunks. If none is
+ *                          given, defaults to the largest possible, i.e. a
+ *                          std::vector of hsize_t elements.
  */
 // NOTE Could include compression level here in the future
 template<typename Cont=std::vector<hsize_t>>
@@ -661,9 +666,9 @@ const Cont calc_chunksize(const hsize_t typesize,
         log->debug("Trying to use the fewest possible chunks for a single "
                    "I/O operation ...");
 
-        __opt_chunks_target(_chunks, CHUNKSIZE_MAX, // <- target value
-                            typesize, CHUNKSIZE_MAX, CHUNKSIZE_MIN,
-                            larger_high_dims, log);
+        opt_chunks_target(_chunks, CHUNKSIZE_MAX, // <- target value
+                          typesize, CHUNKSIZE_MAX, CHUNKSIZE_MIN,
+                          larger_high_dims, log);
         // NOTE The algorithm is also able to _increase_ the chunk size in
         //      certain dimensions. However, with _chunks == io_extend and the
         //      knowledge that the current bytesize of _chunks is above the
@@ -678,9 +683,9 @@ const Cont calc_chunksize(const hsize_t typesize,
         log->debug("Optimizing chunks in unlimited dimensions to be closer "
                    "to base chunksize ...");
 
-        __opt_chunks_target(_chunks, CHUNKSIZE_BASE, // <- target value
-                            typesize, CHUNKSIZE_MAX, CHUNKSIZE_MIN,
-                            larger_high_dims, log);
+        opt_chunks_target(_chunks, CHUNKSIZE_BASE, // <- target value
+                          typesize, CHUNKSIZE_MAX, CHUNKSIZE_MIN,
+                          larger_high_dims, log);
         // NOTE There is no issue with going beyond the maximum chunksize here
     }
     else {
@@ -712,9 +717,9 @@ const Cont calc_chunksize(const hsize_t typesize,
         log->debug("Have max_extend information and can (potentially) use it "
                    "to optimize chunk extensions.");
 
-        __opt_chunks_with_max_extend(_chunks, max_extend,
-                                     typesize, CHUNKSIZE_MAX,
-                                     opt_inf_dims, larger_high_dims, log);
+        opt_chunks_with_max_extend(_chunks, max_extend,
+                                   typesize, CHUNKSIZE_MAX,
+                                   opt_inf_dims, larger_high_dims, log);
     }
     // else: no further optimization possible
 
