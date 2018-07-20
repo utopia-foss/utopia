@@ -11,10 +11,11 @@
 using namespace Utopia::DataIO;
 
 
+/// Little wrapper to test for equality of the vectors and print out info
 template<typename T>
 void assert_equal(const std::vector<T> a, const std::vector<T> b) {
     // Evaluate whether equal
-    const bool equal = std::equal(a.begin(), a.end(), b.begin(), b.end());
+    const bool equal = (a == b);
 
     // Create some output
     std::cout << "Vectors" << std::endl << "   ";
@@ -25,11 +26,12 @@ void assert_equal(const std::vector<T> a, const std::vector<T> b) {
         std::cout << element << ",  ";
     std::cout << std::endl;
 
-    if (equal == true)
+    if (equal)
         std::cout << "are equal." << std::endl << std::endl;
     else
         std::cout << "are NOT equal." << std::endl << std::endl;
 
+    // And finally, call the assertion
     assert(equal);
 }
 
