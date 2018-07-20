@@ -22,12 +22,10 @@ namespace DataIO {
  * @tparam  Cont      The container type
  * @tparam  Predicate The predicate type
  */
-template<typename Cont,
-         typename Predicate,
-         typename IdxCont=std::vector<unsigned short>>
-IdxCont find_all_idcs (Cont &vec, Predicate pred) {
+template<typename Cont, typename Predicate>
+std::vector<unsigned short> find_all_idcs (Cont &vec, Predicate pred) {
     // Create the return container
-    IdxCont idcs;
+    std::vector<unsigned short> idcs;
 
     // Repeatedly start iterating over the vector until reached the end
     auto iter = vec.begin();
@@ -126,10 +124,10 @@ void opt_chunks_target(Cont &chunks,
      *   AND
      *   within bounds of minimum and maximum chunk size
      * 
-     * NOTE:
-     * Limit the optimization to 23 iterations per dimension; usually, we will
-     * leave the loop much earlier; the _mean_ extend of the dataset would have
-     * to be ~8M entries _per dimension_ to exhaust this optimization loop.
+     * NOTE Limiting the optimization to 23 iterations per dimension;
+     *      usually, we will eave the loop much earlier; the _mean_ extend of
+     *      the dataset would have to be ~8M (2^23) entries _per dimension_ to
+     *      exhaust this optimization loop.
      */
     for (unsigned short i=0; i < 23 * rank; i++)
     {
@@ -221,10 +219,11 @@ void opt_chunks_target(Cont &chunks,
  * @param   larger_high_dims If true, dimensions with high indices will be
  *                           favoured for enlarging chunk extend in that dim
  * @param   log              The logger object to use
+ *
+ * @tparam  Cont             The container type for the chunks
+ * @tparam  Logger           The logger type
  */
-template<typename Cont,
-         typename Logger,
-         typename IdxCont=std::vector<unsigned short>>
+template<typename Cont, typename Logger>
 void opt_chunks_with_max_extend(Cont &chunks,
                                 const Cont &max_extend,
                                 const hsize_t typesize,
@@ -249,10 +248,6 @@ void opt_chunks_with_max_extend(Cont &chunks,
 
     // -- Parse dims and prepare algorithm -- //
 
-    // Create a container with the available dims indices
-    IdxCont dims(chunks.size());
-    std::iota(dims.begin(), dims.end(), 0);
-
     // Determine the finite dims
     auto dims_fin = find_all_idcs(max_extend,
                                   [](auto l){return l != H5S_UNLIMITED;});
@@ -266,6 +261,16 @@ void opt_chunks_with_max_extend(Cont &chunks,
     // good guess for these. Instead, we should use the leverage we have for
     // optimizing the chunk size along the finite dims. The infinite dims will
     // thus, most likely, end up with shorter chunk sizes.
+
+
+    // Declare a container type for storing indices, same as those returned by
+    // the find_all_idcs function
+    using IdxCont = decltype(dims_fin);
+
+    // Create a container with the available dimension indices
+    IdxCont dims(chunks.size());
+    std::iota(dims.begin(), dims.end(), 0);
+
 
     // Among the finite dims, determine the dims that can still be filled,
     // i.e. those where the chunk size does not reach the max_extend
@@ -417,7 +422,8 @@ void opt_chunks_with_max_extend(Cont &chunks,
 }
 
 
-// -- The actual guess_chunksize method, publicly used -- //
+
+// -- The actual guess_chunksize method -- //
 
 /**  \page opt_chunksize Algorithms for optimizing chunk size
  *
