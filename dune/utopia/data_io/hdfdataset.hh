@@ -1105,11 +1105,9 @@ public:
         using Type = remove_qualifier_t<decltype(adaptor(*begin))>;
         // if we copy only the content of [begin, end), then simple vector
         // copy suffices
-        if constexpr (std::is_same<Type, typename Iter::value_type>::value)
+        if constexpr (std::is_same_v<Type, typename Iter::value_type>)
         {
-            auto buff = std::vector<Type>(begin, end);
-
-            write(std::move(std::vector<Type>(begin, end)));
+            write(std::vector<Type>(begin, end));
         }
         else
         {

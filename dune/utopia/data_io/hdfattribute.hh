@@ -377,7 +377,7 @@ public:
      */
     void close()
     {
-        if (_attribute != -1)
+        if (H5Iis_valid(_attribute))
         {
             H5Aclose(_attribute);
             _attribute = -1;
@@ -830,11 +830,7 @@ public:
      */
     virtual ~HDFAttribute()
     {
-        if (H5Iis_valid(_attribute))
-        { // FIXME: add check to make sure that
-          // it is not closed more than once
-            H5Aclose(_attribute);
-        }
+        close();
     }
 
     /**
