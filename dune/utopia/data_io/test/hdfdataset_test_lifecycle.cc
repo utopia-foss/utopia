@@ -100,7 +100,6 @@ int main()
     opened_dataset.open(lifecyclegroup, "first");
     assert(H5Iis_valid(opened_dataset.get_id()) == true);
     assert(opened_dataset.get_current_extent() == hsizevec{100});
-    std::cout << opened_dataset.get_chunksizes() << std::endl;
     assert(opened_dataset.get_chunksizes() == hsizevec{10});
     assert(opened_dataset.get_capacity() == hsizevec{100});
 
