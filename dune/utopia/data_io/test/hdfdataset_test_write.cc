@@ -131,7 +131,7 @@ int main()
     // string determines the length. Can't do shit about the \0 unfortunatly
     // should look like this in file
     /*
-        niggastring
+        testsstring
         0\0\0\0\0\0\0\0\0\0\0
         1\0\0\0\0\0\0\0\0\0\0
         2\0\0\0\0\0\0\0\0\0\0
@@ -141,7 +141,7 @@ int main()
         .
         25\0\0\0\0\0\0\0\0\0\0
     */
-    stringset->write(std::string("niggastring"));
+    stringset->write(std::string("testsstring"));
     assert(stringset->get_current_extent() == hsizevec{1});
     assert(stringset->get_offset() == hsizevec{0});
     for (std::size_t i = 0; i < 25; ++i)
