@@ -14,6 +14,7 @@
 #include <hdf5.h>
 #include <hdf5_hl.h>
 #include <numeric>
+#include <cmath>
 #include <unordered_map>
 namespace Utopia
 {
@@ -1125,7 +1126,7 @@ public:
             }
         }
     }
-};
+}; // end of HDFDataset class
 
 /**
  * @brief      Exchange state between lhs and rhs
@@ -1141,6 +1142,7 @@ void swap(HDFDataset<HDFObject>& lhs, HDFDataset<HDFObject>& rhs)
     lhs.swap(rhs);
 }
 
+
 } // namespace DataIO
 } // namespace Utopia
-#endif
+#endif // HDFDATASET_HH
