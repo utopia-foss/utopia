@@ -521,10 +521,11 @@ public:
      * @param chunksize The chunksizes in each dimension to use
      * @param compress_level The compression level to use, 0 to 10 (0 = no compression, 10 highest compression)
      */
+    template <typename T>
     void open(HDFObject& parent_object,
               std::string path,
-              std::vector<hsize_t> capacity = {},
-              std::vector<hsize_t> chunksizes = {},
+              std::vector<hsize_t> capacity,
+              T chunksizes,
               hsize_t compress_level = 0)
     {
         _parent_object = &parent_object;
@@ -578,8 +579,17 @@ public:
             else
             {
                 _capacity = capacity;
-                _chunksizes = chunksizes;
                 _rank = _capacity.size();
+                if constexpr (std::is_same_v<T, std::string>)
+                {
+                    throw std::invalid_argument(
+                        "Automatic chunksize not yet inside");
+                    _chunksizes = compute
+                }
+                else
+                {
+                    _chunksizes = chunksizes;
+                }
             }
 
             _compress_level = compress_level;
@@ -1085,15 +1095,16 @@ public:
      * @param chunksize The chunksizes in each dimension to use
      * @param compress_level The compression level to use
      */
+    template <typename T>
     HDFDataset(HDFObject& parent_object,
                std::string path,
-               std::vector<hsize_t> capacity = {},
-               std::vector<hsize_t> chunksizes = {},
+               std::vector<hsize_t> capacity,
+               T chunksizes,
                hsize_t compress_level = 0)
         : _referencecounter(parent_object.get_referencecounter())
 
     {
-        open(parent_object, path, capacity, chunksizes, compress_level);
+        open<T>(parent_object, path, capacity, T, compress_level);
     }
 
     /**
