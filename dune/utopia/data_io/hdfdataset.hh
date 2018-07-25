@@ -1334,7 +1334,7 @@ public:
     {
         close();
     }
-}; // namespace DataIO
+}; // end of HDFDataset class
 
 /**
  * @brief      Exchange state between lhs and rhs
@@ -1352,4 +1352,4 @@ void swap(HDFDataset<HDFObject>& lhs, HDFDataset<HDFObject>& rhs)
 
 } // namespace DataIO
 } // namespace Utopia
-#endif
+#endif // HDFDATASET_HH
