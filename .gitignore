@@ -14,3 +14,4 @@ python/utopya/utopya/info.py
 
 # ignore clang format used by vscode
 **.clang-format
+.vs/*
