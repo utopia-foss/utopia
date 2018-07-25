@@ -46,15 +46,16 @@ int main()
     auto testgroup2 = base_group->open_group("/testgroup1/dummygroup");
     assert((*testgroup->get_referencecounter())[testgroup->get_address()] == 2);
 
-    assert((*testgroup->get_referencecounter())[testgroup->get_address()] == 2);
-
     testgroup->add_attribute(
         "readme", "this group has been created for testing reference counter");
     testgroup->close();
     assert((*testgroup->get_referencecounter())[testgroup->get_address()] == 1);
 
     // check if the attributes are there
+    testgroup->open(*base_group, "/testgroup1/dummygroup");
     assert(H5LTfind_attribute(testgroup->get_id(), "readme") == 1);
+
+    testgroup->close();
 
     // check now if stuff can be done with the group
     testgroup2->add_attribute(

@@ -27,7 +27,7 @@ void assert_hdfgroups(HDFGroup& lhs, HDFGroup& rhs)
     assert(lhs.get_path() == rhs.get_path());
     assert(lhs.get_id() == rhs.get_id());
     assert(lhs.get_address() == rhs.get_address());
-    assert(lhs.get_referencecounter() == rhs.get_referencecounter());
+    assert(lhs.get_referencecounter().get() == rhs.get_referencecounter().get());
 }
 
 int main()
@@ -48,7 +48,8 @@ int main()
     assert(first.get_path() == copied_first.get_path());
     assert(first.get_id() == copied_first.get_id());
     assert(first.get_address() == copied_first.get_address());
-    assert(first.get_referencecounter() == copied_first.get_referencecounter());
+    assert(first.get_referencecounter().get() ==
+           copied_first.get_referencecounter().get());
 
     // copy assignment
     auto second = first;
@@ -63,12 +64,11 @@ int main()
     // this crosscheck is needed because 'move' changes the object from which
     // something is moved, so we need a copy of it which stays unchanged
     // in order to check correct move.
-    auto crosscheck(first); // this is needed  for checks
-    crosscheck.close();     // but should  not take part in refcount anymore
+    auto crosscheck(first); // this is needed  for checks -> refcount of first goes one up!
+    assert_hdfgroups(crosscheck, first);
 
-    // check move assignment
     auto moveassign_from_first = std::move(first);
-    assert((*moveassign_from_first.get_referencecounter())[moveassign_from_first.get_address()] == 3);
+    assert((*moveassign_from_first.get_referencecounter())[moveassign_from_first.get_address()] == 4);
     assert_hdfgroups(crosscheck, moveassign_from_first);
 
     assert(crosscheck.get_path() == moveassign_from_first.get_path());
@@ -78,7 +78,7 @@ int main()
 
     // check move consturction
     HDFGroup moveconst_second(std::move(second));
-    assert((*moveconst_second.get_referencecounter())[moveconst_second.get_address()] == 3);
+    assert((*moveconst_second.get_referencecounter())[moveconst_second.get_address()] == 4);
     assert_hdfgroups(crosscheck, moveconst_second);
 
     // check open method
@@ -89,7 +89,7 @@ int main()
     }
     assert(!H5Iis_valid(moveconst_second.get_id()));
     opened_group.open(*file.get_basegroup(), "first");
-    // moveconst_second.get_path()); assert(H5Iis_valid(opened_group.get_id()));
+    assert(H5Iis_valid(opened_group.get_id()));
 
     return 0;
 }
