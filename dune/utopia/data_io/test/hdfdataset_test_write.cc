@@ -45,6 +45,7 @@ int main()
     auto twoDdataset = file.open_dataset("/2ddataset", {10, 100}, {1, 5});
     auto adapteddataset = file.open_dataset("/adapteddataset", {3, 100}, {1, 10});
     auto fireandforgetdataset = file.open_dataset("/fireandforget");
+    auto fireandforgetdataset2d = file.open_dataset("/fireandforget2d", {5, 100});
 
     ///////////////////////////////////////////////////////////////////////////
     ////////////////////// MAKE DATA NEEDED LATER /////////////////////////////
@@ -218,12 +219,27 @@ int main()
     adapteddataset->write(points.begin(), points.end(),
                           [](auto& pt) { return pt.z; });
 
-    // write good ol' vector into dataset where everything is automatically determined
+    // write good ol' vector into dataset where everything is automatically
+    // determined. Includes ability to extend it, like for contset
     fireandforgetdataset->write(std::vector<int>(10, 1));
+    assert(fireandforgetdataset->get_current_extent() == hsizevec{10});
     fireandforgetdataset->write(std::vector<int>(10, 2));
+    assert(fireandforgetdataset->get_current_extent() == hsizevec{20});
     fireandforgetdataset->write(std::vector<int>(10, 3));
+    assert(fireandforgetdataset->get_current_extent() == hsizevec{30});
     fireandforgetdataset->write(std::vector<int>(10, 4));
+    assert(fireandforgetdataset->get_current_extent() == hsizevec{40});
     fireandforgetdataset->write(std::vector<int>(10, 5));
+    assert(fireandforgetdataset->get_current_extent() == hsizevec{50});
+
+    // write good ol' vector into 2d fireandforget dataset which determines
+    // chunksize automatically. Works like twoddataset
+    for (std::size_t i = 0; i < 5; ++i)
+    {
+        fireandforgetdataset2d->write(std::vector<int>(100, i + 1));
+        assert(fireandforgetdataset2d->get_current_extent() == (hsizevec{i + 1, 100}));
+        assert(fireandforgetdataset2d->get_offset() == (hsizevec{i, 0}));
+    }
 
     return 0;
 }

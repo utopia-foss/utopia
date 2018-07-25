@@ -36,6 +36,7 @@ int main()
     auto twoDdataset = file.open_dataset("/2ddataset");
     auto adapteddataset = file.open_dataset("/adapteddataset");
     auto fireandforgetdataset = file.open_dataset("/fireandforget");
+    auto fireandforgetdataset2d = file.open_dataset("/fireandforget2d");
 
     // check that parameters are read out correctly
     assert(contset->get_capacity() == hsizevec{100});
@@ -46,6 +47,7 @@ int main()
     assert(twoDdataset->get_capacity() == (hsizevec{10, 100}));
     assert(adapteddataset->get_capacity() == (hsizevec{3, 100}));
     assert(fireandforgetdataset->get_capacity() == hsizevec{H5S_UNLIMITED});
+    assert(fireandforgetdataset2d->get_capacity() == (hsizevec{5, 100}));
 
     assert(contset->get_current_extent() == hsizevec{30});
     assert(nestedcontset->get_current_extent() == hsizevec{40});
@@ -55,6 +57,7 @@ int main()
     assert(twoDdataset->get_current_extent() == (hsizevec{6, 100}));
     assert(adapteddataset->get_current_extent() == (hsizevec{3, 100}));
     assert(fireandforgetdataset->get_current_extent() == hsizevec{50});
+    assert(fireandforgetdataset2d->get_current_extent() == (hsizevec{5, 100}));
 
     assert(contset->get_chunksizes() == hsizevec{5});
     assert(nestedcontset->get_chunksizes() == hsizevec{5});
@@ -63,7 +66,7 @@ int main()
     assert(scalarset->get_chunksizes() == hsizevec{5});
     assert(twoDdataset->get_chunksizes() == (hsizevec{1, 5}));
     assert(adapteddataset->get_chunksizes() == (hsizevec{1, 10}));
-    // fireandforget unknown...
+    // fireandforget & fireandforget2d unknown...
 
     // offset should be at end of data currently contained
     assert(contset->get_offset() == hsizevec{30});
@@ -74,6 +77,7 @@ int main()
     assert(twoDdataset->get_offset() == (hsizevec{6, 100}));
     assert(adapteddataset->get_offset() == (hsizevec{3, 100}));
     assert(fireandforgetdataset->get_offset() == hsizevec{50});
+    assert(fireandforgetdataset2d->get_offset() == (hsizevec{5, 100}));
 
     ///////////////////////////////////////////////////////////////////////////
     ////////////////////// MAKE EXPECTED DATA TO TEST AGAINST  ////////////////
@@ -163,6 +167,16 @@ int main()
                       [&]() -> int { return i + 1; });
     }
 
+    // make expected data for fireandforget2d -> 1d vector of size 500, which
+    // represents 2d data of dimensions [5, 100]
+    std::vector<int> fireandforgetdata2d(500);
+    for (std::size_t i = 0; i < 5; ++i)
+    {
+        std::generate(fireandforgetdata2d.begin() + i * 100,
+                      fireandforgetdata2d.begin() + (i + 1) * 100,
+                      [&]() -> int { return i + 1; });
+    }
+
     ///////////////////////////////////////////////////////////////////////////
     ///////////////////// FULL READING TAKES PLACE NOW ////////////////////////
     ///////////////////////////////////////////////////////////////////////////
@@ -247,12 +261,18 @@ int main()
     assert(fireandforgetshape == std::vector<hsize_t>{50});
     assert(read_fireandforgetdata == fireandforgetdata);
 
+    // read fireandforgetdataset2d
+    auto [fireandforget2dshape, read_fireandforgetdata2d] =
+        fireandforgetdataset2d->read<std::vector<int>>();
+    assert(fireandforget2dshape == (std::vector<hsize_t>{5, 100}));
+    assert(fireandforgetdata2d == read_fireandforgetdata2d);
+
     ////////////////////////////////////////////////////////////////////////////
     /////////////////// PARTIAL READING TAKES PLACE NOW ////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    // README: offset is used in partial reads, and hence its value has to be
-    // tested again (should equal start always)
+    // README: offset is used in partial reads, and hence its value has to
+    // be tested again (should equal start always)
 
     // README: below numpy slice notation is used in comments, at least for 1d
 

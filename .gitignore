@@ -8,10 +8,10 @@ build-cmake/
 *.pytest_cache
 __pychache__
 *.pyc
+.vs/*
 
 # Ignore cmake-configured files
 python/utopya/utopya/info.py
 
 # ignore clang format used by vscode
 **.clang-format
-.vs/*
