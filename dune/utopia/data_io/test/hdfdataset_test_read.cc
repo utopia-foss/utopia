@@ -38,6 +38,10 @@ int main()
     auto fireandforgetdataset = file.open_dataset("/fireandforget");
     auto fireandforgetdataset2d = file.open_dataset("/fireandforget2d");
 
+    // this is only used to check that capacity and chunksize setter work
+    // it is not read, as the read functionality for it is tested at contset
+    auto latestarterdataset2 = file.open_dataset("/latestarter2");
+
     // check that parameters are read out correctly
     assert(contset->get_capacity() == hsizevec{100});
     assert(nestedcontset->get_capacity() == hsizevec{100});
@@ -48,6 +52,7 @@ int main()
     assert(adapteddataset->get_capacity() == (hsizevec{3, 100}));
     assert(fireandforgetdataset->get_capacity() == hsizevec{H5S_UNLIMITED});
     assert(fireandforgetdataset2d->get_capacity() == (hsizevec{5, 100}));
+    assert(latestarterdataset2->get_capacity() == (hsizevec{500}));
 
     assert(contset->get_current_extent() == hsizevec{30});
     assert(nestedcontset->get_current_extent() == hsizevec{40});
@@ -66,6 +71,7 @@ int main()
     assert(scalarset->get_chunksizes() == hsizevec{5});
     assert(twoDdataset->get_chunksizes() == (hsizevec{1, 5}));
     assert(adapteddataset->get_chunksizes() == (hsizevec{1, 10}));
+    assert(latestarterdataset2->get_chunksizes() == (hsizevec{10}));
     // fireandforget & fireandforget2d unknown...
 
     // offset should be at end of data currently contained
@@ -78,7 +84,6 @@ int main()
     assert(adapteddataset->get_offset() == (hsizevec{3, 100}));
     assert(fireandforgetdataset->get_offset() == hsizevec{50});
     assert(fireandforgetdataset2d->get_offset() == (hsizevec{5, 100}));
-
     ///////////////////////////////////////////////////////////////////////////
     ////////////////////// MAKE EXPECTED DATA TO TEST AGAINST  ////////////////
     ///////////////////////////////////////////////////////////////////////////

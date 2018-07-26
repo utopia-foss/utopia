@@ -688,14 +688,17 @@ public:
      */
     void set_capacity(std::vector<hsize_t> capacity)
     {
-        if (_current_extent != std::vector<hsize_t>(_rank, 0))
+        if (_dataset != -1)
         {
             throw std::runtime_error(
                 "Dataset " + _path +
                 ": Cannot set capacity after dataset has been created");
         }
-        _rank = capacity.size();
-        _capacity = capacity;
+        else
+        {
+            _rank = capacity.size();
+            _capacity = capacity;
+        }
     }
 
     /**
@@ -705,17 +708,19 @@ public:
      */
     void set_chunksize(std::vector<hsize_t> chunksizes)
     {
-        if (_current_extent != std::vector<hsize_t>(_rank, 0))
+        if (_dataset != -1)
         {
             throw std::runtime_error(
                 "Dataset " + _path +
                 ": Cannot set chunksize after dataset has been created");
         }
-        if (chunksizes.size() != _rank)
+
+        // if chunksizes = {} then it will be automatically determined
+        if (chunksizes.size() != _rank and chunksizes.size() != 0)
         {
             throw std::runtime_error(
                 "Dataset " + _path +
-                ": chunksizes size has to be equal to dataset rank");
+                ": Chunksizes size has to be equal to dataset rank");
         }
 
         _chunksizes = chunksizes;

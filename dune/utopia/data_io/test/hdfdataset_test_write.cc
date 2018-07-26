@@ -46,6 +46,8 @@ int main()
     auto adapteddataset = file.open_dataset("/adapteddataset", {3, 100}, {1, 10});
     auto fireandforgetdataset = file.open_dataset("/fireandforget");
     auto fireandforgetdataset2d = file.open_dataset("/fireandforget2d", {5, 100});
+    auto latestarterdataset = file.open_dataset("/latestarter");
+    auto latestarterdataset2 = file.open_dataset("/latestarter2");
 
     ///////////////////////////////////////////////////////////////////////////
     ////////////////////// MAKE DATA NEEDED LATER /////////////////////////////
@@ -241,5 +243,56 @@ int main()
         assert(fireandforgetdataset2d->get_offset() == (hsizevec{i, 0}));
     }
 
+    latestarterdataset->set_capacity({500}); // as it is now, chunksize will be automatically determined
+    latestarterdataset->write(std::vector<int>{1, 2, 3, 4, 5});
+    latestarterdataset->write(std::vector<int>{-1, -2, -3, -4, -5});
+
+    // test that the exception is correctly thrown
+    try
+    {
+        latestarterdataset->set_capacity({700});
+    }
+    catch (std::exception& e)
+    {
+        std::cout << e.what() << std::endl;
+        std::string message =
+            "Dataset latestarter: Cannot set capacity after dataset has been "
+            "created";
+        assert(e.what() == message);
+    }
+
+    latestarterdataset2->set_capacity({500}); // as it is now, chunksize will be automatically determined
+
+    // try to set it wrongly
+    try
+    {
+        latestarterdataset2->set_chunksize({5, 30, 7});
+    }
+    catch (std::exception& e)
+    {
+        std::string message =
+            "Dataset latestarter2: Chunksizes size has to be equal to dataset "
+            "rank";
+        assert(e.what() == message);
+    }
+
+    latestarterdataset2->set_chunksize({}); // automatically determined, should work out
+
+    latestarterdataset2->set_chunksize({10}); // as it is now, chunksize will be automatically determined
+    latestarterdataset2->write(std::vector<int>(25, 12));
+
+    // test that the exception is correctly thrown
+
+    try
+    {
+        latestarterdataset2->set_chunksize({30});
+    }
+    catch (std::exception& e)
+    {
+        std::string message =
+            "Dataset latestarter2: Cannot set chunksize after dataset has been "
+            "created";
+        assert(e.what() == message);
+    }
     return 0;
 }
