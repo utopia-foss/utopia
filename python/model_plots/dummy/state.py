@@ -9,8 +9,38 @@ from ..tools import save_and_close
 
 # -----------------------------------------------------------------------------
 
+def single_state(dm: DataManager, *, out_path: str, uni: int, step: int, fmt: str=None, save_kwargs: dict=None, **plot_kwargs):
+    """Plots the state for a single time step
+    
+    Args:
+        dm (DataManager): The data manager from which to retrieve the data
+        out_path (str): Where to store the plot to
+        uni (int): The universe to use
+        step (int): The time step to plot
+        fmt (str, optional): the plt.plot format argument
+        save_kwargs (dict, optional): kwargs to the plt.savefig function
+        **plot_kwargs: Passed on to plt.plot
+    """
+    # Get the state dataset
+    state = dm['uni'][str(uni)]['data/dummy/state']
+
+    # Select the time step
+    state_at_step = state[step, :]
+
+    # Assemble arguments
+    args = [state_at_step]
+    if fmt:
+        args.append(fmt)
+
+    # Call the plot function
+    plt.plot(*args, **plot_kwargs)
+
+    # Save and close figure
+    save_and_close(out_path, save_kwargs=save_kwargs)
+
+
 def state_mean(dm: DataManager, *, out_path: str, uni: int, fmt: str=None, save_kwargs: dict=None, **plot_kwargs):
-    """Calculates the state mean and performs a lineplot
+    """Plots the state mean over time.
     
     Args:
         dm (DataManager): The data manager from which to retrieve the data
@@ -20,15 +50,14 @@ def state_mean(dm: DataManager, *, out_path: str, uni: int, fmt: str=None, save_
         save_kwargs (dict, optional): kwargs to the plt.savefig function
         **plot_kwargs: Passed on to plt.plot
     """
-    # Get the group that all datasets are in
-    grp = dm['uni'][str(uni)]['data/dummy']
+    # Get the state dataset
+    state = dm['uni'][str(uni)]['data/dummy/state']
 
-    # Extract the x and y data
-    # NOTE need this complicated approach due to the way the data is saved
-    data = [(int(name[5:]), np.mean(dset)) for name, dset in grp.items()]
-    data.sort()
-    x_data = [p[0] for p in data]
-    y_data = [p[1] for p in data]
+    # Calculate the mean by averaging over the columns
+    y_data = np.mean(state, axis=1)
+
+    # The x data is just the time steps
+    x_data = list(range(state.shape[0]))
 
     # Assemble the arguments
     args = [x_data, y_data]
