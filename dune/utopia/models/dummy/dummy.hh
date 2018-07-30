@@ -3,7 +3,8 @@
 
 #include <dune/utopia/base.hh>
 #include <dune/utopia/core/model.hh>
-#include "../data_io/hdfdataset.hh"
+#include "../../data_io/hdfdataset.hh"
+#include "../../data_io/hdfgroup.hh"
 namespace Utopia
 {
 namespace Models
@@ -59,7 +60,7 @@ public:
           // Initialise state and boundary condition members
           _state(initial_state),
           _bc(_state.size(), 1.0),
-          _dataset(this->_group->open_dataset("state_data"));
+          _dataset(this->_hdfgrp->open_dataset("state_data"))
     {
         // set capacity such that dataset is 2d and has unlimited number of lines, 
         // but '_state.size()' many columns
@@ -86,7 +87,7 @@ public:
     /// Write data into a dataset that corresponds to the current step
     void write_data()
     {
-        dataset->write(_state.begin(), _state.end(),
+        _dataset->write(_state.begin(), _state.end(),
                        [](auto& value) { return value; });
     }
 
