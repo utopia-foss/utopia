@@ -12,6 +12,7 @@
 #include "../hdfgroup.hh"
 #include <cassert>
 #include <chrono>
+#include <dune/common/parallel/mpihelper.hh>
 #include <iostream>
 #include <thread>
 
@@ -27,8 +28,10 @@ struct Point
     double z;
 };
 
-int main()
+int main(int argc, char** argv)
 {
+    Dune::MPIHelper::instance(argc, argv);
+
     Utopia::setup_loggers();
     spdlog::get("data_io")->set_level(spdlog::level::debug);
 

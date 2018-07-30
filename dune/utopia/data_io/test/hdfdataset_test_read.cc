@@ -9,8 +9,10 @@
 #include "../hdfgroup.hh"
 #include <cassert>
 #include <chrono>
+#include <dune/common/parallel/mpihelper.hh>
 #include <iostream>
 #include <thread>
+
 using namespace Utopia::DataIO;
 using hsizevec = std::vector<hsize_t>;
 
@@ -21,8 +23,10 @@ struct Point
     double z;
 };
 
-int main()
+int main(int argc, char** argv)
 {
+    Dune::MPIHelper::instance(argc, argv);
+
     ///////////////////////////////////////////////////////////////////////////
     ////////////////////// MAKE FILE, OPEN DATASETS  //////////////////////////
     ///////////////////////////////////////////////////////////////////////////
