@@ -28,7 +28,8 @@ int main (int argc, char** argv)
 
 
         // add an attribute which gives times
-        model.get_dataset()->add_attribute("times")
+        std::vector<std::size_t> times(model.get_time_max());
+        model.get_dataset()->add_attribute("written timesteps", times);
 
         // The following is only for testing! (To be read by frontend)
         // TODO check whether this is still relevant
