@@ -22,5 +22,15 @@ def test_dummy_plotting(tmpdir):
     # Load
     mv.dm.load_from_cfg(print_tree=True)
 
-    # Plot
+    # Plot the default configuration
     mv.pm.plot_from_cfg()
+
+    # Perform a custom plot that tests the utopya plotting functions
+    mv.pm.plot("all_states",
+               creator="external",
+               out_dir=str(tmpdir),
+               module=".basic",
+               plot_func="lineplot",
+               uni=0,
+               y="dummy/state"
+               )

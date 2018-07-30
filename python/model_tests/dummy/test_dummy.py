@@ -47,25 +47,22 @@ def test_output():
     # For each universe, iterate over the output data and assert the shape
     # and the content of the output data
     for uni_no, uni in dm['uni'].items():
+        # Assert that data was written
+        assert 'state' in uni['data']['dummy']
+
         # Get the data
-        data = uni['data']['dummy']
+        state = uni['data']['dummy']['state']
 
         # Get the config of this universe
         uni_cfg = uni['cfg']
 
         # Assert correct length (100 steps + initial state)
-        assert len(data) == uni_cfg['num_steps'] + 1
+        assert state.shape == (uni_cfg['num_steps'] + 1, 1000)
         
-        # Check the shape content of each dataset
-        for dset_name, dset in data.items():
-            # Assert dataset shape is correct
-            assert dset.shape == (1000,)  # NOTE: hard-coded
-
-            # Get the step from the dataset name (e.g., "data-42")
-            step = int(dset_name[5:])
-
+        # Check that the rows are as expected
+        for step in range(state.shape[0]):
             # Assert correctness of data, depending on step
-            assert step*0.4 <= np.mean(dset) <= step*0.6
+            assert step*0.4 <= np.mean(state[step,:]) <= step*0.6
             # NOTE the dummy model adds random numbers between 0 and 1 to its
             # state vector each time step, thus increasing the mean by 0.5
             # each time step. With a state vector of length 1000, the mean

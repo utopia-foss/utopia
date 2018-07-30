@@ -9,6 +9,7 @@
 #include "../hdffile.hh"
 #include "../hdfgroup.hh"
 #include <cassert>
+#include <dune/common/parallel/mpihelper.hh>
 #include <fstream>
 #include <hdf5.h>
 #include <iostream>
@@ -24,8 +25,10 @@ struct Datastruct
     std::string c;
 };
 
-int main()
+int main(int argc, char** argv)
 {
+    Dune::MPIHelper::instance(argc, argv);
+
     std::default_random_engine rng(67584327);
     std::normal_distribution<double> dist(1., 2.5);
     std::uniform_int_distribution<std::size_t> idist(20, 50);

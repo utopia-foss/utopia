@@ -8,13 +8,17 @@
 #include "../hdffile.hh"
 #include "../hdfgroup.hh"
 #include <cassert>
+#include <dune/common/parallel/mpihelper.hh>
 #include <iostream>
 #include <random>
 #include <string>
+
 using namespace Utopia::DataIO;
 
-int main()
+int main(int argc, char** argv)
 {
+    Dune::MPIHelper::instance(argc, argv);
+
     HDFFile file("testfileX.h5", "w");
     auto group = file.open_group("/testgroup");
     HDFAttribute attribute(*group, "testattribute");
