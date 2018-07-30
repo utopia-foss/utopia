@@ -3,7 +3,7 @@
 
 #include <dune/utopia/base.hh>
 #include <dune/utopia/core/model.hh>
-
+#include "../data_io/hdfdataset.hh"
 namespace Utopia
 {
 namespace Models
@@ -24,7 +24,7 @@ private:
     using Base = Model<Dummy, DummyTypes>;
 
     // Type shortcut for dataset
-    using Dset = std::shared_ptr<HDFDataset<HDFGroup>>;
+    using Dset = std::shared_ptr<Utopia::DataIO::HDFDataset<Utopia::DataIO::HDFGroup>>;
 
     /// The current state of the model
     Data _state;
