@@ -19,15 +19,35 @@ using DummyTypes = ModelTypes<std::vector<double>, std::vector<double>>;
  */
 class Dummy : public Model<Dummy, DummyTypes>
 {
-public:
+private:
     /// The base model class
     using Base = Model<Dummy, DummyTypes>;
+
+    // Type shortcut for dataset
+    using Dset = std::shared_ptr<HDFDataset<HDFGroup>>;
 
     /// The current state of the model
     Data _state;
 
     /// The boundary conditions of the model
     BCType _bc;
+
+    // dataset to write state to
+    Dset _dataset;
+
+public:
+    auto get_dataset(){
+        return _dataset;
+    }
+
+    auto get_state(){
+        return _state;
+    }
+
+    auto get_bc(){
+        return _bc;
+    }
+
 
     /// Construct the dummy model with an initial state
     /** \param initial_state Initial state of the model
@@ -38,8 +58,12 @@ public:
           Base(name, parent_model),
           // Initialise state and boundary condition members
           _state(initial_state),
-          _bc(_state.size(), 1.0)
+          _bc(_state.size(), 1.0),
+          _dataset(this->_group->open_dataset("state_data"));
     {
+        // set capacity such that dataset is 2d and has unlimited number of lines, 
+        // but '_state.size()' many columns
+        _dataset->set_capacity({H5S_UNLIMITED, _state.size()});
         // Write initial state
         this->write_data();
     }
@@ -62,12 +86,6 @@ public:
     /// Write data into a dataset that corresponds to the current step
     void write_data()
     {
-        // Generate the dataset name
-        const std::string dset_name = "data-" + std::to_string(this->_time);
-        // FIXME this should use dataset extensions!
-
-        // Open the dataset and write the state into it
-        auto dataset = this->_hdfgrp->open_dataset(dset_name, {H5S_UNLIMITED}, {10});
         dataset->write(_state.begin(), _state.end(),
                        [](auto& value) { return value; });
     }

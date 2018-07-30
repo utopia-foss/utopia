@@ -24,9 +24,11 @@ int main (int argc, char** argv)
 
         // ... now use the PseudoParent to perform the iteration
         model.run();
-
         // -- Model iteration finished. -- //
 
+
+        // add an attribute which gives times
+        model.get_dataset()->add_attribute("times")
 
         // The following is only for testing! (To be read by frontend)
         // TODO check whether this is still relevant
