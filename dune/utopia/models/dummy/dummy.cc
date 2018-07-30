@@ -25,11 +25,7 @@ int main (int argc, char** argv)
         // ... now use the PseudoParent to perform the iteration
         model.run();
         // -- Model iteration finished. -- //
-
-
-        // add an attribute which gives times
-        std::vector<std::size_t> times(model.get_time_max());
-        model.get_dataset()->add_attribute("written timesteps", times);
+        
 
         // The following is only for testing! (To be read by frontend)
         // TODO check whether this is still relevant

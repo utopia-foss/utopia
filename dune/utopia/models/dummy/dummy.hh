@@ -3,71 +3,69 @@
 
 #include <dune/utopia/base.hh>
 #include <dune/utopia/core/model.hh>
-#include "../../data_io/hdfdataset.hh"
-#include "../../data_io/hdfgroup.hh"
-namespace Utopia
-{
-namespace Models
-{
-namespace Dummy
-{
+
+
+namespace Utopia {
+namespace Models {
+namespace Dummy {
+
 /// Define data types of dummy model
-using DummyTypes = ModelTypes<std::vector<double>, std::vector<double>>;
+using DummyTypes = ModelTypes<
+    std::vector<double>,  // state
+    std::vector<double>   // boundary condition
+    // can change other types here
+>;
 
 /// Dummy model with simple update rule
-/** Holds a vector of doubles and increments its entries by the boundary
- *  condition vector or 1 otherwise.
+/** Holds a vector of doubles and increments its entries by random numbers
+ *  with the bounds determined by the boundary condition vector.
  */
 class Dummy : public Model<Dummy, DummyTypes>
 {
-private:
+public:
     /// The base model class
     using Base = Model<Dummy, DummyTypes>;
 
     // Type shortcut for dataset
-    using Dset = std::shared_ptr<Utopia::DataIO::HDFDataset<Utopia::DataIO::HDFGroup>>;
+    using DataSet = Base::DataSet;
 
+private:
     /// The current state of the model
     Data _state;
 
     /// The boundary conditions of the model
     BCType _bc;
 
-    // dataset to write state to
-    Dset _dataset;
+    /// Dataset to write the state to
+    std::shared_ptr<DataSet> _dset_state;
 
 public:
-    auto get_dataset(){
-        return _dataset;
-    }
-
-    auto get_state(){
-        return _state;
-    }
-
-    auto get_bc(){
-        return _bc;
-    }
-
-
     /// Construct the dummy model with an initial state
-    /** \param initial_state Initial state of the model
+    /** \param name          Name of this model instance
+     *  \param parent_model  The parent model instance this instance appears
+     *                       under
+     *  \param initial_state Initial state of the model
      */
     template <class ParentModel>
-    Dummy(const std::string name, const ParentModel& parent_model, const Data& initial_state)
-        : // Use the base constructor for the main parts
+    Dummy(const std::string name,
+          const ParentModel& parent_model,
+          const Data& initial_state)
+        :
+          // Use the base constructor for the main parts
           Base(name, parent_model),
           // Initialise state and boundary condition members
           _state(initial_state),
           _bc(_state.size(), 1.0),
-          _dataset(this->_hdfgrp->open_dataset("state_data"))
+          _dset_state(this->_hdfgrp->open_dataset("state"))
     {
-        // set capacity such that dataset is 2d and has unlimited number of lines, 
-        // but '_state.size()' many columns
-        _dataset->set_capacity({H5S_UNLIMITED, _state.size()});
-        // Write initial state
+        // Set capacity to a 2D dataset with as many rows as there are steps
+        // and as many columns as the state is large.
+        _dset_state->set_capacity({this->get_time_max() + 1, _state.size()});
+        
+        // Now write the initial state
         this->write_data();
     }
+
 
     /// Iterate by one time step
     /** @detail This writes random numbers into the state vector, incrementing
@@ -80,16 +78,21 @@ public:
         // Write some random numbers into the state vector
         auto gen = std::bind(std::uniform_real_distribution<>(), *this->_rng);
         std::generate(_bc.begin(), _bc.end(), gen);
-        std::transform(_state.begin(), _state.end(), _bc.begin(), _state.begin(),
+        std::transform(_state.begin(), _state.end(),
+                       _bc.begin(), _state.begin(),
                        [](const auto a, const auto b) { return a + b; });
     }
+
 
     /// Write data into a dataset that corresponds to the current step
     void write_data()
     {
-        _dataset->write(_state.begin(), _state.end(),
-                       [](auto& value) { return value; });
+        _dset_state->write(_state.begin(), _state.end(),
+                           [](auto& value) { return value; });
     }
+
+
+    // -- Getters and Setters -- //
 
     // Set model boundary condition
     void set_boundary_condition(const BCType& new_bc)
