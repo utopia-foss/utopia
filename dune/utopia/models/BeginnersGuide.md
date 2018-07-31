@@ -39,11 +39,11 @@ It's time for a little check if everything works as desired. For that, follow th
     - Are there errors? Hmmm... check above that you adjusted everything as described.
     - Building succeeds? Nice! :tada:
 - [ ] Use the command line interface to run the model:
-    ```
-    cd build-cmake
-    source ./activate
-    utopia run MyFancyModel
-    ```
+```
+cd build-cmake
+source ./activate
+utopia run MyFancyModel
+```
 
 Hoping that everything went well so far, let's continue with setting up the testing and plotting framework...
 
