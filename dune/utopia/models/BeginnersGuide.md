@@ -14,7 +14,8 @@ To avoid problems, go through the following sections from top to bottom.
 
 We assume that you want to build your own model, called `MyFancyModel`. Probably, you will give it a more suitable name. So, keep in mind to replace every `MyFancyModel` below with the actual model name.
 
-If you follow all the steps explained in the following, you will end up with your own _Utopia_ model.
+For the setup of the infrastructure, we provide a so-called [`CopyMe`](CopyMe) model, which can be copied and used as basis for your own model; this will be the first step below.  
+Note that there is also a [`CopyMeBare`](CopyMeBare) model; it includes _only the bare basics_ needed for a model, while the `CopyMe` model also includes showcase of some functionality. If you are new to Utopia, you should go with the latter; if you are already more proficient, use the former.
 
 - [ ] Move to the `dune/utopia/models/` directory inside the `utopia` repository.
 - [ ] Copy the `CopyMe` directory and paste it in the same directory.
@@ -61,7 +62,7 @@ If you write your model, you should change these.
 ## Inspiration From Other Models
 If you want to learn more about the capabilities of Utopia and how models can look like, we recommend that you have a look at the already implemented models, e.g.:
 
-* `SimpleEG`: A simple evolutionary game model with cells on a grid
+* [`SimpleEG`](SimpleEG): A simple evolutionary game model with cells on a grid
 
 <!-- TODO: add more models here -->
 
