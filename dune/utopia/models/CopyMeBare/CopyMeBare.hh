@@ -9,6 +9,7 @@
 
 #include <functional>
 
+
 namespace Utopia {
 namespace Models {
 namespace CopyMeBare {
@@ -86,8 +87,8 @@ public:
      */
     template<class ParentModel>
     CopyMeBareModel (const std::string name,
-                   ParentModel &parent,
-                   ManagerType&& manager)
+                     ParentModel &parent,
+                     ManagerType&& manager)
     :
         // Initialize first via base model
         Base(name, parent),
@@ -96,7 +97,11 @@ public:
         // Open the datasets
         // e.g. via this->_hdfgrp->open_dataset("my_var")
     {
+        // Initialize grid cells
 
+        // Set dataset capacities
+
+        // Write out the initial state
     }
 
     // Setup functions ........................................................
@@ -179,4 +184,5 @@ auto setup_manager(std::string name, ParentModel& parent_model)
 } // namespace CopyMeBare
 } // namespace Models
 } // namespace Utopia
+
 #endif // UTOPIA_MODELS_COPYMEBARE_HH
