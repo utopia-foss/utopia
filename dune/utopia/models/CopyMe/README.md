@@ -39,6 +39,7 @@ I am actually not so sure, if there is a lot of theory behind this...
 ## Possible Future Extensions
 
 You have a nice idea, but
+
 1. that would open a completely new storyline and thus would need the creation of a new model that is based on this one.
 2. you just did not have the time to explore everything, however, it would probably be a good idea to look into this in future work.
 
