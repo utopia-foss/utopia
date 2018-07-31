@@ -6,8 +6,8 @@ import pytest
 
 from utopya.testtools import ModelTest
 
-# Configure the ModelTest class for dummy
-mtc = ModelTest("dummy", test_file=__file__)  # TODO set your model name here
+# Configure the ModelTest class for CopyMe
+mtc = ModelTest("CopyMe", test_file=__file__)  # TODO set your model name here
 
 # Fixtures --------------------------------------------------------------------
 # Define fixtures
@@ -52,7 +52,7 @@ def test_output():
     # and the content of the output data
     for uni_no, uni in dm['uni'].items():
         # Get the data
-        data = uni['data']['dummy']  # TODO change this to your model name
+        data = uni['data']['CopyMe']  # TODO change this to your model name
 
         # Get the config of this universe
         uni_cfg = uni['cfg']
@@ -60,11 +60,7 @@ def test_output():
         # Assert correct length (100 steps + initial state)
         assert len(data) == uni_cfg['num_steps'] + 1
         
-        # Check the content of all available datasets
-        for dset_name, dset in data.items():
-            # Assert dataset shape is correct
-            assert dset.shape == (1000,)  # NOTE: will probably be a different
-
-            # TODO add more tests below, e.g.:
-            assert np.mean(dset) > 0
-            # ...
+        # # Check the content of all available datasets
+        # for dset_name, dset in data.items():
+        #     # Assert dataset shape is correct
+        #     assert dset.shape == (1000,)  
