@@ -1,4 +1,4 @@
-"""Dummy-model specific plot function for the state"""
+"""CopyMe-model specific plot function for the state"""
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -21,17 +21,19 @@ def state_mean(dm: DataManager, *, out_path: str, uni: int, fmt: str=None, save_
         **plot_kwargs: Passed on to plt.plot
     """
     # Get the group that all datasets are in
-    grp = dm['uni'][str(uni)]['data/dummy']
+    grp = dm['uni'][str(uni)]['data/CopyMe']
 
-    # Extract the x and y data
-    # NOTE need this complicated approach due to the way the data is saved
-    data = [(int(name[5:]), np.mean(dset)) for name, dset in grp.items()]
-    data.sort()
-    x_data = [p[0] for p in data]
-    y_data = [p[1] for p in data]
+    # Get the shape of the data
+    uni_cfg = dm['uni'][str(uni)]['cfg']
+    num_steps = uni_cfg['num_steps']
+    grid_size = uni_cfg['CopyMe']['grid_size']
+
+    # Extract the y data which is 'some_state' avaraged over all grid cells for every time step
+    data = grp['some_state'].reshape(grid_size[0], grid_size[1], num_steps+1)
+    y_data = [np.mean(d) for d in data]
 
     # Assemble the arguments
-    args = [x_data, y_data]
+    args = [y_data]
     if fmt:
         args.append(fmt)
 
