@@ -23,17 +23,34 @@ Note that there is also a [`CopyMeBare`](CopyMeBare) model; it includes _only th
     - A remark concerning the naming convention: Your model name should consist of words that start with Capital Letters and are `DirectlyConcatenatedWithoutSeparatingSymbols`.
 - [ ] Rename all the files inside of the newly created directory such that all `CopyMe`s are replaced by `MyFancyModel`s
 - [ ] Tell _Utopia_ that there is a new model, e.g. include your model in the Utopia CMake build routine:
-    - [ ] In `dune/utopia/models/`, you find a `CMakeLists.txt` file. Open it and let `CMake` find your model directory by including the command: `add_subdirectory(MyFancyModel)` 
-    - [ ] In `dune/utopia/models/MyFancyModel/`, there is another `CMakeLists.txt` file. Open it and change the line `add_model(CopyMe CopyMe.cc)` to `add_model(MyFancyModel MyFancyModel.cc)`. With this command you tell `CMake` that you include a new model should be added.
+    - [ ] In `dune/utopia/models/`, you find a `CMakeLists.txt` file. Open it and let CMake find your model directory by including the command: `add_subdirectory(MyFancyModel)` 
+    - [ ] In `dune/utopia/models/MyFancyModel/`, there is another `CMakeLists.txt` file. Open it and change the line `add_model(CopyMe CopyMe.cc)` to `add_model(MyFancyModel MyFancyModel.cc)`. With this command, you tell CMake that a new model should be kept track of.
 - [ ] Open the file `MyFancyModel.cc` in the `dune/utopia/models/MyFancyModel/` directory and do the following:
     - [ ] Throughout the file, replace all `CopyMe`'s by `MyFancyModel`'s.
 - [ ] Open the file `MyFancyModel.hh` in the `dune/utopia/models/MyFancyModel/` directory and do the following:
     - [ ] Throughout the file, replace all `CopyMe`'s by `MyFancyModel`'s.
     - [ ] Throughout the file, replace all `COPYME`'s by `MYFANCYMODEL`'s.
 
+
+It's time for a little check if everything works as desired. For that, follow the following steps:
+- [ ] Enter the `build-cmake` directory and run `cmake ..`
+- [ ] Check that the CMake log contains `Registered model target: MyFancyModel`
+- [ ] Now execute `make MyFancyModel` ...
+    - Are there errors? Hmmm... check above that you adjusted everything as described.
+    - Building succeeds? Nice! :tada:
+- [ ] Use the command line interface to run the model:
+    ```
+    cd build-cmake
+    source ./activate
+    utopia run MyFancyModel
+    ```
+
+Hoping that everything went well so far, let's continue with setting up the testing and plotting framework...
+
+
 ### The Testing Framework
 - [ ] Set up the testing framework
-    - [ ] Move to the directory `utopia/python/model_tests`
+    - [ ] Move to the `python/model_tests` directory
     - [ ] Copy the `CopyMe` directory and rename it to `MyFancyModel`. Make sure that there is a file named `__init__.py` inside the directory. 
     - [ ] Inside the created `MyFancyModel` directory, rename the `test_CopyMe.py` file to `test_MyFancyModel.py`.
     - [ ] Open the `test_MyFancyModel.py` file and replace all `CopyMe`'s by `MyFancyModel`'s.
@@ -44,7 +61,7 @@ __Important:__ Remember to remove the provided example tests if you remove unnee
 
 ### The Plotting Framework
 - [ ] Set up the plotting framework
-    - [ ] Move to the directory `utopia/python/model_plots`
+    - [ ] Move to the `python/model_plots` directory
     - [ ] Copy the `CopyMe` directory and rename it to `MyFancyModel`. Make sure that there is a file named `__init__.py` inside the directory.
 
 The `state.py` script is provided to show you how a model specific plotting script could look like. Remember to remove it (comment it out) if you start removing or changing parts of the former `CopyMe` model code. Otherwise, you will get error messages.
