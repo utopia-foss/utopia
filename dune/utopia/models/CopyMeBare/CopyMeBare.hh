@@ -73,6 +73,9 @@ private:
 
     // -- Temporary objects -- //
     
+    // -- Datasets -- //
+    // std::shared_ptr<DataSet> _dset_my_var;
+
     // -- Rule functions -- //
 
 public:
@@ -89,7 +92,9 @@ public:
         // Initialize first via base model
         Base(name, parent),
         // Now initialize members specific to this class
-        _manager(manager)  
+        _manager(manager)
+        // Open the datasets
+        // e.g. via this->_hdfgrp->open_dataset("my_var")
     {
 
     }
@@ -148,8 +153,8 @@ auto setup_manager(std::string name, ParentModel& parent_model)
     auto grid = Utopia::Setup::create_grid<2>(gsize);
 
     // Create the CopyMeBare initial state
-    // COMMENT: This just sets a default state, but the actual initialization should also
-    //          happen in the model constructor
+    // NOTE: This just sets a _default_ state. The actual initialization
+    //       should be part of the model class and invoked during construction
     State state_0 = {};
 
     // Create cells on that grid, passing the initial state
