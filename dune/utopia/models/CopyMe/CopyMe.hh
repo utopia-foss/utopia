@@ -17,8 +17,7 @@ namespace CopyMe {
 /// Enum that will be part of the internal state of a cell
 enum SomeEnum : unsigned short int {Enum0, Enum1};
 
-/// State struct for CopyMe model. 
-// Here, you can collect all the states, a cell should have
+/// State struct for CopyMe model.
 struct State {
     int some_state;
     double some_trait;
@@ -313,14 +312,8 @@ auto setup_manager(std::string name, ParentModel& parent_model)
     auto cells = Utopia::Setup::create_cells_on_grid<true>(grid, state_0);
 
     // Create the grid manager, passing the template argument
-    if (periodic) {
-        log->info("Now initializing GridManager with periodic boundary "
-                  "conditions ...");
-    }
-    else {
-        log->info("Now initializing GridManager with fixed boundary "
-                  "conditions ...");
-    }
+    log->info("Initializing GridManager with {} boundary conditions ...",
+              (periodic ? "periodic" : "fixed"));
     
     return Utopia::Setup::create_manager_cells<true, periodic>(grid,
                                                                cells,
@@ -331,4 +324,5 @@ auto setup_manager(std::string name, ParentModel& parent_model)
 } // namespace CopyMe
 } // namespace Models
 } // namespace Utopia
+
 #endif // UTOPIA_MODELS_COPYME_HH

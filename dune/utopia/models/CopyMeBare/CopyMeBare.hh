@@ -16,19 +16,15 @@ namespace CopyMeBare {
 
 
 /// State struct for CopyMeBare model. 
-// Here, you can collect all the states, a cell should have
 struct State {
-
+    // TODO Define the state a cell of this model can have
 };
-
-
-// Alias the neighborhood classes
-using NextNeighbor = Utopia::Neighborhoods::NextNeighbor;
-using MooreNeighbor = Utopia::Neighborhoods::MooreNeighbor;
 
 
 /// Boundary condition type
 struct Boundary {};
+// NOTE if you do not use the boundary condition type, you can delete the
+//      definition of the struct above and the passing to the type helper
 
 
 /// Typehelper to define data types of CopyMeBare model 
@@ -37,7 +33,7 @@ using CopyMeBareModelTypes = ModelTypes<State, Boundary>;
 
 /// The CopyMeBare Model
 /** Add your class description here.
- *  
+ *  ...
  */
 template<class ManagerType>
 class CopyMeBareModel:
@@ -64,6 +60,10 @@ public:
 
     /// Data type of the shared RNG
     using RNG = typename Base::RNG;
+
+    // Alias the neighborhood classes to make access more convenient
+    using NextNeighbor = Utopia::Neighborhoods::NextNeighbor;
+    using MooreNeighbor = Utopia::Neighborhoods::MooreNeighbor;
 
 private:
     // Base members: _time, _name, _cfg, _hdfgrp, _rng
@@ -172,14 +172,8 @@ auto setup_manager(std::string name, ParentModel& parent_model)
     auto cells = Utopia::Setup::create_cells_on_grid<true>(grid, state_0);
 
     // Create the grid manager, passing the template argument
-    if (periodic) {
-        log->info("Now initializing GridManager with periodic boundary "
-                  "conditions ...");
-    }
-    else {
-        log->info("Now initializing GridManager with fixed boundary "
-                  "conditions ...");
-    }
+    log->info("Initializing GridManager with {} boundary conditions ...",
+              (periodic ? "periodic" : "fixed"));
     
     return Utopia::Setup::create_manager_cells<true, periodic>(grid,
                                                                cells,
