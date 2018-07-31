@@ -72,12 +72,18 @@ private:
     /// The grid manager
     ManagerType _manager;
 
+
     // -- Temporary objects -- //
+
     
     // -- Datasets -- //
+    // NOTE They should be named '_dset_<name>', where <name> is the
+    //      dataset's actual name as set in the constructor.
     // std::shared_ptr<DataSet> _dset_my_var;
 
+
     // -- Rule functions -- //
+    // Define functions that can be applied to the cells of the grid
 
 public:
     /// Construct the CopyMeBare model

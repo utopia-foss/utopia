@@ -9,13 +9,13 @@
 
 #include <functional>
 
+
 namespace Utopia {
 namespace Models {
 namespace CopyMe {
 
 /// Enum that will be part of the internal state of a cell
 enum SomeEnum : unsigned short int {Enum0, Enum1};
-
 
 /// State struct for CopyMe model. 
 // Here, you can collect all the states, a cell should have
@@ -25,24 +25,20 @@ struct State {
     SomeEnum some_enum;
 };
 
-
-// Alias the neighborhood classes
-using NextNeighbor = Utopia::Neighborhoods::NextNeighbor;
-using MooreNeighbor = Utopia::Neighborhoods::MooreNeighbor;
-
-
 /// Boundary condition type
 struct Boundary {};
 
 
 /// Typehelper to define data types of CopyMe model 
 using CopyMeModelTypes = ModelTypes<State, Boundary>;
+// NOTE if you do not use the boundary condition type, you can delete the
+//      definition of the struct above and the passing to the type helper
 
 
-/// The CopyME Model
-/** Add your class description here.
- *  This model's only right to exist is to be a template model. 
- *  That means its functionality is based on nonesense but it shows how 
+/// The CopyMe Model
+/** Add your model description here.
+ *  This model's only right to exist is to be a template for new models. 
+ *  That means its functionality is based on nonsense but it shows how 
  *  actually useful functionality could be implemented.
  */
 template<class ManagerType>
@@ -71,6 +67,11 @@ public:
     /// Data type of the shared RNG
     using RNG = typename Base::RNG;
 
+    // Alias the neighborhood classes to make access more convenient
+    using NextNeighbor = Utopia::Neighborhoods::NextNeighbor;
+    using MooreNeighbor = Utopia::Neighborhoods::MooreNeighbor;
+
+
 private:
     // Base members: _time, _name, _cfg, _hdfgrp, _rng
 
@@ -81,15 +82,22 @@ private:
     /// A model parameter I need
     const double _some_parameter;
 
+
     // -- Temporary objects -- //
     
+
     // -- Datasets -- //
+    // NOTE They should be named '_dset_<name>', where <name> is the
+    //      dataset's actual name as set in the constructor.
     std::shared_ptr<DataSet> _dset_some_state;
     std::shared_ptr<DataSet> _dset_some_trait;
 
 
     // -- Rule functions -- //
-    /// Define some initial state for all cells
+    // Define functions that can be applied to the cells of the grid
+    // NOTE The below are examples; delete and/or adjust them to your needs!
+
+    /// Sets the given cell to state "A"
     std::function<State(std::shared_ptr<CellType>)> _set_initial_state_A = [](const auto cell){
         // Get the state of the Cell
         auto state = cell->state();
@@ -103,7 +111,7 @@ private:
     };
 
 
-    /// Define some initial state for all cells
+    /// Sets the given cell to state "B"
     std::function<State(std::shared_ptr<CellType>)> _set_initial_state_B = [](const auto cell){
         // Get the state of the Cell
         auto state = cell->state();
@@ -130,7 +138,8 @@ private:
         {
             state.some_trait += static_cast<double>(nb->state().some_state);
         }
-        // Ahhh and obviously you need to divide some float by _some_parameter because that makes totally sense
+        // Ahhh and obviously you need to divide some float by _some_parameter
+        // because that makes totally sense
         state.some_trait /= _some_parameter;
 
         // Set some_enum to Enum0
@@ -139,6 +148,7 @@ private:
         // Return the new cell state
         return state;
     };
+
 
     /// Define the update rule for a cell
     std::function<State(std::shared_ptr<CellType>)> _some_update = [this](const auto cell){
@@ -206,7 +216,7 @@ public:
         // Extract the mode that determines the initial state
         const auto initial_state = as_str(this->_cfg["initial_state"]);
 
-        // Apply a rule to all cells depending on the configuration
+        // Apply a rule to all cells depending on the config value
         if (initial_state == "init_0")
         {
             apply_rule(_set_initial_state_A, _manager.cells());
@@ -256,6 +266,10 @@ public:
                                     return cell->state().some_trait;
                                 });
     }
+
+
+    // Getters and setters ....................................................
+    // Can add some getters and setters here to interface with other model
 };
 
 
