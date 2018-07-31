@@ -230,6 +230,8 @@ test:models:
     # Also test each model via the CLI
     - $ENTER_DUNE_ENV
     - utopia run dummy
+    - utopia run CopyMe
+    - utopia run CopyMeBare --no-plot
     # TODO add calls for all models here
     # TODO find an automatic way to do this, perhaps via a --test flag?
 

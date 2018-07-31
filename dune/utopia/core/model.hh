@@ -10,9 +10,14 @@
 namespace Utopia {
 
 
+/// Dummy type for boundary conditions; this is used as a default value
+struct BCDummy {};
+
+
 /// Wrapper struct for defining base class data types
 /** \tparam DataType              Type of the data the model operates on
- *  \tparam BoundaryConditionType Data type of the boundary condition
+ *  \tparam BoundaryConditionType Data type of the boundary condition. If not
+ *                                set, an empty struct is used as default.
  *  \tparam RNGType               The RNG class to use
  *  \tparam ConfigType            The class to use for reading the config
  *  \tparam DataGroupType         The data group class to store datasets in
@@ -20,7 +25,7 @@ namespace Utopia {
  *  \tparam TimeType              The type to use for the time members
  */
 template<typename DataType,
-         typename BoundaryConditionType,
+         typename BoundaryConditionType=BCDummy,
          typename RNGType=std::mt19937,
          typename ConfigType=Utopia::DataIO::Config,
          typename DataGroupType=Utopia::DataIO::HDFGroup,
