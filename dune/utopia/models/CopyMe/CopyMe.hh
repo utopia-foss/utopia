@@ -179,11 +179,15 @@ public:
         _manager(manager),
         _some_parameter(as_double(this->_cfg["some_parameter"])),
         // create datasets
-        _dset_some_state(this->_hdfgrp->open_dataset("some_state", {H5S_UNLIMITED}, {10})),
-        _dset_some_trait(this->_hdfgrp->open_dataset("some_trait", {H5S_UNLIMITED}, {10}))        
+        _dset_some_state(this->_hdfgrp->open_dataset("some_state")),
+        _dset_some_trait(this->_hdfgrp->open_dataset("some_trait"))        
     {
-        // Initialize cells
+        // Call the method that initializes the cells
         this->initialize_cells();
+
+        // Set the capacity of the datasets
+        _dset_some_state->set_capacity({this->get_time_max() + 1});
+        _dset_some_trait->set_capacity({this->get_time_max() + 1});
 
         // Write initial state
         this->write_data();
@@ -235,25 +239,19 @@ public:
     /// Write data
     void write_data ()
     {   
-        // For the grid data, get the cells in order to iterate over them
-        auto cells = _manager.cells();
-
         // some_state
-        _dset_some_state->write(cells.begin(), cells.end(),
-                              [](auto& cell) {
-                                return cell->state().some_state;
-                              }
-                              );
+        _dset_some_state->write(_manager.cells().begin(),
+                                _manager.cells().end(),
+                                [](auto& cell) {
+                                    return cell->state().some_state;
+                                });
 
         // some_trait
-        _dset_some_trait->write(  cells.begin(), cells.end(),
-                              [](auto& cell) {
-                                return cell->state().some_trait;
-                              }
-                              );
-
-        this->_log->debug("Data written");
-        // TODO Once implemented, use the higher-level wrapper for writing data
+        _dset_some_trait->write(_manager.cells().begin(),
+                                _manager.cells().end(),
+                                [](auto& cell) {
+                                    return cell->state().some_trait;
+                                });
     }
 };
 
