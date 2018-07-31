@@ -170,8 +170,8 @@ public:
      */
     template<class ParentModel>
     CopyMeModel (const std::string name,
-                   ParentModel &parent,
-                   ManagerType&& manager)
+                 ParentModel &parent,
+                 ManagerType&& manager)
     :
         // Initialize first via base model
         Base(name, parent),
@@ -186,8 +186,14 @@ public:
         this->initialize_cells();
 
         // Set the capacity of the datasets
-        _dset_some_state->set_capacity({this->get_time_max() + 1});
-        _dset_some_trait->set_capacity({this->get_time_max() + 1});
+        // We know the maximum number of steps (== #rows), and the number of
+        // grid cells (== #columns); that is the final extend of the dataset.
+        const hsize_t num_cells = std::distance(_manager.cells().begin(),
+                                                _manager.cells().end());
+        this->_log->debug("Setting dataset capacities to {} x {} ...",
+                          this->get_time_max() + 1, num_cells);
+        _dset_some_state->set_capacity({this->get_time_max() + 1, num_cells});
+        _dset_some_trait->set_capacity({this->get_time_max() + 1, num_cells});
 
         // Write initial state
         this->write_data();
