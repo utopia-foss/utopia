@@ -34,7 +34,7 @@ def test_basics():
 # NOTE The below test is an example of how to access data and write a test.
 #      You can adjust this to your needs and then remove the decorator to
 #      enable the test.
-@pytest.mark.skip("Need to adapt this to the CopyMe model")
+# TODO Adapt this to the data you are putting out
 def test_output(): 
     """Test that the output structure is correct"""
     # Create a Multiverse and let it run
@@ -57,10 +57,18 @@ def test_output():
         # Get the config of this universe
         uni_cfg = uni['cfg']
 
-        # Assert correct length (100 steps + initial state)
-        assert len(data) == uni_cfg['num_steps'] + 1
-        
-        # # Check the content of all available datasets
-        # for dset_name, dset in data.items():
-        #     # Assert dataset shape is correct
-        #     assert dset.shape == (1000,)  
+        # Calculate the number of cells
+        grid_size = uni_cfg['CopyMe']['grid_size']
+        num_cells = grid_size[0] * grid_size[1]
+
+        # Check that all datasets are available
+        assert 'some_state' in data
+        assert 'some_trait' in data
+
+        # Assert they have the correct shape
+        assert data['some_state'].shape == (uni_cfg['num_steps'] + 1,
+                                            num_cells)
+        assert data['some_trait'].shape == (uni_cfg['num_steps'] + 1,
+                                            num_cells)
+
+        # Can do further tests here ...
