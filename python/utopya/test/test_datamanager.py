@@ -93,17 +93,13 @@ def test_load_single(dm_after_single):
     # Check that the binary data is loaded as expected
     assert 'data' in uni
     assert 'data/dummy' in uni
-    assert len(uni['data/dummy']) == 6
 
-    # Get the first dataset and check its content
-    dset = uni['data/dummy/data-1']
+    # Get the state dataset and check its content
+    dset = uni['data/dummy/state']
 
     assert isinstance(dset, udc.NumpyDC)
-
-    assert dset.shape == (1000,)
+    assert dset.shape == (uni['cfg']['num_steps'] + 1, 1000)
     assert np.issubdtype(dset.dtype, float)
-    assert all([0 <= v <= 1 for v in dset.data.flat])
-
 
 def test_load_sweep(dm_after_sweep):
     """Tests the loading of simulation data for a sweep"""
@@ -126,13 +122,11 @@ def test_load_sweep(dm_after_sweep):
         # Check that the binary data is loaded as expected
         assert 'data' in uni
         assert 'data/dummy' in uni
-        assert len(uni['data/dummy']) == 6
+        assert 'data/dummy/state' in uni
     
-        # Get the first dataset and check its content
-        dset = uni['data/dummy/data-1']
+        # Get the state dataset and check its content
+        dset = uni['data/dummy/state']
 
         assert isinstance(dset, udc.NumpyDC)
-
-        assert dset.shape == (1000,)
+        assert dset.shape == (uni['cfg']['num_steps'] + 1, 1000)
         assert np.issubdtype(dset.dtype, float)
-        assert all([0 <= v <= 1 for v in dset.data.flat])

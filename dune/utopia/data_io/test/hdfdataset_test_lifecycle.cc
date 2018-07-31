@@ -6,52 +6,19 @@
 #include "../hdfdataset.hh"
 #include "../hdffile.hh"
 #include "../hdfgroup.hh"
+#include "../hdfutilities.hh"
 #include <cassert>
 #include <cmath>
 #include <cstdio>
+#include <dune/common/parallel/mpihelper.hh>
 #include <iostream>
 #include <string>
+#include <thread>
 #include <vector>
 
 using namespace Utopia::DataIO;
-
-/// Assert that two Dataset instances have the same public members
-/** \tparam LHS Left hand side dataset type
- *  \tparam RHS Right hand side dataset type
- *  Template parameters are necessary because HDFDataset is a template
- */
-template <typename T>
-bool operator==(std::vector<T>& a, std::vector<T>& b)
-{
-    if (a.size() == b.size())
-    {
-        return false;
-    }
-    else
-    {
-        if (std::is_floating_point<T>::value)
-        {
-            for (std::size_t i = 0; i < a.size(); ++i)
-            {
-                if (std::abs((a[i] - b[i]) / max(a[i], b[i])) < 1e-16)
-                {
-                    return false;
-                }
-            }
-        }
-        else
-        {
-            for (std::size_t i = 0; i < a.size(); ++i)
-            {
-                if (a[i] != b[i])
-                {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-}
+using namespace std::literals::chrono_literals;
+using hsizevec = std::vector<hsize_t>;
 
 bool operator==(HDFGroup& a, HDFGroup& b)
 {
@@ -71,26 +38,28 @@ void assert_hdfdatasets(LHS& lhs, RHS& rhs)
     assert(lhs.get_path() == rhs.get_path());
     assert(lhs.get_id() == rhs.get_id());
     assert(lhs.get_address() == rhs.get_address());
-    assert(lhs.get_referencecounter() == rhs.get_referencecounter());
+    assert(lhs.get_referencecounter().get() == rhs.get_referencecounter().get());
     assert(&lhs.get_parent() == &rhs.get_parent());
     assert(lhs.get_parent() == rhs.get_parent());
     assert(lhs.get_rank() == rhs.get_rank());
     assert(lhs.get_capacity() == rhs.get_capacity());
-    assert(lhs.get_current_extend() == rhs.get_current_extend());
+    assert(lhs.get_current_extent() == rhs.get_current_extent());
     assert(lhs.get_chunksizes() == rhs.get_chunksizes());
     assert(lhs.get_compresslevel() == rhs.get_compresslevel());
 }
 
-int main()
+int main(int argc, char** argv)
 {
+    Dune::MPIHelper::instance(argc, argv);
+
     HDFFile file("dataset_test_lifetime.h5", "w");
 
-    HDFGroup lifecyclegroup(*file.get_basegroup(), "lifecycletest");
+    HDFGroup lifecyclegroup(file, "/lifecycletest");
     std::vector<int> data(100, 42);
 
-    HDFDataset first(lifecyclegroup, "first", 1, {100}, {10}, 5);
+    HDFDataset first(lifecyclegroup, "first", {100}, {10}, 5);
 
-    HDFDataset first_simple(lifecyclegroup, "first_simple");
+    HDFDataset first_simple(lifecyclegroup, "first_simple", {}, {10});
 
     first.write(data.begin(), data.end(), [](int& value) { return value; });
     first_simple.write(data.begin(), data.end(), [](int& value) { return value; });
@@ -123,18 +92,26 @@ int main()
     assert((*moveconst_second.get_referencecounter())[moveconst_second.get_address()] == 4);
     assert_hdfdatasets(crosscheck, moveconst_second);
 
-    // lifecyclegroup.close();
-    // file.close();
-    // file.open("dataset_test_lifetime.h5", "r+");
-    // lifecyclegroup.open(*file.get_basegroup(), "lifecycletest");
+    lifecyclegroup.close();
+    file.close();
+    file.open("dataset_test_lifetime.h5", "r+");
+    lifecyclegroup.open(file, "/lifecycletest");
+
     // test open method
     HDFDataset<HDFGroup> opened_dataset;
-    opened_dataset.open(lifecyclegroup, "first", 1, {100}, {10}, 5);
+    opened_dataset.open(lifecyclegroup, "first");
     assert(H5Iis_valid(opened_dataset.get_id()) == true);
+    assert(opened_dataset.get_current_extent() == hsizevec{100});
+    assert(opened_dataset.get_chunksizes() == hsizevec{10});
+    assert(opened_dataset.get_capacity() == hsizevec{100});
 
     // test simple open method
     HDFDataset<HDFGroup> opened_dataset_simple;
     opened_dataset_simple.open(lifecyclegroup, "first_simple");
     assert(H5Iis_valid(opened_dataset_simple.get_id()) == true);
+    assert(opened_dataset_simple.get_current_extent() == hsizevec{100});
+    assert(opened_dataset_simple.get_chunksizes() == hsizevec{10});
+    assert(opened_dataset_simple.get_capacity() == hsizevec{H5S_UNLIMITED});
+
     return 0;
 }
