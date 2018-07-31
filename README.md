@@ -196,8 +196,25 @@ Available testing groups:
 | `python` | All python tests |
 
 
-## New to Utopia? How to Build a Model
-All Utopia models are located inside the [`dune/utopia/models`](dune/utopia/models) directory.
-There, you can explore already existing models and learn from these examples, how to build your own _Utopia_ model.
+## Currently implemented models
+Below you find an overview over the models currently implemented in Utopia.
+By clicking on the model name, you will be guided to the corresponding directory inside `dune/utopia/models`, where all models reside.
+This will also show you a README of the model which contains further information about the aims and the implementation of the model.
 
-In case you are new to Utopia and you want to create a new model, check out the [Beginners Guide](dune/utopia/models/BeginnersGuide.md), which will guide you through the first steps of building a new model.
+| Model Name | Description |
+| ---------- | ----------- |
+| [`SimpleEG`](dune/utopia/models/SimpleEG) | A model of simple evolutionary games on grids |
+
+
+#### Model templates, tests, benchmarks ...
+Additionally, some models are only needed to assert that Utopia functions as desired:
+
+| Model Name | Description |
+| ---------- | ----------- |
+| [`dummy`](dune/utopia/models/dummy) | Main testing model |
+| [`CopyMe`](dune/utopia/models/CopyMe) | A template for creating new models _(see below)_ |
+| [`CopyMeBare`](dune/utopia/models/CopyMeBare) | A _minimal_ template for creating new models |
+
+
+#### New to Utopia? How do I build a model?
+Aside exploring the already existing models listed above, you should check out the [Beginners Guide](dune/utopia/models/BeginnersGuide.md), which will guide you through the first steps of building your own, fancy, new Utopia model. :tada:
