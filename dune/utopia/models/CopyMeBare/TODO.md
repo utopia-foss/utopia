@@ -1,1 +1,0 @@
-### Look in the `BeginnersGuide.md` within the `CopyMe` model to check whether everything that needs to be adapted is adapted.

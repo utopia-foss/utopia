@@ -1,4 +1,4 @@
-#include <iostream>       // std::cout, std::endl
+#include <iostream>
 
 #include "CopyMe.hh"
 
@@ -19,7 +19,6 @@ int main (int argc, char** argv)
             CopyMeModel model("CopyMe", pp,
                               setup_manager<true>("CopyMe", pp));
             model.run();
-
         }
         else {
             // Non-periodic grid

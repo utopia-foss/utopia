@@ -16,17 +16,17 @@ We assume that you want to build your own model, called `MyFancyModel`. Probably
 
 If you follow all the steps explained in the following, you will end up with your own _Utopia_ model.
 
-- [ ] Move to the `utopia/dune/utopia/models/` directory
+- [ ] Move to the `dune/utopia/models/` directory inside the `utopia` repository.
 - [ ] Copy the `CopyMe` directory and paste it in the same directory.
 - [ ] Rename the copied directory to `MyFancyModel` (or rather your chosen name). 
     - A remark concerning the naming convention: Your model name should consist of words that start with Capital Letters and are `DirectlyConcatenatedWithoutSeparatingSymbols`.
 - [ ] Rename all the files inside of the newly created directory such that all `CopyMe`s are replaced by `MyFancyModel`s
 - [ ] Tell _Utopia_ that there is a new model, e.g. include your model in the Utopia CMake build routine:
-    - [ ] In `utopia/dune/utopia/models/`, you find a `CMakeLists.txt` file. Open it and let `CMake` find your model directory by including the command: `add_subdirectory(MyFancyModel)` 
-    - [ ] In `utopia/dune/utopia/models/MyFancyModel/`, there is another `CMakeLists.txt` file. Open it and change the line `add_model(CopyMe CopyMe.cc)` to `add_model(MyFancyModel MyFancyModel.cc)`. With this command you tell `CMake` that you include a new model should be added.
-- [ ] Open the file `MyFancyModel.cc` in the `utopia/dune/utopia/models/MyFancyModel/` directory and do the following:
+    - [ ] In `dune/utopia/models/`, you find a `CMakeLists.txt` file. Open it and let `CMake` find your model directory by including the command: `add_subdirectory(MyFancyModel)` 
+    - [ ] In `dune/utopia/models/MyFancyModel/`, there is another `CMakeLists.txt` file. Open it and change the line `add_model(CopyMe CopyMe.cc)` to `add_model(MyFancyModel MyFancyModel.cc)`. With this command you tell `CMake` that you include a new model should be added.
+- [ ] Open the file `MyFancyModel.cc` in the `dune/utopia/models/MyFancyModel/` directory and do the following:
     - [ ] Throughout the file, replace all `CopyMe`'s by `MyFancyModel`'s.
-- [ ] Open the file `MyFancyModel.hh` in the `utopia/dune/utopia/models/MyFancyModel/` directory and do the following:
+- [ ] Open the file `MyFancyModel.hh` in the `dune/utopia/models/MyFancyModel/` directory and do the following:
     - [ ] Throughout the file, replace all `CopyMe`'s by `MyFancyModel`'s.
     - [ ] Throughout the file, replace all `COPYME`'s by `MYFANCYMODEL`'s.
 
@@ -85,11 +85,9 @@ More information about how to use `spdlog` and what functionality is provided ca
 
 ## Finished! 
 
-Congratulations, you have build a new model! :) So now, just one thing remains:
+Congratulations, you have build a new model! :)
 
-- [ ] Delete the `BeginnersGuide.md`. You do not need it anymore and anything that you do not need anymore in your model should not be part of the model anymore!
-
-Your next guide will be the `MyModelWorksGuide.md` guide.
+Your next guide will be the [Model Requirements](ModelRequirements.md).
 It contains information what requirements your code must fulfill such that it can be accepted as a model within _Utopia_, e.g. that it can be merged into _Utopia_'s `master` branch. 
 
 Have fun implementing your own _Utopia_ model! :) 

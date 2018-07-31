@@ -1,4 +1,4 @@
-#include <iostream>       // std::cout, std::endl
+#include <iostream>
 
 #include "CopyMeBare.hh"
 
@@ -9,7 +9,6 @@ int main (int argc, char** argv)
     try {
         Dune::MPIHelper::instance(argc, argv);
 
-
         // Initialize the PseudoParent from config file path
         Utopia::PseudoParent pp(argv[1]);
 
@@ -18,16 +17,13 @@ int main (int argc, char** argv)
         if (Utopia::as_bool(pp.get_cfg()["CopyMeBare"]["periodic"])) {
             // Periodic grid
             CopyMeBareModel model("CopyMe", pp,
-                                setup_manager<true>("CopyMeBare", pp));
-
+                                  setup_manager<true>("CopyMeBare", pp));
             model.run();
-
         }
         else {
             // Non-periodic grid
             CopyMeBareModel model("CopyMe", pp,
-                                setup_manager<false>("CopyMeBare", pp));
-
+                                  setup_manager<false>("CopyMeBare", pp));
             model.run();
         }
 

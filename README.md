@@ -195,7 +195,9 @@ Available testing groups:
 | `models` | Models tests (implemented in `python/model_tests`) |
 | `python` | All python tests |
 
-### New to Utopia? How to Build a Model
-All Utopia models are located inside of the `utopia/dune/models/` directory. There, you can explore already existing models and learn from these examples, how to build a _Utopia_ model.
 
-In case you are new to Utopia and you want to create a new model, look inside the `utopia/dune/models/CopyMe/` directory. There, you find a `BeginnersGuide.md`, which will guide you through the first steps of building a new model.
+### New to Utopia? How to Build a Model
+All Utopia models are located inside the [`dune/utopia/models`](dune/utopia/models) directory.
+There, you can explore already existing models and learn from these examples, how to build your own _Utopia_ model.
+
+In case you are new to Utopia and you want to create a new model, check out the [Beginners Guide](dune/utopia/models/BeginnersGuide.md), which will guide you through the first steps of building a new model.
