@@ -123,8 +123,6 @@ class ModelTest:
     def create_mv(self, *, from_cfg: str=None, run_cfg_path: str=None, **update_meta_cfg) -> Multiverse:
         """Creates a Multiverse for this model.
         
-        If both
-        
         Args:
             from_cfg (str, optional): The name of the config file (relative to
                 the test directory) to be used.
