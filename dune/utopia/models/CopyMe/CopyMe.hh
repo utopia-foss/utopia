@@ -197,20 +197,17 @@ public:
     /// Initialize the cells according to `initial_state` config parameter
     void initialize_cells()
     {
-        // Get the cells
-        auto cells = _manager.cells();
-
         // Extract the mode that determines the initial state
-        auto initial_state = as_str(this->_cfg["initial_state"]);
+        const auto initial_state = as_str(this->_cfg["initial_state"]);
 
         // Apply a rule to all cells depending on the configuration
         if (initial_state == "init_0")
         {
-            apply_rule(_set_initial_state_A, cells);
+            apply_rule(_set_initial_state_A, _manager.cells());
         }
         else if (initial_state == "init_1")
         {
-            apply_rule(_set_initial_state_B, cells);
+            apply_rule(_set_initial_state_B, _manager.cells());
         }
         else
         {
@@ -230,7 +227,7 @@ public:
      */
     void perform_step ()
     {
-        // Apply the rules to all cells
+        // Apply the rules to all cells, first the interaction, then the update
         apply_rule(_some_interaction, _manager.cells());
         apply_rule(_some_update, _manager.cells());
     }
@@ -286,9 +283,10 @@ auto setup_manager(std::string name, ParentModel& parent_model)
     // Create grid of that size
     auto grid = Utopia::Setup::create_grid<2>(gsize);
 
-    // Create the CopyMe initial state: some_state 0 and some_trait 3.4 some_initial_enum "A", "B"
-    // COMMENT: This just sets a default state, but the actual initialization should also
-    //          happen in the model constructor
+    // Create the CopyMe initial state:
+    // some_state 0 and some_trait 3.4 some_initial_enum "A", "B"
+    // NOTE: This just sets a _default_ state. The actual initialization
+    //       should be part of the model class and invoked during construction
     State state_0 = {0, 3.4, SomeEnum::Enum0};
 
     // Create cells on that grid, passing the initial state
