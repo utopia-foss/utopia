@@ -44,15 +44,18 @@ inline const std::string log_core = "core";
 inline std::shared_ptr<spdlog::logger> init_logger (
     const std::string name,
     const spdlog::level::level_enum level,
-    const bool throw_on_exist = true)
+    const bool throw_on_exist = true
+)
 {
     auto logger = spdlog::get(name);
+    
     if (not logger || throw_on_exist) {
+        // Create it; spdlog throws an exception if it already exists
         logger = spdlog::stdout_color_mt(name);
     }
     else {
         logger->warn("Skipping initialization of logger '{}' because "
-            "it already exists.", name);
+                     "it already exists.", name);
     }
     logger->set_level(level);
     return logger;

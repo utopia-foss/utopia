@@ -215,6 +215,9 @@ plot_manager:
   out_dir: ""
   # TODO check if reasonable decision
 
+  # Whether to raise exceptions for plotting errors. false: only log them
+  raise_exc: false
+
   # Save all plot configurations alongside the plots
   save_plot_cfg: true
 

@@ -12,9 +12,8 @@ parameter_space:
     default: 42
     values: [23, 42, 665, 667]
 
-  # TODO change "dummy" to the name of your model instance
-  dummy: !model  
-    model_name: dummy  # imports the model config for the dummy model
+  # TODO change "CopyMe" to the name of your model instance
+  CopyMe: !model  
+    model_name: CopyMe  # imports the model config for the CopyMe model
 
     # NOTE Below, entries from the model config can be changed or added
-    foo: bar

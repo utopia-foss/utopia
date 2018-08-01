@@ -115,16 +115,16 @@ a_x = w_{S_x\bar{S_x}} - w_{\bar{S_x}\bar{S_x}}
 where $`\bar{S_x}`$ is the complementary strategy of $`S_x`$.
 From a more biological perspective, it can be interpreted as the fitness advantage of rare mutant strategy $`S_0`$ if $`S_1`$ is the common strategy.
 
-##### Type 1: Hawk-Dove game (HD game): $`a_1, a_2 >0`$
+##### Type 1: Hawk-Dove game (HD game): $`a_0, a_1 >0`$
 
 In this parameter regime, the game has the characteristics of a _Hawk-Dove game_. It is also known as the _game of chicken_ or _snowdrift game_. 
 We describe its logic using the Hawk-Dove picture, although the same situation can be adapted to a multitude of situations that can be found in a multitude of areas such as biology or even international politics. This game was also used in the foundation of evolutionary game theory in the paper of May & Price (1973).
 
 In a Hawk-Dove game two players compete for a resource that cannot be split up. They can choose between two strategies: threat displays (Dove) or attack (Hawk). If both choose the Hawk strategy they attack each other and fight until one of them is injured and the other wins. If one player behaves as a Hawk and the other one as a Dove the Hawk defeats the Dove. If both players choose Dove, they both get a small benefit. However, the payoff is smaller than for a Hawk playing against a Dove.
 
-If the parameters are chosen such that the relation $`a_1, a_2 >0`$ is met, the game is a version of a Hawk-Dove game. Varying the parameters varies the relation of the outcomes from the individual strategies in the games, their qualitative outcome, however, does not change.
+If the parameters are chosen such that the relation $`a_0, a_1 >0`$ is met, the game is a version of a Hawk-Dove game. Varying the parameters varies the relation of the outcomes from the individual strategies in the games, their qualitative outcome, however, does not change.
 
-##### Type 2: Coordination game (CO game): $`a_1, a_2 <0`$
+##### Type 2: Coordination game (CO game): $`a_0, a_1 <0`$
 
 This game is perhaps best explained using Jean-Jacques Rousseau's _Discourse on the Origin and Basis of Inequality Among Men_ (1754):
 
@@ -132,14 +132,14 @@ This game is perhaps best explained using Jean-Jacques Rousseau's _Discourse on 
 
 Extracting the underlying nature of the interaction: All players profit most, if they work for a common aim, but single players can get distracted by easier achievable goals with smaller returns. There is a steady state – all cooperating – which is however unstable to some kind.
 
-Such situations can be modelled if the parameters of the interaction matrix obbey the relation $`a_1, a_2 <0`$.
+Such situations can be modelled if the parameters of the interaction matrix obbey the relation $`a_0, a_1 <0`$.
 
-##### Type 3: Dominant Strategy game (DS game): $`a_1, < 0 < a_2 `$ or $` a_1, > 0 > a_2 `$
+##### Type 3: Dominant Strategy game (DS game): $`a_0, < 0 < a_1 `$ or $` a_0, > 0 > a_1 `$
 
 In dominant strategy games, one strategy can be easily invaded by the other one, whereas the other cannot be invaded. Assuming replicator dynamics, this means that one strategy has a fixation, thus a population will evolve towards it.
 
 There are two qualitatively different types of dominant strategy games:
-###### Type 3a: Prisoner's Dilemma (PD Game): $`a_1, < 0 < a_2 `$
+###### Type 3a: Prisoner's Dilemma (PD Game): $`a_0, < 0 < a_1 `$
 
 The Prisoner's Dilemma is arguably the most famous social dilemma. The standard story to explain the nature of the dilemma uses two prisoner's from the same criminal gang. Let us call them A and B. They are confined separately and cannot communicate with each other. Their sentenzing is dependent on the desicion of the other prisoner: If A and B betray each other, each serves 2 years in prison. If A betrays B and B remains silent, then A will be set free and B will need to serve 3 years in prison. If they both remain silent, they will get a diminished punishment of 1 year. Therefore, the decision of one prisoner is dependent on the decision of the other one. Both face a social dilemma situation.
 
@@ -152,13 +152,13 @@ T & P
 \end{pmatrix}
 ```
 
-defines a Prisoner's Dilemma if the parameters have the following relation: T (temptation) > R (reward) > P (punishment) > S (sucker's payoff). This formulation is equivalent to the condition: $`a_1, < 0 < a_2 `$. 
+defines a Prisoner's Dilemma if the parameters have the following relation: T (temptation) > R (reward) > P (punishment) > S (sucker's payoff). This formulation is equivalent to the condition: $`a_0, < 0 < a_1 `$. 
 
 In a Prisoner's Dilemma the mean fitness $`\bar{w}`$ decreases with increasing frequency of the dominant strategy. This means that the more players defect the lower the mean fitness gets.
 
-###### Type 3b: Lasséz-Faire game (LF Game): $`a_2, < 0 < a_1 `$
+###### Type 3b: Lasséz-Faire game (LF Game): $`a_1, < 0 < a_0 `$
 
-In the Lasséz-Faire game regime – defined by the relation $`a_2, < 0 < a_1 `$ – there is no social dilemma any more. One strategy is dominant and also results in the highest mean payoff. The mean fitness $`\bar{w}`$ increases with increasing frequency of the dominant strategy. 
+In the Lasséz-Faire game regime – defined by the relation $`a_1, < 0 < a_0 `$ – there is no social dilemma any more. One strategy is dominant and also results in the highest mean payoff. The mean fitness $`\bar{w}`$ increases with increasing frequency of the dominant strategy. 
 
 ## Possible Future Extensions
 This section collects ideas of generalizing and extending the model:

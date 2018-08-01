@@ -29,25 +29,29 @@ strategy:
   module: model_plots.SimpleEG
   plot_func: grid_animation
 
+  # Select the universe
   uni: 0
+
+  # Select the properties to plot
   to_plot:
     strategy:
-      cmap: RdYlBu
+      cmap: PD_discrete  # PD_discrete is a colormap specifically designed
+                         # for the Prisoner's Dilemma, i.e.: red & blue
       limits: [0, 1]
-      title: 'Strategy'
+      title: Strategy
       
     payoff: 
       cmap: viridis
       limits: [0, 12]
-      title: 'Payoff'
+      title: Payoff
 
   # Video options
-  writer: frames
-  fps: 1
+  writer: frames  # can be: frames, ffmpeg (if installed), ...
+  fps: 2
   step_size: 1
-  dpi: 100
+  dpi: 96
 
-  frames: 
+  # For the 'frames' writer, the following additional kwargs can be passed
+  frames_kwargs: 
     name_padding: 5
-    format: 'png'
-    dpi: 100
+    file_format: png

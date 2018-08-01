@@ -6,14 +6,18 @@
  */
 #include "../hdfutilities.hh"
 #include <cassert>
+#include <dune/common/parallel/mpihelper.hh>
 #include <iostream>
 #include <map>
 #include <string>
 #include <vector>
+
 using namespace Utopia::DataIO;
 
-int main()
+int main(int argc, char** argv)
 {
+    Dune::MPIHelper::instance(argc, argv);
+
     // test remove_pointer metafunction
 
     // FIXME: for some reason gcc throws compiler errors of assert

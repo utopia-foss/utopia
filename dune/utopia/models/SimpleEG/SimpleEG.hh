@@ -9,6 +9,10 @@
 
 #include <functional>
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> master
 namespace Utopia {
 namespace Models {
 namespace SimpleEG {
@@ -16,13 +20,17 @@ namespace SimpleEG {
 /// Strategy enum
 enum Strategy : unsigned short int { S0=0, S1=1 };
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> master
 /// State struct for SimpleEG model, consisting of strategy and payoff
 struct State {
     Strategy strategy;
     double payoff;
 };
 
+<<<<<<< HEAD
 
 /// Boundary condition type
 struct Boundary {};
@@ -41,6 +49,24 @@ using SimpleEGModelTypes = ModelTypes<State, Boundary>;
 /// Simple model of evolutionary games on grids
 /** ...
  *  ...
+=======
+/// Typehelper to define data types of SimpleEG model 
+using SimpleEGModelTypes = ModelTypes<State>;
+
+
+
+/// Simple model of evolutionary games on grids
+/** In this model, cells have an internal strategy, which determines their 
+ * success in the interacions with their neighboring cells. The success is
+ * given by an interaction matrix. In one interaction step, every cell
+ * interacts with all its neighboring cells (interaction lambda function). 
+ * Afterwards, all cells are updated synchroneously (update lambda function). 
+ * From a cells perspective, the mechanism is as follows: 
+ * Look around in you neighborhood for the cell, which had the highest payoff 
+ * from the interactions. Change your state to this `fittest` neighboring 
+ * cell's state. If multiple cells within a neighborhood have the same payoff
+ * choose randomly between their strategies.
+>>>>>>> master
  */
 template<class ManagerType>
 class SimpleEGModel:
@@ -74,8 +100,18 @@ public:
     /// Type of the interaction matrix
     using IAMatrixType = typename std::array<std::array<double,2>,2>;
 
+<<<<<<< HEAD
 private:
     // Base members: time, name, cfg, hdfgrp, rng
+=======
+    // Alias the neighborhood classes for easier access
+    using NextNeighbor = Utopia::Neighborhoods::NextNeighbor;
+    using MooreNeighbor = Utopia::Neighborhoods::MooreNeighbor;
+
+
+private:
+    // Base members: _time, _name, _cfg, _hdfgrp, _rng
+>>>>>>> master
 
     // -- Members of this model -- //
     /// The grid manager
@@ -87,7 +123,11 @@ private:
 
     // -- Temporary objects -- //
     /// A container to temporarily accumulate the fittest neighbour cells in
+<<<<<<< HEAD
     CellContainer<typename ManagerType::Cell> _fittest_cell_in_nbhood;
+=======
+    CellContainer<typename ManagerType::Cell> _fittest_cells_in_nbhood;
+>>>>>>> master
 
     
     // -- Datasets -- //
@@ -132,7 +172,11 @@ private:
         // Update procedure is as follows:
         // Loop through the neighbors and store all neighbors with the
         // highest payoff.
+<<<<<<< HEAD
         // Use the member _fittest_cell_in_nbhood for this, such that the vector does
+=======
+        // Use the member _fittest_cells_in_nbhood for this, such that the vector does
+>>>>>>> master
         // not need to be recreated for each cell.
 
         // NOTE In most cases the vector will contain only one cell.
@@ -145,35 +189,40 @@ private:
 
         // Set highest payoff in the neighborhood to the cell's payoff
         double highest_payoff = state.payoff;
+<<<<<<< HEAD
         _fittest_cell_in_nbhood.clear();
         _fittest_cell_in_nbhood.push_back(cell);
+=======
+        _fittest_cells_in_nbhood.clear();
+        _fittest_cells_in_nbhood.push_back(cell);
+>>>>>>> master
         
         // Iterate over neighbours of this cell:
         for (auto nb : MooreNeighbor::neighbors(cell, this->_manager)){
             if (nb->state().payoff > highest_payoff) {
                 // Found a new highest payoff
                 highest_payoff = nb->state().payoff;
-                _fittest_cell_in_nbhood.clear();
-                _fittest_cell_in_nbhood.push_back(nb);
+                _fittest_cells_in_nbhood.clear();
+                _fittest_cells_in_nbhood.push_back(nb);
             }
             else if (nb->state().payoff == highest_payoff) {
                 // Have a payoff equal to that of another cell
-                _fittest_cell_in_nbhood.push_back(nb);
+                _fittest_cells_in_nbhood.push_back(nb);
             }
             // else: payoff was below highest payoff
         }
 
         // Now, update the strategy according to the fittest neighbour
-        if (_fittest_cell_in_nbhood.size() == 1) {
+        if (_fittest_cells_in_nbhood.size() == 1) {
             // Only one fittest neighbour. -> The state of the current cell
             // is updated with that of the fittest neighbour.
-            state.strategy = _fittest_cell_in_nbhood[0]->state().strategy;
+            state.strategy = _fittest_cells_in_nbhood[0]->state().strategy;
         }
-        else if (_fittest_cell_in_nbhood.size() > 1) {
+        else if (_fittest_cells_in_nbhood.size() > 1) {
             // There are multiple nbs with the same (highest) payoff.
             // -> Choose randomly one of them to pass on its strategy
-            std::uniform_int_distribution<> dist(0, _fittest_cell_in_nbhood.size()-1);
-            state.strategy = _fittest_cell_in_nbhood[dist(*this->_rng)]->state().strategy;
+            std::uniform_int_distribution<> dist(0, _fittest_cells_in_nbhood.size()-1);
+            state.strategy = _fittest_cells_in_nbhood[dist(*this->_rng)]->state().strategy;
         }
         else {
             // There is no fittest neighbor. This case should never occur
@@ -201,22 +250,30 @@ public:
         // Now initialize members specific to this class
         _manager(manager),
         _ia_matrix(this->extract_ia_matrix()),
-        _fittest_cell_in_nbhood(),
-        // datasets
+        _fittest_cells_in_nbhood(),
+        // And open datasets for strategy and payoff
         _dset_strategy(this->_hdfgrp->open_dataset("strategy")),
         _dset_payoff(this->_hdfgrp->open_dataset("payoff"))
     {   
         // Initialize cells
         this->initialize_cells();
 
+        // Set dataset capacities
+        // We already know the maximum number of steps and the number of cells
+        const hsize_t num_cells = std::distance(_manager.cells().begin(),
+                                                _manager.cells().end());
+        this->_log->debug("Setting dataset capacities to {} x {} ...",
+                          this->get_time_max() + 1, num_cells);
+        _dset_strategy->set_capacity({this->get_time_max() + 1, num_cells});
+        _dset_payoff->set_capacity(  {this->get_time_max() + 1, num_cells});
+
         // Write initial state
         this->write_data();
 
-        // Write _ia_matrix in hdfgrp attribute
+        // Write _ia_matrix in _hdfgrp attribute
         this->_hdfgrp->add_attribute("ia_matrix", _ia_matrix);
-
-        // Create
     }
+
 
     // Setup functions ........................................................
     /// Initialize the cells according to `initial_state` config parameter
@@ -281,23 +338,22 @@ public:
             this->_log->debug("Cells with strategy 1:  {} of {}",
                               num_s1, num_cells);
 
-            // OPTIONAL TODO can add some logic here to make more clever assignments, 
-            // i.e. starting out with all S1 if the number to set is higher than half ...
+            // TODO Optionally, can add some logic here to make more clever
+            //      assignments, i.e. starting out with all S1 if the number
+            //      to set is higher than half ...
 
             // Need a counter of cells that were set to S1
             std::size_t num_set = 0;
 
-            // Get the cells...
+            // Get the cells... and shuffle them.
             auto random_cells = _manager.cells();
-
-            // ... and shuffle them
-            std::shuffle(random_cells.begin(), random_cells.end(), *this->_rng);
+            std::shuffle(random_cells.begin(), random_cells.end(),
+                         *this->_rng);
 
             // Make num_s1 cells use strategy 1
             for (auto&& cell : random_cells){
                 // If the desired number of cells using strategy 1 is not yet reached change another cell's strategy
                 if (num_set < num_s1) {
-
                     // Check if it already has strategy 1.
                     if (cell->state().strategy == Strategy::S1) {
                         // Already has strategy 1, don't set it again
@@ -342,10 +398,11 @@ public:
                                             "setting initial state to '"
                                             + initial_state + "'!");
             }
-            // FIXME This is rather fragile. Better approach: calculate the
-            //       central point (here!) and find the cell beneath that
-            //       point, setting it to single_strategy.
-            //       Use rule application to set default_strategy.
+            // FIXME This and the below is rather fragile and should be
+            //       improved. Better approach: calculate the central point
+            //       (here!) and find the cell beneath that point, setting it
+            //       to single_strategy. Then use rule application to set
+            //       default_strategy.
 
             auto set_initial_strategy = [&](const auto cell) {
                 // Get the state of this cell
@@ -380,8 +437,7 @@ public:
                                         "supported!");
         }
 
-        std::cout << "Cells initialized." << std::endl;
-
+        this->_log->info("Cells initialized.");
     }
 
 
@@ -407,48 +463,24 @@ public:
 
     /// Write data
     void write_data ()
-    {   
-        // For the grid data, get the cells in order to iterate over them
-        auto cells = _manager.cells();
-        const unsigned int num_cells = std::distance(cells.begin(), cells.end());
-
+    {
         // strategy
-        _dset_strategy->write(cells.begin(), cells.end(),
+        _dset_strategy->write(_manager.cells().begin(), _manager.cells().end(),
                               [](auto& cell) {
                                 return static_cast<unsigned short int>(cell->state().strategy);
-                              },
-                              2,              // rank
-                              {1, num_cells}, // extend of this entry
-                              {},             // max_size of the dataset
-                              8               // chunksize, for extension
-                              );
+                              });
 
         // payoffs
-        _dset_payoff->write(  cells.begin(), cells.end(),
-                              [](auto& cell) {
+        _dset_payoff->write(_manager.cells().begin(), _manager.cells().end(),
+                            [](auto& cell) {
                                 return cell->state().payoff;
-                              },
-                              2,              // rank
-                              {1, num_cells}, // extend of this entry
-                              {},             // max_size of the dataset
-                              8               // chunksize, for extension
-                              );
-
-        // TODO Once implemented, use the higher-level wrapper for writing data
+                            });
     }
 
 
-    // TODO Check what to do with the below methods
-    /// Set model boundary condition
-    // void set_boundary_condition (const BCType& bc) { _bc = bc; }
-
-
-    /// Set model initial condition
-    // void set_initial_condition (const Data& ic) { _state = ic; }
-
-
-    /// Return const reference to stored data
-    // const Data& data () const { return _state; }
+    // Getters and setters ....................................................
+    // TODO Add them here once it is clear how models interface with each
+    //      others' data.
 
 
 private:
@@ -487,44 +519,47 @@ private:
         else if (this->_cfg["bc_pair"]) {
             // If ia_matrix is not provided in the config, get the ia_matrix
             // from the bc-pair
-
             const auto [b, c] = as_<std::pair<double, double>>(this->_cfg["bc_pair"]);
             const double ia_00 = b - c;
             const double ia_01 = -c;
             const double ia_10 = b;
             const double ia_11 = 0.;
+
             const std::array<double,2> row0({{ia_00, ia_01}});
             const std::array<double,2> row1({{ia_10, ia_11}});
-            const IAMatrixType ia_matrix({{row0, row1}});
 
+            const IAMatrixType ia_matrix({{row0, row1}});
             return ia_matrix;
         }
         else if (this->_cfg["b"]) {
             // If both previous cases are not provided, then return the
             // ia_matrix given by the paramter "b"
-
             // NOTE: There is no check for b>1 implemented here.
             const auto b = as_double(this->_cfg["b"]);
             const double ia_00 = 1;
             const double ia_01 = 0;
             const double ia_10 = b;
             const double ia_11 = 0.;
+
             const std::array<double,2> row0({{ia_00, ia_01}});
             const std::array<double,2> row1({{ia_10, ia_11}});
-            const IAMatrixType ia_matrix({{row0, row1}});
 
+            const IAMatrixType ia_matrix({{row0, row1}});
             return ia_matrix;
         }
 
         // If we reach this point, not enough parameters were provided
-        throw std::invalid_argument("The interaction matrix is not given!");
+        throw std::invalid_argument("No interaction matrix given! Check that "
+                                    "at least one of the following config "
+                                    "entries is available: `ia_matrix`, "
+                                    "`bc_pair`, `b`");
     }
 };
 
 
 /// Setup the grid manager with an initial state
-/** \param name          TODO
-  * \param parent_model  TODO
+/** \param name          The name of the model instance
+  * \param parent_model  The parent model the new model instance will reside in
   *
   * \tparam periodic     Whether the grid should be periodic
   * \tparam ParentModel  The parent model type
@@ -548,25 +583,18 @@ auto setup_manager(std::string name, ParentModel& parent_model)
               gsize[0], gsize[1]);
 
     // Create grid of that size
-    // auto grid = Utopia::Setup::create_grid<2>({{gsize[0], gsize[1]}});
     auto grid = Utopia::Setup::create_grid<2>(gsize);
 
     // Create the SimpleEG initial state: S0 and payoff 0.0
     State state_0 = {Strategy::S0, 0.0};
-    // TODO make state_0 configurable?
+    // NOTE The initialize_cells method relies on payoff being set to zero here
 
     // Create cells on that grid, passing the initial state
     auto cells = Utopia::Setup::create_cells_on_grid<true>(grid, state_0);
 
     // Create the grid manager, passing the template argument
-    if (periodic) {
-        log->info("Now initializing GridManager with periodic boundary "
-                  "conditions ...");
-    }
-    else {
-        log->info("Now initializing GridManager with fixed boundary "
-                  "conditions ...");
-    }
+    log->info("Initializing GridManager with {} boundary conditions ...",
+              (periodic ? "periodic" : "fixed"));
     
     return Utopia::Setup::create_manager_cells<true, periodic>(grid,
                                                                cells,

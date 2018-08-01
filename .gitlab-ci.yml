@@ -227,9 +227,13 @@ test:models:
     - $DUNECTRL --only=utopia configure
     # Test all models using the testing framework
     - $DUNECTRL --only=utopia make test_models
-    # Also test each model via the CLI
+    # Also test each model via the CLI. Need to enter the virtual env first
     - $ENTER_DUNE_ENV
+    # First, the test models:
     - utopia run dummy
+    - utopia run CopyMe
+    - utopia run CopyMeBare --no-plot
+    # ...and now the actual models:
     - utopia run SimpleEG
     # TODO add calls for all models here
     # TODO find an automatic way to do this, perhaps via a --test flag?
