@@ -16,7 +16,7 @@
 # sure that no circular includes occur.
 ---
 # Grid parameters
-grid_size: [400, 400]
+grid_size: [100, 100]
 periodic: false          # false: cells at boundary have fewer neighbors
 
 # Initial state
@@ -36,7 +36,7 @@ infection_herd: south # can be: south, none
 
 
 # probablity for tree growth in each time step
-_pb_tree: 0.6
+_pb_tree: 0.0075
 
 #probablity for an infected cell to infect a cell in the neighborhood
 _pb_infect:  0.8
