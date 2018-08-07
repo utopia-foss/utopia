@@ -57,4 +57,4 @@ def plot_forest(dm: DataManager, *, out_path: str, file_format: str='png', uni: 
             img.set_data(data[i])
         plt.title("timestep: {}".format(i))
         #FIXME Include save_kwargs in plt.savefig
-        plt.savefig(out_path_base + "{}".format(i) + out_path_ext)
+        plt.savefig(out_path_base + "{0:0>4}".format(i) + out_path_ext)
