@@ -1,0 +1,9 @@
+# Default plots for the ContDisease model
+---
+forest_ca:
+  creator: external
+
+  module: model_plots.ContDisease
+  plot_func: plot_forest
+  file_format: png
+  uni: 0
