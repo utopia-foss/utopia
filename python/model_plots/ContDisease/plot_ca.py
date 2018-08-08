@@ -31,10 +31,10 @@ def plot_forest(dm: DataManager, *, out_path: str, file_format: str='png', uni: 
     num_steps = uni_cfg['num_steps']
     grid_size = uni_cfg['ContDisease']['grid_size']
 
-    # Extract the data for the tree states and convert it into a 2d-array
+    # Extract the data for the tree states and convert it into a 3d-array
 
-    data_1d = grp["state"]
-    data = np.reshape(data_1d, (num_steps+1, grid_size[0], grid_size[1]))
+    data_ = grp["state"]
+    data = np.reshape(data_, (num_steps+1, grid_size[0], grid_size[1]))
 
 
     # Define colormap
