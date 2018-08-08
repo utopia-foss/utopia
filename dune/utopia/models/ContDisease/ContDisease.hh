@@ -215,7 +215,7 @@ public:
         const auto initial_state = as_str(this->_cfg["initial_state"]);
 
         // Extract if an infection herd is activated
-        const auto infection_herd = as_str(this->_cfg["infection_herd"]);
+        const bool infection_herd = as_bool(this->_cfg["infection_herd"]);
 
         // Extract postion of possible infection herd
         const auto infection_herd_src = as_str(this->_cfg["infection_herd_src"]);
@@ -237,7 +237,7 @@ public:
         }
 
         // Different initializations for possible infection herds.
-        if (infection_herd == "true"){
+        if (infection_herd == true){
 
           if (infection_herd_src == "south"){
 
@@ -265,7 +265,7 @@ public:
           }
         }
 
-        else if (infection_herd == "false"){
+        else if (infection_herd == false){
           this->_log->debug("Not using an infection herd.");
         }
 
