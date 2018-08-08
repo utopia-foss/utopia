@@ -36,10 +36,10 @@ infection_herd: south # can be: south, none
 
 
 # probablity for tree growth in each time step
-_pb_tree: 0.0075
+p_growth: 0.0075
 
 #probablity for an infected cell to infect a cell in the neighborhood
-_pb_infect:  1
+p_infect:  1
 
 #probaility for random point infection of a tree
-_pb_rd_infect: 0 #0.05
+p_rd_infect: 0 #0.05

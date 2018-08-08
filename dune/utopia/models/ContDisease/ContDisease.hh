@@ -73,12 +73,18 @@ private:
     /// The grid manager
     ManagerType _manager;
 
-    // Probabilites that a tree grows in an empty cell, and that a infected
-    // cell infects a neighbor cell. These are extracted out of the config file.
-    const double _pb_tree, _pb_infect, _pb_rd_infect;
+    /// Probability for the appearance of a tree
+    const double _p_growth;
+
+    /// Probability that an infected cell infects a neighbouring cell
+    const double _p_infect;
+
+    /// Probability for a random infection
+    const double _p_rd_infect;
+
 
     // -- Datasets -- //
-    std::shared_ptr<DataSet> _dset_treestate;
+    std::shared_ptr<DataSet> _dset_state;
 
 
     // -- Rule functions -- //
@@ -99,9 +105,9 @@ private:
     /// Define the update rule
     std::function<State(std::shared_ptr<CellType>)> _update = [this](const auto cell){
         // Update (all cells at the same time) according to the following rules:
-        // Empty cells grow "trees with probability _pb_tree.
+        // Empty cells grow "trees with probability _p_growth.
         // Tree cells in neighborhood of an infected cell get infected with the
-        // probability _pb_infect.
+        // probability _p_infect.
         // Infected cells die and become an empty cell.
 
         // Get the state of the cell
@@ -110,9 +116,9 @@ private:
 
         if (state.treestate == empty){
 
-          // With a probablity of _pb_tree set the treestate of the cell to tree.
+          // With a probablity of _p_growth set the treestate of the cell to tree.
           std::uniform_real_distribution<> dist(0., 1.);
-          if (dist(*this->_rng) < _pb_tree){
+          if (dist(*this->_rng) < _p_growth){
               state.treestate = tree;
           }
         }
@@ -122,13 +128,13 @@ private:
           std::uniform_real_distribution<> dist(0., 1.);
 
           // infection by random point infection
-          if (dist(*this->_rng) < _pb_rd_infect){
+          if (dist(*this->_rng) < _p_rd_infect){
             state.treestate = infected;
           }
 
 
           // Go through neighbor cells (here 5-cell neighbourhood), look if they
-          // are infected (or an infection infection_herd), if yes, infect cell with the probability _pb_infect.
+          // are infected (or an infection infection_herd), if yes, infect cell with the probability _p_infect.
 
           for (auto nb : NextNeighbor::neighbors(cell, this->_manager)){
 
@@ -137,7 +143,7 @@ private:
 
 
               if (nb_state.treestate == infected or nb_state.treestate == herd){
-                if (dist(*this->_rng) < _pb_infect){
+                if (dist(*this->_rng) < _p_infect){
                     state.treestate = infected;
                   }
               }
@@ -174,12 +180,12 @@ public:
         _manager(manager),
 
         // initialize probabilities
-        _pb_tree(as_double(this->_cfg["_pb_tree"])),
-        _pb_infect(as_double(this->_cfg["_pb_infect"])),
-        _pb_rd_infect(as_double(this->_cfg["_pb_rd_infect"])),
+        _p_growth(as_double(this->_cfg["p_growth"])),
+        _p_infect(as_double(this->_cfg["p_infect"])),
+        _p_rd_infect(as_double(this->_cfg["p_rd_infect"])),
 
         // create dataset for treestates
-        _dset_treestate(this->_hdfgrp->open_dataset("treestate"))
+        _dset_state(this->_hdfgrp->open_dataset("state"))
 
     {
         // Call the method that initializes the cells
@@ -192,7 +198,7 @@ public:
                                                 _manager.cells().end());
         this->_log->debug("Setting dataset capacities to {} x {} ...",
                           this->get_time_max() + 1, num_cells);
-        _dset_treestate->set_capacity({this->get_time_max() + 1, num_cells});
+        _dset_state->set_capacity({this->get_time_max() + 1, num_cells});
 
 
         // Write initial state
@@ -278,8 +284,8 @@ public:
     /// Write data
     void write_data ()
     {
-        // _dset_treestate
-        _dset_treestate->write(_manager.cells().begin(),
+        // _dset_state
+        _dset_state->write(_manager.cells().begin(),
                                 _manager.cells().end(),
                                 [](auto& cell) {
                                     return static_cast<unsigned short int>(cell->state().treestate);
