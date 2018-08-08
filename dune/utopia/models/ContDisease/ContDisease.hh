@@ -233,7 +233,7 @@ public:
         }
         else
         {
-            throw std::invalid_argument("The initial state is not valid!");
+            throw std::invalid_argument("The initial state ''" + initial_state + "'' is not valid! Valid options: 'empty'");
         }
 
         // Different initializations for possible infection herds.
@@ -261,7 +261,7 @@ public:
 
           else
           {
-            throw std::invalid_argument("The infection herd source is not valid!");
+            throw std::invalid_argument("The infection herd source ''" + initial_state + "'' is not valid! Valid options: 'south'");
           }
         }
 
