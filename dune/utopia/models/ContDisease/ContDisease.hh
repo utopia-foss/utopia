@@ -15,16 +15,12 @@ namespace Models {
 namespace ContDisease {
 
 /// State of forest cell
-enum TreeState : unsigned short int {empty = 0, tree = 1, infected = 2, herd = 3};
+enum CellState : unsigned short int {empty = 0, tree = 1, infected = 2, herd = 3};
 
-/// State struct for ContDisease model.
-struct State {
-    TreeState treestate;
-};
 
 
 /// Typehelper to define data types of ContDisease model
-using ContDiseaseModelTypes = ModelTypes<State>;
+using ContDiseaseModelTypes = ModelTypes<CellState>;
 
 
 
@@ -90,20 +86,20 @@ private:
     // -- Rule functions -- //
 
     /// Sets the given cell to state "empty"
-    std::function<State(std::shared_ptr<CellType>)> _set_initial_state_empty = [](const auto cell){
+    std::function<CellState(std::shared_ptr<CellType>)> _set_initial_state_empty = [](const auto cell){
         // Get the state of the Cell
-        auto state = cell->state();
+        auto cellstate = cell->state();
 
         // Set cell to empty
-        state.treestate = empty;
-        return state;
+        cellstate = empty;
+        return cellstate;
     };
 
 
 
 
     /// Define the update rule
-    std::function<State(std::shared_ptr<CellType>)> _update = [this](const auto cell){
+    std::function<CellState(std::shared_ptr<CellType>)> _update = [this](const auto cell){
         // Update (all cells at the same time) according to the following rules:
         // Empty cells grow "trees with probability _p_growth.
         // Tree cells in neighborhood of an infected cell get infected with the
@@ -111,25 +107,25 @@ private:
         // Infected cells die and become an empty cell.
 
         // Get the state of the cell
-        auto state = cell->state();
+        auto cellstate = cell->state();
 
 
-        if (state.treestate == empty){
+        if (cellstate == empty){
 
           // With a probablity of _p_growth set the treestate of the cell to tree.
           std::uniform_real_distribution<> dist(0., 1.);
           if (dist(*this->_rng) < _p_growth){
-              state.treestate = tree;
+              cellstate = tree;
           }
         }
 
-        else if (state.treestate == tree){
+        else if (cellstate == tree){
           // Tree can be infected by neighbor our by random-point-infection.
           std::uniform_real_distribution<> dist(0., 1.);
 
           // infection by random point infection
           if (dist(*this->_rng) < _p_rd_infect){
-            state.treestate = infected;
+            cellstate = infected;
           }
 
 
@@ -138,13 +134,13 @@ private:
 
           for (auto nb : NextNeighbor::neighbors(cell, this->_manager)){
 
-            if (state.treestate == tree){
-              auto nb_state = nb->state();
+            if (cellstate == tree){
+              auto nb_cellstate = nb->state();
 
 
-              if (nb_state.treestate == infected || nb_state.treestate == herd){
+              if (nb_cellstate == infected || nb_cellstate == herd){
                 if (dist(*this->_rng) < _p_infect){
-                    state.treestate = infected;
+                    cellstate = infected;
                   }
               }
             }
@@ -155,11 +151,11 @@ private:
 
         }
 
-        else if (state.treestate == infected){
-          state.treestate = empty;
+        else if (cellstate == infected){
+          cellstate = empty;
         }
 
-        return state;
+        return cellstate;
     };
 
 
@@ -242,7 +238,7 @@ public:
           if (infection_herd_src == "south"){
 
             auto _set_infection_herd_south = [&](const auto cell){
-              auto state = cell->state();
+              auto cellstate = cell->state();
 
               // Get postion of the Cell, grid extensions and number of cells
               const auto& pos = cell->position();
@@ -252,9 +248,9 @@ public:
               const auto& cell_size_y = grid_ext[1]  / grid_num_cells[1];
 
               if (pos[1] < cell_size_y){
-                state.treestate = herd;
+                cellstate = herd;
               }
-              return state;
+              return cellstate;
             };
             apply_rule(_set_infection_herd_south, _manager.cells());
           }
@@ -297,7 +293,7 @@ public:
         _dset_state->write(_manager.cells().begin(),
                                 _manager.cells().end(),
                                 [](auto& cell) {
-                                    return static_cast<unsigned short int>(cell->state().treestate);
+                                    return static_cast<unsigned short int>(cell->state());
                                 });
     }
 
@@ -338,10 +334,10 @@ auto setup_manager(std::string name, ParentModel& parent_model)
     auto grid = Utopia::Setup::create_grid<2>(gsize);
 
     // Create the ContDisease initial state:
-    State state_0 = {TreeState::empty};
+    CellState cellstate_0 = empty;
 
     // Create cells on that grid, passing the initial state
-    auto cells = Utopia::Setup::create_cells_on_grid<true>(grid, state_0);
+    auto cells = Utopia::Setup::create_cells_on_grid<true>(grid, cellstate_0);
 
     // Create the grid manager, passing the template argument
     log->info("Initializing GridManager with {} boundary conditions ...",
