@@ -142,7 +142,7 @@ private:
               auto nb_state = nb->state();
 
 
-              if (nb_state.treestate == infected or nb_state.treestate == herd){
+              if (nb_state.treestate == infected || nb_state.treestate == herd){
                 if (dist(*this->_rng) < _p_infect){
                     state.treestate = infected;
                   }
