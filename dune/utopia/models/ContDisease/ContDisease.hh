@@ -134,7 +134,7 @@ private:
 
 
           // Go through neighbor cells (here 5-cell neighbourhood), look if they
-          // are infected (or an infection infection_herd), if yes, infect cell with the probability _p_infect.
+          // are infected (or an infection herd), if yes, infect cell with the probability _p_infect.
 
           for (auto nb : NextNeighbor::neighbors(cell, this->_manager)){
 
@@ -208,14 +208,17 @@ public:
     // Setup functions ........................................................
 
     /// Initialize the cells according to `initial_state` and
-    /// the 'infection_herd' config parameter
+    /// the 'infection_herd' and 'infection_herd_src' config parameters
     void initialize_cells()
     {
         // Extract the mode that determines the initial state
         const auto initial_state = as_str(this->_cfg["initial_state"]);
 
-        // Extract postion of possible infection herd
+        // Extract if an infection herd is activated
         const auto infection_herd = as_str(this->_cfg["infection_herd"]);
+
+        // Extract postion of possible infection herd
+        const auto infection_herd_src = as_str(this->_cfg["infection_herd_src"]);
 
         this->_log->info("Initializing cells in '{}' mode ...", initial_state);
 
@@ -230,41 +233,47 @@ public:
         }
         else
         {
-            throw std::runtime_error("The initial state is not valid!");
+            throw std::invalid_argument("The initial state is not valid!");
         }
 
         // Different initializations for possible infection herds.
-        if (infection_herd == "south")
-        {
+        if (infection_herd == "true"){
 
+          if (infection_herd_src == "south"){
 
-          auto _set_infection_herd_south = [&](const auto cell){
-            auto state = cell->state();
+            auto _set_infection_herd_south = [&](const auto cell){
+              auto state = cell->state();
 
-            // Get postion of the Cell, grid extensions and number of cells
-            const auto& pos = cell->position();
-            const auto& grid_ext = _manager.extensions();
-            const auto& grid_num_cells = _manager.grid_cells();
+              // Get postion of the Cell, grid extensions and number of cells
+              const auto& pos = cell->position();
+              const auto& grid_ext = _manager.extensions();
+              const auto& grid_num_cells = _manager.grid_cells();
 
-            const auto& cell_size_y = grid_ext[1]  / grid_num_cells[1];
+              const auto& cell_size_y = grid_ext[1]  / grid_num_cells[1];
 
-            if (pos[1] < cell_size_y){
-              state.treestate = herd;
-            }
+              if (pos[1] < cell_size_y){
+                state.treestate = herd;
+              }
+              return state;
+            };
+            apply_rule(_set_infection_herd_south, _manager.cells());
+          }
 
-            return state;
-          };
-
-          apply_rule(_set_infection_herd_south, _manager.cells());
+          else
+          {
+            throw std::invalid_argument("The infection herd source is not valid!");
+          }
         }
 
-        else if (infection_herd != "none")
-        {
-           throw std::runtime_error("The infection herd is not valid!");
+        else if (infection_herd == "false"){
+          this->_log->debug("Not using an infection herd.");
         }
 
-        // Write information that cells are initialized to the logger
-        this->_log->info("Cells initialized.");
+        else{
+          throw std::invalid_argument("The only valid arguments are true or false!");
+        }
+      // Write information that cells are initialized to the logger
+      this->_log->info("Cells initialized.");
     }
 
 

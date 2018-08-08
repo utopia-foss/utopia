@@ -31,7 +31,12 @@ initial_state: empty   # can be: empty
 
 # Infection herd
 
-infection_herd: south # can be: south, none
+
+infection_herd: true # false to deactivate infection herds
+                     # can be: true, false
+
+infection_herd_src: south # where the herd originates from, if activated above
+                          # can be: south
 
 
 
