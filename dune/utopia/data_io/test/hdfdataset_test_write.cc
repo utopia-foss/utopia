@@ -1,213 +1,301 @@
+
 /**
- * @brief Tests writing of data to datasets for mulitple kinds of data
+ * @brief In this file, the write functionality of hdfdataset is tested.
+ *        Parameter setting from constructors are not tested,
+ *        hdfdataset_test_lifecycle is for that. Hence, this file only tests
+ *        updates of parameters like current_extent and offset.
  *
- * @file hdfdataset_test_write.cc
+ * @date 2018-07-18
  */
 #include "../hdfdataset.hh"
 #include "../hdffile.hh"
 #include "../hdfgroup.hh"
 #include <cassert>
-#include <cmath>
-#include <cstdio>
+#include <chrono>
+#include <dune/common/parallel/mpihelper.hh>
 #include <iostream>
-#include <string>
-#include <vector>
+#include <thread>
 
+// shorthands
 using namespace Utopia::DataIO;
+using hsizevec = std::vector<hsize_t>;
 
-// helper function for making a non compressed dataset
-template <typename Datatype>
-hid_t make_dataset_for_tests(hid_t id,
-                             std::string _name,
-                             hsize_t _rank,
-                             std::vector<hsize_t> _extend,
-                             std::vector<hsize_t> _max_extend,
-                             hsize_t chunksize)
+// used for testing rvalue container returning adaptors
+struct Point
 {
-    if (chunksize > 0)
-    {
-        // create creation property list, set chunksize and compress level
-        hid_t plist = H5Pcreate(H5P_DATASET_CREATE);
-        H5Pset_chunk(plist, _rank, &chunksize);
+    double x;
+    double y;
+    double z;
+};
 
-        // make dataspace
-        hid_t dspace = H5Screate_simple(_rank, _extend.data(), _max_extend.data());
-
-        // create dataset and return
-        return H5Dcreate(id, _name.c_str(), HDFTypeFactory::type<Datatype>(),
-                         dspace, H5P_DEFAULT, plist, H5P_DEFAULT);
-    }
-    else
-    {
-        // create dataset right away
-
-        return H5Dcreate(id, _name.c_str(), HDFTypeFactory::type<Datatype>(),
-                         H5Screate_simple(_rank, _extend.data(), _max_extend.data()),
-                         H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    }
-}
-
-void write_dataset_onedimensional(HDFFile& file)
+int main(int argc, char** argv)
 {
-    // 1d dataset tests
-    HDFGroup testgroup1(*file.get_basegroup(), "/testgroup1");
-    HDFGroup testgroup2(*file.get_basegroup(), "/testgroup2");
+    Dune::MPIHelper::instance(argc, argv);
 
-    // Test for constructor
+    Utopia::setup_loggers();
+    spdlog::get("data_io")->set_level(spdlog::level::debug);
 
-    // nothing happend until now
-    HDFDataset testdataset(testgroup2, "testdataset");
-    assert(testdataset.get_id() == -1);
+    ///////////////////////////////////////////////////////////////////////////
+    ////////////////////// MAKE FILE, OPEN DATASETS  //////////////////////////
+    ///////////////////////////////////////////////////////////////////////////
+    HDFFile file("datatset_testfile.h5", "w");
 
-    // make a dummy dataset to which later will be written
-    hid_t dummy_dset = make_dataset_for_tests<double>(
-        testgroup1.get_id(), "/testgroup1/testdataset2", 1, {100}, {H5S_UNLIMITED}, 50);
-    H5Dclose(dummy_dset);
-    // open dataset again
-    HDFDataset testdataset2(testgroup1, "testdataset2");
-    hid_t dummy_dset2 = H5Dopen(file.get_id(), "/testgroup1/testdataset2", H5P_DEFAULT);
-    // get its name
-    std::string name;
-    name.resize(25);
-    H5Iget_name(dummy_dset2, name.data(), name.size());
-    H5Dclose(dummy_dset2);
-    name.pop_back(); // get rid of superfluous \0 hdf5 writes in there
-    std::string dsetname =
-        testdataset2.get_parent().get_path() + "/" + testdataset2.get_name();
-    // check if name is correct
-    assert(name == dsetname);
+    auto contset = file.open_dataset("/containerdataset", {100}, {5});
+    auto nestedcontset = file.open_dataset("/containercontainerdataset", {100}, {5});
+    auto stringset = file.open_dataset("/stringdataset", {100}, {5});
+    auto ptrset = file.open_dataset("/pointerdataset", {100}, {5});
+    auto scalarset = file.open_dataset("/scalardataset", {100}, {5});
+    auto twoDdataset = file.open_dataset("/2ddataset", {10, 100}, {1, 5});
+    auto adapteddataset = file.open_dataset("/adapteddataset", {3, 100}, {1, 10});
+    auto fireandforgetdataset = file.open_dataset("/fireandforget");
+    auto fireandforgetdataset2d = file.open_dataset("/fireandforget2d", {5, 100});
+    auto latestarterdataset = file.open_dataset("/latestarter");
+    auto latestarterdataset2 = file.open_dataset("/latestarter2");
 
-    std::vector<double> data(100, 3.14);
-    for (std::size_t i = 0; i < data.size(); ++i)
+    ///////////////////////////////////////////////////////////////////////////
+    ////////////////////// MAKE DATA NEEDED LATER /////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////
+
+    std::array<int, 4> arr{{0, 1, 2, 3}};
+    std::array<int, 4> arr2{{4, 5, 6, 7}};
+
+    std::shared_ptr<double> ptr(new double[5]);
+    for (std::size_t i = 0; i < 5; ++i)
     {
-        data[i] += i;
-    }
-    // test write: most simple case
-    testdataset.write(data.begin(), data.end(), [](auto& value) { return value; });
-
-    for (auto& value : data)
-    {
-        value = 6.28;
-    }
-    testdataset2.write(data.begin(), data.end(),
-                       [](auto& value) { return value; });
-
-    HDFDataset<HDFGroup> compressed_dataset(testgroup1, "compressed_dataset");
-    compressed_dataset.write(data.begin(), data.end(),
-                             [](auto& value) { return value; }, 1,
-                             {data.size()}, {}, 20, 5);
-
-    compressed_dataset.close();
-
-    HDFDataset<HDFGroup> compressed_dataset2(testgroup1, "compressed_dataset");
-
-    for (auto& value : data)
-    {
-        value = 3.14 / 2;
-    }
-    compressed_dataset2.write(data.begin(), data.end(),
-                              [](auto& value) { return value; });
-
-    // 1d dataset variable length
-    std::vector<std::vector<double>> data_2d(100, std::vector<double>(10, 3.16));
-
-    HDFDataset<HDFGroup> varlen_dataset(testgroup1, "varlendataset");
-    varlen_dataset.write(
-        data_2d.begin(), data_2d.end(),
-        [](auto& value) -> std::vector<double>& { return value; }, 1, {100});
-
-    // multiple objects refer to the same dataset
-    HDFGroup multirefgroup(*file.get_basegroup(), "multiref_test");
-    HDFDataset multirefdataset1(multirefgroup, "multirefdataset");
-
-    data = std::vector<double>(100, 3.14);
-    for (std::size_t i = 0; i < data.size(); ++i)
-    {
-        data[i] += i;
+        ptr.get()[i] = 3.14;
     }
 
-    // write some stuff to multirefdataset1
-    multirefdataset1.write(data.begin(), data.end(),
-                           [](auto& value) { return value; }, 1, {100}, {}, 50);
-
-    std::string attr1 = "First attribute to multiple reference dataset";
-    multirefdataset1.add_attribute("Attribute1", attr1);
-    HDFDataset multirefdataset2(multirefgroup, "multirefdataset");
-
-    assert((*multirefdataset1.get_referencecounter())[multirefdataset1.get_address()] == 2);
-    assert((*multirefdataset2.get_referencecounter())[multirefdataset1.get_address()] == 2);
-
-    multirefdataset1.close();
-
-    assert((*multirefdataset2.get_referencecounter())[multirefdataset1.get_address()] == 1);
-    assert((*multirefdataset1.get_referencecounter())[multirefdataset1.get_address()] == 1);
-
-    for (std::size_t i = 0; i < data.size(); ++i)
+    std::vector<Point> points(100);
+    for (int i = 0; i < 100; ++i)
     {
-        data[i] += i + 100;
-    }
-    // write some stuff to multirefdataset2
-    multirefdataset2.write(data.begin(), data.end(),
-                           [](auto& value) { return value; }, 1, {100}, {}, 50);
-    std::string attr2 = "Second attribute to multirefdataset";
-    multirefdataset2.add_attribute("Attribute2", attr2);
-}
-
-void write_dataset_multidimensional(HDFFile& file)
-{
-    HDFGroup multidimgroup(*file.get_basegroup(), "/multi_dim_data");
-    std::vector<double> data(100, 2.718);
-
-    HDFDataset multidimdataset(multidimgroup, "multiddim_dataset");
-    multidimdataset.write(data.begin(), data.end(),
-                          [](auto& value) { return value; }, 2, {1, 100});
-
-    HDFDataset multidimdataset_compressed(multidimgroup,
-                                          "multiddim_dataset_compressed");
-
-    std::for_each(data.begin(), data.end(),
-                  [](auto& value) { return value += 1; });
-    multidimdataset_compressed.write(data.begin(), data.end(),
-                                     [](auto& value) { return value; }, 2,
-                                     {1, 100}, {}, 50, 5);
-
-    multidimdataset.close();
-
-    HDFDataset multidimdataset_extendable(multidimgroup,
-                                          "multiddim_dataset_extendable");
-
-    double writeval = 100;
-    for (std::size_t i = 0; i < data.size(); ++i)
-    {
-        data[i] = writeval;
-        writeval += 1;
+        points[i].x = 3.14;
+        points[i].y = 3.14 + 1;
+        points[i].z = 3.14 + 2;
     }
 
-    multidimdataset_extendable.write(
-        data.begin(), data.end(), [](auto& value) { return value; }, 2, {1, 100}, {}, 50);
+    ///////////////////////////////////////////////////////////////////////////
+    /////////////////// ACTUAL WRITING TAKES PLACE NOW ////////////////////////
+    ///////////////////////////////////////////////////////////////////////////
 
-    multidimdataset_extendable.close();
+    // good ol' simple vector of numbers, should look like this in file
+    /*
+        3.14
+        3.14
+        3.14
+        .
+        .
+        .
+        3.14
+        6.28
+        6.28
+        6.28
+        .
+        .
+        .
+        6.28
+        9.42
+        9.42
+        9.42
+        .
+        .
+        .
+        9.42
+    */
 
-    HDFDataset multidimdataset_reopened(multidimgroup,
-                                        "multiddim_dataset_extendable");
+    contset->write(std::vector<double>(10, 3.14));
+    assert(contset->get_current_extent() == hsizevec{10});
 
-    double value = 200;
-    for (std::size_t i = 0; i < data.size(); ++i)
+    contset->write(std::vector<double>(10, 6.28));
+    assert(contset->get_current_extent() == hsizevec{20});
+
+    contset->write(std::vector<double>(10, 9.42));
+    assert(contset->get_current_extent() == hsizevec{30});
+
+    // write array dataset, then append, should look like this in file
+    /*
+        [0,1,2,3]
+        [0,1,2,3]
+        [0,1,2,3]
+        .
+        .
+        .
+        [0,1,2,3]
+        [4,5,6,7]
+        [4,5,6,7]
+        [4,5,6,7]
+        .
+        .
+        .
+        [4,5,6,7]
+    */
+    nestedcontset->write(std::vector<std::array<int, 4>>(20, arr));
+    assert(nestedcontset->get_current_extent() == hsizevec{20});
+    assert(nestedcontset->get_offset() == hsizevec{0});
+
+    nestedcontset->write(std::vector<std::array<int, 4>>(20, arr2));
+    assert(nestedcontset->get_current_extent() == hsizevec{40});
+    assert(nestedcontset->get_offset() == hsizevec{20});
+
+    // write a bunch of strings one after another into the dataset.
+    // note that missing parts are filled with '\0'(?), and the very first
+    // string determines the length. Can't do shit about the \0 unfortunatly
+    // should look like this in file
+    /*
+        testsstring
+        0\0\0\0\0\0\0\0\0\0\0
+        1\0\0\0\0\0\0\0\0\0\0
+        2\0\0\0\0\0\0\0\0\0\0
+        3\0\0\0\0\0\0\0\0\0\0
+        .
+        .
+        .
+        25\0\0\0\0\0\0\0\0\0\0
+    */
+    stringset->write(std::string("testsstring"));
+    assert(stringset->get_current_extent() == hsizevec{1});
+    assert(stringset->get_offset() == hsizevec{0});
+    for (std::size_t i = 0; i < 25; ++i)
     {
-        data[i] = value;
-        value += 1;
+        stringset->write(std::to_string(i));
+        assert(stringset->get_current_extent() == hsizevec{i + 2});
+        assert(stringset->get_offset() == hsizevec{i + 1});
     }
-    multidimdataset_reopened.write(
-        data.begin(), data.end(), [](auto& value) { return value; }, 2, {1, 100}, {}, 50);
-}
 
-int main()
-{
-    HDFFile file("dataset_test.h5", "w");
+    // write 2d dataset
+    // looks like this:
+    /*
+        0,0,0,0,0,  ...,0
+        1,1,1,1,1,  ...,1
+        2,2,2,2,2,  ...,2
+        3,3,3,3,3,  ...,3
+        4,4,4,4,4,  ...,4
+        5,5,5,5,5,  ...,5
+    */
+    for (std::size_t i = 0; i < 6; ++i)
+    {
+        twoDdataset->write(std::vector<double>(100, i));
+        assert(twoDdataset->get_current_extent() == (hsizevec{i + 1, 100}));
+        assert(twoDdataset->get_offset() == (hsizevec{i, 0}));
+    }
 
-    write_dataset_onedimensional(file);
+    // README: we now tested  the current_extent/offset update in all occuring
+    // cases, hence it is not repeted blow (ptr/adapted and scalar just repeats container and string logic)
 
-    write_dataset_multidimensional(file);
+    // write pointers -> 3 times, each time an array of len 5 with different numbers:
+    /*
+        3.14,3.14,3.14,3.14,3.14,6.28,6.28,6.28,6.28,6.28,9.42,9.42,9.42,9.42,9.42
+    */
+    ptrset->write(ptr.get(), {5});
+    for (std::size_t j = 2; j < 4; ++j)
+    {
+        for (std::size_t i = 0; i < 5; ++i)
+        {
+            ptr.get()[i] = j * 3.14;
+        }
+        ptrset->write(ptr.get(), {5});
+    }
 
+    // write 5 scalars (single numbers) one after another into the dataset
+    /*
+        0
+        1
+        2
+        3
+        4
+    */
+    for (int i = 0; i < 5; ++i)
+    {
+        scalarset->write(i);
+    }
+
+    // write each coordinate into one line in adapteddataset:
+    // looks like this:
+    /*
+        x1, x2, x3, ..., x100
+        y1, y2, y3, ..., y100
+        z1, z2, z3, ..., z100
+    */
+    adapteddataset->write(points.begin(), points.end(),
+                          [](auto& pt) { return pt.x; });
+
+    adapteddataset->write(points.begin(), points.end(),
+                          [](auto& pt) { return pt.y; });
+
+    adapteddataset->write(points.begin(), points.end(),
+                          [](auto& pt) { return pt.z; });
+
+    // write good ol' vector into dataset where everything is automatically
+    // determined. Includes ability to extend it, like for contset
+    fireandforgetdataset->write(std::vector<int>(10, 1));
+    assert(fireandforgetdataset->get_current_extent() == hsizevec{10});
+    fireandforgetdataset->write(std::vector<int>(10, 2));
+    assert(fireandforgetdataset->get_current_extent() == hsizevec{20});
+    fireandforgetdataset->write(std::vector<int>(10, 3));
+    assert(fireandforgetdataset->get_current_extent() == hsizevec{30});
+    fireandforgetdataset->write(std::vector<int>(10, 4));
+    assert(fireandforgetdataset->get_current_extent() == hsizevec{40});
+    fireandforgetdataset->write(std::vector<int>(10, 5));
+    assert(fireandforgetdataset->get_current_extent() == hsizevec{50});
+
+    // write good ol' vector into 2d fireandforget dataset which determines
+    // chunksize automatically. Works like twoddataset
+    for (std::size_t i = 0; i < 5; ++i)
+    {
+        fireandforgetdataset2d->write(std::vector<int>(100, i + 1));
+        assert(fireandforgetdataset2d->get_current_extent() == (hsizevec{i + 1, 100}));
+        assert(fireandforgetdataset2d->get_offset() == (hsizevec{i, 0}));
+    }
+
+    latestarterdataset->set_capacity({500}); // as it is now, chunksize will be automatically determined
+    latestarterdataset->write(std::vector<int>{1, 2, 3, 4, 5});
+    latestarterdataset->write(std::vector<int>{-1, -2, -3, -4, -5});
+
+    // test that the exception is correctly thrown
+    try
+    {
+        latestarterdataset->set_capacity({700});
+    }
+    catch (std::exception& e)
+    {
+        std::cout << e.what() << std::endl;
+        std::string message =
+            "Dataset latestarter: Cannot set capacity after dataset has been "
+            "created";
+        assert(e.what() == message);
+    }
+
+    latestarterdataset2->set_capacity({500}); // as it is now, chunksize will be automatically determined
+
+    // try to set it wrongly
+    try
+    {
+        latestarterdataset2->set_chunksize({5, 30, 7});
+    }
+    catch (std::exception& e)
+    {
+        std::string message =
+            "Dataset latestarter2: Chunksizes size has to be equal to dataset "
+            "rank";
+        assert(e.what() == message);
+    }
+
+    latestarterdataset2->set_chunksize({}); // automatically determined, should work out
+
+    latestarterdataset2->set_chunksize({10}); // as it is now, chunksize will be automatically determined
+    latestarterdataset2->write(std::vector<int>(25, 12));
+
+    // test that the exception is correctly thrown
+
+    try
+    {
+        latestarterdataset2->set_chunksize({30});
+    }
+    catch (std::exception& e)
+    {
+        std::string message =
+            "Dataset latestarter2: Cannot set chunksize after dataset has been "
+            "created";
+        assert(e.what() == message);
+    }
     return 0;
 }

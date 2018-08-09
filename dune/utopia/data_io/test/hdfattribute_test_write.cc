@@ -1,6 +1,7 @@
 /**
  * @brief Tests writing different kinds of data to an Attribute to a HDFObject.
- *
+ *        The correctness is mostly checked after reading the data back in
+ *        in hdfattribute_test_read
  * @file hdfattribute_test_write.cc
 
  */
@@ -8,6 +9,9 @@
 #include "../hdffile.hh"
 #include "../hdfgroup.hh"
 #include <cassert>
+#include <dune/common/parallel/mpihelper.hh>
+#include <fstream>
+#include <hdf5.h>
 #include <iostream>
 #include <random>
 #include <string>
@@ -21,8 +25,10 @@ struct Datastruct
     std::string c;
 };
 
-int main()
+int main(int argc, char** argv)
 {
+    Dune::MPIHelper::instance(argc, argv);
+
     std::default_random_engine rng(67584327);
     std::normal_distribution<double> dist(1., 2.5);
     std::uniform_int_distribution<std::size_t> idist(20, 50);
@@ -43,7 +49,8 @@ int main()
     std::string attributename5 = "charptrattribute";
     std::string attributename6 = "multidimattribute";
     std::string attributename7 = "stringvectorattribute";
-
+    std::string attributename8 = "rvalueattribute";
+    std::string attributename9 = "constsize_array_attribute";
     // making struct data for attribute0
     std::vector<Datastruct> structdata(100);
     std::generate(structdata.begin(), structdata.end(), [&]() {
@@ -85,7 +92,6 @@ int main()
         attributename4, attributename5, attributename6, attributename7};
 
     // make attributes
-
     HDFAttribute attribute0(low_group, attributename0);
 
     HDFAttribute attribute1(low_group, attributename1);
@@ -102,22 +108,56 @@ int main()
 
     HDFAttribute attribute7(low_group, attributename7);
 
+    HDFAttribute attribute8(low_group, attributename8);
+
+    HDFAttribute attribute9(low_group, attributename9);
+
+    // write to each attribute
+
+    // extract field from struct
     attribute0.write(structdata.begin(), structdata.end(),
                      [](auto& compound) { return compound.b; });
 
+    // write simple string
     attribute1.write(attribute_data1);
 
+    // write simple vector of doubles
     attribute2.write(attribute_data2);
 
+    // write simple integer
     attribute3.write(attribute_data3);
 
+    // write vector of vectors
     attribute4.write(attribute_data4);
 
+    // write const char* -> this is not std::string!
     attribute5.write("this is a char* attribute");
 
+    // write 2d array
     attribute6.write(arr, {20, 50});
 
+    // write vector of strings
     attribute7.write(stringvec);
+
+    // writing vector generated in adaptor
+    attribute8.write(structdata.begin(), structdata.end(), [](auto& compound) {
+        return std::vector<double>{static_cast<double>(compound.a), compound.b};
+    });
+
+    // write array generated in adaptor which then should use
+    // constsize hdf5 array types instead of hvl_t
+    attribute9.write(structdata.begin(), structdata.end(), [](auto& compound) {
+        return std::array<double, 2>{static_cast<double>(compound.a), compound.b};
+    });
+
+    // check tha the hdf5 array type is correctly build.
+    hid_t attr9 = attribute9.get_id();
+    hid_t attr9t = H5Aget_type(attr9);
+    auto tdim = H5Tget_array_ndims(attr9t);
+    hsize_t dims[1] = {0}; // insert wrong number deliberatly
+    H5Tget_array_dims(attr9t, dims);
+    assert(tdim == 1);
+    assert(dims[0] == 2);
 
     return 0;
 }

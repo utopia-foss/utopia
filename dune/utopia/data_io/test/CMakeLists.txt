@@ -1,5 +1,12 @@
+# place auxilary files in build directory
+file(COPY "cfg_utils_test.yml"
+     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+# register targets
 set(TESTS_DATAIO
+    cfg_utils_test
     hdfbufferfactory_test
+    hdfchunking_test
     hdftypefactory_test
     hdffile_test
     hdfattribute_test_read

@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 # Dependency lists
 INSTALL_DEPS = ['numpy>=1.13',
-                'PyYAML==3.12',
+                'PyYAML>=3.12,<4.0',
                 # From private repositories:
                 'paramspace>=1.0.1',
                 'dantro>=0.1.0-rc.5'  # TODO use 0.1.0 once released

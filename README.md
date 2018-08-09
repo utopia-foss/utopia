@@ -23,12 +23,7 @@ clone the submodule repositories:
 
     git clone --recurse-submodules https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia.git
 
-#### Submodules troubleshooting
-If you already cloned the main repository but from a point where the submodules
-were not yet present, you need to pull the submodules using:
-
-    git submodule update --init --recursive
-
+##### Submodules troubleshooting
 After performing an update of the code base using `git pull`, or checking out a
 new branch with `git checkout`, you need to update the submodules' tree
 explicitly by calling
@@ -36,6 +31,11 @@ explicitly by calling
     git submodule update
 
 This will perform a `git checkout` of the specified commit in all submodules.
+
+If you already cloned the main repository but from a point where the submodules
+were not yet present, you need to pull the submodules for the first time using:
+
+    git submodule update --init --recursive
 
 
 ### Dependencies
@@ -48,26 +48,31 @@ This will perform a `git checkout` of the specified commit in all submodules.
 | pkg-config | | |
 | [HDF5](https://www.hdfgroup.org/solutions/hdf5/) | >= 1.10. | |
 | [yaml-cpp](https://github.com/jbeder/yaml-cpp) | 0.6.2 | Included as submodule |
+| [spdlog](https://github.com/gabime/spdlog) | >= 0.17.0 | Included as submodule |
 | [Boost](http://www.boost.org/) | >= 1.65 | |
 | [dune-common](https://gitlab.dune-project.org/core/dune-common) | master | |
 | [dune-geometry](https://gitlab.dune-project.org/core/dune-geometry) | master | |
 | [dune-grid](https://gitlab.dune-project.org/core/dune-grid) | master | |
 | [dune-uggrid](https://gitlab.dune-project.org/staging/dune-uggrid) | master | |
-| Python | >= 3.6 | Earlier Python3 versions _may_ work, but are not tested |
-| [paramspace](https://ts-gitlab.iup.uni-heidelberg.de/yunus/paramspace) | >= 1.0.1 | |
-| [dantro](https://ts-gitlab.iup.uni-heidelberg.de/utopia/dantro) | >= 0.1 |  |
 
-### Recommended
+#### Python
+Utopia's frontend, `utopya`, uses Python >= 3.6 and some custom packages.
+Earlier Python versions _might_ work, but are not tested.
+
+| Software | Version | Purpose |
+| ---------| ------- | ------- |
+| [paramspace](https://ts-gitlab.iup.uni-heidelberg.de/yunus/paramspace) | >= 1.0.1 | Makes parameter sweeps easy |
+| [dantro](https://ts-gitlab.iup.uni-heidelberg.de/utopia/dantro) | >= 0.1 | A data loading and plotting framework |
+
+If you have ssh-keys configured to access this GitLab, these packages and their dependencies will automatically be installed into a virtual environment.
+If not, please see the troubleshooting section in the step-by-step instructions.
+
+#### Recommended
 | Software | Version | Purpose |
 | ---------| ------- | ------- |
 | [doxygen](http://www.stack.nl/~dimitri/doxygen/) | >= 1.8.14 | Builds the code documentation upon installation |
 
-### Optional Packages
-| Software | Version | Purpose |
-| -------- | ------- | ------- |
-| [PSGraf](https://ts-gitlab.iup.uni-heidelberg.de/tools/psgraf)| master | Data visualization on the fly |
 
-Install PSGraf according to its installation manual. When executing `dunecontrol`, append `CMAKE_FLAGS="-DPSGRAF_ROOT=<path/to/psgraf/build>"`. If PSGraf is found, the preprocessor macro `HAVE_PSGRAF` is set.
 
 ### Step-by-step Instructions
 These instructions are intended for 'clean' __Ubuntu__ (18.04) or __macOS__ setups.
@@ -186,4 +191,30 @@ Available testing groups:
 | ----- | ---- |
 | `core` | Backend functions for models |
 | `dataio` | Backend functions for reading config files and writing data |
-| `python` | Frontend functions for managing simulations and analyzing data |
+| `utopya` | Frontend package for performing simulations, reading and analyzing data |
+| `models` | Models tests (implemented in `python/model_tests`) |
+| `python` | All python tests |
+
+
+## Currently implemented models
+Below you find an overview over the models currently implemented in Utopia.
+By clicking on the model name, you will be guided to the corresponding directory inside `dune/utopia/models`, where all models reside.
+This will also show you a README of the model which contains further information about the aims and the implementation of the model.
+
+| Model Name | Description |
+| ---------- | ----------- |
+| [`SimpleEG`](dune/utopia/models/SimpleEG) | A model of simple evolutionary games on grids |
+
+
+#### Model templates, tests, benchmarks ...
+Additionally, some models are only needed to assert that Utopia functions as desired:
+
+| Model Name | Description |
+| ---------- | ----------- |
+| [`dummy`](dune/utopia/models/dummy) | Main testing model |
+| [`CopyMe`](dune/utopia/models/CopyMe) | A template for creating new models _(see below)_ |
+| [`CopyMeBare`](dune/utopia/models/CopyMeBare) | A _minimal_ template for creating new models |
+
+
+#### New to Utopia? How do I build a model?
+Aside exploring the already existing models listed above, you should check out the [Beginners Guide](dune/utopia/models/BeginnersGuide.md), which will guide you through the first steps of building your own, fancy, new Utopia model. :tada:

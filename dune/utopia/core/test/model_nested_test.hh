@@ -25,7 +25,7 @@ public:
     using Base = Model<DoNothingModel, CommonModelTypes>;
 
     /// store the level as a member
-    const unsigned int level;
+    const unsigned int _level;
 
 public:
     /// Constructor
@@ -36,10 +36,9 @@ public:
         // Pass arguments to the base class constructor
         Base(name, parent_model),
         // Store level
-        level(cfg["level"].as<unsigned int>())
+        _level(as_<unsigned int>(this->_cfg["level"]))
     {
-        std::cout << "  DoNothingModel '" << name << "' initialized. "
-                  << "Level: " << level << std::endl;
+        this->_log->info("DoNothingModel initialized. Level: {}", _level);
     }
 
     /// Perform a single step (nothing to do here)
@@ -63,7 +62,7 @@ public:
     using Base = Model<OneModel, CommonModelTypes>;
 
     /// store the level as a member
-    const unsigned int level;
+    const unsigned int _level;
 
     /// submodel: DoNothingModel
     DoNothingModel lazy;
@@ -77,12 +76,11 @@ public:
         // Pass arguments to the base class constructor
         Base(name, parent_model),
         // Store level
-        level(cfg["level"].as<unsigned int>()),
+        _level(as_<unsigned int>(this->_cfg["level"])),
         // Submodel initialization
         lazy("lazy", *this)
     {
-        std::cout << "  OneModel '" << name << "' initialized. "
-                  << "Level: " << level << std::endl;
+        this->_log->info("OneModel initialized. Level: {}", _level);
     }
 
     /// Perform a single step, i.e.: iterate the submodels
@@ -109,7 +107,7 @@ public:
     using Base = Model<AnotherModel, CommonModelTypes>;
 
     /// store the level as a member
-    const unsigned int level;
+    const unsigned int _level;
 
     /// submodel: One
     OneModel sub_one;
@@ -126,13 +124,12 @@ public:
         // Pass arguments to the base class constructor
         Base(name, parent_model),
         // Store level
-        level(cfg["level"].as<unsigned int>()),
+        _level(as_<unsigned int>(this->_cfg["level"])),
         // Submodel initialization
-        sub_one("one", parent_model),
+        sub_one("one", *this),
         sub_lazy("lazy", *this)
     {
-        std::cout << "  AnotherModel '" << name << "' initialized. "
-                  << "Level: " << level << std::endl;
+        this->_log->info("AnotherModel initialized. Level: {}", _level);
     }
 
     /// Perform a single step, i.e.: iterate the submodels
@@ -157,7 +154,7 @@ public:
     using Base = Model<RootModel, CommonModelTypes>;
 
     /// store the level as a member
-    const unsigned int level;
+    const unsigned int _level;
 
     /// submodel: OneModel
     OneModel sub_one;
@@ -174,13 +171,12 @@ public:
         // Initialize completely via parent class constructor
         Base(name, parent_model),
         // Store level
-        level(cfg["level"].as<unsigned int>()),
+        _level(as_<unsigned int>(this->_cfg["level"])),
         // Submodel initialization
         sub_one("one", *this),
         sub_another("another", *this)
     {
-        std::cout << "  RootModel '" << name << "' initialized. "
-                  << "Level: " << level << std::endl;
+       this->_log->info("RootModel initialized. Level: {}", _level);
     }
 
     /// Perform a single step, i.e.: iterate the submodels

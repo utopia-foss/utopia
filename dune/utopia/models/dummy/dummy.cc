@@ -1,50 +1,45 @@
-#include <iostream>       // std::cout, std::endl
 #include <thread>         // std::this_thread::sleep_for
 #include <chrono>         // std::chrono::seconds
 
 #include "dummy.hh"
 
+
 // Declare the model
-using DummyModel = Utopia::Models::Dummy;
+using DummyModel = Utopia::Models::Dummy::Dummy;
 
 int main (int argc, char** argv)
 {
     try {
         Dune::MPIHelper::instance(argc, argv);
 
-        // Read in the config file
-        const std::string config_file = argv[1];
 
-        // create PseudoParent, setting up the HDFFile and RNG
-        Utopia::PseudoParent pp(config_file);
+        // -- Model definition and iteration -- //
 
-        // get the config from the PseudoParent
-        auto config = pp.get_cfg();
+        // Create PseudoParent from config file, setting up the HDFFile and RNG
+        Utopia::PseudoParent pp(argv[1]);
 
         // Set the initial state, then create the model instance
         std::vector<double> state(1E3, 0.0);
         DummyModel model("dummy", pp, state);
 
-        // And iterate it for a number of steps
-        auto num_steps = config["num_steps"].as<int>();
-        std::cout << "num_steps: " << num_steps << std::endl;
-        std::cout << "Starting iteration ..." << std::endl;
+        // ... now use the PseudoParent to perform the iteration
+        model.run();
+        // -- Model iteration finished. -- //
+        
 
-        for(int i = 0; i < num_steps; ++i) {
-            model.iterate();
-        }
-
-        // Sleep (to be read by frontend)
+        // The following is only for testing! (To be read by frontend)
+        // TODO check whether this is still relevant
         unsigned int sleep_time = 300; // in milliseconds
         unsigned int num_sleeps = 3;
 
         for (unsigned int i = 0; i < num_sleeps; ++i) {
-            std::cout << "Sleep #" << (i+1) << " ..." << std::endl;
+            pp.get_logger()->info("Sleep #{}", i+1);
             std::this_thread::sleep_for(std::chrono::milliseconds(sleep_time));
         }
 
-        std::cout << "All done." << std::endl << "Really." << std::endl;
-
+        // Test messages needed to assert that all output is read by frontend:
+        pp.get_logger()->info("All done.");
+        pp.get_logger()->info("Really.");
         return 0;
     }
     catch (std::exception& e) {

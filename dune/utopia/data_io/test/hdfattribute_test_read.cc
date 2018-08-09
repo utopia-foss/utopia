@@ -7,6 +7,7 @@
 #include "../hdffile.hh"
 #include "../hdfgroup.hh"
 #include <cassert>
+#include <dune/common/parallel/mpihelper.hh>
 #include <iostream>
 #include <random>
 #include <string>
@@ -20,8 +21,10 @@ struct Datastruct
     std::string c;
 };
 
-int main()
+int main(int argc, char** argv)
 {
+    Dune::MPIHelper::instance(argc, argv);
+
     ////////////////////////////////////////////////////////////////////////////
     // preliminary stuff
     ////////////////////////////////////////////////////////////////////////////
@@ -48,6 +51,8 @@ int main()
     std::string attributename5 = "charptrattribute";
     std::string attributename6 = "multidimattribute";
     std::string attributename7 = "stringvectorattribute";
+    std::string attributename8 = "rvalueattribute";
+    std::string attributename9 = "constsize_array_attribute";
 
     ////////////////////////////////////////////////////////////////////////////
     // making expected data
@@ -104,6 +109,16 @@ int main()
         attributename0, attributename1, attributename2, attributename3,
         attributename4, attributename5, attributename6, attributename7};
 
+    // make expected rvalue vector data
+    std::vector<std::vector<double>> expected_rv_data(
+        expected_structdata.size(), std::vector<double>(2));
+    for (std::size_t i = 0; i < expected_structdata.size(); ++i)
+    {
+        expected_rv_data[i] =
+            std::vector<double>{static_cast<double>(expected_structdata[i].a),
+                                expected_structdata[i].b};
+    }
+
     ////////////////////////////////////////////////////////////////////////////
     // make attributes
     ////////////////////////////////////////////////////////////////////////////
@@ -116,7 +131,8 @@ int main()
     HDFAttribute attribute5(low_group, attributename5);
     HDFAttribute attribute6(low_group, attributename6);
     HDFAttribute attribute7(low_group, attributename7);
-
+    HDFAttribute attribute8(low_group, attributename8);
+    HDFAttribute attribute9(low_group, attributename9);
     ////////////////////////////////////////////////////////////////////////////
     // trying to read, using c++17 structured bindings
     ////////////////////////////////////////////////////////////////////////////
@@ -286,11 +302,33 @@ int main()
     // attribute 7
     std::vector<std::string> read_stringvecdata2(8);
 
-    attribute7.read<std::vector<std::string>>(read_stringvecdata2);
+    attribute7.read(read_stringvecdata2);
 
     for (std::size_t i = 0; i < 8; ++i)
     {
         assert(expected_stringvecdata[i] == read_stringvecdata2[i]);
+    }
+
+    // attribute 8
+    std::vector<std::vector<double>> read_rv_data(expected_rv_data.size(),
+                                                  std::vector<double>(2));
+    attribute8.read(read_rv_data);
+
+    for (std::size_t i = 0; i < 100; ++i)
+    {
+        assert(std::abs(expected_rv_data[i][0] - read_rv_data[i][0]) < 1e-16);
+        assert(std::abs(expected_rv_data[i][1] - read_rv_data[i][1]) < 1e-16);
+    }
+
+    // attribute 9
+    std::vector<std::array<double, 2>> read_arr_data(expected_rv_data.size(),
+                                                     std::array<double, 2>());
+
+    attribute9.read(read_arr_data);
+    for (std::size_t i = 0; i < 100; ++i)
+    {
+        assert(std::abs(expected_rv_data[i][0] - read_arr_data[i][0]) < 1e-16);
+        assert(std::abs(expected_rv_data[i][1] - read_arr_data[i][1]) < 1e-16);
     }
     return 0;
 }

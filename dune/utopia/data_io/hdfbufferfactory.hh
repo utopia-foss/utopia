@@ -25,8 +25,6 @@ namespace DataIO
  */
 class HDFBufferFactory
 {
-private:
-protected:
 public:
     /**
      * @brief      function for converting source data into variable length
@@ -77,16 +75,28 @@ public:
         if constexpr (is_container_v<T>)
         {
             // set up buffer
-
-            std::vector<hvl_t> data_buffer(std::distance(begin, end));
-
-            auto buffer_begin = data_buffer.begin();
-            for (; begin != end; ++begin, ++buffer_begin)
+            if constexpr (is_array_like_v<T>)
             {
-                *buffer_begin = convert_source(adaptor(*begin));
+                std::vector<T> data_buffer(std::distance(begin, end));
+                auto buffer_begin = data_buffer.begin();
+                for (; begin != end; ++begin, ++buffer_begin)
+                {
+                    *buffer_begin = adaptor(*begin);
+                }
+                return data_buffer;
             }
+            else
+            {
+                std::vector<hvl_t> data_buffer(std::distance(begin, end));
 
-            return data_buffer;
+                auto buffer_begin = data_buffer.begin();
+                for (; begin != end; ++begin, ++buffer_begin)
+                {
+                    *buffer_begin = convert_source(adaptor(*begin));
+                }
+
+                return data_buffer;
+            }
         }
         else if constexpr (std::is_same_v<T, std::string>)
         {
