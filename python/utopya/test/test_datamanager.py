@@ -14,6 +14,7 @@ import utopya.datacontainer as udc
 # Local constants
 RUN_CFG_PATH = resource_filename('test', 'cfg/run_cfg.yml')
 SWEEP_CFG_PATH = resource_filename('test', 'cfg/sweep_cfg.yml')
+LARGE_SWEEP_CFG_PATH = resource_filename('test', 'cfg/large_sweep_cfg.yml')
 
 # Fixtures --------------------------------------------------------------------
 
@@ -55,6 +56,20 @@ def dm_after_sweep(mv_kwargs) -> DataManager:
     output going into a temporary directory, then returns the DataManager."""
     # Initialise the Multiverse
     mv_kwargs['run_cfg_path'] = SWEEP_CFG_PATH
+    mv = Multiverse(**mv_kwargs)
+
+    # Run a sweep
+    mv.run_sweep()
+    
+    # Return the data manager
+    return mv.dm
+
+@pytest.fixture
+def dm_after_large_sweep(mv_kwargs) -> DataManager:
+    """Initialises a Multiverse with a DataManager, runs a simulation with
+    output going into a temporary directory, then returns the DataManager."""
+    # Initialise the Multiverse
+    mv_kwargs['run_cfg_path'] = LARGE_SWEEP_CFG_PATH
     mv = Multiverse(**mv_kwargs)
 
     # Run a sweep
@@ -132,15 +147,16 @@ def test_load_sweep(dm_after_sweep):
         assert dset.shape == (uni['cfg']['num_steps'] + 1, 1000)
         assert np.issubdtype(dset.dtype, float)
 
-def test_MultiverseGroup(dm_after_single):
+def test_MultiverseGroup(dm_after_large_sweep):
     """Tests the MultiverseGroup"""
-    dm = dm_after_single
+    dm = dm_after_large_sweep
 
     # Load and print a tree of the loaded data
     dm.load_from_cfg(print_tree=True)
 
-    # Check integer acccess
+    # Check integer acccess, also for double digits
     assert 0 in dm['uni']
+    assert 15 in dm['uni']
 
     # Bad integer keys should not work
     with pytest.raises(KeyError, match="No universe with ID 42 available"):
