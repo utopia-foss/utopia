@@ -169,22 +169,49 @@ public:
     /// Set model boundary condition
     void set_boundary_condition (const BCType& new_bc) { _bc = new_bc; }
 
+
     /// Set model initial condition
-    void set_initial_condition (const Data& ic) {
-        auto cells = _manager.cells();
-        for (auto ci : cells) {
-            // Find cell in ic with same coordinates
-            for (auto cj : ic) {
-                if (ci->position() == cj->position()) {
-                    // Copy cell content
-                    ci->state_new() = cj->state();
-                }
-                std::cout << std::endl;
+    void set_initial_condition (const Data& ic)
+    {
+        assert(check_ic_compatibility(ic));
+
+        auto& cells = _manager.cells();
+        for (size_t i = 0; i < cells.size(); ++i) {
+            cells[i]->state_new() = ic[i]->state();
+            cells[i]->update();
+        }
+    }
+
+private:
+
+    // Verify that the inserted initial condition can be used
+    /** This function checks if
+     *      - the inserted container has the appropriate size
+     *      - the coordinates of all cells match individually
+     *  \param ic Initial condition to be used
+     */
+    bool check_ic_compatibility (const Data& ic)
+    {
+        const auto& cells = _manager.cells();
+
+        // check size
+        if (ic.size() != cells.size()) {
+            throw std::runtime_error("Container inserted as initial condition "
+                "has incorrect size " + std::to_string(ic.size())
+                + " (should be " + std::to_string(cells.size() + ")"));
+        }
+
+        // check coordinates
+        for (size_t i = 0; i < cells.size(); ++i)
+        {
+            const auto& coord_1 = cells[i]->position();
+            const auto& coord_2 = ic[i]->position();
+            for (size_t j = 0; j < coord_1.size(); j++) {
+                if (coord_1[j] != coord_2[j])
+                    return false;
             }
         }
-        for_each(cells.begin(), cells.end(),
-            [](const auto& cell){ cell->update(); }
-        );
+        return true;
     }
 };
 
