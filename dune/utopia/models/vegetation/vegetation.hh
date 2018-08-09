@@ -133,7 +133,6 @@ public:
     /// Write the cell states (aka plant bio-mass)
     void write_data () 
     {
-        const auto& cells = _manager.cells();
         _dset_plant_mass->write(_manager.cells().begin(),
                                 _manager.cells().end(),
                                 [](auto& cell) { return cell->state(); }
