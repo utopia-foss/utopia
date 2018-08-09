@@ -6,7 +6,7 @@ from setuptools import setup, find_packages
 INSTALL_DEPS = ['numpy>=1.13',
                 'PyYAML>=3.12,<4.0',
                 # From private repositories:
-                'paramspace>=1.0.1',
+                'paramspace>=1.1.0-pre.2',
                 'dantro>=0.1.0-rc.5'  # TODO use 0.1.0 once released
                 ]
 TEST_DEPS    = ['pytest>=3.4.0', 'pytest-cov>=2.5.1']
