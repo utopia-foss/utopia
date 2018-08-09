@@ -1,47 +1,60 @@
-# Copy Me
+# Contagious Disease Model
 
-The `CopyMe` model is just a template model, which helps you create a new model. This template `README` is just a proposition, but you can use your own creativity and structure to convey the important information about your model in a nice and catchy way. Feel free to add or delete new sections.
+This is a simple model of a contagious disease on a 2D-grid. It is based
+on the description in the script of the CCEES lecture of Prof. Roth.
 
 ## Fundamentals
 
-Here, you can add some description of the fundamental ideas of your model and the questions it potentially can address.
+We model a "forest" on a two dimensional square grid of cells. Each cell can be
+in one of four different states: empty, tree, infected or herd.
 
-### Subchapter of the Fundamentals
+#Update Rules
 
-Here, important subaspects of the model can be addressed.
+Each time step the cells update their respective states according to the
+following rules:
+
+1: Infected --> Empty
+2: Empty    --> Tree
+                -with a probability p_growth
+3: Tree     --> Infected
+                -with the probability p_infect for each infected
+                or herd cell in the neighbourhood
+                -with probability p_rd_infect for random-point infections
+
+The model uses the Van Neumann neighborhood (NextNeighbor), but it can be
+switched out with the Moore neighborhood (MooreNeighbor) fairly easy.
+
+## Infection herds
+
+Infection herds can be activated at the lower boundary of the grid. They spread
+infection like normal infected trees, but don't revert back to the empty state.
+(like Rule 1).
+
+## Initialization
+
+The default initialization is empty, so all cells are empty. In future randomly
+distributed trees could be added as an initialization method, though it doesn't
+impact the model outcomes.
 
 ## Implementation Details
 
-This section provides a few important implementation details.
-
-### First Crucial Detail
-
-### Second Detail: If You Try to Implement This Model, You Will Surely Have This Problem
-
-And I solved it! Look here...
+The implementation is based on the CopyMe and the SimpleEG model.  
 
 ## Simulation Results – A Selection Process
 
-it is always nice to have some small (!) pictures or videos which show some interesting simulation results.
+The model outputs a plot for each time step of the states on a 2D-grid.
 
-## More Conceptual and Theoretical Background
+// TODO: Maybe add link to wiki?
 
-Models normally are based on a lot of theory. Here, you can mention or explain some of it. Further, you can refer to important papers and/or books.
+## Theoretical Background
 
-### Theory of Template Models
+// TODO
 
-I am actually not so sure, if there is a lot of theory behind this...
-
-### Theory of Everything
-
-42 [Adams 1979]
 
 ## Possible Future Extensions
 
-You have a nice idea, but
-
-1. that would open a completely new storyline and thus would need the creation of a new model that is based on this one.
-2. you just did not have the time to explore everything, however, it would probably be a good idea to look into this in future work.
+Based on this model, the forest fire model could be implemented.
 
 ## References
-- Adams, Douglas (1979). _A Hitchhiker's Guide to the Galaxy_. Pan books.
+
+Kurt Roth: Chaotic, Complex, and Evolving Environmental Systems. Unpublished lecture notes, University of Heidelberg, 2018.
