@@ -84,8 +84,9 @@ def test_load_single(dm_after_single):
     assert 'cfg/run' in dm
 
     assert len(dm['uni']) == 1
-    assert 'uni/0' in dm
-    uni = dm['uni/0']
+    assert 'uni' in dm
+    assert 0 in dm['uni']
+    uni = dm['uni'][0]
     
     # Check that the uni config is loaded
     assert 'cfg' in uni
@@ -130,3 +131,20 @@ def test_load_sweep(dm_after_sweep):
         assert isinstance(dset, udc.NumpyDC)
         assert dset.shape == (uni['cfg']['num_steps'] + 1, 1000)
         assert np.issubdtype(dset.dtype, float)
+
+def test_MultiverseGroup(dm_after_single):
+    """Tests the MultiverseGroup"""
+    dm = dm_after_single
+
+    # Load and print a tree of the loaded data
+    dm.load_from_cfg(print_tree=True)
+
+    # Check integer acccess
+    assert 0 in dm['uni']
+
+    # Bad integer keys should not work
+    with pytest.raises(KeyError, match="No universe with ID 42 available"):
+        dm['uni'][42]
+    
+    with pytest.raises(KeyError, match="Universe IDs cannot be negative!"):
+        dm['uni'][-1]
