@@ -203,7 +203,8 @@ private:
             {
                 throw std::runtime_error(
                     "Cannot read data into nested containers with depth > 3 "
-                    "in attribute " + _name + " into vector containers!");
+                    "in attribute " +
+                    _name + " into vector containers!");
             }
 
             // everything is fine.
@@ -376,7 +377,7 @@ public:
      */
     void close()
     {
-        if (_attribute != -1)
+        if (H5Iis_valid(_attribute))
         {
             H5Aclose(_attribute);
             _attribute = -1;
@@ -754,7 +755,7 @@ public:
     void write(Iter begin,
                Iter end,
                Adaptor adaptor = [](auto& value) { return value; },
-               std::vector<hsize_t> shape = {})
+               [[maybe_unused]] std::vector<hsize_t> shape = {})
     {
         using Type = remove_qualifier_t<decltype(adaptor(*begin))>;
         // if we copy only the content of [begin, end), then simple vector
@@ -829,11 +830,7 @@ public:
      */
     virtual ~HDFAttribute()
     {
-        if (H5Iis_valid(_attribute))
-        { // FIXME: add check to make sure that
-          // it is not closed more than once
-            H5Aclose(_attribute);
-        }
+        close();
     }
 
     /**
@@ -845,29 +842,9 @@ public:
      */
 
     HDFAttribute(HDFObject& object, std::string name)
-        : _name(name), _shape(std::vector<hsize_t>()), _parent_object(&object)
+        : _shape(std::vector<hsize_t>())
     {
-        // checks the validity and opens attribute if possible, else
-        // postphones until it is written
-        if (H5Iis_valid(_parent_object->get_id()) == false)
-        {
-            throw std::invalid_argument(
-                "parent_object of attribute " + _name +
-                " is invalid, has it been closed already?");
-        }
-        else
-        {
-            if (H5LTfind_attribute(_parent_object->get_id(), _name.c_str()) == 1)
-            { // attribute exists
-                _attribute = H5Aopen(_parent_object->get_id(), _name.c_str(), H5P_DEFAULT);
-
-                get_shape();
-            }
-            else
-            { // attribute does not exist: make
-                _attribute = -1;
-            }
-        }
+        open(object, name);
     }
 };
 

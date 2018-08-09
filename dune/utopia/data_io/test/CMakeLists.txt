@@ -6,6 +6,7 @@ file(COPY "cfg_utils_test.yml"
 set(TESTS_DATAIO
     cfg_utils_test
     hdfbufferfactory_test
+    hdfchunking_test
     hdftypefactory_test
     hdffile_test
     hdfattribute_test_read

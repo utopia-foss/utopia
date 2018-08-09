@@ -194,3 +194,27 @@ Available testing groups:
 | `utopya` | Frontend package for performing simulations, reading and analyzing data |
 | `models` | Models tests (implemented in `python/model_tests`) |
 | `python` | All python tests |
+
+
+## Currently implemented models
+Below you find an overview over the models currently implemented in Utopia.
+By clicking on the model name, you will be guided to the corresponding directory inside `dune/utopia/models`, where all models reside.
+This will also show you a README of the model which contains further information about the aims and the implementation of the model.
+
+| Model Name | Description |
+| ---------- | ----------- |
+| [`SimpleEG`](dune/utopia/models/SimpleEG) | A model of simple evolutionary games on grids |
+
+
+#### Model templates, tests, benchmarks ...
+Additionally, some models are only needed to assert that Utopia functions as desired:
+
+| Model Name | Description |
+| ---------- | ----------- |
+| [`dummy`](dune/utopia/models/dummy) | Main testing model |
+| [`CopyMe`](dune/utopia/models/CopyMe) | A template for creating new models _(see below)_ |
+| [`CopyMeBare`](dune/utopia/models/CopyMeBare) | A _minimal_ template for creating new models |
+
+
+#### New to Utopia? How do I build a model?
+Aside exploring the already existing models listed above, you should check out the [Beginners Guide](dune/utopia/models/BeginnersGuide.md), which will guide you through the first steps of building your own, fancy, new Utopia model. :tada:

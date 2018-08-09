@@ -70,7 +70,9 @@ public:
         _manager(manager),
 
         // Open dataset for output of cell states 
-        _dset_plant_mass(this->_hdfgrp->open_dataset("plant_mass"))
+        _dset_plant_mass(this->_hdfgrp->open_dataset("plant_mass",
+                                                     {H5S_UNLIMITED,
+                                                      _manager.cells().size()}))
     {
         // Initialize model parameters from config file
         Rain rain{as_double(this->_cfg["rain_mean"]),
@@ -90,17 +92,14 @@ public:
                                      as_double(this->_cfg["seeding"]));
 
         // Write the cell coordinates
-        auto coords = this->_hdfgrp->open_dataset("cell_positions");
+        auto coords = this->_hdfgrp->open_dataset("cell_positions", {100});
         coords->write(_manager.cells().begin(),
                       _manager.cells().end(),
                       [](const auto& cell) {
                         return std::array<double,2>
                             {{cell->position()[0],
                               cell->position()[1]}};
-                      },
-                      1,
-                      {100},
-                      {100}
+                      }
         );
 
         // Write initial state 
@@ -134,16 +133,11 @@ public:
     /// Write the cell states (aka plant bio-mass)
     void write_data () 
     {
-        auto cells = _manager.cells();
-        unsigned int num_cells = std::distance(cells.begin(), cells.end());
-
-        _dset_plant_mass->write(cells.begin(), cells.end(),
-                              [](auto& cell) { return cell->state(); },
-                              2,              // rank
-                              {1, num_cells}, // extend of this entry
-                              {},             // max_size of the dataset
-                              8               // chunksize, for extension
-                              );
+        const auto& cells = _manager.cells();
+        _dset_plant_mass->write(_manager.cells().begin(),
+                                _manager.cells().end(),
+                                [](auto& cell) { return cell->state(); }
+                               );
     }
 
     /// Return const reference to stored data

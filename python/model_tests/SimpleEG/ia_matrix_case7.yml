@@ -1,0 +1,14 @@
+# Config for testing a specific ia_matrix configuration
+---
+parameter_space:
+  # Disable steps; not needed
+  num_steps: 0
+
+  # Load the model config
+  SimpleEG: !model
+    model_name: SimpleEG
+
+    # Work on a smaller grid size
+    grid_size: [5, 5]
+
+    # NOT setting a value here because the default is to be tested

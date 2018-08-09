@@ -8,7 +8,9 @@
 #include "../hdffile.hh"
 #include "../hdfgroup.hh"
 #include <cassert>
+#include <dune/common/parallel/mpihelper.hh>
 #include <iostream>
+
 using namespace Utopia::DataIO;
 
 bool check_exists_group(HDFFile& file, std::string path)
@@ -25,8 +27,10 @@ bool check_exists_group(HDFFile& file, std::string path)
     }
 }
 
-int main()
+int main(int argc, char** argv)
 {
+    Dune::MPIHelper::instance(argc, argv);
+
     HDFFile file("grouptest_file.h5", "w");
 
     // open file and read
@@ -46,15 +50,16 @@ int main()
     auto testgroup2 = base_group->open_group("/testgroup1/dummygroup");
     assert((*testgroup->get_referencecounter())[testgroup->get_address()] == 2);
 
-    assert((*testgroup->get_referencecounter())[testgroup->get_address()] == 2);
-
     testgroup->add_attribute(
         "readme", "this group has been created for testing reference counter");
     testgroup->close();
     assert((*testgroup->get_referencecounter())[testgroup->get_address()] == 1);
 
     // check if the attributes are there
+    testgroup->open(*base_group, "/testgroup1/dummygroup");
     assert(H5LTfind_attribute(testgroup->get_id(), "readme") == 1);
+
+    testgroup->close();
 
     // check now if stuff can be done with the group
     testgroup2->add_attribute(

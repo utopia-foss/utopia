@@ -9,8 +9,10 @@
 #include "../hdffile.hh"
 #include "../hdfgroup.hh"
 #include <cassert>
+#include <dune/common/parallel/mpihelper.hh>
 #include <iostream>
 #include <vector>
+
 using namespace Utopia::DataIO;
 // for getting info
 
@@ -29,7 +31,7 @@ void write(std::vector<Teststruct>& data)
     auto group = file.get_basegroup()->open_group(
         "first_deeper/second_deeper/third_deeper");
 
-    auto dataset = group->open_dataset("dataset1");
+    auto dataset = group->open_dataset("dataset1", {data.size()});
     dataset->write(data.begin(), data.end(), [](auto& value) { return value.x; });
     // std::string attrdata = "this is a testattribute";
     dataset->add_attribute(
@@ -37,14 +39,14 @@ void write(std::vector<Teststruct>& data)
         std::string("this is an attribute to a double dataset"));
 
     // write variable length string
-    auto dataset2 = group->open_dataset("dataset2");
+    auto dataset2 = group->open_dataset("dataset2", {data.size()});
     dataset2->write(data.begin(), data.end(),
                     [](auto& value) -> std::string& { return value.y; });
 
     dataset2->add_attribute("stringattribute",
                             "this is an attribute to std::string");
 
-    auto dataset3 = group->open_dataset("dataset3");
+    auto dataset3 = group->open_dataset("dataset3", {data.size()});
     dataset3->write(data.begin(), data.end(),
                     [](auto& value) -> std::vector<int>& { return value.z; });
 
@@ -64,7 +66,8 @@ void read(std::vector<Teststruct>& data)
     auto dataset2 = group->open_dataset("dataset2");
     auto dataset3 = group->open_dataset("dataset3");
 
-    auto values = dataset1->read<double>();
+    auto [shape1, values] = dataset1->read<std::vector<double>>();
+    assert(shape1 == std::vector<hsize_t>{data.size()});
 
     assert(values.size() == data.size());
     for (std::size_t i = 0; i < data.size(); ++i)
@@ -72,14 +75,18 @@ void read(std::vector<Teststruct>& data)
         assert(std::abs(values[i] - data[i].x) < 1e-16);
     }
 
-    auto read_data = dataset2->read<std::string>();
-    assert(read_data.size() == data.size());
-    for (std::size_t i = 0; i < read_data.size(); ++i)
+    auto [shape2, read_stringdata] = dataset2->read<std::vector<std::string>>();
+    assert(shape2 == std::vector<hsize_t>{data.size()});
+
+    assert(read_stringdata.size() == data.size());
+    for (std::size_t i = 0; i < read_stringdata.size(); ++i)
     {
-        assert(std::string(read_data[i]) == data[i].y);
+        assert(std::string(read_stringdata[i]) == data[i].y);
     }
 
-    auto read_data_int = dataset3->read<std::vector<int>>();
+    auto [shape3, read_data_int] = dataset3->read<std::vector<std::vector<int>>>();
+    assert(shape3 == std::vector<hsize_t>{data.size()});
+
     for (std::size_t i = 0; i < read_data_int.size(); ++i)
     {
         assert(read_data_int[i].size() == data[i].z.size());
@@ -90,14 +97,16 @@ void read(std::vector<Teststruct>& data)
     }
 
     HDFAttribute attribute(*dataset1, "testattribute");
-    auto [shape, read_attribute] = attribute.read<std::string>();
-    assert(shape.size() == 1);
-    assert(shape[0] == 1);
+    auto [shape_attr, read_attribute] = attribute.read<std::string>();
+    assert(shape_attr.size() == 1);
+    assert(shape_attr[0] == 1);
     assert(read_attribute == "this is an attribute to a double dataset");
 }
 
-int main()
+int main(int argc, char** argv)
 {
+    Dune::MPIHelper::instance(argc, argv);
+
     // H5Eset_auto(error_stack, NULL, NULL); // turn off automatic error
     // printings
     std::vector<Teststruct> data(50);

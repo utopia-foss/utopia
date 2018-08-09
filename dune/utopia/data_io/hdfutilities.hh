@@ -8,8 +8,11 @@
 #define HDFUTILITIES_HH
 
 #include <array>
+#include <cmath>
+#include <iostream>
 #include <string>
 #include <type_traits>
+#include <vector>
 // Functions for determining if a type is an STL-container are provided here.
 // This is used if we wish to make hdf5 types for storing such data in an
 // hdf5 dataset.
@@ -198,7 +201,7 @@ struct is_array_like<T, std::void_t<decltype(std::tuple_size<T>::value)>> : std:
 };
 // FIXME Using tuple_size here is not optimal, but it gives a unique
 //       representation of the tuple
-// See:  https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/merge_requests/109/diffs#note_11774
+// See: https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/merge_requests/109/diffs#note_11774
 
 /**
  * @brief Shorthand for is_array_like
@@ -207,6 +210,88 @@ struct is_array_like<T, std::void_t<decltype(std::tuple_size<T>::value)>> : std:
  */
 template <typename T>
 inline constexpr bool is_array_like_v = is_array_like<T>::value;
+
+/**
+ * @brief Output operator for std::arrays
+ *
+ * @tparam T
+ * @tparam N
+ * @param os
+ * @param v
+ * @return std::ostream&
+ */
+template <class T, std::size_t N>
+inline std::ostream& operator<<(std::ostream& os, const std::array<T, N>& v)
+{
+    os << "[";
+    for (auto ii = v.begin(); ii != v.end(); ++ii)
+    {
+        os << " " << *ii;
+    }
+    os << " ]";
+    return os;
+}
+
+/**
+ * @brief Output operator for std::arrays
+ *
+ * @tparam T
+ * @tparam N
+ * @param os
+ * @param v
+ * @return std::ostream&
+ */
+template <class T, std::size_t N>
+inline std::ostream& operator<<(std::ostream& os, std::array<T, N>&& v)
+{
+    os << "[";
+    for (auto ii = v.begin(); ii != v.end(); ++ii)
+    {
+        os << " " << *ii;
+    }
+    os << " ]";
+    return os;
+}
+
+/**
+ * @brief Output operator for containers
+ *
+ * @tparam T automatically determined
+ * @param os outstream to use
+ * @param v container to put out
+ * @return std::ostream& outstream used
+ */
+template <template <typename...> class Container, class T, std::enable_if_t<!is_string_v<Container<T>>, int> = 0>
+inline std::ostream& operator<<(std::ostream& os, const Container<T>& v)
+{
+    os << "[";
+    for (typename Container<T>::const_iterator ii = v.begin(); ii != v.end(); ++ii)
+    {
+        os << " " << *ii;
+    }
+    os << " ]";
+    return os;
+}
+
+/**
+ * @brief Output operator for containers
+ *
+ * @tparam T automatically determined
+ * @param os outstream to use
+ * @param v container to put out
+ * @return std::ostream& outstream used
+ */
+template <template <typename...> class Container, class T, std::enable_if_t<!is_string_v<Container<T>>, int> = 0>
+inline std::ostream& operator<<(std::ostream& os, Container<T>&& v)
+{
+    os << "[";
+    for (auto ii = v.begin(); ii != v.end(); ++ii)
+    {
+        os << " " << *ii;
+    }
+    os << " ]";
+    return os;
+}
 
 } // namespace DataIO
 } // namespace Utopia
