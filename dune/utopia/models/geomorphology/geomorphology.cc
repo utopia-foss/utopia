@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
         auto mngr  = Utopia::Setup::create_manager_cells<true, true>(grid, cells);
 
         // Create the model instance
-        Utopia::Models::Geomorphology model("geomorphology", pp, mngr);
+        Utopia::Models::Geomorphology::Geomorphology model("geomorphology", pp, mngr);
 
         // And iterate it for a number of steps
         auto num_steps = config["num_steps"].as<int>();

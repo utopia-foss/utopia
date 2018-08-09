@@ -12,6 +12,8 @@ namespace Utopia {
 
 namespace Models {
 
+namespace Geomorphology {
+
 /// Define data type and boundary condition type of geomorphology model
 template<class Manager>
 using DataType = typename Manager::Container;
@@ -183,6 +185,8 @@ public:
         );
     }
 };
+
+} // namespace Geomorphology
 
 } // namespace Models
 
