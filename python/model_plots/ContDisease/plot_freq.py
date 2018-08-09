@@ -11,10 +11,8 @@ from ..tools import save_and_close
 
 # -----------------------------------------------------------------------------
 
-
-
-def plot_forest(dm: DataManager, *, out_path: str, file_format: str='png', uni: int, fmt: str=None, save_kwargs: dict=None, **plot_kwargs):
-    """Plots the forest state for each time step of the two dimensional celluar automaton
+def plot_frequency(dm: DataManager, *, out_path: str, file_format: str='png', uni: int, fmt: str=None, save_kwargs: dict=None, **plot_kwargs):
+    """Calculates the the density of trees and perfoms a lineplot
 
     Args:
         dm (DataManager): The data manager from which to retrieve the data
@@ -31,31 +29,23 @@ def plot_forest(dm: DataManager, *, out_path: str, file_format: str='png', uni: 
     uni_cfg = dm['uni'][str(uni)]['cfg']
     num_steps = uni_cfg['num_steps']
     grid_size = uni_cfg['ContDisease']['grid_size']
-
+    num_cells = grid_size[0] * grid_size[1]
     # Extract the data for the tree states and convert it into a 3d-array
 
     data_ = grp["state"]
-    data = np.reshape(data_, (num_steps+1, grid_size[1], grid_size[0]))
 
+    # Calculates for each time step the ratio of trees to the grid size
 
-    # Define colormap
-
-    cmp = mpl.colors.ListedColormap(['#996633','#006600','#cc0000', '#ff6600'])
-    boundary = [0,0.5,1.5,2.5,3.5]
-    norm = mpl.colors.BoundaryNorm(boundary, cmp.N)
-
-    # Plot data and save it
-
-    out_path_base = os.path.splitext(out_path)[0]
-    out_path_ext = os.path.splitext(file_format)[1]
-
-
+    ratio_tree = []
+    timesteps = list(range(num_steps))
     for i in range(num_steps):
-        if (i == 0):
-            plt.figure()
-            img = plt.imshow(data[i], cmp, norm = norm, origin = 'lower', **plot_kwargs)
-        else:
-            img.set_data(data[i])
-        plt.title("timestep: {}".format(i))
-        #FIXME Include save_kwargs in plt.savefig
-        plt.savefig(out_path_base + "{0:0>4}".format(i) + out_path_ext)
+        ratio_tree.append( np.sum(data_[i] == 1) / num_cells )
+
+    plt.figure()
+    plt.title("tree density")
+
+    plt.plot(timesteps,ratio_tree,  color = 'green', label = 'tree', **plot_kwargs)
+
+    plt.xlabel("timesteps")
+    plt.legend()
+    save_and_close(out_path, save_kwargs=save_kwargs)
