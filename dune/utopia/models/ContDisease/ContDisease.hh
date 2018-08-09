@@ -233,7 +233,7 @@ public:
         }
 
         // Different initializations for possible infection herds.
-        if (infection_herd == true){
+        if (infection_herd){
 
           if (infection_herd_src == "south"){
 
@@ -255,19 +255,15 @@ public:
             apply_rule(_set_infection_herd_south, _manager.cells());
           }
 
-          else
-          {
-            throw std::invalid_argument("The infection herd source ''" + initial_state + "'' is not valid! Valid options: 'south'");
+          else {
+            throw std::invalid_argument("The infection herd source ''" + infection_herd_src + "'' is not valid! Valid options: 'south'");
           }
         }
 
-        else if (infection_herd == false){
+        else {
           this->_log->debug("Not using an infection herd.");
         }
 
-        else{
-          throw std::invalid_argument("The only valid arguments are true or false!");
-        }
       // Write information that cells are initialized to the logger
       this->_log->info("Cells initialized.");
     }
