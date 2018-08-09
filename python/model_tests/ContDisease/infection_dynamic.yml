@@ -1,0 +1,20 @@
+# Configuration file used to test that the infection dynamic of the model is correct
+
+---
+
+parameter_space:
+  num_steps: 3
+
+# Load the model config
+  ContDisease: !model
+    model_name: ContDisease  # imports the model config for the CopyMe model
+    initial_state: empty
+
+    infection_herd: true
+    infection_herd_src: south
+
+    p_growth: 1
+    p_infect: 1
+    p_rd_infect: 0
+
+    grid_size: [3,3]

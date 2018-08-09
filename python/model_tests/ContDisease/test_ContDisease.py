@@ -1,14 +1,14 @@
 """Tests of the output of the ContDisease model"""
 
-#import numpy as np
+import numpy as np
 
-#import pytest
+import pytest
 
-#from utopya.testtools import ModelTest
+from utopya.testtools import ModelTest
 
-"""
+
 # Configure the ModelTest class for ContDisease
-mtc = ModelTest("ContDisease", test_file=__file__)  # TODO set your model name here
+mtc = ModelTest("ContDisease", test_file=__file__)
 
 # Fixtures --------------------------------------------------------------------
 # Define fixtures
@@ -16,61 +16,129 @@ mtc = ModelTest("ContDisease", test_file=__file__)  # TODO set your model name h
 
 # Tests -----------------------------------------------------------------------
 
-def test_basics():
-    Test the most basic features of the model
-    # Create a Multiverse using the default model configuration
-    mv = mtc.create_mv()
 
-    # Run a single simulation
-    mv.run_single()
+def test_initial_state_empty():
+    """
+    Tests that the initial states are all empty,
+    for the initial state empty and no infection herd activated.
+    """
+    mv, dm = mtc.create_run_load(from_cfg="initial_state_empty.yml")
 
-    # Load data using the DataManager and the default load configuration
-    mv.dm.load_from_cfg(print_tree=True)
-    # The `print_tree` flag creates output of which data was loaded
-    # NOTE can also use a shortcut to do all of the above, see test_output
+    # Get data
+    grp = dm['uni']['0']['data/ContDisease']
+    data_ = grp["state"]
 
-    # Assert that data was loaded, i.e. that data was written
-    assert len(mv.dm)
+    # Get the grid size
+    uni_cfg = dm['uni']['0']['cfg']
+    grid_size = uni_cfg['ContDisease']['grid_size']
 
-# NOTE The below test is an example of how to access data and write a test.
-#      You can adjust this to your needs and then remove the decorator to
-#      enable the test.
-# TODO Adapt this to the data you are putting out
-def test_output():
-    Test that the output structure is correct
-    # Create a Multiverse and let it run
-    mv, dm = mtc.create_run_load(from_cfg="output.yml", perform_sweep=True)
-    # NOTE this is a shortcut. It creates the mv, lets it run, then loads data
+    num_cells = grid_size[0] * grid_size[1]
 
-    # Get the meta-config from the DataManager
-    mcfg = dm['cfg']['meta']
-    print("meta config: ", mcfg)
+    # Check that only one step was performed and written
 
-    # Assert that the number of runs matches the specified ones
-    assert len(dm['uni']) == mcfg['parameter_space'].volume
+    assert data_.shape == (1, num_cells)
 
-    # For each universe, iterate over the output data and assert the shape
-    # and the content of the output data
-    for uni_no, uni in dm['uni'].items():
-        # Get the data
-        data = uni['data']['ContDisease']  # TODO change this to your model name
+    # Check if all Cells are empty
 
-        # Get the config of this universe
-        uni_cfg = uni['cfg']
+    assert data_.all() == np.zeros(num_cells).all()
 
-        # Calculate the number of cells
-        grid_size = uni_cfg['ContDisease']['grid_size']
-        num_cells = grid_size[0] * grid_size[1]
+def test_initial_state_herd_south():
+    """
+    Initial state is 'empty', but an infection herd at the southern side
+    is activated.
+    """
 
-        # Check that all datasets are available
-        assert 'some_state' in data
-        assert 'some_trait' in data
+    mv, dm = mtc.create_run_load(from_cfg="initial_state_empty_herd_south.yml")
 
-        # Assert they have the correct shape
-        assert data['some_state'].shape == (uni_cfg['num_steps'] + 1,
-                                            num_cells)
-        assert data['some_trait'].shape == (uni_cfg['num_steps'] + 1,
-                                            num_cells)
+    # Get data
+    grp = dm['uni']['0']['data/ContDisease']
+    data_ = grp["state"]
 
-        # Can do further tests here ...
-"""
+    # Get the grid size
+    uni_cfg = dm['uni']['0']['cfg']
+    grid_size = uni_cfg['ContDisease']['grid_size']
+    num_cells = grid_size[0] * grid_size[1]
+
+    num_steps = uni_cfg['num_steps']
+    data = np.reshape(data_, (num_steps+1, grid_size[1], grid_size[0]))
+
+
+    # Check that only one step was written
+
+    assert data_.shape == (1, num_cells)
+
+    # Check if all Cells are empty, apart from the lowest horizontal row
+
+    assert data[0][:-1].all() == np.zeros((grid_size[1],grid_size[0]-1)).all()
+
+    # Check if the lowest row is an infection herd
+
+    assert data[0][-1].all() == (np.zeros(grid_size[1]+3)).all()
+
+def test_growing_dynamic():
+    """
+    Test that with a p_growth probability of 1 and an empty initial state,
+    all cells become trees after one timestep.
+    """
+
+    mv, dm = mtc.create_run_load(from_cfg="growing_dynamic.yml")
+
+    # Get data
+    grp = dm['uni']['0']['data/ContDisease']
+    data_ = grp["state"]
+
+    # Get the grid size
+    uni_cfg = dm['uni']['0']['cfg']
+    grid_size = uni_cfg['ContDisease']['grid_size']
+    num_cells = grid_size[0] * grid_size[1]
+
+    # Check that only two steps were written
+
+    assert data_.shape == (2, num_cells)
+
+    # Check that all cells are trees after one timestep
+
+    assert data_[1].all() == (np.full((grid_size[1],grid_size[0]),1)).all()
+
+def test_infection_dynamic():
+    """
+    Test that with a p_infect probability of 1, a p_growth probability of 1
+    and an empty initial state, with an infection herd south the infection spreads
+    according to the expectations.
+    """
+
+    mv, dm = mtc.create_run_load(from_cfg="infection_dynamic.yml")
+
+    # Get data
+    grp = dm['uni']['0']['data/ContDisease']
+    data_ = grp["state"]
+
+    # Get the grid size
+    uni_cfg = dm['uni']['0']['cfg']
+    grid_size = uni_cfg['ContDisease']['grid_size']
+    num_cells = grid_size[0] * grid_size[1]
+
+    num_steps = uni_cfg['num_steps']
+    data = np.reshape(data_, (num_steps+1, grid_size[1], grid_size[0]))
+
+    # Check that only three steps were written
+
+    assert data_.shape == (4, num_cells)
+
+    #Check that the last row is an infection herd
+
+    assert data[0][-1].all() == (np.zeros(grid_size[1]+3)).all()
+
+    # Check that only the second row is infected after two timesteps and the
+    # first are trees.
+
+    assert data[2][0].all() == (np.zeros(grid_size[1])+1).all()
+    assert data[2][1].all() == (np.zeros(grid_size[1])+2).all()
+    assert data[2][-1].all() == (np.zeros(grid_size[1])+3).all()
+
+    # Check that the second row is empty after three timesteps and the
+    # first is infected.
+
+    assert data[3][0].all() == (np.zeros(grid_size[1])+2).all()
+    assert data[3][1].all() == (np.zeros(grid_size[1])).all()
+    assert data[3][-1].all() == (np.zeros(grid_size[1])+3).all()
