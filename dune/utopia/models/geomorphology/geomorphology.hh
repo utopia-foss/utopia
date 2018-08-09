@@ -87,14 +87,16 @@ public:
                                     this->_cfg["rain_var"].template as<double>());
 
         // Write the cell coordinates
-        auto dsetX = this->_hdfgrp->open_dataset("coordinates_x");
-        dsetX->write(_manager.cells().begin(),
-                    _manager.cells().end(), 
-                    [](const auto& cell) {return cell->position()[0];});
-        auto dsetY = this->_hdfgrp->open_dataset("coordinates_y");
-        dsetY->write(_manager.cells().begin(),
-                    _manager.cells().end(), 
-                    [](const auto& cell) {return cell->position()[1];});
+        auto coords = this->_hdfgrp->open_dataset("cell_positions",
+                                                  {_manager.cells().size()});
+        coords->write(_manager.cells().begin(),
+                      _manager.cells().end(),
+                      [](const auto& cell) {
+                        return std::array<double,2>
+                            {{cell->position()[0],
+                              cell->position()[1]}};
+                      }
+        );
 
         // Write cell height 
         auto dsetH = this->_hdfgrp->open_dataset("height");
