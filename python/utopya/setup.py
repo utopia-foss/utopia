@@ -6,8 +6,9 @@ from setuptools import setup, find_packages
 INSTALL_DEPS = ['numpy>=1.13',
                 'PyYAML==3.12',
                 # From private repositories:
+                # NOTE Versions need also be set in python/CMakeLists.txt
                 'paramspace>=1.0.1',
-                'dantro>=0.1.0-rc.5'  # TODO use 0.1.0 once released
+                'dantro>=0.2.0'
                 ]
 TEST_DEPS    = ['pytest>=3.4.0', 'pytest-cov>=2.5.1']
 
