@@ -103,7 +103,7 @@ public:
                       }
         );
 
-        // Write initial state 
+        // Write initial state
         write_data();
     }
 
@@ -118,17 +118,33 @@ public:
     {
         // Apply logistic growth and seeding
         auto growth_seeding_rule = [this](const auto cell){
-                auto state = cell->state();
+                const auto state = cell->state();
                 auto rain  = std::get<Rain>(_bc)(*(_manager.rng()));
+
+                // regular logistic growth
                 if (state != 0) {
                     auto growth = std::get<1>(_bc);
                     return state + state*growth*(1 - state/rain);
                 }
+
+                // seeding
                 auto seeding = std::get<2>(_bc);
                 return seeding*rain;
 
         };
+
+        // Set negative populations to zero
+        auto sanitize_population = [this](const auto cell){
+            const auto state = cell->state();
+            if (state < 0.0 or std::isinf(state)) {
+                return 0.0;
+            }
+
+            return state;
+        };
+
         apply_rule(growth_seeding_rule, _manager.cells());
+        apply_rule(sanitize_population, _manager.cells());
     }
 
     /// Write the cell states (aka plant bio-mass)

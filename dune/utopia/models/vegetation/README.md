@@ -6,7 +6,7 @@ So far, the only driver for a change in the plant bio-mass is rainfall, implemen
 
 ## Model parameters
 
-* mean rainfall $`<r>`$
+* mean rainfall $`\langle r \rangle`$
 * rainfall standard deviation $`\sigma_r`$
 * growth rate $`g`$
 * seeding rate $`s`$
@@ -16,6 +16,9 @@ So far, the only driver for a change in the plant bio-mass is rainfall, implemen
 In each time step, the plant bio-mass on a cell is increased according to a logistic growth model. Let $`m_{t,i}`$ be the plant bio-mass on cell $`i`$ at time $`t`$ and $`r_{t,i}`$ the rainfall at time $`t`$ onto cell $`i`$. The plant bio-mass at time $`t+1`$ is then determined as
 
 $`m_{t+1,i} = m_{t,i} + m_{t,i} \cdot g \cdot (1 - m_{t,i}/r_{t,i})`$.
+
+It is possible that the result yields a negative value. In this case, the
+population density is silenty set to zero, $`m_{t+1,i} = 0`$.
 
 ## Seeding process
 
@@ -27,7 +30,7 @@ $`m_{t+1,i} = s \cdot r_{t,i}`$.
 
 The current default parameters (as defined in the file `vegetation_cfg.yml`) are:
 
-* $`<r> = 10`$
+* $`\langle r \rangle = 10`$
 * $`\sigma_r = 2`$
 * $`g = 0.1`$
 * $`s = 0.2`$
