@@ -64,11 +64,11 @@ public:
         _manager(manager),
 
         // Open dataset for output of cell states 
-        _dset_water_content(this->hdfgrp->open_dataset("water_content")),
+        _dset_water_content(this->_hdfgrp->open_dataset("water_content")),
 
         // Initialize model parameters from config file
-        _bc{this->cfg["rain_mean"].template as<double>(), 
-            this->cfg["rain_var"].template as<double>()}
+        _bc{this->_cfg["rain_mean"].template as<double>(), 
+            this->_cfg["rain_var"].template as<double>()}
     {
         // Initialize altitude as an inclined plane (by making use of coordinates)
         auto set_inclined_plane = [this](const auto cell) {   
@@ -79,23 +79,23 @@ public:
         apply_rule(set_inclined_plane, manager.cells()); 
 
         // Add the model parameters as attributes
-        this->hdfgrp->add_attribute("rain_mean", 
-                                    this->cfg["rain_mean"].template as<double>());
-        this->hdfgrp->add_attribute("rain_var", 
-                                    this->cfg["rain_var"].template as<double>());
+        this->_hdfgrp->add_attribute("rain_mean", 
+                                    this->_cfg["rain_mean"].template as<double>());
+        this->_hdfgrp->add_attribute("rain_var", 
+                                    this->_cfg["rain_var"].template as<double>());
 
         // Write the cell coordinates
-        auto dsetX = this->hdfgrp->open_dataset("coordinates_x");
+        auto dsetX = this->_hdfgrp->open_dataset("coordinates_x");
         dsetX->write(_manager.cells().begin(),
                     _manager.cells().end(), 
                     [](const auto& cell) {return cell->position()[0];});
-        auto dsetY = this->hdfgrp->open_dataset("coordinates_y");
+        auto dsetY = this->_hdfgrp->open_dataset("coordinates_y");
         dsetY->write(_manager.cells().begin(),
                     _manager.cells().end(), 
                     [](const auto& cell) {return cell->position()[1];});
 
         // Write cell height 
-        auto dsetH = this->hdfgrp->open_dataset("height");
+        auto dsetH = this->_hdfgrp->open_dataset("height");
         dsetH->write(_manager.cells().begin(),
                     _manager.cells().end(), 
                     [](const auto& cell) {return cell->state()[0];});
@@ -107,9 +107,6 @@ public:
     /// Iterate a single step
     void perform_step ()
     {
-        // Communicate which iteration step is performed
-        std::cout << "  Performing step @ t = " << this->time << " ...";
-
         // Let it rain
         auto rain = [this](const auto cell) {
             auto rain = _bc(*(_manager.rng()));
@@ -156,18 +153,10 @@ public:
      */
     void write_data () {
 
-        std::cout << "Writing data @ t = " << this->time << " ... " << std::endl;
-
-        auto cells = _manager.cells();
-        unsigned int num_cells = std::distance(cells.begin(), cells.end());
-
-        _dset_water_content->write(cells.begin(), cells.end(),
-                              [](auto& cell) { return cell->state()[1]; },
-                              2,              // rank
-                              {1, num_cells}, // extend of this entry
-                              {},             // max_size of the dataset
-                              8               // chunksize, for extension
-                              );
+        _dset_water_content->write(_manager.cells().begin(),
+                                   _manager.cells().end(),
+                                   [](auto& cell) { return cell->state()[1]; }
+                                  );
     }
 
     /// Return const reference to cell container
