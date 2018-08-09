@@ -73,8 +73,8 @@ public:
         _dset_plant_mass(this->_hdfgrp->open_dataset("plant_mass"))
     {
         // Initialize model parameters from config file
-        std::normal_distribution<> rain{as_double(this->_cfg["rain_mean"]),
-                                        as_double(this->_cfg["rain_var"])};
+        Rain rain{as_double(this->_cfg["rain_mean"]),
+                  as_double(this->_cfg["rain_var"])};
         _bc = std::make_tuple(rain, 
                               as_double(this->_cfg["growth"]),
                               as_double(this->_cfg["seeding"]));
@@ -90,14 +90,18 @@ public:
                                      as_double(this->_cfg["seeding"]));
 
         // Write the cell coordinates
-        auto dsetX = this->_hdfgrp->open_dataset("coordinates_x");
-        dsetX->write(_manager.cells().begin(),
-                    _manager.cells().end(), 
-                    [](const auto& cell) {return cell->position()[0];});
-        auto dsetY = this->_hdfgrp->open_dataset("coordinates_y");
-        dsetY->write(_manager.cells().begin(),
-                    _manager.cells().end(), 
-                    [](const auto& cell) {return cell->position()[1];});
+        auto coords = this->_hdfgrp->open_dataset("cell_positions");
+        coords->write(_manager.cells().begin(),
+                      _manager.cells().end(),
+                      [](const auto& cell) {
+                        return std::array<double,2>
+                            {{cell->position()[0],
+                              cell->position()[1]}};
+                      },
+                      1,
+                      {100},
+                      {100}
+        );
 
         // Write initial state 
         write_data();
