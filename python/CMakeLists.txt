@@ -16,7 +16,7 @@ message(STATUS "Installing required Python packages ...")
 # NOTE Take care that the versions used here match those in the README.md
 # -- paramspace --
 dune_python_find_package(PACKAGE paramspace
-                         VERSION 1.0.1
+                         VERSION 1.1.0rc2
                          INTERPRETER ${DUNE_PYTHON_VIRTUALENV_EXECUTABLE})
 
 if(NOT DUNE_PYTHON_paramspace_FOUND)

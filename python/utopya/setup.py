@@ -4,10 +4,10 @@ from setuptools import setup, find_packages
 
 # Dependency lists
 INSTALL_DEPS = ['numpy>=1.13',
-                'PyYAML==3.12',
+                'PyYAML>=3.12,<4.0',
                 # From private repositories:
                 # NOTE Versions need also be set in python/CMakeLists.txt
-                'paramspace>=1.0.1',
+                'paramspace>=1.1.0-pre.2',
                 'dantro>=0.2.0'
                 ]
 TEST_DEPS    = ['pytest>=3.4.0', 'pytest-cov>=2.5.1']
