@@ -71,7 +71,7 @@ public:
 
         // Open dataset for output of cell states 
         _dset_plant_mass(this->_hdfgrp->open_dataset("plant_mass",
-                                                     {H5S_UNLIMITED,
+                                                     {this->get_time_max() + 1,
                                                       _manager.cells().size()}))
     {
         // Initialize model parameters from config file
@@ -92,7 +92,8 @@ public:
                                      as_double(this->_cfg["seeding"]));
 
         // Write the cell coordinates
-        auto coords = this->_hdfgrp->open_dataset("cell_positions", {100});
+        auto coords = this->_hdfgrp->open_dataset("cell_positions",
+                                                  {_manager.cells().size()});
         coords->write(_manager.cells().begin(),
                       _manager.cells().end(),
                       [](const auto& cell) {
