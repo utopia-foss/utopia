@@ -2,9 +2,9 @@
 ---
 forest_ca:
   creator: external
-
   module: model_plots.ContDisease
   plot_func: plot_forest
+
   file_format: png
   uni: 0
 
@@ -12,4 +12,5 @@ frequencies:
   creator: external
   module: model_plots.ContDisease
   plot_func: plot_frequency
+
   uni: 0
