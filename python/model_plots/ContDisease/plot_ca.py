@@ -45,11 +45,11 @@ def plot_forest(dm: DataManager, *, out_path: str, file_format: str='png', uni: 
 
     # Set the initial states
     plt.figure()
-    img = plt.imshow(data[i], cmp, norm = norm, origin = 'lower', **plot_kwargs)
+    img = plt.imshow(data[0], cmp, norm = norm, origin = 'lower', **plot_kwargs)
+    plt.savefig(out_path_base + "{0:0>4}".format(0) + out_path_ext)
 
     for i in range(1, num_steps):
         img.set_data(data[i])
-        plt.title("timestep: {t:0{pad:d}d}".format(t=i, pad=len(str(num_steps))))
+        plt.title("timestep: {}".format(i))
         #FIXME Include save_kwargs in plt.savefig
-        plt.savefig(out_path_base + "{0:0>4}".format(i) + out_path_ext,
-                    **(save_kwargs if save_kwargs else {}))
+        plt.savefig(out_path_base + "{0:0>4}".format(i) + out_path_ext)
