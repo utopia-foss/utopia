@@ -30,7 +30,7 @@ def frequency(dm: DataManager, *, out_path: str, uni: int, strategy: Union[str, 
         TypeError: For invalid strategy argument
     """
     # Get the group that all datasets are in
-    grp = dm['uni'][str(uni)]['data/SimpleEG']
+    grp = dm['uni'][uni]['data/SimpleEG']
 
     # Extract the data of the frequency
     strategy_data = grp['strategy']

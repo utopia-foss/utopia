@@ -52,8 +52,8 @@ def test_specific_scenario():
     # Create a multiverse, run a single univers and save the data in the DataManager dm
     mv, dm = mtc.create_run_load(from_cfg="specific_scenario.yml", perform_sweep=False)
 
-    payoff = dm['uni']['0']['data']['SimpleEG']['payoff'].reshape(11,11,11)
-    strategy = dm['uni']['0']['data']['SimpleEG']['strategy'].reshape(11,11,11)
+    payoff = dm['uni'][0]['data']['SimpleEG']['payoff'].reshape(11, 11, 11)
+    strategy = dm['uni'][0]['data']['SimpleEG']['strategy'].reshape(11, 11, 11)
 
     ### Check specific values 
     ## First iteration
@@ -99,14 +99,19 @@ def test_specific_scenario():
 
 def test_macroscopic_values():
     """Test macroscopic values taken and adapted from Nowak & May 1992"""
-    # Create a multiverse, run a single univers and save the data in the data manager dm
-    mv, dm = mtc.create_run_load(from_cfg="macroscopic_value.yml", perform_sweep=False)
+    # Create a multiverse, run a single universe and load the data into the
+    # DataManager dm
+    mv, dm = mtc.create_run_load(from_cfg="macroscopic_value.yml",
+                                 perform_sweep=False)
+
+    # Get the universe (via integer access!)
+    uni = dm['uni'][0]
 
     # Get the strategy
-    strategy = dm['uni']['0']['data']['SimpleEG']['strategy']
+    strategy = uni['data']['SimpleEG']['strategy']
     
     # Get the grid size
-    cfg = dm['uni']['0']['cfg']['SimpleEG']
+    cfg = uni['cfg']['SimpleEG']
     grid_size = cfg['grid_size']
 
     # Calculate the frequency of S0 and S1 for the last five time steps

@@ -22,7 +22,7 @@ def single_state(dm: DataManager, *, out_path: str, uni: int, step: int, fmt: st
         **plot_kwargs: Passed on to plt.plot
     """
     # Get the state dataset
-    state = dm['uni'][str(uni)]['data/dummy/state']
+    state = dm['uni'][uni]['data/dummy/state']
 
     # Select the time step
     state_at_step = state[step, :]
@@ -51,7 +51,7 @@ def state_mean(dm: DataManager, *, out_path: str, uni: int, fmt: str=None, save_
         **plot_kwargs: Passed on to plt.plot
     """
     # Get the state dataset
-    state = dm['uni'][str(uni)]['data/dummy/state']
+    state = dm['uni'][uni]['data/dummy/state']
 
     # Calculate the mean by averaging over the columns
     y_data = np.mean(state, axis=1)

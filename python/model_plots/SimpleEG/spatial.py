@@ -139,10 +139,10 @@ def grid_animation(dm: DataManager, *, out_path: str, uni: int, to_plot: dict, w
         return im
 
     # Get the group that all datasets are in
-    grp = dm['uni'][str(uni)]['data/SimpleEG']
+    grp = dm['uni'][uni]['data/SimpleEG']
 
     # Get the shape of the 2D grid to later reshape the data
-    cfg = dm['uni'][str(uni)]['cfg']
+    cfg = dm['uni'][uni]['cfg']
     grid_size = cfg['SimpleEG']['grid_size']
     steps = cfg['num_steps']
     new_shape = (steps+1, grid_size[0], grid_size[1])

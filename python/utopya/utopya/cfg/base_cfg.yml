@@ -160,6 +160,14 @@ data_manager:
   # not create collisions.
   # Directories are created recursively, if they do not exist.
 
+  # Define the structure of the data tree beforehand; this allows to specify
+  # the types of groups before content is loaded into them.
+  # NOTE The strings given to the Cls argument are mapped to a type using a
+  #      class variable of the DataManager
+  create_groups:
+    - path: uni
+      Cls: MultiverseGroup
+
   # Supply a default load configuration for the DataManager
   # This can then be invoked using the dm.load_from_cfg() method.
   load_cfg:
