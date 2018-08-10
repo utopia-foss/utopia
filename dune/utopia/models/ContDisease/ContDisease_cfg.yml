@@ -16,7 +16,7 @@
 # sure that no circular includes occur.
 ---
 # Grid parameters
-grid_size: [100,100]
+grid_size: [1024,1024]
 periodic: false          # false: cells at boundary have fewer neighbors
 
 # Initial state
@@ -25,9 +25,6 @@ initial_state: empty   # can be: empty
 #Explanation for different initial states:
 #  - empty:           all cells start empty
 
-# TODO
-#  - random:          if a cell contains a tree or is empty is randomly distri-
-#                     buted
 
 # Infection herd
 
@@ -50,9 +47,9 @@ stone_init: random # sets type of stone initialization
 
 #stone_init: random
 
-stone_density: 0.0005 # stone density in entire grid
+stone_density: 0.1 # stone density in entire grid
 
-stone_cluster: 1 # how much stones prefer to form clusters
+stone_cluster: 0.2 # how much stones prefer to form clusters
 
 
 # probablity for tree growth in each time step

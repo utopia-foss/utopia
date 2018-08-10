@@ -60,8 +60,10 @@ The model outputs a plot for each time step of the states on a 2D-grid.
 
 ## Possible Future Extensions
 
-Based on this model, the forest fire model could be implemented.
-More ways to initialize stones. 
+-Based on this model, the forest fire model could be implemented.
+-More ways to initialize stones.
+-switch between neighborhoods with a config parameter
+-a plotting config parameter to only save every n-th plot (perfomance)
 
 ## References
 
