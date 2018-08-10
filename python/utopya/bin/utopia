@@ -38,6 +38,15 @@ p_run.add_argument('--note',
                    default=None, nargs='?',
                    help="Overwrites the `paths->model_note` entry which is "
                         "used in creation of the run directory path.")
+p_run.add_argument('--debug',
+                   action='store_true',
+                   help="If given, sets a number of configuration parameters "
+                        "which make debugging of the model and the associated "
+                        "plotting scripts easier, e.g. by lowering the model "
+                        "log level to DEBUG and creating tracebacks for "
+                        "exceptions in the python scripts. Note that the "
+                        "--sim-errors flag takes precedence over what is set "
+                        "here.")
 p_run.add_argument('--sim-errors',
                    default=None, nargs='?',
                    help="Controls the value of the WorkerManager's "
@@ -109,17 +118,39 @@ if __name__ == '__main__':
     if args.note:
         update_dict['paths'] = dict(model_note=args.note)
 
+    # In debug mode, set a number of configuration keys
+    if args.debug:
+        # NOTE Relies on update_dict not containig the top-level entries that
+        #      are set here.
+
+        # Set model log level to DEBUG
+        update_dict['parameter_space'] = dict(log_levels=dict(model='debug'))
+        
+        # Let PlotManager raise exceptions
+        update_dict['plot_manager'] = dict(raise_exc=True)
+
+        # Let WorkerManager raise exceptions
+        update_dict['worker_manager'] = dict(nonzero_exit_handling=args.sim_errors)
+
     # Set the WorkerManager's non-zero exit handling, if in debug mode
     if args.sim_errors:
-        update_dict['worker_manager'] = dict(nonzero_exit_handling=args.sim_errors)
+        # Check if an entry already exists; if not, need an empty dict there
+        if 'worker_manager' not in update_dict:
+            update_dict['worker_manager'] = {}
+        
+        update_dict['worker_manager']['nonzero_exit_handling']=args.sim_errors
 
     # Set number of simulation steps
     if args.num_steps:
         if args.num_steps < 0:
             raise ValueError("Argument --num-steps needs to be positive, was "
                              "{}.".format(args.num_steps))
-        update_dict['parameter_space'] = dict(num_steps=args.num_steps)
 
+        # Check if key already exists in order to not overwrite anything
+        if 'parameter_space' not in update_dict:
+            update_dict['parameter_space'] = {}
+
+        update_dict['parameter_space']['num_steps'] = args.num_steps
 
     # Preparations finished now
     # Using the args, instantiate a Multiverse object
