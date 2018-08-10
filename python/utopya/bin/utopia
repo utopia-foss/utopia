@@ -130,7 +130,7 @@ if __name__ == '__main__':
         update_dict['plot_manager'] = dict(raise_exc=True)
 
         # Let WorkerManager raise exceptions
-        update_dict['worker_manager'] = dict(nonzero_exit_handling=args.sim_errors)
+        update_dict['worker_manager'] = dict(nonzero_exit_handling='raise')
 
     # Set the WorkerManager's non-zero exit handling, if in debug mode
     if args.sim_errors:
