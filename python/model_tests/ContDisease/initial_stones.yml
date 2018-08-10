@@ -9,8 +9,8 @@ parameter_space:
   ContDisease: !model
     model_name: ContDisease  # imports the model config for the CopyMe model
     initial_state: empty
-    stones: false
+    stones: true
     infection_herd: false
-
+    stone_density: 0.8
 
     grid_size: [32,32]

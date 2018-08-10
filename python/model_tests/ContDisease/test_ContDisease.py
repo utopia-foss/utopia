@@ -40,7 +40,31 @@ def test_initial_state_empty():
 
     # Check if all Cells are empty
 
-    assert data_.all() == np.zeros(num_cells).all()
+def test_initial_stones():
+    """
+    Tests that if stones are activated any cells are "stone".
+    """
+    mv, dm = mtc.create_run_load(from_cfg="initial_stones.yml")
+
+    # Get data
+    grp = dm['uni']['0']['data/ContDisease']
+    data_ = grp["state"]
+
+    # Get the grid size
+    uni_cfg = dm['uni']['0']['cfg']
+    grid_size = uni_cfg['ContDisease']['grid_size']
+
+    num_cells = grid_size[0] * grid_size[1]
+
+    # Check that only one step was performed and written
+
+    assert data_.shape == (1, num_cells)
+
+    # Check if all Cells are empty
+
+    assert data_.any() == (np.zeros(num_cells)+4).any()
+
+
 
 def test_initial_state_herd_south():
     """

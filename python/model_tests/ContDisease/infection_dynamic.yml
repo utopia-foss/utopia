@@ -9,7 +9,7 @@ parameter_space:
   ContDisease: !model
     model_name: ContDisease  # imports the model config for the CopyMe model
     initial_state: empty
-
+    stones: false
     infection_herd: true
     infection_herd_src: south
 

@@ -15,7 +15,7 @@ namespace Models {
 namespace ContDisease {
 
 /// State of forest cell
-enum CellState : unsigned short int {empty = 0, tree = 1, infected = 2, herd = 3};
+enum CellState : unsigned short int {empty = 0, tree = 1, infected = 2, herd = 3, stone = 4};
 
 
 
@@ -216,6 +216,20 @@ public:
         // Extract postion of possible infection herd
         const auto infection_herd_src = as_str(this->_cfg["infection_herd_src"]);
 
+        // Extract if stones are activated
+        const bool stones = as_bool(this->_cfg["stones"]);
+
+        // Extract how stones are to be initialized
+        const auto stone_init = as_str(this->_cfg["stone_init"]);
+
+        // Extract stone density for stone_init = random
+        const double stone_density = as_double(this->_cfg["stone_density"]);
+
+        // Extract clustering weight for stone_init = random
+        const double stone_cluster = as_double(this->_cfg["stone_cluster"]);
+
+
+
         this->_log->info("Initializing cells in '{}' mode ...", initial_state);
 
 
@@ -264,8 +278,51 @@ public:
           this->_log->debug("Not using an infection herd.");
         }
 
-      // Write information that cells are initialized to the logger
-      this->_log->info("Cells initialized.");
+
+        if (stones){
+
+          if (stone_init == "random"){
+            // initialize stones at random so a certain areal density is reached
+            std::uniform_real_distribution<> dist(0., 1.);
+
+            auto cells_rd = _manager.cells();
+            std::shuffle(cells_rd.begin(),cells_rd.end(), *this->_rng);
+
+            for (auto&& cell: cells_rd ){
+              if (dist(*this->_rng) < stone_density){
+                cell->state_new() = stone;
+                cell->update();
+              }
+            }
+
+            for (auto&& cell: cells_rd ){
+              for (auto nb : MooreNeighbor::neighbors(cell, this->_manager)){
+                if(cell->state() == empty){
+                  if (nb->state() == stone){
+                    if (dist(*this->_rng) < stone_cluster){
+                      cell->state_new() = stone;
+                      cell-> update();
+                    }
+                  }
+                }
+                else{
+                  break;
+                }
+              }
+            }
+          }
+
+          else{
+            throw std::invalid_argument("The stone initialization ''" + stone_init + "'' is not valid! Valid options: 'random'");
+          }
+
+        }
+        else{
+          this->_log->debug("Not using stones.");
+        }
+
+        // Write information that cells are initialized to the logger
+        this->_log->info("Cells initialized.");
     }
 
 

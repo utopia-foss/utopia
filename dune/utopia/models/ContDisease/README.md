@@ -6,7 +6,7 @@ on the description in the script of the CCEES lecture of Prof. Roth.
 ## Fundamentals
 
 We model a "forest" on a two dimensional square grid of cells. Each cell can be
-in one of four different states: empty, tree, infected or herd.
+in one of four different states: empty, tree, infected, herd or stones.
 
 #Update Rules
 
@@ -29,6 +29,13 @@ switched out with the Moore neighborhood (MooreNeighbor) fairly easy.
 Infection herds can be activated at the lower boundary of the grid. They spread
 infection like normal infected trees, but don't revert back to the empty state.
 (like Rule 1).
+
+## Stones
+
+Stone are cells that can't be infected nor turn into trees. They are used to
+represent barriers in the forest. At the moment they can initialized at random,
+with an additional weight to encourage clustering of stones.
+
 
 ## Initialization
 
@@ -54,6 +61,7 @@ The model outputs a plot for each time step of the states on a 2D-grid.
 ## Possible Future Extensions
 
 Based on this model, the forest fire model could be implemented.
+More ways to initialize stones. 
 
 ## References
 
