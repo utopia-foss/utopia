@@ -23,6 +23,11 @@ struct State {
     double payoff;
 };
 
+
+/// Define initial state variable to use in setup function
+State state0 = {Strategy::S0, 0.0};
+
+
 /// Typehelper to define data types of SimpleEG model 
 using SimpleEGModelTypes = ModelTypes<State>;
 
@@ -509,51 +514,6 @@ private:
                                     "`bc_pair`, `b`");
     }
 };
-
-
-/// Setup the grid manager with an initial state
-/** \param name          The name of the model instance
-  * \param parent_model  The parent model the new model instance will reside in
-  *
-  * \tparam periodic     Whether the grid should be periodic
-  * \tparam ParentModel  The parent model type
-  */ 
-template<bool periodic=true, typename ParentModel>
-auto setup_manager(std::string name, ParentModel& parent_model)
-{
-    // Get the logger... and use it :)
-    auto log = parent_model.get_logger();
-    log->info("Setting up '{}' model ...", name);
-
-    // Get the configuration and the rng
-    auto cfg = parent_model.get_cfg()[name];
-    auto rng = parent_model.get_rng();
-
-    // Extract grid size from config
-    const auto gsize = as_array<unsigned int, 2>(cfg["grid_size"]);
-
-    // Inform about the size
-    log->info("Creating 2-dimensional grid of size: {} x {} ...",
-              gsize[0], gsize[1]);
-
-    // Create grid of that size
-    auto grid = Utopia::Setup::create_grid<2>(gsize);
-
-    // Create the SimpleEG initial state: S0 and payoff 0.0
-    State state_0 = {Strategy::S0, 0.0};
-    // NOTE The initialize_cells method relies on payoff being set to zero here
-
-    // Create cells on that grid, passing the initial state
-    auto cells = Utopia::Setup::create_cells_on_grid<true>(grid, state_0);
-
-    // Create the grid manager, passing the template argument
-    log->info("Initializing GridManager with {} boundary conditions ...",
-              (periodic ? "periodic" : "fixed"));
-    
-    return Utopia::Setup::create_manager_cells<true, periodic>(grid,
-                                                               cells,
-                                                               rng);
-}
 
 
 } // namespace SimpleEG
