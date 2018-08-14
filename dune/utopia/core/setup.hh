@@ -262,7 +262,11 @@ namespace Setup
 
 
      /// Create a grid from a model configuration
+<<<<<<< HEAD
      template<unsigned short dim=2, typename ParentModel>
+=======
+     template<typename ParentModel>
+>>>>>>> 7f982c0ae24faea69b23d4bd5d47cb91f6312618
      auto create_grid_from_model(const std::string name,
                                  const ParentModel& parent_model) {
         // Get the logger
@@ -293,14 +297,15 @@ namespace Setup
 
 
 
-     /// Grid setup function
-     // Setup the grid manager with an initial state
+    /// Grid setup function
+    // Setup the grid manager with an initial state
     /** \param name          The name of the model instance
       * \param parent_model  The parent model the new model instance will reside in
       *
       * \tparam periodic     Whether the grid should be periodic
       * \tparam ParentModel  The parent model type
-      */ 
+      */
+    // TODO Update documentation
     template<bool periodic=true,
              unsigned short dim=2,
              bool structured=true,
@@ -326,6 +331,8 @@ namespace Setup
         return create_manager_cells<structured, periodic>(grid, cells,
                                                           parent_model.get_rng());
     }
+
+    // TODO add equivalent function for agents on grid
 
 } // namespace Setup
 
