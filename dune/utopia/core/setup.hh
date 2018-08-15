@@ -262,11 +262,7 @@ namespace Setup
 
 
      /// Create a grid from a model configuration
-<<<<<<< HEAD
      template<unsigned short dim=2, typename ParentModel>
-=======
-     template<typename ParentModel>
->>>>>>> 7f982c0ae24faea69b23d4bd5d47cb91f6312618
      auto create_grid_from_model(const std::string name,
                                  const ParentModel& parent_model) {
         // Get the logger
@@ -326,7 +322,7 @@ namespace Setup
         parent_model.get_logger()->info("Initializing GridManager with {} "
                                         "boundary conditions ...",
                                         (periodic ? "periodic" : "fixed"));
-        // TODO add the other template arguments
+        // TODO add the other template arguments to the log message
         
         return create_manager_cells<structured, periodic>(grid, cells,
                                                           parent_model.get_rng());
@@ -334,8 +330,8 @@ namespace Setup
 
     // TODO add equivalent function for agents on grid
 
-} // namespace Setup
 
+} // namespace Setup
 } // namespace Utopia
 
 #endif // SETUP_HH

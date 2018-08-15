@@ -1,6 +1,5 @@
 #include <iostream>
 
-#include <dune/utopia/core/setup.hh>
 #include "SimpleEG.hh"
 
 using namespace Utopia::Models::SimpleEG;

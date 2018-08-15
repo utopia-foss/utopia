@@ -3,6 +3,7 @@
 #include "CopyMe.hh"
 
 using namespace Utopia::Models::CopyMe;
+using Utopia::Setup::create_grid_manager_cells;
 
 int main (int argc, char** argv)
 {
@@ -17,13 +18,15 @@ int main (int argc, char** argv)
         if (Utopia::as_bool(pp.get_cfg()["CopyMe"]["periodic"])) {
             // Periodic grid
             CopyMeModel model("CopyMe", pp,
-                              setup_manager<true>("CopyMe", pp));
+                              create_grid_manager_cells<true>("CopyMe", pp,
+                                                              state0));
             model.run();
         }
         else {
             // Non-periodic grid
             CopyMeModel model("CopyMe", pp,
-                              setup_manager<false>("CopyMe", pp));
+                              create_grid_manager_cells<false>("CopyMe", pp,
+                                                               state0));
             model.run();
         }
 
