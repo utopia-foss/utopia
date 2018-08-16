@@ -262,6 +262,17 @@ namespace Setup
 
 
      /// Create a grid from a model configuration
+     /**\detail Using information from the configuration extracted from a
+      *         parent model instance, a new grid instance is returned
+      *
+      * \param name          The name of the model instance; needed for access
+      *                      to the correct configuration parameter
+      * \param parent_model  The parent model the new model instance will
+      *                      reside in
+      *
+      * \tparam dim          Dimensionaliy of the grid, can be 2 or 3
+      * \tparam ParentModel  The parent model type
+      */
      template<unsigned short dim=2, typename ParentModel>
      auto create_grid_from_model(const std::string name,
                                  const ParentModel& parent_model) {
@@ -294,14 +305,22 @@ namespace Setup
 
 
     /// Grid setup function
-    // Setup the grid manager with an initial state
-    /** \param name          The name of the model instance
-      * \param parent_model  The parent model the new model instance will reside in
+    /** \detail Sets up a GridManager with cells using the configuration info
+      * supplied by a model and its model configuration.
+      *
+      * \param name          The name of the model instance; needed for access
+      *                      to the correct configuration parameter
+      * \param parent_model  The parent model the new model instance will
+      *                      reside in.
+      * \param initial_state The initial state of all cells
       *
       * \tparam periodic     Whether the grid should be periodic
+      * \tparam dim          Dimensionaliy of the grid, can be 2 or 3
+      * \tparam structured   Whether the grid should be structured
+      * \tparam sync         Whether the cells should be synchronous or not
       * \tparam ParentModel  The parent model type
+      * \tparam State        Type of the initial state
       */
-    // TODO Update documentation
     template<bool periodic=true,
              unsigned short dim=2,
              bool structured=true,
