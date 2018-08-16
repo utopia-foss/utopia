@@ -18,15 +18,15 @@ int main (int argc, char** argv)
         if (Utopia::as_bool(pp.get_cfg()["CopyMe"]["periodic"])) {
             // Periodic grid
             CopyMeModel model("CopyMe", pp,
-                              create_grid_manager_cells<true>("CopyMe", pp,
-                                                              state0));
+                create_grid_manager_cells<State, true>("CopyMe", pp)
+            );
             model.run();
         }
         else {
             // Non-periodic grid
             CopyMeModel model("CopyMe", pp,
-                              create_grid_manager_cells<false>("CopyMe", pp,
-                                                               state0));
+                create_grid_manager_cells<State, false>("CopyMe", pp)
+            );
             model.run();
         }
 

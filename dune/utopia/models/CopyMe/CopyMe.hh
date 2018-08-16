@@ -24,9 +24,6 @@ struct State {
     SomeEnum some_enum;
 };
 
-/// Define initial state variable to use in setup function
-State state0 = {0, 0.0, SomeEnum::Enum0};
-
 /// Boundary condition type
 struct Boundary {};
 

@@ -174,7 +174,7 @@ namespace Setup
         typename GridType>
     decltype(auto) create_cells_on_grid (
         const GridWrapper<GridType>& grid_wrapper,
-        const State state = 0)
+        const State state = State())
     {
 
         using GridTypes = GridTypeAdaptor<GridType>;
@@ -321,15 +321,16 @@ namespace Setup
       * \tparam ParentModel  The parent model type
       * \tparam State        Type of the initial state
       */
-    template<bool periodic=true,
+    template<typename State,
+             bool periodic=true,
              unsigned short dim=2,
              bool structured=true,
              bool sync=true,
-             typename ParentModel,
-             typename State>
+             typename ParentModel
+            >
     auto create_grid_manager_cells(const std::string name,
                                    const ParentModel& parent_model,
-                                   const State initial_state)
+                                   const State initial_state = State())
     {
         // Get the grid, passing through arguments
         auto grid = create_grid_from_model<dim>(name, parent_model);

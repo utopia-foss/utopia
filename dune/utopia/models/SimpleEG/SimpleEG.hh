@@ -23,11 +23,6 @@ struct State {
     double payoff;
 };
 
-
-/// Define initial state variable to use in setup function
-State state0 = {Strategy::S0, 0.0};
-
-
 /// Typehelper to define data types of SimpleEG model 
 using SimpleEGModelTypes = ModelTypes<State>;
 

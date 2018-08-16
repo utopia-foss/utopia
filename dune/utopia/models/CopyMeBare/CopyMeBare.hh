@@ -20,9 +20,6 @@ struct State {
     // TODO Define the state a cell of this model can have
 };
 
-/// Define initial state variable to use in setup function
-State state0 = {};
-
 /// Boundary condition type
 struct Boundary {};
 // NOTE if you do not use the boundary condition type, you can delete the

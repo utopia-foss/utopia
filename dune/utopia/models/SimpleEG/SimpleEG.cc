@@ -20,16 +20,16 @@ int main (int argc, char** argv)
         if (Utopia::as_bool(pp.get_cfg()["SimpleEG"]["periodic"])) {
             // Periodic grid
             SimpleEGModel model("SimpleEG", pp,
-                                create_grid_manager_cells<true>("SimpleEG",
-                                                                pp, state0));
+                create_grid_manager_cells<State, true>("SimpleEG", pp)
+            );
             model.run();
 
         }
         else {
             // Non-periodic grid
             SimpleEGModel model("SimpleEG", pp,
-                                create_grid_manager_cells<false>("SimpleEG",
-                                                                 pp, state0));
+                create_grid_manager_cells<State, false>("SimpleEG", pp)
+            );
             model.run();
         }
 
