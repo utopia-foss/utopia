@@ -14,6 +14,8 @@ add_subdirectory(CopyMe)
 add_subdirectory(CopyMeBare)
 add_subdirectory(dummy)
 add_subdirectory(SimpleEG)
+add_subdirectory(Amee)
+
 # ...
 # NOTE add your subdirectory above (alphabetically sorted)
 
