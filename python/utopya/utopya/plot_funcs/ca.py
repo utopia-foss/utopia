@@ -77,18 +77,21 @@ class FileWriterContextManager():
 
 # -----------------------------------------------------------------------------
 
-def state(  dm: DataManager, *, 
-            model_name: str,
-            out_path: str, 
-            uni: int, 
-            to_plot: dict,
-            writer: str,
-            frames_kwargs: dict, 
-            fps: int=2, 
-            step_size: int=1, 
-            dpi: int=96) -> None:
-    """Create a grid animation of a two dimensional cellular automaton
-    
+def state_anim( dm: DataManager, *, 
+                model_name: str,
+                out_path: str, 
+                uni: int, 
+                to_plot: dict,
+                writer: str,
+                frames_kwargs: dict, 
+                fps: int=2, 
+                step_size: int=1, 
+                dpi: int=96) -> None:
+    """Create an animation of the states of a two dimensional cellular automaton.
+    The function can use different writers, e.g. write out only the frames or create
+    an animation with an external programm (e.g. ffmpeg). 
+    Multiple properties can be plotted next to each other, specified by the to_plot dict.
+
     Arguments:
         dm (DataManager): The DataManager object containing the data
         model_name (str): The model name, in which the data is located

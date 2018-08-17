@@ -21,29 +21,49 @@ frequencies:
   uni: 0
   strategy: [S0, S1]
 
-# plot the spatial development in the CA of the strategy and payoff
-strategy_payoff:
+
+# plot the spatial development in the CA of the strategy
+strategy_and_payoff:
   creator: external
   file_ext: mp4
 
-  module: model_plots.SimpleEG
-  plot_func: grid_animation
+  module: .ca
+  plot_func: state_anim
 
   # Select the universe
+  model_name: SimpleEG
   uni: 0
 
   # Select the properties to plot
   to_plot:
+    # The name of the property to plot with its options
     strategy:
-      cmap: PD_discrete  # PD_discrete is a colormap specifically designed
-                         # for the Prisoner's Dilemma, i.e.: red & blue
-      limits: [0, 1]
       title: Strategy
-      
-    payoff: 
-      cmap: viridis
-      limits: [0, 12]
+      limits: [0, 1]
+
+      # Specify the colormap
+      # This can be done in two ways:
+      #   1. use a matplotlib colormap such as 'viridis'
+      #   2. provide a dictionary from which a discrete colormap
+      #      is derived. The keys correspond to the labels,
+      #      and the values define the color
+      # cmap: viridis
+      cmap: 
+        S0: red
+        S1: blue
+
+    # The name of the property to plot with its options
+    payoff:
       title: Payoff
+      limits: [0, 12]
+
+      # Specify the colormap
+      # This can be done in two ways:
+      #   1. use a matplotlib colormap such as 'viridis'
+      #   2. provide a dictionary from which a discrete colormap
+      #      is derived. The keys correspond to the labels,
+      #      and the values define the color
+      cmap: viridis
 
   # Video options
   writer: ffmpeg  # can be: frames, ffmpeg (if installed), ...
@@ -63,7 +83,7 @@ strategy:
   file_ext: mp4
 
   module: .ca
-  plot_func: state
+  plot_func: state_anim
 
   # Select the universe
   model_name: SimpleEG
