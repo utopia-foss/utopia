@@ -1,10 +1,40 @@
-# Default plots for the CopyMe model
+# Default plots for the ForestFireModel
 ---
 state_mean:
   creator: external
   
-  # Use the CopyMe-specific plot functions
-  module: model_plots.CopyMe
+  # Use the ForestFireModel-specific plot functions
+  module: model_plots.ForestFireModel
   plot_func: state_mean
 
   uni: 0
+
+  # plot the spatial development in the CA of the strategy
+state_map_series:
+  creator: external
+  file_ext: mp4
+
+  module: model_plots.ForestFireModel
+  plot_func: grid_animation
+
+  # Select the universe
+  uni: 0
+
+  # Select the properties to plot
+  to_plot:
+    state:
+      cmap: PD_discrete  # PD_discrete is a colormap specifically designed
+                         # for the Prisoner's Dilemma, i.e.: red & blue
+      limits: [0,2]
+      title: State
+
+  # Video options
+  writer: frames  # can be: frames, ffmpeg (if installed), ...
+  fps: 1
+  step_size: 1
+  dpi: 96
+
+  # For the 'frames' writer, the following additional kwargs can be passed
+  frames_kwargs: 
+    name_padding: 5
+    file_format: png

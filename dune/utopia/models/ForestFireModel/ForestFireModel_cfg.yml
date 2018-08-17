@@ -16,11 +16,13 @@
 # sure that no circular includes occur.
 ---
 # Grid parameters
-grid_size: [21, 21]
+grid_size: [101, 101]
 periodic: true          # false: cells at boundary have fewer neighbors
 
 # Initial state
-initial_state: init_0   # can be: init_0, init_1
+initial_state: empty   # can be: empty, tree=forest
 
 # some parameter
-some_parameter: 1.23456
+growth_rate: 7.5e-3
+lightning_frequency: 1e-4
+resistance: 0

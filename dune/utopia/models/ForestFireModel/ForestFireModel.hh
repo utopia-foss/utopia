@@ -14,22 +14,10 @@ namespace Utopia {
 namespace Models {
 namespace ForestFireModel {
 
-/// Enum that will be part of the internal state of a cell
-enum SomeEnum : unsigned short int {Enum0, Enum1};
-
-/// State struct for ForestFireModel model.
-struct State {
-    int some_state;
-    double some_trait;
-    SomeEnum some_enum;
-};
-
-/// Boundary condition type
-struct Boundary {};
-
+enum State : unsigned short int { empty=0, tree=1, burning=2 };
 
 /// Typehelper to define data types of ForestFireModel model 
-using ForestFireModelTypes = ModelTypes<State, Boundary>;
+using ForestFireModelTypes = ModelTypes<State>;
 // NOTE if you do not use the boundary condition type, you can delete the
 //      definition of the struct above and the passing to the type helper
 
@@ -78,93 +66,87 @@ private:
     /// The grid manager
     ManagerType _manager;
 
-    /// A model parameter I need
-    const double _some_parameter;
+    /// Model parameters
+    const double _growth_rate;
+    const double _lightning_frequency;
+    const double _resistance;  
 
-
-    // -- Temporary objects -- //
-    
 
     // -- Datasets -- //
     // NOTE They should be named '_dset_<name>', where <name> is the
     //      dataset's actual name as set in the constructor.
-    std::shared_ptr<DataSet> _dset_some_state;
-    std::shared_ptr<DataSet> _dset_some_trait;
+    std::shared_ptr<DataSet> _dset_state;
 
 
     // -- Rule functions -- //
-    // Define functions that can be applied to the cells of the grid
-    // NOTE The below are examples; delete and/or adjust them to your needs!
+    // states: 0: empty, 1: tree, 2: burning 
+    // empty -> tree with probability growth_rate
+    // tree -> burning with probability lightning_frequency
+    // tree -> burning with probability 1 - resistance if i' in Neighborhood of i burning
+    // burning -> empty
 
-    /// Sets the given cell to state "A"
-    std::function<State(std::shared_ptr<CellType>)> _set_initial_state_A = [](const auto cell){
+    /// Sets the given cell to state "empty"
+    std::function<State(std::shared_ptr<CellType>)> _set_initial_state_empty = [](const auto cell){
         // Get the state of the Cell
         auto state = cell->state();
 
         // Set the internal variables
-        state.some_state = 5;
-        state.some_trait = 2.;
-        state.some_enum = Enum0;
+        state = empty;
 
         return state;
     };
 
 
-    /// Sets the given cell to state "B"
-    std::function<State(std::shared_ptr<CellType>)> _set_initial_state_B = [](const auto cell){
+    /// Sets the given cell to state "tree"
+    std::function<State(std::shared_ptr<CellType>)> _set_initial_state_tree = [](const auto cell){
         // Get the state of the Cell
         auto state = cell->state();
 
         // Set the internal variables
-        state.some_state = 3;
-        state.some_trait = 4.2;
-        state.some_enum = Enum1;
+        state = tree;
 
-        return state;
-    };
-
-
-    /// Define some interaction for a cell
-    std::function<State(std::shared_ptr<CellType>)> _some_interaction = [this](const auto cell){
-        // Get the state of the Cell
-        auto state = cell->state();
-
-        // Increase some_state by one
-        state.some_state += 1;
-
-        // Increase some_trait by adding up the some_state's from all neighbors
-        for (auto nb : MooreNeighbor::neighbors(cell, this->_manager))
-        {
-            state.some_trait += static_cast<double>(nb->state().some_state);
-        }
-        // Ahhh and obviously you need to divide some float by _some_parameter
-        // because that makes totally sense
-        state.some_trait /= _some_parameter;
-
-        // Set some_enum to Enum0
-        state.some_enum = Enum0;
-
-        // Return the new cell state
         return state;
     };
 
 
     /// Define the update rule for a cell
-    std::function<State(std::shared_ptr<CellType>)> _some_update = [this](const auto cell){
-        // Here, you can write some update rule description
+    std::function<State(std::shared_ptr<CellType>)> _update = [this](const auto cell){
 
         // Get the state of the cell
         auto state = cell->state();
 
-        // With a probablity of 0.3 set the cell's state.some_state to 0
         std::uniform_real_distribution<> dist(0., 1.);
-        if (dist(*this->_rng) < 0.3)
-        {
-            state.some_state = 0;
+        // state is empty, empty -> tree by growth
+        if (state == empty && dist(*this->_rng) < _growth_rate) {  
+            state = tree; 
         }
 
-        // Set some_enum to Enum1
-        state.some_enum = Enum1;
+        // state is tree
+        else if (state == tree)
+        {
+            // tree -> burning by lightning
+            if (dist(*this->_rng) < _lightning_frequency) {
+                state = burning; 
+            }
+
+            // tree -> burning by catching fire from neighbor
+            else 
+            {
+                for (auto nb : MooreNeighbor::neighbors(cell, this->_manager))
+                {
+                    if (nb->state() == burning && dist(*this->_rng) < 1-_resistance) // i' burning
+                    {
+                        state = burning;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // state is burning, burning -> empty
+        else if (state == burning) {
+            state = empty;
+        }
 
         // Return the new state cell
         return state;
@@ -186,10 +168,11 @@ public:
         Base(name, parent),
         // Now initialize members specific to this class
         _manager(manager),
-        _some_parameter(as_double(this->_cfg["some_parameter"])),
+        _growth_rate(as_double(this->_cfg["growth_rate"])),
+        _lightning_frequency(as_double(this->_cfg["lightning_frequency"])),
+        _resistance(as_double(this->_cfg["resistance"])),
         // create datasets
-        _dset_some_state(this->_hdfgrp->open_dataset("some_state")),
-        _dset_some_trait(this->_hdfgrp->open_dataset("some_trait"))        
+        _dset_state(this->_hdfgrp->open_dataset("state"))      
     {
         // Call the method that initializes the cells
         this->initialize_cells();
@@ -201,8 +184,7 @@ public:
                                                 _manager.cells().end());
         this->_log->debug("Setting dataset capacities to {} x {} ...",
                           this->get_time_max() + 1, num_cells);
-        _dset_some_state->set_capacity({this->get_time_max() + 1, num_cells});
-        _dset_some_trait->set_capacity({this->get_time_max() + 1, num_cells});
+        _dset_state->set_capacity({this->get_time_max() + 1, num_cells});
 
         // Write initial state
         this->write_data();
@@ -216,13 +198,13 @@ public:
         const auto initial_state = as_str(this->_cfg["initial_state"]);
 
         // Apply a rule to all cells depending on the config value
-        if (initial_state == "init_0")
+        if (initial_state == "empty")
         {
-            apply_rule(_set_initial_state_A, _manager.cells());
+            apply_rule(_set_initial_state_empty, _manager.cells());
         }
-        else if (initial_state == "init_1")
+        else if (initial_state == "tree")
         {
-            apply_rule(_set_initial_state_B, _manager.cells());
+            apply_rule(_set_initial_state_tree, _manager.cells());
         }
         else
         {
@@ -243,26 +225,18 @@ public:
     void perform_step ()
     {
         // Apply the rules to all cells, first the interaction, then the update
-        apply_rule(_some_interaction, _manager.cells());
-        apply_rule(_some_update, _manager.cells());
+        apply_rule(_update, _manager.cells());
     }
 
 
     /// Write data
     void write_data ()
     {   
-        // some_state
-        _dset_some_state->write(_manager.cells().begin(),
+        // state
+        _dset_state->write(_manager.cells().begin(),
                                 _manager.cells().end(),
                                 [](auto& cell) {
-                                    return cell->state().some_state;
-                                });
-
-        // some_trait
-        _dset_some_trait->write(_manager.cells().begin(),
-                                _manager.cells().end(),
-                                [](auto& cell) {
-                                    return cell->state().some_trait;
+                                    return cell->state();
                                 });
     }
 
