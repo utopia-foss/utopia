@@ -106,6 +106,13 @@ public:
                     _manager.cells().end(), 
                     [](const auto& cell) {return cell->state().height;});
 
+        // Set dataset capacities
+        const hsize_t num_cells = std::distance(_manager.cells().begin(),
+                                                _manager.cells().end());
+        this->_log->debug("Setting dataset capacities to {} x {} ...",
+                          this->get_time_max() + 1, num_cells);
+        _dset_water_content->set_capacity({this->get_time_max() + 1, num_cells});
+
         // Write initial state 
         write_data();
     }
