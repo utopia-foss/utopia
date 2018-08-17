@@ -66,10 +66,12 @@ strategy:
   plot_func: state
 
   # Select the universe
+  model_name: SimpleEG
   uni: 0
 
   # Select the properties to plot
   to_plot:
+    # The name of the property to plot with its options
     strategy:
       title: Strategy
       limits: [0, 1]
@@ -85,43 +87,6 @@ strategy:
         S0: red
         S1: blue
 
-  # Video options
-  writer: ffmpeg  # can be: frames, ffmpeg (if installed), ...
-  fps: 2
-  step_size: 1
-  dpi: 96
-
-  # For the 'frames' writer, the following additional kwargs can be passed
-  frames_kwargs: 
-    name_padding: 5
-    file_format: png
-
-
-# plot the spatial development in the CA of the payoff
-payoff:
-  creator: external
-  file_ext: mp4
-
-  module: .ca
-  plot_func: state
-
-  # Select the universe
-  uni: 0
-
-  # Select the properties to plot
-  to_plot:
-    payoff:
-      title: Payoff
-      limits: [0, 10]
-
-      # Specify the colormap
-      # This can be done in two ways:
-      #   1. use a matplotlib colormap such as 'viridis'
-      #   2. provide a dictionary from which a discrete colormap
-      #      is derived. The keys correspond to the labels,
-      #      and the values define the color
-      cmap: viridis
-      
   # Video options
   writer: ffmpeg  # can be: frames, ffmpeg (if installed), ...
   fps: 2

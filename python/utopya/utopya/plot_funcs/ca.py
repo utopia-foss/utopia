@@ -25,7 +25,11 @@ class FileWriter():
 
     It adheres to the corresponding matplotlib animation interface.
     """
-    def __init__(self, *, name_padding: int=6, file_format: str='png', fstr: str="{path:}_frame{num:0{pad:}d}.{ext:}", **savefig_kwargs):
+    def __init__(   self, *, 
+                    name_padding: int=6, 
+                    file_format: str='png', 
+                    fstr: str="{path:}_frame{num:0{pad:}d}.{ext:}", 
+                    **savefig_kwargs):
         # Save arguments
         self.index = 0
         self.name_padding = name_padding
@@ -73,11 +77,21 @@ class FileWriterContextManager():
 
 # -----------------------------------------------------------------------------
 
-def state(dm: DataManager, *, out_path: str, uni: int, to_plot: dict, writer: str, frames_kwargs: dict, fps: int=2, step_size: int=1, dpi: int=96) -> None:
+def state(  dm: DataManager, *, 
+            model_name: str,
+            out_path: str, 
+            uni: int, 
+            to_plot: dict,
+            writer: str,
+            frames_kwargs: dict, 
+            fps: int=2, 
+            step_size: int=1, 
+            dpi: int=96) -> None:
     """Create a grid animation of a two dimensional cellular automaton
     
     Arguments:
         dm (DataManager): The DataManager object containing the data
+        model_name (str): The model name, in which the data is located
         out_path (str): The output path
         uni (int): The universum
         to_plot (dict): The plotting configuration
@@ -140,11 +154,11 @@ def state(dm: DataManager, *, out_path: str, uni: int, to_plot: dict, writer: st
         return im
 
     # Get the group that all datasets are in
-    grp = dm['uni'][uni]['data/SimpleEG']
+    grp = dm['uni'][uni]['data'][model_name]
 
     # Get the shape of the 2D grid to later reshape the data
     cfg = dm['uni'][uni]['cfg']
-    grid_size = cfg['SimpleEG']['grid_size']
+    grid_size = cfg[model_name]['grid_size']
     steps = cfg['num_steps']
     new_shape = (steps+1, grid_size[0], grid_size[1])
 
