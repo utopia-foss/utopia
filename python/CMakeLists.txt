@@ -44,9 +44,8 @@ message(STATUS "Installing utopya ...")
 # For easier development: install using symlinks to the local package
 set(DUNE_PYTHON_INSTALL_EDITABLE True)
 
-# Install utopya and the extras (that are needed for testing)
-dune_python_install_package(PATH utopya
-                            ADDITIONAL_PIP_PARAMS "${CMAKE_CURRENT_SOURCE_DIR}/utopya/[test_deps]")
+# Install utopya and dependencies
+dune_python_install_package(PATH utopya)
 
 # Add a custom target to symlink the utopia CLI
 # set(CLI_SYMLINK /usr/local/bin/utopia)
