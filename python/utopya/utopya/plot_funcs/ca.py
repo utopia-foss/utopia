@@ -134,7 +134,7 @@ def state_anim( dm: DataManager, *,
             bounds = limits
             norm = mpl.colors.BoundaryNorm(bounds, colormap.N)
         else:
-            raise("The cmap needs to be a list of a string")
+            raise TypeError("The cmap needs to be a dict or a string")
 
         # Create imshow
         im = ax.imshow(initial_data, cmap=colormap, animated=True,
