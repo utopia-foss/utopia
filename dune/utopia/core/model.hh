@@ -186,7 +186,7 @@ public:
         perform_step();
         increment_time();
         write_data();
-        _log->debug("Finished iteration: {:8d} / {:8d}", _time, _time_max);
+        _log->debug("Finished iteration: {:9d} / {:d}", _time, _time_max);
     }
 
     /// Run the model from the current time to the maximum time
