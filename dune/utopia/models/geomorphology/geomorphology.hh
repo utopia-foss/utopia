@@ -67,12 +67,12 @@ public:
         // Initialise the reference to the Manager object
         _manager(manager),
 
-        // Open dataset for output of cell states 
-        _dset_water_content(this->_hdfgrp->open_dataset("water_content")),
-
         // Initialize model parameters from config file
         _bc{this->_cfg["rain_mean"].template as<double>(), 
-            this->_cfg["rain_var"].template as<double>()}
+            this->_cfg["rain_var"].template as<double>()},
+
+        // Open dataset for output of cell states 
+        _dset_water_content(this->_hdfgrp->open_dataset("water_content"))
     {
         // Initialize altitude as an inclined plane (by making use of coordinates)
         auto set_inclined_plane = [this](const auto cell) {   
