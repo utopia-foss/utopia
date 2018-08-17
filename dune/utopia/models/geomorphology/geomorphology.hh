@@ -46,8 +46,9 @@ private:
     /// The boundary conditions (aka parameters) of the model
     BCType _bc;
 
-    /// Dataset 
+    /// Datasets
     std::shared_ptr<DataSet> _dset_water_content;
+    std::shared_ptr<DataSet> _dset_height;
 
 public:
 
@@ -71,8 +72,9 @@ public:
         _bc{this->_cfg["rain_mean"].template as<double>(), 
             this->_cfg["rain_var"].template as<double>()},
 
-        // Open dataset for output of cell states 
-        _dset_water_content(this->_hdfgrp->open_dataset("water_content"))
+        // Open datasets for output of cell states 
+        _dset_water_content(this->_hdfgrp->open_dataset("water_content")),
+        _dset_height(this->_hdfgrp->open_dataset("height"))
     {
         // Initialize altitude as an inclined plane (by making use of coordinates)
         auto set_inclined_plane = [](const auto cell) {   
@@ -100,18 +102,13 @@ public:
                       }
         );
 
-        // Write cell height 
-        auto dsetH = this->_hdfgrp->open_dataset("height");
-        dsetH->write(_manager.cells().begin(),
-                    _manager.cells().end(), 
-                    [](const auto& cell) {return cell->state().height;});
-
         // Set dataset capacities
         const hsize_t num_cells = std::distance(_manager.cells().begin(),
                                                 _manager.cells().end());
         this->_log->debug("Setting dataset capacities to {} x {} ...",
                           this->get_time_max() + 1, num_cells);
         _dset_water_content->set_capacity({this->get_time_max() + 1, num_cells});
+        _dset_height->set_capacity({this->get_time_max() + 1, num_cells});
 
         // Write initial state 
         write_data();
@@ -169,6 +166,11 @@ public:
         _dset_water_content->write(_manager.cells().begin(),
                                    _manager.cells().end(),
                                    [](auto& cell) { return cell->state().watercontent; }
+                                  );
+
+        _dset_height->write(_manager.cells().begin(),
+                                   _manager.cells().end(),
+                                   [](auto& cell) { return cell->state().height; }
                                   );
     }
 
