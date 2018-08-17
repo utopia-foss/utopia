@@ -186,10 +186,13 @@ def state(  dm: DataManager, *,
     # Set plot parameters
     rcParams.update({'font.size': 20})
     rcParams['figure.figsize'] = (6.0 * len(to_plot), 5.0)
-
+    
     # Create figure
-    fig = plt.figure()
-    ax = fig.gca()
+    fig, axs = plt.subplots(1, len(to_plot))
+
+    # Assert that the axes are stored in a list even if it is only one axis.
+    if len(to_plot) == 1:
+         axs = [axs] 
 
     # Store the imshow objects such that only the data has to be updated in a
     # following iteration step
@@ -201,7 +204,7 @@ def state(  dm: DataManager, *,
         for t in range(steps):
 
             # Loop through the subfigures
-            for i, (key, props) in enumerate(to_plot.items()):
+            for i, (ax, (key, props)) in enumerate(zip(axs, to_plot.items())):
                     # In the first time step create a new imshow object
                     if t == 0:
                         im = plot_property(key,
