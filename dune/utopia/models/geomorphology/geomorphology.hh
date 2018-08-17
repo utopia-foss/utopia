@@ -50,6 +50,9 @@ private:
     std::shared_ptr<DataSet> _dset_water_content;
     std::shared_ptr<DataSet> _dset_height;
 
+    // A map of lowest neighbors
+    std::map<typename Manager::Cell::Index, std::shared_ptr<typename Manager::Cell>> _l_neighbors;
+
 public:
 
     /// Construct the Geomorphology model
@@ -117,6 +120,9 @@ public:
     /// Iterate a single step
     void perform_step ()
     {
+        // Update lowest neighbors
+        update_l_neighbors();
+
         // Let it rain
         auto rain = [this](const auto cell) {
             auto rain = _bc(*(_manager.rng()));
@@ -134,14 +140,7 @@ public:
 
         // Waterflow  
         for (auto& cell : cells) {
-            // Find lowest neighbour
-            auto neighbors = Neighborhoods::NextNeighbor::neighbors(cell, _manager);
-            auto l_neighbor = neighbors[0];
-            for (auto neighbor : neighbors) {
-                if (neighbor->state().height < l_neighbor->state().height) 
-                    l_neighbor = neighbor;
-            }
-            // Put watercontent from cell to l_neighbor
+            auto l_neighbor = _l_neighbors[cell->id()];
             l_neighbor->state_new().watercontent += cell->state().watercontent;
         }
 
@@ -194,6 +193,42 @@ public:
     }
 
 private:
+
+    /// Update the map of lowest neighbors
+    void update_l_neighbors() {
+    
+        for (auto& cell : _manager.cells()) {
+
+            // Find lowest neighbour
+            auto neighbors = Neighborhoods::NextNeighbor::neighbors(cell, _manager);
+            CellContainer<typename Manager::Cell> lowest_neighbors;
+            auto l_neighbor = cell; // _l_neighbors of a cell is itself, if it is a sink
+            for (auto neighbor : neighbors) {
+                auto height_diff = neighbor->state().height - l_neighbor->state().height;
+                // Check if cells have approximately the same height.
+                // For problems of float comparison see:
+                // https://stackoverflow.com/questions/17333/what-is-the-most-effective-way-for-float-and-double-comparison
+                if ((height_diff < 10e-6) && (-height_diff < 10e-6)) {
+                    lowest_neighbors.push_back(neighbor);
+                }
+                // If neighbor is lower, update l_neighbor and list
+                else if (height_diff < 0) {
+                    l_neighbor = neighbor;
+                    lowest_neighbors.clear();
+                    lowest_neighbors.push_back(l_neighbor);
+                }
+            }
+
+            // If there is more than one lowest neighbor, select one randomly.
+            if (lowest_neighbors.size() > 1) {
+                std::uniform_int_distribution<> dis(0, lowest_neighbors.size() - 1);
+                l_neighbor = lowest_neighbors[dis(*(this->_rng))];
+            }
+
+            // Set lowest neighbor for cell
+            _l_neighbors[cell->id()] = l_neighbor;
+        }
+    }
 
     // Verify that the inserted initial condition can be used
     /** This function checks if
