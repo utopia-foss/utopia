@@ -21,8 +21,8 @@ frequencies:
   uni: 0
   strategy: [S0, S1]
 
-# plot the spatial development in the CA of the strategy
-strategy:
+# plot the spatial development in the CA of the strategy and payoff
+strategy_payoff:
   creator: external
   file_ext: mp4
 
@@ -46,7 +46,42 @@ strategy:
       title: Payoff
 
   # Video options
-  writer: frames  # can be: frames, ffmpeg (if installed), ...
+  writer: ffmpeg  # can be: frames, ffmpeg (if installed), ...
+  fps: 2
+  step_size: 1
+  dpi: 96
+
+  # For the 'frames' writer, the following additional kwargs can be passed
+  frames_kwargs: 
+    name_padding: 5
+    file_format: png
+
+
+# plot the spatial development in the CA of the strategy
+strategy:
+  creator: external
+  file_ext: mp4
+
+  module: .ca
+  plot_func: state
+
+  # Select the universe
+  uni: 0
+
+  # Select the properties to plot
+  to_plot:
+    strategy:
+      title: Strategy
+      limits: [0, 1]
+
+      # Specify the colormap
+      # cmap: viridis
+      cmap: 
+        S0: red
+        S1: blue
+
+  # Video options
+  writer: ffmpeg  # can be: frames, ffmpeg (if installed), ...
   fps: 2
   step_size: 1
   dpi: 96
