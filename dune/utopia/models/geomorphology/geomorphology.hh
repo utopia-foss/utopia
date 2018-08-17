@@ -218,57 +218,6 @@ private:
 };
 
 
-/// Setup the grid manager with an initial state
-/** \param name          The name of the model instance
-  * \param parent_model  The parent model the new model instance will reside in
-  *
-  * \tparam ParentModel  The parent model type
-  */ 
-template<typename ParentModel>
-auto setup_manager(const std::string name, ParentModel& parent_model)
-{
-    // define data types (should this go into the namespace?)
-    using Tag = Utopia::DefaultTag;
-    constexpr bool sync = true;
-
-    // define grid properties
-    constexpr bool structured = true;
-    constexpr bool periodic = false;
-
-    // Get the logger... and use it :)
-    auto log = parent_model.get_logger();
-    log->info("Setting up '{}' model ...", name);
-
-    // Get the configuration and the rng
-    auto cfg = parent_model.get_cfg()[name];
-    auto rng = parent_model.get_rng();
-
-    // Extract grid size from config
-    const auto grid_size = as_<unsigned int>(cfg["grid_size"]);
-
-    // Inform about the size
-    log->info("Creating 2-dimensional grid of size: {0} x {0} ...",
-              grid_size);
-
-    // Create grid of that size
-    auto grid = Utopia::Setup::create_grid<2>(grid_size);
-
-    // initial value: No plant density
-    State initial_state = {0.0, 0.0};
-
-    // Create cells on that grid, passing the initial state
-    auto cells = Utopia::Setup::create_cells_on_grid<sync, State, Tag>(grid,
-                                                                       initial_state);
-
-    // Create the grid manager, passing the template argument
-    log->info("Initializing GridManager with {} boundary conditions ...",
-              (periodic ? "periodic" : "fixed"));
-
-    return Utopia::Setup::create_manager_cells<structured, periodic>(grid,
-                                                                     cells,
-                                                                     rng);
-}
-
 } // namespace Geomorphology
 } // namespace Models
 } // namespace Utopia

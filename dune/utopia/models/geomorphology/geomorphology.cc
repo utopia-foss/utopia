@@ -2,6 +2,9 @@
 
 #include "geomorphology.hh"
 
+using namespace Utopia::Models::Geomorphology;
+using Utopia::Setup::create_grid_manager_cells;
+
 int main(int argc, char *argv[])
 {
     try {
@@ -11,9 +14,8 @@ int main(int argc, char *argv[])
         Utopia::PseudoParent pp(argv[1]);
 
         // Set the initial state, then create the model instance
-        Utopia::Models::Geomorphology::Geomorphology model("geomorphology", pp,
-            Utopia::Models::Geomorphology::setup_manager("geomorphology", pp));
-
+        Geomorphology model("geomorphology", pp,
+            create_grid_manager_cells<State, false>("geomorphology", pp));
 
         // Just run!
         model.run();
