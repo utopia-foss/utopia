@@ -25,11 +25,11 @@ class FileWriter():
 
     It adheres to the corresponding matplotlib animation interface.
     """
-    def __init__(   self, *, 
-                    name_padding: int=6, 
-                    file_format: str='png', 
-                    fstr: str="{path:}_frame{num:0{pad:}d}.{ext:}", 
-                    **savefig_kwargs):
+    def __init__(self, *,
+                 name_padding: int=6,
+                 file_format: str='png',
+                 fstr: str="{path:}/{num:0{pad:}d}.{ext:}",
+                 **savefig_kwargs):
         # Save arguments
         self.index = 0
         self.name_padding = name_padding
@@ -77,27 +77,30 @@ class FileWriterContextManager():
 
 # -----------------------------------------------------------------------------
 
-def state_anim( dm: DataManager, *, 
-                model_name: str,
-                out_path: str, 
-                uni: int, 
-                to_plot: dict,
-                writer: str,
-                frames_kwargs: dict, 
-                fps: int=2, 
-                step_size: int=1, 
-                dpi: int=96) -> None:
+def state_anim(dm: DataManager, *, 
+               out_path: str, 
+               uni: int, 
+               model_name: str,
+               to_plot: dict,
+               writer: str,
+               frames_kwargs: dict, 
+               fps: int=2, 
+               step_size: int=1, 
+               dpi: int=96) -> None:
     """Create an animation of the states of a two dimensional cellular automaton.
     The function can use different writers, e.g. write out only the frames or create
     an animation with an external programm (e.g. ffmpeg). 
     Multiple properties can be plotted next to each other, specified by the to_plot dict.
-
+    
     Arguments:
         dm (DataManager): The DataManager object containing the data
-        model_name (str): The model name, in which the data is located
         out_path (str): The output path
         uni (int): The universum
-        to_plot (dict): The plotting configuration
+        model_name (str): The name of the model instance, in which the data is
+            located.
+        to_plot (dict): The plotting configuration. The entries of this key
+            refer to a path within the data and can include forward slashes to
+            navigate to data of submodels.
         writer (str): The writer that should be used. Additional to the
             external writers such as 'ffmpeg', it is possible to create and
             save the individual frames with 'frames'
@@ -120,7 +123,7 @@ def state_anim( dm: DataManager, *,
 
         return colormap
 
-    def plot_property(name, *, initial_data, ax, cmap, limits, title=None):
+    def plot_property(name, *, initial_data, ax, cmap, limits: list, title: str=None):
         """Helper function to plot a property on a given axis"""
         # Get colormap
         # Case continuous colormap
@@ -128,13 +131,18 @@ def state_anim( dm: DataManager, *,
             norm = None
             bounds = None
             colormap = cmap
-        # case discrete colormap
+
+        # Case discrete colormap
         elif isinstance(cmap, dict):
             colormap = get_discrete_colormap(list(cmap.values()))
             bounds = limits
             norm = mpl.colors.BoundaryNorm(bounds, colormap.N)
+
         else:
-            raise TypeError("The cmap needs to be a dict or a string")
+            raise TypeError("Argument cmap needs to be either a string with "
+                            "name of the colormap or a dict with values for a "
+                            "discrete colormap. Was: {} with value: '{}'"
+                            "".format(type(cmap), cmap))
 
         # Create imshow
         im = ax.imshow(initial_data, cmap=colormap, animated=True,
@@ -148,6 +156,7 @@ def state_anim( dm: DataManager, *,
         fig = plt.gcf()
         cbar = fig.colorbar(im ,ax=ax, norm=norm, ticks=bounds,
                             fraction=0.046, pad=0.04)
+
         if bounds is not None:
             # vertical color bar ticks
             yticklabels = cmap.keys()
@@ -163,7 +172,7 @@ def state_anim( dm: DataManager, *,
     cfg = dm['uni'][uni]['cfg']
     grid_size = cfg[model_name]['grid_size']
     steps = cfg['num_steps']
-    new_shape = (steps+1, grid_size[0], grid_size[1])
+    new_shape = (steps+1, grid_size[1], grid_size[0])
 
     # Extract the data of the strategies in the CA    
     data_1d = {p: grp[p] for p in to_plot.keys()}
@@ -210,8 +219,7 @@ def state_anim( dm: DataManager, *,
             for i, (ax, (key, props)) in enumerate(zip(axs, to_plot.items())):
                     # In the first time step create a new imshow object
                     if t == 0:
-                        im = plot_property(key,
-                                           initial_data=data[key][t],
+                        im = plot_property(key, initial_data=data[key][t],
                                            ax=ax, **props)
                         ims.append(im)
 
