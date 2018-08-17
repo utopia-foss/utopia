@@ -236,7 +236,7 @@ public:
         _dset_state->write(_manager.cells().begin(),
                                 _manager.cells().end(),
                                 [](auto& cell) {
-                                    return cell->state();
+                                    return static_cast<unsigned short int>(cell->state());
                                 });
     }
 
