@@ -75,7 +75,7 @@ public:
         _dset_water_content(this->_hdfgrp->open_dataset("water_content"))
     {
         // Initialize altitude as an inclined plane (by making use of coordinates)
-        auto set_inclined_plane = [this](const auto cell) {   
+        auto set_inclined_plane = [](const auto cell) {   
             auto state = cell->state();
             state.height = cell->position()[1]; 
             return state;       
