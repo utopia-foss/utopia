@@ -141,13 +141,9 @@ public:
         // Waterflow  
         for (auto& cell : cells) {
             auto l_neighbor = _l_neighbors[cell->id()];
-            l_neighbor->state_new().watercontent += cell->state().watercontent;
-        }
-
-        // Remove water from boundary cells (sinks)
-        for (auto& cell : cells) {
-            if (cell->is_boundary())
-                cell->state_new().watercontent = 0;
+            // Put water onto another cell only if I'm not a boundary cell
+            if (not cell->is_boundary())
+                l_neighbor->state_new().watercontent += cell->state().watercontent;
         }
 
         // Update cells
