@@ -21,7 +21,13 @@ Note that there is also a [`CopyMeBare`](CopyMeBare) model; it includes _only th
 - [ ] Copy the `CopyMe` directory and paste it in the same directory.
 - [ ] Rename the copied directory to `MyFancyModel` (or rather your chosen name). 
     - A remark concerning the naming convention: Your model name should consist of words that start with Capital Letters and are `DirectlyConcatenatedWithoutSeparatingSymbols`.
-- [ ] Rename all the files inside of the newly created directory such that all `CopyMe`s are replaced by `MyFancyModel`s
+- [ ] Rename all the files inside of the newly created directory such that all
+    `CopyMe`s are replaced by `MyFancyModel`s. You can do so by using the
+    [parameter expasion capabilities](http://wiki.bash-hackers.org/syntax/pe)
+    of BASH. Inside your model directory, call
+
+        for file in CopyMe*; do mv $file ${file/CopyMe/MyFancyModel}; done
+
 - [ ] Tell _Utopia_ that there is a new model, e.g. include your model in the Utopia CMake build routine:
     - [ ] In `dune/utopia/models/`, you find a `CMakeLists.txt` file. Open it and let CMake find your model directory by including the command: `add_subdirectory(MyFancyModel)` 
     - [ ] In `dune/utopia/models/MyFancyModel/`, there is another `CMakeLists.txt` file. Open it and change the line `add_model(CopyMe CopyMe.cc)` to `add_model(MyFancyModel MyFancyModel.cc)`. With this command, you tell CMake that a new model should be kept track of.
