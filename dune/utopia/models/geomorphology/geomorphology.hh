@@ -9,19 +9,21 @@
 #include <dune/utopia/data_io/hdfdataset.hh>
 
 namespace Utopia {
-
 namespace Models {
-
 namespace Geomorphology {
 
+/// State struct for Geomorphology model
+struct State {
+    double height;
+    double watercontent;
+};
+
 /// Define data type and boundary condition type of geomorphology model
-template<class Manager>
-using DataType = typename Manager::Container;
 
 using Rain = std::normal_distribution<>;
 
 template<class Manager>
-using GeomorphologyTypes = ModelTypes<DataType<Manager>, Rain>;
+using GeomorphologyTypes = ModelTypes<typename Manager::Container, Rain>;
 
 /// A very simple geomorphology model
 template<class Manager>
@@ -75,7 +77,7 @@ public:
         // Initialize altitude as an inclined plane (by making use of coordinates)
         auto set_inclined_plane = [this](const auto cell) {   
             auto state = cell->state();
-            state[0] = cell->position()[1]; 
+            state.height = cell->position()[1]; 
             return state;       
         };
         apply_rule(set_inclined_plane, manager.cells()); 
@@ -102,7 +104,7 @@ public:
         auto dsetH = this->_hdfgrp->open_dataset("height");
         dsetH->write(_manager.cells().begin(),
                     _manager.cells().end(), 
-                    [](const auto& cell) {return cell->state()[0];});
+                    [](const auto& cell) {return cell->state().height;});
 
         // Write initial state 
         write_data();
@@ -115,7 +117,7 @@ public:
         auto rain = [this](const auto cell) {
             auto rain = _bc(*(_manager.rng()));
             auto state = cell->state();
-            state[1] += rain; 
+            state.watercontent += rain; 
             return state;
         };
         apply_rule(rain, _manager.cells());
@@ -123,7 +125,7 @@ public:
         // Reset state_new of cells
         auto& cells = _manager.cells();
         for (auto& cell : cells) {
-            cell->state_new()[1] = 0;
+            cell->state_new().watercontent = 0;
         }
 
         // Waterflow  
@@ -132,17 +134,17 @@ public:
             auto neighbors = Neighborhoods::NextNeighbor::neighbors(cell, _manager);
             auto l_neighbor = neighbors[0];
             for (auto neighbor : neighbors) {
-                if (neighbor->state()[0] < l_neighbor->state()[0]) 
+                if (neighbor->state().height < l_neighbor->state().height) 
                     l_neighbor = neighbor;
             }
             // Put watercontent from cell to l_neighbor
-            l_neighbor->state_new()[1] += cell->state()[1];
+            l_neighbor->state_new().watercontent += cell->state().watercontent;
         }
 
         // Remove water from boundary cells (sinks)
         for (auto& cell : cells) {
             if (cell->is_boundary())
-                cell->state_new()[1] = 0;
+                cell->state_new().watercontent = 0;
         }
 
         // Update cells
@@ -159,7 +161,7 @@ public:
 
         _dset_water_content->write(_manager.cells().begin(),
                                    _manager.cells().end(),
-                                   [](auto& cell) { return cell->state()[1]; }
+                                   [](auto& cell) { return cell->state().watercontent; }
                                   );
     }
 
@@ -226,7 +228,6 @@ template<typename ParentModel>
 auto setup_manager(const std::string name, ParentModel& parent_model)
 {
     // define data types (should this go into the namespace?)
-    using State = std::array<double, 2>; //height, watercontent
     using Tag = Utopia::DefaultTag;
     constexpr bool sync = true;
 
@@ -269,9 +270,7 @@ auto setup_manager(const std::string name, ParentModel& parent_model)
 }
 
 } // namespace Geomorphology
-
 } // namespace Models
-
 } // namespace Utopia
 
 #endif // GEOMORPHOLOGY_HH
