@@ -51,6 +51,7 @@ public:
     using BCType = typename Base::BCType;
     using Data = typename Base::Data;
     using DataSet = DataIO::HDFDataset<DataIO::HDFGroup>;
+    using CellType = typename Manager::Cell;
 
 private:
 
@@ -66,6 +67,15 @@ private:
 
     // A map of lowest neighbors
     std::map<typename Manager::Cell::Index, std::shared_ptr<typename Manager::Cell>> _lowest_neighbors;
+
+    // Rule functions
+    std::function<State(std::shared_ptr<CellType>)> _rain = [this](const auto cell){
+        auto rain = _bc.rain(*(_manager.rng()));
+        auto state = cell->state();
+        state.watercontent += rain; 
+        return state;
+    };
+
 
 public:
 
@@ -147,19 +157,13 @@ public:
     /// Iterate a single step
     void perform_step ()
     {
-        auto& cells = _manager.cells();
+        auto cells = _manager.cells();
 
         // Update lowest neighbors
         update_lowest_neighbors();
 
         // Let it rain
-        auto rain = [this](const auto cell) {
-            auto rain = _bc.rain(*(_manager.rng()));
-            auto state = cell->state();
-            state.watercontent += rain; 
-            return state;
-        };
-        apply_rule(rain, cells);
+        apply_rule(_rain, cells);
 
         // Sediment flow
         for (auto& cell : cells) {
