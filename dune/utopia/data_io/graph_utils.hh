@@ -12,10 +12,13 @@ namespace Utopia {
 namespace DataIO {
 
 /// Write function for a static boost::Graph
-template<typename GraphType>
-std::shared_ptr<HDFGroup> save_graph(GraphType &g,
-                                     std::shared_ptr<HDFGroup> parent_grp,
-                                     const std::string name)
+template<
+    bool save_edges = true,
+    typename GraphType>
+std::enable_if_t<save_edges, std::shared_ptr<HDFGroup>>
+save_graph(GraphType &g,
+         const std::shared_ptr<HDFGroup>& parent_grp,
+         const std::string& name)
 {
     // Create the group for the graph
     auto grp = parent_grp->open_group(name);
@@ -55,6 +58,46 @@ std::shared_ptr<HDFGroup> save_graph(GraphType &g,
             );
         }
     );
+
+    // Return newly created group
+    return grp;
+}
+
+/// Write function for a static boost::Graph
+template<
+    bool save_edges = true,
+    typename GraphType>
+std::enable_if_t<!save_edges, std::shared_ptr<HDFGroup>>
+save_graph(GraphType &g,
+         const std::shared_ptr<HDFGroup>& parent_grp,
+         const std::string& name)
+{
+    // Create the group for the graph
+    auto grp = parent_grp->open_group(name);
+
+    // Store in attributes that this is supposed to be a Graph
+    grp->add_attribute("is_static_graph_group", true);
+
+    // Collect some metadata
+    auto num_vertices = boost::num_vertices(g);
+    auto num_edges = boost::num_edges(g);
+
+    // Also store some metadata
+    grp->add_attribute("directed", boost::is_directed(g));
+    grp->add_attribute("num_vertices", num_vertices);
+    grp->add_attribute("num_edges", num_edges);
+    grp->add_attribute("save_edges", save_edges);
+    // TODO _could_ add more attributes here, should be general though
+
+    // Initialize datasets to store vertices list
+    auto dset_vl = grp->open_dataset("_vertex_list", {num_vertices});
+
+    // Save vertices list
+    auto [v, v_end] = boost::vertices(g);
+    dset_vl->write(v, v_end,
+                   [&](auto vd){return boost::get(boost::vertex_index, g, vd);}
+    );
+
 
     // Return newly created group
     return grp;
