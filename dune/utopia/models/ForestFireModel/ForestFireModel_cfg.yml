@@ -1,14 +1,4 @@
-# The model configuration for the CopyMe model
-#
-# This file should ONLY contain model-specific configuration and needs to be
-# written such that it can be used by _every_ model instance, regardless
-# of the level within a model hierarchy.
-# 
-# To that end, it needs to specify the parameters at the level of the instance
-# of a Model class.
-# 
-# This file is usually handled by the frontend: usage of advanced yaml features
-# like anchors and tags is supported.
+# The model configuration for the ForestFire model
 # 
 # Note, however, that this file should hold the _default_ values for a single
 # instance. Therefore, parameter sweeps should not be specified here!
@@ -20,9 +10,11 @@ grid_size: [101, 101]
 periodic: true          # false: cells at boundary have fewer neighbors
 
 # Initial state
-initial_state: empty   # can be: empty, tree=forest
+initial_state: empty     # can be: empty, tree=forest
 
-# some parameter
-growth_rate: 7.5e-3
-lightning_frequency: 1e-4
+# parameter
+growth_rate: 7.5e-4
+lightning_frequency: 1e-5
 resistance: 0
+two_state_FFM: true    # can be: false (three state model -> fires propagates), 
+                        #         true  (two state model   -> fires percolate).

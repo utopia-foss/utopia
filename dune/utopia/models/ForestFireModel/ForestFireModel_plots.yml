@@ -29,8 +29,8 @@ state_map_series:
       title: State
 
   # Video options
-  writer: frames  # can be: frames, ffmpeg (if installed), ...
-  fps: 1
+  writer: ffmpeg  # can be: frames, ffmpeg (if installed), ...
+  fps: 3
   step_size: 1
   dpi: 96
 

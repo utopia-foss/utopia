@@ -69,7 +69,9 @@ private:
     /// Model parameters
     const double _growth_rate;
     const double _lightning_frequency;
-    const double _resistance;  
+    const double _resistance;
+    const bool _two_state_FFM;  // 0: three state model, Contageous desease, 1: two state model, percolation
+                                // 0 implies sync update, 1 async update
 
 
     // -- Datasets -- //
@@ -79,11 +81,8 @@ private:
 
 
     // -- Rule functions -- //
-    // states: 0: empty, 1: tree, 2: burning 
-    // empty -> tree with probability growth_rate
-    // tree -> burning with probability lightning_frequency
-    // tree -> burning with probability 1 - resistance if i' in Neighborhood of i burning
-    // burning -> empty
+    // initialise all empty or all tree
+    // update following the FFM set of rules
 
     /// Sets the given cell to state "empty"
     std::function<State(std::shared_ptr<CellType>)> _set_initial_state_empty = [](const auto cell){
@@ -108,47 +107,75 @@ private:
         return state;
     };
 
+    /// turns connected cluster to burning
+    // function called recursively on all neighbors
+    // must be async update
+    std::function<void(std::shared_ptr<CellType>)> _percolate = [this](auto cell){
+        if constexpr (!ManagerType::Cell::is_sync()) {
+            auto state = cell->state();
+            if (state == tree) {
+                cell->state() = empty;
+                for (auto nb : MooreNeighbor::neighbors(cell,this->_manager)) {
+                    _percolate(nb);
+                }
+            }
+        }        
+        
+        return;
+    };
 
-    /// Define the update rule for a cell
-    std::function<State(std::shared_ptr<CellType>)> _update = [this](const auto cell){
-
-        // Get the state of the cell
+    /// update follwoing set of rules
+    /**    states: 0: empty, 1: tree (, 2: burning)
+        * Contageous desease spread (CDM)
+        *    empty -> tree with probability growth_rate
+        *    tree -> burning with probability lightning_frequency
+        *    tree -> burning with probability 1 - resistance if i' in Neighborhood of i burning
+        *    burning -> empty
+        * Percolation spread (PM)
+        *    empty -> tree with probability growth_rate
+        *    tree -> burning with probability lightning_frequency
+        *    or tree -> burning if connected to cluster -> empty instantaneously (two state FFM, percolation)
+        */
+    std::function<State(std::shared_ptr<CellType>)> _update = [this](auto cell){
         auto state = cell->state();
 
         std::uniform_real_distribution<> dist(0., 1.);
-        // state is empty, empty -> tree by growth
+        
+        // if state is empty, empty -> tree by growth
         if (state == empty && dist(*this->_rng) < _growth_rate) {  
             state = tree; 
         }
 
-        // state is tree
+        // state is tree, tree -> burning by lighning or by burning neighbors
         else if (state == tree)
         {
             // tree -> burning by lightning
+            // in PercolationM connecte cluster catches fire -> percolation
             if (dist(*this->_rng) < _lightning_frequency) {
-                state = burning; 
+                if (_two_state_FFM) {
+                    _percolate(cell); // modifies state of nb cells -> implies use of async update
+                    state = empty;
+                }
+                else {
+                    state = burning;
+                }
             }
-
-            // tree -> burning by catching fire from neighbor
-            else 
+            // catch fire from Neighbors in CDM
+            else if (!_two_state_FFM) 
             {
-                for (auto nb : MooreNeighbor::neighbors(cell, this->_manager))
-                {
-                    if (nb->state() == burning && dist(*this->_rng) < 1-_resistance) // i' burning
-                    {
+                for (auto nb : MooreNeighbor::neighbors(cell,this->_manager)) {
+                    if (nb->state() == burning) {
                         state = burning;
-                        break;
                     }
                 }
             }
         }
 
-        // state is burning, burning -> empty
+        // stop burning, turn empty in CDM
         else if (state == burning) {
             state = empty;
         }
 
-        // Return the new state cell
         return state;
     };
 
@@ -171,6 +198,7 @@ public:
         _growth_rate(as_double(this->_cfg["growth_rate"])),
         _lightning_frequency(as_double(this->_cfg["lightning_frequency"])),
         _resistance(as_double(this->_cfg["resistance"])),
+        _two_state_FFM(Utopia::as_bool(this->_cfg["two_state_FFM"])),
         // create datasets
         _dset_state(this->_hdfgrp->open_dataset("state"))      
     {
@@ -200,11 +228,21 @@ public:
         // Apply a rule to all cells depending on the config value
         if (initial_state == "empty")
         {
-            apply_rule(_set_initial_state_empty, _manager.cells());
+            if constexpr (ManagerType::Cell::is_sync()) {
+                apply_rule(_set_initial_state_empty, _manager.cells());
+            }
+            else {
+                apply_rule(_set_initial_state_empty, _manager.cells(), *this->_rng);
+            }
         }
         else if (initial_state == "tree")
         {
-            apply_rule(_set_initial_state_tree, _manager.cells());
+            if constexpr (ManagerType::Cell::is_sync()) {
+                apply_rule(_set_initial_state_tree, _manager.cells());
+            }
+            else {
+                apply_rule(_set_initial_state_tree, _manager.cells(), *this->_rng);
+            }
         }
         else
         {
@@ -224,8 +262,12 @@ public:
      */
     void perform_step ()
     {
-        // Apply the rules to all cells, first the interaction, then the update
-        apply_rule(_update, _manager.cells());
+        if constexpr (ManagerType::Cell::is_sync()) {
+            apply_rule(_update, _manager.cells());
+        }
+        else {
+            apply_rule(_update, _manager.cells(), *this->_rng);
+        }
     }
 
 

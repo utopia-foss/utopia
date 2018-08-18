@@ -15,17 +15,38 @@ int main (int argc, char** argv)
 
         // Initialize the main model instance with different template arguments
         // and then iterate it ... Need separate cases for this.
-        if (Utopia::as_bool(pp.get_cfg()["ForestFireModel"]["periodic"])) {
-            // Periodic grid
+        if (Utopia::as_bool(pp.get_cfg()["ForestFireModel"]["periodic"]) 
+            && Utopia::as_bool(pp.get_cfg()["ForestFireModel"]["two_state_FFM"])) 
+        {
+            // Periodic grid and async update
             ForestFireModel model("ForestFireModel", pp,
-                create_grid_manager_cells<State, true>("ForestFireModel", pp)
+                create_grid_manager_cells<State,true,2,true,false>("ForestFireModel", pp)
             );
             model.run();
         }
-        else {
-            // Non-periodic grid
+        else if (Utopia::as_bool(pp.get_cfg()["ForestFireModel"]["periodic"]) 
+            && !Utopia::as_bool(pp.get_cfg()["ForestFireModel"]["two_state_FFM"])) 
+        {
+            // Periodic grid and sync update
             ForestFireModel model("ForestFireModel", pp,
-                create_grid_manager_cells<State, false>("ForestFireModel", pp)
+                create_grid_manager_cells<State,true,2,true,true>("ForestFireModel", pp)
+            );
+            model.run();
+        }
+        else if (!Utopia::as_bool(pp.get_cfg()["ForestFireModel"]["periodic"]) 
+            && Utopia::as_bool(pp.get_cfg()["ForestFireModel"]["two_state_FFM"])) 
+        {
+            // Non-Periodic grid and sync update
+            ForestFireModel model("ForestFireModel", pp,
+                create_grid_manager_cells<State,false,2,true,false>("ForestFireModel", pp)
+            );
+            model.run();
+        }
+        else 
+        {
+            // Non-periodic grid and async update
+            ForestFireModel model("ForestFireModel", pp,
+                create_grid_manager_cells<State,false,2,true,true>("ForestFireModel", pp)
             );
             model.run();
         }
