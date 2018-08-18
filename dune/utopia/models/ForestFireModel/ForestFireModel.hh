@@ -70,7 +70,7 @@ private:
     const double _growth_rate;
     const double _lightning_frequency;
     const double _resistance;
-    const bool _two_state_FFM;  // 0: three state model, Contageous desease, 1: two state model, percolation
+    const bool _two_state_FFM;  // 0: three state model, contagious disease, 1: two state model, percolation
                                 // 0 implies sync update, 1 async update
 
 
@@ -126,7 +126,7 @@ private:
 
     /// update follwoing set of rules
     /**    states: 0: empty, 1: tree (, 2: burning)
-        * Contageous desease spread (CDM)
+        * contagious disease spread (CDM)
         *    empty -> tree with probability growth_rate
         *    tree -> burning with probability lightning_frequency
         *    tree -> burning with probability 1 - resistance if i' in Neighborhood of i burning
