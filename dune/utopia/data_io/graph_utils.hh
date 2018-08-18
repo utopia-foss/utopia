@@ -14,7 +14,8 @@ namespace DataIO {
 /// Write function for a static boost::Graph
 template<
     bool save_edges = true,
-    typename GraphType>
+    typename GraphType,
+    typename id_type=boost::vertex_index_t>
 std::enable_if_t<save_edges, std::shared_ptr<HDFGroup>>
 save_graph(GraphType &g,
          const std::shared_ptr<HDFGroup>& parent_grp,
@@ -43,7 +44,7 @@ save_graph(GraphType &g,
     // Save vertices list
     auto [v, v_end] = boost::vertices(g);
     dset_vl->write(v, v_end,
-        [&](auto vd){return boost::get(boost::vertex_index, g, vd);}
+        [&](auto vd){return boost::get(id_type(), g, vd);}
     );
 
     // Save adjacency list
@@ -53,8 +54,8 @@ save_graph(GraphType &g,
             // Extract indices of source and target vertex as well as of the
             // edge this corresponds to.
             return std::array<std::size_t, 2>( // TODO use boost::index_type?
-                {boost::get(boost::vertex_index, g, boost::source(ed, g)),
-                 boost::get(boost::vertex_index, g, boost::target(ed, g))}
+                {boost::get(id_type(), g, boost::source(ed, g)),
+                 boost::get(id_type(), g, boost::target(ed, g))}
             );
         }
     );
