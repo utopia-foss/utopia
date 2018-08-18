@@ -80,7 +80,7 @@ class Multiverse:
         self._create_run_dir(**self.meta_cfg['paths'], cfg_parts=files)
 
         # Provide some information
-        log.info("  Run directory:  %s", self.dirs['run'])
+        log.info("Run directory:\n  %s", self.dirs['run'])
 
         # Create a data manager
         self._dm = DataManager(self.dirs['run'],
@@ -678,12 +678,12 @@ class FrozenMultiverse(Multiverse):
         # Only keep selected entries from the meta configuration. The rest is
         # not needed and is deleted in order to not confuse the user with
         # potentially varying versions of the meta config.
-        self._meta_cfg = {k: v for k, v in self._meta_cfg
-                          if k in ('data_manager', 'plot_manager')}
+        self._meta_cfg = {k: v for k, v in self._meta_cfg.items()
+                          if k in ('paths', 'data_manager', 'plot_manager')}
 
         # Generate the path to the run directory that is to be loaded
         self._create_run_dir(**self.meta_cfg['paths'], run_dir=run_dir)
-        log.info("  Associated run directory:  %s", self.dirs['run'])
+        log.info("Run directory:\n  %s", self.dirs['run'])
 
         # Create a data manager
         self._dm = DataManager(self.dirs['run'],
@@ -718,8 +718,11 @@ class FrozenMultiverse(Multiverse):
             # Now check whether to use the latest output or a specific one
             if run_dir is None:
                 # Use the latest (alphabetically, assuming all are timestamps)
+                log.info("Trying to identify latest directory ...")
+
                 latest = [d for d in sorted(os.listdir(model_dir))
                           if os.path.isdir(os.path.join(model_dir, d))][-1]
+                # TODO should regex the names?!
                 run_dir = os.path.join(model_dir, latest)
         
             elif isinstance(run_dir, str):  # TODO add ability to use glob?

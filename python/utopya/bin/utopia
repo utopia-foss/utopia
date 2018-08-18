@@ -13,6 +13,9 @@ subparsers = parser.add_subparsers(dest='mode',
                                    title="commands")
 p_run  = subparsers.add_parser('run',
                                help="perform a simulation run")
+p_eval = subparsers.add_parser('eval',
+                               help="load a finished Utopia run and perform "
+                                    "only the evaluation")
 p_cfg  = subparsers.add_parser('config',
                                help="set user-specific config options")
 
@@ -76,6 +79,35 @@ p_run.add_argument('--plot-only',
                         "configuration that match the names given here.")
 
 
+# subcommand: eval ............................................................
+p_eval.add_argument('model_name',
+                    help="Name of the model to evaluate. This is used to find "
+                         "the output directory")
+p_eval.add_argument('run_dir_path',
+                    default=None, nargs='?',
+                    help="Path to the run directory that is to be loaded. "
+                         "It can be relative to the model output directory "
+                         "(i.e.: only the timestamp), or an absolute path. "
+                         "If not given, the latest timestamp is used.")
+p_eval.add_argument('--plots-cfg',
+                    default=None, nargs='?',
+                    help="If given, uses the plots configuration file found "
+                         "at this path instead of the defaults of the model.")
+p_eval.add_argument('--plot-only',
+                    default=None, nargs='*',
+                    help="If given, will plot only those entries of the plot "
+                         "configuration that match the names given here.")
+p_eval.add_argument('--run_cfg_path',
+                    default=None, nargs='?',
+                    help="Path to the run configuration. Can be used to "
+                         "change the configuration of DataManager and "
+                         "PlotManager.")
+p_eval.add_argument('--debug',
+                    action='store_true',
+                    help="If given, configures the PlotManager such that it "
+                         "raises exceptions instead of warning.")
+
+
 # subcommand: config ..........................................................
 p_cfg.add_argument('--deploy',
                    action='store_true',
@@ -109,13 +141,16 @@ if __name__ == '__main__':
         # End here.
         sys.exit()
 
+    # Run & eval subcommands ..................................................
+    # NOTE the subcommands only differ in which Multiverse class is created and
+    #      whether a run is performed or not
 
-    # Prepare Multiverse ......................................................
+    # Prepare Multiverse
     # Set an empty update dict. It will hold adjustments to the given configs
     update_dict = {}
 
     # If a model_note was given, add it to the paths
-    if args.note:
+    if args.mode == 'run' and args.note:
         update_dict['paths'] = dict(model_note=args.note)
 
     # In debug mode, set a number of configuration keys
@@ -133,7 +168,7 @@ if __name__ == '__main__':
         update_dict['worker_manager'] = dict(nonzero_exit_handling='raise')
 
     # Set the WorkerManager's non-zero exit handling, if in debug mode
-    if args.sim_errors:
+    if args.mode == 'run' and args.sim_errors:
         # Check if an entry already exists; if not, need an empty dict there
         if 'worker_manager' not in update_dict:
             update_dict['worker_manager'] = {}
@@ -141,7 +176,7 @@ if __name__ == '__main__':
         update_dict['worker_manager']['nonzero_exit_handling']=args.sim_errors
 
     # Set number of simulation steps
-    if args.num_steps:
+    if args.mode == 'run' and args.num_steps:
         if args.num_steps < 0:
             raise ValueError("Argument --num-steps needs to be positive, was "
                              "{}.".format(args.num_steps))
@@ -153,14 +188,16 @@ if __name__ == '__main__':
         update_dict['parameter_space']['num_steps'] = args.num_steps
 
     # Preparations finished now
-    # Using the args, instantiate a Multiverse object
-    mv = utopya.Multiverse(model_name=args.model_name,
-                           run_cfg_path=args.run_cfg_path,
-                           **update_dict)
     
     
-    # Perform the run .........................................................
+    # Create Multiverse and perform the run
     if args.mode in ['run']:
+        # Instantiate a Multiverse object
+        mv = utopya.Multiverse(model_name=args.model_name,
+                               run_cfg_path=args.run_cfg_path,
+                               **update_dict)
+
+        # Distinguish single and sweep
         if args.single:
             if args.sweep:
                 warnings.warn("Received both --single and --sweep command "
@@ -177,18 +214,26 @@ if __name__ == '__main__':
         else:
             mv.run()
 
+        # Only need to continue if plots are to be created
+        if args.no_plot:
+            sys.exit()
 
-    # Loading an Utopia run ...................................................
-    # Only need to continue if plots are to be created
-    if args.no_plot:
-        sys.exit()
 
+    elif args.mode in ['eval']:
+        # Create a frozen Multiverse object that supplies all the necessary
+        # structures to load data and plot ...
+        mv = utopya.FrozenMultiverse(model_name=args.model_name,
+                                     run_dir=args.run_dir_path,
+                                     run_cfg_path=args.run_cfg_path,
+                                     **update_dict)
+
+    # else: should not occur!
+
+    # Loading and plotting
     # Tell the DataManager to load
     mv.dm.load_from_cfg(print_tree=True)
     # NOTE This will load the data using the utopya default configuration
 
-
-    # Plotting ................................................................
     # Tell the PlotManager to plot
     mv.pm.plot_from_cfg(plots_cfg=args.plots_cfg, plot_only=args.plot_only)
     # NOTE If plots_cfg was not given, this uses the plot configuration that
