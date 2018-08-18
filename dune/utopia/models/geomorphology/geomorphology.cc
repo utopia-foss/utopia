@@ -15,6 +15,7 @@ int main(int argc, char *argv[])
 
         // Set the initial state, then create the model instance
         Geomorphology model("geomorphology", pp,
+            // periodic=false, structured=sync=true
             create_grid_manager_cells<State, false>("geomorphology", pp));
 
         // Just run!

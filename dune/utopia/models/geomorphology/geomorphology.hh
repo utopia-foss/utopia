@@ -1,6 +1,8 @@
 #ifndef GEOMORPHOLOGY_HH
 #define GEOMORPHOLOGY_HH
 
+#include <cmath>
+
 #include <dune/utopia/base.hh>
 #include <dune/utopia/core/model.hh>
 #include <dune/utopia/core/apply.hh>
@@ -18,12 +20,24 @@ struct State {
     double watercontent;
 };
 
-/// Define data type and boundary condition type of geomorphology model
-
+/// Define boundary condition type of geomorphology model
 using Rain = std::normal_distribution<>;
+struct GeomorphologyParameters {
+
+    // Constructor
+    GeomorphologyParameters(double _rain_mean, double _rain_var, 
+            double _height, double _uplift, double _erodibility) : 
+        rain{_rain_mean, _rain_var}, height(_height), 
+        uplift(_uplift), erodibility(_erodibility) {}
+
+    Rain rain;
+    double height;
+    double uplift;
+    double erodibility;
+};
 
 template<class Manager>
-using GeomorphologyTypes = ModelTypes<typename Manager::Container, Rain>;
+using GeomorphologyTypes = ModelTypes<typename Manager::Container, GeomorphologyParameters>;
 
 /// A very simple geomorphology model
 template<class Manager>
@@ -51,7 +65,7 @@ private:
     std::shared_ptr<DataSet> _dset_height;
 
     // A map of lowest neighbors
-    std::map<typename Manager::Cell::Index, std::shared_ptr<typename Manager::Cell>> _l_neighbors;
+    std::map<typename Manager::Cell::Index, std::shared_ptr<typename Manager::Cell>> _lowest_neighbors;
 
 public:
 
@@ -72,18 +86,23 @@ public:
         _manager(manager),
 
         // Initialize model parameters from config file
-        _bc{this->_cfg["rain_mean"].template as<double>(), 
-            this->_cfg["rain_var"].template as<double>()},
+        _bc(this->_cfg["rain_mean"].template as<double>(), 
+            this->_cfg["rain_var"].template as<double>(),
+            this->_cfg["height"].template as<double>(),
+            this->_cfg["uplift"].template as<double>(),
+            this->_cfg["erodibility"].template as<double>()),
 
         // Open datasets for output of cell states 
         _dset_water_content(this->_hdfgrp->open_dataset("water_content")),
         _dset_height(this->_hdfgrp->open_dataset("height"))
+
     {
         // Initialize altitude as an inclined plane (by making use of coordinates)
-        auto set_inclined_plane = [](const auto cell) {   
+        auto set_inclined_plane = [this](const auto cell) {   
             auto state = cell->state();
-            state.height = cell->position()[1]; 
-            return state;       
+            state.height = this->_cfg["slope"].template as<double>()*cell->position()[1] + 
+                this->_cfg["height"].template as<double>(); 
+            return state;
         };
         apply_rule(set_inclined_plane, manager.cells()); 
 
@@ -92,6 +111,14 @@ public:
                                     this->_cfg["rain_mean"].template as<double>());
         this->_hdfgrp->add_attribute("rain_var", 
                                     this->_cfg["rain_var"].template as<double>());
+        this->_hdfgrp->add_attribute("height", 
+                                    this->_cfg["height"].template as<double>());
+        this->_hdfgrp->add_attribute("slope", 
+                                    this->_cfg["slope"].template as<double>());
+        this->_hdfgrp->add_attribute("uplift", 
+                                    this->_cfg["uplift"].template as<double>());
+        this->_hdfgrp->add_attribute("erodibility", 
+                                    this->_cfg["erodibility"].template as<double>());
 
         // Write the cell coordinates
         auto coords = this->_hdfgrp->open_dataset("cell_positions",
@@ -120,30 +147,65 @@ public:
     /// Iterate a single step
     void perform_step ()
     {
+        auto& cells = _manager.cells();
+
         // Update lowest neighbors
-        update_l_neighbors();
+        update_lowest_neighbors();
 
         // Let it rain
         auto rain = [this](const auto cell) {
-            auto rain = _bc(*(_manager.rng()));
+            auto rain = _bc.rain(*(_manager.rng()));
             auto state = cell->state();
             state.watercontent += rain; 
             return state;
         };
-        apply_rule(rain, _manager.cells());
+        apply_rule(rain, cells);
 
-        // Reset state_new of cells
-        auto& cells = _manager.cells();
+        // Sediment flow
+        for (auto& cell : cells) {
+
+            // Compute height difference to lowest neighbor
+            auto lowest_neighbor = _lowest_neighbors[cell->id()];
+            double delta_height = cell->state().height - lowest_neighbor->state().height;
+            if (delta_height > 0 && cell->state().watercontent > 0) {
+
+                // Compute sediment flow and substract from cell height
+                double sediment_flow = delta_height*_bc.erodibility*std::sqrt(cell->state().watercontent);
+                cell->state_new().height -= sediment_flow;
+                   
+                // Check if new height is nan or inf, in that case set to zero
+                if (std::isnan(cell->state_new().height) || std::isinf(cell->state_new().height)) {
+                    this->_log->debug("Cell ID {}, delta_height {}, water {}, new height {}",
+                                  cell->id(), delta_height, cell->state().watercontent, cell->state_new().height);
+                    cell->state_new().height = 0;
+                }
+
+                // Check if new height is negative, in that case set to zero
+                if (cell->state_new().height < 0)
+                    cell->state_new().height = 0;
+
+                // Would be reasonable but gives not so nice results: Add sediment flow to lowest neighbor...
+                //if (cell->id() >= 20) // Let sediments flow out of lower boundary, really badly hard-coded.
+                //    _lowest_neighbors[cell->id()]->state_new().height += sediment_flow;
+            }
+        }
+
+        // Prepare state_new for waterflow
         for (auto& cell : cells) {
             cell->state_new().watercontent = 0;
         }
 
         // Waterflow  
         for (auto& cell : cells) {
-            auto l_neighbor = _l_neighbors[cell->id()];
+            auto lowest_neighbor = _lowest_neighbors[cell->id()];
             // Put water onto another cell only if I'm not a boundary cell
             if (not cell->is_boundary())
-                l_neighbor->state_new().watercontent += cell->state().watercontent;
+                lowest_neighbor->state_new().watercontent += cell->state().watercontent;
+        }
+
+        // Uplift  
+        for (auto& cell : cells) {
+            cell->state_new().height += _bc.uplift;
         }
 
         // Update cells
@@ -191,38 +253,41 @@ public:
 private:
 
     /// Update the map of lowest neighbors
-    void update_l_neighbors() {
+    void update_lowest_neighbors() {
     
         for (auto& cell : _manager.cells()) {
 
             // Find lowest neighbour
-            auto neighbors = Neighborhoods::NextNeighbor::neighbors(cell, _manager);
+            auto neighbors = Neighborhoods::MooreNeighbor::neighbors(cell, _manager);
             CellContainer<typename Manager::Cell> lowest_neighbors;
-            auto l_neighbor = cell; // _l_neighbors of a cell is itself, if it is a sink
+            auto lowest_neighbor = cell; // _lowest_neighbors of a cell is itself, if it is a sink
+            lowest_neighbors.push_back(lowest_neighbor);
             for (auto neighbor : neighbors) {
-                auto height_diff = neighbor->state().height - l_neighbor->state().height;
+                auto height_diff = neighbor->state().height - lowest_neighbor->state().height;
+
                 // Check if cells have approximately the same height.
                 // For problems of float comparison see:
                 // https://stackoverflow.com/questions/17333/what-is-the-most-effective-way-for-float-and-double-comparison
-                if ((height_diff < 10e-6) && (-height_diff < 10e-6)) {
+                if ((height_diff < 1e-6) && (-height_diff < 1e-6)) {
                     lowest_neighbors.push_back(neighbor);
                 }
-                // If neighbor is lower, update l_neighbor and list
+
+                // If neighbor is lower, update lowest_neighbor and list
                 else if (height_diff < 0) {
-                    l_neighbor = neighbor;
+                    lowest_neighbor = neighbor;
                     lowest_neighbors.clear();
-                    lowest_neighbors.push_back(l_neighbor);
+                    lowest_neighbors.push_back(lowest_neighbor);
                 }
             }
 
             // If there is more than one lowest neighbor, select one randomly.
             if (lowest_neighbors.size() > 1) {
                 std::uniform_int_distribution<> dis(0, lowest_neighbors.size() - 1);
-                l_neighbor = lowest_neighbors[dis(*(this->_rng))];
+                lowest_neighbor = lowest_neighbors[dis(*(this->_rng))];
             }
 
             // Set lowest neighbor for cell
-            _l_neighbors[cell->id()] = l_neighbor;
+            _lowest_neighbors[cell->id()] = lowest_neighbor;
         }
     }
 
