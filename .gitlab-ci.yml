@@ -273,6 +273,7 @@ test:cli:
     #
     # Test the plotting capabilities
     - utopia run dummy --note plt0 --no-plot
+    - utopia eval dummy  # should create the corresponding plots
     - utopia run dummy --note plt1
     - utopia run dummy --note plt2 --plot-only states
     - utopia run dummy --note plt3 --plots-cfg $MODEL_SRC/dummy/dummy_plots.yml
