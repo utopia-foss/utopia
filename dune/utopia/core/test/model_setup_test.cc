@@ -51,6 +51,14 @@ int main(int argc, char *argv[])
         assert(as_str(model2.get_cfg()["bar"]) == "foo");
         assert(as_str(model3.get_cfg()["spam"]) == "eggs");
 
+        // Is the write_every parameter passed along correctly?
+        assert(pp1.get_write_every() == 3);
+        assert(pp2.get_write_every() == 3);
+        assert(pp3.get_write_every() == 3);
+        assert(model1.get_write_every() == 3);
+        assert(model2.get_write_every() == 1); // set manually
+        assert(model2.get_write_every() == 3); // set manually
+
         std::cout << "Tests finished." << std::endl << std::endl;
 
 
