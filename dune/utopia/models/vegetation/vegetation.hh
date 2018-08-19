@@ -16,7 +16,7 @@ namespace Vegetation {
 
 /// State of a cell in the vegetation model
 struct State {
-    double plant_biomass;
+    double plant_mass;
 };
 
 /// Define parameters of vegetation model
@@ -80,18 +80,17 @@ public:
         // Initialise the reference to the Manager object
         _manager(manager),
 
+        // Initialize model parameters from config file
+        _bc(this->_cfg["rain_mean"].template as<double>(), 
+            this->_cfg["rain_var"].template as<double>(),
+            this->_cfg["growth"].template as<double>(),
+            this->_cfg["seeding"].template as<double>()),
+
         // Open dataset for output of cell states 
         _dset_plant_mass(this->_hdfgrp->open_dataset("plant_mass",
                                                      {this->get_time_max() + 1,
                                                       _manager.cells().size()}))
     {
-        // Initialize model parameters from config file
-        Rain rain{as_double(this->_cfg["rain_mean"]),
-                  as_double(this->_cfg["rain_var"])};
-        _bc = std::make_tuple(rain, 
-                              as_double(this->_cfg["growth"]),
-                              as_double(this->_cfg["seeding"]));
-
         // Add the model parameters as attributes
         this->_hdfgrp->add_attribute("rain_mean",
                                      as_double(this->_cfg["rain_mean"]));
@@ -129,28 +128,29 @@ public:
     {
         // Apply logistic growth and seeding
         auto growth_seeding_rule = [this](const auto cell){
-                const auto state = cell->state();
-                auto rain  = std::get<Rain>(_bc)(*(_manager.rng()));
+                auto state = cell->state();
+                auto rain = _bc.rain(*(this->_rng));
+                auto mass = state.plant_mass;
 
                 // regular logistic growth
-                if (state != 0) {
-                    auto growth = std::get<1>(_bc);
-                    return state + state*growth*(1 - state/rain);
+                if (mass != 0) {
+                    state.plant_mass += mass * _bc.growth_rate*(1 - mass/rain);
                 }
 
                 // seeding
-                auto seeding = std::get<2>(_bc);
-                return seeding*rain;
+                else {
+                    state.plant_mass = _bc.seeding_rate*rain;
+                }
 
+                return state;
         };
 
         // Set negative populations to zero
         auto sanitize_population = [this](const auto cell){
-            const auto state = cell->state();
-            if (state < 0.0 or std::isinf(state)) {
-                return 0.0;
+            auto state = cell->state();
+            if (state.plant_mass < 0. or std::isinf(state.plant_mass)) {
+                state.plant_mass = 0.;
             }
-
             return state;
         };
 
@@ -163,7 +163,7 @@ public:
     {
         _dset_plant_mass->write(_manager.cells().begin(),
                                 _manager.cells().end(),
-                                [](auto& cell) { return cell->state(); }
+                                [](auto& cell) { return cell->state().plant_mass; }
                                );
     }
 
