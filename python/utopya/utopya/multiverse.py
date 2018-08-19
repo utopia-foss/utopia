@@ -629,9 +629,8 @@ class FrozenMultiverse(Multiverse):
                 model output directory is computed and run_dir will be seen
                 as relative to that directory.
             run_dir (str, optional): The run directory to load. Can be a path
-                relative to the model output directory, i.e.: the timestamp of
-                the run directory. If an absolute path is given, will use that
-                one. If not given, will use the most recent timestamp.
+                relative to the current working directory, an absolute path,
+                or the timestamp of the run directory. If not given, will use the most recent timestamp.
             run_cfg_path (str, optional): The path to the run configuration.
             user_cfg_path (str, optional): If given, this is used to update the
                 base configuration. If None, will look for it in the default
@@ -725,13 +724,20 @@ class FrozenMultiverse(Multiverse):
             # Can now expand the user
             run_dir = os.path.expanduser(run_dir)
 
-            # Distinguish absolute and relative paths
+            # Distinguish absolute and relative paths and time stamps
             if os.path.isabs(run_dir):
                 log.debug("Received absolute run_dir, using that one.")
 
-            else:
-                # Is a string and thus relative to the directory of the model
+            elif re.match(r'\d{6}-\d{6}_?.*', run_dir):
+                # Is a timestamp, look relative to the model directory
+                log.info("Received timestamp '%s' for run_dir; trying to find "
+                         "one within the model directory ...", run_dir)
                 run_dir = os.path.join(model_dir, run_dir)
+
+            else:
+                # Is not an absolute path and not a timestamp; thus a relative
+                # path to the current working directory
+                run_dir = os.path.join(os.getcwd(), run_dir)
 
         else:
             raise TypeError("Argument run_dir needs to be None, an absolute "
@@ -756,4 +762,4 @@ class FrozenMultiverse(Multiverse):
 
         # Done
 
-    # TODO print error messages in those properties that are unavailable?!
+    # TODO return errors in properties that are unavailable?!
