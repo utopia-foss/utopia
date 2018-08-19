@@ -6,7 +6,7 @@
 # sure that no circular includes occur.
 ---
 # Grid parameters
-grid_size: [101, 101]
+grid_size: [501, 501]
 periodic: true          # false: cells at boundary have fewer neighbors
 
 # Initial state
@@ -16,5 +16,5 @@ initial_state: empty     # can be: empty, tree=forest
 growth_rate: 7.5e-4
 lightning_frequency: 1e-5
 resistance: 0
-two_state_FFM: true    # can be: false (three state model -> fires propagates), 
+two_state_FFM: false    # can be: false (three state model -> fires propagates), 
                         #         true  (two state model   -> fires percolate).

@@ -32,7 +32,7 @@ state_map_series:
   writer: ffmpeg  # can be: frames, ffmpeg (if installed), ...
   fps: 3
   step_size: 1
-  dpi: 96
+  dpi: 128
 
   # For the 'frames' writer, the following additional kwargs can be passed
   frames_kwargs: 
