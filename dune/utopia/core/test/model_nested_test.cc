@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
 
         // check RNG with same seed gives same value
         Utopia::DefaultRNG rng(Utopia::as_<int>(pp.get_cfg()["seed"]));
-        (*root.get_rng()).discard(8);
+        rng.discard(8);
         assert(rng() == (*root.get_rng())());
 
         log->info("Tests successful. :)");
