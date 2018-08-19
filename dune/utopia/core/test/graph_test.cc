@@ -82,6 +82,39 @@ void test_create_small_world_graph(){
 }
 
 
+/// Test the function that creates a random graph
+void test_create_scale_free_graph(){
+    // Create a random number generator
+    Utopia::DefaultRNG rng;
+    Utopia::DefaultRNG rng_copy = rng;
+
+    // Set graph properties
+    const int num_vertices = 200;
+    const int mean_degree = 4;
+
+    // Create test graph
+    auto g = create_scale_free_graph<G>(    num_vertices,
+                                            mean_degree,
+                                            rng); 
+
+    // Assert that the number of vertices and edges is correct
+    assert(num_vertices == boost::num_vertices(g));
+    assert(num_vertices * mean_degree == boost::num_edges(g));
+
+    // Check that at least one vertex has more than 10 edges
+    bool at_least_one_more_than_ten_edges = false;
+    for (auto [v, v_end] = boost::vertices(g); v!=v_end; ++v){
+        if (boost::out_degree(*v, g) > 10){
+            at_least_one_more_than_ten_edges = true;
+            break;
+        }
+    }
+    assert(at_least_one_more_than_ten_edges == true);
+
+    // Assert that the state of the rng has changed.
+    assert(rng!=rng_copy);
+}
+
 
 
 
