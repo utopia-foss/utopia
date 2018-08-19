@@ -50,6 +50,7 @@ public:
     using BCType = typename Base::BCType;
     using Data = typename Base::Data;
     using DataSet = DataIO::HDFDataset<DataIO::HDFGroup>;
+    using CellType = typename Manager::Cell;
 
 private:
 
@@ -61,6 +62,38 @@ private:
     
     /// Dataset 
     std::shared_ptr<DataSet> _dset_plant_mass;
+
+    /// Rule functions
+
+    // Apply logistic growth and seeding
+    /** For each cell, a random gauss-distributed number is drawn that 
+     *  represents the rainfall onto that cell. If the plant bio-mass at that 
+     *  cell is already non-zero, it is increased according to a logistic growth
+     *  model. If it is zero, than the plant bio-mass is set proportional to the 
+     *  seeding rate and the amount of rain.
+     */
+    std::function<State(std::shared_ptr<CellType>)> _growth_seeding = [this](const auto cell){
+        auto state = cell->state();
+        auto rain = _bc.rain(*(this->_rng));
+        auto mass = state.plant_mass;
+
+        // regular logistic growth
+        if (mass != 0) { state.plant_mass += mass * _bc.growth_rate*(1 - mass/rain); }
+
+        // seeding
+        else { state.plant_mass = _bc.seeding_rate*rain; }
+
+        return state;
+    };
+
+    // Set negative plant masses to zero
+    std::function<State(std::shared_ptr<CellType>)> _sanitize_states = [this](const auto cell){
+        auto state = cell->state();
+        if (state.plant_mass < 0. or std::isinf(state.plant_mass)) {
+            state.plant_mass = 0.;
+        }
+        return state;
+    };
 
 public:
 
@@ -118,44 +151,10 @@ public:
     }
 
     /// Iterate a single step
-    /** For each cell, a random gauss-distributed number is drawn that 
-     *  represents the rainfall onto that cell. If the plant bio-mass at that 
-     *  cell is already non-zero, it is increased according to a logistic growth
-     *  model. If it is zero, than the plant bio-mass is set proportional to the 
-     *  seeding rate and the amount of rain.
-     */
     void perform_step ()
     {
-        // Apply logistic growth and seeding
-        auto growth_seeding_rule = [this](const auto cell){
-                auto state = cell->state();
-                auto rain = _bc.rain(*(this->_rng));
-                auto mass = state.plant_mass;
-
-                // regular logistic growth
-                if (mass != 0) {
-                    state.plant_mass += mass * _bc.growth_rate*(1 - mass/rain);
-                }
-
-                // seeding
-                else {
-                    state.plant_mass = _bc.seeding_rate*rain;
-                }
-
-                return state;
-        };
-
-        // Set negative populations to zero
-        auto sanitize_population = [this](const auto cell){
-            auto state = cell->state();
-            if (state.plant_mass < 0. or std::isinf(state.plant_mass)) {
-                state.plant_mass = 0.;
-            }
-            return state;
-        };
-
-        apply_rule(growth_seeding_rule, _manager.cells());
-        apply_rule(sanitize_population, _manager.cells());
+        apply_rule(_growth_seeding, _manager.cells());
+        apply_rule(_sanitize_states, _manager.cells());
     }
 
     /// Write the cell states (aka plant bio-mass)
