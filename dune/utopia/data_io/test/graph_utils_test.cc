@@ -32,13 +32,13 @@ struct Edge {
 // Create different graph types to be tested.
 using Graph_vertvecS_edgevecS_undir =  boost::adjacency_list<
                                             boost::vecS,        // edge container
-                                            boost::vecS,       // vertex container
+                                            boost::vecS,        // vertex container
                                             boost::undirectedS,
                                             Vertex,             // vertex struct
                                             Edge>;              // edge struct
 
 using Graph_vertlistS_edgelistS_undir =  boost::adjacency_list<
-                                            boost::listS,        // edge container
+                                            boost::listS,       // edge container
                                             boost::listS,       // vertex container
                                             boost::undirectedS,
                                             Vertex,             // vertex struct
@@ -46,14 +46,14 @@ using Graph_vertlistS_edgelistS_undir =  boost::adjacency_list<
 
 using Graph_vertsetS_edgesetS_undir =  boost::adjacency_list<
                                             boost::setS,        // edge container
-                                            boost::setS,       // vertex container
+                                            boost::setS,        // vertex container
                                             boost::undirectedS,
                                             Vertex,             // vertex struct
                                             Edge>;              // edge struct
 
 using Graph_vertvecS_edgevecS_dir =  boost::adjacency_list<
                                             boost::vecS,        // edge container
-                                            boost::vecS,       // vertex container
+                                            boost::vecS,        // vertex container
                                             boost::directedS,
                                             Vertex,             // vertex struct
                                             Edge>;              // edge struct

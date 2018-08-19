@@ -4,7 +4,7 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/adjacency_matrix.hpp>
 #include <boost/graph/small_world_generator.hpp>
-
+#include <boost/graph/random.hpp>
 
 namespace Utopia {
 namespace Graph {
