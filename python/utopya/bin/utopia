@@ -86,9 +86,10 @@ p_eval.add_argument('model_name',
 p_eval.add_argument('run_dir_path',
                     default=None, nargs='?',
                     help="Path to the run directory that is to be loaded. "
-                         "It can be relative to the model output directory "
-                         "(i.e.: only the timestamp), or an absolute path. "
-                         "If not given, the latest timestamp is used.")
+                         "It can be a relative or absolute path, or the "
+                         "timestamp (including model note, if present) of the "
+                         "directory. If not given, the directory with the "
+                         "most recent timestamp is used.")
 p_eval.add_argument('--plots-cfg',
                     default=None, nargs='?',
                     help="If given, uses the plots configuration file found "
