@@ -68,15 +68,15 @@ int main(int argc, char *argv[])
         assert(root.sub_one.lazy.get_logger()->level() == spdlog::level::trace);
 
         // check different random numbers are drawn from each submodel
-        assert((root.get_rng())() != (root.sub_one.get_rng())());
-        assert((root.sub_one.get_rng())() != (root.sub_another.get_rng())());
-        assert((root.sub_another.get_rng())() != (root.sub_one.lazy.get_rng())());
-        assert((root.sub_one.lazy.get_rng())() != (root.sub_another.sub_one.lazy.get_rng())());
+        assert((*root.get_rng())() != (*root.sub_one.get_rng())());
+        assert((*root.sub_one.get_rng())() != (*root.sub_another.get_rng())());
+        assert((*root.sub_another.get_rng())() != (*root.sub_one.lazy.get_rng())());
+        assert((*root.sub_one.lazy.get_rng())() != (*root.sub_another.sub_one.lazy.get_rng())());
 
         // check RNG with same seed gives same value
         Utopia::DefaultRNG rng(Utopia::as_<int>(pp.get_cfg()["seed"]));
-        (*(root.get_rng())).discard(8);
-        assert(rng() == (root.get_rng())());
+        (*root.get_rng()).discard(8);
+        assert(rng() == (*root.get_rng())());
 
         log->info("Tests successful. :)");
 
