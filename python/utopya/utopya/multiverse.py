@@ -6,6 +6,7 @@ import os
 import time
 import copy
 import glob
+import re
 import logging
 from shutil import copyfile
 from pkg_resources import resource_filename
@@ -42,6 +43,7 @@ class Multiverse:
 
     BASE_CFG_PATH = resource_filename('utopya', 'cfg/base_cfg.yml')
     USER_CFG_SEARCH_PATH = os.path.expanduser("~/.config/utopia/user_cfg.yml")
+    RUN_DIR_TIME_FSTR = "%y%m%d-%H%M%S"
 
     def __init__(self, *, model_name: str, run_cfg_path: str=None, user_cfg_path: str=None, **update_meta_cfg):
         """Initialize the Multiverse.
@@ -416,7 +418,7 @@ class Multiverse:
         out_dir = os.path.expanduser(str(out_dir))
         run_dir = os.path.join(out_dir,
                                self.model_name,
-                               time.strftime("%y%m%d-%H%M%S"))
+                               time.strftime(self.RUN_DIR_TIME_FSTR))
 
         # Append a model note, if needed
         if model_note:
@@ -651,19 +653,17 @@ class FrozenMultiverse(Multiverse):
         log.info("Initializing FrozenMultiverse for '%s' model ...",
                  self.model_name)
 
-        # Expand user, such that paths with `~` are also regarded as absolute
-        if run_dir is not None:
-            run_dir = os.path.expanduser(run_dir)
-
         # Decide whether to load the meta configuration from the given run
         # directory or the currently available one.
-        if use_meta_cfg_from_run_dir and run_dir and os.path.isabs(run_dir):
-            log.info("Trying to load meta configuration from given absolute "
-                     "run directory ...")
-            raise NotImplementedError
-
+        if (use_meta_cfg_from_run_dir
+            and isinstance(run_dir, str)
+            and os.path.isabs(run_dir)):
             # Find the meta config backup file and load it
             # Alternatively, create it from the singular backup files ...
+            # log.info("Trying to load meta configuration from given absolute "
+            #          "run directory ...")
+
+            raise NotImplementedError
 
             # Update it with the given update_meta_cfg dict
 
@@ -704,40 +704,43 @@ class FrozenMultiverse(Multiverse):
         Args:
             run_dir (str): See __init__
         """
+        # Create model directory
+        out_dir = os.path.expanduser(str(out_dir))
+        model_dir = os.path.join(out_dir, self.model_name)
+
         # Distinguish different types of values for the run_dir argument
-        if run_dir and os.path.isabs(run_dir):
+        if run_dir is None:
             # Is absolute, can leave it as it is
-            log.debug("Received absolute path for run directory; using that.")
+            log.info("Trying to identify most recent run directory ...")
 
-        else:
-            # Need to generate the path to the directory where all output
-            # for a specific model is stored.
-            out_dir = os.path.expanduser(str(out_dir))
-            model_dir = os.path.join(out_dir, self.model_name)
+            # Create list of _directories_ matching timestamp pattern
+            dirs = [d for d in sorted(os.listdir(model_dir))
+                    if  os.path.isdir(os.path.join(model_dir, d))
+                    and re.match(r'\d{6}-\d{6}_?.*', os.path.basename(d))]
+            
+            # Use the latest to choose the run directory
+            run_dir = os.path.join(model_dir, dirs[-1])
 
-            # Now check whether to use the latest output or a specific one
-            if run_dir is None:
-                # Use the latest (alphabetically, assuming all are timestamps)
-                log.info("Trying to identify latest directory ...")
+        elif isinstance(run_dir, str):
+            # Can now expand the user
+            run_dir = os.path.expanduser(run_dir)
 
-                latest = [d for d in sorted(os.listdir(model_dir))
-                          if os.path.isdir(os.path.join(model_dir, d))][-1]
-                # TODO should regex the names?!
-                run_dir = os.path.join(model_dir, latest)
-        
-            elif isinstance(run_dir, str):  # TODO add ability to use glob?
-                # Is relative to the directory of the model
-                run_dir = os.path.join(model_dir, run_dir)
+            # Distinguish absolute and relative paths
+            if os.path.isabs(run_dir):
+                log.debug("Received absolute run_dir, using that one.")
 
             else:
-                raise TypeError("Argument run_dir needs to be None or an "
-                                "absolute path or a path relative to the "
-                                "model output directory, was: {}"
-                                "".format(run_dir))
+                # Is a string and thus relative to the directory of the model
+                run_dir = os.path.join(model_dir, run_dir)
 
+        else:
+            raise TypeError("Argument run_dir needs to be None, an absolute "
+                            "path or a path relative to the model output "
+                            "directory, was: {}".format(run_dir))
+            
         # Check if the directory exists
         if not os.path.isdir(run_dir):
-            raise IOError("Generated run directory '{}' does not exist!"
+            raise IOError("No directory found at run path '{}'!"
                           "".format(run_dir))
 
         # It does. Store it as attribute.
@@ -747,7 +750,6 @@ class FrozenMultiverse(Multiverse):
         for subdir in ('config', 'eval', 'universes'):
             # Check if the directory exists
             subdir_path = os.path.join(run_dir, subdir)
-
 
             # Now store
             self.dirs[subdir] = subdir_path
