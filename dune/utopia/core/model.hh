@@ -396,14 +396,8 @@ public:
     }
     
     /// Return the parameter that controls how often write_data is called
-    /** If it is not given in the configuration, will write very time step,
-     *  i.e., this function returns 1.
-     */
     Time get_write_every() const {
-        if (_cfg["write_every"]) {
-            return as_<Time>(_cfg["write_every"]);
-        }
-        return 1;
+        return as_<Time>(_cfg["write_every"]);
     }
     
     /// Return a pointer to the RNG
