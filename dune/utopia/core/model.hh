@@ -93,6 +93,9 @@ protected:
     /// The HDF group this model instance should write its data to
     const std::shared_ptr<DataGroup> _hdfgrp;
 
+    /// How often to call write_data from iterate
+    const Time _write_every;
+
     /// The RNG shared between models
     const std::shared_ptr<RNG> _rng;
 
@@ -124,6 +127,7 @@ public:
         //extract the other information from the parent model object
         _cfg(parent_model.get_cfg()[_name]),
         _hdfgrp(parent_model.get_hdfgrp()->open_group(_name)),
+        _write_every(this->determine_write_every(parent_model)),
         _rng(parent_model.get_rng()),
         _log(spdlog::stdout_color_mt(parent_model.get_logger()->name() + "."
                                      + _name))
@@ -140,7 +144,10 @@ public:
             _log->set_level(parent_model.get_logger()->level());
         }
 
-        // TODO add other informative log messages here?
+        // Provide some informative log messages
+        _log->info("Model instance '{}' constructed.", _name);
+        _log->debug("time_max:     {} step(s)", _time_max);
+        _log->debug("write_every:  {} step(s)", _write_every);
     }
 
 
@@ -166,6 +173,11 @@ public:
         return _hdfgrp;
     }
     
+    /// Return the parameter that controls how often write_data is called
+    Time get_write_every() const {
+        return _write_every;
+    }
+    
     /// Return a pointer to the shared RNG
     std::shared_ptr<RNG> get_rng() const {
         return _rng;
@@ -180,12 +192,17 @@ public:
     // -- Default implementations -- //
 
     /// Iterate one (time) step of this model
-    /** @detail Increment time, perform step, then write data
+    /** Increment time, perform step, then write data. If the write_every
+     *  argument was set, will call write_data only in that interval.
      */
     void iterate () {
         perform_step();
         increment_time();
-        write_data();
+
+        if (_time % _write_every == 0) {
+            _log->debug("Calling write_data ...");
+            write_data();
+        }
         _log->debug("Finished iteration: {:9d} / {:d}", _time, _time_max);
     }
 
@@ -238,12 +255,26 @@ protected:
     void increment_time (const Time dt=1) {
         _time += dt;
     }
+    // TODO perhaps make this private?
 
     /// cast to the derived class
     Derived& impl () { return static_cast<Derived&>(*this); }
     
     /// const cast to the derived interface
     const Derived& impl () const { return static_cast<const Derived&>(*this); }
+
+private:
+    /// Helper function to initialize the write_every member
+    template<typename ParentModel>
+    Time determine_write_every(ParentModel &parent_model) const {
+        if (_cfg["write_every"]) {
+            // Use the value given in the configuration
+            return as_<Time>(_cfg["write_every"]);
+        }
+        // Use the value from the parent
+        return parent_model.get_write_every();
+    }
+
 };
 
 
@@ -359,6 +390,17 @@ public:
     /// Return a pointer to the HDF group, which is the base group of the file
     std::shared_ptr<HDFGroup> get_hdfgrp() const {
         return _hdffile->get_basegroup();
+    }
+    
+    /// Return the parameter that controls how often write_data is called
+    /** If it is not given in the configuration, will write very time step,
+     *  i.e., this function returns 1.
+     */
+    Time get_write_every() const {
+        if (_cfg["write_every"]) {
+            return as_<Time>(_cfg["write_every"]);
+        }
+        return 1;
     }
     
     /// Return a pointer to the RNG
