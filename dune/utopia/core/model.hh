@@ -144,6 +144,9 @@ public:
             _log->set_level(parent_model.get_logger()->level());
         }
 
+        // Store write_every value in the hdfgrp
+        _hdfgrp->add_attribute("write_every", _write_every);
+
         // Provide some informative log messages
         _log->info("Model instance '{}' constructed.", _name);
         _log->debug("time_max:     {} step(s)", _time_max);

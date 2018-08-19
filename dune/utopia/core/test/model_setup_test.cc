@@ -59,6 +59,8 @@ int main(int argc, char *argv[])
         assert(model2.get_write_every() == 1); // set manually
         assert(model3.get_write_every() == 3); // set manually
 
+        // TODO Also check that the write_every value was stored to attributes
+
         std::cout << "Tests finished." << std::endl << std::endl;
 
 
