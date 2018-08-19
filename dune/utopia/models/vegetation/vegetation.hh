@@ -10,22 +10,33 @@
 
 
 namespace Utopia {
-
 namespace Models {
-
 namespace Vegetation {
 
-/// Define data type and boundary condition type of vegetation model
-template<class Manager>
-using DataType = typename Manager::Container;
 
+/// State of a cell in the vegetation model
+struct State {
+    double plant_biomass;
+};
+
+/// Define parameters of vegetation model
 using Rain = std::normal_distribution<>;
-using GrowthRate = double;
-using SeedingRate = double;
-using BoundaryConditionType = std::tuple<Rain, GrowthRate, SeedingRate>;
+struct VegetationParameters {
+
+    // Constructor
+    VegetationParameters(double _rain_mean, double _rain_var, 
+            double _growth_rate, double _seeding_rate) : 
+        rain{_rain_mean, _rain_var}, 
+        growth_rate(_growth_rate), seeding_rate(_seeding_rate) {}
+
+    Rain rain;
+    double growth_rate;
+    double seeding_rate;
+};
 
 template<class Manager>
-using VegetationTypes = ModelTypes<DataType<Manager>, BoundaryConditionType>;
+using VegetationTypes = ModelTypes<typename Manager::Container, VegetationParameters>;
+
 
 /// A very simple vegetation model
 template<class Manager>
