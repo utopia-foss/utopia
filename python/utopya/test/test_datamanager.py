@@ -25,15 +25,14 @@ def mv_kwargs(tmpdir) -> dict:
     This uses the `tmpdir` fixture provided by pytest, which creates a unique
     temporary directory that is removed after the tests ran through.
     """
-    # Create a dict that specifies a unique testing path.
-    # The str cast is needed for python version < 3.6
-    rand_str = "test_" + uuid.uuid4().hex[:8]
-    unique_paths = dict(out_dir=tmpdir, model_note=rand_str)
+    # Create a random string to use as model note
+    rand_str = "test_" + uuid.uuid4().hex
 
+    # Create a dict that specifies a unique testing path.
     return dict(model_name='dummy',
                 run_cfg_path=RUN_CFG_PATH,
                 user_cfg_path=False,  # to omit the user config
-                update_meta_cfg=dict(paths=unique_paths)
+                paths=dict(out_dir=str(tmpdir), model_note=rand_str)
                 )
 
 @pytest.fixture
