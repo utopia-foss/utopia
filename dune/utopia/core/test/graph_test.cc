@@ -46,15 +46,54 @@ void test_create_random_graph(){
 }
 
 
+/// Test the function that creates a random graph
+void test_create_small_world_graph(){
+    // Create a random number generator
+    Utopia::DefaultRNG rng;
+    Utopia::DefaultRNG rng_copy = rng;
+
+    // Set graph properties
+    const int num_vertices = 100;
+    const int mean_degree = 2;
+    const double p_rewire = 0.6;
+
+    // Create test graph
+    auto g = create_small_world_graph<G>(   num_vertices,
+                                    mean_degree,
+                                    p_rewire,
+                                    rng); 
+
+    // Assert that the number of vertices and edges is correct
+    assert(num_vertices == boost::num_vertices(g));
+    assert(num_vertices * mean_degree == boost::num_edges(g));
+
+    // Check that at least one vertex does not have connectivity mean_degree any more
+    bool at_least_one_rewired = false;
+    for (auto [v, v_end] = boost::vertices(g); v!=v_end; ++v){
+        if (boost::out_degree(*v, g) != mean_degree){
+            at_least_one_rewired = true;
+            break;
+        }
+    }
+    assert(at_least_one_rewired == true);
+
+    // Assert that the state of the rng has changed.
+    assert(rng!=rng_copy);
+}
+
+
+
+
+
 int main(int argc, char* argv[])
 {
     try
     {
         Dune::MPIHelper::instance(argc, argv);
 
-
         test_create_random_graph();
-
+        test_create_small_world_graph();
+        
         return 0;
     }
 
