@@ -114,8 +114,15 @@ def test_load_single(dm_after_single):
     dset = uni['data/dummy/state']
 
     assert isinstance(dset, udc.NumpyDC)
-    assert dset.shape == (uni['cfg']['num_steps'] + 1, 1000)
+    assert dset.shape[1] == 1000
     assert np.issubdtype(dset.dtype, float)
+
+    # Test other configured capabilities
+    # write_every -> only every write_every step should have been written
+    write_every = int(uni['data/dummy'].attrs['write_every'])
+    assert write_every == uni['cfg']['write_every']
+    assert dset.shape[0] == (uni['cfg']['num_steps'] // write_every) + 1
+
 
 def test_load_sweep(dm_after_sweep):
     """Tests the loading of simulation data for a sweep"""
