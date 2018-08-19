@@ -2,6 +2,9 @@
 
 #include "vegetation.hh"
 
+using namespace Utopia::Models::Vegetation;
+using Utopia::Setup::create_grid_manager_cells;
+
 int main (int argc, char** argv)
 {
     try {
@@ -11,8 +14,8 @@ int main (int argc, char** argv)
         Utopia::PseudoParent pp(argv[1]);
 
         // Set the initial state, then create the model instance
-        Utopia::Models::Vegetation::Vegetation model("vegetation", pp,
-            Utopia::Models::Vegetation::setup_manager("vegetation", pp));
+        Vegetation model("vegetation", pp,
+            create_grid_manager_cells<State, true>("vegetation", pp));
 
         // Just run!
         model.run();
