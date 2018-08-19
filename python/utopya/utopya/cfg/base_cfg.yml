@@ -256,6 +256,11 @@ parameter_space:
   # By default, perform only three steps
   num_steps: 3
 
+  # By default, write_data is called in every iteration step:
+  write_every: 1
+  # This value is passed along to sub-models. Every sub model can also define
+  # the key on their level to change it (analogous to log_levels.)
+
   # The default logging levels
   log_levels:
     # level for I/O operations
