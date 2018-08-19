@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
         assert(pp3.get_write_every() == 3);
         assert(model1.get_write_every() == 3);
         assert(model2.get_write_every() == 1); // set manually
-        assert(model2.get_write_every() == 3); // set manually
+        assert(model3.get_write_every() == 3); // set manually
 
         std::cout << "Tests finished." << std::endl << std::endl;
 
