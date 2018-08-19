@@ -26,7 +26,7 @@ struct BCDummy {};
  */
 template<typename DataType,
          typename BoundaryConditionType=BCDummy,
-         typename RNGType=std::mt19937,
+         typename RNGType=DefaultRNG,
          typename ConfigType=Utopia::DataIO::Config,
          typename DataGroupType=Utopia::DataIO::HDFGroup,
          typename DataSetType=Utopia::DataIO::HDFDataset<Utopia::DataIO::HDFGroup>,
@@ -258,7 +258,7 @@ protected:
  *
  *  \tparam RNG The RNG type to use
  */
-template<typename RNG=std::mt19937>
+template<typename RNG=DefaultRNG>
 class PseudoParent
 {
 protected:

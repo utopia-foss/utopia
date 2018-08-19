@@ -21,7 +21,6 @@ set(TESTS_CORE
     model_nested_test
     model_setup_test
     model_with_manager_test
-    rng_test
     state_test
     tags_test
     )
