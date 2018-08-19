@@ -3,7 +3,8 @@
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/adjacency_matrix.hpp>
-// #include <random>
+#include <boost/graph/small_world_generator.hpp>
+
 
 namespace Utopia {
 namespace Graph {
@@ -117,6 +118,38 @@ Graph create_scale_free_graph(  const std::size_t num_vertices,
             num_edges+=edges_added;
         }
     }
+    return g;
+}
+
+
+/// Create a small-world graph
+/** This function creates a small-world graph using the Watts-Strogatz model.
+ * @tparam Graph The graph type
+ * @tparam RNG The random number generator type
+ * @param num_vertices The total number of vertices
+ * @param mean_degree The mean degree
+ * @param p_rewire The rewiring probability
+ * @param RNG The random number generator
+ * @return Graph The small-world graph
+ */
+template <typename Graph, typename RNG>
+Graph create_small_world_graph( const std::size_t num_vertices,
+                                const std::size_t mean_degree,
+                                const double p_rewire,
+                                RNG& rng)
+{
+    // Create an empty graph
+    Graph g;
+
+    // Define a small-world generator
+    using SWGen = boost::small_world_iterator<RNG, Graph>;
+
+    // Create a small-world graph
+    g = Graph(  SWGen(rng, num_vertices, mean_degree, p_rewire),
+                SWGen(), 
+                num_vertices);
+
+    // Return the graph
     return g;
 }
 
