@@ -6,6 +6,7 @@
 #include <boost/graph/adjacency_matrix.hpp>
 #include <boost/graph/random.hpp>
 #include <boost/graph/properties.hpp>
+#include <cstdio>
 
 #include <dune/common/parallel/mpihelper.hh>
 #include <dune/utopia/data_io/graph_utils.hh>
@@ -97,7 +98,7 @@ GraphType create_and_initialize_test_graph(const int num_vertices, const int num
 void test_save_graph()
 {
     // Create a test HDFFile and a HDFGroup 
-    auto hdf = Utopia::DataIO::HDFFile("graph_testfile.h5","a");
+    auto hdf = Utopia::DataIO::HDFFile("graph_testfile.h5","w");
     auto grp = hdf.open_group("testgroup");
 
     // Test case 1: 
@@ -178,6 +179,10 @@ void test_save_graph()
     Utopia::DataIO::save_graph<true>(g_vvd, grp, "g_vvd");
     // ... without edges
     Utopia::DataIO::save_graph<false>(g_vvd, grp, "g_vvd_noedges");
+
+
+    // Remove the graph testsfile
+    std::remove("graph_testfile.h5");
 }
 
 
