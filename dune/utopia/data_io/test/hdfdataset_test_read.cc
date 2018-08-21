@@ -38,6 +38,8 @@ int main(int argc, char** argv)
     auto ptrset = file.open_dataset("/pointerdataset");
     auto scalarset = file.open_dataset("/scalardataset");
     auto twoDdataset = file.open_dataset("/2ddataset");
+    auto twoDdataset_unlimited = file.open_dataset("/2ddataset_unlimited");
+
     auto adapteddataset = file.open_dataset("/adapteddataset");
     auto fireandforgetdataset = file.open_dataset("/fireandforget");
     auto fireandforgetdataset2d = file.open_dataset("/fireandforget2d");
@@ -125,6 +127,11 @@ int main(int argc, char** argv)
         twoddata[i].insert(twoddata[i].begin(), 100, i);
     }
 
+    // ... for 2d dataset unlimited
+    std::vector<std::vector<int>> twoddata_unlimited(55, std::vector<int>());
+    for (std::size_t i = 0; i < 55; ++i){
+        twoddata_unlimited[i] = std::vector<int>(100, i);
+    }
     std::vector<std::vector<double>> partial_twoddata(2, std::vector<double>());
     for (std::size_t i = 0; i < 2; ++i)
     {
@@ -245,6 +252,22 @@ int main(int argc, char** argv)
             assert(std::abs(twoddata[i][j] - read_twoddata[i * 100 + j]) < 1e-16);
         }
     }
+
+
+    // read 2d unlimited dataset
+    auto [twodshape_unlimited, read_twoddata_unlimited] = twoDdataset_unlimited->read<std::vector<int>>();
+    assert(twodshape_unlimited.size() == 2);
+    assert(twodshape_unlimited[0] == 55);
+    assert(twodshape_unlimited[1] == 100);
+    assert(read_twoddata_unlimited.size() == 5500);
+    for (std::size_t i = 0; i < 55; ++i)
+    {
+        for (std::size_t j = 0; j < 100; ++j)
+        {
+            assert(twoddata_unlimited[i][j] == read_twoddata_unlimited[i * 100 + j]);
+        }
+    }
+
 
     // read adaptedset
     auto [adaptedshape, read_adaptedata] = adapteddataset->read<std::vector<double>>();

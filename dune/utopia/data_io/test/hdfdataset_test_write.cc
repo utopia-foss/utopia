@@ -46,6 +46,10 @@ int main(int argc, char** argv)
     auto ptrset = file.open_dataset("/pointerdataset", {100}, {5});
     auto scalarset = file.open_dataset("/scalardataset", {100}, {5});
     auto twoDdataset = file.open_dataset("/2ddataset", {10, 100}, {1, 5});
+
+    // README: capacity of {fixed, H5S_UNLIMITED} is not possible, because hdf5
+    // does not know when to start the next line. Use variable length vectors for this
+    auto twoDdataset_unlimited = file.open_dataset("/2ddataset_unlimited", {H5S_UNLIMITED, 100});
     auto adapteddataset = file.open_dataset("/adapteddataset", {3, 100}, {1, 10});
     auto fireandforgetdataset = file.open_dataset("/fireandforget");
     auto fireandforgetdataset2d = file.open_dataset("/fireandforget2d", {5, 100});
@@ -177,6 +181,15 @@ int main(int argc, char** argv)
         assert(twoDdataset->get_current_extent() == (hsizevec{i + 1, 100}));
         assert(twoDdataset->get_offset() == (hsizevec{i, 0}));
     }
+
+
+    // write 2d dataset with unlimited first dimension
+    for (std::size_t i = 0; i < 55; ++i){
+        twoDdataset_unlimited->write(std::vector<int>(100, i));
+        assert(twoDdataset_unlimited->get_current_extent() == (hsizevec{i + 1, 100}));
+        assert(twoDdataset_unlimited->get_offset() == (hsizevec{i, 0}));
+    }
+
 
     // README: we now tested  the current_extent/offset update in all occuring
     // cases, hence it is not repeted blow (ptr/adapted and scalar just repeats container and string logic)
