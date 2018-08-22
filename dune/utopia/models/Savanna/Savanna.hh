@@ -50,10 +50,11 @@ struct Param {
     
     Param(double alpha, double beta, double gamma, 
         double omega0, double omega1, double theta1, double theta2, 
-        double s1, double s2, double phi0, double phi1, double mu, double nu) :
-            alpha(alpha), beta(beta), gamma(gamma), 
-            omega0(omega0), omega1(omega1), theta1(theta1), theta2(theta2), 
-            s1(s1), s2(s2), phi0(phi0), phi1(phi1), mu(mu), nu(nu)
+        double s1, double s2, double phi0, double phi1, double mu, double nu) 
+    :
+        alpha(alpha), beta(beta), gamma(gamma), 
+        omega0(omega0), omega1(omega1), theta1(theta1), theta2(theta2), 
+        s1(s1), s2(s2), phi0(phi0), phi1(phi1), mu(mu), nu(nu)
     { }
 };
 
