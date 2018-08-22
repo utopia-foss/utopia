@@ -15,17 +15,30 @@ namespace Models {
 namespace Savanna {
 
 /// Enum that will be part of the internal state of a cell
-enum SomeEnum : unsigned short int {Enum0, Enum1};
+// enum Density : unsigned short int {G, S, T}; // Grass, Sapplings, Trees
 
 /// State struct for Savanna model.
 struct State {
-    int some_state;
-    double some_trait;
-    SomeEnum some_enum;
+    double G;
+    double T;
+    double S() const { return 1 - G - T; };
+
+    State() : G(1),T(0) 
+    {}
+    State(double g, double s, double t) : G(g), T(t)
+    {
+        if (g+s+t > 1+1e-6 || g+s+t < 1-1e-6) {
+            std::cout << "WARNING: initial state not a density: G+S+T must be 1.";
+        }
+    }
 };
 
 /// Boundary condition type
 struct Boundary {};
+
+double omega(const State& state, const double gamma, const double omega0, const double omega1, const double theta1, const double s1) {
+    return omega0 + (omega1-omega0)/(1+exp(-(state.G+gamma*(state.S()+state.T)-theta1)/s1));
+}
 
 
 /// Typehelper to define data types of Savanna model 
@@ -79,7 +92,21 @@ private:
     ManagerType _manager;
 
     /// A model parameter I need
-    const double _some_parameter;
+    const double _dt;
+
+    const double _alpha;
+    const double _beta;
+    const double _gamma;
+    const double _omega0;
+    const double _omega1;
+    const double _theta1;
+    const double _theta2;
+    const double _s1;
+    const double _s2;
+    const double _phi0;
+    const double _phi1;
+    const double _mu;
+    const double _nu;
 
 
     // -- Temporary objects -- //
@@ -88,8 +115,9 @@ private:
     // -- Datasets -- //
     // NOTE They should be named '_dset_<name>', where <name> is the
     //      dataset's actual name as set in the constructor.
-    std::shared_ptr<DataSet> _dset_some_state;
-    std::shared_ptr<DataSet> _dset_some_trait;
+    std::shared_ptr<DataSet> _dset_density_G;
+    std::shared_ptr<DataSet> _dset_density_S;
+    std::shared_ptr<DataSet> _dset_density_T;
 
 
     // -- Rule functions -- //
@@ -97,74 +125,87 @@ private:
     // NOTE The below are examples; delete and/or adjust them to your needs!
 
     /// Sets the given cell to state "A"
-    std::function<State(std::shared_ptr<CellType>)> _set_initial_state_A = [](const auto cell){
+    std::function<State(std::shared_ptr<CellType>)> _set_initial_state_G = [](const auto cell){
         // Get the state of the Cell
         auto state = cell->state();
 
         // Set the internal variables
-        state.some_state = 5;
-        state.some_trait = 2.;
-        state.some_enum = Enum0;
+        state = State(0.99,0.,0.01);
+
+        return state;
+    };
+
+    /// Sets the given cell to state "B"
+    std::function<State(std::shared_ptr<CellType>)> _set_initial_state_S = [](const auto cell){
+        // Get the state of the Cell
+        auto state = cell->state();
+
+        // Set the internal variables
+        state = State(0.,1.,0.);
 
         return state;
     };
 
 
     /// Sets the given cell to state "B"
-    std::function<State(std::shared_ptr<CellType>)> _set_initial_state_B = [](const auto cell){
+    std::function<State(std::shared_ptr<CellType>)> _set_initial_state_T = [](const auto cell){
         // Get the state of the Cell
         auto state = cell->state();
 
         // Set the internal variables
-        state.some_state = 3;
-        state.some_trait = 4.2;
-        state.some_enum = Enum1;
+        state = State(0.,0.,1.);
 
         return state;
     };
 
 
-    /// Define some interaction for a cell
-    std::function<State(std::shared_ptr<CellType>)> _some_interaction = [this](const auto cell){
+    /// Sets the given cell to state "A"
+    std::function<State(std::shared_ptr<CellType>)> _set_initial_state_rand = [this](const auto cell){
         // Get the state of the Cell
         auto state = cell->state();
-
-        // Increase some_state by one
-        state.some_state += 1;
-
-        // Increase some_trait by adding up the some_state's from all neighbors
-        for (auto nb : MooreNeighbor::neighbors(cell, this->_manager))
+        std::uniform_real_distribution<> dist(0., 1.);
+        double tmp = dist(*this->_rng);
+        double G,S,T;
+        if (tmp<0.4) 
         {
-            state.some_trait += static_cast<double>(nb->state().some_state);
+            G = dist(*this->_rng);
+            std::uniform_real_distribution<> dist_adapt(0, 1.-G);
+            T = dist_adapt(*this->_rng);
+            S = 1-G-T;
         }
-        // Ahhh and obviously you need to divide some float by _some_parameter
-        // because that makes totally sense
-        state.some_trait /= _some_parameter;
+        else if (tmp < 0.8) 
+        {
+            T = dist(*this->_rng);
+            std::uniform_real_distribution<> dist_adapt(0, 1.-T);
+            G = dist_adapt(*this->_rng);
+            S = 1-G-T;
+        }
+        else 
+        {
+            S = dist(*this->_rng);
+            std::uniform_real_distribution<> dist_adapt(0, 1.-S);
+            G = dist_adapt(*this->_rng);
+            T = 1-G-S;
+        }
 
-        // Set some_enum to Enum0
-        state.some_enum = Enum0;
+        // Set the internal variables
+        state = State(G,S,T);
 
-        // Return the new cell state
         return state;
     };
 
 
     /// Define the update rule for a cell
-    std::function<State(std::shared_ptr<CellType>)> _some_update = [this](const auto cell){
-        // Here, you can write some update rule description
+    std::function<State(std::shared_ptr<CellType>)> _update = [this](const auto cell){
+        // Here, you c[an write some update rule description
 
         // Get the state of the cell
         auto state = cell->state();
 
-        // With a probablity of 0.3 set the cell's state.some_state to 0
-        std::uniform_real_distribution<> dist(0., 1.);
-        if (dist(*this->_rng) < 0.3)
-        {
-            state.some_state = 0;
-        }
-
-        // Set some_enum to Enum1
-        state.some_enum = Enum1;
+        double dG = _mu*state.S() + _nu*state.T - _beta*state.G*state.T;
+		double dT = omega(state, _gamma, _omega0, _omega1, _theta1, _s1)*state.S()-_nu*state.T;
+		state.G = state.G+dG*_dt;
+		state.T = state.T+dT*_dt;
 
         // Return the new state cell
         return state;
@@ -186,10 +227,24 @@ public:
         Base(name, parent),
         // Now initialize members specific to this class
         _manager(manager),
-        _some_parameter(as_double(this->_cfg["some_parameter"])),
+        _dt(as_double(this->_cfg["dt"])),
+        _alpha(as_double(this->_cfg["alpha"])),
+        _beta(as_double(this->_cfg["beta"])),
+        _gamma(as_double(this->_cfg["gamma"])),
+        _omega0(as_double(this->_cfg["omega_0"])),
+        _omega1(as_double(this->_cfg["omega_1"])),
+        _theta1(as_double(this->_cfg["theta_1"])),
+        _theta2(as_double(this->_cfg["theta_2"])),
+        _s1(as_double(this->_cfg["s_2"])),
+        _s2(as_double(this->_cfg["s_2"])),
+        _phi0(as_double(this->_cfg["phi_0"])),
+        _phi1(as_double(this->_cfg["phi_1"])),
+        _mu(as_double(this->_cfg["mu"])),
+        _nu(as_double(this->_cfg["nu"])),
         // create datasets
-        _dset_some_state(this->_hdfgrp->open_dataset("some_state")),
-        _dset_some_trait(this->_hdfgrp->open_dataset("some_trait"))        
+        _dset_density_G(this->_hdfgrp->open_dataset("density_G")),
+        _dset_density_S(this->_hdfgrp->open_dataset("density_S")),
+        _dset_density_T(this->_hdfgrp->open_dataset("density_T"))     
     {
         // Call the method that initializes the cells
         this->initialize_cells();
@@ -201,8 +256,9 @@ public:
                                                 _manager.cells().end());
         this->_log->debug("Setting dataset capacities to {} x {} ...",
                           this->get_time_max() + 1, num_cells);
-        _dset_some_state->set_capacity({this->get_time_max() + 1, num_cells});
-        _dset_some_trait->set_capacity({this->get_time_max() + 1, num_cells});
+        _dset_density_G->set_capacity({this->get_time_max() + 1, num_cells});
+        _dset_density_S->set_capacity({this->get_time_max() + 1, num_cells});
+        _dset_density_T->set_capacity({this->get_time_max() + 1, num_cells});
 
         // Write initial state
         this->write_data();
@@ -216,13 +272,17 @@ public:
         const auto initial_state = as_str(this->_cfg["initial_state"]);
 
         // Apply a rule to all cells depending on the config value
-        if (initial_state == "init_0")
+        if (initial_state == "init_Grass")
         {
-            apply_rule(_set_initial_state_A, _manager.cells());
+            apply_rule(_set_initial_state_G, _manager.cells());
         }
-        else if (initial_state == "init_1")
+        else if (initial_state == "init_Trees")
         {
-            apply_rule(_set_initial_state_B, _manager.cells());
+            apply_rule(_set_initial_state_T, _manager.cells());
+        }
+        else if (initial_state == "init_random")
+        {
+            apply_rule(_set_initial_state_rand, _manager.cells());
         }
         else
         {
@@ -243,26 +303,31 @@ public:
     void perform_step ()
     {
         // Apply the rules to all cells, first the interaction, then the update
-        apply_rule(_some_interaction, _manager.cells());
-        apply_rule(_some_update, _manager.cells());
+        apply_rule(_update, _manager.cells());
     }
 
 
     /// Write data
     void write_data ()
     {   
-        // some_state
-        _dset_some_state->write(_manager.cells().begin(),
+        // Grass
+        _dset_density_G->write(_manager.cells().begin(),
                                 _manager.cells().end(),
                                 [](auto& cell) {
-                                    return cell->state().some_state;
+                                    return cell->state().G;
                                 });
 
-        // some_trait
-        _dset_some_trait->write(_manager.cells().begin(),
+        // Savanna
+        _dset_density_S->write(_manager.cells().begin(),
                                 _manager.cells().end(),
                                 [](auto& cell) {
-                                    return cell->state().some_trait;
+                                    return cell->state().S();
+                                });
+        // Tree
+        _dset_density_T->write(_manager.cells().begin(),
+                                _manager.cells().end(),
+                                [](auto& cell) {
+                                    return cell->state().T;
                                 });
     }
 

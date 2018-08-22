@@ -16,11 +16,24 @@
 # sure that no circular includes occur.
 ---
 # Grid parameters
-grid_size: [21, 21]
-periodic: true          # false: cells at boundary have fewer neighbors
+grid_size: [1, 1]
+periodic: false         # false: cells at boundary have fewer neighbors
 
 # Initial state
-initial_state: init_0   # can be: init_0, init_1
+initial_state: init_Grass   # can be: init_Grass, init_Trees
 
-# some parameter
-some_parameter: 1.23456
+# parameter
+dt: 0.01  # time step for euler scheme -> one step eq. dt
+alpha: 0.2
+beta: 0.9
+gamma: 0.0
+omega_0: 0.9
+omega_1: 0.4
+theta_1: 0.4
+theta_2: 0.4
+s_1: 0.01
+s_2: 0.05
+phi_0: 0.1
+phi_1: 0.9
+mu: 0.1
+nu: 0.05
