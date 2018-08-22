@@ -125,8 +125,8 @@ def state_grass_bifurcation(dm: DataManager, *, out_path: str, uni: int, fmt: st
         T_data = grp['density_T'].reshape(grid_size[0], grid_size[1], num_steps+1)
         T = T_data[0,0,num_steps]
 
-        plt.scatter(beta,G,c='green')
-        plt.scatter(beta,T,c='black',s=5)
+        plt.scatter(beta,G,c='green',s=6)
+        plt.scatter(beta,T,c='black',s=4)
 
     # Call the plot function
     #plt.plot(*args, **plot_kwargs)

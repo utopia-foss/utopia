@@ -33,11 +33,36 @@ struct State {
     }
 };
 
+struct Param {
+    const double alpha;
+    const double beta;
+    const double gamma;
+    const double omega0;
+    const double omega1;
+    const double theta1;
+    const double theta2;
+    const double s1;
+    const double s2;
+    const double phi0;
+    const double phi1;
+    const double mu;
+    const double nu;
+    
+    Param(double alpha, double beta, double gamma, 
+        double omega0, double omega1, double theta1, double theta2, 
+        double s1, double s2, double phi0, double phi1, double mu, double nu) :
+            alpha(alpha), beta(beta), gamma(gamma), 
+            omega0(omega0), omega1(omega1), theta1(theta1), theta2(theta2), 
+            s1(s1), s2(s2), phi0(phi0), phi1(phi1), mu(mu), nu(nu)
+    { }
+};
+
 /// Boundary condition type
 struct Boundary {};
 
-double omega(const State& state, const double gamma, const double omega0, const double omega1, const double theta1, const double s1) {
-    return omega0 + (omega1-omega0)/(1+exp(-(state.G+gamma*(state.S()+state.T)-theta1)/s1));
+double omega(const State& state, const Param param) {
+    return param.omega0 + 
+        (param.omega1-param.omega0)/(1+exp(-(state.G+param.gamma*(state.S()+state.T)-param.theta1)/param.s1));
 }
 
 
@@ -93,20 +118,7 @@ private:
 
     /// A model parameter I need
     const double _dt;
-
-    const double _alpha;
-    const double _beta;
-    const double _gamma;
-    const double _omega0;
-    const double _omega1;
-    const double _theta1;
-    const double _theta2;
-    const double _s1;
-    const double _s2;
-    const double _phi0;
-    const double _phi1;
-    const double _mu;
-    const double _nu;
+    const Param _param;
 
 
     // -- Temporary objects -- //
@@ -202,10 +214,10 @@ private:
         // Get the state of the cell
         auto state = cell->state();
 
-        double dG = _mu*state.S() + _nu*state.T - _beta*state.G*state.T;
-		double dT = omega(state, _gamma, _omega0, _omega1, _theta1, _s1)*state.S()-_nu*state.T;
-		state.G = state.G+dG*_dt;
-		state.T = state.T+dT*_dt;
+        double dG = _param.mu*state.S() + _param.nu*state.T - _param.beta*state.G*state.T;
+		double dT = omega(state, _param)*state.S()-_param.nu*state.T;
+		state.G = state.G + dG*_dt;
+		state.T = state.T + dT*_dt;
 
         // Return the new state cell
         return state;
@@ -228,19 +240,15 @@ public:
         // Now initialize members specific to this class
         _manager(manager),
         _dt(as_double(this->_cfg["dt"])),
-        _alpha(as_double(this->_cfg["alpha"])),
-        _beta(as_double(this->_cfg["beta"])),
-        _gamma(as_double(this->_cfg["gamma"])),
-        _omega0(as_double(this->_cfg["omega_0"])),
-        _omega1(as_double(this->_cfg["omega_1"])),
-        _theta1(as_double(this->_cfg["theta_1"])),
-        _theta2(as_double(this->_cfg["theta_2"])),
-        _s1(as_double(this->_cfg["s_2"])),
-        _s2(as_double(this->_cfg["s_2"])),
-        _phi0(as_double(this->_cfg["phi_0"])),
-        _phi1(as_double(this->_cfg["phi_1"])),
-        _mu(as_double(this->_cfg["mu"])),
-        _nu(as_double(this->_cfg["nu"])),
+        
+        _param(as_double(this->_cfg["alpha"]), as_double(this->_cfg["beta"]),
+            as_double(this->_cfg["gamma"]), as_double(this->_cfg["omega_0"]),
+            as_double(this->_cfg["omega_1"]), as_double(this->_cfg["theta_1"]),
+            as_double(this->_cfg["theta_2"]), as_double(this->_cfg["s_2"]),
+            as_double(this->_cfg["s_2"]), as_double(this->_cfg["phi_0"]),
+            as_double(this->_cfg["phi_1"]), as_double(this->_cfg["mu"]),
+            as_double(this->_cfg["nu"])
+        ),
         // create datasets
         _dset_density_G(this->_hdfgrp->open_dataset("density_G")),
         _dset_density_S(this->_hdfgrp->open_dataset("density_S")),
