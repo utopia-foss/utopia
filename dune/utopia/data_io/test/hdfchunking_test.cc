@@ -188,7 +188,7 @@ int main(int argc, char** argv)
                      {1024 * 1024});                     // 1M
 
         // 2D, long rows, large typesize
-        // -> 
+        // -> Should split one row into 8 chunks
         assert_equal(calc_chunksize(8, {1, 1024*1024},   // 8M
                                     {16, 1024 * 1024}),  // 16 * 8M
                      {1, 128 * 1024});                   // 1M
