@@ -87,6 +87,7 @@ int main(int argc, char** argv)
         assert_equal(calc_chunksize(8, {1, 2048}), // 16k
                      {1, 2048});                   // stays the same
 
+
         // -- With all infinite max_extend values -- //
         // Shortcut
         auto INF = H5S_UNLIMITED;
@@ -152,6 +153,7 @@ int main(int argc, char** argv)
         assert_equal(calc_chunksize(8, {1, 2048}, {}, false), // 16k
                      {1, 2048});                              // stays the same
 
+
         // -- With finite max_extend -- //
 
         // 1D, io_extend fits, already reaching max_extend
@@ -184,6 +186,12 @@ int main(int argc, char** argv)
         assert_equal(calc_chunksize(1, {2048 * 1024},    // 2M
                                     {16 * 1024 * 1024}), // 16M
                      {1024 * 1024});                     // 1M
+
+        // 2D, long rows, large typesize
+        // -> 
+        assert_equal(calc_chunksize(8, {1, 1024*1024},   // 8M
+                                    {16, 1024 * 1024}),  // 16 * 8M
+                     {1, 128 * 1024});                   // 1M
 
         // 3D dataset, io_extend smaller, max_extend > max chunksize
         // -> extend last axes first
