@@ -313,10 +313,14 @@ class WorkerTask(Task):
                           "`enqueue_lines` instead.")
                 line_read_func = enqueue_lines
 
-            # Establish queue for stream reading, creating a new pipe for STDOUT and forwarding STDERR into that same pipe
+            # Establish queue for stream reading, creating a new pipe for
+            # STDOUT and _forwarding_ STDERR into that same pipe. For the
+            # specification of that syntax, see the subprocess.Popen docs:
+            #   docs.python.org/3/library/subprocess.html#subprocess.Popen
             q = queue.Queue()
             stdout = subprocess.PIPE
             stderr = subprocess.STDOUT
+            
         else:
             # No stream-reading is taking place; forward all streams to devnull
             stdout = stderr = subprocess.DEVNULL
