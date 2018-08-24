@@ -10,7 +10,7 @@
 # As this file is (usually) handled by the frontend, it is possible to use
 # yaml features like anchors, inheritance, ...
 ---
-grid_size: 10
+grid_size: [10, 10]
 rain_mean: 10
 rain_var: 2
 growth: 0.1
