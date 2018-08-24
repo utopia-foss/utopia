@@ -25,15 +25,14 @@ def mv_kwargs(tmpdir) -> dict:
     This uses the `tmpdir` fixture provided by pytest, which creates a unique
     temporary directory that is removed after the tests ran through.
     """
-    # Create a dict that specifies a unique testing path.
-    # The str cast is needed for python version < 3.6
-    rand_str = "test_" + uuid.uuid4().hex[:8]
-    unique_paths = dict(out_dir=tmpdir, model_note=rand_str)
+    # Create a random string to use as model note
+    rand_str = "test_" + uuid.uuid4().hex
 
+    # Create a dict that specifies a unique testing path.
     return dict(model_name='dummy',
                 run_cfg_path=RUN_CFG_PATH,
                 user_cfg_path=False,  # to omit the user config
-                update_meta_cfg=dict(paths=unique_paths)
+                paths=dict(out_dir=str(tmpdir), model_note=rand_str)
                 )
 
 @pytest.fixture
@@ -114,8 +113,15 @@ def test_load_single(dm_after_single):
     dset = uni['data/dummy/state']
 
     assert isinstance(dset, udc.NumpyDC)
-    assert dset.shape == (uni['cfg']['num_steps'] + 1, 1000)
+    assert dset.shape[1] == 1000
     assert np.issubdtype(dset.dtype, float)
+
+    # Test other configured capabilities
+    # write_every -> only every write_every step should have been written
+    write_every = int(uni['data/dummy'].attrs['write_every'])
+    assert write_every == uni['cfg']['write_every']
+    assert dset.shape[0] == (uni['cfg']['num_steps'] // write_every) + 1
+
 
 def test_load_sweep(dm_after_sweep):
     """Tests the loading of simulation data for a sweep"""
