@@ -233,3 +233,52 @@ def state_anim(dm: DataManager, *,
             # Updated both subfigures now
             # Tell the writer that the frame is finished
             w.grab_frame()
+
+
+
+# -----------------------------------------------------------------------------
+
+def average_state_over_time(dm: DataManager, *, 
+                            out_path: str, 
+                            uni: int, 
+                            model_name: str,
+                            state: str,
+                            fmt: str=None, 
+                            save_kwargs: dict=None, **plot_kwargs):
+    """Calculates the state mean and performs a lineplot
+    
+    Args:
+        dm (DataManager): The data manager from which to retrieve the data
+        out_path (str): Where to store the plot to
+        uni (int): The universe to use
+        model_name (str): The name of the model instance
+        state (str): The name of state (i.e. data set) to plot
+        fmt (str, optional): the plt.plot format argument
+        save_kwargs (dict, optional): kwargs to the plt.savefig function
+        **plot_kwargs: Passed on to plt.plot
+    """
+    # Get the group that all datasets are in
+    grp = dm['uni'][uni]['data'][model_name]
+
+    # Get the shape of the data
+    uni_cfg = dm['uni'][uni]['cfg']
+    num_steps = uni_cfg['num_steps']
+    grid_size = uni_cfg[model_name]['grid_size']
+
+    # Extract the y data which is 'some_state' avaraged over all grid cells for every time step
+    data = grp[state].reshape(grid_size[0], grid_size[1], num_steps+1)
+    y_data = [np.mean(d) for d in data]
+
+    # Assemble the arguments
+    args = [y_data]
+    if fmt:
+        args.append(fmt)
+
+    # Call the plot function
+    plt.plot(*args, **plot_kwargs)
+    plt.xlabel('Time')
+    plt.ylabel(state)
+
+    # Save and close figure
+    plt.savefig(out_path, **(save_kwargs if save_kwargs else {}))
+    plt.close()
