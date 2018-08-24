@@ -1,0 +1,37 @@
+# This defines the default plots for the Geomorphology model
+---
+
+# plot the spatial development in the CA 
+geomorphology:
+  creator: external
+  file_ext: mp4
+
+  module: .ca
+  plot_func: state_anim
+
+  # Select the universe
+  model_name: geomorphology
+  uni: 0
+
+  # Select the properties to plot
+  to_plot:
+    height:
+      cmap: copper
+      limits: [1000, 1200]
+      title: Height
+      
+    water_content: 
+      cmap: Blues
+      limits: [0, 100]
+      title: Water Content
+
+  # Video options
+  writer: ffmpeg  # can be: frames, ffmpeg (if installed), ...
+  fps: 2
+  step_size: 1
+  dpi: 96
+
+  # For the 'frames' writer, the following additional kwargs can be passed
+  frames_kwargs: 
+    name_padding: 5
+    file_format: png
