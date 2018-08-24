@@ -260,17 +260,12 @@ def average_state_over_time(dm: DataManager, *,
     # Get the group that all datasets are in
     grp = dm['uni'][uni]['data'][model_name]
 
-    # Get the shape of the data
-    uni_cfg = dm['uni'][uni]['cfg']
-    num_steps = uni_cfg['num_steps']
-    grid_size = uni_cfg[model_name]['grid_size']
-
-    # Extract the y data which is 'some_state' avaraged over all grid cells for every time step
-    data = grp[state].reshape(grid_size[0], grid_size[1], num_steps+1)
-    y_data = [np.mean(d) for d in data]
+    # Extract the y data which is 'state' avaraged over all grid cells for every time step
+    y_data = np.mean(grp[state], axis=1)
+    x_data = np.linspace(0, len(y_data), len(y_data))
 
     # Assemble the arguments
-    args = [y_data]
+    args = [x_data, y_data]
     if fmt:
         args.append(fmt)
 
