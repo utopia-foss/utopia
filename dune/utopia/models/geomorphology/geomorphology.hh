@@ -70,7 +70,7 @@ private:
 
     // Rule functions
     std::function<State(std::shared_ptr<CellType>)> _rain = [this](const auto cell){
-        auto rain = _bc.rain(*(_manager.rng()));
+        auto rain = _bc.rain(*(this->_rng));
         auto state = cell->state();
         state.watercontent += rain; 
         return state;
