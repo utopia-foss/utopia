@@ -1,0 +1,51 @@
+# This defines the default plots for the Vegetation model
+---
+
+# plot the average plant density per cell over time
+average_plant_density_time:
+  creator: external
+  module: .ca
+  plot_func: average_state_over_time
+  model_name: vegetation
+  uni: 0
+  state: plant_mass
+
+# plot the spatial development in the CA of the strategy
+plant_density_spatial:
+  creator: external
+  file_ext: mp4
+
+  module: .ca
+  plot_func: state_anim
+
+  # Select the universe
+  model_name: vegetation
+  uni: 0
+
+  # Select the properties to plot
+  to_plot:
+
+    # The name of the property to plot with its options
+    plantmass:
+      title: Plant Biomass
+      limits: [0, 12]
+
+      # Specify the colormap
+      # This can be done in two ways:
+      #   1. use a matplotlib colormap such as 'viridis'
+      #   2. provide a dictionary from which a discrete colormap
+      #      is derived. The keys correspond to the labels,
+      #      and the values define the color
+      cmap: Greens
+
+  # Video options
+  writer: ffmpeg  # can be: frames, ffmpeg (if installed), ...
+  fps: 2
+  step_size: 1
+  dpi: 96
+
+  # For the 'frames' writer, the following additional kwargs can be passed
+  frames_kwargs: 
+    name_padding: 5
+    file_format: png
+
