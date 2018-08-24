@@ -87,7 +87,7 @@ private:
     };
 
     // Set negative plant masses to zero
-    std::function<State(std::shared_ptr<CellType>)> _sanitize_states = [this](const auto cell){
+    std::function<State(std::shared_ptr<CellType>)> _sanitize_states = [](const auto cell){
         auto state = cell->state();
         if (state.plant_mass < 0. or std::isinf(state.plant_mass)) {
             state.plant_mass = 0.;
