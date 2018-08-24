@@ -28,7 +28,7 @@ def mv_kwargs(tmpdir) -> dict:
     # Create a dict that specifies a unique testing path.
     # The str cast is needed for python version < 3.6
     rand_str = "test_" + uuid.uuid4().hex
-    unique_paths = dict(out_dir=tmpdir, model_note=rand_str)
+    unique_paths = dict(out_dir=str(tmpdir), model_note=rand_str)
 
     return dict(model_name="dummy",
                 run_cfg_path=RUN_CFG_PATH,
@@ -184,13 +184,15 @@ def test_FrozenMultiverse(mv_kwargs):
     mv = Multiverse(**mv_kwargs)
     mv.run_single()
 
+    # NOTE Need to adjust the data directory in order to not create collisions
+    # in the eval directory due to same timestamps ...
+
     # Now create a frozen Multiverse from that one
     # Without run directory, the latest one should be loaded
     print("\nInitializing FrozenMultiverse without further kwargs")
-    FrozenMultiverse(**mv_kwargs)
+    FrozenMultiverse(**mv_kwargs,
+                     data_manager=dict(out_dir="eval/{date:}_1"))
 
-    # NOTE For the other tests, need to adjust the data directory in order to
-    # not create collisions in the eval directory due to same timestamps
 
     # With a relative path, the corresponding directory should be found
     print("\nInitializing FrozenMultiverse with timestamp as run_dir")

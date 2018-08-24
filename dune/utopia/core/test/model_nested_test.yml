@@ -12,6 +12,7 @@
 seed: 42
 output_path: model_nested_test_tmpfile.h5
 num_steps: 3
+write_every: 1
 
 log_levels:
   core: debug
