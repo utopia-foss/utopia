@@ -2,6 +2,7 @@
 seed: 42
 output_path: model_with_manager_tmpfile.h5
 num_steps: 3
+write_every: 1
 
 grid_size: 100
 
