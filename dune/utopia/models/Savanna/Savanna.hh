@@ -390,7 +390,7 @@ public:
                                     return cell->state().T;
                                 });
         // Forest
-        _dset_density_T->write(_manager.cells().begin(),
+        _dset_density_F->write(_manager.cells().begin(),
                                 _manager.cells().end(),
                                 [](auto& cell) {
                                     return cell->state().F;

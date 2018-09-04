@@ -1,18 +1,18 @@
 # Default plots for the CopyMe model
 ---
-state_mean:
+state_time:
   creator: external
   
-  # Use the CopyMe-specific plot functions
+  # Use the Savanna-specific plot functions
   module: model_plots.Savanna
-  plot_func: state_mean
+  plot_func: state_time
 
   uni: 0
 
 state_final:
   creator: external
   
-  # Use the CopyMe-specific plot functions
+  # Use the Savanna-specific plot functions
   module: model_plots.Savanna
   plot_func: state_final
 
@@ -21,6 +21,7 @@ state_final:
 state_grass_bifurcation:
   creator: external
 
+  # Use the Savanna-specific plot functions
   module: model_plots.Savanna
   plot_func: state_grass_bifurcation
 

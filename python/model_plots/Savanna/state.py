@@ -9,8 +9,8 @@ from ..tools import save_and_close
 
 # -----------------------------------------------------------------------------
 
-def state_mean(dm: DataManager, *, out_path: str, uni: int, fmt: str=None, save_kwargs: dict=None, **plot_kwargs):
-    """Calculates the state mean and performs a lineplot
+def state_time(dm: DataManager, *, out_path: str, uni: int, fmt: str=None, save_kwargs: dict=None, **plot_kwargs):
+    """Performs a lineplot on the state 
     
     Args:
         dm (DataManager): The data manager from which to retrieve the data
@@ -31,20 +31,11 @@ def state_mean(dm: DataManager, *, out_path: str, uni: int, fmt: str=None, save_
         grid_size = uni_cfg['Savanna']['grid_size']
 
         # Extract the y data which is 'some_state' avaraged over all grid cells for every time step
-        G_data = grp['density_G']#.reshape(grid_size[0], grid_size[1], num_steps+1)
-        #G_mean = [np.mean(d) for d in G_data]
-        S_data = grp['density_S']#.reshape(grid_size[0], grid_size[1], num_steps+1)
-        #S_mean = [np.mean(d) for d in S_data]
-        T_data = grp['density_T']#.reshape(grid_size[0], grid_size[1], num_steps+1)
-        #T_mean = [np.mean(d) for d in T_data]
-
-        # Assemble the arguments
-        #args = [G_data, S_data, T_data]
-        #if fmt:
-        #    args.append(fmt)
+        G_data = grp['density_G']
+        S_data = grp['density_S']
+        T_data = grp['density_T']
 
         # Call the plot function
-        #plt.plot(*args, **plot_kwargs)
         plt.plot(G_data, "green")
         plt.plot(S_data, "blue")
         plt.plot(T_data, "black")
