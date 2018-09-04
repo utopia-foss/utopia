@@ -137,8 +137,8 @@ private:
     // NOTE They should be named '_dset_<name>', where <name> is the
     //      dataset's actual name as set in the constructor.
     std::shared_ptr<DataSet> _dset_density_G;
-    std::shared_ptr<DataSet> _dset_density_S;
     std::shared_ptr<DataSet> _dset_density_T;
+    std::shared_ptr<DataSet> _dset_density_F;
     std::shared_ptr<DataSet> _dset_pos_x;
     std::shared_ptr<DataSet> _dset_pos_y;
 
@@ -292,8 +292,8 @@ public:
         ),
         // create datasets
         _dset_density_G(this->_hdfgrp->open_dataset("density_G")),
-        _dset_density_S(this->_hdfgrp->open_dataset("density_S")),
         _dset_density_T(this->_hdfgrp->open_dataset("density_T")),
+        _dset_density_F(this->_hdfgrp->open_dataset("density_F")),
         _dset_pos_x(this->_hdfgrp->open_dataset("position_x")),
         _dset_pos_y(this->_hdfgrp->open_dataset("position_y"))     
     {
@@ -308,10 +308,20 @@ public:
         this->_log->debug("Setting dataset capacities to {} x {} ...",
                           this->get_time_max() + 1, num_cells);
         _dset_density_G->set_capacity({this->get_time_max() + 1, num_cells});
-        _dset_density_S->set_capacity({this->get_time_max() + 1, num_cells});
         _dset_density_T->set_capacity({this->get_time_max() + 1, num_cells});
-        _dset_pos_x->set_capacity({this->get_time_max() + 1, num_cells});
-        _dset_pos_y->set_capacity({this->get_time_max() + 1, num_cells});
+        _dset_density_F->set_capacity({this->get_time_max() + 1, num_cells});
+        _dset_pos_x->set_capacity({1, num_cells});
+        _dset_pos_y->set_capacity({1, num_cells});
+        _dset_pos_x->write(_manager.cells().begin(),
+                                _manager.cells().end(),
+                                [](auto& cell) {
+                                    return cell->position()[0];
+                                });
+        _dset_pos_y->write(_manager.cells().begin(),
+                                _manager.cells().end(),
+                                [](auto& cell) {
+                                    return cell->position()[1];
+                                });
 
         // Write initial state
         this->write_data();
@@ -373,28 +383,17 @@ public:
                                 [](auto& cell) {
                                     return cell->state().G;
                                 });
-
-        // Savanna
-        _dset_density_S->write(_manager.cells().begin(),
-                                _manager.cells().end(),
-                                [](auto& cell) {
-                                    return cell->state().S();
-                                });
         // Tree
         _dset_density_T->write(_manager.cells().begin(),
                                 _manager.cells().end(),
                                 [](auto& cell) {
                                     return cell->state().T;
                                 });
-        _dset_pos_x->write(_manager.cells().begin(),
+        // Forest
+        _dset_density_T->write(_manager.cells().begin(),
                                 _manager.cells().end(),
                                 [](auto& cell) {
-                                    return cell->position()[0];
-                                });
-        _dset_pos_y->write(_manager.cells().begin(),
-                                _manager.cells().end(),
-                                [](auto& cell) {
-                                    return cell->position()[1];
+                                    return cell->state().F;
                                 });
     }
 
