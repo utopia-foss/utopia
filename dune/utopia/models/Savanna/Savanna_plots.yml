@@ -9,14 +9,14 @@ state_mean:
 
   uni: 0
 
-# state_final:
-#   creator: external
+state_final:
+  creator: external
   
-#   # Use the CopyMe-specific plot functions
-#   module: model_plots.Savanna
-#   plot_func: state_final
+  # Use the CopyMe-specific plot functions
+  module: model_plots.Savanna
+  plot_func: state_final
 
-#   uni: 0
+  uni: 0
 
 state_grass_bifurcation:
   creator: external

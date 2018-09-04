@@ -21,13 +21,16 @@ namespace Savanna {
 struct State {
     double G;
     double T;
-    double S() const { return 1 - G - T; };
+    double F;
+    double S() const { return 1 - G - T - F; };
 
-    State() : G(1),T(0) 
+    State() : 
+        G(0.99),T(0.01),F(0)
     {}
-    State(double g, double s, double t) : G(g), T(t)
+    State(double g, double s, double t, double f = 0) : 
+        G(g), T(t), F(f)
     {
-        if (g+s+t > 1+1e-6 || g+s+t < 1-1e-6) {
+        if (g+s+t+f > 1+1e-6 || g+s+t+f < 1-1e-6) {
             std::cout << "WARNING: initial state not a density: G+S+T must be 1.";
         }
     }
@@ -62,8 +65,13 @@ struct Param {
 struct Boundary {};
 
 double omega(const State& state, const Param param) {
-    return param.omega0 + 
-        (param.omega1-param.omega0)/(1+exp(-(state.G+param.gamma*(state.S()+state.T)-param.theta1)/param.s1));
+    return param.omega0 + (param.omega1-param.omega0) /
+        (1+exp(-(state.G+param.gamma*(state.S()+state.T)-param.theta1)/param.s1));
+}
+
+double phi(const State& state, const Param param) {
+    return param.phi0 + (param.phi1-param.phi0) /
+        (1+exp(-(state.G+param.gamma*(state.S()+state.T)-param.theta2)/param.s2));
 }
 
 
@@ -131,48 +139,72 @@ private:
     std::shared_ptr<DataSet> _dset_density_G;
     std::shared_ptr<DataSet> _dset_density_S;
     std::shared_ptr<DataSet> _dset_density_T;
+    std::shared_ptr<DataSet> _dset_pos_x;
+    std::shared_ptr<DataSet> _dset_pos_y;
 
 
     // -- Rule functions -- //
     // Define functions that can be applied to the cells of the grid
     // NOTE The below are examples; delete and/or adjust them to your needs!
 
-    /// Sets the given cell to state "A"
+    // -- Initialisation Rules -- //
+
+    /// Sets the given cell to state "G" with small perturbation on T
     std::function<State(std::shared_ptr<CellType>)> _set_initial_state_G = [](const auto cell){
         // Get the state of the Cell
         auto state = cell->state();
 
         // Set the internal variables
-        state = State(0.99,0.,0.01);
+        state = State(0.99,0.,0.01,0.);
 
         return state;
     };
 
-    /// Sets the given cell to state "B"
+    /// Sets the given cell to state "S"
     std::function<State(std::shared_ptr<CellType>)> _set_initial_state_S = [](const auto cell){
         // Get the state of the Cell
         auto state = cell->state();
 
         // Set the internal variables
-        state = State(0.,1.,0.);
+        state = State(0.,1.,0.,0.);
 
         return state;
     };
 
 
-    /// Sets the given cell to state "B"
+    /// Sets the given cell to state "T"
     std::function<State(std::shared_ptr<CellType>)> _set_initial_state_T = [](const auto cell){
         // Get the state of the Cell
         auto state = cell->state();
 
         // Set the internal variables
-        state = State(0.,0.,1.);
+        state = State(0.,0.,1.,0.);
 
         return state;
     };
 
+     /// creats a map of different equally distributed initial states
+    std::function<State(std::shared_ptr<CellType>)> _set_initial_state_spatial = [this](const auto cell) {
+        auto state = cell->state();
+        auto position = cell->position();
+        double size_x = as_double(this->_cfg["grid_size"][0]);
+        double size_y = as_double(this->_cfg["grid_size"][1]);
 
-    /// Sets the given cell to state "A"
+        double G = position[0]/size_x;
+        double T = position[1]/size_y;
+        double S = 1 - G - T;
+        if (S < 0) {
+            G = 0.99;
+            T = 0.01;
+            S = 0;
+        }
+
+        state = State(G,S,T);
+
+        return state;
+    };
+
+    /// Sets the given cell to random state
     std::function<State(std::shared_ptr<CellType>)> _set_initial_state_rand = [this](const auto cell){
         // Get the state of the Cell
         auto state = cell->state();
@@ -207,6 +239,7 @@ private:
         return state;
     };
 
+    // -- Update Rule -- //
 
     /// Define the update rule for a cell
     std::function<State(std::shared_ptr<CellType>)> _update = [this](const auto cell){
@@ -215,10 +248,17 @@ private:
         // Get the state of the cell
         auto state = cell->state();
 
-        double dG = _param.mu*state.S() + _param.nu*state.T - _param.beta*state.G*state.T;
-		double dT = omega(state, _param)*state.S()-_param.nu*state.T;
+        // G ̇ =μS + νT − βGT + φ􏰀(G+γ(1−G−F)􏰁)*F − αGF
+        double dG = _param.mu*state.S() + _param.nu*state.T - _param.beta*state.G*state.T 
+                    + phi(state, _param)*state.F - _param.alpha*state.G*state.F;
+        // T ̇ = ω(􏰀G +γ(1−G −F)􏰁)*S − νT − αTF
+		double dT = omega(state, _param)*state.S() - _param.nu*state.T 
+                    - _param.alpha*state.T*state.F;
+        // F ̇ = [􏰀α(1−F) − φ􏰀(G+γ(1−G −F))]􏰁􏰁F
+        double dF = (_param.alpha*(1-state.F) - phi(state, _param))*state.F;
 		state.G = state.G + dG*_dt;
 		state.T = state.T + dT*_dt;
+        state.F = state.F + dF*_dt;
 
         // Return the new state cell
         return state;
@@ -253,7 +293,9 @@ public:
         // create datasets
         _dset_density_G(this->_hdfgrp->open_dataset("density_G")),
         _dset_density_S(this->_hdfgrp->open_dataset("density_S")),
-        _dset_density_T(this->_hdfgrp->open_dataset("density_T"))     
+        _dset_density_T(this->_hdfgrp->open_dataset("density_T")),
+        _dset_pos_x(this->_hdfgrp->open_dataset("position_x")),
+        _dset_pos_y(this->_hdfgrp->open_dataset("position_y"))     
     {
         // Call the method that initializes the cells
         this->initialize_cells();
@@ -268,6 +310,8 @@ public:
         _dset_density_G->set_capacity({this->get_time_max() + 1, num_cells});
         _dset_density_S->set_capacity({this->get_time_max() + 1, num_cells});
         _dset_density_T->set_capacity({this->get_time_max() + 1, num_cells});
+        _dset_pos_x->set_capacity({this->get_time_max() + 1, num_cells});
+        _dset_pos_y->set_capacity({this->get_time_max() + 1, num_cells});
 
         // Write initial state
         this->write_data();
@@ -292,6 +336,10 @@ public:
         else if (initial_state == "init_random")
         {
             apply_rule(_set_initial_state_rand, _manager.cells());
+        }
+        else if (initial_state == "init_spatial")
+        {
+            apply_rule(_set_initial_state_spatial, _manager.cells());
         }
         else
         {
@@ -337,6 +385,16 @@ public:
                                 _manager.cells().end(),
                                 [](auto& cell) {
                                     return cell->state().T;
+                                });
+        _dset_pos_x->write(_manager.cells().begin(),
+                                _manager.cells().end(),
+                                [](auto& cell) {
+                                    return cell->position()[0];
+                                });
+        _dset_pos_y->write(_manager.cells().begin(),
+                                _manager.cells().end(),
+                                [](auto& cell) {
+                                    return cell->position()[1];
                                 });
     }
 
