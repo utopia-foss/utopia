@@ -20,13 +20,13 @@ grid_size: [1, 1]
 periodic: false         # false: cells at boundary have fewer neighbors
 
 # Initial state
-initial_state: init_Grass   # can be: init_Grass, init_Trees, init_spatial
+initial_state: init_random   # can be: init_Grass, init_Trees, init_spatial, init_random
 
 # PARAMETER
 dt: 0.01      # time step for euler scheme -> one step eq. dt
 
 alpha: 0.2    # Forest tree birth rate
-beta: 0.3     # Savanna saplings birth rate
+beta: 0.4     # Savanna saplings birth rate
 
 gamma: 0.0    # Fire propagation through savanna relative to grass
               # Grass cover beneath savanna tree / shadiness
