@@ -26,14 +26,14 @@ initial_state: init_random   # can be: init_Grass, init_Trees, init_spatial, ini
 dt: 0.01      # time step for euler scheme -> one step eq. dt
 
 alpha: 0.2    # Forest tree birth rate
-beta: 0.4     # Savanna saplings birth rate
+beta: 0.3     # Savanna saplings birth rate
 
 gamma: 0.0    # Fire propagation through savanna relative to grass
               # Grass cover beneath savanna tree / shadiness
 
 # Savanna sapling-to-adult recruitment rate: omega(G,S,T)
 omega_0: 0.9  
-omega_1: 0.4  
+omega_1: 0.2  
 theta_1: 0.4   # upper limit for fire spread on savanna tree cover
 s_1: 0.01      # slope
 
@@ -43,5 +43,5 @@ phi_1: 0.9
 theta_2: 0.4  # upper limit for fire spread on savanna tree cover
 s_2: 0.05     # slope
 
-mu: 0.1       # Savanna sapling mortality rate
-nu: 0.05      # Adult savanna tree mortality rate
+mu: 0.2       # Savanna sapling mortality rate
+nu: 0.1      # Adult savanna tree mortality rate

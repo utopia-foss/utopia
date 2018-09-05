@@ -155,7 +155,7 @@ private:
         auto state = cell->state();
 
         // Set the internal variables
-        state = State(0.99,0.,0.01,0.);
+        state = State(0.95,0.,0.05,0.);
 
         return state;
     };
