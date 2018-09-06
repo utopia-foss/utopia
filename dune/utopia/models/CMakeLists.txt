@@ -14,7 +14,7 @@ add_subdirectory(CopyMe)
 add_subdirectory(CopyMeBare)
 add_subdirectory(dummy)
 add_subdirectory(SimpleEG)
-add_subdirectory(Savanna)
+add_subdirectory(SavannaHomogeneous)
 # ...
 # NOTE add your subdirectory above (alphabetically sorted)
 
