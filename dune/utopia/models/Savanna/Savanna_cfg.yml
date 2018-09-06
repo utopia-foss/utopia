@@ -17,7 +17,7 @@
 ---
 # Grid parameters
 grid_size: [1, 1]
-periodic: false         # false: cells at boundary have fewer neighbors
+periodic: false        # false: cells at boundary have fewer neighbors
 
 # Initial state
 initial_state: init_random   # can be: init_Grass, init_Trees, init_spatial, init_random
@@ -44,4 +44,4 @@ theta_2: 0.4  # upper limit for fire spread on savanna tree cover
 s_2: 0.05     # slope
 
 mu: 0.2       # Savanna sapling mortality rate
-nu: 0.1      # Adult savanna tree mortality rate
+nu: 0.1       # Adult savanna tree mortality rate
