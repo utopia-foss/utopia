@@ -176,8 +176,8 @@ save_graph(GraphType &g,
             // Extract indices of source and target vertex as well as of the
             // edge this corresponds to.
             return std::array<std::size_t, 2>( // TODO use boost::index_type?
-                {boost::get(ids, boost::source(ed, g)),
-                 boost::get(ids, boost::target(ed, g))}
+                {{boost::get(ids, boost::source(ed, g)),
+                 boost::get(ids, boost::target(ed, g))}}
             );
         }
     );
@@ -240,8 +240,8 @@ save_graph(GraphType &g,
             // Extract indices of source and target vertex as well as of the
             // edge this corresponds to.
             return std::array<std::size_t, 2>( // TODO use boost::index_type?
-                {boost::get(ids, boost::source(ed, g)),
-                 boost::get(ids, boost::target(ed, g))}
+                {{boost::get(ids, boost::source(ed, g)),
+                 boost::get(ids, boost::target(ed, g))}}
             );
         }
     );

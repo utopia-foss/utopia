@@ -14,7 +14,7 @@ struct Vertex{
 
 // Define test graph type
 using G = boost::adjacency_list<
-                    boost::vecS,        // edge container
+                    boost::setS,        // edge container
                     boost::vecS,        // vertex container
                     boost::undirectedS,
                     Vertex>;             // vertex struct
@@ -65,7 +65,7 @@ void test_create_small_world_graph(){
 
     // Assert that the number of vertices and edges is correct
     assert(num_vertices == boost::num_vertices(g));
-    assert(num_vertices * mean_degree == boost::num_edges(g));
+    assert(num_vertices * mean_degree /2 == boost::num_edges(g));
 
     // Check that at least one vertex does not have connectivity mean_degree any more
     bool at_least_one_rewired = false;
@@ -99,7 +99,8 @@ void test_create_scale_free_graph(){
 
     // Assert that the number of vertices and edges is correct
     assert(num_vertices == boost::num_vertices(g));
-    assert(num_vertices * mean_degree == boost::num_edges(g));
+    std::cout << num_vertices << " " << mean_degree << " " << boost::num_edges(g);
+    assert(num_vertices * mean_degree / 2== boost::num_edges(g));
 
     // Check that at least one vertex has more than 10 edges
     bool at_least_one_more_than_ten_edges = false;
