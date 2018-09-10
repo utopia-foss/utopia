@@ -5,6 +5,7 @@ from setuptools import setup, find_packages
 # Dependency lists
 INSTALL_DEPS = ['numpy>=1.13',
                 'PyYAML>=3.12,<4.0',
+                'coloredlogs>=10.0',
                 # only required for testing
                 'pytest>=3.4.0',
                 'pytest-cov>=2.5.1',
