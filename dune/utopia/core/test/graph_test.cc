@@ -46,7 +46,7 @@ void test_create_random_graph(){
 }
 
 
-/// Test the function that creates a random graph
+/// Test the function that creates a small-world graph
 void test_create_small_world_graph(){
     // Create a random number generator
     Utopia::DefaultRNG rng;
@@ -82,7 +82,7 @@ void test_create_small_world_graph(){
 }
 
 
-/// Test the function that creates a random graph
+/// Test the function that creates a scale-free graph
 void test_create_scale_free_graph(){
     // Create a random number generator
     Utopia::DefaultRNG rng;
@@ -116,8 +116,6 @@ void test_create_scale_free_graph(){
 }
 
 
-
-
 int main(int argc, char* argv[])
 {
     try
@@ -126,6 +124,7 @@ int main(int argc, char* argv[])
 
         test_create_random_graph();
         test_create_small_world_graph();
+        test_create_scale_free_graph();
         
         return 0;
     }
