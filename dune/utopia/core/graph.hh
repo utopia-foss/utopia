@@ -79,7 +79,7 @@ Graph create_scale_free_graph(  const std::size_t num_vertices,
             for (auto j = 0; j<m0+1; ++j){
                 if (i!=j){
                     // Increase the number of edges only if an edge was added
-                    if (boost::add_edge(i,j, g).second == true) ++num_edges;
+                    if (boost::add_edge(i, j, g).second == true) ++num_edges;
                 }
             }
         }

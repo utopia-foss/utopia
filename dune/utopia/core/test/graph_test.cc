@@ -14,7 +14,7 @@ struct Vertex{
 
 // Define test graph type
 using G = boost::adjacency_list<
-                    boost::setS,        // edge container
+                    boost::vecS,        // edge container
                     boost::vecS,        // vertex container
                     boost::undirectedS,
                     Vertex>;             // vertex struct
@@ -99,7 +99,6 @@ void test_create_scale_free_graph(){
 
     // Assert that the number of vertices and edges is correct
     assert(num_vertices == boost::num_vertices(g));
-    std::cout << num_vertices << " " << mean_degree << " " << boost::num_edges(g);
     assert(num_vertices * mean_degree / 2== boost::num_edges(g));
 
     // Check that at least one vertex has more than 10 edges
@@ -132,7 +131,7 @@ int main(int argc, char* argv[])
 
     catch (...)
     {
-        std::cerr << "Exeception occured!" << std::endl;
+        std::cerr << "Exception occured!" << std::endl;
         return 1;
     }
 }
