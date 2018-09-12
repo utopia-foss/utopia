@@ -59,13 +59,13 @@ Graph create_scale_free_graph(  const std::size_t num_vertices,
     // Create empty graph
     Graph g;
     
-    // Creating a link effectively adds two counts to the number of total degrees. 
-    // To counteract counting twice, the mean degree is halfed
-    auto m = mean_degree/2.;
-
-    if (num_vertices < m){
+    // Check for cases in which the algorithm does not work
+    if (num_vertices < mean_degree){
         throw std::runtime_error("The desired mean degree is too high."
                                 "There are not enough vertices to place all edges.");
+    }
+    else if (mean_degree % 2){
+        throw std::runtime_error("The mean degree needs to be even!");
     }
     else if (boost::is_directed(g)){
         throw std::runtime_error("The scale-free generator algorithm currently "
@@ -96,7 +96,7 @@ Graph create_scale_free_graph(  const std::size_t num_vertices,
             auto edges_added = 0;
 
             // Add the desired number of edges
-            for (auto edge = 0; edge<m; ++edge){
+            for (std::size_t edge = 0; edge<mean_degree/2; ++edge){
                 // Keep track of the probability
                 auto prob = 0.;
                 // Calculate a random number

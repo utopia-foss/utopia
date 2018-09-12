@@ -1,6 +1,7 @@
 #include <dune/utopia/base.hh>
 #include <dune/utopia/core/graph.hh>
 #include <cassert>
+#include <iostream>
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/adjacency_matrix.hpp>
@@ -83,7 +84,7 @@ void test_create_small_world_graph(){
 
 
 /// Test the function that creates a scale-free graph
-void test_create_scale_free_graph(){
+int test_create_scale_free_graph(){
     // Create a random number generator
     Utopia::DefaultRNG rng;
     Utopia::DefaultRNG rng_copy = rng;
@@ -98,9 +99,7 @@ void test_create_scale_free_graph(){
                                             rng); 
 
     // Assert that the number of vertices and edges is correct
-    std::cout << boost::num_vertices(g) << std::endl;
     assert(num_vertices == boost::num_vertices(g));
-    std::cout << num_vertices << " " << mean_degree << " " << num_vertices * mean_degree / 2 << " " << boost::num_edges(g) << std::endl;
     assert(num_vertices * mean_degree / 2 == boost::num_edges(g));
 
     // Check that at least one vertex has more than 10 edges
@@ -115,6 +114,66 @@ void test_create_scale_free_graph(){
 
     // Assert that the state of the rng has changed.
     assert(rng!=rng_copy);
+
+    /// Test catching exceptions
+    // Case: directed Graph
+
+    using G_directed = boost::adjacency_list<
+        boost::vecS,        // edge container
+        boost::vecS,        // vertex container
+        boost::directedS,
+        Vertex>;             // vertex struct
+
+    bool caught = false;
+    try
+    {
+        auto g_dir = create_scale_free_graph<G_directed> (num_vertices, mean_degree, rng);
+    }
+    catch (const std::exception& e)
+    {
+        caught = true;
+        std::cerr << e.what() << std::endl;
+    }
+    if (!caught)
+    {
+        return -1;
+    }
+
+    // Case: mean degree greater than number of vertices
+    caught = false;
+    try
+    {
+        auto g_fail = create_scale_free_graph<G> (5, 6, rng);
+    }
+    catch (const std::exception& e)
+    {
+        caught = true;
+        std::cerr << e.what() << std::endl;
+    }
+    if (!caught)
+    {
+        return -1;
+    }
+
+    // Case: mean degree is odd
+    caught = false;
+    try
+    {
+        auto g_fail = create_scale_free_graph<G> (10, 5, rng);
+    }
+    catch (const std::exception& e)
+    {
+        caught = true;
+        std::cerr << e.what() << std::endl;
+    }
+    if (!caught)
+    {
+        return -1;
+    }
+
+
+    // everything as expected
+    return 0;
 }
 
 
@@ -126,11 +185,10 @@ int main(int argc, char* argv[])
 
         test_create_random_graph();
         test_create_small_world_graph();
-        test_create_scale_free_graph();
+        int sentinel = test_create_scale_free_graph();
         
-        return 0;
+        return sentinel;
     }
-
     catch (...)
     {
         std::cerr << "Exception occured!" << std::endl;
