@@ -160,6 +160,7 @@ private:
                     state = burning;
                 }
             }
+            
             // catch fire from Neighbors in CDM
             else if (!_two_state_FFM) 
             {
