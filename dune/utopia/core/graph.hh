@@ -169,6 +169,109 @@ Graph create_small_world_graph( const std::size_t num_vertices,
 }
 
 
+/// Cycles a vertex index
+/** Cycles the index of a vertex such that if the vertex index exceeds 
+ * the number of vertices it is projected on the interval [0, num_vertices]
+ * 
+ * @param vertex The vertex index
+ * @param num_vertices The number of vertices
+ * 
+ * @return The cycled vertex index
+ */
+int cycled_index(const long int vertex, const long int num_vertices){
+    if (vertex <= num_vertices){
+        if (vertex >= 0){
+            return vertex;
+        }
+        else {
+            return cycled_index(vertex + num_vertices, num_vertices);
+        }
+    }
+    else{
+        return cycled_index(vertex % num_vertices, num_vertices);
+    }
+}
+
+
+/// Create a k-regular graph (a circular graph)
+/** @brief  Create a regular graph with degree k.
+ * Creates a regular graph arranged on a circle where vertices are connected 
+ * to their k/2 next neighbors on both sides for the case that k is even.
+ * If k is uneven an additional connection is added to the opposite lying vertex. 
+ * In this case, the total number of vertices n has to be even otherwise the code 
+ * returns an error.
+ * 
+ * @tparam Graph The graph type
+ * 
+ * @param num_vertices The number of vertices
+ * @param degree The degree of every vertex
+ */
+template<typename Graph>
+Graph create_k_regular_graph(const long int num_vertices, const long int degree) {
+    // Create a graph
+    Graph g(num_vertices);
+
+    // Case of uneven degree
+    if (degree % 2 == 1)
+    {
+        // Case of uneven number of vertices
+        if (num_vertices % 2 == 1){
+            throw std::runtime_error("If the degree is uneven, the number of vertices cannot be uneven too!");
+        }
+        // Case of even number of vertices
+        else
+        {
+            // Imagine vertices arranged on a circle.
+            // For every node add connections to the next degree/2 next neighbors in both directions.
+            // Additionally add a node to the opposite neighbor on the circle
+            for (auto [v, v_end] = boost::vertices(g); v!=v_end; ++v){
+                for (auto nb = -degree/2; nb <= degree/2; ++nb){
+                    if (nb != 0){
+                        // Calculate the source and target of the new edge
+                        auto source = cycled_index(*v, num_vertices);
+                        auto target = cycled_index(*v + nb, num_vertices) % num_vertices;
+                        
+                        // If the edge does not exist yet, create it
+                        if (!edge(source, target, g).second){
+                            boost::add_edge(source, target, g);
+                        }
+                    }
+                    else if (nb == 0){
+                        // Calculate source and target of the edge
+                        auto source = cycled_index(*v, num_vertices);
+                        auto target = cycled_index(*v + num_vertices / 2, num_vertices) % num_vertices;
+
+                        // If the edge does not exist yet, create it
+                        if (!boost::edge(source, target, g).second){
+                            boost::add_edge(source, target, g);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    // Case of even degree
+    else
+    {
+        for (auto [v, v_end] = boost::vertices(g); v!=v_end; ++v){
+            for (auto nb = -degree/2; nb <= degree/2; ++nb){
+                if (nb != 0){
+                    // Calculate source and target of the new edge
+                    auto source = *v;
+                    auto target = cycled_index(*v +nb, num_vertices) % num_vertices;
+
+                    // Add the new edge if it not yet exists
+                    if (!boost::edge(source, target, g).second){
+                        boost::add_edge(source, target, g); 
+                    }
+                }
+            }
+        }
+    }
+    return g;
+}
+
+
 } // namespace Graph
 } // namespace Utopia
 
