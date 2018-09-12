@@ -177,17 +177,70 @@ int test_create_scale_free_graph(){
 }
 
 
+/// Test the k-regular graph creation
+int test_create_k_regular_graph(){
+    // Create four different regular graph test cases
+    const int num_vertices_even = 100;
+    const int num_vertices_odd = 99;
+    const int degree_odd = 3; 
+    const int degree_even = 4;
+
+    auto g_eo = create_k_regular_graph<G>(num_vertices_even, degree_odd);
+    auto g_ee = create_k_regular_graph<G>(num_vertices_even, degree_even);
+    auto g_oe = create_k_regular_graph<G>(num_vertices_odd, degree_even);
+  
+    // Check that all vertices have the same expected degree
+    for (auto [v, v_end] = boost::vertices(g_eo); v!=v_end; ++v){
+        assert (boost::num_vertices(g_eo) == num_vertices_even);
+        assert (boost::out_degree(*v, g_eo) == degree_odd);
+    }
+
+    // Check that all vertices have the same expected degree
+    for (auto [v, v_end] = boost::vertices(g_ee); v!=v_end; ++v){
+        assert (boost::num_vertices(g_ee) == num_vertices_even);
+        assert (boost::out_degree(*v, g_ee) == degree_even);
+    }
+
+    // Check that all vertices have the same expected degree
+    for (auto [v, v_end] = boost::vertices(g_oe); v!=v_end; ++v){
+        assert (boost::num_vertices(g_oe) == num_vertices_odd);
+        assert (boost::out_degree(*v, g_oe) == degree_even);
+    }
+
+    bool caught = false;
+    try{
+        auto g_oo = create_k_regular_graph<G>(num_vertices_odd, degree_odd);
+    }
+    catch(std::exception& e)
+    {
+        caught = true;
+        std::cerr << e.what() << std::endl;
+    }
+    if (!caught){
+        return -1;
+    }
+
+    return 0;
+}
+
 int main(int argc, char* argv[])
 {
     try
     {
         Dune::MPIHelper::instance(argc, argv);
 
+        int sentinel_regular = test_create_k_regular_graph();
         test_create_random_graph();
         test_create_small_world_graph();
-        int sentinel = test_create_scale_free_graph();
+        int sentinel_scale_free = test_create_scale_free_graph();
         
-        return sentinel;
+        if (sentinel_regular == -1 || sentinel_scale_free == -1)
+        {
+            return -1;
+        }
+        else{
+            return 0;
+        }
     }
     catch (...)
     {
