@@ -107,23 +107,6 @@ private:
         return state;
     };
 
-    /// turns connected cluster to burning
-    // function called recursively on all neighbors
-    // must be async update
-    std::function<void(std::shared_ptr<CellType>)> _percolate = [this](auto cell){
-        if constexpr (!ManagerType::Cell::is_sync()) {
-            auto state = cell->state();
-            if (state == tree) {
-                cell->state() = empty;
-                for (auto nb : MooreNeighbor::neighbors(cell,this->_manager)) {
-                    _percolate(nb);
-                }
-            }
-        }        
-        
-        return;
-    };
-
     /// update follwoing set of rules
     /**    states: 0: empty, 1: tree (, 2: burning)
         * contagious disease spread (CDM)
@@ -153,8 +136,26 @@ private:
             // in PercolationM connecte cluster catches fire -> percolation
             if (dist(*this->_rng) < _lightning_frequency) {
                 if (_two_state_FFM) {
-                    _percolate(cell); // modifies state of nb cells -> implies use of async update
-                    state = empty;
+                    if constexpr (!ManagerType::Cell::is_sync()) {
+						// burn cluster of trees
+						// asynchronous update needed!
+						std::vector<decltype(cell)> cluster = { cell };
+						cell->state() = empty; 
+						state = empty;
+						for (unsigned long i = 0; i < cluster.size(); ++i)
+						{
+							auto cluster_member = cluster[i];
+							for (auto cluster_potential_member : NextNeighbor::neighbors(cluster_member,this->_manager))
+							{
+								if (cluster_potential_member->state() == tree)
+								{
+									cluster.push_back(cluster_potential_member);									
+									cluster_potential_member->state() = empty;
+								}
+							}
+						}
+                        std::cout << cluster.size() << std::endl;
+					}
                 }
                 else {
                     state = burning;
