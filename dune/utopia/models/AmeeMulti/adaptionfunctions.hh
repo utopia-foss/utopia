@@ -21,15 +21,16 @@ auto multi_notnormed = [](auto agent) -> std::vector<double> {
         (int) celltrait.size() > 0 and start < (int)trait.size() and
         start < (int)celltrait.size())
     {
-        for (int i = start;
-             i < end && i < (int)celltrait.size() && i < (int)trait.size(); ++i)
+        int i = start;
+        int j = 0;
+        for (; i < end && i < (int)celltrait.size() && i < (int)trait.size(); ++i, ++j)
         {
-            adaption[i] = (trait[i] * celltrait[i]) /
+            adaption[j] = (trait[i] * celltrait[i]) /
                           (1. + (std::abs(trait[i] - celltrait[i])));
 
-            if (std::isnan(adaption[i]) or (adaption[i] < 0.) or std ::isinf(adaption[i]))
+            if (std::isnan(adaption[j]) or (adaption[j] < 0.) or std ::isinf(adaption[j]))
             {
-                adaption[i] = 0.;
+                adaption[j] = 0.;
             }
         }
     }
@@ -48,16 +49,17 @@ auto multi_normed = [](auto agent) -> std::vector<double> {
         (int) celltrait.size() > 0 and start < (int)trait.size() and
         start < (int)celltrait.size())
     {
-        for (int i = start;
-             i < end && i < (int)celltrait.size() && i < (int)trait.size(); ++i)
+        int i = start;
+        int j = 0;
+        for (; i < end && i < (int)celltrait.size() && i < (int)trait.size(); ++i, ++j)
         {
-            adaption[i] = ((trait[i] * celltrait[i]) /
+            adaption[j] = ((trait[i] * celltrait[i]) /
                            (1. + (std::abs(trait[i] - celltrait[i])))) /
                           (end - start);
 
-            if (std::isnan(adaption[i]) or (adaption[i] < 0.) or std ::isinf(adaption[i]))
+            if (std::isnan(adaption[j]) or (adaption[j] < 0.) or std ::isinf(adaption[j]))
             {
-                adaption[i] = 0.;
+                adaption[j] = 0.;
             }
         }
     }

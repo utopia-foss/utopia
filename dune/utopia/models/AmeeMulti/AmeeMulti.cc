@@ -2,14 +2,16 @@
 #include "agentstate.hh"
 #include "utils/generators.hh"
 #include <iostream>
-
+#include <thread>
 using namespace Utopia::Models::AmeeMulti;
 using Utopia::Setup::create_grid_manager_cells;
-
+using namespace std::literals::chrono_literals;
 int main(int argc, char** argv)
 {
     try
     {
+        // std::this_thread::sleep_for(30s);
+
         Dune::MPIHelper::instance(argc, argv);
 
         using RNG = Xoroshiro<>;
@@ -21,7 +23,7 @@ int main(int argc, char** argv)
         // make managers first -> this has to be wrapped in a factory function
         auto cellmanager =
             Utopia::Setup::create_grid_manager_cells<Cellstate, true, 2, true, false>(
-                "Amee", pp);
+                "AmeeMulti", pp);
 
         auto grid = cellmanager.grid();
         using GridType = typename decltype(grid)::element_type;
@@ -32,8 +34,8 @@ int main(int argc, char** argv)
 
         // read stuff from the config
         bool construction =
-            Utopia::as_bool(pp.get_cfg()["Amee"]["construction"]);
-        bool decay = Utopia::as_bool(pp.get_cfg()["Amee"]["decay"]);
+            Utopia::as_bool(pp.get_cfg()["AmeeMulti"]["construction"]);
+        bool decay = Utopia::as_bool(pp.get_cfg()["AmeeMulti"]["decay"]);
 
         using Trait = std::vector<double>;
         using Agentstate = Agentstate<Cell, Trait, RNG>;

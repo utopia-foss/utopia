@@ -108,6 +108,7 @@ private:
     double _upper_resourcelimit;
 
     // model parameters
+    bool _highresoutput;
     std::array<unsigned, 2> _highres_interval;
     Adaptionfunction _check_adaption;
     static std::map<std::string, Adaptionfunction> adaptionfunctionmap;
@@ -118,7 +119,6 @@ private:
 
     std::vector<AgentAdaptortuple> _agent_adaptors;
     std::vector<CellAdaptortuple> _cell_adaptors;
-    bool _highresoutput;
 
 public:
     CellUpdateFunction check_arraylengths = [&](std::shared_ptr<CellType> cell) {
@@ -140,14 +140,34 @@ public:
         double resourcecredit = 0.;
         auto& cell = agent->state().habitat;
 
-        for (; i < agent->state().end && i < cell->state().resources.size(); ++i, ++j)
+        this->_log->debug("   metabolism");
+        this->_log->debug("  cell resource size: ", cell->state().resources.size());
+        this->_log->debug("  cell resources: ");
+        for (auto& val : cell->state().resources)
+        {
+            this->_log->debug("   {}", val);
+        }
+
+        this->_log->debug("  agent adaptions: ");
+        for (auto& val : agent->state().adaption)
+        {
+            this->_log->debug("   {}", val);
+        }
+
+        for (; i < unsigned(agent->state().end) && i < cell->state().resources.size();
+             ++i, ++j)
         {
             resourcecredit = (cell->state().resources[i] > agent->state().adaption[j])
                                  ? agent->state().adaption[j]
                                  : cell->state().resources[i];
-
             resourcecredit = (resourcecredit > _upper_resourcelimit) ? _upper_resourcelimit
                                                                      : resourcecredit;
+            this->_log->debug(
+                "  resourcecredit, i, j, resources, adaptions: {}, {}, {}, {}, "
+                "{}",
+                resourcecredit, i, j, cell->state().resources[i],
+                agent->state().adaption[j]);
+
             agent->state().resources += resourcecredit;
             cell->state().resources[i] -= resourcecredit;
         }
@@ -166,8 +186,6 @@ public:
         check_arraylengths(agent->state().habitat);
 
         auto old_home = agent->state().habitat;
-        auto& celltrait = old_home->state().celltrait;
-        auto& trait = agent->state().trait;
         decltype(old_home) new_home = nullptr;
         if (agent->state().resources < (_offspringresources + _reproductioncost))
         {
@@ -224,6 +242,7 @@ public:
         auto& parent_state = agent->state();
         while (parent_state.resources > (_offspringresources + _reproductioncost))
         {
+            // segfault here probably
             _agentmanager.agents().emplace_back(std::make_shared<AgentType>(
                 Agentstate(parent_state, _offspringresources, _mutationrates),
                 0, parent_state.habitat->position()));
@@ -257,16 +276,57 @@ public:
     AgentUpdateFunction update_agent = [&](std::shared_ptr<AgentType> agent) {
         move(agent);
 
+        this->_log->info(" after move");
+
+        this->_log->debug("  agent resources: {}", agent->state().resources);
+        this->_log->debug("  agent <adaption>: {}",
+                          std::accumulate(agent->state().adaption.begin(),
+                                          agent->state().adaption.end(), 0.));
+        this->_log->debug("  agent start: {}", agent->state().start);
+        this->_log->debug("  agent end:   {}", agent->state().end);
+        this->_log->debug("  agent dead:  {}", agent->state().deathflag);
+
         if constexpr (construction)
         {
             modify(agent);
         }
 
+        this->_log->info(" after modify");
+
+        this->_log->debug("  agent resources: {}", agent->state().resources);
+        this->_log->debug("  agent <adaption>: {}",
+                          std::accumulate(agent->state().adaption.begin(),
+                                          agent->state().adaption.end(), 0.));
+        this->_log->debug("  agent start: {}", agent->state().start);
+        this->_log->debug("  agent end:   {}", agent->state().end);
+        this->_log->debug("  agent dead:  {}", agent->state().deathflag);
+
         metabolism(agent);
 
-        reproduce(agent);
+        this->_log->info(" after metabolism");
 
-        kill(agent);
+        this->_log->debug("  agent resources: {}", agent->state().resources);
+        this->_log->debug("  agent <adaption>: {}",
+                          std::accumulate(agent->state().adaption.begin(),
+                                          agent->state().adaption.end(), 0.));
+        this->_log->debug("  agent start: {}", agent->state().start);
+        this->_log->debug("  agent end:   {}", agent->state().end);
+        this->_log->debug("  agent dead:  {}", agent->state().deathflag);
+
+        // reproduce(agent);
+
+        // this->_log->info(" after reproduce");
+
+        // this->_log->debug("  agent resources: {}", agent->state().resources);
+        // this->_log->debug("  agent <adaption>: {}",
+        //                   std::accumulate(agent->state().adaption.begin(),
+        //                                   agent->state().adaption.end(), 0.));
+        // this->_log->debug("  agent start: {}", agent->state().start);
+        // this->_log->debug("  agent end:   {}", agent->state().end);
+        // this->_log->debug("  agent dead:  {}", agent->state().deathflag);
+
+        // kill(agent);
+        // this->_log->info(" after kill");
     };
 
     template <class ParentModel>
@@ -274,6 +334,8 @@ public:
         : Base(name, parent),
           _cellmanager(cellmanager),
           _agentmanager(agentmanager),
+          _decayintensity(as_double(this->_cfg["decayintensity"])),
+
           _livingcost(as_double(this->_cfg["livingcost"])),
           _reproductioncost(as_double(this->_cfg["reproductioncost"])),
           _offspringresources(as_double(this->_cfg["offspringresources"])),
@@ -281,7 +343,6 @@ public:
               as_double(this->_cfg["substitutionrate"]), as_double(this->_cfg["insertionrate"]),
               as_double(this->_cfg["substitution_std"])}),
           _deathprobability(as_double(this->_cfg["deathprobability"])),
-          _decayintensity(as_double(this->_cfg["decayintensity"])),
           _modifiercost(as_double(this->_cfg["modifiercost"])),
           _upper_resourcelimit(as_double(this->_cfg["upper_resourcelimit"])),
           _highresoutput(as_bool(this->_cfg["highresoutput"])),
@@ -291,6 +352,8 @@ public:
               adaptionfunctionmap[as_str(this->_cfg["adaptionfunction"])]),
           _deathdist(std::uniform_real_distribution<double>(0., 1.)),
           _movedist(std::uniform_int_distribution<std::size_t>(0, 8)),
+          _dgroup_agents(this->_hdfgrp->open_group("Agents")),
+          _dgroup_cells(this->_hdfgrp->open_group("Cells")),
           _agent_adaptors({AgentAdaptortuple{"adaption",
                                              [](const auto& agent) -> double {
                                                  return std::accumulate(
@@ -339,10 +402,7 @@ public:
         this->_log->info(" decayintensity: {}", _decayintensity);
         this->_log->info(" modifiercost: {}", _modifiercost);
         this->_log->info(" highresoutput: {}", _highresoutput);
-        this->_log->info(" Agenttype: {}", as_str(this->_cfg["Agenttype"]));
         this->_log->info(" upper_resourcelimit: {}", _upper_resourcelimit);
-
-        write_data();
     }
 
     void initialize_cells()
@@ -391,10 +451,8 @@ public:
         const auto init_genotype_values =
             as_array<double, 2>(this->_cfg["init_genotype_values"]);
 
-        const auto init_start = as_<int>(this->_cfg["init_start"]);
-        const auto init_end = as_<int>(this->_cfg["init_end"]);
-        const auto init_intensity = as_double(this->_cfg["init_intensity"]);
-
+        // try
+        // {
         // make adaption which is viable
         auto cell = find_cell(_agentmanager.agents()[0], _cellmanager);
 
@@ -404,6 +462,7 @@ public:
                                                  init_genotype_values[1]);
 
         std::uniform_int_distribution<int> idist(0, init_genotypelen);
+        std::uniform_real_distribution<double> zo_dist(0., 1.);
         for (; i < 10000; ++i)
         {
             // make initial agent genotype
@@ -412,20 +471,45 @@ public:
             {
                 val = dist(*(this->_rng));
             }
+            int s = idist(*this->_rng);
+            int e = idist(*this->_rng);
 
+            if (s > int(cell->state().celltrait.size()))
+            {
+                continue;
+            }
+
+            // swap if end smaller than start
+
+            if (e < s)
+            {
+                std::swap(s, e);
+            }
             agent->state() = Agentstate(trait, cell, init_resources, this->_rng,
-                                        init_start, init_end, init_intensity);
+                                        s, e, zo_dist(*this->_rng));
 
             agent->state().adaption = _check_adaption(agent);
 
-            double acc_adaption = std::accumulate(
-                agent->state().adaption.begin(), agent->state().adaption.end(), 0.);
-
-            if (acc_adaption > _livingcost)
+            std::size_t i = agent->state().start;
+            std::size_t j = 0;
+            bool found = false;
+            for (; i < unsigned(agent->state().end) and
+                   i < cell->state().resources.size() and
+                   j < agent->state().adaption.size();
+                 ++i, ++j)
             {
-                break;
+                if (agent->state().adaption.at(j) * cell->state().resources.at(i) > _livingcost)
+                {
+                    found = true;
+                }
             }
+            break;
         }
+        // }
+        // catch (std::exception& e)
+        // {
+        //     this->_log->info(" Exception {}", e.what());
+        // }
         this->_log->debug("Agents initialized");
     }
 
@@ -438,24 +522,67 @@ public:
     {
         auto& agents = _agentmanager.agents();
         auto& cells = _cellmanager.cells();
-
+        this->_log->info("Current time: {}, current populationsize: {}",
+                         this->_time, agents.size());
+        for (auto& agent : agents)
+        {
+            this->_log->debug("timestep start");
+            this->_log->debug(" agent resources: {}", agent->state().resources);
+            this->_log->debug(" agent <adaption>: {}",
+                              std::accumulate(agent->state().adaption.begin(),
+                                              agent->state().adaption.end(), 0.));
+            this->_log->debug(" agent start: {}", agent->state().start);
+            this->_log->debug(" agent end:   {}", agent->state().end);
+        }
         if (agents.size() == 0)
         {
             this->_log->info("Population extinct");
+            throw std::runtime_error("Extinction!");
             return;
         }
 
         std::for_each(agents.begin(), agents.end(), update_adaption);
+        for (auto& agent : agents)
+        {
+            this->_log->info("after update_adaption");
 
+            this->_log->debug(" agent resources: {}", agent->state().resources);
+            this->_log->debug(" agent <adaption>: {}",
+                              std::accumulate(agent->state().adaption.begin(),
+                                              agent->state().adaption.end(), 0.));
+            this->_log->debug(" agent start: {}", agent->state().start);
+            this->_log->debug(" agent end:   {}", agent->state().end);
+        }
         std::for_each(cells.begin(), cells.end(), update_cell);
+        for (auto& agent : agents)
+        {
+            this->_log->info("after update_cell");
 
+            this->_log->debug(" agent resources: {}", agent->state().resources);
+            this->_log->debug(" agent <adaption>: {}",
+                              std::accumulate(agent->state().adaption.begin(),
+                                              agent->state().adaption.end(), 0.));
+            this->_log->debug(" agent start: {}", agent->state().start);
+            this->_log->debug(" agent end:   {}", agent->state().end);
+        }
         std::for_each_n(agents.begin(), agents.size(), update_agent);
+        for (auto& agent : agents)
+        {
+            this->_log->info("after update_agent");
 
-        // kill agents
+            this->_log->debug(" agent resources: {}", agent->state().resources);
+            this->_log->debug(" agent <adaption>: {}",
+                              std::accumulate(agent->state().adaption.begin(),
+                                              agent->state().adaption.end(), 0.));
+            this->_log->debug(" agent start: {}", agent->state().start);
+            this->_log->debug(" agent end:   {}", agent->state().end);
+        }
         agents.erase(
             std::remove_if(agents.begin(), agents.end(),
                            [](auto agent) { return agent->state().deathflag; }),
             agents.end());
+
+        // write_data();
     }
 
     void write_data()
@@ -463,11 +590,19 @@ public:
         auto& agents = _agentmanager.agents();
         auto& cells = _cellmanager.cells();
 
+        if (agents.size() == 0)
+        {
+            return;
+        }
+
         std::size_t chunksize = (agents.size() < 1000) ? (agents.size()) : 1000;
+        this->_log->debug("Writing data at time {}", this->_time);
+
         auto agrp = this->_dgroup_agents->open_group(std::to_string(this->_time));
         for (auto& tpl : _agent_adaptors)
         {
             auto& [name, func] = tpl;
+            this->_log->debug("name of dataset: {}", name);
             agrp->open_dataset(name, {agents.size()}, {chunksize})
                 ->write(agents.begin(), agents.end(), func);
         }

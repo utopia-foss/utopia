@@ -125,6 +125,11 @@ struct Agentstate
           habitat(parent.habitat),
           deathflag(false)
     {
+        if (end < start)
+        {
+            end = 0;
+            start = 0;
+        }
     }
 };
 } // namespace AmeeMulti
