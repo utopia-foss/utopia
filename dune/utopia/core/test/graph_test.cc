@@ -90,7 +90,7 @@ void test_create_scale_free_graph(){
 
     // Set graph properties
     const int num_vertices = 200;
-    const int mean_degree = 4;
+    const int mean_degree = 8;
 
     // Create test graph
     auto g = create_scale_free_graph<G>(    num_vertices,
@@ -98,8 +98,10 @@ void test_create_scale_free_graph(){
                                             rng); 
 
     // Assert that the number of vertices and edges is correct
+    std::cout << boost::num_vertices(g) << std::endl;
     assert(num_vertices == boost::num_vertices(g));
-    assert(num_vertices * mean_degree / 2== boost::num_edges(g));
+    std::cout << num_vertices << " " << mean_degree << " " << num_vertices * mean_degree / 2 << " " << boost::num_edges(g) << std::endl;
+    assert(num_vertices * mean_degree / 2 == boost::num_edges(g));
 
     // Check that at least one vertex has more than 10 edges
     bool at_least_one_more_than_ten_edges = false;

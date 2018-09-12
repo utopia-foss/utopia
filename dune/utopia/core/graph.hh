@@ -44,7 +44,7 @@ Graph create_random_graph(  const std::size_t num_vertices,
 /// Create a scale-free graph
 /** This function generates a scale-free graph using the Barabási-Albert model.
  * 
- * @tparam Graph THe graph type
+ * @tparam Graph The graph type
  * @tparam RNG The random number generator type
  * @param num_vertices The total number of vertices
  * @param mean_degree The mean degree
@@ -67,26 +67,30 @@ Graph create_scale_free_graph(  const std::size_t num_vertices,
         throw std::runtime_error("The desired mean degree is too high."
                                 "There are not enough vertices to place all edges.");
     }
+    else if (boost::is_directed(g)){
+        throw std::runtime_error("The scale-free generator algorithm currently "
+                                "only works for undirected graphs. "
+                                "The provided graph is directed.");
+    }
     else{
         // Define helper variables
         auto num_edges = 0;
         auto deg_ignore = 0;
-        auto m0 = m*2.;
 
-        
-        // Create a small spawning network with m0+1 completely connected vertices.
-        for (auto i = 0; i<m0+1; ++i){
-            for (auto j = 0; j<m0+1; ++j){
-                if (i!=j){
-                    // Increase the number of edges only if an edge was added
-                    if (boost::add_edge(i, j, g).second == true) ++num_edges;
-                }
+        // Create initial spawning network that is fully connected
+        for (std::size_t i = 0; i<mean_degree+1; ++i){
+            for (std::size_t j = 0; j<i; ++j){
+                // Increase the number of edges only if an edge was added
+                if (boost::add_edge(i, j, g).second == true) ++num_edges;
             }
         }
 
+        // Keep account whether an edge has been added or not
+        bool edge_added = false;
+
         // Add i times a vertex and connect it randomly but weighted to the existing vertices
         std::uniform_real_distribution<> rand(0, 1);
-        for (auto i = 0; i<(num_vertices - m0 - 1); ++i){
+        for (std::size_t i = 0; i<(num_vertices - mean_degree - 1); ++i){
             // Add a new vertex
             auto new_vertex = boost::add_vertex(g);
             auto edges_added = 0;
@@ -99,20 +103,31 @@ Graph create_scale_free_graph(  const std::size_t num_vertices,
                 auto rand_num = rand(rng);
 
                 // Loop through every vertex and look if it can be connected
-                for (auto [v, v_end] = boost::vertices(g); v!=v_end; ++v){
-                    // Check whether the notes are already connected
+                for (auto [v, v_end] = boost::vertices(g); v!=v_end; ++v)
+                {
+                    // Until now, no edge has been added. Reset edge_added.
+                    edge_added = false;
+
+                    // Check whether the nodes are already connected
                     if (!boost::edge(new_vertex, *v, g).second){
                         prob += boost::out_degree(*v, g) / ((2. * num_edges) - deg_ignore);
                     }
-
                     if (rand_num <= prob){
                         // create an edge between the two vertices
                         deg_ignore = boost::out_degree(*v, g);
                         boost::add_edge(new_vertex, *v, g);
 
+                        // Increase the number of added edges and keep track that an edge has been added
                         ++edges_added;
+                        edge_added = true;
                         break;
                     }
+                }
+
+                // If no edge has been attached in one loop through the vertices
+                // try again to attach an edge with another random number
+                if (!edge_added){
+                    --edge;
                 }
             }
             num_edges+=edges_added;
