@@ -16,11 +16,42 @@
 # sure that no circular includes occur.
 ---
 # Grid parameters
-grid_size: [21, 21]
+grid_size: [32,32]
 periodic: true          # false: cells at boundary have fewer neighbors
+seed: 4378573
 
-# Initial state
-initial_state: init_0   # can be: init_0, init_1
+# Initial state for cells
+init_cell_traitlen: 6
+init_cell_resources: [1., 1., 1., 1., 1., 1.]
+init_cell_resourceinflux: [2., 4., 5., 1., 6., 2.]
+init_celltrait_min: -5.
+init_celltrait_max: 5.
 
-# some parameter
-some_parameter: 1.23456
+
+# Initial state for agents
+init_genotypelen: 64
+init_resources: 1.
+init_genotype_min: -5.
+init_genotype_max: 5.
+init_start: 2
+init_end: 3
+init_intensity: 0.
+
+
+# Parameters for model
+livingcost: 1.
+reproductioncost: 1.
+offspringresources: 1.
+deathprobability: 1e-2
+substitutionrate: 1e-3
+insertionrate: 1e-3
+substitution_std: 1e-3
+modifiercost: 0.
+decayintensity: 1e-2
+highresoutput: false
+adaptionfunction: "multi_notnormed"
+
+
+# Model structure: Agent- & cell types etc
+construction: true
+decay: true

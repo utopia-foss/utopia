@@ -1,9 +1,9 @@
-#ifndef UTOPIA_MODELS_AGENT_STATE_HH
-#define UTOPIA_MODELS_AGENT_STATE_HH
-
+#ifndef UTOPIA_MODELS_AMEEMULTI_AGENTSTATE_HH
+#define UTOPIA_MODELS_AMEEMULTI_AGENTSTATE_HH
 #include <memory>
 #include <random>
 #include <vector>
+
 namespace Utopia
 {
 namespace Models
@@ -18,17 +18,17 @@ namespace AmeeMulti
  * @tparam Ptype
  * @tparam RNG
  */
-template <typename Cell, typename Trait, typename RNG>
+template <typename Cell, typename Traittype, typename RNG>
 struct Agentstate
 {
-    using Phenotype = Trait;
-    using P = typename Phenotype::value_type;
+    using Trait = Traittype;
+    using T = typename Trait::value_type;
 
     std::shared_ptr<RNG> rng;
     int start;
     int end;
     double intensity;
-    Phenotype phenotype;
+    Trait trait;
     std::vector<double> adaption;
     double resources;
     unsigned age;
@@ -36,43 +36,45 @@ struct Agentstate
     std::shared_ptr<Cell> habitat;
     bool deathflag;
 
-    Phenotype phenotype(Phenotype& phenotype, std::vector<double>& mutationrates)
+    Trait copy_trait(Trait& parent_trait, std::vector<double>& mutationrates)
     {
-        Phenotype new_genome(parent_genome);
+        Trait new_trait(parent_trait);
 
         double substmut = mutationrates[0];
         double editmut = mutationrates[1];
-
-        P min = *std::min_element(parent_genome.begin(), parent_genome.end());
-        P max = *std::max_element(parent_genome.begin(), parent_genome.end());
+        double subststd = mutationrates[2];
+        T min = *std::min_element(parent_trait.begin(), parent_trait.end());
+        T max = *std::max_element(parent_trait.begin(), parent_trait.end());
 
         std::uniform_real_distribution<double> choice(0., 1.);
-        std::uniform_real_distribution<P> values(min, max);
-        std::uniform_int_distribution<std::size_t> loc(0, new_genome.size() - 1);
+        std::uniform_real_distribution<T> values(min, max);
+        std::uniform_int_distribution<std::size_t> loc(0, new_trait.size() - 1);
+
         if (choice(*rng) < substmut)
         {
-            new_genome[loc(*rng)] = values(*rng);
+            new_trait[loc(*rng)] =
+                std::normal_distribution<T>(new_trait[loc(*rng)], subststd)(*rng);
         } // insert  mutation
         if (choice(*rng) < editmut)
         {
-            new_genome.insert(std::next(new_genome.begin(), loc(*rng)), values(*rng));
+            new_trait.insert(std::next(new_trait.begin(), loc(*rng)), values(*rng));
         } // delete mutation
         if (choice(*rng) < editmut)
         {
-            new_genome.erase(std::next( new_genome.begin(), loc(*rng));
+            new_trait.erase(std::next(new_trait.begin(), loc(*rng)));
         }
-        return new_genome;
+        return new_trait;
     }
 
     Agentstate() = default;
-    Agentstate(Phenotype ph, std::shared_ptr<Cell> loc, std::shared_ptr<RNG> rand, int s, int e, double i)
-        : rng(rand),
+    Agentstate(Trait trt, std::shared_ptr<Cell> loc, double res, std::shared_ptr<RNG> rnd, int s, int e, double i)
+        : rng(rnd),
           start(s),
           end(e),
           intensity(i),
-          phenotype(ph),
+          trait(trt),
           adaption(std::vector<double>(e - s, 0.)),
-          resources(0.),
+          resources(res),
           age(0),
           fitness(0),
           habitat(loc),
@@ -80,32 +82,32 @@ struct Agentstate
     {
     }
 
-    Agentstate(Agentstate& parent, std::vector<double>& mutationrates)
+    Agentstate(Agentstate& parent, double offspringres, std::vector<double>& mutationrates)
         : rng(parent.rng),
-          start([&]() {
-              if (std : uniform_real_distribution<>(0., 1.) < mutationrates[0])
+          start([&]() -> int {
+              if (std::uniform_real_distribution<>(0., 1.)(*this->rng) < mutationrates[0])
               {
-                  return std::normal_distribution<>(
-                      double(parent.start), mutationrates[2])(*parent.rng);
+                  return std::round(std::normal_distribution<>(
+                      double(parent.start), mutationrates[2])(*parent.rng));
               }
               else
               {
                   return parent.start;
               }
           }()),
-          end([&]() {
-              if (std : uniform_real_distribution<>(0., 1.) < mutationrates[0])
+          end([&]() -> int {
+              if (std::uniform_real_distribution<>(0., 1.)(*this->rng) < mutationrates[0])
               {
-                  return std::normal_distribution<>(
-                      double(parent.end), mutationrates[2])(*parent.rng);
+                  return std::round(std::normal_distribution<>(
+                      double(parent.end), mutationrates[2])(*parent.rng));
               }
               else
               {
                   return parent.end;
               }
           }()),
-          intensity([&]() {
-              if (std : uniform_real_distribution<>(0., 1.) < mutationrates[0])
+          intensity([&]() -> double {
+              if (std::uniform_real_distribution<>(0., 1.)(*this->rng) < mutationrates[0])
               {
                   return std::normal_distribution<>(
                       double(parent.intensity), mutationrates[2])(*parent.rng);
@@ -114,14 +116,13 @@ struct Agentstate
               {
                   return parent.intensity;
               }
-          }),
-          phenotype(copy_genome(parent.phenotype, mutationrates)),
-          adaption(std::vector<double>(e - s, 0.)),
-          resources(0.),
+          }()),
+          trait(copy_trait(parent.trait, mutationrates)),
+          adaption(std::vector<double>(end - start, 0.)),
+          resources(offspringres),
           age(0),
           fitness(0),
-          rng(rand),
-          habitat(loc),
+          habitat(parent.habitat),
           deathflag(false)
     {
     }
@@ -129,5 +130,4 @@ struct Agentstate
 } // namespace AmeeMulti
 } // namespace Models
 } // namespace Utopia
-
 #endif

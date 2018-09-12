@@ -1,0 +1,62 @@
+parameter_space: 
+  num_steps: 10000
+  seed: 519472
+  periodic: true          # false: cells at boundary have fewer neighbors
+  write_every: 10
+
+  AmeeMulti: !model
+    model_name: AmeeMulti
+    grid_size: [32,32]
+
+    # Initial state for cells
+    init_cell_traitlen: 9
+    init_cell_resources: 1.
+    init_cell_resourceinflux: 9.
+    init_celltrait_values: [-5., 5.]
+    upper_influxlimit: 1000.
+
+    # Initial state for agents
+    init_genotypelen: 64 
+    init_resources: 1.
+    init_genotype_values: [-5., 5.]
+
+    metabolism_inefficiency: 0.2
+    # Parameters for model
+    livingcost: 1.
+    reproductioncost: 1.
+    offspringresources: 1.
+    deaththreshold: 1e-2
+
+    substitutionrate: 1e-3
+    insertionrate: 1e-3
+    substitution_std: 1e-3
+    removethreshold: 1e-3
+    modifiercost: 0.
+    decayintensity: 1e-2
+    highresoutput: true
+    adaptionfunction: "multi_notnormed"
+    upper_resourcelimit: 20.
+
+    # Model structure: Agent- & cell types etc
+    Agenttype: !sweep # can be simple, complex, or highlevel
+      default: simple
+      values: [highlevel, simple, complex]
+    Celltype: single_resource
+    construction: true
+    decay: true
+    highres_mod: 100
+    highres_interval: [0, 1000]
+    statistics_time: 1000000
+
+
+# stuff for worker manager
+worker_manager:
+  num_workers: 4
+
+# These are passed to Multiverse._create_run_dir
+paths:
+  # base output directory
+  out_dir: ~/utopia_output
+
+  # model note is added to the output directory path
+  model_note: "test"
