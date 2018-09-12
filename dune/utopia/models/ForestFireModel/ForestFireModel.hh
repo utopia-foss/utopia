@@ -154,7 +154,6 @@ private:
 								}
 							}
 						}
-                        std::cout << cluster.size() << std::endl;
 					}
                 }
                 else {
