@@ -1,7 +1,9 @@
+# Tests the dummy model with increased number of steps and a write_every value
 ---
 parameter_space:
   seed: 1337
-  num_steps: 5
+  num_steps: 10
+  write_every: 2
 
   dummy: !model
     model_name: dummy
