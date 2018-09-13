@@ -154,9 +154,11 @@ private:
 						for (unsigned long i = 0; i < cluster.size(); ++i)
 						{
 							auto cluster_member = cluster[i];
-							for (auto cluster_potential_member : NextNeighbor::neighbors(cluster_member,this->_manager))
+							for (auto cluster_potential_member : 
+                                    NextNeighbor::neighbors(cluster_member,this->_manager))
 							{
-								if (cluster_potential_member->state() == tree)
+								if (cluster_potential_member->state() == tree && 
+                                    dist(*this->_rng) > _resistance)
 								{
 									cluster.push_back(cluster_potential_member);									
 									cluster_potential_member->state() = empty;
@@ -174,7 +176,7 @@ private:
             else if (!_two_state_FFM) 
             {
                 for (auto nb : MooreNeighbor::neighbors(cell,this->_manager)) {
-                    if (nb->state() == burning) {
+                    if (nb->state() == burning && dist(*this->_rng) > _resistance) {
                         state = burning;
                     }
                 }

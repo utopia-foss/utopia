@@ -11,11 +11,11 @@ periodic: true          # false: cells at boundary have fewer neighbors
 
 # Initial state
 initial_density: 0.5      # initial density of trees. value in [0,1].
-                        # 0 corresponds to all empty, 1 to all trees
+                          # 0 corresponds to all empty, 1 to all trees
 
 # parameter
-growth_rate: 7.5e-4
-lightning_frequency: 1e-5
-resistance: 0
-two_state_FFM: false     # can be: false (three state model -> fires propagates),
-                        #         true  (two state model   -> fires percolate).
+growth_rate: 7.5e-4       # probability per site to grow tree
+lightning_frequency: 1e-5 # probability per site to transit tree -> burning
+resistance: 0             # probability to _not_ catch fire from neighbor per neighbor
+two_state_FFM: true       # can be: false (three state model -> fires propagates),
+                          #         true  (two state model   -> fires percolate).
