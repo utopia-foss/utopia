@@ -4,11 +4,15 @@ seed: 42
 output_path: model_setup_test_tmpfile.h5
 num_steps: 3
 
+# How frequently to call write_data; passed along to submodels
+write_every: 3
+
 model1:
   foo: bar
 
 model2:
   bar: foo
+  write_every: 1
 
 model3:
   spam: eggs

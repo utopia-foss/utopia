@@ -5,6 +5,8 @@ The Multiverse supplies the main user interface of the frontend.
 import os
 import time
 import copy
+import glob
+import re
 import logging
 from shutil import copyfile
 from pkg_resources import resource_filename
@@ -41,6 +43,7 @@ class Multiverse:
 
     BASE_CFG_PATH = resource_filename('utopya', 'cfg/base_cfg.yml')
     USER_CFG_SEARCH_PATH = os.path.expanduser("~/.config/utopia/user_cfg.yml")
+    RUN_DIR_TIME_FSTR = "%y%m%d-%H%M%S"
 
     def __init__(self, *, model_name: str, run_cfg_path: str=None, user_cfg_path: str=None, **update_meta_cfg):
         """Initialize the Multiverse.
@@ -52,7 +55,7 @@ class Multiverse:
                 base configuration. If None, will look for it in the default
                 path, see Multiverse.USER_CFG_SEARCH_PATH.
             **update_meta_cfg: Can be used to update the meta configuration
-                generated from 
+                generated from the previous configuration levels
         """
         # Initialize empty attributes (partly property-managed)
         self._meta_cfg = None
@@ -79,7 +82,7 @@ class Multiverse:
         self._create_run_dir(**self.meta_cfg['paths'], cfg_parts=files)
 
         # Provide some information
-        log.info("  Run directory:  %s", self.dirs['run'])
+        log.info("Run directory:\n  %s", self.dirs['run'])
 
         # Create a data manager
         self._dm = DataManager(self.dirs['run'],
@@ -415,7 +418,7 @@ class Multiverse:
         out_dir = os.path.expanduser(str(out_dir))
         run_dir = os.path.join(out_dir,
                                self.model_name,
-                               time.strftime("%y%m%d-%H%M%S"))
+                               time.strftime(self.RUN_DIR_TIME_FSTR))
 
         # Append a model note, if needed
         if model_note:
@@ -601,3 +604,162 @@ class Multiverse:
 
         log.debug("Added simulation task for universe %d.", uni_id)
 
+
+# -----------------------------------------------------------------------------
+
+class FrozenMultiverse(Multiverse):
+    """A frozen Multiverse is like a Multiverse, but frozen.
+
+    It is initialized from a finished Multiverse run and re-creates all the
+    attributes from that data, e.g.: the meta configuration, a DataManager,
+    and a PlotManager.
+
+    Note that it is no longer able to perform any simulations.
+    """
+
+    def __init__(self, *, model_name: str, run_dir: str=None, run_cfg_path: str=None, user_cfg_path: str=None, use_meta_cfg_from_run_dir: bool=False, **update_meta_cfg):
+        """Initializes the FrozenMultiverse from a model name and the name 
+        of a run directory.
+        
+        Note that this also takes arguments to specify the run configuration to
+        use.
+        
+        Args:
+            model_name (str): The name of the model to load. From this, the
+                model output directory is computed and run_dir will be seen
+                as relative to that directory.
+            run_dir (str, optional): The run directory to load. Can be a path
+                relative to the current working directory, an absolute path,
+                or the timestamp of the run directory. If not given, will use the most recent timestamp.
+            run_cfg_path (str, optional): The path to the run configuration.
+            user_cfg_path (str, optional): If given, this is used to update the
+                base configuration. If None, will look for it in the default
+                path, see Multiverse.USER_CFG_SEARCH_PATH.
+            use_meta_cfg_from_run_dir (bool, optional): If True, will load the
+                meta configuration from the given run directory; only works for
+                absolute run directories.
+            **update_meta_cfg: Can be used to update the meta configuration
+                generated from the previous configuration levels
+        """
+        # Initialize empty attributes (partly property-managed)
+        self._meta_cfg = None
+        self._model_name = None
+        self._dirs = {}
+
+        # Set the model name
+        self.model_name = model_name
+
+        log.info("Initializing FrozenMultiverse for '%s' model ...",
+                 self.model_name)
+
+        # Decide whether to load the meta configuration from the given run
+        # directory or the currently available one.
+        if (use_meta_cfg_from_run_dir
+            and isinstance(run_dir, str)
+            and os.path.isabs(run_dir)):
+            # Find the meta config backup file and load it
+            # Alternatively, create it from the singular backup files ...
+            # log.info("Trying to load meta configuration from given absolute "
+            #          "run directory ...")
+
+            raise NotImplementedError
+
+            # Update it with the given update_meta_cfg dict
+
+        else:
+            # Need to create a meta configuration from the currently available
+            # values.
+            self._create_meta_cfg(run_cfg_path=run_cfg_path,
+                                  user_cfg_path=user_cfg_path,
+                                  update_meta_cfg=update_meta_cfg)
+            # NOTE this already stores it in self._meta_cfg
+
+        # Only keep selected entries from the meta configuration. The rest is
+        # not needed and is deleted in order to not confuse the user with
+        # potentially varying versions of the meta config.
+        self._meta_cfg = {k: v for k, v in self._meta_cfg.items()
+                          if k in ('paths', 'data_manager', 'plot_manager')}
+
+        # Generate the path to the run directory that is to be loaded
+        self._create_run_dir(**self.meta_cfg['paths'], run_dir=run_dir)
+        log.info("Run directory:\n  %s", self.dirs['run'])
+
+        # Create a data manager
+        self._dm = DataManager(self.dirs['run'],
+                               name=self.model_name + "_data",
+                               **self.meta_cfg['data_manager'])
+
+        # Instantiate the PlotManager with the model-specific plot config
+        self._pm = PlotManager(dm=self.dm,
+                               plots_cfg=MODELS[self.model_name]['plots_cfg'],
+                               **self.meta_cfg['plot_manager'])
+
+        log.info("Initialized FrozenMultiverse.")
+
+    def _create_run_dir(self, *, out_dir: str, run_dir: str, **kwargs):
+        """Helper function to find the run directory from arguments given
+        to __init__.
+        
+        Args:
+            run_dir (str): See __init__
+        """
+        # Create model directory
+        out_dir = os.path.expanduser(str(out_dir))
+        model_dir = os.path.join(out_dir, self.model_name)
+
+        # Distinguish different types of values for the run_dir argument
+        if run_dir is None:
+            # Is absolute, can leave it as it is
+            log.info("Trying to identify most recent run directory ...")
+
+            # Create list of _directories_ matching timestamp pattern
+            dirs = [d for d in sorted(os.listdir(model_dir))
+                    if  os.path.isdir(os.path.join(model_dir, d))
+                    and re.match(r'\d{6}-\d{6}_?.*', os.path.basename(d))]
+            
+            # Use the latest to choose the run directory
+            run_dir = os.path.join(model_dir, dirs[-1])
+
+        elif isinstance(run_dir, str):
+            # Can now expand the user
+            run_dir = os.path.expanduser(run_dir)
+
+            # Distinguish absolute and relative paths and time stamps
+            if os.path.isabs(run_dir):
+                log.debug("Received absolute run_dir, using that one.")
+
+            elif re.match(r'\d{6}-\d{6}_?.*', run_dir):
+                # Is a timestamp, look relative to the model directory
+                log.info("Received timestamp '%s' for run_dir; trying to find "
+                         "one within the model directory ...", run_dir)
+                run_dir = os.path.join(model_dir, run_dir)
+
+            else:
+                # Is not an absolute path and not a timestamp; thus a relative
+                # path to the current working directory
+                run_dir = os.path.join(os.getcwd(), run_dir)
+
+        else:
+            raise TypeError("Argument run_dir needs to be None, an absolute "
+                            "path or a path relative to the model output "
+                            "directory, was: {}".format(run_dir))
+            
+        # Check if the directory exists
+        if not os.path.isdir(run_dir):
+            raise IOError("No directory found at run path '{}'!"
+                          "".format(run_dir))
+
+        # It does. Store it as attribute.
+        self.dirs['run'] = run_dir
+
+        # Also associate the sub directories
+        for subdir in ('config', 'eval', 'universes'):
+            # Check if the directory exists
+            subdir_path = os.path.join(run_dir, subdir)
+
+            # Now store
+            self.dirs[subdir] = subdir_path
+
+        # Done
+
+    # TODO return errors in properties that are unavailable?!
