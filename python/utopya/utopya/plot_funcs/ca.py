@@ -160,6 +160,7 @@ def state_anim(dm: DataManager, *,
         if bounds is not None:
             # vertical color bar ticks
             yticklabels = cmap.keys()
+            cbar.set_ticks(np.arange(bounds[0],bounds[1]+1,1))
             cbar.ax.set_yticklabels(yticklabels) 
         ax.axis('off')
 
