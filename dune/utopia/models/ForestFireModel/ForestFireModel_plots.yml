@@ -1,0 +1,52 @@
+# Default plots for the ForestFireModel
+---
+state_mean:
+  creator: external
+  
+  # Use the ForestFireModel-specific plot functions
+  module: model_plots.ForestFireModel
+  plot_func: state_mean
+
+  uni: 0
+
+# plot the spatial development in the CA of the state
+state_map:
+  creator: external
+  file_ext: mp4
+
+  module: .ca
+  plot_func: state_anim
+
+  # Select the universe
+  model_name: ForestFireModel
+  uni: 0
+
+  # Select the properties to plot
+  to_plot:
+    # The name of the property to plot with its options
+    state:
+      title: State
+      limits: [0, 2]
+
+      # Specify the colormap
+      # This can be done in two ways:
+      #   1. use a matplotlib colormap such as 'viridis'
+      #   2. provide a dictionary from which a discrete colormap
+      #      is derived. The keys correspond to the labels,
+      #      and the values define the color
+      # cmap: viridis
+      cmap: 
+        empty: goldenrod
+        tree: green
+        burning: red
+
+  # Video options
+  writer: ffmpeg  # can be: frames, ffmpeg (if installed), ...
+  fps: 2
+  step_size: 1
+  dpi: 96
+
+  # For the 'frames' writer, the following additional kwargs can be passed
+  frames_kwargs: 
+    name_padding: 5
+    file_format: png
