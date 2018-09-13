@@ -15,6 +15,7 @@ initial_density: 0.5      # initial density of trees. value in [0,1].
 
 # parameter
 growth_rate: 7.5e-4       # probability per site to grow tree
+light_bottom_row: false   # if true, bottom row permanently on fire - percolation model
 lightning_frequency: 1e-5 # probability per site to transit tree -> burning
 resistance: 0             # probability to _not_ catch fire from neighbor per neighbor
 two_state_FFM: true       # can be: false (three state model -> fires propagates),

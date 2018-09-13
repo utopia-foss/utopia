@@ -16,6 +16,49 @@ namespace ForestFireModel {
 
 enum State : unsigned short int { empty=0, tree=1, burning=2 };
 
+struct Param {
+    const double growth_rate;
+    const double lightning_frequency;
+    const double resistance;
+
+    Param(double growth_rate, double lightning_frequency, double resistance)
+    :
+        growth_rate(growth_rate), lightning_frequency(lightning_frequency),
+        resistance(resistance)
+    {
+        if (growth_rate > 1 || growth_rate < 0)
+        {
+            throw std::runtime_error("growth rate is a probability per cell. \
+                Should have value in [0,1]! \
+                1 corresponds to empty turns to tree in 1 step. \
+                0.1 every 10th step. 0 never. ");
+        }
+        if (lightning_frequency > 1 || lightning_frequency < 0)
+        {
+            throw std::runtime_error("lightning frequency is a probability per cell. \
+                Should have value in [0,1]! \
+                1 corresponds to tree hit by lightning in one step. \
+                0.1 every 10th step. 0 never. ");
+        }
+        if (resistance > 1 || resistance < 0)
+        {
+            throw std::runtime_error("Resistance is a probability per burning neighbor. \
+                Should have value in [0,1]! \
+                0 corresponds to no resistance to fire. 1 to total resistance.");
+        }
+    }
+};
+
+struct ModelFeature {
+    const bool two_state_FFM;
+    const bool light_bottom_row;
+
+    ModelFeature(bool two_state_FFM, bool light_bottom_row)
+    :
+        two_state_FFM(two_state_FFM), light_bottom_row(light_bottom_row)
+    { }
+};
+
 /// Typehelper to define data types of ForestFireModel model 
 using ForestFireModelTypes = ModelTypes<State>;
 // NOTE if you do not use the boundary condition type, you can delete the
@@ -67,11 +110,9 @@ private:
     ManagerType _manager;
 
     /// Model parameters
-    const double _growth_rate;
-    const double _lightning_frequency;
-    const double _resistance;
-    const bool _two_state_FFM;  // 0: three state model, contagious disease, 1: two state model, percolation
-                                // 0 implies sync update, 1 async update
+    const Param _param;
+    const ModelFeature _model_feature;  // 0: three state model, contagious disease, 1: two state model, percolation
+                                        // 0 implies sync update, 1 async update
     const double _initial_density; // initial density of trees
 
 
@@ -116,6 +157,34 @@ private:
         return state;
     };
 
+    std::function<State(std::shared_ptr<CellType>)> _burn_cluster = [this](auto cell){
+        if constexpr (!ManagerType::Cell::is_sync()) {
+            std::uniform_real_distribution<> dist(0., 1.);
+
+            // burn cluster of trees
+            // asynchronous update needed!
+            std::vector<decltype(cell)> cluster = { cell };
+            cell->state() = empty;
+
+            for (unsigned long i = 0; i < cluster.size(); ++i)
+            {
+                auto cluster_member = cluster[i];
+                for (auto cluster_potential_member : 
+                        NextNeighbor::neighbors(cluster_member,this->_manager))
+                {
+                    if (cluster_potential_member->state() == tree && 
+                        dist(*this->_rng) > _param.resistance)
+                    {
+                        cluster.push_back(cluster_potential_member);									
+                        cluster_potential_member->state() = empty;
+                    }
+                }
+            }
+        }
+
+        return cell->state();
+    };
+
     /// update follwoing set of rules
     /**    states: 0: empty, 1: tree (, 2: burning)
         * contagious disease spread (CDM)
@@ -134,7 +203,7 @@ private:
         std::uniform_real_distribution<> dist(0., 1.);
         
         // if state is empty, empty -> tree by growth
-        if (state == empty && dist(*this->_rng) < _growth_rate) {  
+        if (state == empty && dist(*this->_rng) < _param.growth_rate) {  
             state = tree; 
         }
 
@@ -143,42 +212,33 @@ private:
         {
             // tree -> burning by lightning
             // in PercolationM connecte cluster catches fire -> percolation
-            if (dist(*this->_rng) < _lightning_frequency) {
-                if (_two_state_FFM) {
-                    if constexpr (!ManagerType::Cell::is_sync()) {
-						// burn cluster of trees
-						// asynchronous update needed!
-						std::vector<decltype(cell)> cluster = { cell };
-						cell->state() = empty; 
-						state = empty;
-						for (unsigned long i = 0; i < cluster.size(); ++i)
-						{
-							auto cluster_member = cluster[i];
-							for (auto cluster_potential_member : 
-                                    NextNeighbor::neighbors(cluster_member,this->_manager))
-							{
-								if (cluster_potential_member->state() == tree && 
-                                    dist(*this->_rng) > _resistance)
-								{
-									cluster.push_back(cluster_potential_member);									
-									cluster_potential_member->state() = empty;
-								}
-							}
-						}
-					}
+            if (dist(*this->_rng) < _param.lightning_frequency) {
+                if (_model_feature.two_state_FFM) {
+                    state = _burn_cluster(cell);
                 }
                 else {
                     state = burning;
                 }
             }
-            
+                        
             // catch fire from Neighbors in CDM
-            else if (!_two_state_FFM) 
+            else if (!_model_feature.two_state_FFM) 
             {
                 for (auto nb : MooreNeighbor::neighbors(cell,this->_manager)) {
-                    if (nb->state() == burning && dist(*this->_rng) > _resistance) {
+                    if (nb->state() == burning && dist(*this->_rng) > _param.resistance) {
                         state = burning;
                     }
+                }
+            }
+            
+            // ignite bottom row
+            if (_model_feature.light_bottom_row && cell->position()[1]==0.5) 
+            {
+                if (_model_feature.two_state_FFM) {
+                    state = _burn_cluster(cell);
+                }
+                else {
+                    state = burning;
                 }
             }
         }
@@ -207,10 +267,13 @@ public:
         Base(name, parent),
         // Now initialize members specific to this class
         _manager(manager),
-        _growth_rate(as_double(this->_cfg["growth_rate"])),
-        _lightning_frequency(as_double(this->_cfg["lightning_frequency"])),
-        _resistance(as_double(this->_cfg["resistance"])),
-        _two_state_FFM(Utopia::as_bool(this->_cfg["two_state_FFM"])),
+        _param(as_double(this->_cfg["growth_rate"]),
+            as_double(this->_cfg["lightning_frequency"]),
+            as_double(this->_cfg["resistance"])
+        ),
+        _model_feature(Utopia::as_bool(this->_cfg["two_state_FFM"]),
+            Utopia::as_bool(this->_cfg["light_bottom_row"])
+        ),
         _initial_density(as_double(this->_cfg["initial_density"])),
         // create datasets
         _dset_state(this->_hdfgrp->open_dataset("state"))      
