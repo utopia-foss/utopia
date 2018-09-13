@@ -72,6 +72,7 @@ private:
     const double _resistance;
     const bool _two_state_FFM;  // 0: three state model, contagious disease, 1: two state model, percolation
                                 // 0 implies sync update, 1 async update
+    const double _initial_density; // initial density of trees
 
 
     // -- Datasets -- //
@@ -95,14 +96,22 @@ private:
         return state;
     };
 
-
-    /// Sets the given cell to state "tree"
-    std::function<State(std::shared_ptr<CellType>)> _set_initial_state_tree = [](const auto cell){
+    /// Sets the given cell to state "tree" with probability p, else to "empty"
+    std::function<State(std::shared_ptr<CellType>)> _set_initial_density_tree = [this](const auto cell){
         // Get the state of the Cell
         auto state = cell->state();
 
+        std::uniform_real_distribution<> dist(0., 1.);
+
         // Set the internal variables
-        state = tree;
+        if (dist(*this->_rng) < _initial_density)
+        {
+            state = tree;
+        }
+        else
+        {
+            state = empty;
+        }
 
         return state;
     };
@@ -200,6 +209,7 @@ public:
         _lightning_frequency(as_double(this->_cfg["lightning_frequency"])),
         _resistance(as_double(this->_cfg["resistance"])),
         _two_state_FFM(Utopia::as_bool(this->_cfg["two_state_FFM"])),
+        _initial_density(as_double(this->_cfg["initial_density"])),
         // create datasets
         _dset_state(this->_hdfgrp->open_dataset("state"))      
     {
@@ -224,10 +234,10 @@ public:
     void initialize_cells()
     {
         // Extract the mode that determines the initial state
-        const auto initial_state = as_str(this->_cfg["initial_state"]);
+        const auto initial_density = as_double(this->_cfg["initial_density"]);
 
         // Apply a rule to all cells depending on the config value
-        if (initial_state == "empty")
+        if (initial_density == 0)
         {
             if constexpr (ManagerType::Cell::is_sync()) {
                 apply_rule(_set_initial_state_empty, _manager.cells());
@@ -236,18 +246,18 @@ public:
                 apply_rule(_set_initial_state_empty, _manager.cells(), *this->_rng);
             }
         }
-        else if (initial_state == "tree")
+        else if (initial_density > 0. && initial_density <= 1.)
         {
             if constexpr (ManagerType::Cell::is_sync()) {
-                apply_rule(_set_initial_state_tree, _manager.cells());
+                apply_rule(_set_initial_density_tree, _manager.cells());
             }
             else {
-                apply_rule(_set_initial_state_tree, _manager.cells(), *this->_rng);
+                apply_rule(_set_initial_density_tree, _manager.cells(), *this->_rng);
             }
         }
         else
         {
-            throw std::runtime_error("The initial state is not valid!");
+            throw std::runtime_error("The initial state is not valid! Must be value between 0 and 1");
         }
 
         // Write information that cells are initialized to the logger
