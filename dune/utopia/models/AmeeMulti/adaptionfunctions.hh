@@ -43,12 +43,13 @@ auto multi_normed = [](auto agent) -> std::vector<double> {
     auto end = state.end;
     const auto& celltrait = state.habitat->state().celltrait;
     const auto& trait = state.trait;
-    std::vector<double> adaption(end - start, 0.);
 
     if (start > 0 and end > 0 and end > start and trait.size() > 0 and
         (int) celltrait.size() > 0 and start < (int)trait.size() and
         start < (int)celltrait.size())
     {
+        std::vector<double> adaption(end - start, 0.);
+
         int i = start;
         int j = 0;
         for (; i < end && i < (int)celltrait.size() && i < (int)trait.size(); ++i, ++j)
@@ -62,8 +63,12 @@ auto multi_normed = [](auto agent) -> std::vector<double> {
                 adaption[j] = 0.;
             }
         }
+        return adaption;
     }
-    return adaption;
+    else
+    {
+        return std::vector<double>();
+    }
 };
 
 auto simple_notnormed = [](auto agent) {
@@ -72,12 +77,13 @@ auto simple_notnormed = [](auto agent) {
     auto end = state.end;
     const auto& celltrait = state.habitat->state().celltrait;
     const auto& trait = state.trait;
-    std::vector<double> adaption(end - start, 0.);
 
     if (start > 0 and end > 0 and end > start and trait.size() > 0 and
         (int) celltrait.size() > 0 and start < (int)trait.size() and
         start < (int)celltrait.size())
     {
+        std::vector<double> adaption(end - start, 0.);
+
         for (int i = start;
              i < end && i < (int)celltrait.size() && i < (int)trait.size(); ++i)
         {
@@ -88,8 +94,12 @@ auto simple_notnormed = [](auto agent) {
                 adaption[i] = 0.;
             }
         }
+        return adaption;
     }
-    return adaption;
+    else
+    {
+        return std::vector<double>();
+    }
 };
 
 auto simple_normed = [](auto agent) {
@@ -98,12 +108,13 @@ auto simple_normed = [](auto agent) {
     auto end = state.end;
     const auto& celltrait = state.habitat->state().celltrait;
     const auto& trait = state.trait;
-    std::vector<double> adaption(end - start, 0.);
 
     if (start > 0 and end > 0 and end > start and trait.size() > 0 and
         (int) celltrait.size() > 0 and start < (int)trait.size() and
         start < (int)celltrait.size())
     {
+        std::vector<double> adaption(end - start, 0.);
+
         for (int i = start;
              i < end && i < (int)celltrait.size() && i < (int)trait.size(); ++i)
         {
@@ -114,8 +125,12 @@ auto simple_normed = [](auto agent) {
                 adaption[i] = 0.;
             }
         }
+        return adaption;
     }
-    return adaption;
+    else
+    {
+        return std::vector<double>();
+    }
 };
 
 } // namespace AmeeMulti

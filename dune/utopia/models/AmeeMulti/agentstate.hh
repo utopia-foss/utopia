@@ -38,31 +38,41 @@ struct Agentstate
 
     Trait copy_trait(Trait& parent_trait, std::vector<double>& mutationrates)
     {
+        // std::cout << "   copying trait" << std::endl;
         Trait new_trait(parent_trait);
-
+        // std::cout << "    new trait size, mutationrates size: " << new_trait.size()
+        // << "," << mutationrates.size() << std::endl;
         double substmut = mutationrates[0];
         double editmut = mutationrates[1];
         double subststd = mutationrates[2];
+
+        // std::cout << "   min and max" << std::endl;
         T min = *std::min_element(parent_trait.begin(), parent_trait.end());
         T max = *std::max_element(parent_trait.begin(), parent_trait.end());
+
+        // std::cout << "    " << min << "," << max << std::endl;
 
         std::uniform_real_distribution<double> choice(0., 1.);
         std::uniform_real_distribution<T> values(min, max);
         std::uniform_int_distribution<std::size_t> loc(0, new_trait.size() - 1);
-
+        // std::cout << "   rng: " << rng.get() << std::endl;
         if (choice(*rng) < substmut)
         {
+            // std::cout << "    substitution" << std::endl;
             new_trait[loc(*rng)] =
                 std::normal_distribution<T>(new_trait[loc(*rng)], subststd)(*rng);
         } // insert  mutation
         if (choice(*rng) < editmut)
         {
+            // std::cout << "    insertion" << std::endl;
             new_trait.insert(std::next(new_trait.begin(), loc(*rng)), values(*rng));
         } // delete mutation
         if (choice(*rng) < editmut)
         {
+            // std::cout << "    deletion" << std::endl;
             new_trait.erase(std::next(new_trait.begin(), loc(*rng)));
         }
+        // std::cout << "returning " << std::endl;
         return new_trait;
     }
 
@@ -129,6 +139,11 @@ struct Agentstate
         {
             end = 0;
             start = 0;
+        }
+        if (end > int(trait.size()) or start > int(trait.size()))
+        {
+            std::cerr << "  too large s, e: " << start << "," << end << std::endl;
+            throw std::runtime_error(" fucked up parameters");
         }
     }
 };

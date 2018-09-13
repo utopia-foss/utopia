@@ -6,6 +6,7 @@
 #include "cellstate.hh"
 #include "utils/test_utils.hh"
 #include "utils/utils.hh"
+#include <cassert>
 #include <dune/utopia/base.hh>
 #include <dune/utopia/core/apply.hh>
 #include <dune/utopia/core/model.hh>
@@ -97,6 +98,7 @@ private:
 
     // global cell parameters
     double _decayintensity;
+    double _removethreshold;
 
     // global agent parameters
     double _livingcost;
@@ -108,11 +110,13 @@ private:
     double _upper_resourcelimit;
 
     // model parameters
+
     bool _highresoutput;
     std::array<unsigned, 2> _highres_interval;
     Adaptionfunction _check_adaption;
     static std::map<std::string, Adaptionfunction> adaptionfunctionmap;
     std::uniform_real_distribution<double> _deathdist;
+    std::uniform_real_distribution<double> _resdist;
     std::uniform_int_distribution<std::size_t> _movedist;
     std::shared_ptr<DataGroup> _dgroup_agents;
     std::shared_ptr<DataGroup> _dgroup_cells;
@@ -120,39 +124,39 @@ private:
     std::vector<AgentAdaptortuple> _agent_adaptors;
     std::vector<CellAdaptortuple> _cell_adaptors;
 
+    std::size_t _idx;
+
 public:
     CellUpdateFunction check_arraylengths = [&](std::shared_ptr<CellType> cell) {
         auto size = cell->state().celltrait.size();
-        EXPECT_EQ(cell->state().resources.size(), size);
-        EXPECT_EQ(cell->state().resourceinfluxes.size(), size);
+        // EXPECT_EQ(cell->state().resources.size(), size);
+        // EXPECT_EQ(cell->state().resourceinfluxes.size(), size);
+        assert(cell->state().resources.size() == size);
+        assert(cell->state().resourceinfluxes.size() == size);
     };
 
     // update sub functions
     AgentUpdateFunction update_adaption = [&](std::shared_ptr<AgentType> agent) {
         check_arraylengths(agent->state().habitat);
+
         agent->state().adaption = _check_adaption(agent);
+        // std::cout << "update adaption" << std::endl;
+        // std::cout << "  " << agent->state().start << "," << agent->state().end << std::endl;
+        // std::cout << "  "
+        //           << AP(agent->state().trait.begin() + agent->state().start,
+        //                 agent->state().trait.begin() + agent->state().end)
+        //           << "\n  " << agent->state().habitat->state().celltrait << "\n"
+        //           << std::endl;
+        // std::cout << "  " << agent->state().adaption << std::endl;
     };
 
     AgentUpdateFunction metabolism = [&](std::shared_ptr<AgentType> agent) {
         check_arraylengths(agent->state().habitat);
+
         std::size_t i = agent->state().start;
         std::size_t j = 0;
         double resourcecredit = 0.;
         auto& cell = agent->state().habitat;
-
-        this->_log->debug("   metabolism");
-        this->_log->debug("  cell resource size: ", cell->state().resources.size());
-        this->_log->debug("  cell resources: ");
-        for (auto& val : cell->state().resources)
-        {
-            this->_log->debug("   {}", val);
-        }
-
-        this->_log->debug("  agent adaptions: ");
-        for (auto& val : agent->state().adaption)
-        {
-            this->_log->debug("   {}", val);
-        }
 
         for (; i < unsigned(agent->state().end) && i < cell->state().resources.size();
              ++i, ++j)
@@ -162,11 +166,6 @@ public:
                                  : cell->state().resources[i];
             resourcecredit = (resourcecredit > _upper_resourcelimit) ? _upper_resourcelimit
                                                                      : resourcecredit;
-            this->_log->debug(
-                "  resourcecredit, i, j, resources, adaptions: {}, {}, {}, {}, "
-                "{}",
-                resourcecredit, i, j, cell->state().resources[i],
-                agent->state().adaption[j]);
 
             agent->state().resources += resourcecredit;
             cell->state().resources[i] -= resourcecredit;
@@ -180,12 +179,67 @@ public:
 
     AgentUpdateFunction modify = [&](std::shared_ptr<AgentType> agent) {
         check_arraylengths(agent->state().habitat);
+        auto cell = agent->state().habitat;
+        auto& trt = agent->state().trait;
+        auto& ctrt = cell->state().celltrait;
+        auto start = agent->state().start;
+        auto end = agent->state().end;
+        auto i = agent->state().intensity;
+        if (std::abs(i) < 1e-16)
+        {
+            return;
+        }
+        if (start < 0 or end < 0 or start >= (int)trt.size() or end <= start)
+        {
+            return;
+        }
+
+        std::size_t i = start;
+        for (; i < end && i < ctrt.size(); ++i)
+        {
+            if (agent->state().resources < _modifiercost)
+            {
+                break;
+            }
+            else
+            {
+                // when decayed to naught, revive with random influx
+                if (std::isnan(ctrt[i]))
+                {
+                    ctrt[i] = 0.;
+                    cell->state().resources[i] = 0.;
+                    cell->state().resourceinfluxes[i] = _resdist(*this->_rng);
+                    cell->state().modtimes[i] = this->_time;
+                }
+                // nudge value towards own value at this locus
+                ctrt[i] -= i * (ctrt[i] - trt[i]);
+                modtimes[i] = this->_time;
+                agent->state().resources -= _modifiercost;
+            }
+        }
+
+        for (; i < end && i < trt.size(); ++i)
+        {
+            if (agent->state().resources < _modifiercost)
+            {
+                break;
+            }
+            else
+            {
+                ctrt.emplace_back(i * trt[i]);
+                modtimes.emplace_back(this->_time);
+                cell->state().resources.emplace_back(0.);
+                cell->state().resourceinfluxes.emplace_back(_resdist(*this->_rng));
+                agent->state().resources -= _modifiercost;
+            }
+        }
     };
 
     AgentUpdateFunction move = [&](std::shared_ptr<AgentType> agent) {
         check_arraylengths(agent->state().habitat);
 
         auto old_home = agent->state().habitat;
+
         decltype(old_home) new_home = nullptr;
         if (agent->state().resources < (_offspringresources + _reproductioncost))
         {
@@ -237,26 +291,48 @@ public:
 
     AgentUpdateFunction reproduce = [&](std::shared_ptr<AgentType> agent) {
         check_arraylengths(agent->state().habitat);
-
         auto cell = agent->state().habitat;
-        auto& parent_state = agent->state();
-        while (parent_state.resources > (_offspringresources + _reproductioncost))
+        this->_log->debug("reproduction");
+        this->_log->debug(" agent resources: {}", agent->state().resources);
+
+        while (agent->state().resources > (_offspringresources + _reproductioncost))
         {
-            // segfault here probably
             _agentmanager.agents().emplace_back(std::make_shared<AgentType>(
-                Agentstate(parent_state, _offspringresources, _mutationrates),
-                0, parent_state.habitat->position()));
+                Agentstate(agent->state(), _offspringresources, _mutationrates),
+                _idx++, agent->state().habitat->position()));
 
             _agentmanager.agents().back()->state().adaption =
                 _check_adaption(_agentmanager.agents().back());
 
-            parent_state.resources -= (_offspringresources + _reproductioncost);
-            parent_state.fitness += 1;
+            agent->state().resources -= (_offspringresources + _reproductioncost);
+            agent->state().fitness += 1;
         }
     };
 
     CellUpdateFunction celltrait_decay = [&](std::shared_ptr<CellType> cell) {
         check_arraylengths(cell);
+
+        auto& org = cell->state().original;
+        auto& ctrt = cell->state().celltrait;
+        auto& times = cell->state().modtimes;
+
+        for (std::size_t i = 0; i < org.size(); ++i)
+        {
+            ctrt[i] = org[i] + (ctrt[i] - org[i]) *
+                                   std::exp(-_decayintensity * (ctrt[i] - org[i]));
+        }
+
+        for (std::size_t i = org.size(); i < ctrt.size(); ++i)
+        {
+            ctrt[i] *= std::exp(-_decayintensity * (ctrt[i] - org[i]));
+            if (std::abs(ctrt[i]) < _removethreshold)
+            {
+                ctrt[i] = nan;
+                cell->state().resourceinfluxes[i] = 0.;
+                cell->state().modtimes[i] = nan;
+                // cellresources are left, can still be used, but nothing else anymore is done
+            }
+        }
     };
 
     CellUpdateFunction update_cell = [&](std::shared_ptr<CellType> cell) {
@@ -276,57 +352,16 @@ public:
     AgentUpdateFunction update_agent = [&](std::shared_ptr<AgentType> agent) {
         move(agent);
 
-        this->_log->info(" after move");
-
-        this->_log->debug("  agent resources: {}", agent->state().resources);
-        this->_log->debug("  agent <adaption>: {}",
-                          std::accumulate(agent->state().adaption.begin(),
-                                          agent->state().adaption.end(), 0.));
-        this->_log->debug("  agent start: {}", agent->state().start);
-        this->_log->debug("  agent end:   {}", agent->state().end);
-        this->_log->debug("  agent dead:  {}", agent->state().deathflag);
+        metabolism(agent);
 
         if constexpr (construction)
         {
             modify(agent);
         }
 
-        this->_log->info(" after modify");
+        reproduce(agent);
 
-        this->_log->debug("  agent resources: {}", agent->state().resources);
-        this->_log->debug("  agent <adaption>: {}",
-                          std::accumulate(agent->state().adaption.begin(),
-                                          agent->state().adaption.end(), 0.));
-        this->_log->debug("  agent start: {}", agent->state().start);
-        this->_log->debug("  agent end:   {}", agent->state().end);
-        this->_log->debug("  agent dead:  {}", agent->state().deathflag);
-
-        metabolism(agent);
-
-        this->_log->info(" after metabolism");
-
-        this->_log->debug("  agent resources: {}", agent->state().resources);
-        this->_log->debug("  agent <adaption>: {}",
-                          std::accumulate(agent->state().adaption.begin(),
-                                          agent->state().adaption.end(), 0.));
-        this->_log->debug("  agent start: {}", agent->state().start);
-        this->_log->debug("  agent end:   {}", agent->state().end);
-        this->_log->debug("  agent dead:  {}", agent->state().deathflag);
-
-        // reproduce(agent);
-
-        // this->_log->info(" after reproduce");
-
-        // this->_log->debug("  agent resources: {}", agent->state().resources);
-        // this->_log->debug("  agent <adaption>: {}",
-        //                   std::accumulate(agent->state().adaption.begin(),
-        //                                   agent->state().adaption.end(), 0.));
-        // this->_log->debug("  agent start: {}", agent->state().start);
-        // this->_log->debug("  agent end:   {}", agent->state().end);
-        // this->_log->debug("  agent dead:  {}", agent->state().deathflag);
-
-        // kill(agent);
-        // this->_log->info(" after kill");
+        kill(agent);
     };
 
     template <class ParentModel>
@@ -335,7 +370,7 @@ public:
           _cellmanager(cellmanager),
           _agentmanager(agentmanager),
           _decayintensity(as_double(this->_cfg["decayintensity"])),
-
+          _removethreshold(as_double(this->_cfg["removethreshold"])),
           _livingcost(as_double(this->_cfg["livingcost"])),
           _reproductioncost(as_double(this->_cfg["reproductioncost"])),
           _offspringresources(as_double(this->_cfg["offspringresources"])),
@@ -351,47 +386,54 @@ public:
           _check_adaption(
               adaptionfunctionmap[as_str(this->_cfg["adaptionfunction"])]),
           _deathdist(std::uniform_real_distribution<double>(0., 1.)),
-          _movedist(std::uniform_int_distribution<std::size_t>(0, 8)),
+          _movedist(std::uniform_int_distribution<std::size_t>(0, 7)),
+          _resdist(std::uniform_real_distribution<double>(
+              as_vector<double>(this->_cfg["resourceinflux_limits"]),
+              as_vector<double>(this->_cfg["resourceinflux_limits"]))),
           _dgroup_agents(this->_hdfgrp->open_group("Agents")),
           _dgroup_cells(this->_hdfgrp->open_group("Cells")),
-          _agent_adaptors({AgentAdaptortuple{"adaption",
-                                             [](const auto& agent) -> double {
-                                                 return std::accumulate(
-                                                     agent->state().adaption.begin(),
-                                                     agent->state().adaption.end(), 0.);
-                                             }},
-                           AgentAdaptortuple{"intensity",
-                                             [](const auto& agent) -> double {
-                                                 return agent->state().intensity;
-                                             }},
-                           AgentAdaptortuple{"start",
-                                             [](const auto& agent) -> double {
-                                                 return agent->state().start;
-                                             }},
-                           AgentAdaptortuple{"end",
-                                             [](const auto& agent) -> double {
-                                                 return agent->state().end;
-                                             }},
-                           AgentAdaptortuple{"fitness",
-                                             [](const auto& agent) -> double {
-                                                 return agent->state().fitness;
-                                             }},
-                           AgentAdaptortuple{"age",
-                                             [](const auto& agent) -> double {
-                                                 return agent->state().age;
-                                             }}}),
-          _cell_adaptors(
-              {CellAdaptortuple{"resources",
-                                [](const auto& cell) -> std::vector<double> {
-                                    return cell->state().resources;
-                                }},
-               CellAdaptortuple{"resourceinfluxes", [](const auto& cell) -> std::vector<double> {
-                                    return cell->state().resourceinfluxes;
-                                }}})
+          _agent_adaptors(
+              {AgentAdaptortuple{"adaption",
+                                 [](const auto& agent) -> double {
+                                     return std::accumulate(
+                                         agent->state().adaption.begin(),
+                                         agent->state().adaption.end(), 0.);
+                                 }},
+               AgentAdaptortuple{"intensity",
+                                 [](const auto& agent) -> double {
+                                     return agent->state().intensity;
+                                 }},
+               AgentAdaptortuple{"start",
+                                 [](const auto& agent) -> double {
+                                     return agent->state().start;
+                                 }},
+               AgentAdaptortuple{
+                   "end",
+                   [](const auto& agent) -> double { return agent->state().end; }},
+               AgentAdaptortuple{"fitness",
+                                 [](const auto& agent) -> double {
+                                     return agent->state().fitness;
+                                 }},
+               AgentAdaptortuple{
+                   "age",
+                   [](const auto& agent) -> double { return agent->state().age; }},
+               AgentAdaptortuple{"traitlen",
+                                 [](const auto& agent) -> double {
+                                     return agent->state().trait.size();
+                                 }}}),
+          _cell_adaptors({CellAdaptortuple{"resources",
+                                           [](const auto& cell) -> std::vector<double> {
+                                               return cell->state().resources;
+                                           }},
+                          CellAdaptortuple{"resourceinfluxes",
+                                           [](const auto& cell) -> std::vector<double> {
+                                               return cell->state().resourceinfluxes;
+                                           }}}),
+          _idx(0)
     {
         initialize_cells();
         initialize_agents();
-        this->_log->info("Parameters:");
+        this->_log->info("Model Parameters:");
         this->_log->info(" num cells: {}", _cellmanager.cells().size());
         this->_log->info(" livingcost: {}", _livingcost);
         this->_log->info(" reproductioncost: {}", _reproductioncost);
@@ -412,13 +454,45 @@ public:
         // Extract the mode that determines the initial state
         const auto init_celltrait_len =
             as_<std::size_t>(this->_cfg["init_cell_traitlen"]);
-        const auto init_cellresources =
-            as_vector<double>(this->_cfg["init_cell_resources"]);
-        const auto init_cellresourceinflux =
-            as_vector<double>(this->_cfg["init_cell_resourceinflux"]);
 
+        const auto init_cellresourceinflux =
+            as_str(this->_cfg["init_cell_resourceinflux"]);
+        std::vector<double> init_cellresourceinfluxes(init_celltrait_len, 0.);
+        if (init_cellresourceinflux == "random")
+        {
+            std::generate(init_cellresourceinfluxes.begin(),
+                          init_cellresourceinfluxes.end(),
+                          [this]() { return _resdist(*this->_rng); });
+        }
+        else
+        {
+            init_cellresourceinfluxes =
+                as_vector<double>(this->_cfg["cell_influxvalues"]);
+        }
+
+        std::vector<double> init_cellresources(init_celltrait_len, 1.);
         const auto init_celltrait_values =
             as_array<double, 2>(this->_cfg["init_celltrait_values"]);
+
+        this->_log->info("Cell Parameters:");
+        this->_log->info(" init_celltrait_len: {}", init_celltrait_len);
+        this->_log->info(" init_cell_resources");
+        for (auto& value : init_cellresources)
+        {
+            this->_log->info("  {}", value);
+        }
+
+        this->_log->info(" init_cell_resourceinflux");
+        for (auto& value : init_cellresourceinfluxes)
+        {
+            this->_log->info("  {}", value);
+        }
+
+        this->_log->info(" init_celltrait_values");
+        for (auto& value : init_celltrait_values)
+        {
+            this->_log->info("  {}", value);
+        }
 
         CT init_celltrait(init_celltrait_len);
         std::uniform_real_distribution<CTV> dist(init_celltrait_values[0],
@@ -431,7 +505,7 @@ public:
         // generate new cellstate
         apply_rule<false>(
             [&]([[maybe_unused]] const auto cell) {
-                Cellstate cs(init_celltrait, init_cellresourceinflux, init_cellresources);
+                Cellstate cs(init_celltrait, init_cellresourceinfluxes, init_cellresources);
                 return cs;
             },
             _cellmanager.cells());
@@ -451,8 +525,16 @@ public:
         const auto init_genotype_values =
             as_array<double, 2>(this->_cfg["init_genotype_values"]);
 
-        // try
-        // {
+        this->_log->info("Agent Parameters:");
+        this->_log->info(" init_genotypelen: {}", init_genotypelen);
+        this->_log->info(" init_resources: {}", init_resources);
+
+        this->_log->info(" init_genotype_values");
+        for (auto& value : init_genotype_values)
+        {
+            this->_log->info("  {}", value);
+        }
+
         // make adaption which is viable
         auto cell = find_cell(_agentmanager.agents()[0], _cellmanager);
 
@@ -462,7 +544,7 @@ public:
                                                  init_genotype_values[1]);
 
         std::uniform_int_distribution<int> idist(0, init_genotypelen);
-        std::uniform_real_distribution<double> zo_dist(0., 1.);
+        // std::uniform_real_distribution<double> zo_dist(0., 1.);
         for (; i < 10000; ++i)
         {
             // make initial agent genotype
@@ -485,8 +567,8 @@ public:
             {
                 std::swap(s, e);
             }
-            agent->state() = Agentstate(trait, cell, init_resources, this->_rng,
-                                        s, e, zo_dist(*this->_rng));
+            agent->state() =
+                Agentstate(trait, cell, init_resources, this->_rng, s, e, 0.);
 
             agent->state().adaption = _check_adaption(agent);
 
@@ -505,11 +587,17 @@ public:
             }
             break;
         }
-        // }
-        // catch (std::exception& e)
-        // {
-        //     this->_log->info(" Exception {}", e.what());
-        // }
+
+        this->_log->info("Initial agent: ");
+        this->_log->info(" adaption");
+        for (auto& val : agent->state().adaption)
+        {
+            this->_log->info(val);
+        }
+
+        this->_log->info(agent->state().start);
+        this->_log->info(agent->state().end);
+
         this->_log->debug("Agents initialized");
     }
 
@@ -522,18 +610,11 @@ public:
     {
         auto& agents = _agentmanager.agents();
         auto& cells = _cellmanager.cells();
-        this->_log->info("Current time: {}, current populationsize: {}",
-                         this->_time, agents.size());
-        for (auto& agent : agents)
-        {
-            this->_log->debug("timestep start");
-            this->_log->debug(" agent resources: {}", agent->state().resources);
-            this->_log->debug(" agent <adaption>: {}",
-                              std::accumulate(agent->state().adaption.begin(),
-                                              agent->state().adaption.end(), 0.));
-            this->_log->debug(" agent start: {}", agent->state().start);
-            this->_log->debug(" agent end:   {}", agent->state().end);
-        }
+        // if (this->_time % 1000 == 0)
+        // {
+        //     this->_log->info("Current time: {}, current populationsize: {}",
+        //                      this->_time, agents.size());
+        // }
         if (agents.size() == 0)
         {
             this->_log->info("Population extinct");
@@ -542,47 +623,26 @@ public:
         }
 
         std::for_each(agents.begin(), agents.end(), update_adaption);
-        for (auto& agent : agents)
-        {
-            this->_log->info("after update_adaption");
 
-            this->_log->debug(" agent resources: {}", agent->state().resources);
-            this->_log->debug(" agent <adaption>: {}",
-                              std::accumulate(agent->state().adaption.begin(),
-                                              agent->state().adaption.end(), 0.));
-            this->_log->debug(" agent start: {}", agent->state().start);
-            this->_log->debug(" agent end:   {}", agent->state().end);
-        }
         std::for_each(cells.begin(), cells.end(), update_cell);
-        for (auto& agent : agents)
-        {
-            this->_log->info("after update_cell");
 
-            this->_log->debug(" agent resources: {}", agent->state().resources);
-            this->_log->debug(" agent <adaption>: {}",
-                              std::accumulate(agent->state().adaption.begin(),
-                                              agent->state().adaption.end(), 0.));
-            this->_log->debug(" agent start: {}", agent->state().start);
-            this->_log->debug(" agent end:   {}", agent->state().end);
-        }
-        std::for_each_n(agents.begin(), agents.size(), update_agent);
-        for (auto& agent : agents)
-        {
-            this->_log->info("after update_agent");
+        std::shuffle(agents.begin(), agents.end(), *this->_rng);
+        // std::for_each_n(agents.begin(), agents.size(), update_agent);
 
-            this->_log->debug(" agent resources: {}", agent->state().resources);
-            this->_log->debug(" agent <adaption>: {}",
-                              std::accumulate(agent->state().adaption.begin(),
-                                              agent->state().adaption.end(), 0.));
-            this->_log->debug(" agent start: {}", agent->state().start);
-            this->_log->debug(" agent end:   {}", agent->state().end);
+        std::vector<unsigned> indices(agents.size());
+        std::iota(indices.begin(), indices.end(), 0);
+
+        std::shuffle(indices.begin(), indices.end(), *(this->_rng));
+
+        for (auto& idx : indices)
+        {
+            update_agent(agents[idx]);
         }
+
         agents.erase(
             std::remove_if(agents.begin(), agents.end(),
                            [](auto agent) { return agent->state().deathflag; }),
             agents.end());
-
-        // write_data();
     }
 
     void write_data()
@@ -607,12 +667,21 @@ public:
                 ->write(agents.begin(), agents.end(), func);
         }
 
+        agrp->open_dataset("adaptionvector", {agents.size()}, {chunksize})
+            ->write(agents.begin(), agents.end(),
+                    [](const auto& agent) { return agent->state().adaption; });
+
         auto cgrp = this->_dgroup_cells->open_group(std::to_string(this->_time));
         for (auto& tpl : _cell_adaptors)
         {
             auto& [name, func] = tpl;
-            cgrp->open_dataset(name)->write(cells.begin(), cells.end(), func);
+            cgrp->open_dataset(name, {cells.size()})->write(cells.begin(), cells.end(), func);
         };
+
+        cgrp->open_dataset("celltraitlen", {cells.size()})
+            ->write(cells.begin(), cells.end(), [](const auto& cell) {
+                return cell->state().celltrait.size();
+            });
     }
 
 }; // namespace AmeeMulti
