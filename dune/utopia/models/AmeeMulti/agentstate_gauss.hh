@@ -1,5 +1,5 @@
-#ifndef UTOPIA_MODELS_AMEEMULTI_AGENTSTATE_HH
-#define UTOPIA_MODELS_AMEEMULTI_AGENTSTATE_HH
+#ifndef UTOPIA_MODELS_AMEEMULTI_AGENTSTATE_GAUSS_HH
+#define UTOPIA_MODELS_AMEEMULTI_AGENTSTATE_GAUSS_HH
 #include <memory>
 #include <random>
 #include <vector>
@@ -18,17 +18,17 @@ namespace AmeeMulti
  * @tparam Ptype
  * @tparam RNG
  */
-template <typename Cell, typename Traittype, typename RNG>
-struct Agentstate
+template <typename Cell, typename PT, typename RNG>
+struct AgentStateGauss
 {
-    using Trait = Traittype;
-    using T = typename Trait::value_type;
+    using Phenotype = PT;
+    using P = typename Phenotype::value_type;
 
     std::shared_ptr<RNG> rng;
     int start;
     int end;
     double intensity;
-    Trait trait;
+    Phenotype phenotype;
     std::vector<double> adaption;
     double resources;
     unsigned age;
@@ -36,54 +36,55 @@ struct Agentstate
     std::shared_ptr<Cell> habitat;
     bool deathflag;
 
-    Trait copy_trait(Trait& parent_trait, std::vector<double>& mutationrates)
+    Phenotype copy_phenotype(Phenotype& parent_phenotype, std::vector<double>& mutationrates)
     {
-        // std::cout << "   copying trait" << std::endl;
-        Trait new_trait(parent_trait);
-        // std::cout << "    new trait size, mutationrates size: " << new_trait.size()
+        // std::cout << "   copying phenotype" << std::endl;
+        Phenotype new_phenotype(parent_phenotype);
+        // std::cout << "    new phenotype size, mutationrates size: " << new_phenotype.size()
         // << "," << mutationrates.size() << std::endl;
         double substmut = mutationrates[0];
         double editmut = mutationrates[1];
         double subststd = mutationrates[2];
 
         // std::cout << "   min and max" << std::endl;
-        T min = *std::min_element(parent_trait.begin(), parent_trait.end());
-        T max = *std::max_element(parent_trait.begin(), parent_trait.end());
+        P min = *std::min_element(parent_phenotype.begin(), parent_phenotype.end());
+        P max = *std::max_element(parent_phenotype.begin(), parent_phenotype.end());
 
         // std::cout << "    " << min << "," << max << std::endl;
 
         std::uniform_real_distribution<double> choice(0., 1.);
-        std::uniform_real_distribution<T> values(min, max);
-        std::uniform_int_distribution<std::size_t> loc(0, new_trait.size() - 1);
+        std::uniform_real_distribution<P> values(min, max);
+        std::uniform_int_distribution<std::size_t> loc(0, new_phenotype.size() - 1);
         // std::cout << "   rng: " << rng.get() << std::endl;
         if (choice(*rng) < substmut)
         {
             // std::cout << "    substitution" << std::endl;
-            new_trait[loc(*rng)] =
-                std::normal_distribution<T>(new_trait[loc(*rng)], subststd)(*rng);
+            new_phenotype[loc(*rng)] =
+                std::normal_distribution<P>(new_phenotype[loc(*rng)], subststd)(*rng);
         } // insert  mutation
         if (choice(*rng) < editmut)
         {
             // std::cout << "    insertion" << std::endl;
-            new_trait.insert(std::next(new_trait.begin(), loc(*rng)), values(*rng));
+            new_phenotype.insert(std::next(new_phenotype.begin(), loc(*rng)),
+                                 values(*rng));
         } // delete mutation
         if (choice(*rng) < editmut)
         {
             // std::cout << "    deletion" << std::endl;
-            new_trait.erase(std::next(new_trait.begin(), loc(*rng)));
+            new_phenotype.erase(std::next(new_phenotype.begin(), loc(*rng)));
         }
         // std::cout << "returning " << std::endl;
-        return new_trait;
+        return new_phenotype;
     }
 
-    Agentstate() = default;
-    Agentstate(Trait trt, std::shared_ptr<Cell> loc, double res, std::shared_ptr<RNG> rnd, int s, int e, double i)
+    AgentStateGauss() = default;
+    AgentStateGauss(Phenotype init_ptype, std::shared_ptr<Cell> loc, double res, std::shared_ptr<RNG> rnd)
         : rng(rnd),
-          start(s),
-          end(e),
-          intensity(i),
-          trait(trt),
-          adaption(std::vector<double>(e - s, 0.)),
+          start(0),
+          end(0),
+          intensity(0),
+          phenotype(init_ptype),
+          adaption(std::vector<double>()),
           resources(res),
           age(0),
           fitness(0),
@@ -92,7 +93,7 @@ struct Agentstate
     {
     }
 
-    Agentstate(Agentstate& parent, double offspringres, std::vector<double>& mutationrates)
+    AgentStateGauss(AgentStateGauss& parent, double offspringres, std::vector<double>& mutationrates)
         : rng(parent.rng),
           start([&]() -> int {
               if (std::uniform_real_distribution<>(0., 1.)(*this->rng) < mutationrates[0])
@@ -127,7 +128,7 @@ struct Agentstate
                   return parent.intensity;
               }
           }()),
-          trait(copy_trait(parent.trait, mutationrates)),
+          phenotype(copy_phenotype(parent.phenotype, mutationrates)),
           adaption(std::vector<double>(end - start, 0.)),
           resources(offspringres),
           age(0),
@@ -139,11 +140,6 @@ struct Agentstate
         {
             end = 0;
             start = 0;
-        }
-        if (end > int(trait.size()) or start > int(trait.size()))
-        {
-            std::cerr << "  too large s, e: " << start << "," << end << std::endl;
-            throw std::runtime_error(" fucked up parameters");
         }
     }
 };

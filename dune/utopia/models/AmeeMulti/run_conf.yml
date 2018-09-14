@@ -1,5 +1,5 @@
 parameter_space: 
-  num_steps: 100000
+  num_steps: 10000
   seed: 519472
   periodic: true          # false: cells at boundary have fewer neighbors
   write_every: 500
@@ -9,9 +9,7 @@ parameter_space:
     grid_size: [32,32]
 
     # Cell parameters
-    init_cell_traitlen: !sweep 
-      default: 9
-      values: [6, 12, 24, 48, 64, 128]
+    init_cell_traitlen: 24
     init_cell_resourceinflux: "random"
     # init_cell_resourceinflux: "given"
     # cell_influxvalues: [1., 1., 1., 1., 1., 1.]
@@ -22,11 +20,13 @@ parameter_space:
     decayintensity: 1e-2
 
     # Agent parameters
-    init_genotypelen: 64 
+    init_genotypelen: 64
     init_resources: 1.
     init_genotype_values: [-5., 5.]
     metabolism_inefficiency: 0.2
-    livingcost: 1.
+    livingcost: !sweep
+      default: 1.
+      values: [1., 2., 4., 6., 8., 10.]
     reproductioncost: 1.
     offspringresources: 1.
     deathprobability: 1e-2
@@ -43,6 +43,7 @@ parameter_space:
     construction: true
     decay: true
     highresinterval: [0, 1000]
+    Agenttype: "gauss"
 
 
 # stuff for worker manager
@@ -55,4 +56,4 @@ paths:
   out_dir: ~/utopia_output
 
   # model note is added to the output directory path
-  model_note: "celltraitlen_nomod"
+  model_note: "modification_decay_test_livingcostsweep"

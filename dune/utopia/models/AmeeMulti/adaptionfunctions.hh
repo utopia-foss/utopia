@@ -14,7 +14,7 @@ auto multi_notnormed = [](auto agent) -> std::vector<double> {
     auto start = state.start;
     auto end = state.end;
     const auto& celltrait = state.habitat->state().celltrait;
-    const auto& trait = state.trait;
+    const auto& trait = state.phenotype;
     std::vector<double> adaption(end - start, 0.);
 
     if (start > 0 and end > 0 and end > start and trait.size() > 0 and
@@ -42,7 +42,7 @@ auto multi_normed = [](auto agent) -> std::vector<double> {
     auto start = state.start;
     auto end = state.end;
     const auto& celltrait = state.habitat->state().celltrait;
-    const auto& trait = state.trait;
+    const auto& trait = state.phenotype;
 
     if (start > 0 and end > 0 and end > start and trait.size() > 0 and
         (int) celltrait.size() > 0 and start < (int)trait.size() and
@@ -76,7 +76,7 @@ auto simple_notnormed = [](auto agent) {
     auto start = state.start;
     auto end = state.end;
     const auto& celltrait = state.habitat->state().celltrait;
-    const auto& trait = state.trait;
+    const auto& trait = state.phenotype;
 
     if (start > 0 and end > 0 and end > start and trait.size() > 0 and
         (int) celltrait.size() > 0 and start < (int)trait.size() and
@@ -107,7 +107,7 @@ auto simple_normed = [](auto agent) {
     auto start = state.start;
     auto end = state.end;
     const auto& celltrait = state.habitat->state().celltrait;
-    const auto& trait = state.trait;
+    const auto& trait = state.phenotype;
 
     if (start > 0 and end > 0 and end > start and trait.size() > 0 and
         (int) celltrait.size() > 0 and start < (int)trait.size() and
