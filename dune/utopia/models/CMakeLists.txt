@@ -13,8 +13,8 @@ message(STATUS "Starting Utopia model registration ...")
 add_subdirectory(CopyMe)
 add_subdirectory(CopyMeBare)
 add_subdirectory(dummy)
-add_subdirectory(SimpleEG)
 add_subdirectory(ForestFireModel)
+add_subdirectory(SimpleEG)
 # ...
 # NOTE add your subdirectory above (alphabetically sorted)
 
