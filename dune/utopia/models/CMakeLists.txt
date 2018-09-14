@@ -14,11 +14,8 @@ add_subdirectory(CopyMe)
 add_subdirectory(CopyMeBare)
 add_subdirectory(dummy)
 add_subdirectory(ForestFireModel)
-<<<<<<< HEAD
 add_subdirectory(SavannaHeterogeneous)
 add_subdirectory(SavannaHomogeneous)
-=======
->>>>>>> 172-add-forestfiremodel
 add_subdirectory(SimpleEG)
 # ...
 # NOTE add your subdirectory above (alphabetically sorted)
