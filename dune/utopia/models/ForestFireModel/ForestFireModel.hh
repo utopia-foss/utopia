@@ -215,6 +215,20 @@ private:
             if (dist(*this->_rng) < _param.lightning_frequency) {
                 if (_model_feature.two_state_FFM) {
                     state = _burn_cluster(cell);
+<<<<<<< HEAD
+=======
+                }
+                else {
+                    state = burning;
+                }
+            }
+
+            // ignite bottom row
+            else if (_model_feature.light_bottom_row && cell->position()[1]==0.5) 
+            {
+                if (_model_feature.two_state_FFM) {
+                    state = _burn_cluster(cell);
+>>>>>>> 172-add-forestfiremodel
                 }
                 else {
                     state = burning;
