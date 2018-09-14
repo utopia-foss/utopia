@@ -1,14 +1,10 @@
 Amee:
-  Agenttype: complex
-  Celltype: single_resource
+  Agenttype: simple
   adaptionfunction: simple_notnormed
   construction: true
   deaththreshold: 1e-2
   decay: true
   decayintensity: 1e-2
-  grid_size:
-  - 32
-  - 32
   highresoutput: true
   init_cell_resourceinflux: 9.0
   init_cell_resources: 0
@@ -37,6 +33,6 @@ log_levels:
   data_io: warning
   model: info
 num_steps: 100000
-output_path: data_test_complex.h5
+output_path: data_test_simple.h5
 periodic: true
 seed: 519472

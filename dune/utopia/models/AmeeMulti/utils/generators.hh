@@ -347,7 +347,7 @@ public:
         typename Statetype::value_type s1 = this->_state[_p = (_p + 1) & 15];
         s1 ^= s1 << a;                                      // a
         this->_state[_p] = s1 ^ s0 ^ (s1 >> b) ^ (s0 >> c); // b, c
-        return this->_state[_p] * UINT64_C(1181783497276652981);
+        return this->_state[_p] * UINT64_C(1181783497276652981); // where does this number come from?
     }
 
     /**

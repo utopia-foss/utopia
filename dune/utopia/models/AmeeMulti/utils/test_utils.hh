@@ -27,6 +27,23 @@ namespace Utils
         std::cerr << ", rhs: " << rhs << std::endl;                   \
     }
 
+#define ASSERT_NEQ(lhs, rhs)                                            \
+    if (is_equal(lhs, rhs))                                             \
+    {                                                                   \
+        std::cerr << "Asserted inequality wrong at line: " << __LINE__; \
+        std::cerr << " lhs: " << lhs;                                   \
+        std::cerr << ", rhs: " << rhs << std::endl;                     \
+        std::exit(-1);                                                  \
+    }
+
+#define EXPECT_NEQ(lhs, rhs)                                            \
+    if (is_equal(lhs, rhs))                                             \
+    {                                                                   \
+        std::cerr << "Exepcted inequality wrong at line: " << __LINE__; \
+        std::cerr << " lhs: " << lhs;                                   \
+        std::cerr << ", rhs: " << rhs << std::endl;                     \
+    }
+
 #define ASSERT_GREATER(lhs, rhs)                                                  \
     if (!(is_greater(lhs, rhs)))                                                  \
     {                                                                             \

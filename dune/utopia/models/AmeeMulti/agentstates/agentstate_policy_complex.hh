@@ -28,16 +28,16 @@ struct Agentstate_policy_complex
         // run over genotype and get codon elements
         for (; i < size - sumlen; i += sumlen)
         {
-            phenotype.push_back(this->get_codon_value(i, i + sumlen));
+            phenotype.push_back(this->get_codon_value(i, i + sumlen, divisor, genotype));
         }
         // std::cout << "size = " << size << std::endl;
         // std::cout << " i   = " << i << std::endl;
         phenotype.push_back(this->get_codon_value(
-            i, (i + sumlen) <= size ? (i + sumlen) : genotype.size()));
+            i, (i + sumlen) <= size ? (i + sumlen) : genotype.size(), divisor, genotype));
         return phenotype;
     }
 
-    virtual auto genotype_phenotype_map(Genotype& genotype) override
+    virtual std::tuple<unsigned, double, int, int, double, Phenotype> genotype_phenotype_map(Genotype& genotype) override
     {
         unsigned sumlen = 0;
         double divisor = 0.;
@@ -74,12 +74,14 @@ struct Agentstate_policy_complex
             {
                 divisor = static_cast<double>(genotype[1] + genotype[3]);
 
-                start = std::round(this->get_codon_value(4, 4 + sumlen));
-                end = std::round(this->get_codon_value(4 + sumlen, 4 + 2 * sumlen));
+                start = std::round(this->get_codon_value(4, 4 + sumlen, divisor, genotype));
+                end = std::round(this->get_codon_value(
+                    4 + sumlen, 4 + 2 * sumlen, divisor, genotype));
 
-                intensity = this->get_codon_value(4 + 2 * sumlen, 4 + 3 * sumlen);
+                intensity = this->get_codon_value(
+                    4 + 2 * sumlen, 4 + 3 * sumlen, divisor, genotype);
 
-                phenotype = translate_genome();
+                phenotype = translate_genome(sumlen, divisor, genotype);
             }
             return std::make_tuple(sumlen, divisor, start, end, intensity, phenotype);
         }

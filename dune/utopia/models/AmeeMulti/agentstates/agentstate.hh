@@ -58,7 +58,7 @@ struct AgentState : public Statepolicy
      * @param init_resources Resource value inherited from parent
      * @param mutationrates mutationrates to use for mutating the genome, per default [substmut, editmut]
      */
-    AgentState(AgentState& parent_state, double init_resources)
+    AgentState(AgentState& parent_state, double init_resources, std::vector<double>& mutationrates)
         : rng(parent_state.rng),
           resources(init_resources),
           fitness(0),
@@ -68,7 +68,7 @@ struct AgentState : public Statepolicy
     {
         genotype = this->copy_genome(parent_state.genotype, mutationrates, rng);
 
-        auto& [sumlen, divisor, start, end, intensity, phenotype] =
+        std::tie(sumlen, divisor, start, end, intensity, phenotype) =
             this->genotype_phenotype_map(genotype);
         adaption = std::vector<double>(end - start, 0.);
     }
@@ -93,7 +93,7 @@ struct AgentState : public Statepolicy
           deathflag(false),
           genotype(init_genome)
     {
-        auto& [sumlen, divisor, start, end, intensity, phenotype] =
+        std::tie(sumlen, divisor, start, end, intensity, phenotype) =
             this->genotype_phenotype_map(genotype);
         adaption = std::vector<double>(end - start, 0.);
     }
@@ -106,8 +106,9 @@ struct AgentState : public Statepolicy
  * @param lhs object to swap state with rhs
  * @param rhs object to swap state with lhs
  */
-template <typename Cell, typename Gtype, typename Ptype, typename RNG>
-void swap(AgentState<Cell, Gtype, Ptype, RNG>& lhs, AgentState<Cell, Gtype, Ptype, RNG>& rhs)
+template <typename Cell, typename Gtype, typename Ptype, typename RNG, typename Policy>
+void swap(AgentState<Cell, Gtype, Ptype, RNG, Policy>& lhs,
+          AgentState<Cell, Gtype, Ptype, RNG, Policy>& rhs)
 {
     lhs.swap(rhs);
 }

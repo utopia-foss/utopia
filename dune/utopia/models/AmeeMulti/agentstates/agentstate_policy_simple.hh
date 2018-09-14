@@ -14,6 +14,7 @@ namespace AmeeMulti
 template <class Genotype, class Phenotype, class RNG>
 struct Agentstate_policy_simple
 {
+    using P = typename Phenotype::value_type;
     /**
      * @brief Function for computing a value from a range [s,e) in the genome
      * - analog to biological codon-aminoacid map
@@ -80,7 +81,7 @@ struct Agentstate_policy_simple
      *
      * @return Phenotype
      */
-    virtual auto genotype_phenotype_map(Genotype& genotype)
+    virtual std::tuple<unsigned, double, int, int, double, Phenotype> genotype_phenotype_map(Genotype& genotype)
     {
         unsigned sumlen = 0;
         double divisor = 0.;
@@ -117,11 +118,11 @@ struct Agentstate_policy_simple
             {
                 divisor = static_cast<double>(genotype[1] + genotype[3]);
 
-                start = std::round(get_codon_value(4, 4 + sumlen));
+                start = std::round(get_codon_value(4, 4 + sumlen, divisor, genotype));
 
-                end = std::round(get_codon_value(4 + sumlen, 4 + 2 * sumlen));
+                end = std::round(get_codon_value(4 + sumlen, 4 + 2 * sumlen, divisor, genotype));
 
-                intensity = get_codon_value(4 + 2 * sumlen, 4 + 3 * sumlen);
+                intensity = get_codon_value(4 + 2 * sumlen, 4 + 3 * sumlen, divisor, genotype);
                 // if (intensity < 0.)
                 // {
                 //     intensity = 0.;

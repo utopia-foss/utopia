@@ -1,5 +1,5 @@
-#ifndef UTOPIA_MODELS_AMEEMULTI_AGENTSTATEPOLICY_COMPLEX_HH
-#define UTOPIA_MODELS_AMEEMULTI_AGENTSTATEPOLICY_COMPLEX_HH
+#ifndef UTOPIA_MODELS_AMEEMULTI_AGENTSTATEPOLICY_HIGHLEVEL_HH
+#define UTOPIA_MODELS_AMEEMULTI_AGENTSTATEPOLICY_HIGHLEVEL_HH
 
 #include "agentstate_policy_simple.hh"
 namespace Utopia
@@ -9,9 +9,10 @@ namespace Models
 namespace AmeeMulti
 {
 template <class Genotype, class Phenotype, class RNG>
-struct Agentstate_policy_complex
+struct Agentstate_policy_highlevel
     : public Agentstate_policy_simple<Genotype, Phenotype, RNG>
 {
+    using P = typename Phenotype::value_type;
     virtual Genotype copy_genome(Genotype& parent_genome,
                                  std::vector<double>& mutationrates,
                                  std::shared_ptr<RNG> rng) override
@@ -47,7 +48,7 @@ struct Agentstate_policy_complex
         }
         if (choice(*rng) < editmut)
         {
-            new_genotype.insert(std::next(new_genotype.begin(), loc(rng), values(*rng)));
+            new_genotype.insert(std::next(new_genotype.begin(), loc(*rng)), values(*rng));
         }
         if (choice(*rng) < editmut)
         {
@@ -56,7 +57,7 @@ struct Agentstate_policy_complex
         return new_genotype;
     }
 
-    virtual auto genotype_phenotype_map(Genotype& genotype) override
+    virtual std::tuple<unsigned, double, int, int, double, Phenotype> genotype_phenotype_map(Genotype& genotype) override
     {
         unsigned sumlen = 0;
         double divisor = 0.;

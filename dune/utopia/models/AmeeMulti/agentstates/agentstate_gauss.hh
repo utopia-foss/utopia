@@ -140,6 +140,7 @@ struct AgentStateGauss
         {
             end = 0;
             start = 0;
+            adaption = std::vector<double>();
         }
     }
 };

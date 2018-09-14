@@ -2,7 +2,7 @@
 #define UTOPIA_MODELS_AMEEMULTI_HH
 
 #include "adaptionfunctions.hh"
-#include "agentstate_gauss.hh"
+#include "agentstates/agentstate_gauss.hh"
 #include "cellstate.hh"
 #include "utils/test_utils.hh"
 #include "utils/utils.hh"
@@ -194,8 +194,8 @@ public:
             return;
         }
 
-        std::size_t i = start;
-        for (; i < end && i < ctrt.size(); ++i)
+        int i = start;
+        for (; i < end && i < int(ctrt.size()); ++i)
         {
             if (agent->state().resources < _modifiercost)
             {
@@ -218,7 +218,7 @@ public:
             }
         }
 
-        for (; i < end && i < trt.size(); ++i)
+        for (; i < end && i < int(trt.size()); ++i)
         {
             if (agent->state().resources < _modifiercost)
             {
@@ -329,7 +329,7 @@ public:
             {
                 ctrt[i] = std::numeric_limits<CTV>::quiet_NaN();
                 cell->state().resourceinfluxes[i] = 0.;
-                cell->state().modtimes[i] = std::numeric_limits<double>::quiet_NaN();
+                times[i] = std::numeric_limits<double>::quiet_NaN();
                 // cellresources are left alone, can still be used, but nothing else anymore is done
             }
         }
@@ -405,10 +405,10 @@ public:
           _check_adaption(
               adaptionfunctionmap[as_str(this->_cfg["adaptionfunction"])]),
           _deathdist(std::uniform_real_distribution<double>(0., 1.)),
-          _movedist(std::uniform_int_distribution<std::size_t>(0, 7)),
           _resdist(std::uniform_real_distribution<double>(
               as_vector<double>(this->_cfg["resourceinflux_limits"])[0],
               as_vector<double>(this->_cfg["resourceinflux_limits"])[1])),
+          _movedist(std::uniform_int_distribution<std::size_t>(0, 7)),
           _dgroup_agents(this->_hdfgrp->open_group("Agents")),
           _dgroup_cells(this->_hdfgrp->open_group("Cells")),
           _agent_adaptors(
@@ -572,26 +572,30 @@ public:
             {
                 val = dist(*(this->_rng));
             }
-            int s = idist(*this->_rng);
-            int e = idist(*this->_rng);
 
-            if (s > int(cell->state().celltrait.size()))
-            {
-                continue;
-            }
-
-            // swap if end smaller than start
-
-            if (e < s)
-            {
-                std::swap(s, e);
-            }
             agent->state() = Agentstate(trait, cell, init_resources, this->_rng);
 
-            agent->state().start = s;
-            agent->state().end = e;
-            agent->state().intensity = 0.;
+            if constexpr (std::is_same_v<Agentstate, AgentStateGauss<CellType, AP, RNG>>)
+            {
+                int s = idist(*this->_rng);
+                int e = idist(*this->_rng);
 
+                if (s > int(cell->state().celltrait.size()))
+                {
+                    continue;
+                }
+
+                // swap if end smaller than start
+
+                if (e < s)
+                {
+                    std::swap(s, e);
+                }
+
+                agent->state().start = s;
+                agent->state().end = e;
+                agent->state().intensity = 0.;
+            }
             agent->state().adaption = _check_adaption(agent);
 
             std::size_t i = agent->state().start;

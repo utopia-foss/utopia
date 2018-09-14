@@ -1,22 +1,24 @@
 # place auxilary files in build directory
-file(COPY "test_config_complex.yml"
+file(COPY "multi_test_config_complex.yml"
      DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-file(COPY "test_config_simple.yml"
+file(COPY "multi_test_config_simple.yml"
      DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-file(COPY "test_config_highlevel.yml"
+file(COPY "multi_test_config_highlevel.yml"
+     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY "multi_test_config_gauss.yml"
      DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 # register targets
-set(TESTS_AMEE
-    agentstatecomplex_test
-    agentstatehighlevel_test
-    agentstatesimple_test
-    agentstategauss_test
-    model_test
+set(TESTS_AMEEMULTI
+    multi_agentstatecomplex_test
+    multi_agentstatehighlevel_test
+    multi_agentstatesimple_test
+    multi_agentstategauss_test
+    multi_model_test
     )
 
 # add AMEEMULTI tests
-foreach(test ${TESTS_AMEE})
+foreach(test ${TESTS_AMEEMULTI})
     dune_add_test(NAME AMEEMULTI_${test} SOURCES ${test}.cc)
 
     # link library targets
@@ -40,4 +42,4 @@ endforeach(test)
 
 # add custom target for 'AMEEMULTI' prefix
 add_custom_target(test_ameemulti
-    COMMAND ctest --output-on-failure --tests-regex ^AMEE_.+$)
+    COMMAND ctest --output-on-failure --tests-regex ^AMEEMULTI_.+$)
