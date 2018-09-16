@@ -240,10 +240,10 @@ int main(int argc, char** argv)
     // Initialize the PseudoParent from config file path
     Utopia::PseudoParent<RNG> parentmodel_simple(
         "multi_test_config_simple.yml");
-    Utopia::PseudoParent<RNG> parentmodel_complex(
-        "multi_test_config_complex.yml");
-    Utopia::PseudoParent<RNG> parentmodel_highlevel(
-        "multi_test_config_highlevel.yml");
+    // Utopia::PseudoParent<RNG> parentmodel_complex(
+    //     "multi_test_config_complex.yml");
+    // Utopia::PseudoParent<RNG> parentmodel_highlevel(
+    //     "multi_test_config_highlevel.yml");
 
     ////////////////////////////////////////////////////////////////////////
     // using simple agent

@@ -1,19 +1,31 @@
-AmeeMulti:
+---
+seed: 4378573
+output_path: "gauss.h5"
+num_steps: 10000
+periodic: true
+
+write_every: 1
+grid_size:
+- 32
+- 32
+log_levels:
+  core: warning
+  data_io: warning
+  model: info
+
+AmeeMulti: 
+  model_name: AmeeMulti
   Agenttype: gauss
   adaptionfunction: multi_notnormed
   construction: true
   deathprobability: 1e-2
   decay: true
-  grid_size:
-  - 32
-  - 32
   init_cell_traitlen: 6
   init_cell_resourceinflux: "given"
   cell_influxvalues: [1., 1., 1., 1., 1., 1.]
   resourceinflux_limits: [0., 10.]
   init_celltrait_values: [-5., 5.]
 
-  upper_influxlimit: 1000. # not yet needed
   removethreshold: 1e-3
   decayintensity: 1e-2
   init_genotype_values: [-5., 5.]
@@ -25,19 +37,7 @@ AmeeMulti:
   offspringresources: 1.0
   periodic: true
   reproductioncost: 1.0
-  seed: 4378573
   substitution_std: 1e-3
   substitutionrate: 1e-3
   highresinterval: [0, 1000]
   highresoutput: true
-
-grid:
-- 32
-- 32
-log_levels:
-  core: warning
-  data_io: warning
-  model: info
-num_steps: 100000
-periodic: true
-seed: 519472

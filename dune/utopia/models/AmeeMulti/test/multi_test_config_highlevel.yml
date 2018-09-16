@@ -1,6 +1,6 @@
 ---
 seed: 4378573
-output_path: model_test_tmpfile.h5
+output_path: "highlevel.h5"
 num_steps: 10000
 periodic: true
 
@@ -41,3 +41,4 @@ AmeeMulti:
   substitutionrate: 1e-3
   highresinterval: [0, 1000]
   highresoutput: true
+output: true

@@ -10,8 +10,9 @@ parameter_space:
 
     # Cell parameters
     init_cell_traitlen: 24
-    init_cell_resourceinflux: "given"
-    cell_influxvalues: [1., 1., 1., 1., 1., 1.]
+    init_cell_resourceinflux: "random"
+    # init_cell_resourceinflux: "given"
+    # cell_influxvalues: [1., 1., 1., 1., 1., 1.]
     resourceinflux_limits: [0., 10.]
     init_celltrait_values: [-5., 5.]
     removethreshold: 1e-3
@@ -39,3 +40,49 @@ parameter_space:
     decay: true
     highresinterval: [0, 1000]
     Agenttype: "simple"
+
+
+
+# ---
+# seed: 4378573
+# output_path: "simple.h5"
+# num_steps: 10000
+# periodic: true
+
+# write_every: 1
+# grid_size:
+# - 32
+# - 32
+# log_levels:
+#   core: warning
+#   data_io: warning
+#   model: info
+
+# AmeeMulti: 
+#   model_name: AmeeMulti
+#   Agenttype: simple
+#   adaptionfunction: multi_notnormed
+#   construction: true
+#   deathprobability: 1e-2
+#   decay: true
+#   init_cell_traitlen: 6
+#   init_cell_resourceinflux: "given"
+#   cell_influxvalues: [1., 1., 1., 1., 1., 1.]
+#   resourceinflux_limits: [0., 10.]
+#   init_celltrait_values: [-5., 5.]
+
+#   removethreshold: 1e-3
+#   decayintensity: 1e-2
+#   init_genotype_values: [-5., 5.]
+#   init_genotypelen: 64
+#   init_resources: 5.
+#   insertionrate: 1e-3
+#   livingcost: 5
+#   modifiercost: 0.1
+#   offspringresources: 1.0
+#   periodic: true
+#   reproductioncost: 1.0
+#   substitution_std: 1e-3
+#   substitutionrate: 1e-3
+#   highresinterval: [0, 1000]
+#   highresoutput: true
