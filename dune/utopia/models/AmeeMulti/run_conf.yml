@@ -41,19 +41,5 @@ parameter_space:
     construction: true
     decay: true
     highresinterval: [0, 1000]
-    Agenttype: !sweep 
-      default: "simple"
-      values: ["simple", "gauss", "complex", "highlevel"]
+    Agenttype: "simple"
 
-
-# stuff for worker manager
-worker_manager:
-  num_workers: 4
-
-# These are passed to Multiverse._create_run_dir
-paths:
-  # base output directory
-  out_dir: ~/utopia_output
-
-  # model note is added to the output directory path
-  model_note: "modification_decay_test_agenttypesweep"

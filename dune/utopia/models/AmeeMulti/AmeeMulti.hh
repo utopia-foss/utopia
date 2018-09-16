@@ -486,10 +486,15 @@ public:
                           init_cellresourceinfluxes.end(),
                           [this]() { return _resdist(*this->_rng); });
         }
-        else
+        else if (init_cellresourceinflux == "given")
         {
             init_cellresourceinfluxes =
                 as_vector<double>(this->_cfg["cell_influxvalues"]);
+        }
+        else
+        {
+            throw std::runtime_error(
+                "Unknown init_cell_resourceinflux given in config");
         }
 
         std::vector<double> init_cellresources(init_celltrait_len, 1.);
@@ -752,6 +757,16 @@ public:
             ->write(cells.begin(), cells.end(), [](const auto& cell) {
                 return cell->state().celltrait.size();
             });
+    }
+
+    auto& cellmanager()
+    {
+        return _cellmanager;
+    }
+
+    auto& agentmanager()
+    {
+        return _agentmanager;
     }
 
     const auto& agents()

@@ -1,7 +1,7 @@
 // custom assert macros go here
 #include "utils.hh"
 #include <cmath>
-
+#include <sstream>
 namespace Utopia
 {
 namespace Models
@@ -10,13 +10,14 @@ namespace AmeeMulti
 {
 namespace Utils
 {
-#define ASSERT_EQ(lhs, rhs)                                           \
-    if (!is_equal(lhs, rhs))                                          \
-    {                                                                 \
-        std::cerr << "Asserted equality wrong at line: " << __LINE__; \
-        std::cerr << " lhs: " << lhs;                                 \
-        std::cerr << ", rhs: " << rhs << std::endl;                   \
-        std::exit(-1);                                                \
+#define ASSERT_EQ(lhs, rhs)                                     \
+    if (!is_equal(lhs, rhs))                                    \
+    {                                                           \
+        std::stringstream str;                                  \
+        str << "Asserted equality wrong at line: " << __LINE__; \
+        str << " lhs: " << lhs;                                 \
+        str << ", rhs: " << rhs << std::endl;                   \
+        throw std::runtime_error(str.str());                    \
     }
 
 #define EXPECT_EQ(lhs, rhs)                                           \

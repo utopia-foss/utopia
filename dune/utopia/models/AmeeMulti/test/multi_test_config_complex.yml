@@ -1,53 +1,43 @@
-parameter_space: 
-  num_steps: 10000
-  seed: 519472
-  periodic: true          # false: cells at boundary have fewer neighbors
-  write_every: 500
+---
+seed: 4378573
+output_path: model_test_tmpfile.h5
+num_steps: 10000
+periodic: true
 
-  AmeeMulti: !model
-    model_name: AmeeMulti
-    grid_size: [32,32]
+write_every: 1
+grid_size:
+- 32
+- 32
+log_levels:
+  core: warning
+  data_io: warning
+  model: info
 
-    # Cell parameters
-    init_cell_traitlen: 6
-    init_cell_resourceinflux: "given"
-    cell_influxvalues: [1., 1., 1., 1., 1., 1.]
-    resourceinflux_limits: [0., 10.]
-    init_celltrait_values: [-5., 5.]
-    removethreshold: 1e-3
-    decayintensity: 1e-2
+AmeeMulti: 
+  model_name: AmeeMulti
+  Agenttype: complex
+  adaptionfunction: multi_notnormed
+  construction: true
+  deathprobability: 1e-2
+  decay: true
+  init_cell_traitlen: 6
+  init_cell_resourceinflux: "given"
+  cell_influxvalues: [1., 1., 1., 1., 1., 1.]
+  resourceinflux_limits: [0., 10.]
+  init_celltrait_values: [-5., 5.]
 
-    # Agent parameters
-    init_genotypelen: 64
-    init_resources: 5.
-    init_genotype_values: [-5., 5.]
-    livingcost: 5.
-    reproductioncost: 1.
-    offspringresources: 1.
-    deathprobability: 1e-2
-    substitutionrate: 1e-3
-    insertionrate: 1e-3
-    substitution_std: 1e-3
-    modifiercost: 0.
-
-    adaptionfunction: "multi_notnormed"
-    upper_resourcelimit: 2500.
-    highresoutput: true
-
-    # Model structure: Agent- & cell types etc
-    construction: true
-    decay: true
-    highresinterval: [0, 1000]
-    Agenttype: "complex"
-
-# stuff for worker manager
-worker_manager:
-  num_workers: 4
-
-# These are passed to Multiverse._create_run_dir
-paths:
-  # base output directory
-  out_dir: ~/utopia_output
-
-  # model note is added to the output directory path
-  model_note: "modification_decay_test_agenttypesweep"
+  removethreshold: 1e-3
+  decayintensity: 1e-2
+  init_genotype_values: [-5., 5.]
+  init_genotypelen: 64
+  init_resources: 5.
+  insertionrate: 1e-3
+  livingcost: 5
+  modifiercost: 0.1
+  offspringresources: 1.0
+  periodic: true
+  reproductioncost: 1.0
+  substitution_std: 1e-3
+  substitutionrate: 1e-3
+  highresinterval: [0, 1000]
+  highresoutput: true

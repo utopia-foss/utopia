@@ -1,18 +1,17 @@
 #ifndef UTOPIA_MODEL_HH
 #define UTOPIA_MODEL_HH
 
+#include <dune/utopia/core/logging.hh>
+#include <dune/utopia/data_io/cfg_utils.hh>
 #include <dune/utopia/data_io/hdffile.hh>
 #include <dune/utopia/data_io/hdfgroup.hh>
-#include <dune/utopia/data_io/cfg_utils.hh>
-#include <dune/utopia/core/logging.hh>
 
-
-namespace Utopia {
-
-
+namespace Utopia
+{
 /// Dummy type for boundary conditions; this is used as a default value
-struct BCDummy {};
-
+struct BCDummy
+{
+};
 
 /// Wrapper struct for defining base class data types
 /** \tparam DataType              Type of the data the model operates on
@@ -24,14 +23,13 @@ struct BCDummy {};
  *  \tparam DataSetType           The data group class to store data in
  *  \tparam TimeType              The type to use for the time members
  */
-template<typename DataType,
-         typename BoundaryConditionType=BCDummy,
-         typename RNGType=DefaultRNG,
-         typename ConfigType=Utopia::DataIO::Config,
-         typename DataGroupType=Utopia::DataIO::HDFGroup,
-         typename DataSetType=Utopia::DataIO::HDFDataset<Utopia::DataIO::HDFGroup>,
-         typename TimeType=std::size_t
-         >
+template <typename DataType,
+          typename BoundaryConditionType = BCDummy,
+          typename RNGType = DefaultRNG,
+          typename ConfigType = Utopia::DataIO::Config,
+          typename DataGroupType = Utopia::DataIO::HDFGroup,
+          typename DataSetType = Utopia::DataIO::HDFDataset<Utopia::DataIO::HDFGroup>,
+          typename TimeType = std::size_t>
 struct ModelTypes
 {
     using Data = DataType;
@@ -43,12 +41,11 @@ struct ModelTypes
     using Time = TimeType;
 };
 
-
 /// Base class interface for Models using the CRT Pattern
 /** \tparam Derived Type of the derived model class
  *  \tparam ModelTypes Convenience wrapper for extracting model data types
  */
-template<class Derived, typename ModelTypes>
+template <class Derived, typename ModelTypes>
 class Model
 {
 public:
@@ -57,16 +54,16 @@ public:
 
     /// Data type of the state
     using Data = typename ModelTypes::Data;
-    
+
     /// Data type of the boundary condition
     using BCType = typename ModelTypes::BCType;
-    
+
     /// Data type that holds the configuration
     using Config = typename ModelTypes::Config;
-    
+
     /// Data type that is used for storing datasets
     using DataGroup = typename ModelTypes::DataGroup;
-    
+
     /// Data type that is used for storing data
     using DataSet = typename ModelTypes::DataSet;
 
@@ -83,7 +80,7 @@ protected:
 
     /// Model-internal maximum time stamp
     const Time _time_max;
-    
+
     /// Name of the model instance
     const std::string _name;
 
@@ -117,29 +114,28 @@ public:
      *                      corresponding config node, the group, the RNG,
      *                      and the parent log level are extracted.
      */
-    template<class ParentModel>
-    Model (const std::string name,
-           const ParentModel &parent_model)
-    :
-        _time(0),
-        _time_max(parent_model.get_time_max()),
-        _name(name),
-        //extract the other information from the parent model object
-        _cfg(parent_model.get_cfg()[_name]),
-        _hdfgrp(parent_model.get_hdfgrp()->open_group(_name)),
-        _write_every(this->determine_write_every(parent_model)),
-        _rng(parent_model.get_rng()),
-        _log(spdlog::stdout_color_mt(parent_model.get_logger()->name() + "."
-                                     + _name))
+    template <class ParentModel>
+    Model(const std::string name, const ParentModel& parent_model)
+        : _time(0),
+          _time_max(parent_model.get_time_max()),
+          _name(name),
+          // extract the other information from the parent model object
+          _cfg(parent_model.get_cfg()[_name]),
+          _hdfgrp(parent_model.get_hdfgrp()->open_group(_name)),
+          _write_every(this->determine_write_every(parent_model)),
+          _rng(parent_model.get_rng()),
+          _log(spdlog::stdout_color_mt(parent_model.get_logger()->name() + "." + _name))
     {
         // Set this model instance's log level
-        if (_cfg["log_level"]) {
+        if (_cfg["log_level"])
+        {
             // Via value given in configuration
             const auto lvl = as_str(_cfg["log_level"]);
             _log->debug("Setting log level to '{}' ...", lvl);
             _log->set_level(spdlog::level::from_str(lvl));
         }
-        else {
+        else
+        {
             // No config value given; use the level of the parent's logger
             _log->set_level(parent_model.get_logger()->level());
         }
@@ -153,44 +149,49 @@ public:
         _log->debug("write_every:  {} step(s)", _write_every);
     }
 
-
     // -- Getters -- //
 
     /// Return the current time of this model
-    Time get_time() const {
+    Time get_time() const
+    {
         return _time;
     }
 
     /// Return the maximum time possible for this model
-    Time get_time_max() const {
+    Time get_time_max() const
+    {
         return _time_max;
     }
 
     /// Return the config node of this model
-    Config get_cfg() const {
+    Config get_cfg() const
+    {
         return _cfg;
     }
-    
+
     /// Return a pointer to the HDF group this model stores data in
-    std::shared_ptr<DataGroup> get_hdfgrp() const {
+    std::shared_ptr<DataGroup> get_hdfgrp() const
+    {
         return _hdfgrp;
     }
-    
+
     /// Return the parameter that controls how often write_data is called
-    Time get_write_every() const {
+    Time get_write_every() const
+    {
         return _write_every;
     }
-    
+
     /// Return a pointer to the shared RNG
-    std::shared_ptr<RNG> get_rng() const {
+    std::shared_ptr<RNG> get_rng() const
+    {
         return _rng;
     }
 
     /// Return a pointer to the logger of this model
-    std::shared_ptr<spdlog::logger> get_logger() const {
+    std::shared_ptr<spdlog::logger> get_logger() const
+    {
         return _log;
     }
-
 
     // -- Default implementations -- //
 
@@ -198,11 +199,13 @@ public:
     /** Increment time, perform step, then write data. If the write_every
      *  argument was set, will call write_data only in that interval.
      */
-    void iterate () {
+    void iterate()
+    {
         perform_step();
         increment_time();
 
-        if (_time % _write_every == 0) {
+        if (_time % _write_every == 0)
+        {
             _log->debug("Calling write_data ...");
             write_data();
         }
@@ -211,43 +214,48 @@ public:
 
     /// Run the model from the current time to the maximum time
     /** @detail This repeatedly calls the iterate method, which increments time
-      *
-      */
-    void run () {
-        _log->info("Running model from current time  {}  to time  {}  ...",
-                   _time, _time_max);
+     *
+     */
+    void run()
+    {
+        _log->info("Running model from current time  {}  to time  {}  ...", _time, _time_max);
 
-        while (_time < _time_max) {
+        while (_time < _time_max)
+        {
             iterate();
         }
         _log->info("Run finished. Current time:  {}", _time);
     }
 
-
     // -- User-defined implementations -- //
 
     /// Perform the computation of a step
-    void perform_step () {
+    void perform_step()
+    {
         impl().perform_step();
     }
-    
+
     /// Write data
-    void write_data () {
+    void write_data()
+    {
         impl().write_data();
     }
 
     /// Return const reference to stored data
-    const Data& data () const {
+    const Data& data() const
+    {
         return impl().data();
     }
-    
+
     /// Set model boundary condition
-    void set_boundary_condition (const BCType& bc) {
+    void set_boundary_condition(const BCType& bc)
+    {
         impl().set_boundary_condition(bc);
     }
 
     /// Set model initial condition
-    void set_initial_condition (const Data& ic) {
+    void set_initial_condition(const Data& ic)
+    {
         impl().set_initial_condition(ic);
     }
 
@@ -255,31 +263,38 @@ protected:
     /// Increment time
     /** \param dt Time increment, defaults to 1
      */
-    void increment_time (const Time dt=1) {
+    void increment_time(const Time dt = 1)
+    {
         _time += dt;
     }
     // TODO perhaps make this private?
 
     /// cast to the derived class
-    Derived& impl () { return static_cast<Derived&>(*this); }
-    
+    Derived& impl()
+    {
+        return static_cast<Derived&>(*this);
+    }
+
     /// const cast to the derived interface
-    const Derived& impl () const { return static_cast<const Derived&>(*this); }
+    const Derived& impl() const
+    {
+        return static_cast<const Derived&>(*this);
+    }
 
 private:
     /// Helper function to initialize the write_every member
-    template<typename ParentModel>
-    Time determine_write_every(ParentModel &parent_model) const {
-        if (_cfg["write_every"]) {
+    template <typename ParentModel>
+    Time determine_write_every(ParentModel& parent_model) const
+    {
+        if (_cfg["write_every"])
+        {
             // Use the value given in the configuration
             return as_<Time>(_cfg["write_every"]);
         }
         // Use the value from the parent
         return parent_model.get_write_every();
     }
-
 };
-
 
 /// A class to use at the top level of the model hierarchy as a mock parent
 /** \detail It is especially useful when initializing a top-level model as then
@@ -292,7 +307,7 @@ private:
  *
  *  \tparam RNG The RNG type to use
  */
-template<typename RNG=DefaultRNG>
+template <typename RNG = DefaultRNG>
 class PseudoParent
 {
 protected:
@@ -326,16 +341,15 @@ public:
      *
      *  \param cfg_path The path to the YAML-formatted configuration file
      */
-    PseudoParent (const std::string cfg_path)
-    :
-    // Initialize the config node from the path to the config file
-    _cfg(YAML::LoadFile(cfg_path)),
-    // Create a file at the specified output path and store the shared pointer
-    _hdffile(std::make_shared<HDFFile>(as_str(_cfg["output_path"]), "w")),
-    // Initialize the RNG from a seed
-    _rng(std::make_shared<RNG>(as_<int>(_cfg["seed"]))),
-    // And initialize the root logger at warning level
-    _log(Utopia::init_logger("root", spdlog::level::warn, false))
+    PseudoParent(const std::string cfg_path)
+        : // Initialize the config node from the path to the config file
+          _cfg(YAML::LoadFile(cfg_path)),
+          // Create a file at the specified output path and store the shared pointer
+          _hdffile(std::make_shared<HDFFile>(as_str(_cfg["output_path"]), "w")),
+          // Initialize the RNG from a seed
+          _rng(std::make_shared<RNG>(as_<int>(_cfg["seed"]))),
+          // And initialize the root logger at warning level
+          _log(Utopia::init_logger("root", spdlog::level::warn, false))
     {
         setup_loggers(); // global loggers
         set_log_level(); // this log level
@@ -343,7 +357,6 @@ public:
         _log->info("Initialized PseudoParent from config file");
         _log->debug("cfg_path:      {}", cfg_path);
     }
-    
 
     /// Constructor that allows granular control over config parameters
     /**
@@ -352,61 +365,63 @@ public:
      *  \param seed The seed the RNG is initialized with (default: 42)
      *  \param output_file_mode The access mode of the HDF5 file (default: w)
      */
-    PseudoParent (const std::string cfg_path,
-                  const std::string output_path,
-                  const int seed=42,
-                  const std::string output_file_mode="w")
-    :
-    // Initialize the config node from the path to the config file
-    _cfg(YAML::LoadFile(cfg_path)),
-    // Create a file at the specified output path
-    _hdffile(std::make_shared<HDFFile>(output_path, output_file_mode)),
-    // Initialize the RNG from a seed
-    _rng(std::make_shared<RNG>(seed)),
-    // And initialize the root logger at warning level
-    _log(Utopia::init_logger("root", spdlog::level::warn, false))
+    PseudoParent(const std::string cfg_path,
+                 const std::string output_path,
+                 const int seed = 42,
+                 const std::string output_file_mode = "w")
+        : // Initialize the config node from the path to the config file
+          _cfg(YAML::LoadFile(cfg_path)),
+          // Create a file at the specified output path
+          _hdffile(std::make_shared<HDFFile>(output_path, output_file_mode)),
+          // Initialize the RNG from a seed
+          _rng(std::make_shared<RNG>(seed)),
+          // And initialize the root logger at warning level
+          _log(Utopia::init_logger("root", spdlog::level::warn, false))
     {
         setup_loggers(); // global loggers
         set_log_level(); // this log level
 
         _log->info("Initialized PseudoParent from parameters");
         _log->debug("cfg_path:      {}", cfg_path);
-        _log->debug("output_path:   {}  (mode: {})",
-                    output_path, output_file_mode);
+        _log->debug("output_path:   {}  (mode: {})", output_path, output_file_mode);
         _log->debug("seed:          {}", seed);
     }
-
-
 
     // -- Getters -- //
 
     /// Return the config node of the Pseudo model, i.e. the root node
-    Config get_cfg() const {
+    Config get_cfg() const
+    {
         return _cfg;
     }
 
     /// Return a pointer to the HDF data file
-    std::shared_ptr<HDFFile> get_hdffile() const {
+    std::shared_ptr<HDFFile> get_hdffile() const
+    {
         return _hdffile;
     }
-    
+
     /// Return a pointer to the HDF group, which is the base group of the file
-    std::shared_ptr<HDFGroup> get_hdfgrp() const {
+    std::shared_ptr<HDFGroup> get_hdfgrp() const
+    {
         return _hdffile->get_basegroup();
     }
-    
+
     /// Return the parameter that controls how often write_data is called
-    Time get_write_every() const {
+    Time get_write_every() const
+    {
         return as_<Time>(_cfg["write_every"]);
     }
-    
+
     /// Return a pointer to the RNG
-    std::shared_ptr<RNG> get_rng() const {
+    std::shared_ptr<RNG> get_rng() const
+    {
         return _rng;
     }
 
     /// Return a pointer to the logger of this model
-    std::shared_ptr<spdlog::logger> get_logger() const {
+    std::shared_ptr<spdlog::logger> get_logger() const
+    {
         return _log;
     }
 
@@ -414,31 +429,27 @@ public:
     /** @detail Currently, this reads the `num_steps` key, but this might be
      *          changed in the future to allow continuous time steps.
      */
-    Time get_time_max() const {
+    Time get_time_max() const
+    {
         return as_<Time>(_cfg["num_steps"]);
     }
 
-
-
-
 private:
-
     /// Set up the global loggers with levels specified in the config file
-    void setup_loggers () const {
+    void setup_loggers() const
+    {
         Utopia::setup_loggers(
             spdlog::level::from_str(as_str(_cfg["log_levels"]["core"])),
-            spdlog::level::from_str(as_str(_cfg["log_levels"]["data_io"]))
-        );
+            spdlog::level::from_str(as_str(_cfg["log_levels"]["data_io"])));
     }
 
     /// Set the log level for the pseudo parent from the base_cfg
-    void set_log_level () const {
+    void set_log_level() const
+    {
         _log->set_level(
-            spdlog::level::from_str(as_str(_cfg["log_levels"]["model"]))
-        );
+            spdlog::level::from_str(as_str(_cfg["log_levels"]["model"])));
     }
 };
-
 
 } // namespace Utopia
 
