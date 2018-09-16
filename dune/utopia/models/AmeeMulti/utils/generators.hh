@@ -347,7 +347,7 @@ public:
         typename Statetype::value_type s1 = this->_state[_p = (_p + 1) & 15];
         s1 ^= s1 << a;                                      // a
         this->_state[_p] = s1 ^ s0 ^ (s1 >> b) ^ (s0 >> c); // b, c
-        return this->_state[_p] * UINT64_C(1181783497276652981); // where does this number come from?
+        return this->_state[_p] * UINT64_C(1181783497276652981);
     }
 
     /**
@@ -420,10 +420,9 @@ public:
      */
     XorShiftStar(typename Statetype::value_type single_state)
         : Base(single_state), _p([&]() {
-              std::seed_seq seq{single_state};
-              std::array<decltype(_p), 1> p;
-              seq.generate(p.begin(), p.end());
-              return p[0];
+              std::default_random_engine eng(single_state);
+              std::uniform_int_distribution<int> pdist(0, this->_state.size());
+              return pdist(eng);
           }())
     {
     }

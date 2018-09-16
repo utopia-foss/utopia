@@ -53,6 +53,9 @@ public:
     using AP = typename Agentstate::Phenotype;
     using APV = typename AP::value_type;
 
+    using AG = typename Agentstate::Genotype;
+    using AGV = typename AG::value_type;
+
     using Types = Modeltypes;
 
     /// The base model type
@@ -559,7 +562,7 @@ public:
 
         std::size_t i = 0;
         auto agent = _agentmanager.agents()[0];
-        std::uniform_real_distribution<APV> dist(init_genotype_values[0],
+        std::uniform_real_distribution<AGV> dist(init_genotype_values[0],
                                                  init_genotype_values[1]);
 
         std::uniform_int_distribution<int> idist(0, init_genotypelen);
@@ -567,10 +570,17 @@ public:
         for (; i < 10000; ++i)
         {
             // make initial agent genotype
-            AP trait(init_genotypelen);
+            AG trait(init_genotypelen);
             for (auto& val : trait)
             {
-                val = dist(*(this->_rng));
+                if constexpr (std::is_integral_v<AGV>)
+                {
+                    val = std::round(dist(*(this->_rng)));
+                }
+                else
+                {
+                    val = dist(*(this->_rng));
+                }
             }
 
             agent->state() = Agentstate(trait, cell, init_resources, this->_rng);
@@ -742,6 +752,141 @@ public:
             ->write(cells.begin(), cells.end(), [](const auto& cell) {
                 return cell->state().celltrait.size();
             });
+    }
+
+    const auto& agents()
+    {
+        return _agentmanager.agents();
+    }
+
+    const auto& cells()
+    {
+        return _cellmanager.cells();
+    }
+
+    Adaptionfunction get_adaptionfunction()
+    {
+        return _check_adaption;
+    }
+
+    void set_adaptionfunction(Adaptionfunction new_adaptionfunc)
+    {
+        _check_adaption = new_adaptionfunc;
+    }
+
+    double get_livingcost()
+    {
+        return _livingcost;
+    }
+
+    void set_livingcost(double lv)
+    {
+        _livingcost = lv;
+    }
+
+    double get_reproductioncost()
+    {
+        return _reproductioncost;
+    }
+
+    void set_reproductioncost(double rc)
+    {
+        _reproductioncost = rc;
+    }
+
+    double get_offspringresources()
+    {
+        return _offspringresources;
+    }
+
+    void set_offspringresources(double oc)
+    {
+        _offspringresources = oc;
+    }
+
+    double get_deathprobability()
+    {
+        return _deathprobability;
+    }
+
+    void set_deathprobability(double dth)
+    {
+        _deathprobability = dth;
+    }
+
+    double get_decayintensity()
+    {
+        return _decayintensity;
+    }
+
+    void set_decayintensity(double dci)
+    {
+        _decayintensity = dci;
+    }
+
+    double get_removethreshold()
+    {
+        return _removethreshold;
+    }
+
+    void set_removethreshold(double rmth)
+    {
+        _removethreshold = rmth;
+    }
+
+    double get_modifiercost()
+    {
+        return _modifiercost;
+    }
+
+    void set_modifiercost(double mc)
+    {
+        _modifiercost = mc;
+    }
+
+    bool get_highresoutput()
+    {
+        return _highresoutput;
+    }
+
+    void set_highresoutput(bool hro)
+    {
+        _highresoutput = hro;
+    }
+
+    std::size_t get_idx()
+    {
+        return _idx;
+    }
+
+    auto get_mutationrates()
+    {
+        return _mutationrates;
+    }
+
+    void set_mutationrates(std::vector<double> mutationrates)
+    {
+        _mutationrates = mutationrates;
+    }
+
+    auto get_upperresourcelimit()
+    {
+        return _upper_resourcelimit;
+    }
+
+    auto get_highresinterval()
+    {
+        return _highres_interval;
+    }
+
+    auto get_decay()
+    {
+        return decay;
+    }
+
+    auto get_construction()
+    {
+        return construction;
     }
 
 }; // namespace AmeeMulti

@@ -15,6 +15,7 @@ set(TESTS_AMEEMULTI
     multi_agentstatesimple_test
     multi_agentstategauss_test
     multi_model_test
+    multi_generatortest
     )
 
 # add AMEEMULTI tests

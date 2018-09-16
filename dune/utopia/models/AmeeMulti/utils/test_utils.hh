@@ -61,13 +61,13 @@ namespace Utils
         std::cerr << ", rhs: " << rhs << std::endl;                               \
     }
 
-#define ASSERT_GEQ(lhs, rhs)                                                          \
-    if (!(is_greater(lhs, rhs)) and !Utopia::Models::Amee::Utils(::is_equallhs, rhs)) \
-    {                                                                                 \
-        std::cerr << "Asserted relation 'lhs <= rhs' wrong at line: " << __LINE__;    \
-        std::cerr << " lhs: " << lhs;                                                 \
-        std::cerr << ", rhs: " << rhs << std::endl;                                   \
-        std::exit(-1);                                                                \
+#define ASSERT_GEQ(lhs, rhs)                                                               \
+    if (!(is_greater(lhs, rhs)) and !Utopia::Models::AmeeMulti::Utils::is_equal(lhs, rhs)) \
+    {                                                                                      \
+        std::cerr << "Asserted relation 'lhs <= rhs' wrong at line: " << __LINE__;         \
+        std::cerr << " lhs: " << lhs;                                                      \
+        std::cerr << ", rhs: " << rhs << std::endl;                                        \
+        std::exit(-1);                                                                     \
     }
 
 #define EXPECT_GEQ(lhs, rhs)                                                       \

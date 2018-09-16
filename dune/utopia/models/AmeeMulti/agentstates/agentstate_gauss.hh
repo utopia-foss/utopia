@@ -22,6 +22,8 @@ template <typename Cell, typename PT, typename RNG>
 struct AgentStateGauss
 {
     using Phenotype = PT;
+    using Genotype = PT;
+
     using P = typename Phenotype::value_type;
 
     std::shared_ptr<RNG> rng;
