@@ -8,11 +8,15 @@ namespace Models
 {
 namespace AmeeMulti
 {
-template <class Genotype, class Phenotype, class RNG>
-struct Agentstate_policy_highlevel
-    : public Agentstate_policy_simple<Genotype, Phenotype, RNG>
+template <class Gt, class Pt, class PRNG>
+struct Agentstate_policy_highlevel : public Agentstate_policy_simple<Gt, Pt, PRNG>
 {
+    using Phenotype = Pt;
+    using Genotype = Gt;
+    using RNG = PRNG;
+
     using P = typename Phenotype::value_type;
+
     virtual Genotype copy_genome(Genotype& parent_genome,
                                  std::vector<double>& mutationrates,
                                  std::shared_ptr<RNG> rng) override

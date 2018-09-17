@@ -365,7 +365,7 @@ void test_simple()
     using GenotypeS = std::vector<double>;
     using PhenotypeS = std::vector<double>;
     using PolicyS = Agentstate_policy_simple<GenotypeS, PhenotypeS, RNG>;
-    using ASS = AgentState<Cell, GenotypeS, PhenotypeS, RNG, PolicyS>;
+    using ASS = AgentState<Cell, PolicyS>;
 
     parentmodel_simple.get_logger()->info("Using simple Agentstate");
     // make agents and agentmanager
@@ -409,7 +409,7 @@ void test_complex()
     using GenotypeS = std::vector<int>;
     using PhenotypeS = std::vector<double>;
     using PolicyS = Agentstate_policy_complex<GenotypeS, PhenotypeS, RNG>;
-    using ASS = AgentState<Cell, GenotypeS, PhenotypeS, RNG, PolicyS>;
+    using ASS = AgentState<Cell, PolicyS>;
 
     parentmodel_complex.get_logger()->info("Using complex Agentstate");
     // make agents and agentmanager
@@ -455,7 +455,7 @@ void test_highlevel()
     using GenotypeS = std::vector<double>;
     using PhenotypeS = std::vector<double>;
     using PolicyS = Agentstate_policy_highlevel<GenotypeS, PhenotypeS, RNG>;
-    using ASS = AgentState<Cell, GenotypeS, PhenotypeS, RNG, PolicyS>;
+    using ASS = AgentState<Cell, PolicyS>;
 
     parentmodel_highlevel.get_logger()->info("Using highlevel Agentstate");
     // make agents and agentmanager

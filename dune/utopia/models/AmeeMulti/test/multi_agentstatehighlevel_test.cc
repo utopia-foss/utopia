@@ -15,7 +15,7 @@ using Genotype = std::vector<double>;
 using Phenotype = std::vector<double>;
 using RNG = Xoroshiro<>;
 using APC = Agentstate_policy_highlevel<Genotype, Phenotype, RNG>;
-using State = AgentState<Cell, Genotype, Phenotype, RNG, APC>;
+using State = AgentState<Cell, APC>;
 
 int main()
 {

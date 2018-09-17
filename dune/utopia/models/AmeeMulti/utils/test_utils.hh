@@ -1,3 +1,6 @@
+#ifndef UTOPIA_MODELS_AMEEMULTI_TEST_UTILS_HH
+#define UTOPIA_MODELS_AMEEMULTI_TEST_UTILS_HH
+
 // custom assert macros go here
 #include "utils.hh"
 #include <cmath>
@@ -6,7 +9,7 @@ namespace Utopia
 {
 namespace Models
 {
-namespace AmeeMulti
+namespace Amee
 {
 namespace Utils
 {
@@ -66,17 +69,17 @@ namespace Utils
         std::cerr << std::setprecision(16) << ", rhs: " << rhs << std::endl;      \
     }
 
-#define ASSERT_GEQ(lhs, rhs)                                                               \
-    if (!(is_greater(lhs, rhs)) and !Utopia::Models::AmeeMulti::Utils::is_equal(lhs, rhs)) \
-    {                                                                                      \
-        std::cerr << "Asserted relation 'lhs <= rhs' wrong at line: " << __LINE__;         \
-        std::cerr << std::setprecision(16) << " lhs: " << lhs;                             \
-        std::cerr << std::setprecision(16) << ", rhs: " << rhs << std::endl;               \
-        std::exit(-1);                                                                     \
+#define ASSERT_GEQ(lhs, rhs)                                                       \
+    if (!(is_greater(lhs, rhs) or is_equal(lhs, rhs)))                             \
+    {                                                                              \
+        std::cerr << "Asserted relation 'lhs <= rhs' wrong at line: " << __LINE__; \
+        std::cerr << std::setprecision(16) << " lhs: " << lhs;                     \
+        std::cerr << std::setprecision(16) << ", rhs: " << rhs << std::endl;       \
+        std::exit(-1);                                                             \
     }
 
 #define EXPECT_GEQ(lhs, rhs)                                                       \
-    if (!(is_greater(lhs, rhs)) and !is_equal(lhs, rhs))                           \
+    if (!(is_greater(lhs, rhs) or is_equal(lhs, rhs)))                             \
     {                                                                              \
         std::cerr << "Exepcted relation 'lhs <= rhs' wrong at line: " << __LINE__; \
         std::cerr << std::setprecision(16) << " lhs: " << lhs;                     \
@@ -103,7 +106,7 @@ namespace Utils
     }
 
 #define ASSERT_LEQ(lhs, rhs)                                                       \
-    if (!(is_less(lhs, rhs)) and !is_equal(lhs, rhs))                              \
+    if (!(is_less(lhs, rhs) or is_equal(lhs, rhs)))                                \
     {                                                                              \
         std::cerr << std::setprecision(16)                                         \
                   << "Asserted relation 'lhs <= rhs' wrong at line: " << __LINE__; \
@@ -113,7 +116,7 @@ namespace Utils
     }
 
 #define EXPECT_LEQ(lhs, rhs)                                                       \
-    if (!(is_less(lhs, rhs)) and !is_equal(lhs, rhs))                              \
+    if (!(is_less(lhs, rhs) or is_equal(lhs, rhs)))                                \
     {                                                                              \
         std::cerr << std::setprecision(16)                                         \
                   << "Exepcted relation 'lhs <= rhs' wrong at line: " << __LINE__; \
@@ -122,6 +125,7 @@ namespace Utils
     }
 
 } // namespace Utils
-} // namespace AmeeMulti
+} // namespace Amee
 } // namespace Models
 } // namespace Utopia
+#endif

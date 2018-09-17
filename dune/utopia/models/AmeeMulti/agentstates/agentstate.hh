@@ -21,11 +21,12 @@ namespace AmeeMulti
  * @tparam Ptype the phenotype type e.g. std::vector<double>
  * @tparam RNG the random number generator type.
  */
-template <typename Cell, typename Gtype, typename Ptype, typename RNG, typename Statepolicy>
+template <typename Cell, typename Statepolicy>
 struct AgentState : public Statepolicy
 {
-    using Genotype = Gtype;
-    using Phenotype = Ptype;
+    using Genotype = typename Statepolicy::Genotype;
+    using Phenotype = typename Statepolicy::Phenotype;
+    using RNG = typename Statepolicy::RNG;
     using G = typename Genotype::value_type;
     using P = typename Phenotype::value_type;
 
@@ -131,9 +132,8 @@ struct AgentState : public Statepolicy
  * @param lhs object to swap state with rhs
  * @param rhs object to swap state with lhs
  */
-template <typename Cell, typename Gtype, typename Ptype, typename RNG, typename Policy>
-void swap(AgentState<Cell, Gtype, Ptype, RNG, Policy>& lhs,
-          AgentState<Cell, Gtype, Ptype, RNG, Policy>& rhs)
+template <typename Cell, typename Policy>
+void swap(AgentState<Cell, Policy>& lhs, AgentState<Cell, Policy>& rhs)
 {
     lhs.swap(rhs);
 }

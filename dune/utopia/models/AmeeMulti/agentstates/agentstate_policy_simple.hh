@@ -11,9 +11,12 @@ namespace Models
 {
 namespace AmeeMulti
 {
-template <class Genotype, class Phenotype, class RNG>
+template <class Gt, class Pt, class PRNG>
 struct Agentstate_policy_simple
 {
+    using Phenotype = Pt;
+    using Genotype = Gt;
+    using RNG = PRNG;
     using P = typename Phenotype::value_type;
     /**
      * @brief Function for computing a value from a range [s,e) in the genome

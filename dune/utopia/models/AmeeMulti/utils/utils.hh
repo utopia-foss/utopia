@@ -1,5 +1,5 @@
-#ifndef AMEE_UTILS_HH
-#define AMEE_UTILS_HH
+#ifndef UTOPIA_MODELS_AMEEMULTI_UTILS_HH
+#define UTOPIA_MODELS_AMEEMULTI_UTILS_HH
 
 #include "../../../data_io/hdfutilities.hh"
 #include <cmath>

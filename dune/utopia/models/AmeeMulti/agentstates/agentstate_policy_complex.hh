@@ -8,10 +8,14 @@ namespace Models
 {
 namespace AmeeMulti
 {
-template <class Genotype, class Phenotype, class RNG>
-struct Agentstate_policy_complex
-    : public Agentstate_policy_simple<Genotype, Phenotype, RNG>
+template <class Gt, class Pt, class PRNG>
+struct Agentstate_policy_complex : public Agentstate_policy_simple<Gt, Pt, PRNG>
 {
+    using Phenotype = Pt;
+    using Genotype = Gt;
+    using RNG = PRNG;
+    using P = typename Phenotype::value_type;
+
     Phenotype translate_genome(unsigned sumlen, double divisor, Genotype& genotype)
     {
         if (sumlen == 0 || std::abs(divisor) < 1e-16)

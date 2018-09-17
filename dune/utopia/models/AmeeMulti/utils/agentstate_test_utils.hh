@@ -25,9 +25,8 @@ struct Cell
     virtual ~Cell() = default;
 };
 
-template <template <typename...> class Agentstate, typename Cell, typename Genotype, typename Phenotype, typename Rng, typename Policy>
-bool operator==(const Agentstate<Cell, Genotype, Phenotype, Rng, Policy>& lhs,
-                const Agentstate<Cell, Genotype, Phenotype, Rng, Policy>& rhs)
+template <template <typename...> class Agentstate, typename Cell, typename Policy>
+bool operator==(const Agentstate<Cell, Policy>& lhs, const Agentstate<Cell, Policy>& rhs)
 {
     return (lhs.rng == rhs.rng) && (is_equal(lhs.resources, rhs.resources)) &&
            (lhs.fitness == rhs.fitness) && (lhs.sumlen == rhs.sumlen) &&
