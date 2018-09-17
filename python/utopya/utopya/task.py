@@ -246,8 +246,8 @@ class WorkerTask(Task):
 
             return poll_res
         
-        else:
-            return self._worker_status
+        # Return the cached exit status
+        return self._worker_status
 
     # Magic methods ...........................................................
 
@@ -441,12 +441,12 @@ class WorkerTask(Task):
 
         return
 
-    def save_streams(self, stream_names: list='all'):
+    def save_streams(self, stream_names: list='all', final: bool=False) -> None:
         """For each stream, checks if it is to be saved, and if yes: saves it.
-
+        
         The saving location is stored in the streams dict. The relevant keys
         are the `save` flag and the `save_path` string.
-
+        
         Note that this function does not save the whole stream log, but only
         those part of the stream log that have not already been saved. The
         position up to which the stream was saved is stored under the
@@ -456,6 +456,12 @@ class WorkerTask(Task):
             stream_names (list, optional): The list of stream names to _check_.
                 If 'all' (default), will check all streams whether the `save`
                 flag is set.
+            final (bool, optional): If True, this is regarded as the final
+                save operation for the stream, which will lead to additional
+                information being saved to the end of the log.
+        
+        Returns:
+            None
         """
 
         if not self.streams:
@@ -496,11 +502,19 @@ class WorkerTask(Task):
             with open(stream['save_path'], 'a') as f:
                 # Write header, if not already done
                 if stream['lines_saved'] == 0:
-                    f.write("Log of '{}' stream of WorkerTask '{}'\n\n"
-                            "".format(stream_name, self.name))
+                    f.write("Log of '{}' stream of WorkerTask '{}'"
+                            "\n\n".format(stream_name, self.name))
 
                 # Write the lines to save
                 f.write("\n".join(lines_to_save))
+
+                # If this is the final save call, add information on the exit
+                # status to the end
+                if final:
+                    f.write("\n"
+                            "\n---"
+                            "\nend of log. exit code: {}"
+                            "".format(self.worker_status))
 
                 # Ensure new line at the end
                 f.write("\n")
@@ -636,7 +650,7 @@ class WorkerTask(Task):
         # Read all remaining stream lines, then forward remaining and save all
         self.read_streams(max_num_reads=-1)
         self.forward_streams()
-        self.save_streams()
+        self.save_streams(final=True)
 
         # If given, call the callback function
         self._invoke_callback('finished')
