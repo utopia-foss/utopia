@@ -1,6 +1,5 @@
 #include "AmeeMulti.hh"
 #include "agentstates/agentstate.hh"
-#include "agentstates/agentstate_gauss.hh"
 #include "agentstates/agentstate_policy_complex.hh"
 #include "agentstates/agentstate_policy_highlevel.hh"
 #include "agentstates/agentstate_policy_simple.hh"
@@ -53,26 +52,10 @@ int main(int argc, char** argv)
             if (agenttype == "simple")
             {
                 using Policy = Agentstate_policy_simple<Genotype, Phenotype, RNG>;
-                using Agentstate = AgentState<Cell, Genotype, Phenotype, RNG, Policy>;
+                using Agentstate = AgentState<Cell, Policy>;
                 auto agentmanager = Utopia::Setup::create_manager_agents<true, true>(
                     wrapper, Utopia::Setup::create_agents_on_grid(wrapper, 1, Agentstate()));
 
-                using Agentmanager = decltype(agentmanager);
-                // making model types
-                using Modeltypes =
-                    Utopia::ModelTypes<std::pair<Cell, typename Agentmanager::Agent>, Utopia::BCDummy, RNG>;
-                using AmeeMulti =
-                    AmeeMulti<Cell, Cellmanager, Agentmanager, Modeltypes, true, true>;
-
-                AmeeMulti model("AmeeMulti", pp, cellmanager, agentmanager);
-                // run model
-                model.run();
-            }
-            if (agenttype == "gauss")
-            {
-                using Agentstate = AgentStateGauss<Cell, Phenotype, RNG>;
-                auto agentmanager = Utopia::Setup::create_manager_agents<true, true>(
-                    wrapper, Utopia::Setup::create_agents_on_grid(wrapper, 1, Agentstate()));
                 using Agentmanager = decltype(agentmanager);
                 // making model types
                 using Modeltypes =
@@ -87,7 +70,7 @@ int main(int argc, char** argv)
             if (agenttype == "complex")
             {
                 using Policy = Agentstate_policy_complex<Genotype, Phenotype, RNG>;
-                using Agentstate = AgentState<Cell, Genotype, Phenotype, RNG, Policy>;
+                using Agentstate = AgentState<Cell, Policy>;
 
                 auto agentmanager = Utopia::Setup::create_manager_agents<true, true>(
                     wrapper, Utopia::Setup::create_agents_on_grid(wrapper, 1, Agentstate()));
@@ -105,7 +88,7 @@ int main(int argc, char** argv)
             if (agenttype == "highlevel")
             {
                 using Policy = Agentstate_policy_highlevel<Genotype, Phenotype, RNG>;
-                using Agentstate = AgentState<Cell, Genotype, Phenotype, RNG, Policy>;
+                using Agentstate = AgentState<Cell, Policy>;
                 auto agentmanager = Utopia::Setup::create_manager_agents<true, true>(
                     wrapper, Utopia::Setup::create_agents_on_grid(wrapper, 1, Agentstate()));
                 using Agentmanager = decltype(agentmanager);
@@ -125,7 +108,7 @@ int main(int argc, char** argv)
             if (agenttype == "simple")
             {
                 using Policy = Agentstate_policy_simple<Genotype, Phenotype, RNG>;
-                using Agentstate = AgentState<Cell, Genotype, Phenotype, RNG, Policy>;
+                using Agentstate = AgentState<Cell, Policy>;
                 auto agentmanager = Utopia::Setup::create_manager_agents<true, true>(
                     wrapper, Utopia::Setup::create_agents_on_grid(wrapper, 1, Agentstate()));
 
@@ -141,28 +124,11 @@ int main(int argc, char** argv)
                 // run model
                 model.run();
             }
-            if (agenttype == "gauss")
-            {
-                using Agentstate = AgentStateGauss<Cell, Phenotype, RNG>;
-                auto agentmanager = Utopia::Setup::create_manager_agents<true, true>(
-                    wrapper, Utopia::Setup::create_agents_on_grid(wrapper, 1, Agentstate()));
 
-                using Agentmanager = decltype(agentmanager);
-
-                using Modeltypes =
-                    Utopia::ModelTypes<std::pair<Cell, typename Agentmanager::Agent>, Utopia::BCDummy, RNG>;
-                using AmeeMulti =
-                    AmeeMulti<Cell, Cellmanager, Agentmanager, Modeltypes, true, false>;
-
-                AmeeMulti model("AmeeMulti", pp, cellmanager, agentmanager);
-
-                // run model
-                model.run();
-            }
             if (agenttype == "complex")
             {
                 using Policy = Agentstate_policy_complex<Genotype, Phenotype, RNG>;
-                using Agentstate = AgentState<Cell, Genotype, Phenotype, RNG, Policy>;
+                using Agentstate = AgentState<Cell, Policy>;
                 auto agentmanager = Utopia::Setup::create_manager_agents<true, true>(
                     wrapper, Utopia::Setup::create_agents_on_grid(wrapper, 1, Agentstate()));
 
@@ -181,7 +147,7 @@ int main(int argc, char** argv)
             if (agenttype == "highlevel")
             {
                 using Policy = Agentstate_policy_highlevel<Genotype, Phenotype, RNG>;
-                using Agentstate = AgentState<Cell, Genotype, Phenotype, RNG, Policy>;
+                using Agentstate = AgentState<Cell, Policy>;
                 auto agentmanager = Utopia::Setup::create_manager_agents<true, true>(
                     wrapper, Utopia::Setup::create_agents_on_grid(wrapper, 1, Agentstate()));
 
@@ -203,7 +169,7 @@ int main(int argc, char** argv)
             if (agenttype == "simple")
             {
                 using Policy = Agentstate_policy_simple<Genotype, Phenotype, RNG>;
-                using Agentstate = AgentState<Cell, Genotype, Phenotype, RNG, Policy>;
+                using Agentstate = AgentState<Cell, Policy>;
                 auto agentmanager = Utopia::Setup::create_manager_agents<true, true>(
                     wrapper, Utopia::Setup::create_agents_on_grid(wrapper, 1, Agentstate()));
 
@@ -219,28 +185,11 @@ int main(int argc, char** argv)
                 // run model
                 model.run();
             }
-            if (agenttype == "gauss")
-            {
-                using Agentstate = AgentStateGauss<Cell, Phenotype, RNG>;
-                auto agentmanager = Utopia::Setup::create_manager_agents<true, true>(
-                    wrapper, Utopia::Setup::create_agents_on_grid(wrapper, 1, Agentstate()));
 
-                using Agentmanager = decltype(agentmanager);
-
-                using Modeltypes =
-                    Utopia::ModelTypes<std::pair<Cell, typename Agentmanager::Agent>, Utopia::BCDummy, RNG>;
-                using AmeeMulti =
-                    AmeeMulti<Cell, Cellmanager, Agentmanager, Modeltypes, false, true>;
-
-                AmeeMulti model("AmeeMulti", pp, cellmanager, agentmanager);
-
-                // run model
-                model.run();
-            }
             if (agenttype == "complex")
             {
                 using Policy = Agentstate_policy_complex<Genotype, Phenotype, RNG>;
-                using Agentstate = AgentState<Cell, Genotype, Phenotype, RNG, Policy>;
+                using Agentstate = AgentState<Cell, Policy>;
                 auto agentmanager = Utopia::Setup::create_manager_agents<true, true>(
                     wrapper, Utopia::Setup::create_agents_on_grid(wrapper, 1, Agentstate()));
 
@@ -259,7 +208,7 @@ int main(int argc, char** argv)
             if (agenttype == "highlevel")
             {
                 using Policy = Agentstate_policy_highlevel<Genotype, Phenotype, RNG>;
-                using Agentstate = AgentState<Cell, Genotype, Phenotype, RNG, Policy>;
+                using Agentstate = AgentState<Cell, Policy>;
                 auto agentmanager = Utopia::Setup::create_manager_agents<true, true>(
                     wrapper, Utopia::Setup::create_agents_on_grid(wrapper, 1, Agentstate()));
 
@@ -281,7 +230,7 @@ int main(int argc, char** argv)
             if (agenttype == "simple")
             {
                 using Policy = Agentstate_policy_simple<Genotype, Phenotype, RNG>;
-                using Agentstate = AgentState<Cell, Genotype, Phenotype, RNG, Policy>;
+                using Agentstate = AgentState<Cell, Policy>;
                 auto agentmanager = Utopia::Setup::create_manager_agents<true, true>(
                     wrapper, Utopia::Setup::create_agents_on_grid(wrapper, 1, Agentstate()));
                 using Agentmanager = decltype(agentmanager);
@@ -295,28 +244,11 @@ int main(int argc, char** argv)
                 // run model
                 model.run();
             }
-            if (agenttype == "gauss")
-            {
-                using Agentstate = AgentStateGauss<Cell, Phenotype, RNG>;
-                auto agentmanager = Utopia::Setup::create_manager_agents<true, true>(
-                    wrapper, Utopia::Setup::create_agents_on_grid(wrapper, 1, Agentstate()));
-                using Agentmanager = decltype(agentmanager);
 
-                using Modeltypes =
-                    Utopia::ModelTypes<std::pair<Cell, typename Agentmanager::Agent>, Utopia::BCDummy, RNG>;
-                using AmeeMulti =
-                    AmeeMulti<Cell, Cellmanager, Agentmanager, Modeltypes, false, false>;
-
-                // build model
-                AmeeMulti model("AmeeMulti", pp, cellmanager, agentmanager);
-
-                // run model
-                model.run();
-            }
             if (agenttype == "complex")
             {
                 using Policy = Agentstate_policy_complex<Genotype, Phenotype, RNG>;
-                using Agentstate = AgentState<Cell, Genotype, Phenotype, RNG, Policy>;
+                using Agentstate = AgentState<Cell, Policy>;
                 auto agentmanager = Utopia::Setup::create_manager_agents<true, true>(
                     wrapper, Utopia::Setup::create_agents_on_grid(wrapper, 1, Agentstate()));
                 using Agentmanager = decltype(agentmanager);
@@ -335,7 +267,7 @@ int main(int argc, char** argv)
             if (agenttype == "highlevel")
             {
                 using Policy = Agentstate_policy_highlevel<Genotype, Phenotype, RNG>;
-                using Agentstate = AgentState<Cell, Genotype, Phenotype, RNG, Policy>;
+                using Agentstate = AgentState<Cell, Policy>;
                 auto agentmanager = Utopia::Setup::create_manager_agents<true, true>(
                     wrapper, Utopia::Setup::create_agents_on_grid(wrapper, 1, Agentstate()));
                 using Agentmanager = decltype(agentmanager);
