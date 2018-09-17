@@ -33,7 +33,6 @@ Graph create_random_graph(  const std::size_t num_vertices,
     Graph g; 
 
     // Create a random graph using the Erdös-Rényi algorithm
-    // The graph is undirected
     boost::generate_random_graph(g, num_vertices, num_edges , rng, allow_parallel, self_edges); 
 
     // Return graph
@@ -88,7 +87,8 @@ Graph create_scale_free_graph(  const std::size_t num_vertices,
         // Keep account whether an edge has been added or not
         bool edge_added = false;
 
-        // Add i times a vertex and connect it randomly but weighted to the existing vertices
+        // Add i times a vertex and connect it randomly but weighted 
+        // to the existing vertices
         std::uniform_real_distribution<> rand(0, 1);
         for (std::size_t i = 0; i<(num_vertices - mean_degree - 1); ++i){
             // Add a new vertex
@@ -110,14 +110,16 @@ Graph create_scale_free_graph(  const std::size_t num_vertices,
 
                     // Check whether the nodes are already connected
                     if (!boost::edge(new_vertex, *v, g).second){
-                        prob += boost::out_degree(*v, g) / ((2. * num_edges) - deg_ignore);
+                        prob += boost::out_degree(*v, g) 
+                                / ((2. * num_edges) - deg_ignore);
                     }
                     if (rand_num <= prob){
                         // create an edge between the two vertices
                         deg_ignore = boost::out_degree(*v, g);
                         boost::add_edge(new_vertex, *v, g);
 
-                        // Increase the number of added edges and keep track that an edge has been added
+                        // Increase the number of added edges and keep track 
+                        // that an edge has been added
                         ++edges_added;
                         edge_added = true;
                         break;
@@ -207,7 +209,8 @@ int cycled_index(const long int vertex, const long int num_vertices){
  * @param degree The degree of every vertex
  */
 template<typename Graph>
-Graph create_k_regular_graph(const long int num_vertices, const long int degree) {
+Graph create_k_regular_graph(   const long int num_vertices, 
+                                const long int degree) {
     // Create a graph
     Graph g(num_vertices);
 
@@ -216,20 +219,23 @@ Graph create_k_regular_graph(const long int num_vertices, const long int degree)
     {
         // Case of uneven number of vertices
         if (num_vertices % 2 == 1){
-            throw std::runtime_error("If the degree is uneven, the number of vertices cannot be uneven too!");
+            throw std::runtime_error("If the degree is uneven, the number"
+                                    "of vertices cannot be uneven too!");
         }
         // Case of even number of vertices
         else
         {
             // Imagine vertices arranged on a circle.
-            // For every node add connections to the next degree/2 next neighbors in both directions.
+            // For every node add connections to the next degree/2 next 
+            // neighbors in both directions.
             // Additionally add a node to the opposite neighbor on the circle
             for (auto [v, v_end] = boost::vertices(g); v!=v_end; ++v){
                 for (auto nb = -degree/2; nb <= degree/2; ++nb){
                     if (nb != 0){
                         // Calculate the source and target of the new edge
                         auto source = cycled_index(*v, num_vertices);
-                        auto target = cycled_index(*v + nb, num_vertices) % num_vertices;
+                        auto target = cycled_index(*v + nb, num_vertices)
+                                            % num_vertices;
                         
                         // If the edge does not exist yet, create it
                         if (!edge(source, target, g).second){
@@ -239,7 +245,8 @@ Graph create_k_regular_graph(const long int num_vertices, const long int degree)
                     else if (nb == 0){
                         // Calculate source and target of the edge
                         auto source = cycled_index(*v, num_vertices);
-                        auto target = cycled_index(*v + num_vertices / 2, num_vertices) % num_vertices;
+                        auto target = cycled_index(*v + num_vertices / 2, num_vertices) 
+                                            % num_vertices;
 
                         // If the edge does not exist yet, create it
                         if (!boost::edge(source, target, g).second){
