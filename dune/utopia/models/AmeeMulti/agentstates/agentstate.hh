@@ -70,6 +70,19 @@ struct AgentState : public Statepolicy
 
         std::tie(sumlen, divisor, start, end, intensity, phenotype) =
             this->genotype_phenotype_map(genotype);
+
+        if (end < 0)
+        {
+            end = 0;
+        }
+        if (start < 0)
+        {
+            start = 0;
+        }
+        if (end < start)
+        {
+            start = end;
+        }
         adaption = std::vector<double>(end - start, 0.);
     }
 
@@ -95,6 +108,18 @@ struct AgentState : public Statepolicy
     {
         std::tie(sumlen, divisor, start, end, intensity, phenotype) =
             this->genotype_phenotype_map(genotype);
+        if (end < 0)
+        {
+            end = 0;
+        }
+        if (start < 0)
+        {
+            start = 0;
+        }
+        if (end < start)
+        {
+            start = end;
+        }
         adaption = std::vector<double>(end - start, 0.);
     }
 

@@ -42,6 +42,7 @@ int main()
     ASSERT_EQ(state.divisor, 5.);
     ASSERT_EQ(state.start, 1);
     ASSERT_EQ(state.end, 4);
+    ASSERT_EQ(state.adaption.size(), std::size_t(3));
     ASSERT_EQ(state.intensity, 3.);
     ASSERT_EQ(int(state.age), 0);
     ASSERT_EQ(int(state.fitness), 0);
@@ -61,6 +62,7 @@ int main()
     ASSERT_EQ(child.intensity, 3.);
     ASSERT_EQ(int(child.age), 0);
     ASSERT_EQ(int(child.fitness), 0);
+    ASSERT_EQ(child.adaption.size(), std::size_t(3));
     assert(child.habitat == cell);
     ASSERT_EQ(child.resources, 1.);
     ASSERT_NEQ(child.genotype, state.genotype);

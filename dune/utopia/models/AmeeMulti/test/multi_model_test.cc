@@ -1,7 +1,6 @@
 #include "../AmeeMulti.hh"
 #include "../adaptionfunctions.hh"
 #include "../agentstates/agentstate.hh"
-#include "../agentstates/agentstate_gauss.hh"
 #include "../agentstates/agentstate_policy_complex.hh"
 #include "../agentstates/agentstate_policy_highlevel.hh"
 #include "../agentstates/agentstate_policy_simple.hh"
@@ -13,6 +12,11 @@
 using namespace Utopia;
 using namespace Utopia::Models::AmeeMulti;
 using namespace Utopia::Models::AmeeMulti::Utils;
+
+using RNG = std::mt19937;
+using Celltraits = std::vector<double>;
+using CS = Cellstate<Celltraits>;
+
 template <typename Model>
 void test_model_construction(Model& model)
 {
@@ -25,10 +29,10 @@ void test_model_construction(Model& model)
     // cell parameters
     std::size_t init_cell_traitlen =
         Utopia::as_<std::size_t>(cfg["init_cell_traitlen"]);
-    std::vector<double> init_cell_resourceinflux =
-        as_vector<double>(cfg["init_cell_resourceinflux"]);
+    std::string init_cellresourceinflux_kind =
+        as_str(cfg["init_cellresourceinflux_kind"]);
     std::vector<double> init_cell_resourceinflux_values =
-        as_vector<double>(cfg["cell_influxvalues"]);
+        as_vector<double>(cfg["init_cell_influxvalues"]);
     std::vector<double> resourceinflux_limits =
         as_vector<double>(cfg["resourceinflux_limits"]);
     std::vector<double> init_celltrait_values =
@@ -74,8 +78,6 @@ void test_model_construction(Model& model)
     auto inhabited_cell = agents[0]->state().habitat;
     for (auto& agent : agents)
     {
-        std::cout << " glen: " << agent->state().genotype.size() << std::endl;
-        std::cout << " plen: " << agent->state().phenotype.size() << std::endl;
         ASSERT_EQ(std::abs(agent->state().resources - init_resources), 0.);
         ASSERT_EQ(agent->state().genotype.size(), init_genotypelen);
         ASSERT_LEQ(double(*std::max_element(agent->state().genotype.begin(),
@@ -117,7 +119,7 @@ void test_model_construction(Model& model)
             ASSERT_GEQ(
                 *std::min_element(state.celltrait.begin(), state.celltrait.end()),
                 init_celltrait_values[0]);
-            ASSERT_EQ(state.resourceinfluxes, init_cell_resourceinflux);
+            ASSERT_EQ(state.resourceinfluxes, init_cell_resourceinflux_values);
             ASSERT_EQ(state.celltrait, state.original);
             ASSERT_EQ(state.modtimes, std::vector<double>(state.celltrait.size(), 0.));
         }
@@ -144,9 +146,11 @@ void test_model_functions(Model& model)
     // update adaption
     adamstate.phenotype = std::vector<double>{1., 2., -1., 2., 4.};
     edenstate.celltrait = std::vector<double>{-1., 1., 2., 1., 3.};
+    edenstate.resources = std::vector<double>{1., 1., 1., 1., 1.};
+    edenstate.resourceinfluxes = std::vector<double>{1., 1., 1., 1., 1.};
     adamstate.start = 0;
-    adamstate.end = 4;
-    adamstate.adaption = {0., 0., 0., 0.};
+    adamstate.end = 5;
+    adamstate.adaption = {0., 0., 0., 0., 0.};
     model.update_adaption(adam);
     ASSERT_EQ(adamstate.adaption, (std::vector<double>{0., 1., 0., 1., 6.}));
 
@@ -154,103 +158,202 @@ void test_model_functions(Model& model)
     adamstate.resources = 0.;
     edenstate.resources = std::vector<double>(5, 10.);
     model.metabolism(adam);
-    ASSERT_EQ(adamstate.resources, 7.);
+    ASSERT_EQ(adamstate.resources, 3.);
     ASSERT_EQ(edenstate.resources, (std::vector<double>{10., 9., 10., 9., 4.}));
     ASSERT_EQ(int(adamstate.age), 1);
+
+    // metabolism values odd: too few resources on cell
+    edenstate.resources = std::vector<double>{2., 2., 2., 2., 2.};
+    adamstate.adaption = std::vector<double>{8., 8., 8., 8., 8.};
+    adamstate.resources = 5.;
+    model.metabolism(adam);
+    ASSERT_EQ(adamstate.resources, 10.);
+    ASSERT_EQ(edenstate.resources, (std::vector<double>{0., 0., 0, 0, 0}));
+    ASSERT_EQ(int(adamstate.age), 2);
+
+    // metabolism values odd: too much adaption -> limited by upper influx
+    edenstate.resources = std::vector<double>{20., 20., 20., 20., 20.};
+    adamstate.adaption = std::vector<double>{20., 20., 20., 20., 20.};
+    adamstate.resources = 5.;
+    model.metabolism(adam);
+    ASSERT_EQ(adamstate.resources, 75.);
+    ASSERT_EQ(edenstate.resources, (std::vector<double>{5., 5., 5, 5, 5}));
+    ASSERT_EQ(int(adamstate.age), 3);
 
     // move
     auto neighbors =
         Utopia::Neighborhoods::MooreNeighbor::neighbors(eden, model.cellmanager());
-    edenstate.celltrait = std::vector<double>(8, 1.);
+    edenstate.celltrait = std::vector<double>(8, 0.);
+    edenstate.resourceinfluxes = std::vector<double>(8, 10.);
+    edenstate.resources = std::vector<double>(8, 10.);
+    adamstate.phenotype = std::vector<double>(8, 1);
+    adamstate.start = 1;
+    adamstate.end = 5;
+    adamstate.resources = 0.5;
+    adamstate.adaption = std::vector<double>(4, 0.);
     model.update_adaption(adam);
 
     // directed movement
     for (auto& neighbor : neighbors)
     {
-        neighbor->state().celltrait = std::vector<double>(8, 1.);
+        neighbor->state().celltrait = std::vector<double>(8, 0);
+        neighbor->state().resources = std::vector<double>(8, 10.);
+        neighbor->state().resourceinfluxes = std::vector<double>(8, 10.);
     }
 
     neighbors[2]->state().celltrait = adamstate.phenotype;
 
     model.move(adam);
 
-    ASSERT_EQ(neighbors[2], adamstate.habitat);
-    ASSERT_EQ(adamstate.adaption, (std::vector<double>{1, 4, 1, 4, 16}));
+    assert(neighbors[2].get() == adamstate.habitat.get());
+    ASSERT_EQ(adamstate.adaption, (std::vector<double>{1, 1, 1, 1}));
+
+    eden = adamstate.habitat;
+    edenstate = eden->state();
 
     // random movement
     adamstate.resources = 0.5; // has to move
+    edenstate.celltrait = std::vector<double>(8, 1.);
+    edenstate.resourceinfluxes = std::vector<double>(8, 10.);
+    edenstate.resources = std::vector<double>(8, 10.);
+    adamstate.phenotype = std::vector<double>(8, 1.);
+    adamstate.start = 1;
+    adamstate.end = 5;
+    adamstate.resources = 0.5;
+    adamstate.adaption = std::vector<double>(4, 0.);
+    model.update_adaption(adam);
+
     for (auto& neighbor : neighbors)
     {
         neighbor->state().celltrait = std::vector<double>(8, 1.);
     }
     model.update_adaption(adam);
     model.move(adam);
-    ASSERT_NEQ(adamstate.habitat, neighbors[2]);
-    ASSERT_NEQ(adamstate.habitat, eden);
-    ASSERT_EQ(adamstate.adaption, (std::vector<double>{1., 1., 0., 1., 1.}))
+    assert(adamstate.habitat != eden);
+    ASSERT_EQ(adamstate.adaption, (std::vector<double>{1., 1., 1., 1.}))
 
     eden = adamstate.habitat;
     edenstate = eden->state();
+
     // modify
-    adamstate.intensity = 1.2;
+    adamstate.intensity = 0.5;
     adamstate.start = 2;
     adamstate.end = 5;
-    edenstate.celltrait = std::vector<double>(6, 1.);
-    adamstate.phenotype = std::vector<double>(6, 4.8);
-    adamstate.resources = 1.;
+    adam->state().habitat->state().celltrait = std::vector<double>(6, 1.);
+    adam->state().habitat->state().resources = std::vector<double>(6, 1.);
+    adam->state().habitat->state().resourceinfluxes = std::vector<double>(6, 1.);
+
+    adamstate.phenotype = std::vector<double>(6, 4.);
+    adamstate.resources = 10.;
     model.modify(adam);
-    ASSERT_EQ(edenstate.celltrait,
-              (std::vector<double>{1., 1., 5.56, 5.56, 5.56, 1., 1.}));
-    ASSERT_EQ(adamstate.resources, 0.7);
+    ASSERT_EQ(adam->state().habitat->state().celltrait,
+              (std::vector<double>{1., 1., 2.5, 2.5, 2.5, 1.}));
+
+    ASSERT_EQ(adamstate.resources, 9.7);
     ASSERT_EQ(edenstate.modtimes, (std::vector<double>(6, 0.)));
 
     adamstate.end = 8;
-    edenstate.celltrait = std::vector<double>(6, 1.);
-    adamstate.phenotype = std::vector<double>(10, 4.8);
-    adamstate.resources = 1.;
+    adamstate.phenotype = std::vector<double>(8, 4.);
+    adam->state().habitat->state().celltrait = std::vector<double>(6, 1.);
+    adam->state().habitat->state().resources = std::vector<double>(6, 1.);
+    adam->state().habitat->state().resourceinfluxes = std::vector<double>(6, 1.);
+    adam->state().resources = 10.;
     model.modify(adam);
-    ASSERT_EQ(3, 6);
-    ASSERT_EQ(edenstate.celltrait,
-              (std::vector<double>{1., 1., 5.56, 5.56, 5.56, 5.56, 5.56, 5.56}));
-    ASSERT_EQ(adamstate.resources, 0.4);
-    ASSERT_EQ(edenstate.modtimes, (std::vector<double>(8, 0.)));
-    assert(3 == 6);
+    ASSERT_EQ(adam->state().habitat->state().celltrait,
+              (std::vector<double>{1., 1., 2.5, 2.5, 2.5, 2.5, 2., 2.}));
+    ASSERT_EQ(adamstate.resources, 9.4);
+    ASSERT_EQ(adam->state().habitat->state().modtimes, (std::vector<double>(8, 0.)));
+
+    // test bad values -> should do nothing and hence everything is as it was
+    adam->state().end = adam->state().start;
+    model.modify(adam);
+    ASSERT_EQ(adam->state().habitat->state().celltrait,
+              (std::vector<double>{1., 1., 2.5, 2.5, 2.5, 2.5, 2., 2.}));
+    ASSERT_EQ(adamstate.resources, 9.4);
+    ASSERT_EQ(adam->state().habitat->state().modtimes, (std::vector<double>(8, 0.)));
 
     // reproduce
+    adam->state().resources = 10;
+    model.reproduce(adam);
+    ASSERT_EQ(adam->state().fitness, 4.);
+    ASSERT_EQ(model.agents().size(), std::size_t(5));
+    ASSERT_EQ(adam->state().resources, 2.);
+    for (std::size_t i = 1; i < model.agents().size(); ++i)
+    {
+        ASSERT_EQ(model.agents()[i]->state().resources, 1.);
+        assert(model.agents()[i]->state().habitat == adam->state().habitat);
+        ASSERT_EQ(model.agents()[i]->state().fitness, 0.);
+        ASSERT_EQ(model.agents()[i]->state().age, std::size_t(0));
+    }
 
     // kill
-
-    // update agent
+    auto deadmanwalking = model.agents().back();
+    deadmanwalking->state().resources = 0.;
+    ASSERT_EQ(deadmanwalking->state().deathflag, false);
+    model.kill(deadmanwalking);
+    ASSERT_EQ(deadmanwalking->state().deathflag, true);
 
     // update cell
+    auto cell = model.cells().front();
+    cell->state().celltrait = std::vector<double>(10, 1.);
+    cell->state().original = std::vector<double>(10, 1.);
+    cell->state().resourceinfluxes =
+        std::vector<double>(cell->state().celltrait.size(), 10);
+    cell->state().resources = std::vector<double>(cell->state().celltrait.size(), 1);
+
+    model.update_cell(cell);
+    ASSERT_EQ(cell->state().resources, std::vector<double>(10, 11.));
 
     // decay_celltrait
+    cell->state().celltrait = std::vector<double>(7, 5.);
+    cell->state().original = std::vector<double>(5, 1.);
+    cell->state().modtimes = std::vector<double>(7, 2);
+    cell->state().resources = std::vector<double>(7, 2);
+    cell->state().resourceinfluxes = std::vector<double>(7, 5);
+
+    model.increment_time(5);
+
+    model.set_decayintensity(0.5);
+    model.celltrait_decay(cell);
+    ASSERT_EQ(cell->state().celltrait,
+              (std::vector<double>{1.8925206405937192, 1.8925206405937192,
+                                   1.8925206405937192, 1.8925206405937192, 1.8925206405937192,
+                                   1.115650800742149, 1.115650800742149}));
+
+    // decay until the first added locus is removed
+    model.increment_time(2);
+    model.set_decayintensity(2.5);
+
+    cell->state().celltrait = std::vector<double>(7, 5.);
+    cell->state().original = std::vector<double>(5, 1.);
+    cell->state().modtimes = std::vector<double>{4, 4, 4, 4, 4, 1, 4};
+    cell->state().resources = std::vector<double>(7, 2);
+    cell->state().resourceinfluxes = std::vector<double>(7, 5);
+    model.celltrait_decay(cell);
+
+    for (std::size_t i = 0; i < 5; ++i)
+    {
+        ASSERT_EQ(cell->state().celltrait[i], 1.002212337480591);
+        ASSERT_EQ(cell->state().modtimes[i], 4.);
+    }
+
+    assert(std::isnan(cell->state().celltrait[5]));
+    assert(std::isnan(cell->state().modtimes[5]));
+
+    ASSERT_EQ(cell->state().celltrait[6], 0.002765421850739168);
+    ASSERT_EQ(cell->state().modtimes[6], 4.);
+
+    ASSERT_EQ(cell->state().resourceinfluxes, (std::vector<double>{5, 5, 5, 5, 5, 0, 5}));
+    ASSERT_EQ(cell->state().resources, std::vector<double>(7, 2));
 }
 
-int main(int argc, char** argv)
+void test_simple()
 {
-    Dune::MPIHelper::instance(argc, argv);
-
-    using namespace Utopia::Models::AmeeMulti;
-
-    using RNG = std::mt19937;
-    using Celltraits = std::vector<double>;
-    using Cellstate = Cellstate<Celltraits>;
-
-    // Initialize the PseudoParent from config file path
     Utopia::PseudoParent<RNG> parentmodel_simple(
         "multi_test_config_simple.yml");
-    // Utopia::PseudoParent<RNG> parentmodel_complex(
-    //     "multi_test_config_complex.yml");
-    // Utopia::PseudoParent<RNG> parentmodel_highlevel(
-    //     "multi_test_config_highlevel.yml");
-
-    ////////////////////////////////////////////////////////////////////////
-    // using simple agent
-    // make managers first -> this has to be wramodeled in a factory function
     auto cellmanager_simple =
-        Utopia::Setup::create_grid_manager_cells<Cellstate, true, 2, true, false>(
-            "AmeeMulti", parentmodel_simple);
+        Utopia::Setup::create_grid_manager_cells<CS, true, 2, true, false>(
+            "AmeeMultiSimple", parentmodel_simple);
 
     auto grid_simple = cellmanager_simple.grid();
     using GridType = typename decltype(grid_simple)::element_type;
@@ -280,99 +383,112 @@ int main(int argc, char** argv)
         AmeeMulti<Cell, decltype(cellmanager_simple), decltype(agentmanager_simple), Modeltypes_Simple, true, true>;
 
     // make model
-    AmeeMulti_Simple model_simple("AmeeMulti", parentmodel_simple,
+    AmeeMulti_Simple model_simple("AmeeMultiSimple", parentmodel_simple,
                                   cellmanager_simple, agentmanager_simple);
 
     // actual tests
     test_model_construction(model_simple);
     test_model_functions(model_simple);
+}
 
-    // ////////////////////////////////////////////////////////////////////////
-    // // using complex agent
-    // // make managers first -> this has to be wramodeled in a factory function
-    // auto cellmanager_complex =
-    //     Utopia::Setup::create_grid_manager_cells<Cellstate, true, 2, true, false>(
-    //         "AmeeMulti", parentmodel_complex);
+void test_complex()
+{
+    Utopia::PseudoParent<RNG> parentmodel_complex(
+        "multi_test_config_complex.yml");
+    auto cellmanager_complex =
+        Utopia::Setup::create_grid_manager_cells<CS, true, 2, true, false>(
+            "AmeeMultiComplex", parentmodel_complex);
 
-    // auto grid_complex = cellmanager_complex.grid();
-    // using GridType = typename decltype(grid_complex)::element_type;
-    // using Cell = typename decltype(cellmanager_complex)::Cell;
+    auto grid_complex = cellmanager_complex.grid();
+    using GridType = typename decltype(grid_complex)::element_type;
+    using Cell = typename decltype(cellmanager_complex)::Cell;
 
-    // Utopia::GridWrapper<GridType> wrapper_complex{
-    //     grid_complex, cellmanager_complex.extensions(), cellmanager_complex.grid_cells()};
+    Utopia::GridWrapper<GridType> wrapper_complex{
+        grid_complex, cellmanager_complex.extensions(), cellmanager_complex.grid_cells()};
 
-    // using GenotypeC = std::vector<int>;
-    // using PhenotypeC = std::vector<double>;
-    // using PolicyC = Agentstate_policy_complex<GenotypeC, PhenotypeC, RNG>;
-    // using ASC = AgentState<Cell, GenotypeC, PhenotypeC, RNG, PolicyC>;
+    using GenotypeS = std::vector<int>;
+    using PhenotypeS = std::vector<double>;
+    using PolicyS = Agentstate_policy_complex<GenotypeS, PhenotypeS, RNG>;
+    using ASS = AgentState<Cell, GenotypeS, PhenotypeS, RNG, PolicyS>;
 
-    // parentmodel_complex.get_logger()->info("Using complex Agentstate");
-    // // make agents and agentmanager
-    // auto agents_complex =
-    //     Utopia::Setup::create_agents_on_grid(wrapper_complex, 1, ASC());
+    parentmodel_complex.get_logger()->info("Using complex Agentstate");
+    // make agents and agentmanager
+    auto agents_complex =
+        Utopia::Setup::create_agents_on_grid(wrapper_complex, 1, ASS());
 
-    // auto agentmanager_complex = Utopia::Setup::create_manager_agents<true, true>(
-    //     wrapper_complex, agents_complex);
+    auto agentmanager_complex = Utopia::Setup::create_manager_agents<true, true>(
+        wrapper_complex, agents_complex);
 
-    // // making model types
-    // using Modeltypes_Complex =
-    //     Utopia::ModelTypes<std::pair<Cell, typename decltype(agentmanager_complex)::Agent>, Utopia::BCDummy, RNG>;
+    // making model types
+    using Modeltypes_Simple =
+        Utopia::ModelTypes<std::pair<Cell, typename decltype(agentmanager_complex)::Agent>, Utopia::BCDummy, RNG>;
 
-    // // get AmeeMulti typedef
-    // using AmeeMulti_Complex =
-    //     AmeeMulti<Cell, decltype(cellmanager_complex), decltype(agentmanager_complex), Modeltypes_Complex, true, true>;
+    // get AmeeMulti typedef
+    using AmeeMulti_Complex =
+        AmeeMulti<Cell, decltype(cellmanager_complex), decltype(agentmanager_complex), Modeltypes_Simple, true, true>;
 
-    // // make model
-    // AmeeMulti_Complex model_complex("AmeeMulti", parentmodel_complex,
-    //                                 cellmanager_complex, agentmanager_complex);
+    // make model
+    AmeeMulti_Complex model_complex("AmeeMultiComplex", parentmodel_complex,
+                                    cellmanager_complex, agentmanager_complex);
 
-    // // actual tests
-    // test_model_construction(model_complex);
-    // test_model_functions(model_complex);
+    // actual tests
+    test_model_construction(model_complex);
+    test_model_functions(model_complex);
+}
 
-    // ////////////////////////////////////////////////////////////////////////
-    // // using highlevel agent
-    // // make managers first -> this has to be wramodeled in a factory function
-    // auto cellmanager_highlevel =
-    //     Utopia::Setup::create_grid_manager_cells<Cellstate, true, 2, true, false>(
-    //         "AmeeMulti", parentmodel_highlevel);
+void test_highlevel()
+{
+    Utopia::PseudoParent<RNG> parentmodel_highlevel(
+        "multi_test_config_highlevel.yml");
+    auto cellmanager_highlevel =
+        Utopia::Setup::create_grid_manager_cells<CS, true, 2, true, false>(
+            "AmeeMultiHighlevel", parentmodel_highlevel);
 
-    // auto grid_highlevel = cellmanager_highlevel.grid();
-    // using GridType = typename decltype(grid_highlevel)::element_type;
-    // using Cell = typename decltype(cellmanager_highlevel)::Cell;
+    auto grid_highlevel = cellmanager_highlevel.grid();
+    using GridType = typename decltype(grid_highlevel)::element_type;
+    using Cell = typename decltype(cellmanager_highlevel)::Cell;
 
-    // Utopia::GridWrapper<GridType> wrapper_highlevel{
-    //     grid_highlevel, cellmanager_highlevel.extensions(),
-    //     cellmanager_highlevel.grid_cells()};
+    Utopia::GridWrapper<GridType> wrapper_highlevel{
+        grid_highlevel, cellmanager_highlevel.extensions(),
+        cellmanager_highlevel.grid_cells()};
 
-    // using GenotypeHL = std::vector<double>;
-    // using PhenotypeHL = std::vector<double>;
-    // using PolicyHL = Agentstate_policy_highlevel<GenotypeHL, PhenotypeHL, RNG>;
-    // using ASH = AgentState<Cell, GenotypeHL, PhenotypeHL, RNG, PolicyHL>;
+    using GenotypeS = std::vector<double>;
+    using PhenotypeS = std::vector<double>;
+    using PolicyS = Agentstate_policy_highlevel<GenotypeS, PhenotypeS, RNG>;
+    using ASS = AgentState<Cell, GenotypeS, PhenotypeS, RNG, PolicyS>;
 
-    // parentmodel_highlevel.get_logger()->info("Using highlevel Agentstate");
-    // // make agents and agentmanager
-    // auto agents_highlevel =
-    //     Utopia::Setup::create_agents_on_grid(wrapper_highlevel, 1, ASH());
+    parentmodel_highlevel.get_logger()->info("Using highlevel Agentstate");
+    // make agents and agentmanager
+    auto agents_highlevel =
+        Utopia::Setup::create_agents_on_grid(wrapper_highlevel, 1, ASS());
 
-    // auto agentmanager_highlevel = Utopia::Setup::create_manager_agents<true, true>(
-    //     wrapper_highlevel, agents_highlevel);
+    auto agentmanager_highlevel = Utopia::Setup::create_manager_agents<true, true>(
+        wrapper_highlevel, agents_highlevel);
 
-    // // making model types
-    // using Modeltypes_HL =
-    //     Utopia::ModelTypes<std::pair<Cell, typename decltype(agentmanager_highlevel)::Agent>, Utopia::BCDummy, RNG>;
+    // making model types
+    using Modeltypes_Simple =
+        Utopia::ModelTypes<std::pair<Cell, typename decltype(agentmanager_highlevel)::Agent>, Utopia::BCDummy, RNG>;
 
-    // // get AmeeMulti typedef
-    // using AmeeMulti_HL =
-    //     AmeeMulti<Cell, decltype(cellmanager_highlevel), decltype(agentmanager_highlevel), Modeltypes_HL, true, true>;
+    // get AmeeMulti typedef
+    using AmeeMulti_Highlevel =
+        AmeeMulti<Cell, decltype(cellmanager_highlevel), decltype(agentmanager_highlevel), Modeltypes_Simple, true, true>;
 
-    // // make model
-    // AmeeMulti_HL model_highlevel("AmeeMulti", parentmodel_highlevel,
-    //                              cellmanager_highlevel, agentmanager_highlevel);
+    // make model
+    AmeeMulti_Highlevel model_highlevel("AmeeMultiHighlevel", parentmodel_highlevel,
+                                        cellmanager_highlevel, agentmanager_highlevel);
 
-    // // actual tests
-    // test_model_construction(model_highlevel);
-    // test_model_functions(model_highlevel);
+    // actual tests
+    test_model_construction(model_highlevel);
+    test_model_functions(model_highlevel);
+}
+
+int main(int argc, char** argv)
+{
+    Dune::MPIHelper::instance(argc, argv);
+
+    test_simple();
+    test_complex();
+    test_highlevel();
 
     return 0;
 }

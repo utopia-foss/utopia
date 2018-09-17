@@ -1,44 +1,58 @@
----
-seed: 4378573
-output_path: "highlevel.h5"
-num_steps: 10000
-periodic: true
-
-write_every: 1
-grid_size:
-- 32
-- 32
-log_levels:
-  core: warning
-  data_io: warning
-  model: info
-
-AmeeMulti: 
-  model_name: AmeeMulti
+AmeeMultiHighlevel:
+  model_name: AmeeMultiHighlevel
   Agenttype: highlevel
   adaptionfunction: multi_notnormed
   construction: true
   deathprobability: 1e-2
   decay: true
-  init_cell_traitlen: 6
-  init_cell_resourceinflux: "given"
-  cell_influxvalues: [1., 1., 1., 1., 1., 1.]
-  resourceinflux_limits: [0., 10.]
-  init_celltrait_values: [-5., 5.]
-
-  removethreshold: 1e-3
   decayintensity: 1e-2
-  init_genotype_values: [-5., 5.]
+  grid_size:
+  - 32
+  - 32
+  highresinterval:
+  - 0
+  - 1000
+  highresoutput: true
+  init_cellresourceinflux_kind: "given"
+  init_cell_influxvalues: [1., 1., 1., 1., 1., 1.]
+  init_cell_resources: [1., 1., 1., 1., 1., 1.]
+  init_cell_traitlen: 6
+  init_celltrait_max: 5.0
+  init_celltrait_min: -5.0
+  init_celltrait_values:
+  - -5.0
+  - 5.0
+  init_end: 3
+  init_genotype_values:
+  - -5.0
+  - 5.0
   init_genotypelen: 64
-  init_resources: 5.
+  init_intensity: 0.0
+  init_resources: 5.0
+  init_start: 2
   insertionrate: 1e-3
-  livingcost: 5
+  livingcost: 5.0
+  metabolism_inefficiency: 0.2
   modifiercost: 0.1
   offspringresources: 1.0
   periodic: true
+  removethreshold: 1e-3
   reproductioncost: 1.0
+  resourceinflux_limits:
+  - 0.0
+  - 10.0
+  seed: 4378573
   substitution_std: 1e-3
   substitutionrate: 1e-3
-  highresinterval: [0, 1000]
-  highresoutput: true
-output: true
+  upper_influxlimit: 1000.0
+  upper_resourcelimit: 15.0
+
+log_levels:
+  core: warning
+  data_io: warning
+  model: info
+num_steps: 10000
+output_path: "highlevel_data.h5"
+periodic: true
+seed: 519472
+write_every: 500

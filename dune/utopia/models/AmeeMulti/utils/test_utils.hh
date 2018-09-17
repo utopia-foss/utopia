@@ -1,7 +1,7 @@
 // custom assert macros go here
 #include "utils.hh"
 #include <cmath>
-#include <sstream>
+#include <iomanip>
 namespace Utopia
 {
 namespace Models
@@ -10,47 +10,51 @@ namespace AmeeMulti
 {
 namespace Utils
 {
-#define ASSERT_EQ(lhs, rhs)                                     \
-    if (!is_equal(lhs, rhs))                                    \
-    {                                                           \
-        std::stringstream str;                                  \
-        str << "Asserted equality wrong at line: " << __LINE__; \
-        str << " lhs: " << lhs;                                 \
-        str << ", rhs: " << rhs << std::endl;                   \
-        throw std::runtime_error(str.str());                    \
+#define ASSERT_EQ(lhs, rhs)                                                  \
+    if (!is_equal(lhs, rhs))                                                 \
+    {                                                                        \
+        std::cerr << std::setprecision(16)                                   \
+                  << "Asserted equality wrong at line: " << __LINE__;        \
+        std::cerr << std::setprecision(16) << " lhs: " << lhs;               \
+        std::cerr << std::setprecision(16) << ", rhs: " << rhs << std::endl; \
+        std::exit(-1);                                                       \
     }
 
-#define EXPECT_EQ(lhs, rhs)                                           \
-    if (!is_equal(lhs, rhs))                                          \
-    {                                                                 \
-        std::cerr << "Exepcted equality wrong at line: " << __LINE__; \
-        std::cerr << " lhs: " << lhs;                                 \
-        std::cerr << ", rhs: " << rhs << std::endl;                   \
+#define EXPECT_EQ(lhs, rhs)                                                  \
+    if (!is_equal(lhs, rhs))                                                 \
+    {                                                                        \
+        std::cerr << std::setprecision(16)                                   \
+                  << "Exepcted equality wrong at line: " << __LINE__;        \
+        std::cerr << std::setprecision(16) << " lhs: " << lhs;               \
+        std::cerr << std::setprecision(16) << ", rhs: " << rhs << std::endl; \
     }
 
-#define ASSERT_NEQ(lhs, rhs)                                            \
-    if (is_equal(lhs, rhs))                                             \
-    {                                                                   \
-        std::cerr << "Asserted inequality wrong at line: " << __LINE__; \
-        std::cerr << " lhs: " << lhs;                                   \
-        std::cerr << ", rhs: " << rhs << std::endl;                     \
-        std::exit(-1);                                                  \
+#define ASSERT_NEQ(lhs, rhs)                                                 \
+    if (is_equal(lhs, rhs))                                                  \
+    {                                                                        \
+        std::cerr << std::setprecision(16)                                   \
+                  << "Asserted inequality wrong at line: " << __LINE__;      \
+        std::cerr << std::setprecision(16) << " lhs: " << lhs;               \
+        std::cerr << std::setprecision(16) << ", rhs: " << rhs << std::endl; \
+        std::exit(-1);                                                       \
     }
 
-#define EXPECT_NEQ(lhs, rhs)                                            \
-    if (is_equal(lhs, rhs))                                             \
-    {                                                                   \
-        std::cerr << "Exepcted inequality wrong at line: " << __LINE__; \
-        std::cerr << " lhs: " << lhs;                                   \
-        std::cerr << ", rhs: " << rhs << std::endl;                     \
+#define EXPECT_NEQ(lhs, rhs)                                                 \
+    if (is_equal(lhs, rhs))                                                  \
+    {                                                                        \
+        std::cerr << std::setprecision(16)                                   \
+                  << "Exepcted inequality wrong at line: " << __LINE__;      \
+        std::cerr << std::setprecision(16) << " lhs: " << lhs;               \
+        std::cerr << std::setprecision(16) << ", rhs: " << rhs << std::endl; \
     }
 
 #define ASSERT_GREATER(lhs, rhs)                                                  \
     if (!(is_greater(lhs, rhs)))                                                  \
     {                                                                             \
-        std::cerr << "Asserted relation 'lhs > rhs' wrong at line: " << __LINE__; \
-        std::cerr << " lhs: " << lhs;                                             \
-        std::cerr << ", rhs: " << rhs << std::endl;                               \
+        std::cerr << std::setprecision(16)                                        \
+                  << "Asserted relation 'lhs > rhs' wrong at line: " << __LINE__; \
+        std::cerr << std::setprecision(16) << " lhs: " << lhs;                    \
+        std::cerr << std::setprecision(16) << ", rhs: " << rhs << std::endl;      \
         std::exit(-1);                                                            \
     }
 
@@ -58,16 +62,16 @@ namespace Utils
     if (!(is_greater(lhs, rhs)))                                                  \
     {                                                                             \
         std::cerr << "Exepcted relation 'lhs > rhs' wrong at line: " << __LINE__; \
-        std::cerr << " lhs: " << lhs;                                             \
-        std::cerr << ", rhs: " << rhs << std::endl;                               \
+        std::cerr << std::setprecision(16) << " lhs: " << lhs;                    \
+        std::cerr << std::setprecision(16) << ", rhs: " << rhs << std::endl;      \
     }
 
 #define ASSERT_GEQ(lhs, rhs)                                                               \
     if (!(is_greater(lhs, rhs)) and !Utopia::Models::AmeeMulti::Utils::is_equal(lhs, rhs)) \
     {                                                                                      \
         std::cerr << "Asserted relation 'lhs <= rhs' wrong at line: " << __LINE__;         \
-        std::cerr << " lhs: " << lhs;                                                      \
-        std::cerr << ", rhs: " << rhs << std::endl;                                        \
+        std::cerr << std::setprecision(16) << " lhs: " << lhs;                             \
+        std::cerr << std::setprecision(16) << ", rhs: " << rhs << std::endl;               \
         std::exit(-1);                                                                     \
     }
 
@@ -75,42 +79,46 @@ namespace Utils
     if (!(is_greater(lhs, rhs)) and !is_equal(lhs, rhs))                           \
     {                                                                              \
         std::cerr << "Exepcted relation 'lhs <= rhs' wrong at line: " << __LINE__; \
-        std::cerr << " lhs: " << lhs;                                              \
-        std::cerr << ", rhs: " << rhs << std::endl;                                \
+        std::cerr << std::setprecision(16) << " lhs: " << lhs;                     \
+        std::cerr << std::setprecision(16) << ", rhs: " << rhs << std::endl;       \
     }
 
 #define ASSERT_LESS(lhs, rhs)                                                     \
     if (!(is_less(lhs, rhs)))                                                     \
     {                                                                             \
-        std::cerr << "Asserted relation 'lhs < rhs' wrong at line: " << __LINE__; \
-        std::cerr << " lhs: " << lhs;                                             \
-        std::cerr << ", rhs: " << rhs << std::endl;                               \
+        std::cerr << std::setprecision(16)                                        \
+                  << "Asserted relation 'lhs < rhs' wrong at line: " << __LINE__; \
+        std::cerr << std::setprecision(16) << " lhs: " << lhs;                    \
+        std::cerr << std::setprecision(16) << ", rhs: " << rhs << std::endl;      \
         std::exit(-1);                                                            \
     }
 
 #define EXPECT_LESS(lhs, rhs)                                                     \
     if (!(is_less(lhs, rhs)))                                                     \
     {                                                                             \
-        std::cerr << "Exepcted relation 'lhs < rhs' wrong at line: " << __LINE__; \
-        std::cerr << " lhs: " << lhs;                                             \
-        std::cerr << ", rhs: " << rhs << std::endl;                               \
+        std::cerr << std::setprecision(16)                                        \
+                  << "Exepcted relation 'lhs < rhs' wrong at line: " << __LINE__; \
+        std::cerr << std::setprecision(16) << " lhs: " << lhs;                    \
+        std::cerr << std::setprecision(16) << ", rhs: " << rhs << std::endl;      \
     }
 
 #define ASSERT_LEQ(lhs, rhs)                                                       \
     if (!(is_less(lhs, rhs)) and !is_equal(lhs, rhs))                              \
     {                                                                              \
-        std::cerr << "Asserted relation 'lhs <= rhs' wrong at line: " << __LINE__; \
-        std::cerr << " lhs: " << lhs;                                              \
-        std::cerr << ", rhs: " << rhs << std::endl;                                \
+        std::cerr << std::setprecision(16)                                         \
+                  << "Asserted relation 'lhs <= rhs' wrong at line: " << __LINE__; \
+        std::cerr << std::setprecision(16) << " lhs: " << lhs;                     \
+        std::cerr << std::setprecision(16) << ", rhs: " << rhs << std::endl;       \
         std::exit(-1);                                                             \
     }
 
 #define EXPECT_LEQ(lhs, rhs)                                                       \
     if (!(is_less(lhs, rhs)) and !is_equal(lhs, rhs))                              \
     {                                                                              \
-        std::cerr << "Exepcted relation 'lhs <= rhs' wrong at line: " << __LINE__; \
-        std::cerr << " lhs: " << lhs;                                              \
-        std::cerr << ", rhs: " << rhs << std::endl;                                \
+        std::cerr << std::setprecision(16)                                         \
+                  << "Exepcted relation 'lhs <= rhs' wrong at line: " << __LINE__; \
+        std::cerr << std::setprecision(16) << " lhs: " << lhs;                     \
+        std::cerr << std::setprecision(16) << ", rhs: " << rhs << std::endl;       \
     }
 
 } // namespace Utils

@@ -2,7 +2,6 @@
 #define UTOPIA_MODELS_AMEEMULTI_HH
 
 #include "adaptionfunctions.hh"
-#include "agentstates/agentstate_gauss.hh"
 #include "cellstate.hh"
 #include "utils/test_utils.hh"
 #include "utils/utils.hh"
@@ -192,7 +191,7 @@ public:
         {
             return;
         }
-        if (start < 0 or end < 0 or start >= (int)trt.size() or end <= start)
+        if (start < 0 or end < 0 or start >= (int)trt.size() or end < start)
         {
             return;
         }
@@ -214,6 +213,7 @@ public:
                     cell->state().resourceinfluxes[i] = _resdist(*this->_rng);
                     cell->state().modtimes[i] = this->_time;
                 }
+
                 // nudge value towards own value at this locus
                 ctrt[i] -= intensity * (ctrt[i] - trt[i]);
                 cell->state().modtimes[i] = this->_time;
@@ -262,6 +262,7 @@ public:
                 update_adaption(agent);
                 testadaption = std::accumulate(agent->state().adaption.begin(),
                                                agent->state().adaption.end(), 0.);
+
                 if (testadaption > trialadaption && testadaption > curradaption)
                 {
                     trialadaption = testadaption;
@@ -313,26 +314,31 @@ public:
     };
 
     CellUpdateFunction celltrait_decay = [&](std::shared_ptr<CellType> cell) {
-        // check_arraylengths(cell);
+        check_arraylengths(cell);
 
         auto& org = cell->state().original;
         auto& ctrt = cell->state().celltrait;
         auto& times = cell->state().modtimes;
-
+        auto t = this->_time;
         for (std::size_t i = 0; i < org.size(); ++i)
         {
             ctrt[i] = org[i] + (ctrt[i] - org[i]) *
-                                   std::exp(-_decayintensity * (ctrt[i] - org[i]));
+                                   std::exp(-_decayintensity * (t - times[i]));
         }
 
         for (std::size_t i = org.size(); i < ctrt.size(); ++i)
         {
-            ctrt[i] *= std::exp(-_decayintensity * (ctrt[i] - org[i]));
+            if (std::isnan(ctrt[i]))
+            {
+                continue;
+            }
+            ctrt[i] *= std::exp(-_decayintensity * (t - times[i]));
             if (std::abs(ctrt[i]) < _removethreshold)
             {
                 ctrt[i] = std::numeric_limits<CTV>::quiet_NaN();
                 cell->state().resourceinfluxes[i] = 0.;
                 times[i] = std::numeric_limits<double>::quiet_NaN();
+
                 // cellresources are left alone, can still be used, but nothing else anymore is done
             }
         }
@@ -477,19 +483,27 @@ public:
         const auto init_celltrait_len =
             as_<std::size_t>(this->_cfg["init_cell_traitlen"]);
 
-        const auto init_cellresourceinflux =
-            as_str(this->_cfg["init_cell_resourceinflux"]);
-        std::vector<double> init_cellresourceinfluxes(init_celltrait_len, 0.);
-        if (init_cellresourceinflux == "random")
+        const auto init_cell_resourceinflux_kind =
+            as_str(this->_cfg["init_cellresourceinflux_kind"]);
+
+        std::vector<double> init_cellresourceinfluxes;
+        if (init_cell_resourceinflux_kind == "random")
         {
+            init_cellresourceinfluxes.resize(init_celltrait_len);
             std::generate(init_cellresourceinfluxes.begin(),
                           init_cellresourceinfluxes.end(),
                           [this]() { return _resdist(*this->_rng); });
         }
-        else if (init_cellresourceinflux == "given")
+        else if (init_cell_resourceinflux_kind == "given")
         {
             init_cellresourceinfluxes =
-                as_vector<double>(this->_cfg["cell_influxvalues"]);
+                as_vector<double>(this->_cfg["init_cell_influxvalues"]);
+            if (init_celltrait_len != init_cellresourceinfluxes.size())
+            {
+                throw std::runtime_error(
+                    "init_cell_influxvalues must be as long as "
+                    "init_celltraitlen");
+            }
         }
         else
         {
@@ -567,11 +581,11 @@ public:
 
         std::size_t i = 0;
         auto agent = _agentmanager.agents()[0];
-        std::uniform_real_distribution<AGV> dist(init_genotype_values[0],
-                                                 init_genotype_values[1]);
+        std::uniform_real_distribution<double> dist(init_genotype_values[0],
+                                                    init_genotype_values[1]);
 
-        std::uniform_int_distribution<int> idist(0, init_genotypelen);
-        // std::uniform_real_distribution<double> zo_dist(0., 1.);
+        bool found = false;
+
         for (; i < 10000; ++i)
         {
             // make initial agent genotype
@@ -590,55 +604,25 @@ public:
 
             agent->state() = Agentstate(trait, cell, init_resources, this->_rng);
 
-            if constexpr (std::is_same_v<Agentstate, AgentStateGauss<CellType, AP, RNG>>)
-            {
-                int s = idist(*this->_rng);
-                int e = idist(*this->_rng);
-
-                if (s > int(cell->state().celltrait.size()))
-                {
-                    continue;
-                }
-
-                // swap if end smaller than start
-
-                if (e < s)
-                {
-                    std::swap(s, e);
-                }
-
-                agent->state().start = s;
-                agent->state().end = e;
-                agent->state().intensity = 0.;
-            }
             agent->state().adaption = _check_adaption(agent);
-
-            std::size_t i = agent->state().start;
-            std::size_t j = 0;
-            bool found = false;
-            double cum_res = 0.;
-            for (; i < unsigned(agent->state().end) and
-                   i < cell->state().resources.size() and
-                   j < agent->state().adaption.size();
-                 ++i, ++j)
+            double cum_res = std::accumulate(agent->state().adaption.begin(),
+                                             agent->state().adaption.end(), 0.);
+            if (cum_res > _livingcost && agent->state().intensity >= 0.)
             {
-                cum_res += agent->state().adaption[j];
-                if (cum_res > _livingcost)
-                {
-                    found = true;
-                }
-            }
-            if (found == true)
-            {
+                found = true;
                 break;
             }
+        }
+        if (!found)
+        {
+            throw std::runtime_error("Could not build viable organism!");
         }
 
         this->_log->info("Initial agent: ");
         this->_log->info(" adaption");
         for (auto& val : agent->state().adaption)
         {
-            this->_log->info(val);
+            this->_log->info("  {}", val);
         }
 
         this->_log->info(" agent start {}", agent->state().start);
@@ -666,7 +650,7 @@ public:
             return m / s;
         };
 
-        if (this->_time % 250 == 0)
+        if (this->_time % 1 == 0)
         {
             this->_log->info(
                 "\nCurrent time: {},\n current populationsize: {},\n "

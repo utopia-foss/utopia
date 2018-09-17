@@ -5,15 +5,13 @@ file(COPY "multi_test_config_simple.yml"
      DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY "multi_test_config_highlevel.yml"
      DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-file(COPY "multi_test_config_gauss.yml"
-     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
 
 # register targets
 set(TESTS_AMEEMULTI
     multi_agentstatecomplex_test
     multi_agentstatehighlevel_test
     multi_agentstatesimple_test
-    multi_agentstategauss_test
     multi_model_test
     multi_generatortest
     )

@@ -28,7 +28,7 @@ namespace Utils
  * @return false else
  */
 template <typename T>
-constexpr bool is_equal(const T& lhs, const T& rhs, double tol = 1e-16)
+constexpr bool is_equal(const T& lhs, const T& rhs, double tol = 2e-15)
 {
     if constexpr (std::is_floating_point_v<T>)
     {
