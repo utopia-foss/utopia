@@ -12,14 +12,14 @@ namespace Utopia {
 namespace DataIO {
 
 /// Write function for a static boost::Graph
-/**
+/** This function is only used in the case save_edges=true.
  * 
- * @tparam true Saves the edges if true 
+ * @tparam save_edges=true Saves the edges 
  * @tparam GraphType 
  * @param g The graph
  * @param parent_grp The parent HDFGroup
  * @param name The name of the graph group
- * @return std::enable_if_t<save_edges, std::shared_ptr<HDFGroup>> The network data in a HDFGroup
+ * @return std::shared_ptr<HDFGroup> The network data in a HDFGroup
  */
 template<bool save_edges = true, typename GraphType>
 std::enable_if_t<save_edges, std::shared_ptr<HDFGroup>>
@@ -72,9 +72,9 @@ save_graph( GraphType &g,
 
 
 /// Write function for a static boost::Graph
-/**
+/** This function is only used in the case save_edges=false.
  * 
- * @tparam false Saves the edges if true 
+ * @tparam save_edges=false It does not save the edges
  * @tparam GraphType 
  * @param g The graph
  * @param parent_grp The parent HDFGroup
@@ -120,14 +120,15 @@ save_graph( GraphType &g,
 
 
 /// Write function for a static boost::Graph
-/**
- * @tparam true Saves the edges if true 
+/** This function is only used if save_edges=true.
+ * 
+ * @tparam save_edges=true Saves the edges if true 
  * @tparam PropertyMap The property map of the vertex ids
  * @tparam GraphType 
  * @param g The graph
  * @param parent_grp The parent HDFGroup
  * @param name The name of the graph group
- * @return std::enable_if_t<save_edges, std::shared_ptr<HDFGroup>> The network data in a HDFGroup
+ * @return std::shared_ptr<HDFGroup> The network data in a HDFGroup
  */
 template<bool save_edges = true, typename PropertyMap, typename GraphType>
 std::enable_if_t<save_edges, std::shared_ptr<HDFGroup>>
@@ -181,16 +182,17 @@ save_graph( GraphType &g,
 
 
 /// Write function for a static boost::Graph
-/**
- * @tparam true Saves the edges if true 
+/** This function is only used if save_edges=false.
+ * 
+ * @tparam save_edges Does not safe the edges
  * @tparam PropertyMap The property map of the vertex ids
  * @tparam GraphType 
  * @param g The graph
  * @param parent_grp The parent HDFGroup
  * @param name The name of the graph group
- * @return std::enable_if_t<save_edges, std::shared_ptr<HDFGroup>> The network data in a HDFGroup
+ * @return std::shared_ptr<HDFGroup> The network data in a HDFGroup
  */
-template<bool save_edges = false, typename PropertyMap, typename GraphType>
+template<bool save_edges = true, typename PropertyMap, typename GraphType>
 std::enable_if_t<!save_edges, std::shared_ptr<HDFGroup>>
 save_graph( GraphType &g,
             const std::shared_ptr<HDFGroup>& parent_grp,
