@@ -6,6 +6,7 @@
 #include <boost/graph/adjacency_matrix.hpp>
 #include <boost/graph/graph_traits.hpp>
 
+#include <dune/utopia/core/logging.hh>
 #include <dune/utopia/data_io/hdfgroup.hh>
 
 namespace Utopia {
@@ -28,11 +29,14 @@ std::shared_ptr<HDFGroup> save_graph(GraphType &g,
                                      const std::shared_ptr<HDFGroup>& parent_grp,
                                      const std::string& name)
 {
-    // TODO get the logger and add some messages?
-
-    // Collect some information on the graph that is to be saved
+    // Collect some information on the graph
     auto num_vertices = boost::num_vertices(g);
     auto num_edges = boost::num_edges(g);
+
+    // Get a logger to use here (Note: needs to have been setup beforehand)
+    auto log = spdlog::get("data_io");
+    log->info("Saving graph '{}' ({} vertices, {} edges) ...",
+              name, num_vertices, num_edges);
 
     // Create the group for the graph and store metadata in its attributes
     auto grp = parent_grp->open_group(name);
@@ -66,7 +70,8 @@ std::shared_ptr<HDFGroup> save_graph(GraphType &g,
             );
         }
     );
-    // FIXME edge index is missing!?!
+
+    log->debug("Graph saved.");
 
     // Return the newly created group
     return grp;
@@ -93,12 +98,15 @@ std::shared_ptr<HDFGroup> save_graph(GraphType &g,
                                      const std::shared_ptr<HDFGroup>& parent_grp,
                                      const std::string& name,
                                      const PropertyMap vertex_ids)
-{    
-    // TODO get the logger and add some messages?
-
-    // Collect some information on the graph that is to be saved
+{
+    // Collect some information on the graph
     auto num_vertices = boost::num_vertices(g);
     auto num_edges = boost::num_edges(g);
+
+    // Get a logger to use here (Note: needs to have been setup beforehand)
+    auto log = spdlog::get("data_io");
+    log->info("Saving graph '{}' ({} vertices, {} edges) ...",
+              name, num_vertices, num_edges);
 
     // Create the group for the graph and store metadata in its attributes
     auto grp = parent_grp->open_group(name);
@@ -130,8 +138,9 @@ std::shared_ptr<HDFGroup> save_graph(GraphType &g,
             );
         }
     );
-    // FIXME edge index is missing!?!
     
+    log->debug("Graph saved.");
+
     // Return the newly created group
     return grp;
 }

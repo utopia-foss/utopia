@@ -176,24 +176,23 @@ void test_save_graph()
 }
 
 
-int main(int argc, char** argv)
-{
-    try
-    {
+int main(int argc, char** argv) {
+    try {
+        // Setup
         Dune::MPIHelper::instance(argc, argv);
+        Utopia::setup_loggers();
 
+        // Run the test
         test_save_graph();
 
         std::cout << "Tests successful." << std::endl;
         return 0;
     }
-    catch (std::exception& e)
-    {
+    catch (std::exception& e) {
         std::cerr << e.what() << std::endl;
         return 1;
     }
-    catch (...)
-    {
+    catch (...) {
         std::cout << "Exception occurred!" << std::endl;
         return 1;
     }
