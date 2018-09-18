@@ -213,7 +213,7 @@ def state_anim(dm: DataManager, *,
     with w.saving(fig, out_path, dpi=dpi):
         
         # Loop through time steps
-        for t in range(steps):
+        for t in range(steps+1):
 
             # Loop through the subfigures
             for i, (ax, (key, props)) in enumerate(zip(axs, to_plot.items())):
