@@ -11,10 +11,10 @@
 namespace Utopia {
 namespace DataIO {
 
-/// Write function for a static boost::Graph
-/** This function writes a boost::graph into a HDFGroup.
+/// Write function for a boost::Graph
+/** This function writes a boost::graph into a HDFGroup. It assumes that the
+ *  vertices and edges of the graph already supply indices.
  * 
- * @tparam save_edges=true Saves the edges if true
  * @tparam GraphType 
  *
  * @param g The graph to save
@@ -23,127 +23,116 @@ namespace DataIO {
  *
  * @return std::shared_ptr<HDFGroup> The newly created graph group
  */
-template<bool save_edges=true, typename GraphType>
+template<typename GraphType>
 std::shared_ptr<HDFGroup> save_graph(GraphType &g,
                                      const std::shared_ptr<HDFGroup>& parent_grp,
                                      const std::string& name)
 {
-    // Create the group for the graph
-    auto grp = parent_grp->open_group(name);
+    // TODO get the logger and add some messages?
 
-    // Store in attributes that this is supposed to be a Graph
-    grp->add_attribute("is_static_graph_group", true);
-
-    // Collect some metadata
+    // Collect some information on the graph that is to be saved
     auto num_vertices = boost::num_vertices(g);
     auto num_edges = boost::num_edges(g);
 
-    // Also store some metadata
+    // Create the group for the graph and store metadata in its attributes
+    auto grp = parent_grp->open_group(name);
+
+    grp->add_attribute("is_graph_group", true);
     grp->add_attribute("directed", boost::is_directed(g));
     grp->add_attribute("num_vertices", num_vertices);
     grp->add_attribute("num_edges", num_edges);
-    // TODO _could_ add more attributes here, should be general though
-
-    // Initialize dataset to store vertices list in
+    grp->add_attribute("custom_ids", false);
+    
+    // Initialize datasets to store vertices and adjacency lists in
     auto dset_vl = grp->open_dataset("_vertex_list", {num_vertices});
+    auto dset_al = grp->open_dataset("_adjacency_list", {num_edges});
 
-    // Save vertices list
+    // Save vertex list 
     auto [v, v_end] = boost::vertices(g);
     dset_vl->write(v, v_end,
         [&](auto vd){return boost::get(boost::vertex_index_t(), g, vd);}
     );
 
     // Save adjacency list
-    if constexpr (save_edges){
-        // Initialize dataset to store adjacency list in
-        auto dset_al = grp->open_dataset("_adjacency_list", {num_edges});
+    auto [e, e_end] = boost::edges(g);
+    dset_al->write(e, e_end,
+        [&](auto ed){
+            // TODO If possible, use boost::index_type instead of size_t
+            return std::array<std::size_t, 2>(
+                {{boost::get(boost::vertex_index_t(), g,
+                             boost::source(ed, g)),
+                  boost::get(boost::vertex_index_t(), g,
+                             boost::target(ed, g))}}
+            );
+        }
+    );
+    // FIXME edge index is missing!?!
 
-        auto [e, e_end] = boost::edges(g);
-        dset_al->write(e, e_end,
-            [&](auto ed){
-                // Extract indices of source and target vertex as well as of
-                // the edge this corresponds to.
-                // TODO If possible, use boost::index_type instead of size_t
-                return std::array<std::size_t, 2>(
-                    {{boost::get(boost::vertex_index_t(), g,
-                                 boost::source(ed, g)),
-                      boost::get(boost::vertex_index_t(), g,
-                                 boost::target(ed, g))}}
-                );
-            }
-        );
-    }
-
-    // Return newly created group
+    // Return the newly created group
     return grp;
 }
 
 
-/// Write function for a static boost::Graph
-/** This function writes a boost::graph into a HDFGroup.
+/// Write function for a boost::Graph
+/** This function writes a boost::graph into a HDFGroup. By supplying custom
+ *  vertex IDs, they need not be part of the graph in order for this function
+ *  to operate.
  * 
- * @tparam save_edges=true Saves the edges if true 
- * @tparam PropertyMap The property map of the vertex ids
  * @tparam GraphType 
+ * @tparam PropertyMap The property map of the vertex ids
  *
  * @param g The graph to save
  * @param parent_grp The parent HDFGroup the graph should be stored in
  * @param name The name the newly created graph group should have
- * @param ids A custom list of IDs that corresponds to the vertices
+ * @param vertex_ids A custom property map of vertex IDs to use
  *
  * @return std::shared_ptr<HDFGroup> The newly created graph group
  */
-template<bool save_edges=true, typename GraphType, typename PropertyMap>
+template<typename GraphType, typename PropertyMap>
 std::shared_ptr<HDFGroup> save_graph(GraphType &g,
                                      const std::shared_ptr<HDFGroup>& parent_grp,
                                      const std::string& name,
-                                     const PropertyMap ids)
-{
-    // Create the group for the graph
-    auto grp = parent_grp->open_group(name);
+                                     const PropertyMap vertex_ids)
+{    
+    // TODO get the logger and add some messages?
 
-    // Store in attributes that this is supposed to be a Graph
-    grp->add_attribute("is_static_graph_group", true);
-
-    // Collect some metadata
+    // Collect some information on the graph that is to be saved
     auto num_vertices = boost::num_vertices(g);
     auto num_edges = boost::num_edges(g);
 
-    // Also store some metadata
+    // Create the group for the graph and store metadata in its attributes
+    auto grp = parent_grp->open_group(name);
+
+    grp->add_attribute("is_graph_group", true);
     grp->add_attribute("directed", boost::is_directed(g));
     grp->add_attribute("num_vertices", num_vertices);
     grp->add_attribute("num_edges", num_edges);
-    // TODO _could_ add more attributes here, should be general though
-
-    // Initialize dataset to store vertices list in
+    grp->add_attribute("custom_ids", true);
+    
+    // Initialize datasets to store vertices and adjacency lists in
     auto dset_vl = grp->open_dataset("_vertex_list", {num_vertices});
+    auto dset_al = grp->open_dataset("_adjacency_list", {num_edges});
 
-    // Save vertices list
+    // Save vertex list
     auto [v, v_end] = boost::vertices(g);
     dset_vl->write(v, v_end,
-        [&](auto vd){return boost::get(ids, vd);}
+        [&](auto vd){return boost::get(vertex_ids, vd);}
     );
 
     // Save adjacency list
-    if constexpr (save_edges){
-        // Initialize dataset to store adjacency list in
-        auto dset_al = grp->open_dataset("_adjacency_list", {num_edges});
-
-        auto [e, e_end] = boost::edges(g);
-        dset_al->write(e, e_end,
-            [&](auto ed){
-                // Extract indices of source and target vertex as well as of
-                // the edge this corresponds to.
-                // TODO If possible, use boost::index_type instead of size_t
-                return std::array<std::size_t, 2>(
-                    {{boost::get(ids, boost::source(ed, g)),
-                      boost::get(ids, boost::target(ed, g))}}
-                );
-            }
-        );
-    }
+    auto [e, e_end] = boost::edges(g);
+    dset_al->write(e, e_end,
+        [&](auto ed){
+            // TODO If possible, use boost::index_type instead of size_t
+            return std::array<std::size_t, 2>(
+                {{boost::get(vertex_ids, boost::source(ed, g)),
+                  boost::get(vertex_ids, boost::target(ed, g))}}
+            );
+        }
+    );
+    // FIXME edge index is missing!?!
     
-    // Return newly created group
+    // Return the newly created group
     return grp;
 }
 

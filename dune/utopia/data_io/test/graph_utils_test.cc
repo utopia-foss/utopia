@@ -97,6 +97,8 @@ GraphType create_and_initialize_test_graph(const int num_vertices, const int num
 /// Test the save graph functionality
 void test_save_graph()
 {
+    using Utopia::DataIO::save_graph;
+
     // Create a test HDFFile and a HDFGroup 
     auto hdf = Utopia::DataIO::HDFFile("graph_testfile.h5","w");
     auto grp = hdf.open_group("testgroup");
@@ -108,11 +110,8 @@ void test_save_graph()
     // Set up graph
     auto g_vvu = create_and_initialize_test_graph<Graph_vertvecS_edgevecS_undir>(10,3);
 
-    // Save the graph ...
-    // ...with edges
-    Utopia::DataIO::save_graph<true>(g_vvu, grp, "g");
-    // ... without edges
-    Utopia::DataIO::save_graph<false>(g_vvu, grp, "g_vvu_noedges");
+    // Save the graph
+    save_graph(g_vvu, grp, "g");
 
     // Test case 2: 
     //     vertex container: boost::listS
@@ -128,16 +127,13 @@ void test_save_graph()
     // needs to be defined.
     // NOTE: The user needs to adapt this id, such that it actually represents a unique id
     //       for every agent within the model dynamics!
-    using VertexIdMapLLU = boost::property_map<Graph_vertlistS_edgelistS_undir, 
+    using VertexIdMapLLU = boost::property_map<Graph_vertlistS_edgelistS_undir,
                                             std::size_t Vertex::*
                                             >::type;
     VertexIdMapLLU vertex_id_map_llu = get(&Vertex::id, g_llu);
 
-    // Save the graph ...
-    // ... with edges
-    Utopia::DataIO::save_graph<true>(g_llu, grp, "g_llu", vertex_id_map_llu);
-    // ... without edges
-    Utopia::DataIO::save_graph<false>(g_llu, grp, "g_llu_noedges", vertex_id_map_llu);
+    // Save the graph
+    save_graph(g_llu, grp, "g_llu", vertex_id_map_llu);
 
 
     // Test case 3: 
@@ -159,11 +155,8 @@ void test_save_graph()
                                             >::type;
     VertexIdMapSSU vertex_id_map_ssu = get(&Vertex::id, g_ssu);
 
-    // Save the graph ...
-    // ... with edges
-    Utopia::DataIO::save_graph<true>(g_ssu, grp, "g_ssu", vertex_id_map_ssu);
-    // ... without edges
-    Utopia::DataIO::save_graph<false>(g_ssu, grp, "g_ssu_noedges", vertex_id_map_ssu);
+    // Save the graph
+    save_graph(g_ssu, grp, "g_ssu", vertex_id_map_ssu);
 
 
     // Test case 4: 
@@ -174,11 +167,8 @@ void test_save_graph()
     // Set up graph
     auto g_vvd = create_and_initialize_test_graph<Graph_vertvecS_edgevecS_dir>(10,3);
 
-    // Save the graph ...
-    // ... with edges 
-    Utopia::DataIO::save_graph<true>(g_vvd, grp, "g_vvd");
-    // ... without edges
-    Utopia::DataIO::save_graph<false>(g_vvd, grp, "g_vvd_noedges");
+    // Save the graph
+    save_graph(g_vvd, grp, "g_vvd");
 
 
     // Remove the graph testsfile
