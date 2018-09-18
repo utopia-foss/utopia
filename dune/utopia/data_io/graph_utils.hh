@@ -40,7 +40,6 @@ std::shared_ptr<HDFGroup> save_graph( GraphType &g,
     grp->add_attribute("directed", boost::is_directed(g));
     grp->add_attribute("num_vertices", num_vertices);
     grp->add_attribute("num_edges", num_edges);
-    grp->add_attribute("edges_saved", save_edges);
     // TODO _could_ add more attributes here, should be general though
 
     // Initialize datasets to store vertices list in
@@ -108,7 +107,6 @@ save_graph( GraphType &g,
     grp->add_attribute("directed", boost::is_directed(g));
     grp->add_attribute("num_vertices", num_vertices);
     grp->add_attribute("num_edges", num_edges);
-    grp->add_attribute("edges_saved", save_edges);
     // TODO _could_ add more attributes here, should be general though
 
     // Initialize datasets to store vertices list and adjacency list in
