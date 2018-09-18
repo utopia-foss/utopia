@@ -84,7 +84,7 @@ void test_create_small_world_graph(){
 
 
 /// Test the function that creates a scale-free graph
-int test_create_scale_free_graph(){
+void test_create_scale_free_graph(){
     // Create a random number generator
     Utopia::DefaultRNG rng;
     Utopia::DefaultRNG rng_copy = rng;
@@ -124,61 +124,51 @@ int test_create_scale_free_graph(){
         boost::directedS,
         Vertex>;             // vertex struct
 
-    bool caught = false;
     try
     {
         auto g_dir = create_scale_free_graph<G_directed> (num_vertices, mean_degree, rng);
     }
     catch (const std::exception& e)
     {
-        caught = true;
-        std::cerr << e.what() << std::endl;
+        std::cerr << "Caught expected exception" << std::endl;
     }
-    if (!caught)
-    {
-        return -1;
+    catch (...){
+        throw std::runtime_error("Caught unexpected exception in "
+                                 "create_scale_free_graph function test.");
     }
 
     // Case: mean degree greater than number of vertices
-    caught = false;
     try
     {
         auto g_fail = create_scale_free_graph<G> (5, 6, rng);
     }
     catch (const std::exception& e)
     {
-        caught = true;
-        std::cerr << e.what() << std::endl;
+        std::cerr << "Caught expected exception" << std::endl;
     }
-    if (!caught)
-    {
-        return -1;
+    catch (...){
+        throw std::runtime_error("Caught unexpected exception in "
+                                 "create_scale_free_graph function test.");
     }
 
     // Case: mean degree is odd
-    caught = false;
     try
     {
         auto g_fail = create_scale_free_graph<G> (10, 5, rng);
     }
     catch (const std::exception& e)
     {
-        caught = true;
-        std::cerr << e.what() << std::endl;
+        std::cerr << "Caught expected exception" << std::endl;
     }
-    if (!caught)
-    {
-        return -1;
+    catch (...){
+        throw std::runtime_error("Caught unexpected exception in "
+                                 "create_scale_free_graph function test.");
     }
-
-
-    // everything as expected
-    return 0;
 }
 
 
 /// Test the k-regular graph creation
-int test_create_k_regular_graph(){
+void test_create_k_regular_graph(){
     // Create four different regular graph test cases
     const int num_vertices_even = 100;
     const int num_vertices_odd = 99;
@@ -207,20 +197,17 @@ int test_create_k_regular_graph(){
         assert (boost::out_degree(*v, g_oe) == degree_even);
     }
 
-    bool caught = false;
     try{
         auto g_oo = create_k_regular_graph<G>(num_vertices_odd, degree_odd);
     }
-    catch(std::exception& e)
+    catch (const std::exception& e)
     {
-        caught = true;
-        std::cerr << e.what() << std::endl;
+        std::cerr << "Caught expected exception." << std::endl;
     }
-    if (!caught){
-        return -1;
+    catch (...){
+        throw std::runtime_error("Caught an unexpected exception in "
+                                 "create_k_regular_graph function test.");
     }
-
-    return 0;
 }
 
 int main(int argc, char* argv[])
@@ -229,22 +216,20 @@ int main(int argc, char* argv[])
     {
         Dune::MPIHelper::instance(argc, argv);
 
-        int sentinel_regular = test_create_k_regular_graph();
+        test_create_k_regular_graph();
         test_create_random_graph();
         test_create_small_world_graph();
-        int sentinel_scale_free = test_create_scale_free_graph();
+        test_create_scale_free_graph();
         
-        if (sentinel_regular == -1 || sentinel_scale_free == -1)
-        {
-            return -1;
-        }
-        else{
-            return 0;
-        }
+        return 0;
+    }
+    catch (const std::exception& e){
+        std::cerr << e.what() << std::endl;
+        return 1;
     }
     catch (...)
     {
-        std::cerr << "Exception occured!" << std::endl;
+        std::cerr << "Unexpected exceptions occured in the graph test!" << std::endl;
         return 1;
     }
 }
