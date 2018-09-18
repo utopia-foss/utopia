@@ -21,13 +21,11 @@ namespace DataIO {
  * @param name The name of the graph group
  * @return std::enable_if_t<save_edges, std::shared_ptr<HDFGroup>> The network data in a HDFGroup
  */
-template<
-    bool save_edges = true,
-    typename GraphType>
+template<bool save_edges = true, typename GraphType>
 std::enable_if_t<save_edges, std::shared_ptr<HDFGroup>>
-save_graph(GraphType &g,
-         const std::shared_ptr<HDFGroup>& parent_grp,
-         const std::string& name)
+save_graph( GraphType &g,
+            const std::shared_ptr<HDFGroup>& parent_grp,
+            const std::string& name)
 {
     // Create the group for the graph
     auto grp = parent_grp->open_group(name);
@@ -83,13 +81,11 @@ save_graph(GraphType &g,
  * @param name The name of the graph group
  * @return std::enable_if_t<save_edges, std::shared_ptr<HDFGroup>> The network data in a HDFGroup
  */
- template<
-    bool save_edges = true,
-    typename GraphType>
+template<bool save_edges = true, typename GraphType>
 std::enable_if_t<!save_edges, std::shared_ptr<HDFGroup>>
-save_graph(GraphType &g,
-         const std::shared_ptr<HDFGroup>& parent_grp,
-         const std::string& name)
+save_graph( GraphType &g,
+            const std::shared_ptr<HDFGroup>& parent_grp,
+            const std::string& name)
 {
     // Create the group for the graph
     auto grp = parent_grp->open_group(name);
@@ -133,15 +129,12 @@ save_graph(GraphType &g,
  * @param name The name of the graph group
  * @return std::enable_if_t<save_edges, std::shared_ptr<HDFGroup>> The network data in a HDFGroup
  */
-template<
-    bool save_edges = true,
-    typename PropertyMap,
-    typename GraphType>
+template<bool save_edges = true, typename PropertyMap, typename GraphType>
 std::enable_if_t<save_edges, std::shared_ptr<HDFGroup>>
-save_graph(GraphType &g,
-         const std::shared_ptr<HDFGroup>& parent_grp,
-         const std::string& name,
-         const PropertyMap ids)
+save_graph( GraphType &g,
+            const std::shared_ptr<HDFGroup>& parent_grp,
+            const std::string& name,
+            const PropertyMap ids)
 {
     // Create the group for the graph
     auto grp = parent_grp->open_group(name);
@@ -197,15 +190,12 @@ save_graph(GraphType &g,
  * @param name The name of the graph group
  * @return std::enable_if_t<save_edges, std::shared_ptr<HDFGroup>> The network data in a HDFGroup
  */
- template<
-    bool save_edges = false,
-    typename PropertyMap,
-    typename GraphType>
+template<bool save_edges = false, typename PropertyMap, typename GraphType>
 std::enable_if_t<!save_edges, std::shared_ptr<HDFGroup>>
-save_graph(GraphType &g,
-         const std::shared_ptr<HDFGroup>& parent_grp,
-         const std::string& name,
-         const PropertyMap ids)
+save_graph( GraphType &g,
+            const std::shared_ptr<HDFGroup>& parent_grp,
+            const std::string& name,
+            const PropertyMap ids)
 {
     // Create the group for the graph
     auto grp = parent_grp->open_group(name);
