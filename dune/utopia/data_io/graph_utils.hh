@@ -43,9 +43,8 @@ std::shared_ptr<HDFGroup> save_graph( GraphType &g,
     grp->add_attribute("edges_saved", save_edges);
     // TODO _could_ add more attributes here, should be general though
 
-    // Initialize datasets to store vertices list and adjacency list in
+    // Initialize datasets to store vertices list in
     auto dset_vl = grp->open_dataset("_vertex_list", {num_vertices});
-    auto dset_al = grp->open_dataset("_adjacency_list", {num_edges});
 
     // Save vertices list
     auto [v, v_end] = boost::vertices(g);
@@ -55,6 +54,9 @@ std::shared_ptr<HDFGroup> save_graph( GraphType &g,
 
     // Save adjacency list
     if constexpr (save_edges){
+        // Initialize datasets to store adjacency list in
+        auto dset_al = grp->open_dataset("_adjacency_list", {num_edges});
+
         auto [e, e_end] = boost::edges(g);
         dset_al->write(e, e_end,
             [&](auto ed){
@@ -111,7 +113,6 @@ save_graph( GraphType &g,
 
     // Initialize datasets to store vertices list and adjacency list in
     auto dset_vl = grp->open_dataset("_vertex_list", {num_vertices});
-    auto dset_al = grp->open_dataset("_adjacency_list", {num_edges});
 
     // Save vertices list
     auto [v, v_end] = boost::vertices(g);
@@ -121,6 +122,9 @@ save_graph( GraphType &g,
 
     // Save adjacency list
     if constexpr (save_edges){
+        // Initialize datasets to store adjacency list in
+        auto dset_al = grp->open_dataset("_adjacency_list", {num_edges});
+
         auto [e, e_end] = boost::edges(g);
         dset_al->write(e, e_end,
             [&](auto ed){
