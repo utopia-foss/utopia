@@ -16,15 +16,17 @@ namespace DataIO {
  * 
  * @tparam save_edges=true Saves the edges if true
  * @tparam GraphType 
- * @param g The graph
- * @param parent_grp The parent HDFGroup
- * @param name The name of the graph group
- * @return std::shared_ptr<HDFGroup> The network data in a HDFGroup
+ *
+ * @param g The graph to save
+ * @param parent_grp The parent HDFGroup the graph should be stored in
+ * @param name The name the newly created graph group should have
+ *
+ * @return std::shared_ptr<HDFGroup> The newly created graph group
  */
-template<bool save_edges = true, typename GraphType>
-std::shared_ptr<HDFGroup> save_graph( GraphType &g,
-                                    const std::shared_ptr<HDFGroup>& parent_grp,
-                                    const std::string& name)
+template<bool save_edges=true, typename GraphType>
+std::shared_ptr<HDFGroup> save_graph(GraphType &g,
+                                     const std::shared_ptr<HDFGroup>& parent_grp,
+                                     const std::string& name)
 {
     // Create the group for the graph
     auto grp = parent_grp->open_group(name);
@@ -42,7 +44,7 @@ std::shared_ptr<HDFGroup> save_graph( GraphType &g,
     grp->add_attribute("num_edges", num_edges);
     // TODO _could_ add more attributes here, should be general though
 
-    // Initialize datasets to store vertices list in
+    // Initialize dataset to store vertices list in
     auto dset_vl = grp->open_dataset("_vertex_list", {num_vertices});
 
     // Save vertices list
@@ -53,17 +55,20 @@ std::shared_ptr<HDFGroup> save_graph( GraphType &g,
 
     // Save adjacency list
     if constexpr (save_edges){
-        // Initialize datasets to store adjacency list in
+        // Initialize dataset to store adjacency list in
         auto dset_al = grp->open_dataset("_adjacency_list", {num_edges});
 
         auto [e, e_end] = boost::edges(g);
         dset_al->write(e, e_end,
             [&](auto ed){
-                // Extract indices of source and target vertex as well as of the
-                // edge this corresponds to.
-                return std::array<std::size_t, 2>( // TODO use boost::index_type?
-                    {{boost::get(boost::vertex_index_t(), g, boost::source(ed, g)),
-                    boost::get(boost::vertex_index_t(), g, boost::target(ed, g))}}
+                // Extract indices of source and target vertex as well as of
+                // the edge this corresponds to.
+                // TODO If possible, use boost::index_type instead of size_t
+                return std::array<std::size_t, 2>(
+                    {{boost::get(boost::vertex_index_t(), g,
+                                 boost::source(ed, g)),
+                      boost::get(boost::vertex_index_t(), g,
+                                 boost::target(ed, g))}}
                 );
             }
         );
@@ -80,18 +85,19 @@ std::shared_ptr<HDFGroup> save_graph( GraphType &g,
  * @tparam save_edges=true Saves the edges if true 
  * @tparam PropertyMap The property map of the vertex ids
  * @tparam GraphType 
- * @param g The graph
- * @param parent_grp The parent HDFGroup
- * @param name The name of the graph group
- * @param ids The id's of the vertices
- * @return std::shared_ptr<HDFGroup> The network data in a HDFGroup
+ *
+ * @param g The graph to save
+ * @param parent_grp The parent HDFGroup the graph should be stored in
+ * @param name The name the newly created graph group should have
+ * @param ids A custom list of IDs that corresponds to the vertices
+ *
+ * @return std::shared_ptr<HDFGroup> The newly created graph group
  */
-template<bool save_edges = true, typename PropertyMap, typename GraphType>
-std::shared_ptr<HDFGroup>
-save_graph( GraphType &g,
-            const std::shared_ptr<HDFGroup>& parent_grp,
-            const std::string& name,
-            const PropertyMap ids)
+template<bool save_edges=true, typename GraphType, typename PropertyMap>
+std::shared_ptr<HDFGroup> save_graph(GraphType &g,
+                                     const std::shared_ptr<HDFGroup>& parent_grp,
+                                     const std::string& name,
+                                     const PropertyMap ids)
 {
     // Create the group for the graph
     auto grp = parent_grp->open_group(name);
@@ -109,7 +115,7 @@ save_graph( GraphType &g,
     grp->add_attribute("num_edges", num_edges);
     // TODO _could_ add more attributes here, should be general though
 
-    // Initialize datasets to store vertices list and adjacency list in
+    // Initialize dataset to store vertices list in
     auto dset_vl = grp->open_dataset("_vertex_list", {num_vertices});
 
     // Save vertices list
@@ -120,17 +126,18 @@ save_graph( GraphType &g,
 
     // Save adjacency list
     if constexpr (save_edges){
-        // Initialize datasets to store adjacency list in
+        // Initialize dataset to store adjacency list in
         auto dset_al = grp->open_dataset("_adjacency_list", {num_edges});
 
         auto [e, e_end] = boost::edges(g);
         dset_al->write(e, e_end,
             [&](auto ed){
-                // Extract indices of source and target vertex as well as of the
-                // edge this corresponds to.
-                return std::array<std::size_t, 2>( // TODO use boost::index_type?
+                // Extract indices of source and target vertex as well as of
+                // the edge this corresponds to.
+                // TODO If possible, use boost::index_type instead of size_t
+                return std::array<std::size_t, 2>(
                     {{boost::get(ids, boost::source(ed, g)),
-                        boost::get(ids, boost::target(ed, g))}}
+                      boost::get(ids, boost::target(ed, g))}}
                 );
             }
         );
