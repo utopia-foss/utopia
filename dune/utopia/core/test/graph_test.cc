@@ -133,14 +133,8 @@ void test_create_scale_free_graph(){
         std::cerr << "Caught expected exception" << std::endl;
     }
     catch (...){
-<<<<<<< HEAD
         throw std::runtime_error("Caught unexpected exception in "
                                  "create_scale_free_graph function test.");
-=======
-        std::cerr   << "Caught unexpected exception in create_scale_free_graph function test." 
-                    << std::endl;
-        throw -1;
->>>>>>> 8c4cc2e2427658b4110e0d20164faa9d6980f13f
     }
 
     // Case: mean degree greater than number of vertices
@@ -153,14 +147,8 @@ void test_create_scale_free_graph(){
         std::cerr << "Caught expected exception" << std::endl;
     }
     catch (...){
-<<<<<<< HEAD
         throw std::runtime_error("Caught unexpected exception in "
                                  "create_scale_free_graph function test.");
-=======
-        std::cerr   << "Caught unexpected exception in create_scale_free_graph function test." 
-                    << std::endl;    
-        throw -1;
->>>>>>> 8c4cc2e2427658b4110e0d20164faa9d6980f13f
     }
 
     // Case: mean degree is odd
@@ -173,14 +161,8 @@ void test_create_scale_free_graph(){
         std::cerr << "Caught expected exception" << std::endl;
     }
     catch (...){
-<<<<<<< HEAD
         throw std::runtime_error("Caught unexpected exception in "
                                  "create_scale_free_graph function test.");
-=======
-        std::cerr   << "Caught unexpected exception in create_scale_free_graph function test." 
-                    << std::endl;
-        throw -1;
->>>>>>> 8c4cc2e2427658b4110e0d20164faa9d6980f13f
     }
 }
 
@@ -223,14 +205,8 @@ void test_create_k_regular_graph(){
         std::cerr << "Caught expected exception." << std::endl;
     }
     catch (...){
-<<<<<<< HEAD
         throw std::runtime_error("Caught an unexpected exception in "
                                  "create_k_regular_graph function test.");
-=======
-        std::cerr << "Caught an unexpected exception in create_k_regular_graph"
-                     "function test." << std::endl;
-        throw -1;
->>>>>>> 8c4cc2e2427658b4110e0d20164faa9d6980f13f
     }
 }
 
@@ -247,15 +223,9 @@ int main(int argc, char* argv[])
         
         return 0;
     }
-<<<<<<< HEAD
     catch (const std::exception& e){
         std::cerr << e.what() << std::endl;
         return 1;
-=======
-    catch (const int i){
-        std::cerr << "Caught all expected exceptions" << std::endl;
-        return 0;
->>>>>>> 8c4cc2e2427658b4110e0d20164faa9d6980f13f
     }
     catch (...)
     {
