@@ -215,9 +215,14 @@ public:
                 }
 
                 // nudge value towards own value at this locus
-                ctrt[i] -= intensity * (ctrt[i] - trt[i]);
-                cell->state().modtimes[i] = this->_time;
-                agent->state().resources -= _modifiercost;
+                double value = intensity * (ctrt[i] - trt[i]);
+                double cost = _modifiercost * std::abs(value);
+                if (cost < agent->state().resources)
+                {
+                    ctrt[i] -= value;
+                    cell->state().modtimes[i] = this->_time;
+                    agent->state().resources -= cost;
+                }
             }
         }
 
@@ -229,13 +234,19 @@ public:
             }
             else
             {
-                ctrt.emplace_back(intensity * trt[i]);
-                cell->state().modtimes.emplace_back(this->_time);
-                cell->state().resources.emplace_back(0.);
-                cell->state().resourceinfluxes.emplace_back(
-                    (intensity * trt[i] > 0. ? intensity * trt[i] : 0.) *
-                    _resdist(*this->_rng));
-                agent->state().resources -= _modifiercost;
+                double value = intensity * trt[i];
+                double cost = _modifiercost * std::abs(value);
+
+                if (cost < agent->state().resources)
+                {
+                    ctrt.emplace_back(intensity * trt[i]);
+                    cell->state().modtimes.emplace_back(this->_time);
+                    cell->state().resources.emplace_back(0.);
+                    cell->state().resourceinfluxes.emplace_back(
+                        (intensity * trt[i] > 0. ? intensity * trt[i] : 0.) *
+                        _resdist(*this->_rng));
+                    agent->state().resources -= cost;
+                }
             }
         }
     };
@@ -359,14 +370,17 @@ public:
     };
 
     AgentUpdateFunction update_agent = [&](std::shared_ptr<AgentType> agent) {
-        move(agent);
+        update_adaption(agent);
 
-        metabolism(agent);
+        move(agent);
 
         if constexpr (construction)
         {
             modify(agent);
         }
+        update_adaption(agent);
+
+        metabolism(agent);
 
         reproduce(agent);
 
@@ -886,6 +900,16 @@ public:
     auto get_construction()
     {
         return construction;
+    }
+
+    auto get_time()
+    {
+        return this->_time;
+    }
+
+    auto set_time(std::size_t t)
+    {
+        this->_time = t;
     }
 
 }; // namespace AmeeMulti

@@ -239,38 +239,90 @@ void test_model_functions(Model& model)
     adamstate.intensity = 0.5;
     adamstate.start = 2;
     adamstate.end = 5;
-    adam->state().habitat->state().celltrait = std::vector<double>(6, 1.);
+    adam->state().habitat->state().celltrait = std::vector<double>(6, 6.);
     adam->state().habitat->state().resources = std::vector<double>(6, 1.);
     adam->state().habitat->state().resourceinfluxes = std::vector<double>(6, 1.);
-
     adamstate.phenotype = std::vector<double>(6, 4.);
     adamstate.resources = 10.;
+    model.set_modifiercost(0.1);
+
     model.modify(adam);
+
     ASSERT_EQ(adam->state().habitat->state().celltrait,
-              (std::vector<double>{1., 1., 2.5, 2.5, 2.5, 1.}));
+              (std::vector<double>{6., 6., 5., 5., 5., 6.}));
 
     ASSERT_EQ(adamstate.resources, 9.7);
     ASSERT_EQ(edenstate.modtimes, (std::vector<double>(6, 0.)));
 
     adamstate.end = 8;
     adamstate.phenotype = std::vector<double>(8, 4.);
-    adam->state().habitat->state().celltrait = std::vector<double>(6, 1.);
+    adam->state().habitat->state().celltrait = std::vector<double>(6, 6.);
     adam->state().habitat->state().resources = std::vector<double>(6, 1.);
     adam->state().habitat->state().resourceinfluxes = std::vector<double>(6, 1.);
+    adam->state().habitat->state().modtimes = std::vector<double>(6, 0.);
     adam->state().resources = 10.;
+    model.set_modifiercost(0.1);
+    model.increment_time();
+
     model.modify(adam);
+
     ASSERT_EQ(adam->state().habitat->state().celltrait,
-              (std::vector<double>{1., 1., 2.5, 2.5, 2.5, 2.5, 2., 2.}));
-    ASSERT_EQ(adamstate.resources, 9.4);
-    ASSERT_EQ(adam->state().habitat->state().modtimes, (std::vector<double>(8, 0.)));
+              (std::vector<double>{6., 6., 5., 5., 5., 5., 2., 2.}));
+    ASSERT_EQ(adam->state().habitat->state().modtimes,
+              (std::vector<double>{0., 0., 1., 1., 1., 1., 1., 1.}));
+    ASSERT_EQ(adamstate.resources, 9.2);
 
     // test bad values -> should do nothing and hence everything is as it was
     adam->state().end = adam->state().start;
     model.modify(adam);
     ASSERT_EQ(adam->state().habitat->state().celltrait,
-              (std::vector<double>{1., 1., 2.5, 2.5, 2.5, 2.5, 2., 2.}));
-    ASSERT_EQ(adamstate.resources, 9.4);
-    ASSERT_EQ(adam->state().habitat->state().modtimes, (std::vector<double>(8, 0.)));
+              (std::vector<double>{6., 6., 5., 5., 5., 5., 2., 2.}));
+    ASSERT_EQ(adamstate.resources, 9.2);
+    ASSERT_EQ(adam->state().habitat->state().modtimes,
+              (std::vector<double>{0., 0., 1., 1., 1., 1., 1., 1.}));
+
+    // cannot afford modification - internally
+    adamstate.intensity = 2;
+    adamstate.start = 2;
+    adamstate.end = 5;
+    adamstate.phenotype = std::vector<double>(6, 4.);
+    adamstate.habitat->state().celltrait = std::vector<double>(6, 6.);
+    adam->state().habitat->state().resources = std::vector<double>(6, 1.);
+    adam->state().habitat->state().resourceinfluxes = std::vector<double>(6, 1.);
+    adam->state().habitat->state().modtimes = std::vector<double>(6, 0.);
+    adamstate.resources = 10.;
+    model.set_modifiercost(1.);
+    model.modify(adam);
+    ASSERT_EQ(adam->state().habitat->state().celltrait,
+              (std::vector<double>{6., 6., 2., 2., 6., 6.}));
+
+    ASSERT_EQ(adamstate.resources, 2.);
+    ASSERT_EQ(adam->state().habitat->state().modtimes,
+              (std::vector<double>{0., 0., 1., 1., 0., 0.}));
+
+    // cannot afford modification - beyond celltraitlength
+
+    adamstate.start = 2;
+    adamstate.end = 8;
+    adamstate.intensity = 2;
+    adamstate.phenotype = std::vector<double>(8, 4.);
+
+    adam->state().habitat->state().celltrait = std::vector<double>(6, 6.);
+    adam->state().habitat->state().resources = std::vector<double>(6, 1.);
+    adam->state().habitat->state().resourceinfluxes = std::vector<double>(6, 1.);
+    adam->state().resources = 15.;
+    model.set_modifiercost(0.5);
+
+    model.modify(adam);
+
+    ASSERT_EQ(adam->state().habitat->state().celltrait,
+              (std::vector<double>{6., 6., 2., 2., 2., 2., 8.}));
+    ASSERT_EQ(adam->state().habitat->state().modtimes,
+              (std::vector<double>{0., 0., 1., 1., 1., 1., 1.}));
+    ASSERT_EQ(adamstate.resources, 3.);
+
+    // reset time again
+    model.set_time(0);
 
     // reproduce
     adam->state().resources = 10;
