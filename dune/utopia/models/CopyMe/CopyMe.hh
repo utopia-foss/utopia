@@ -17,6 +17,7 @@ namespace CopyMe {
 /// Enum that will be part of the internal state of a cell
 enum SomeEnum : unsigned short int {Enum0, Enum1};
 
+
 /// State struct for CopyMe model.
 struct State {
     int some_state;
@@ -24,14 +25,9 @@ struct State {
     SomeEnum some_enum;
 };
 
-/// Boundary condition type
-struct Boundary {};
 
-
-/// Typehelper to define data types of CopyMe model 
-using CopyMeModelTypes = ModelTypes<State, Boundary>;
-// NOTE if you do not use the boundary condition type, you can delete the
-//      definition of the struct above and the passing to the type helper
+/// Typehelper to define types of CopyMe model 
+using CopyMeModelTypes = ModelTypes<>;
 
 
 /// The CopyMe Model
@@ -47,9 +43,6 @@ class CopyMeModel:
 public:
     /// The base model type
     using Base = Model<CopyMeModel<ManagerType>, CopyMeModelTypes>;
-    
-    /// Data type of the state
-    using Data = typename Base::Data;
     
     /// Cell type
     using CellType = typename ManagerType::Cell;
@@ -268,7 +261,8 @@ public:
 
 
     // Getters and setters ....................................................
-    // Can add some getters and setters here to interface with other model
+    // Add getters and setters here to interface with other model
+    
 };
 
 } // namespace CopyMe

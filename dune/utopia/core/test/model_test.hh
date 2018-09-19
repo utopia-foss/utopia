@@ -8,10 +8,7 @@
 namespace Utopia {
 
 /// Define data types for the test models
-using TestModelTypes = ModelTypes<
-    std::vector<double>,
-    std::vector<double>
->;
+using TestModelTypes = ModelTypes<>;
 
 /// Test model with simple update rule
 /** Holds a vector of doubles and increments its entries by the boundary
@@ -27,9 +24,13 @@ public:
     /// The base model class
     using Base = Model<TestModel, TestModelTypes>;
 
+    /// Define the data type to use
+    using Data = std::vector<double>;
+
 private:
+    // Declare members
     Data _state;
-    BCType _bc;
+    Data _bc;
 
 public:
     /// Construct the test model with an initial state
@@ -60,13 +61,13 @@ public:
     void write_data () {}
 
     // Set model boundary condition
-    void set_boundary_condition (const BCType& bc) { _bc = bc; }
+    void set_bc (const Data& bc) { _bc = bc; }
 
     /// Set model initial condition
-    void set_initial_condition (const Data& ic) { _state = ic; }
+    void set_state (const Data& s) { _state = s; }
 
     /// Return const reference to stored data
-    const Data& data () const { return _state; }
+    const Data& state () const { return _state; }
 };
 
 

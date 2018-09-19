@@ -8,10 +8,7 @@
 
 /// Template declaration for model types extracted from Manager
 template<class Manager>
-using MngrModelTypes = Utopia::ModelTypes<
-    typename Manager::Container,
-    std::vector<bool>
->;
+using MngrModelTypes = Utopia::ModelTypes<>;
 
 /// A model that has a custom (and templated) Manager as as member
 template<class Manager>
@@ -22,12 +19,11 @@ private:
     Manager _manager;
 
 public:
+    /// Type of the base class
     using Base = Utopia::Model<MngrModel<Manager>, MngrModelTypes<Manager>>;
+
+    /// Type of the data, i.e.: the cell container of cells
     using Data = typename Manager::Container;
-    using BCType = typename Base::BCType;
-    using Config = typename Base::Config;
-    using DataGroup = typename Base::DataGroup;
-    using RNG = typename Base::RNG;
 
     /// Construct the model.
     /** \param manager Manager for this model
@@ -60,9 +56,6 @@ public:
 
     /// Return const reference to cell container
     const Data& data () const { return _manager.cells(); }
-
-    // Set model boundary condition
-    void set_boundary_condition ([[maybe_unused]] const BCType& bc) { }
 
     /// Set model initial condition
     void set_initial_condition (const Data& container) {
