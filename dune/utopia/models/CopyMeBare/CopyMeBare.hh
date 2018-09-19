@@ -20,14 +20,9 @@ struct State {
     // TODO Define the state a cell of this model can have
 };
 
-/// Boundary condition type
-struct Boundary {};
-// NOTE if you do not use the boundary condition type, you can delete the
-//      definition of the struct above and the passing to the type helper
 
-
-/// Typehelper to define data types of CopyMeBare model 
-using CopyMeBareModelTypes = ModelTypes<State, Boundary>;
+/// Typehelper to define types of CopyMeBare model 
+using CopyMeBareModelTypes = ModelTypes<>;
 
 
 /// The CopyMeBare Model
@@ -41,9 +36,6 @@ class CopyMeBareModel:
 public:
     /// The base model type
     using Base = Model<CopyMeBareModel<ManagerType>, CopyMeBareModelTypes>;
-    
-    /// Data type of the state
-    using Data = typename Base::Data;
     
     /// Cell type
     using CellType = typename ManagerType::Cell;
@@ -129,6 +121,11 @@ public:
     {   
         // State which data should be written
     }
+
+    
+    // Getters and setters ....................................................
+    // Add getters and setters here to interface with other model
+    
 };
 
 } // namespace CopyMeBare

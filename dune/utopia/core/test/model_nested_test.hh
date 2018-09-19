@@ -7,10 +7,7 @@
 namespace Utopia {
 
 /// Define data types for use in all models
-using CommonModelTypes = ModelTypes<
-    std::vector<double>,
-    std::vector<double>
->;
+using CommonModelTypes = ModelTypes<>;
 
 
 /// Test model that is used within the nested models
