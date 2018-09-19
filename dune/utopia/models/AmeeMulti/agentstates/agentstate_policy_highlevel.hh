@@ -61,31 +61,34 @@ struct Agentstate_policy_highlevel : public Agentstate_policy_simple<Gt, Pt, PRN
         return new_genotype;
     }
 
-    virtual std::tuple<unsigned, double, int, int, double, Phenotype> genotype_phenotype_map(Genotype& genotype) override
+    virtual std::tuple<unsigned, double, int, int, int, int, double, Phenotype> genotype_phenotype_map(
+        Genotype& genotype) override
     {
         unsigned sumlen = 0;
         double divisor = 0.;
         int start = 0;
         int end = 0;
+        int startmod = 0;
+        int endmod = 0;
         double intensity = 0.;
         Phenotype phenotype;
 
-        if (genotype.size() < 4)
+        if (genotype.size() < 6)
         {
-            start = 0;
-            end = 0;
-            intensity = 0.;
-            phenotype = Phenotype();
+            return std::make_tuple(sumlen, divisor, start, end, startmod,
+                                   endmod, intensity, phenotype);
         }
         else
         {
             start = genotype[0];
             end = genotype[1];
-            intensity = genotype[2];
+            startmod = genotype[2];
+            endmod = genotype[3];
+            intensity = genotype[4];
             phenotype = Phenotype(genotype.begin(), genotype.end());
+            return std::make_tuple(sumlen, divisor, start, end, startmod,
+                                   endmod, intensity, phenotype);
         }
-
-        return std::make_tuple(sumlen, divisor, start, end, intensity, phenotype);
     }
 };
 } // namespace AmeeMulti

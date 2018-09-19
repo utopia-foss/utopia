@@ -9,13 +9,12 @@ parameter_space:
     grid_size: [32,32]
 
     # Cell parameters
-    init_cell_traitlen: 24
-    init_cell_resourceinflux: "random"
+    init_cell_traitlen: 64
+    init_cellresourceinflux_kind: "random"
     # init_cell_resourceinflux: "given"
     # cell_influxvalues: [1., 1., 1., 1., 1., 1.,1., 1., 1., 1., 1., 1.]
     resourceinflux_limits: [0., 10.]
     init_celltrait_values: [-5., 5.]
-    #upper_influxlimit: 1000. # not yet needed
     removethreshold: 1e-3
     decayintensity: 1e-2
 
@@ -23,7 +22,6 @@ parameter_space:
     init_genotypelen: 64
     init_resources: 5.
     init_genotype_values: [-5., 5.]
-    #metabolism_inefficiency: 0.2 # not yet needed
     livingcost: 5.
     reproductioncost: 1.
     offspringresources: 1.
@@ -33,7 +31,7 @@ parameter_space:
     substitution_std: 1e-3
     modifiercost: 0.
     adaptionfunction: "multi_notnormed"
-    upper_resourcelimit: 2500.
+    upper_resourcelimit: 10000.
     highresoutput: true
 
     # Model structure: Agent- & cell types etc
@@ -42,7 +40,7 @@ parameter_space:
     highresinterval: [0, 1000]
     Agenttype: !sweep
       default: simple
-      values: [simple, complex, highlevel, gauss]
+      values: [simple, complex, highlevel]
 
     # stuff for worker manager
 worker_manager:
@@ -54,5 +52,5 @@ paths:
   out_dir: ~/utopia_output
 
   # model note is added to the output directory path
-  model_note: "agenttype_test"
+  model_note: "modrange_test_highinflux_nomod"
 

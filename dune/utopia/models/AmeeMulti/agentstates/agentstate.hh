@@ -37,6 +37,8 @@ struct AgentState : public Statepolicy
     double divisor;
     int start;
     int end;
+    int start_mod;
+    int end_mod;
     std::vector<double> adaption;
     double intensity;
     std::size_t age;
@@ -44,6 +46,34 @@ struct AgentState : public Statepolicy
     bool deathflag;
     Genotype genotype;
     Phenotype phenotype;
+
+    void swap(AgentState<Cell, Statepolicy>& other)
+    {
+        if (this == &other)
+        {
+            return;
+        }
+        else
+        {
+            using std::swap;
+            swap(rng, other.rng);
+            swap(resources, other.resources);
+            swap(fitness, other.fitness);
+            swap(sumlen, other.sumlen);
+            swap(divisor, other.divisor);
+            swap(start, other.start);
+            swap(end, other.end);
+            swap(start_mod, other.start_mod);
+            swap(end_mod, other.end_mod);
+            swap(adaption, other.adaption);
+            swap(intensity, other.intensity);
+            swap(age, other.age);
+            swap(habitat, other.habitat);
+            swap(deathflag, other.deathflag);
+            swap(genotype, other.genotype);
+            swap(phenotype, other.phenotype);
+        }
+    }
 
     AgentState() = default;
     AgentState(const AgentState& other) = default;
@@ -69,8 +99,8 @@ struct AgentState : public Statepolicy
     {
         genotype = this->copy_genome(parent_state.genotype, mutationrates, rng);
 
-        std::tie(sumlen, divisor, start, end, intensity, phenotype) =
-            this->genotype_phenotype_map(genotype);
+        std::tie(sumlen, divisor, start, end, start_mod, end_mod, intensity,
+                 phenotype) = this->genotype_phenotype_map(genotype);
 
         if (end < 0)
         {
@@ -84,6 +114,20 @@ struct AgentState : public Statepolicy
         {
             start = end;
         }
+
+        if (end_mod < 0)
+        {
+            end_mod = 0;
+        }
+        if (start_mod < 0)
+        {
+            start_mod = 0;
+        }
+        if (end_mod < start_mod)
+        {
+            start_mod = end_mod;
+        }
+
         adaption = std::vector<double>(end - start, 0.);
     }
 
@@ -107,8 +151,8 @@ struct AgentState : public Statepolicy
           deathflag(false),
           genotype(init_genome)
     {
-        std::tie(sumlen, divisor, start, end, intensity, phenotype) =
-            this->genotype_phenotype_map(genotype);
+        std::tie(sumlen, divisor, start, end, start_mod, end_mod, intensity,
+                 phenotype) = this->genotype_phenotype_map(genotype);
         if (end < 0)
         {
             end = 0;
@@ -121,6 +165,20 @@ struct AgentState : public Statepolicy
         {
             start = end;
         }
+
+        if (end_mod < 0)
+        {
+            end_mod = 0;
+        }
+        if (start_mod < 0)
+        {
+            start_mod = 0;
+        }
+        if (end_mod < start_mod)
+        {
+            start_mod = end_mod;
+        }
+
         adaption = std::vector<double>(end - start, 0.);
     }
 

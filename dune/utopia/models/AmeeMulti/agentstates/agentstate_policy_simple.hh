@@ -84,17 +84,21 @@ struct Agentstate_policy_simple
      *
      * @return Phenotype
      */
-    virtual std::tuple<unsigned, double, int, int, double, Phenotype> genotype_phenotype_map(Genotype& genotype)
+    virtual std::tuple<unsigned, double, int, int, int, int, double, Phenotype> genotype_phenotype_map(Genotype& genotype)
     {
         unsigned sumlen = 0;
         double divisor = 0.;
         int start = 0;
         int end = 0;
+        int startmod = 0;
+        int endmod = 0;
         double intensity = 0.;
         Phenotype phenotype;
+
         if (genotype.size() < 4)
         {
-            return std::make_tuple(sumlen, divisor, start, end, intensity, phenotype);
+            return std::make_tuple(sumlen, divisor, start, end, startmod,
+                                   endmod, intensity, phenotype);
         }
         else
         {
@@ -108,14 +112,10 @@ struct Agentstate_policy_simple
                 sumlen = sl;
             }
 
-            if (genotype.size() < (4 + (4 * sumlen)))
+            if (genotype.size() < (4 + (6 * sumlen)))
             {
-                sumlen = 0;
-                divisor = 0;
-                start = 0;
-                end = 0;
-                intensity = 0.;
-                phenotype = Phenotype();
+                return std::make_tuple(sumlen, divisor, start, end, startmod,
+                                       endmod, intensity, phenotype);
             }
             else
             {
@@ -125,17 +125,24 @@ struct Agentstate_policy_simple
 
                 end = std::round(get_codon_value(4 + sumlen, 4 + 2 * sumlen, divisor, genotype));
 
-                intensity = get_codon_value(4 + 2 * sumlen, 4 + 3 * sumlen, divisor, genotype);
+                startmod = std::round(get_codon_value(
+                    4 + 2 * sumlen, 4 + 3 * sumlen, divisor, genotype));
+
+                endmod = std::round(get_codon_value(
+                    4 + 3 * sumlen, 4 + 4 * sumlen, divisor, genotype));
+
+                intensity = get_codon_value(4 + 4 * sumlen, 4 + 5 * sumlen, divisor, genotype);
                 // if (intensity < 0.)
                 // {
                 //     intensity = 0.;
                 // }
 
                 phenotype =
-                    Phenotype(genotype.begin() + (4 + 3 * sumlen), genotype.end());
+                    Phenotype(genotype.begin() + (4 + 5 * sumlen), genotype.end());
             }
 
-            return std::make_tuple(sumlen, divisor, start, end, intensity, phenotype);
+            return std::make_tuple(sumlen, divisor, start, end, startmod,
+                                   endmod, intensity, phenotype);
         }
     }
 };

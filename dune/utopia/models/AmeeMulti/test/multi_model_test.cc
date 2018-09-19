@@ -143,7 +143,10 @@ void test_model_functions(Model& model)
 
     auto edentrait = edenstate.celltrait;
 
+    ////////////////////////////////////////////////////////////////////////////
     // update adaption
+    ////////////////////////////////////////////////////////////////////////////
+
     adamstate.phenotype = std::vector<double>{1., 2., -1., 2., 4.};
     edenstate.celltrait = std::vector<double>{-1., 1., 2., 1., 3.};
     edenstate.resources = std::vector<double>{1., 1., 1., 1., 1.};
@@ -154,7 +157,10 @@ void test_model_functions(Model& model)
     model.update_adaption(adam);
     ASSERT_EQ(adamstate.adaption, (std::vector<double>{0., 1., 0., 1., 6.}));
 
+    ////////////////////////////////////////////////////////////////////////////
     // metabolism
+    ////////////////////////////////////////////////////////////////////////////
+
     adamstate.resources = 0.;
     edenstate.resources = std::vector<double>(5, 10.);
     model.metabolism(adam);
@@ -180,7 +186,10 @@ void test_model_functions(Model& model)
     ASSERT_EQ(edenstate.resources, (std::vector<double>{5., 5., 5, 5, 5}));
     ASSERT_EQ(int(adamstate.age), 3);
 
+    ////////////////////////////////////////////////////////////////////////////
     // move
+    ////////////////////////////////////////////////////////////////////////////
+
     auto neighbors =
         Utopia::Neighborhoods::MooreNeighbor::neighbors(eden, model.cellmanager());
     edenstate.celltrait = std::vector<double>(8, 0.);
@@ -235,10 +244,15 @@ void test_model_functions(Model& model)
     eden = adamstate.habitat;
     edenstate = eden->state();
 
+    ////////////////////////////////////////////////////////////////////////////
     // modify
+    ////////////////////////////////////////////////////////////////////////////
     adamstate.intensity = 0.5;
     adamstate.start = 2;
     adamstate.end = 5;
+    adamstate.start_mod = 2;
+    adamstate.end_mod = 5;
+
     adam->state().habitat->state().celltrait = std::vector<double>(6, 6.);
     adam->state().habitat->state().resources = std::vector<double>(6, 1.);
     adam->state().habitat->state().resourceinfluxes = std::vector<double>(6, 1.);
@@ -255,6 +269,7 @@ void test_model_functions(Model& model)
     ASSERT_EQ(edenstate.modtimes, (std::vector<double>(6, 0.)));
 
     adamstate.end = 8;
+    adamstate.end_mod = 8;
     adamstate.phenotype = std::vector<double>(8, 4.);
     adam->state().habitat->state().celltrait = std::vector<double>(6, 6.);
     adam->state().habitat->state().resources = std::vector<double>(6, 1.);
@@ -274,6 +289,8 @@ void test_model_functions(Model& model)
 
     // test bad values -> should do nothing and hence everything is as it was
     adam->state().end = adam->state().start;
+    adam->state().end_mod = adam->state().start_mod;
+
     model.modify(adam);
     ASSERT_EQ(adam->state().habitat->state().celltrait,
               (std::vector<double>{6., 6., 5., 5., 5., 5., 2., 2.}));
@@ -285,6 +302,9 @@ void test_model_functions(Model& model)
     adamstate.intensity = 2;
     adamstate.start = 2;
     adamstate.end = 5;
+    adamstate.start_mod = 2;
+    adamstate.end_mod = 5;
+
     adamstate.phenotype = std::vector<double>(6, 4.);
     adamstate.habitat->state().celltrait = std::vector<double>(6, 6.);
     adam->state().habitat->state().resources = std::vector<double>(6, 1.);
@@ -301,9 +321,11 @@ void test_model_functions(Model& model)
               (std::vector<double>{0., 0., 1., 1., 0., 0.}));
 
     // cannot afford modification - beyond celltraitlength
-
     adamstate.start = 2;
     adamstate.end = 8;
+    adamstate.start_mod = 2;
+    adamstate.end_mod = 8;
+
     adamstate.intensity = 2;
     adamstate.phenotype = std::vector<double>(8, 4.);
 
@@ -321,10 +343,70 @@ void test_model_functions(Model& model)
               (std::vector<double>{0., 0., 1., 1., 1., 1., 1.}));
     ASSERT_EQ(adamstate.resources, 3.);
 
-    // reset time again
+    // modify, [start, end) and [start_mod, end_mod) overlap only partially overlap
+    adamstate.start = 2;
+    adamstate.end = 8;
+    adamstate.start_mod = 6;
+    adamstate.end_mod = 9;
+
+    adamstate.intensity = 1;
+    adamstate.phenotype = std::vector<double>(15, 4.);
+
+    adam->state().habitat->state().celltrait = std::vector<double>(11, 6.);
+    adam->state().habitat->state().resources = std::vector<double>(11, 1.);
+    adam->state().habitat->state().resourceinfluxes = std::vector<double>(10, 1.);
+    adam->state().habitat->state().modtimes = std::vector<double>(10, 0.);
+    adam->state().resources = 15.;
+    model.set_modifiercost(0.5);
+    adam->state().adaption = std::vector<double>(6, 0.);
+
+    model.modify(adam);
+    model.update_adaption(adam);
+
+    ASSERT_EQ(adam->state().habitat->state().celltrait,
+              (std::vector<double>{6., 6., 6., 6., 6., 6., 4., 4., 4., 6., 6.}));
+    ASSERT_EQ(adam->state().habitat->state().modtimes,
+              (std::vector<double>{0., 0., 0., 0., 0., 0., 1., 1., 1., 0., 0.}));
+    ASSERT_EQ(adamstate.resources, 12.);
+    ASSERT_EQ(adamstate.adaption, (std::vector<double>{8., 8., 8., 8., 16., 16.}));
+
+    // modify, [start, end) and [start_mod, end_mod) overlap only partially
+    // overlap but end_mod goes beyond celltraitlength
+    adamstate.start = 2;
+    adamstate.end = 8;
+    adamstate.start_mod = 6;
+    adamstate.end_mod = 12;
+
+    adamstate.intensity = 1;
+    adamstate.phenotype = std::vector<double>(15, 4.);
+
+    adam->state().habitat->state().celltrait = std::vector<double>(9, 6.);
+    adam->state().habitat->state().resources = std::vector<double>(9, 1.);
+    adam->state().habitat->state().resourceinfluxes = std::vector<double>(9, 1.);
+    adam->state().resources = 15.;
+    model.set_modifiercost(0.5);
+    adam->state().adaption = std::vector<double>(6, 0.);
+
+    model.modify(adam);
+    model.update_adaption(adam);
+
+    ASSERT_EQ(adam->state().habitat->state().celltrait,
+              (std::vector<double>{6., 6., 6., 6., 6., 6., 4., 4., 4., 4., 4., 4.}));
+
+    ASSERT_EQ(adam->state().habitat->state().modtimes,
+              (std::vector<double>{0., 0., 0., 0., 0., 0., 1., 1., 1., 1., 1., 1.}));
+    ASSERT_EQ(adamstate.resources, 12.);
+    ASSERT_EQ(adamstate.adaption, (std::vector<double>{8., 8., 8., 8., 16., 16.}));
+
+    ASSERT_EQ(adamstate.resources, 6.);
+
+    // reset time again for later reference
     model.set_time(0);
 
+    ////////////////////////////////////////////////////////////////////////////
     // reproduce
+    ////////////////////////////////////////////////////////////////////////////
+
     adam->state().resources = 10;
     model.reproduce(adam);
     ASSERT_EQ(adam->state().fitness, 4.);
@@ -338,14 +420,20 @@ void test_model_functions(Model& model)
         ASSERT_EQ(model.agents()[i]->state().age, std::size_t(0));
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     // kill
+    ////////////////////////////////////////////////////////////////////////////
+
     auto deadmanwalking = model.agents().back();
     deadmanwalking->state().resources = 0.;
     ASSERT_EQ(deadmanwalking->state().deathflag, false);
     model.kill(deadmanwalking);
     ASSERT_EQ(deadmanwalking->state().deathflag, true);
 
+    ////////////////////////////////////////////////////////////////////////////
     // update cell
+    ////////////////////////////////////////////////////////////////////////////
+
     auto cell = model.cells().front();
     cell->state().celltrait = std::vector<double>(10, 1.);
     cell->state().original = std::vector<double>(10, 1.);
@@ -356,7 +444,10 @@ void test_model_functions(Model& model)
     model.update_cell(cell);
     ASSERT_EQ(cell->state().resources, std::vector<double>(10, 11.));
 
+    ////////////////////////////////////////////////////////////////////////////
     // decay_celltrait
+    ////////////////////////////////////////////////////////////////////////////
+
     cell->state().celltrait = std::vector<double>(7, 5.);
     cell->state().original = std::vector<double>(5, 1.);
     cell->state().modtimes = std::vector<double>(7, 2);

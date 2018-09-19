@@ -184,8 +184,8 @@ public:
         auto cell = agent->state().habitat;
         auto& trt = agent->state().phenotype;
         auto& ctrt = cell->state().celltrait;
-        auto start = agent->state().start;
-        auto end = agent->state().end;
+        auto start = agent->state().start_mod;
+        auto end = agent->state().end_mod;
         auto intensity = agent->state().intensity;
         if (std::abs(intensity) < 1e-16)
         {
@@ -378,6 +378,7 @@ public:
         {
             modify(agent);
         }
+
         update_adaption(agent);
 
         metabolism(agent);
@@ -385,25 +386,6 @@ public:
         reproduce(agent);
 
         kill(agent);
-
-        // std::size_t i = agent->state().start;
-        // std::size_t j = 0;
-        // for (; i < agent->state().end &&
-        //        i < agent->state().habitat->state().celltrait.size();
-        //      ++i, ++j)
-        // {
-        //     if (std::isnan(agent->state().adaption[j]) or
-        //         std::isnan(agent->state().habitat->state().celltrait[i]) or
-        //         std::isnan(agent->state().phenotype[i]))
-        //     {
-        //         this->_log->warn("NaN found!");
-        //         std::cout << " adaption:  " << agent->state().adaption << std::endl;
-        //         std::cout << " celltrait: " << agent->state().habitat->state().celltrait
-        //                   << std::endl;
-        //         std::cout << " trait    : " << agent->state().phenotype << std::endl;
-        //         // throw std::runtime_error(" nan found!");
-        //     }
-        // }
     };
 
     template <class ParentModel>
@@ -435,7 +417,7 @@ public:
           _dgroup_agents(this->_hdfgrp->open_group("Agents")),
           _dgroup_cells(this->_hdfgrp->open_group("Cells")),
           _agent_adaptors(
-              {AgentAdaptortuple{"adaption",
+              {AgentAdaptortuple{"accumulated_adaption",
                                  [](const auto& agent) -> double {
                                      return std::accumulate(
                                          agent->state().adaption.begin(),
@@ -452,6 +434,14 @@ public:
                AgentAdaptortuple{
                    "end",
                    [](const auto& agent) -> double { return agent->state().end; }},
+               AgentAdaptortuple{"startmod",
+                                 [](const auto& agent) -> double {
+                                     return agent->state().start_mod;
+                                 }},
+               AgentAdaptortuple{"endmod",
+                                 [](const auto& agent) -> double {
+                                     return agent->state().end_mod;
+                                 }},
                AgentAdaptortuple{"fitness",
                                  [](const auto& agent) -> double {
                                      return agent->state().fitness;
@@ -654,18 +644,18 @@ public:
     {
         auto& agents = _agentmanager.agents();
         auto& cells = _cellmanager.cells();
-        auto mean = [](auto begin, auto end, auto getter) {
-            double m = 0.;
-            double s = double(std::distance(begin, end));
-            for (; begin != end; ++begin)
-            {
-                m += getter(*begin);
-            }
-            return m / s;
-        };
 
-        if (this->_time % 1 == 0)
+        if (this->_time % 1000 == 0)
         {
+            auto mean = [](auto begin, auto end, auto getter) {
+                double m = 0.;
+                double s = double(std::distance(begin, end));
+                for (; begin != end; ++begin)
+                {
+                    m += getter(*begin);
+                }
+                return m / s;
+            };
             this->_log->info(
                 "\nCurrent time: {},\n current populationsize: {},\n "
                 "<adaption> {},\n "
