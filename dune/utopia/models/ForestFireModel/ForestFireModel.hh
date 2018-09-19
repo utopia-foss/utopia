@@ -60,7 +60,7 @@ struct ModelFeature {
 };
 
 /// Typehelper to define data types of ForestFireModel model 
-using ForestFireModelTypes = ModelTypes<State>;
+using ForestFireModelTypes = ModelTypes<>;
 // NOTE if you do not use the boundary condition type, you can delete the
 //      definition of the struct above and the passing to the type helper
 
@@ -78,9 +78,6 @@ class ForestFireModel:
 public:
     /// The base model type
     using Base = Model<ForestFireModel<ManagerType>, ForestFireModelTypes>;
-    
-    /// Data type of the state
-    using Data = typename Base::Data;
     
     /// Cell type
     using CellType = typename ManagerType::Cell;
