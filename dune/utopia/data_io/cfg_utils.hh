@@ -1,5 +1,5 @@
-#ifndef DATAIO_UTILS_HH
-#define DATAIO_UTILS_HH
+#ifndef DATAIO_CFG_UTILS_HH
+#define DATAIO_CFG_UTILS_HH
 
 #include <boost/core/demangle.hpp>
 #include <yaml-cpp/yaml.h>
@@ -117,4 +117,4 @@ std::array<T, len> as_array(const Utopia::DataIO::Config& node) {
 
 
 } // namespace Utopia
-#endif // DATAIO_UTILS_HH
+#endif // DATAIO_CFG_UTILS_HH
