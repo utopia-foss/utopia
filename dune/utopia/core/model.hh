@@ -23,17 +23,13 @@ struct BCDummy
  *  \tparam DataSetType           The data group class to store data in
  *  \tparam TimeType              The type to use for the time members
  */
-template <typename DataType,
-          typename BoundaryConditionType = BCDummy,
-          typename RNGType = DefaultRNG,
+template <typename RNGType = DefaultRNG,
           typename ConfigType = Utopia::DataIO::Config,
           typename DataGroupType = Utopia::DataIO::HDFGroup,
           typename DataSetType = Utopia::DataIO::HDFDataset<Utopia::DataIO::HDFGroup>,
           typename TimeType = std::size_t>
 struct ModelTypes
 {
-    using Data = DataType;
-    using BCType = BoundaryConditionType;
     using RNG = RNGType;
     using Config = ConfigType;
     using DataGroup = DataGroupType;
@@ -51,12 +47,6 @@ class Model
 public:
     // -- Data types uses throughout the model class -- //
     // NOTE: these are also available to derived classes
-
-    /// Data type of the state
-    using Data = typename ModelTypes::Data;
-
-    /// Data type of the boundary condition
-    using BCType = typename ModelTypes::BCType;
 
     /// Data type that holds the configuration
     using Config = typename ModelTypes::Config;
@@ -239,24 +229,6 @@ public:
     void write_data()
     {
         impl().write_data();
-    }
-
-    /// Return const reference to stored data
-    const Data& data() const
-    {
-        return impl().data();
-    }
-
-    /// Set model boundary condition
-    void set_boundary_condition(const BCType& bc)
-    {
-        impl().set_boundary_condition(bc);
-    }
-
-    /// Set model initial condition
-    void set_initial_condition(const Data& ic)
-    {
-        impl().set_initial_condition(ic);
     }
 
 protected:
