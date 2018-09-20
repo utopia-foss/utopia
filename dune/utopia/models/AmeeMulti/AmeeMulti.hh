@@ -203,7 +203,7 @@ public:
             return;
         }
 
-        std::size_t min_m = std::min(end, int(ctrt.size()));
+        std::size_t min_m = std::min({end, int(ctrt.size()), int(trt.size())});
         std::size_t min_a = std::min(end, int(trt.size()));
 
         for (int i = start; i < min_m; ++i)
