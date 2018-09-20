@@ -2,7 +2,9 @@
 #define UTOPIA_MODELS_AGENT_STATE_HH
 #include <cmath>
 #include <iostream>
+#include <stdexcept>
 #include <vector>
+
 namespace Utopia
 {
 namespace Models
@@ -28,9 +30,14 @@ auto multi_notnormed = [](auto agent) -> std::vector<double> {
             adaption[j] = (trait[i] * celltrait[i]) /
                           (1. + (std::abs(trait[i] - celltrait[i])));
 
-            if (std::isnan(adaption[j]) or (adaption[j] < 0.) or std ::isinf(adaption[j]))
+            if (std::isnan(adaption[j]) or (adaption[j] < 0.))
             {
                 adaption[j] = 0.;
+            }
+
+            if (std::isinf(adaption[j]))
+            {
+                throw std::runtime_error("Inf found in adaption");
             }
         }
     }
@@ -58,9 +65,14 @@ auto multi_normed = [](auto agent) -> std::vector<double> {
                            (1. + (std::abs(trait[i] - celltrait[i])))) /
                           (end - start);
 
-            if (std::isnan(adaption[j]) or (adaption[j] < 0.) or std ::isinf(adaption[j]))
+            if (std::isnan(adaption[j]) or (adaption[j] < 0.))
             {
                 adaption[j] = 0.;
+            }
+
+            if (std::isinf(adaption[j]))
+            {
+                throw std::runtime_error("Inf found in adaption");
             }
         }
         return adaption;
@@ -89,9 +101,13 @@ auto simple_notnormed = [](auto agent) {
         {
             adaption[i] = 1. / (1. + (std::abs(trait[i] - celltrait[i])));
 
-            if (std::isnan(adaption[i]) or (adaption[i] < 0.) or std ::isinf(adaption[i]))
+            if (std::isnan(adaption[i]) or (adaption[i] < 0.))
             {
                 adaption[i] = 0.;
+            }
+            if (std::isinf(adaption[i]))
+            {
+                throw std::runtime_error("Inf found in adaption");
             }
         }
         return adaption;
@@ -120,9 +136,13 @@ auto simple_normed = [](auto agent) {
         {
             adaption[i] = (1. / (1. + (std::abs(trait[i] - celltrait[i])))) / (end - start);
 
-            if (std::isnan(adaption[i]) or (adaption[i] < 0.) or std ::isinf(adaption[i]))
+            if (std::isnan(adaption[i]) or (adaption[i] < 0.))
             {
                 adaption[i] = 0.;
+            }
+            if (std::isinf(adaption[i]))
+            {
+                throw std::runtime_error("Inf found in adaption");
             }
         }
         return adaption;

@@ -185,13 +185,15 @@ public:
     };
 
     AgentUpdateFunction modify = [&](std::shared_ptr<AgentType> agent) {
+        this->_log->debug(" agent: {}", agent->id());
         check_arraylengths(agent->state().habitat);
         auto cell = agent->state().habitat;
         auto& trt = agent->state().phenotype;
         auto& ctrt = cell->state().celltrait;
-        auto start = agent->state().start_mod;
-        auto end = agent->state().end_mod;
-        auto intensity = agent->state().intensity;
+        int start = agent->state().start_mod;
+        int end = agent->state().end_mod;
+        double intensity = agent->state().intensity;
+
         if (std::abs(intensity) < 1e-16)
         {
             return;
@@ -201,10 +203,15 @@ public:
             return;
         }
 
-        int i = start;
-        for (; i < end && i < int(ctrt.size()); ++i)
+        std::size_t min_m = std::min(end, int(ctrt.size()));
+        std::size_t min_a = std::min(end, int(trt.size()));
+
+        for (int i = start; i < min_m; ++i)
         {
-            if (agent->state().resources < _modifiercost)
+            this->_log->debug("  modifying: i = {} , end = {}, ctrtsize = {}",
+                              i, end, ctrt.size());
+
+            if (agent->state().resources < (_reproductioncost + _offspringresources))
             {
                 break;
             }
@@ -231,9 +238,10 @@ public:
             }
         }
 
-        for (; i < end && i < int(trt.size()); ++i)
+        for (int i = min_m; i < min_a; ++i)
         {
-            if (agent->state().resources < _modifiercost)
+            this->_log->debug("  appending: i = {} , end = {}", i, end);
+            if (agent->state().resources < (_reproductioncost + _offspringresources))
             {
                 break;
             }
@@ -247,9 +255,10 @@ public:
                     ctrt.emplace_back(intensity * trt[i]);
                     cell->state().modtimes.emplace_back(this->_time);
                     cell->state().resources.emplace_back(0.);
-                    cell->state().resourceinfluxes.emplace_back(
-                        (intensity * trt[i] > 0. ? intensity * trt[i] : 0.) *
-                        _resdist(*this->_rng));
+                    // cell->state().resourceinfluxes.emplace_back(
+                    //     (intensity * trt[i] > 0. ? intensity * trt[i] : 0.) *
+                    //     _resdist(*this->_rng));
+                    cell->state().resourceinfluxes.emplace_back(_resdist(*this->_rng));
                     agent->state().resources -= cost;
                 }
             }
@@ -358,6 +367,19 @@ public:
                 // cellresources are left alone, can still be used, but nothing else anymore is done
             }
         }
+
+        // // remove shit again
+        // ctrt.erase(std::remove_if(ctrt.begin(), ctrt.end(),
+        //                           [](auto value) { return std::isnan(value); }),
+        //            ctrt.end());
+        // cell->state().resourceinfluxes.erase(
+        //     std::remove_if(cell->state().resourceinfluxes.begin(),
+        //                    cell->state().resourceinfluxes.end(),
+        //                    [](auto value) { return std::abs(value) < 1e-16; }),
+        //     ctrt.end());
+        // times.erase(std::remove_if(times.begin(), times.end(),
+        //                            [](auto value) { return std::isnan(value); }),
+        //             ctrt.end());
     };
 
     CellUpdateFunction update_cell = [&](std::shared_ptr<CellType> cell) {
@@ -496,16 +518,15 @@ public:
         initialize_cells();
         initialize_agents();
 
+        _dgroup_statistics->add_attribute(
+            "Stored quantities", "mean, var, mode, min, q25, q50, q75, max");
         for (std::size_t i = 0; i < _agent_adaptors.size(); ++i)
         {
-            _dsets_statistics[i] = _dgroup_statistics->open_dataset(
-                std::get<0>(_agent_adaptors[i]), {this->_time_max});
+            _dsets_statistics.push_back(_dgroup_statistics->open_dataset(
+                std::get<0>(_agent_adaptors[i]), {1 + (this->_time_max / 10)}));
 
-            _dsets_statistics[i]->add_attribute(
-                "Stored quantities",
-                "mean, var, mode, min, q25, q50, q75, max");
-
-            _statistics_data[i].reserve(250);
+            _statistics_data.push_back(std::vector<std::array<double, 8>>());
+            _statistics_data.back().reserve(250);
         }
 
         this->_log->info("Model Parameters:");
@@ -633,7 +654,7 @@ public:
 
         bool found = false;
 
-        for (; i < 10000; ++i)
+        for (; i < 100000; ++i)
         {
             // make initial agent genotype
             AG trait(init_genotypelen);
@@ -653,12 +674,12 @@ public:
 
             agent->state().adaption = _check_adaption(agent);
             double cum_res = 0;
-            auto s = agent->state().start;
-            auto e = agent->state().end;
+            int s = agent->state().start;
+            int e = agent->state().end;
 
-            for (std::size_t i = s;
-                 i < e && i < agent->state().habitat->state().celltrait.size() &&
-                 i < agent->state().phenotype.size();
+            for (int i = s;
+                 i < e && i < int(agent->state().habitat->state().celltrait.size()) &&
+                 i < int(agent->state().phenotype.size());
                  ++i)
             {
                 cum_res += (agent->state().habitat->state().resourceinfluxes[i] >
@@ -666,8 +687,7 @@ public:
                                ? agent->state().adaption[i - s]
                                : agent->state().habitat->state().resourceinfluxes[i];
             }
-            if (cum_res > 2 * _livingcost and
-                e < agent->state().habitat->state().celltrait.size()) // e < ... stops adaption from being needlessly long
+            if (cum_res > 2 * _livingcost and agent->state().intensity >= 0.)
             {
                 found = true;
                 break;
@@ -707,7 +727,7 @@ public:
         auto& agents = _agentmanager.agents();
         auto& cells = _cellmanager.cells();
 
-        if (this->_time % 2 == 0)
+        if (this->_time % 5 == 0)
         {
             auto mean = [](auto begin, auto end, auto getter) {
                 double m = 0.;
@@ -719,8 +739,9 @@ public:
                 return m / s;
             };
             this->_log->info(
-                "Current time: {}, current populationsize: {},"
-                "<adaption> {}, <adaption_size> {}",
+                "Current time: {}\n current populationsize: {}\n"
+                " <adaption> {}\n <adaption_size> {}\n <resourceinfluxes> {}\n"
+                " <resourceinfluxesize> {}",
                 this->_time, agents.size(),
                 mean(agents.begin(), agents.end(),
                      [](auto agent) {
@@ -728,7 +749,16 @@ public:
                                                 agent->state().adaption.end(), 0.);
                      }),
                 mean(agents.begin(), agents.end(),
-                     [](auto agent) { return agent->state().adaption.size(); }));
+                     [](auto agent) { return agent->state().adaption.size(); }),
+                mean(cells.begin(), cells.end(),
+                     [](auto cell) {
+                         return std::accumulate(
+                             cell->state().resourceinfluxes.begin(),
+                             cell->state().resourceinfluxes.end(), 0.);
+                     }),
+                mean(cells.begin(), cells.end(), [](auto cell) {
+                    return cell->state().resourceinfluxes.size();
+                }));
 
             // mean(cells.begin(), cells.end(),
             //      [](auto cell) { return cell->state().celltrait.size(); }),
@@ -814,16 +844,16 @@ public:
                 });
         }
 
-        if (this->_time % 10 == 0)
+        if (this->_time % 50 == 0)
         {
             for (std::size_t i = 0; i < _agent_adaptors.size(); ++i)
             {
-                _statistics_data[i].push_back(Utils::describe(
+                _statistics_data[i].push_back(Utils::Describe()(
                     agents.begin(), agents.end(), std::get<1>(_agent_adaptors[i])));
             }
         }
 
-        if (this->_time % (2500) == 0)
+        if (_statistics_data.front().size() == _statistics_data.front().capacity())
         {
             for (std::size_t i = 0; i < _agent_adaptors.size(); ++i)
             {

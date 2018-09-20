@@ -61,6 +61,10 @@ constexpr bool is_equal(const T& lhs, const T& rhs, [[maybe_unused]] double tol 
         }
         return equal;
     }
+    else if constexpr (std::is_pointer_v<T>)
+    {
+        return lhs == rhs;
+    }
     else
     {
         throw std::runtime_error("Unknown objects to compare in is_equal");

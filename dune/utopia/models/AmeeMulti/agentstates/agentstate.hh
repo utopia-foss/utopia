@@ -110,6 +110,11 @@ struct AgentState : public Statepolicy
         {
             start = 0;
         }
+
+        if (end > int(phenotype.size()))
+        {
+            end = phenotype.size();
+        }
         if (end < start)
         {
             start = end;
@@ -153,6 +158,7 @@ struct AgentState : public Statepolicy
     {
         std::tie(sumlen, divisor, start, end, start_mod, end_mod, intensity,
                  phenotype) = this->genotype_phenotype_map(genotype);
+
         if (end < 0)
         {
             end = 0;
@@ -160,6 +166,10 @@ struct AgentState : public Statepolicy
         if (start < 0)
         {
             start = 0;
+        }
+        if (end > int(phenotype.size()))
+        {
+            end = phenotype.size();
         }
         if (end < start)
         {
