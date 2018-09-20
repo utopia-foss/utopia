@@ -1,10 +1,15 @@
 """The utopya package implements the frontend of Utopia."""
 
-# Configure the logging module for the whole package here
 import logging
-logging.basicConfig(format="%(levelname)-8s %(module)-14s %(message)s",
-                    level=logging.INFO)
+import coloredlogs
+
+# Configure the logging module
+logging.basicConfig(level=logging.INFO)
+
+# Add colour logging to the root logger
 log = logging.getLogger(__name__)
+coloredlogs.install(logger=log,
+                    fmt="%(levelname)-8s %(module)-14s %(message)s")
 
 # Specify the version
 __version__ = '0.1.0-pre.0'
