@@ -45,7 +45,9 @@ int main()
     ASSERT_EQ(state.divisor, 0.);
     ASSERT_EQ(state.start, 1);
     ASSERT_EQ(state.end, 2);
-    ASSERT_EQ(state.intensity, 3.);
+    ASSERT_EQ(state.start_mod, 3);
+    ASSERT_EQ(state.end_mod, 3);
+    ASSERT_EQ(state.intensity, 5.);
     ASSERT_EQ(int(state.age), 0);
     ASSERT_EQ(int(state.fitness), 0);
     assert(state.habitat == cell);
@@ -63,7 +65,9 @@ int main()
     ASSERT_EQ(child.divisor, 0.);
     ASSERT_EQ(child.start, 1);
     ASSERT_EQ(child.end, 2);
-    ASSERT_EQ(child.intensity, 3.);
+    ASSERT_EQ(child.start_mod, 3);
+    ASSERT_EQ(child.end_mod, 3);
+    ASSERT_EQ(child.intensity, 5.);
     ASSERT_EQ(int(child.age), 0);
     ASSERT_EQ(int(child.fitness), 0);
     assert(child.habitat == cell);

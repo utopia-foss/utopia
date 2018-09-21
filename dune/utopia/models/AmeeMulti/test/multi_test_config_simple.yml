@@ -13,26 +13,25 @@ AmeeMultiSimple:
   - 0
   - 1000
   highresoutput: true
+  highrestime: 100
+  statisticstime: 20
   init_cellresourceinflux_kind: "given"
-  init_cell_influxvalues: [1., 1., 1., 1., 1., 1.]
-  init_cell_resources: [1., 1., 1., 1., 1., 1.]
-  init_cell_traitlen: 6
+  init_cell_influxvalues: [10., 10., 10., 10., 10., 10.,10., 10., 10., 10., 10., 10.,10., 10., 10., 10., 10., 10.,10., 10., 10., 10., 10., 10.]
+  init_cell_resources: [1., 1., 1., 1., 1., 1.,1., 1., 1., 1., 1., 1.,1., 1., 1., 1., 1., 1.,1., 1., 1., 1., 1., 1.]
+  init_cell_traitlen: 24
   init_celltrait_max: 5.0
   init_celltrait_min: -5.0
   init_celltrait_values:
   - -5.0
   - 5.0
-  init_end: 3
   init_genotype_values:
   - -5.0
   - 5.0
   init_genotypelen: 64
   init_intensity: 0.0
   init_resources: 5.0
-  init_start: 2
   insertionrate: 1e-3
   livingcost: 5.0
-  metabolism_inefficiency: 0.2
   modifiercost: 0.1
   offspringresources: 1.0
   periodic: true

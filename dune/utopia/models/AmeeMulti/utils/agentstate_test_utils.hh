@@ -34,7 +34,8 @@ bool operator==(const Agentstate<Cell, Policy>& lhs, const Agentstate<Cell, Poli
            (lhs.end == rhs.end) && (is_equal(lhs.adaption, rhs.adaption)) &&
            (is_equal(lhs.intensity, rhs.intensity)) && (lhs.age == rhs.age) &&
            (lhs.habitat == rhs.habitat) && (lhs.deathflag == rhs.deathflag) &&
-           (lhs.genotype == rhs.genotype) && (lhs.phenotype == rhs.phenotype);
+           (lhs.genotype == rhs.genotype) && (lhs.phenotype == rhs.phenotype) &&
+           (lhs.start_mod == rhs.start_mod) && (lhs.end_mod == rhs.end_mod);
 }
 
 } // namespace AmeeMulti

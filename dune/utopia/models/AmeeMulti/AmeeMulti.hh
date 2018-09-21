@@ -3,7 +3,7 @@
 
 #include "adaptionfunctions.hh"
 #include "cellstate.hh"
-#include "statistics.hh"
+#include "utils/statistics.hh"
 #include "utils/test_utils.hh"
 #include "utils/utils.hh"
 #include <cassert>
@@ -118,7 +118,8 @@ private:
 
     bool _highresoutput;
     std::array<unsigned, 2> _highres_interval;
-    unsigned _highresmod;
+    unsigned _highrestime;
+    unsigned _statisticstime;
     Adaptionfunction _check_adaption;
     static std::map<std::string, Adaptionfunction> adaptionfunctionmap;
     std::uniform_real_distribution<double> _deathdist;
@@ -203,8 +204,8 @@ public:
             return;
         }
 
-        std::size_t min_m = std::min({end, int(ctrt.size()), int(trt.size())});
-        std::size_t min_a = std::min(end, int(trt.size()));
+        int min_m = std::min({end, int(ctrt.size()), int(trt.size())});
+        int min_a = std::min(end, int(trt.size()));
 
         for (int i = start; i < min_m; ++i)
         {
@@ -226,12 +227,12 @@ public:
                     cell->state().modtimes[i] = this->_time;
                 }
 
-                // nudge value towards own value at this locus
-                double value = intensity * (ctrt[i] - trt[i]);
-                double cost = _modifiercost * std::abs(value);
+                // replace value at locus with scaled value of organism phenotype
+                double value = intensity * trt[i];
+                double cost = _modifiercost * std::abs(value - ctrt[i]);
                 if (cost < agent->state().resources)
                 {
-                    ctrt[i] -= value;
+                    ctrt[i] = value;
                     cell->state().modtimes[i] = this->_time;
                     agent->state().resources -= cost;
                 }
@@ -456,7 +457,8 @@ public:
           _highresoutput(as_bool(this->_cfg["highresoutput"])),
           _highres_interval(
               as_array<unsigned, 2>(this->_cfg["highresinterval"])),
-          _highresmod(as_<unsigned>(this->_cfg["highresmod"])),
+          _highrestime(as_<unsigned>(this->_cfg["highrestime"])),
+          _statisticstime(as_<unsigned>(this->_cfg["statisticstime"])),
           _check_adaption(
               adaptionfunctionmap[as_str(this->_cfg["adaptionfunction"])]),
           _deathdist(std::uniform_real_distribution<double>(0., 1.)),
@@ -520,13 +522,15 @@ public:
 
         _dgroup_statistics->add_attribute(
             "Stored quantities", "mean, var, mode, min, q25, q50, q75, max");
+        _dgroup_statistics->add_attribute("Save time", 50);
+
         for (std::size_t i = 0; i < _agent_adaptors.size(); ++i)
         {
             _dsets_statistics.push_back(_dgroup_statistics->open_dataset(
-                std::get<0>(_agent_adaptors[i]), {1 + (this->_time_max / 10)}));
+                std::get<0>(_agent_adaptors[i]), {1 + (this->_time_max / _statisticstime)}));
 
             _statistics_data.push_back(std::vector<std::array<double, 8>>());
-            _statistics_data.back().reserve(250);
+            _statistics_data.back().reserve(1 + this->_time_max / _statisticstime);
         }
 
         this->_log->info("Model Parameters:");
@@ -614,7 +618,7 @@ public:
         // generate new cellstate
         apply_rule<false>(
             [&]([[maybe_unused]] const auto cell) {
-                Cellstate cs(init_celltrait, init_cellresourceinfluxes, init_cellresources);
+                Cellstate cs(init_celltrait, init_cellresources, init_cellresourceinfluxes);
                 return cs;
             },
             _cellmanager.cells());
@@ -647,14 +651,13 @@ public:
         // make adaption which is viable
         auto cell = find_cell(_agentmanager.agents()[0], _cellmanager);
 
-        std::size_t i = 0;
         auto agent = _agentmanager.agents()[0];
         std::uniform_real_distribution<double> dist(init_genotype_values[0],
                                                     init_genotype_values[1]);
 
         bool found = false;
 
-        for (; i < 100000; ++i)
+        for (std::size_t i = 0; i < 100000; ++i)
         {
             // make initial agent genotype
             AG trait(init_genotypelen);
@@ -673,21 +676,28 @@ public:
             agent->state() = Agentstate(trait, cell, init_resources, this->_rng);
 
             agent->state().adaption = _check_adaption(agent);
+
             double cum_res = 0;
             int s = agent->state().start;
             int e = agent->state().end;
-
-            for (int i = s;
-                 i < e && i < int(agent->state().habitat->state().celltrait.size()) &&
-                 i < int(agent->state().phenotype.size());
-                 ++i)
+            int amin =
+                std::min({e, int(agent->state().habitat->state().celltrait.size()),
+                          int(agent->state().phenotype.size())});
+            for (int i = s; i < amin; ++i)
             {
                 cum_res += (agent->state().habitat->state().resourceinfluxes[i] >
                             agent->state().adaption[i - s])
                                ? agent->state().adaption[i - s]
                                : agent->state().habitat->state().resourceinfluxes[i];
             }
-            if (cum_res > 2 * _livingcost and agent->state().intensity >= 0.)
+            // std::cout << " candidate build: " << std::endl;
+            // std::cout << "  start    : " << agent->state().start <<
+            // std::endl; std::cout << "  end      : " << agent->state().end <<
+            // std::endl; std::cout << "  cumad    : " << cum_res << std::endl;
+
+            // std::cout << "  intensity: " << agent->state().intensity << std::endl;
+
+            if (cum_res > 1.2 * _livingcost)
             {
                 found = true;
                 break;
@@ -759,19 +769,6 @@ public:
                 mean(cells.begin(), cells.end(), [](auto cell) {
                     return cell->state().resourceinfluxes.size();
                 }));
-
-            // mean(cells.begin(), cells.end(),
-            //      [](auto cell) { return cell->state().celltrait.size(); }),
-            // mean(agents.begin(), agents.end(),
-            //      [](auto agent) { return agent->state().phenotype.size(); }),
-            // mean(agents.begin(), agents.end(),
-            //      [](auto agent) { return agent->state().start; }),
-            // mean(agents.begin(), agents.end(),
-            //      [](auto agent) { return agent->state().end; }),
-            // mean(agents.begin(), agents.end(),
-            //      [](auto agent) { return agent->state().start_mod; }),
-            // mean(agents.begin(), agents.end(),
-            //      [](auto agent) { return agent->state().end_mod; }));
         }
         if (agents.size() == 0)
         {
@@ -844,7 +841,7 @@ public:
                 });
         }
 
-        if (this->_time % 50 == 0)
+        if (this->_time % _statisticstime == 0)
         {
             for (std::size_t i = 0; i < _agent_adaptors.size(); ++i)
             {

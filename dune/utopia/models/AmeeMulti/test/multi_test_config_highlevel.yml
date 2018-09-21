@@ -13,10 +13,12 @@ AmeeMultiHighlevel:
   - 0
   - 1000
   highresoutput: true
+  highrestime: 100
+  statisticstime: 20
   init_cellresourceinflux_kind: "given"
-  init_cell_influxvalues: [1., 1., 1., 1., 1., 1.]
-  init_cell_resources: [1., 1., 1., 1., 1., 1.]
-  init_cell_traitlen: 6
+  init_cell_influxvalues: [10., 10., 10., 10., 10., 10.,10., 10., 10., 10., 10., 10.,10., 10., 10., 10., 10., 10.,10., 10., 10., 10., 10., 10.]
+  init_cell_resources: [1., 1., 1., 1., 1., 1.,1., 1., 1., 1., 1., 1.,1., 1., 1., 1., 1., 1.,1., 1., 1., 1., 1., 1.]
+  init_cell_traitlen: 24
   init_celltrait_max: 5.0
   init_celltrait_min: -5.0
   init_celltrait_values:

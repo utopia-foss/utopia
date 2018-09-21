@@ -33,15 +33,16 @@ parameter_space:
     adaptionfunction: "multi_notnormed"
     upper_resourcelimit: 10000.
     highresoutput: true
-    highresmod: 50
+    highrestime: 100
+    statisticstime: 20
 
     # Model structure: Agent- & cell types etc
-    construction: false
-    decay: false
+    construction: true
+    decay: true
     highresinterval: [0, 1000]
     Agenttype: !sweep
       default: simple
-      values: [simple, complex, highlevel]
+      values: [simple, complex]
 
     # stuff for worker manager
 worker_manager:
@@ -53,5 +54,5 @@ paths:
   out_dir: ~/utopia_output
 
   # model note is added to the output directory path
-  model_note: "agenttype_test_nomod"
+  model_note: "agenttype_test"
 
