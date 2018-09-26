@@ -85,7 +85,7 @@ struct Agentstate_policy_highlevel : public Agentstate_policy_simple<Gt, Pt, PRN
             startmod = genotype[2];
             endmod = genotype[3];
             intensity = genotype[4];
-            phenotype = Phenotype(genotype.begin(), genotype.end());
+            phenotype = Phenotype(genotype.begin() + 5, genotype.end());
             return std::make_tuple(sumlen, divisor, start, end, startmod,
                                    endmod, intensity, phenotype);
         }

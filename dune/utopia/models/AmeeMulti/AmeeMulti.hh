@@ -186,8 +186,8 @@ public:
     };
 
     AgentUpdateFunction modify = [&](std::shared_ptr<AgentType> agent) {
-        this->_log->debug(" agent: {}", agent->id());
-        // check_arraylengths(agent->state().habitat);
+        // this->_log->debug(" agent: {}", agent->id());
+        check_arraylengths(agent->state().habitat);
         auto cell = agent->state().habitat;
         auto& trt = agent->state().phenotype;
         auto& ctrt = cell->state().celltrait;
@@ -522,12 +522,12 @@ public:
 
         _dgroup_statistics->add_attribute(
             "Stored quantities", "mean, var, mode, min, q25, q50, q75, max");
-        _dgroup_statistics->add_attribute("Save time", 50);
+        _dgroup_statistics->add_attribute("Save time", _statisticstime);
 
         for (std::size_t i = 0; i < _agent_adaptors.size(); ++i)
         {
-            _dsets_statistics.push_back(_dgroup_statistics->open_dataset(
-                std::get<0>(_agent_adaptors[i]), {1 + (this->_time_max / _statisticstime)}));
+            _dsets_statistics.push_back(
+                _dgroup_statistics->open_dataset(std::get<0>(_agent_adaptors[i])));
 
             _statistics_data.push_back(std::vector<std::array<double, 8>>());
             _statistics_data.back().reserve(1 + this->_time_max / _statisticstime);
@@ -545,11 +545,14 @@ public:
         this->_log->info(" modifiercost: {}", _modifiercost);
         this->_log->info(" highresoutput: {}", _highresoutput);
         this->_log->info(" upper_resourcelimit: {}", _upper_resourcelimit);
+        this->_log->info(" construction: {}",
+                         as_str(this->_cfg["construction"]));
+        this->_log->info(" decay       : {}", as_str(this->_cfg["decay"]));
     }
 
     void initialize_cells()
     {
-        this->_log->debug("Starting initialize_cells");
+        this->_log->info("Starting initialize_cells");
 
         // Extract the mode that determines the initial state
         const auto init_celltrait_len =
@@ -657,7 +660,7 @@ public:
 
         bool found = false;
 
-        for (std::size_t i = 0; i < 100000; ++i)
+        for (std::size_t i = 0; i < 1000000; ++i)
         {
             // make initial agent genotype
             AG trait(init_genotypelen);
@@ -691,13 +694,12 @@ public:
                                : agent->state().habitat->state().resourceinfluxes[i];
             }
             // std::cout << " candidate build: " << std::endl;
-            // std::cout << "  start    : " << agent->state().start <<
-            // std::endl; std::cout << "  end      : " << agent->state().end <<
-            // std::endl; std::cout << "  cumad    : " << cum_res << std::endl;
+            // std::cout << "  start     : " << agent->state().start << std::endl;
+            // std::cout << "  end       : " << agent->state().end << std::endl;
+            // std::cout << "  cum_res   : " << cum_res << std::endl;
+            // std::cout << "  intensity : " << agent->state().intensity << std::endl;
 
-            // std::cout << "  intensity: " << agent->state().intensity << std::endl;
-
-            if (cum_res > 1.2 * _livingcost)
+            if (cum_res > _livingcost)
             {
                 found = true;
                 break;
@@ -718,11 +720,6 @@ public:
         this->_log->info(" agent start_mod {}", agent->state().start_mod);
         this->_log->info(" agent end_mod {}", agent->state().end_mod);
         this->_log->info(" adaption size: {}", agent->state().adaption.size());
-        // this->_log->info(" adaption");
-        // for (auto& val : agent->state().adaption)
-        // {
-        //     this->_log->info("  {}", val);
-        // }
 
         this->_log->info("Agents initialized");
     }
@@ -737,7 +734,7 @@ public:
         auto& agents = _agentmanager.agents();
         auto& cells = _cellmanager.cells();
 
-        if (this->_time % 5 == 0)
+        if (this->_time % 10000 == 0)
         {
             auto mean = [](auto begin, auto end, auto getter) {
                 double m = 0.;
@@ -751,7 +748,7 @@ public:
             this->_log->info(
                 "Current time: {}\n current populationsize: {}\n"
                 " <adaption> {}\n <adaption_size> {}\n <resourceinfluxes> {}\n"
-                " <resourceinfluxesize> {}",
+                " <resourceinfluxesize> {}, <celltraitsize> {}",
                 this->_time, agents.size(),
                 mean(agents.begin(), agents.end(),
                      [](auto agent) {
@@ -766,9 +763,12 @@ public:
                              cell->state().resourceinfluxes.begin(),
                              cell->state().resourceinfluxes.end(), 0.);
                      }),
-                mean(cells.begin(), cells.end(), [](auto cell) {
-                    return cell->state().resourceinfluxes.size();
-                }));
+                mean(cells.begin(), cells.end(),
+                     [](auto cell) {
+                         return cell->state().resourceinfluxes.size();
+                     }),
+                mean(cells.begin(), cells.end(),
+                     [](auto cell) { return cell->state().celltrait.size(); }));
         }
         if (agents.size() == 0)
         {
@@ -850,7 +850,8 @@ public:
             }
         }
 
-        if (_statistics_data.front().size() == _statistics_data.front().capacity())
+        if (this->_time > 0 and (this->_time % (this->_time_max / 10) == 0 or
+                                 this->_time == this->_time_max))
         {
             for (std::size_t i = 0; i < _agent_adaptors.size(); ++i)
             {
