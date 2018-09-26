@@ -94,7 +94,7 @@ yaml.add_constructor(u'!expr', _expr_constructor)
 yaml.add_constructor(u'!model', _model_cfg_constructor)
 yaml.add_constructor(u'!stop-condition', utopya.stopcond.stop_cond_constructor)
 yaml.add_constructor(u'!sc-func', utopya.stopcond.sc_func_constructor)
-yaml.add_constructor(u'!sweep', psp_constrs.pdim_enabled_only)
+yaml.add_constructor(u'!sweep', psp_constrs.pdim)
 yaml.add_constructor(u'!sweep-default', psp_constrs.pdim_get_default)
 
 
