@@ -15,47 +15,49 @@ log = logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------------
 
-def frequency(dm: DataManager, *, out_path: str, uni: int, strategy: Union[str, list] = ['S0', 'S1'], save_kwargs: dict=None, **plot_kwargs):
-    """Calculates the frequency of a given strategy and performs a lineplot
+def frequency(dm: DataManager, *, out_path: str, uni: int, Population: Union[str, list] = ['prey', 'predator'], save_kwargs: dict=None, **plot_kwargs):
+    """Calculates the frequency of a given Population and performs a lineplot
     
     Args:
         dm (DataManager): The data manager from which to retrieve the data
         out_path (str): Where to store the plot to
         uni (int): The universe to use
-        strategy (Union[str, list], optional): The strategy to plot
+        Population (Union[str, list], optional): The population to plot
         save_kwargs (dict, optional): kwargs to the plt.savefig function
         **plot_kwargs: Passed on to plt.plot
     
     Raises:
-        TypeError: For invalid strategy argument
+        TypeError: For invalid population argument
     """
     # Get the group that all datasets are in
-    grp = dm['uni'][str(uni)]['data/SimpleEG']
+    grp = dm['uni'][str(uni)]['data/PredatorPrey']
 
     # Extract the data of the frequency
-    strategy_data = grp['strategy']
-    num_cells = len(strategy_data[0])
-    frequencies = [np.bincount(s) / num_cells for s in strategy_data]
+    population_data = grp['Population'] 
+    num_cells = len(population_data[0])
+    frequencies = [np.bincount(p, minlength=4)[[1, 2]] / num_cells for p in population_data] 
+    
 
-    # Get the frequencies of the desired strategy and plot it
-    # Single strategy
-    if isinstance(strategy, str):
-        y_data = [f[int(strategy[-1])] for f in frequencies]
+    # Get the frequencies of the desired Population and plot it
+    # Single population
+    if isinstance(Population, str):
+        y_data = [f[np.where(np.asarray(['prey', 'predator']) == Population)] for f in frequencies]
 
         # Create the plot
-        plt.plot(y_data, label=strategy, **plot_kwargs)
+        plt.plot(y_data, label=Population, **plot_kwargs)
+        
     
     # Multiple strategies
-    elif isinstance(strategy, list):
-        for s in strategy:
-            y_data = [f[int(s[-1])] for f in frequencies]
+    elif isinstance(Population, list):
+        for p in Population:
+            y_data = [f[np.where(np.asarray(['prey', 'predator']) == p)] for f in frequencies]
 
             # Create the plot
-            plt.plot(y_data, label=s, **plot_kwargs)
+            plt.plot(y_data, label=p, **plot_kwargs)
 
     else:
-        raise TypeError("Invalid argument 'strategy' of type {} and value "
-                        "'{}'!".format(type(strategy), strategy))
+        raise TypeError("Invalid argument 'population' of type {} and value "
+                        "'{}'!".format(type(Population), Population))
 
     # Set general plot options
     plt.ylim(-0.05, 1.05)

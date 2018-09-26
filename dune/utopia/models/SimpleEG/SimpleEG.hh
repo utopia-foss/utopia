@@ -9,10 +9,6 @@
 
 #include <functional>
 
-<<<<<<< HEAD
-=======
-
->>>>>>> master
 namespace Utopia {
 namespace Models {
 namespace SimpleEG {
@@ -20,36 +16,12 @@ namespace SimpleEG {
 /// Strategy enum
 enum Strategy : unsigned short int { S0=0, S1=1 };
 
-<<<<<<< HEAD
-
-=======
->>>>>>> master
 /// State struct for SimpleEG model, consisting of strategy and payoff
 struct State {
     Strategy strategy;
     double payoff;
 };
 
-<<<<<<< HEAD
-
-/// Boundary condition type
-struct Boundary {};
-// TODO do we need this?
-
-
-// Alias the neighborhood classes
-using NextNeighbor = Utopia::Neighborhoods::NextNeighbor;
-using MooreNeighbor = Utopia::Neighborhoods::MooreNeighbor;
-
-
-/// Typehelper to define data types of SimpleEG model 
-using SimpleEGModelTypes = ModelTypes<State, Boundary>;
-
-
-/// Simple model of evolutionary games on grids
-/** ...
- *  ...
-=======
 /// Typehelper to define data types of SimpleEG model 
 using SimpleEGModelTypes = ModelTypes<State>;
 
@@ -66,7 +38,6 @@ using SimpleEGModelTypes = ModelTypes<State>;
  * from the interactions. Change your state to this `fittest` neighboring 
  * cell's state. If multiple cells within a neighborhood have the same payoff
  * choose randomly between their strategies.
->>>>>>> master
  */
 template<class ManagerType>
 class SimpleEGModel:
@@ -100,10 +71,6 @@ public:
     /// Type of the interaction matrix
     using IAMatrixType = typename std::array<std::array<double,2>,2>;
 
-<<<<<<< HEAD
-private:
-    // Base members: time, name, cfg, hdfgrp, rng
-=======
     // Alias the neighborhood classes for easier access
     using NextNeighbor = Utopia::Neighborhoods::NextNeighbor;
     using MooreNeighbor = Utopia::Neighborhoods::MooreNeighbor;
@@ -111,7 +78,6 @@ private:
 
 private:
     // Base members: _time, _name, _cfg, _hdfgrp, _rng
->>>>>>> master
 
     // -- Members of this model -- //
     /// The grid manager
@@ -123,11 +89,7 @@ private:
 
     // -- Temporary objects -- //
     /// A container to temporarily accumulate the fittest neighbour cells in
-<<<<<<< HEAD
-    CellContainer<typename ManagerType::Cell> _fittest_cell_in_nbhood;
-=======
     CellContainer<typename ManagerType::Cell> _fittest_cells_in_nbhood;
->>>>>>> master
 
     
     // -- Datasets -- //
@@ -172,11 +134,7 @@ private:
         // Update procedure is as follows:
         // Loop through the neighbors and store all neighbors with the
         // highest payoff.
-<<<<<<< HEAD
-        // Use the member _fittest_cell_in_nbhood for this, such that the vector does
-=======
         // Use the member _fittest_cells_in_nbhood for this, such that the vector does
->>>>>>> master
         // not need to be recreated for each cell.
 
         // NOTE In most cases the vector will contain only one cell.
@@ -189,13 +147,8 @@ private:
 
         // Set highest payoff in the neighborhood to the cell's payoff
         double highest_payoff = state.payoff;
-<<<<<<< HEAD
-        _fittest_cell_in_nbhood.clear();
-        _fittest_cell_in_nbhood.push_back(cell);
-=======
         _fittest_cells_in_nbhood.clear();
         _fittest_cells_in_nbhood.push_back(cell);
->>>>>>> master
         
         // Iterate over neighbours of this cell:
         for (auto nb : MooreNeighbor::neighbors(cell, this->_manager)){

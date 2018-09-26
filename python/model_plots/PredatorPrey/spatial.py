@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import animation as anim
 from matplotlib import rcParams
+import matplotlib as mpl
 
 from utopya import DataManager
 
@@ -16,31 +17,49 @@ log = logging.getLogger(__name__)
 # -----------------------------------------------------------------------------
 
 class FileWriter():
-    """The FileWriter class yields functionality to save individual frames."""
-    def __init__(self, *, frame_name_padding: int=5, frame_format: str='png', **savefig_kwargs):
-        self.index = 0
-        self.frame_name_padding = frame_name_padding
-        self.frame_format = frame_format
+    """The FileWriter class yields functionality to save individual frames.
 
-    def saving(self, fig, out_path, *,dpi):
+    It adheres to the corresponding matplotlib animation interface.
+    """
+    def __init__(self, *, name_padding: int=6, file_format: str='png', fstr: str="{path:}_frame{num:0{pad:}d}.{ext:}", **savefig_kwargs):
+        # Save arguments
+        self.index = 0
+        self.name_padding = name_padding
+        self.fstr = fstr
+        self.file_format = file_format
+        self.savefig_kwargs = savefig_kwargs
+
+        # Other attributes
+        self.cm = None
+
+    def saving(self, fig, out_path: str, *,dpi):
+        """Create an instance of the context manager"""
         self.cm = FileWriterContextManager(fig=fig, out_path=out_path, dpi=dpi)
         return self.cm
 
-    def grab_frame(self, **savefig_kwargs):
-        out_path = self.cm.out_path[:-4] + str(self.index).rjust(self.frame_name_padding, '0') + '.' + self.frame_format
+    def grab_frame(self):
+        """Stores a single frame"""
+        # Build the output path from the info of the context manager
+        path_wo_ext = os.path.splitext(self.cm.out_path)[0]
+        out_path = self.fstr.format(path=path_wo_ext,
+                                    num=self.index, pad=self.name_padding,
+                                    ext=self.file_format)
 
-        self.cm.fig.savefig(out_path, format=self.frame_format, dpi=self.cm.dpi, **savefig_kwargs)
-        self.index = self.index + 1
+        # Save the frame using the context manager, then increment the index
+        self.cm.fig.savefig(out_path, format=self.file_format,
+                            **self.cm.kwargs, **self.savefig_kwargs)
+        self.index += 1
 
 class FileWriterContextManager():
     """This class is needed by the file writer to provide the same interface
     as the matplotlib movie writers do.
     """
 
-    def __init__(self, *, fig, out_path, dpi):
+    def __init__(self, *, fig, out_path, **kwargs):
+        # Store arguments
         self.fig = fig
         self.out_path = out_path
-        self.dpi = dpi
+        self.kwargs = kwargs
 
     def __enter__(self):
         pass
@@ -50,7 +69,7 @@ class FileWriterContextManager():
 
 # -----------------------------------------------------------------------------
 
-def grid_animation(dm: DataManager,  *, out_path: str, uni: int, to_plot: dict, writer: str, frames: dict, fps: int=2, step_size: int=1, dpi: int=96) -> None:
+def grid_animation(dm: DataManager, *, out_path: str, uni: int, to_plot: dict, writer: str, frames_kwargs: dict, fps: int=2, step_size: int=1, dpi: int=96) -> None:
     """Create a grid animation of a two dimensional cellular automaton
     
     Arguments:
@@ -59,49 +78,81 @@ def grid_animation(dm: DataManager,  *, out_path: str, uni: int, to_plot: dict, 
         uni (int): The universum
         to_plot (dict): The plotting configuration
         writer (str): The writer that should be used. Additional to the
-            external writers such as 'ffmpeg', it is possible to create an
-            dsave the individual frames with 'frames'
-        frames (dict): The frames configuration that is used if writer='frames'
+            external writers such as 'ffmpeg', it is possible to create and
+            save the individual frames with 'frames'
+        frames_kwargs (dict): The frames configuration that is used if the
+            'frames' writer is used.
         fps (int, optional): The frames per second
         step_size (int, optional): The step size
         dpi (int, optional): The dpi setting
     
-    Returns:
-        None
+    Raises:
+        ValueError: For an invalid `writer` argument
     """
+
+    def get_pd_colormap(cmap):
+        # define a color list
+        cmaplist = [(0.19215686274509805,
+                     0.21176470588235294,
+                     0.5843137254901961,
+                     1.0), # red
+                    (0.6470588235294118,
+                     0.0,
+                     0.14901960784313725,
+                     1.0)] # blue
+        
+        # use _any_ colormap
+        colormap = plt.cm.jet  # yay, jet! :japanese_ogre:
+        
+        # replace it by the new colormap with the list of colours
+        colormap = colormap.from_list('PD_discrete', cmaplist, len(cmaplist))
+
+        return colormap
 
     def plot_property(name, *, initial_data, ax, cmap, limits, title=None):
         """Helper function to plot a property on a given axis"""
+        # Get colormap
+        if cmap == "PD_discrete":
+            cmap = get_pd_colormap(cmap)
+            bounds = [0, 1]
+            norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
+        else:
+            norm = None
+            bounds = None
+
         # Create imshow
-        im = ax.imshow(initial_data, cmap=cmap, animated=True, origin='lower', vmin=limits[0], vmax=limits[1])
+        im = ax.imshow(initial_data, cmap=cmap, animated=True,
+                       origin='lower', vmin=limits[0], vmax=limits[1])
 
         if title is not None:
             ax.set_title(title)
 
         # Create colorbars
         fig = plt.gcf()
-        fig.colorbar(im ,ax=ax, fraction=0.046, pad=0.04)
+        cbar = fig.colorbar(im ,ax=ax, norm=norm, ticks=bounds,
+                            fraction=0.046, pad=0.04)
+        if bounds is not None:
+            cbar.ax.set_yticklabels(['S0', 'S1'])  # vertical color bar
         ax.axis('off')
 
         return im
-
     # Get the group that all datasets are in
-    grp = dm['uni'][str(uni)]['data/SimpleEG']
+    grp = dm['uni'][str(uni)]['data/PredatorPrey']
 
     # Get the shape of the 2D grid to later reshape the data
     cfg = dm['uni'][str(uni)]['cfg']
-    grid_size = cfg['SimpleEG']['grid_size']
+    grid_size = cfg['PredatorPrey']['grid_size']
     steps = cfg['num_steps']
     new_shape = (steps+1, grid_size[0], grid_size[1])
 
-    # Extract the data of the strategies in the CA    
+    # Extract the data of the populations in the CA    
     data_1d = {p: grp[p] for p in to_plot.keys()}
     data = {k: np.reshape(v, new_shape) for k,v in data_1d.items()}
         
     # Distinguish writer classes
     if anim.writers.is_available(writer):
         # Create animation writer if the writer is available
-        wCls = anim.writers[writer]
+        WCls = anim.writers[writer]
         w = WCls(fps=fps,
                  metadata=dict(title="Grid Animation — {}"
                                      "".format(", ".join(to_plot.keys()),

@@ -1,53 +1,58 @@
-# This defines the default plots for the SimpleEG model
+# This defines the default plots for the PredatorPrey model
 ---
 
 # plot the frequency of the strategy S0
-frequency_S0:
+population_prey:
   creator: external
 
-  module: model_plots.SimpleEG
+  module: model_plots.PredatorPrey
   plot_func: frequency
 
   uni: 0
-  strategy: S0
+  Population: prey
 
 # plot the frequency of strategy S0 and S1 in one plot
 frequencies:
   creator: external
 
-  module: model_plots.SimpleEG
+  module: model_plots.PredatorPrey
   plot_func: frequency
 
   uni: 0
-  strategy: [S0, S1]
+  Population: [prey, predator]
 
 # plot the spatial development in the CA of the strategy
-strategy:
+population:
   creator: external
   file_ext: mp4
 
-  module: model_plots.SimpleEG
+  module: model_plots.PredatorPrey
   plot_func: grid_animation
 
   uni: 0
   to_plot:
-    strategy:
-      cmap: RdYlBu
-      limits: [0, 1]
-      title: 'Strategy'
-      
-    payoff: 
+    Population:
       cmap: viridis
-      limits: [0, 12]
-      title: 'Payoff'
+      limits: [0, 3]
+      title: 'Population'
+      
+    resource_prey: 
+      cmap: viridis
+      limits: [0, 1]
+      title: 'resource_prey'
+
+    resource_pred: 
+      cmap: viridis
+      limits: [0, 1]
+      title: 'resource_pred'
 
   # Video options
-  writer: frames
-  fps: 1
-  step_size: 1
-  dpi: 100
+  writer: ffmpeg  # can be: frames, ffmpeg (if installed), ...
+  fps: 2
+  step_size: 3
+  dpi: 96
 
-  frames: 
+  # For the 'frames' writer, the following additional kwargs can be passed
+  frames_kwargs: 
     name_padding: 5
-    format: 'png'
-    dpi: 100
+    file_format: png

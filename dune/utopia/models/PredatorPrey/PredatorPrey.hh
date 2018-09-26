@@ -9,6 +9,7 @@
 
 #include <functional>
 #include <limits.h>
+#include <algorithm>
 
 namespace Utopia {
 namespace Models {
@@ -17,13 +18,12 @@ namespace PredatorPrey {
 /// Population enum
 enum Population : unsigned short int { empty=0, prey=1, predator=2, pred_prey=3 };
 
-///State struct
+/// State struct
 struct State {
-    Population;
-    unsigned int resource_pred;
-    unsigned int resource_prey;
+    Population population;
+    unsigned short int resource_pred;
+    unsigned short int resource_prey;
 };
-
 
 
 /// Boundary condition type
@@ -40,9 +40,15 @@ using MooreNeighbor = Utopia::Neighborhoods::MooreNeighbor;
 using PredatorPreyModelTypes = ModelTypes<State, Boundary>;
 
 
-/// Simple model of evolutionary games on grids
-/** ...
- *  ...
+/// PredatorPrey Model on grid cells
+/** Predators and prey correspond to the Population state of each cell, either empty, prey, predator or both. 
+ * Cells are updated based on the following interactions:
+ * 1) resource levels are reduced by 1 for both species and individuals removed if resource = 0 (_cost_of_living)
+ * 2) predators move to neighbouring cells if there is a no prey on their own cell, prey flees with a certain probability
+ * if there is a predator on the same cell
+ * 3) prey takes up resources, predators eat prey if on the same cell
+ * 4) both predators and prey reproduce if resources are sufficient and if there is a cell in their neighbourhood not already occupied
+ * by the same species
  */
 template<class ManagerType>
 class PredatorPreyModel:
@@ -73,9 +79,6 @@ public:
     /// Data type of the shared RNG
     using RNG = typename Base::RNG;
 
-    /// Type of the interaction matrix
-    /// using IAMatrixType = typename std::array<std::array<double,2>,2>;
-
 private:
     // Base members: time, name, cfg, hdfgrp, rng
 
@@ -83,22 +86,18 @@ private:
     /// The grid manager
     ManagerType _manager;
 
-    /// The interaction matrix (extracted during initialization)
-    /// const IAMatrixType _ia_matrix;
-
 
     // -- Temporary objects -- //
-    /// A container to temporarily accumulate the neighbour cells that are occupied by prey
+    /// A container to temporarily accumulate the neighbour cells that are occupied by prey, empty or not occupied by the same species
     CellContainer<typename ManagerType::Cell> _prey_cell_in_nbhood;
     CellContainer<typename ManagerType::Cell> _empty_cell_in_nbhood;
+    CellContainer<typename ManagerType::Cell> _repro_cell_in_nbhood;
     
     // -- Datasets -- //
-    std::shared_ptr<DataSet> _dset_state;
+    std::shared_ptr<DataSet> _dset_population;
+    std::shared_ptr<DataSet> _dset_resource_prey;
+    std::shared_ptr<DataSet> _dset_resource_pred;
 
-    // -- Random Numbers --//
-    // Use a uniform integer distribution for random numbers
-            auto rand = std::bind(std::uniform_real_distribution<>(),
-                                  std::ref(*this->_rng));
 
     // -- Rule functions -- //
 
@@ -107,125 +106,140 @@ private:
         // Get the state of the cell
         auto state = cell->state();
         
+        // check for the predators and preys that would die and remove them 
+        if (state.resource_pred == 1) {
+            state.population = static_cast<Population>(state.population - 2);
+        }
+
+        if (state.resource_prey == 1) {
+                state.population = static_cast<Population>(state.population - 1);
+            }
+
         // subtract the cost of living from the resources 
-        state.resource_pred = (state.resource_pred - 1) % USHRT_MAX;
-        state.resource_prey = (state.resource_prey - 1) % USHRT_MAX;
-        
-        // check for the dead predators and preys and remove them (not necessary to do for prey unless minimal resources are smaller or equal to cost of living + cost of repro)
-        if (resource_pred == 0) {
-            state.Population = state.Population - 2;
-        }
+        state.resource_pred = std::clamp(state.resource_pred - 1, 0, USHRT_MAX);
+        state.resource_prey = std::clamp(state.resource_prey - 1, 0, USHRT_MAX);
+        return state;
+    };
 
-        else if (resource_prey == 0) {
-            state.Population = state.Population -1;
-        }
-    }
-
-    /// Define the interaction between cells
+    /// Define the movement of individuals
     std::function<State(std::shared_ptr<CellType>)> _move = [this](const auto cell){
         // Get the state of the Cell
         auto state = cell->state();
 
 
-        // Go through neighboring cells, look at their strategies and add
-        // the corresponding payoff only to the current cell's payoff.
-        // NOTE: adding the corresponding payoff to the neighboring cell
-        // would lead to payoffs being added multiple times!
-        
-        //Question: would something like partition(cells, [](state){ return state == 1}) be faster if applied beforehand?
+        // Go through cells, if only a predator populates it, look for prey in the neighbourhood and move to that cell
+        // or go to an empty cell if no prey is found. If both predator and prey live on the same cell, the prey flees
+        // with a certain probability
+   
+        if (state.population == predator) {
+            // checking neighbouring cells for prey and moving to that cell
 
-        if (state.Population == predator) {
-            //checking neighbouring cells for prey and moving to that cell, alternatively try to do something like MooreNeighbor:neighbors(cell, this->manager)->state == 2 
+            // clear the containers for cells that contain prey or empty cells in the neighbourhood
+            _prey_cell_in_nbhood.clear();
+            _empty_cell_in_nbhood.clear();
+
             for (auto nb : MooreNeighbor::neighbors(cell, this->_manager))
             {
-                nb_state = nb->state();
-                _prey_cell_in_nbhood.clear();
-                _empty_cell_in_nbhood.clear();
+                auto nb_state = nb->state();
 
 
-                if (nb_state.Population == prey) {
+                if (nb_state.population == prey) {
                      _prey_cell_in_nbhood.push_back(nb);
 
                 }
 
-                else if (nb_state.Population == empty) {
+                else if (nb_state.population == empty) {
                     _empty_cell_in_nbhood.push_back(nb);
 
                 }
             }
-            //choose a random cell for the movement if there is more than one
-            std::uniform_int_distribution<> dist(0, _fittest_cell_in_nbhood.size()-1);
-            _prey_cell_in_nbhood[0] = _prey_cell_in_nbhood[dist(*this->_rng)];
-            _empty_cell_in_nbhood[0] = _empty_cell_in_nbhood[dist(*this->_rng)];
+            // distributions to choose a random cell for the movement if there is more than one
+            std::uniform_int_distribution<> dist_prey(0, _prey_cell_in_nbhood.size()-1);
+            std::uniform_int_distribution<> dist_empty(0, _empty_cell_in_nbhood.size()-1);
+            
 
-            //now updating the cell state and the respective neighbor
+
+            // now update the cell state and the respective neighbor
             if (_prey_cell_in_nbhood.size() > 0) {
+
+                _prey_cell_in_nbhood[0] = _prey_cell_in_nbhood[dist_prey(*this->_rng)];
+                _prey_cell_in_nbhood.resize(1);
                 
-                apply_rule([state](const auto cell){
+                
+
+                apply_rule<false>([state](const auto cell){
                     auto nb_state = cell->state();
-                    nb_state.Population = pred_prey;
+                    nb_state.population = pred_prey;
                     nb_state.resource_pred = state.resource_pred;
                     return nb_state;
                 }, 
                 _prey_cell_in_nbhood);
 
-                state.Population = empty;
+                state.population = empty;
                 state.resource_pred = 0;
 
             }
 
             else if (_empty_cell_in_nbhood.size() > 0) {
+
+                 _empty_cell_in_nbhood[0] = _empty_cell_in_nbhood[dist_empty(*this->_rng)];
+                 _empty_cell_in_nbhood.resize(1);
                 
-                apply_rule([state](const auto cell){
+                apply_rule<false>([state](const auto cell){
                     auto nb_state = cell->state();
-                    nb_state.Population = predator;
+                    nb_state.population = predator;
                     nb_state.resource_pred = state.resource_pred;
                     return nb_state;
                 }, 
                 _empty_cell_in_nbhood);
 
-                state.Population = empty;
+                state.population = empty;
                 state.resource_pred = 0;
                 
             }
 
         }
 
-        else if (state.Population == pred_prey) {
-            //checking neighbouring cells if empty
+        else if (state.population == pred_prey) {
+            // checking neighbouring cells if empty for the prey to flee
+
+            // clear container for empty cells
+            _empty_cell_in_nbhood.clear();
+
             for (auto nb : MooreNeighbor::neighbors(cell, this->_manager))
             {
-                nb_state = nb->state();
-                _empty_cell_in_nbhood.clear();
+                auto nb_state = nb->state();
+                
 
-
-                if (nb_state.Population == empty) {
+                if (nb_state.population == empty) {
                     _empty_cell_in_nbhood.push_back(nb);
 
                 }
             }
 
-            //choose a random cell for the movement if there is more than one
-            std::uniform_int_distribution<> dist(0, _fittest_cell_in_nbhood.size()-1);
-            _empty_cell_in_nbhood[0] = _empty_cell_in_nbhood[dist(*this->_rng)];
+            // choose a random cell for the movement if there is more than one
+            std::uniform_int_distribution<> dist(0, _empty_cell_in_nbhood.size()-1);
             
-            //random number for flight
+            // random number for flight
             std::uniform_real_distribution<> rand(0, 1);
 
-            //fleeing probability from config
+            // fleeing probability from config
             const auto p_flee = as_double(this->_cfg["p_flee"]);
 
-            if (rand(*this->_rng) > p_flee && _empty_cell_in_nbhood.size() > 0) {
+            if (rand(*this->_rng) < p_flee && _empty_cell_in_nbhood.size() > 0) {
+
+                _empty_cell_in_nbhood[0] = _empty_cell_in_nbhood[dist(*this->_rng)];
+                _empty_cell_in_nbhood.resize(1);
                 
-                apply_rule([state](const auto cell){
+                apply_rule<false>([state](const auto cell){
                     auto nb_state = cell->state();
-                    nb_state.Population = prey;
+                    nb_state.population = prey;
                     nb_state.resource_prey = state.resource_prey;
                     return nb_state;
                 }, 
                 _empty_cell_in_nbhood);
 
-                state.Population = empty;
+                state.population = predator;
                 state.resource_prey = 0;
                 
             }
@@ -233,59 +247,127 @@ private:
         return state;
     };
 
-    /// Define the update rule 
-    std::function<State(std::shared_ptr<CellType>)> _update = [this](const auto cell){
+    /// Define the eating rule 
+    std::function<State(std::shared_ptr<CellType>)> _eat = [this](const auto cell){
         // Update procedure is as follows:
         // prey is consumed if predator and prey on the same cell
         // prey resource is increased if there is just prey on the cell
-        // 
-        // not need to be recreated for each cell.
-
-
+        
+        // Parameters for resources
+        unsigned short int delta_e = as_<unsigned short int>(this->_cfg["delta_e"]);
+        unsigned short int e_max = as_<unsigned short int>(this->_cfg["e_max"]);
 
         // Get the state of the cell
         auto state = cell->state();
 
-        // Set highest payoff in the neighborhood to the cell's payoff
-        double highest_payoff = state.payoff;
-        _fittest_cell_in_nbhood.clear();
-        _fittest_cell_in_nbhood.push_back(cell);
-        
-        // Iterate over neighbours of this cell:
-        for (auto nb : MooreNeighbor::neighbors(cell, this->_manager)){
-            if (nb->state().payoff > highest_payoff) {
-                // Found a new highest payoff
-                highest_payoff = nb->state().payoff;
-                _fittest_cell_in_nbhood.clear();
-                _fittest_cell_in_nbhood.push_back(nb);
+        // Eating: preys get eaten by predators and preys eat
+        if (state.population == pred_prey) {
+            state.population = predator;
+            state.resource_pred = std::clamp<unsigned short>(state.resource_pred + delta_e, 0, e_max);
+            state.resource_prey = 0;
+            
+        }
+        else if (state.population == prey) {
+            state.resource_prey = std::clamp<unsigned short>(state.resource_prey + delta_e, 0, e_max);
+        }
+        return state;
+    };
+
+    /// Define the reproduction rule
+    std::function<State(std::shared_ptr<CellType>)> _repro = [this](const auto cell) {
+        // Reproduction with possibility p_repro if empty space available
+
+        // Get the state of the cell
+        auto state = cell->state();
+
+        // random number for flight, distribution
+        std::uniform_real_distribution<> rand(0, 1); 
+
+        if ((state.population == predator) && (rand(*this->_rng) < as_double(this->_cfg["p_repro"])) && (state.resource_pred > as_<unsigned short int>(this->_cfg["e_min"]))) {
+            
+            _repro_cell_in_nbhood.clear();
+            
+
+            for (auto nb : MooreNeighbor::neighbors(cell, this->_manager))
+            {
+                auto nb_state = nb->state();
+
+
+                if (nb_state.population == prey || nb_state.population == empty) {
+
+                     _repro_cell_in_nbhood.push_back(nb);
+
+                }
             }
-            else if (nb->state().payoff == highest_payoff) {
-                // Have a payoff equal to that of another cell
-                _fittest_cell_in_nbhood.push_back(nb);
+
+            if (_repro_cell_in_nbhood.size() > 0) {
+                //choose a random cell for the offspring to be placed on
+                std::uniform_int_distribution<> dist(0, _repro_cell_in_nbhood.size()-1);
+                _repro_cell_in_nbhood[0] = _repro_cell_in_nbhood[dist(*this->_rng)];
+                _repro_cell_in_nbhood.resize(1);
+
+                apply_rule<false>([](const auto cell){
+
+                    auto nb_state = cell->state();
+
+                    nb_state.population = static_cast<Population>(nb_state.population + 2); // new state will be predator or pred_prey
+
+                    nb_state.resource_pred = 2; // give 2 units to offspring
+
+                    return nb_state;
+
+                }, _repro_cell_in_nbhood);
+                
+                // deduct cost of reproduction
+                state.resource_pred -= 2;
             }
-            // else: payoff was below highest payoff
         }
 
-        // Now, update the strategy according to the fittest neighbour
-        if (_fittest_cell_in_nbhood.size() == 1) {
-            // Only one fittest neighbour. -> The state of the current cell
-            // is updated with that of the fittest neighbour.
-            state.strategy = _fittest_cell_in_nbhood[0]->state().strategy;
+        else if (state.population == prey && rand(*this->_rng) < as_double(this->_cfg["p_repro"]) && state.resource_prey > as_<unsigned short int>(this->_cfg["e_min"])) {
+            
+            _repro_cell_in_nbhood.clear();
+            
+
+            for (auto nb : MooreNeighbor::neighbors(cell, this->_manager))
+            {
+                auto nb_state = nb->state();
+
+
+                if (nb_state.population == predator || nb_state.population == empty) {
+
+                     _repro_cell_in_nbhood.push_back(nb);
+
+                }
+            }
+
+
+            if (_repro_cell_in_nbhood.size() > 0) {
+                //choose a random cell for the offspring to be placed on
+                std::uniform_int_distribution<> dist(0, _repro_cell_in_nbhood.size()-1);
+                _repro_cell_in_nbhood[0] = _repro_cell_in_nbhood[dist(*this->_rng)];
+                _repro_cell_in_nbhood.resize(1);
+
+                apply_rule<false>([](const auto cell){
+
+                    auto nb_state = cell->state();
+
+                    nb_state.population = static_cast<Population>(nb_state.population + 1); //new state will be predator or pred_prey
+
+                    nb_state.resource_prey = 2; // give 2 units of resource to offspring
+
+                    return nb_state;
+
+                }, _repro_cell_in_nbhood);
+                
+                // deduct cost of reproduction
+                state.resource_prey -= 2;
+            }
         }
-        else if (_fittest_cell_in_nbhood.size() > 1) {
-            // There are multiple nbs with the same (highest) payoff.
-            // -> Choose randomly one of them to pass on its strategy
-            std::uniform_int_distribution<> dist(0, _fittest_cell_in_nbhood.size()-1);
-            state.strategy = _fittest_cell_in_nbhood[dist(*this->_rng)]->state().strategy;
-        }
-        else {
-            // There is no fittest neighbor. This case should never occur
-            throw std::runtime_error("There was no fittest neighbor in "
-                                        "the cell update. Should not occur!");
-        }
+
 
         return state;
     };
+
 
 
 public:
@@ -303,179 +385,87 @@ public:
         Base(name, parent),
         // Now initialize members specific to this class
         _manager(manager),
-        _ia_matrix(this->extract_ia_matrix()),
-        _fittest_cell_in_nbhood(),
+        _prey_cell_in_nbhood(),
+        _empty_cell_in_nbhood(),
+        _repro_cell_in_nbhood(),
         // datasets
-        _dset_strategy(this->_hdfgrp->open_dataset("strategy")),
-        _dset_payoff(this->_hdfgrp->open_dataset("payoff"))
+        _dset_population(this->_hdfgrp->open_dataset("Population")),
+        _dset_resource_prey(this->_hdfgrp->open_dataset("resource_prey")),
+        _dset_resource_pred(this->_hdfgrp->open_dataset("resource_pred"))
+
+        
     {   
         // Initialize cells
         this->initialize_cells();
-
+        // Set dataset capacities
+        // We already know the maximum number of steps and the number of cells
+        const hsize_t num_cells = std::distance(_manager.cells().begin(),
+                                                _manager.cells().end());
+        this->_log->debug("Setting dataset capacities to {} x {} ...",
+                        this->get_time_max() + 1, num_cells);
+        _dset_population->set_capacity({this->get_time_max() + 1, num_cells});
+        _dset_resource_prey->set_capacity(  {this->get_time_max() + 1, num_cells});
+        _dset_resource_pred->set_capacity(  {this->get_time_max() + 1, num_cells});
         // Write initial state
         this->write_data();
 
-        // Write _ia_matrix in hdfgrp attribute
-        this->_hdfgrp->add_attribute("ia_matrix", _ia_matrix);
 
         // Create
     }
 
     // Setup functions ........................................................
-    /// Initialize the cells according to `initial_state` config parameter
+    /// Initialize the cells randomly
     void initialize_cells()
     {
-        // Extract the mode that determines the initial strategy
+        // Extract the mode that determines the initial state
         auto initial_state = as_str(this->_cfg["initial_state"]);
 
         this->_log->info("Initializing cells in '{}' mode ...", initial_state);
 
-        // Distinguish according to the mode, which strategy to choose
-        // NOTE that the payoff is already initialized to zero.
+        // Distinguish according to the mode, which state to choose
         if (initial_state == "random")
         {
             // Get the threshold probability value
-            const auto s1_prob = as_double(this->_cfg["s1_prob"]);
+            const auto prey_prob = as_double(this->_cfg["prey_prob"]);
+            const auto pred_prob = as_double(this->_cfg["pred_prob"]);
 
             // Use a uniform real distribution for random numbers
             auto rand = std::bind(std::uniform_real_distribution<>(),
                                   std::ref(*this->_rng));
 
             // Define the update rule
-            auto set_random_strategy = [&rand, &s1_prob](const auto cell) {
+            auto set_random_population = [&rand, &prey_prob, &pred_prob](const auto cell) {
                 // Get the state
                 auto state = cell->state();
 
-                // Draw a random number and compare it to the threshold
-                if (rand() < s1_prob) {
-                    // Use strategy 1
-                    state.strategy = Strategy::S1;
+                // Draw a random number and compare it to the thresholds
+                double random_number = rand();
+
+                if (random_number < prey_prob) {
+                    // put prey on the cell and give 2 resource units to it
+                    state.population = Population::prey;
+                    state.resource_prey = 2;
+                    state.resource_pred 0;
+                }
+                else if (random_number < (prey_prob + pred_prob)){
+                    // put a predator on the cell and give 2 resource units to it
+                    state.population = Population::predator;
+                    state.resource_pred = 2;
+                    state.resource_prey = 0;
                 }
                 else {
-                    // Use strategy 0
-                    state.strategy = Strategy::S0;
+                    // initialize as empty
+                    state.population = Population::empty;
+                    state.resource_pred = 0;
+                    state.resource_prey = 0;
                 }
-
                 return state;
             };
             
             // Apply the rule to all cells
-            apply_rule(set_random_strategy, _manager.cells());
+            apply_rule<false>(set_random_population, _manager.cells());
         } 
-        else if (initial_state == "fraction")
-        {
-            // Get the value for the fraction of cells to have strategy 1
-            const auto s1_fraction = as_double(this->_cfg["s1_fraction"]);
-
-            if (s1_fraction > 1. || s1_fraction < 0.) {
-                throw std::invalid_argument("Need `s1_fraction` in [0, 1], "
-                                            "but got value: "
-                                            + std::to_string(s1_fraction));
-            }
-
-            // Get the cells container
-            auto& cells = _manager.cells();
-
-            // Calculate the number of cells that should have that strategy
-            const auto num_cells = cells.size();
-            const std::size_t num_s1 = s1_fraction * num_cells;
-            // NOTE this is a flooring calculation!
-
-            this->_log->debug("Cells with strategy 1:  {} of {}",
-                              num_s1, num_cells);
-
-            // OPTIONAL TODO can add some logic here to make more clever assignments, 
-            // i.e. starting out with all S1 if the number to set is higher than half ...
-
-            // Need a counter of cells that were set to S1
-            std::size_t num_set = 0;
-
-            // Get the cells...
-            auto random_cells = _manager.cells();
-
-            // ... and shuffle them
-            std::shuffle(random_cells.begin(), random_cells.end(), *this->_rng);
-
-            // Make num_s1 cells use strategy 1
-            for (auto&&  cell : random_cells){
-                // If the desired number of cells using strategy 1 is not yet reached change another cell's strategy
-                if (num_set < num_s1) {
-
-                    // Check if it already has strategy 1.
-                    if (cell->state().strategy == Strategy::S1) {
-                        // Already has strategy 1, don't set it again
-                        continue;
-                    }
-                    // else: has strategy 0 -> set to S1 and increment counter
-                    cell->state_new().strategy = Strategy::S1;
-                    cell->update();
-
-                    num_set++;
-                }
-                // Break, if fraction of strategy 1 is reached
-                else break;
-            }
-        }
-        else if (initial_state == "single_s0" || initial_state == "single_s1")
-        {
-            // Determine which strategy is the common default strategy 
-            // and which one is the single strategy in the center of the grid
-            Strategy default_strategy, single_strategy;
-            if (initial_state == "single_s0") {
-                default_strategy = Strategy::S1;
-                single_strategy = Strategy::S0;
-            }
-            else {
-                default_strategy = Strategy::S0;
-                single_strategy = Strategy::S1;
-            }
-
-            const auto& cells = _manager.cells();
-
-            // Get the grid extensions and perform checks on it
-            const auto& grid_ext = _manager.extensions();
-            // NOTE It is more robust to use the grid extensions than using the
-            //      values stored in cfg["grid_size"].
-
-            // For now, need to throw an error for non-odd-valued grid_ext
-            if (!(   (std::fmod(grid_ext[0], 2) != 0.)
-                  && (std::fmod(grid_ext[1], 2) != 0.))) {
-                throw std::invalid_argument("Need odd grid extensions to "
-                                            "calculate central cell for "
-                                            "setting initial state to '"
-                                            + initial_state + "'!");
-            }
-            // FIXME This is rather fragile. Better approach: calculate the
-            //       central point (here!) and find the cell beneath that
-            //       point, setting it to single_strategy.
-            //       Use rule application to set default_strategy.
-
-            auto set_initial_strategy = [&](const auto cell) {
-                // Get the state of this cell
-                auto state = cell->state();
-
-                // Get the position
-                const auto& pos = cell->position();
-                // NOTE  Careful! Is a Dune::FieldVector<double, 2>
-                //       Thus, need to do float calculations. The case with
-                //       even grid_size extensions is caught above
-
-                // Set the initial strategy depending on pos in the grid
-                if (   pos[0] == grid_ext[0] / 2 
-                    && pos[1] == grid_ext[1] / 2) {
-                    // The cell _is_ in the center of the grid
-                    state.strategy = single_strategy;
-                }
-                else {
-                    // The cell _is not_ in the center of the grid
-                    state.strategy = default_strategy;
-                }
-                
-                return state;
-            };
-            // Apply the rule
-            apply_rule(set_initial_strategy, cells);
-        }
+        
         else
         {
             throw std::invalid_argument("`initial_state` parameter with value "
@@ -490,21 +480,18 @@ public:
 
     // Runtime functions ......................................................
 
-    /** @brief Iterate a single step
-     *  @detail In the config, the following interaction matrix is stored:
-     *                S0                 S1
-     *      S0 ( _ia_matrix[0][0]  _ia_matrix[0][1]  )
-     *      S1 ( _ia_matrix[1][0]  _ia_matrix[1][1]  )
-     *
-     * The interaction payoff is given from the perspective of the left-column-
-     * strategy. E.g. if S0 interacts with S1, S0 receives the payoff given by
-     * _ia_matrix[0][1] whereas S1 receives the payoff given by _ia_matrix[1][0].
-     */
     void perform_step ()
-    {
+    {      
+        
         // Apply the rules to all cells
-        apply_rule(_interaction, _manager.cells());
-        apply_rule(_update, _manager.cells());
+        apply_rule<false>(_cost, _manager.cells());
+        
+        apply_rule(_move, _manager.cells(), *this->_rng);
+        
+
+        apply_rule<false>(_eat, _manager.cells());
+        
+        apply_rule(_repro, _manager.cells(), *this->_rng);
     }
 
 
@@ -513,115 +500,30 @@ public:
     {   
         // For the grid data, get the cells in order to iterate over them
         auto cells = _manager.cells();
-        const unsigned int num_cells = std::distance(cells.begin(), cells.end());
 
-        // strategy
-        _dset_strategy->write(cells.begin(), cells.end(),
+        // Population
+        _dset_population->write(cells.begin(), cells.end(),
                               [](auto& cell) {
-                                return static_cast<unsigned short int>(cell->state().strategy);
-                              },
-                              2,              // rank
-                              {1, num_cells}, // extent of this entry
-                              {},             // max_size of the dataset
-                              8               // chunksize, for extension
-                              );
+                                return static_cast<unsigned short int>(cell->state().population);
+                              });
 
-        // payoffs
-        _dset_payoff->write(  cells.begin(), cells.end(),
+        // resource of prey
+        _dset_resource_prey->write(cells.begin(), cells.end(),
                               [](auto& cell) {
-                                return cell->state().payoff;
-                              },
-                              2,              // rank
-                              {1, num_cells}, // extend of this entry
-                              {},             // max_size of the dataset
-                              8               // chunksize, for extension
-                              );
+                                return static_cast<unsigned short int>(cell->state().resource_prey);
+                              });
+        
 
-        // TODO Once implemented, use the higher-level wrapper for writing data
+        // resource of pred
+
+        _dset_resource_pred->write(cells.begin(), cells.end(), 
+                              [](auto& cell) {
+                                return static_cast<unsigned short int>(cell->state().resource_pred);
+        });
+
     }
 
 
-    // TODO Check what to do with the below methods
-    /// Set model boundary condition
-    // void set_boundary_condition (const BCType& bc) { _bc = bc; }
-
-
-    /// Set model initial condition
-    // void set_initial_condition (const Data& ic) { _state = ic; }
-
-
-    /// Return const reference to stored data
-    // const Data& data () const { return _state; }
-
-
-private:
-    /// Extract the interaction matrix from the config file
-    /** In the model config file there are three different ways to specify
-     *  the interaction:
-     * 1) Explicitely setting the interaction matrix `ia_matrix`
-     *        S0      S1
-     *   S0 [ia_00  ia_01]
-     *   S1 [ia_10  ia_11]
-     *
-     * 2) Setting a benefit and cost pair `bc_pair`
-     *        S0    S1
-     *   S0 [b-c    -c]
-     *   S1 [b       0]
-     * 
-     * 3) Setting the benefit paramter `b` following the paper of Nowak&May1992
-     *        S0    S1
-     *   S0 [1       0]
-     *   S1 [b(>1)   0]
-     * 
-     * 
-     * If 1) is set, 2) and 3) will be ignored. The function returns the
-     * explicitely given ia_matrix.
-     * If 1) is not set, then the interaction matrix of 2) will be returned.
-     * If 1) and 2) are not set, the interaction matrix of 3) will be returned.
-     * 
-     * @return IAMatrixType The interaction matrix
-     */
-    const IAMatrixType extract_ia_matrix() const
-    {
-        // Return the ia_matrix if it is explicitly given in the config
-        if (this->_cfg["ia_matrix"]) {
-            return as_<IAMatrixType>(this->_cfg["ia_matrix"]);
-        }
-        else if (this->_cfg["bc_pair"]) {
-            // If ia_matrix is not provided in the config, get the ia_matrix
-            // from the bc-pair
-
-            const auto [b, c] = as_<std::pair<double, double>>(this->_cfg["bc_pair"]);
-            const double ia_00 = b - c;
-            const double ia_01 = -c;
-            const double ia_10 = b;
-            const double ia_11 = 0.;
-            const std::array<double,2> row0({{ia_00, ia_01}});
-            const std::array<double,2> row1({{ia_10, ia_11}});
-            const IAMatrixType ia_matrix({{row0, row1}});
-
-            return ia_matrix;
-        }
-        else if (this->_cfg["b"]) {
-            // If both previous cases are not provided, then return the
-            // ia_matrix given by the paramter "b"
-
-            // NOTE: There is no check for b>1 implemented here.
-            const auto b = as_double(this->_cfg["b"]);
-            const double ia_00 = 1;
-            const double ia_01 = 0;
-            const double ia_10 = b;
-            const double ia_11 = 0.;
-            const std::array<double,2> row0({{ia_00, ia_01}});
-            const std::array<double,2> row1({{ia_10, ia_11}});
-            const IAMatrixType ia_matrix({{row0, row1}});
-
-            return ia_matrix;
-        }
-
-        // If we reach this point, not enough parameters were provided
-        throw std::invalid_argument("The interaction matrix is not given!");
-    }
 };
 
 
@@ -651,15 +553,13 @@ auto setup_manager(std::string name, ParentModel& parent_model)
               gsize[0], gsize[1]);
 
     // Create grid of that size
-    // auto grid = Utopia::Setup::create_grid<2>({{gsize[0], gsize[1]}});
     auto grid = Utopia::Setup::create_grid<2>(gsize);
 
-    // Create the PredatorPrey initial state: S0 and payoff 0.0
-    State state_0 = {Strategy::S0, 0.0};
-    // TODO make state_0 configurable?
+    // Create the PredatorPrey initial state: empty cells and no resources
+    State state_0 = {Population::empty, static_cast<unsigned short>(0), static_cast<unsigned short>(0)};
 
     // Create cells on that grid, passing the initial state
-    auto cells = Utopia::Setup::create_cells_on_grid<true>(grid, state_0);
+    auto cells = Utopia::Setup::create_cells_on_grid<false>(grid, state_0);
 
     // Create the grid manager, passing the template argument
     if (periodic) {
