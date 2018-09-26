@@ -1008,9 +1008,6 @@ struct Describe
      * distribution represented by the values in the range [start, end):
      *             * Mean
      *             * variance
-     *             * skewness
-     *             * excess-kurtosis
-     *             * mode
      *             * min
      *             * 25-th quantile
      *             * 50-th quantile
@@ -1033,7 +1030,7 @@ struct Describe
     {
         if (std::distance(start, end) == 0)
         {
-            return std::array<double, 8>({{0, 0, 0, 0, 0, 0, 0, 0}});
+            return std::array<double, 7>({{0, 0, 0, 0, 0, 0, 0}});
         }
         using T = decltype(getter(*start));
         long int n = 0;
@@ -1096,7 +1093,7 @@ struct Describe
         std::nth_element(data.begin(), data.begin() + (idx_75), data.end());
         T q75 = *(data.begin() + (idx_75));
 
-        return std::array<double, 8>{
+        return std::array<double, 7>{
             {static_cast<double>(mean), static_cast<double>(M2 / (n - 1)),
              static_cast<double>(min), static_cast<double>(q25), static_cast<double>(q50),
              static_cast<double>(q75), static_cast<double>(max)}};

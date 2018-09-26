@@ -33,15 +33,19 @@ parameter_space:
     modifiercost: 0.
     adaptionfunction: "multi_notnormed"
     upper_resourcelimit: 10000.
-    highresoutput: false
+    highresoutput: true
     highrestime: 100
     statisticstime: 50
 
     # Model structure: Agent- & cell types etc
     construction: !sweep
       default: true
-      values: [true, false]
-    decay: true
+      values: [true, true,  false]
+    decay: !coupled-sweep
+      target_name: construction
+      default: true
+      values: [true, false, false]
+
     highresinterval: [0, 1000]
     Agenttype: !sweep 
       default: simple

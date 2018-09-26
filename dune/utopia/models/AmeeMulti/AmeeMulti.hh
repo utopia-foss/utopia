@@ -90,8 +90,7 @@ private:
     using AgentAdaptor = std::function<double(const std::shared_ptr<AgentType>)>;
     using AgentAdaptortuple = std::tuple<std::string, AgentAdaptor>;
 
-    using CellAdaptor =
-        std::function<std::vector<double>(const std::shared_ptr<CellType>)>;
+    using CellAdaptor = std::function<double(const std::shared_ptr<CellType>)>;
     using CellAdaptortuple = std::tuple<std::string, CellAdaptor>;
 
     using AgentUpdateFunction = std::function<void(const std::shared_ptr<AgentType>)>;
@@ -127,11 +126,16 @@ private:
     std::uniform_int_distribution<std::size_t> _movedist;
     std::shared_ptr<DataGroup> _dgroup_agents;
     std::shared_ptr<DataGroup> _dgroup_cells;
-    std::shared_ptr<DataGroup> _dgroup_statistics;
-    std::vector<std::shared_ptr<DataSet>> _dsets_statistics;
+    std::shared_ptr<DataGroup> _dgroup_agent_statistics;
+    std::shared_ptr<DataGroup> _dgroup_cell_statistics;
+    std::vector<std::shared_ptr<DataSet>> _dsets_agent_statistics;
+    std::vector<std::shared_ptr<DataSet>> _dsets_cell_statistics;
+
     std::vector<AgentAdaptortuple> _agent_adaptors;
     std::vector<CellAdaptortuple> _cell_adaptors;
-    std::vector<std::vector<std::array<double, 8>>> _statistics_data;
+    std::vector<std::vector<std::array<double, 7>>> _agent_statistics_data;
+    std::vector<std::vector<std::array<double, 7>>> _cell_statistics_data;
+
     std::size_t _idx;
 
 public:
@@ -468,7 +472,10 @@ public:
           _movedist(std::uniform_int_distribution<std::size_t>(0, 7)),
           _dgroup_agents(this->_hdfgrp->open_group("Agents")),
           _dgroup_cells(this->_hdfgrp->open_group("Cells")),
-          _dgroup_statistics(this->_hdfgrp->open_group("Agent_statistics")),
+          _dgroup_agent_statistics(
+              this->_hdfgrp->open_group("Agent_statistics")),
+          _dgroup_cell_statistics(this->_hdfgrp->open_group("Cell_statistics")),
+
           _agent_adaptors(
               {AgentAdaptortuple{"accumulated_adaption",
                                  [](const auto& agent) -> double {
@@ -506,31 +513,53 @@ public:
                                  [](const auto& agent) -> double {
                                      return agent->state().phenotype.size();
                                  }}}),
-          _cell_adaptors({CellAdaptortuple{"resources",
-                                           [](const auto& cell) -> std::vector<double> {
-                                               return cell->state().resources;
-                                           }},
-                          CellAdaptortuple{"resourceinfluxes",
-                                           [](const auto& cell) -> std::vector<double> {
-                                               return cell->state().resourceinfluxes;
-                                           }}}),
+          _cell_adaptors(
+              {CellAdaptortuple{"resources",
+                                [](const auto& cell) -> double {
+                                    return std::accumulate(
+                                        cell->state().resources.begin(),
+                                        cell->state().resources.end(), 0.);
+                                }},
+               CellAdaptortuple{"resourceinfluxes",
+                                [](const auto& cell) -> double {
+                                    return std::accumulate(
+                                        cell->state().resourceinfluxes.begin(),
+                                        cell->state().resourceinfluxes.end(), 0.);
+                                }},
+               CellAdaptortuple{"cell_traitlen",
+                                [](const auto& cell) -> double {
+                                    return cell->state().celltrait.size();
+                                }}}),
 
           _idx(0)
     {
         initialize_cells();
         initialize_agents();
 
-        _dgroup_statistics->add_attribute(
+        _dgroup_agent_statistics->add_attribute(
             "Stored quantities", "mean, var, mode, min, q25, q50, q75, max");
-        _dgroup_statistics->add_attribute("Save time", _statisticstime);
+        _dgroup_agent_statistics->add_attribute("Save time", _statisticstime);
 
         for (std::size_t i = 0; i < _agent_adaptors.size(); ++i)
         {
-            _dsets_statistics.push_back(
-                _dgroup_statistics->open_dataset(std::get<0>(_agent_adaptors[i])));
+            _dsets_agent_statistics.push_back(_dgroup_agent_statistics->open_dataset(
+                std::get<0>(_agent_adaptors[i])));
 
-            _statistics_data.push_back(std::vector<std::array<double, 8>>());
-            _statistics_data.back().reserve(1 + this->_time_max / _statisticstime);
+            _agent_statistics_data.push_back(std::vector<std::array<double, 7>>());
+            _agent_statistics_data.back().reserve(1 + this->_time_max / _statisticstime);
+        }
+
+        _dgroup_cell_statistics->add_attribute(
+            "Stored quantities", "mean, var, mode, min, q25, q50, q75, max");
+        _dgroup_cell_statistics->add_attribute("Save time", _statisticstime);
+
+        for (std::size_t i = 0; i < _cell_adaptors.size(); ++i)
+        {
+            _dsets_cell_statistics.push_back(_dgroup_cell_statistics->open_dataset(
+                std::get<0>(_cell_adaptors[i])));
+
+            _cell_statistics_data.push_back(std::vector<std::array<double, 7>>());
+            _cell_statistics_data.back().reserve(1 + this->_time_max / _statisticstime);
         }
 
         this->_log->info("Model Parameters:");
@@ -804,59 +833,60 @@ public:
     {
         auto& agents = _agentmanager.agents();
         auto& cells = _cellmanager.cells();
-        if ((this->_time < _highres_interval[1] and this->_time >= _highres_interval[0]))
+
+        if (agents.size() == 0)
         {
-            if (agents.size() == 0)
-            {
-                return;
-            }
-
+            return;
+        }
+        if (_highresoutput && (this->_time < _highres_interval[1] and
+                               this->_time >= _highres_interval[0]))
+        {
             std::size_t chunksize = (agents.size() < 1000) ? (agents.size()) : 1000;
-            this->_log->debug("Writing data at time {}", this->_time);
 
-            auto agrp = this->_dgroup_agents->open_group(std::to_string(this->_time));
-            for (auto& tpl : _agent_adaptors)
+            auto agrp = _dgroup_agents->open_group("t=" + std::to_string(this->_time));
+
+            for (auto& [name, adaptor] : _agent_adaptors)
             {
-                auto& [name, func] = tpl;
-                this->_log->debug("name of dataset: {}", name);
                 agrp->open_dataset(name, {agents.size()}, {chunksize})
-                    ->write(agents.begin(), agents.end(), func);
+                    ->write(agents.begin(), agents.end(), adaptor);
             }
+            auto cgrp = _dgroup_cells->open_group("t=" + std::to_string(this->_time));
 
-            agrp->open_dataset("adaptionvector", {agents.size()}, {chunksize})
-                ->write(agents.begin(), agents.end(),
-                        [](const auto& agent) { return agent->state().adaption; });
-
-            auto cgrp = this->_dgroup_cells->open_group(std::to_string(this->_time));
-            for (auto& tpl : _cell_adaptors)
+            for (auto& [name, adaptor] : _cell_adaptors)
             {
-                auto& [name, func] = tpl;
-                cgrp->open_dataset(name, {cells.size()})
-                    ->write(cells.begin(), cells.end(), func);
-            };
-
-            cgrp->open_dataset("celltraitlen", {cells.size()})
-                ->write(cells.begin(), cells.end(), [](const auto& cell) {
-                    return cell->state().celltrait.size();
-                });
+                cgrp->open_dataset(name, {cells.size()}, {chunksize})
+                    ->write(cells.begin(), cells.end(), adaptor);
+            }
         }
 
         if (this->_time % _statisticstime == 0)
         {
             for (std::size_t i = 0; i < _agent_adaptors.size(); ++i)
             {
-                _statistics_data[i].push_back(Utils::Describe()(
+                _agent_statistics_data[i].push_back(Utils::Describe()(
                     agents.begin(), agents.end(), std::get<1>(_agent_adaptors[i])));
+            }
+
+            for (std::size_t i = 0; i < _cell_adaptors.size(); ++i)
+            {
+                _cell_statistics_data[i].push_back(Utils::Describe()(
+                    cells.begin(), cells.end(), std::get<1>(_cell_adaptors[i])));
             }
         }
 
         if (this->_time > 0 and (this->_time % (this->_time_max / 10) == 0 or
                                  this->_time == this->_time_max))
         {
-            for (std::size_t i = 0; i < _agent_adaptors.size(); ++i)
+            for (std::size_t i = 0; i < _dsets_agent_statistics.size(); ++i)
             {
-                _dsets_statistics[i]->write(_statistics_data[i]);
-                _statistics_data[i].clear();
+                _dsets_agent_statistics[i]->write(_agent_statistics_data[i]);
+                _agent_statistics_data[i].clear();
+            }
+
+            for (std::size_t i = 0; i < _dsets_cell_statistics.size(); ++i)
+            {
+                _dsets_cell_statistics[i]->write(_cell_statistics_data[i]);
+                _cell_statistics_data[i].clear();
             }
         }
     }
