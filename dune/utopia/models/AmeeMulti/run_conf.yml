@@ -1,5 +1,5 @@
 parameter_space: 
-  num_steps: 100000
+  num_steps: 10000
   seed: 594472
   periodic: true          # false: cells at boundary have fewer neighbors
   write_every: 1
@@ -26,23 +26,26 @@ parameter_space:
     reproductioncost: 1.
     offspringresources: 1.
     deathprobability: 1e-2
+
     substitutionrate: 1e-3
     insertionrate: 1e-3
     substitution_std: 1e-3
     modifiercost: 0.
     adaptionfunction: "multi_notnormed"
     upper_resourcelimit: 10000.
-    highresoutput: true
+    highresoutput: false
     highrestime: 100
-    statisticstime: 20
+    statisticstime: 50
 
     # Model structure: Agent- & cell types etc
-    construction: true
+    construction: !sweep
+      default: true
+      values: [true, false]
     decay: true
     highresinterval: [0, 1000]
-    Agenttype: !sweep
+    Agenttype: !sweep 
       default: simple
-      values: [simple, complex]
+      values: [simple, highlevel, complex]
 
     # stuff for worker manager
 worker_manager:
@@ -54,5 +57,5 @@ paths:
   out_dir: ~/utopia_output
 
   # model note is added to the output directory path
-  model_note: "agenttype_test"
+  model_note: "construction_decay"
 
