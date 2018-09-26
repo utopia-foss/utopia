@@ -24,7 +24,10 @@ int main(int argc, char* argv[])
         constexpr bool sync = true;
         constexpr bool async = false;
 
-        //build the ingredients for a manager
+        // create a random number generator
+        Utopia::DefaultRNG rng(42);
+
+        // build the ingredients for a manager
         auto grid = Utopia::Setup::create_grid(5);
         auto cells = Utopia::Setup::create_cells_on_grid<sync>(grid);
 
@@ -58,7 +61,7 @@ int main(int argc, char* argv[])
         // apply the rule in a asynchronous fashion
         auto rule_acc_neighbors_async 
             = get_rule_acc_neighbors_with_mngr(m_async);
-        Utopia::apply_rule(rule_acc_neighbors_async, m_async.cells(), *m_async.rng());
+        Utopia::apply_rule(rule_acc_neighbors_async, m_async.cells(), rng);
         assert(std::any_of(m_async.cells().begin(), m_async.cells().end(),
             [](const auto cell){ return cell->state() != 1; }
         ));
@@ -82,8 +85,7 @@ int main(int argc, char* argv[])
         };
 
         // shuffle
-        Utopia::apply_rule<true>(rule_register_ids, m_async.cells(),
-            *m_async.rng());
+        Utopia::apply_rule<true>(rule_register_ids, m_async.cells(), rng);
         const auto ids_copy = ids;
         // don't shuffle
         Utopia::apply_rule<false>(rule_register_ids, m_async.cells());
@@ -107,12 +109,12 @@ int main(int argc, char* argv[])
         // apply rule only to some agents
         decltype(agents) applicants;
         std::sample(agents.begin(), agents.end(),
-            std::back_inserter(applicants), 10, *m_agents.rng());
+            std::back_inserter(applicants), 10, rng);
         auto rule_state_increment
             = []([[maybe_unused]] const auto agent){
             return 42;
         };
-        Utopia::apply_rule(rule_state_increment, applicants, *m_agents.rng());
+        Utopia::apply_rule(rule_state_increment, applicants, rng);
 
         assert(std::count_if(m_agents.agents().begin(),
                 m_agents.agents().end(),

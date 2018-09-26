@@ -24,9 +24,7 @@ struct BCDummy {};
  *  \tparam DataSetType           The data group class to store data in
  *  \tparam TimeType              The type to use for the time members
  */
-template<typename DataType,
-         typename BoundaryConditionType=BCDummy,
-         typename RNGType=std::mt19937,
+template<typename RNGType=DefaultRNG,
          typename ConfigType=Utopia::DataIO::Config,
          typename DataGroupType=Utopia::DataIO::HDFGroup,
          typename DataSetType=Utopia::DataIO::HDFDataset<Utopia::DataIO::HDFGroup>,
@@ -34,8 +32,6 @@ template<typename DataType,
          >
 struct ModelTypes
 {
-    using Data = DataType;
-    using BCType = BoundaryConditionType;
     using RNG = RNGType;
     using Config = ConfigType;
     using DataGroup = DataGroupType;
@@ -54,12 +50,6 @@ class Model
 public:
     // -- Data types uses throughout the model class -- //
     // NOTE: these are also available to derived classes
-
-    /// Data type of the state
-    using Data = typename ModelTypes::Data;
-    
-    /// Data type of the boundary condition
-    using BCType = typename ModelTypes::BCType;
     
     /// Data type that holds the configuration
     using Config = typename ModelTypes::Config;
@@ -93,6 +83,9 @@ protected:
     /// The HDF group this model instance should write its data to
     const std::shared_ptr<DataGroup> _hdfgrp;
 
+    /// How often to call write_data from iterate
+    const Time _write_every;
+
     /// The RNG shared between models
     const std::shared_ptr<RNG> _rng;
 
@@ -124,6 +117,7 @@ public:
         //extract the other information from the parent model object
         _cfg(parent_model.get_cfg()[_name]),
         _hdfgrp(parent_model.get_hdfgrp()->open_group(_name)),
+        _write_every(this->determine_write_every(parent_model)),
         _rng(parent_model.get_rng()),
         _log(spdlog::stdout_color_mt(parent_model.get_logger()->name() + "."
                                      + _name))
@@ -140,7 +134,13 @@ public:
             _log->set_level(parent_model.get_logger()->level());
         }
 
-        // TODO add other informative log messages here?
+        // Store write_every value in the hdfgrp
+        _hdfgrp->add_attribute("write_every", _write_every);
+
+        // Provide some informative log messages
+        _log->info("Model instance '{}' constructed.", _name);
+        _log->debug("time_max:     {} step(s)", _time_max);
+        _log->debug("write_every:  {} step(s)", _write_every);
     }
 
 
@@ -166,6 +166,11 @@ public:
         return _hdfgrp;
     }
     
+    /// Return the parameter that controls how often write_data is called
+    Time get_write_every() const {
+        return _write_every;
+    }
+    
     /// Return a pointer to the shared RNG
     std::shared_ptr<RNG> get_rng() const {
         return _rng;
@@ -180,13 +185,18 @@ public:
     // -- Default implementations -- //
 
     /// Iterate one (time) step of this model
-    /** @detail Increment time, perform step, then write data
+    /** Increment time, perform step, then write data. If the write_every
+     *  argument was set, will call write_data only in that interval.
      */
     void iterate () {
         perform_step();
         increment_time();
-        write_data();
-        _log->debug("Finished iteration: {:8d} / {:8d}", _time, _time_max);
+
+        if (_time % _write_every == 0) {
+            _log->debug("Calling write_data ...");
+            write_data();
+        }
+        _log->debug("Finished iteration: {:9d} / {:d}", _time, _time_max);
     }
 
     /// Run the model from the current time to the maximum time
@@ -216,21 +226,6 @@ public:
         impl().write_data();
     }
 
-    /// Return const reference to stored data
-    const Data& data () const {
-        return impl().data();
-    }
-    
-    /// Set model boundary condition
-    void set_boundary_condition (const BCType& bc) {
-        impl().set_boundary_condition(bc);
-    }
-
-    /// Set model initial condition
-    void set_initial_condition (const Data& ic) {
-        impl().set_initial_condition(ic);
-    }
-
 protected:
     /// Increment time
     /** \param dt Time increment, defaults to 1
@@ -238,12 +233,26 @@ protected:
     void increment_time (const Time dt=1) {
         _time += dt;
     }
+    // TODO perhaps make this private?
 
     /// cast to the derived class
     Derived& impl () { return static_cast<Derived&>(*this); }
     
     /// const cast to the derived interface
     const Derived& impl () const { return static_cast<const Derived&>(*this); }
+
+private:
+    /// Helper function to initialize the write_every member
+    template<typename ParentModel>
+    Time determine_write_every(ParentModel &parent_model) const {
+        if (_cfg["write_every"]) {
+            // Use the value given in the configuration
+            return as_<Time>(_cfg["write_every"]);
+        }
+        // Use the value from the parent
+        return parent_model.get_write_every();
+    }
+
 };
 
 
@@ -258,7 +267,7 @@ protected:
  *
  *  \tparam RNG The RNG type to use
  */
-template<typename RNG=std::mt19937>
+template<typename RNG=DefaultRNG>
 class PseudoParent
 {
 protected:
@@ -359,6 +368,11 @@ public:
     /// Return a pointer to the HDF group, which is the base group of the file
     std::shared_ptr<HDFGroup> get_hdfgrp() const {
         return _hdffile->get_basegroup();
+    }
+    
+    /// Return the parameter that controls how often write_data is called
+    Time get_write_every() const {
+        return as_<Time>(_cfg["write_every"]);
     }
     
     /// Return a pointer to the RNG

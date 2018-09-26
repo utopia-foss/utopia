@@ -113,10 +113,10 @@ def test_workertask_streams(tmpdir):
 
     t = WorkerTask(name="stream_test", 
                    worker_kwargs=dict(args=("echo", "foo\nbar\nbaz"),
-                                            read_stdout=True,
-                                            line_read_func=enqueue_json,
-                                            save_streams=True,
-                                            save_streams_to=str(save_path)))
+                                      read_stdout=True,
+                                      line_read_func=enqueue_json,
+                                      save_streams=True,
+                                      save_streams_to=str(save_path)))
 
     # There are no streams yet, so trying to save streams now should not
     # generate a file at save_path
@@ -132,7 +132,7 @@ def test_workertask_streams(tmpdir):
         sleep(0.05)
 
     # Add additional sleep to avoid any form of race condition
-    sleep(0.5)
+    sleep(0.2)
 
     # Read a single line
     t.read_streams()
@@ -156,6 +156,49 @@ def test_workertask_streams(tmpdir):
 
     # Trying to save the streams again, there should be no more lines available
     t.save_streams()
+
+def test_workertask_streams_stderr(tmpdir):
+    """Tests that not only the stdout is read, but also stderr"""
+    save_path = tmpdir.join("out.log")
+
+    # Define the arguments tuple and the WorkerTask
+    write_to_stderr = ("python", "-c",
+                       # Python commands start here; needs double-escaping!
+                       'import sys;'
+                       'print("start");'
+                       'sys.stderr.write("err1\\nerr2\\n");'
+                       'sys.stderr.flush();'
+                       'print("end")')
+    # This should create four lines, though not necessarily in that order
+
+    t = WorkerTask(name="stderr_test", 
+                   worker_kwargs=dict(args=write_to_stderr,
+                                      read_stdout=True,
+                                      line_read_func=enqueue_json,
+                                      save_streams=True,
+                                      save_streams_to=str(save_path)))
+
+
+    # Now spawn the worker and wait until done
+    t.spawn_worker()
+
+    while t.worker.poll() is None:
+        sleep(0.05)
+
+    # Add additional sleep to avoid any form of race condition
+    sleep(0.2)
+
+    # Read the stream's content until empty
+    t.read_streams(max_num_reads=-1)
+    out_log = t.streams['out']['log']
+    print(out_log)
+
+    # Check that the content is as expected
+    assert len(out_log) == 4
+    assert "err1" in out_log
+    assert "err2" in out_log
+    assert "start" in out_log
+    assert "end" in out_log
 
 # TaskList tests --------------------------------------------------------------
 

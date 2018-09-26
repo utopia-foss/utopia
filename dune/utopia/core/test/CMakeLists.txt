@@ -14,6 +14,7 @@ set(TESTS_CORE
     agent_test_3d
     cell_test
     dependency_test
+    graph_test
     grid_cells_test_2d
     grid_cells_test_3d
     grid_test
@@ -21,7 +22,6 @@ set(TESTS_CORE
     model_nested_test
     model_setup_test
     model_with_manager_test
-    rng_test
     state_test
     tags_test
     )

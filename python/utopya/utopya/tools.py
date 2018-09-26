@@ -12,7 +12,7 @@ from typing import Union, Tuple
 import yaml
 import numpy as np
 
-import paramspace.yaml_constructors as psp_constrs
+import paramspace.yaml_constructors as pspyc
 
 import utopya.stopcond
 from utopya.info import MODELS
@@ -94,8 +94,10 @@ yaml.add_constructor(u'!expr', _expr_constructor)
 yaml.add_constructor(u'!model', _model_cfg_constructor)
 yaml.add_constructor(u'!stop-condition', utopya.stopcond.stop_cond_constructor)
 yaml.add_constructor(u'!sc-func', utopya.stopcond.sc_func_constructor)
-yaml.add_constructor(u'!sweep', psp_constrs.pdim_enabled_only)
-yaml.add_constructor(u'!sweep-default', psp_constrs.pdim_get_default)
+yaml.add_constructor(u'!sweep', pspyc.pdim)
+yaml.add_constructor(u'!sweep-default', pspyc.pdim_get_default)
+yaml.add_constructor(u'!coupled-sweep', pspyc.coupled_pdim)
+yaml.add_constructor(u'!coupled-sweep-default', pspyc.coupled_pdim_get_default)
 
 
 # input/output ----------------------------------------------------------------

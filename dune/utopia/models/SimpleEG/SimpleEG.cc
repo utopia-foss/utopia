@@ -1,8 +1,9 @@
-#include <iostream>       // std::cout, std::endl
+#include <iostream>
 
 #include "SimpleEG.hh"
 
 using namespace Utopia::Models::SimpleEG;
+using Utopia::Setup::create_grid_manager_cells;
 
 int main (int argc, char** argv)
 {
@@ -19,16 +20,16 @@ int main (int argc, char** argv)
         if (Utopia::as_bool(pp.get_cfg()["SimpleEG"]["periodic"])) {
             // Periodic grid
             SimpleEGModel model("SimpleEG", pp,
-                                setup_manager<true>("SimpleEG", pp));
-
+                create_grid_manager_cells<State, true>("SimpleEG", pp)
+            );
             model.run();
 
         }
         else {
             // Non-periodic grid
             SimpleEGModel model("SimpleEG", pp,
-                                setup_manager<false>("SimpleEG", pp));
-
+                create_grid_manager_cells<State, false>("SimpleEG", pp)
+            );
             model.run();
         }
 
