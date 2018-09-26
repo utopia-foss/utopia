@@ -149,7 +149,7 @@ public:
 
     // update sub functions
     AgentUpdateFunction update_adaption = [&](std::shared_ptr<AgentType> agent) {
-        check_arraylengths(agent->state().habitat);
+        // check_arraylengths(agent->state().habitat);
 
         agent->state().adaption = _check_adaption(agent);
         // std::cout << "update adaption" << std::endl;
@@ -163,7 +163,7 @@ public:
     };
 
     AgentUpdateFunction metabolism = [&](std::shared_ptr<AgentType> agent) {
-        check_arraylengths(agent->state().habitat);
+        // check_arraylengths(agent->state().habitat);
 
         std::size_t i = agent->state().start;
         std::size_t j = 0;
@@ -271,7 +271,7 @@ public:
     };
 
     AgentUpdateFunction move = [&](std::shared_ptr<AgentType> agent) {
-        check_arraylengths(agent->state().habitat);
+        // check_arraylengths(agent->state().habitat);
 
         auto old_home = agent->state().habitat;
 
@@ -317,7 +317,7 @@ public:
     };
 
     AgentUpdateFunction kill = [&](std::shared_ptr<AgentType> agent) {
-        check_arraylengths(agent->state().habitat);
+        // check_arraylengths(agent->state().habitat);
 
         if (is_equal(agent->state().resources, 0.) or _deathdist(*(this->_rng)) < _deathprobability)
         {
@@ -326,7 +326,7 @@ public:
     };
 
     AgentUpdateFunction reproduce = [&](std::shared_ptr<AgentType> agent) {
-        check_arraylengths(agent->state().habitat);
+        // check_arraylengths(agent->state().habitat);
         auto cell = agent->state().habitat;
 
         while (agent->state().resources > (_offspringresources + _reproductioncost))
@@ -344,7 +344,7 @@ public:
     };
 
     CellUpdateFunction celltrait_decay = [&](std::shared_ptr<CellType> cell) {
-        check_arraylengths(cell);
+        // check_arraylengths(cell);
 
         auto& org = cell->state().original;
         auto& ctrt = cell->state().celltrait;
