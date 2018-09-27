@@ -66,19 +66,21 @@ void test_MonitorTimer(){
     // Create a MonitorTimer that measures in milliseconds
     MonitorTimer mt(2);
     
+    const bool reset_timer = true;
+
     // It is not time to emit but ...
-    assert(mt.time_has_come() == false);
+    assert(mt.time_has_come(reset_timer) == false);
 
     // ... if you wait for three milliseconds
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(3ms);
     
     // it is time to emit!
-    assert(mt.time_has_come() == true);
+    assert(mt.time_has_come(reset_timer) == true);
 
     // Of course directly afterwards, there is again no time to emit.
-    assert(mt.time_has_come() == false);
-    assert(mt.time_has_come() == false);
+    assert(mt.time_has_come(reset_timer) == false);
+    assert(mt.time_has_come(reset_timer) == false);
 }
 
 
@@ -122,6 +124,47 @@ void test_RootMonitor_and_Monitor(){
     Monitor mn("mn", m);
     Monitor mmm("mmm", mm);
     Monitor n("n", rm);
+
+    m.set_entry("an_int", 1);
+    mm.set_entry("a_double", 3.578);
+    mn.set_entry("a_vector", std::vector<int>{1,2,3});
+    mmm.set_entry("a_string", "string");
+
+    // Not enough time has passed, so do not write this entry into the MonitorData
+    // object
+    m.set_entry_if_time_is_ripe("hopefully_not_written!", "undesired_info");
+
+    // Check that the data is emited in the desired form
+    // For this track the buffer of std::cout 
+    std::streambuf* coutbuf = std::cout.rdbuf();
+    Savebuf sbuf(coutbuf);
+    std::cout.rdbuf(&sbuf);
+
+    // Nothing should be emitted because not enough time has passed
+    rm.perform_emission();
+
+    // After 10ms enough time has passed such that the needed_info 
+    // should be written and the whole information should be emitted.
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(10ms);
+    mmm.set_entry_if_time_is_ripe("hopefully_written", 2);
+
+std::this_thread::sleep_for(10ms);
+        rm.perform_emission();
+
+    // Assert that the std::cout buffer has the same values as the data
+    // NOTE: From the terminal output one has to cut off the last characters
+    //       otherwise the comparison fails.
+    std::string expected_output =   "{m.an_int: 1, "
+                                    "m.mm.a_double: 3.578, "
+                                    "m.mn.a_vector: [1, 2, 3], "
+                                    "m.mm.mmm.a_string: string}";
+    std::string terminal_output = sbuf.str().substr(0,expected_output.length());
+    std::cout << terminal_output << std::endl;
+    assert(terminal_output.compare(expected_output) == 0);
+
+    // restore the original stream buffer
+    std::cout.rdbuf(coutbuf); 
 
 }
 

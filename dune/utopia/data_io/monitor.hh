@@ -28,14 +28,17 @@ public:
                     // Initialize the time of the last commit to current time
                     _last_emit(Clock::now()) {}
 
-    bool time_has_come(){
+    bool time_has_come(const bool reset=false){
         // Calculate the time difference between now and the last emit
         auto now = Clock::now();
         auto duration = std::chrono::duration_cast<ChronoTimeUnit>(now - _last_emit);
         
         // If more time than the _emit_interval has passed return true
         if ((std::size_t)duration.count() > _emit_interval) {
-            _last_emit = now;
+            if (reset){
+                _last_emit = now;
+                std::cout << "reset" << std::endl;
+            }
             return true;
         }
         else{
@@ -85,13 +88,13 @@ public:
                     _data(MonitorData()) {};
 
     void perform_emission(){
-        if (time_has_come()){
+        if (time_has_come(true)){
             _data.emit();
         }
     }
 
-    bool time_has_come(){
-        return _timer->time_has_come();
+    bool time_has_come(const bool reset=false){
+        return _timer->time_has_come(reset);
     }
 
     Timer& get_timer(){
@@ -120,29 +123,15 @@ public:
                 _name(parent_mtr.get_name() + "." + name),
                 _root_mtr(parent_mtr.get_root_mtr()){};
 
-
     template <typename Value>
     void set_entry(const std::string key, const Value value){
-        // Set the data
         _root_mtr->get_data().set_entry(_name, key, value);
-    }
-
-    template <typename Function>
-    void set_entry(const std::string key, const Function& function){
-        _root_mtr->get_data().set_entry(_name, key, function());
     }
 
     template <typename Value>
     void set_entry_if_time_is_ripe(const std::string key, const Value value){
-        if (_root_mtr->time_has_come()){
+        if (_root_mtr->time_has_come(false)){
             set_entry(key, value);   
-        }
-    }
-
-    template <typename Function>
-    void set_entry_if_time_is_ripe(const std::string key, Function& function){
-        if (_root_mtr->time_has_come()){
-            set_entry(key, function);   
         }
     }
 
