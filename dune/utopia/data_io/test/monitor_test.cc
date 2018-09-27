@@ -64,7 +64,7 @@ public:
 /// Test the MonitorTimer class
 void test_MonitorTimer(){
     // Create a MonitorTimer that measures in milliseconds
-    MonitorTimer<std::chrono::milliseconds> mt(2);
+    MonitorTimer mt(2);
     
     // It is not time to emit but ...
     assert(mt.time_has_come() == false);
@@ -79,9 +79,6 @@ void test_MonitorTimer(){
     // Of course directly afterwards, there is again no time to emit.
     assert(mt.time_has_come() == false);
     assert(mt.time_has_come() == false);
-
-    // The MonitorTimer can also be constructed for other duration types
-    MonitorTimer<std::chrono::seconds> mts(1);
 }
 
 
@@ -115,9 +112,23 @@ void test_MonitorData(){
 }
 
 
+void test_RootMonitor_and_Monitor(){
+    // Create a RootMonitor object
+    RootMonitor rm("name", 2);
+
+    // Create a Monitor object from a RootMonitor and other Monitors
+    Monitor m("m", rm);
+    Monitor mm("mm", m);
+    Monitor mn("mn", m);
+    Monitor mmm("mmm", mm);
+    Monitor n("n", rm);
+
+}
+
 int main(){
     test_MonitorTimer();
     test_MonitorData();
+    test_RootMonitor_and_Monitor();
 
     return 0;
 }
