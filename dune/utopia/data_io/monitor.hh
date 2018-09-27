@@ -10,11 +10,12 @@
 namespace Utopia{
 namespace DataIO{
 
+template <typename DurationType = std::chrono::seconds>
 class MonitorTimer{
 public:
-    typedef std::chrono::steady_clock Clock;
+    typedef std::chrono::high_resolution_clock Clock;
 
-    using Time = std::__1::chrono::steady_clock::time_point;
+    using Time = std::__1::chrono::high_resolution_clock::time_point;
 
 private:
     const double _emit_interval;
@@ -29,10 +30,10 @@ public:
                     // Initialize the time of the last commit to current time
                     _last_emit(Clock::now()) {}
 
-    bool time_to_emit(){
+    bool time_has_come(){
         // Calculate the time difference between now and the last emit
         auto now = Clock::now();
-        auto duration = now - _last_emit;
+        auto duration = std::chrono::duration_cast<DurationType>(now - _last_emit);
         
         // If more time than the _emit_interval has passed return true
         if (duration.count() > _emit_interval) {
@@ -74,12 +75,12 @@ class Monitor{
 private:
     const std::string _name;
 
-    std::shared_ptr<MonitorTimer> _timer;
+    std::shared_ptr<MonitorTimer<>> _timer;
 
     std::shared_ptr<MonitorData> _data;
 public:
     Monitor(const std::string name,
-            std::shared_ptr<MonitorTimer>& timer,
+            std::shared_ptr<MonitorTimer<>>& timer,
             std::shared_ptr<MonitorData>& data) : 
                 _name(name),
                 _timer(timer),
@@ -98,14 +99,14 @@ public:
 
     template <typename Value>
     void set_entry_if_time_is_ripe(const std::string key, const Value value){
-        if (_timer->time_to_emit()){
+        if (_timer->time_has_come()){
             set_entry(key, value);   
         }
     }
 
     template <typename Function>
     void set_entry_if_time_is_ripe(const std::string key, Function& function){
-        if (_timer->time_to_emit()){
+        if (_timer->time_has_come()){
             set_entry(key, function);   
         }
     }
@@ -116,7 +117,7 @@ class RootMonitor{
 private:
     const std::string _name;
 
-    std::shared_ptr<MonitorTimer> _timer;
+    std::shared_ptr<MonitorTimer<>> _timer;
 
     MonitorData _data_to_emit;
 
@@ -124,7 +125,7 @@ public:
     RootMonitor(const std::string name, 
                 const double emit_interval) :
                     _name(name),
-                    _timer(std::make_shared<MonitorTimer>(emit_interval)),
+                    _timer(std::make_shared<MonitorTimer<>>(emit_interval)),
                     // Create an empty MonitorData object for the data to be emitted
                     _data_to_emit(MonitorData()) {};
 
@@ -132,15 +133,15 @@ public:
         _data_to_emit.emit();
     }
 
-    bool time_to_emit(){
-        return _timer->time_to_emit();
+    bool time_has_come(){
+        return _timer->time_has_come();
     }
 
     YAML::Node& get_data_to_emit(){
         return _data_to_emit.get_data();
     }
 
-    std::shared_ptr<MonitorTimer> get_timer(){
+    std::shared_ptr<MonitorTimer<>> get_timer(){
         return _timer;
     }
 };
