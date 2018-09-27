@@ -3,6 +3,7 @@
 #include "PredatorPrey.hh"
 
 using namespace Utopia::Models::PredatorPrey;
+using Utopia::Setup::create_grid_manager_cells;
 
 int main (int argc, char** argv)
 {
@@ -19,7 +20,7 @@ int main (int argc, char** argv)
         if (Utopia::as_bool(pp.get_cfg()["PredatorPrey"]["periodic"])) {
             // Periodic grid
             PredatorPreyModel model("PredatorPrey", pp,
-                                setup_manager<true>("PredatorPrey", pp));
+                                create_grid_manager_cells<State, true, 2, true, false>("PredatorPrey", pp));
 
             model.run();
 
@@ -27,7 +28,7 @@ int main (int argc, char** argv)
         else {
             // Non-periodic grid
             PredatorPreyModel model("PredatorPrey", pp,
-                                setup_manager<false>("PredatorPrey", pp));
+                                create_grid_manager_cells<State, false, 2, true, false>("PredatorPrey", pp));
 
             model.run();
         }

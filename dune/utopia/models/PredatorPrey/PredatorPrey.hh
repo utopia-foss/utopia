@@ -26,9 +26,6 @@ struct State {
 };
 
 
-/// Boundary condition type
-struct Boundary {};
-// TODO do we need this?
 
 
 // Alias the neighborhood classes
@@ -37,7 +34,7 @@ using MooreNeighbor = Utopia::Neighborhoods::MooreNeighbor;
 
 
 /// Typehelper to define data types of PredatorPrey model 
-using PredatorPreyModelTypes = ModelTypes<State, Boundary>;
+using PredatorPreyModelTypes = ModelTypes<>;
 
 
 /// PredatorPrey Model on grid cells
@@ -58,14 +55,9 @@ public:
     /// The base model
     using Base = Model<PredatorPreyModel<ManagerType>, PredatorPreyModelTypes>;
     
-    /// Data type of the state
-    using Data = typename Base::Data;
     
     /// Cell type
     using CellType = typename ManagerType::Cell;
-
-    /// Data type of the boundary condition
-    using BCType = typename Base::BCType;
     
     /// Data type that holds the configuration
     using Config = typename Base::Config;
@@ -417,61 +409,47 @@ public:
     /// Initialize the cells randomly
     void initialize_cells()
     {
-        // Extract the mode that determines the initial state
-        auto initial_state = as_str(this->_cfg["initial_state"]);
+        // Get the threshold probability value
+        const auto prey_prob = as_double(this->_cfg["prey_prob"]);
+        const auto pred_prob = as_double(this->_cfg["pred_prob"]);
 
-        this->_log->info("Initializing cells in '{}' mode ...", initial_state);
+        // Use a uniform real distribution for random numbers
+        auto rand = std::bind(std::uniform_real_distribution<>(),
+                                std::ref(*this->_rng));
 
-        // Distinguish according to the mode, which state to choose
-        if (initial_state == "random")
-        {
-            // Get the threshold probability value
-            const auto prey_prob = as_double(this->_cfg["prey_prob"]);
-            const auto pred_prob = as_double(this->_cfg["pred_prob"]);
+        // Define the update rule
+        auto set_random_population = [&rand, &prey_prob, &pred_prob](const auto cell) {
+            // Get the state
+            auto state = cell->state();
 
-            // Use a uniform real distribution for random numbers
-            auto rand = std::bind(std::uniform_real_distribution<>(),
-                                  std::ref(*this->_rng));
+            // Draw a random number and compare it to the thresholds
+            double random_number = rand();
 
-            // Define the update rule
-            auto set_random_population = [&rand, &prey_prob, &pred_prob](const auto cell) {
-                // Get the state
-                auto state = cell->state();
-
-                // Draw a random number and compare it to the thresholds
-                double random_number = rand();
-
-                if (random_number < prey_prob) {
-                    // put prey on the cell and give 2 resource units to it
-                    state.population = Population::prey;
-                    state.resource_prey = 2;
-                    state.resource_pred 0;
-                }
-                else if (random_number < (prey_prob + pred_prob)){
-                    // put a predator on the cell and give 2 resource units to it
-                    state.population = Population::predator;
-                    state.resource_pred = 2;
-                    state.resource_prey = 0;
-                }
-                else {
-                    // initialize as empty
-                    state.population = Population::empty;
-                    state.resource_pred = 0;
-                    state.resource_prey = 0;
-                }
-                return state;
-            };
-            
-            // Apply the rule to all cells
-            apply_rule<false>(set_random_population, _manager.cells());
-        } 
+            if (random_number < prey_prob) {
+                // put prey on the cell and give 2 resource units to it
+                state.population = Population::prey;
+                state.resource_prey = 2;
+                state.resource_pred = 0;
+            }
+            else if (random_number < (prey_prob + pred_prob)){
+                // put a predator on the cell and give 2 resource units to it
+                state.population = Population::predator;
+                state.resource_pred = 2;
+                state.resource_prey = 0;
+            }
+            else {
+                // initialize as empty
+                state.population = Population::empty;
+                state.resource_pred = 0;
+                state.resource_prey = 0;
+            }
+            return state;
+        };
         
-        else
-        {
-            throw std::invalid_argument("`initial_state` parameter with value "
-                                        "'" + initial_state + "' is not "
-                                        "supported!");
-        }
+        // Apply the rule to all cells
+        apply_rule<false>(set_random_population, _manager.cells());
+         
+        
 
         std::cout << "Cells initialized." << std::endl;
 
@@ -525,56 +503,6 @@ public:
 
 
 };
-
-
-/// Setup the grid manager with an initial state
-/** \param name          TODO
-  * \param parent_model  TODO
-  *
-  * \tparam periodic     Whether the grid should be periodic
-  * \tparam ParentModel  The parent model type
-  */ 
-template<bool periodic=true, typename ParentModel>
-auto setup_manager(std::string name, ParentModel& parent_model)
-{
-    // Get the logger... and use it :)
-    auto log = parent_model.get_logger();
-    log->info("Setting up '{}' model ...", name);
-
-    // Get the configuration and the rng
-    auto cfg = parent_model.get_cfg()[name];
-    auto rng = parent_model.get_rng();
-
-    // Extract grid size from config
-    const auto gsize = as_array<unsigned int, 2>(cfg["grid_size"]);
-
-    // Inform about the size
-    log->info("Creating 2-dimensional grid of size: {} x {} ...",
-              gsize[0], gsize[1]);
-
-    // Create grid of that size
-    auto grid = Utopia::Setup::create_grid<2>(gsize);
-
-    // Create the PredatorPrey initial state: empty cells and no resources
-    State state_0 = {Population::empty, static_cast<unsigned short>(0), static_cast<unsigned short>(0)};
-
-    // Create cells on that grid, passing the initial state
-    auto cells = Utopia::Setup::create_cells_on_grid<false>(grid, state_0);
-
-    // Create the grid manager, passing the template argument
-    if (periodic) {
-        log->info("Now initializing GridManager with periodic boundary "
-                  "conditions ...");
-    }
-    else {
-        log->info("Now initializing GridManager with fixed boundary "
-                  "conditions ...");
-    }
-    
-    return Utopia::Setup::create_manager_cells<true, periodic>(grid,
-                                                               cells,
-                                                               rng);
-}
 
 
 } // namespace PredatorPrey

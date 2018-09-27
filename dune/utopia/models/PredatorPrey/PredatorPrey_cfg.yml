@@ -1,4 +1,4 @@
-# The model configuration for the SimpleEG model
+# The model configuration for the Predator-Prey model
 #
 # This file should ONLY contain model-specific configuration and needs to be
 # written such that it can be used by _every_ model instance, regardless
@@ -19,23 +19,17 @@
 grid_size: [500, 500]
 periodic: true          # false: cells at boundary have fewer neighbors
 
-# Initial state
-initial_state: random   # can be: random, fraction, single_s0, single_s1
-prey_prob: 0.2            # only used for 'random' initial state
-pred_prob: 0.285        # only used for 'fraction' initial state
-# Explanation:
-#   - random:             strategy 1 occurs with probability s1_prob
-#   - fraction:           s1_fraction of all cells have strategy 1
-#   - single_s0:          single cell at the center has strategy 0
-#   - single_s1:          single cell at the center has strategy 1
-# NOTE for the single-cell modes, both grid extensions need to be odd-valued
+# Initial state parameters, each cell is populated randomly
+prey_prob: 0.2         # probability to initialize as prey   
+pred_prob: 0.285       # probability to initialize as predator
 
-# Defining the interaction matrix through the benefit b:
-delta_e: 2               
-e_max: 200
-e_min: 3
-p_repro: 0.5
-p_flee: 0.5
+
+# Model specific parameters:
+delta_e: 2   # resource increase by food uptake             
+e_max: 200   # maximum resource level
+e_min: 3     # threshold for reproduction
+p_repro: 0.5 # probability to reproduce
+p_flee: 0.5  # probability for prey to flee from predator if on same cell
 
 
 
