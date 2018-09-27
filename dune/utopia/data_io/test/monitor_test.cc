@@ -114,11 +114,11 @@ void test_MonitorData(){
 }
 
 
-void test_RootMonitor_and_Monitor(){
-    // Create a RootMonitor object
-    RootMonitor rm("name", 2);
+void test_MonitorManager_and_Monitor(){
+    // Create a MonitorManager object
+    MonitorManager rm(2);
 
-    // Create a Monitor object from a RootMonitor and other Monitors
+    // Create a Monitor object from a MonitorManager and other Monitors
     Monitor m("m", rm);
     Monitor mm("mm", m);
     Monitor mn("mn", m);
@@ -171,7 +171,7 @@ void test_RootMonitor_and_Monitor(){
 int main(){
     test_MonitorTimer();
     test_MonitorData();
-    test_RootMonitor_and_Monitor();
+    test_MonitorManager_and_Monitor();
 
     return 0;
 }

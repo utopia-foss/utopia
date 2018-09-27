@@ -14,7 +14,7 @@ class MonitorTimer{
 public:
     typedef std::chrono::high_resolution_clock Clock;
 
-    using Time = std::__1::chrono::high_resolution_clock::time_point;
+    using Time = std::chrono::high_resolution_clock::time_point;
     using ChronoTimeUnit = std::chrono::milliseconds;
 
 private:
@@ -67,21 +67,17 @@ public:
 };
 
 
-class RootMonitor{
+class MonitorManager{
 private:
 
     using Timer = std::shared_ptr<MonitorTimer>;
-
-    const std::string _name;
 
     Timer _timer;
 
     MonitorData _data;
 
 public:
-    RootMonitor(const std::string name, 
-                const std::size_t emit_interval) :
-                    _name(name),
+    MonitorManager(const std::size_t emit_interval) :
                     _timer(std::make_shared<MonitorTimer>(emit_interval)),
                     // Create an empty MonitorData object for the data to be emitted
                     _data(MonitorData()) {};
@@ -110,32 +106,32 @@ class Monitor{
 private:
     const std::string _name;
 
-    std::shared_ptr<RootMonitor> _root_mtr;
+    std::shared_ptr<MonitorManager> _mtr_mgr;
 public:
     Monitor(const std::string name,
-            RootMonitor root_mtr):
+            MonitorManager root_mtr):
                 _name(name),
-                _root_mtr(std::make_shared<RootMonitor>(root_mtr)){};
+                _mtr_mgr(std::make_shared<MonitorManager>(root_mtr)){};
 
     Monitor(const std::string name,
             Monitor& parent_mtr):
                 _name(parent_mtr.get_name() + "." + name),
-                _root_mtr(parent_mtr.get_root_mtr()){};
+                _mtr_mgr(parent_mtr.get_mtr_mgr()){};
 
     template <typename Value>
     void set_entry(const std::string key, const Value value){
-        _root_mtr->get_data().set_entry(_name, key, value);
+        _mtr_mgr->get_data().set_entry(_name, key, value);
     }
 
     template <typename Value>
     void set_entry_if_time_is_ripe(const std::string key, const Value value){
-        if (_root_mtr->time_has_come(false)){
+        if (_mtr_mgr->time_has_come(false)){
             set_entry(key, value);   
         }
     }
 
-    std::shared_ptr<RootMonitor> get_root_mtr() const {
-        return _root_mtr;
+    std::shared_ptr<MonitorManager> get_mtr_mgr() const {
+        return _mtr_mgr;
     }
 
     std::string get_name() const {
