@@ -1,5 +1,5 @@
 parameter_space: 
-  num_steps: 10000
+  num_steps: 1000000 #1e6
   seed: 594472
   periodic: true          # false: cells at boundary have fewer neighbors
   write_every: 1
@@ -27,25 +27,30 @@ parameter_space:
     offspringresources: 1.
     deathprobability: 1e-2
 
-    substitutionrate: 1e-3
+    # substitutionrate: 1e-3
     insertionrate: 1e-3
     substitution_std: 1e-3
+    substitutionrate: !sweep
+      default: 1e-3
+      values: [1e-4, 1e-2, 5e-2]
+
     modifiercost: 0.
     adaptionfunction: "multi_notnormed"
     upper_resourcelimit: 10000.
-    highresoutput: true
+    highresoutput: false
     highrestime: 100
     statisticstime: 50
 
     # Model structure: Agent- & cell types etc
-    construction: !sweep
-      default: true
-      values: [true, true,  false]
-    decay: !coupled-sweep
-      target_name: construction
-      default: true
-      values: [true, false, false]
-
+    # construction: !sweep
+    #   default: true
+    #   values: [true, true,  false]
+    # decay: !coupled-sweep
+    #   target_name: construction
+    #   default: true
+    #   values: [true, false, false]
+    construction: true
+    decay: true
     highresinterval: [0, 1000]
     Agenttype: !sweep 
       default: simple
@@ -61,5 +66,5 @@ paths:
   out_dir: ~/utopia_output
 
   # model note is added to the output directory path
-  model_note: "construction_decay"
+  model_note: "substitutionrate_longrun"
 

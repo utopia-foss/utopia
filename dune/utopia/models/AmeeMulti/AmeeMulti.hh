@@ -765,39 +765,33 @@ public:
 
         if (this->_time % 10000 == 0)
         {
-            auto mean = [](auto begin, auto end, auto getter) {
-                double m = 0.;
-                double s = double(std::distance(begin, end));
-                for (; begin != end; ++begin)
-                {
-                    m += getter(*begin);
-                }
-                return m / s;
-            };
             this->_log->info(
                 "Current time: {}\n current populationsize: {}\n"
                 " <adaption> {}\n <adaption_size> {}\n <resourceinfluxes> {}\n"
                 " <resourceinfluxesize> {}, <celltraitsize> {}",
                 this->_time, agents.size(),
-                mean(agents.begin(), agents.end(),
-                     [](auto agent) {
-                         return std::accumulate(agent->state().adaption.begin(),
-                                                agent->state().adaption.end(), 0.);
-                     }),
-                mean(agents.begin(), agents.end(),
-                     [](auto agent) { return agent->state().adaption.size(); }),
-                mean(cells.begin(), cells.end(),
-                     [](auto cell) {
-                         return std::accumulate(
-                             cell->state().resourceinfluxes.begin(),
-                             cell->state().resourceinfluxes.end(), 0.);
-                     }),
-                mean(cells.begin(), cells.end(),
-                     [](auto cell) {
-                         return cell->state().resourceinfluxes.size();
-                     }),
-                mean(cells.begin(), cells.end(),
-                     [](auto cell) { return cell->state().celltrait.size(); }));
+                ArithmeticMean()(agents.begin(), agents.end(),
+                                 [](auto agent) {
+                                     return std::accumulate(
+                                         agent->state().adaption.begin(),
+                                         agent->state().adaption.end(), 0.);
+                                 }),
+                ArithmeticMean()(
+                    agents.begin(), agents.end(),
+                    [](auto agent) { return agent->state().adaption.size(); }),
+                ArithmeticMean()(cells.begin(), cells.end(),
+                                 [](auto cell) {
+                                     return std::accumulate(
+                                         cell->state().resourceinfluxes.begin(),
+                                         cell->state().resourceinfluxes.end(), 0.);
+                                 }),
+                ArithmeticMean()(cells.begin(), cells.end(),
+                                 [](auto cell) {
+                                     return cell->state().resourceinfluxes.size();
+                                 }),
+                ArithmeticMean()(cells.begin(), cells.end(), [](auto cell) {
+                    return cell->state().celltrait.size();
+                }));
         }
         if (agents.size() == 0)
         {
