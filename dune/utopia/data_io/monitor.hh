@@ -22,8 +22,6 @@ private:
 
     Time _last_emit;
 
-    YAML::Node _data_to_emit;
-
 public:
     MonitorTimer(const double emit_interval) :
                     _emit_interval(emit_interval),
@@ -56,9 +54,9 @@ public:
         _data.SetStyle(YAML::EmitterStyle::Flow);
     };
 
-    YAML::Node& get_data() {
-        return _data;
-    }
+    // YAML::Node& get_data(){
+    //     return _data;
+    // }
 
     template<typename Value>
     void set_entry(const std::string model_name, const std::string key, const Value value){
@@ -137,9 +135,9 @@ public:
         return _timer->time_has_come();
     }
 
-    YAML::Node& get_data_to_emit(){
-        return _data_to_emit.get_data();
-    }
+    // YAML::Node& get_data_to_emit(){
+    //     return _data_to_emit.get_data();
+    // }
 
     std::shared_ptr<MonitorTimer<>> get_timer(){
         return _timer;
