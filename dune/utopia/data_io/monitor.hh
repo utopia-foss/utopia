@@ -37,7 +37,6 @@ public:
         if ((std::size_t)duration.count() > _emit_interval) {
             if (reset){
                 _last_emit = now;
-                std::cout << "reset" << std::endl;
             }
             return true;
         }
@@ -143,8 +142,6 @@ public:
         return _name;
     }
 };
-
-
 
 } // namespace DataIO
 } // namespace Utopia

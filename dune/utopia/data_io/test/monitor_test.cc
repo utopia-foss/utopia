@@ -147,25 +147,25 @@ void test_RootMonitor_and_Monitor(){
     // should be written and the whole information should be emitted.
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(10ms);
-    mmm.set_entry_if_time_is_ripe("hopefully_written", 2);
-
-std::this_thread::sleep_for(10ms);
-        rm.perform_emission();
+    m.set_entry_if_time_is_ripe("hopefully_written", "needed_info");
+    m.set_entry_if_time_is_ripe("hopefully_again_written", "additional_info");
+    m.set_entry_if_time_is_ripe("an_int", 3);
+    rm.perform_emission();
 
     // Assert that the std::cout buffer has the same values as the data
     // NOTE: From the terminal output one has to cut off the last characters
     //       otherwise the comparison fails.
-    std::string expected_output =   "{m.an_int: 1, "
+    std::string expected_output =   "{m.an_int: 3, "
                                     "m.mm.a_double: 3.578, "
                                     "m.mn.a_vector: [1, 2, 3], "
-                                    "m.mm.mmm.a_string: string}";
+                                    "m.mm.mmm.a_string: string, "
+                                    "m.hopefully_written: needed_info, "
+                                    "m.hopefully_again_written: additional_info}";
     std::string terminal_output = sbuf.str().substr(0,expected_output.length());
-    std::cout << terminal_output << std::endl;
     assert(terminal_output.compare(expected_output) == 0);
 
     // restore the original stream buffer
     std::cout.rdbuf(coutbuf); 
-
 }
 
 int main(){
