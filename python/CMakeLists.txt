@@ -21,7 +21,7 @@ dune_python_find_package(PACKAGE paramspace
 
 if(NOT DUNE_PYTHON_paramspace_FOUND)
     # install from current _master_ branch
-    python_install_package_remote(URL ssh://git@ts-gitlab.iup.uni-heidelberg.de:10022/yunus/paramspace.git@release/v1.1
+    python_install_package_remote(URL ssh://git@ts-gitlab.iup.uni-heidelberg.de:10022/yunus/paramspace.git@release/v1.x
         TRUSTED_HOST ts-gitlab.iup.uni-heidelberg.de)
 endif()
 
@@ -33,7 +33,7 @@ dune_python_find_package(PACKAGE dantro
 if(NOT DUNE_PYTHON_dantro_FOUND)
     # install from current _master_ branch
     python_install_package_remote(
-        URL ssh://git@ts-gitlab.iup.uni-heidelberg.de:10022/utopia/dantro.git@release/v0.3
+        URL ssh://git@ts-gitlab.iup.uni-heidelberg.de:10022/utopia/dantro.git@release/v0.x
         TRUSTED_HOST ts-gitlab.iup.uni-heidelberg.de)
 endif()
 
