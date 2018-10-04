@@ -1,3 +1,22 @@
+## EXAMPLES:
+# sweep - cartesian product of {true, true, false} and {true, true, false}:
+   
+    # construction: !sweep
+    #   default: true
+    #   values: [true, true,  false]
+    # decay: !sweep
+    #   default: true
+    #   values: [true, true,  false]
+
+# coupled sweep, one parameter enslaved to other: {(true, true), (true, false), (false, false)}
+    # construction: !sweep
+    #   default: true
+    #   values: [true, true,  false]
+    # decay: !coupled-sweep
+    #   target_name: construction
+    #   default: true
+    #   values: [true, false, false]
+
 parameter_space: 
   num_steps: 1000000 #1e6
   seed: 594472
@@ -11,7 +30,7 @@ parameter_space:
     # Cell parameters
     init_cell_traitlen: 24
     init_cellresourceinflux_kind: "random"
-    # init_cell_resourceinflux: "given"
+    # init_cell_resourceinflux: "given" # DO NOT DELETE THIS, IMPORTANT
     # cell_influxvalues: [1., 1., 1., 1., 1., 1.,1., 1., 1., 1., 1., 1.]
     resourceinflux_limits: [0., 5.]
     init_celltrait_values: [-5., 5.]
@@ -27,12 +46,10 @@ parameter_space:
     offspringresources: 1.
     deathprobability: 1e-2
 
-    # substitutionrate: 1e-3
+    # mutationrates, important for evolution speed and stability
     insertionrate: 1e-3
-    substitution_std: 1e-3
-    substitutionrate: !sweep
-      default: 1e-3
-      values: [1e-4, 1e-2, 5e-2]
+    substitution_std: 0.2
+    substitutionrate: 1e-3
 
     modifiercost: 0.
     adaptionfunction: "multi_notnormed"
@@ -42,19 +59,12 @@ parameter_space:
     statisticstime: 50
 
     # Model structure: Agent- & cell types etc
-    # construction: !sweep
-    #   default: true
-    #   values: [true, true,  false]
-    # decay: !coupled-sweep
-    #   target_name: construction
-    #   default: true
-    #   values: [true, false, false]
     construction: true
     decay: true
     highresinterval: [0, 1000]
     Agenttype: !sweep 
       default: simple
-      values: [simple, highlevel, complex]
+      values: [simple, complex]
 
     # stuff for worker manager
 worker_manager:
@@ -66,5 +76,5 @@ paths:
   out_dir: ~/utopia_output
 
   # model note is added to the output directory path
-  model_note: "substitutionrate_longrun"
+  model_note: "new_simple_test"
 

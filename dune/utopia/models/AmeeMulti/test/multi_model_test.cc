@@ -2,7 +2,6 @@
 #include "../adaptionfunctions.hh"
 #include "../agentstates/agentstate.hh"
 #include "../agentstates/agentstate_policy_complex.hh"
-#include "../agentstates/agentstate_policy_highlevel.hh"
 #include "../agentstates/agentstate_policy_simple.hh"
 #include "../cellstate.hh"
 #include "../utils/generators.hh"
@@ -510,49 +509,6 @@ void test_model_functions(Model& model)
     ASSERT_EQ(cell->state().resources, std::vector<double>(7, 2));
 }
 
-void test_simple()
-{
-    Utopia::PseudoParent<RNG> parentmodel_simple(
-        "multi_test_config_simple.yml");
-    auto cellmanager_simple =
-        Utopia::Setup::create_grid_manager_cells<CS, true, 2, true, false>(
-            "AmeeMultiSimple", parentmodel_simple);
-
-    auto grid_simple = cellmanager_simple.grid();
-    using GridType = typename decltype(grid_simple)::element_type;
-    using Cell = typename decltype(cellmanager_simple)::Cell;
-
-    Utopia::GridWrapper<GridType> wrapper_simple{
-        grid_simple, cellmanager_simple.extensions(), cellmanager_simple.grid_cells()};
-
-    using GenotypeS = std::vector<double>;
-    using PhenotypeS = std::vector<double>;
-    using PolicyS = Agentstate_policy_simple<GenotypeS, PhenotypeS, RNG>;
-    using ASS = AgentState<Cell, PolicyS>;
-
-    parentmodel_simple.get_logger()->info("Using simple Agentstate");
-    // make agents and agentmanager
-    auto agents_simple = Utopia::Setup::create_agents_on_grid(wrapper_simple, 1, ASS());
-
-    auto agentmanager_simple = Utopia::Setup::create_manager_agents<true, true>(
-        wrapper_simple, agents_simple);
-
-    // making model types
-    using Modeltypes_Simple = Utopia::ModelTypes<RNG>;
-
-    // get AmeeMulti typedef
-    using AmeeMulti_Simple =
-        AmeeMulti<Cell, decltype(cellmanager_simple), decltype(agentmanager_simple), Modeltypes_Simple, true, true>;
-
-    // make model
-    AmeeMulti_Simple model_simple("AmeeMultiSimple", parentmodel_simple,
-                                  cellmanager_simple, agentmanager_simple);
-
-    // actual tests
-    test_model_construction(model_simple);
-    test_model_functions(model_simple);
-}
-
 void test_complex()
 {
     Utopia::PseudoParent<RNG> parentmodel_complex(
@@ -597,49 +553,47 @@ void test_complex()
     test_model_functions(model_complex);
 }
 
-void test_highlevel()
+void test_simple()
 {
-    Utopia::PseudoParent<RNG> parentmodel_highlevel(
-        "multi_test_config_highlevel.yml");
-    auto cellmanager_highlevel =
+    Utopia::PseudoParent<RNG> parentmodel_simple(
+        "multi_test_config_simple.yml");
+    auto cellmanager_simple =
         Utopia::Setup::create_grid_manager_cells<CS, true, 2, true, false>(
-            "AmeeMultiHighlevel", parentmodel_highlevel);
+            "AmeeMultiSimple", parentmodel_simple);
 
-    auto grid_highlevel = cellmanager_highlevel.grid();
-    using GridType = typename decltype(grid_highlevel)::element_type;
-    using Cell = typename decltype(cellmanager_highlevel)::Cell;
+    auto grid_simple = cellmanager_simple.grid();
+    using GridType = typename decltype(grid_simple)::element_type;
+    using Cell = typename decltype(cellmanager_simple)::Cell;
 
-    Utopia::GridWrapper<GridType> wrapper_highlevel{
-        grid_highlevel, cellmanager_highlevel.extensions(),
-        cellmanager_highlevel.grid_cells()};
+    Utopia::GridWrapper<GridType> wrapper_simple{
+        grid_simple, cellmanager_simple.extensions(), cellmanager_simple.grid_cells()};
 
     using GenotypeS = std::vector<double>;
     using PhenotypeS = std::vector<double>;
-    using PolicyS = Agentstate_policy_highlevel<GenotypeS, PhenotypeS, RNG>;
+    using PolicyS = Agentstate_policy_simple<GenotypeS, PhenotypeS, RNG>;
     using ASS = AgentState<Cell, PolicyS>;
 
-    parentmodel_highlevel.get_logger()->info("Using highlevel Agentstate");
+    parentmodel_simple.get_logger()->info("Using simple Agentstate");
     // make agents and agentmanager
-    auto agents_highlevel =
-        Utopia::Setup::create_agents_on_grid(wrapper_highlevel, 1, ASS());
+    auto agents_simple = Utopia::Setup::create_agents_on_grid(wrapper_simple, 1, ASS());
 
-    auto agentmanager_highlevel = Utopia::Setup::create_manager_agents<true, true>(
-        wrapper_highlevel, agents_highlevel);
+    auto agentmanager_simple = Utopia::Setup::create_manager_agents<true, true>(
+        wrapper_simple, agents_simple);
 
     // making model types
     using Modeltypes_Simple = Utopia::ModelTypes<RNG>;
 
     // get AmeeMulti typedef
-    using AmeeMulti_Highlevel =
-        AmeeMulti<Cell, decltype(cellmanager_highlevel), decltype(agentmanager_highlevel), Modeltypes_Simple, true, true>;
+    using AmeeMulti_Simple =
+        AmeeMulti<Cell, decltype(cellmanager_simple), decltype(agentmanager_simple), Modeltypes_Simple, true, true>;
 
     // make model
-    AmeeMulti_Highlevel model_highlevel("AmeeMultiHighlevel", parentmodel_highlevel,
-                                        cellmanager_highlevel, agentmanager_highlevel);
+    AmeeMulti_Simple model_simple("AmeeMultiSimple", parentmodel_simple,
+                                  cellmanager_simple, agentmanager_simple);
 
     // actual tests
-    test_model_construction(model_highlevel);
-    test_model_functions(model_highlevel);
+    test_model_construction(model_simple);
+    test_model_functions(model_simple);
 }
 
 int main(int argc, char** argv)
@@ -648,9 +602,6 @@ int main(int argc, char** argv)
 
     test_simple();
     test_complex();
-
-    // does not work,cannot build viable organism
-    // test_highlevel();
 
     return 0;
 }
