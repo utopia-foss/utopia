@@ -1,7 +1,6 @@
 #include "AmeeMulti.hh"
 #include "agentstates/agentstate.hh"
 #include "agentstates/agentstate_policy_complex.hh"
-#include "agentstates/agentstate_policy_highlevel.hh"
 #include "agentstates/agentstate_policy_simple.hh"
 
 #include "utils/generators.hh"

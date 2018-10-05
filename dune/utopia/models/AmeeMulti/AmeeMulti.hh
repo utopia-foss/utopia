@@ -475,13 +475,20 @@ public:
           _dgroup_agent_statistics(
               this->_hdfgrp->open_group("Agent_statistics")),
           _dgroup_cell_statistics(this->_hdfgrp->open_group("Cell_statistics")),
-
           _agent_adaptors(
               {AgentAdaptortuple{"accumulated_adaption",
                                  [](const auto& agent) -> double {
                                      return std::accumulate(
                                          agent->state().adaption.begin(),
                                          agent->state().adaption.end(), 0.);
+                                 }},
+               AgentAdaptortuple{"sumlen",
+                                 [](const auto& agent) -> double {
+                                     return agent->state().sumlen;
+                                 }},
+               AgentAdaptortuple{"divisor",
+                                 [](const auto& agent) -> double {
+                                     return agent->state().divisor;
                                  }},
                AgentAdaptortuple{"intensity",
                                  [](const auto& agent) -> double {
@@ -563,6 +570,7 @@ public:
         }
 
         this->_log->info("Model Parameters:");
+        this->_log->info(" agenttype: {}", as_str(this->_cfg["Agenttype"]));
         this->_log->info(" num cells: {}", _cellmanager.cells().size());
         this->_log->info(" livingcost: {}", _livingcost);
         this->_log->info(" reproductioncost: {}", _reproductioncost);
@@ -768,7 +776,7 @@ public:
             this->_log->info(
                 "Current time: {}\n current populationsize: {}\n"
                 " <adaption> {}\n <adaption_size> {}\n <resourceinfluxes> {}\n"
-                " <resourceinfluxesize> {}, <celltraitsize> {}",
+                " <resourceinfluxesize> {}\n <celltraitsize> {}",
                 this->_time, agents.size(),
                 ArithmeticMean()(agents.begin(), agents.end(),
                                  [](auto agent) {
@@ -832,8 +840,10 @@ public:
         {
             return;
         }
-        if (_highresoutput && (this->_time < _highres_interval[1] and
-                               this->_time >= _highres_interval[0]))
+        if (_highresoutput and ((this->_time < _highres_interval[1] and
+                                 this->_time >= _highres_interval[0]) or
+                                (this->_time >= 50000 and this->_time < 51000) or
+                                (this->_time >= 500000 and this->_time < 501000)))
         {
             std::size_t chunksize = (agents.size() < 1000) ? (agents.size()) : 1000;
 
@@ -868,7 +878,7 @@ public:
             }
         }
 
-        if (this->_time > 0 and (this->_time % (this->_time_max / 10) == 0 or
+        if (this->_time > 0 and (this->_time % (_statisticstime * 10) == 0 or
                                  this->_time == this->_time_max))
         {
             for (std::size_t i = 0; i < _dsets_agent_statistics.size(); ++i)

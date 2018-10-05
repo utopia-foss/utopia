@@ -18,7 +18,7 @@
     #   values: [true, false, false]
 
 parameter_space: 
-  num_steps: 1000000 #1e6
+  num_steps: 1000000
   seed: 594472
   periodic: true          # false: cells at boundary have fewer neighbors
   write_every: 1
@@ -32,7 +32,7 @@ parameter_space:
     init_cellresourceinflux_kind: "random"
     # init_cell_resourceinflux: "given" # DO NOT DELETE THIS, IMPORTANT
     # cell_influxvalues: [1., 1., 1., 1., 1., 1.,1., 1., 1., 1., 1., 1.]
-    resourceinflux_limits: [0., 5.]
+    resourceinflux_limits: [0., 3.5]
     init_celltrait_values: [-5., 5.]
     removethreshold: 1e-3
     decayintensity: 1e-2
@@ -62,7 +62,7 @@ parameter_space:
     construction: true
     decay: true
     highresinterval: [0, 1000]
-    Agenttype: !sweep 
+    Agenttype: !sweep
       default: simple
       values: [simple, complex]
 
@@ -76,5 +76,5 @@ paths:
   out_dir: ~/utopia_output
 
   # model note is added to the output directory path
-  model_note: "new_simple_test"
+  model_note: "test_run_1e6"
 
