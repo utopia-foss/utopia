@@ -9,10 +9,22 @@
 
 #include <array>
 #include <cmath>
+#include <dune/common/fvector.hh>
 #include <iostream>
 #include <string>
 #include <type_traits>
 #include <vector>
+
+namespace std
+{
+// dirty trick: overload tuple_size for dune fieldvector
+
+template <typename T, std::size_t N>
+class tuple_size<Dune::FieldVector<T, N>> : public integral_constant<size_t, N>
+{
+};
+} // namespace std
+
 // Functions for determining if a type is an STL-container are provided here.
 // This is used if we wish to make hdf5 types for storing such data in an
 // hdf5 dataset.
@@ -199,6 +211,7 @@ template <typename T>
 struct is_array_like<T, std::void_t<decltype(std::tuple_size<T>::value)>> : std::true_type
 {
 };
+
 // FIXME Using tuple_size here is not optimal, but it gives a unique
 //       representation of the tuple
 // See: https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/merge_requests/109/diffs#note_11774

@@ -12,6 +12,7 @@
 #include <dune/utopia/core/model.hh>
 #include <dune/utopia/core/setup.hh>
 #include <dune/utopia/core/types.hh>
+#include <fstream>
 
 #include <functional>
 
@@ -139,32 +140,12 @@ private:
     std::size_t _idx;
 
 public:
-    CellUpdateFunction check_arraylengths = [&](std::shared_ptr<CellType> cell) {
-        auto size = cell->state().celltrait.size();
-        // EXPECT_EQ(cell->state().resources.size(), size);
-        // EXPECT_EQ(cell->state().resourceinfluxes.size(), size);
-        assert(cell->state().resources.size() == size);
-        assert(cell->state().resourceinfluxes.size() == size);
-    };
-
     // update sub functions
     AgentUpdateFunction update_adaption = [&](std::shared_ptr<AgentType> agent) {
-        // check_arraylengths(agent->state().habitat);
-
         agent->state().adaption = _check_adaption(agent);
-        // std::cout << "update adaption" << std::endl;
-        // std::cout << "  " << agent->state().start << "," << agent->state().end << std::endl;
-        // std::cout << "  "
-        //           << AP(agent->state().phenotype.begin() + agent->state().start,
-        //                 agent->state().phenotype.begin() + agent->state().end)
-        //           << "\n  " << agent->state().habitat->state().celltrait << "\n"
-        //           << std::endl;
-        // std::cout << "  " << agent->state().adaption << std::endl;
     };
 
     AgentUpdateFunction metabolism = [&](std::shared_ptr<AgentType> agent) {
-        // check_arraylengths(agent->state().habitat);
-
         std::size_t i = agent->state().start;
         std::size_t j = 0;
         double resourcecredit = 0.;
@@ -176,6 +157,7 @@ public:
             resourcecredit = (cell->state().resources[i] > agent->state().adaption[j])
                                  ? agent->state().adaption[j]
                                  : cell->state().resources[i];
+
             resourcecredit = (resourcecredit > _upper_resourcelimit) ? _upper_resourcelimit
                                                                      : resourcecredit;
 
@@ -187,11 +169,11 @@ public:
                                        ? (agent->state().resources - _livingcost)
                                        : 0.;
         agent->state().age += 1;
+
+        assert(agent->state().resources >= 0.);
     };
 
     AgentUpdateFunction modify = [&](std::shared_ptr<AgentType> agent) {
-        // this->_log->debug(" agent: {}", agent->id());
-        check_arraylengths(agent->state().habitat);
         auto cell = agent->state().habitat;
         auto& trt = agent->state().phenotype;
         auto& ctrt = cell->state().celltrait;
@@ -271,8 +253,6 @@ public:
     };
 
     AgentUpdateFunction move = [&](std::shared_ptr<AgentType> agent) {
-        // check_arraylengths(agent->state().habitat);
-
         auto old_home = agent->state().habitat;
 
         decltype(old_home) new_home = nullptr;
@@ -317,8 +297,6 @@ public:
     };
 
     AgentUpdateFunction kill = [&](std::shared_ptr<AgentType> agent) {
-        // check_arraylengths(agent->state().habitat);
-
         if (is_equal(agent->state().resources, 0.) or _deathdist(*(this->_rng)) < _deathprobability)
         {
             agent->state().deathflag = true;
@@ -326,7 +304,6 @@ public:
     };
 
     AgentUpdateFunction reproduce = [&](std::shared_ptr<AgentType> agent) {
-        // check_arraylengths(agent->state().habitat);
         auto cell = agent->state().habitat;
 
         while (agent->state().resources > (_offspringresources + _reproductioncost))
@@ -344,8 +321,6 @@ public:
     };
 
     CellUpdateFunction celltrait_decay = [&](std::shared_ptr<CellType> cell) {
-        // check_arraylengths(cell);
-
         auto& org = cell->state().original;
         auto& ctrt = cell->state().celltrait;
         auto& times = cell->state().modtimes;
@@ -372,24 +347,9 @@ public:
                 // cellresources are left alone, can still be used, but nothing else anymore is done
             }
         }
-
-        // // remove shit again
-        // ctrt.erase(std::remove_if(ctrt.begin(), ctrt.end(),
-        //                           [](auto value) { return std::isnan(value); }),
-        //            ctrt.end());
-        // cell->state().resourceinfluxes.erase(
-        //     std::remove_if(cell->state().resourceinfluxes.begin(),
-        //                    cell->state().resourceinfluxes.end(),
-        //                    [](auto value) { return std::abs(value) < 1e-16; }),
-        //     ctrt.end());
-        // times.erase(std::remove_if(times.begin(), times.end(),
-        //                            [](auto value) { return std::isnan(value); }),
-        //             ctrt.end());
     };
 
     CellUpdateFunction update_cell = [&](std::shared_ptr<CellType> cell) {
-        // check_arraylengths(cell);
-
         for (std::size_t i = 0; i < cell->state().celltrait.size(); ++i)
         {
             cell->state().resources[i] += cell->state().resourceinfluxes[i];
@@ -403,43 +363,20 @@ public:
 
     AgentUpdateFunction update_agent = [&](std::shared_ptr<AgentType> agent) {
         update_adaption(agent);
-        // this->_log->info("  begin adaption: {} ",
-        //                  std::accumulate(agent->state().adaption.begin(),
-        //                                  agent->state().adaption.end(), 0.));
-        // this->_log->info("  begin resources: {}", agent->state().resources);
+
         move(agent);
-        // this->_log->info("  move adaption: {} ",
-        //                  std::accumulate(agent->state().adaption.begin(),
-        //                                  agent->state().adaption.end(), 0.));
-        // this->_log->info("  move resources: {}", agent->state().resources);
+
         if constexpr (construction)
         {
             modify(agent);
-            // this->_log->info("  construction adaption: {} ",
-            //                  std::accumulate(agent->state().adaption.begin(),
-            //                                  agent->state().adaption.end(), 0.));
-            // this->_log->info("  construction resources: {}", agent->state().resources);
         }
         update_adaption(agent);
-        // this->_log->info("  update adaption adaption: {} ",
-        //                  std::accumulate(agent->state().adaption.begin(),
-        //                                  agent->state().adaption.end(), 0.));
-        // this->_log->info("  update adaption resources: {}", agent->state().resources);
+
         metabolism(agent);
-        // this->_log->info("  metabolism adaption: {} ",
-        //                  std::accumulate(agent->state().adaption.begin(),
-        //                                  agent->state().adaption.end(), 0.));
-        // this->_log->info("  metabolism resources: {}", agent->state().resources);
+
         reproduce(agent);
-        // this->_log->info("  reproduce adaption: {} ",
-        //                  std::accumulate(agent->state().adaption.begin(),
-        //                                  agent->state().adaption.end(), 0.));
-        // this->_log->info("  reproduce resources: {}", agent->state().resources);
+
         kill(agent);
-        // this->_log->info("  kill adaption: {}",
-        //                  std::accumulate(agent->state().adaption.begin(),
-        //                                  agent->state().adaption.end(), 0.));
-        // this->_log->info("  kill resources: {}", agent->state().resources);
     };
 
     template <class ParentModel>
@@ -585,6 +522,17 @@ public:
         this->_log->info(" construction: {}",
                          as_str(this->_cfg["construction"]));
         this->_log->info(" decay       : {}", as_str(this->_cfg["decay"]));
+
+        // write out cell position and cell id to be able to link them later for
+        // agents
+        this->_dgroup_cells
+            ->open_dataset("cell_position", {_cellmanager.cells().size()}, {1000})
+            ->write(_cellmanager.cells().begin(), _cellmanager.cells().end(),
+                    [](auto cell) { return cell->position(); });
+        this->_dgroup_cells
+            ->open_dataset("cell_id", {_cellmanager.cells().size()}, {1000})
+            ->write(_cellmanager.cells().begin(), _cellmanager.cells().end(),
+                    [](auto cell) { return cell->id(); });
     }
 
     void initialize_cells()
@@ -730,11 +678,6 @@ public:
                                ? agent->state().adaption[i - s]
                                : agent->state().habitat->state().resourceinfluxes[i];
             }
-            // std::cout << " candidate build: " << std::endl;
-            // std::cout << "  start     : " << agent->state().start << std::endl;
-            // std::cout << "  end       : " << agent->state().end << std::endl;
-            // std::cout << "  cum_res   : " << cum_res << std::endl;
-            // std::cout << "  intensity : " << agent->state().intensity << std::endl;
 
             if (cum_res > _livingcost)
             {
@@ -766,41 +709,62 @@ public:
         this->_time += dt;
     }
 
+    void print_statistics(const std::vector<std::shared_ptr<AgentType>>& agents,
+                          const std::vector<std::shared_ptr<CellType>>& cells)
+    {
+        ArithmeticMean Mean;
+        Maximum Max;
+        this->_log->info(
+            "Current time: {}\n current populationsize: {}\n"
+            " <adaption> {}\n <adaption_size> {}\n <genome_size> {}\n "
+            "<phenotype_size> {}\n <resourceinfluxes> {}\n"
+            " <resourceinfluxesize> {}\n <celltraitsize> {}\n"
+            " max_adaptionsize {}\n max_resourceinfluxsize {}\n "
+            "max_celltraitsize {}\n max_genotypesize {}\n max_phenotypesize "
+            "{} ",
+            this->_time, agents.size(),
+            Mean(agents.begin(), agents.end(),
+                 [](auto agent) {
+                     return std::accumulate(agent->state().adaption.begin(),
+                                            agent->state().adaption.end(), 0.);
+                 }),
+            Mean(agents.begin(), agents.end(),
+                 [](auto agent) { return agent->state().adaption.size(); }),
+            Mean(agents.begin(), agents.end(),
+                 [](auto agent) { return agent->state().genotype.size(); }),
+            Mean(agents.begin(), agents.end(),
+                 [](auto agent) { return agent->state().phenotype.size(); }),
+            Mean(cells.begin(), cells.end(),
+                 [](auto cell) {
+                     return std::accumulate(cell->state().resourceinfluxes.begin(),
+                                            cell->state().resourceinfluxes.end(), 0.);
+                 }),
+            Mean(cells.begin(), cells.end(),
+                 [](auto cell) { return cell->state().resourceinfluxes.size(); }),
+            Mean(cells.begin(), cells.end(),
+                 [](auto cell) { return cell->state().celltrait.size(); }),
+            Max(agents.begin(), agents.end(),
+                [](auto agent) { return agent->state().adaption.size(); }),
+            Max(cells.begin(), cells.end(),
+                [](auto cell) { return cell->state().resourceinfluxes.size(); }),
+            Max(cells.begin(), cells.end(),
+                [](auto cell) { return cell->state().celltrait.size(); }),
+            Max(agents.begin(), agents.end(),
+                [](auto agent) { return agent->state().genotype.size(); }),
+            Max(agents.begin(), agents.end(),
+                [](auto agent) { return agent->state().phenotype.size(); }));
+    }
+
     void perform_step()
     {
         auto& agents = _agentmanager.agents();
         auto& cells = _cellmanager.cells();
 
-        if (this->_time % 10000 == 0)
+        if ((this->_time % 5000 == 0) or (this->_time > 300000 and this->_time % 10 == 0))
         {
-            this->_log->info(
-                "Current time: {}\n current populationsize: {}\n"
-                " <adaption> {}\n <adaption_size> {}\n <resourceinfluxes> {}\n"
-                " <resourceinfluxesize> {}\n <celltraitsize> {}",
-                this->_time, agents.size(),
-                ArithmeticMean()(agents.begin(), agents.end(),
-                                 [](auto agent) {
-                                     return std::accumulate(
-                                         agent->state().adaption.begin(),
-                                         agent->state().adaption.end(), 0.);
-                                 }),
-                ArithmeticMean()(
-                    agents.begin(), agents.end(),
-                    [](auto agent) { return agent->state().adaption.size(); }),
-                ArithmeticMean()(cells.begin(), cells.end(),
-                                 [](auto cell) {
-                                     return std::accumulate(
-                                         cell->state().resourceinfluxes.begin(),
-                                         cell->state().resourceinfluxes.end(), 0.);
-                                 }),
-                ArithmeticMean()(cells.begin(), cells.end(),
-                                 [](auto cell) {
-                                     return cell->state().resourceinfluxes.size();
-                                 }),
-                ArithmeticMean()(cells.begin(), cells.end(), [](auto cell) {
-                    return cell->state().celltrait.size();
-                }));
+            print_statistics(agents, cells);
         }
+
         if (agents.size() == 0)
         {
             this->_log->info("Population extinct");
@@ -825,74 +789,87 @@ public:
             update_agent(agents[idx]);
         }
 
-        agents.erase(
-            std::remove_if(agents.begin(), agents.end(),
+        _agentmanager.agents().erase(
+            std::remove_if(_agentmanager.agents().begin(),
+                           _agentmanager.agents().end(),
                            [](auto agent) { return agent->state().deathflag; }),
-            agents.end());
+            _agentmanager.agents().end());
     }
 
+    /**
+     * @brief write out data stuff
+     *
+     */
     void write_data()
     {
-        auto& agents = _agentmanager.agents();
-        auto& cells = _cellmanager.cells();
+        // auto& agents = _agentmanager.agents();
+        // auto& cells = _cellmanager.cells();
 
-        if (agents.size() == 0)
-        {
-            return;
-        }
-        if (_highresoutput and ((this->_time < _highres_interval[1] and
-                                 this->_time >= _highres_interval[0]) or
-                                (this->_time >= 50000 and this->_time < 51000) or
-                                (this->_time >= 500000 and this->_time < 501000)))
-        {
-            std::size_t chunksize = (agents.size() < 1000) ? (agents.size()) : 1000;
+        // if (agents.size() == 0)
+        // {
+        //     return;
+        // }
+        // if (_highresoutput and ((this->_time < _highres_interval[1] and
+        //                          this->_time >= _highres_interval[0]) or
+        //                         (this->_time >= 50000 and this->_time < 51000) or
+        //                         (this->_time >= 500000 and this->_time < 501000)))
+        // {
+        //     std::size_t chunksize = (agents.size() < 1000) ? (agents.size()) : 1000;
 
-            auto agrp = _dgroup_agents->open_group("t=" + std::to_string(this->_time));
+        //     auto agrp = _dgroup_agents->open_group("t=" + std::to_string(this->_time));
 
-            for (auto& [name, adaptor] : _agent_adaptors)
-            {
-                agrp->open_dataset(name, {agents.size()}, {chunksize})
-                    ->write(agents.begin(), agents.end(), adaptor);
-            }
-            auto cgrp = _dgroup_cells->open_group("t=" + std::to_string(this->_time));
+        //     for (auto& [name, adaptor] : _agent_adaptors)
+        //     {
+        //         agrp->open_dataset(name, {agents.size()}, {chunksize})
+        //             ->write(agents.begin(), agents.end(), adaptor);
+        //     }
+        //     auto cgrp = _dgroup_cells->open_group("t=" + std::to_string(this->_time));
 
-            for (auto& [name, adaptor] : _cell_adaptors)
-            {
-                cgrp->open_dataset(name, {cells.size()}, {chunksize})
-                    ->write(cells.begin(), cells.end(), adaptor);
-            }
-        }
+        //     for (auto& [name, adaptor] : _cell_adaptors)
+        //     {
+        //         cgrp->open_dataset(name, {cells.size()}, {chunksize})
+        //             ->write(cells.begin(), cells.end(), adaptor);
+        //     }
 
-        if (this->_time % _statisticstime == 0)
-        {
-            for (std::size_t i = 0; i < _agent_adaptors.size(); ++i)
-            {
-                _agent_statistics_data[i].push_back(Utils::Describe()(
-                    agents.begin(), agents.end(), std::get<1>(_agent_adaptors[i])));
-            }
+        // some additional stuff for agents
+        // agrp->open_dataset("cell_id", {agents.size()}, {chunksize})
+        //     ->write(agents.begin(), agents.end(),
+        //             [](auto agent) { return agent->state().habitat->id(); });
 
-            for (std::size_t i = 0; i < _cell_adaptors.size(); ++i)
-            {
-                _cell_statistics_data[i].push_back(Utils::Describe()(
-                    cells.begin(), cells.end(), std::get<1>(_cell_adaptors[i])));
-            }
-        }
+        // }
 
-        if (this->_time > 0 and (this->_time % (_statisticstime * 10) == 0 or
-                                 this->_time == this->_time_max))
-        {
-            for (std::size_t i = 0; i < _dsets_agent_statistics.size(); ++i)
-            {
-                _dsets_agent_statistics[i]->write(_agent_statistics_data[i]);
-                _agent_statistics_data[i].clear();
-            }
+        // if (this->_time % _statisticstime == 0)
+        // {
 
-            for (std::size_t i = 0; i < _dsets_cell_statistics.size(); ++i)
-            {
-                _dsets_cell_statistics[i]->write(_cell_statistics_data[i]);
-                _cell_statistics_data[i].clear();
-            }
-        }
+        //     for (std::size_t i = 0; i < _agent_adaptors.size(); ++i)
+        //     {
+        //         _agent_statistics_data[i].push_back(Utils::Describe()(
+        //             agents.begin(), agents.end(), std::get<1>(_agent_adaptors[i])));
+        //     }
+
+        //     for (std::size_t i = 0; i < _cell_adaptors.size(); ++i)
+        //     {
+        //         _cell_statistics_data[i].push_back(Utils::Describe()(
+        //             cells.begin(), cells.end(), std::get<1>(_cell_adaptors[i])));
+        //     }
+        // }
+
+        // if (this->_time > 0 and (this->_time % (_statisticstime * 10) == 0 or
+        //                          this->_time == this->_time_max))
+        // {
+        //     for (std::size_t i = 0; i < _dsets_agent_statistics.size(); ++i)
+        //     {
+        //         _dsets_agent_statistics[i]->write(_agent_statistics_data[i]);
+        //         _agent_statistics_data[i].clear();
+        //     }
+
+        //     for (std::size_t i = 0; i < _dsets_cell_statistics.size(); ++i)
+        //     {
+        //         _dsets_cell_statistics[i]->write(_cell_statistics_data[i]);
+        //         _cell_statistics_data[i].clear();
+        //     }
+
+        // }
     }
 
     auto& cellmanager()

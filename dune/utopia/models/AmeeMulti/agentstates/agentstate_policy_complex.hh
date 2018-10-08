@@ -55,8 +55,7 @@ protected:
         {
             phenotype.push_back(get_codon_value(i, i + sumlen, divisor, genotype));
         }
-        // std::cout << "size = " << size << std::endl;
-        // std::cout << " i   = " << i << std::endl;
+
         phenotype.push_back(get_codon_value(
             i, (i + sumlen) <= size ? (i + sumlen) : genotype.size(), divisor, genotype));
         return phenotype;

@@ -928,31 +928,37 @@ struct Median
 struct Minimum
 {
     /**
-     * @brief      Computes the minimum of the range [begin, end).
+     * @brief Computes the minimum of the range [begin, end).
      *
-     * @param[in]  start      The iterator pointing to the first element in
-     *                        [start, end)
-     * @param[in]  end        The iterator pointing to the element after the
-     * last element in the range [start, end)
-     *
-     * @param[in]  The comparison-function to use, defaults to
-     *                        operator<(const T&, const T&).
-     *
-     *
-     * @return     The minimum value in the range [begin, end).
+     * @tparam InputIterator
+     * @tparam std::function<bool(const T &, const T &)>
+     * @param start
+     * @param end
+     * @param adaptor
+     * @return auto
      */
-    template <typename InputIterator, typename Compare>
-    auto operator()(InputIterator start, InputIterator end, Compare comp)
+    template <typename InputIterator, typename Adaptor>
+    auto operator()(InputIterator start, InputIterator end, Adaptor&& adaptor)
     {
-        return *std::min_element(start, end, comp);
+        auto value = adaptor(*start);
+        for (; start != end; ++start)
+        {
+            if (adaptor(*start) < value)
+            {
+                value = adaptor(*start);
+            }
+        }
+        return value;
     }
 
     /**
-     * @brief      Computes the minimum of the range [begin, end).
+     * @brief Computes the minimum of the range [begin, end).
      *
      * @tparam InputIterator
+     * @tparam std::function<bool(const T &, const T &)>
      * @param start
      * @param end
+     * @param comp
      * @return auto
      */
     template <typename InputIterator>
@@ -965,23 +971,27 @@ struct Minimum
 struct Maximum
 {
     /**
-     * @brief      Computes the maximum of the range [begin, end).
+     * @brief Computes the maximum of the range [begin, end).
      *
-     * @param[in]  start      The iterator pointing to the first element in
-     *                        [start, end)
-     * @param[in]  end        The iterator pointing to the element after the
-     * last element in the range [start, end)
-     *
-     * @param[in]  The comparison-function to use, defaults to
-     *                        operator<(const T&, const T&).
-     *
-     *
-     * @return     The maximum value in the range [begin, end).
+     * @tparam InputIterator
+     * @tparam std::function<bool(const T &, const T &)>
+     * @param start
+     * @param end
+     * @param adaptor
+     * @return auto
      */
-    template <typename InputIterator, typename Compare>
-    auto operator()(InputIterator start, InputIterator end, Compare&& comp)
+    template <typename InputIterator, typename Adaptor>
+    auto operator()(InputIterator start, InputIterator end, Adaptor&& adaptor)
     {
-        return *std::max_element(start, end, comp);
+        auto value = adaptor(*start);
+        for (; start != end; ++start)
+        {
+            if (adaptor(*start) > value)
+            {
+                value = adaptor(*start);
+            }
+        }
+        return value;
     }
 
     /**

@@ -18,7 +18,7 @@
     #   values: [true, false, false]
 
 parameter_space: 
-  num_steps: 1000000
+  num_steps: 360000
   seed: 594472
   periodic: true          # false: cells at boundary have fewer neighbors
   write_every: 1
@@ -32,7 +32,7 @@ parameter_space:
     init_cellresourceinflux_kind: "random"
     # init_cell_resourceinflux: "given" # DO NOT DELETE THIS, IMPORTANT
     # cell_influxvalues: [1., 1., 1., 1., 1., 1.,1., 1., 1., 1., 1., 1.]
-    resourceinflux_limits: [0., 3.5]
+    resourceinflux_limits: [0., 5.]
     init_celltrait_values: [-5., 5.]
     removethreshold: 1e-3
     decayintensity: 1e-2
@@ -48,13 +48,15 @@ parameter_space:
 
     # mutationrates, important for evolution speed and stability
     insertionrate: 1e-3
-    substitution_std: 0.2
+    substitution_std: !sweep 
+      default: 0.2
+      values: [0.1, 0.4, 0.6, 0.8, 1.]
     substitutionrate: 1e-3
 
     modifiercost: 0.
     adaptionfunction: "multi_notnormed"
-    upper_resourcelimit: 10000.
-    highresoutput: false
+    upper_resourcelimit: 1000.
+    highresoutput: true
     highrestime: 100
     statisticstime: 50
 
@@ -62,9 +64,7 @@ parameter_space:
     construction: true
     decay: true
     highresinterval: [0, 1000]
-    Agenttype: !sweep
-      default: simple
-      values: [simple, complex]
+    Agenttype: simple
 
     # stuff for worker manager
 worker_manager:
@@ -76,5 +76,5 @@ paths:
   out_dir: ~/utopia_output
 
   # model note is added to the output directory path
-  model_note: "test_run_1e6"
+  model_note: "test_run_300000"
 
