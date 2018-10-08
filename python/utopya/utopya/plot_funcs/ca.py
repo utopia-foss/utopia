@@ -172,7 +172,7 @@ def state_anim(dm: DataManager, *,
     # Get the shape of the 2D grid to later reshape the data
     cfg = dm['uni'][uni]['cfg']
     grid_size = cfg[model_name]['grid_size']
-    steps = cfg['num_steps']
+    steps = int(cfg['num_steps']/cfg.get('write_every', 1))
     new_shape = (steps+1, grid_size[1], grid_size[0])
 
     # Extract the data of the strategies in the CA    
