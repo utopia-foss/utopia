@@ -22,10 +22,10 @@ parameter_space:
   seed: 594472
   periodic: true          # false: cells at boundary have fewer neighbors
   write_every: 1
+  grid_size: [32,32]
 
   AmeeMulti: !model
     model_name: AmeeMulti
-    grid_size: [32,32]
 
     # Cell parameters
     init_cell_traitlen: 24
