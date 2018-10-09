@@ -690,8 +690,14 @@ public:
             throw std::runtime_error("Could not build viable organism!");
         }
 
+        // estimate maximum population size and reserve memory accordingly,
+        // with some safety margin (factor of 2)
+        auto resource_influxlimits =
+            as_vector<double>(this->_cfg["resourceinflux_limits"]);
+
         // reserve memory for a lot of agents:
-        _agentmanager.agents().reserve(1000000);
+        _agentmanager.agents().reserve(2 * (resource_influxlimits[1] / _upper_resourcelimit) *
+                                       _cellmanager.cells().size());
 
         this->_log->info("Initial agent: ");
 

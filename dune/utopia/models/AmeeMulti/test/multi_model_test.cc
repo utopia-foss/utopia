@@ -71,7 +71,7 @@ void test_model_construction(Model& model)
     ASSERT_EQ(model.get_highresinterval(), highresinterval);
     ASSERT_EQ(model.get_decay(), decay);
     ASSERT_EQ(model.get_construction(), construction);
-
+    ASSERT_EQ(model.cells().size(), std::size_t(1024));
     // check agent parameters
     ASSERT_EQ(int(agents.size()), 1);
     auto inhabited_cell = agents[0]->state().habitat;
