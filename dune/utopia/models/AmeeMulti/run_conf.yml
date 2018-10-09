@@ -18,7 +18,7 @@
     #   values: [true, false, false]
 
 parameter_space: 
-  num_steps: 360000
+  num_steps: 500000
   seed: 594472
   periodic: true          # false: cells at boundary have fewer neighbors
   write_every: 1
