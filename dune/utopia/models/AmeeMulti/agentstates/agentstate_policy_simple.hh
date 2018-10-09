@@ -66,7 +66,7 @@ struct Agentstate_policy_simple
         {
             auto where = loc(*rng);
             new_genotype[where] =
-                std::normal_distribution<G>(parent_genome[where], std)(*rng);
+                std::normal_distribution<double>(parent_genome[where], std)(*rng);
         }
         if (choice(*rng) < editmut)
         {

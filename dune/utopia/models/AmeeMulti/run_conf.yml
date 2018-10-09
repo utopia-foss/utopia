@@ -56,7 +56,7 @@ parameter_space:
     modifiercost: 0.
     adaptionfunction: "multi_notnormed"
     upper_resourcelimit: 1000.
-    highresoutput: true
+    highresoutput: false
     highrestime: 100
     statisticstime: 50
 

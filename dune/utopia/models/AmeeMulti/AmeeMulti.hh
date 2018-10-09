@@ -170,7 +170,15 @@ public:
                                        : 0.;
         agent->state().age += 1;
 
-        assert(agent->state().resources >= 0.);
+        if(agent->state().resources < 0.){
+            throw std::runtime_error("negative resources found for agent!");
+        }
+
+        for(auto& val: agent->state().habitat->state().resources){
+            if(val < 0.){
+                throw std::runtime_error("negative resources found in agent's habitat!");
+            }
+        }
     };
 
     AgentUpdateFunction modify = [&](std::shared_ptr<AgentType> agent) {
@@ -255,7 +263,8 @@ public:
     AgentUpdateFunction move = [&](std::shared_ptr<AgentType> agent) {
         auto old_home = agent->state().habitat;
 
-        decltype(old_home) new_home = nullptr;
+        std::shared_ptr<Cell> new_home = nullptr;
+
         if (agent->state().resources < (_offspringresources + _reproductioncost))
         {
             auto nb = MooreNeighbor::neighbors(old_home, _cellmanager);
@@ -286,9 +295,8 @@ public:
                 new_home = nb[_movedist(*(this->_rng))];
             }
 
-            // update adaption and habitat pointer
+            // update habitat pointer
             agent->state().habitat = new_home;
-            update_adaption(agent);
 
             // get position of agent and move it
             auto pos = new_home->position();
@@ -366,10 +374,13 @@ public:
 
         move(agent);
 
+        update_adaption(agent);
+
         if constexpr (construction)
         {
             modify(agent);
         }
+
         update_adaption(agent);
 
         metabolism(agent);
