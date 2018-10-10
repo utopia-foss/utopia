@@ -1062,7 +1062,6 @@ struct Describe
                       [&](auto& value) { data.emplace_back(getter(value)); });
 
         long int maxcount = 1.;
-        T mode = getter(*start);
 
         for (auto& element : data)
         {
@@ -1085,7 +1084,6 @@ struct Describe
             if (maxcount > buckets[element])
             {
                 maxcount = buckets[element];
-                mode = element;
             }
         }
 
@@ -1114,9 +1112,6 @@ struct Describe
      * distribution represented by the values in the range [start, end):
      *             * Mean
      *             * variance
-     *             * skewness
-     *             * excess-kurtosis
-     *             * mode
      *             * min
      *             * 25-th quantile
      *             * 50-th quantile
