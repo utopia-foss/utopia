@@ -1,7 +1,6 @@
-"""Tests of the output of the CopyMe model"""
+"""Tests of the initialisation of the ForestFireModel"""
 
 import numpy as np
-
 import pytest
 
 from utopya.testtools import ModelTest
@@ -13,6 +12,7 @@ mtc = ModelTest("ForestFireModel", test_file=__file__)
 # Define fixtures
 
 # Helpers ---------------------------------------------------------------------
+# NOTE These helpers are also imported by other test modules for ForestFireModel
 
 def model_cfg(**kwargs) -> dict:
     """Creates a dict that can update the config of the ForestFireModel"""
@@ -69,8 +69,6 @@ def test_output():
         assert data['state'].shape == (uni_cfg['num_steps'] + 1,
                                             num_cells)
 
-        # Can do further tests here ...
-
 def test_initial_state_random(): 
     """Test that the initial states are random.
 
@@ -81,7 +79,7 @@ def test_initial_state_random():
     mv, dm = mtc.create_run_load(from_cfg="initial_state.yml",
                                  perform_sweep=True)
 
-    # For all universes, perform checks on the payoff and strategy data
+    # For all universes, perform checks on the state
     for uni in dm['uni'].values():
         data = uni['data']['ForestFireModel']
 
