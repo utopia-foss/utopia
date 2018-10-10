@@ -139,6 +139,11 @@ private:
 
     std::size_t _idx;
 
+    double logistic_function(double r, double K, double u0, double t)
+    {
+        return (K * u0 * std::exp(r * t)) / (K + u0 * (std::exp(r * t) - 1.));
+    }
+
 public:
     // update sub functions
     AgentUpdateFunction update_adaption = [&](std::shared_ptr<AgentType> agent) {
@@ -170,13 +175,17 @@ public:
                                        : 0.;
         agent->state().age += 1;
 
-        if(agent->state().resources < 0.){
+        if (agent->state().resources < 0.)
+        {
             throw std::runtime_error("negative resources found for agent!");
         }
 
-        for(auto& val: agent->state().habitat->state().resources){
-            if(val < 0.){
-                throw std::runtime_error("negative resources found in agent's habitat!");
+        for (auto& val : agent->state().habitat->state().resources)
+        {
+            if (val < 0.)
+            {
+                throw std::runtime_error(
+                    "negative resources found in agent's habitat!");
             }
         }
     };
@@ -203,8 +212,8 @@ public:
 
         for (int i = start; i < min_m; ++i)
         {
-            this->_log->debug("  modifying: i = {} , end = {}, ctrtsize = {}",
-                              i, end, ctrt.size());
+            // //this->_log->debug("  modifying: i = {} , end = {}, ctrtsize = {}",
+            //                   i, end, ctrt.size());
 
             if (agent->state().resources < (_reproductioncost + _offspringresources))
             {
@@ -235,7 +244,7 @@ public:
 
         for (int i = min_m; i < min_a; ++i)
         {
-            this->_log->debug("  appending: i = {} , end = {}", i, end);
+            // //this->_log->debug("  appending: i = {} , end = {}", i, end);
             if (agent->state().resources < (_reproductioncost + _offspringresources))
             {
                 break;
@@ -360,7 +369,17 @@ public:
     CellUpdateFunction update_cell = [&](std::shared_ptr<CellType> cell) {
         for (std::size_t i = 0; i < cell->state().celltrait.size(); ++i)
         {
-            cell->state().resources[i] += cell->state().resourceinfluxes[i];
+            if (is_equal(cell->state().resources[i], 0., 1e-10)) // FIXME: tolerance?
+            {
+                cell->state().resources[i] = cell->state().resourceinfluxes[i];
+            }
+            else
+            {
+                cell->state().resources[i] =
+                    logistic_function(cell->state().resourceinfluxes[i],
+                                      cell->state().resource_capacities[i],
+                                      cell->state().resources[i], 1.);
+            }
         }
 
         if constexpr (decay)
@@ -517,25 +536,25 @@ public:
             _cell_statistics_data.back().reserve(1 + this->_time_max / _statisticstime);
         }
 
-        this->_log->info("Model Parameters:");
-        this->_log->info(" agenttype: {}", as_str(this->_cfg["Agenttype"]));
-        this->_log->info(" num cells: {}", _cellmanager.cells().size());
-        this->_log->info(" livingcost: {}", _livingcost);
-        this->_log->info(" reproductioncost: {}", _reproductioncost);
-        this->_log->info(" offspringresources: {}", _offspringresources);
-        this->_log->info(" _deathprobability: {}", _deathprobability);
-        this->_log->info(" mutationrates: {},{},{},{},{} ", "(", _mutationrates[0],
-                         _mutationrates[1], _mutationrates[2], ")");
-        this->_log->info(" decayintensity: {}", _decayintensity);
-        this->_log->info(" modifiercost: {}", _modifiercost);
-        this->_log->info(" highresoutput: {}", _highresoutput);
-        this->_log->info(" upper_resourcelimit: {}", _upper_resourcelimit);
-        this->_log->info(" construction: {}",
-                         as_str(this->_cfg["construction"]));
-        this->_log->info(" decay       : {}", as_str(this->_cfg["decay"]));
+        // this->_log->info("Model Parameters:");
+        // this->_log->info(" agenttype: {}", as_str(this->_cfg["Agenttype"]));
+        // this->_log->info(" num cells: {}", _cellmanager.cells().size());
+        // this->_log->info(" livingcost: {}", _livingcost);
+        // this->_log->info(" reproductioncost: {}", _reproductioncost);
+        // this->_log->info(" offspringresources: {}", _offspringresources);
+        // this->_log->info(" _deathprobability: {}", _deathprobability);
+        // this->_log->info(" mutationrates: {},{},{},{},{} ", "(", _mutationrates[0],
+        //  _mutationrates[1], _mutationrates[2], ")");
+        // this->_log->info(" decayintensity: {}", _decayintensity);
+        // this->_log->info(" modifiercost: {}", _modifiercost);
+        // this->_log->info(" highresoutput: {}", _highresoutput);
+        // this->_log->info(" upper_resourcelimit: {}", _upper_resourcelimit);
+        // this->_log->info(" construction: {}",
+        //  as_str(this->_cfg["construction"]));
+        // this->_log->info(" decay       : {}", as_str(this->_cfg["decay"]));
 
-        // write out cell position and cell id to be able to link them later for
-        // agents
+        // write out cell position and cell id to be able to
+        // link them later for agents
         this->_dgroup_cells
             ->open_dataset("cell_position", {_cellmanager.cells().size()}, {1000})
             ->write(_cellmanager.cells().begin(), _cellmanager.cells().end(),
@@ -548,12 +567,13 @@ public:
 
     void initialize_cells()
     {
-        this->_log->info("Starting initialize_cells");
+        // this->_log->info("Starting initialize_cells");
 
         // Extract the mode that determines the initial state
         const auto init_celltrait_len =
             as_<std::size_t>(this->_cfg["init_cell_traitlen"]);
 
+        // initialize resource influxes
         const auto init_cell_resourceinflux_kind =
             as_str(this->_cfg["init_cellresourceinflux_kind"]);
 
@@ -579,32 +599,41 @@ public:
         else
         {
             throw std::runtime_error(
-                "Unknown init_cell_resourceinflux given in config");
+                "Unknown init_cell_resourceinflux given in config, must be "
+                "'given' or 'random'");
+        }
+
+        // initialize resource maximum capacities
+        const auto cell_resourcecapacity_kind =
+            as_str(this->_cfg["cellresourcecapacity_kind"]);
+
+        std::vector<double> resourcecapacities;
+
+        if (cell_resourcecapacity_kind == "random")
+        {
+            const auto cell_resourcecapacity_limits =
+                as_vector<double>(this->_cfg["cellresourcecapacity_limits"]);
+            std::uniform_real_distribution<double> capdist(
+                cell_resourcecapacity_limits[0], cell_resourcecapacity_limits[1]);
+            resourcecapacities.resize(init_celltrait_len);
+            std::generate(resourcecapacities.begin(), resourcecapacities.end(),
+                          [this, &capdist]() { return capdist(*this->_rng); });
+        }
+        else if (cell_resourcecapacity_kind == "given")
+        {
+            resourcecapacities =
+                as_vector<double>(this->_cfg["cellresourcecapacities"]);
+        }
+        else
+        {
+            throw std::runtime_error(
+                "Unknown cell_resourcecapacity_kind given in config, must be "
+                "'given' or 'random'");
         }
 
         std::vector<double> init_cellresources(init_celltrait_len, 1.);
         const auto init_celltrait_values =
             as_array<double, 2>(this->_cfg["init_celltrait_values"]);
-
-        this->_log->info("Cell Parameters:");
-        this->_log->info(" init_celltrait_len: {}", init_celltrait_len);
-        this->_log->info(" init_cell_resources");
-        for (auto& value : init_cellresources)
-        {
-            this->_log->info("  {}", value);
-        }
-
-        this->_log->info(" init_cell_resourceinflux");
-        for (auto& value : init_cellresourceinfluxes)
-        {
-            this->_log->info("  {}", value);
-        }
-
-        this->_log->info(" init_celltrait_values");
-        for (auto& value : init_celltrait_values)
-        {
-            this->_log->info("  {}", value);
-        }
 
         CT init_celltrait(init_celltrait_len);
         std::uniform_real_distribution<CTV> dist(init_celltrait_values[0],
@@ -617,18 +646,16 @@ public:
         // generate new cellstate
         apply_rule<false>(
             [&]([[maybe_unused]] const auto cell) {
-                Cellstate cs(init_celltrait, init_cellresources, init_cellresourceinfluxes);
+                Cellstate cs(init_celltrait, init_cellresources,
+                             init_cellresourceinfluxes, resourcecapacities);
                 return cs;
             },
             _cellmanager.cells());
-
-        // Write information that cells are initialized to the logger
-        this->_log->info("Cells initialized.");
     }
 
     void initialize_agents()
     {
-        this->_log->info("Starting initialize_agents");
+        // this->_log->info("Starting initialize_agents");
 
         // Extract the mode that determines the initial state
         const auto init_genotypelen =
@@ -637,15 +664,15 @@ public:
         const auto init_genotype_values =
             as_array<double, 2>(this->_cfg["init_genotype_values"]);
 
-        this->_log->info(" Agent Parameters:");
-        this->_log->info(" init_genotypelen: {}", init_genotypelen);
-        this->_log->info(" init_resources: {}", init_resources);
+        // this->_log->info(" Agent Parameters:");
+        // this->_log->info(" init_genotypelen: {}", init_genotypelen);
+        // this->_log->info(" init_resources: {}", init_resources);
 
-        this->_log->info(" init_genotype_values");
-        for (auto& value : init_genotype_values)
-        {
-            this->_log->info("  {}", value);
-        }
+        // this->_log->info(" init_genotype_values");
+        // for (auto& value : init_genotype_values)
+        // {
+        // this->_log->info("  {}", value);
+        // }
 
         // make adaption which is viable
         auto cell = find_cell(_agentmanager.agents()[0], _cellmanager);
@@ -656,7 +683,7 @@ public:
 
         bool found = false;
 
-        for (std::size_t i = 0; i < 1000000; ++i)
+        for (std::size_t i = 0; i < 100000000; ++i)
         {
             // make initial agent genotype
             AG trait(init_genotypelen);
@@ -710,15 +737,15 @@ public:
         _agentmanager.agents().reserve(2 * (resource_influxlimits[1] / _upper_resourcelimit) *
                                        _cellmanager.cells().size());
 
-        this->_log->info("Initial agent: ");
+        // this->_log->info("Initial agent: ");
 
-        this->_log->info(" agent start {}", agent->state().start);
-        this->_log->info(" agent end {}", agent->state().end);
-        this->_log->info(" agent start_mod {}", agent->state().start_mod);
-        this->_log->info(" agent end_mod {}", agent->state().end_mod);
-        this->_log->info(" adaption size: {}", agent->state().adaption.size());
+        // this->_log->info(" agent start {}", agent->state().start);
+        // this->_log->info(" agent end {}", agent->state().end);
+        // this->_log->info(" agent start_mod {}", agent->state().start_mod);
+        // this->_log->info(" agent end_mod {}", agent->state().end_mod);
+        // this->_log->info(" adaption size: {}", agent->state().adaption.size());
 
-        this->_log->info("Agents initialized");
+        // this->_log->info("Agents initialized");
     }
 
     void increment_time(const typename Base::Time dt = 1)
@@ -777,15 +804,19 @@ public:
         auto& agents = _agentmanager.agents();
         auto& cells = _cellmanager.cells();
 
-        if ((this->_time % 5000 == 0) or (this->_time > 300000 and this->_time % 10 == 0))
+        if ((this->_time % 5000 == 0)) // or (this->_time > 350000 and this->_time % 1 == 0))
         {
             print_statistics(agents, cells);
+            // std::cout << " t = " << this->_time << std::endl;
         }
+        // if (agents.size() > 100000)
+        // {
+        //     throw std::runtime_error(
+        //         " Over 100000 organisms in population, stopping");
+        // }
 
         if (agents.size() == 0)
         {
-            this->_log->info("Population extinct");
-            // throw std::runtime_error(" Population extinct");
             return;
         }
 
@@ -794,7 +825,6 @@ public:
         std::for_each(cells.begin(), cells.end(), update_cell);
 
         std::shuffle(agents.begin(), agents.end(), *this->_rng);
-        // std::for_each_n(agents.begin(), agents.size(), update_agent);
 
         std::vector<unsigned> indices(agents.size());
         std::iota(indices.begin(), indices.end(), 0);
@@ -819,8 +849,8 @@ public:
      */
     void write_data()
     {
-        // auto& agents = _agentmanager.agents();
-        // auto& cells = _cellmanager.cells();
+        auto& agents = _agentmanager.agents();
+        auto& cells = _cellmanager.cells();
 
         // if (agents.size() == 0)
         // {
@@ -855,38 +885,36 @@ public:
 
         // }
 
-        // if (this->_time % _statisticstime == 0)
-        // {
+        if (this->_time % _statisticstime == 0)
+        {
+            for (std::size_t i = 0; i < _agent_adaptors.size(); ++i)
+            {
+                _agent_statistics_data[i].push_back(Utils::Describe()(
+                    agents.begin(), agents.end(), std::get<1>(_agent_adaptors[i])));
+            }
 
-        //     for (std::size_t i = 0; i < _agent_adaptors.size(); ++i)
-        //     {
-        //         _agent_statistics_data[i].push_back(Utils::Describe()(
-        //             agents.begin(), agents.end(), std::get<1>(_agent_adaptors[i])));
-        //     }
+            for (std::size_t i = 0; i < _cell_adaptors.size(); ++i)
+            {
+                _cell_statistics_data[i].push_back(Utils::Describe()(
+                    cells.begin(), cells.end(), std::get<1>(_cell_adaptors[i])));
+            }
+        }
 
-        //     for (std::size_t i = 0; i < _cell_adaptors.size(); ++i)
-        //     {
-        //         _cell_statistics_data[i].push_back(Utils::Describe()(
-        //             cells.begin(), cells.end(), std::get<1>(_cell_adaptors[i])));
-        //     }
-        // }
+        if (this->_time > 0 and (this->_time % (_statisticstime * 10) == 0 or
+                                 this->_time == this->_time_max))
+        {
+            for (std::size_t i = 0; i < _dsets_agent_statistics.size(); ++i)
+            {
+                _dsets_agent_statistics[i]->write(_agent_statistics_data[i]);
+                _agent_statistics_data[i].clear();
+            }
 
-        // if (this->_time > 0 and (this->_time % (_statisticstime * 10) == 0 or
-        //                          this->_time == this->_time_max))
-        // {
-        //     for (std::size_t i = 0; i < _dsets_agent_statistics.size(); ++i)
-        //     {
-        //         _dsets_agent_statistics[i]->write(_agent_statistics_data[i]);
-        //         _agent_statistics_data[i].clear();
-        //     }
-
-        //     for (std::size_t i = 0; i < _dsets_cell_statistics.size(); ++i)
-        //     {
-        //         _dsets_cell_statistics[i]->write(_cell_statistics_data[i]);
-        //         _cell_statistics_data[i].clear();
-        //     }
-
-        // }
+            for (std::size_t i = 0; i < _dsets_cell_statistics.size(); ++i)
+            {
+                _dsets_cell_statistics[i]->write(_cell_statistics_data[i]);
+                _cell_statistics_data[i].clear();
+            }
+        }
     }
 
     auto& cellmanager()

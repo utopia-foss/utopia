@@ -18,6 +18,8 @@ AmeeMultiComplex:
   init_cellresourceinflux_kind: "given"
   init_cell_influxvalues: [10., 10., 10., 10., 10., 10.,10., 10., 10., 10., 10., 10.,10., 10., 10., 10., 10., 10.,10., 10., 10., 10., 10., 10.]
   init_cell_resources: [1., 1., 1., 1., 1., 1.,1., 1., 1., 1., 1., 1.,1., 1., 1., 1., 1., 1.,1., 1., 1., 1., 1., 1.]
+  cellresourcecapacity_kind: "given"
+  cellresourcecapacities: [1000., 1000., 1000., 1000., 1000., 1000.,1000., 1000., 1000., 1000., 1000., 1000.,1000., 1000., 1000., 1000., 1.000, 1.000,1000., 1000., 1000., 1000., 1000., 1000.]
   init_cell_traitlen: 24
   init_celltrait_max: 5.0
   init_celltrait_min: -5.0

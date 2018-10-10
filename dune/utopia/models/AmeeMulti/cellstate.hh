@@ -9,6 +9,11 @@ namespace Models
 {
 namespace AmeeMulti
 {
+/**
+ * @brief
+ *
+ * @tparam Traittype
+ */
 template <typename Traittype>
 struct Cellstate
 {
@@ -20,14 +25,25 @@ struct Cellstate
     std::vector<double> resources;
     std::vector<double> resourceinfluxes;
     std::vector<double> modtimes;
+    std::vector<double> resource_capacities;
 
     Cellstate() = default;
-    Cellstate(Trait ct, std::vector<double> res, std::vector<double> res_in)
+
+    /**
+     * @brief Construct a new Cellstate object
+     *
+     * @param ct
+     * @param res
+     * @param res_in
+     * @param res_cap
+     */
+    Cellstate(Trait ct, std::vector<double> res, std::vector<double> res_in, std::vector<double> res_cap)
         : celltrait(ct),
           original(ct),
           resources(res),
           resourceinfluxes(res_in),
-          modtimes(std::vector<double>(ct.size(), 0.))
+          modtimes(std::vector<double>(ct.size(), 0.)),
+          resource_capacities(res_cap)
     {
     }
 };

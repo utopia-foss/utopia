@@ -36,6 +36,8 @@ void test_model_construction(Model& model)
         as_vector<double>(cfg["resourceinflux_limits"]);
     std::vector<double> init_celltrait_values =
         as_vector<double>(cfg["init_celltrait_values"]);
+    std::vector<double> cell_resourcecapacities =
+        as_vector<double>(cfg["cellresourcecapacities"]);
     double removethreshold = as_double(cfg["removethreshold"]);
     double decayintensity = as_double(cfg["decayintensity"]);
 
@@ -120,6 +122,8 @@ void test_model_construction(Model& model)
                 init_celltrait_values[0]);
 
             ASSERT_EQ(state.resourceinfluxes, init_cell_resourceinflux_values);
+            ASSERT_EQ(state.resource_capacities, cell_resourcecapacities);
+
             ASSERT_EQ(state.celltrait, state.original);
             ASSERT_EQ(state.modtimes, std::vector<double>(state.celltrait.size(), 0.));
         }
@@ -213,6 +217,7 @@ void test_model_functions(Model& model)
     neighbors[2]->state().celltrait = adamstate.phenotype;
 
     model.move(adam);
+    model.update_adaption(adam);
 
     assert(neighbors[2].get() == adamstate.habitat.get());
     ASSERT_EQ(adamstate.adaption, (std::vector<double>{1, 1, 1, 1}));
@@ -220,6 +225,7 @@ void test_model_functions(Model& model)
     eden = adamstate.habitat;
     edenstate = eden->state();
     adamstate = adam->state();
+
     // random movement
     adamstate.resources = 0.5; // has to move
     edenstate.celltrait = std::vector<double>(8, 1.);
@@ -242,6 +248,8 @@ void test_model_functions(Model& model)
     }
     model.update_adaption(adam);
     model.move(adam);
+    model.update_adaption(adam);
+
     assert(adamstate.habitat != eden);
     for (auto& neighbor : neighbors)
     {
@@ -456,10 +464,24 @@ void test_model_functions(Model& model)
     cell->state().original = std::vector<double>(10, 1.);
     cell->state().resourceinfluxes =
         std::vector<double>(cell->state().celltrait.size(), 10);
-    cell->state().resources = std::vector<double>(cell->state().celltrait.size(), 1);
+
+    // if has no resources, is set to resourceinfluxes
+    cell->state().resources = std::vector<double>(cell->state().celltrait.size(), 0);
 
     model.update_cell(cell);
-    ASSERT_EQ(cell->state().resources, std::vector<double>(10, 11.));
+    ASSERT_EQ(cell->state().resources, std::vector<double>(10, 10.));
+
+    // if has resources is set to logisitc function with t = 1 and u0 = current
+    // resources: u(t) = (K*u(t-1)*exp(-rt))/(K + u(t-1)*(exp(-rt) - 1))
+
+    cell->state().resources = std::vector<double>(cell->state().celltrait.size(), 1.5);
+    cell->state().resourceinfluxes =
+        std::vector<double>(cell->state().celltrait.size(), 3.);
+    cell->state().resource_capacities =
+        std::vector<double>(cell->state().celltrait.size(), 50.);
+    model.update_cell(cell);
+
+    ASSERT_EQ(cell->state().resources, std::vector<double>(10, 19.15868925150003));
 
     ////////////////////////////////////////////////////////////////////////////
     // decay_celltrait
