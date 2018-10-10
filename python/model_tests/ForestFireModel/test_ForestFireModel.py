@@ -12,6 +12,11 @@ mtc = ModelTest("ForestFireModel", test_file=__file__)
 # Fixtures --------------------------------------------------------------------
 # Define fixtures
 
+# Helpers ---------------------------------------------------------------------
+
+def model_cfg(**kwargs) -> dict:
+    """Creates a dict that can update the config of the ForestFireModel"""
+    return dict(parameter_space=dict(ForestFireModel=dict(**kwargs)))
 
 # Tests -----------------------------------------------------------------------
 
@@ -65,3 +70,64 @@ def test_output():
                                             num_cells)
 
         # Can do further tests here ...
+
+def test_initial_state_random(): 
+    """Test that the initial states are random.
+
+    This also tests for the correct array shape, something that is not done in
+    the other tests.
+    """
+    # Use the config file for common settings, change via additional kwargs
+    mv, dm = mtc.create_run_load(from_cfg="initial_state.yml",
+                                 perform_sweep=True)
+
+    # For all universes, perform checks on the payoff and strategy data
+    for uni in dm['uni'].values():
+        data = uni['data']['ForestFireModel']
+
+        # Get the grid size
+        grid_size = uni['cfg']['ForestFireModel']['grid_size']
+        num_cells = grid_size[0] * grid_size[1]
+
+        # Check that only a single step was written and the extent is correct
+        assert data['state'].shape == (1, num_cells)
+
+        # check, that no cell is burning
+        assert 0 <= np.amax(data['state']) <= 1
+
+        # Strategies should be random; calculate the ratio and check limits
+        density = np.sum(data['state'])/data['state'].shape[1]
+        assert 0.45 <= density <= 0.55  # TODO values ok?
+
+
+    # Test again for another probability value
+    initial_density = 0.2
+    mv, dm = mtc.create_run_load(from_cfg="initial_state.yml",
+                                 perform_sweep=True,
+                                 **model_cfg(initial_density=initial_density))
+
+    for uni in dm['uni'].values():
+        data = uni['data']['ForestFireModel']
+
+        # check, that no cell is burning
+        assert 0 <= np.amax(data['state']) <= 1
+
+        # Calculate fraction and compare to desired probability
+        density = np.sum(data['state'])/data['state'].shape[1]
+        assert initial_density - 0.05 <= density <= initial_density + 0.05
+
+    # Test again for another probability value - implies _set_initial_state_empty function
+    initial_density = 0.0
+    mv, dm = mtc.create_run_load(from_cfg="initial_state.yml",
+                                 perform_sweep=True,
+                                 **model_cfg(initial_density=initial_density))
+
+    for uni in dm['uni'].values():
+        data = uni['data']['ForestFireModel']
+
+        # check, that no cell is burning
+        assert 0 <= np.amax(data['state']) <= 1
+
+        # Calculate fraction and compare to desired probability
+        density = np.sum(data['state'])/data['state'].shape[1]
+        assert density == initial_density
