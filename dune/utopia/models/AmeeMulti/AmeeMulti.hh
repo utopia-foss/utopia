@@ -117,7 +117,7 @@ private:
     // model parameters
 
     bool _highresoutput;
-    std::array<unsigned, 2> _highres_interval;
+    vector<std::array<unsigned, 2>> _highres_intervals;
     unsigned _highrestime;
     unsigned _statisticstime;
     Adaptionfunction _check_adaption;
@@ -426,8 +426,8 @@ public:
           _modifiercost(as_double(this->_cfg["modifiercost"])),
           _upper_resourcelimit(as_double(this->_cfg["upper_resourcelimit"])),
           _highresoutput(as_bool(this->_cfg["highresoutput"])),
-          _highres_interval(
-              as_array<unsigned, 2>(this->_cfg["highresinterval"])),
+          _highres_intervals(as_vector<std::array<unsigned, 2>>(
+              this->_cfg["highresinterval"])),
           _highrestime(as_<unsigned>(this->_cfg["highrestime"])),
           _statisticstime(as_<unsigned>(this->_cfg["statisticstime"])),
           _check_adaption(
@@ -536,23 +536,6 @@ public:
             _cell_statistics_data.back().reserve(1 + this->_time_max / _statisticstime);
         }
 
-        // this->_log->info("Model Parameters:");
-        // this->_log->info(" agenttype: {}", as_str(this->_cfg["Agenttype"]));
-        // this->_log->info(" num cells: {}", _cellmanager.cells().size());
-        // this->_log->info(" livingcost: {}", _livingcost);
-        // this->_log->info(" reproductioncost: {}", _reproductioncost);
-        // this->_log->info(" offspringresources: {}", _offspringresources);
-        // this->_log->info(" _deathprobability: {}", _deathprobability);
-        // this->_log->info(" mutationrates: {},{},{},{},{} ", "(", _mutationrates[0],
-        //  _mutationrates[1], _mutationrates[2], ")");
-        // this->_log->info(" decayintensity: {}", _decayintensity);
-        // this->_log->info(" modifiercost: {}", _modifiercost);
-        // this->_log->info(" highresoutput: {}", _highresoutput);
-        // this->_log->info(" upper_resourcelimit: {}", _upper_resourcelimit);
-        // this->_log->info(" construction: {}",
-        //  as_str(this->_cfg["construction"]));
-        // this->_log->info(" decay       : {}", as_str(this->_cfg["decay"]));
-
         // write out cell position and cell id to be able to
         // link them later for agents
         this->_dgroup_cells
@@ -567,8 +550,6 @@ public:
 
     void initialize_cells()
     {
-        // this->_log->info("Starting initialize_cells");
-
         // Extract the mode that determines the initial state
         const auto init_celltrait_len =
             as_<std::size_t>(this->_cfg["init_cell_traitlen"]);
@@ -664,16 +645,6 @@ public:
         const auto init_genotype_values =
             as_array<double, 2>(this->_cfg["init_genotype_values"]);
 
-        // this->_log->info(" Agent Parameters:");
-        // this->_log->info(" init_genotypelen: {}", init_genotypelen);
-        // this->_log->info(" init_resources: {}", init_resources);
-
-        // this->_log->info(" init_genotype_values");
-        // for (auto& value : init_genotype_values)
-        // {
-        // this->_log->info("  {}", value);
-        // }
-
         // make adaption which is viable
         auto cell = find_cell(_agentmanager.agents()[0], _cellmanager);
 
@@ -736,16 +707,6 @@ public:
         // reserve memory for a lot of agents:
         _agentmanager.agents().reserve(2 * (resource_influxlimits[1] / _upper_resourcelimit) *
                                        _cellmanager.cells().size());
-
-        // this->_log->info("Initial agent: ");
-
-        // this->_log->info(" agent start {}", agent->state().start);
-        // this->_log->info(" agent end {}", agent->state().end);
-        // this->_log->info(" agent start_mod {}", agent->state().start_mod);
-        // this->_log->info(" agent end_mod {}", agent->state().end_mod);
-        // this->_log->info(" adaption size: {}", agent->state().adaption.size());
-
-        // this->_log->info("Agents initialized");
     }
 
     void increment_time(const typename Base::Time dt = 1)
@@ -804,16 +765,10 @@ public:
         auto& agents = _agentmanager.agents();
         auto& cells = _cellmanager.cells();
 
-        if ((this->_time % 5000 == 0)) // or (this->_time > 350000 and this->_time % 1 == 0))
+        if ((this->_time % 5000 == 0))
         {
             print_statistics(agents, cells);
-            // std::cout << " t = " << this->_time << std::endl;
         }
-        // if (agents.size() > 100000)
-        // {
-        //     throw std::runtime_error(
-        //         " Over 100000 organisms in population, stopping");
-        // }
 
         if (agents.size() == 0)
         {
@@ -852,238 +807,237 @@ public:
         auto& agents = _agentmanager.agents();
         auto& cells = _cellmanager.cells();
 
-        // if (agents.size() == 0)
-        // {
-        //     return;
-        // }
-        // if (_highresoutput and ((this->_time < _highres_interval[1] and
-        //                          this->_time >= _highres_interval[0]) or
-        //                         (this->_time >= 50000 and this->_time < 51000) or
-        //                         (this->_time >= 500000 and this->_time < 501000)))
-        // {
-        //     std::size_t chunksize = (agents.size() < 1000) ? (agents.size()) : 1000;
-
-        //     auto agrp = _dgroup_agents->open_group("t=" + std::to_string(this->_time));
-
-        //     for (auto& [name, adaptor] : _agent_adaptors)
-        //     {
-        //         agrp->open_dataset(name, {agents.size()}, {chunksize})
-        //             ->write(agents.begin(), agents.end(), adaptor);
-        //     }
-        //     auto cgrp = _dgroup_cells->open_group("t=" + std::to_string(this->_time));
-
-        //     for (auto& [name, adaptor] : _cell_adaptors)
-        //     {
-        //         cgrp->open_dataset(name, {cells.size()}, {chunksize})
-        //             ->write(cells.begin(), cells.end(), adaptor);
-        //     }
-
-        // some additional stuff for agents
-        // agrp->open_dataset("cell_id", {agents.size()}, {chunksize})
-        //     ->write(agents.begin(), agents.end(),
-        //             [](auto agent) { return agent->state().habitat->id(); });
-
-        // }
-
-        if (this->_time % _statisticstime == 0)
+        if (agents.size() == 0)
         {
-            for (std::size_t i = 0; i < _agent_adaptors.size(); ++i)
+            return;
+        }
+
+        // if a highres_interval is exhausted, pop from the stack of intervals
+        if (this->_time == _highres_intervals.back()[1] - 1)
+        {
+            _highres_intervals.pop_back();
+        }
+
+        // else write
+        if (_highresoutput and (this->_time < _highres_intervals.back()[1] and
+                                 this->_time >= _highres_intervals.back()[0))
+        {
+            std::size_t chunksize = (agents.size() < 1000) ? (agents.size()) : 1000;
+
+            auto agrp = _dgroup_agents->open_group("t=" + std::to_string(this->_time));
+
+            for (auto& [name, adaptor] : _agent_adaptors)
             {
-                _agent_statistics_data[i].push_back(Utils::Describe()(
-                    agents.begin(), agents.end(), std::get<1>(_agent_adaptors[i])));
+                agrp->open_dataset(name, {agents.size()}, {chunksize}, 6)
+                    ->write(agents.begin(), agents.end(), adaptor);
+            }
+            auto cgrp = _dgroup_cells->open_group("t=" + std::to_string(this->_time));
+
+            for (auto& [name, adaptor] : _cell_adaptors)
+            {
+                cgrp->open_dataset(name, {cells.size()}, {chunksize}, 6)
+                    ->write(cells.begin(), cells.end(), adaptor);
             }
 
-            for (std::size_t i = 0; i < _cell_adaptors.size(); ++i)
+            if (this->_time % _statisticstime == 0)
             {
-                _cell_statistics_data[i].push_back(Utils::Describe()(
-                    cells.begin(), cells.end(), std::get<1>(_cell_adaptors[i])));
+                for (std::size_t i = 0; i < _agent_adaptors.size(); ++i)
+                {
+                    _agent_statistics_data[i].push_back(Utils::Describe()(
+                        agents.begin(), agents.end(), std::get<1>(_agent_adaptors[i])));
+                }
+
+                for (std::size_t i = 0; i < _cell_adaptors.size(); ++i)
+                {
+                    _cell_statistics_data[i].push_back(Utils::Describe()(
+                        cells.begin(), cells.end(), std::get<1>(_cell_adaptors[i])));
+                }
+            }
+
+            if (this->_time > 0 and (this->_time % (_statisticstime * 10) == 0 or
+                                     this->_time == this->_time_max))
+            {
+                for (std::size_t i = 0; i < _dsets_agent_statistics.size(); ++i)
+                {
+                    _dsets_agent_statistics[i]->write(_agent_statistics_data[i]);
+                    _agent_statistics_data[i].clear();
+                }
+
+                for (std::size_t i = 0; i < _dsets_cell_statistics.size(); ++i)
+                {
+                    _dsets_cell_statistics[i]->write(_cell_statistics_data[i]);
+                    _cell_statistics_data[i].clear();
+                }
             }
         }
 
-        if (this->_time > 0 and (this->_time % (_statisticstime * 10) == 0 or
-                                 this->_time == this->_time_max))
+        auto& cellmanager()
         {
-            for (std::size_t i = 0; i < _dsets_agent_statistics.size(); ++i)
-            {
-                _dsets_agent_statistics[i]->write(_agent_statistics_data[i]);
-                _agent_statistics_data[i].clear();
-            }
-
-            for (std::size_t i = 0; i < _dsets_cell_statistics.size(); ++i)
-            {
-                _dsets_cell_statistics[i]->write(_cell_statistics_data[i]);
-                _cell_statistics_data[i].clear();
-            }
+            return _cellmanager;
         }
-    }
 
-    auto& cellmanager()
-    {
-        return _cellmanager;
-    }
+        auto& agentmanager()
+        {
+            return _agentmanager;
+        }
 
-    auto& agentmanager()
-    {
-        return _agentmanager;
-    }
+        const auto& agents()
+        {
+            return _agentmanager.agents();
+        }
 
-    const auto& agents()
-    {
-        return _agentmanager.agents();
-    }
+        const auto& cells()
+        {
+            return _cellmanager.cells();
+        }
 
-    const auto& cells()
-    {
-        return _cellmanager.cells();
-    }
+        Adaptionfunction get_adaptionfunction()
+        {
+            return _check_adaption;
+        }
 
-    Adaptionfunction get_adaptionfunction()
-    {
-        return _check_adaption;
-    }
+        void set_adaptionfunction(Adaptionfunction new_adaptionfunc)
+        {
+            _check_adaption = new_adaptionfunc;
+        }
 
-    void set_adaptionfunction(Adaptionfunction new_adaptionfunc)
-    {
-        _check_adaption = new_adaptionfunc;
-    }
+        double get_livingcost()
+        {
+            return _livingcost;
+        }
 
-    double get_livingcost()
-    {
-        return _livingcost;
-    }
+        void set_livingcost(double lv)
+        {
+            _livingcost = lv;
+        }
 
-    void set_livingcost(double lv)
-    {
-        _livingcost = lv;
-    }
+        double get_reproductioncost()
+        {
+            return _reproductioncost;
+        }
 
-    double get_reproductioncost()
-    {
-        return _reproductioncost;
-    }
+        void set_reproductioncost(double rc)
+        {
+            _reproductioncost = rc;
+        }
 
-    void set_reproductioncost(double rc)
-    {
-        _reproductioncost = rc;
-    }
+        double get_offspringresources()
+        {
+            return _offspringresources;
+        }
 
-    double get_offspringresources()
-    {
-        return _offspringresources;
-    }
+        void set_offspringresources(double oc)
+        {
+            _offspringresources = oc;
+        }
 
-    void set_offspringresources(double oc)
-    {
-        _offspringresources = oc;
-    }
+        double get_deathprobability()
+        {
+            return _deathprobability;
+        }
 
-    double get_deathprobability()
-    {
-        return _deathprobability;
-    }
+        void set_deathprobability(double dth)
+        {
+            _deathprobability = dth;
+        }
 
-    void set_deathprobability(double dth)
-    {
-        _deathprobability = dth;
-    }
+        double get_decayintensity()
+        {
+            return _decayintensity;
+        }
 
-    double get_decayintensity()
-    {
-        return _decayintensity;
-    }
+        void set_decayintensity(double dci)
+        {
+            _decayintensity = dci;
+        }
 
-    void set_decayintensity(double dci)
-    {
-        _decayintensity = dci;
-    }
+        double get_removethreshold()
+        {
+            return _removethreshold;
+        }
 
-    double get_removethreshold()
-    {
-        return _removethreshold;
-    }
+        void set_removethreshold(double rmth)
+        {
+            _removethreshold = rmth;
+        }
 
-    void set_removethreshold(double rmth)
-    {
-        _removethreshold = rmth;
-    }
+        double get_modifiercost()
+        {
+            return _modifiercost;
+        }
 
-    double get_modifiercost()
-    {
-        return _modifiercost;
-    }
+        void set_modifiercost(double mc)
+        {
+            _modifiercost = mc;
+        }
 
-    void set_modifiercost(double mc)
-    {
-        _modifiercost = mc;
-    }
+        bool get_highresoutput()
+        {
+            return _highresoutput;
+        }
 
-    bool get_highresoutput()
-    {
-        return _highresoutput;
-    }
+        void set_highresoutput(bool hro)
+        {
+            _highresoutput = hro;
+        }
 
-    void set_highresoutput(bool hro)
-    {
-        _highresoutput = hro;
-    }
+        std::size_t get_idx()
+        {
+            return _idx;
+        }
 
-    std::size_t get_idx()
-    {
-        return _idx;
-    }
+        auto get_mutationrates()
+        {
+            return _mutationrates;
+        }
 
-    auto get_mutationrates()
-    {
-        return _mutationrates;
-    }
+        void set_mutationrates(std::vector<double> mutationrates)
+        {
+            _mutationrates = mutationrates;
+        }
 
-    void set_mutationrates(std::vector<double> mutationrates)
-    {
-        _mutationrates = mutationrates;
-    }
+        auto get_upperresourcelimit()
+        {
+            return _upper_resourcelimit;
+        }
 
-    auto get_upperresourcelimit()
-    {
-        return _upper_resourcelimit;
-    }
+        auto get_highresinterval()
+        {
+            return _highres_intervals;
+        }
 
-    auto get_highresinterval()
-    {
-        return _highres_interval;
-    }
+        auto get_decay()
+        {
+            return decay;
+        }
 
-    auto get_decay()
-    {
-        return decay;
-    }
+        auto get_construction()
+        {
+            return construction;
+        }
 
-    auto get_construction()
-    {
-        return construction;
-    }
+        auto get_time()
+        {
+            return this->_time;
+        }
 
-    auto get_time()
-    {
-        return this->_time;
-    }
+        auto set_time(std::size_t t)
+        {
+            this->_time = t;
+        }
 
-    auto set_time(std::size_t t)
-    {
-        this->_time = t;
-    }
+    }; // namespace AmeeMulti
 
-}; // namespace AmeeMulti
-
-template <typename Cell, typename CellManager, typename AgentManager, typename Modeltypes, bool construction, bool decay>
-std::map<std::string, typename AmeeMulti<Cell, CellManager, AgentManager, Modeltypes, construction, decay>::Adaptionfunction>
-    AmeeMulti<Cell, CellManager, AgentManager, Modeltypes, construction, decay>::adaptionfunctionmap = {
-        {"multi_notnormed", multi_notnormed},
-        {"multi_normed", multi_normed},
-        {"simple_notnormed", simple_notnormed},
-        {"simple_normed", simple_normed}};
+    template <typename Cell, typename CellManager, typename AgentManager, typename Modeltypes, bool construction, bool decay>
+    std::map<std::string, typename AmeeMulti<Cell, CellManager, AgentManager, Modeltypes, construction, decay>::Adaptionfunction>
+        AmeeMulti<Cell, CellManager, AgentManager, Modeltypes, construction, decay>::adaptionfunctionmap = {
+            {"multi_notnormed", multi_notnormed},
+            {"multi_normed", multi_normed},
+            {"simple_notnormed", simple_notnormed},
+            {"simple_normed", simple_normed}};
 
 } // namespace AmeeMulti
+} // namespace AmeeMulti
 } // namespace Models
-} // namespace Utopia
 
 #endif // UTOPIA_MODELS_COPYME_HH

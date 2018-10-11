@@ -22,7 +22,7 @@
     # cell_influxvalues: [1., 1., 1., 1., 1., 1.,1., 1., 1., 1., 1., 1.]
 
 parameter_space: 
-  num_steps: 500000
+  num_steps: 1000000
   seed: 594472
   periodic: true          # false: cells at boundary have fewer neighbors
   write_every: 1
@@ -32,7 +32,7 @@ parameter_space:
     model_name: AmeeMulti
     
     # Cell parameters
-    init_cell_traitlen: 6
+    init_cell_traitlen: 24
     init_cellresourceinflux_kind: "random"
     cellresourcecapacity_kind: "random"
     cellresourcecapacity_limits: [150., 1000.]
@@ -66,7 +66,7 @@ parameter_space:
     # Model structure: Agent- & cell types etc
     construction: true
     decay: true
-    highresinterval: [0, 1000]
+    highresinterval: [[0, 2500], [50000, 52500], [500000, 502500], [990000, 992500]]
     Agenttype: !sweep 
       default: simple 
       values: [simple, complex]
