@@ -117,8 +117,7 @@ private:
     // model parameters
 
     bool _highresoutput;
-    std::vector<std::array<unsigned, 2>> _highres_intervals;
-    unsigned _highrestime;
+    std::vector<std::array<unsigned, 2>> _highres_interval;
     unsigned _statisticstime;
     Adaptionfunction _check_adaption;
     static std::map<std::string, Adaptionfunction> adaptionfunctionmap;
@@ -139,18 +138,21 @@ private:
 
     std::size_t _idx;
 
+public:
+    // update sub functions
+
     double logistic_function(double r, double K, double u0, double t)
     {
         return (K * u0 * std::exp(r * t)) / (K + u0 * (std::exp(r * t) - 1.));
     }
 
-public:
-    // update sub functions
-    AgentUpdateFunction update_adaption = [&](std::shared_ptr<AgentType> agent) {
+    void update_adaption(const std::shared_ptr<AgentType> agent)
+    {
         agent->state().adaption = _check_adaption(agent);
-    };
+    }
 
-    AgentUpdateFunction metabolism = [&](std::shared_ptr<AgentType> agent) {
+    void metabolism(const std::shared_ptr<AgentType> agent)
+    {
         std::size_t i = agent->state().start;
         std::size_t j = 0;
         double resourcecredit = 0.;
@@ -188,9 +190,10 @@ public:
                     "negative resources found in agent's habitat!");
             }
         }
-    };
+    }
 
-    AgentUpdateFunction modify = [&](std::shared_ptr<AgentType> agent) {
+    void modify(const std::shared_ptr<AgentType> agent)
+    {
         auto cell = agent->state().habitat;
         auto& trt = agent->state().phenotype;
         auto& ctrt = cell->state().celltrait;
@@ -267,9 +270,10 @@ public:
                 }
             }
         }
-    };
+    }
 
-    AgentUpdateFunction move = [&](std::shared_ptr<AgentType> agent) {
+    void move(const std::shared_ptr<AgentType> agent)
+    {
         auto old_home = agent->state().habitat;
 
         std::shared_ptr<Cell> new_home = nullptr;
@@ -311,16 +315,18 @@ public:
             auto pos = new_home->position();
             move_to(pos, agent, _agentmanager);
         }
-    };
+    }
 
-    AgentUpdateFunction kill = [&](std::shared_ptr<AgentType> agent) {
+    void kill(const std::shared_ptr<AgentType> agent)
+    {
         if (is_equal(agent->state().resources, 0.) or _deathdist(*(this->_rng)) < _deathprobability)
         {
             agent->state().deathflag = true;
         }
-    };
+    }
 
-    AgentUpdateFunction reproduce = [&](std::shared_ptr<AgentType> agent) {
+    void reproduce(const std::shared_ptr<AgentType> agent)
+    {
         auto cell = agent->state().habitat;
 
         while (agent->state().resources > (_offspringresources + _reproductioncost))
@@ -335,9 +341,10 @@ public:
             agent->state().resources -= (_offspringresources + _reproductioncost);
             agent->state().fitness += 1;
         }
-    };
+    }
 
-    CellUpdateFunction celltrait_decay = [&](std::shared_ptr<CellType> cell) {
+    void celltrait_decay(const std::shared_ptr<CellType> cell)
+    {
         auto& org = cell->state().original;
         auto& ctrt = cell->state().celltrait;
         auto& times = cell->state().modtimes;
@@ -364,9 +371,10 @@ public:
                 // cellresources are left alone, can still be used, but nothing else anymore is done
             }
         }
-    };
+    }
 
-    CellUpdateFunction update_cell = [&](std::shared_ptr<CellType> cell) {
+    void update_cell(const std::shared_ptr<CellType> cell)
+    {
         for (std::size_t i = 0; i < cell->state().celltrait.size(); ++i)
         {
             if (is_equal(cell->state().resources[i], 0., 1e-10)) // FIXME: tolerance?
@@ -386,9 +394,10 @@ public:
         {
             celltrait_decay(cell);
         }
-    };
+    }
 
-    AgentUpdateFunction update_agent = [&](std::shared_ptr<AgentType> agent) {
+    void update_agent(const std::shared_ptr<AgentType> agent)
+    {
         update_adaption(agent);
 
         move(agent);
@@ -426,9 +435,8 @@ public:
           _modifiercost(as_double(this->_cfg["modifiercost"])),
           _upper_resourcelimit(as_double(this->_cfg["upper_resourcelimit"])),
           _highresoutput(as_bool(this->_cfg["highresoutput"])),
-          _highres_intervals(as_vector<std::array<unsigned, 2>>(
+          _highres_interval(as_vector<std::array<unsigned, 2>>(
               this->_cfg["highresinterval"])),
-          _highrestime(as_<unsigned>(this->_cfg["highrestime"])),
           _statisticstime(as_<unsigned>(this->_cfg["statisticstime"])),
           _check_adaption(
               adaptionfunctionmap[as_str(this->_cfg["adaptionfunction"])]),
@@ -487,6 +495,10 @@ public:
                AgentAdaptortuple{
                    "age",
                    [](const auto& agent) -> double { return agent->state().age; }},
+               AgentAdaptortuple{"cell_id",
+                                 [](const auto& agent) -> double {
+                                     return agent->state().habitat->id();
+                                 }},
                AgentAdaptortuple{"traitlen",
                                  [](const auto& agent) -> double {
                                      return agent->state().phenotype.size();
@@ -550,6 +562,8 @@ public:
             ->open_dataset("cell_id", {_cellmanager.cells().size()}, {1000})
             ->write(_cellmanager.cells().begin(), _cellmanager.cells().end(),
                     [](auto cell) { return cell->id(); });
+
+        std::reverse(_highres_interval.begin(), _highres_interval.end());
     }
 
     void initialize_cells()
@@ -617,6 +631,7 @@ public:
         }
 
         std::vector<double> init_cellresources(init_celltrait_len, 1.);
+
         const auto init_celltrait_values =
             as_array<double, 2>(this->_cfg["init_celltrait_values"]);
 
@@ -640,8 +655,6 @@ public:
 
     void initialize_agents()
     {
-        // this->_log->info("Starting initialize_agents");
-
         // Extract the mode that determines the initial state
         const auto init_genotypelen =
             as_<std::size_t>(this->_cfg["init_genotypelen"]);
@@ -769,21 +782,25 @@ public:
         auto& agents = _agentmanager.agents();
         auto& cells = _cellmanager.cells();
 
-        if ((this->_time % 5000 == 0))
-        {
-            print_statistics(agents, cells);
-        }
+        // if ((this->_time % 5000 == 0))
+        // {
+        //     print_statistics(agents, cells);
+        // }
 
         if (agents.size() == 0)
         {
             return;
         }
 
-        std::for_each(agents.begin(), agents.end(), update_adaption);
+        for (auto& agent : agents)
+        {
+            update_adaption(agent);
+        }
 
-        std::for_each(cells.begin(), cells.end(), update_cell);
-
-        std::shuffle(agents.begin(), agents.end(), *this->_rng);
+        for (auto& cell : cells)
+        {
+            update_cell(cell);
+        }
 
         std::vector<unsigned> indices(agents.size());
         std::iota(indices.begin(), indices.end(), 0);
@@ -816,15 +833,10 @@ public:
             return;
         }
 
-        // if a highres_interval is exhausted, pop from the stack of intervals
-        if (this->_time == _highres_intervals.back()[1] - 1)
-        {
-            _highres_intervals.pop_back();
-        }
+        auto curr_hi = _highres_interval.back();
 
-        // else write
-        if (_highresoutput and (this->_time < _highres_intervals.back()[1] and
-                                this->_time >= _highres_intervals.back()[0]))
+        if (_highresoutput && (this->_time < curr_hi[1] and this->_time >= curr_hi[0]))
+
         {
             std::size_t chunksize = (agents.size() < 1000) ? (agents.size()) : 1000;
 
@@ -835,8 +847,6 @@ public:
                 agrp->open_dataset(name, {agents.size()}, {chunksize}, 6)
                     ->write(agents.begin(), agents.end(), adaptor);
             }
-
-            // write cells
             auto cgrp = _dgroup_cells->open_group("t=" + std::to_string(this->_time));
 
             for (auto& [name, adaptor] : _cell_adaptors)
@@ -875,6 +885,11 @@ public:
                 _dsets_cell_statistics[i]->write(_cell_statistics_data[i]);
                 _cell_statistics_data[i].clear();
             }
+        }
+
+        if (this->_time == curr_hi[1])
+        {
+            _highres_interval.pop_back();
         }
     }
 
