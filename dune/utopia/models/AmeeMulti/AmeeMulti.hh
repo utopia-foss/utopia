@@ -116,7 +116,6 @@ private:
 
     // model parameters
 
-    bool _highresoutput;
     std::vector<std::array<unsigned, 2>> _highres_interval;
     unsigned _statisticstime;
     Adaptionfunction _check_adaption;
@@ -434,7 +433,6 @@ public:
           _deathprobability(as_double(this->_cfg["deathprobability"])),
           _modifiercost(as_double(this->_cfg["modifiercost"])),
           _upper_resourcelimit(as_double(this->_cfg["upper_resourcelimit"])),
-          _highresoutput(as_bool(this->_cfg["highresoutput"])),
           _highres_interval(as_vector<std::array<unsigned, 2>>(
               this->_cfg["highresinterval"])),
           _statisticstime(as_<unsigned>(this->_cfg["statisticstime"])),
@@ -835,7 +833,7 @@ public:
 
         auto curr_hi = _highres_interval.back();
 
-        if (_highresoutput && (this->_time < curr_hi[1] and this->_time >= curr_hi[0]))
+        if (this->_time < curr_hi[1] and this->_time >= curr_hi[0])
 
         {
             std::size_t chunksize = (agents.size() < 1000) ? (agents.size()) : 1000;
@@ -991,16 +989,6 @@ public:
     void set_modifiercost(double mc)
     {
         _modifiercost = mc;
-    }
-
-    bool get_highresoutput()
-    {
-        return _highresoutput;
-    }
-
-    void set_highresoutput(bool hro)
-    {
-        _highresoutput = hro;
     }
 
     std::size_t get_idx()
