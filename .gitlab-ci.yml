@@ -224,19 +224,26 @@ test:models:
   dependencies:
     - build:models
   script:
-    - $DUNECTRL --only=utopia configure
     # Test all models using the testing framework
+    - $DUNECTRL --only=utopia configure
     - $DUNECTRL --only=utopia make test_models
-    # Also test each model via the CLI. Need to enter the virtual env first
+    #
+    # Also test each model via the CLI.
+    # Need to enter the virtual env first
     - $ENTER_DUNE_ENV
-    # First, the test models:
+    #
+    # First, the test and benchmark models:
     - utopia run dummy
     - utopia run CopyMe
     - utopia run CopyMeBare --no-plot
-    # ...and now the actual models:
+    - utopia run HdfBench --no-plot  # FIXME once plot file is ready
+    #
+    # Now the actual models:
     - utopia run SimpleEG
+    - utopia run Hierarnet
     # TODO add calls for all models here
     # TODO find an automatic way to do this, perhaps via a --test flag?
+    # TODO use --debug in all of these?
 
 test:cli:
   stage: test
