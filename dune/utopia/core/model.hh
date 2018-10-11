@@ -316,7 +316,7 @@ public:
         set_log_level(); // this log level
 
         _log->info("Initialized PseudoParent from config file");
-        _log->debug("cfg_path:      {}", cfg_path);
+        _log->debug("cfg_path:  {}", cfg_path);
     }
     
 
@@ -345,10 +345,10 @@ public:
         set_log_level(); // this log level
 
         _log->info("Initialized PseudoParent from parameters");
-        _log->debug("cfg_path:      {}", cfg_path);
-        _log->debug("output_path:   {}  (mode: {})",
+        _log->debug("cfg_path:     {}", cfg_path);
+        _log->debug("output_path:  {}  (mode: {})",
                     output_path, output_file_mode);
-        _log->debug("seed:          {}", seed);
+        _log->debug("seed:         {}", seed);
     }
 
 

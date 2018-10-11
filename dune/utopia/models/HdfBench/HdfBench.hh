@@ -5,7 +5,10 @@
 #include <vector>
 #include <chrono>
 #include <limits>
+#include <numeric>
 #include <functional>
+
+#include <boost/iterator/counting_iterator.hpp>
 
 #include <dune/utopia/base.hh>
 #include <dune/utopia/core/setup.hh>
@@ -51,27 +54,26 @@ public:
     typedef std::chrono::duration<double> dsec;
 
     /// Type of a benchmark function pointer
-    using BenchmarkFunc = std::function<const double(Config)>;
+    using BenchFunc = std::function<const double(const std::string, Config)>;
 
 
 private:
     // Base members: _time, _name, _cfg, _hdfgrp, _rng
 
-    // -- Members of this model -- //
-    /// The map of implemented benchmarks and corresponding functions
-    std::map<std::string, BenchmarkFunc> _benchmark_funcs;
-    
-    /// The corresponding setup functions
-    std::map<std::string, BenchmarkFunc> _setup_funcs;
-    
-    /// Shared configuration for the _enabled_ benchmarks and their setup func
-    std::map<std::string, Config> _bench_cfg;
 
-    /// The names of enabled benchmarks, read from configuration
-    const std::vector<std::string> _enabled;
+    // -- Members of this model -- //
+    /// A map of implemented setup functions for datasets
+    std::map<std::string, BenchFunc> _setup_funcs;
+
+    /// A map of implemented write functions
+    std::map<std::string, BenchFunc> _write_funcs;
+    
+    /// Configuration for the benchmarks
+    const std::map<std::string, Config> _benchmarks;
 
     /// The results of the measurements, stored under the benchmark name
     std::map<std::string, double> _times;
+
     
     // -- Datasets -- //
     /// Dataset to store the write times in
@@ -80,6 +82,18 @@ private:
     /// Dataset to write test data to are stored in a map of dataset pointers
     std::map<std::string, std::shared_ptr<DataSet>> _dsets;
 
+
+    // -- Construction helper functions -- //
+    /// Parse the benchmarks into a map of configurations
+    std::map<std::string, Config> parse_benchmarks() {
+        auto benchmarks = as_vector<std::string>(this->_cfg["benchmarks"]);
+        std::map<std::string, Config> cfg;
+
+        for (auto &bname : benchmarks) {
+            cfg[bname] = as_<Config>(this->_cfg[bname]);
+        }
+        return cfg;
+    }
 
 public:
     /// Construct the HdfBench model
@@ -93,67 +107,47 @@ public:
         // Initialize first via base model
         Base(name, parent),
 
-        // Set maps for benchmark functions and setup functions
-        _benchmark_funcs(),
+        // Set maps for setup and write functions
         _setup_funcs(),
-        // TODO ideally, combine these two somehow?
-
-        // ...and the configurations for each of these
-        _bench_cfg(),
+        _write_funcs(),
 
         // Get the set of enabled benchmarks from the config
-        _enabled(as_vector<std::string>(this->_cfg["enabled"])),
+        _benchmarks(parse_benchmarks()),
 
-        // Create the temporary map for measured times and its dataset
+        // Create the temporary map for measured times and the times dataset
         _times(),
         _dset_times(this->_hdfgrp->open_dataset("times"))
     {   
-        // Set up the functions mappings . . . . . . . . . . . . . . . . . . . 
-        this->_log->debug("Associating benchmark functions ...");
+        // Set up the function mappings . . . . . . . . . . . . . . . . . . . .
         // FIXME Creating func maps should be possible in initializer list!
 
-        _benchmark_funcs["simple_1d"] = bench_simple_1d;
-        _setup_funcs["simple_1d"] = setup_simple_1d;
+        this->_log->debug("Associating setup functions ...");
+        _setup_funcs["setup_2d"] = setup_2d;
         
 
-        // Check and parse arguments . . . . . . . . . . . . . . . . . . . . . 
-        this->_log->debug("Checking and parsing arguments ...");
-        // Check if the benchmark names are valid and parse the config
-        for (auto &bname : _enabled) {
-            // Check the name does not appear twice
-            if (std::count(_enabled.begin(), _enabled.end(), bname) > 1) {
-                throw std::invalid_argument("The benchmark name '"+bname+"' "
-                                            "cannot appear more than once!");
-            }
+        this->_log->debug("Associating write functions ...");
+        _write_funcs["write_const"] = write_const;
 
-            // And that the names match one of those available in the func map
-            if (_benchmark_funcs.count(bname) != 1) {
-                throw std::invalid_argument("Given benchmark name '"+bname+"' "
-                                            "is not a registered benchmark!");
-            }
+        
+        this->_log->debug("Associated {} setup and {} write function(s).",
+                          _setup_funcs.size(), _write_funcs.size());
 
-            // Add entries to the map, setting NaNs for safety
-            _times[bname] = std::numeric_limits<double>::quiet_NaN();
 
-            // Load the config entry
-            _bench_cfg[bname] = as_<Config>(this->_cfg[bname]);
+        // Carry out the setup benchmark  . . . . . . . . . . . . . . . . . . .
+        for (auto const& [bname, bcfg] : _benchmarks) {
+            // Setup the dataset and store the corresponding time
+            _times[bname] = this->benchmark<true>(bname, bcfg);
         }
 
-        this->_log->info("Enabled {} of {} benchmark function(s).",
-                         _enabled.size(), _benchmark_funcs.size());
+        this->_log->info("Successfully set up {} benchmark configuration(s).",
+                         _times.size());
 
-
-        // Set up the datasets and write initial data . . . . . . . . . . . . .
+        // Set up the times dataset and write initial data . . . . . . . . . . 
         // Set dataset capacities for the times dataset
         this->_log->debug("Setting capacity of 'times' dataset to {} x {} ...",
-                          this->get_time_max() + 1, _enabled.size());
-        _dset_times->set_capacity({this->get_time_max() + 1, _enabled.size()});
-
-        
-        // Carry out the setup functions and store the times
-        for (auto &bname : _enabled) {
-            _times[bname] = this->measure<true>(bname);
-        }
+                          this->get_time_max() + 1, _benchmarks.size());
+        _dset_times->set_capacity({this->get_time_max() + 1,
+                                   _benchmarks.size()});
 
         // Write out the times needed for setup
         this->write_data();
@@ -163,11 +157,11 @@ public:
         _dset_times->add_attribute<std::array<std::string, 2>>("dims",
                                                                {"t",
                                                                 "benchmark"});
-        _dset_times->add_attribute("coords_benchmark", _enabled);
+        // _dset_times->add_attribute("coords_benchmark",
+        //                            _benchmarks); // TODO store keys
 
 
-        this->_log->debug("HdfBenchModel instance '{}' constructor finished.",
-                          this->_name);
+        this->_log->debug("Finished constructing HdfBench '{}'.", this->_name);
     }
 
     // Runtime functions ......................................................
@@ -178,8 +172,8 @@ public:
      *          needed for each of the enabled benchmarks.
      */
     void perform_step () {
-        for (auto& bname : _enabled) {
-            _times[bname] = this->measure(bname);
+        for (auto const& [bname, bcfg] : _benchmarks) {
+            _times[bname] = this->benchmark(bname, bcfg);
         }
     }
 
@@ -195,27 +189,36 @@ protected:
 
     // Helper functions .......................................................
 
-    template<bool setup=false>
-    const double measure(const std::string &bname) {
-        // Get the setup or benchmark function
-        BenchmarkFunc bfunc;
 
+    /// Carries out the benchmark function associated with the given name
+    template<bool setup=false>
+    const double benchmark(const std::string &bname, const Config &bcfg) {
+        // Get the name of the setup/benchmark function, then resolve it
+        BenchFunc bfunc;
         if constexpr (setup) {
-            bfunc = _setup_funcs.at(bname);
+            const auto func_name = as_str(bcfg["setup_func"]);
+            bfunc = _setup_funcs.at(func_name);
         }
         else {
-            bfunc = _benchmark_funcs.at(bname);
+            const auto func_name = as_str(bcfg["write_func"]);
+            bfunc = _write_funcs.at(func_name);
         }
 
         // Call the function; its return value is the time it took to execute
-        return bfunc(_bench_cfg[bname]);
+        const auto btime = bfunc(bname, bcfg);
+
+        // Log the time, then return it        
+        this->_log->debug("Benchmark result {:>12s} : {:>9.3f} µs",
+                          bname, btime * 1E6);
+        return btime; 
     }
 
+    /// Returns the time (in seconds) since the given time point
     const double time_since(const Time start) {
-        dsec seconds = Clock::now() - start;
-        return seconds.count();
+        return time_between(start, Clock::now());
     }
     
+    /// Returns the absolute time (in seconds) between the given time points
     const double time_between(const Time start, const Time end) {
         dsec seconds = abs(end - start);
         return seconds.count();
@@ -224,14 +227,44 @@ protected:
 
     // Setup functions ........................................................
 
-    BenchmarkFunc setup_simple_1d = [this](auto cfg){
-        return 1.; // TODO
+    /// Sets up a 2d dataset with a given number of columns
+    BenchFunc setup_2d = [this](auto bname, auto cfg){
+        // Without measuring time, extract the parameters
+        auto num_cols = as_<std::size_t>(cfg["num_cols"]);
+        auto num_rows = this->get_time_max() + 1;
+
+        const auto start = Clock::now();
+        // -- benchmark start -- //
+
+        // Create the dataset and set its capacity
+        _dsets[bname] = this->_hdfgrp->open_dataset(bname);
+        _dsets[bname]->set_capacity({num_rows, num_cols});
+
+        // --- benchmark end --- //
+        return time_since(start);
     };
 
     // Benchmark functions ....................................................
 
-    BenchmarkFunc bench_simple_1d = [this](auto cfg){
-        return 1.; // TODO
+    /// Writes a constant value into the 
+    BenchFunc write_const = [this](auto bname, auto cfg){
+        // Determine the value to write
+        auto val = as_double(cfg["const_val"]);
+
+        // Determine iterator length
+        const auto wsize = as_vector<std::size_t>(cfg["write_size"]);
+        const auto it_len = std::accumulate(wsize.begin(), wsize.end(),
+                                            1, std::multiplies<std::size_t>());
+
+        const auto start = Clock::now();
+        // -- benchmark start -- //
+
+        _dsets[bname]->write(boost::counting_iterator<std::size_t>(0),
+                             boost::counting_iterator<std::size_t>(it_len),
+                             [&val](auto &count){ return val; });
+
+        // --- benchmark end --- //
+        return time_since(start);
     };
 };
 

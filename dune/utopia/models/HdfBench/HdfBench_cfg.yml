@@ -15,12 +15,28 @@
 # Furthermore, if including other models' parameters via the `!model` tag, make
 # sure that no circular includes occur.
 ---
-# The following sequence defines the benchmarks to carry out
-enabled:
-  - simple_1d
-# NOTE Duplicates are not allowed here!
+# The following sequence defines the names of the benchmarks to carry out
+# NOTE Each entry needs to match with a config entry below.
+#      Also, duplicates are not allowed!
+benchmarks:
+  - basic
 
 # .............................................................................
 # Shared settings for the individual benchmarks and their setup functions.
-# These are defined regardless of enabled status
-simple_1d: {}
+# These are only loaded if the benchmark is enabled.
+
+basic:
+  # Define the names of the setup and benchmark functions
+  setup_func: setup_2d
+  write_func: write_const
+  
+  # Shared arguments
+  # The number of columns the dataset should have
+  num_cols: &cols 100
+
+  # The size of the data to write
+  write_size: [*cols]
+
+  # The constant value to write
+  const_val: 0
+  # TODO add way to specify type via map
