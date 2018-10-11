@@ -1013,7 +1013,7 @@ public:
 
     auto get_highresinterval()
     {
-        return _highres_intervals;
+        return _highres_interval;
     }
 
     auto get_decay()
