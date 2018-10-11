@@ -81,5 +81,5 @@ paths:
   out_dir: ~/utopia_output
 
   # model note is added to the output directory path
-  model_note: "test_run_500000"
+  model_note: "test_run_1000000"
 
