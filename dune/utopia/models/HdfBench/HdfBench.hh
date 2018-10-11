@@ -135,8 +135,12 @@ public:
 
         // Carry out the setup benchmark  . . . . . . . . . . . . . . . . . . .
         for (auto const& [bname, bcfg] : _benchmarks) {
-            // Setup the dataset and store the corresponding time
-            _times[bname] = this->benchmark<true>(bname, bcfg);
+            // Setup the dataset and perform one write operation
+            const auto setup_time = this->benchmark<true>(bname, bcfg);
+            const auto write_time = this->benchmark(bname, bcfg);
+
+            // Then store the sum
+            _times[bname] = setup_time + write_time;
         }
 
         this->_log->info("Successfully set up {} benchmark configuration(s).",
@@ -172,6 +176,8 @@ public:
      *          needed for each of the enabled benchmarks.
      */
     void perform_step () {
+        // TODO consider adding sleep functionality here to simulate simulation
+
         for (auto const& [bname, bcfg] : _benchmarks) {
             _times[bname] = this->benchmark(bname, bcfg);
         }
@@ -208,8 +214,8 @@ protected:
         const auto btime = bfunc(bname, bcfg);
 
         // Log the time, then return it        
-        this->_log->debug("Benchmark result {:>12s} : {:>9.3f} µs",
-                          bname, btime * 1E6);
+        this->_log->debug("Benchmark result {:>13s} {} : {:>10.3f} ms",
+                          bname, setup ? "setup" : "write", btime * 1E3);
         return btime; 
     }
 
@@ -251,9 +257,9 @@ protected:
         // Determine the value to write
         auto val = as_double(cfg["const_val"]);
 
-        // Determine iterator length
-        const auto wsize = as_vector<std::size_t>(cfg["write_size"]);
-        const auto it_len = std::accumulate(wsize.begin(), wsize.end(),
+        // Determine iterator length by factorizing the shape
+        const auto shape = as_vector<std::size_t>(cfg["write_shape"]);
+        const auto it_len = std::accumulate(shape.begin(), shape.end(),
                                             1, std::multiplies<std::size_t>());
 
         const auto start = Clock::now();

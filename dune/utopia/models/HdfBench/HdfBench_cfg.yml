@@ -20,23 +20,42 @@
 #      Also, duplicates are not allowed!
 benchmarks:
   - basic
+  - long_rows
+
+# If true, the initial setup is followed by a write operation and the
+# _combined_ time is saved.
+initial_write: true  # TODO
+
+# Delete the test datasets after the run went through
+delete_afterwards: true  # TODO
+
+# Whether to sleep before a simulation step starts or between individual
+# benchmarks, simulating a simulation taking place
+sleep_before_benchs: 0  # TODO
+sleep_between_benchs: 0  # TODO
 
 # .............................................................................
 # Shared settings for the individual benchmarks and their setup functions.
 # These are only loaded if the benchmark is enabled.
 
-basic:
+basic: &basic
   # Define the names of the setup and benchmark functions
   setup_func: setup_2d
   write_func: write_const
   
   # Shared arguments
   # The number of columns the dataset should have
-  num_cols: &cols 100
+  num_cols: &basic_num_cols 100
 
-  # The size of the data to write
-  write_size: [*cols]
+  # The shape of the data to write; an iterator with the corresponding length
+  # is created from the factorized shape extends
+  write_shape: [*basic_num_cols]
 
-  # The constant value to write
-  const_val: 0
-  # TODO add way to specify type via map
+  # The constant value to write (always a double)
+  const_val: 42.
+
+long_rows:
+  <<: *basic
+
+  num_cols: &long_rows_num_cols 1048576  # == 1024^2
+  write_shape: [*long_rows_num_cols]
