@@ -64,9 +64,8 @@ private:
     /// The corresponding setup functions
     std::map<std::string, BenchmarkFunc> _setup_funcs;
     
-    /// The configuration for each of the benchmarks and its setup function
-    const Config _benchmark_cfgs;
-    const Config _setup_cfgs;
+    /// Shared configuration for the _enabled_ benchmarks and their setup func
+    std::map<std::string, Config> _bench_cfg;
 
     /// The names of enabled benchmarks, read from configuration
     const std::vector<std::string> _enabled;
@@ -95,49 +94,80 @@ public:
         Base(name, parent),
 
         // Set maps for benchmark functions and setup functions
-        _benchmark_funcs({{"simple_1d", bench_simple_1d}}),
-        _setup_funcs(    {{"simple_1d", setup_simple_1d}}),
+        _benchmark_funcs(),
+        _setup_funcs(),
+        // TODO ideally, combine these two somehow?
 
         // ...and the configurations for each of these
-        _benchmark_cfgs(as_<Config>(this->_cfg["benchmark_cfgs"])),
-        _setup_cfgs(as_<Config>(this->_cfg["setup_cfgs"])),
+        _bench_cfg(),
 
-        // Get the vector of enabled benchmarks from the config
+        // Get the set of enabled benchmarks from the config
         _enabled(as_vector<std::string>(this->_cfg["enabled"])),
 
         // Create the temporary map for measured times and its dataset
         _times(),
         _dset_times(this->_hdfgrp->open_dataset("times"))
-    {
-        // Check if the benchmark names are valid
-        // TODO check for valid names
-        // TODO check for duplicates
+    {   
+        // Set up the functions mappings . . . . . . . . . . . . . . . . . . . 
+        this->_log->debug("Associating benchmark functions ...");
+        // FIXME Creating func maps should be possible in initializer list!
+
+        _benchmark_funcs["simple_1d"] = bench_simple_1d;
+        _setup_funcs["simple_1d"] = setup_simple_1d;
+        
+
+        // Check and parse arguments . . . . . . . . . . . . . . . . . . . . . 
+        this->_log->debug("Checking and parsing arguments ...");
+        // Check if the benchmark names are valid and parse the config
         for (auto &bname : _enabled) {
-            if (false) {
+            // Check the name does not appear twice
+            if (std::count(_enabled.begin(), _enabled.end(), bname) > 1) {
+                throw std::invalid_argument("The benchmark name '"+bname+"' "
+                                            "cannot appear more than once!");
+            }
+
+            // And that the names match one of those available in the func map
+            if (_benchmark_funcs.count(bname) != 1) {
                 throw std::invalid_argument("Given benchmark name '"+bname+"' "
-                                            "is not valid!");
+                                            "is not a registered benchmark!");
             }
 
             // Add entries to the map, setting NaNs for safety
             _times[bname] = std::numeric_limits<double>::quiet_NaN();
+
+            // Load the config entry
+            _bench_cfg[bname] = as_<Config>(this->_cfg[bname]);
         }
 
+        this->_log->info("Enabled {} of {} benchmark function(s).",
+                         _enabled.size(), _benchmark_funcs.size());
+
+
+        // Set up the datasets and write initial data . . . . . . . . . . . . .
         // Set dataset capacities for the times dataset
         this->_log->debug("Setting capacity of 'times' dataset to {} x {} ...",
                           this->get_time_max() + 1, _enabled.size());
         _dset_times->set_capacity({this->get_time_max() + 1, _enabled.size()});
 
-        // Carry out the setup functions
-        for (auto& bname : _enabled) {
+        
+        // Carry out the setup functions and store the times
+        for (auto &bname : _enabled) {
             _times[bname] = this->measure<true>(bname);
         }
 
         // Write out the times needed for setup
         this->write_data();
 
-        // Write dimension names and coordinates to dataset attributes
-        _dset_times->add_attribute<std::array<std::string, 2>>("dims", {"t", "benchmark"});
+        // Now that the dataset is opened, write dimension names and
+        // coordinates to dataset attributes
+        _dset_times->add_attribute<std::array<std::string, 2>>("dims",
+                                                               {"t",
+                                                                "benchmark"});
         _dset_times->add_attribute("coords_benchmark", _enabled);
+
+
+        this->_log->debug("HdfBenchModel instance '{}' constructor finished.",
+                          this->_name);
     }
 
     // Runtime functions ......................................................
@@ -166,23 +196,19 @@ protected:
     // Helper functions .......................................................
 
     template<bool setup=false>
-    const double measure(const std::string &bname)
-    {
-        // Get the configuration and the corresponding function
-        Config cfg;
+    const double measure(const std::string &bname) {
+        // Get the setup or benchmark function
         BenchmarkFunc bfunc;
 
         if constexpr (setup) {
-            cfg = _setup_cfgs[bname];
             bfunc = _setup_funcs.at(bname);
         }
         else {
-            cfg = _benchmark_cfgs[bname];
             bfunc = _benchmark_funcs.at(bname);
         }
 
         // Call the function; its return value is the time it took to execute
-        return bfunc(cfg);
+        return bfunc(_bench_cfg[bname]);
     }
 
     const double time_since(const Time start) {

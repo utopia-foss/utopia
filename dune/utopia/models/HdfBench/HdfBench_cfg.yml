@@ -15,14 +15,12 @@
 # Furthermore, if including other models' parameters via the `!model` tag, make
 # sure that no circular includes occur.
 ---
-# The following list defines the benchmarks to carry out
+# The following sequence defines the benchmarks to carry out
 enabled:
   - simple_1d
+# NOTE Duplicates are not allowed here!
 
 # .............................................................................
-# Settings for the individual benchmarks
-benchmark_cfgs:
-  simple_1d: {}
-
-setup_cfgs:
-  simple_1d: {}
+# Shared settings for the individual benchmarks and their setup functions.
+# These are defined regardless of enabled status
+simple_1d: {}
