@@ -185,12 +185,12 @@ def cluster_anim(dm: DataManager, *,
     # Extract the data of the strategies in the CA    
     data_1d = {p: grp[p] for p in to_plot.keys()}
     for key in to_plot.keys():
-        if key == 'cluster' and to_plot['cluster'].get('cmap_periodic', False):
-            for t in range(data_1d['cluster'].shape[0]):
-                for i in range(data_1d['cluster'].shape[1]):
-                    if (data_1d['cluster'][t][i] >= 0):
-                        limits = to_plot['cluster'].get('limits', [0,20])
-                        data_1d['cluster'][t][i] = data_1d['cluster'][t][i] % limits[1]
+        if to_plot[key].get('cmap_periodic', False):
+            for t in range(data_1d[key].shape[0]):
+                for i in range(data_1d[key].shape[1]):
+                    if (data_1d[key][t][i] >= 0):
+                        limits = to_plot[key].get('limits', [0,20])
+                        data_1d[key][t][i] = data_1d[key][t][i] % limits[1]
     data = {k: np.reshape(v, new_shape) for k,v in data_1d.items()}
         
     # Distinguish writer classes
