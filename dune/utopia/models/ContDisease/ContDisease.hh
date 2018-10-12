@@ -1,13 +1,15 @@
 #ifndef UTOPIA_MODELS_CONTDISEASE_HH
 #define UTOPIA_MODELS_CONTDISEASE_HH
 
+#include <functional>
+
 #include <dune/utopia/base.hh>
 #include <dune/utopia/core/setup.hh>
 #include <dune/utopia/core/model.hh>
 #include <dune/utopia/core/apply.hh>
 #include <dune/utopia/core/types.hh>
 
-#include <functional>
+
 
 
 namespace Utopia {
@@ -20,7 +22,7 @@ enum CellState : unsigned short int {empty = 0, tree = 1, infected = 2, herd = 3
 
 
 /// Typehelper to define data types of ContDisease model
-using ContDiseaseModelTypes = ModelTypes<CellState>;
+using ContDiseaseModelTypes = ModelTypes<>;
 
 
 
@@ -35,7 +37,7 @@ using ContDiseaseModelTypes = ModelTypes<CellState>;
  * cells that can not be infected, therefore represent a blockade for the spread
  * of the infection. Infection herds are cells that continously spread infection
  * without dying themselves. Different starting conditions, and update
- * mechanisms can be configured. 
+ * mechanisms can be configured.
  */
 
 template<class ManagerType>
@@ -45,9 +47,6 @@ class ContDiseaseModel:
 public:
     /// The base model type
     using Base = Model<ContDiseaseModel<ManagerType>, ContDiseaseModelTypes>;
-
-    /// Data type of the state
-    using Data = typename Base::Data;
 
     /// Cell type
     using CellType = typename ManagerType::Cell;
