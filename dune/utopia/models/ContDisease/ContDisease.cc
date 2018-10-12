@@ -17,13 +17,13 @@ int main (int argc, char** argv)
         if (Utopia::as_bool(pp.get_cfg()["ContDisease"]["periodic"])) {
             // Periodic grid
             ContDiseaseModel model("ContDisease", pp,
-                              setup_manager<true>("ContDisease", pp));
+                                   setup_manager<true>("ContDisease", pp));
             model.run();
         }
         else {
             // Non-periodic grid
             ContDiseaseModel model("ContDisease", pp,
-                              setup_manager<false>("ContDisease", pp));
+                                   setup_manager<false>("ContDisease", pp));
             model.run();
         }
 

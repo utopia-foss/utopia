@@ -349,11 +349,10 @@ public:
     void write_data ()
     {
         // _dset_state
-        _dset_state->write(_manager.cells().begin(),
-                                _manager.cells().end(),
-                                [](auto& cell) {
-                                    return static_cast<unsigned short int>(cell->state());
-                                });
+        _dset_state->write(_manager.cells().begin(), _manager.cells().end(),
+                           [](auto& cell) {
+                                return static_cast<unsigned short int>(cell->state());
+                            });
     }
 
 
@@ -378,9 +377,8 @@ auto setup_manager(std::string name, ParentModel& parent_model)
     auto log = parent_model.get_logger();
     log->info("Setting up '{}' model ...", name);
 
-    // Get the configuration and the rng
+    // Get the configuration
     auto cfg = parent_model.get_cfg()[name];
-    auto rng = parent_model.get_rng();
 
     // Extract grid size from config
     const auto gsize = as_array<unsigned int, 2>(cfg["grid_size"]);
@@ -399,12 +397,10 @@ auto setup_manager(std::string name, ParentModel& parent_model)
     auto cells = Utopia::Setup::create_cells_on_grid<true>(grid, cellstate_0);
 
     // Create the grid manager, passing the template argument
-    log->info("Initializing GridManager with {} boundary conditions ...",
+    log->info("Initializing GridManager with {} boundaries ...",
               (periodic ? "periodic" : "fixed"));
 
-    return Utopia::Setup::create_manager_cells<true, periodic>(grid,
-                                                               cells,
-                                                               rng);
+    return Utopia::Setup::create_manager_cells<true, periodic>(grid, cells);
 }
 
 
