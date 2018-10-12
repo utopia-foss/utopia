@@ -14,7 +14,19 @@ namespace Utopia {
 namespace Models {
 namespace ForestFireModel {
 
-enum State : unsigned short int { empty=0, tree=1, burning=2 };
+enum StateEnum { empty=0, tree=1, burning=2 };
+
+struct State {
+    StateEnum state;
+    int cluster_tag;
+
+    State() :
+        state(empty),  cluster_tag(-1)
+    { }
+    State(StateEnum s) :
+        state(s),  cluster_tag(-1)
+    { }
+};
 
 struct Param {
     const double growth_rate;
@@ -112,11 +124,14 @@ private:
                                         // 0 implies sync update, 1 async update
     const double _initial_density; // initial density of trees
 
+    // -- Temporary objects -- //
+    int _cluster_tag_cnt;
 
     // -- Datasets -- //
     // NOTE They should be named '_dset_<name>', where <name> is the
     //      dataset's actual name as set in the constructor.
     std::shared_ptr<DataSet> _dset_state;
+    std::shared_ptr<DataSet> _dset_cluster;
 
 
     // -- Rule functions -- //
@@ -129,7 +144,7 @@ private:
         auto state = cell->state();
 
         // Set the internal variables
-        state = empty;
+        state.state = empty;
 
         return state;
     };
@@ -144,11 +159,11 @@ private:
         // Set the internal variables
         if (dist(*this->_rng) < _initial_density)
         {
-            state = tree;
+            state.state = tree;
         }
         else
         {
-            state = empty;
+            state.state = empty;
         }
 
         return state;
@@ -161,7 +176,7 @@ private:
             // burn cluster of trees
             // asynchronous update needed!
             std::vector<decltype(cell)> cluster = { cell };
-            cell->state() = empty;
+            cell->state().state = empty;
 
             for (unsigned long i = 0; i < cluster.size(); ++i)
             {
@@ -169,11 +184,11 @@ private:
                 for (auto cluster_potential_member : 
                         NextNeighbor::neighbors(cluster_member,this->_manager))
                 {
-                    if (cluster_potential_member->state() == tree && 
+                    if (cluster_potential_member->state().state == tree &&
                         dist(*this->_rng) > _param.resistance)
                     {
                         cluster.push_back(cluster_potential_member);									
-                        cluster_potential_member->state() = empty;
+                        cluster_potential_member->state().state = empty;
                     }
                 }
             }
@@ -196,16 +211,17 @@ private:
         */
     std::function<State(std::shared_ptr<CellType>)> _update = [this](auto cell){
         auto state = cell->state();
+        state.cluster_tag = -1; // reset
 
         std::uniform_real_distribution<> dist(0., 1.);
         
         // if state is empty, empty -> tree by growth
-        if (state == empty && dist(*this->_rng) < _param.growth_rate) {  
-            state = tree; 
+        if (state.state == empty && dist(*this->_rng) < _param.growth_rate) {
+            state.state = tree;
         }
 
         // state is tree, tree -> burning by lighning or by burning neighbors
-        else if (state == tree)
+        else if (state.state == tree)
         {
             // tree -> burning by lightning
             // in PercolationM connecte cluster catches fire -> percolation
@@ -214,7 +230,7 @@ private:
                     state = _burn_cluster(cell);
                 }
                 else {
-                    state = burning;
+                    state.state = burning;
                 }
             }
 
@@ -225,7 +241,7 @@ private:
                     state = _burn_cluster(cell);
                 }
                 else {
-                    state = burning;
+                    state.state = burning;
                 }
             }
                         
@@ -233,20 +249,48 @@ private:
             else if (!_model_feature.two_state_FFM) 
             {
                 for (auto nb : MooreNeighbor::neighbors(cell,this->_manager)) {
-                    if (nb->state() == burning && dist(*this->_rng) > _param.resistance) {
-                        state = burning;
+                    if (nb->state().state == burning && dist(*this->_rng) > _param.resistance) {
+                        state.state = burning;
                     }
                 }
             }
         }
 
         // stop burning, turn empty in CDM
-        else if (state == burning) {
-            state = empty;
+        else if (state.state == burning) {
+            state.state = empty;
         }
 
         return state;
     };
+
+    std::function<State(std::shared_ptr<CellType>)> _identify_cluster = [this](auto cell){
+        if constexpr (!ManagerType::Cell::is_sync())
+        {
+            if (cell->state().cluster_tag == -1 && cell->state().state == tree) // else already labeled
+            {
+                std::vector<decltype(cell)> cluster = { cell };
+                cell->state().cluster_tag = _cluster_tag_cnt;
+                for (unsigned long i = 0; i < cluster.size(); ++i)
+                {
+                    auto cluster_member = cluster[i];
+                    for (auto cluster_potential_member : NextNeighbor::neighbors(cluster_member,this->_manager))
+                    {
+                        if (cluster_potential_member->state().cluster_tag == -1 &&
+                            cluster_potential_member->state().state == tree)
+                        {
+                            cluster_potential_member->state().cluster_tag = _cluster_tag_cnt;
+                            cluster.push_back(cluster_potential_member);
+                        }
+                    }
+                }
+                _cluster_tag_cnt++;
+            }
+        }
+
+        return cell->state();
+    };
+
 
 
 public:
@@ -272,8 +316,11 @@ public:
             Utopia::as_bool(this->_cfg["light_bottom_row"])
         ),
         _initial_density(as_double(this->_cfg["initial_density"])),
+        // temporary members
+        _cluster_tag_cnt(0),
         // create datasets
-        _dset_state(this->_hdfgrp->open_dataset("state"))      
+        _dset_state(this->_hdfgrp->open_dataset("state")),
+        _dset_cluster(this->_hdfgrp->open_dataset("cluster"))
     {
         // Call the method that initializes the cells
         this->initialize_cells();
@@ -286,6 +333,8 @@ public:
         this->_log->debug("Setting dataset capacities to {} x {} ...",
                           this->get_time_max() + 1, num_cells);
         _dset_state->set_capacity({this->get_time_max() + 1, num_cells});
+        _dset_cluster->set_capacity({this->get_time_max() + 1, num_cells});
+        // get cluster
 
         // Write initial state
         this->write_data();
@@ -303,18 +352,22 @@ public:
         {
             if constexpr (ManagerType::Cell::is_sync()) {
                 apply_rule(_set_initial_state_empty, _manager.cells());
+                apply_rule(_identify_cluster, _manager.cells());
             }
             else {
                 apply_rule(_set_initial_state_empty, _manager.cells(), *this->_rng);
+                apply_rule(_identify_cluster, _manager.cells(), *this->_rng);
             }
         }
         else if (initial_density > 0. && initial_density <= 1.)
         {
             if constexpr (ManagerType::Cell::is_sync()) {
                 apply_rule(_set_initial_density_tree, _manager.cells());
+                apply_rule(_identify_cluster, _manager.cells());
             }
             else {
                 apply_rule(_set_initial_density_tree, _manager.cells(), *this->_rng);
+                apply_rule(_identify_cluster, _manager.cells(), *this->_rng);
             }
         }
         else
@@ -335,11 +388,14 @@ public:
      */
     void perform_step ()
     {
+        _cluster_tag_cnt = 0;
         if constexpr (ManagerType::Cell::is_sync()) {
             apply_rule(_update, _manager.cells());
+            apply_rule(_identify_cluster, _manager.cells());
         }
         else {
             apply_rule(_update, _manager.cells(), *this->_rng);
+            apply_rule(_identify_cluster, _manager.cells(), *this->_rng);
         }
     }
 
@@ -351,7 +407,14 @@ public:
         _dset_state->write(_manager.cells().begin(),
                                 _manager.cells().end(),
                                 [](auto& cell) {
-                                    return static_cast<unsigned short int>(cell->state());
+                                    return static_cast<unsigned short int>(cell->state().state);
+                                });
+
+                                // state
+        _dset_cluster->write(_manager.cells().begin(),
+                                _manager.cells().end(),
+                                [](auto& cell) {
+                                    return cell->state().cluster_tag;
                                 });
     }
 

@@ -1,4 +1,4 @@
-"""ForestFireModel specific plot functions for spatial figures"""
+"""This module provides plotting functions to visualize cellular automata."""
 
 import os
 import logging
@@ -16,13 +16,18 @@ from utopya import DataManager
 log = logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------------
+# Helper function
 
 class FileWriter():
     """The FileWriter class yields functionality to save individual frames.
 
     It adheres to the corresponding matplotlib animation interface.
     """
-    def __init__(self, *, name_padding: int=6, file_format: str='png', fstr: str="{path:}_frame{num:0{pad:}d}.{ext:}", **savefig_kwargs):
+    def __init__(self, *,
+                 name_padding: int=6,
+                 file_format: str='png',
+                 fstr: str="{path:}/{num:0{pad:}d}.{ext:}",
+                 **savefig_kwargs):
         # Save arguments
         self.index = 0
         self.name_padding = name_padding
@@ -70,14 +75,30 @@ class FileWriterContextManager():
 
 # -----------------------------------------------------------------------------
 
-def grid_animation(dm: DataManager, *, out_path: str, uni: int, to_plot: dict, writer: str, frames_kwargs: dict, fps: int=2, step_size: int=1, dpi: int=96) -> None:
-    """Create a grid animation of a two dimensional cellular automaton
+def cluster_anim(dm: DataManager, *, 
+               out_path: str, 
+               uni: int, 
+               model_name: str,
+               to_plot: dict,
+               writer: str,
+               frames_kwargs: dict, 
+               fps: int=2, 
+               step_size: int=1, 
+               dpi: int=96) -> None:
+    """Create an animation of the states of a two dimensional cellular automaton.
+    The function can use different writers, e.g. write out only the frames or create
+    an animation with an external programm (e.g. ffmpeg). 
+    Multiple properties can be plotted next to each other, specified by the to_plot dict.
     
     Arguments:
         dm (DataManager): The DataManager object containing the data
         out_path (str): The output path
         uni (int): The universum
-        to_plot (dict): The plotting configuration
+        model_name (str): The name of the model instance, in which the data is
+            located.
+        to_plot (dict): The plotting configuration. The entries of this key
+            refer to a path within the data and can include forward slashes to
+            navigate to data of submodels.
         writer (str): The writer that should be used. Additional to the
             external writers such as 'ffmpeg', it is possible to create and
             save the individual frames with 'frames'
@@ -91,68 +112,85 @@ def grid_animation(dm: DataManager, *, out_path: str, uni: int, to_plot: dict, w
         ValueError: For an invalid `writer` argument
     """
 
-    def get_pd_colormap(cmap):
-        # define a color list
-        cmaplist = [(0.19215686274509805,
-                     0.21176470588235294,
-                     0.5843137254901961,
-                     1.0), # red
-                    (0.6470588235294118,
-                     0.0,
-                     0.14901960784313725,
-                     1.0),
-                     (0.1470588235294118,
-                     0.0,
-                     0.14901960784313725,
-                     1.0)] # blue
-        
+    def get_discrete_colormap(cmap):        
         # use _any_ colormap
         colormap = plt.cm.jet  # yay, jet! :japanese_ogre:
         
         # replace it by the new colormap with the list of colours
-        colormap = colormap.from_list('PD_discrete', cmaplist, len(cmaplist))
+        colormap = colormap.from_list('custom_discrete', cmap, len(cmap))
 
         return colormap
 
-    def plot_property(name, *, initial_data, ax, cmap, limits, title=None):
+    def plot_property(name, *, initial_data, ax, cmap, limits: list, title: str=None, cmap_periodic=False):
         """Helper function to plot a property on a given axis"""
         # Get colormap
-        if cmap == "PD_discrete":
-            cmap = get_pd_colormap(cmap)
-            ticks = [0,1,2]
-            norm = mpl.colors.BoundaryNorm(ticks, cmap.N)
-        else:
+        # Case continuous colormap
+        if cmap_periodic and isinstance(cmap, str):
+            colors = plt.cm.get_cmap(cmap)
+            colors = colors(np.linspace(0., 1, limits[1]))
+            colors = np.vstack(([0,0,0,0], colors))
+            mymap = mpl.colors.LinearSegmentedColormap.from_list('custom_discrete', colors, len(colors))
+            colormap = mymap
+            bounds = None
             norm = None
-            ticks = None
+
+        elif isinstance(cmap, str):
+            norm = None
+            bounds = None
+            colormap = cmap
+
+        # Case discrete colormap
+        elif isinstance(cmap, dict):
+            colormap = get_discrete_colormap(list(cmap.values()))
+            bounds = limits
+            norm = mpl.colors.BoundaryNorm(bounds, colormap.N)
+
+        else:
+            raise TypeError("Argument cmap needs to be either a string with "
+                            "name of the colormap or a dict with values for a "
+                            "discrete colormap. Was: {} with value: '{}'"
+                            "".format(type(cmap), cmap))
 
         # Create imshow
-        im = ax.imshow(initial_data, cmap=cmap, animated=True,
+        im = ax.imshow(initial_data, cmap=colormap, animated=True,
                        origin='lower', vmin=limits[0], vmax=limits[1])
 
+        # Set title
         if title is not None:
             ax.set_title(title)
 
         # Create colorbars
         fig = plt.gcf()
-        cbar = fig.colorbar(im ,ax=ax, norm=norm, ticks=ticks,
+        cbar = fig.colorbar(im ,ax=ax, norm=norm, ticks=bounds,
                             fraction=0.046, pad=0.04)
-        if ticks is not None:
-            cbar.ax.set_yticklabels(['empty', 'tree', 'burning'])  # vertical color bar
+
+        if bounds is not None:
+            # vertical color bar ticks
+            yticklabels = cmap.keys()
+            cbar.set_ticks(np.arange(bounds[0], bounds[1]+1))
+            cbar.ax.set_yticklabels(yticklabels) 
         ax.axis('off')
 
         return im
 
     # Get the group that all datasets are in
-    grp = dm['uni'][uni]['data/ForestFireModel']
+    grp = dm['uni'][uni]['data'][model_name]
 
     # Get the shape of the 2D grid to later reshape the data
     cfg = dm['uni'][uni]['cfg']
-    grid_size = cfg['ForestFireModel']['grid_size']
-    steps = cfg['num_steps']
-    new_shape = (steps+1, grid_size[0], grid_size[1])
+    grid_size = cfg[model_name]['grid_size']
+    steps = int(cfg['num_steps']/cfg.get('write_every', 1))
+    new_shape = (steps+1, grid_size[1], grid_size[0])
 
     # Extract the data of the strategies in the CA    
     data_1d = {p: grp[p] for p in to_plot.keys()}
+    for key in to_plot.keys():
+        if key == 'cluster' and to_plot['cluster'].get('cmap_periodic', False):
+            for t in range(data_1d['cluster'].shape[0]):
+                for i in range(data_1d['cluster'].shape[1]):
+                    if (data_1d['cluster'][t][i] >= 0):
+                        limits = to_plot['cluster'].get('limits', [0,20])
+                        data_1d['cluster'][t][i] = data_1d['cluster'][t][i] % limits[1]
     data = {k: np.reshape(v, new_shape) for k,v in data_1d.items()}
         
     # Distinguish writer classes
@@ -175,14 +213,14 @@ def grid_animation(dm: DataManager, *, out_path: str, uni: int, to_plot: dict, w
     # Set plot parameters
     rcParams.update({'font.size': 20})
     rcParams['figure.figsize'] = (6.0 * len(to_plot), 5.0)
-
+    
     # Create figure
     fig, axs = plt.subplots(1, len(to_plot))
 
     # Assert that the axes are stored in a list even if it is only one axis.
     if len(to_plot) == 1:
          axs = [axs] 
-        
+
     # Store the imshow objects such that only the data has to be updated in a
     # following iteration step
     ims = []
@@ -190,14 +228,13 @@ def grid_animation(dm: DataManager, *, out_path: str, uni: int, to_plot: dict, w
     with w.saving(fig, out_path, dpi=dpi):
         
         # Loop through time steps
-        for t in range(0,steps,step_size):
+        for t in range(steps+1):
 
             # Loop through the subfigures
             for i, (ax, (key, props)) in enumerate(zip(axs, to_plot.items())):
                     # In the first time step create a new imshow object
                     if t == 0:
-                        im = plot_property(key,
-                                           initial_data=data[key][t],
+                        im = plot_property(key, initial_data=data[key][t],
                                            ax=ax, **props)
                         ims.append(im)
 
