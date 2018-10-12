@@ -91,12 +91,7 @@ private:
 
     /// Sets the given cell to state "empty"
     std::function<CellState(std::shared_ptr<CellType>)> _set_initial_state_empty = [](const auto cell){
-        // Get the state of the Cell
-        auto cellstate = cell->state();
-
-        // Set cell to empty
-        cellstate = empty;
-        return cellstate;
+        return empty;
     };
 
 
