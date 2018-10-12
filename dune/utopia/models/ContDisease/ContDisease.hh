@@ -103,12 +103,14 @@ private:
 
 
     /// Define the update rule
+    /** Update (all cells at the same time) according to the following rules:
+     * Empty cells grow "trees with probability _p_growth.
+     * Tree cells in neighborhood of an infected cell get infected with the
+     * probability _p_infect.
+     * Infected cells die and become an empty cell.
+     */
+
     std::function<CellState(std::shared_ptr<CellType>)> _update = [this](const auto cell){
-        // Update (all cells at the same time) according to the following rules:
-        // Empty cells grow "trees with probability _p_growth.
-        // Tree cells in neighborhood of an infected cell get infected with the
-        // probability _p_infect.
-        // Infected cells die and become an empty cell.
 
         // Get the state of the cell
         auto cellstate = cell->state();
