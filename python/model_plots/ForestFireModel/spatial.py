@@ -1,7 +1,5 @@
 """This module provides plotting functions to visualize cellular automata."""
 
-from ._setup import *
-
 import os
 import logging
 from typing import Union
@@ -77,7 +75,7 @@ class FileWriterContextManager():
 
 # -----------------------------------------------------------------------------
 
-def state_anim(dm: DataManager, *, 
+def cluster_anim(dm: DataManager, *, 
                out_path: str, 
                uni: int, 
                model_name: str,
@@ -123,11 +121,20 @@ def state_anim(dm: DataManager, *,
 
         return colormap
 
-    def plot_property(name, *, initial_data, ax, cmap, limits: list, title: str=None):
+    def plot_property(name, *, initial_data, ax, cmap, limits: list, title: str=None, cmap_periodic=False):
         """Helper function to plot a property on a given axis"""
         # Get colormap
         # Case continuous colormap
-        if isinstance(cmap, str):
+        if cmap_periodic and isinstance(cmap, str):
+            colors = plt.cm.get_cmap(cmap)
+            colors = colors(np.linspace(0., 1, limits[1]))
+            colors = np.vstack(([0,0,0,0], colors))
+            mymap = mpl.colors.LinearSegmentedColormap.from_list('custom_discrete', colors, len(colors))
+            colormap = mymap
+            bounds = None
+            norm = None
+
+        elif isinstance(cmap, str):
             norm = None
             bounds = None
             colormap = cmap
@@ -177,6 +184,13 @@ def state_anim(dm: DataManager, *,
 
     # Extract the data of the strategies in the CA    
     data_1d = {p: grp[p] for p in to_plot.keys()}
+    for key in to_plot.keys():
+        if key == 'cluster' and to_plot['cluster'].get('cmap_periodic', False):
+            for t in range(data_1d['cluster'].shape[0]):
+                for i in range(data_1d['cluster'].shape[1]):
+                    if (data_1d['cluster'][t][i] >= 0):
+                        limits = to_plot['cluster'].get('limits', [0,20])
+                        data_1d['cluster'][t][i] = data_1d['cluster'][t][i] % limits[1]
     data = {k: np.reshape(v, new_shape) for k,v in data_1d.items()}
         
     # Distinguish writer classes

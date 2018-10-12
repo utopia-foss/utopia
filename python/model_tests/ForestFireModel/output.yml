@@ -1,0 +1,18 @@
+# Configuration file used to test that the output of the model is correct
+
+# TODO specify what this config file intends to test here
+# TODO rename this file to match the intended test purpose more explicitly
+---
+perform_sweep: true
+
+parameter_space:
+  num_steps: 3
+
+  seed: !sweep
+    default: 42
+    range: [4]
+
+  ForestFireModel: !model  
+    model_name: ForestFireModel  # imports the model config for the ForestFireModel
+
+    # NOTE Below, entries from the model config can be changed or added
