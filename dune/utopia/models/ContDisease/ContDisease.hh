@@ -24,11 +24,18 @@ using ContDiseaseModelTypes = ModelTypes<CellState>;
 
 
 
-/// The ContDisease Model
-/** Add your model description here.
- *  This model's only right to exist is to be a template for new models.
- *  That means its functionality is based on nonsense but it shows how
- *  actually useful functionality could be implemented.
+/// Contagious disease model on a grid
+/** In this model, we model the spread of a disease through a forest on
+ * a 2D grid. Each cell can have one of five different states: empty, tree,
+ * infected, herd or empty. Each time step cells update their state according
+ * to the update rules. Empty cells will convert with a certain probability
+ * to tress, while trees represent cells that can be infected. Infection can
+ * happen either through a neighboring cells, or through random point infection.
+ * A infected cells reverts back to empty after one time step. Stones represent
+ * cells that can not be infected, therefore represent a blockade for the spread
+ * of the infection. Infection herds are cells that continously spread infection
+ * without dying themselves. Different starting conditions, and update
+ * mechanisms can be configured. 
  */
 
 template<class ManagerType>

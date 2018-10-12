@@ -6,7 +6,7 @@ on the description in the script of the CCEES lecture of Prof. Roth.
 ## Fundamentals
 
 We model a "forest" on a two dimensional square grid of cells. Each cell can be
-in one of four different states: empty, tree, infected, herd or stones.
+in one of five different states: empty, tree, infected, herd or stones.
 
 #Update Rules
 
