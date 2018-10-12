@@ -82,9 +82,13 @@ def test_basic_interactions():
 
     pop = dm['uni'][0]['data']['PredatorPrey']['Population'].reshape(3, 2, 1)
     resource_pred = dm['uni'][0]['data']['PredatorPrey']['resource_pred'].reshape(3, 2, 1)
+    resource_prey = dm['uni'][0]['data']['PredatorPrey']['resource_prey'].reshape(3, 2, 1)
 
     assert np.all(resource_pred[: , : , :] == [[[2], [0]], [[0],[1]], [[0], [0]]]) \
-            or np.all(resource_prey[: , : , :] == [[[0], [2]], [[1],[0]], [[0], [0]]])
+            or np.all(resource_pred[: , : , :] == [[[0], [2]], [[1],[0]], [[0], [0]]])
+
+    assert np.all(resource_prey[: , :, :] == 0)
+
     assert np.all(pop[ : , :, :] == [[[2], [0]], [[0],[2]], [[0], [0]]]) \
             or np.all(pop[ : , :, :] == [[[0], [2]], [[2], [0]], [[0], [0]]])
 
@@ -116,14 +120,18 @@ def test_basic_interactions():
 
     # Test wether the prey flees from the predator. Unfortunately, as the update
     # order is random, the prey can only flee, if its own cell has not been updated,
-    # before a predator invades it.   
+    # before a predator invades it.
 
+    # Create the model_config dict to be able to update the parameter_space dict
+    model_config = model_cfg(grid_size=[20, 1], prey_frac=0.95, pred_frac=0.05, delta_e=2, 
+                             p_repro=0.0, p_flee=1.0)
+
+    # Add a specific number of steps for this test
+    model_config['parameter_space'].update({'num_steps':20})
 
     # Create a multiverse, run a single universe and save the data in the DataManager dm
-    model_config = model_cfg(grid_size=[20, 1], prey_frac=0.95, pred_frac=0.05, delta_e=2, p_repro=0.0, p_flee=1.0)
-    model_config['parameter_space'].update({'num_steps':20})
-    mv, dm = mtc.create_run_load(from_cfg="specific_scenario.yml", perform_sweep=False, num_steps=20,
-                                 **model_config)
+    mv, dm = mtc.create_run_load(from_cfg="specific_scenario.yml", perform_sweep=False, 
+                                num_steps=20, **model_config)
 
     pop = dm['uni'][0]['data']['PredatorPrey']['Population'].reshape(21, 20, 1)
     pop = pop.astype(int)

@@ -11,9 +11,6 @@ parameter_space:
   # Do a number of steps
   num_steps: 2
 
-  # Set a fixed seed
-  seed: 42
-
   # Load the default model config
   PredatorPrey: !model
     model_name: PredatorPrey
