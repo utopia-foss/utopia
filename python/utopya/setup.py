@@ -4,17 +4,21 @@ from setuptools import setup, find_packages
 
 # Dependency lists
 INSTALL_DEPS = ['numpy>=1.13',
-                'PyYAML==3.12',
+                'PyYAML>=3.12,<4.0',
+                'coloredlogs>=10.0',
+                # only required for testing
+                'pytest>=3.4.0',
+                'pytest-cov>=2.5.1',
                 # From private repositories:
-                'paramspace>=1.0.1',
-                'dantro>=0.1.0-rc.5'  # TODO use 0.1.0 once released
+                # NOTE Versions need also be set in python/CMakeLists.txt
+                'paramspace>=1.1.1,<2.0',  # TODO migrate to >=2.0
+                'dantro>=0.3.2,<0.4'       # TODO migrate to >=0.4
                 ]
-TEST_DEPS    = ['pytest>=3.4.0', 'pytest-cov>=2.5.1']
 
 setup(name='utopya',
       #
       # Package information
-      version='0.1.0-pre.0',
+      version='0.1.0-pre.1',
       # NOTE This needs to correspond to utopya.__init__.__version__
       description='The Utopia frontend package.',
       url='https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia',
@@ -27,9 +31,7 @@ setup(name='utopya',
       packages=find_packages(exclude=["*.test", "*.test.*", "test.*", "test"]),
       package_data=dict(utopya=["cfg/*.yml"]),
       install_requires=INSTALL_DEPS,
-      tests_require=TEST_DEPS,
       test_suite='py.test',
-      extras_require=dict(test_deps=TEST_DEPS),
       #
       # Command line scripts, installed into the virtual environment
       scripts=['bin/utopia']

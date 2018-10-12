@@ -16,24 +16,24 @@ message(STATUS "Installing required Python packages ...")
 # NOTE Take care that the versions used here match those in the README.md
 # -- paramspace --
 dune_python_find_package(PACKAGE paramspace
-                         VERSION 1.0.1
+                         VERSION 1.1.1
                          INTERPRETER ${DUNE_PYTHON_VIRTUALENV_EXECUTABLE})
 
 if(NOT DUNE_PYTHON_paramspace_FOUND)
     # install from current _master_ branch
-    python_install_package_remote(URL ssh://git@ts-gitlab.iup.uni-heidelberg.de:10022/yunus/paramspace.git
+    python_install_package_remote(URL ssh://git@ts-gitlab.iup.uni-heidelberg.de:10022/yunus/paramspace.git@release/v1.x  # TODO migrate to 2.x
         TRUSTED_HOST ts-gitlab.iup.uni-heidelberg.de)
 endif()
 
 # -- dantro --
 dune_python_find_package(PACKAGE dantro
-                         VERSION 0.1.0
+                         VERSION 0.3.2
                          INTERPRETER ${DUNE_PYTHON_VIRTUALENV_EXECUTABLE})
 
 if(NOT DUNE_PYTHON_dantro_FOUND)
     # install from current _master_ branch
     python_install_package_remote(
-        URL ssh://git@ts-gitlab.iup.uni-heidelberg.de:10022/utopia/dantro.git
+        URL ssh://git@ts-gitlab.iup.uni-heidelberg.de:10022/utopia/dantro.git@release/v0.3  # TODO should move back to 0.x
         TRUSTED_HOST ts-gitlab.iup.uni-heidelberg.de)
 endif()
 
@@ -44,9 +44,8 @@ message(STATUS "Installing utopya ...")
 # For easier development: install using symlinks to the local package
 set(DUNE_PYTHON_INSTALL_EDITABLE True)
 
-# Install utopya and the extras (that are needed for testing)
-dune_python_install_package(PATH utopya
-                            ADDITIONAL_PIP_PARAMS "${CMAKE_CURRENT_SOURCE_DIR}/utopya/[test_deps]")
+# Install utopya and dependencies
+dune_python_install_package(PATH utopya)
 
 # Add a custom target to symlink the utopia CLI
 # set(CLI_SYMLINK /usr/local/bin/utopia)

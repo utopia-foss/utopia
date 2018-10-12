@@ -21,10 +21,10 @@ def state_mean(dm: DataManager, *, out_path: str, uni: int, fmt: str=None, save_
         **plot_kwargs: Passed on to plt.plot
     """
     # Get the group that all datasets are in
-    grp = dm['uni'][str(uni)]['data/CopyMe']
+    grp = dm['uni'][uni]['data/CopyMe']
 
     # Get the shape of the data
-    uni_cfg = dm['uni'][str(uni)]['cfg']
+    uni_cfg = dm['uni'][uni]['cfg']
     num_steps = uni_cfg['num_steps']
     grid_size = uni_cfg['CopyMe']['grid_size']
 

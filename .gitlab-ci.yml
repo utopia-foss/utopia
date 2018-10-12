@@ -266,10 +266,15 @@ test:cli:
     - utopia run dummy $MODEL_TESTS/dummy/sweep.yml --sweep --note sweep
     # Test setting the number of steps (negative should fail)
     - utopia run dummy --num-steps 1 --no-plot
-    - if utopia run dummy --num-steps -1; then exit 1; else exit 0; fi
+    - if utopia run dummy --num-steps -1; then exit 1; else echo "all good"; fi
+    # Test debug mode and setting simulation errors level
+    - utopia run dummy --note debug0 --num-steps 3 --debug
+    - utopia run dummy --note debug1 --num-steps 3 --debug --sim-errors warn
     #
     # Test the plotting capabilities
     - utopia run dummy --note plt0 --no-plot
+    - sleep 1.1 && utopia eval dummy  # should create the corresponding plots
+    # FIXME Need to sleep because the eval directory will already exist
     - utopia run dummy --note plt1
     - utopia run dummy --note plt2 --plot-only states
     - utopia run dummy --note plt3 --plots-cfg $MODEL_SRC/dummy/dummy_plots.yml

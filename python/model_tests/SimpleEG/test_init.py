@@ -231,7 +231,7 @@ def test_ia_matrix_extraction():
         _, dm = mtc.create_run_load(from_cfg="ia_matrix_case{}.yml".format(i))
 
         # Get the interaction matrix from the data attributes
-        grp = dm['uni']['0']['data']['SimpleEG']
+        grp = dm['uni'][0]['data']['SimpleEG']
         
         # Now, check whether the ia_matrix is correct
         check_ia_matrices(grp.attrs['ia_matrix'], expected_matrix)

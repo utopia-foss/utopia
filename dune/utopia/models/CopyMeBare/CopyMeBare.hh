@@ -21,14 +21,8 @@ struct State {
 };
 
 
-/// Boundary condition type
-struct Boundary {};
-// NOTE if you do not use the boundary condition type, you can delete the
-//      definition of the struct above and the passing to the type helper
-
-
-/// Typehelper to define data types of CopyMeBare model 
-using CopyMeBareModelTypes = ModelTypes<State, Boundary>;
+/// Typehelper to define types of CopyMeBare model 
+using CopyMeBareModelTypes = ModelTypes<>;
 
 
 /// The CopyMeBare Model
@@ -42,9 +36,6 @@ class CopyMeBareModel:
 public:
     /// The base model type
     using Base = Model<CopyMeBareModel<ManagerType>, CopyMeBareModelTypes>;
-    
-    /// Data type of the state
-    using Data = typename Base::Data;
     
     /// Cell type
     using CellType = typename ManagerType::Cell;
@@ -130,56 +121,12 @@ public:
     {   
         // State which data should be written
     }
-};
 
-
-/**
- * @brief Set up the grid manager and initialize the cells
- * 
- * @tparam periodic=true Use periodic boundary conditions
- * @tparam ParentModel The parent model type
- * @param name The name of the model
- * @param parent_model The parent model
- * @return auto The manager
- */
-template<bool periodic=true, typename ParentModel>
-auto setup_manager(std::string name, ParentModel& parent_model)
-{
-    // Get the logger... and use it :)
-    auto log = parent_model.get_logger();
-    log->info("Setting up '{}' model ...", name);
-
-    // Get the configuration and the rng
-    auto cfg = parent_model.get_cfg()[name];
-    auto rng = parent_model.get_rng();
-
-    // Extract grid size from config
-    const auto gsize = as_array<unsigned int, 2>(cfg["grid_size"]);
-
-    // Inform about the size
-    log->info("Creating 2-dimensional grid of size: {} x {} ...",
-              gsize[0], gsize[1]);
-
-    // Create grid of that size
-    auto grid = Utopia::Setup::create_grid<2>(gsize);
-
-    // Create the CopyMeBare initial state
-    // NOTE: This just sets a _default_ state. The actual initialization
-    //       should be part of the model class and invoked during construction
-    State state_0 = {};
-
-    // Create cells on that grid, passing the initial state
-    auto cells = Utopia::Setup::create_cells_on_grid<true>(grid, state_0);
-
-    // Create the grid manager, passing the template argument
-    log->info("Initializing GridManager with {} boundary conditions ...",
-              (periodic ? "periodic" : "fixed"));
     
-    return Utopia::Setup::create_manager_cells<true, periodic>(grid,
-                                                               cells,
-                                                               rng);
-}
-
+    // Getters and setters ....................................................
+    // Add getters and setters here to interface with other model
+    
+};
 
 } // namespace CopyMeBare
 } // namespace Models

@@ -1,0 +1,10 @@
+# A test configuration that runs a (larger) parameter sweep over the seed
+---
+parameter_space:
+  num_steps: 1
+  seed: !sweep
+    default: 1337
+    range: [16]
+    
+  dummy: !model
+    model_name: dummy  

@@ -7,7 +7,7 @@
 namespace Utopia {
 
 /// Define a dummy data type
-using DoNothingModelType = ModelTypes<bool, bool>;
+using DoNothingModelType = ModelTypes<>;
 
 /// A model that does nothing
 class DoNothingModel:

@@ -12,4 +12,5 @@ list(APPEND DUNE_LIBS ${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES})
 # include Utopia macros
 include(PythonInstallPackageRemote)
 include(UtopiaAddModel)
+include(UtopiaAddModelTest)
 include(UtopiaGenerateModelInfo)

@@ -14,6 +14,7 @@ import utopya.datacontainer as udc
 # Local constants
 RUN_CFG_PATH = resource_filename('test', 'cfg/run_cfg.yml')
 SWEEP_CFG_PATH = resource_filename('test', 'cfg/sweep_cfg.yml')
+LARGE_SWEEP_CFG_PATH = resource_filename('test', 'cfg/large_sweep_cfg.yml')
 
 # Fixtures --------------------------------------------------------------------
 
@@ -24,15 +25,14 @@ def mv_kwargs(tmpdir) -> dict:
     This uses the `tmpdir` fixture provided by pytest, which creates a unique
     temporary directory that is removed after the tests ran through.
     """
-    # Create a dict that specifies a unique testing path.
-    # The str cast is needed for python version < 3.6
-    rand_str = "test_" + uuid.uuid4().hex[:8]
-    unique_paths = dict(out_dir=tmpdir, model_note=rand_str)
+    # Create a random string to use as model note
+    rand_str = "test_" + uuid.uuid4().hex
 
+    # Create a dict that specifies a unique testing path.
     return dict(model_name='dummy',
                 run_cfg_path=RUN_CFG_PATH,
                 user_cfg_path=False,  # to omit the user config
-                update_meta_cfg=dict(paths=unique_paths)
+                paths=dict(out_dir=str(tmpdir), model_note=rand_str)
                 )
 
 @pytest.fixture
@@ -63,6 +63,20 @@ def dm_after_sweep(mv_kwargs) -> DataManager:
     # Return the data manager
     return mv.dm
 
+@pytest.fixture
+def dm_after_large_sweep(mv_kwargs) -> DataManager:
+    """Initialises a Multiverse with a DataManager, runs a simulation with
+    output going into a temporary directory, then returns the DataManager."""
+    # Initialise the Multiverse
+    mv_kwargs['run_cfg_path'] = LARGE_SWEEP_CFG_PATH
+    mv = Multiverse(**mv_kwargs)
+
+    # Run a sweep
+    mv.run_sweep()
+    
+    # Return the data manager
+    return mv.dm
+
 # Tests -----------------------------------------------------------------------
 
 def test_init(tmpdir):
@@ -84,8 +98,9 @@ def test_load_single(dm_after_single):
     assert 'cfg/run' in dm
 
     assert len(dm['uni']) == 1
-    assert 'uni/0' in dm
-    uni = dm['uni/0']
+    assert 'uni' in dm
+    assert 0 in dm['uni']
+    uni = dm['uni'][0]
     
     # Check that the uni config is loaded
     assert 'cfg' in uni
@@ -98,8 +113,15 @@ def test_load_single(dm_after_single):
     dset = uni['data/dummy/state']
 
     assert isinstance(dset, udc.NumpyDC)
-    assert dset.shape == (uni['cfg']['num_steps'] + 1, 1000)
+    assert dset.shape[1] == 1000
     assert np.issubdtype(dset.dtype, float)
+
+    # Test other configured capabilities
+    # write_every -> only every write_every step should have been written
+    write_every = int(uni['data/dummy'].attrs['write_every'])
+    assert write_every == uni['cfg']['write_every']
+    assert dset.shape[0] == (uni['cfg']['num_steps'] // write_every) + 1
+
 
 def test_load_sweep(dm_after_sweep):
     """Tests the loading of simulation data for a sweep"""
@@ -130,3 +152,21 @@ def test_load_sweep(dm_after_sweep):
         assert isinstance(dset, udc.NumpyDC)
         assert dset.shape == (uni['cfg']['num_steps'] + 1, 1000)
         assert np.issubdtype(dset.dtype, float)
+
+def test_MultiverseGroup(dm_after_large_sweep):
+    """Tests the MultiverseGroup"""
+    dm = dm_after_large_sweep
+
+    # Load and print a tree of the loaded data
+    dm.load_from_cfg(print_tree=True)
+
+    # Check integer acccess, also for double digits
+    assert 0 in dm['uni']
+    assert 15 in dm['uni']
+
+    # Bad integer keys should not work
+    with pytest.raises(KeyError, match="No universe with ID 42 available"):
+        dm['uni'][42]
+    
+    with pytest.raises(KeyError, match="Universe IDs cannot be negative!"):
+        dm['uni'][-1]

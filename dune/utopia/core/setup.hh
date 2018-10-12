@@ -7,6 +7,7 @@
 #include <dune/utopia/core/cell.hh>
 #include <dune/utopia/core/agent.hh>
 #include <dune/utopia/core/grid.hh>
+#include <dune/utopia/data_io/cfg_utils.hh>
 
 namespace Utopia
 {
@@ -39,39 +40,33 @@ namespace Setup
     /// Create a GridManager from a grid and a CellContainer
     /** \param wrapper GridWrapper instance holding the grid
      *  \param cells CellContainer holding the cells
-     *  \param rng Random number generator. Defaults to DefaultRNG
      */
-    template<bool structured, bool periodic, typename GridType,
-        typename CellType, typename RNG=DefaultRNG>
+    template<bool structured, bool periodic, typename GridType, typename CellType>
     auto create_manager_cells (
         const GridWrapper<GridType>& wrapper,
-        const CellContainer<CellType>& cells,
-        const std::shared_ptr<RNG> rng = std::make_shared<DefaultRNG>(0))
+        const CellContainer<CellType>& cells)
         -> GridManager<
-            Manager::Cells, CellType, GridType, RNG, structured, periodic>
+            Manager::Cells, CellType, GridType, structured, periodic>
     {
         return GridManager<
-            Manager::Cells, CellType, GridType, RNG, structured, periodic>(
-            wrapper, cells, rng);
+            Manager::Cells, CellType, GridType, structured, periodic>(
+            wrapper, cells);
     }
 
     /// Create a GridManager from a grid and an AgentContainer
     /** \param wrapper GridWrapper instance holding the grid
      *  \param agents AgentContainer holding the cells
-     *  \param rng Random number generator. Defaults to DefaultRNG
      */
-    template<bool structured, bool periodic, typename GridType,
-        typename AgentType, typename RNG=DefaultRNG>
+    template<bool structured, bool periodic, typename GridType, typename AgentType>
     auto create_manager_agents (
         const GridWrapper<GridType>& wrapper,
-        const AgentContainer<AgentType>& agents,
-        const std::shared_ptr<RNG> rng = std::make_shared<DefaultRNG>(0))
+        const AgentContainer<AgentType>& agents)
         -> GridManager<
-            Manager::Agents, AgentType, GridType, RNG, structured, periodic>
+            Manager::Agents, AgentType, GridType, structured, periodic>
     {
         return GridManager<
-            Manager::Agents, AgentType, GridType, RNG, structured, periodic>(
-            wrapper, agents, rng);
+            Manager::Agents, AgentType, GridType, structured, periodic>(
+            wrapper, agents);
     }
 
     /// Create an unstructured grid from a Gmsh file
@@ -173,7 +168,7 @@ namespace Setup
         typename GridType>
     decltype(auto) create_cells_on_grid (
         const GridWrapper<GridType>& grid_wrapper,
-        const State state = 0)
+        const State state = State())
     {
 
         using GridTypes = GridTypeAdaptor<GridType>;
@@ -243,7 +238,7 @@ namespace Setup
              [](const auto& ext){
                  return std::uniform_real_distribution<Coordinate>(0.0,ext);
          });
-         std::ranlux24_base ran(123456);
+         DefaultRNG ran(123456); //TODO
 
          // create agents
          for(std::size_t i = 0; i<count; ++i)
@@ -259,8 +254,97 @@ namespace Setup
          return agents;
      }
 
-} // namespace Setup
 
+     /// Create a grid from a model configuration
+     /**\detail Using information from the configuration extracted from a
+      *         parent model instance, a new grid instance is returned
+      *
+      * \param name          The name of the model instance; needed for access
+      *                      to the correct configuration parameter
+      * \param parent_model  The parent model the new model instance will
+      *                      reside in
+      *
+      * \tparam dim          Dimensionaliy of the grid, can be 2 or 3
+      * \tparam ParentModel  The parent model type
+      */
+     template<unsigned short dim=2, typename ParentModel>
+     auto create_grid_from_model(const std::string name,
+                                 const ParentModel& parent_model) {
+        // Get the logger
+        const auto log = parent_model.get_logger();
+        log->info("Setting up grid from model instance '{}'...", name);
+
+        // Get the configuration
+        const auto cfg = parent_model.get_cfg()[name];
+
+        // Extract grid size from config
+        static_assert(dim == 2 || dim == 3,
+                      "Template argument dim must be 2 or 3!");
+        const auto gsize = as_array<unsigned int, dim>(cfg["grid_size"]);
+        
+        // Inform about the size
+        if constexpr (dim == 2) {
+            log->info("Creating 2-dimensional grid of size: {} x {} ...",
+                      gsize[0], gsize[1]);
+        }
+        else {
+            log->info("Creating 3-dimensional grid of size: {} x {} x {} ...",
+                      gsize[0], gsize[1], gsize[2]);
+        }
+
+        // Create grid of that size and return
+        return create_grid<dim>(gsize);
+     }
+
+
+
+    /// Grid setup function
+    /** \detail Sets up a GridManager with cells using the configuration info
+      * supplied by a model and its model configuration.
+      *
+      * \param name          The name of the model instance; needed for access
+      *                      to the correct configuration parameter
+      * \param parent_model  The parent model the new model instance will
+      *                      reside in.
+      * \param initial_state The initial state of all cells
+      *
+      * \tparam periodic     Whether the grid should be periodic
+      * \tparam dim          Dimensionaliy of the grid, can be 2 or 3
+      * \tparam structured   Whether the grid should be structured
+      * \tparam sync         Whether the cells should be synchronous or not
+      * \tparam ParentModel  The parent model type
+      * \tparam State        Type of the initial state
+      */
+    template<typename State,
+             bool periodic=true,
+             unsigned short dim=2,
+             bool structured=true,
+             bool sync=true,
+             typename ParentModel
+            >
+    auto create_grid_manager_cells(const std::string name,
+                                   const ParentModel& parent_model,
+                                   const State initial_state = State())
+    {
+        // Get the grid, passing through arguments
+        auto grid = create_grid_from_model<dim>(name, parent_model);
+
+        // Create cells on that grid, passing the initial state
+        auto cells = create_cells_on_grid<sync>(grid, initial_state);
+
+        // Create the grid manager, passing the template argument
+        parent_model.get_logger()->info("Initializing GridManager with {} "
+                                        "boundary conditions ...",
+                                        (periodic ? "periodic" : "fixed"));
+        // TODO add the other template arguments to the log message
+        
+        return create_manager_cells<structured, periodic>(grid, cells);
+    }
+
+    // TODO add equivalent function for agents on grid
+
+
+} // namespace Setup
 } // namespace Utopia
 
 #endif // SETUP_HH
