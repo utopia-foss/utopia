@@ -67,6 +67,14 @@ public:
     using NextNeighbor = Utopia::Neighborhoods::NextNeighbor;
     using MooreNeighbor = Utopia::Neighborhoods::MooreNeighbor;
 
+    /// Probability for the appearance of a tree
+    double _p_growth;
+
+    /// Probability that an infected cell infects a neighbouring cell
+    double _p_infect;
+
+    /// Probability for a random infection
+    double _p_rd_infect;
 
 private:
     // Base members: _time, _name, _cfg, _hdfgrp, _rng
@@ -74,16 +82,6 @@ private:
     // -- Members of this model -- //
     /// The grid manager
     ManagerType _manager;
-
-    /// Probability for the appearance of a tree
-    const double _p_growth;
-
-    /// Probability that an infected cell infects a neighbouring cell
-    const double _p_infect;
-
-    /// Probability for a random infection
-    const double _p_rd_infect;
-
 
     // -- Datasets -- //
     std::shared_ptr<DataSet> _dset_state;
