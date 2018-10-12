@@ -67,7 +67,7 @@ parameter_space:
     decay: true
     highresinterval: [[0, 2000], [50000, 52000], [500000, 502500], [998000, 1000000]]
     Agenttype: !sweep 
-      default: simple 
+      default: complex 
       values: [simple, complex]
 
     # stuff for worker manager

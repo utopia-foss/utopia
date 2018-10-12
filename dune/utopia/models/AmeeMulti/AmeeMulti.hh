@@ -493,10 +493,7 @@ public:
                AgentAdaptortuple{
                    "age",
                    [](const auto& agent) -> double { return agent->state().age; }},
-               AgentAdaptortuple{"cell_id",
-                                 [](const auto& agent) -> double {
-                                     return agent->state().habitat->id();
-                                 }},
+
                AgentAdaptortuple{"traitlen",
                                  [](const auto& agent) -> double {
                                      return agent->state().phenotype.size();
@@ -834,7 +831,6 @@ public:
         auto curr_hi = _highres_interval.back();
 
         if (this->_time < curr_hi[1] and this->_time >= curr_hi[0])
-
         {
             std::size_t chunksize = (agents.size() < 1000) ? (agents.size()) : 1000;
 
@@ -845,11 +841,12 @@ public:
                 agrp->open_dataset(name, {agents.size()}, {chunksize}, 6)
                     ->write(agents.begin(), agents.end(), adaptor);
             }
+
             auto cgrp = _dgroup_cells->open_group("t=" + std::to_string(this->_time));
 
             for (auto& [name, adaptor] : _cell_adaptors)
             {
-                cgrp->open_dataset(name, {cells.size()}, {chunksize}, 6)
+                cgrp->open_dataset(name, {cells.size()}, {256}, 6)
                     ->write(cells.begin(), cells.end(), adaptor);
             }
         }
