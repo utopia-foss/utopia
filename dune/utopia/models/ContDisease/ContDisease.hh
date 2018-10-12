@@ -146,7 +146,7 @@ private:
         else if (cellstate == infected){
             cellstate = empty;
         }
-        
+
         return cellstate;
     };
 
@@ -321,8 +321,17 @@ public:
     // Runtime functions ......................................................
 
     /** @brief Iterate a single step
-     *  @detail Here you can add a detailed description what exactly happens
-     *          in a single iteration step
+     *  @detail Each cell updates depending on its state and the state of the
+     *          neighbouring cells according to the following update rules:
+     *          1: Infected --> Empty
+     *          2: Empty    --> Tree
+     *              -with a probability p_growth
+     *          3: Tree     --> Infected
+     *            -with the probability p_infect for each infected
+     *            or herd cell in the neighbourhood
+     *            -with probability p_rd_infect for random-point infections
+     *          4: Herd or stone cells remain in their respective state.
+     *
      */
     void perform_step ()
     {
