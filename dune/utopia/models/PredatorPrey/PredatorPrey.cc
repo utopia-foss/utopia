@@ -15,8 +15,6 @@ int main (int argc, char** argv)
         Utopia::PseudoParent pp(argv[1]);
 
         // Initialize the main model instance with different template arguments
-        // and then iterate it ... Need separate cases for this.
-        // TODO find a better way to check for this argument?!
         if (Utopia::as_bool(pp.get_cfg()["PredatorPrey"]["periodic"])) {
             // Periodic grid
             PredatorPreyModel model("PredatorPrey", pp,

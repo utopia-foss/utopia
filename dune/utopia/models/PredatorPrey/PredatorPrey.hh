@@ -97,19 +97,21 @@ private:
     std::function<State(std::shared_ptr<CellType>)> _cost = [this](const auto cell){
         // Get the state of the cell
         auto state = cell->state();
-        
-        // check for the predators and preys that would die and remove them 
-        if (state.resource_pred == 1) {
-            state.population = static_cast<Population>(state.population - 2);
-        }
-
-        if (state.resource_prey == 1) {
-                state.population = static_cast<Population>(state.population - 1);
-            }
 
         // subtract the cost of living from the resources 
         state.resource_pred = std::clamp(state.resource_pred - 1, 0, USHRT_MAX);
         state.resource_prey = std::clamp(state.resource_prey - 1, 0, USHRT_MAX);
+
+        // check for the predators and preys that have no resources and remove them 
+        if (state.population > 1 && state.resource_pred == 0) {
+            state.population = static_cast<Population>(state.population - 2);
+        }
+
+        if ((state.population == 1 || state.population == 3) && state.resource_prey == 0) {
+                state.population = static_cast<Population>(state.population - 1);
+            }
+
+        
         return state;
     };
 
@@ -272,10 +274,10 @@ private:
         // Get the state of the cell
         auto state = cell->state();
 
-        // random number for flight, distribution
+        // random number for reproduction, distribution
         std::uniform_real_distribution<> rand(0, 1); 
 
-        if ((state.population == predator) && (rand(*this->_rng) < as_double(this->_cfg["p_repro"])) && (state.resource_pred > as_<unsigned short int>(this->_cfg["e_min"]))) {
+        if ((state.population == predator) && (rand(*this->_rng) < as_double(this->_cfg["p_repro"])) && (state.resource_pred >= as_<unsigned short int>(this->_cfg["e_min"]))) {
             
             _repro_cell_in_nbhood.clear();
             
@@ -315,7 +317,7 @@ private:
             }
         }
 
-        else if (state.population == prey && rand(*this->_rng) < as_double(this->_cfg["p_repro"]) && state.resource_prey > as_<unsigned short int>(this->_cfg["e_min"])) {
+        else if (state.population == prey && rand(*this->_rng) < as_double(this->_cfg["p_repro"]) && state.resource_prey >= as_<unsigned short int>(this->_cfg["e_min"])) {
             
             _repro_cell_in_nbhood.clear();
             
@@ -409,49 +411,123 @@ public:
     /// Initialize the cells randomly
     void initialize_cells()
     {
-        // Get the threshold probability value
-        const auto prey_prob = as_double(this->_cfg["prey_prob"]);
-        const auto pred_prob = as_double(this->_cfg["pred_prob"]);
+        // Extract the mode that determines the initial strategy
+        auto initial_state = as_str(this->_cfg["initial_state"]);
 
-        // Use a uniform real distribution for random numbers
-        auto rand = std::bind(std::uniform_real_distribution<>(),
-                                std::ref(*this->_rng));
+        this->_log->info("Initializing cells in '{}' mode ...", initial_state);
 
-        // Define the update rule
-        auto set_random_population = [&rand, &prey_prob, &pred_prob](const auto cell) {
-            // Get the state
-            auto state = cell->state();
+        if (initial_state == "random")
+        {
+            // Get the threshold probability value
+            const auto prey_prob = as_double(this->_cfg["prey_prob"]);
+            const auto pred_prob = as_double(this->_cfg["pred_prob"]);
 
-            // Draw a random number and compare it to the thresholds
-            double random_number = rand();
+            // Use a uniform real distribution for random numbers
+            auto rand = std::bind(std::uniform_real_distribution<>(),
+                                    std::ref(*this->_rng));
 
-            if (random_number < prey_prob) {
-                // put prey on the cell and give 2 resource units to it
-                state.population = Population::prey;
-                state.resource_prey = 2;
-                state.resource_pred = 0;
+            // Define the update rule
+            auto set_random_population = [&rand, &prey_prob, &pred_prob](const auto cell) {
+                // Get the state
+                auto state = cell->state();
+
+                // Draw a random number and compare it to the thresholds
+                double random_number = rand();
+
+                if (random_number < prey_prob) {
+                    // put prey on the cell and give 2 resource units to it
+                    state.population = Population::prey;
+                    state.resource_prey = 2;
+                    state.resource_pred = 0;
+                }
+                else if (random_number < (prey_prob + pred_prob)){
+                    // put a predator on the cell and give 2 resource units to it
+                    state.population = Population::predator;
+                    state.resource_pred = 2;
+                    state.resource_prey = 0;
+                }
+                else {
+                    // initialize as empty
+                    state.population = Population::empty;
+                    state.resource_pred = 0;
+                    state.resource_prey = 0;
+                }
+                return state;
+            };
+            
+            // Apply the rule to all cells
+            apply_rule<false>(set_random_population, _manager.cells());
+            
+            
+
+
+        }
+        else if (initial_state == "fraction")
+        {
+            // Get the value for the fraction of cells to be populated by prey
+            const auto prey_fraction = as_double(this->_cfg["prey_frac"]);
+
+            // Get the value for the fraction of cells to be populated by predators
+            const auto pred_fraction = as_double(this->_cfg["pred_frac"]);
+
+            if (prey_fraction < 0 || pred_fraction < 0 || (prey_fraction + pred_fraction) >  1 ) {
+                throw std::invalid_argument("Need `prey_frac` and pred `pred_frac` in [0, 1] and the sum not exceeding 1, "
+                                            "but got values: "
+                                            + std::to_string(prey_fraction) + " and " + std::to_string(pred_fraction));
             }
-            else if (random_number < (prey_prob + pred_prob)){
-                // put a predator on the cell and give 2 resource units to it
-                state.population = Population::predator;
-                state.resource_pred = 2;
-                state.resource_prey = 0;
-            }
-            else {
-                // initialize as empty
-                state.population = Population::empty;
-                state.resource_pred = 0;
-                state.resource_prey = 0;
-            }
-            return state;
-        };
-        
-        // Apply the rule to all cells
-        apply_rule<false>(set_random_population, _manager.cells());
-         
-        
 
-        std::cout << "Cells initialized." << std::endl;
+            // Get the cells container
+            auto& cells = _manager.cells();
+
+            // Calculate the number of cells that should have that strategy
+            const auto num_cells = cells.size();
+            const std::size_t num_prey = prey_fraction * num_cells;
+            const std::size_t num_pred = pred_fraction * num_cells;
+            // NOTE this is a flooring calculation!
+
+            this->_log->debug("Cells with popupation prey and pred:  {} and {}",
+                              num_prey, num_pred);
+
+            // Need a counter of cells that were set to prey and pred
+            std::size_t num_set_prey = 0;
+            std::size_t num_set_pred = 0;
+
+            // Get the cells... and shuffle them.
+            auto random_cells = _manager.cells();
+            std::shuffle(random_cells.begin(), random_cells.end(),
+                         *this->_rng);
+
+            // Set the cells accordingly
+            for (auto&& cell : random_cells){
+                // If the desired number of cells populated by prey is not yet reached change another cell's strategy
+                if (num_set_prey < num_prey)
+                {
+                    cell->state().population = Population::prey;
+                    cell->state().resource_prey = 2;
+                    cell->state().resource_pred = 0;
+
+                    num_set_prey++;
+                }
+                else if (num_set_pred < num_pred)
+                {
+                    cell->state().population = Population::predator;
+                    cell->state().resource_pred = 2;
+                    cell->state().resource_prey = 0;
+
+                    num_set_pred++;
+                }
+                // Break, if fraction of strategy 1 is reached
+                else break;
+            }
+        }
+        else
+        {
+            throw std::invalid_argument("`initial_state` parameter with value "
+                                        "'" + initial_state + "' is not "
+                                        "supported!");
+        }
+
+        this->_log->info("Cells initialized.");
 
     }
 
@@ -460,15 +536,19 @@ public:
 
     void perform_step ()
     {      
-        
+    
         // Apply the rules to all cells
+
+        // cost of living is subducted and individuals are removed if resources are 0
         apply_rule<false>(_cost, _manager.cells());
         
+        // predators prey, prey tries to flee
         apply_rule(_move, _manager.cells(), *this->_rng);
         
-
+        // eat
         apply_rule<false>(_eat, _manager.cells());
         
+        // 
         apply_rule(_repro, _manager.cells(), *this->_rng);
     }
 
