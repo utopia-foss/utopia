@@ -110,52 +110,43 @@ private:
         // Get the state of the cell
         auto cellstate = cell->state();
 
-
         if (cellstate == empty){
-
-          // With a probablity of _p_growth set the treestate of the cell to tree.
-          std::uniform_real_distribution<> dist(0., 1.);
-          if (dist(*this->_rng) < _p_growth){
-              cellstate = tree;
-          }
+            // With a probablity of _p_growth set the treestate of the cell to tree.
+            std::uniform_real_distribution<> dist(0., 1.);
+            if (dist(*this->_rng) < _p_growth){
+                cellstate = tree;
+            }
         }
 
         else if (cellstate == tree){
-          // Tree can be infected by neighbor our by random-point-infection.
-          std::uniform_real_distribution<> dist(0., 1.);
-
-          // infection by random point infection
-          if (dist(*this->_rng) < _p_rd_infect){
-            cellstate = infected;
-          }
-
-
-          // Go through neighbor cells (here 5-cell neighbourhood), look if they
-          // are infected (or an infection herd), if yes, infect cell with the probability _p_infect.
-
-          for (auto nb : NextNeighbor::neighbors(cell, this->_manager)){
-
-            if (cellstate == tree){
-              auto nb_cellstate = nb->state();
-
-
-              if (nb_cellstate == infected || nb_cellstate == herd){
-                if (dist(*this->_rng) < _p_infect){
-                    cellstate = infected;
-                  }
-              }
+            // Tree can be infected by neighbor our by random-point-infection.
+            std::uniform_real_distribution<> dist(0., 1.);
+            // infection by random point infection
+            if (dist(*this->_rng) < _p_rd_infect){
+                cellstate = infected;
             }
-            else {
-              break;
-            }
-          }
 
+            // Go through neighbor cells (here 5-cell neighbourhood), look if they
+            // are infected (or an infection herd), if yes, infect cell with the probability _p_infect.
+            for (auto nb : NextNeighbor::neighbors(cell, this->_manager)){
+                if (cellstate == tree){
+                    auto nb_cellstate = nb->state();
+                    if (nb_cellstate == infected || nb_cellstate == herd){
+                        if (dist(*this->_rng) < _p_infect){
+                            cellstate = infected;
+                        }
+                    }
+                }
+                else {
+                    break;
+                }
+            }
         }
 
         else if (cellstate == infected){
-          cellstate = empty;
+            cellstate = empty;
         }
-
+        
         return cellstate;
     };
 
