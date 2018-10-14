@@ -262,9 +262,6 @@ public:
                     ctrt.emplace_back(intensity * trt[i]);
                     cell->state().modtimes.emplace_back(this->_time);
                     cell->state().resources.emplace_back(0.);
-                    // cell->state().resourceinfluxes.emplace_back(
-                    //     (intensity * trt[i] > 0. ? intensity * trt[i] : 0.) *
-                    //     _resdist(*this->_rng));
                     cell->state().resourceinfluxes.emplace_back(_resdist(*this->_rng));
                     agent->state().resources -= cost;
                 }
