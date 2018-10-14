@@ -22,7 +22,6 @@ int main()
 {
     using namespace Utopia;
     MemoryPool<int> mempool(10);
-    MemoryPool<Thing> thingmempool(100);
 
     // allocate stuff
     ASSERT_EQ(mempool.free_pointers().size(), 10);
@@ -54,6 +53,9 @@ int main()
     }
 
     ASSERT_EQ(mempool.free_pointers().size(), 7);
+
+    // use with some struct stuff
+    MemoryPool<Thing> thingmempool(100);
 
     return 0;
 }
