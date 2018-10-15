@@ -22,11 +22,11 @@
     # cell_influxvalues: [1., 1., 1., 1., 1., 1.,1., 1., 1., 1., 1., 1.]
 
 parameter_space: 
-  num_steps: 1000000
-  seed: 594472
+  num_steps: 250000
   periodic: true          # false: cells at boundary have fewer neighbors
   write_every: 1
   grid_size: [32,32]
+  seed: 594472
 
   AmeeMulti:
     model_name: AmeeMulti
@@ -52,9 +52,9 @@ parameter_space:
     deathprobability: 1e-2
 
     # mutationrates, important for evolution speed and stability
-    insertionrate: 1e-3
-    substitution_std: 0.2
-    substitutionrate: 1e-3
+    insertionrate: 1e-2
+    substitution_std: 0.8
+    substitutionrate: 1e-32
 
     modifiercost: 0.
     adaptionfunction: "multi_notnormed"
@@ -65,7 +65,7 @@ parameter_space:
     # Model structure: Agent- & cell types etc
     construction: true
     decay: true
-    highresinterval: [[0, 2000], [50000, 52000], [500000, 502500], [998000, 1000000]]
+    highresinterval: [[0, 2000], [50000, 52000], [200000, 202500], [248000, 250000]]
     Agenttype: !sweep 
       default: complex 
       values: [simple, complex]
@@ -80,5 +80,5 @@ paths:
   out_dir: ~/utopia_output
 
   # model note is added to the output directory path
-  model_note: "test_run_1000000"
+  model_note: "test_run_250000_high_mutationrates"
 

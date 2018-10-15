@@ -101,6 +101,9 @@ private:
     CellManager _cellmanager;
     AgentManager _agentmanager;
 
+    // memory buffer for agents
+    std::allocator<AgentType> _alloc;
+
     // global cell parameters
     double _decayintensity;
     double _removethreshold;
@@ -330,8 +333,8 @@ public:
 
         while (agent->state().resources > (_offspringresources + _reproductioncost))
         {
-            _agentmanager.agents().emplace_back(std::make_shared<AgentType>(
-                Agentstate(agent->state(), _offspringresources, _mutationrates),
+            _agentmanager.agents().emplace_back(std::allocate_shared<AgentType>(
+                _alloc, Agentstate(agent->state(), _offspringresources, _mutationrates),
                 _idx++, agent->state().habitat->position()));
 
             _agentmanager.agents().back()->state().adaption =
@@ -518,6 +521,8 @@ public:
 
           _idx(0)
     {
+        _alloc.allocate(1000000);
+
         initialize_cells();
         initialize_agents();
 
@@ -777,10 +782,11 @@ public:
         auto& agents = _agentmanager.agents();
         auto& cells = _cellmanager.cells();
 
-        // if ((this->_time % 5000 == 0))
-        // {
-        //     print_statistics(agents, cells);
-        // }
+        if ((this->_time % 5000 == 0))
+        {
+            this->_log->info(" T = {}", this->_time);
+            // print_statistics(agents, cells);
+        }
 
         if (agents.size() == 0)
         {
@@ -820,72 +826,75 @@ public:
      */
     void write_data()
     {
-        auto& agents = _agentmanager.agents();
-        auto& cells = _cellmanager.cells();
+        // auto& agents = _agentmanager.agents();
+        // auto& cells = _cellmanager.cells();
 
-        if (agents.size() == 0)
-        {
-            return;
-        }
+        // if (agents.size() == 0)
+        // {
+        //     return;
+        // }
 
-        auto curr_hi = _highres_interval.back();
+        // if (_highres_interval.size() != 0)
+        // {
+        //     auto curr_hi = _highres_interval.back();
 
-        if (this->_time < curr_hi[1] and this->_time >= curr_hi[0])
-        {
-            std::size_t chunksize = (agents.size() < 1000) ? (agents.size()) : 1000;
+        //     if (this->_time < curr_hi[1] and this->_time >= curr_hi[0])
+        //     {
+        //         std::size_t chunksize = (agents.size() < 1000) ? (agents.size()) : 1000;
 
-            auto agrp = _dgroup_agents->open_group("t=" + std::to_string(this->_time));
+        //         auto agrp = _dgroup_agents->open_group("t=" + std::to_string(this->_time));
 
-            for (auto& [name, adaptor] : _agent_adaptors)
-            {
-                agrp->open_dataset(name, {agents.size()}, {chunksize}, 6)
-                    ->write(agents.begin(), agents.end(), adaptor);
-            }
+        //         for (auto& [name, adaptor] : _agent_adaptors)
+        //         {
+        //             agrp->open_dataset(name, {agents.size()}, {chunksize}, 6)
+        //                 ->write(agents.begin(), agents.end(), adaptor);
+        //         }
 
-            auto cgrp = _dgroup_cells->open_group("t=" + std::to_string(this->_time));
+        //         auto cgrp = _dgroup_cells->open_group("t=" + std::to_string(this->_time));
 
-            for (auto& [name, adaptor] : _cell_adaptors)
-            {
-                cgrp->open_dataset(name, {cells.size()}, {256}, 6)
-                    ->write(cells.begin(), cells.end(), adaptor);
-            }
-        }
+        //         for (auto& [name, adaptor] : _cell_adaptors)
+        //         {
+        //             cgrp->open_dataset(name, {cells.size()}, {256}, 6)
+        //                 ->write(cells.begin(), cells.end(), adaptor);
+        //         }
+        //     }
 
-        if (this->_time % _statisticstime == 0)
-        {
-            for (std::size_t i = 0; i < _agent_adaptors.size(); ++i)
-            {
-                _agent_statistics_data[i].push_back(Utils::Describe()(
-                    agents.begin(), agents.end(), std::get<1>(_agent_adaptors[i])));
-            }
+        //     if (this->_time == curr_hi[1])
+        //     {
+        //         _highres_interval.pop_back();
+        //     }
+        // }
 
-            for (std::size_t i = 0; i < _cell_adaptors.size(); ++i)
-            {
-                _cell_statistics_data[i].push_back(Utils::Describe()(
-                    cells.begin(), cells.end(), std::get<1>(_cell_adaptors[i])));
-            }
-        }
+        // if (this->_time % _statisticstime == 0)
+        // {
+        //     for (std::size_t i = 0; i < _agent_adaptors.size(); ++i)
+        //     {
+        //         _agent_statistics_data[i].push_back(Utils::Describe()(
+        //             agents.begin(), agents.end(), std::get<1>(_agent_adaptors[i])));
+        //     }
 
-        if (this->_time > 0 and (this->_time % (_statisticstime * 10) == 0 or
-                                 this->_time == this->_time_max))
-        {
-            for (std::size_t i = 0; i < _dsets_agent_statistics.size(); ++i)
-            {
-                _dsets_agent_statistics[i]->write(_agent_statistics_data[i]);
-                _agent_statistics_data[i].clear();
-            }
+        //     for (std::size_t i = 0; i < _cell_adaptors.size(); ++i)
+        //     {
+        //         _cell_statistics_data[i].push_back(Utils::Describe()(
+        //             cells.begin(), cells.end(), std::get<1>(_cell_adaptors[i])));
+        //     }
+        // }
 
-            for (std::size_t i = 0; i < _dsets_cell_statistics.size(); ++i)
-            {
-                _dsets_cell_statistics[i]->write(_cell_statistics_data[i]);
-                _cell_statistics_data[i].clear();
-            }
-        }
+        // if (this->_time > 0 and (this->_time % (_statisticstime * 10) == 0 or
+        //                          this->_time == this->_time_max))
+        // {
+        //     for (std::size_t i = 0; i < _dsets_agent_statistics.size(); ++i)
+        //     {
+        //         _dsets_agent_statistics[i]->write(_agent_statistics_data[i]);
+        //         _agent_statistics_data[i].clear();
+        //     }
 
-        if (this->_time == curr_hi[1])
-        {
-            _highres_interval.pop_back();
-        }
+        //     for (std::size_t i = 0; i < _dsets_cell_statistics.size(); ++i)
+        //     {
+        //         _dsets_cell_statistics[i]->write(_cell_statistics_data[i]);
+        //         _cell_statistics_data[i].clear();
+        //     }
+        // }
     }
 
     auto& cellmanager()
