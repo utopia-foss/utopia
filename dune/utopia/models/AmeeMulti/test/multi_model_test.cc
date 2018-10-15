@@ -63,13 +63,11 @@ void test_model_construction(Model& model)
     std::string Agenttype = as_str(cfg["Agenttype"]);
     bool construction = as_bool(cfg["construction"]);
     bool decay = as_bool(cfg["decay"]);
-    std::array<unsigned, 2> highresinterval =
-        as_array<unsigned, 2>(cfg["highresinterval"]);
-    bool highresoutput = as_bool(cfg["highresoutput"]);
+    std::vector<std::array<unsigned, 2>> highresinterval =
+        as_vector<std::array<unsigned, 2>>(cfg["highresinterval"]);
 
     // check that the initialization of model,  cells and agent was correct
     // check model parameters
-    ASSERT_EQ(model.get_highresoutput(), highresoutput);
     ASSERT_EQ(model.get_highresinterval(), highresinterval);
     ASSERT_EQ(model.get_decay(), decay);
     ASSERT_EQ(model.get_construction(), construction);

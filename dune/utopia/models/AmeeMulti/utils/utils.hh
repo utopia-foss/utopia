@@ -1,8 +1,8 @@
 #ifndef UTOPIA_MODELS_AMEEMULTI_UTILS_HH
 #define UTOPIA_MODELS_AMEEMULTI_UTILS_HH
 
-#include "../../../data_io/hdfutilities.hh"
 #include <cmath>
+#include <dune/utopia/data_io/hdfutilities.hh>
 #include <functional>
 #include <iomanip>
 #include <iostream>

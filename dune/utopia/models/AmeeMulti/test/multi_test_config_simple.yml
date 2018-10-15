@@ -9,9 +9,8 @@ AmeeMultiSimple:
   grid_size:
   - 32
   - 32
-  highresinterval:
-  - 0
-  - 1000
+  highresinterval: [[0, 2000], [50000, 52000], [200000, 202500], [248000, 250000]]
+
   highresoutput: true
   highrestime: 100
   statisticstime: 20

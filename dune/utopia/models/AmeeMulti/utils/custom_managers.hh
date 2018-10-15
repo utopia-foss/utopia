@@ -1,5 +1,5 @@
-#ifndef AMEEMULTI_CUSTOM_MANAGERS_HH
-#define AMEEMULTI_CUSTOM_MANAGERS_HH
+#ifndef UTOPIA_MODELS_AMEEMULTI_CUSTOM_MANAGERS_HH
+#define UTOPIA_MODELS_AMEEMULTI_CUSTOM_MANAGERS_HH
 
 #include <algorithm>
 #include <dune/utopia/core/grid.hh>

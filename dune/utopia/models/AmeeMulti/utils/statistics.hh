@@ -1,5 +1,5 @@
-#ifndef STATISTICS_HH
-#define STATISTICS_HH
+#ifndef UTOPIA_MODELS_AMEEMULTI_STATISTICS_HH
+#define UTOPIA_MODELS_AMEEMULTI_STATISTICS_HH
 /** @file statistics.hh
  *  @brief Implements functions for computing statistics.
  *
