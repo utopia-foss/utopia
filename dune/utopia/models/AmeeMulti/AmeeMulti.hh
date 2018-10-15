@@ -100,6 +100,7 @@ private:
     // managers
     CellManager _cellmanager;
     AgentManager _agentmanager;
+    std::unordered_map<std::shared_ptr<CellType>, MooreNeighbor::neighbors> _neighborhoods;
 
     // memory buffer for agents
     std::allocator<AgentType> _alloc;
@@ -264,9 +265,6 @@ public:
                     ctrt.emplace_back(intensity * trt[i]);
                     cell->state().modtimes.emplace_back(this->_time);
                     cell->state().resources.emplace_back(0.);
-                    // cell->state().resourceinfluxes.emplace_back(
-                    //     (intensity * trt[i] > 0. ? intensity * trt[i] : 0.) *
-                    //     _resdist(*this->_rng));
                     cell->state().resourceinfluxes.emplace_back(_resdist(*this->_rng));
                     agent->state().resources -= cost;
                 }
@@ -282,7 +280,7 @@ public:
 
         if (agent->state().resources < (_offspringresources + _reproductioncost))
         {
-            auto nb = MooreNeighbor::neighbors(old_home, _cellmanager);
+            auto nb = neighborhoods[old_home];
             std::shuffle(nb.begin(), nb.end(), std::forward<RNG>(*(this->_rng)));
             double testadaption = std::accumulate(
                 agent->state().adaption.begin(), agent->state().adaption.end(), 0.);
@@ -651,6 +649,12 @@ public:
                 return cs;
             },
             _cellmanager.cells());
+
+        // make neighborhoods lookup table
+        std::for_each(_cellmanager.cells().begin(), _cellmanager.cells().end(),
+                      [this](auto& cell) {
+                          _neighborhoods[cell] = MooreNeighbor::neighbors(cell, _cellmanager)
+                      });
     }
 
     void initialize_agents()
