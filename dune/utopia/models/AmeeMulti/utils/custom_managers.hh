@@ -26,7 +26,7 @@ private:
     /// container for agents
     std::vector<Agent*> _agents;
 
-    ///
+    /// memorypool to hold the memory for the agents
     MemoryPool<Agent> _mempool;
 
 public:
@@ -49,17 +49,103 @@ public:
         return _agents;
     }
 
-    MemoryPool<Agent> memorypool()
+    MemoryPool<Agent>& memorypool()
     {
         return _mempool;
     }
 
-    /// Erase all agents for which the rule evaluates to true
+    /**
+     * @brief Erase all agents for which rule evaluates to true
+     *
+     * @param rule Unary function of signature bool(Agent*)
+     */
     template <typename Rule>
     void erase_if(Rule rule)
     {
         auto cutoff = std::remove_if(_agents.begin(), _agents.end(), rule);
         _agents.erase(cutoff, _agents.end());
+    }
+
+    /**
+     * @brief Apply a unary function which does not change the containersize to
+     *        each agent in the population
+     *
+     * @tparam Rule
+     * @param rule
+     */
+    template <typename Rule>
+    void apply_rule(Rule&& rule)
+    {
+        std::for_each(_agents.begin(), _agents.end(), std::forward<Rule&&>(rule));
+    }
+
+    /**
+     * @brief Apply a unary function which may change the containersize to
+     *        each agent in the subpopulation in the index interval [s,e)
+     *
+     * @tparam Rule Unaryfunctiontype of signature void(Agent*)
+     * @param s start of subinterval to apply rule to
+     * @param e end of subinterval to apply rule to
+     * @param rule Rule to apply
+     */
+    template <typename Rule>
+    void apply_rule_n(std::size_t s, std::size_t e, Rule&& rule)
+    {
+        for (std::size_t i = s; i < e; ++i)
+        {
+            rule(_agents[i]);
+        }
+    }
+
+    /**
+     * @brief Apply a unary function which may change the containersize to
+     *        each agent in the subpopulation in the index interval [0,n)
+     *
+     * @tparam Rule Unaryfunctiontype of signature void(Agent*)
+     * @param  n end of subinterval to apply rule to
+     * @param  rule Rule to apply
+     */
+    template <typename Rule>
+    void apply_rule_n(std::size_t n, Rule&& rule)
+    {
+        apply_rule_n(0, n, std::forward<Rule&&>(rule));
+    }
+
+    /**
+     * @brief Apply a unary function which may change the containersize to
+     *        each agent in the subpopulation in the index interval [s,e)
+     *        after shuffling said interval via the supplied rng
+     *
+     * @tparam Rule Unaryfunctiontype of signature void(Agent*)
+     * @param s start of subinterval to apply rule to
+     * @param e end of subinterval to apply rule to
+     * @param rng Randomnumber generator for shuffle
+     * @param rule Rule to apply
+     */
+    template <typename Rule, typename Rng>
+    void apply_rule_n(std::size_t s, std::size_t e, Rng& rng, Rule&& rule)
+    {
+        std::shuffle(std::next(agents.begin(), s), std::next(agents.begin(), e), rng);
+
+        for (std::size_t i = s; i < e; ++i)
+        {
+            rule(_agents[i]);
+        }
+    }
+
+    /**
+     * @brief Apply a unary function which may change the containersize to
+     *        each agent in the subpopulation in the index interval [0,n)
+     *
+     * @tparam Rule Unaryfunctiontype of signature void(Agent*)
+     * @param  n end of subinterval to apply rule to
+     * @param rng Randomnumber generator for shuffle
+     * @param  rule Rule to apply
+     */
+    template <typename Rule, typename Rng>
+    void apply_rule_n(std::size_t n, Rng& rng, Rule&& rule)
+    {
+        apply_rule_n(0, n, rng, std::forward<Rule&&>(rule));
     }
 };
 } // namespace Utopia

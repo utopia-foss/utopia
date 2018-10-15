@@ -1,5 +1,6 @@
 #ifndef UTOPIA_MODELS_AMEEMULTI_MEMORYPOOL_HH
 #define UTOPIA_MODELS_AMEEMULTI_MEMORYPOOL_HH
+#include <cstring>
 #include <iostream>
 #include <memory>
 #include <numeric>
@@ -48,44 +49,28 @@ public:
      * @param n number of elements to allocate
      * @return T*
      */
-    T* allocate(std::size_t n)
+    T* allocate()
     {
-        if (_free_pointers.size() < n)
+        if (_free_pointers.size() == 0)
         {
-            std::size_t s = _size;
-            while (s - _free_pointers.size() < n)
-            {
-                s *= 2;
-            }
-
-            auto new_buffer = new Type[s];
+            std::size_t s = _size * 2;
+            Type* new_buffer = new Type[s];
+            Type* old_buffer = _buffer;
             std::memcpy(new_buffer, _buffer, _size * sizeof(T));
+            delete[] old_buffer;
+            _buffer = new_buffer;
+
             for (std::size_t i = _size; i < s; ++i)
             {
                 _free_pointers.push_back(i);
             }
+
+            _size = s;
         }
 
-        auto ptr =
-            reinterpret_cast<T*>(&_buffer[_free_pointers[_free_pointers.size() - n]]);
-        _free_pointers.erase(_free_pointers.begin() + _free_pointers.size() - n,
-                             _free_pointers.end());
+        auto ptr = reinterpret_cast<T*>(&_buffer[_free_pointers.back()]);
+        _free_pointers.pop_back();
         return ptr;
-    }
-
-    /**
-     * @brief deallocate the pointer ptr of type T* and size n
-     *
-     * @param ptr
-     * @param n
-     */
-    void deallocate(T* ptr, std::size_t n)
-    {
-        std::size_t start = ptr - _buffer;
-        for (std::size_t i = start; i < n + start; ++i)
-        {
-            _free_pointers.push_back(i);
-        }
     }
 
     /**
@@ -95,17 +80,16 @@ public:
      */
     void deallocate(T* ptr)
     {
-        _free_pointers.push_back(ptr - _buffer);
+        _free_pointers.push_back(ptr - reinterpret_cast<T*>(_buffer));
     }
 
     /**
-     * @brief allocate a space for a single object of type T
+     * @brief deallocate everything
      *
-     * @return T*
      */
-    T* allocate()
+    void clear()
     {
-        return allocate(1);
+        std::iota(_free_pointers.begin(), _free_pointers.end(), 0);
     }
 
     /**
@@ -135,7 +119,7 @@ public:
     /**
      * @brief Construct a new Memory Pool object with initial size 'size'
      *
-     * @param size
+     * @param size: initial size of the memorypool
      */
     MemoryPool(std::size_t size) : _buffer(new Type[size]), _size(size)
     {
@@ -143,11 +127,20 @@ public:
         std::iota(_free_pointers.begin(), _free_pointers.end(), 0);
     }
 
+    /**
+     * @brief Destroy the Memory Pool object
+     *
+     */
     ~MemoryPool()
     {
         delete[] _buffer;
     }
 
+    /**
+     * @brief Construct a new Memory Pool object
+     *
+     * @param other
+     */
     MemoryPool(const MemoryPool& other) : _size(other._size)
     {
         _buffer = new Type[other._size];
@@ -156,6 +149,11 @@ public:
         _free_pointers = other._free_pointers;
     }
 
+    /**
+     * @brief Construct a new Memory Pool object
+     *
+     * @param other
+     */
     MemoryPool(MemoryPool&& other)
     {
         _buffer = other._buffer;
@@ -164,6 +162,11 @@ public:
         _size = std::move(other._size);
     }
 
+    /**
+     * @brief swap states with other
+     *
+     * @param other
+     */
     void swap(MemoryPool& other)
     {
         if (this == &other)
@@ -179,16 +182,28 @@ public:
         }
     }
 
+    /**
+     * @brief copy assignment
+     *
+     * @param other
+     * @return MemoryPool&
+     */
     MemoryPool& operator=(const MemoryPool& other)
     {
         _size = other._size;
-        _buffer = std::shared_ptr<Type>(new Type[other._size]);
+        _buffer = new Type[other._size];
         std::memcpy(_buffer, other._buffer, _size);
         T* otherbegin = other._buffer;
         _free_pointers = other._free_pointers;
         return *this;
     }
 
+    /**
+     * @brief move assignment
+     *
+     * @param other
+     * @return MemoryPool&
+     */
     MemoryPool& operator=(MemoryPool&& other)
     {
         _buffer = other._buffer;
