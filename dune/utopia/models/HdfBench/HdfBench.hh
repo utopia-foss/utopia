@@ -186,11 +186,6 @@ public:
                           "sleep_bench: {}s", initial_write ? "yes" : "no",
                           _sleep_step.count(), _sleep_bench.count());
 
-        // Use the below iteration also to create a vector of benchmark names
-        // that correspond to the coordinates of the "benchmark" dimension of
-        // the _times dataset.
-        std::vector<std::string> benchmark_names;
-
         this->_log->info("Performing setup and initial benchmarks ...");
 
         for (auto &bname : _benchmarks) {
@@ -202,9 +197,6 @@ public:
             if (initial_write) {
                 _times[bname] += this->benchmark(bname);
             }
-
-            // Add the name to the vector of benchmark names
-            benchmark_names.push_back(bname);
         }
 
 
@@ -223,7 +215,7 @@ public:
         _dset_times->add_attribute<std::array<std::string, 2>>("dims",
                                                                {{"t",
                                                                 "benchmark"}});
-        _dset_times->add_attribute("coords_benchmark", benchmark_names);
+        _dset_times->add_attribute("coords_benchmark", _benchmarks);
         _dset_times->add_attribute("initial_write", initial_write);
 
 
@@ -252,17 +244,18 @@ public:
     }
 
 
-    /// Write data
+    /// Write the result times of each benchmark
     void write_data () {   
-        _dset_times->write(_times.begin(), _times.end(),
-                           [](auto& result) { return result.second; });
+        _dset_times->write(_benchmarks.begin(), _benchmarks.end(),
+                           [this](auto& bname) {
+                                return this->_times.at(bname);
+                            });
     }
 
 
 protected:
 
-    // Helper functions .......................................................
-
+    // Benchmarking ...........................................................
 
     /// Carries out the benchmark associated with the given name
     template<bool setup=false>
@@ -340,7 +333,8 @@ protected:
         return time_setup + time_since(start);
     };    
 
-    // Benchmark functions ....................................................
+
+    // Write functions ........................................................
 
     /// Writes a constant value into the dataset
     BenchFunc write_const = [this](auto bname, auto cfg){

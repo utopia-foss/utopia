@@ -22,7 +22,7 @@ benchmarks:
   - basic
   - 1M
   - 10M
-  - 10M_small_chunks
+  - 10M_large_chunks
 
 # If true, the initial setup is followed by a write operation and the
 # _combined_ time is saved.
@@ -68,9 +68,9 @@ basic: &basic
   <<: *basic
   write_shape: [10485760]  # 10M
 
-10M_small_chunks:
+10M_large_chunks:
   <<: *basic
   setup_func: setup_nd_with_chunks
 
   write_shape: [10485760]  # 10M
-  chunks: [1, 524288]      # 0.5M
+  chunks: [1, 10485760]    # 10M * typesize
