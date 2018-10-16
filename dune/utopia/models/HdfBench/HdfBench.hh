@@ -85,10 +85,7 @@ private:
     std::map<std::string, std::shared_ptr<DataSet>> _dsets;
 
 
-    // -- Configuration parameters applicable to all benchmarks -- //
-    /// Whether to perform a write operation at time step 0
-    const bool _initial_write;
-    
+    // -- Configuration parameters applicable to all benchmarks -- //    
     /// Whether to delete datasets after the last step
     const bool _delete_afterwards;
     
@@ -137,7 +134,6 @@ public:
         _dsets(),
 
         // Extract config parameters applicable to all benchmarks
-        _initial_write(as_bool(this->_cfg["initial_write"])),
         _delete_afterwards(as_bool(this->_cfg["delete_afterwards"])),
         _sleep_step(as_double(this->_cfg["sleep_step"])),
         _sleep_bench(as_double(this->_cfg["sleep_bench"]))
@@ -167,8 +163,11 @@ public:
         // Carry out the setup benchmark  . . . . . . . . . . . . . . . . . . .
         this->_log->info("Received {:d} benchmark configuration(s).",
                          _benchmarks.size());
+
+        const bool initial_write = as_bool(this->_cfg["initial_write"]);
+
         this->_log->debug("initial_write: {},  sleep_step: {}s,  "
-                          "sleep_bench: {}s", _initial_write ? "yes" : "no",
+                          "sleep_bench: {}s", initial_write ? "yes" : "no",
                           _sleep_step.count(), _sleep_bench.count());
 
         // Use the below iteration also to create a vector of benchmark names
@@ -184,7 +183,7 @@ public:
 
             // Perform one write operation, if configured to do so, and add
             // the time on top
-            if (_initial_write) {
+            if (initial_write) {
                 _times[bname] += this->benchmark(bname, bcfg);
             }
 
@@ -209,6 +208,7 @@ public:
                                                                {"t",
                                                                 "benchmark"});
         _dset_times->add_attribute("coords_benchmark", benchmark_names);
+        _dset_times->add_attribute("initial_write", initial_write);
 
 
         this->_log->debug("Finished constructing HdfBench '{}'.", this->_name);
