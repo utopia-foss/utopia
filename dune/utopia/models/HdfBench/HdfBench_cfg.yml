@@ -41,16 +41,16 @@ sleep_bench: 0
 
 basic: &basic
   # Define the names of the setup and benchmark functions
-  setup_func: setup_2d
+  setup_func: setup_nd
   write_func: write_const
   
-  # Shared arguments
-  # The number of columns the dataset should have
-  num_cols: &basic_num_cols 100
-
-  # The shape of the data to write; an iterator with the corresponding length
-  # is created from the factorized shape extends
-  write_shape: [*basic_num_cols]
+  # Shared arguments start below
+  # The shape of the data to write
+  write_shape: [100]
+  # NOTE For writing, an iterator with length equal to the product of the
+  #      shape extends is created.
+  # NOTE The setup functions using this parameter prepend one extra dimension
+  #      in front with the extend being the maximum number of time steps + 1.
 
   # The constant value to write (always a double)
   const_val: 42.
@@ -58,5 +58,4 @@ basic: &basic
 long_rows:
   <<: *basic
 
-  num_cols: &long_rows_num_cols 1048576  # == 1024^2
-  write_shape: [*long_rows_num_cols]
+  write_shape: [1048576]  # == 1024^2

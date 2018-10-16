@@ -9,6 +9,7 @@
 #include <functional>
 #include <thread>
 
+#include <hdf5.h>
 #include <boost/iterator/counting_iterator.hpp>
 
 #include <dune/utopia/base.hh>
@@ -152,7 +153,7 @@ public:
         // FIXME Creating func maps should be possible in initializer list!
 
         this->_log->debug("Associating setup functions ...");
-        _setup_funcs["setup_2d"] = setup_2d;
+        _setup_funcs["setup_nd"] = setup_nd;
         
 
         this->_log->debug("Associating write functions ...");
@@ -164,8 +165,8 @@ public:
 
 
         // Carry out the setup benchmark  . . . . . . . . . . . . . . . . . . .
-        this->_log->info("Performing setup and initial benchmark of {} "
-                         "configuration(s) ...", _benchmarks.size());
+        this->_log->info("Received {:d} benchmark configuration(s).",
+                         _benchmarks.size());
         this->_log->debug("initial_write: {},  sleep_step: {}s,  "
                           "sleep_bench: {}s", _initial_write ? "yes" : "no",
                           _sleep_step.count(), _sleep_bench.count());
@@ -174,6 +175,8 @@ public:
         // that correspond to the coordinates of the "benchmark" dimension of
         // the _times dataset.
         std::vector<std::string> benchmark_names;
+
+        this->_log->info("Performing setup and initial benchmarks ...");
 
         for (auto const& [bname, bcfg] : _benchmarks) {
             // Setup the dataset and store the time needed
@@ -282,18 +285,21 @@ protected:
 
     // Setup functions ........................................................
 
-    /// Sets up a 2d dataset with a given number of columns
-    BenchFunc setup_2d = [this](auto bname, auto cfg){
-        // Without measuring time, extract the parameters
-        auto num_cols = as_<std::size_t>(cfg["num_cols"]);
-        auto num_rows = this->get_time_max() + 1;
+    /* @brief Sets up an n-dimensional dataset
+     * @detail The dataset shape corresponds to the write_shape argument, but
+     *         with an extra dimension in front that has as extend time_max + 1
+     */
+    BenchFunc setup_nd = [this](auto bname, auto cfg){
+        // Determine the shape of the final dataset
+        auto shape = as_vector<hsize_t>(cfg["write_shape"]);
+        shape.insert(shape.begin(), this->get_time_max() + 1);
 
         const auto start = Clock::now();
         // -- benchmark start -- //
 
         // Create the dataset and set its capacity
         _dsets[bname] = this->_hdfgrp->open_dataset(bname);
-        _dsets[bname]->set_capacity({num_rows, num_cols});
+        _dsets[bname]->set_capacity(shape);
 
         // --- benchmark end --- //
         return time_since(start);
@@ -301,7 +307,7 @@ protected:
 
     // Benchmark functions ....................................................
 
-    /// Writes a constant value into the 
+    /// Writes a constant value into the dataset
     BenchFunc write_const = [this](auto bname, auto cfg){
         // Determine the value to write
         auto val = as_double(cfg["const_val"]);
@@ -314,6 +320,7 @@ protected:
         const auto start = Clock::now();
         // -- benchmark start -- //
 
+        // Can use the counting iterator as surrogate
         _dsets[bname]->write(boost::counting_iterator<std::size_t>(0),
                              boost::counting_iterator<std::size_t>(it_len),
                              [&val](auto &count){ return val; });
