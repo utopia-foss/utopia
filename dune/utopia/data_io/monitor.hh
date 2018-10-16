@@ -10,7 +10,7 @@
 namespace Utopia{
 namespace DataIO{
 
-/// The monitor timer keeps track of the time when to emit monitor data
+/// The MonitorTimer keeps track of the time when to emit monitor data
 class MonitorTimer{
 public:
     // -- Data types uses throughout the monitor timer-- //
@@ -70,6 +70,7 @@ public:
 };
 
 
+/// The MonitorData stores the data that is emitted to the terminal.
 class MonitorData{
 private:
     // -- Member declaration -- //
@@ -159,27 +160,60 @@ public:
     }
 };
 
+
+/// The Monitor monitors data that is emitted if a given time has passed.
 class Monitor{
 private:
+    // -- Member declaration -- //
+    /// The name of the monitor
     const std::string _name;
 
+    /// The monitor manager
     std::shared_ptr<MonitorManager> _mtr_mgr;
 public:
+    /// Constructor
+    /** Construct a new Monitor object. 
+     * 
+     * @param name The name of the monitor
+     * @param root_mtr The root monitor manager
+     */
     Monitor(const std::string name,
             MonitorManager root_mtr):
                 _name(name),
                 _mtr_mgr(std::make_shared<MonitorManager>(root_mtr)){};
 
+    /// Constructor
+    /** Construct a new Monitor object. The shared pointer to the MonitorManager
+     * points at the same MonitorManager as in the parent monitor object.
+     * 
+     * @param name The name of the monitor
+     * @param parent_mtr The parent monitor
+     */
     Monitor(const std::string name,
             Monitor& parent_mtr):
                 _name(parent_mtr.get_name() + "." + name),
                 _mtr_mgr(parent_mtr.get_mtr_mgr()){};
 
+    /// Set a new entry in the MonitorData.
+    /**
+     * @tparam Value The type of the value
+     * @param key The key of the new entry
+     * @param value The value of the new entry
+     */
     template <typename Value>
     void set_entry(const std::string key, const Value value){
         _mtr_mgr->get_data().set_entry(_name, key, value);
     }
 
+    /// Set a new entry in the MonitorData if enough time has passed.
+    /**
+     * If more time has passed than specified in the _emit_interval
+     * the monitor sets a new entry in the MonitorData.
+     * 
+     * @tparam Value The type of the value
+     * @param key The key of the new entry
+     * @param value The value of the new entry
+     */
     template <typename Value>
     void set_entry_if_time_is_ripe(const std::string key, const Value value){
         if (_mtr_mgr->time_has_come(false)){
@@ -187,10 +221,12 @@ public:
         }
     }
 
+    /// Get a shared pointer to the MonitorManager.
     std::shared_ptr<MonitorManager> get_mtr_mgr() const {
         return _mtr_mgr;
     }
 
+    /// get the name of the monitor.
     std::string get_name() const {
         return _name;
     }
