@@ -134,6 +134,11 @@ public:
 
 
         // Carry out the setup benchmark  . . . . . . . . . . . . . . . . . . .
+        // Use the below iteration also to create a vector of benchmark names
+        // that correspond to the coordinates of the "benchmark" dimension of
+        // the _times dataset.
+        std::vector<std::string> benchmark_names;
+
         for (auto const& [bname, bcfg] : _benchmarks) {
             // Setup the dataset and perform one write operation
             const auto setup_time = this->benchmark<true>(bname, bcfg);
@@ -141,10 +146,13 @@ public:
 
             // Then store the sum
             _times[bname] = setup_time + write_time;
+
+            // And add the name to the vector of benchmark names
+            benchmark_names.push_back(bname);
         }
 
         this->_log->info("Successfully set up {} benchmark configuration(s).",
-                         _times.size());
+                         benchmark_names.size());
 
         // Set up the times dataset and write initial data . . . . . . . . . . 
         // Set dataset capacities for the times dataset
@@ -156,13 +164,12 @@ public:
         // Write out the times needed for setup
         this->write_data();
 
-        // Now that the dataset is opened, write dimension names and
-        // coordinates to dataset attributes
+        // With the dataset open, write dimension names and coordinates to
+        // the dataset attributes
         _dset_times->add_attribute<std::array<std::string, 2>>("dims",
                                                                {"t",
                                                                 "benchmark"});
-        // _dset_times->add_attribute("coords_benchmark",
-        //                            _benchmarks); // TODO store keys
+        _dset_times->add_attribute("coords_benchmark", benchmark_names);
 
 
         this->_log->debug("Finished constructing HdfBench '{}'.", this->_name);
@@ -172,8 +179,8 @@ public:
 
     /** @brief Iterate a single step
      *  @detail The "iteration" in this model is the step that _creates_ the
-     *          data that is written in the write_data method, i.e.: the times
-     *          needed for each of the enabled benchmarks.
+     *          data that is written in the write_data method, i.e.: it carries
+     *          out the benchmarks and stores the corresponding times.
      */
     void perform_step () {
         // TODO consider adding sleep functionality here to simulate simulation
