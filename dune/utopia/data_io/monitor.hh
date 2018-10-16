@@ -105,39 +105,58 @@ public:
 };
 
 
+/// The MonitorManager manages the MonitorData and MonitorTimer
+/** 
+ * The manager performs an emission of the stored monitor data
+ * if the monitor timer asserts that enough time has passed since
+ * the last emit.
+ */
 class MonitorManager{
 private:
-
+    // -- Type definitions -- //
+    /// Type of the timer
     using Timer = std::shared_ptr<MonitorTimer>;
 
+    // -- Member declaration -- //
+    /// The monitor timer
     Timer _timer;
 
+    /// The monitor data
     MonitorData _data;
 
 public:
-    MonitorManager(const std::size_t emit_interval) :
+    /// Constructor
+    /**
+     * @param emit_interval The emit interval that specifies after how much
+     * time to emit the monitor data.
+     */
+    MonitorManager( const std::size_t emit_interval) :
+                    // Create a new MonitorTimer object
                     _timer(std::make_shared<MonitorTimer>(emit_interval)),
                     // Create an empty MonitorData object for the data to be emitted
                     _data(MonitorData()) {};
 
+    /// Perform an emission of the data to the terminal.
     void perform_emission(){
         if (time_has_come(true)){
             _data.emit();
         }
     }
 
+    /// Check whether the time to emit has come.
     bool time_has_come(const bool reset=false){
         return _timer->time_has_come(reset);
     }
 
+    /// Get a shared pointer to the MonitorTimer object.
     Timer& get_timer(){
         return _timer;
     }
 
+    /// Get the reference to the monitor data object.
     MonitorData& get_data(){
         return _data;
     }
-
 };
 
 class Monitor{
