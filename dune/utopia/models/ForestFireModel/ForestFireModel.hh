@@ -131,7 +131,8 @@ private:
     // NOTE They should be named '_dset_<name>', where <name> is the
     //      dataset's actual name as set in the constructor.
     std::shared_ptr<DataSet> _dset_state;
-    std::shared_ptr<DataSet> _dset_cluster;
+    std::shared_ptr<DataSet> _dset_cluster_id;
+    std::shared_ptr<DataSet> _dset_cluster_color;
 
 
     // -- Rule functions -- //
@@ -320,7 +321,8 @@ public:
         _cluster_tag_cnt(0),
         // create datasets
         _dset_state(this->_hdfgrp->open_dataset("state")),
-        _dset_cluster(this->_hdfgrp->open_dataset("cluster"))
+        _dset_cluster_id(this->_hdfgrp->open_dataset("cluster_id")),
+        _dset_cluster_color(this->_hdfgrp->open_dataset("cluster_color"))
     {
         // Call the method that initializes the cells
         this->initialize_cells();
@@ -333,7 +335,8 @@ public:
         this->_log->debug("Setting dataset capacities to {} x {} ...",
                           this->get_time_max() + 1, num_cells);
         _dset_state->set_capacity({this->get_time_max() + 1, num_cells});
-        _dset_cluster->set_capacity({this->get_time_max() + 1, num_cells});
+        _dset_cluster_id->set_capacity({this->get_time_max() + 1, num_cells});
+        _dset_cluster_color->set_capacity({this->get_time_max() + 1, num_cells});
         // get cluster
 
         // Write initial state
@@ -410,11 +413,17 @@ public:
                                     return static_cast<unsigned short int>(cell->state().state);
                                 });
 
-                                // state
-        _dset_cluster->write(_manager.cells().begin(),
+        // cluster id
+        _dset_cluster_id->write(_manager.cells().begin(),
                                 _manager.cells().end(),
                                 [](auto& cell) {
                                     return cell->state().cluster_tag;
+                                });
+        // cluster id in color-representation - periodic id
+        _dset_cluster_color->write(_manager.cells().begin(),
+                                _manager.cells().end(),
+                                [](auto& cell) { 
+                                    return cell->state().cluster_tag % 20;
                                 });
     }
 
