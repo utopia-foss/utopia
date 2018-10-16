@@ -21,7 +21,8 @@
 benchmarks:
   - basic
   - long_rows
-  - small_chunks
+  - write_2d
+  - write_2d_with_chunks
 
 # If true, the initial setup is followed by a write operation and the
 # _combined_ time is saved.

@@ -8,6 +8,7 @@
 #include <numeric>
 #include <functional>
 #include <thread>
+#include <iostream>
 
 #include <hdf5.h>
 #include <boost/iterator/counting_iterator.hpp>
@@ -98,14 +99,30 @@ private:
 
 
     // -- Construction helper functions -- //
-    /// Parse the benchmarks into a map of configurations
-    std::map<std::string, Config> parse_benchmarks() {
+    /// Load the benchmark configurations into a map
+    std::map<std::string, Config> load_benchmarks() {
+        this->_log->debug("Loading benchmark configurations ...");
+
         auto benchmarks = as_vector<std::string>(this->_cfg["benchmarks"]);
         std::map<std::string, Config> cfg;
 
         for (auto &bname : benchmarks) {
-            cfg[bname] = as_<Config>(this->_cfg[bname]);
+            this->_log->trace("Loading benchmark configuration '{}' ...",
+                              bname);
+
+            try {
+                cfg[bname] = as_<Config>(this->_cfg[bname]);
+            }
+            catch (std::exception &e) {
+                std::cerr << "Could not find a benchmark configuration with "
+                             "name '" << bname << "'! Make sure the given "
+                             "configuration contains such an entry."
+                          << std::endl << "Original error:" << std::endl;
+                throw;
+            }
         }
+        
+        this->_log->debug("Got {} benchmark configurations.", cfg.size());
         return cfg;
     }
 
@@ -126,7 +143,7 @@ public:
         _write_funcs(),
 
         // Get the set of enabled benchmarks from the config
-        _benchmarks(parse_benchmarks()),
+        _benchmarks(load_benchmarks()),
 
         // Create the temporary map for measured times and the times dataset
         _times(),
@@ -162,11 +179,7 @@ public:
 
 
         // Carry out the setup benchmark  . . . . . . . . . . . . . . . . . . .
-        this->_log->info("Received {:d} benchmark configuration(s).",
-                         _benchmarks.size());
-
         const bool initial_write = as_bool(this->_cfg["initial_write"]);
-
         this->_log->debug("initial_write: {},  sleep_step: {}s,  "
                           "sleep_bench: {}s", initial_write ? "yes" : "no",
                           _sleep_step.count(), _sleep_bench.count());
