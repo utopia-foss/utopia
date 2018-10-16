@@ -72,18 +72,33 @@ public:
 
 class MonitorData{
 private:
+    // -- Member declaration -- //
+    /// The monitor data that should be emitted
     YAML::Node _data;
+
 public:
+
+    /// Constructor
     MonitorData() : _data(YAML::Node()) {
         // Specify that the emitted data is shown in a single line
         _data.SetStyle(YAML::EmitterStyle::Flow);
     };
 
+    /// Set an entry in the monitor data
+    /** 
+     * @tparam Value The type of the value that should be monitored
+     * @param model_name The model name which will be prefixed to the key
+     * @param key The key of the new entry
+     * @param value The value of the new entry
+     */
     template<typename Value>
-    void set_entry(const std::string model_name, const std::string key, const Value value){
+    void set_entry( const std::string model_name, 
+                    const std::string key, 
+                    const Value value){
         _data[model_name + "." + key] = value;
     }
 
+    /// Emit the stored data to the terminal.
     void emit(){
         std::cout << _data << std::endl;
     }
