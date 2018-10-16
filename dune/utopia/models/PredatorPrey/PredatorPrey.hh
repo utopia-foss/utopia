@@ -94,7 +94,7 @@ private:
     // -- Rule functions -- //
 
     /// Cost of Living
-    std::function<State(std::shared_ptr<CellType>)> _cost = [this](const auto cell){
+    std::function<State(std::shared_ptr<CellType>)> _cost = [](const auto cell){
         // Get the state of the cell
         auto state = cell->state();
 
