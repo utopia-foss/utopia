@@ -10,28 +10,51 @@
 namespace Utopia{
 namespace DataIO{
 
+/// The monitor timer keeps track of the time when to emit monitor data
 class MonitorTimer{
 public:
-    typedef std::chrono::high_resolution_clock Clock;
+    // -- Data types uses throughout the monitor timer-- //
 
+    /// Data type for the clock
+    using Clock = std::chrono::high_resolution_clock;
+
+    /// Data type for a time point
     using Time = std::chrono::high_resolution_clock::time_point;
-    using ChronoTimeUnit = std::chrono::milliseconds;
+
+    /// Data type for the time unit
+    using TimeUnit = std::chrono::milliseconds;
 
 private:
+    // -- Member declaration -- //
+    /// The emit interval
     const std::size_t _emit_interval;
 
+    /// The time of the last emit
     Time _last_emit;
 
 public:
-    MonitorTimer(const std::size_t emit_interval) :
+    /// Constructor
+    /** Construct a new Monitor Timer object. The _last_emit time is set to the
+     * time of construction.
+     * @param emit_interval The time interval that defines whether the time has
+     * come to emit data. If more time than the _emit_interval has passed
+     * the time_has_come function returns true.
+     */
+    MonitorTimer(   const std::size_t emit_interval) :
                     _emit_interval(emit_interval),
                     // Initialize the time of the last commit to current time
                     _last_emit(Clock::now()) {}
 
+    /// Check for whether the time to emit has come or not.
+    /**
+     * @param reset Reset the internal timer to the current time
+     *        if the _emit_interval has been exceeded.
+     * @return true if the internal timer has exceeded the _last_emit time.
+     */
     bool time_has_come(const bool reset=false){
         // Calculate the time difference between now and the last emit
         auto now = Clock::now();
-        auto duration = std::chrono::duration_cast<ChronoTimeUnit>(now - _last_emit);
+        auto duration = std::chrono::duration_cast<TimeUnit>(now - _last_emit);
         
         // If more time than the _emit_interval has passed return true
         if ((std::size_t)duration.count() > _emit_interval) {
