@@ -71,8 +71,11 @@ private:
     /// A map of implemented write functions
     std::map<std::string, BenchFunc> _write_funcs;
     
+    /// Names of benchmarks
+    const std::vector<std::string> _benchmarks;
+
     /// Configuration for the benchmarks
-    const std::map<std::string, Config> _benchmarks;
+    const std::map<std::string, Config> _bench_cfgs;
 
     /// The results of the measurements, stored under the benchmark name
     std::map<std::string, double> _times;
@@ -102,11 +105,9 @@ private:
     /// Load the benchmark configurations into a map
     std::map<std::string, Config> load_benchmarks() {
         this->_log->debug("Loading benchmark configurations ...");
-
-        auto benchmarks = as_vector<std::string>(this->_cfg["benchmarks"]);
         std::map<std::string, Config> cfg;
 
-        for (auto &bname : benchmarks) {
+        for (auto &bname : _benchmarks) {
             this->_log->trace("Loading benchmark configuration '{}' ...",
                               bname);
 
@@ -117,7 +118,7 @@ private:
                 std::cerr << "Could not find a benchmark configuration with "
                              "name '" << bname << "'! Make sure the given "
                              "configuration contains such an entry."
-                          << std::endl << "Original error:" << std::endl;
+                          << std::endl << "Original error message:  ";
                 throw;
             }
         }
@@ -143,7 +144,8 @@ public:
         _write_funcs(),
 
         // Get the set of enabled benchmarks from the config
-        _benchmarks(load_benchmarks()),
+        _benchmarks(as_vector<std::string>(this->_cfg["benchmarks"])),
+        _bench_cfgs(load_benchmarks()),
 
         // Create the temporary map for measured times and the times dataset
         _times(),
@@ -191,14 +193,14 @@ public:
 
         this->_log->info("Performing setup and initial benchmarks ...");
 
-        for (auto const& [bname, bcfg] : _benchmarks) {
+        for (auto &bname : _benchmarks) {
             // Setup the dataset and store the time needed
-            _times[bname] = this->benchmark<true>(bname, bcfg);
+            _times[bname] = this->benchmark<true>(bname);
 
             // Perform one write operation, if configured to do so, and add
             // the time on top
             if (initial_write) {
-                _times[bname] += this->benchmark(bname, bcfg);
+                _times[bname] += this->benchmark(bname);
             }
 
             // Add the name to the vector of benchmark names
@@ -242,10 +244,10 @@ public:
         // NOTE Duration might be zero, not triggering a sleep. Same below.
 
         // Carry out the benchmarks, optionally sleeping some time before that
-        for (auto const& [bname, bcfg] : _benchmarks) {
+        for (auto &bname : _benchmarks) {
             std::this_thread::sleep_for(_sleep_bench);
 
-            _times[bname] = this->benchmark(bname, bcfg);
+            _times[bname] = this->benchmark(bname);
         }
     }
 
@@ -262,9 +264,12 @@ protected:
     // Helper functions .......................................................
 
 
-    /// Carries out the benchmark function associated with the given name
+    /// Carries out the benchmark associated with the given name
     template<bool setup=false>
-    double benchmark(const std::string &bname, const Config &bcfg) {
+    double benchmark(const std::string &bname) {
+        // Get the benchmark configuration entry
+        const auto bcfg = _bench_cfgs.at(bname);
+
         // Get the name of the setup/benchmark function, then resolve it
         BenchFunc bfunc;
         if constexpr (setup) {
@@ -278,7 +283,7 @@ protected:
         const auto btime = bfunc(bname, bcfg);
 
         // Log the time, then return it        
-        this->_log->debug("Benchmark result {:>13s} {} : {:>10.3f} ms",
+        this->_log->debug("Benchmark result {:>20s} {} : {:>10.3f} ms",
                           bname, setup ? "setup" : "write", btime * 1E3);
         return btime; 
     }

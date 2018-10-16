@@ -20,9 +20,9 @@
 #      Also, duplicates are not allowed!
 benchmarks:
   - basic
-  - long_rows
-  - write_2d
-  - write_2d_with_chunks
+  - 1M
+  - 10M
+  - 10M_small_chunks
 
 # If true, the initial setup is followed by a write operation and the
 # _combined_ time is saved.
@@ -38,8 +38,10 @@ sleep_step: 0
 sleep_bench: 0
 
 # .............................................................................
-# Shared settings for the individual benchmarks and their setup functions.
-# These are only loaded if the benchmark is enabled.
+# Settings for the individual benchmarks
+# These define the setup and write functions to use for the benchmark and their
+# parameters. The configurations are only loaded if a benchmark with such a
+# name appears in the list of benchmarks above.
 
 basic: &basic
   # Define the names of the setup and benchmark functions
@@ -57,18 +59,18 @@ basic: &basic
   # The constant value to write (always a double)
   const_val: 42.
 
-long_rows:
+
+1M:
   <<: *basic
+  write_shape: [1048576]  # 1M
 
-  write_shape: [1048576]  # == 1024^2
-
-write_2d: &write_2d
+10M:
   <<: *basic
+  write_shape: [10485760]  # 10M
 
-  write_shape: [512, 2048]
-
-write_2d_with_chunks:
-  <<: *write_2d
-
+10M_small_chunks:
+  <<: *basic
   setup_func: setup_nd_with_chunks
-  chunks: [1, 256, 1024]
+
+  write_shape: [10485760]  # 10M
+  chunks: [1, 524288]      # 0.5M
