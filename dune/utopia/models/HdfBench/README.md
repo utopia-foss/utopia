@@ -53,6 +53,17 @@ long_rows:
 ```
 
 #### Advanced options
+There are a number of additional configuration flags that change the behaviour of the benchmarks:
+
+| Argument name | possible values (default) | Description |
+| ------------- | ------------------------- | ----------- |
+| `initial_write` | boolean (`true`)        | Whether the initial setup is followed by a write operation; time for step 0 is then the _combined_ time for both.
+| `sleep_step`| positive float-likes (`0.`)  | Sleep time at the beginning of each step (not measured) |
+| `sleep_bench`| positive float-likes (`0.`) | Sleep time at the beginning of each benchmark (not measured) |
+
+<!-- TODO: add delete_afterwards flag once implemented -->
+
+The `sleep_*` features can make a benchmark more realistic as they give the operating system time to do its magic, which would, in a real simulation, happen during the computational parts of a simulation step.
 
 
 ## Available setup and write functions
@@ -60,7 +71,8 @@ long_rows:
 | Name | Description |
 | ---- | ----------- |
 | `setup_nd` | Sets up an $`n`$-dimensional dataset with shape `{num_steps + 1, write_shape}` |
-| `write_const` | Writes `const_val` in shape `write_shape` to the dataset. |
+| `setup_nd_with_chunks` | Additionally to `setup_chunks`, allows to manually set the chunk sizes via `chunks` argument (needs to include time dimension!) |
+| `write_const` | Writes `const_val` in shape `write_shape` to the dataset |
 
 _TODO: add more._
 

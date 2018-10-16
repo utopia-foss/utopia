@@ -56,7 +56,7 @@ public:
     typedef std::chrono::duration<double> dsec;
 
     /// Type of a benchmark function pointer
-    using BenchFunc = std::function<const double(const std::string, Config)>;
+    using BenchFunc = std::function<double(const std::string, Config)>;
 
 
 private:
@@ -150,6 +150,7 @@ public:
 
         this->_log->debug("Associating setup functions ...");
         _setup_funcs["setup_nd"] = setup_nd;
+        _setup_funcs["setup_nd_with_chunks"] = setup_nd_with_chunks;
         
 
         this->_log->debug("Associating write functions ...");
@@ -205,8 +206,8 @@ public:
         // With the dataset open, write dimension names and coordinates to
         // the dataset attributes
         _dset_times->add_attribute<std::array<std::string, 2>>("dims",
-                                                               {"t",
-                                                                "benchmark"});
+                                                               {{"t",
+                                                                "benchmark"}});
         _dset_times->add_attribute("coords_benchmark", benchmark_names);
         _dset_times->add_attribute("initial_write", initial_write);
 
@@ -250,16 +251,14 @@ protected:
 
     /// Carries out the benchmark function associated with the given name
     template<bool setup=false>
-    const double benchmark(const std::string &bname, const Config &bcfg) {
+    double benchmark(const std::string &bname, const Config &bcfg) {
         // Get the name of the setup/benchmark function, then resolve it
         BenchFunc bfunc;
         if constexpr (setup) {
-            const auto func_name = as_str(bcfg["setup_func"]);
-            bfunc = _setup_funcs.at(func_name);
+            bfunc = _setup_funcs.at(as_str(bcfg["setup_func"]));
         }
         else {
-            const auto func_name = as_str(bcfg["write_func"]);
-            bfunc = _write_funcs.at(func_name);
+            bfunc = _write_funcs.at(as_str(bcfg["write_func"]));
         }
 
         // Call the function; its return value is the time it took to execute
@@ -272,12 +271,12 @@ protected:
     }
 
     /// Returns the time (in seconds) since the given time point
-    const double time_since(const Time start) {
+    double time_since(const Time start) {
         return time_between(start, Clock::now());
     }
     
     /// Returns the absolute time (in seconds) between the given time points
-    const double time_between(const Time start, const Time end) {
+    double time_between(const Time start, const Time end) {
         dsec seconds = abs(end - start);
         return seconds.count();
     }
@@ -305,6 +304,24 @@ protected:
         return time_since(start);
     };
 
+
+    BenchFunc setup_nd_with_chunks = [this](auto bname, auto cfg){
+        // Call the regular setup_nd to set up the dataset
+        const auto time_setup = this->setup_nd(bname, cfg);
+
+        // Extract the chunks argument
+        const auto chunks = as_vector<hsize_t>(cfg["chunks"]);
+
+        const auto start = Clock::now();
+        // -- benchmark start -- //
+
+        // Set the chunks value
+        _dsets[bname]->set_chunksize(chunks);
+
+        // --- benchmark end --- //
+        return time_setup + time_since(start);
+    };    
+
     // Benchmark functions ....................................................
 
     /// Writes a constant value into the dataset
@@ -323,7 +340,9 @@ protected:
         // Can use the counting iterator as surrogate
         _dsets[bname]->write(boost::counting_iterator<std::size_t>(0),
                              boost::counting_iterator<std::size_t>(it_len),
-                             [&val](auto &count){ return val; });
+                             [&val]([[maybe_unused]] auto &count){
+                                return val;
+                             });
 
         // --- benchmark end --- //
         return time_since(start);

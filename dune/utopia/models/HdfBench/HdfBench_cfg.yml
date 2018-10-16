@@ -21,6 +21,7 @@
 benchmarks:
   - basic
   - long_rows
+  - small_chunks
 
 # If true, the initial setup is followed by a write operation and the
 # _combined_ time is saved.
@@ -59,3 +60,14 @@ long_rows:
   <<: *basic
 
   write_shape: [1048576]  # == 1024^2
+
+write_2d: &write_2d
+  <<: *basic
+
+  write_shape: [512, 2048]
+
+write_2d_with_chunks:
+  <<: *write_2d
+
+  setup_func: setup_nd_with_chunks
+  chunks: [1, 256, 1024]
