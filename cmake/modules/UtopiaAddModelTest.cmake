@@ -40,6 +40,6 @@ function(add_model_test)
     )
 
     # Done. Inform about it
-    message(STATUS "Added model test:          ${target_name}")
+    message(STATUS "Added model test target:     ${target_name}")
 
 endfunction()
