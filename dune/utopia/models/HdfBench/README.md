@@ -86,4 +86,7 @@ For dynamic evaluation of benchmarks, the dataset attributes should be used:
 * `initial_write`: whether the first benchmarked time (row 0) includes a write operation or _only_ the setup time of the dataset.
 
 ### Evaluation scripts
-_TODO_
+Evaluation scripts are implemented in the `model_plots.HdfBench` module.
+By default, a plot of the benchmarked execution times over the time steps is created for universe `0`.
+
+_TODO: expand these._

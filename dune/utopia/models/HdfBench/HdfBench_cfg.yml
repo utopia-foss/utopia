@@ -68,4 +68,4 @@ basic: &basic
   setup_func: setup_nd_with_chunks
 
   write_shape: [1048576]  # 1M
-  chunks: [10, 1048576]   # 1M * typesize
+  chunks: [4, 1048576]    # 1M * typesize
