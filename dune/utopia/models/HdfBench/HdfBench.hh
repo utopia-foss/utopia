@@ -7,6 +7,7 @@
 #include <limits>
 #include <numeric>
 #include <functional>
+#include <thread>
 
 #include <boost/iterator/counting_iterator.hpp>
 
@@ -83,6 +84,21 @@ private:
     std::map<std::string, std::shared_ptr<DataSet>> _dsets;
 
 
+    // -- Configuration parameters applicable to all benchmarks -- //
+    /// Whether to perform a write operation at time step 0
+    const bool _initial_write;
+    
+    /// Whether to delete datasets after the last step
+    const bool _delete_afterwards;
+    
+    /// Sleep time in seconds at the beginning of each step
+    const std::chrono::duration<double> _sleep_step;
+    
+    /// Sleep time in seconds before each benchmark
+    const std::chrono::duration<double> _sleep_bench;
+
+
+
     // -- Construction helper functions -- //
     /// Parse the benchmarks into a map of configurations
     std::map<std::string, Config> parse_benchmarks() {
@@ -116,8 +132,22 @@ public:
 
         // Create the temporary map for measured times and the times dataset
         _times(),
-        _dset_times(this->_hdfgrp->open_dataset("times"))
+        _dset_times(this->_hdfgrp->open_dataset("times")),
+        _dsets(),
+
+        // Extract config parameters applicable to all benchmarks
+        _initial_write(as_bool(this->_cfg["initial_write"])),
+        _delete_afterwards(as_bool(this->_cfg["delete_afterwards"])),
+        _sleep_step(as_double(this->_cfg["sleep_step"])),
+        _sleep_bench(as_double(this->_cfg["sleep_bench"]))
     {   
+        // Check arguments
+        if (_delete_afterwards) {
+            throw std::invalid_argument("delete_afterwards feature is not yet "
+                                        "implemented!");
+        }
+
+
         // Set up the function mappings . . . . . . . . . . . . . . . . . . . .
         // FIXME Creating func maps should be possible in initializer list!
 
@@ -134,25 +164,31 @@ public:
 
 
         // Carry out the setup benchmark  . . . . . . . . . . . . . . . . . . .
+        this->_log->info("Performing setup and initial benchmark of {} "
+                         "configuration(s) ...", _benchmarks.size());
+        this->_log->debug("initial_write: {},  sleep_step: {}s,  "
+                          "sleep_bench: {}s", _initial_write ? "yes" : "no",
+                          _sleep_step.count(), _sleep_bench.count());
+
         // Use the below iteration also to create a vector of benchmark names
         // that correspond to the coordinates of the "benchmark" dimension of
         // the _times dataset.
         std::vector<std::string> benchmark_names;
 
         for (auto const& [bname, bcfg] : _benchmarks) {
-            // Setup the dataset and perform one write operation
-            const auto setup_time = this->benchmark<true>(bname, bcfg);
-            const auto write_time = this->benchmark(bname, bcfg);
+            // Setup the dataset and store the time needed
+            _times[bname] = this->benchmark<true>(bname, bcfg);
 
-            // Then store the sum
-            _times[bname] = setup_time + write_time;
+            // Perform one write operation, if configured to do so, and add
+            // the time on top
+            if (_initial_write) {
+                _times[bname] += this->benchmark(bname, bcfg);
+            }
 
-            // And add the name to the vector of benchmark names
+            // Add the name to the vector of benchmark names
             benchmark_names.push_back(bname);
         }
 
-        this->_log->info("Successfully set up {} benchmark configuration(s).",
-                         benchmark_names.size());
 
         // Set up the times dataset and write initial data . . . . . . . . . . 
         // Set dataset capacities for the times dataset
@@ -180,12 +216,18 @@ public:
     /** @brief Iterate a single step
      *  @detail The "iteration" in this model is the step that _creates_ the
      *          data that is written in the write_data method, i.e.: it carries
-     *          out the benchmarks and stores the corresponding times.
+     *          out the benchmarks and stores the corresponding times in the
+     *          _times member, to be written out in write_data
      */
     void perform_step () {
-        // TODO consider adding sleep functionality here to simulate simulation
+        // Sleep before the actual step is carried out
+        std::this_thread::sleep_for(_sleep_step);
+        // NOTE Duration might be zero, not triggering a sleep. Same below.
 
+        // Carry out the benchmarks, optionally sleeping some time before that
         for (auto const& [bname, bcfg] : _benchmarks) {
+            std::this_thread::sleep_for(_sleep_bench);
+
             _times[bname] = this->benchmark(bname, bcfg);
         }
     }

@@ -24,15 +24,16 @@ benchmarks:
 
 # If true, the initial setup is followed by a write operation and the
 # _combined_ time is saved.
-initial_write: true  # TODO
+initial_write: true
 
 # Delete the test datasets after the run went through
-delete_afterwards: true  # TODO
+delete_afterwards: false  # TODO implement
 
-# Whether to sleep before a simulation step starts or between individual
-# benchmarks, simulating a simulation taking place
-sleep_before_benchs: 0  # TODO
-sleep_between_benchs: 0  # TODO
+# Sleep time (in seconds, can be float) at the beginning of each step, or
+# between individual benchmarks. Choose 0 to deactivate.
+# These simulate a simulation taking place, giving the OS time to do its thing.
+sleep_step: 0
+sleep_bench: 0
 
 # .............................................................................
 # Shared settings for the individual benchmarks and their setup functions.
