@@ -79,6 +79,8 @@ public:
     using NextNeighbor = Utopia::Neighborhoods::NextNeighbor;
     using MooreNeighbor = Utopia::Neighborhoods::MooreNeighbor;
 
+    using AgentContainer = typename AgentManager::Container;
+
 private:
     // function types
     using AgentFunction = std::function<void(const std::shared_ptr<AgentType>)>;
@@ -100,7 +102,7 @@ private:
     // managers
     CellManager _cellmanager;
     AgentManager _agentmanager;
-    std::unordered_map<std::shared_ptr<CellType>, std::vector<std::shared_ptr<CellType>>> _neighborhoods;
+    // std::unordered_map<std::shared_ptr<CellType>, std::vector<std::shared_ptr<CellType>>> _neighborhoods;
 
     // memory buffer for agents
     std::allocator<AgentType> _alloc;
@@ -280,7 +282,7 @@ public:
 
         if (agent->state().resources < (_offspringresources + _reproductioncost))
         {
-            auto nb = _neighborhoods[old_home];
+            auto nb = old_home->neighborhood;
             std::shuffle(nb.begin(), nb.end(), std::forward<RNG>(*(this->_rng)));
             double testadaption = std::accumulate(
                 agent->state().adaption.begin(), agent->state().adaption.end(), 0.);
@@ -649,13 +651,6 @@ public:
                 return cs;
             },
             _cellmanager.cells());
-
-        // make neighborhoods lookup table
-        std::for_each(_cellmanager.cells().begin(), _cellmanager.cells().end(),
-                      [this](auto& cell) {
-                          _neighborhoods[cell] =
-                              MooreNeighbor::neighbors(cell, _cellmanager);
-                      });
     }
 
     void initialize_agents()
@@ -798,31 +793,34 @@ public:
             return;
         }
 
-        for (auto& agent : agents)
-        {
-            update_adaption(agent);
-        }
+        // for (auto& agent : agents)
+        // {
+        //     update_adaption(agent);
+        // }
 
-        for (auto& cell : cells)
-        {
-            update_cell(cell);
-        }
+        // for (auto& cell : cells)
+        // {
+        //     update_cell(cell);
+        // }
 
-        std::vector<unsigned> indices(agents.size());
-        std::iota(indices.begin(), indices.end(), 0);
+        // std::vector<unsigned> indices(agents.size());
+        // std::iota(indices.begin(), indices.end(), 0);
 
-        std::shuffle(indices.begin(), indices.end(), *(this->_rng));
+        // std::shuffle(indices.begin(), indices.end(), *(this->_rng));
 
-        for (auto& idx : indices)
-        {
-            update_agent(agents[idx]);
-        }
+        // for (auto& idx : indices)
+        // {
+        //     update_agent(agents[idx]);
+        // }
 
-        _agentmanager.agents().erase(
-            std::remove_if(_agentmanager.agents().begin(),
-                           _agentmanager.agents().end(),
-                           [](auto agent) { return agent->state().deathflag; }),
-            _agentmanager.agents().end());
+        _agentmanager.apply_rule(&AmeeMulti::update_adaption);
+
+        apply_rule(&AmeeMulti::update_cell, _cellmanager.cells());
+
+        _agentmanager.apply_rule_n(agents.size(), *this->_rng, &AmeeMulti::update_agent);
+
+        _agentmanager.erase_if(
+            [](auto agent) { return agent->state().deathflag; });
     }
 
     /**

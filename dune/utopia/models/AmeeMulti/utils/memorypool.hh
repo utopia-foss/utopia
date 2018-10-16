@@ -145,7 +145,6 @@ public:
     {
         _buffer = new Type[other._size];
         std::memcpy(_buffer, other._buffer, _size);
-        T* otherbegin = other._buffer;
         _free_pointers = other._free_pointers;
     }
 
@@ -193,7 +192,6 @@ public:
         _size = other._size;
         _buffer = new Type[other._size];
         std::memcpy(_buffer, other._buffer, _size);
-        T* otherbegin = other._buffer;
         _free_pointers = other._free_pointers;
         return *this;
     }

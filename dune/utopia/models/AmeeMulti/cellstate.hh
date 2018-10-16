@@ -26,6 +26,7 @@ struct Cellstate
     std::vector<double> resourceinfluxes;
     std::vector<double> modtimes;
     std::vector<double> resource_capacities;
+    std::vector<std::shared_ptr<Cellstate>> neighborhood;
 
     Cellstate() = default;
 
