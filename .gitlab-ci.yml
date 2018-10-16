@@ -236,7 +236,7 @@ test:models:
     - utopia run dummy
     - utopia run CopyMe
     - utopia run CopyMeBare --no-plot
-    - utopia run HdfBench --no-plot  # FIXME once plot file is ready
+    - utopia run HdfBench
     #
     # Now the actual models:
     - utopia run SimpleEG

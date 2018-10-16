@@ -1,2 +1,8 @@
 # Default plots for the HdfBench model
 ---
+bench_results:
+  creator: external
+  
+  # Use the HdfBench-specific plot functions
+  module: model_plots.HdfBench
+  plot_func: times
