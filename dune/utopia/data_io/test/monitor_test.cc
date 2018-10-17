@@ -84,10 +84,10 @@ void test_MonitorTimer(){
 }
 
 
-// Test the MonitorData functionality
-void test_MonitorData(){
-    // Create a MonitorData object, which holds an empty YAML::Node 
-    MonitorData md;
+// Test the MonitorEntries functionality
+void test_MonitorEntries(){
+    // Create a MonitorEntries object, which holds an empty YAML::Node 
+    MonitorEntries md;
 
     // Fill the node with a value and using a lambda function
     md.set_entry("testmodel1", "key", 42);
@@ -130,7 +130,7 @@ void test_MonitorManager_and_Monitor(){
     mn.provide_entry("a_vector", [](){return std::vector<int>{1,2,3};});
     mmm.provide_entry("a_string", [](){return "string";});
 
-    // Not enough time has passed, so do not write this entry into the MonitorData
+    // Not enough time has passed, so do not write this entry into the MonitorEntries
     // object
     m.provide_entry("hopefully_not_written!", [](){return "undesired_info";});
 
@@ -170,7 +170,7 @@ void test_MonitorManager_and_Monitor(){
 
 int main(){
     test_MonitorTimer();
-    test_MonitorData();
+    test_MonitorEntries();
     test_MonitorManager_and_Monitor();
 
     return 0;

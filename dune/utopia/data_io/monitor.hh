@@ -70,8 +70,8 @@ public:
 };
 
 
-/// The MonitorData stores the data that is emitted to the terminal.
-class MonitorData{
+/// The MonitorEntries stores the data that is emitted to the terminal.
+class MonitorEntries{
 private:
     // -- Member declaration -- //
     /// The monitor data that should be emitted
@@ -80,7 +80,7 @@ private:
 public:
 
     /// Constructor
-    MonitorData() : _data(YAML::Node()) {
+    MonitorEntries() : _data(YAML::Node()) {
         // Specify that the emitted data is shown in a single line
         _data.SetStyle(YAML::EmitterStyle::Flow);
     };
@@ -106,7 +106,7 @@ public:
 };
 
 
-/// The MonitorManager manages the MonitorData and MonitorTimer
+/// The MonitorManager manages the MonitorEntries and MonitorTimer
 /** 
  * The manager performs an emission of the stored monitor data
  * if the monitor timer asserts that enough time has passed since
@@ -123,7 +123,7 @@ private:
     Timer _timer;
 
     /// The monitor data
-    MonitorData _data;
+    MonitorEntries _data;
 
 public:
     /// Constructor
@@ -134,8 +134,8 @@ public:
     MonitorManager( const double emit_interval) :
                     // Create a new MonitorTimer object
                     _timer(std::make_shared<MonitorTimer>(emit_interval)),
-                    // Create an empty MonitorData object for the data to be emitted
-                    _data(MonitorData()) {};
+                    // Create an empty MonitorEntries object for the data to be emitted
+                    _data(MonitorEntries()) {};
 
     /// Perform an emission of the data to the terminal.
     void perform_emission(){
@@ -155,7 +155,7 @@ public:
     }
 
     /// Get the reference to the monitor data object.
-    MonitorData& get_data(){
+    MonitorEntries& get_data(){
         return _data;
     }
 };
@@ -194,7 +194,7 @@ public:
                 _name(parent_mtr.get_name() + "." + name),
                 _mtr_mgr(parent_mtr.get_monitor_manager()){};
 
-    /// Provide a new entry in the MonitorData.
+    /// Provide a new entry in the MonitorEntries.
     /** This entry is only set if the MonitorManager asserts that the emit
      * interval time is surpassed.
      * @tparam Function The type of the function that is called
@@ -209,7 +209,7 @@ public:
         }
     }
 
-    /// Provide a new entry in the MonitorData.
+    /// Provide a new entry in the MonitorEntries.
     /** This entry is only set if the MonitorManager asserts that the emit
      * interval time is surpassed.
      * @tparam Value The type of the value
