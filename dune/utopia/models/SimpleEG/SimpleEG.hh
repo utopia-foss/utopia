@@ -411,11 +411,10 @@ public:
     }
 
 
-    /// Monitor information in the terminal
+    /// Monitor model information
     void monitor ()
     {
-        // Monitor the time
-        this->_mtr.provide_entry("time", [this](){return this->_time;});
+
     }
 
 

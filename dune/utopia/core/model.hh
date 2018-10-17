@@ -276,6 +276,8 @@ public:
     /// Monitor information in the terminal
     void monitor () {
         if (_mtr_mgr->collect()){
+            // Monitor the time
+            this->_mtr.set_by_value("time", this->_time);
             impl().monitor();
         }
     }

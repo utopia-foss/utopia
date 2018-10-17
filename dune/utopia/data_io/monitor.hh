@@ -223,11 +223,9 @@ public:
      * @param value The value of the new entry
      */
     template <typename Function>
-    void provide_entry( const std::string key, 
+    void set_by_func(   const std::string key, 
                         const Function f){
-        if (_mtr_mgr->collect()){
-            _mtr_mgr->get_data().set_entry(_name, key, f());   
-        }
+        _mtr_mgr->get_data().set_entry(_name, key, f());   
     }
 
     /// Provide a new entry in the MonitorEntries.
@@ -238,11 +236,9 @@ public:
      * @param value The value of the new entry
      */
     template <typename Value>
-    void provide_entry_value(   const std::string key, 
-                                const Value value){
-        if (_mtr_mgr->collect()){
-            _mtr_mgr->get_data().set_entry(_name, key, value);   
-        }
+    void set_by_value(  const std::string key, 
+                        const Value value){
+        _mtr_mgr->get_data().set_entry(_name, key, value);   
     }
 
 
