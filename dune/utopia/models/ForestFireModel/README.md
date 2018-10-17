@@ -1,47 +1,30 @@
-# Copy Me
-
-The `CopyMe` model is just a template model, which helps you create a new model. This template `README` is just a proposition, but you can use your own creativity and structure to convey the important information about your model in a nice and catchy way. Feel free to add or delete new sections.
+# ForestFireModel
+The ForestFireModel simulates the development of a forest under influence of forest fires. Trees grow on a random basis and fires cause their death, either for a whole cluster instantaneously (two state model) or for a cluster by propagation via the neighborhood (three state model).
 
 ## Fundamentals
 
-Here, you can add some description of the fundamental ideas of your model and the questions it potentially can address.
+The model is based on the description in the CCEES Lecture Notes by Kurt Roth in chapter 7.3 (Discrete Complex Systems - Contact Processes).
 
 ### Subchapter of the Fundamentals
 
-Here, important subaspects of the model can be addressed.
+The model differentiates between two modes:
+
+* The two state forest fire. Available states for a cell in a cellular automaton are 'empty' and 'tree'. Trees grow on an empty cell with probability 'growth_rate'. With the probability 'lightning_frequency' a cell is ignited and this cell, as well as all connected cells (the cluster) burn instantaneously and turn to empty - a percolation occurs.
+* The three state forest fire. Available states for a cell in a cellular automaton are 'empty',  'tree', 'burning'. Trees grow on an empty cell with probability 'growth_rate'. With the probability 'lightning_frequency' a cell is ignited and turns to burning. Furthermore a cell turns from tree to burning if at least one of its neighbors is burning. Burning cells turn empty (one time step later).
+
+Use the boolean 'two_state_FFM' to use either model.
 
 ## Implementation Details
 
-This section provides a few important implementation details.
+There is the possibility to use the model feature 'ignite bottom row' instead of a lightning frequency. Cells don't ignite at random, but any tree on the bottom (southern) row is ignited.
 
-### First Crucial Detail
-
-### Second Detail: If You Try to Implement This Model, You Will Surely Have This Problem
-
-And I solved it! Look here...
+The model can be used as a percolation model if the simulation is run for a single time step.
 
 ## Simulation Results – A Selection Process
 
-it is always nice to have some small (!) pictures or videos which show some interesting simulation results.
-
-## More Conceptual and Theoretical Background
-
-Models normally are based on a lot of theory. Here, you can mention or explain some of it. Further, you can refer to important papers and/or books.
-
-### Theory of Template Models
-
-I am actually not so sure, if there is a lot of theory behind this...
-
-### Theory of Everything
-
-42 [Adams 1979]
-
-## Possible Future Extensions
-
-You have a nice idea, but
-
-1. that would open a completely new storyline and thus would need the creation of a new model that is based on this one.
-2. you just did not have the time to explore everything, however, it would probably be a good idea to look into this in future work.
+See CCEES Lecture Notes
 
 ## References
-- Adams, Douglas (1979). _A Hitchhiker's Guide to the Galaxy_. Pan books.
+- Bak, P., K. Chen and C. Tang, 1990: A forest-fire model and some thoughts on turbulence, Phys. Lett. A, 147, (5-6), 297–300, doi: 10.1016/0375–9601(90)90451–S.
+
+- Kurt Roth: Complex, Chaotic and Evolving Environmental Systems (Lecture Notes). Chapter 7.3 (Discrete Complex Systems - Contact Processes)
