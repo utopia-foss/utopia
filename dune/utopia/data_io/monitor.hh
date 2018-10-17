@@ -147,7 +147,7 @@ public:
 
     /// Perform an emission of the data to the terminal.
     void perform_emission(){
-        if (time_has_come()){
+        if (_collect){
             _data.emit();
         }
     }

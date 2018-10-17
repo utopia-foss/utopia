@@ -43,6 +43,7 @@ struct ModelTypes
     using Time = TimeType;
     using Monitor = MonitorType;
     using MonitorManager = MonitorManagerType;
+    using Level = std::size_t;
 };
 
 
@@ -78,6 +79,9 @@ public:
     /// Data type for the monitor manager
     using MonitorManager = typename ModelTypes::MonitorManager;
 
+    /// Data type for the hierarchical level
+    using Level = typename ModelTypes::Level;
+
 protected:
     // -- Member declarations -- //
     /// Model-internal current time stamp
@@ -110,6 +114,9 @@ protected:
     /// The monitor manager
     std::shared_ptr<MonitorManager> _mtr_mgr;
 
+    /// The hierarchical level
+    const Level _level;
+
 public:
     // -- Constructor -- //
 
@@ -140,7 +147,8 @@ public:
         _log(spdlog::stdout_color_mt(parent_model.get_logger()->name() + "."
                                      + _name)),
         _mtr(Monitor(name, parent_model.get_monitor_manager())),
-        _mtr_mgr(parent_model.get_monitor_manager())
+        _mtr_mgr(parent_model.get_monitor_manager()),
+        _level(parent_model.get_level() + 1)
     {
         // Set this model instance's log level
         if (_cfg["log_level"]) {
@@ -211,6 +219,11 @@ public:
         return _mtr_mgr;
     }
 
+    /// Return the hierarchical level within the model hierarchy
+    Level get_level() const {
+        return _level;
+    }
+
     // -- Default implementations -- //
 
     /// Iterate one (time) step of this model
@@ -219,10 +232,16 @@ public:
      *  will call write_data only in that interval.
      */
     void iterate () {
-        perform_step();
-        monitor();
-        
+        perform_step();     
         increment_time();
+
+        // If the model is at the first hierarchical level, check whether 
+        // the monitor entries should be collected and emitted for all submodels
+        if (_level==1){
+            _mtr_mgr->time_has_come();
+        }
+        monitor();
+        _mtr_mgr->perform_emission();
 
         if (_time % _write_every == 0) {
             _log->debug("Calling write_data ...");
@@ -316,6 +335,10 @@ protected:
     using HDFGroup = Utopia::DataIO::HDFGroup;
     using Time = std::size_t;
     using MonitorManager = Utopia::DataIO::MonitorManager;
+    using Level = std::size_t;
+
+    /// The hierarchical level
+    const Level _level;
 
     /// The config node
     const Config _cfg;
@@ -346,6 +369,8 @@ public:
      */
     PseudoParent (const std::string cfg_path)
     :
+    // The hierarchical level is 0
+    _level(0),
     // Initialize the config node from the path to the config file
     _cfg(YAML::LoadFile(cfg_path)),
     // Create a file at the specified output path and store the shared pointer
@@ -378,6 +403,8 @@ public:
                   const std::string output_file_mode="w",
                   const double emit_interval=5.)
     :
+    // The hierarchical level is 0
+    _level(0),
     // Initialize the config node from the path to the config file
     _cfg(YAML::LoadFile(cfg_path)),
     // Create a file at the specified output path
@@ -403,6 +430,11 @@ public:
 
 
     // -- Getters -- //
+
+    /// Return the hierarchical level within the model hierarchy
+    Level get_level() const {
+        return _level;
+    }
 
     /// Return the config node of the Pseudo model, i.e. the root node
     Config get_cfg() const {
