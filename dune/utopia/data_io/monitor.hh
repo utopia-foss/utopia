@@ -194,27 +194,36 @@ public:
                 _name(parent_mtr.get_name() + "." + name),
                 _mtr_mgr(parent_mtr.get_monitor_manager()){};
 
-    /// Set a new entry in the MonitorData.
-    /**
+    /// Provide a new entry in the MonitorData.
+    /** This entry is only set if the MonitorManager asserts that the emit
+     * interval time is surpassed.
+     * @tparam Function The type of the function that is called
+     * @param key The key of the new entry
+     * @param value The value of the new entry
+     */
+    template <typename Function>
+    void provide_entry( const std::string key, 
+                        const Function f){
+        if (_mtr_mgr->time_has_come(false)){
+            _mtr_mgr->get_data().set_entry(_name, key, f());   
+        }
+    }
+
+    /// Provide a new entry in the MonitorData.
+    /** This entry is only set if the MonitorManager asserts that the emit
+     * interval time is surpassed.
      * @tparam Value The type of the value
      * @param key The key of the new entry
      * @param value The value of the new entry
-     * @param wait_for_timer If the timer assures that the emit interval is
-     * surpassed set the entry, otherwise nothing is written.
      */
     template <typename Value>
-    void set_entry( const std::string key, 
-                    const Value value, 
-                    const bool wait_for_timer = true){
-        if (wait_for_timer){
-            if (_mtr_mgr->time_has_come(false)){
-                _mtr_mgr->get_data().set_entry(_name, key, value);   
-            }
-        }
-        else{
-            _mtr_mgr->get_data().set_entry(_name, key, value);
+    void provide_entry_value(   const std::string key, 
+                                const Value value){
+        if (_mtr_mgr->time_has_come(false)){
+            _mtr_mgr->get_data().set_entry(_name, key, value);   
         }
     }
+
 
     /// Get a shared pointer to the MonitorManager.
     std::shared_ptr<MonitorManager> get_monitor_manager() const {

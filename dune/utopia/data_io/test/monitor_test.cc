@@ -125,14 +125,14 @@ void test_MonitorManager_and_Monitor(){
     Monitor mmm("mmm", mm);
     Monitor n("n", std::make_shared<MonitorManager>(rm));
 
-    m.set_entry("an_int", 1, false);
-    mm.set_entry("a_double", 3.578, false);
-    mn.set_entry("a_vector", std::vector<int>{1,2,3}, false);
-    mmm.set_entry("a_string", "string", false);
+    m.provide_entry("an_int", [](){return 1;});
+    mm.provide_entry("a_double", [](){return 3.578;});
+    mn.provide_entry("a_vector", [](){return std::vector<int>{1,2,3};});
+    mmm.provide_entry("a_string", [](){return "string";});
 
     // Not enough time has passed, so do not write this entry into the MonitorData
     // object
-    m.set_entry("hopefully_not_written!", "undesired_info");
+    m.provide_entry("hopefully_not_written!", [](){return "undesired_info";});
 
     // Check that the data is emited in the desired form
     // For this track the buffer of std::cout 
@@ -147,9 +147,9 @@ void test_MonitorManager_and_Monitor(){
     // should be written and the whole information should be emitted.
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(10ms);
-    m.set_entry("hopefully_written", "needed_info");
-    m.set_entry("hopefully_again_written", "additional_info");
-    m.set_entry("an_int", 3);
+    m.provide_entry("hopefully_written", [](){return "needed_info";});
+    m.provide_entry("hopefully_again_written", [](){return "additional_info";});
+    m.provide_entry("an_int", [](){return 3;});
     rm.perform_emission();
 
     // Assert that the std::cout buffer has the same values as the data

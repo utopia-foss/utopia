@@ -220,6 +220,7 @@ public:
      */
     void iterate () {
         perform_step();
+        _mtr.get_monitor_manager()->perform_emission();
         increment_time();
 
         if (_time % _write_every == 0) {
@@ -228,7 +229,6 @@ public:
         }
         _log->debug("Finished iteration: {:9d} / {:d}", _time, _time_max);
 
-        _mtr.get_monitor_manager()->perform_emission();
     }
 
     /// Run the model from the current time to the maximum time
