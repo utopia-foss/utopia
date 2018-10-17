@@ -9,6 +9,22 @@ state_mean:
 
   uni: 0
 
+cluster_distribution:
+  creator: external
+  
+  # Use the ForestFireModel-specific plot functions
+  module: model_plots.ForestFireModel
+  plot_func: cluster_distribution
+
+  uni: 0
+
+  # at which time to plot
+  time: -1
+
+  plot_kwargs: 
+    linestyle: 'None'
+    marker: '.'
+
 # plot the spatial development in the CA of the state
 state_map:
   creator: external
