@@ -1,41 +1,63 @@
-#include "AmeeMulti.hh"
-#include "agentstates/agentstate.hh"
-#include "agentstates/agentstate_policy_complex.hh"
-#include "agentstates/agentstate_policy_simple.hh"
-#include "utils/custom_managers.hh"
-#include "utils/generators.hh"
+#include <dune/utopia/core/tags.hh>
+#include <dune/utopia/models/AmeeMulti/AmeeMulti.hh>
+#include <dune/utopia/models/AmeeMulti/agentstates/agentstate.hh>
+#include <dune/utopia/models/AmeeMulti/agentstates/agentstate_policy_complex.hh>
+#include <dune/utopia/models/AmeeMulti/agentstates/agentstate_policy_simple.hh>
+#include <dune/utopia/models/AmeeMulti/utils/custom_cell.hh>
+#include <dune/utopia/models/AmeeMulti/utils/custom_setup.hh>
+#include <dune/utopia/models/AmeeMulti/utils/generators.hh>
+#include <dune/utopia/models/AmeeMulti/utils/memorypool.hh>
 #include <iostream>
 #include <thread>
 
 using namespace Utopia::Models::AmeeMulti;
 using namespace std::literals::chrono_literals;
 
+// build a struct which makes setup simpler
+
+template <template <typename, typename, typename> class AgentPolicy, typename G, typename P, typename RNG, bool construction, bool decay>
+struct Modelfactory
+{
+    template <typename Model, typename Cellmanager>
+    auto operator()(std::string name,
+                    Model& parentmodel,
+                    Cellmanager& cellmanager,
+                    std::size_t mempoolsize = 1000000)
+    {
+        using CellType = typename Cellmanager::Cell;
+        using Genotype = G;
+        using Phenotype = P;
+        using Policy = AgentPolicy<Genotype, Phenotype, RNG>;
+        using Agentstate = AgentState<CellType, Policy>;
+        using Position = Dune::FieldVector<double, 2>;
+        using AgentType =
+            Utopia::Agent<Agentstate, Utopia::EmptyTag, std::size_t, Position>;
+
+        // making model types
+        using Modeltypes = Utopia::ModelTypes<RNG>;
+
+        return AmeeMulti<CellType, AgentType, Modeltypes, construction, decay>(
+            name, parentmodel, cellmanager.cells(), mempoolsize);
+    }
+};
+
 int main(int argc, char** argv)
 {
-    // try
-    // {
-    // std::this_thread::sleep_for(20s);
-
     Dune::MPIHelper::instance(argc, argv);
 
     using RNG = Xoroshiro<>;
     using Celltraits = std::vector<double>;
     using Cellstate = Cellstate<Celltraits>;
+    using Genotype = std::vector<double>;
+    using Phenotype = std::vector<double>;
 
     // Initialize the PseudoParent from config file path
     Utopia::PseudoParent<RNG> pp(argv[1]);
 
     // make managers first -> this has to be wrapped in a factory function
-    auto cellmanager =
-        Utopia::Setup::create_grid_manager_cells<Cellstate, true, 2, true, false>(
-            "AmeeMulti", pp);
-
-    auto grid = cellmanager.grid();
-    using GridType = typename decltype(grid)::element_type;
-    using Cell = typename decltype(cellmanager)::Cell;
-
-    Utopia::GridWrapper<GridType> wrapper{grid, cellmanager.extensions(),
-                                          cellmanager.grid_cells()};
+    auto cellmanager = Utopia::Models::AmeeMulti::Setup::create_grid_manager_cells<
+        Utopia::Models::AmeeMulti::StaticCell, Cellstate, true, 2, true, false>(
+        "AmeeMulti", pp);
 
     // read stuff from the config
     bool construction =
@@ -43,198 +65,35 @@ int main(int argc, char** argv)
     bool decay = Utopia::as_bool(pp.get_cfg()["AmeeMulti"]["decay"]);
     std::string agenttype =
         Utopia::as_str(pp.get_cfg()["AmeeMulti"]["Agenttype"]);
-    using Cellmanager = decltype(cellmanager);
 
-    // if (construction && decay)
-    // {
-    //     if (agenttype == "simple")
-    //     {
-    using Genotype = std::vector<double>;
-    using Phenotype = std::vector<double>;
-    using Policy = Agentstate_policy_simple<Genotype, Phenotype, RNG>;
-    using Agentstate = AgentState<Cell, Policy>;
-    auto agentmanager = Utopia::Models::AmeeMulti::Setup::create_manager_agents<true, true>(
-        wrapper, Utopia::Setup::create_agents_on_grid(wrapper, 1, Agentstate()), 1000000);
-
-    using Agentmanager = decltype(agentmanager);
-    // making model types
-    using Modeltypes = Utopia::ModelTypes<RNG>;
-    using AmeeMulti = AmeeMulti<Cell, Cellmanager, Agentmanager, Modeltypes, true, true>;
-
-    AmeeMulti model("AmeeMulti", pp, cellmanager, agentmanager);
-    // run model
-    model.run();
-    //     }
-    //     if (agenttype == "complex")
-    //     {
-    //         using Genotype = std::vector<int>;
-    //         using Phenotype = std::vector<double>;
-    //         using Policy = Agentstate_policy_complex<Genotype, Phenotype,
-    //         RNG>; using Agentstate = AgentState<Cell, Policy>;
-
-    //         auto agentmanager =
-    //             Utopia::Models::AmeeMulti::Setup::create_manager_agents<true, true>(
-    //                 wrapper,
-    //                 Utopia::Setup::create_agents_on_grid(wrapper, 1, Agentstate()), 1000000);
-
-    //         using Agentmanager = decltype(agentmanager);
-    //         // making model types
-    //         using Modeltypes = Utopia::ModelTypes<RNG>;
-
-    //         using AmeeMulti =
-    //             AmeeMulti<Cell, Cellmanager, agentmanager, Modeltypes, true, true>;
-
-    //         AmeeMulti model("AmeeMulti", pp, cellmanager, agentmanager);
-    //         // run model
-    //         model.run();
-    //     }
-    // }
-    // else if (construction && !decay)
-    // {
-    //     if (agenttype == "simple")
-    //     {
-    //         using Genotype = std::vector<double>;
-    //         using Phenotype = std::vector<double>;
-    //         using Policy = Agentstate_policy_simple<Genotype, Phenotype, RNG>;
-    //         using Agentstate = AgentState<Cell, Policy>;
-    //         auto agentmanager =
-    //             Utopia::Models::AmeeMulti::Setup::create_manager_agents<true, true>(
-    //                 wrapper,
-    //                 Utopia::Setup::create_agents_on_grid(wrapper, 1, Agentstate()), 1000000);
-
-    //         using Agentmanager = decltype(agentmanager);
-
-    //         using Modeltypes = Utopia::ModelTypes<RNG>;
-
-    //         using AmeeMulti =
-    //             AmeeMulti<Cell, Cellmanager, agentmanager, Modeltypes, true, false>;
-
-    //         AmeeMulti model("AmeeMulti", pp, cellmanager, agentmanager);
-
-    //         // run model
-    //         model.run();
-    //     }
-
-    //     if (agenttype == "complex")
-    //     {
-    //         using Genotype = std::vector<int>;
-    //         using Phenotype = std::vector<double>;
-    //         using Policy = Agentstate_policy_complex<Genotype, Phenotype, RNG>;
-    //         using Agentstate = AgentState<Cell, Policy>;
-    //         auto agentmanager =
-    //             Utopia::Models::AmeeMulti::Setup::create_manager_agents<true, true>(
-    //                 wrapper,
-    //                 Utopia::Setup::create_agents_on_grid(wrapper, 1, Agentstate()), 1000000);
-
-    //         using Agentmanager = decltype(agentmanager);
-
-    //         using Modeltypes = Utopia::ModelTypes<RNG>;
-
-    //         using AmeeMulti =
-    //             AmeeMulti<Cell, Cellmanager, agentmanager, Modeltypes, true, false>;
-
-    //         AmeeMulti model("AmeeMulti", pp, cellmanager, agentmanager);
-
-    //         // run model
-    //         model.run();
-    //     }
-    // }
-    // else if (!construction && decay)
-    // {
-    //     if (agenttype == "simple")
-    //     {
-    //         using Genotype = std::vector<double>;
-    //         using Phenotype = std::vector<double>;
-    //         using Policy = Agentstate_policy_simple<Genotype, Phenotype, RNG>;
-    //         using Agentstate = AgentState<Cell, Policy>;
-    //         auto agentmanager =
-    //             Utopia::Models::AmeeMulti::Setup::create_manager_agents<true, true>(
-    //                 wrapper,
-    //                 Utopia::Setup::create_agents_on_grid(wrapper, 1, Agentstate()), 1000000);
-
-    //         using Agentmanager = decltype(agentmanager);
-    //         using Modeltypes = Utopia::ModelTypes<RNG>;
-
-    //         using AmeeMulti =
-    //             AmeeMulti<Cell, Cellmanager, agentmanager, Modeltypes, false, true>;
-
-    //         AmeeMulti model("AmeeMulti", pp, cellmanager, agentmanager);
-
-    //         // run model
-    //         model.run();
-    //     }
-
-    //     if (agenttype == "complex")
-    //     {
-    //         using Genotype = std::vector<int>;
-    //         using Phenotype = std::vector<double>;
-    //         using Policy = Agentstate_policy_complex<Genotype, Phenotype, RNG>;
-    //         using Agentstate = AgentState<Cell, Policy>;
-    //         auto agentmanager =
-    //             Utopia::Models::AmeeMulti::Setup::create_manager_agents<true, true>(
-    //                 wrapper,
-    //                 Utopia::Setup::create_agents_on_grid(wrapper, 1, Agentstate()), 1000000);
-
-    //         using Agentmanager = decltype(agentmanager);
-
-    //         using Modeltypes = Utopia::ModelTypes<RNG>;
-    //         using AmeeMulti =
-    //             AmeeMulti<Cell, Cellmanager, agentmanager, Modeltypes, false, true>;
-
-    //         AmeeMulti model("AmeeMulti", pp, cellmanager, agentmanager);
-
-    //         // run model
-    //         model.run();
-    //     }
-    // }
-    // else
-    // {
-    //     if (agenttype == "simple")
-    //     {
-    //         using Genotype = std::vector<double>;
-    //         using Phenotype = std::vector<double>;
-    //         using Policy = Agentstate_policy_simple<Genotype, Phenotype, RNG>;
-    //         using Agentstate = AgentState<Cell, Policy>;
-    //         auto agentmanager =
-    //             Utopia::Models::AmeeMulti::Setup::create_manager_agents<true, true>(
-    //                 wrapper,
-    //                 Utopia::Setup::create_agents_on_grid(wrapper, 1, Agentstate()), 1000000);
-
-    //         using Agentmanager = decltype(agentmanager);
-    //         using Modeltypes = Utopia::ModelTypes<RNG>;
-    //         using AmeeMulti =
-    //             AmeeMulti<Cell, Cellmanager, agentmanager, Modeltypes, false, false>;
-    //         AmeeMulti model("AmeeMulti", pp, cellmanager, agentmanager);
-
-    //         // run model
-    //         model.run();
-    //     }
-
-    //     if (agenttype == "complex")
-    //     {
-    //         using Genotype = std::vector<int>;
-    //         using Phenotype = std::vector<double>;
-    //         using Policy = Agentstate_policy_complex<Genotype, Phenotype,
-    //         RNG>; using Agentstate = AgentState<Cell, Policy>;
-
-    //         auto agentmanager =
-    //             Utopia::Models::AmeeMulti::Setup::create_manager_agents<true, true>(
-    //                 wrapper,
-    //                 Utopia::Setup::create_agents_on_grid(wrapper, 1, Agentstate()), 1000000);
-
-    //         using Agentmanager = decltype(agentmanager);
-    //         using Modeltypes = Utopia::ModelTypes<RNG>;
-
-    //         using AmeeMulti =
-    //             AmeeMulti<Cell, Cellmanager, agentmanager, Modeltypes, false, false>;
-
-    //         // build model
-    //         AmeeMulti model("AmeeMulti", pp, cellmanager, agentmanager);
-
-    //         // run model
-    //         model.run();
-    //     }
-    // }
+    if (std::make_tuple(construction, decay, agenttype) ==
+        std::tuple<bool, bool, std::string>{true, true, "simple"})
+    {
+        auto model =
+            Modelfactory<Agentstate_policy_simple, Genotype, Phenotype, RNG, true, true>()(
+                "AmeeMulti", pp, cellmanager);
+    }
+    else if (std::make_tuple(construction, decay, agenttype) ==
+             std::tuple<bool, bool, std::string>{true, true, "complex"})
+    {
+        auto model =
+            Modelfactory<Agentstate_policy_complex, Genotype, Phenotype, RNG, true, true>()(
+                "AmeeMulti", pp, cellmanager);
+    }
+    else if (std::make_tuple(construction, decay, agenttype) ==
+             std::tuple<bool, bool, std::string>{true, false, "simple"})
+    {
+        auto model =
+            Modelfactory<Agentstate_policy_simple, Genotype, Phenotype, RNG, true, false>()(
+                "AmeeMulti", pp, cellmanager);
+    }
+    else if (std::make_tuple(construction, decay, agenttype) ==
+             std::tuple<bool, bool, std::string>{false, false, "complex"})
+    {
+        auto model =
+            Modelfactory<Agentstate_policy_complex, Genotype, Phenotype, RNG, false, false>()(
+                "AmeeMulti", pp, cellmanager);
+    }
 
     return 0;
 }

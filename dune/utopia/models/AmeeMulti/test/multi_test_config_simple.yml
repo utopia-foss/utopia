@@ -1,5 +1,5 @@
-AmeeMultiSimple:
-  model_name: AmeeMultiSimple
+AmeeMulti:
+  model_name: AmeeMulti
   Agenttype: simple
   adaptionfunction: multi_notnormed
   construction: true

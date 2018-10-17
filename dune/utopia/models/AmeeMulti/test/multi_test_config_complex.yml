@@ -1,5 +1,5 @@
 AmeeMultiComplex:
-  model_name: AmeeMultiComplex
+  model_name: AmeeMulti
   Agenttype: complex
   adaptionfunction: multi_notnormed
   construction: true

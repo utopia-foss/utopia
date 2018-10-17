@@ -2,11 +2,18 @@
 #define UTOPIA_MODELS_AMEEMULTI_CUSTOM_CELL_HH
 #include <dune/utopia/core/cell.hh>
 
+namespace Utopia
+{
+namespace Models
+{
+namespace AmeeMulti
+{
 template <typename T, bool sync, class Tags, typename PositionType, typename IndexType, std::size_t custom_neighborhood_count = 0>
 class StaticCell
-    : public Cell<T, sync, Tags, PositionType, IndexType, custom_neighborhood_count>
+    : public Utopia::Cell<T, sync, Tags, PositionType, IndexType, custom_neighborhood_count>
 {
 private:
+    using Base = Utopia::Cell<T, sync, Tags, PositionType, IndexType, custom_neighborhood_count>;
     std::vector<std::shared_ptr<StaticCell>> _neighborhood;
 
 public:
@@ -17,7 +24,7 @@ public:
 
     void swap(StaticCell& other)
     {
-        if (this = &other)
+        if (this == &other)
         {
             return;
         }
@@ -61,5 +68,8 @@ public:
         : Base(t, pos, boundary, index)
     {
     }
-};
+}; // namespace AmeeMultitemplate<typenameT,boolsync,classTags,typenamePositionType,typenameIndexType,std::size_tcustom_neighborhood_count=0>classStaticCell:publicCell<T,sync,Tags,PositionType,IndexType,custom_neighborhood_count>
+} // namespace AmeeMulti
+} // namespace Models
+} // namespace Utopia
 #endif

@@ -1,25 +1,29 @@
-#include "../AmeeMulti.hh"
-#include "../adaptionfunctions.hh"
-#include "../agentstates/agentstate.hh"
-#include "../agentstates/agentstate_policy_complex.hh"
-#include "../agentstates/agentstate_policy_simple.hh"
-#include "../cellstate.hh"
-#include "../utils/generators.hh"
-#include "../utils/test_utils.hh"
-#include "../utils/utils.hh"
+#include <dune/utopia/models/AmeeMulti/AmeeMulti.hh>
+#include <dune/utopia/models/AmeeMulti/adaptionfunctions.hh>
+#include <dune/utopia/models/AmeeMulti/agentstates/agentstate.hh>
+#include <dune/utopia/models/AmeeMulti/agentstates/agentstate_policy_complex.hh>
+#include <dune/utopia/models/AmeeMulti/agentstates/agentstate_policy_simple.hh>
+#include <dune/utopia/models/AmeeMulti/cellstate.hh>
+#include <dune/utopia/models/AmeeMulti/utils/custom_cell.hh>
+#include <dune/utopia/models/AmeeMulti/utils/custom_setup.hh>
+#include <dune/utopia/models/AmeeMulti/utils/generators.hh>
+#include <dune/utopia/models/AmeeMulti/utils/test_utils.hh>
+#include <dune/utopia/models/AmeeMulti/utils/utils.hh>
 
 using namespace Utopia;
+
 using namespace Utopia::Models::AmeeMulti;
 using namespace Utopia::Models::AmeeMulti::Utils;
 
 using RNG = std::mt19937;
 using Celltraits = std::vector<double>;
 using CS = Cellstate<Celltraits>;
+using namespace std::literals::chrono_literals;
 
 template <typename Model>
 void test_model_construction(Model& model)
 {
-    auto& agents = model.agents();
+    auto& agents = model.population();
     auto& cells = model.cells();
     auto cfg = model.get_cfg();
 
@@ -66,6 +70,7 @@ void test_model_construction(Model& model)
     std::vector<std::array<unsigned, 2>> highresinterval =
         as_vector<std::array<unsigned, 2>>(cfg["highresinterval"]);
 
+    std::reverse(highresinterval.begin(), highresinterval.end());
     // check that the initialization of model,  cells and agent was correct
     // check model parameters
     ASSERT_EQ(model.get_highresinterval(), highresinterval);
@@ -74,6 +79,9 @@ void test_model_construction(Model& model)
     ASSERT_EQ(model.cells().size(), std::size_t(1024));
     // check agent parameters
     ASSERT_EQ(int(agents.size()), 1);
+    ASSERT_EQ(agents[0]->state().age, std::size_t(0));
+    ASSERT_EQ(agents[0]->state().fitness, 0.);
+
     auto inhabited_cell = agents[0]->state().habitat;
     for (auto& agent : agents)
     {
@@ -133,7 +141,7 @@ void test_model_construction(Model& model)
 template <typename Model>
 void test_model_functions(Model& model)
 {
-    auto& agents = model.agents();
+    auto& agents = model.population();
 
     auto adam = agents[0];
     auto& adamstate = adam->state();
@@ -433,21 +441,21 @@ void test_model_functions(Model& model)
     adam->state().resources = 10;
     model.reproduce(adam);
     ASSERT_EQ(adam->state().fitness, 4.);
-    ASSERT_EQ(model.agents().size(), std::size_t(5));
+    ASSERT_EQ(model.population().size(), std::size_t(5));
     ASSERT_EQ(adam->state().resources, 2.);
-    for (std::size_t i = 1; i < model.agents().size(); ++i)
+    for (std::size_t i = 1; i < model.population().size(); ++i)
     {
-        ASSERT_EQ(model.agents()[i]->state().resources, 1.);
-        assert(model.agents()[i]->state().habitat == adam->state().habitat);
-        ASSERT_EQ(model.agents()[i]->state().fitness, 0.);
-        ASSERT_EQ(model.agents()[i]->state().age, std::size_t(0));
+        ASSERT_EQ(model.population()[i]->state().resources, 1.);
+        assert(model.population()[i]->state().habitat == adam->state().habitat);
+        ASSERT_EQ(model.population()[i]->state().fitness, 0.);
+        ASSERT_EQ(model.population()[i]->state().age, std::size_t(0));
     }
 
     ////////////////////////////////////////////////////////////////////////////
     // kill
     ////////////////////////////////////////////////////////////////////////////
 
-    auto deadmanwalking = model.agents().back();
+    auto deadmanwalking = model.population().back();
     deadmanwalking->state().resources = 0.;
     ASSERT_EQ(deadmanwalking->state().deathflag, false);
     model.kill(deadmanwalking);
@@ -529,99 +537,101 @@ void test_model_functions(Model& model)
     ASSERT_EQ(cell->state().resources, std::vector<double>(7, 2));
 }
 
-void test_complex()
+// build a struct which makes setup simpler
+
+template <template <typename, typename, typename> class AgentPolicy, typename G, typename P, typename RNG, bool construction, bool decay>
+struct Modelfactory
 {
-    Utopia::PseudoParent<RNG> parentmodel_complex(
-        "multi_test_config_complex.yml");
-    auto cellmanager_complex =
-        Utopia::Setup::create_grid_manager_cells<CS, true, 2, true, false>(
-            "AmeeMultiComplex", parentmodel_complex);
+    template <typename Model, typename Cellmanager>
+    auto operator()(std::string name,
+                    Model& parentmodel,
+                    Cellmanager& cellmanager,
+                    std::size_t mempoolsize = 1000000)
+    {
+        using CellType = typename Cellmanager::Cell;
+        using Genotype = G;
+        using Phenotype = P;
+        using Policy = AgentPolicy<Genotype, Phenotype, RNG>;
+        using Agentstate = AgentState<CellType, Policy>;
+        using Position = Dune::FieldVector<double, 2>;
+        using AgentType =
+            Utopia::Agent<Agentstate, Utopia::EmptyTag, std::size_t, Position>;
 
-    auto grid_complex = cellmanager_complex.grid();
-    using GridType = typename decltype(grid_complex)::element_type;
-    using Cell = typename decltype(cellmanager_complex)::Cell;
+        // making model types
+        using Modeltypes = Utopia::ModelTypes<RNG>;
 
-    Utopia::GridWrapper<GridType> wrapper_complex{
-        grid_complex, cellmanager_complex.extensions(), cellmanager_complex.grid_cells()};
-
-    using GenotypeS = std::vector<int>;
-    using PhenotypeS = std::vector<double>;
-    using PolicyS = Agentstate_policy_complex<GenotypeS, PhenotypeS, RNG>;
-    using ASS = AgentState<Cell, PolicyS>;
-
-    parentmodel_complex.get_logger()->info("Using complex Agentstate");
-    // make agents and agentmanager
-    auto agents_complex =
-        Utopia::Setup::create_agents_on_grid(wrapper_complex, 1, ASS());
-
-    auto agentmanager_complex = Utopia::Setup::create_manager_agents<true, true>(
-        wrapper_complex, agents_complex);
-
-    // making model types
-    using Modeltypes_Simple = Utopia::ModelTypes<RNG>;
-
-    // get AmeeMulti typedef
-    using AmeeMulti_Complex =
-        AmeeMulti<Cell, decltype(cellmanager_complex), decltype(agentmanager_complex), Modeltypes_Simple, true, true>;
-
-    // make model
-    AmeeMulti_Complex model_complex("AmeeMultiComplex", parentmodel_complex,
-                                    cellmanager_complex, agentmanager_complex);
-
-    // actual tests
-    test_model_construction(model_complex);
-    test_model_functions(model_complex);
-}
-
-void test_simple()
-{
-    Utopia::PseudoParent<RNG> parentmodel_simple(
-        "multi_test_config_simple.yml");
-    auto cellmanager_simple =
-        Utopia::Setup::create_grid_manager_cells<CS, true, 2, true, false>(
-            "AmeeMultiSimple", parentmodel_simple);
-
-    auto grid_simple = cellmanager_simple.grid();
-    using GridType = typename decltype(grid_simple)::element_type;
-    using Cell = typename decltype(cellmanager_simple)::Cell;
-
-    Utopia::GridWrapper<GridType> wrapper_simple{
-        grid_simple, cellmanager_simple.extensions(), cellmanager_simple.grid_cells()};
-
-    using GenotypeS = std::vector<double>;
-    using PhenotypeS = std::vector<double>;
-    using PolicyS = Agentstate_policy_simple<GenotypeS, PhenotypeS, RNG>;
-    using ASS = AgentState<Cell, PolicyS>;
-
-    parentmodel_simple.get_logger()->info("Using simple Agentstate");
-    // make agents and agentmanager
-    auto agents_simple = Utopia::Setup::create_agents_on_grid(wrapper_simple, 1, ASS());
-
-    auto agentmanager_simple = Utopia::Setup::create_manager_agents<true, true>(
-        wrapper_simple, agents_simple);
-
-    // making model types
-    using Modeltypes_Simple = Utopia::ModelTypes<RNG>;
-
-    // get AmeeMulti typedef
-    using AmeeMulti_Simple =
-        AmeeMulti<Cell, decltype(cellmanager_simple), decltype(agentmanager_simple), Modeltypes_Simple, true, true>;
-
-    // make model
-    AmeeMulti_Simple model_simple("AmeeMultiSimple", parentmodel_simple,
-                                  cellmanager_simple, agentmanager_simple);
-
-    // actual tests
-    test_model_construction(model_simple);
-    test_model_functions(model_simple);
-}
+        return AmeeMulti<CellType, AgentType, Modeltypes, construction, decay>(
+            name, parentmodel, cellmanager.cells(), mempoolsize);
+    }
+};
 
 int main(int argc, char** argv)
 {
     Dune::MPIHelper::instance(argc, argv);
 
-    test_simple();
-    test_complex();
+    for (auto& conf :
+         {"multi_test_config_simple.yml", "multi_test_config_complex.yml"})
+    {
+        using RNG = Xoroshiro<>;
+        using Celltraits = std::vector<double>;
+        using Cellstate = Cellstate<Celltraits>;
+        using Genotype = std::vector<double>;
+        using Phenotype = std::vector<double>;
+        // Initialize the PseudoParent from config file path
+        Utopia::PseudoParent<RNG> pp(conf);
+        pp.get_logger()->info("Current config: {}", conf);
 
+        // make managers first -> this has to be wrapped in a factory function
+        auto cellmanager = Utopia::Models::AmeeMulti::Setup::create_grid_manager_cells<
+            Utopia::Models::AmeeMulti::StaticCell, Cellstate, true, 2, true, false>(
+            "AmeeMulti", pp);
+
+        // read stuff from the config
+        bool construction =
+            Utopia::as_bool(pp.get_cfg()["AmeeMulti"]["construction"]);
+        bool decay = Utopia::as_bool(pp.get_cfg()["AmeeMulti"]["decay"]);
+        std::string agenttype =
+            Utopia::as_str(pp.get_cfg()["AmeeMulti"]["Agenttype"]);
+
+        if (std::make_tuple(construction, decay, agenttype) ==
+            std::tuple<bool, bool, std::string>{true, true, "simple"})
+        {
+            auto model =
+                Modelfactory<Agentstate_policy_simple, Genotype, Phenotype, RNG, true, true>()(
+                    "AmeeMulti", pp, cellmanager);
+
+            auto agents = model.population();
+
+            // test_model_construction(model);
+            // test_model_functions(model);
+        }
+        else if (std::make_tuple(construction, decay, agenttype) ==
+                 std::tuple<bool, bool, std::string>{true, true, "complex"})
+        {
+            auto model =
+                Modelfactory<Agentstate_policy_complex, Genotype, Phenotype, RNG, true, true>()(
+                    "AmeeMulti", pp, cellmanager);
+            // test_model_construction(model);
+            // test_model_functions(model);
+        }
+        else if (std::make_tuple(construction, decay, agenttype) ==
+                 std::tuple<bool, bool, std::string>{true, false, "simple"})
+        {
+            auto model =
+                Modelfactory<Agentstate_policy_simple, Genotype, Phenotype, RNG, true, false>()(
+                    "AmeeMulti", pp, cellmanager);
+            // test_model_construction(model);
+            // test_model_functions(model);
+        }
+        else if (std::make_tuple(construction, decay, agenttype) ==
+                 std::tuple<bool, bool, std::string>{false, false, "complex"})
+        {
+            auto model =
+                Modelfactory<Agentstate_policy_complex, Genotype, Phenotype, RNG, false, false>()(
+                    "AmeeMulti", pp, cellmanager);
+            // test_model_construction(model);
+            // test_model_functions(model);
+        }
+    }
     return 0;
 }

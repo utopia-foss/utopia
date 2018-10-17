@@ -83,7 +83,7 @@ auto multi_normed = [](auto agent) -> std::vector<double> {
     }
 };
 
-auto simple_notnormed = [](auto agent) {
+auto simple_notnormed = [](auto agent) -> std::vector<double> {
     auto& state = agent->state();
     auto start = state.start;
     auto end = state.end;
@@ -118,7 +118,7 @@ auto simple_notnormed = [](auto agent) {
     }
 };
 
-auto simple_normed = [](auto agent) {
+auto simple_normed = [](auto agent) -> std::vector<double> {
     auto& state = agent->state();
     auto start = state.start;
     auto end = state.end;

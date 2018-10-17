@@ -12,6 +12,8 @@
 #include <dune/utopia/core/model.hh>
 #include <dune/utopia/core/setup.hh>
 #include <dune/utopia/core/types.hh>
+#include <dune/utopia/models/AmeeMulti/utils/memorypool.hh>
+
 #include <fstream>
 
 #include <functional>
@@ -34,18 +36,15 @@ using namespace Utils;
  * @tparam construction
  * @tparam decay
  */
-template <typename Cell, typename CellManager, typename AgentManager, typename Modeltypes, bool construction, bool decay>
+template <typename Cell, typename Agent, typename Modeltypes, bool construction, bool decay>
 class AmeeMulti
-    : public Model<AmeeMulti<Cell, CellManager, AgentManager, Modeltypes, construction, decay>, Modeltypes>
+    : public Model<AmeeMulti<Cell, Agent, Modeltypes, construction, decay>, Modeltypes>
 {
 public:
-    using AgentType = typename AgentManager::Agent;
-    using CellType = typename CellManager::Cell;
-    /// CellState
-    using Cellstate = typename CellType::State;
-
-    /// Agentstate
-    using Agentstate = typename AgentType::State;
+    using Gridcell = Cell;
+    using Organism = Agent;
+    using Cellstate = typename Gridcell::State;
+    using Agentstate = typename Organism::State;
 
     // cell traits typedefs
     using CT = typename Cellstate::Trait;
@@ -60,8 +59,7 @@ public:
     using Types = Modeltypes;
 
     /// The base model type
-    using Base =
-        Model<AmeeMulti<Cell, CellManager, AgentManager, Modeltypes, construction, decay>, Modeltypes>;
+    using Base = Model<AmeeMulti<Cell, Agent, Modeltypes, construction, decay>, Modeltypes>;
 
     /// Data type that holds the configuration
     using Config = typename Base::Config;
@@ -79,33 +77,33 @@ public:
     using NextNeighbor = Utopia::Neighborhoods::NextNeighbor;
     using MooreNeighbor = Utopia::Neighborhoods::MooreNeighbor;
 
-    using AgentContainer = typename AgentManager::Container;
+    using AgentContainer = std::vector<Organism*>;
+
+    using Cellcontainer = std::vector<std::shared_ptr<Gridcell>>;
 
 private:
     // function types
-    using AgentFunction = std::function<void(const std::shared_ptr<AgentType>)>;
+    using AgentFunction = std::function<void(Organism*)>;
 
-    using CellFunction = std::function<void(const std::shared_ptr<CellType>)>;
+    using CellFunction = std::function<void(const std::shared_ptr<Gridcell>)>;
 
-    using Adaptionfunction =
-        std::function<std::vector<double>(const std::shared_ptr<AgentType>)>;
+    using Adaptionfunction = std::function<std::vector<double>(Organism*)>;
 
-    using AgentAdaptor = std::function<double(const std::shared_ptr<AgentType>)>;
+    using AgentAdaptor = std::function<double(Organism*)>;
     using AgentAdaptortuple = std::tuple<std::string, AgentAdaptor>;
 
-    using CellAdaptor = std::function<double(const std::shared_ptr<CellType>)>;
+    using CellAdaptor = std::function<double(const std::shared_ptr<Gridcell>)>;
     using CellAdaptortuple = std::tuple<std::string, CellAdaptor>;
 
-    using AgentUpdateFunction = std::function<void(const std::shared_ptr<AgentType>)>;
-    using CellUpdateFunction = std::function<void(const std::shared_ptr<CellType>)>;
+    using AgentUpdateFunction = std::function<void(Organism*)>;
+    using CellUpdateFunction = std::function<void(const std::shared_ptr<Gridcell>)>;
 
-    // managers
-    CellManager _cellmanager;
-    AgentManager _agentmanager;
-    // std::unordered_map<std::shared_ptr<CellType>, std::vector<std::shared_ptr<CellType>>> _neighborhoods;
+    // memorypool for agents
+    MemoryPool<Organism> _mempool;
 
-    // memory buffer for agents
-    std::allocator<AgentType> _alloc;
+    // population& grid
+    AgentContainer _population;
+    Cellcontainer _cells;
 
     // global cell parameters
     double _decayintensity;
@@ -151,12 +149,12 @@ public:
         return (K * u0 * std::exp(r * t)) / (K + u0 * (std::exp(r * t) - 1.));
     }
 
-    void update_adaption(const std::shared_ptr<AgentType> agent)
+    void update_adaption(Organism* agent)
     {
         agent->state().adaption = _check_adaption(agent);
     }
 
-    void metabolism(const std::shared_ptr<AgentType> agent)
+    void metabolism(Organism* agent)
     {
         std::size_t i = agent->state().start;
         std::size_t j = 0;
@@ -197,7 +195,7 @@ public:
         }
     }
 
-    void modify(const std::shared_ptr<AgentType> agent)
+    void modify(Organism* agent)
     {
         auto cell = agent->state().habitat;
         auto& trt = agent->state().phenotype;
@@ -274,15 +272,15 @@ public:
         }
     }
 
-    void move(const std::shared_ptr<AgentType> agent)
+    void move(Organism* agent)
     {
-        auto old_home = agent->state().habitat;
+        std::shared_ptr<Cell> old_home = agent->state().habitat;
 
         std::shared_ptr<Cell> new_home = nullptr;
 
         if (agent->state().resources < (_offspringresources + _reproductioncost))
         {
-            auto nb = old_home->neighborhood;
+            auto& nb = old_home->neighborhood();
             std::shuffle(nb.begin(), nb.end(), std::forward<RNG>(*(this->_rng)));
             double testadaption = std::accumulate(
                 agent->state().adaption.begin(), agent->state().adaption.end(), 0.);
@@ -315,37 +313,36 @@ public:
 
             // get position of agent and move it
             auto pos = new_home->position();
-            move_to(pos, agent, _agentmanager);
         }
     }
 
-    void kill(const std::shared_ptr<AgentType> agent)
+    void kill(Organism* agent)
     {
         if (is_equal(agent->state().resources, 0.) or _deathdist(*(this->_rng)) < _deathprobability)
         {
             agent->state().deathflag = true;
+            _mempool.deallocate(agent);
         }
     }
 
-    void reproduce(const std::shared_ptr<AgentType> agent)
+    void reproduce(Organism* agent)
     {
         auto cell = agent->state().habitat;
 
         while (agent->state().resources > (_offspringresources + _reproductioncost))
         {
-            _agentmanager.agents().emplace_back(std::allocate_shared<AgentType>(
-                _alloc, Agentstate(agent->state(), _offspringresources, _mutationrates),
-                _idx++, agent->state().habitat->position()));
+            _population.push_back(reinterpret_cast<Organism*>(::new (_mempool.allocate()) Organism(
+                Agentstate(agent->state(), _offspringresources, _mutationrates),
+                _idx++, agent->state().habitat->position())));
 
-            _agentmanager.agents().back()->state().adaption =
-                _check_adaption(_agentmanager.agents().back());
+            _population.back()->state().adaption = _check_adaption(_population.back());
 
             agent->state().resources -= (_offspringresources + _reproductioncost);
             agent->state().fitness += 1;
         }
     }
 
-    void celltrait_decay(const std::shared_ptr<CellType> cell)
+    void celltrait_decay(const std::shared_ptr<Gridcell> cell)
     {
         auto& org = cell->state().original;
         auto& ctrt = cell->state().celltrait;
@@ -375,7 +372,7 @@ public:
         }
     }
 
-    void update_cell(const std::shared_ptr<CellType> cell)
+    void update_cell(const std::shared_ptr<Gridcell> cell)
     {
         for (std::size_t i = 0; i < cell->state().celltrait.size(); ++i)
         {
@@ -398,7 +395,7 @@ public:
         }
     }
 
-    void update_agent(const std::shared_ptr<AgentType> agent)
+    void update_agent(Organism* agent)
     {
         update_adaption(agent);
 
@@ -421,10 +418,13 @@ public:
     };
 
     template <class ParentModel>
-    AmeeMulti(const std::string name, ParentModel& parent, CellManager cellmanager, AgentManager agentmanager)
+    AmeeMulti(const std::string name,
+              ParentModel& parent,
+              const Cellcontainer& cells,
+              std::size_t mempoolsize = 1000000)
         : Base(name, parent),
-          _cellmanager(cellmanager),
-          _agentmanager(agentmanager),
+          _mempool(MemoryPool<Organism>(mempoolsize)),
+          _cells(cells),
           _decayintensity(as_double(this->_cfg["decayintensity"])),
           _removethreshold(as_double(this->_cfg["removethreshold"])),
           _livingcost(as_double(this->_cfg["livingcost"])),
@@ -521,8 +521,6 @@ public:
 
           _idx(0)
     {
-        _alloc.allocate(1000000);
-
         initialize_cells();
         initialize_agents();
 
@@ -555,12 +553,12 @@ public:
         // write out cell position and cell id to be able to
         // link them later for agents
         this->_hdfgrp->open_group("grid")
-            ->open_dataset("cell_position", {_cellmanager.cells().size()}, {1000})
-            ->write(_cellmanager.cells().begin(), _cellmanager.cells().end(),
+            ->open_dataset("cell_position", {_cells.size()}, {1000})
+            ->write(_cells.begin(), _cells.end(),
                     [](auto cell) { return cell->position(); });
         this->_hdfgrp->open_group("grid")
-            ->open_dataset("cell_id", {_cellmanager.cells().size()}, {1000})
-            ->write(_cellmanager.cells().begin(), _cellmanager.cells().end(),
+            ->open_dataset("cell_id", {_cells.size()}, {1000})
+            ->write(_cells.begin(), _cells.end(),
                     [](auto cell) { return cell->id(); });
 
         std::reverse(_highres_interval.begin(), _highres_interval.end());
@@ -644,13 +642,11 @@ public:
         }
 
         // generate new cellstate
-        apply_rule<false>(
-            [&]([[maybe_unused]] const auto cell) {
-                Cellstate cs(init_celltrait, init_cellresources,
-                             init_cellresourceinfluxes, resourcecapacities);
-                return cs;
-            },
-            _cellmanager.cells());
+
+        std::for_each(_cells.begin(), _cells.end(), [&](auto cell) {
+            cell->state() = Cellstate(init_celltrait, init_cellresources,
+                                      init_cellresourceinfluxes, resourcecapacities);
+        });
     }
 
     void initialize_agents()
@@ -662,10 +658,18 @@ public:
         const auto init_genotype_values =
             as_array<double, 2>(this->_cfg["init_genotype_values"]);
 
-        // make adaption which is viable
-        auto cell = find_cell(_agentmanager.agents()[0], _cellmanager);
+        // reserve states for agents
+        _population.reserve(1000000);
+        std::shared_ptr<Cell> eden =
+            _cells[std::uniform_int_distribution<std::size_t>(0, _cells.size() - 1)(*this->_rng)];
 
-        auto agent = _agentmanager.agents()[0];
+        Agentstate adamstate({}, eden, init_resources, this->_rng);
+
+        _population.push_back(reinterpret_cast<Organism*>(::new (
+            _mempool.allocate()) Organism(adamstate, _idx++, eden->position())));
+
+        auto agent = _population[0];
+
         std::uniform_real_distribution<double> dist(init_genotype_values[0],
                                                     init_genotype_values[1]);
 
@@ -687,7 +691,7 @@ public:
                 }
             }
 
-            agent->state() = Agentstate(trait, cell, init_resources, this->_rng);
+            agent->state() = Agentstate(trait, eden, init_resources, this->_rng);
 
             agent->state().adaption = _check_adaption(agent);
 
@@ -720,10 +724,6 @@ public:
         // with some safety margin (factor of 2)
         auto resource_influxlimits =
             as_vector<double>(this->_cfg["resourceinflux_limits"]);
-
-        // reserve memory for a lot of agents:
-        _agentmanager.agents().reserve(2 * (resource_influxlimits[1] / _upper_resourcelimit) *
-                                       _cellmanager.cells().size());
     }
 
     void increment_time(const typename Base::Time dt = 1)
@@ -731,8 +731,8 @@ public:
         this->_time += dt;
     }
 
-    void print_statistics(const std::vector<std::shared_ptr<AgentType>>& agents,
-                          const std::vector<std::shared_ptr<CellType>>& cells)
+    void print_statistics(const std::vector<Organism*>& agents,
+                          const std::vector<std::shared_ptr<Gridcell>>& cells)
     {
         ArithmeticMean Mean;
         Maximum Max;
@@ -779,48 +779,41 @@ public:
 
     void perform_step()
     {
-        auto& agents = _agentmanager.agents();
-        auto& cells = _cellmanager.cells();
-
         if ((this->_time % 5000 == 0))
         {
             this->_log->info(" T = {}", this->_time);
-            // print_statistics(agents, cells);
+            // print_statistics(_population, _cells);
         }
 
-        if (agents.size() == 0)
+        if (_population.size() == 0)
         {
             return;
         }
 
-        // for (auto& agent : agents)
-        // {
-        //     update_adaption(agent);
-        // }
+        for (auto& agent : _population)
+        {
+            update_adaption(agent);
+        }
 
-        // for (auto& cell : cells)
-        // {
-        //     update_cell(cell);
-        // }
+        for (auto& cell : _cells)
+        {
+            update_cell(cell);
+        }
 
-        // std::vector<unsigned> indices(agents.size());
-        // std::iota(indices.begin(), indices.end(), 0);
+        std::vector<unsigned> indices(_population.size());
+        std::iota(indices.begin(), indices.end(), 0);
 
-        // std::shuffle(indices.begin(), indices.end(), *(this->_rng));
+        std::shuffle(indices.begin(), indices.end(), *(this->_rng));
 
-        // for (auto& idx : indices)
-        // {
-        //     update_agent(agents[idx]);
-        // }
+        for (auto& idx : indices)
+        {
+            update_agent(_population[idx]);
+        }
 
-        _agentmanager.apply_rule(&AmeeMulti::update_adaption);
-
-        apply_rule(&AmeeMulti::update_cell, _cellmanager.cells());
-
-        _agentmanager.apply_rule_n(agents.size(), *this->_rng, &AmeeMulti::update_agent);
-
-        _agentmanager.erase_if(
-            [](auto agent) { return agent->state().deathflag; });
+        _population.erase(
+            std::remove_if(_population.begin(), _population.end(),
+                           [](auto agent) { return agent->state().deathflag; }),
+            _population.end());
     }
 
     /**
@@ -829,9 +822,6 @@ public:
      */
     void write_data()
     {
-        // auto& agents = _agentmanager.agents();
-        // auto& cells = _cellmanager.cells();
-
         // if (agents.size() == 0)
         // {
         //     return;
@@ -900,24 +890,14 @@ public:
         // }
     }
 
-    auto& cellmanager()
+    const auto& population()
     {
-        return _cellmanager;
-    }
-
-    auto& agentmanager()
-    {
-        return _agentmanager;
-    }
-
-    const auto& agents()
-    {
-        return _agentmanager.agents();
+        return _population;
     }
 
     const auto& cells()
     {
-        return _cellmanager.cells();
+        return _cells;
     }
 
     Adaptionfunction get_adaptionfunction()
@@ -1047,9 +1027,9 @@ public:
 
 }; // namespace AmeeMulti
 
-template <typename Cell, typename CellManager, typename AgentManager, typename Modeltypes, bool construction, bool decay>
-std::map<std::string, typename AmeeMulti<Cell, CellManager, AgentManager, Modeltypes, construction, decay>::Adaptionfunction>
-    AmeeMulti<Cell, CellManager, AgentManager, Modeltypes, construction, decay>::adaptionfunctionmap = {
+template <typename Cell, typename Agent, typename Modeltypes, bool construction, bool decay>
+std::map<std::string, typename AmeeMulti<Cell, Agent, Modeltypes, construction, decay>::Adaptionfunction>
+    AmeeMulti<Cell, Agent, Modeltypes, construction, decay>::adaptionfunctionmap = {
         {"multi_notnormed", multi_notnormed},
         {"multi_normed", multi_normed},
         {"simple_notnormed", simple_notnormed},

@@ -131,7 +131,7 @@ public:
      * @brief Destroy the Memory Pool object
      *
      */
-    ~MemoryPool()
+    virtual ~MemoryPool()
     {
         delete[] _buffer;
     }
