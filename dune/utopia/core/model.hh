@@ -227,33 +227,48 @@ public:
     // -- Default implementations -- //
 
     /// Iterate one (time) step of this model
-    /** Increment time, perform step, write data, then emit monitor data 
-     *  to the terminal. If the write_every argument was set, 
-     *  will call write_data only in that interval.
+    /** Increment time, perform step, emit monitor data, and write data.
+     *  Monitoring is performed differently depending on the model level. Also,
+     *  the write_data function may be called only every `write_every` steps.
      */
     void iterate () {
+        // -- Perform the simulation step -- //
         perform_step();     
         increment_time();
 
-        // If the model is at the first hierarchical level, check whether 
-        // the monitor entries should be collected and emitted for all submodels
-        if (_level==1){
-            _mtr_mgr->time_has_come();
+        // -- Monitoring -- //
+        /* If the model is at the first hierarchical level, check whether the
+         * monitor entries should be collected and emitted. This leads to a
+         * flag being set in the monitor manager, such that the submodels do
+         * not have to do the check against the timer as well and that all
+         * collected data stems from the same time step.
+         */ 
+        if (_level == 1) {
+            _mtr_mgr->check_timer();
+            monitor();
+            
+            // If enabled for this step, perform the emission of monitor data
+            // NOTE At this point, we can be sure that all submodels have
+            //      already run, because their iterate functions were called
+            //      in the perform_step of the level 1 model.
+            _mtr_mgr->emit_if_enabled();
         }
-        monitor();
-        _mtr_mgr->perform_emission();
+        else {
+            monitor();
+        }
 
+        // -- Data output -- //
         if (_time % _write_every == 0) {
             _log->debug("Calling write_data ...");
             write_data();
         }
-        _log->debug("Finished iteration: {:9d} / {:d}", _time, _time_max);
 
+        _log->debug("Finished iteration: {:9d} / {:d}", _time, _time_max);
     }
 
     /// Run the model from the current time to the maximum time
-    /** @detail This repeatedly calls the iterate method, which increments time
-      *
+    /** @detail This repeatedly calls the iterate method until the maximum time
+      *         is reached.
       */
     void run () {
         _log->info("Running model from current time  {}  to time  {}  ...",
@@ -274,10 +289,17 @@ public:
     }
 
     /// Monitor information in the terminal
+    /* @detail The child implementation of this function will only be called if
+     *         the monitor manager has determined that an emission will occur,
+     *         because it only makes sense to collect data if it will be
+     *         emitted in this step.
+     */
     void monitor () {
-        if (_mtr_mgr->collect()){
-            // Monitor the time
-            this->_mtr.set_by_value("time", this->_time);
+        if (_mtr_mgr->emit_enabled()) {
+            // Supply the current time of this model to the monitor
+            _mtr.set_by_value("time", _time);
+
+            // Call the child's implementation of the monitor functions.
             impl().monitor();
         }
     }
@@ -417,7 +439,7 @@ public:
     // And initialize the root logger at warning level
     _log(Utopia::init_logger("root", spdlog::level::warn, false)),
     // Create a monitor manager
-    _mtr_mgr(as_double(_cfg["monitor_emit_interval"]))
+    _mtr_mgr(emit_interval)
     {
         setup_loggers(); // global loggers
         set_log_level(); // this log level

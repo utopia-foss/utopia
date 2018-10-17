@@ -132,6 +132,7 @@ void test_MonitorManager_and_Monitor(){
     m.set_by_value("an_int", 1);
     mm.set_by_func("a_double", [](){return 3.578;});
     mn.set_by_func("a_vector", [](){return std::vector<int>{1,2,3};});
+    mn.set_by_func("an_array", [](){return std::array<float, 3>{{.1,.2,.3}};});
     mmm.set_by_func("a_string", [](){return "string";});
 
     // Check that the data is emited in the desired form
@@ -147,25 +148,24 @@ void test_MonitorManager_and_Monitor(){
     m.set_by_func("hopefully_written", [](){return "needed_info";});
     m.set_by_func("hopefully_again_written", [](){return "additional_info";});
     m.set_by_func("an_int", [](){return 3;});
-    rm.perform_emission();
+    rm.emit_if_enabled();
 
     // Not enough time has passed, so do not write this entry into the MonitorEntries
     // object
     m.set_by_func("hopefully_not_written!", [](){return "undesired_info";});
 
     // Nothing should be emitted because not enough time has passed
-    rm.perform_emission();
+    rm.emit_if_enabled();
 
     // Assert that the std::cout buffer has the same values as the data
-    // NOTE: From the terminal output one has to cut off the last characters
-    //       otherwise the comparison fails.
-    std::string expected_output =   "{m.an_int: 3, "
+    std::string expected_output =   "{m.an_int: 1, "
                                     "m.mm.a_double: 3.578, "
                                     "m.mn.a_vector: [1, 2, 3], "
+                                    "m.mn.an_array: [0.1, 0.2, 0.3], "
                                     "m.mm.mmm.a_string: string, "
                                     "m.hopefully_written: needed_info, "
-                                    "m.hopefully_again_written: additional_info}";
-    std::string terminal_output = sbuf.str().substr(0,expected_output.length());
+                                    "m.hopefully_again_written: additional_info}\n";
+    std::string terminal_output = sbuf.str();
     assert(terminal_output.compare(expected_output) == 0);
 
     // restore the original stream buffer
