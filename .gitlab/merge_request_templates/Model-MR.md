@@ -15,6 +15,7 @@ This MR implements the ... model.
 - [ ] Implemented plotting functions
 - [ ] Added model README
 - [ ] Linked to this model in the main README under "Currently implemented models"
+- [ ] [Model requirements](dune/utopia/models/ModelRequirements.md) are all fulfilled
 - [ ] Pipeline passing
 - [ ] Approved by @ ...
 <!-- Add reviewer(s) here once no longer in WIP -->
