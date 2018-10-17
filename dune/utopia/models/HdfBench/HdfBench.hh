@@ -288,7 +288,7 @@ protected:
     
     /// Returns the absolute time (in seconds) between the given time points
     double time_between(const Time start, const Time end) {
-        dsec seconds = abs(end - start);
+        const dsec seconds = abs(end - start);
         return seconds.count();
     }
 
@@ -339,7 +339,7 @@ protected:
     /// Writes a constant value into the dataset
     BenchFunc write_const = [this](auto bname, auto cfg){
         // Determine the value to write
-        auto val = as_double(cfg["const_val"]);
+        const auto val = as_double(cfg["const_val"]);
 
         // Determine iterator length by factorizing the shape
         const auto shape = as_vector<std::size_t>(cfg["write_shape"]);
