@@ -199,25 +199,20 @@ public:
      * @tparam Value The type of the value
      * @param key The key of the new entry
      * @param value The value of the new entry
+     * @param wait_for_timer If the timer assures that the emit interval is
+     * surpassed set the entry, otherwise nothing is written.
      */
     template <typename Value>
-    void set_entry(const std::string key, const Value value){
-        _mtr_mgr->get_data().set_entry(_name, key, value);
-    }
-
-    /// Set a new entry in the MonitorData if enough time has passed.
-    /**
-     * If more time has passed than specified in the _emit_interval
-     * the monitor sets a new entry in the MonitorData.
-     * 
-     * @tparam Value The type of the value
-     * @param key The key of the new entry
-     * @param value The value of the new entry
-     */
-    template <typename Value>
-    void set_entry_if_time_is_ripe(const std::string key, const Value value){
-        if (_mtr_mgr->time_has_come(false)){
-            set_entry(key, value);   
+    void set_entry( const std::string key, 
+                    const Value value, 
+                    const bool wait_for_timer = true){
+        if (wait_for_timer){
+            if (_mtr_mgr->time_has_come(false)){
+                _mtr_mgr->get_data().set_entry(_name, key, value);   
+            }
+        }
+        else{
+            _mtr_mgr->get_data().set_entry(_name, key, value);
         }
     }
 
