@@ -261,6 +261,9 @@ parameter_space:
   # This value is passed along to sub-models. Every sub model can also define
   # the key on their level to change it (analogous to log_levels.)
 
+  # By default, emit monitor data to the terminal every five seconds:
+  monitor_emit_interval: 5.
+
   # The default logging levels
   log_levels:
     # level for I/O operations

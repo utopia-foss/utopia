@@ -4,6 +4,7 @@
 #include <dune/utopia/data_io/hdffile.hh>
 #include <dune/utopia/data_io/hdfgroup.hh>
 #include <dune/utopia/data_io/cfg_utils.hh>
+#include <dune/utopia/data_io/monitor.hh>
 #include <dune/utopia/core/logging.hh>
 
 
@@ -23,12 +24,15 @@ struct BCDummy {};
  *  \tparam DataGroupType         The data group class to store datasets in
  *  \tparam DataSetType           The data group class to store data in
  *  \tparam TimeType              The type to use for the time members
+ *  \tparam MonitorType           The type to use for the Monitor member
  */
 template<typename RNGType=DefaultRNG,
          typename ConfigType=Utopia::DataIO::Config,
          typename DataGroupType=Utopia::DataIO::HDFGroup,
          typename DataSetType=Utopia::DataIO::HDFDataset<Utopia::DataIO::HDFGroup>,
-         typename TimeType=std::size_t
+         typename TimeType=std::size_t,
+         typename MonitorType=Utopia::DataIO::Monitor,
+         typename MonitorManagerType=Utopia::DataIO::MonitorManager
          >
 struct ModelTypes
 {
@@ -37,6 +41,8 @@ struct ModelTypes
     using DataGroup = DataGroupType;
     using DataSet = DataSetType;
     using Time = TimeType;
+    using Monitor = MonitorType;
+    using MonitorManager = MonitorManagerType;
 };
 
 
@@ -66,6 +72,12 @@ public:
     /// Data type for the model time
     using Time = typename ModelTypes::Time;
 
+    /// Data type for the monitor
+    using Monitor = typename ModelTypes::Monitor;
+
+    /// Data type for the monitor manager
+    using MonitorManager = typename ModelTypes::MonitorManager;
+
 protected:
     // -- Member declarations -- //
     /// Model-internal current time stamp
@@ -91,6 +103,12 @@ protected:
 
     /// The (model) logger
     const std::shared_ptr<spdlog::logger> _log;
+
+    /// The monitor
+    Monitor _mtr;
+
+    /// The monitor manager
+    std::shared_ptr<MonitorManager> _mtr_mgr;
 
 public:
     // -- Constructor -- //
@@ -120,7 +138,9 @@ public:
         _write_every(this->determine_write_every(parent_model)),
         _rng(parent_model.get_rng()),
         _log(spdlog::stdout_color_mt(parent_model.get_logger()->name() + "."
-                                     + _name))
+                                     + _name)),
+        _mtr(Monitor(name, parent_model.get_monitor_manager())),
+        _mtr_mgr(parent_model.get_monitor_manager())
     {
         // Set this model instance's log level
         if (_cfg["log_level"]) {
@@ -181,12 +201,22 @@ public:
         return _log;
     }
 
+    /// Return the monitor of this model
+    Monitor get_monitor() const {
+        return _mtr;
+    }
+
+    /// Return the monitor manager of the root model
+    std::shared_ptr<MonitorManager> get_monitor_manager() const {
+        return _mtr_mgr;
+    }
 
     // -- Default implementations -- //
 
     /// Iterate one (time) step of this model
-    /** Increment time, perform step, then write data. If the write_every
-     *  argument was set, will call write_data only in that interval.
+    /** Increment time, perform step, write data, then emit monitor data 
+     *  to the terminal. If the write_every argument was set, 
+     *  will call write_data only in that interval.
      */
     void iterate () {
         perform_step();
@@ -197,6 +227,8 @@ public:
             write_data();
         }
         _log->debug("Finished iteration: {:9d} / {:d}", _time, _time_max);
+
+        _mtr.get_monitor_manager()->perform_emission();
     }
 
     /// Run the model from the current time to the maximum time
@@ -276,6 +308,7 @@ protected:
     using HDFFile = Utopia::DataIO::HDFFile;
     using HDFGroup = Utopia::DataIO::HDFGroup;
     using Time = std::size_t;
+    using MonitorManager = Utopia::DataIO::MonitorManager;
 
     /// The config node
     const Config _cfg;
@@ -291,6 +324,9 @@ protected:
      *  respective model
      */
     const std::shared_ptr<spdlog::logger> _log;
+
+    /// The monitor manager
+    MonitorManager _mtr_mgr;
 
 public:
     /// Constructor that only requires path to a config file
@@ -310,7 +346,9 @@ public:
     // Initialize the RNG from a seed
     _rng(std::make_shared<RNG>(as_<int>(_cfg["seed"]))),
     // And initialize the root logger at warning level
-    _log(Utopia::init_logger("root", spdlog::level::warn, false))
+    _log(Utopia::init_logger("root", spdlog::level::warn, false)),
+    // Create a monitor manager
+    _mtr_mgr(as_double(_cfg["monitor_emit_interval"]))
     {
         setup_loggers(); // global loggers
         set_log_level(); // this log level
@@ -330,7 +368,8 @@ public:
     PseudoParent (const std::string cfg_path,
                   const std::string output_path,
                   const int seed=42,
-                  const std::string output_file_mode="w")
+                  const std::string output_file_mode="w",
+                  const double emit_interval=5.)
     :
     // Initialize the config node from the path to the config file
     _cfg(YAML::LoadFile(cfg_path)),
@@ -339,7 +378,9 @@ public:
     // Initialize the RNG from a seed
     _rng(std::make_shared<RNG>(seed)),
     // And initialize the root logger at warning level
-    _log(Utopia::init_logger("root", spdlog::level::warn, false))
+    _log(Utopia::init_logger("root", spdlog::level::warn, false)),
+    // Create a monitor manager
+    _mtr_mgr(as_double(_cfg["monitor_emit_interval"]))
     {
         setup_loggers(); // global loggers
         set_log_level(); // this log level
@@ -349,6 +390,7 @@ public:
         _log->debug("output_path:   {}  (mode: {})",
                     output_path, output_file_mode);
         _log->debug("seed:          {}", seed);
+        _log->debug("emit_interval: {}", emit_interval);
     }
 
 
@@ -393,7 +435,10 @@ public:
         return as_<Time>(_cfg["num_steps"]);
     }
 
-
+    /// Return the monitor manager of this model
+    std::shared_ptr<MonitorManager> get_monitor_manager() const {
+        return std::make_shared<MonitorManager>(_mtr_mgr);
+    }
 
 
 private:

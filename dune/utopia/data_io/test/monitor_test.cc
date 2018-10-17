@@ -64,7 +64,7 @@ public:
 /// Test the MonitorTimer class
 void test_MonitorTimer(){
     // Create a MonitorTimer that measures in milliseconds
-    MonitorTimer mt(2);
+    MonitorTimer mt(0.002);
     
     const bool reset_timer = true;
 
@@ -116,14 +116,14 @@ void test_MonitorData(){
 
 void test_MonitorManager_and_Monitor(){
     // Create a MonitorManager object
-    MonitorManager rm(2);
+    MonitorManager rm(0.002);
 
     // Create a Monitor object from a MonitorManager and other Monitors
-    Monitor m("m", rm);
+    Monitor m("m", std::make_shared<MonitorManager>(rm));
     Monitor mm("mm", m);
     Monitor mn("mn", m);
     Monitor mmm("mmm", mm);
-    Monitor n("n", rm);
+    Monitor n("n", std::make_shared<MonitorManager>(rm));
 
     m.set_entry("an_int", 1, false);
     mm.set_entry("a_double", 3.578, false);

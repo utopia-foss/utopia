@@ -22,12 +22,12 @@ public:
     using Time = std::chrono::high_resolution_clock::time_point;
 
     /// Data type for the time unit
-    using TimeUnit = std::chrono::milliseconds;
+    using DurationType = std::chrono::duration<double>;
 
 private:
     // -- Member declaration -- //
     /// The emit interval
-    const std::size_t _emit_interval;
+    const DurationType _emit_interval;
 
     /// The time of the last emit
     Time _last_emit;
@@ -40,7 +40,7 @@ public:
      * come to emit data. If more time than the _emit_interval has passed
      * the time_has_come function returns true.
      */
-    MonitorTimer(   const std::size_t emit_interval) :
+    MonitorTimer(   const double emit_interval) :
                     _emit_interval(emit_interval),
                     // Initialize the time of the last commit to current time
                     _last_emit(Clock::now()) {}
@@ -53,11 +53,11 @@ public:
      */
     bool time_has_come(const bool reset=false){
         // Calculate the time difference between now and the last emit
-        auto now = Clock::now();
-        auto duration = std::chrono::duration_cast<TimeUnit>(now - _last_emit);
+        const auto now = Clock::now();
+        const DurationType duration = now - _last_emit;
         
         // If more time than the _emit_interval has passed return true
-        if ((std::size_t)duration.count() > _emit_interval) {
+        if (duration > _emit_interval) {
             if (reset){
                 _last_emit = now;
             }
@@ -131,7 +131,7 @@ public:
      * @param emit_interval The emit interval that specifies after how much
      * time to emit the monitor data.
      */
-    MonitorManager( const std::size_t emit_interval) :
+    MonitorManager( const double emit_interval) :
                     // Create a new MonitorTimer object
                     _timer(std::make_shared<MonitorTimer>(emit_interval)),
                     // Create an empty MonitorData object for the data to be emitted
@@ -178,9 +178,9 @@ public:
      * @param root_mtr The root monitor manager
      */
     Monitor(const std::string name,
-            MonitorManager root_mtr):
+            std::shared_ptr<MonitorManager> root_mtr):
                 _name(name),
-                _mtr_mgr(std::make_shared<MonitorManager>(root_mtr)){};
+                _mtr_mgr(root_mtr){};
 
     /// Constructor
     /** Construct a new Monitor object. The shared pointer to the MonitorManager
@@ -192,7 +192,7 @@ public:
     Monitor(const std::string name,
             Monitor& parent_mtr):
                 _name(parent_mtr.get_name() + "." + name),
-                _mtr_mgr(parent_mtr.get_mtr_mgr()){};
+                _mtr_mgr(parent_mtr.get_monitor_manager()){};
 
     /// Set a new entry in the MonitorData.
     /**
@@ -217,7 +217,7 @@ public:
     }
 
     /// Get a shared pointer to the MonitorManager.
-    std::shared_ptr<MonitorManager> get_mtr_mgr() const {
+    std::shared_ptr<MonitorManager> get_monitor_manager() const {
         return _mtr_mgr;
     }
 
