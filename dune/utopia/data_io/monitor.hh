@@ -40,11 +40,12 @@ public:
      * come to emit data. If more time than the _emit_interval has passed
      * the time_has_come function returns true.
      */
-    MonitorTimer(   const double emit_interval) :
+    MonitorTimer(double emit_interval) :
                     _emit_interval(emit_interval),
                     // Initialize the time of the last commit to the emit interval
                     // such that directly after initialization the time has come
-                    _last_emit(Clock::now()) {}
+                    _last_emit() {
+                    }
 
     /// Check for whether the time to emit has come or not.
     /**
@@ -146,13 +147,13 @@ public:
 
     /// Perform an emission of the data to the terminal.
     void perform_emission(){
-        if (time_has_come(true)){
+        if (time_has_come()){
             _data.emit();
         }
     }
 
     /// Check whether the time to emit has come.
-    bool time_has_come(const bool reset=false){
+    bool time_has_come(){
         // 
         if (_timer->time_has_come()) {
             _collect = true;
@@ -161,6 +162,7 @@ public:
         else {
             _collect = false;
         }
+        return _collect;
     }
 
     /// Check whether monitor entries should be collected

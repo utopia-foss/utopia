@@ -65,22 +65,26 @@ public:
 void test_MonitorTimer(){
     // Create a MonitorTimer that measures in milliseconds
     MonitorTimer mt(0.002);
-    
-    const bool reset_timer = true;
 
-    // It is not time to emit but ...
-    assert(mt.time_has_come(reset_timer) == false);
+    // It is not time to emit ...
+    assert(mt.time_has_come() == true);
+    
+    // ... but not if you reset
+    mt.reset();
+    assert(mt.time_has_come() == false);
 
     // ... if you wait for three milliseconds
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(3ms);
     
     // it is time to emit!
-    assert(mt.time_has_come(reset_timer) == true);
+    assert(mt.time_has_come() == true);
+    mt.reset();
 
     // Of course directly afterwards, there is again no time to emit.
-    assert(mt.time_has_come(reset_timer) == false);
-    assert(mt.time_has_come(reset_timer) == false);
+    assert(mt.time_has_come() == false);
+    mt.reset();
+    assert(mt.time_has_come() == false);
 }
 
 
@@ -125,23 +129,16 @@ void test_MonitorManager_and_Monitor(){
     Monitor mmm("mmm", mm);
     Monitor n("n", std::make_shared<MonitorManager>(rm));
 
-    m.provide_entry("an_int", [](){return 1;});
+    m.provide_entry_value("an_int", 1);
     mm.provide_entry("a_double", [](){return 3.578;});
     mn.provide_entry("a_vector", [](){return std::vector<int>{1,2,3};});
     mmm.provide_entry("a_string", [](){return "string";});
-
-    // Not enough time has passed, so do not write this entry into the MonitorEntries
-    // object
-    m.provide_entry("hopefully_not_written!", [](){return "undesired_info";});
 
     // Check that the data is emited in the desired form
     // For this track the buffer of std::cout 
     std::streambuf* coutbuf = std::cout.rdbuf();
     Savebuf sbuf(coutbuf);
     std::cout.rdbuf(&sbuf);
-
-    // Nothing should be emitted because not enough time has passed
-    rm.perform_emission();
 
     // After 10ms enough time has passed such that the needed_info 
     // should be written and the whole information should be emitted.
@@ -150,6 +147,13 @@ void test_MonitorManager_and_Monitor(){
     m.provide_entry("hopefully_written", [](){return "needed_info";});
     m.provide_entry("hopefully_again_written", [](){return "additional_info";});
     m.provide_entry("an_int", [](){return 3;});
+    rm.perform_emission();
+
+    // Not enough time has passed, so do not write this entry into the MonitorEntries
+    // object
+    m.provide_entry("hopefully_not_written!", [](){return "undesired_info";});
+
+    // Nothing should be emitted because not enough time has passed
     rm.perform_emission();
 
     // Assert that the std::cout buffer has the same values as the data
