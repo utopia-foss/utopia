@@ -58,6 +58,9 @@ public:
     }
 
     /// Do nothing for now
+    void monitor () {}
+
+    /// Do nothing for now
     void write_data () {}
 
     // Set model boundary condition

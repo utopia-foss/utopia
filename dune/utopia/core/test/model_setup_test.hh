@@ -33,6 +33,9 @@ public:
     /// Perform a single step (nothing to do here)
     void perform_step () {}
 
+    /// Monitor data (does nothing)
+    void monitor () {}
+
     /// Data write method (does nothing)
     void write_data () {}
 };

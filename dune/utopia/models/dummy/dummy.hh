@@ -83,6 +83,14 @@ public:
     }
 
 
+    /// Monitor information in the terminal
+    void monitor ()
+    {
+        // Monitor the time
+        this->_mtr.provide_entry("time", [this](){return this->_time;});
+    }
+
+
     /// Write data into a dataset that corresponds to the current step
     void write_data()
     {

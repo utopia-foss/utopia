@@ -220,7 +220,8 @@ public:
      */
     void iterate () {
         perform_step();
-        _mtr.get_monitor_manager()->perform_emission();
+        monitor();
+        
         increment_time();
 
         if (_time % _write_every == 0) {
@@ -251,6 +252,12 @@ public:
     /// Perform the computation of a step
     void perform_step () {
         impl().perform_step();
+    }
+
+    /// Monitor information in the terminal
+    void monitor () {
+        impl().monitor();
+        // _mtr.get_monitor_manager()->perform_emission();
     }
     
     /// Write data
