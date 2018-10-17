@@ -1,5 +1,4 @@
 AmeeMultiComplex:
-  model_name: AmeeMulti
   Agenttype: complex
   adaptionfunction: multi_notnormed
   construction: true
@@ -59,3 +58,4 @@ output_path: "complex_data.h5"
 periodic: true
 seed: 519472
 write_every: 500
+model_name: AmeeMultiComplex

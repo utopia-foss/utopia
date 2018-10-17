@@ -138,8 +138,8 @@ void test_model_construction(Model& model)
     ASSERT_EQ(model.get_decayintensity(), decayintensity);
 }
 
-template <typename Model>
-void test_model_functions(Model& model)
+template <typename Model, typename Cellmanager>
+void test_model_functions(Model& model, Cellmanager& cellmanager)
 {
     auto& agents = model.population();
 
@@ -200,8 +200,7 @@ void test_model_functions(Model& model)
     // move
     ////////////////////////////////////////////////////////////////////////////
 
-    auto neighbors =
-        Utopia::Neighborhoods::MooreNeighbor::neighbors(eden, model.cellmanager());
+    auto neighbors = Utopia::Neighborhoods::MooreNeighbor::neighbors(eden, cellmanager);
     edenstate.celltrait = std::vector<double>(8, 0.);
     edenstate.resourceinfluxes = std::vector<double>(8, 10.);
     edenstate.resources = std::vector<double>(8, 10.);
@@ -238,8 +237,7 @@ void test_model_functions(Model& model)
     edenstate.resourceinfluxes = std::vector<double>(8, 10.);
     edenstate.resources = std::vector<double>(8, 10.);
     adamstate.phenotype = std::vector<double>(8, 1.);
-    neighbors =
-        Utopia::Neighborhoods::MooreNeighbor::neighbors(eden, model.cellmanager());
+    neighbors = Utopia::Neighborhoods::MooreNeighbor::neighbors(eden, cellmanager);
     adamstate.start = 1;
     adamstate.end = 5;
     adamstate.resources = 0.5;
@@ -581,56 +579,58 @@ int main(int argc, char** argv)
         Utopia::PseudoParent<RNG> pp(conf);
         pp.get_logger()->info("Current config: {}", conf);
 
+        std::string model_name = as_str(pp.get_cfg()["model_name"]);
+        pp.get_logger()->info("Current model name: {}", model_name);
         // make managers first -> this has to be wrapped in a factory function
         auto cellmanager = Utopia::Models::AmeeMulti::Setup::create_grid_manager_cells<
             Utopia::Models::AmeeMulti::StaticCell, Cellstate, true, 2, true, false>(
-            "AmeeMulti", pp);
+            model_name, pp);
 
         // read stuff from the config
         bool construction =
-            Utopia::as_bool(pp.get_cfg()["AmeeMulti"]["construction"]);
-        bool decay = Utopia::as_bool(pp.get_cfg()["AmeeMulti"]["decay"]);
+            Utopia::as_bool(pp.get_cfg()[model_name]["construction"]);
+        bool decay = Utopia::as_bool(pp.get_cfg()[model_name]["decay"]);
         std::string agenttype =
-            Utopia::as_str(pp.get_cfg()["AmeeMulti"]["Agenttype"]);
+            Utopia::as_str(pp.get_cfg()[model_name]["Agenttype"]);
 
         if (std::make_tuple(construction, decay, agenttype) ==
             std::tuple<bool, bool, std::string>{true, true, "simple"})
         {
             auto model =
                 Modelfactory<Agentstate_policy_simple, Genotype, Phenotype, RNG, true, true>()(
-                    "AmeeMulti", pp, cellmanager);
+                    model_name, pp, cellmanager);
 
             auto agents = model.population();
 
-            // test_model_construction(model);
-            // test_model_functions(model);
+            test_model_construction(model);
+            test_model_functions(model, cellmanager);
         }
         else if (std::make_tuple(construction, decay, agenttype) ==
                  std::tuple<bool, bool, std::string>{true, true, "complex"})
         {
             auto model =
                 Modelfactory<Agentstate_policy_complex, Genotype, Phenotype, RNG, true, true>()(
-                    "AmeeMulti", pp, cellmanager);
-            // test_model_construction(model);
-            // test_model_functions(model);
+                    model_name, pp, cellmanager);
+            test_model_construction(model);
+            test_model_functions(model, cellmanager);
         }
         else if (std::make_tuple(construction, decay, agenttype) ==
                  std::tuple<bool, bool, std::string>{true, false, "simple"})
         {
             auto model =
                 Modelfactory<Agentstate_policy_simple, Genotype, Phenotype, RNG, true, false>()(
-                    "AmeeMulti", pp, cellmanager);
-            // test_model_construction(model);
-            // test_model_functions(model);
+                    model_name, pp, cellmanager);
+            test_model_construction(model);
+            test_model_functions(model, cellmanager);
         }
         else if (std::make_tuple(construction, decay, agenttype) ==
                  std::tuple<bool, bool, std::string>{false, false, "complex"})
         {
             auto model =
                 Modelfactory<Agentstate_policy_complex, Genotype, Phenotype, RNG, false, false>()(
-                    "AmeeMulti", pp, cellmanager);
-            // test_model_construction(model);
-            // test_model_functions(model);
+                    model_name, pp, cellmanager);
+            test_model_construction(model);
+            test_model_functions(model, cellmanager);
         }
     }
     return 0;

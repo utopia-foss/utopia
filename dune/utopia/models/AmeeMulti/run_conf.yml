@@ -22,7 +22,7 @@
     # cell_influxvalues: [1., 1., 1., 1., 1., 1.,1., 1., 1., 1., 1., 1.]
 
 parameter_space: 
-  num_steps: 250000
+  num_steps: 1000
   periodic: true          # false: cells at boundary have fewer neighbors
   write_every: 1
   grid_size: [32,32]
