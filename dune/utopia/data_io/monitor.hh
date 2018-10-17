@@ -42,7 +42,8 @@ public:
      */
     MonitorTimer(   const double emit_interval) :
                     _emit_interval(emit_interval),
-                    // Initialize the time of the last commit to current time
+                    // Initialize the time of the last commit to the emit interval
+                    // such that directly after initialization the time has come
                     _last_emit(Clock::now()) {}
 
     /// Check for whether the time to emit has come or not.
@@ -51,21 +52,22 @@ public:
      *        if the _emit_interval has been exceeded.
      * @return true if the internal timer has exceeded the _last_emit time.
      */
-    bool time_has_come(const bool reset=false){
+    bool time_has_come(){
         // Calculate the time difference between now and the last emit
-        const auto now = Clock::now();
-        const DurationType duration = now - _last_emit;
+        const DurationType duration = Clock::now() - _last_emit;
         
         // If more time than the _emit_interval has passed return true
         if (duration > _emit_interval) {
-            if (reset){
-                _last_emit = now;
-            }
             return true;
         }
         else{
             return false;
         }
+    }
+
+    /// Reset the timer to now
+    void reset(){
+        _last_emit = Clock::now();
     }
 };
 
@@ -125,6 +127,9 @@ private:
     /// The monitor data
     MonitorEntries _data;
 
+    /// The flag that determines whether to collect data
+    bool _collect;
+
 public:
     /// Constructor
     /**
@@ -135,7 +140,9 @@ public:
                     // Create a new MonitorTimer object
                     _timer(std::make_shared<MonitorTimer>(emit_interval)),
                     // Create an empty MonitorEntries object for the data to be emitted
-                    _data(MonitorEntries()) {};
+                    _data(MonitorEntries()),
+                    // Initialially collect data
+                    _collect(true) {};
 
     /// Perform an emission of the data to the terminal.
     void perform_emission(){
@@ -146,7 +153,19 @@ public:
 
     /// Check whether the time to emit has come.
     bool time_has_come(const bool reset=false){
-        return _timer->time_has_come(reset);
+        // 
+        if (_timer->time_has_come()) {
+            _collect = true;
+            _timer->reset();
+        }
+        else {
+            _collect = false;
+        }
+    }
+
+    /// Check whether monitor entries should be collected
+    bool collect() const {
+        return _collect;
     }
 
     /// Get a shared pointer to the MonitorTimer object.
@@ -204,7 +223,7 @@ public:
     template <typename Function>
     void provide_entry( const std::string key, 
                         const Function f){
-        if (_mtr_mgr->time_has_come(false)){
+        if (_mtr_mgr->collect()){
             _mtr_mgr->get_data().set_entry(_name, key, f());   
         }
     }
@@ -219,7 +238,7 @@ public:
     template <typename Value>
     void provide_entry_value(   const std::string key, 
                                 const Value value){
-        if (_mtr_mgr->time_has_come(false)){
+        if (_mtr_mgr->collect()){
             _mtr_mgr->get_data().set_entry(_name, key, value);   
         }
     }
