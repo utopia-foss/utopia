@@ -275,8 +275,9 @@ public:
 
     /// Monitor information in the terminal
     void monitor () {
-        impl().monitor();
-        // _mtr.get_monitor_manager()->perform_emission();
+        if (_mtr_mgr->collect()){
+            impl().monitor();
+        }
     }
     
     /// Write data
