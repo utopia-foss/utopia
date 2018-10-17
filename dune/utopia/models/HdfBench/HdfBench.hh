@@ -46,15 +46,16 @@ public:
     /// Data type that holds the configuration
     using Config = typename Base::Config;
 
+
     // -- Types for time handling -- //
     /// Type of clock
-    typedef std::chrono::high_resolution_clock Clock;
+    using Clock = std::chrono::high_resolution_clock;
 
     /// Type of a time point, retrieved from the clock
     using Time = std::chrono::high_resolution_clock::time_point;
 
     /// Type of the duration measure, should be a floating-point type
-    typedef std::chrono::duration<double> dsec;
+    using DurationType = std::chrono::duration<double>;
 
     /// Type of a benchmark function pointer
     using BenchFunc = std::function<double(const std::string, Config)>;
@@ -288,7 +289,7 @@ protected:
     
     /// Returns the absolute time (in seconds) between the given time points
     double time_between(const Time start, const Time end) {
-        const dsec seconds = abs(end - start);
+        const DurationType seconds = abs(end - start);
         return seconds.count();
     }
 
