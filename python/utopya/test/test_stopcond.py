@@ -1,11 +1,11 @@
 """Test the stopcond module"""
 
-import yaml
 import time
 import subprocess
 
 import pytest
 
+from utopya.tools import yaml
 import utopya.stopcond as sc
 import utopya.stopcond_funcs as sc_funcs
 from utopya.task import WorkerTask
@@ -43,9 +43,6 @@ def test_init():
 
 def test_constructors():
     """Tests the YAML constructor"""
-    yaml.add_constructor(u'!stop-condition', sc.stop_cond_constructor)
-    yaml.add_constructor(u'!sc-func', sc.sc_func_constructor)
-
     ymlstr1 = "sc: !stop-condition {to_check: [], name: foo, description: bar}"
     assert isinstance(yaml.load(ymlstr1)['sc'], sc.StopCondition)
 

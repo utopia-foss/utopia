@@ -4,21 +4,21 @@ from setuptools import setup, find_packages
 
 # Dependency lists
 INSTALL_DEPS = ['numpy>=1.13',
-                'PyYAML>=3.12,<4.0',
                 'coloredlogs>=10.0',
+                'ruamel.yaml',
                 # only required for testing
                 'pytest>=3.4.0',
                 'pytest-cov>=2.5.1',
                 # From private repositories:
                 # NOTE Versions need also be set in python/CMakeLists.txt
-                'paramspace>=1.1.1,<2.0',  # TODO migrate to >=2.0
-                'dantro>=0.3.2,<0.4'       # TODO migrate to >=0.4
+                'paramspace>=2.0.0rc5', # TODO use release version once ready
+                'dantro>=0.4.0rc3'      # TODO use release version once ready
                 ]
 
 setup(name='utopya',
       #
       # Package information
-      version='0.1.0-pre.1',
+      version='0.1.0-pre.2',
       # NOTE This needs to correspond to utopya.__init__.__version__
       description='The Utopia frontend package.',
       url='https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia',

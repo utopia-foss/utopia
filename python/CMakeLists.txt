@@ -16,24 +16,24 @@ message(STATUS "Installing required Python packages ...")
 # NOTE Take care that the versions used here match those in the README.md
 # -- paramspace --
 dune_python_find_package(PACKAGE paramspace
-                         VERSION 1.1.1
+                         VERSION 2.0.0rc5  # TODO use release version
                          INTERPRETER ${DUNE_PYTHON_VIRTUALENV_EXECUTABLE})
 
 if(NOT DUNE_PYTHON_paramspace_FOUND)
     # install from current _master_ branch
-    python_install_package_remote(URL ssh://git@ts-gitlab.iup.uni-heidelberg.de:10022/yunus/paramspace.git@release/v1.x  # TODO migrate to 2.x
+    python_install_package_remote(URL ssh://git@ts-gitlab.iup.uni-heidelberg.de:10022/yunus/paramspace.git@release/v2.x
         TRUSTED_HOST ts-gitlab.iup.uni-heidelberg.de)
 endif()
 
 # -- dantro --
 dune_python_find_package(PACKAGE dantro
-                         VERSION 0.3.2
+                         VERSION 0.4.0rc3  # TODO use release version
                          INTERPRETER ${DUNE_PYTHON_VIRTUALENV_EXECUTABLE})
 
 if(NOT DUNE_PYTHON_dantro_FOUND)
     # install from current _master_ branch
     python_install_package_remote(
-        URL ssh://git@ts-gitlab.iup.uni-heidelberg.de:10022/utopia/dantro.git@release/v0.3  # TODO should move back to 0.x
+        URL ssh://git@ts-gitlab.iup.uni-heidelberg.de:10022/utopia/dantro.git@release/v0.x
         TRUSTED_HOST ts-gitlab.iup.uni-heidelberg.de)
 endif()
 

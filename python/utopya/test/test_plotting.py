@@ -16,7 +16,7 @@ def test_dummy_plotting(tmpdir):
     """Test plotting of the dummy model"""
     # Create and run simulation
     mv = Multiverse(model_name='dummy',
-                    update_meta_cfg=dict(paths=dict(out_dir=tmpdir)))
+                    update_meta_cfg=dict(paths=dict(out_dir=str(tmpdir))))
     mv.run_single()
 
     # Load

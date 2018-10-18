@@ -122,8 +122,8 @@ Check out the troubleshooting section there if this fails.
 
 | Software | Version | Purpose |
 | ---------| ------- | ------- |
-| [paramspace](https://ts-gitlab.iup.uni-heidelberg.de/yunus/paramspace) | >= 1.1.1 | Makes parameter sweeps easy |
-| [dantro](https://ts-gitlab.iup.uni-heidelberg.de/utopia/dantro) | >= 0.3.2 | A data loading and plotting framework |
+| [paramspace](https://ts-gitlab.iup.uni-heidelberg.de/yunus/paramspace) | >= 2.0 | Makes parameter sweeps easy |
+| [dantro](https://ts-gitlab.iup.uni-heidelberg.de/utopia/dantro) | >= 0.4 | A data loading and plotting framework |
 
 #### Recommended
 

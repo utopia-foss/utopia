@@ -152,21 +152,3 @@ def test_load_sweep(dm_after_sweep):
         assert isinstance(dset, udc.NumpyDC)
         assert dset.shape == (uni['cfg']['num_steps'] + 1, 1000)
         assert np.issubdtype(dset.dtype, float)
-
-def test_MultiverseGroup(dm_after_large_sweep):
-    """Tests the MultiverseGroup"""
-    dm = dm_after_large_sweep
-
-    # Load and print a tree of the loaded data
-    dm.load_from_cfg(print_tree=True)
-
-    # Check integer acccess, also for double digits
-    assert 0 in dm['uni']
-    assert 15 in dm['uni']
-
-    # Bad integer keys should not work
-    with pytest.raises(KeyError, match="No universe with ID 42 available"):
-        dm['uni'][42]
-    
-    with pytest.raises(KeyError, match="Universe IDs cannot be negative!"):
-        dm['uni'][-1]

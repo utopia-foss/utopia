@@ -6,7 +6,7 @@ import logging
 import warnings
 from typing import List, Callable
 
-import yaml
+import ruamel.yaml
 
 import utopya.stopcond_funcs as sc_funcs
 from utopya.task import Task
@@ -14,6 +14,7 @@ from utopya.task import Task
 # Initialise logger
 log = logging.getLogger(__name__)
 
+# -----------------------------------------------------------------------------
 
 class StopCondition:
     """A StopCondition object holds information on the conditions in which a worker process should be stopped.
@@ -137,7 +138,7 @@ def stop_cond_constructor(loader, node) -> StopCondition:
     """Constructor for creating a StopCondition object from a mapping"""
     log.debug("Encountered tag associated with StopCondition.")
 
-    if isinstance(node, yaml.nodes.MappingNode):
+    if isinstance(node, ruamel.yaml.nodes.MappingNode):
         log.debug("Constructing mapping ...")
         mapping = loader.construct_mapping(node, deep=True)
         stop_cond = StopCondition(**mapping)
@@ -156,9 +157,9 @@ def sc_func_constructor(loader, node) -> Callable:
     """
     log.debug("Encountered tag associated with stop condition function.")
 
-    if isinstance(node, yaml.nodes.ScalarNode):
+    if isinstance(node, ruamel.yaml.nodes.ScalarNode):
         log.debug("Constructing python string from scalar ...")
-        sc_func_name = loader.construct_python_str(node)
+        sc_func_name = str(loader.construct_scalar(node))
         log.debug("  Resolved string:  %s", sc_func_name)
     else:
         raise TypeError("A stop condition function can only be constructed "

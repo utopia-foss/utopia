@@ -193,7 +193,7 @@ class Multiverse:
 
         # Add the task to the worker manager.
         log.info("Adding task for simulation of a single universe ...")
-        self._add_sim_task(uni_id=0, max_uni_id=0, uni_cfg=uni_cfg)
+        self._add_sim_task(uni_id_str="0", uni_cfg=uni_cfg, is_sweep=False)
 
         # Prevent adding further tasks to disallow further runs
         self.wm.tasks.lock()
@@ -222,11 +222,10 @@ class Multiverse:
         log.info("Adding tasks for simulation of %d universes ...",
                  pspace.volume)
 
-        max_uni_id = pspace.volume - 1
+        for uni_cfg, uni_id_str in pspace.iterator(with_info='state_no_str'):
+            self._add_sim_task(uni_id_str=uni_id_str, uni_cfg=uni_cfg,
+                               is_sweep=True)
 
-        for uni_cfg, uni_id in pspace.all_points(with_info=('state_no',)):
-            self._add_sim_task(uni_id=uni_id, max_uni_id=max_uni_id,
-                               uni_cfg=uni_cfg)
         log.info("Tasks added.")
 
         # Prevent adding further tasks to disallow further runs
@@ -471,36 +470,7 @@ class Multiverse:
 
         log.debug("Finished creating run directory and backing up config.")
 
-    @staticmethod
-    def _create_uni_basename(*, uni_id: int, max_uni_id: int) -> str:
-        """Returns the formatted universe basename, zero-padded, for usage
-        in WorkerTask names and universe directory creation.
-        
-        Args:
-            uni_id (int): ID of the universe whose folder should be created.
-                Needs to be positive or zero.
-            max_uni_id (int): highest ID, needed for correct zero-padding.
-                Needs to be larger or equal to uni_id.
-        
-        Returns:
-            str: The zero-padded universe basename, e.g. uni0042
-        
-        Raises:
-            ValueError: For invalid `uni_id` or `max_uni_id` arguments 
-        """
-
-        # Check if uni_id and max_uni_id are positive
-        if uni_id < 0 or uni_id > max_uni_id:
-            raise ValueError("Input variables don't match prerequisites: "
-                             "uni_id >= 0, max_uni_id >= uni_id. Given "
-                             "arguments: uni_id {}, max_uni_id {}"
-                             "".format(uni_id, max_uni_id))
-
-        # Use a format string to create the zero-padded universe basename
-        return "uni{id:>0{digits:}d}".format(id=uni_id,
-                                             digits=len(str(max_uni_id)))
-
-    def _add_sim_task(self, *, uni_id: int, max_uni_id: int, uni_cfg: dict) -> None:
+    def _add_sim_task(self, *, uni_id_str: str, uni_cfg: dict, is_sweep: bool) -> None:
         """Helper function that handles task assignment to the WorkerManager.
         
         This function creates a WorkerTask that will perform the following
@@ -508,15 +478,17 @@ class Multiverse:
           - Create a universe (folder) for the task (simulation)
           - Write that universe's configuration to a yaml file in that folder
           - Create the correct arguments for the call to the model binary
-    
+        
         To that end, this method gathers all necessary arguments and registers
         a WorkerTask with the WorkerManager.
         
         Args:
-            uni_id (int): ID of the universe whose folder should be created
-            max_uni_id (int): highest ID, needed for correct zero-padding
+            uni_id_str (str): The zero-padded uni id string
             uni_cfg (dict): given by ParamSpace. Defines how many simulations
                 should be started
+        
+        Raises:
+            RuntimeError: If adding the simulation task failed
         """
         def setup_universe(*, worker_kwargs: dict, model_name: str, model_binpath: str, uni_cfg: dict, uni_basename: str) -> dict:
             """The callable that will setup everything needed for a universe.
@@ -569,9 +541,9 @@ class Multiverse:
 
             return wk
 
-        # Generate the universe basename, which will be used for the folder and the task name
-        uni_basename = self._create_uni_basename(uni_id=uni_id,
-                                                 max_uni_id=max_uni_id)
+        # Generate the universe basename, which will be used for the folder
+        # and the task name
+        uni_basename = "uni" + uni_id_str
 
         # Create the dict that will be passed as arguments to setup_universe
         setup_kwargs = dict(model_name=self.model_name,
@@ -583,8 +555,8 @@ class Multiverse:
         wk = self.meta_cfg.get('worker_kwargs')
 
         if wk and wk.get('forward_streams') == 'in_single_run':
-            # Check for the max_uni_id as indicator for a single run
-            wk['forward_streams'] = bool(max_uni_id == 0)
+            # Reverse the flag to determine whether to forward streams
+            wk['forward_streams'] = (not is_sweep)
 
         # Try to add a task to the worker manager
         try:
@@ -602,7 +574,7 @@ class Multiverse:
                                "Multiverse?"
                                "".format(uni_basename)) from err
 
-        log.debug("Added simulation task for universe %d.", uni_id)
+        log.debug("Added simulation task: %s.", uni_basename)
 
 
 # -----------------------------------------------------------------------------
