@@ -162,9 +162,7 @@ private:
         return state;
     };
 
-    RuleFunc _burn_cluster = [this](auto cell)
-        -> std::enable_if_t<!ManagerType::Cell::is_sync(), RuleFunc>
-    {
+    RuleFunc _burn_cluster = [this](auto cell) {
         if constexpr (!ManagerType::Cell::is_sync()) {
             std::uniform_real_distribution<> dist(0., 1.);
 
@@ -187,6 +185,9 @@ private:
                     }
                 }
             }
+        }
+        else {
+            (void)this;
         }
 
         return cell->state();
