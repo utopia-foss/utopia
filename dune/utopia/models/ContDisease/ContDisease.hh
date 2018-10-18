@@ -128,6 +128,7 @@ private:
 
             // Go through neighbor cells (here 5-cell neighbourhood), look if they
             // are infected (or an infection herd), if yes, infect cell with the probability _p_infect.
+            // TODO implement neighborhood as template argument
             for (auto nb : NextNeighbor::neighbors(cell, this->_manager)){
                 if (cellstate == tree){
                     auto nb_cellstate = nb->state();
