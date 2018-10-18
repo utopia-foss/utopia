@@ -10,8 +10,6 @@
 #include <dune/utopia/core/types.hh>
 
 
-
-
 namespace Utopia {
 namespace Models {
 namespace ContDisease {
@@ -20,10 +18,8 @@ namespace ContDisease {
 enum CellState : unsigned short int {empty = 0, tree = 1, infected = 2, herd = 3, stone = 4};
 
 
-
 /// Typehelper to define data types of ContDisease model
 using ContDiseaseModelTypes = ModelTypes<>;
-
 
 
 /// Contagious disease model on a grid
@@ -39,7 +35,6 @@ using ContDiseaseModelTypes = ModelTypes<>;
  * without dying themselves. Different starting conditions, and update
  * mechanisms can be configured.
  */
-
 template<class ManagerType>
 class ContDiseaseModel:
     public Model<ContDiseaseModel<ManagerType>, ContDiseaseModelTypes>
@@ -50,6 +45,9 @@ public:
 
     /// Cell type
     using CellType = typename ManagerType::Cell;
+
+    /// Rule Function
+    using RuleFunc = typename std::function<CellState(std::shared_ptr<CellType>)>;
 
     /// Data type that holds the configuration
     using Config = typename Base::Config;
@@ -86,16 +84,61 @@ private:
     // -- Datasets -- //
     std::shared_ptr<DataSet> _dset_state;
 
+    // -- Helper functions -- //
+
+    // initialize stones at random so a certain areal density is reached
+    void _init_stones_rd(const double stone_density, const double stone_cluster){
+        std::uniform_real_distribution<> dist(0., 1.);
+
+        auto cells_rd = _manager.cells();
+        std::shuffle(cells_rd.begin(),cells_rd.end(), *this->_rng);
+
+        for (auto&& cell: cells_rd ){
+            if (dist(*this->_rng) < stone_density){
+                cell->state_new() = stone;
+                cell->update();
+            }
+        }
+
+        // Attempt to encourage the stones to form continous clusters
+        for (auto&& cell: cells_rd ){
+            for (auto nb : MooreNeighbor::neighbors(cell, this->_manager)){
+                if (   (cell->state() == empty)
+                    && (nb->state() == stone)
+                    && (dist(*this->_rng) < stone_cluster))
+                {
+                    cell->state_new() = stone;
+                    cell-> update();
+                }
+                else {
+                    break;
+                }
+            }
+        }
+    };
 
     // -- Rule functions -- //
 
-    /// Sets the given cell to state "empty"
-    std::function<CellState(std::shared_ptr<CellType>)> _set_initial_state_empty = [](const auto cell){
+    // Sets the given cell to state "empty"
+    RuleFunc _set_initial_state_empty = [](const auto cell){
         return empty;
     };
 
+    // Sets an infection herd at the southern end of the grid
+    RuleFunc _set_infection_herd_south = [&](const auto cell){
+        auto cellstate = cell->state();
 
+        // Get postion of the Cell, grid extensions and number of cells
+        const auto& pos = cell->position();
+        const auto& grid_ext = _manager.extensions();
+        const auto& grid_num_cells = _manager.grid_cells();
+        const auto& cell_size_y = grid_ext[1]  / grid_num_cells[1];
 
+        if (pos[1] < cell_size_y){
+            cellstate = herd;
+          }
+          return cellstate;
+    };
 
     /// Define the update rule
     /** Update (all cells at the same time) according to the following rules:
@@ -105,7 +148,7 @@ private:
      * Infected cells die and become an empty cell.
      */
 
-    std::function<CellState(std::shared_ptr<CellType>)> _update = [this](const auto cell){
+    RuleFunc _update = [this](const auto cell){
 
         // Get the state of the cell
         auto cellstate = cell->state();
@@ -150,6 +193,8 @@ private:
 
         return cellstate;
     };
+
+
 
 
 public:
@@ -221,97 +266,46 @@ public:
         // Extract clustering weight for stone_init = random
         const double stone_cluster = as_double(this->_cfg["stone_cluster"]);
 
-
-
         this->_log->info("Initializing cells in '{}' mode ...", initial_state);
-
 
         // Different initialization methods for the forest
 
         //empty forest
-        if (initial_state == "empty")
-        {
+        if (initial_state == "empty"){
             //Apply rule to all cells in the forest.
             apply_rule(_set_initial_state_empty, _manager.cells());
         }
-        else
-        {
+        else {
             throw std::invalid_argument("The initial state ''" + initial_state + "'' is not valid! Valid options: 'empty'");
         }
 
         // Different initializations for possible infection herds.
         if (infection_herd){
 
-          if (infection_herd_src == "south"){
-
-            auto _set_infection_herd_south = [&](const auto cell){
-              auto cellstate = cell->state();
-
-              // Get postion of the Cell, grid extensions and number of cells
-              const auto& pos = cell->position();
-              const auto& grid_ext = _manager.extensions();
-              const auto& grid_num_cells = _manager.grid_cells();
-
-              const auto& cell_size_y = grid_ext[1]  / grid_num_cells[1];
-
-              if (pos[1] < cell_size_y){
-                cellstate = herd;
-              }
-              return cellstate;
-            };
-            apply_rule(_set_infection_herd_south, _manager.cells());
-          }
-
-          else {
-            throw std::invalid_argument("The infection herd source ''" + infection_herd_src + "'' is not valid! Valid options: 'south'");
-          }
+            if (infection_herd_src == "south"){
+                // Set infection herd at the southern border of the grid
+                apply_rule(_set_infection_herd_south, _manager.cells());
+            }
+            else {
+                throw std::invalid_argument("The infection herd source ''" + infection_herd_src + "'' is not valid! Valid options: 'south'");
+            }
         }
-
         else {
-          this->_log->debug("Not using an infection herd.");
+            this->_log->debug("Not using an infection herd.");
         }
 
-
+        // Different intilaizations for stones.
         if (stones){
 
           if (stone_init == "random"){
-            // initialize stones at random so a certain areal density is reached
-            std::uniform_real_distribution<> dist(0., 1.);
-
-            auto cells_rd = _manager.cells();
-            std::shuffle(cells_rd.begin(),cells_rd.end(), *this->_rng);
-
-            for (auto&& cell: cells_rd ){
-              if (dist(*this->_rng) < stone_density){
-                cell->state_new() = stone;
-                cell->update();
-              }
-            }
-
-            for (auto&& cell: cells_rd ){
-              for (auto nb : MooreNeighbor::neighbors(cell, this->_manager)){
-                if(cell->state() == empty){
-                  if (nb->state() == stone){
-                    if (dist(*this->_rng) < stone_cluster){
-                      cell->state_new() = stone;
-                      cell-> update();
-                    }
-                  }
-                }
-                else{
-                  break;
-                }
-              }
-            }
+              _init_stones_rd(stone_density, stone_cluster);
           }
-
-          else{
-            throw std::invalid_argument("The stone initialization ''" + stone_init + "'' is not valid! Valid options: 'random'");
+          else {
+              throw std::invalid_argument("The stone initialization ''" + stone_init + "'' is not valid! Valid options: 'random'");
           }
-
         }
-        else{
-          this->_log->debug("Not using stones.");
+        else {
+            this->_log->debug("Not using stones.");
         }
 
         // Write information that cells are initialized to the logger
