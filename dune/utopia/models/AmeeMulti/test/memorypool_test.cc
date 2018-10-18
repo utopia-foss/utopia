@@ -10,11 +10,11 @@ int main()
     MemoryPool<int> mempool(10);
 
     // allocate stuff
-    ASSERT_EQ(mempool.free_pointers().size(), std::size_t(10));
-    ASSERT_EQ(mempool.size(), std::size_t(10));
+    ASSERT_EQ(mempool.free_pointers().size(), 10ul);
+    ASSERT_EQ(mempool.size(), 10ul);
 
     auto ptr1 = mempool.allocate();
-    ASSERT_EQ(mempool.free_pointers().size(), std::size_t(9));
+    ASSERT_EQ(mempool.free_pointers().size(), 9ul);
 
     ptr1 = mempool.construct(ptr1, 1);
     ASSERT_EQ(*ptr1, 1);
@@ -34,23 +34,27 @@ int main()
 
     ASSERT_EQ(mempool.free_pointers().size(), 0ul);
 
-    // overallocate -> pool increase to 20
-    auto ptr2 = mempool.allocate();
-    ptr2 = mempool.construct(ptr2, 12);
-    ASSERT_EQ(*ptr2, 12);
-    ASSERT_EQ(mempool.size(), 20ul);
-    ASSERT_EQ(mempool.free_pointers().size(), 9ul);
-
-    mempool.deallocate(ptr2);
-    mempool.deallocate(ptr1);
-
-    ASSERT_EQ(mempool.free_pointers().size(), 11ul);
-
-    for (auto& ptr : pointers)
+    try
     {
-        mempool.deallocate(ptr);
+        auto ptr2 = mempool.allocate();
     }
-    ASSERT_EQ(mempool.free_pointers().size(), 20ul);
+    catch (...)
+    {
+        std::cerr << "caught alloc exception" << std::endl;
+    }
 
+    // trying to copy
+    auto mempool2(mempool);
+    ASSERT_EQ(mempool.free_pointers().size(), mempool.free_pointers().size());
+    ASSERT_EQ(mempool.size(), mempool2.size());
+
+    mempool.clear();
+    std::vector<int*> integers(mempool.size());
+    for (std::size_t i = 0; i < mempool.size(); ++i)
+    {
+        integers[i] = mempool.construct(mempool.allocate(), -1 * int(i));
+    }
+    ASSERT_EQ(mempool.free_pointers().size(), 0ul);
+    ASSERT_EQ(mempool.free_pointers().empty(), true);
     return 0;
 }

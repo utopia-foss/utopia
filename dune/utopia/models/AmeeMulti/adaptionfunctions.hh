@@ -11,18 +11,19 @@ namespace Models
 {
 namespace AmeeMulti
 {
-auto multi_notnormed = [](auto agent) -> std::vector<double> {
-    auto& state = agent->state();
+auto multi_notnormed = [](auto& agent) -> std::vector<double> {
+    auto& state = agent.state();
     auto start = state.start;
     auto end = state.end;
     const auto& celltrait = state.habitat->state().celltrait;
     const auto& trait = state.phenotype;
-    std::vector<double> adaption(end - start, 0.);
 
     if (start >= 0 and end > 0 and end > start and trait.size() > 0 and
         (int) celltrait.size() > 0 and start < (int)trait.size() and
         start < (int)celltrait.size())
     {
+        std::vector<double> adaption(end - start, 0.);
+
         int i = start;
         int j = 0;
         for (; i < end && i < (int)celltrait.size() && i < (int)trait.size(); ++i, ++j)
@@ -40,12 +41,16 @@ auto multi_notnormed = [](auto agent) -> std::vector<double> {
                 throw std::runtime_error("Inf found in adaption");
             }
         }
+        return adaption;
     }
-    return adaption;
+    else
+    {
+        return std::vector<double>();
+    }
 };
 
-auto multi_normed = [](auto agent) -> std::vector<double> {
-    auto& state = agent->state();
+auto multi_normed = [](auto& agent) -> std::vector<double> {
+    auto& state = agent.state();
     auto start = state.start;
     auto end = state.end;
     const auto& celltrait = state.habitat->state().celltrait;
@@ -83,8 +88,8 @@ auto multi_normed = [](auto agent) -> std::vector<double> {
     }
 };
 
-auto simple_notnormed = [](auto agent) -> std::vector<double> {
-    auto& state = agent->state();
+auto simple_notnormed = [](auto& agent) -> std::vector<double> {
+    auto& state = agent.state();
     auto start = state.start;
     auto end = state.end;
     const auto& celltrait = state.habitat->state().celltrait;
@@ -118,8 +123,8 @@ auto simple_notnormed = [](auto agent) -> std::vector<double> {
     }
 };
 
-auto simple_normed = [](auto agent) -> std::vector<double> {
-    auto& state = agent->state();
+auto simple_normed = [](auto& agent) -> std::vector<double> {
+    auto& state = agent.state();
     auto start = state.start;
     auto end = state.end;
     const auto& celltrait = state.habitat->state().celltrait;

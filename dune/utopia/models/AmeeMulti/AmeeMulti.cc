@@ -19,10 +19,7 @@ template <template <typename, typename, typename> class AgentPolicy, typename G,
 struct Modelfactory
 {
     template <typename Model, typename Cellmanager>
-    auto operator()(std::string name,
-                    Model& parentmodel,
-                    Cellmanager& cellmanager,
-                    std::size_t mempoolsize = 1000000)
+    auto operator()(std::string name, Model& parentmodel, Cellmanager& cellmanager)
     {
         using CellType = typename Cellmanager::Cell;
         using Genotype = G;
@@ -37,7 +34,7 @@ struct Modelfactory
         using Modeltypes = Utopia::ModelTypes<RNG>;
 
         return AmeeMulti<CellType, AgentType, Modeltypes, construction, decay>(
-            name, parentmodel, cellmanager.cells(), mempoolsize);
+            name, parentmodel, cellmanager.cells());
     }
 };
 
@@ -72,6 +69,7 @@ int main(int argc, char** argv)
         auto model =
             Modelfactory<Agentstate_policy_simple, Genotype, Phenotype, RNG, true, true>()(
                 "AmeeMulti", pp, cellmanager);
+        model.run();
     }
     else if (std::make_tuple(construction, decay, agenttype) ==
              std::tuple<bool, bool, std::string>{true, true, "complex"})
@@ -79,6 +77,7 @@ int main(int argc, char** argv)
         auto model =
             Modelfactory<Agentstate_policy_complex, Genotype, Phenotype, RNG, true, true>()(
                 "AmeeMulti", pp, cellmanager);
+        model.run();
     }
     else if (std::make_tuple(construction, decay, agenttype) ==
              std::tuple<bool, bool, std::string>{true, false, "simple"})
@@ -86,6 +85,7 @@ int main(int argc, char** argv)
         auto model =
             Modelfactory<Agentstate_policy_simple, Genotype, Phenotype, RNG, true, false>()(
                 "AmeeMulti", pp, cellmanager);
+        model.run();
     }
     else if (std::make_tuple(construction, decay, agenttype) ==
              std::tuple<bool, bool, std::string>{false, false, "complex"})
@@ -93,6 +93,7 @@ int main(int argc, char** argv)
         auto model =
             Modelfactory<Agentstate_policy_complex, Genotype, Phenotype, RNG, false, false>()(
                 "AmeeMulti", pp, cellmanager);
+        model.run();
     }
 
     return 0;

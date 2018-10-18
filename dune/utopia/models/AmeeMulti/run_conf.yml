@@ -22,7 +22,7 @@
     # cell_influxvalues: [1., 1., 1., 1., 1., 1.,1., 1., 1., 1., 1., 1.]
 
 parameter_space: 
-  num_steps: 1000
+  num_steps: 1000000
   periodic: true          # false: cells at boundary have fewer neighbors
   write_every: 1
   grid_size: [32,32]
@@ -35,9 +35,9 @@ parameter_space:
     init_cell_traitlen: 24
     init_cellresourceinflux_kind: "random"
     cellresourcecapacity_kind: "random"
-    cellresourcecapacity_limits: [150., 1000.]
+    cellresourcecapacity_limits: [150., 500.]
     # cellresourcecapacities: [10., 10., 10., 10., 10.]
-    resourceinflux_limits: [0., 5.]
+    resourceinflux_limits: [0., 10.]
     init_celltrait_values: [-5., 5.]
     removethreshold: 1e-3
     decayintensity: 1e-2
@@ -52,9 +52,9 @@ parameter_space:
     deathprobability: 1e-2
 
     # mutationrates, important for evolution speed and stability
-    insertionrate: 1e-2
-    substitution_std: 0.8
-    substitutionrate: 1e-32
+    insertionrate: 1e-3
+    substitution_std: 0.2
+    substitutionrate: 1e-3
 
     modifiercost: 0.
     adaptionfunction: "multi_notnormed"
@@ -65,9 +65,9 @@ parameter_space:
     # Model structure: Agent- & cell types etc
     construction: true
     decay: true
-    highresinterval: [[0, 2000], [50000, 52000], [200000, 202500], [248000, 250000]]
+    highresinterval: [[0, 2500], [50000, 52500], [500000,502500], [997500, 1000000]]
     Agenttype: !sweep 
-      default: complex 
+      default: simple 
       values: [simple, complex]
 
     # stuff for worker manager
@@ -80,5 +80,5 @@ paths:
   out_dir: ~/utopia_output
 
   # model note is added to the output directory path
-  model_note: "test_run_250000_high_mutationrates"
+  model_note: "test_run_1000000"
 

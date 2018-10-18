@@ -4,6 +4,7 @@
 #include <iostream>
 #include <memory>
 #include <numeric>
+#include <queue>
 #include <type_traits>
 #include <vector>
 
@@ -20,7 +21,7 @@ class MemoryPool
 private:
     using Type = std::aligned_storage_t<sizeof(T), alignof(T)>;
     Type* _buffer;
-    std::vector<std::size_t> _free_pointers;
+    std::queue<T*> _free_pointers;
     std::size_t _size;
 
 public:
@@ -51,25 +52,13 @@ public:
      */
     T* allocate()
     {
-        if (_free_pointers.size() == 0)
+        if (_free_pointers.empty())
         {
-            std::size_t s = _size * 2;
-            Type* new_buffer = new Type[s];
-            Type* old_buffer = _buffer;
-            std::memcpy(new_buffer, _buffer, _size * sizeof(T));
-            delete[] old_buffer;
-            _buffer = new_buffer;
-
-            for (std::size_t i = _size; i < s; ++i)
-            {
-                _free_pointers.push_back(i);
-            }
-
-            _size = s;
+            throw std::bad_alloc();
         }
 
-        auto ptr = reinterpret_cast<T*>(&_buffer[_free_pointers.back()]);
-        _free_pointers.pop_back();
+        auto ptr = reinterpret_cast<T*>(_free_pointers.front());
+        _free_pointers.pop();
         return ptr;
     }
 
@@ -80,7 +69,7 @@ public:
      */
     void deallocate(T* ptr)
     {
-        _free_pointers.push_back(ptr - reinterpret_cast<T*>(_buffer));
+        _free_pointers.push(ptr);
     }
 
     /**
@@ -89,7 +78,11 @@ public:
      */
     void clear()
     {
-        std::iota(_free_pointers.begin(), _free_pointers.end(), 0);
+        _free_pointers = std::queue<T*>();
+        for (std::size_t i = 0; i < _size; ++i)
+        {
+            _free_pointers.push(reinterpret_cast<T*>(_buffer + i));
+        }
     }
 
     /**
@@ -103,7 +96,7 @@ public:
     template <typename... Args>
     T* construct(T* ptr, Args&&... args)
     {
-        return ::new (ptr) T(std::forward<Args&&...>(args...));
+        return ::new (ptr) T(std::forward<Args&&>(args)...);
     }
 
     /**
@@ -123,8 +116,10 @@ public:
      */
     MemoryPool(std::size_t size) : _buffer(new Type[size]), _size(size)
     {
-        _free_pointers.resize(size);
-        std::iota(_free_pointers.begin(), _free_pointers.end(), 0);
+        for (std::size_t i = 0; i < _size; ++i)
+        {
+            _free_pointers.push(reinterpret_cast<T*>(_buffer + i));
+        }
     }
 
     /**
@@ -145,7 +140,14 @@ public:
     {
         _buffer = new Type[other._size];
         std::memcpy(_buffer, other._buffer, _size);
-        _free_pointers = other._free_pointers;
+
+        T* otherbuff = reinterpret_cast<T*>(other._buffer);
+        auto fqueue = other._free_pointers;
+        while (!fqueue.empty())
+        {
+            _free_pointers.push(reinterpret_cast<T*>(_buffer + (fqueue.front() - otherbuff)));
+            fqueue.pop();
+        }
     }
 
     /**
@@ -192,7 +194,14 @@ public:
         _size = other._size;
         _buffer = new Type[other._size];
         std::memcpy(_buffer, other._buffer, _size);
-        _free_pointers = other._free_pointers;
+
+        T* otherbuff = reinterpret_cast<T*>(other._buffer);
+        auto fqueue = other._free_pointers;
+        while (!fqueue.empty())
+        {
+            _free_pointers.push(reinterpret_cast<T*>(_buffer + (fqueue.front() - otherbuff)));
+            fqueue.pop();
+        }
         return *this;
     }
 
