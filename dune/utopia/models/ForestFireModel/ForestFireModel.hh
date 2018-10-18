@@ -283,6 +283,9 @@ private:
                 _cluster_tag_cnt++;
             }
         }
+        else {
+            (void)this;
+        }
 
         return cell->state();
     };
