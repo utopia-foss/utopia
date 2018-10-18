@@ -195,8 +195,6 @@ private:
     };
 
 
-
-
 public:
     /// Construct the ContDisease model
     /** \param name     Name of this model instance
@@ -341,8 +339,8 @@ public:
         // _dset_state
         _dset_state->write(_manager.cells().begin(), _manager.cells().end(),
                            [](auto& cell) {
-                                return static_cast<unsigned short int>(cell->state());
-                            });
+                              return static_cast<unsigned short int>(cell->state());
+                           });
     }
 
 
