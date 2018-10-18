@@ -111,9 +111,6 @@ protected:
     /// The monitor
     Monitor _mtr;
 
-    /// The monitor manager
-    std::shared_ptr<MonitorManager> _mtr_mgr;
-
     /// The hierarchical level
     const Level _level;
 
@@ -147,7 +144,6 @@ public:
         _log(spdlog::stdout_color_mt(parent_model.get_logger()->name() + "."
                                      + _name)),
         _mtr(Monitor(name, parent_model.get_monitor_manager())),
-        _mtr_mgr(parent_model.get_monitor_manager()),
         _level(parent_model.get_level() + 1)
     {
         // Set this model instance's log level
@@ -214,9 +210,9 @@ public:
         return _mtr;
     }
 
-    /// Return the monitor manager of the root model
+    /// Get the monitor manager of the root model
     std::shared_ptr<MonitorManager> get_monitor_manager() const {
-        return _mtr_mgr;
+        return _mtr.get_monitor_manager();
     }
 
     /// Return the hierarchical level within the model hierarchy
@@ -244,14 +240,14 @@ public:
          * collected data stems from the same time step.
          */ 
         if (_level == 1) {
-            _mtr_mgr->check_timer();
+            _mtr.get_monitor_manager()->check_timer();
             monitor();
             
             // If enabled for this step, perform the emission of monitor data
             // NOTE At this point, we can be sure that all submodels have
             //      already run, because their iterate functions were called
             //      in the perform_step of the level 1 model.
-            _mtr_mgr->emit_if_enabled();
+            _mtr.get_monitor_manager()->emit_if_enabled();
         }
         else {
             monitor();
@@ -295,7 +291,7 @@ public:
      *         emitted in this step.
      */
     void monitor () {
-        if (_mtr_mgr->emit_enabled()) {
+        if (_mtr.get_monitor_manager()->emit_enabled()) {
             // Supply the current time of this model to the monitor
             _mtr.set_by_value("time", _time);
 
