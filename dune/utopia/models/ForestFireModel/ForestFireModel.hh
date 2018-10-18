@@ -40,23 +40,24 @@ struct Param {
     {
         if (growth_rate > 1 || growth_rate < 0)
         {
-            throw std::runtime_error("growth rate is a probability per cell. \
-                Should have value in [0,1]! \
-                1 corresponds to empty turns to tree in 1 step. \
-                0.1 every 10th step. 0 never. ");
+            throw std::invalid_argument("growth rate is a probability per cell. "\
+                                        "Should have value in [0,1]! "\
+                                        "1 corresponds to empty turns to tree in 1 step. "\
+                                        "0.1 every 10th step. 0 never. ");
         }
         if (lightning_frequency > 1 || lightning_frequency < 0)
         {
-            throw std::runtime_error("lightning frequency is a probability per cell. \
-                Should have value in [0,1]! \
-                1 corresponds to tree hit by lightning in one step. \
-                0.1 every 10th step. 0 never. ");
+            throw std::invalid_argument("lightning frequency is a probability per cell. "\
+                                        "Should have value in [0,1]! "\
+                                        "1 corresponds to tree hit by lightning in one step. "\
+                                        "0.1 every 10th step. 0 never. ");
         }
         if (resistance > 1 || resistance < 0)
         {
-            throw std::runtime_error("Resistance is a probability per burning neighbor. \
-                Should have value in [0,1]! \
-                0 corresponds to no resistance to fire. 1 to total resistance.");
+            throw std::invalid_argument("Resistance is a probability per burning neighbor. " \
+                                        "Should have value in [0,1]! " \
+                                        "0 corresponds to no resistance to fire. "\
+                                        "1 to total resistance.");
         }
     }
 };
@@ -124,22 +125,11 @@ private:
 
 
     // -- Rule functions -- //
-    // initialise all empty or all tree
+    // initialise trees random with density
     // update following the FFM set of rules
 
-    /// Sets the given cell to state "empty"
-    RuleFunc _set_initial_state_empty = [](const auto cell){
-        // Get the state of the Cell
-        auto state = cell->state();
-
-        // Set the internal variables
-        state.state = empty;
-
-        return state;
-    };
-
     /// Sets the given cell to state "tree" with probability p, else to "empty"
-    RuleFunc _set_initial_density_tree = [this](const auto cell){
+    RuleFunc _set_initial_state = [this](const auto cell){
         // Get the state of the Cell
         auto state = cell->state();
 
@@ -307,6 +297,7 @@ public:
     :
         // Initialize first via base model
         Base(name, parent),
+        
         // Now initialize members specific to this class
         _manager(manager),
         _param(as_double(this->_cfg["growth_rate"]),
@@ -317,8 +308,10 @@ public:
                        as_bool(this->_cfg["light_bottom_row"])
         ),
         _initial_density(as_double(this->_cfg["initial_density"])),
+        
         // temporary members
         _cluster_tag_cnt(0),
+        
         // create datasets
         _dset_state(this->_hdfgrp->open_dataset("state")),
         _dset_cluster_id(this->_hdfgrp->open_dataset("cluster_id"))
@@ -340,39 +333,29 @@ public:
         this->write_data();
     }
 
+
     // Setup functions ........................................................
     /// Initialize the cells according to `initial_state` config parameter
     void initialize_cells()
     {
-        // Extract the mode that determines the initial state
-        const auto initial_density = as_double(this->_cfg["initial_density"]);
+        // check user config
+        if (_initial_density < 0. || _initial_density > 1.)
+        {
+            throw std::invalid_argument("The initial state is not valid! Must be value between 0 and 1");
+        }
 
         // Apply a rule to all cells depending on the config value
-        if (initial_density == 0)
+        else 
         {
             if constexpr (ManagerType::Cell::is_sync()) {
-                apply_rule(_set_initial_state_empty, _manager.cells());
+                apply_rule(_set_initial_state, _manager.cells());
             }
             else {
-                apply_rule(_set_initial_state_empty, _manager.cells(), *this->_rng);
+                apply_rule(_set_initial_state, _manager.cells(), *this->_rng);
                 apply_rule(_identify_cluster, _manager.cells(), *this->_rng);
             }
         }
-        else if (initial_density > 0. && initial_density <= 1.)
-        {
-            if constexpr (ManagerType::Cell::is_sync()) {
-                apply_rule(_set_initial_density_tree, _manager.cells());
-            }
-            else {
-                apply_rule(_set_initial_density_tree, _manager.cells(), *this->_rng);
-                apply_rule(_identify_cluster, _manager.cells(), *this->_rng);
-            }
-        }
-        else
-        {
-            throw std::runtime_error("The initial state is not valid! Must be value between 0 and 1");
-        }
-
+        
         // Write information that cells are initialized to the logger
         this->_log->info("Cells initialized.");
     }
@@ -397,7 +380,6 @@ public:
         }
     }
 
-
     /// Write data
     void write_data ()
     {   
@@ -415,10 +397,6 @@ public:
                                     return cell->state().cluster_tag;
                                 });
     }
-
-
-    // Getters and setters ....................................................
-    // Can add some getters and setters here to interface with other model
 };
 
 } // namespace ForestFireModel

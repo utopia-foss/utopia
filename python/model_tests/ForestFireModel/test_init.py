@@ -129,3 +129,18 @@ def test_initial_state_random():
         # Calculate fraction and compare to desired probability
         density = np.sum(data['state'])/data['state'].shape[1]
         assert density == initial_density
+
+    initial_density = 1.0
+    mv, dm = mtc.create_run_load(from_cfg="initial_state.yml",
+                                 perform_sweep=True,
+                                 **model_cfg(initial_density=initial_density))
+
+    for uni in dm['uni'].values():
+        data = uni['data']['ForestFireModel']
+
+        # check, that no cell is burning
+        assert 0 <= np.amax(data['state']) <= 1
+
+        # Calculate fraction and compare to desired probability
+        density = np.sum(data['state'])/data['state'].shape[1]
+        assert density == initial_density
