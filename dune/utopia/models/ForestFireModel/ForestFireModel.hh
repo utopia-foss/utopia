@@ -18,13 +18,13 @@ enum StateEnum { empty=0, tree=1, burning=2 };
 
 struct State {
     StateEnum state;
-    int cluster_tag;
+    unsigned int cluster_tag;
 
     State() :
-        state(empty),  cluster_tag(-1)
+        state(empty),  cluster_tag(0)
     { }
     State(StateEnum s) :
-        state(s),  cluster_tag(-1)
+        state(s),  cluster_tag(0)
     { }
 };
 
@@ -117,7 +117,7 @@ private:
     const double _initial_density;      // initial density of trees
 
     // -- Temporary objects -- //
-    int _cluster_tag_cnt;
+    unsigned int _cluster_tag_cnt;
 
     // -- Datasets -- //
     std::shared_ptr<DataSet> _dset_state;
@@ -157,7 +157,7 @@ private:
             std::vector<decltype(cell)> cluster = { cell };
             cell->state().state = empty;
 
-            for (unsigned long i = 0; i < cluster.size(); ++i)
+            for (int i = 0; i < cluster.size(); ++i)
             {
                 auto cluster_member = cluster[i];
                 for (auto cluster_potential_member : 
@@ -193,7 +193,7 @@ private:
      */
     RuleFunc _update = [this](auto cell){
         auto state = cell->state();
-        state.cluster_tag = -1; // reset
+        state.cluster_tag = 0; // reset
 
         std::uniform_real_distribution<> dist(0., 1.);
         
@@ -255,16 +255,18 @@ private:
     RuleFunc _identify_cluster = [this](auto cell){
         if constexpr (!ManagerType::Cell::is_sync())
         {
-            if (cell->state().cluster_tag == -1 && cell->state().state == tree) // else already labeled
+            if (cell->state().cluster_tag == 0 && cell->state().state == tree) // else already labeled
             {
+                _cluster_tag_cnt++;
+
                 std::vector<decltype(cell)> cluster = { cell };
                 cell->state().cluster_tag = _cluster_tag_cnt;
-                for (unsigned long i = 0; i < cluster.size(); ++i)
+                for (int i = 0; i < cluster.size(); ++i)
                 {
                     auto cluster_member = cluster[i];
                     for (auto cluster_potential_member : Neighbor::neighbors(cluster_member,this->_manager))
                     {
-                        if (cluster_potential_member->state().cluster_tag == -1 &&
+                        if (cluster_potential_member->state().cluster_tag == 0 &&
                             cluster_potential_member->state().state == tree)
                         {
                             cluster_potential_member->state().cluster_tag = _cluster_tag_cnt;
@@ -272,7 +274,6 @@ private:
                         }
                     }
                 }
-                _cluster_tag_cnt++;
             }
         }
         else {
@@ -297,7 +298,7 @@ public:
     :
         // Initialize first via base model
         Base(name, parent),
-        
+
         // Now initialize members specific to this class
         _manager(manager),
         _param(as_double(this->_cfg["growth_rate"]),
@@ -308,10 +309,10 @@ public:
                        as_bool(this->_cfg["light_bottom_row"])
         ),
         _initial_density(as_double(this->_cfg["initial_density"])),
-        
+
         // temporary members
         _cluster_tag_cnt(0),
-        
+
         // create datasets
         _dset_state(this->_hdfgrp->open_dataset("state")),
         _dset_cluster_id(this->_hdfgrp->open_dataset("cluster_id"))

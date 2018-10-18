@@ -86,7 +86,7 @@ cluster_map:
     # The name of the property to plot with its options
     cluster_id:
       title: Cluster
-      limits: [-1, 19]
+      limits: [0, 20]
 
       # Specify the colormap
       # This can be done in two ways:
