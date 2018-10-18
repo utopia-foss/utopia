@@ -40,7 +40,7 @@ public:
      * come to emit data. If more time than the _emit_interval has passed
      * the time_has_come function returns true.
      */
-    MonitorTimer (double emit_interval)
+    MonitorTimer (const double emit_interval)
     :
         // Store the emit interval
         _emit_interval(emit_interval),
@@ -148,26 +148,6 @@ public:
         return _emit_enabled;
     }
 
-    /// Get a shared pointer to the MonitorTimer object.
-    Timer& get_timer(){
-        return _timer;
-    }
-    
-    /// Return the emit interval
-    auto get_emit_interval() {
-        return _timer->get_emit_interval();
-    }
-    
-    /// Return the emit interval
-    auto get_emit_counter() {
-        return _emit_counter;
-    }
-
-    /// Get the reference to the monitor entries object.
-    YAML::Node& get_entries(){
-        return _entries;
-    }
-
     /// Set an entry in the monitor entries
     /** 
      * @tparam Value The type of the value that should be monitored
@@ -191,6 +171,26 @@ public:
     void set_time(const Time time){
         _entries["time"] = time;
     }
+
+    /// Get a shared pointer to the MonitorTimer object.
+    Timer& get_timer(){
+        return _timer;
+    }
+    
+    /// Return the emit interval
+    auto get_emit_interval() {
+        return _timer->get_emit_interval();
+    }
+    
+    /// Return the emit interval
+    auto get_emit_counter() {
+        return _emit_counter;
+    }
+
+    /// Get the reference to the monitor entries object.
+    YAML::Node& get_entries(){
+        return _entries;
+    }
 };
 
 
@@ -208,13 +208,13 @@ public:
     /** Construct a new Monitor object. 
      * 
      * @param name The name of the monitor
-     * @param root_mtr The root monitor manager
+     * @param root_mtr_mgr The root monitor manager
      */
     Monitor(const std::string name,
-            std::shared_ptr<MonitorManager> root_mtr)
+            std::shared_ptr<MonitorManager> root_mtr_mgr)
     :
         _name(name),
-        _mtr_mgr(root_mtr)
+        _mtr_mgr(root_mtr_mgr)
     {};
 
     /// Constructor
