@@ -109,7 +109,7 @@ protected:
     const std::shared_ptr<spdlog::logger> _log;
 
     /// The monitor
-    Monitor _mtr;
+    Monitor _monitor;
 
     /// The hierarchical level
     const Level _level;
@@ -143,7 +143,7 @@ public:
         _rng(parent_model.get_rng()),
         _log(spdlog::stdout_color_mt(parent_model.get_logger()->name() + "."
                                      + _name)),
-        _mtr(Monitor(name, parent_model.get_monitor_manager())),
+        _monitor(Monitor(name, parent_model.get_monitor_manager())),
         _level(parent_model.get_level() + 1)
     {
         // Set this model instance's log level
@@ -207,12 +207,12 @@ public:
 
     /// Return the monitor of this model
     Monitor get_monitor() const {
-        return _mtr;
+        return _monitor;
     }
 
     /// Get the monitor manager of the root model
     std::shared_ptr<MonitorManager> get_monitor_manager() const {
-        return _mtr.get_monitor_manager();
+        return _monitor.get_monitor_manager();
     }
 
     /// Return the hierarchical level within the model hierarchy
@@ -240,14 +240,14 @@ public:
          * collected data stems from the same time step.
          */ 
         if (_level == 1) {
-            _mtr.get_monitor_manager()->check_timer();
+            _monitor.get_monitor_manager()->check_timer();
             monitor();
             
             // If enabled for this step, perform the emission of monitor data
             // NOTE At this point, we can be sure that all submodels have
             //      already run, because their iterate functions were called
             //      in the perform_step of the level 1 model.
-            _mtr.get_monitor_manager()->emit_if_enabled();
+            _monitor.get_monitor_manager()->emit_if_enabled();
         }
         else {
             monitor();
@@ -291,9 +291,9 @@ public:
      *         emitted in this step.
      */
     void monitor () {
-        if (_mtr.get_monitor_manager()->emit_enabled()) {
+        if (_monitor.get_monitor_manager()->emit_enabled()) {
             // Supply the current time of this model to the monitor
-            _mtr.set_by_value("time", _time);
+            _monitor.set_by_value("time", _time);
 
             // Call the child's implementation of the monitor functions.
             impl().monitor();
@@ -377,7 +377,7 @@ protected:
     const std::shared_ptr<spdlog::logger> _log;
 
     /// The monitor manager
-    MonitorManager _mtr_mgr;
+    MonitorManager _monitor_mgr;
 
 public:
     /// Constructor that only requires path to a config file
@@ -401,7 +401,7 @@ public:
     // And initialize the root logger at warning level
     _log(Utopia::init_logger("root", spdlog::level::warn, false)),
     // Create a monitor manager
-    _mtr_mgr(as_double(_cfg["monitor_emit_interval"]))
+    _monitor_mgr(as_double(_cfg["monitor_emit_interval"]))
     {
         setup_loggers(); // global loggers
         set_log_level(); // this log level
@@ -435,7 +435,7 @@ public:
     // And initialize the root logger at warning level
     _log(Utopia::init_logger("root", spdlog::level::warn, false)),
     // Create a monitor manager
-    _mtr_mgr(emit_interval)
+    _monitor_mgr(emit_interval)
     {
         setup_loggers(); // global loggers
         set_log_level(); // this log level
@@ -497,7 +497,7 @@ public:
 
     /// Return the monitor manager of this model
     std::shared_ptr<MonitorManager> get_monitor_manager() const {
-        return std::make_shared<MonitorManager>(_mtr_mgr);
+        return std::make_shared<MonitorManager>(_monitor_mgr);
     }
 
 

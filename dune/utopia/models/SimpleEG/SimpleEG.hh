@@ -74,7 +74,7 @@ public:
 
 
 private:
-    // Base members: _time, _name, _cfg, _hdfgrp, _rng, _log, _mgr
+    // Base members: _time, _name, _cfg, _hdfgrp, _rng, _log, _monitor
 
     // -- Members of this model -- //
     /// The grid manager
