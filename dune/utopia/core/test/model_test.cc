@@ -1,6 +1,10 @@
 #include <cassert>
+#include <thread>
+#include <chrono>
+#include <numeric>
 
 #include <dune/utopia/data_io/hdffile.hh>
+#include <dune/utopia/data_io/test/monitor_test.hh>
 
 #include "model_test.hh"
 
@@ -33,6 +37,9 @@ int main(int argc, char *argv[])
         // -- Tests begin here -- //
         std::cout << "Commencing tests ..." << std::endl;
 
+        // no emit should have happened
+        assert(model.get_monitor_manager()->get_emit_counter() == 0);
+
         // assert initial state
         std::cout << "  initial state" << std::endl;
         assert(compare_containers(model.state(), state));
@@ -44,6 +51,9 @@ int main(int argc, char *argv[])
         state = std::vector<double>(1E6, 1.0);
         assert(compare_containers(model.state(), state));
         std::cout << "  correct" << std::endl;
+
+        // monitoring should have happened
+        assert(model.get_monitor_manager()->get_emit_counter() == 1);
 
         // set boundary conditions and check again
         std::cout << "  setting boundary condition + iterate" << std::endl;
@@ -67,6 +77,12 @@ int main(int argc, char *argv[])
         state = std::vector<double>(1E6, 2.0);
         assert(compare_containers(model_it.state(), state));
         std::cout << "  correct" << std::endl;
+
+        // Wait a second, such that the emit interval is surpassed
+        using namespace std::chrono_literals;
+        std::this_thread::sleep_for(10ms);
+        assert(model.get_monitor_manager()->get_emit_counter() == 2);
+
 
         std::cout << "Tests successful. :)" << std::endl;
 

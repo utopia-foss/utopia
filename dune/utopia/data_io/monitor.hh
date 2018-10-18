@@ -67,6 +67,11 @@ public:
     void reset(){
         _last_emit = Clock::now();
     }
+
+    /// Return the emit interval
+    const DurationType get_emit_interval() {
+        return _emit_interval;
+    }
 };
 
 
@@ -92,6 +97,9 @@ private:
     /// The flag that determines whether to collect data
     bool _emit_enabled;
 
+    /// Counts the number of emit operations
+    std::size_t _emit_counter;
+
 public:
     /// Constructor
     /**
@@ -115,6 +123,9 @@ public:
         if (_emit_enabled){
             // Emit the monitor entries to the terminal
             std::cout << _entries << std::endl;
+
+            // Take care of the counter, reset the timer and the emit flag
+            _emit_counter++;
             _timer->reset();
             _emit_enabled = false;
         }
@@ -140,6 +151,16 @@ public:
     /// Get a shared pointer to the MonitorTimer object.
     Timer& get_timer(){
         return _timer;
+    }
+    
+    /// Return the emit interval
+    auto get_emit_interval() {
+        return _timer->get_emit_interval();
+    }
+    
+    /// Return the emit interval
+    auto get_emit_counter() {
+        return _emit_counter;
     }
 
     /// Get the reference to the monitor entries object.

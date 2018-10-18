@@ -51,14 +51,21 @@ public:
     /// Iterate by one time step
     void perform_step ()
     {
-        std::transform(_state.begin(), _state.end(), _bc.begin(),
-            _state.begin(),
+        std::transform(_state.begin(), _state.end(),
+                       _bc.begin(), _state.begin(),
             [](const auto a, const auto b) { return a + b; }
         );
     }
 
-    /// Do nothing for now
-    void monitor () {}
+    /// Monitor the mean of the state
+    void monitor () {
+        _monitor.set_by_func("state_mean", [this](){
+            const double sum = std::accumulate(this->_state.begin(),
+                                               this->_state.end(),
+                                               0);
+            return sum / this->_state.size();
+        });
+    }
 
     /// Do nothing for now
     void write_data () {}
