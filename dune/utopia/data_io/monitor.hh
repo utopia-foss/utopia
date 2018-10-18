@@ -70,44 +70,7 @@ public:
 };
 
 
-/// The MonitorEntries stores the data that is emitted to the terminal.
-// TODO consider moving all this functionality directly into MonitorManager?
-class MonitorEntries {
-private:
-    // -- Member declaration -- //
-    /// The monitor data that should be emitted
-    YAML::Node _data;
-
-public:
-
-    /// Constructor
-    MonitorEntries() : _data(YAML::Node()) {
-        // Specify that the emitted data is shown in a single line
-        _data.SetStyle(YAML::EmitterStyle::Flow);
-    };
-
-    /// Set an entry in the monitor data
-    /** 
-     * @tparam Value The type of the value that should be monitored
-     * @param model_name The model name which will be prefixed to the key
-     * @param key The key of the new entry
-     * @param value The value of the new entry
-     */
-    template<typename Value>
-    void set_entry( const std::string model_name, 
-                    const std::string key, 
-                    const Value value){
-        _data[model_name + "." + key] = value;
-    }
-
-    /// Emit the stored data to the terminal.
-    void emit(){
-        std::cout << _data << std::endl;
-    }
-};
-
-
-/// The MonitorManager manages the MonitorEntries and MonitorTimer
+/// The MonitorManager manages the monitor entries and MonitorTimer
 /** 
  * The manager performs an emission of the stored monitor data
  * if the monitor timer asserts that enough time has passed since
@@ -123,8 +86,8 @@ private:
     /// The monitor timer
     Timer _timer;
 
-    /// The monitor data
-    MonitorEntries _data;
+    /// The monitor entries
+    YAML::Node _entries;
 
     /// The flag that determines whether to collect data
     bool _emit_enabled;
@@ -140,15 +103,18 @@ public:
         // Create a new MonitorTimer object
         _timer(std::make_shared<MonitorTimer>(emit_interval)),
         // Create an empty MonitorEntries object for the data to be emitted
-        _data(MonitorEntries()),
+        _entries(YAML::Node()),
         // Initialially set the collect data flag to true
         _emit_enabled(true)
-    {};
+    { 
+        _entries.SetStyle(YAML::EmitterStyle::Flow);
+    };
 
     /// Perform an emission of the data to the terminal, if the flag was set
     void emit_if_enabled () {
         if (_emit_enabled){
-            _data.emit();
+            // Emit the monitor entries to the terminal
+            std::cout << _entries << std::endl;
             _timer->reset();
             _emit_enabled = false;
         }
@@ -177,8 +143,22 @@ public:
     }
 
     /// Get the reference to the monitor data object.
-    MonitorEntries& get_data(){
-        return _data;
+    YAML::Node& get_entries(){
+        return _entries;
+    }
+
+    /// Set an entry in the monitor data
+    /** 
+     * @tparam Value The type of the value that should be monitored
+     * @param model_name The model name which will be prefixed to the key
+     * @param key The key of the new entry
+     * @param value The value of the new entry
+     */
+    template<typename Value>
+    void set_entry( const std::string model_name, 
+                    const std::string key, 
+                    const Value value){
+        _entries[model_name + "." + key] = value;
     }
 };
 
@@ -220,7 +200,7 @@ public:
         _mtr_mgr(parent_mtr.get_monitor_manager())
     {};
 
-    /// Provide a new entry in the MonitorEntries.
+    /// Provide a new entry to the monitor manager.
     /** This entry is set regardless of whether the emission is enabled!
      * @tparam Function The type of the function that is called
      * @param key The key of the new entry
@@ -228,10 +208,10 @@ public:
      */
     template <typename Function>
     void set_by_func (const std::string key,  const Function f) {
-        _mtr_mgr->get_data().set_entry(_name, key, f());
+        _mtr_mgr->set_entry(_name, key, f());
     }
 
-    /// Provide a new entry in the MonitorEntries.
+    /// Provide a new entry to the monitor manager.
     /** This entry is set regardless of whether the emission is enabled!
      * @tparam Value The type of the value
      * @param key The key of the new entry
@@ -239,7 +219,7 @@ public:
      */
     template <typename Value>
     void set_by_value (const std::string key, const Value value) {
-        _mtr_mgr->get_data().set_entry(_name, key, value);
+        _mtr_mgr->set_entry(_name, key, value);
     }
 
 
