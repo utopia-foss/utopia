@@ -187,7 +187,7 @@ private:
             }
         }
         else {
-            (void)this;
+            (void)this;         // avoid warning: unused this
         }
 
         return cell->state();
@@ -284,7 +284,7 @@ private:
             }
         }
         else {
-            (void)this;
+            (void)this;         // avoid warning: unused this
         }
 
         return cell->state();
