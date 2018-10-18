@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <dune/utopia/core/grid.hh>
 #include <dune/utopia/core/tags.hh>
-#include <dune/utopia/models/AmeeMulti/utils/memorypool.hh>
 
 namespace Utopia
 {

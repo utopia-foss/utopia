@@ -485,7 +485,7 @@ void test_model_functions(Model& model, Cellmanager& cellmanager)
         std::vector<double>(cell->state().celltrait.size(), 50.);
     model.update_cell(cell);
 
-    ASSERT_EQ(cell->state().resources, std::vector<double>(10, 4.5));
+    ASSERT_EQ(cell->state().resources, std::vector<double>(10, 19.15868925150003));
 
     for (std::size_t i = 0; i < 100; ++i)
     {

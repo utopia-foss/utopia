@@ -9,7 +9,6 @@
 #include <dune/utopia/core/types.hh>
 #include <dune/utopia/models/AmeeMulti/adaptionfunctions.hh>
 #include <dune/utopia/models/AmeeMulti/cellstate.hh>
-#include <dune/utopia/models/AmeeMulti/utils/memorypool.hh>
 #include <dune/utopia/models/AmeeMulti/utils/statistics.hh>
 #include <dune/utopia/models/AmeeMulti/utils/test_utils.hh>
 #include <dune/utopia/models/AmeeMulti/utils/utils.hh>
@@ -75,13 +74,11 @@ public:
     using NextNeighbor = Utopia::Neighborhoods::NextNeighbor;
     using MooreNeighbor = Utopia::Neighborhoods::MooreNeighbor;
 
+private:
     using AgentContainer = std::vector<std::shared_ptr<Organism>>;
 
-    // using AgentContainer = std::vector<Organism*>;
     using Cellcontainer = std::vector<std::shared_ptr<Gridcell>>;
 
-private:
-    // function types
     using AgentFunction = std::function<void(Organism*)>;
 
     using CellFunction = std::function<void(const std::shared_ptr<Gridcell>)>;
@@ -96,9 +93,6 @@ private:
 
     using AgentUpdateFunction = std::function<void(Organism&)>;
     using CellUpdateFunction = std::function<void(const std::shared_ptr<Gridcell>)>;
-
-    // // memorypool for agents
-    // MemoryPool<Organism> _mempool;
 
     // population& grid
     AgentContainer _population;
@@ -201,20 +195,6 @@ public:
                                       ? (agent.state().resources - _livingcost)
                                       : 0.;
         agent.state().age += 1;
-
-        if (agent.state().resources < 0.)
-        {
-            throw std::runtime_error("negative resources found for agent!");
-        }
-
-        for (auto& val : agent.state().habitat->state().resources)
-        {
-            if (val < 0.)
-            {
-                throw std::runtime_error(
-                    "negative resources found in agent's habitat!");
-            }
-        }
     }
 
     /**
@@ -349,19 +329,6 @@ public:
     }
 
     /**
-     * @brief Function for checking if an organism is to die
-     *
-     * @param agent
-     */
-    void kill(Organism& agent)
-    {
-        if (is_equal(agent.state().resources, 0.) or _deathdist(*(this->_rng)) < _deathprobability)
-        {
-            agent.state().deathflag = true;
-        }
-    }
-
-    /**
      * @brief Function for reproducing an organism
      *
      * @param agent
@@ -380,6 +347,19 @@ public:
 
             agent.state().resources -= (_offspringresources + _reproductioncost);
             agent.state().fitness += 1;
+        }
+    }
+
+    /**
+     * @brief Function for checking if an organism is to die
+     *
+     * @param agent
+     */
+    void kill(Organism& agent)
+    {
+        if (is_equal(agent.state().resources, 0.) or _deathdist(*(this->_rng)) < _deathprobability)
+        {
+            agent.state().deathflag = true;
         }
     }
 
@@ -427,11 +407,23 @@ public:
     {
         for (std::size_t i = 0; i < cell->state().celltrait.size(); ++i)
         {
-            cell->state().resources[i] += cell->state().resourceinfluxes[i];
+            // cell->state().resources[i] += cell->state().resourceinfluxes[i];
 
-            if (cell->state().resources[i] > cell->state().resource_capacities[i])
+            // if (cell->state().resources[i] > cell->state().resource_capacities[i])
+            // {
+            //     cell->state().resources[i] = cell->state().resource_capacities[i];
+            // }
+
+            if (is_equal(cell->state().resources[i], 0., 1e-7))
             {
-                cell->state().resources[i] = cell->state().resource_capacities[i];
+                cell->state().resources[i] = cell->state().resourceinfluxes[i];
+            }
+            else
+            {
+                cell->state().resources[i] =
+                    logistic_function(cell->state().resourceinfluxes[i],    // r
+                                      cell->state().resource_capacities[i], // K
+                                      cell->state().resources[i], 1); // u0, t
             }
         }
 
@@ -731,10 +723,6 @@ public:
         std::shared_ptr<Cell> eden =
             _cells[std::uniform_int_distribution<std::size_t>(0, _cells.size() - 1)(*this->_rng)];
 
-        // _population.push_back(_mempool.construct(
-        //     _mempool.allocate(), Agentstate({}, eden, init_resources, this->_rng),
-        //     ++_idx, eden->position()));
-
         _population.push_back(std::make_shared<Organism>(
             Agentstate({}, eden, init_resources, this->_rng), ++_idx, eden->position()));
         auto agent = _population[0];
@@ -788,11 +776,6 @@ public:
         {
             throw std::runtime_error("Could not build viable organism!");
         }
-
-        // estimate maximum population size and reserve memory accordingly,
-        // with some safety margin (factor of 2)
-        auto resource_influxlimits =
-            as_vector<double>(this->_cfg["resourceinflux_limits"]);
     }
 
     /**
@@ -1154,6 +1137,7 @@ public:
         this->_time = t;
     }
 
+    virtual ~AmeeMulti() = default;
 }; // namespace AmeeMulti
 
 template <typename Cell, typename Agent, typename Modeltypes, bool construction, bool decay>
