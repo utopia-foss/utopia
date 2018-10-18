@@ -70,6 +70,15 @@ int main(int argc, char *argv[])
         assert(compare_containers(model.state(), state));
         std::cout << "  correct" << std::endl;
 
+
+        // Wait a while, such that the emit interval is surpassed
+        using namespace std::chrono_literals;
+        assert(model.get_monitor_manager()->get_emit_counter() == 1);
+        std::this_thread::sleep_for(100ms);
+        model.iterate();
+        assert(model.get_monitor_manager()->get_emit_counter() == 2);
+
+
         // check override of iterate function in model_it, which was not
         // iterated yet
         std::cout << "  iterate model with custom iterate method" << std::endl;
@@ -77,11 +86,6 @@ int main(int argc, char *argv[])
         state = std::vector<double>(1E6, 2.0);
         assert(compare_containers(model_it.state(), state));
         std::cout << "  correct" << std::endl;
-
-        // Wait a second, such that the emit interval is surpassed
-        using namespace std::chrono_literals;
-        std::this_thread::sleep_for(10ms);
-        assert(model.get_monitor_manager()->get_emit_counter() == 2);
 
 
         std::cout << "Tests successful. :)" << std::endl;

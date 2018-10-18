@@ -259,7 +259,7 @@ public:
         // Supply the state mean to the monitor
         this->_monitor.set_by_func("state_mean", [this](){
             double state_sum = 0.;
-            for (auto &cell : this->_manager.cells()) {
+            for (const auto &cell : this->_manager.cells()) {
                 state_sum += cell->state().some_state;
             }
             return state_sum / std::distance(this->_manager.cells().begin(),
