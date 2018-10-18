@@ -9,14 +9,14 @@ The model is based on the description in the CCEES Lecture Notes by Kurt Roth in
 
 The model differentiates between two modes:
 
-* The two state forest fire. Available states for a cell in a cellular automaton are 'empty' and 'tree'. Trees grow on an empty cell with probability 'growth_rate'. With the probability 'lightning_frequency' a cell is ignited and this cell, as well as all connected cells (the cluster) burn instantaneously and turn to empty - a percolation occurs.
-* The three state forest fire. Available states for a cell in a cellular automaton are 'empty',  'tree', 'burning'. Trees grow on an empty cell with probability 'growth_rate'. With the probability 'lightning_frequency' a cell is ignited and turns to burning. Furthermore a cell turns from tree to burning if at least one of its neighbors is burning. Burning cells turn empty (one time step later).
+* The two state forest fire. Available states for a cell in a cellular automaton are `empty` and `tree`. Trees grow on an empty cell with probability `growth_rate`. With the probability `lightning_frequency` a cell is ignited and this cell, as well as all connected cells (the cluster) burn instantaneously and turn to empty - a percolation occurs.
+* The three state forest fire. Available states for a cell in a cellular automaton are `empty`,  `tree`, `burning`. Trees grow on an empty cell with probability `growth_rate`. With the probability `lightning_frequency` a cell is ignited and turns to burning. Furthermore a cell turns from tree to burning if at least one of its neighbors is burning. Burning cells turn empty (one time step later).
 
-Use the boolean 'two_state_FFM' to use either model.
+Use the boolean `two_state_FFM` to use either model.
 
 ## Implementation Details
 
-There is the possibility to use the model feature 'ignite bottom row' instead of a lightning frequency. Cells don't ignite at random, but any tree on the bottom (southern) row is ignited.
+There is the possibility to use the model feature `ignite_bottom_row` instead of a lightning frequency. Cells don`t ignite at random, but any tree on the bottom (southern) row is ignited.
 
 The model can be used as a percolation model if the simulation is run for a single time step.
 

@@ -73,15 +73,13 @@ struct ModelFeature {
 
 /// Typehelper to define data types of ForestFireModel model 
 using ForestFireModelTypes = ModelTypes<>;
-// NOTE if you do not use the boundary condition type, you can delete the
-//      definition of the struct above and the passing to the type helper
 
 
 /// The ForestFireModel Model
-/** Add your model description here.
- *  This model's only right to exist is to be a template for new models. 
- *  That means its functionality is based on nonsense but it shows how 
- *  actually useful functionality could be implemented.
+/** The ForestFireModel simulates the development of a forest under influence of forest fires. 
+ *  Trees grow on a random basis and fires cause their death, 
+ *  either for a whole cluster instantaneously (two state model) 
+ *  or for a cluster by propagation via the neighborhood (three state model).
  */
 template<class ManagerType>
 class ForestFireModel:
@@ -101,7 +99,7 @@ public:
     using RuleFunc = typename std::function<State(std::shared_ptr<CellType>)>;
 
     // Alias the neighborhood classes to make access more convenient
-    using Neighbor = Utopia::Neighborhoods::MooreNeighbor;
+    using Neighbor = Neighborhoods::MooreNeighbor;
 
 
 private:
@@ -115,14 +113,12 @@ private:
     const Param _param;
     const ModelFeature _model_feature;  // 0: three state model, contagious disease, 1: two state model, percolation
                                         // 0 implies sync update, 1 async update
-    const double _initial_density; // initial density of trees
+    const double _initial_density;      // initial density of trees
 
     // -- Temporary objects -- //
     int _cluster_tag_cnt;
 
     // -- Datasets -- //
-    // NOTE They should be named '_dset_<name>', where <name> is the
-    //      dataset's actual name as set in the constructor.
     std::shared_ptr<DataSet> _dset_state;
     std::shared_ptr<DataSet> _dset_cluster_id;
 
@@ -194,17 +190,17 @@ private:
     };
 
     /// update follwoing set of rules
-    /**    states: 0: empty, 1: tree (, 2: burning)
-        * contagious disease spread (CDM)
-        *    empty -> tree with probability growth_rate
-        *    tree -> burning with probability lightning_frequency
-        *    tree -> burning with probability 1 - resistance if i' in Neighborhood of i burning
-        *    burning -> empty
-        * Percolation spread (PM)
-        *    empty -> tree with probability growth_rate
-        *    tree -> burning with probability lightning_frequency
-        *    or tree -> burning if connected to cluster -> empty instantaneously (two state FFM, percolation)
-        */
+    /** states: 0: empty, 1: tree (, 2: burning)
+     * contagious disease spread (CDM)
+     *    empty -> tree with probability growth_rate
+     *    tree -> burning with probability lightning_frequency
+     *    tree -> burning with probability 1 - resistance if i' in Neighborhood of i burning
+     *    burning -> empty
+     * Percolation spread (PM)
+     *    empty -> tree with probability growth_rate
+     *    tree -> burning with probability lightning_frequency
+     *    or tree -> burning if connected to cluster -> empty instantaneously (two state FFM, percolation)
+     */
     RuleFunc _update = [this](auto cell){
         auto state = cell->state();
         state.cluster_tag = -1; // reset
@@ -260,6 +256,12 @@ private:
         return state;
     };
 
+    /// identify cluster
+    /* get the identity of each cluster of trees, -1 for grass
+     * run a percolation on a cell, that has no id
+     * give all cells of that percolation the same id
+     * _cluster_tag_cnt keeps track of given ids
+     */
     RuleFunc _identify_cluster = [this](auto cell){
         if constexpr (!ManagerType::Cell::is_sync())
         {
@@ -300,19 +302,19 @@ public:
      */
     template<class ParentModel>
     ForestFireModel (const std::string name,
-                 ParentModel &parent,
-                 ManagerType&& manager)
+                     ParentModel &parent,
+                     ManagerType&& manager)
     :
         // Initialize first via base model
         Base(name, parent),
         // Now initialize members specific to this class
         _manager(manager),
         _param(as_double(this->_cfg["growth_rate"]),
-            as_double(this->_cfg["lightning_frequency"]),
-            as_double(this->_cfg["resistance"])
+               as_double(this->_cfg["lightning_frequency"]),
+               as_double(this->_cfg["resistance"])
         ),
-        _model_feature(Utopia::as_bool(this->_cfg["two_state_FFM"]),
-            Utopia::as_bool(this->_cfg["light_bottom_row"])
+        _model_feature(as_bool(this->_cfg["two_state_FFM"]),
+                       as_bool(this->_cfg["light_bottom_row"])
         ),
         _initial_density(as_double(this->_cfg["initial_density"])),
         // temporary members
@@ -333,7 +335,6 @@ public:
                           this->get_time_max() + 1, num_cells);
         _dset_state->set_capacity({this->get_time_max() + 1, num_cells});
         _dset_cluster_id->set_capacity({this->get_time_max() + 1, num_cells});
-        // get cluster
 
         // Write initial state
         this->write_data();
@@ -351,7 +352,6 @@ public:
         {
             if constexpr (ManagerType::Cell::is_sync()) {
                 apply_rule(_set_initial_state_empty, _manager.cells());
-                apply_rule(_identify_cluster, _manager.cells());
             }
             else {
                 apply_rule(_set_initial_state_empty, _manager.cells(), *this->_rng);
@@ -362,7 +362,6 @@ public:
         {
             if constexpr (ManagerType::Cell::is_sync()) {
                 apply_rule(_set_initial_density_tree, _manager.cells());
-                apply_rule(_identify_cluster, _manager.cells());
             }
             else {
                 apply_rule(_set_initial_density_tree, _manager.cells(), *this->_rng);
@@ -381,16 +380,16 @@ public:
 
     // Runtime functions ......................................................
 
-    /** @brief Iterate a single step
-     *  @detail Here you can add a detailed description what exactly happens 
-     *          in a single iteration step
-     */
+    /// Perform step
     void perform_step ()
-    {
+    {   
+        // reset tmp counter for cluster_id
         _cluster_tag_cnt = 0;
+
+        /// apply rules: update and identify cluster
+        // identify cluster only with asynchronous update.
         if constexpr (ManagerType::Cell::is_sync()) {
             apply_rule(_update, _manager.cells());
-            apply_rule(_identify_cluster, _manager.cells());
         }
         else {
             apply_rule(_update, _manager.cells(), *this->_rng);
@@ -404,10 +403,10 @@ public:
     {   
         // state
         _dset_state->write(_manager.cells().begin(),
-                                _manager.cells().end(),
-                                [](auto& cell) {
-                                    return static_cast<unsigned short int>(cell->state().state);
-                                });
+                           _manager.cells().end(),
+                           [](auto& cell) {
+                               return static_cast<unsigned short int>(cell->state().state);
+                           });
 
         // cluster id
         _dset_cluster_id->write(_manager.cells().begin(),
