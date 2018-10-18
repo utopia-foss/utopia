@@ -1,7 +1,10 @@
 ### What does this MR do?
+<!-- Explain _how_ you achieved the proposal of the task. -->
+This MR ...
 
 
 ### Is there something that needs to be double checked?
+<!-- Is there something a reviewer should look out for _especially_? -->
 
 
 ### Can this MR be accepted?
@@ -9,21 +12,10 @@
 - [ ] Added test to ...
 - ...
 - [ ] Pipeline passing
+- [ ] Approved by @ ...
+<!-- Add reviewer(s) here once no longer in WIP -->
 
 
 ### Related issues
-
-Closes #, # and #
-<!-- For automatic closing, do not forget the commas between issue numbers-->
-
-
-<!--
-PLEASE READ THIS!
-
-A Merge Request should be associated to a certain task.
-Its changes are supposed to be merged into the master branch.
-
-Briefly explain __how__ you achieved the proposal of the task.
-
-IMPORTANT: Make sure to set this merge request WIP.
--->
+Closes # ...
+<!-- For automatic closing, you can add commas between issue numbers-->
