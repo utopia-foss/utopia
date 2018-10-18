@@ -20,7 +20,7 @@ namespace std
 // dirty trick: overload tuple_size for dune fieldvector
 
 template <typename T, std::size_t N>
-struct tuple_size<Dune::FieldVector<T, N>> : public integral_constant<size_t, N>
+class tuple_size<Dune::FieldVector<T, N>> : public integral_constant<size_t, N>
 {
 };
 } // namespace std

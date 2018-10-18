@@ -10,9 +10,9 @@
 #include <dune/utopia/models/AmeeMulti/adaptionfunctions.hh>
 #include <dune/utopia/models/AmeeMulti/cellstate.hh>
 #include <dune/utopia/models/AmeeMulti/utils/memorypool.hh>
+#include <dune/utopia/models/AmeeMulti/utils/statistics.hh>
+#include <dune/utopia/models/AmeeMulti/utils/test_utils.hh>
 #include <dune/utopia/models/AmeeMulti/utils/utils.hh>
-#include <dune/utopia/models/AmeeMulti/utils/utils/statistics.hh>
-#include <dune/utopia/models/AmeeMulti/utils/utils/test_utils.hh>
 #include <fstream>
 #include <functional>
 

@@ -164,7 +164,7 @@ void test_model_functions(Model& model, Cellmanager& cellmanager)
     adamstate.start = 0;
     adamstate.end = 5;
     adamstate.adaption = {0., 0., 0., 0., 0.};
-    model.update_adaption(adam);
+    model.update_adaption(*adam);
     ASSERT_EQ(adamstate.adaption, (std::vector<double>{0., 1., 0., 1., 6.}));
 
     ////////////////////////////////////////////////////////////////////////////
@@ -173,7 +173,7 @@ void test_model_functions(Model& model, Cellmanager& cellmanager)
 
     adamstate.resources = 0.;
     edenstate.resources = std::vector<double>(5, 10.);
-    model.metabolism(adam);
+    model.metabolism(*adam);
     ASSERT_EQ(adamstate.resources, 3.);
     ASSERT_EQ(edenstate.resources, (std::vector<double>{10., 9., 10., 9., 4.}));
     ASSERT_EQ(int(adamstate.age), 1);
@@ -182,7 +182,7 @@ void test_model_functions(Model& model, Cellmanager& cellmanager)
     edenstate.resources = std::vector<double>{2., 2., 2., 2., 2.};
     adamstate.adaption = std::vector<double>{8., 8., 8., 8., 8.};
     adamstate.resources = 5.;
-    model.metabolism(adam);
+    model.metabolism(*adam);
     ASSERT_EQ(adamstate.resources, 10.);
     ASSERT_EQ(edenstate.resources, (std::vector<double>{0., 0., 0, 0, 0}));
     ASSERT_EQ(int(adamstate.age), 2);
@@ -191,7 +191,7 @@ void test_model_functions(Model& model, Cellmanager& cellmanager)
     edenstate.resources = std::vector<double>{20., 20., 20., 20., 20.};
     adamstate.adaption = std::vector<double>{20., 20., 20., 20., 20.};
     adamstate.resources = 5.;
-    model.metabolism(adam);
+    model.metabolism(*adam);
     ASSERT_EQ(adamstate.resources, 75.);
     ASSERT_EQ(edenstate.resources, (std::vector<double>{5., 5., 5, 5, 5}));
     ASSERT_EQ(int(adamstate.age), 3);
@@ -209,7 +209,7 @@ void test_model_functions(Model& model, Cellmanager& cellmanager)
     adamstate.end = 5;
     adamstate.resources = 0.5;
     adamstate.adaption = std::vector<double>(4, 0.);
-    model.update_adaption(adam);
+    model.update_adaption(*adam);
 
     // directed movement
     for (auto& neighbor : neighbors)
@@ -221,8 +221,8 @@ void test_model_functions(Model& model, Cellmanager& cellmanager)
 
     neighbors[2]->state().celltrait = adamstate.phenotype;
 
-    model.move(adam);
-    model.update_adaption(adam);
+    model.move(*adam);
+    model.update_adaption(*adam);
 
     assert(neighbors[2].get() == adamstate.habitat.get());
     ASSERT_EQ(adamstate.adaption, (std::vector<double>{1, 1, 1, 1}));
@@ -242,7 +242,7 @@ void test_model_functions(Model& model, Cellmanager& cellmanager)
     adamstate.end = 5;
     adamstate.resources = 0.5;
     adamstate.adaption = std::vector<double>(4, 0.);
-    model.update_adaption(adam);
+    model.update_adaption(*adam);
 
     for (auto& neighbor : neighbors)
     {
@@ -250,9 +250,9 @@ void test_model_functions(Model& model, Cellmanager& cellmanager)
         neighbor->state().resourceinfluxes = std::vector<double>(8, 10.);
         neighbor->state().resources = std::vector<double>(8, 10.);
     }
-    model.update_adaption(adam);
-    model.move(adam);
-    model.update_adaption(adam);
+    model.update_adaption(*adam);
+    model.move(*adam);
+    model.update_adaption(*adam);
 
     assert(adamstate.habitat != eden);
     for (auto& neighbor : neighbors)
@@ -284,7 +284,7 @@ void test_model_functions(Model& model, Cellmanager& cellmanager)
     adamstate.resources = 10.;
     model.set_modifiercost(0.1);
 
-    model.modify(adam);
+    model.modify(*adam);
 
     ASSERT_EQ(adam->state().habitat->state().celltrait,
               (std::vector<double>{6., 6., 2., 2., 2., 6.}));
@@ -303,7 +303,7 @@ void test_model_functions(Model& model, Cellmanager& cellmanager)
     adam->state().resources = 10.;
     model.set_modifiercost(0.1);
 
-    model.modify(adam);
+    model.modify(*adam);
 
     ASSERT_EQ(adam->state().habitat->state().celltrait,
               (std::vector<double>{6., 6., 2., 2., 2., 2., 2., 2.}));
@@ -315,7 +315,7 @@ void test_model_functions(Model& model, Cellmanager& cellmanager)
     adam->state().end = adam->state().start;
     adam->state().end_mod = adam->state().start_mod;
 
-    model.modify(adam);
+    model.modify(*adam);
     ASSERT_EQ(adam->state().habitat->state().celltrait,
               (std::vector<double>{6., 6., 2., 2., 2., 2., 2., 2.}));
     ASSERT_EQ(adamstate.resources, 8.);
@@ -336,7 +336,7 @@ void test_model_functions(Model& model, Cellmanager& cellmanager)
     adam->state().habitat->state().modtimes = std::vector<double>(6, 0.);
     adamstate.resources = 10.;
     model.set_modifiercost(2.);
-    model.modify(adam);
+    model.modify(*adam);
     ASSERT_EQ(adam->state().habitat->state().celltrait,
               (std::vector<double>{6., 6., 4., 4., 6., 6.}));
 
@@ -360,7 +360,7 @@ void test_model_functions(Model& model, Cellmanager& cellmanager)
     adam->state().resources = 15.;
     model.set_modifiercost(1);
 
-    model.modify(adam);
+    model.modify(*adam);
 
     ASSERT_EQ(adamstate.resources, 3.);
     ASSERT_EQ(adam->state().habitat->state().resourceinfluxes.size(), (unsigned long)7);
@@ -388,8 +388,8 @@ void test_model_functions(Model& model, Cellmanager& cellmanager)
     model.set_modifiercost(0.5);
     adam->state().adaption = std::vector<double>(6, 0.);
 
-    model.modify(adam);
-    model.update_adaption(adam);
+    model.modify(*adam);
+    model.update_adaption(*adam);
 
     ASSERT_EQ(adam->state().habitat->state().celltrait,
               (std::vector<double>{6., 6., 6., 6., 6., 6., 4., 4., 4., 6., 6.}));
@@ -418,8 +418,8 @@ void test_model_functions(Model& model, Cellmanager& cellmanager)
     model.set_modifiercost(0.5);
     adam->state().adaption = std::vector<double>(6, 0.);
 
-    model.modify(adam);
-    model.update_adaption(adam);
+    model.modify(*adam);
+    model.update_adaption(*adam);
 
     ASSERT_EQ(adam->state().habitat->state().celltrait,
               (std::vector<double>{6., 6., 6., 6., 6., 6., 4., 4., 4., 4., 4., 4.}));
@@ -437,7 +437,7 @@ void test_model_functions(Model& model, Cellmanager& cellmanager)
     ////////////////////////////////////////////////////////////////////////////
 
     adam->state().resources = 10;
-    model.reproduce(adam);
+    model.reproduce(*adam);
     ASSERT_EQ(adam->state().fitness, 4.);
     ASSERT_EQ(model.population().size(), std::size_t(5));
     ASSERT_EQ(adam->state().resources, 2.);
@@ -456,7 +456,7 @@ void test_model_functions(Model& model, Cellmanager& cellmanager)
     auto deadmanwalking = model.population().back();
     deadmanwalking->state().resources = 0.;
     ASSERT_EQ(deadmanwalking->state().deathflag, false);
-    model.kill(deadmanwalking);
+    model.kill(*deadmanwalking);
     ASSERT_EQ(deadmanwalking->state().deathflag, true);
 
     ////////////////////////////////////////////////////////////////////////////
@@ -485,7 +485,13 @@ void test_model_functions(Model& model, Cellmanager& cellmanager)
         std::vector<double>(cell->state().celltrait.size(), 50.);
     model.update_cell(cell);
 
-    ASSERT_EQ(cell->state().resources, std::vector<double>(10, 19.15868925150003));
+    ASSERT_EQ(cell->state().resources, std::vector<double>(10, 4.5));
+
+    for (std::size_t i = 0; i < 100; ++i)
+    {
+        model.update_cell(cell);
+    }
+    ASSERT_EQ(cell->state().resources, std::vector<double>(10, 50.));
 
     ////////////////////////////////////////////////////////////////////////////
     // decay_celltrait
@@ -525,8 +531,8 @@ void test_model_functions(Model& model, Cellmanager& cellmanager)
         ASSERT_EQ(cell->state().modtimes[i], 4.);
     }
 
-    assert(std::isnan(cell->state().celltrait[5]));
-    assert(std::isnan(cell->state().modtimes[5]));
+    ASSERT_EQ(std::isnan(cell->state().celltrait[5]), true);
+    ASSERT_EQ(std::isnan(cell->state().modtimes[5]), true);
 
     ASSERT_EQ(cell->state().celltrait[6], 0.002765421850739168);
     ASSERT_EQ(cell->state().modtimes[6], 4.);
@@ -541,10 +547,7 @@ template <template <typename, typename, typename> class AgentPolicy, typename G,
 struct Modelfactory
 {
     template <typename Model, typename Cellmanager>
-    auto operator()(std::string name,
-                    Model& parentmodel,
-                    Cellmanager& cellmanager,
-                    std::size_t mempoolsize = 1000000)
+    auto operator()(std::string name, Model& parentmodel, Cellmanager& cellmanager)
     {
         using CellType = typename Cellmanager::Cell;
         using Genotype = G;
@@ -559,7 +562,7 @@ struct Modelfactory
         using Modeltypes = Utopia::ModelTypes<RNG>;
 
         return AmeeMulti<CellType, AgentType, Modeltypes, construction, decay>(
-            name, parentmodel, cellmanager.cells(), mempoolsize);
+            name, parentmodel, cellmanager.cells());
     }
 };
 
