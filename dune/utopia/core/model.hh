@@ -10,11 +10,6 @@
 
 namespace Utopia {
 
-
-/// Dummy type for boundary conditions; this is used as a default value
-struct BCDummy {};
-
-
 /// Wrapper struct for defining base class data types
 /** \tparam DataType              Type of the data the model operates on
  *  \tparam BoundaryConditionType Data type of the boundary condition. If not
