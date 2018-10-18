@@ -68,6 +68,7 @@ int main(int argc, char *argv[])
         assert(root.sub_one.lazy.get_logger()->level() == spdlog::level::trace);
 
         // check different random numbers are drawn from each submodel
+        log->debug("Asserting correct random number generation ...");
         assert((*root.get_rng())() != (*root.sub_one.get_rng())());
         assert((*root.sub_one.get_rng())() != (*root.sub_another.get_rng())());
         assert((*root.sub_another.get_rng())() != (*root.sub_one.lazy.get_rng())());

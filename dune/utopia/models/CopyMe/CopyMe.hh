@@ -47,6 +47,9 @@ public:
     /// Cell type
     using CellType = typename ManagerType::Cell;
 
+    /// Supply a type for rule functions that are applied to cells
+    using RuleFunc = typename std::function<State(std::shared_ptr<CellType>)>;
+
     /// Data type that holds the configuration
     using Config = typename Base::Config;
     
@@ -65,7 +68,7 @@ public:
 
 
 private:
-    // Base members: _time, _name, _cfg, _hdfgrp, _rng
+    // Base members: _time, _name, _cfg, _hdfgrp, _rng, _monitor
 
     // -- Members of this model -- //
     /// The grid manager
@@ -90,7 +93,7 @@ private:
     // NOTE The below are examples; delete and/or adjust them to your needs!
 
     /// Sets the given cell to state "A"
-    std::function<State(std::shared_ptr<CellType>)> _set_initial_state_A = [](const auto cell){
+    RuleFunc _set_initial_state_A = [](const auto cell){
         // Get the state of the Cell
         auto state = cell->state();
 
@@ -104,7 +107,7 @@ private:
 
 
     /// Sets the given cell to state "B"
-    std::function<State(std::shared_ptr<CellType>)> _set_initial_state_B = [](const auto cell){
+    RuleFunc _set_initial_state_B = [](const auto cell){
         // Get the state of the Cell
         auto state = cell->state();
 
@@ -118,7 +121,7 @@ private:
 
 
     /// Define some interaction for a cell
-    std::function<State(std::shared_ptr<CellType>)> _some_interaction = [this](const auto cell){
+    RuleFunc _some_interaction = [this](const auto cell){
         // Get the state of the Cell
         auto state = cell->state();
 
@@ -143,7 +146,7 @@ private:
 
 
     /// Define the update rule for a cell
-    std::function<State(std::shared_ptr<CellType>)> _some_update = [this](const auto cell){
+    RuleFunc _some_update = [this](const auto cell){
         // Here, you can write some update rule description
 
         // Get the state of the cell
@@ -238,6 +241,30 @@ public:
         // Apply the rules to all cells, first the interaction, then the update
         apply_rule(_some_interaction, _manager.cells());
         apply_rule(_some_update, _manager.cells());
+    }
+
+
+    /// Monitor model information
+    /** @detail Here, functions and values can be supplied to the monitor that
+     *          are then available to the frontend. The monitor() function is
+     *          _only_ called if a certain emit interval has passed; thus, the
+     *          performance hit is small. Also, if using set_by_func, the given
+     *          lambda will only be called if an emission will happen.
+     */
+    void monitor ()
+    {
+        // Supply some number -- for illustration -- directly by value
+        this->_monitor.set_by_value("some_value", 42);
+
+        // Supply the state mean to the monitor
+        this->_monitor.set_by_func("state_mean", [this](){
+            double state_sum = 0.;
+            for (const auto &cell : this->_manager.cells()) {
+                state_sum += cell->state().some_state;
+            }
+            return state_sum / std::distance(this->_manager.cells().begin(),
+                                             this->_manager.cells().end());
+        });
     }
 
 

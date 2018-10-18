@@ -17,17 +17,18 @@ int main(int argc, char *argv[])
         PseudoParent pp1("model_setup_test.yml");
         
         // more granular:
-        PseudoParent pp2("model_setup_test.yml",                 // config
-                                 "model_setup_test_tmpfile2.h5", // output
-                                 23,                             // seed
-                                 "w");                           // access mode
+        PseudoParent pp2("model_setup_test.yml",         // config
+                         "model_setup_test_tmpfile2.h5", // output
+                         23,                             // seed
+                         "w",                            // access mode
+                         1.);                            // emit interval
         
         // custom RNG via class template deduction
-        PseudoParent<std::ranlux48_base>                         // RNG class
-                             pp3("model_setup_test.yml",         // config
-                                 "model_setup_test_tmpfile3.h5", // output
-                                 42,                             // seed
-                                 "w");                           // access mode
+        PseudoParent<std::ranlux48_base>                 // RNG class
+                     pp3("model_setup_test.yml",         // config
+                         "model_setup_test_tmpfile3.h5", // output
+                         42,                             // seed
+                         "w");                           // access mode
         // NOTE could also use the simple constructor here, but need to specify
         // a new temporary file for output writing
         std::cout << "Initialization of pseudo parents succeeded."
@@ -59,6 +60,11 @@ int main(int argc, char *argv[])
         assert(model2.get_write_every() == 1); // set manually
         assert(model3.get_write_every() == 3); // set manually
         // NOTE Write output is asserted on Python side
+
+        // Is the monitor emit interval set correctly?
+        assert(pp1.get_monitor_manager()->get_emit_interval().count() == 5.);
+        assert(pp2.get_monitor_manager()->get_emit_interval().count() == 1.);
+        assert(pp3.get_monitor_manager()->get_emit_interval().count() == 5.);
 
         std::cout << "Tests finished." << std::endl << std::endl;
 
