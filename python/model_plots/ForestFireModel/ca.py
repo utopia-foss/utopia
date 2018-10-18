@@ -1,5 +1,7 @@
 """This module implements customisations for the CA plots of the FFM"""
 
+import numpy as np
+
 import utopya.plot_funcs.ca
 
 # -----------------------------------------------------------------------------
@@ -11,8 +13,9 @@ def state_anim(*args, **kwargs) -> None:
     that are needed for the FFM
     """
     def cluster_id_mod20(arr):
+        arr = arr.astype(float)
+        arr[arr == -1] = np.nan
         return arr % 20;
-        # TODO @jweninger check if this does, what you want!
         
     # Bundle the functions into a dict, then call the actual state_anim
     pp_funcs = dict(cluster_id=cluster_id_mod20)
