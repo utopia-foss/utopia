@@ -93,22 +93,15 @@ public:
     
     /// Cell type
     using CellType = typename ManagerType::Cell;
-
-    /// Data type that holds the configuration
-    using Config = typename Base::Config;
-    
-    /// Data type of the group to write model data to, holding datasets
-    using DataGroup = typename Base::DataGroup;
     
     /// Data type for a dataset
     using DataSet = typename Base::DataSet;
 
-    /// Data type of the shared RNG
-    using RNG = typename Base::RNG;
+    /// Rule function type
+    using RuleFunc = typename std::function<State(std::shared_ptr<CellType>)>;
 
     // Alias the neighborhood classes to make access more convenient
-    using NextNeighbor = Utopia::Neighborhoods::NextNeighbor;
-    using MooreNeighbor = Utopia::Neighborhoods::MooreNeighbor;
+    using Neighbor = Utopia::Neighborhoods::MooreNeighbor;
 
 
 private:
@@ -139,7 +132,7 @@ private:
     // update following the FFM set of rules
 
     /// Sets the given cell to state "empty"
-    std::function<State(std::shared_ptr<CellType>)> _set_initial_state_empty = [](const auto cell){
+    RuleFunc _set_initial_state_empty = [](const auto cell){
         // Get the state of the Cell
         auto state = cell->state();
 
@@ -150,7 +143,7 @@ private:
     };
 
     /// Sets the given cell to state "tree" with probability p, else to "empty"
-    std::function<State(std::shared_ptr<CellType>)> _set_initial_density_tree = [this](const auto cell){
+    RuleFunc _set_initial_density_tree = [this](const auto cell){
         // Get the state of the Cell
         auto state = cell->state();
 
@@ -169,7 +162,7 @@ private:
         return state;
     };
 
-    std::function<State(std::shared_ptr<CellType>)> _burn_cluster = [this](auto cell){
+    RuleFunc _burn_cluster = [this](auto cell) {
         if constexpr (!ManagerType::Cell::is_sync()) {
             std::uniform_real_distribution<> dist(0., 1.);
 
@@ -182,7 +175,7 @@ private:
             {
                 auto cluster_member = cluster[i];
                 for (auto cluster_potential_member : 
-                        NextNeighbor::neighbors(cluster_member,this->_manager))
+                        Neighbor::neighbors(cluster_member,this->_manager))
                 {
                     if (cluster_potential_member->state().state == tree &&
                         dist(*this->_rng) > _param.resistance)
@@ -209,7 +202,7 @@ private:
         *    tree -> burning with probability lightning_frequency
         *    or tree -> burning if connected to cluster -> empty instantaneously (two state FFM, percolation)
         */
-    std::function<State(std::shared_ptr<CellType>)> _update = [this](auto cell){
+    RuleFunc _update = [this](auto cell){
         auto state = cell->state();
         state.cluster_tag = -1; // reset
 
@@ -248,7 +241,7 @@ private:
             // catch fire from Neighbors in CDM
             else if (!_model_feature.two_state_FFM) 
             {
-                for (auto nb : MooreNeighbor::neighbors(cell,this->_manager)) {
+                for (auto nb : Neighbor::neighbors(cell,this->_manager)) {
                     if (nb->state().state == burning && dist(*this->_rng) > _param.resistance) {
                         state.state = burning;
                     }
@@ -264,7 +257,7 @@ private:
         return state;
     };
 
-    std::function<State(std::shared_ptr<CellType>)> _identify_cluster = [this](auto cell){
+    RuleFunc _identify_cluster = [this](auto cell){
         if constexpr (!ManagerType::Cell::is_sync())
         {
             if (cell->state().cluster_tag == -1 && cell->state().state == tree) // else already labeled
@@ -274,7 +267,7 @@ private:
                 for (unsigned long i = 0; i < cluster.size(); ++i)
                 {
                     auto cluster_member = cluster[i];
-                    for (auto cluster_potential_member : NextNeighbor::neighbors(cluster_member,this->_manager))
+                    for (auto cluster_potential_member : Neighbor::neighbors(cluster_member,this->_manager))
                     {
                         if (cluster_potential_member->state().cluster_tag == -1 &&
                             cluster_potential_member->state().state == tree)
