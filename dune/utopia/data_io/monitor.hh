@@ -129,8 +129,8 @@ public:
 
     /// Returns true if the emission is enabled
     /* @detail This function can be used as a more performative way to checking
-     *         whether it makes sense to collect monitor data; it makes only
-     *         sense to collect data, if the emission will actually performed
+     *         whether it makes sense to collect monitor entries; it makes only
+     *         sense to collect entries, if the emission will actually performed
      *         in the current time step.
      */
     bool emit_enabled() const {
@@ -142,12 +142,12 @@ public:
         return _timer;
     }
 
-    /// Get the reference to the monitor data object.
+    /// Get the reference to the monitor entries object.
     YAML::Node& get_entries(){
         return _entries;
     }
 
-    /// Set an entry in the monitor data
+    /// Set an entry in the monitor entries
     /** 
      * @tparam Value The type of the value that should be monitored
      * @param model_name The model name which will be prefixed to the key
@@ -160,10 +160,20 @@ public:
                     const Value value){
         _entries[model_name + "." + key] = value;
     }
+
+    /// Set the time in the entries
+    /**
+     * @tparam Time The data type of the time
+     * @param time The time
+     */
+    template<typename Time>
+    void set_time(const Time time){
+        _entries["time"] = time;
+    }
 };
 
 
-/// The Monitor monitors data that is emitted if a given time has passed.
+/// The Monitor monitors entries that are emitted if a given time has passed.
 class Monitor {
 private:
     /// The name of the monitor

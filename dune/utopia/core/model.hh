@@ -287,8 +287,11 @@ public:
      */
     void monitor () {
         if (_monitor.get_monitor_manager()->emit_enabled()) {
-            // Supply the current time of this model to the monitor
-            _monitor.set_by_value("time", _time);
+            // Supply the global time to the monitor manager once
+            // from the monitor on the first level
+            if (_level == 1){
+                _monitor.get_monitor_manager()->set_time(_time);
+            }
 
             // Call the child's implementation of the monitor functions.
             impl().monitor();
