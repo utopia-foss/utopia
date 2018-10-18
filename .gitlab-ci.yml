@@ -7,8 +7,8 @@
 ---
 variables:
   # Setting number of processes
-  CPUS_MULTICORE: 4
-  CPUS_DIND: 3
+  CPUS_DIND: 2
+  CPUS_BUILD: 4
 
   # Variables needed for docker image deployment
   # The image to use is based on the currently selected DUNE version
@@ -30,7 +30,7 @@ variables:
   CONFIG_FLAGS:
       -DDUNE_PYTHON_VIRTUALENV_SETUP=True
       -DDUNE_PYTHON_ALLOW_GET_PIP=True
-  MAKE_FLAGS_BUILD: "" # none for now
+  MAKE_FLAGS_BUILD: -j$CPUS_BUILD
 
   # Directories
   MODEL_DIR: $CI_PROJECT_DIR/dune/utopia/models
