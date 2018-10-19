@@ -113,7 +113,8 @@ public:
         // Create an empty MonitorEntries object for the data to be emitted
         _entries(YAML::Node()),
         // Initialially set the collect data flag to true
-        _emit_enabled(true)
+        _emit_enabled(true),
+        _emit_counter(0)
     { 
         _entries.SetStyle(YAML::EmitterStyle::Flow);
     };
