@@ -15,9 +15,8 @@ int main (int argc, char** argv)
 
         // Initialize the main model instance with different template arguments
         // and then iterate it ... Need separate cases for this.
-        // distinction of periodic / non-periodic grid and two / three state FFM
-        if (Utopia::as_bool(pp.get_cfg()["ForestFireModel"]["periodic"]) 
-            && Utopia::as_bool(pp.get_cfg()["ForestFireModel"]["two_state_FFM"])) 
+        // distinction of periodic / non-periodic grid
+        if (Utopia::as_bool(pp.get_cfg()["ForestFireModel"]["periodic"])) 
         {
             // Periodic grid and async update
             ForestFireModel model("ForestFireModel", pp,
@@ -28,35 +27,13 @@ int main (int argc, char** argv)
             );
             model.run();
         }
-        else if (Utopia::as_bool(pp.get_cfg()["ForestFireModel"]["periodic"]) 
-            && !Utopia::as_bool(pp.get_cfg()["ForestFireModel"]["two_state_FFM"])) 
-        {
-                /* template arguments: State, periodicity=true, 
-                 * dimensionality=2, structured grid=true, synchronous update=true
-                 */ 
-            ForestFireModel model("ForestFireModel", pp,
-                create_grid_manager_cells<State,true,2,true,true>("ForestFireModel", pp)
-            );
-            model.run();
-        }
-        else if (!Utopia::as_bool(pp.get_cfg()["ForestFireModel"]["periodic"]) 
-            && Utopia::as_bool(pp.get_cfg()["ForestFireModel"]["two_state_FFM"])) 
+        else if (!Utopia::as_bool(pp.get_cfg()["ForestFireModel"]["periodic"])) 
         {
                 /* template arguments: State, periodicity=false, 
                  * dimensionality=2, structured grid=true, synchronous update=false
                  */ 
             ForestFireModel model("ForestFireModel", pp,
                 create_grid_manager_cells<State,false,2,true,false>("ForestFireModel", pp)
-            );
-            model.run();
-        }
-        else 
-        {
-                /* template arguments: State, periodicity=false, 
-                 * dimensionality=2, structured grid=true, synchronous update=true
-                 */ 
-            ForestFireModel model("ForestFireModel", pp,
-                create_grid_manager_cells<State,false,2,true,true>("ForestFireModel", pp)
             );
             model.run();
         }
