@@ -23,12 +23,8 @@ def state_mean(dm: DataManager, *, out_path: str, uni: int, fmt: str=None, save_
     # Get the group that all datasets are in
     grp = dm['uni'][uni]['data/ForestFireModel']
 
-    # Get the shape of the data
-    # uni_cfg = dm['uni'][uni]['cfg']
-    # num_steps = uni_cfg['num_steps']
-    # grid_size = uni_cfg['ForestFireModel']['grid_size']
-
-    # Extract the y data which is 'state' avaraged over all grid cells for every time step
+    # Extract the y data which is 'state' avaraged over all grid cells for
+    # every time step
     data = grp['state']
     y_data = [np.mean(d) for d in data] # iterates rows eq. time steps
 
@@ -46,12 +42,12 @@ def state_mean(dm: DataManager, *, out_path: str, uni: int, fmt: str=None, save_
 # -----------------------------------------------------------------------------
 
 def cluster_distribution(dm: DataManager, *, 
-                    out_path: str, 
-                    uni: int, 
-                    fmt: str=None, 
-                    time: int=-1, 
-                    save_kwargs: dict=None, 
-                    plot_kwargs: dict=None):
+                         out_path: str, 
+                         uni: int, 
+                         fmt: str=None, 
+                         time: int=-1, 
+                         save_kwargs: dict=None, 
+                         plot_kwargs: dict=None):
     """Calculates the size distribution of all tree clusters and plots a cumulative histogram
     
     Args:
@@ -101,9 +97,10 @@ def cluster_distribution(dm: DataManager, *,
     if fmt:
         args.append(fmt)
     
-    print(plot_kwargs.values())
-    # # Call the plot function
+    # Call the plot function
     plt.plot(*args, **plot_kwargs)
+
+    # Set plot properties
     plt.xscale('log')
     plt.yscale('log')
     plt.xlabel('cluster size A')

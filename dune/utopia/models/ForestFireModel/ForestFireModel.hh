@@ -1,13 +1,13 @@
 #ifndef UTOPIA_MODELS_FORESTFIREMODEL_HH
 #define UTOPIA_MODELS_FORESTFIREMODEL_HH
 
+#include <functional>
+
 #include <dune/utopia/base.hh>
 #include <dune/utopia/core/setup.hh>
 #include <dune/utopia/core/model.hh>
 #include <dune/utopia/core/apply.hh>
 #include <dune/utopia/core/types.hh>
-
-#include <functional>
 
 
 namespace Utopia {
@@ -18,13 +18,13 @@ enum StateEnum { empty=0, tree=1, burning=2 };
 
 struct State {
     StateEnum state;
-    int cluster_tag;
+    unsigned int cluster_tag;
 
     State() :
-        state(empty),  cluster_tag(-1)
+        state(empty),  cluster_tag(0)
     { }
     State(StateEnum s) :
-        state(s),  cluster_tag(-1)
+        state(s),  cluster_tag(0)
     { }
 };
 
@@ -40,23 +40,24 @@ struct Param {
     {
         if (growth_rate > 1 || growth_rate < 0)
         {
-            throw std::runtime_error("growth rate is a probability per cell. \
-                Should have value in [0,1]! \
-                1 corresponds to empty turns to tree in 1 step. \
-                0.1 every 10th step. 0 never. ");
+            throw std::invalid_argument("growth rate is a probability per cell. "\
+                                        "Should have value in [0,1]! "\
+                                        "1 corresponds to empty turns to tree in 1 step. "\
+                                        "0.1 every 10th step. 0 never. ");
         }
         if (lightning_frequency > 1 || lightning_frequency < 0)
         {
-            throw std::runtime_error("lightning frequency is a probability per cell. \
-                Should have value in [0,1]! \
-                1 corresponds to tree hit by lightning in one step. \
-                0.1 every 10th step. 0 never. ");
+            throw std::invalid_argument("lightning frequency is a probability per cell. "\
+                                        "Should have value in [0,1]! "\
+                                        "1 corresponds to tree hit by lightning in one step. "\
+                                        "0.1 every 10th step. 0 never. ");
         }
         if (resistance > 1 || resistance < 0)
         {
-            throw std::runtime_error("Resistance is a probability per burning neighbor. \
-                Should have value in [0,1]! \
-                0 corresponds to no resistance to fire. 1 to total resistance.");
+            throw std::invalid_argument("Resistance is a probability per burning neighbor. " \
+                                        "Should have value in [0,1]! " \
+                                        "0 corresponds to no resistance to fire. "\
+                                        "1 to total resistance.");
         }
     }
 };
@@ -73,15 +74,13 @@ struct ModelFeature {
 
 /// Typehelper to define data types of ForestFireModel model 
 using ForestFireModelTypes = ModelTypes<>;
-// NOTE if you do not use the boundary condition type, you can delete the
-//      definition of the struct above and the passing to the type helper
 
 
 /// The ForestFireModel Model
-/** Add your model description here.
- *  This model's only right to exist is to be a template for new models. 
- *  That means its functionality is based on nonsense but it shows how 
- *  actually useful functionality could be implemented.
+/** The ForestFireModel simulates the development of a forest under influence of forest fires. 
+ *  Trees grow on a random basis and fires cause their death, 
+ *  either for a whole cluster instantaneously (two state model) 
+ *  or for a cluster by propagation via the neighborhood (three state model).
  */
 template<class ManagerType>
 class ForestFireModel:
@@ -93,22 +92,15 @@ public:
     
     /// Cell type
     using CellType = typename ManagerType::Cell;
-
-    /// Data type that holds the configuration
-    using Config = typename Base::Config;
-    
-    /// Data type of the group to write model data to, holding datasets
-    using DataGroup = typename Base::DataGroup;
     
     /// Data type for a dataset
     using DataSet = typename Base::DataSet;
 
-    /// Data type of the shared RNG
-    using RNG = typename Base::RNG;
+    /// Rule function type
+    using RuleFunc = typename std::function<State(std::shared_ptr<CellType>)>;
 
     // Alias the neighborhood classes to make access more convenient
-    using NextNeighbor = Utopia::Neighborhoods::NextNeighbor;
-    using MooreNeighbor = Utopia::Neighborhoods::MooreNeighbor;
+    using Neighbor = Neighborhoods::MooreNeighbor;
 
 
 private:
@@ -122,36 +114,22 @@ private:
     const Param _param;
     const ModelFeature _model_feature;  // 0: three state model, contagious disease, 1: two state model, percolation
                                         // 0 implies sync update, 1 async update
-    const double _initial_density; // initial density of trees
+    const double _initial_density;      // initial density of trees
 
     // -- Temporary objects -- //
-    int _cluster_tag_cnt;
+    unsigned int _cluster_tag_cnt;
 
     // -- Datasets -- //
-    // NOTE They should be named '_dset_<name>', where <name> is the
-    //      dataset's actual name as set in the constructor.
     std::shared_ptr<DataSet> _dset_state;
     std::shared_ptr<DataSet> _dset_cluster_id;
-    std::shared_ptr<DataSet> _dset_cluster_color;
 
 
     // -- Rule functions -- //
-    // initialise all empty or all tree
+    // initialise trees random with density
     // update following the FFM set of rules
 
-    /// Sets the given cell to state "empty"
-    std::function<State(std::shared_ptr<CellType>)> _set_initial_state_empty = [](const auto cell){
-        // Get the state of the Cell
-        auto state = cell->state();
-
-        // Set the internal variables
-        state.state = empty;
-
-        return state;
-    };
-
     /// Sets the given cell to state "tree" with probability p, else to "empty"
-    std::function<State(std::shared_ptr<CellType>)> _set_initial_density_tree = [this](const auto cell){
+    RuleFunc _set_initial_state = [this](const auto cell){
         // Get the state of the Cell
         auto state = cell->state();
 
@@ -170,7 +148,7 @@ private:
         return state;
     };
 
-    std::function<State(std::shared_ptr<CellType>)> _burn_cluster = [this](auto cell){
+    RuleFunc _burn_cluster = [this](auto cell) {
         if constexpr (!ManagerType::Cell::is_sync()) {
             std::uniform_real_distribution<> dist(0., 1.);
 
@@ -179,11 +157,11 @@ private:
             std::vector<decltype(cell)> cluster = { cell };
             cell->state().state = empty;
 
-            for (unsigned long i = 0; i < cluster.size(); ++i)
+            for (unsigned int i = 0; i < cluster.size(); ++i)
             {
                 auto cluster_member = cluster[i];
                 for (auto cluster_potential_member : 
-                        NextNeighbor::neighbors(cluster_member,this->_manager))
+                        Neighbor::neighbors(cluster_member,this->_manager))
                 {
                     if (cluster_potential_member->state().state == tree &&
                         dist(*this->_rng) > _param.resistance)
@@ -194,25 +172,28 @@ private:
                 }
             }
         }
+        else {
+            (void)this;         // avoid warning: unused this
+        }
 
         return cell->state();
     };
 
     /// update follwoing set of rules
-    /**    states: 0: empty, 1: tree (, 2: burning)
-        * contagious disease spread (CDM)
-        *    empty -> tree with probability growth_rate
-        *    tree -> burning with probability lightning_frequency
-        *    tree -> burning with probability 1 - resistance if i' in Neighborhood of i burning
-        *    burning -> empty
-        * Percolation spread (PM)
-        *    empty -> tree with probability growth_rate
-        *    tree -> burning with probability lightning_frequency
-        *    or tree -> burning if connected to cluster -> empty instantaneously (two state FFM, percolation)
-        */
-    std::function<State(std::shared_ptr<CellType>)> _update = [this](auto cell){
+    /** states: 0: empty, 1: tree (, 2: burning)
+     * contagious disease spread (CDM)
+     *    empty -> tree with probability growth_rate
+     *    tree -> burning with probability lightning_frequency
+     *    tree -> burning with probability 1 - resistance if i' in Neighborhood of i burning
+     *    burning -> empty
+     * Percolation spread (PM)
+     *    empty -> tree with probability growth_rate
+     *    tree -> burning with probability lightning_frequency
+     *    or tree -> burning if connected to cluster -> empty instantaneously (two state FFM, percolation)
+     */
+    RuleFunc _update = [this](auto cell){
         auto state = cell->state();
-        state.cluster_tag = -1; // reset
+        state.cluster_tag = 0; // reset
 
         std::uniform_real_distribution<> dist(0., 1.);
         
@@ -249,7 +230,7 @@ private:
             // catch fire from Neighbors in CDM
             else if (!_model_feature.two_state_FFM) 
             {
-                for (auto nb : MooreNeighbor::neighbors(cell,this->_manager)) {
+                for (auto nb : Neighbor::neighbors(cell,this->_manager)) {
                     if (nb->state().state == burning && dist(*this->_rng) > _param.resistance) {
                         state.state = burning;
                     }
@@ -265,19 +246,27 @@ private:
         return state;
     };
 
-    std::function<State(std::shared_ptr<CellType>)> _identify_cluster = [this](auto cell){
+    /// identify cluster
+    /* get the identity of each cluster of trees, -1 for grass
+     * run a percolation on a cell, that has no id
+     * give all cells of that percolation the same id
+     * _cluster_tag_cnt keeps track of given ids
+     */
+    RuleFunc _identify_cluster = [this](auto cell){
         if constexpr (!ManagerType::Cell::is_sync())
         {
-            if (cell->state().cluster_tag == -1 && cell->state().state == tree) // else already labeled
+            if (cell->state().cluster_tag == 0 && cell->state().state == tree) // else already labeled
             {
+                _cluster_tag_cnt++;
+
                 std::vector<decltype(cell)> cluster = { cell };
                 cell->state().cluster_tag = _cluster_tag_cnt;
-                for (unsigned long i = 0; i < cluster.size(); ++i)
+                for (unsigned int i = 0; i < cluster.size(); ++i)
                 {
                     auto cluster_member = cluster[i];
-                    for (auto cluster_potential_member : NextNeighbor::neighbors(cluster_member,this->_manager))
+                    for (auto cluster_potential_member : Neighbor::neighbors(cluster_member,this->_manager))
                     {
-                        if (cluster_potential_member->state().cluster_tag == -1 &&
+                        if (cluster_potential_member->state().cluster_tag == 0 &&
                             cluster_potential_member->state().state == tree)
                         {
                             cluster_potential_member->state().cluster_tag = _cluster_tag_cnt;
@@ -285,8 +274,10 @@ private:
                         }
                     }
                 }
-                _cluster_tag_cnt++;
             }
+        }
+        else {
+            (void)this;         // avoid warning: unused this
         }
 
         return cell->state();
@@ -302,27 +293,29 @@ public:
      */
     template<class ParentModel>
     ForestFireModel (const std::string name,
-                 ParentModel &parent,
-                 ManagerType&& manager)
+                     ParentModel &parent,
+                     ManagerType&& manager)
     :
         // Initialize first via base model
         Base(name, parent),
+
         // Now initialize members specific to this class
         _manager(manager),
         _param(as_double(this->_cfg["growth_rate"]),
-            as_double(this->_cfg["lightning_frequency"]),
-            as_double(this->_cfg["resistance"])
+               as_double(this->_cfg["lightning_frequency"]),
+               as_double(this->_cfg["resistance"])
         ),
-        _model_feature(Utopia::as_bool(this->_cfg["two_state_FFM"]),
-            Utopia::as_bool(this->_cfg["light_bottom_row"])
+        _model_feature(as_bool(this->_cfg["two_state_FFM"]),
+                       as_bool(this->_cfg["light_bottom_row"])
         ),
         _initial_density(as_double(this->_cfg["initial_density"])),
+
         // temporary members
         _cluster_tag_cnt(0),
+
         // create datasets
         _dset_state(this->_hdfgrp->open_dataset("state")),
-        _dset_cluster_id(this->_hdfgrp->open_dataset("cluster_id")),
-        _dset_cluster_color(this->_hdfgrp->open_dataset("cluster_color"))
+        _dset_cluster_id(this->_hdfgrp->open_dataset("cluster_id"))
     {
         // Call the method that initializes the cells
         this->initialize_cells();
@@ -336,48 +329,34 @@ public:
                           this->get_time_max() + 1, num_cells);
         _dset_state->set_capacity({this->get_time_max() + 1, num_cells});
         _dset_cluster_id->set_capacity({this->get_time_max() + 1, num_cells});
-        _dset_cluster_color->set_capacity({this->get_time_max() + 1, num_cells});
-        // get cluster
 
         // Write initial state
         this->write_data();
     }
 
+
     // Setup functions ........................................................
     /// Initialize the cells according to `initial_state` config parameter
     void initialize_cells()
     {
-        // Extract the mode that determines the initial state
-        const auto initial_density = as_double(this->_cfg["initial_density"]);
+        // check user config
+        if (_initial_density < 0. || _initial_density > 1.)
+        {
+            throw std::invalid_argument("The initial state is not valid! Must be value between 0 and 1");
+        }
 
         // Apply a rule to all cells depending on the config value
-        if (initial_density == 0)
+        else 
         {
             if constexpr (ManagerType::Cell::is_sync()) {
-                apply_rule(_set_initial_state_empty, _manager.cells());
-                apply_rule(_identify_cluster, _manager.cells());
+                apply_rule(_set_initial_state, _manager.cells());
             }
             else {
-                apply_rule(_set_initial_state_empty, _manager.cells(), *this->_rng);
+                apply_rule(_set_initial_state, _manager.cells(), *this->_rng);
                 apply_rule(_identify_cluster, _manager.cells(), *this->_rng);
             }
         }
-        else if (initial_density > 0. && initial_density <= 1.)
-        {
-            if constexpr (ManagerType::Cell::is_sync()) {
-                apply_rule(_set_initial_density_tree, _manager.cells());
-                apply_rule(_identify_cluster, _manager.cells());
-            }
-            else {
-                apply_rule(_set_initial_density_tree, _manager.cells(), *this->_rng);
-                apply_rule(_identify_cluster, _manager.cells(), *this->_rng);
-            }
-        }
-        else
-        {
-            throw std::runtime_error("The initial state is not valid! Must be value between 0 and 1");
-        }
-
+        
         // Write information that cells are initialized to the logger
         this->_log->info("Cells initialized.");
     }
@@ -385,16 +364,16 @@ public:
 
     // Runtime functions ......................................................
 
-    /** @brief Iterate a single step
-     *  @detail Here you can add a detailed description what exactly happens 
-     *          in a single iteration step
-     */
+    /// Perform step
     void perform_step ()
-    {
+    {   
+        // reset tmp counter for cluster_id
         _cluster_tag_cnt = 0;
+
+        /// apply rules: update and identify cluster
+        // identify cluster only with asynchronous update.
         if constexpr (ManagerType::Cell::is_sync()) {
             apply_rule(_update, _manager.cells());
-            apply_rule(_identify_cluster, _manager.cells());
         }
         else {
             apply_rule(_update, _manager.cells(), *this->_rng);
@@ -402,16 +381,15 @@ public:
         }
     }
 
-
     /// Write data
     void write_data ()
     {   
         // state
         _dset_state->write(_manager.cells().begin(),
-                                _manager.cells().end(),
-                                [](auto& cell) {
-                                    return static_cast<unsigned short int>(cell->state().state);
-                                });
+                           _manager.cells().end(),
+                           [](auto& cell) {
+                               return static_cast<unsigned short int>(cell->state().state);
+                           });
 
         // cluster id
         _dset_cluster_id->write(_manager.cells().begin(),
@@ -419,17 +397,7 @@ public:
                                 [](auto& cell) {
                                     return cell->state().cluster_tag;
                                 });
-        // cluster id in color-representation - periodic id
-        _dset_cluster_color->write(_manager.cells().begin(),
-                                _manager.cells().end(),
-                                [](auto& cell) { 
-                                    return cell->state().cluster_tag % 20;
-                                });
     }
-
-
-    // Getters and setters ....................................................
-    // Can add some getters and setters here to interface with other model
 };
 
 } // namespace ForestFireModel

@@ -9,6 +9,7 @@ state_mean:
 
   uni: 0
 
+
 cluster_distribution:
   creator: external
   
@@ -24,6 +25,7 @@ cluster_distribution:
   plot_kwargs: 
     linestyle: 'None'
     marker: '.'
+
 
 # plot the spatial development in the CA of the state
 state_map:
@@ -67,11 +69,12 @@ state_map:
     name_padding: 5
     file_format: png
 
+
 cluster_map:
   creator: external
   file_ext: mp4
 
-  module: .ca
+  module: model_plots.ForestFireModel
   plot_func: state_anim
 
   # Select the universe
@@ -81,9 +84,9 @@ cluster_map:
   # Select the properties to plot
   to_plot:
     # The name of the property to plot with its options
-    cluster_color:
+    cluster_id:
       title: Cluster
-      limits: [-1, 19]
+      limits: [0, 20]
 
       # Specify the colormap
       # This can be done in two ways:
@@ -92,28 +95,7 @@ cluster_map:
       #      is derived. The keys correspond to the labels,
       #      and the values define the color
       # cmap: viridis
-      cmap: 
-        -1: 'white'
-        0:  [0.22352941, 0.23137255, 0.4745098,  1.]
-        1:  [0.32156863, 0.32941176, 0.63921569, 1.]
-        2:  [0.41960784, 0.43137255, 0.81176471, 1.]
-        3:  [0.61176471, 0.61960784, 0.87058824, 1.]
-        4:  [0.38823529, 0.4745098,  0.22352941, 1.]
-        5:  [0.54901961, 0.63529412, 0.32156863, 1.]
-        6:  [0.70980392, 0.81176471, 0.41960784, 1.]
-        7:  [0.80784314, 0.85882353, 0.61176471, 1.]
-        8:  [0.54901961, 0.42745098, 0.19215686, 1.]
-        9:  [0.74117647, 0.61960784, 0.22352941, 1.]
-        10: [0.90588235, 0.72941176, 0.32156863, 1.]
-        11: [0.90588235, 0.79607843, 0.58039216, 1.]
-        12: [0.51764706, 0.23529412, 0.22352941, 1.]
-        13: [0.67843137, 0.28627451, 0.29019608, 1.]
-        14: [0.83921569, 0.38039216, 0.41960784, 1.]
-        15: [0.90588235, 0.58823529, 0.61176471, 1.]
-        16: [0.48235294, 0.25490196, 0.45098039, 1.]
-        17: [0.64705882, 0.31764706, 0.58039216, 1.]
-        18: [0.80784314, 0.42745098, 0.74117647, 1.]
-        19: [0.87058824, 0.61960784, 0.83921569, 1.]
+      cmap: tab20
 
   # Video options
   writer: ffmpeg  # can be: frames, ffmpeg (if installed), ...
