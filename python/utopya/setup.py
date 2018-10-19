@@ -11,7 +11,7 @@ INSTALL_DEPS = ['numpy>=1.13',
                 'pytest-cov>=2.5.1',
                 # From private repositories:
                 # NOTE Versions need also be set in python/CMakeLists.txt
-                'paramspace>=2.0.0rc5', # TODO use release version once ready
+                'paramspace>=2.0.0rc6', # TODO use release version once ready
                 'dantro>=0.4.0rc3'      # TODO use release version once ready
                 ]
 
