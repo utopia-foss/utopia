@@ -167,6 +167,7 @@ This will also show you a README of the model which contains further information
 
 | Model Name | Description |
 | ---------- | ----------- |
+| [`ForestFireModel`](dune/utopia/models/ForestFireModel) | A model of a two state ForestFire, using percolation to burn |
 | [`SimpleEG`](dune/utopia/models/SimpleEG) | A model of simple evolutionary games on grids |
 
 
