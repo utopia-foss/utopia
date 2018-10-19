@@ -7,11 +7,13 @@
 #include <dune/utopia/core/model.hh>
 #include <dune/utopia/core/setup.hh>
 #include <dune/utopia/core/types.hh>
+#include <dune/utopia/models/Amee/Amee.hh>
+#include <dune/utopia/models/Amee/cellstate.hh>
+#include <dune/utopia/models/Amee/utils/statistics.hh>
+#include <dune/utopia/models/Amee/utils/test_utils.hh>
+#include <dune/utopia/models/Amee/utils/utils.hh>
 #include <dune/utopia/models/AmeeMulti/adaptionfunctions.hh>
-#include <dune/utopia/models/AmeeMulti/cellstate.hh>
-#include <dune/utopia/models/AmeeMulti/utils/statistics.hh>
-#include <dune/utopia/models/AmeeMulti/utils/test_utils.hh>
-#include <dune/utopia/models/AmeeMulti/utils/utils.hh>
+
 #include <fstream>
 #include <functional>
 
@@ -34,8 +36,7 @@ using namespace Utils;
  * @tparam decay
  */
 template <typename Cell, typename Agent, typename Modeltypes, bool construction, bool decay>
-class AmeeMulti
-    : public Model<AmeeMulti<Cell, Agent, Modeltypes, construction, decay>, Modeltypes>
+class AmeeMulti : public Amee<Cell, Agent, Modeltypes, construction, decay>
 {
 public:
     using Gridcell = Cell;

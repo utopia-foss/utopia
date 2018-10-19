@@ -37,7 +37,7 @@ parameter_space:
     cellresourcecapacity_kind: "random"
     cellresourcecapacity_limits: [150., 500.]
     # cellresourcecapacities: [10., 10., 10., 10., 10.]
-    resourceinflux_limits: [0., 10.]
+    resourceinflux_limits: [0., 4.]
     init_celltrait_values: [-5., 5.]
     removethreshold: 1e-3
     decayintensity: 1e-2
@@ -67,7 +67,7 @@ parameter_space:
     decay: true
     highresinterval: [[0, 2500], [50000, 52500], [500000,502500], [997500, 1000000]]
     Agenttype: !sweep 
-      default: simple 
+      default: complex 
       values: [simple, complex]
 
     # stuff for worker manager
@@ -80,5 +80,5 @@ paths:
   out_dir: ~/utopia_output
 
   # model note is added to the output directory path
-  model_note: "test_run_1000000"
+  model_note: "test_run_1000000_complex"
 

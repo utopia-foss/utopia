@@ -45,8 +45,6 @@ int main(int argc, char** argv)
         using RNG = Xoroshiro<>;
         using Celltraits = std::vector<double>;
         using Cellstate = Cellstate<Celltraits>;
-        using Genotype = std::vector<double>;
-        using Phenotype = std::vector<double>;
 
         // Initialize the PseudoParent from config file path
         Utopia::PseudoParent<RNG> pp(argv[1]);
@@ -66,6 +64,8 @@ int main(int argc, char** argv)
         if (std::make_tuple(construction, decay, agenttype) ==
             std::tuple<bool, bool, std::string>{true, true, "simple"})
         {
+            using Genotype = std::vector<int>;
+            using Phenotype = std::vector<double>;
             auto model =
                 Modelfactory<Agentstate_policy_simple, Genotype, Phenotype, RNG, true, true>()(
                     "AmeeMulti", pp, cellmanager);
@@ -74,6 +74,8 @@ int main(int argc, char** argv)
         else if (std::make_tuple(construction, decay, agenttype) ==
                  std::tuple<bool, bool, std::string>{true, true, "complex"})
         {
+            using Genotype = std::vector<double>;
+            using Phenotype = std::vector<double>;
             auto model =
                 Modelfactory<Agentstate_policy_complex, Genotype, Phenotype, RNG, true, true>()(
                     "AmeeMulti", pp, cellmanager);
@@ -82,6 +84,8 @@ int main(int argc, char** argv)
         else if (std::make_tuple(construction, decay, agenttype) ==
                  std::tuple<bool, bool, std::string>{true, false, "simple"})
         {
+            using Genotype = std::vector<int>;
+            using Phenotype = std::vector<double>;
             auto model =
                 Modelfactory<Agentstate_policy_simple, Genotype, Phenotype, RNG, true, false>()(
                     "AmeeMulti", pp, cellmanager);
@@ -90,6 +94,8 @@ int main(int argc, char** argv)
         else if (std::make_tuple(construction, decay, agenttype) ==
                  std::tuple<bool, bool, std::string>{false, false, "complex"})
         {
+            using Genotype = std::vector<double>;
+            using Phenotype = std::vector<double>;
             auto model =
                 Modelfactory<Agentstate_policy_complex, Genotype, Phenotype, RNG, false, false>()(
                     "AmeeMulti", pp, cellmanager);
