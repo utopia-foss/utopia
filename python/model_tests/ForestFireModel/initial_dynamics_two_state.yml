@@ -1,7 +1,4 @@
 # Config for testing the different initial states of the model
-#
-# NOTE that this sets only the common values; the changes are set via passing
-#      additional keys to the the ModelTest.create_run_load method
 ---
 parameter_space:
   # Disable steps; not needed
@@ -17,5 +14,4 @@ parameter_space:
     initial_density: 1.0
     growth_rate: 0.01
     lightning_frequency: 0.01
-    two_state_FFM: true
 

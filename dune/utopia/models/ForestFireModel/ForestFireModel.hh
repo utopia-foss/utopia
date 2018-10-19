@@ -14,7 +14,7 @@ namespace Utopia {
 namespace Models {
 namespace ForestFireModel {
 
-enum StateEnum { empty=0, tree=1, burning=2 };
+enum StateEnum { empty=0, tree=1 };
 
 struct State {
     StateEnum state;
@@ -31,12 +31,13 @@ struct State {
 struct Param {
     const double growth_rate;
     const double lightning_frequency;
+    const bool light_bottom_row;
     const double resistance;
 
-    Param(double growth_rate, double lightning_frequency, double resistance)
+    Param(double growth_rate, double lightning_frequency, bool light_bottom_row, double resistance)
     :
         growth_rate(growth_rate), lightning_frequency(lightning_frequency),
-        resistance(resistance)
+        light_bottom_row(light_bottom_row), resistance(resistance)
     {
         if (growth_rate > 1 || growth_rate < 0)
         {
@@ -62,25 +63,14 @@ struct Param {
     }
 };
 
-struct ModelFeature {
-    const bool two_state_FFM;
-    const bool light_bottom_row;
-
-    ModelFeature(bool two_state_FFM, bool light_bottom_row)
-    :
-        two_state_FFM(two_state_FFM), light_bottom_row(light_bottom_row)
-    { }
-};
-
 /// Typehelper to define data types of ForestFireModel model 
 using ForestFireModelTypes = ModelTypes<>;
 
 
 /// The ForestFireModel Model
 /** The ForestFireModel simulates the development of a forest under influence of forest fires. 
- *  Trees grow on a random basis and fires cause their death, 
- *  either for a whole cluster instantaneously (two state model) 
- *  or for a cluster by propagation via the neighborhood (three state model).
+ *  Trees grow on a random basis and fires cause their death
+ *  for a whole cluster instantaneously (two state model).
  */
 template<class ManagerType>
 class ForestFireModel:
@@ -112,9 +102,7 @@ private:
 
     /// Model parameters
     const Param _param;
-    const ModelFeature _model_feature;  // 0: three state model, contagious disease, 1: two state model, percolation
-                                        // 0 implies sync update, 1 async update
-    const double _initial_density;      // initial density of trees
+    double _initial_density;      // density of trees
 
     // -- Temporary objects -- //
     unsigned int _cluster_tag_cnt;
@@ -149,43 +137,33 @@ private:
     };
 
     RuleFunc _burn_cluster = [this](auto cell) {
-        if constexpr (!ManagerType::Cell::is_sync()) {
-            std::uniform_real_distribution<> dist(0., 1.);
+        std::uniform_real_distribution<> dist(0., 1.);
 
-            // burn cluster of trees
-            // asynchronous update needed!
-            std::vector<decltype(cell)> cluster = { cell };
-            cell->state().state = empty;
+        // burn cluster of trees
+        // asynchronous update needed!
+        std::vector<decltype(cell)> cluster = { cell };
+        cell->state().state = empty;
 
-            for (unsigned int i = 0; i < cluster.size(); ++i)
+        for (unsigned int i = 0; i < cluster.size(); ++i)
+        {
+            auto cluster_member = cluster[i];
+            for (auto cluster_potential_member : 
+                    Neighbor::neighbors(cluster_member,this->_manager))
             {
-                auto cluster_member = cluster[i];
-                for (auto cluster_potential_member : 
-                        Neighbor::neighbors(cluster_member,this->_manager))
+                if (cluster_potential_member->state().state == tree &&
+                    dist(*this->_rng) > _param.resistance)
                 {
-                    if (cluster_potential_member->state().state == tree &&
-                        dist(*this->_rng) > _param.resistance)
-                    {
-                        cluster.push_back(cluster_potential_member);									
-                        cluster_potential_member->state().state = empty;
-                    }
+                    cluster.push_back(cluster_potential_member);									
+                    cluster_potential_member->state().state = empty;
                 }
             }
-        }
-        else {
-            (void)this;         // avoid warning: unused this
         }
 
         return cell->state();
     };
 
     /// update follwoing set of rules
-    /** states: 0: empty, 1: tree (, 2: burning)
-     * contagious disease spread (CDM)
-     *    empty -> tree with probability growth_rate
-     *    tree -> burning with probability lightning_frequency
-     *    tree -> burning with probability 1 - resistance if i' in Neighborhood of i burning
-     *    burning -> empty
+    /** states: 0: empty, 1: tree
      * Percolation spread (PM)
      *    empty -> tree with probability growth_rate
      *    tree -> burning with probability lightning_frequency
@@ -206,41 +184,16 @@ private:
         else if (state.state == tree)
         {
             // tree -> burning by lightning
-            // in PercolationM connecte cluster catches fire -> percolation
+            // in Percolation connected cluster catches fire -> percolation
             if (dist(*this->_rng) < _param.lightning_frequency) {
-                if (_model_feature.two_state_FFM) {
-                    state = _burn_cluster(cell);
-                }
-                else {
-                    state.state = burning;
-                }
+                state = _burn_cluster(cell);
             }
 
             // ignite bottom row
-            else if (_model_feature.light_bottom_row && cell->position()[1]==0.5) 
+            else if (_param.light_bottom_row && cell->position()[1]==0.5) 
             {
-                if (_model_feature.two_state_FFM) {
-                    state = _burn_cluster(cell);
-                }
-                else {
-                    state.state = burning;
-                }
+                state = _burn_cluster(cell);
             }
-                        
-            // catch fire from Neighbors in CDM
-            else if (!_model_feature.two_state_FFM) 
-            {
-                for (auto nb : Neighbor::neighbors(cell,this->_manager)) {
-                    if (nb->state().state == burning && dist(*this->_rng) > _param.resistance) {
-                        state.state = burning;
-                    }
-                }
-            }
-        }
-
-        // stop burning, turn empty in CDM
-        else if (state.state == burning) {
-            state.state = empty;
         }
 
         return state;
@@ -253,31 +206,25 @@ private:
      * _cluster_tag_cnt keeps track of given ids
      */
     RuleFunc _identify_cluster = [this](auto cell){
-        if constexpr (!ManagerType::Cell::is_sync())
+        if (cell->state().cluster_tag == 0 && cell->state().state == tree) // else already labeled
         {
-            if (cell->state().cluster_tag == 0 && cell->state().state == tree) // else already labeled
-            {
-                _cluster_tag_cnt++;
+            _cluster_tag_cnt++;
 
-                std::vector<decltype(cell)> cluster = { cell };
-                cell->state().cluster_tag = _cluster_tag_cnt;
-                for (unsigned int i = 0; i < cluster.size(); ++i)
+            std::vector<decltype(cell)> cluster = { cell };
+            cell->state().cluster_tag = _cluster_tag_cnt;
+            for (unsigned int i = 0; i < cluster.size(); ++i)
+            {
+                auto cluster_member = cluster[i];
+                for (auto cluster_potential_member : Neighbor::neighbors(cluster_member,this->_manager))
                 {
-                    auto cluster_member = cluster[i];
-                    for (auto cluster_potential_member : Neighbor::neighbors(cluster_member,this->_manager))
+                    if (cluster_potential_member->state().cluster_tag == 0 &&
+                        cluster_potential_member->state().state == tree)
                     {
-                        if (cluster_potential_member->state().cluster_tag == 0 &&
-                            cluster_potential_member->state().state == tree)
-                        {
-                            cluster_potential_member->state().cluster_tag = _cluster_tag_cnt;
-                            cluster.push_back(cluster_potential_member);
-                        }
+                        cluster_potential_member->state().cluster_tag = _cluster_tag_cnt;
+                        cluster.push_back(cluster_potential_member);
                     }
                 }
             }
-        }
-        else {
-            (void)this;         // avoid warning: unused this
         }
 
         return cell->state();
@@ -303,10 +250,8 @@ public:
         _manager(manager),
         _param(as_double(this->_cfg["growth_rate"]),
                as_double(this->_cfg["lightning_frequency"]),
+               as_bool(this->_cfg["light_bottom_row"]),
                as_double(this->_cfg["resistance"])
-        ),
-        _model_feature(as_bool(this->_cfg["two_state_FFM"]),
-                       as_bool(this->_cfg["light_bottom_row"])
         ),
         _initial_density(as_double(this->_cfg["initial_density"])),
 
@@ -348,13 +293,8 @@ public:
         // Apply a rule to all cells depending on the config value
         else 
         {
-            if constexpr (ManagerType::Cell::is_sync()) {
-                apply_rule(_set_initial_state, _manager.cells());
-            }
-            else {
-                apply_rule(_set_initial_state, _manager.cells(), *this->_rng);
-                apply_rule(_identify_cluster, _manager.cells(), *this->_rng);
-            }
+            apply_rule(_set_initial_state, _manager.cells(), *this->_rng);
+            apply_rule(_identify_cluster, _manager.cells(), *this->_rng);
         }
         
         // Write information that cells are initialized to the logger
@@ -371,14 +311,22 @@ public:
         _cluster_tag_cnt = 0;
 
         /// apply rules: update and identify cluster
-        // identify cluster only with asynchronous update.
-        if constexpr (ManagerType::Cell::is_sync()) {
-            apply_rule(_update, _manager.cells());
+        apply_rule(_update, _manager.cells(), *this->_rng);
+        apply_rule(_identify_cluster, _manager.cells(), *this->_rng);
+    }
+
+    /// Monitor model information
+    void monitor ()
+    {
+        double density = 0;
+        for (const auto cell : _manager.cells()) {
+            if (cell->state().state == tree) {
+                density += 1;
+            }
         }
-        else {
-            apply_rule(_update, _manager.cells(), *this->_rng);
-            apply_rule(_identify_cluster, _manager.cells(), *this->_rng);
-        }
+        density /= double( std::distance(_manager.cells().begin(), 
+                                         _manager.cells().end()) );
+        this->_monitor.set_by_value("tree density", density);
     }
 
     /// Write data
