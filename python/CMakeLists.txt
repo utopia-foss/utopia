@@ -27,7 +27,7 @@ endif()
 
 # -- dantro --
 dune_python_find_package(PACKAGE dantro
-                         VERSION 0.4.0rc3  # TODO use release version
+                         VERSION 0.4.0rc4  # TODO use release version
                          INTERPRETER ${DUNE_PYTHON_VIRTUALENV_EXECUTABLE})
 
 if(NOT DUNE_PYTHON_dantro_FOUND)
