@@ -333,6 +333,21 @@ public:
     }
 
 
+    /// Monitor model information
+    /** @detail Here, functions and values can be supplied to the monitor that
+     *          are then available to the frontend. The monitor() function is
+     *          _only_ called if a certain emit interval has passed; thus, the
+     *          performance hit is small. Also, if using set_by_func, the given
+     *          lambda will only be called if an emission will happen.
+     */
+    void monitor ()
+    {
+        // Can supply information to the monitor here in two ways:
+        // this->_monitor.set_by_value("key", value);
+        // this->_monitor.set_by_func("key", [this](){return 42.;});
+    }
+
+
     /// Write data
     void write_data ()
     {
