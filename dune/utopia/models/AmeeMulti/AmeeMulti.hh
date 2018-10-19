@@ -8,7 +8,7 @@
 #include <dune/utopia/core/setup.hh>
 #include <dune/utopia/core/types.hh>
 #include <dune/utopia/models/Amee/Amee.hh>
-#include <dune/utopia/models/Amee/cellstate.hh>
+#include <dune/utopia/models/Amee/cell_state.hh>
 #include <dune/utopia/models/Amee/utils/statistics.hh>
 #include <dune/utopia/models/Amee/utils/test_utils.hh>
 #include <dune/utopia/models/Amee/utils/utils.hh>
@@ -23,8 +23,6 @@ namespace Models
 {
 namespace AmeeMulti
 {
-using namespace Utils;
-
 /**
  * @brief  Amee model class for multiple resources per cell
  *
@@ -35,8 +33,10 @@ using namespace Utils;
  * @tparam construction
  * @tparam decay
  */
-template <typename Cell, typename Agent, typename Modeltypes, bool construction, bool decay>
-class AmeeMulti : public Amee<Cell, Agent, Modeltypes, construction, decay>
+template <typename Cell, typename Agent, typename Modeltypes, typename Adaptionfunction, bool construction, bool decay>
+class AmeeMulti
+    : public Model<AmeeMulti<Cell, Agent, Modeltypes, Adaptionfunction, construction, decay>, Modeltypes>
+
 {
 public:
     using Gridcell = Cell;
@@ -57,7 +57,8 @@ public:
     using Types = Modeltypes;
 
     /// The base model type
-    using Base = Model<AmeeMulti<Cell, Agent, Modeltypes, construction, decay>, Modeltypes>;
+    using Base =
+        Model<AmeeMulti<Cell, Agent, Modeltypes, Adaptionfunction, construction, decay>, Modeltypes>;
 
     /// Data type that holds the configuration
     using Config = typename Base::Config;
@@ -83,8 +84,6 @@ private:
     using AgentFunction = std::function<void(Organism*)>;
 
     using CellFunction = std::function<void(const std::shared_ptr<Gridcell>)>;
-
-    using Adaptionfunction = std::function<std::vector<double>(Organism&)>;
 
     using AgentAdaptor = std::function<double(std::shared_ptr<Organism>)>;
     using AgentAdaptortuple = std::tuple<std::string, AgentAdaptor>;
@@ -117,7 +116,6 @@ private:
     std::vector<std::array<unsigned, 2>> _highres_interval;
     unsigned _statisticstime;
     Adaptionfunction _check_adaption;
-    static std::map<std::string, Adaptionfunction> adaptionfunctionmap;
     std::uniform_real_distribution<double> _deathdist;
     std::uniform_real_distribution<double> _resdist;
     std::uniform_int_distribution<std::size_t> _movedist;
@@ -240,7 +238,7 @@ public:
                 {
                     ctrt[i] = 0.;
                     cell->state().resources[i] = 0.;
-                    cell->state().resourceinfluxes[i] = _resdist(*this->_rng);
+                    cell->state().resourceinflux[i] = _resdist(*this->_rng);
                     cell->state().modtimes[i] = this->_time;
                 }
 
@@ -273,7 +271,7 @@ public:
                     ctrt.emplace_back(intensity * trt[i]);
                     cell->state().modtimes.emplace_back(this->_time);
                     cell->state().resources.emplace_back(0.);
-                    cell->state().resourceinfluxes.emplace_back(_resdist(*this->_rng));
+                    cell->state().resourceinflux.emplace_back(_resdist(*this->_rng));
                     agent.state().resources -= cost;
                 }
             }
@@ -358,7 +356,8 @@ public:
      */
     void kill(Organism& agent)
     {
-        if (is_equal(agent.state().resources, 0.) or _deathdist(*(this->_rng)) < _deathprobability)
+        if (Amee::Utils::is_equal(agent.state().resources, 0.) or
+            _deathdist(*(this->_rng)) < _deathprobability)
         {
             agent.state().deathflag = true;
         }
@@ -391,7 +390,7 @@ public:
             if (std::abs(ctrt[i]) < _removethreshold)
             {
                 ctrt[i] = std::numeric_limits<CTV>::quiet_NaN();
-                cell->state().resourceinfluxes[i] = 0.;
+                cell->state().resourceinflux[i] = 0.;
                 times[i] = std::numeric_limits<double>::quiet_NaN();
 
                 // cellresources are left alone, can still be used, but nothing else anymore is done
@@ -408,22 +407,22 @@ public:
     {
         for (std::size_t i = 0; i < cell->state().celltrait.size(); ++i)
         {
-            // cell->state().resources[i] += cell->state().resourceinfluxes[i];
+            // cell->state().resources[i] += cell->state().resourceinflux[i];
 
             // if (cell->state().resources[i] > cell->state().resource_capacities[i])
             // {
             //     cell->state().resources[i] = cell->state().resource_capacities[i];
             // }
 
-            if (is_equal(cell->state().resources[i], 0., 1e-7))
+            if (Amee::Utils::is_equal(cell->state().resources[i], 0., 1e-7))
             {
-                cell->state().resources[i] = cell->state().resourceinfluxes[i];
+                cell->state().resources[i] = cell->state().resourceinflux[i];
             }
             else
             {
                 cell->state().resources[i] =
-                    logistic_function(cell->state().resourceinfluxes[i],    // r
-                                      cell->state().resource_capacities[i], // K
+                    logistic_function(cell->state().resourceinflux[i],    // r
+                                      cell->state().resource_capacity[i], // K
                                       cell->state().resources[i], 1); // u0, t
             }
         }
@@ -470,7 +469,13 @@ public:
      * @param cells  cell vector which can be obtained from a cellmanager object
      */
     template <class ParentModel>
-    AmeeMulti(const std::string name, ParentModel& parent, const Cellcontainer& cells)
+    AmeeMulti(const std::string name,
+              ParentModel& parent,
+              const Cellcontainer& cells,
+              Adaptionfunction adaptionfunc,
+
+              std::vector<AgentAdaptortuple> agentadaptors,
+              std::vector<CellAdaptortuple> celladaptors)
         : Base(name, parent),
           _cells(cells),
           _decayintensity(as_double(this->_cfg["decayintensity"])),
@@ -487,8 +492,7 @@ public:
           _highres_interval(as_vector<std::array<unsigned, 2>>(
               this->_cfg["highresinterval"])),
           _statisticstime(as_<unsigned>(this->_cfg["statisticstime"])),
-          _check_adaption(
-              adaptionfunctionmap[as_str(this->_cfg["adaptionfunction"])]),
+          _check_adaption(adaptionfunc),
           _deathdist(std::uniform_real_distribution<double>(0., 1.)),
           _resdist(std::uniform_real_distribution<double>(
               as_vector<double>(this->_cfg["resourceinflux_limits"])[0],
@@ -499,74 +503,8 @@ public:
           _dgroup_agent_statistics(
               this->_hdfgrp->open_group("Agent_statistics")),
           _dgroup_cell_statistics(this->_hdfgrp->open_group("Cell_statistics")),
-          _agent_adaptors(
-              {AgentAdaptortuple{"accumulated_adaption",
-                                 [](const auto& agent) -> double {
-                                     return std::accumulate(
-                                         agent->state().adaption.begin(),
-                                         agent->state().adaption.end(), 0.);
-                                 }},
-               AgentAdaptortuple{"sumlen",
-                                 [](const auto& agent) -> double {
-                                     return agent->state().sumlen;
-                                 }},
-               AgentAdaptortuple{"divisor",
-                                 [](const auto& agent) -> double {
-                                     return agent->state().divisor;
-                                 }},
-               AgentAdaptortuple{"intensity",
-                                 [](const auto& agent) -> double {
-                                     return agent->state().intensity;
-                                 }},
-               AgentAdaptortuple{"start",
-                                 [](const auto& agent) -> double {
-                                     return agent->state().start;
-                                 }},
-               AgentAdaptortuple{
-                   "end",
-                   [](const auto& agent) -> double { return agent->state().end; }},
-               AgentAdaptortuple{"startmod",
-                                 [](const auto& agent) -> double {
-                                     return agent->state().start_mod;
-                                 }},
-               AgentAdaptortuple{"endmod",
-                                 [](const auto& agent) -> double {
-                                     return agent->state().end_mod;
-                                 }},
-               AgentAdaptortuple{"fitness",
-                                 [](const auto& agent) -> double {
-                                     return agent->state().fitness;
-                                 }},
-               AgentAdaptortuple{"cell_id",
-                                 [](const auto& agent) -> double {
-                                     return agent->state().habitat->id();
-                                 }},
-               AgentAdaptortuple{
-                   "age",
-                   [](const auto& agent) -> double { return agent->state().age; }},
-
-               AgentAdaptortuple{"traitlen",
-                                 [](const auto& agent) -> double {
-                                     return agent->state().phenotype.size();
-                                 }}}),
-          _cell_adaptors(
-              {CellAdaptortuple{"resources",
-                                [](const auto& cell) -> double {
-                                    return std::accumulate(
-                                        cell->state().resources.begin(),
-                                        cell->state().resources.end(), 0.);
-                                }},
-               CellAdaptortuple{"resourceinfluxes",
-                                [](const auto& cell) -> double {
-                                    return std::accumulate(
-                                        cell->state().resourceinfluxes.begin(),
-                                        cell->state().resourceinfluxes.end(), 0.);
-                                }},
-               CellAdaptortuple{"cell_traitlen",
-                                [](const auto& cell) -> double {
-                                    return cell->state().celltrait.size();
-                                }}}),
-
+          _agent_adaptors(agentadaptors),
+          _cell_adaptors(celladaptors),
           _idx(0),
           _begintime(std::chrono::high_resolution_clock::now())
     {
@@ -630,19 +568,19 @@ public:
         const auto init_cell_resourceinflux_kind =
             as_str(this->_cfg["init_cellresourceinflux_kind"]);
 
-        std::vector<double> init_cellresourceinfluxes;
+        std::vector<double> init_cellresourceinflux;
         if (init_cell_resourceinflux_kind == "random")
         {
-            init_cellresourceinfluxes.resize(init_celltrait_len);
-            std::generate(init_cellresourceinfluxes.begin(),
-                          init_cellresourceinfluxes.end(),
+            init_cellresourceinflux.resize(init_celltrait_len);
+            std::generate(init_cellresourceinflux.begin(),
+                          init_cellresourceinflux.end(),
                           [this]() { return _resdist(*this->_rng); });
         }
         else if (init_cell_resourceinflux_kind == "given")
         {
-            init_cellresourceinfluxes =
+            init_cellresourceinflux =
                 as_vector<double>(this->_cfg["init_cell_influxvalues"]);
-            if (init_celltrait_len != init_cellresourceinfluxes.size())
+            if (init_celltrait_len != init_cellresourceinflux.size())
             {
                 throw std::runtime_error(
                     "init_cell_influxvalues must be as long as "
@@ -660,7 +598,7 @@ public:
         const auto cell_resourcecapacity_kind =
             as_str(this->_cfg["cellresourcecapacity_kind"]);
 
-        std::vector<double> resourcecapacities;
+        std::vector<double> resourcecapacity;
 
         if (cell_resourcecapacity_kind == "random")
         {
@@ -668,14 +606,14 @@ public:
                 as_vector<double>(this->_cfg["cellresourcecapacity_limits"]);
             std::uniform_real_distribution<double> capdist(
                 cell_resourcecapacity_limits[0], cell_resourcecapacity_limits[1]);
-            resourcecapacities.resize(init_celltrait_len);
-            std::generate(resourcecapacities.begin(), resourcecapacities.end(),
+            resourcecapacity.resize(init_celltrait_len);
+            std::generate(resourcecapacity.begin(), resourcecapacity.end(),
                           [this, &capdist]() { return capdist(*this->_rng); });
         }
         else if (cell_resourcecapacity_kind == "given")
         {
-            resourcecapacities =
-                as_vector<double>(this->_cfg["cellresourcecapacities"]);
+            resourcecapacity =
+                as_vector<double>(this->_cfg["cellresourcecapacity"]);
         }
         else
         {
@@ -701,7 +639,7 @@ public:
 
         std::for_each(_cells.begin(), _cells.end(), [&](auto cell) {
             cell->state() = Cellstate(init_celltrait, init_cellresources,
-                                      init_cellresourceinfluxes, resourcecapacities);
+                                      init_cellresourceinflux, resourcecapacity);
         });
     }
 
@@ -761,10 +699,10 @@ public:
                           int(agent->state().phenotype.size())});
             for (int i = s; i < amin; ++i)
             {
-                cum_res += (agent->state().habitat->state().resourceinfluxes[i] >
+                cum_res += (agent->state().habitat->state().resourceinflux[i] >
                             agent->state().adaption[i - s])
                                ? agent->state().adaption[i - s]
-                               : agent->state().habitat->state().resourceinfluxes[i];
+                               : agent->state().habitat->state().resourceinflux[i];
             }
 
             if (cum_res > _livingcost)
@@ -795,8 +733,8 @@ public:
      */
     void print_statistics()
     {
-        ArithmeticMean Mean;
-        Maximum Max;
+        Amee::ArithmeticMean Mean;
+        Amee::Maximum Max;
         this->_log->info("Current time: {}\n current populationsize: {}\n",
                          this->_time, _population.size());
 
@@ -839,15 +777,15 @@ public:
 
         this->_log->info(
             "\n Cells: "
-            "\n <cum_resourceinfluxes> {}\n"
-            " <resourceinfluxesize> {}\n <celltraitsize> {}\n <resources> {}",
+            "\n <cum_resourceinflux> {}\n"
+            " <resourceinfluxize> {}\n <celltraitsize> {}\n <resources> {}",
             Mean(_cells.begin(), _cells.end(),
                  [](auto cell) {
-                     return std::accumulate(cell->state().resourceinfluxes.begin(),
-                                            cell->state().resourceinfluxes.end(), 0.);
+                     return std::accumulate(cell->state().resourceinflux.begin(),
+                                            cell->state().resourceinflux.end(), 0.);
                  }),
             Mean(_cells.begin(), _cells.end(),
-                 [](auto cell) { return cell->state().resourceinfluxes.size(); }),
+                 [](auto cell) { return cell->state().resourceinflux.size(); }),
             Mean(_cells.begin(), _cells.end(),
                  [](auto cell) { return cell->state().celltrait.size(); }),
             Mean(_cells.begin(), _cells.end(), [](auto cell) {
@@ -856,16 +794,16 @@ public:
             }));
 
         this->_log->info(
-            "\n MAX(cum_resourceinfluxes) {}"
-            "\n MAX(resourceinfluxesize) {} \n MAX(celltraitsize) {}"
+            "\n MAX(cum_resourceinflux) {}"
+            "\n MAX(resourceinfluxize) {} \n MAX(celltraitsize) {}"
             "\n MAX(resources) {}",
             Max(_cells.begin(), _cells.end(),
                 [](auto cell) {
-                    return std::accumulate(cell->state().resourceinfluxes.begin(),
-                                           cell->state().resourceinfluxes.end(), 0.);
+                    return std::accumulate(cell->state().resourceinflux.begin(),
+                                           cell->state().resourceinflux.end(), 0.);
                 }),
             Max(_cells.begin(), _cells.end(),
-                [](auto cell) { return cell->state().resourceinfluxes.size(); }),
+                [](auto cell) { return cell->state().resourceinflux.size(); }),
             Max(_cells.begin(), _cells.end(),
                 [](auto cell) { return cell->state().celltrait.size(); }),
             Max(_cells.begin(), _cells.end(), [](auto cell) {
@@ -974,14 +912,14 @@ public:
         {
             for (std::size_t i = 0; i < _agent_adaptors.size(); ++i)
             {
-                _agent_statistics_data[i].push_back(
-                    Utils::Describe()(_population.begin(), _population.end(),
-                                      std::get<1>(_agent_adaptors[i])));
+                _agent_statistics_data[i].push_back(Amee::Utils::Describe()(
+                    _population.begin(), _population.end(),
+                    std::get<1>(_agent_adaptors[i])));
             }
 
             for (std::size_t i = 0; i < _cell_adaptors.size(); ++i)
             {
-                _cell_statistics_data[i].push_back(Utils::Describe()(
+                _cell_statistics_data[i].push_back(Amee::Utils::Describe()(
                     _cells.begin(), _cells.end(), std::get<1>(_cell_adaptors[i])));
             }
         }
@@ -1140,14 +1078,6 @@ public:
 
     virtual ~AmeeMulti() = default;
 }; // namespace AmeeMulti
-
-template <typename Cell, typename Agent, typename Modeltypes, bool construction, bool decay>
-std::map<std::string, typename AmeeMulti<Cell, Agent, Modeltypes, construction, decay>::Adaptionfunction>
-    AmeeMulti<Cell, Agent, Modeltypes, construction, decay>::adaptionfunctionmap = {
-        {"multi_notnormed", multi_notnormed},
-        {"multi_normed", multi_normed},
-        {"simple_notnormed", simple_notnormed},
-        {"simple_normed", simple_normed}};
 
 } // namespace AmeeMulti
 } // namespace Models
