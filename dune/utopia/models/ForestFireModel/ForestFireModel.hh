@@ -102,7 +102,7 @@ private:
 
     /// Model parameters
     const Param _param;
-    const double _initial_density;      // initial density of trees
+    double _initial_density;      // density of trees
 
     // -- Temporary objects -- //
     unsigned int _cluster_tag_cnt;
@@ -313,7 +313,21 @@ public:
         /// apply rules: update and identify cluster
         apply_rule(_update, _manager.cells(), *this->_rng);
         apply_rule(_identify_cluster, _manager.cells(), *this->_rng);
-}
+    }
+
+    /// Monitor model information
+    void monitor ()
+    {
+        double density = 0;
+        for (const auto cell : _manager.cells()) {
+            if (cell->state().state == tree) {
+                density += 1;
+            }
+        }
+        this->_monitor.set_by_value("tree density", 
+                                    density / double( std::distance(_manager.cells().begin(),
+                                                                    _manager.cells().end()) ));
+    }
 
     /// Write data
     void write_data ()
