@@ -324,9 +324,9 @@ public:
                 density += 1;
             }
         }
-        this->_monitor.set_by_value("tree density", 
-                                    density / double( std::distance(_manager.cells().begin(),
-                                                                    _manager.cells().end()) ));
+        density /= double( std::distance(_manager.cells().begin(), 
+                                         _manager.cells().end()) );
+        this->_monitor.set_by_value("tree density", density);
     }
 
     /// Write data
