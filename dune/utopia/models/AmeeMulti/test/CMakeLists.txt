@@ -8,10 +8,7 @@ file(COPY "multi_test_config_simple.yml"
 
 # register targets
 set(TESTS_AMEEMULTI
-    multi_agentstatecomplex_test
-    multi_agentstatesimple_test
     multi_model_test
-    multi_generatortest
     )
 
 # add AMEEMULTI tests
