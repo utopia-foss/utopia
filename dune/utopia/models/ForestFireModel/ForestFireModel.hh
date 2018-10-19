@@ -157,7 +157,7 @@ private:
             std::vector<decltype(cell)> cluster = { cell };
             cell->state().state = empty;
 
-            for (int i = 0; i < cluster.size(); ++i)
+            for (unsigned int i = 0; i < cluster.size(); ++i)
             {
                 auto cluster_member = cluster[i];
                 for (auto cluster_potential_member : 
@@ -261,7 +261,7 @@ private:
 
                 std::vector<decltype(cell)> cluster = { cell };
                 cell->state().cluster_tag = _cluster_tag_cnt;
-                for (int i = 0; i < cluster.size(); ++i)
+                for (unsigned int i = 0; i < cluster.size(); ++i)
                 {
                     auto cluster_member = cluster[i];
                     for (auto cluster_potential_member : Neighbor::neighbors(cluster_member,this->_manager))
