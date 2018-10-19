@@ -8,7 +8,10 @@ import numpy as np
 
 import pytest
 
+from paramspace import ParamSpace
+
 from utopya import Multiverse, DataManager
+import utopya.datagroup as udg
 import utopya.datacontainer as udc
 
 # Local constants
@@ -97,8 +100,12 @@ def test_load_single(dm_after_single):
     assert 'cfg/model' in dm
     assert 'cfg/run' in dm
 
-    assert len(dm['uni']) == 1
+    # Check that 'uni' is a MultiverseGroup
     assert 'uni' in dm
+    assert isinstance(dm['uni'], udg.MultiverseGroup)
+    assert isinstance(dm['uni'].pspace, ParamSpace)
+
+    assert len(dm['uni']) == 1
     assert 0 in dm['uni']
     uni = dm['uni'][0]
     
@@ -137,6 +144,14 @@ def test_load_sweep(dm_after_sweep):
     assert 'cfg/model' in dm
     assert 'cfg/run' in dm
 
+    # Check that 'uni' is a MultiverseGroup of right length
+    assert 'uni' in dm
+    assert isinstance(dm['uni'], udg.MultiverseGroup)
+    assert isinstance(dm['uni'].pspace, ParamSpace)
+    assert 0 not in dm['uni']
+    assert len(dm['uni']) == dm['uni'].pspace.volume
+
+    # Now go over all available universes
     for uni_no, uni in dm['uni'].items():
         # Check that the uni config is loaded
         assert 'cfg' in uni

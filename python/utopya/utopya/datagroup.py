@@ -6,7 +6,7 @@ They are based on the dantro's OrderedDataGroup class.
 import logging
 
 from dantro.base import BaseDataGroup
-from dantro.group import ParamSpaceGroup
+from dantro.group import ParamSpaceGroup, ParamSpaceStateGroup
 
 # Configure and get logger
 log = logging.getLogger(__name__)
@@ -14,6 +14,10 @@ log = logging.getLogger(__name__)
 # Local constants
 
 # -----------------------------------------------------------------------------
+
+class UniverseGroup(ParamSpaceStateGroup):
+    """This group represents the data of a single universe"""
+
 
 class MultiverseGroup(ParamSpaceGroup):
     """This group is meant to manage the `uni` group of the loaded data, i.e.
@@ -25,4 +29,4 @@ class MultiverseGroup(ParamSpaceGroup):
 
     Furthermore, via dantro, an easy data selector is available
     """
-    
+    _NEW_GROUP_CLS = UniverseGroup

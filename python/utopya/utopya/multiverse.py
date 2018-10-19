@@ -78,7 +78,8 @@ class Multiverse:
                                       update_meta_cfg=update_meta_cfg)
         # NOTE this already stores it in self._meta_cfg
 
-        # Create the run directory and write the meta configuration into it
+        # Create the run directory and write the meta configuration into it.
+        # This already performs the backup of the configuration files.
         self._create_run_dir(**self.meta_cfg['paths'], cfg_parts=files)
 
         # Provide some information
@@ -179,17 +180,11 @@ class Multiverse:
         Note that (currently) each Multiverse instance can _not_ perform
         multiple runs!
         """
-
         # Get the parameter space from the config
         pspace = self.meta_cfg['parameter_space']
-        
-        # If this is a ParamSpace, we need to retrieve the default point
-        if isinstance(pspace, psp.ParamSpace):
-            log.info("Got a ParamSpace object. Retrieving default point ...")
-            uni_cfg = pspace.default
 
-        else:
-            uni_cfg = copy.deepcopy(pspace)
+        # Get the default state of the parameter space
+        uni_cfg = pspace.default
 
         # Add the task to the worker manager.
         log.info("Adding task for simulation of a single universe ...")
@@ -450,7 +445,13 @@ class Multiverse:
         # Write the meta config to the config directory.
         write_yml(self.meta_cfg,
                   path=os.path.join(self.dirs['config'], "meta_cfg.yml"))
-        log.debug("Wrote meta configuration to config directory.")
+        log.debug("Stored meta configuration in config directory.")
+
+        # Separately, store the parameter space there
+        write_yml(self.meta_cfg['parameter_space'],
+                  path=os.path.join(self.dirs['config'],
+                                    "parameter_space.yml"))
+        log.debug("Stored parameter space.")
 
         # If configured, backup the other cfg files one by one
         if backup_involved_cfg_files and cfg_parts:

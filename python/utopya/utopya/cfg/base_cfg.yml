@@ -177,9 +177,19 @@ data_manager:
     cfg:
       loader: yaml                          # The loader function to use
       glob_str: 'config/*.yml'              # Which files to load
+      ignore: [config/parameter_space.yml]  # Which files to ignore
       required: true                        # Whether these files are required
       path_regex: config/(\w+)_cfg.yml      # Extract info from the file path
       target_path: cfg/{match:}             # ...and use in target path
+
+    # Load the parameter space object into the MultiverseGroup attributes
+    pspace:
+      loader: yaml_to_object                # Load into ObjectContainer
+      glob_str: config/parameter_space.yml
+      required: true
+      load_as_attr: true
+      unpack_data: true                     # ... and store as ParamSpace obj.
+      target_path: uni
 
     # Load the configuration files that are generated for _each_ simulation
     # These hold all information that is available to a single simulation and
