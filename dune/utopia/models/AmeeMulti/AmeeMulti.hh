@@ -81,18 +81,11 @@ private:
 
     using Cellcontainer = std::vector<std::shared_ptr<Gridcell>>;
 
-    using AgentFunction = std::function<void(Organism*)>;
-
-    using CellFunction = std::function<void(const std::shared_ptr<Gridcell>)>;
-
     using AgentAdaptor = std::function<double(std::shared_ptr<Organism>)>;
     using AgentAdaptortuple = std::tuple<std::string, AgentAdaptor>;
 
     using CellAdaptor = std::function<double(const std::shared_ptr<Gridcell>)>;
     using CellAdaptortuple = std::tuple<std::string, CellAdaptor>;
-
-    using AgentUpdateFunction = std::function<void(Organism&)>;
-    using CellUpdateFunction = std::function<void(const std::shared_ptr<Gridcell>)>;
 
     // population& grid
     AgentContainer _population;
@@ -368,7 +361,7 @@ public:
      *
      * @param cell
      */
-    void celltrait_decay(const std::shared_ptr<Gridcell> cell)
+    void celltrait_decay(const std::shared_ptr<Gridcell>& cell)
     {
         auto& org = cell->state().original;
         auto& ctrt = cell->state().celltrait;
@@ -403,7 +396,7 @@ public:
      *
      * @param cell
      */
-    void update_cell(const std::shared_ptr<Gridcell> cell)
+    void update_cell(const std::shared_ptr<Gridcell>& cell)
     {
         for (std::size_t i = 0; i < cell->state().celltrait.size(); ++i)
         {
