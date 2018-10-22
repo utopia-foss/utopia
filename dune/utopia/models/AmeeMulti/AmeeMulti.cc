@@ -1,4 +1,5 @@
 #include <dune/utopia/core/tags.hh>
+#include <dune/utopia/models/Amee/agentpolicies/agent_updatepolicy.hh>
 #include <dune/utopia/models/Amee/agentstates/agentstate.hh>
 #include <dune/utopia/models/Amee/agentstates/agentstate_policy_complex.hh>
 #include <dune/utopia/models/Amee/agentstates/agentstate_policy_simple.hh>
@@ -6,6 +7,7 @@
 #include <dune/utopia/models/Amee/utils/custom_setup.hh>
 #include <dune/utopia/models/Amee/utils/generators.hh>
 #include <dune/utopia/models/AmeeMulti/AmeeMulti.hh>
+
 #include <iostream>
 #include <thread>
 
@@ -13,7 +15,14 @@ using namespace Utopia::Models::AmeeMulti;
 using namespace std::literals::chrono_literals;
 
 // build a struct which makes setup simpler
-template <template <typename, typename, typename> class AgentPolicy, typename G, typename P, typename RNG, template <typename> class Adaptionfunc, bool construction, bool decay>
+template <template <typename, typename, typename> class AgentPolicy,
+          typename G,
+          typename P,
+          typename RNG,
+          template <typename> class Adaptionfunc,
+          template <typename, typename, typename, typename> class Agentupdatepolicy,
+          bool construction,
+          bool decay>
 struct Modelfactory
 {
     template <typename Model, typename Cellmanager>
@@ -35,7 +44,7 @@ struct Modelfactory
             {"simple_notnormed", simple_notnormed},
             {"simple_normed", simple_normed}};
 
-        using AgentAdaptor = std::function<double(std::shared_ptr<AgentType>)>;
+        using AgentAdaptor = std::function<double(const std::shared_ptr<AgentType>&)>;
         using AgentAdaptortuple = std::tuple<std::string, AgentAdaptor>;
 
         using CellAdaptor = std::function<double(const std::shared_ptr<CellType>)>;
@@ -107,14 +116,20 @@ struct Modelfactory
         // making model types
         using Modeltypes = Utopia::ModelTypes<RNG>;
 
-        return AmeeMulti<CellType, AgentType, Modeltypes, Adaptionfunc<AgentType>, construction, decay>(
+        return AmeeMulti<CellType, AgentType, Modeltypes, Adaptionfunc<AgentType>,
+                         RNG, Agentupdatepolicy, construction, decay>(
             name, parentmodel, cellmanager.cells(),
             adaptionfunctionmap[adaptionfunctionname], agentadaptors, celladaptors);
     }
 };
 
+// globally used typedefs for stuff
 template <typename Agent>
 using Adaptionfunction = std::function<std::vector<double>(Agent&)>;
+
+template <typename Cell, typename Agent, typename Adaptionfunction, typename RNG>
+using Updatepolicy =
+    Utopia::Models::Amee::SequentialPolicy<Cell, Agent, Adaptionfunction, RNG>;
 
 int main(int argc, char** argv)
 {
@@ -131,7 +146,8 @@ int main(int argc, char** argv)
 
         // make managers first -> this has to be wrapped in a factory function
         auto cellmanager = Utopia::Models::Amee::Setup::create_grid_manager_cells<
-            Utopia::Models::Amee::StaticCell, CS, true, 2, true, false>("Amee", pp);
+            Utopia::Models::Amee::StaticCell, CS, true, 2, true, false>(
+            "AmeeMulti", pp);
 
         // read stuff from the config
         bool construction =
@@ -140,17 +156,19 @@ int main(int argc, char** argv)
         bool decay = Utopia::as_bool(pp.get_cfg()["AmeeMulti"]["decay"]);
 
         std::string agenttype =
-            Utopia::as_str(pp.get_cfg()["AmeeMulti"]["Agenttype"]);
+            Utopia::as_str(pp.get_cfg()["AmeeMulti"]["agenttype"]);
 
         std::string adaptionfunction =
-            Utopia::as_str(pp.get_cfg()["AmeeMulti"]["Adaptionfunction"]);
+            Utopia::as_str(pp.get_cfg()["AmeeMulti"]["adaptionfunction"]);
 
         if (std::make_tuple(construction, decay, agenttype) ==
             std::tuple<bool, bool, std::string>{true, true, "simple"})
         {
             using Genotype = std::vector<double>;
             using Phenotype = std::vector<double>;
-            Modelfactory<Utopia::Models::Amee::Agentstate_policy_simple, Genotype, Phenotype, RNG, Adaptionfunction, true, true> factory;
+            Modelfactory<Utopia::Models::Amee::Agentstate_policy_simple, Genotype,
+                         Phenotype, RNG, Adaptionfunction, Updatepolicy, true, true>
+                factory;
 
             auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
             model.run();
@@ -160,7 +178,9 @@ int main(int argc, char** argv)
         {
             using Genotype = std::vector<int>;
             using Phenotype = std::vector<double>;
-            Modelfactory<Utopia::Models::Amee::Agentstate_policy_complex, Genotype, Phenotype, RNG, Adaptionfunction, true, true> factory;
+            Modelfactory<Utopia::Models::Amee::Agentstate_policy_complex, Genotype,
+                         Phenotype, RNG, Adaptionfunction, Updatepolicy, true, true>
+                factory;
 
             auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
             model.run();
@@ -170,7 +190,9 @@ int main(int argc, char** argv)
         {
             using Genotype = std::vector<double>;
             using Phenotype = std::vector<double>;
-            Modelfactory<Utopia::Models::Amee::Agentstate_policy_simple, Genotype, Phenotype, RNG, Adaptionfunction, true, false> factory;
+            Modelfactory<Utopia::Models::Amee::Agentstate_policy_simple, Genotype,
+                         Phenotype, RNG, Adaptionfunction, Updatepolicy, true, false>
+                factory;
 
             auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
             model.run();
@@ -180,7 +202,9 @@ int main(int argc, char** argv)
         {
             using Genotype = std::vector<int>;
             using Phenotype = std::vector<double>;
-            Modelfactory<Utopia::Models::Amee::Agentstate_policy_complex, Genotype, Phenotype, RNG, Adaptionfunction, false, false> factory;
+            Modelfactory<Utopia::Models::Amee::Agentstate_policy_complex, Genotype,
+                         Phenotype, RNG, Adaptionfunction, Updatepolicy, false, false>
+                factory;
 
             auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
             model.run();
