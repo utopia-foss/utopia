@@ -22,7 +22,7 @@
     # cell_influxvalues: [1., 1., 1., 1., 1., 1.,1., 1., 1., 1., 1., 1.]
 
 parameter_space: 
-  num_steps: 50
+  num_steps: 2000000
   periodic: true          # false: cells at boundary have fewer neighbors
   write_every: 1
   grid_size: [32,32]
@@ -53,7 +53,7 @@ parameter_space:
 
     # mutationrates, important for evolution speed and stability
     insertionrate: 1e-3
-    substitution_std: 0.2
+    substitution_std: 0.6
     substitutionrate: 1e-3
 
     modifiercost: 0.
@@ -65,13 +65,15 @@ parameter_space:
     # Model structure: Agent- & cell types etc
     construction: true
     decay: true
-    highresinterval: [[0, 2500], [50000, 52500], [500000,502500], [997500, 1000000]]
-    agenttype: complex
+    highresinterval: [[0, 2500], [50000, 52500], [500000,502500], [997500, 1000000], [1100000, 1102500], [1250000, 1252500], [1500000,1502500], [1997500, 2000000]]
+    agenttype: !sweep 
+      default: simple 
+      values: [simple, complex]
     threadnum: 2
 
     # stuff for worker manager
 worker_manager:
-  num_workers: 4
+  num_workers: 2
 
 # These are passed to Multiverse._create_run_dir
 paths:
@@ -79,5 +81,5 @@ paths:
   out_dir: ~/utopia_output
 
   # model note is added to the output directory path
-  model_note: "test_run_updatepolicy_sequential"
+  model_note: "test_run_long"
 

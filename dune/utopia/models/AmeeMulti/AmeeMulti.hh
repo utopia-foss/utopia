@@ -682,15 +682,15 @@ public:
     {
         if constexpr (!Updatepolicy::parallel)
         {
-            if ((this->_time % 1 == 0))
-            {
-                this->_log->info("T {}, N {}, elapsed time {} s", this->_time,
-                                 this->_population.size(),
-                                 std::chrono::duration_cast<std::chrono::seconds>(
-                                     std::chrono::high_resolution_clock::now() - _begintime)
-                                     .count());
-                // print_statistics();
-            }
+            // if ((this->_time % 10000 == 0))
+            // {
+            //     this->_log->info("T {}, N {}, elapsed time {} s", this->_time,
+            //                      this->_population.size(),
+            //                      std::chrono::duration_cast<std::chrono::seconds>(
+            //                          std::chrono::high_resolution_clock::now() - _begintime)
+            //                          .count());
+            //     // print_statistics();
+            // }
 
             if (this->_population.size() == 0)
             {
