@@ -1,8 +1,8 @@
 #include <iostream>
 
-#include "ForestFireModel.hh"
+#include "ForestFire.hh"
 
-using namespace Utopia::Models::ForestFireModel;
+using namespace Utopia::Models::ForestFire;
 using Utopia::Setup::create_grid_manager_cells;
 
 int main (int argc, char** argv)
@@ -16,24 +16,24 @@ int main (int argc, char** argv)
         // Initialize the main model instance with different template arguments
         // and then iterate it ... Need separate cases for this.
         // distinction of periodic / non-periodic grid
-        if (Utopia::as_bool(pp.get_cfg()["ForestFireModel"]["periodic"])) 
+        if (Utopia::as_bool(pp.get_cfg()["ForestFire"]["periodic"])) 
         {
             // Periodic grid and async update
-            ForestFireModel model("ForestFireModel", pp,
+            ForestFire model("ForestFire", pp,
                 /* template arguments: State, periodicity=true, 
                  * dimensionality=2, structured grid=true, synchronous update=false
                  */ 
-                create_grid_manager_cells<State,true,2,true,false>("ForestFireModel", pp)
+                create_grid_manager_cells<State,true,2,true,false>("ForestFire", pp)
             );
             model.run();
         }
-        else if (!Utopia::as_bool(pp.get_cfg()["ForestFireModel"]["periodic"])) 
+        else if (!Utopia::as_bool(pp.get_cfg()["ForestFire"]["periodic"])) 
         {
                 /* template arguments: State, periodicity=false, 
                  * dimensionality=2, structured grid=true, synchronous update=false
                  */ 
-            ForestFireModel model("ForestFireModel", pp,
-                create_grid_manager_cells<State,false,2,true,false>("ForestFireModel", pp)
+            ForestFire model("ForestFire", pp,
+                create_grid_manager_cells<State,false,2,true,false>("ForestFire", pp)
             );
             model.run();
         }

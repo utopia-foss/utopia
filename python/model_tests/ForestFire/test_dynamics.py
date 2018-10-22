@@ -1,4 +1,4 @@
-"""Tests of the dynamics of the ForestFireModel"""
+"""Tests of the dynamics of the ForestFire"""
 
 import numpy as np
 import pytest
@@ -8,7 +8,7 @@ from utopya.testtools import ModelTest
 from .test_init import model_cfg
 
 # Configure the ModelTest class
-mtc = ModelTest("ForestFireModel", test_file=__file__)
+mtc = ModelTest("ForestFire", test_file=__file__)
 
 # Utility functions -----------------------------------------------------------
 
@@ -26,10 +26,10 @@ def test_dynamics_two_state_model():
 
     ## For the universe with f=0, ignited bottom and two_state_model=true
     uni = dm['uni'][0]
-    data = uni['data']['ForestFireModel']
+    data = uni['data']['ForestFire']
 
     # Get the grid size
-    grid_size = uni['cfg']['ForestFireModel']['grid_size']
+    grid_size = uni['cfg']['ForestFire']['grid_size']
     num_cells = grid_size[0] * grid_size[1]
     steps =  uni['cfg']['num_steps']
     new_shape = (steps+1, grid_size[1], grid_size[0])

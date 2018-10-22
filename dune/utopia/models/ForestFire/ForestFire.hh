@@ -1,5 +1,5 @@
-#ifndef UTOPIA_MODELS_FORESTFIREMODEL_HH
-#define UTOPIA_MODELS_FORESTFIREMODEL_HH
+#ifndef UTOPIA_MODELS_FORESTFIRE_HH
+#define UTOPIA_MODELS_FORESTFIRE_HH
 
 #include <functional>
 
@@ -12,7 +12,7 @@
 
 namespace Utopia {
 namespace Models {
-namespace ForestFireModel {
+namespace ForestFire {
 
 enum StateEnum { empty=0, tree=1 };
 
@@ -63,22 +63,22 @@ struct Param {
     }
 };
 
-/// Typehelper to define data types of ForestFireModel model 
-using ForestFireModelTypes = ModelTypes<>;
+/// Typehelper to define data types of ForestFire model
+using ForestFireTypes = ModelTypes<>;
 
 
-/// The ForestFireModel Model
-/** The ForestFireModel simulates the development of a forest under influence of forest fires. 
+/// The ForestFire model
+/** The ForestFire model simulates the development of a forest under influence of forest fires. 
  *  Trees grow on a random basis and fires cause their death
  *  for a whole cluster instantaneously (two state model).
  */
 template<class ManagerType>
-class ForestFireModel:
-    public Model<ForestFireModel<ManagerType>, ForestFireModelTypes>
+class ForestFire:
+    public Model<ForestFire<ManagerType>, ForestFireTypes>
 {
 public:
     /// The base model type
-    using Base = Model<ForestFireModel<ManagerType>, ForestFireModelTypes>;
+    using Base = Model<ForestFire<ManagerType>, ForestFireTypes>;
     
     /// Cell type
     using CellType = typename ManagerType::Cell;
@@ -94,7 +94,7 @@ public:
 
 
 private:
-    // Base members: _time, _name, _cfg, _hdfgrp, _rng
+    // Base members: _time, _name, _cfg, _hdfgrp, _rng, _monitor
 
     // -- Members of this model -- //
     /// The grid manager
@@ -111,13 +111,26 @@ private:
     std::shared_ptr<DataSet> _dset_state;
     std::shared_ptr<DataSet> _dset_cluster_id;
 
+    // -- Helper functions // 
+    std::function<double()> _calculate_density = [this]() {
+        double density = 0.;
+        for (const auto& cell : this->_manager.cells()) {
+            if (cell->state().state == tree) {
+                density += 1.;
+            }
+        }
+        density /= double( std::distance(this->_manager.cells().begin(), 
+                                        this->_manager.cells().end()) );
+        return density;
+    };
+
 
     // -- Rule functions -- //
     // initialise trees random with density
     // update following the FFM set of rules
 
     /// Sets the given cell to state "tree" with probability p, else to "empty"
-    RuleFunc _set_initial_state = [this](const auto cell){
+    RuleFunc _set_initial_state = [this](const auto& cell){
         // Get the state of the Cell
         auto state = cell->state();
 
@@ -147,7 +160,7 @@ private:
         for (unsigned int i = 0; i < cluster.size(); ++i)
         {
             auto cluster_member = cluster[i];
-            for (auto cluster_potential_member : 
+            for (auto&& cluster_potential_member : 
                     Neighbor::neighbors(cluster_member,this->_manager))
             {
                 if (cluster_potential_member->state().state == tree &&
@@ -162,7 +175,7 @@ private:
         return cell->state();
     };
 
-    /// update follwoing set of rules
+    /// update following set of rules
     /** states: 0: empty, 1: tree
      * Percolation spread (PM)
      *    empty -> tree with probability growth_rate
@@ -180,7 +193,7 @@ private:
             state.state = tree;
         }
 
-        // state is tree, tree -> burning by lighning or by burning neighbors
+        // state is tree, tree -> burning by lightning or by burning neighbors
         else if (state.state == tree)
         {
             // tree -> burning by lightning
@@ -215,7 +228,7 @@ private:
             for (unsigned int i = 0; i < cluster.size(); ++i)
             {
                 auto cluster_member = cluster[i];
-                for (auto cluster_potential_member : Neighbor::neighbors(cluster_member,this->_manager))
+                for (auto&& cluster_potential_member : Neighbor::neighbors(cluster_member,this->_manager))
                 {
                     if (cluster_potential_member->state().cluster_tag == 0 &&
                         cluster_potential_member->state().state == tree)
@@ -233,13 +246,13 @@ private:
 
 
 public:
-    /// Construct the ForestFireModel model
+    /// Construct the ForestFire model
     /** \param name     Name of this model instance
      *  \param parent   The parent model this model instance resides in
      *  \param manager  The externally setup manager to use for this model
      */
     template<class ParentModel>
-    ForestFireModel (const std::string name,
+    ForestFire (const std::string name,
                      ParentModel &parent,
                      ManagerType&& manager)
     :
@@ -318,15 +331,7 @@ public:
     /// Monitor model information
     void monitor ()
     {
-        double density = 0;
-        for (const auto cell : _manager.cells()) {
-            if (cell->state().state == tree) {
-                density += 1;
-            }
-        }
-        density /= double( std::distance(_manager.cells().begin(), 
-                                         _manager.cells().end()) );
-        this->_monitor.set_by_value("tree density", density);
+        this->_monitor.set_by_func("tree_density", _calculate_density);
     }
 
     /// Write data
@@ -348,8 +353,8 @@ public:
     }
 };
 
-} // namespace ForestFireModel
+} // namespace ForestFire
 } // namespace Models
 } // namespace Utopia
 
-#endif // UTOPIA_MODELS_FORESTFIREMODEL_HH
+#endif // UTOPIA_MODELS_FORESTFIRE_HH

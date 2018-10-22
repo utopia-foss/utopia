@@ -2,18 +2,16 @@
 ---
 parameter_space:
   # Disable steps; not needed
-  num_steps: 0
-
-  # Test for four different seeds
-  seed: !sweep
-    default: 42
-    range: [4]
+  num_steps: 2
 
   # Load the model config
-  ForestFireModel: !model
-    model_name: ForestFireModel
+  ForestFire: !model
+    model_name: ForestFire
 
     # Work on a smaller grid size
     grid_size: [31, 31]
 
-    initial_density: 0.5
+    initial_density: 1.0
+    growth_rate: 0.01
+    lightning_frequency: 0.01
+

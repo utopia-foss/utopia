@@ -1,22 +1,22 @@
-"""Tests of the initialisation of the ForestFireModel"""
+"""Tests of the initialisation of the ForestFire"""
 
 import numpy as np
 import pytest
 
 from utopya.testtools import ModelTest
 
-# Configure the ModelTest class for ForestFireModel
-mtc = ModelTest("ForestFireModel", test_file=__file__)
+# Configure the ModelTest class for ForestFire model
+mtc = ModelTest("ForestFire", test_file=__file__)
 
 # Fixtures --------------------------------------------------------------------
 # Define fixtures
 
 # Helpers ---------------------------------------------------------------------
-# NOTE These helpers are also imported by other test modules for ForestFireModel
+# NOTE These helpers are also imported by other test modules for ForestFire
 
 def model_cfg(**kwargs) -> dict:
-    """Creates a dict that can update the config of the ForestFireModel"""
-    return dict(parameter_space=dict(ForestFireModel=dict(**kwargs)))
+    """Creates a dict that can update the config of the ForestFire"""
+    return dict(parameter_space=dict(ForestFire=dict(**kwargs)))
 
 # Tests -----------------------------------------------------------------------
 
@@ -53,13 +53,13 @@ def test_output():
     # and the content of the output data
     for uni_no, uni in dm['uni'].items():
         # Get the data
-        data = uni['data']['ForestFireModel']
+        data = uni['data']['ForestFire']
 
         # Get the config of this universe
         uni_cfg = uni['cfg']
 
         # Calculate the number of cells
-        grid_size = uni_cfg['ForestFireModel']['grid_size']
+        grid_size = uni_cfg['ForestFire']['grid_size']
         num_cells = grid_size[0] * grid_size[1]
 
         # Check that all datasets are available
@@ -81,10 +81,10 @@ def test_initial_state_random():
 
     # For all universes, perform checks on the state
     for uni in dm['uni'].values():
-        data = uni['data']['ForestFireModel']
+        data = uni['data']['ForestFire']
 
         # Get the grid size
-        grid_size = uni['cfg']['ForestFireModel']['grid_size']
+        grid_size = uni['cfg']['ForestFire']['grid_size']
         num_cells = grid_size[0] * grid_size[1]
 
         # Check that only a single step was written and the extent is correct
@@ -105,7 +105,7 @@ def test_initial_state_random():
                                  **model_cfg(initial_density=initial_density))
 
     for uni in dm['uni'].values():
-        data = uni['data']['ForestFireModel']
+        data = uni['data']['ForestFire']
 
         # check, that no cell is burning
         assert 0 <= np.amax(data['state']) <= 1
@@ -121,7 +121,7 @@ def test_initial_state_random():
                                  **model_cfg(initial_density=initial_density))
 
     for uni in dm['uni'].values():
-        data = uni['data']['ForestFireModel']
+        data = uni['data']['ForestFire']
 
         # check, that no cell is burning
         assert 0 <= np.amax(data['state']) <= 1
@@ -136,7 +136,7 @@ def test_initial_state_random():
                                  **model_cfg(initial_density=initial_density))
 
     for uni in dm['uni'].values():
-        data = uni['data']['ForestFireModel']
+        data = uni['data']['ForestFire']
 
         # check, that no cell is burning
         assert 0 <= np.amax(data['state']) <= 1

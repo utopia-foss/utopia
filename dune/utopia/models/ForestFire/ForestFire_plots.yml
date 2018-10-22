@@ -1,10 +1,10 @@
-# Default plots for the ForestFireModel
+# Default plots for the ForestFire model
 ---
 state_mean:
   creator: external
   
-  # Use the ForestFireModel-specific plot functions
-  module: model_plots.ForestFireModel
+  # Use the ForestFire-model-specific plot functions
+  module: model_plots.ForestFire
   plot_func: state_mean
 
   uni: 0
@@ -13,8 +13,8 @@ state_mean:
 cluster_distribution:
   creator: external
   
-  # Use the ForestFireModel-specific plot functions
-  module: model_plots.ForestFireModel
+  # Use the ForestFire-specific plot functions
+  module: model_plots.ForestFire
   plot_func: cluster_distribution
 
   uni: 0
@@ -36,7 +36,7 @@ state_map:
   plot_func: state_anim
 
   # Select the universe
-  model_name: ForestFireModel
+  model_name: ForestFire
   uni: 0
 
   # Select the properties to plot
@@ -74,11 +74,11 @@ cluster_map:
   creator: external
   file_ext: mp4
 
-  module: model_plots.ForestFireModel
+  module: model_plots.ForestFire
   plot_func: state_anim
 
   # Select the universe
-  model_name: ForestFireModel
+  model_name: ForestFire
   uni: 0
 
   # Select the properties to plot

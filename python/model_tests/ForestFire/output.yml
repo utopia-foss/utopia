@@ -9,5 +9,5 @@ parameter_space:
     default: 42
     range: [4]
 
-  ForestFireModel: !model  
-    model_name: ForestFireModel  # imports the model config for the ForestFireModel
+  ForestFire: !model  
+    model_name: ForestFire  # imports the model config for the ForestFire model

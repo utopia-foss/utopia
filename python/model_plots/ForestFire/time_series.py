@@ -1,4 +1,4 @@
-"""ForestFireModel specific plot function for the state"""
+"""ForestFire model specific plot function for the state"""
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -21,7 +21,7 @@ def state_mean(dm: DataManager, *, out_path: str, uni: int, fmt: str=None, save_
         **plot_kwargs: Passed on to plt.plot
     """
     # Get the group that all datasets are in
-    grp = dm['uni'][uni]['data/ForestFireModel']
+    grp = dm['uni'][uni]['data/ForestFire']
 
     # Extract the y data which is 'state' avaraged over all grid cells for
     # every time step
@@ -60,12 +60,12 @@ def cluster_distribution(dm: DataManager, *,
         plot_kwargs: Passed on to plt.plot
     """
     # Get the group that all datasets are in
-    grp = dm['uni'][uni]['data/ForestFireModel']
+    grp = dm['uni'][uni]['data/ForestFire']
 
     # Get the shape of the data
     uni_cfg = dm['uni'][uni]['cfg']
     num_steps = uni_cfg['num_steps']
-    grid_size = uni_cfg['ForestFireModel']['grid_size']
+    grid_size = uni_cfg['ForestFire']['grid_size']
 
     # Extract the y data which is 'state' avaraged over all grid cells for every time step
     try:
