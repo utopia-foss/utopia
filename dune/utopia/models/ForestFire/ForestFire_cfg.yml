@@ -1,0 +1,20 @@
+# The model configuration for the ForestFire model
+# 
+# Note, however, that this file should hold the _default_ values for a single
+# instance. Therefore, parameter sweeps should not be specified here!
+# Furthermore, if including other models' parameters via the `!model` tag, make
+# sure that no circular includes occur.
+---
+# Grid parameters
+grid_size: [512, 512]
+periodic: true          # false: cells at boundary have fewer neighbors
+
+# Initial state
+initial_density: 0.2      # initial density of trees. value in [0,1].
+                          # 0 corresponds to all empty, 1 to all trees
+
+# parameter
+growth_rate: 7.5e-3       # probability per site to grow tree
+lightning_frequency: 1e-5 # probability per site to transit tree -> burning
+light_bottom_row: false   # if true, bottom row permanently on fire - percolation model
+resistance: 0             # probability to _not_ catch fire from neighbor per neighbor
