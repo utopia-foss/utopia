@@ -113,10 +113,10 @@ private:
 
     // -- Helper functions // 
     std::function<double()> _calculate_density = [this]() {
-        double density = 0;
+        double density = 0.;
         for (const auto& cell : this->_manager.cells()) {
             if (cell->state().state == tree) {
-                density += 1;
+                density += 1.;
             }
         }
         density /= double( std::distance(this->_manager.cells().begin(), 
@@ -175,7 +175,7 @@ private:
         return cell->state();
     };
 
-    /// update follwoing set of rules
+    /// update following set of rules
     /** states: 0: empty, 1: tree
      * Percolation spread (PM)
      *    empty -> tree with probability growth_rate
@@ -193,7 +193,7 @@ private:
             state.state = tree;
         }
 
-        // state is tree, tree -> burning by lighning or by burning neighbors
+        // state is tree, tree -> burning by lightning or by burning neighbors
         else if (state.state == tree)
         {
             // tree -> burning by lightning
@@ -331,8 +331,7 @@ public:
     /// Monitor model information
     void monitor ()
     {
-        double density = _calculate_density();
-        this->_monitor.set_by_value("tree_density", density);
+        this->_monitor.set_by_func("tree_density", _calculate_density);
     }
 
     /// Write data
