@@ -4,11 +4,33 @@
 #include <vector>
 #include <chrono>
 #include <iostream>
+#include <utility>
 
 #include <yaml-cpp/yaml.h>
 
 namespace Utopia {
 namespace DataIO {
+
+/// Test whether an object is callable. 
+/** is_callable returns true for callable functions such as std::functions or
+ * lambdas. However, it returns false if an object only provides an operator().
+ * This is necessary because otherwise types such as int or double would
+ * also return true (for this case use std::is_callable). 
+ * 
+ * @tparam F The function
+ * @tparam Args The function arguments
+ */
+template<class F, class...Args>
+struct is_callable
+{
+    template<class U> static auto test(U* p) 
+        -> decltype((*p)(std::declval<Args>()...), void(), std::true_type());
+    template<class U> static auto test(...) 
+        -> decltype(std::false_type());
+
+    static constexpr bool value = decltype(test<F>(0))::value;
+};
+
 
 /// The MonitorTimer keeps track of the time when to emit monitor data
 class MonitorTimer {
@@ -234,26 +256,47 @@ public:
 
     /// Provide a new entry to the monitor manager.
     /** This entry is set regardless of whether the emission is enabled!
-     * @tparam Function The type of the function that is called
+     * @tparam Func The type of the function (rvalue reference)
      * @param key The key of the new entry
-     * @param value The function to call to retrieve the entry value
+     * @param value The value of the new entry
      */
-    template <typename Function>
-    void set_by_func (const std::string key,  const Function f) {
+    template <typename Func>
+    void set_by_func(const std::string key, Func&& f){
         _mtr_mgr->set_entry(_name, key, f());
     }
 
     /// Provide a new entry to the monitor manager.
     /** This entry is set regardless of whether the emission is enabled!
-     * @tparam Value The type of the value
+     * @tparam Value The type of the value (lvalue reference)
      * @param key The key of the new entry
      * @param value The value of the new entry
      */
     template <typename Value>
-    void set_by_value (const std::string key, const Value value) {
-        _mtr_mgr->set_entry(_name, key, value);
+    void set_by_value(const std::string key, Value const & v){
+        _mtr_mgr->set_entry(_name, key, v);
     }
+ 
+    /// Provide a new entry to the monitor manager.
+    /** This entry is set regardless of whether the emission is enabled!
+     * This function tests whether the argument is callable like a std::function
+     * or a lambda excluding the operator(). Without this exclusion, types such
+     * as int or double would also be classified callable.
+     * @tparam Argument The type of the argument 
+     * @param key The key of the new entry
+     * @param arg The argument (value or function) that determines the value of 
+     * the new entry
+     */
+    template <typename Argument>
+    void set_entry(const std::string key, Argument&& arg) 
+    {
+        if constexpr (is_callable<Argument>::value){
 
+            set_by_func(key, arg);
+        }
+        else{
+            set_by_value(key, arg);
+        }
+    }
 
     /// Get a shared pointer to the MonitorManager.
     std::shared_ptr<MonitorManager> get_monitor_manager() const {
