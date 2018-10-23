@@ -54,6 +54,18 @@ class ExternalPlotCreator(dtr.plot_creators.ExternalPlotCreator):
         return super()._resolve_plot_func(**kwargs)
 
 
+class UniversePlotCreator(dtr.plot_creators.UniversePlotCreator,
+                          ExternalPlotCreator):
+    """Makes plotting with data from a single universe more convenient"""
+    PSGRP_PATH = 'multiverse'
+
+
+class MultiversePlotCreator(dtr.plot_creators.UniversePlotCreator,
+                            ExternalPlotCreator):
+    """Makes plotting with data from a all universes more convenient"""
+    PSGRP_PATH = 'multiverse'
+
+
 # -----------------------------------------------------------------------------
 
 class PlotManager(dtr.plot_mngr.PlotManager):
@@ -64,4 +76,6 @@ class PlotManager(dtr.plot_mngr.PlotManager):
     """
 
     # Register the supported plot creators
-    CREATORS = dict(external=ExternalPlotCreator)
+    CREATORS = dict(external=ExternalPlotCreator,
+                    universe=UniversePlotCreator,
+                    multiverse=MultiversePlotCreator)

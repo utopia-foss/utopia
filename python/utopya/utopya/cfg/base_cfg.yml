@@ -165,7 +165,7 @@ data_manager:
   # NOTE The strings given to the Cls argument are mapped to a type using a
   #      class variable of the DataManager
   create_groups:
-    - path: uni
+    - path: multiverse
       Cls: MultiverseGroup
 
   # Supply a default load configuration for the DataManager
@@ -189,25 +189,25 @@ data_manager:
       required: true
       load_as_attr: true
       unpack_data: true                     # ... and store as ParamSpace obj.
-      target_path: uni
+      target_path: multiverse
 
     # Load the configuration files that are generated for _each_ simulation
     # These hold all information that is available to a single simulation and
     # are in an explicit, human-readable form.
     uni_cfg:
       loader: yaml
-      glob_str: universes/uni*/config.yml
+      glob_str: data/uni*/config.yml
       required: true
-      path_regex: universes/uni(\d+)/config.yml
-      target_path: uni/{match:}/cfg
+      path_regex: data/uni(\d+)/config.yml
+      target_path: multiverse/{match:}/cfg
 
     # Load the binary output data from each simulation.
     data:
       loader: hdf5_proxy
-      glob_str: universes/uni*/data.h5
+      glob_str: data/uni*/data.h5
       required: true
-      path_regex: universes/uni(\d+)/data.h5
-      target_path: uni/{match:}/data
+      path_regex: data/uni(\d+)/data.h5
+      target_path: multiverse/{match:}/data
 
     # The resulting data tree is then:
     #  └┬ cfg
@@ -216,7 +216,7 @@ data_manager:
     #      ├ model
     #      ├ run
     #      └ update
-    #   └ uni
+    #   └ data
     #     └┬ 0
     #        └┬ cfg
     #         └ data

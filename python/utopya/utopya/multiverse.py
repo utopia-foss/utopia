@@ -380,11 +380,11 @@ class Multiverse:
             model_a/
                 180301-125410_my_model_note/
                     config/
-                    eval/
-                    universes/
+                    data/
                         uni000/
                         uni001/
                         ...
+                    eval/
             model_b/
                 180301-125412_my_first_sim/
                 180301-125413_my_second_sim/
@@ -434,7 +434,7 @@ class Multiverse:
                                "simulation again.") from err
 
         # Make subfolders
-        for subdir in ('config', 'eval', 'universes'):
+        for subdir in ('config', 'data', 'eval'):
             subdir_path = os.path.join(run_dir, subdir)
             os.mkdir(subdir_path)
             self.dirs[subdir] = subdir_path
@@ -511,7 +511,7 @@ class Multiverse:
                     Worker.
             """
             # create universe directory path using the basename
-            uni_dir = os.path.join(self.dirs['universes'], uni_basename)
+            uni_dir = os.path.join(self.dirs['data'], uni_basename)
 
             # Now create the folder
             os.mkdir(uni_dir)
@@ -726,7 +726,7 @@ class FrozenMultiverse(Multiverse):
         self.dirs['run'] = run_dir
 
         # Also associate the sub directories
-        for subdir in ('config', 'eval', 'universes'):
+        for subdir in ('config', 'eval', 'data'):
             # Check if the directory exists
             subdir_path = os.path.join(run_dir, subdir)
 

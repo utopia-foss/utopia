@@ -17,6 +17,9 @@ from utopya import DataManager
 # Get a logger
 log = logging.getLogger(__name__)
 
+# Increase log threshold for animation plotting
+logging.getLogger('matplotlib.animation').setLevel(logging.WARNING)
+
 # -----------------------------------------------------------------------------
 # Helper function
 
@@ -79,7 +82,8 @@ class FileWriterContextManager():
 
 def state_anim(dm: DataManager, *, 
                out_path: str, 
-               uni: int, 
+               uni: UniverseGroup, 
+               coords: dict,
                model_name: str,
                to_plot: dict,
                writer: str,
@@ -95,7 +99,8 @@ def state_anim(dm: DataManager, *,
     Arguments:
         dm (DataManager): The DataManager object containing the data
         out_path (str): The output path
-        uni (int): The universum
+        uni (UniverseGroup): The selected universe data
+        coords (dict): The coordinates of this universe
         model_name (str): The name of the model instance, in which the data is
             located.
         to_plot (dict): The plotting configuration. The entries of this key
@@ -109,6 +114,7 @@ def state_anim(dm: DataManager, *,
         fps (int, optional): The frames per second
         step_size (int, optional): The step size
         dpi (int, optional): The dpi setting
+        coords
     
     Raises:
         ValueError: For an invalid `writer` argument
@@ -167,10 +173,10 @@ def state_anim(dm: DataManager, *,
         return im
 
     # Get the group that all datasets are in
-    grp = dm['uni'][uni]['data'][model_name]
+    grp = uni['data'][model_name]
 
     # Get the shape of the 2D grid to later reshape the data
-    cfg = dm['uni'][uni]['cfg']
+    cfg = uni['cfg']
     grid_size = cfg[model_name]['grid_size']
     steps = int(cfg['num_steps']/cfg.get('write_every', 1))
     new_shape = (steps+1, grid_size[1], grid_size[0])
