@@ -123,8 +123,7 @@ public:
     /** @detail Here, functions and values can be supplied to the monitor that
      *          are then available to the frontend. The monitor() function is
      *          _only_ called if a certain emit interval has passed; thus, the
-     *          performance hit is small. Also, if using set_by_func, the given
-     *          lambda will only be called if an emission will happen.
+     *          performance hit is small. 
      */
     void monitor ()
     {
