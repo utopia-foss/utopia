@@ -4,13 +4,13 @@ from ._setup import *
 
 import os
 import logging
-from typing import Union
+from typing import Union, Dict, Callable
 
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib import animation as anim
-from matplotlib import rcParams
+
 import matplotlib as mpl
+import matplotlib.pyplot as plt
+import matplotlib.animation
 
 from utopya import DataManager
 
@@ -90,7 +90,8 @@ def state_anim(dm: DataManager, *,
                frames_kwargs: dict, 
                fps: int=2, 
                step_size: int=1, 
-               dpi: int=96) -> None:
+               dpi: int=96,
+               preprocess_funcs: Dict[str, Callable]=None) -> None:
     """Create an animation of the states of a two dimensional cellular automaton.
     The function can use different writers, e.g. write out only the frames or create
     an animation with an external programm (e.g. ffmpeg). 
@@ -114,7 +115,9 @@ def state_anim(dm: DataManager, *,
         fps (int, optional): The frames per second
         step_size (int, optional): The step size
         dpi (int, optional): The dpi setting
-        coords
+        preprocess_funcs (Dict[str, Callable], optional): For keys matching
+            the keys in `to_plot`, the given function is called before the
+            data is passed on to the plotting function.
     
     Raises:
         ValueError: For an invalid `writer` argument
@@ -129,8 +132,11 @@ def state_anim(dm: DataManager, *,
 
         return colormap
 
-    def plot_property(name, *, initial_data, ax, cmap, limits: list, title: str=None):
-        """Helper function to plot a property on a given axis"""
+    def plot_property(*, data, ax, cmap, limits: list, title: str=None):
+        """Helper function to plot a property on a given axis and return
+        an imshow object
+        """
+
         # Get colormap
         # Case continuous colormap
         if isinstance(cmap, str):
@@ -151,7 +157,7 @@ def state_anim(dm: DataManager, *,
                             "".format(type(cmap), cmap))
 
         # Create imshow
-        im = ax.imshow(initial_data, cmap=colormap, animated=True,
+        im = ax.imshow(data, cmap=colormap, animated=True,
                        origin='lower', vmin=limits[0], vmax=limits[1])
 
         # Set title
@@ -172,23 +178,21 @@ def state_anim(dm: DataManager, *,
 
         return im
 
-    # Get the group that all datasets are in
-    grp = uni['data'][model_name]
+    def prepare_data(*, data_2d: dict, prop_name: str, t: int) -> np.ndarray:
+        """Prepares the data for plotting"""
+        # Get the data from the dict of 2d data
+        data = data_2d[prop_name][t]
 
-    # Get the shape of the 2D grid to later reshape the data
-    cfg = uni['cfg']
-    grid_size = cfg[model_name]['grid_size']
-    steps = int(cfg['num_steps']/cfg.get('write_every', 1))
-    new_shape = (steps+1, grid_size[1], grid_size[0])
+        # If preprocessing is available for this property, call that function
+        if preprocess_funcs and prop_name in preprocess_funcs:
+            data = preprocess_funcs[prop_name](data)
 
-    # Extract the data of the strategies in the CA    
-    data_1d = {p: grp[p] for p in to_plot.keys()}
-    data = {k: np.reshape(v, new_shape) for k,v in data_1d.items()}
-        
-    # Distinguish writer classes
-    if anim.writers.is_available(writer):
+        return data
+
+    # Prepare the writer ......................................................
+    if mpl.animation.writers.is_available(writer):
         # Create animation writer if the writer is available
-        wCls = anim.writers[writer]
+        wCls = mpl.animation.writers[writer]
         w = wCls(fps=fps,
                  metadata=dict(title="Grid Animation — {}"
                                      "".format(", ".join(to_plot.keys()),
@@ -202,41 +206,61 @@ def state_anim(dm: DataManager, *,
         raise ValueError("The writer '{}' is not available on your system!"
                          "".format(writer))
 
-    # Set plot parameters
-    rcParams.update({'font.size': 20})
-    rcParams['figure.figsize'] = (6.0 * len(to_plot), 5.0)
-    
-    # Create figure
-    fig, axs = plt.subplots(1, len(to_plot))
 
-    # Assert that the axes are stored in a list even if it is only one axis.
-    if len(to_plot) == 1:
-         axs = [axs] 
+    # Prepare the data ........................................................
+    # Get the group that all datasets are in
+    grp = uni['data'][model_name]
+
+    # Get the shape of the 2D grid to later reshape the data
+    cfg = uni['cfg']
+    grid_size = cfg[model_name]['grid_size']
+    steps = int(cfg['num_steps']/cfg.get('write_every', 1))
+    new_shape = (steps+1, grid_size[1], grid_size[0])
+
+    # Extract the data of the strategies in the CA and bring them into the
+    # correct shape
+    data_1d = {p: grp[p] for p in to_plot.keys()}
+    data_2d = {k: np.reshape(v, new_shape) for k,v in data_1d.items()}
+
+
+    # Set up plotting .........................................................
+    # Adjust some rc parameters
+    mpl.rcParams.update({'font.size': 20})
+    mpl.rcParams['figure.figsize'] = (6.0 * len(to_plot), 5.0)
+    
+    # Create figure, not squeezing to always have axs be something iterable
+    fig, axs = plt.subplots(1, len(to_plot), squeeze=False)
 
     # Store the imshow objects such that only the data has to be updated in a
-    # following iteration step
-    ims = []
+    # following iteration step. Keys will be the property names
+    ims = dict()
     
+    log.info("Plotting %d frames of %d properties each ...",
+             steps+1, len(to_plot))
+
     with w.saving(fig, out_path, dpi=dpi):
-        
-        # Loop through time steps
+        # Loop through time steps, corresponding to rows in the 2d arrays
         for t in range(steps+1):
+            log.debug("Plotting frame %d ...", t)
 
             # Loop through the subfigures
-            for i, (ax, (key, props)) in enumerate(zip(axs, to_plot.items())):
-                    # In the first time step create a new imshow object
-                    if t == 0:
-                        im = plot_property(key, initial_data=data[key][t],
-                                           ax=ax, **props)
-                        ims.append(im)
+            for ax, (prop_name, props) in zip(axs.flat, to_plot.items()):
+                # Get the data for this time step
+                data = prepare_data(data_2d=data_2d, prop_name=prop_name, t=t)
+                
+                # In the first time step create a new imshow object
+                if t == 0:
+                    ims[prop_name] = plot_property(data=data, ax=ax, **props)
 
-                        # Important to not continue with the rest
-                        continue
+                    # Important to not continue with the rest
+                    continue
 
-                    # In later steps just update imshow data without creating
-                    # a new object
-                    ims[i].set_data(data[key][t])                  
+                # For t>0, it is better to update imshow data without creating
+                # a new object
+                ims[prop_name].set_data(data)
             
-            # Updated both subfigures now
-            # Tell the writer that the frame is finished
+            # Updated all subfigures now and can now tell the writer that the
+            # frame is finished and can be grabbed.
             w.grab_frame()
+
+    log.info("Finished plotting of %d frames.", steps+1)

@@ -1,0 +1,19 @@
+# Config for testing the different initial states of the model
+---
+parameter_space:
+  # Disable steps; not needed
+  num_steps: 0
+
+  # Test for four different seeds
+  seed: !sweep
+    default: 42
+    range: [4]
+
+  # Load the model config
+  ForestFire: !model
+    model_name: ForestFire
+
+    # Work on a smaller grid size
+    grid_size: [31, 31]
+
+    initial_density: 0.5
