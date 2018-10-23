@@ -18,4 +18,5 @@ __version__ = '0.1.0-pre.0'
 # Import those objects that should be easily accessible when importing utopya
 from .multiverse import Multiverse, FrozenMultiverse
 from .datamanager import DataManager
+from .datagroup import UniverseGroup, MultiverseGroup
 from . import info

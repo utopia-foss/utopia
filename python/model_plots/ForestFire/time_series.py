@@ -3,29 +3,26 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from utopya import DataManager
+from utopya import DataManager, UniverseGroup
 
 from ..tools import save_and_close
 
 # -----------------------------------------------------------------------------
 
-def state_mean(dm: DataManager, *, out_path: str, uni: int, fmt: str=None, save_kwargs: dict=None, **plot_kwargs):
+def state_mean(dm: DataManager, *, out_path: str, uni: UniverseGroup, fmt: str=None, save_kwargs: dict=None, **plot_kwargs):
     """Calculates the state mean and performs a lineplot
     
     Args:
         dm (DataManager): The data manager from which to retrieve the data
         out_path (str): Where to store the plot to
-        uni (int): The universe to use
+        uni (UniverseGroup): The selected universe data
         fmt (str, optional): the plt.plot format argument
         save_kwargs (dict, optional): kwargs to the plt.savefig function
         **plot_kwargs: Passed on to plt.plot
     """
-    # Get the group that all datasets are in
-    grp = dm['uni'][uni]['data/ForestFire']
-
     # Extract the y data which is 'state' avaraged over all grid cells for
     # every time step
-    data = grp['state']
+    data = uni['data']['ForestFire/state']
     y_data = [np.mean(d) for d in data] # iterates rows eq. time steps
 
     # Assemble the arguments
@@ -43,7 +40,7 @@ def state_mean(dm: DataManager, *, out_path: str, uni: int, fmt: str=None, save_
 
 def cluster_distribution(dm: DataManager, *, 
                          out_path: str, 
-                         uni: int, 
+                         uni: UniverseGroup, 
                          fmt: str=None, 
                          time: int=-1, 
                          save_kwargs: dict=None, 
@@ -53,17 +50,17 @@ def cluster_distribution(dm: DataManager, *,
     Args:
         dm (DataManager): The data manager from which to retrieve the data
         out_path (str): Where to store the plot to
-        uni (int): The universe to use
+        uni (UniverseGroup): The selected universe data
         fmt (str, optional): the plt.plot format argument
         time (int, optional, default is -1): timestep in output data for plot. default: last step
         save_kwargs (dict, optional): kwargs to the plt.savefig function
         plot_kwargs: Passed on to plt.plot
     """
     # Get the group that all datasets are in
-    grp = dm['uni'][uni]['data/ForestFire']
+    grp = uni['data/ForestFire']
 
     # Get the shape of the data
-    uni_cfg = dm['uni'][uni]['cfg']
+    uni_cfg = uni['cfg']
     num_steps = uni_cfg['num_steps']
     grid_size = uni_cfg['ForestFire']['grid_size']
 

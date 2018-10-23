@@ -1,23 +1,21 @@
 # Default plots for the ForestFire model
 ---
 state_mean:
-  creator: external
+  creator: universe
+  universes: all
   
   # Use the ForestFire-model-specific plot functions
   module: model_plots.ForestFire
   plot_func: state_mean
 
-  uni: 0
-
 
 cluster_distribution:
-  creator: external
+  creator: universe
+  universes: all
   
   # Use the ForestFire-specific plot functions
   module: model_plots.ForestFire
   plot_func: cluster_distribution
-
-  uni: 0
 
   # at which time to plot
   time: -1
@@ -29,7 +27,9 @@ cluster_distribution:
 
 # plot the spatial development in the CA of the state
 state_map:
-  creator: external
+  creator: universe
+  universes: all
+
   file_ext: mp4
 
   module: .ca
@@ -37,7 +37,6 @@ state_map:
 
   # Select the universe
   model_name: ForestFire
-  uni: 0
 
   # Select the properties to plot
   to_plot:
@@ -71,7 +70,9 @@ state_map:
 
 
 cluster_map:
-  creator: external
+  creator: universe
+  universes: all
+  
   file_ext: mp4
 
   module: model_plots.ForestFire
@@ -79,7 +80,6 @@ cluster_map:
 
   # Select the universe
   model_name: ForestFire
-  uni: 0
 
   # Select the properties to plot
   to_plot:

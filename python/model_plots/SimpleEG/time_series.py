@@ -16,13 +16,12 @@ log = logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------------
 
-def frequency(dm: DataManager, *, uni: UniverseGroup, coords: dict, out_path: str, strategy: Union[str, list]=['S0', 'S1'], save_kwargs: dict=None, **plot_kwargs):
+def frequency(dm: DataManager, *, uni: UniverseGroup, out_path: str, strategy: Union[str, list]=['S0', 'S1'], save_kwargs: dict=None, **plot_kwargs):
     """Calculates the frequency of a given strategy and performs a lineplot
     
     Args:
         dm (DataManager): The data manager from which to retrieve the data
         uni (UniverseGroup): The universe from which to plot the data
-        coords (dict): The coordinates of the current universe
         out_path (str): Where to store the plot to
         strategy (Union[str, list], optional): The strategy to plot
         save_kwargs (dict, optional): kwargs to the plt.savefig function

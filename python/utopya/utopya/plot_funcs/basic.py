@@ -10,13 +10,12 @@ log = logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------------
 
-def lineplot(dm: DataManager, *, uni: UniverseGroup, coords: dict, **kwargs):
+def lineplot(dm: DataManager, *, uni: UniverseGroup, **kwargs):
     """Performs a simple lineplot of a specific universe.
     
     Args:
         dm (DataManager): The data manager from which to retrieve the data
         uni (UniverseGroup): The data for this universe
-        coords (dict): The coordinates of this universe in parameter space
         **kwargs: Passed on to the dantro basic plotting function
     
     Returns:

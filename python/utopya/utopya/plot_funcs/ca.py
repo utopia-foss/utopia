@@ -83,7 +83,6 @@ class FileWriterContextManager():
 def state_anim(dm: DataManager, *, 
                out_path: str, 
                uni: UniverseGroup, 
-               coords: dict,
                model_name: str,
                to_plot: dict,
                writer: str,
@@ -101,7 +100,6 @@ def state_anim(dm: DataManager, *,
         dm (DataManager): The DataManager object containing the data
         out_path (str): The output path
         uni (UniverseGroup): The selected universe data
-        coords (dict): The coordinates of this universe
         model_name (str): The name of the model instance, in which the data is
             located.
         to_plot (dict): The plotting configuration. The entries of this key
