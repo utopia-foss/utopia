@@ -281,16 +281,15 @@ public:
      * This function tests whether the argument is callable like a std::function
      * or a lambda excluding the operator(). Without this exclusion, types such
      * as int or double would also be classified callable.
-     * @tparam Argument The type of the argument 
+     * @tparam Arg The type of the argument 
      * @param key The key of the new entry
      * @param arg The argument (value or function) that determines the value of 
      * the new entry
      */
-    template <typename Argument>
-    void set_entry(const std::string key, Argument&& arg) 
+    template <typename Arg>
+    void set_entry(const std::string key, Arg arg) 
     {
-        if constexpr (is_callable<Argument>::value){
-
+        if constexpr (is_callable<Arg>::value){
             set_by_func(key, arg);
         }
         else{

@@ -129,8 +129,8 @@ public:
     void monitor ()
     {
         // Can supply information to the monitor here in two ways:
-        // this->_monitor.set_by_value("key", value);
-        // this->_monitor.set_by_func("key", [this](){return 42.;});
+        // this->_monitor.set_entry("key", value);
+        // this->_monitor.set_entry("key", [this](){return 42.;});
     }
 
 
