@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from utopya import DataManager
+from utopya.datagroup import UniverseGroup
 
 from ..tools import save_and_close
 
@@ -15,13 +16,14 @@ log = logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------------
 
-def frequency(dm: DataManager, *, out_path: str, uni: int, strategy: Union[str, list] = ['S0', 'S1'], save_kwargs: dict=None, **plot_kwargs):
+def frequency(dm: DataManager, *, uni: UniverseGroup, coords: dict, out_path: str, strategy: Union[str, list]=['S0', 'S1'], save_kwargs: dict=None, **plot_kwargs):
     """Calculates the frequency of a given strategy and performs a lineplot
     
     Args:
         dm (DataManager): The data manager from which to retrieve the data
+        uni (UniverseGroup): The universe from which to plot the data
+        coords (dict): The coordinates of the current universe
         out_path (str): Where to store the plot to
-        uni (int): The universe to use
         strategy (Union[str, list], optional): The strategy to plot
         save_kwargs (dict, optional): kwargs to the plt.savefig function
         **plot_kwargs: Passed on to plt.plot
@@ -29,18 +31,17 @@ def frequency(dm: DataManager, *, out_path: str, uni: int, strategy: Union[str, 
     Raises:
         TypeError: For invalid strategy argument
     """
-    # Get the group that all datasets are in
-    grp = dm['uni'][uni]['data/SimpleEG']
-
     # Extract the data of the frequency
-    strategy_data = grp['strategy']
+    strategy_data = uni['data']['SimpleEG']['strategy']
+
     num_cells = len(strategy_data[0])
     frequencies = [np.bincount(s) / num_cells for s in strategy_data]
 
     # Get the frequencies of the desired strategy and plot it
     # Single strategy
     if isinstance(strategy, str):
-        y_data = [f[int(strategy[-1])] for f in frequencies]
+        strategy_map = dict(S0=0, S1=1)
+        y_data = [f[strategy_map[strategy]] for f in frequencies]
 
         # Create the plot
         plt.plot(y_data, label=strategy, **plot_kwargs)

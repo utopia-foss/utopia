@@ -1,38 +1,38 @@
 # This defines the default plots for the SimpleEG model
 ---
-
 # plot the frequency of the strategy S0
 frequency_S0:
-  creator: external
+  creator: universe
+  universes: all
 
   module: model_plots.SimpleEG
   plot_func: frequency
 
-  uni: 0
   strategy: S0
+
 
 # plot the frequency of strategy S0 and S1 in one plot
 frequencies:
-  creator: external
+  creator: universe
+  universes: all
 
   module: model_plots.SimpleEG
   plot_func: frequency
 
-  uni: 0
   strategy: [S0, S1]
 
 
 # plot the spatial development in the CA of the strategy
 strategy_and_payoff:
-  creator: external
+  creator: universe
+  universes: all
+
   file_ext: mp4
 
   module: .ca
   plot_func: state_anim
 
-  # Select the universe
   model_name: SimpleEG
-  uni: 0
 
   # Select the properties to plot
   to_plot:
@@ -79,15 +79,15 @@ strategy_and_payoff:
 
 # plot the spatial development in the CA of the strategy
 strategy:
-  creator: external
+  creator: universe
+  universes: all
+
   file_ext: mp4
 
   module: .ca
   plot_func: state_anim
 
-  # Select the universe
   model_name: SimpleEG
-  uni: 0
 
   # Select the properties to plot
   to_plot:
