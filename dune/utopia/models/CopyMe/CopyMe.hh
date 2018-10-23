@@ -254,10 +254,10 @@ public:
     void monitor ()
     {
         // Supply some number -- for illustration -- directly by value
-        this->_monitor.set_by_value("some_value", 42);
+        this->_monitor.set_entry("some_value", 42);
 
         // Supply the state mean to the monitor
-        this->_monitor.set_by_func("state_mean", [this](){
+        this->_monitor.set_entry("state_mean", [this](){
             double state_sum = 0.;
             for (const auto &cell : this->_manager.cells()) {
                 state_sum += cell->state().some_state;

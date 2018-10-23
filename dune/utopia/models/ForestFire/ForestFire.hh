@@ -331,7 +331,7 @@ public:
     /// Monitor model information
     void monitor ()
     {
-        this->_monitor.set_by_func("tree_density", _calculate_density);
+        this->_monitor.set_entry("tree_density", _calculate_density);        
     }
 
     /// Write data
