@@ -13,9 +13,12 @@ using namespace Utopia::Models::AmeeMulti;
 using namespace std::literals::chrono_literals;
 
 // build a struct which makes setup simpler
-template <template <typename, typename, typename> class AgentPolicy, typename G, typename P, typename RNG, template <typename> class Adaptionfunc, bool construction, bool decay>
+template <template <typename, typename, typename> class AgentPolicy, typename G, typename P, typename RNG, bool construction, bool decay>
 struct Modelfactory
 {
+    template <typename Agent>
+    using Adaptionfunction = std::function<std::vector<double>(Agent&)>;
+
     template <typename Model, typename Cellmanager>
     auto operator()(std::string name, Model& parentmodel, Cellmanager& cellmanager, std::string adaptionfunctionname)
     {
@@ -29,7 +32,7 @@ struct Modelfactory
         using AgentType =
             Utopia::Agent<Agentstate, Utopia::EmptyTag, std::size_t, Position>;
 
-        std::map<std::string, Adaptionfunc<AgentType>> adaptionfunctionmap = {
+        std::map<std::string, Adaptionfunction<AgentType>> adaptionfunctionmap = {
             {"multi_notnormed", multi_notnormed},
             {"multi_normed", multi_normed},
             {"simple_notnormed", simple_notnormed},
@@ -107,14 +110,11 @@ struct Modelfactory
         // making model types
         using Modeltypes = Utopia::ModelTypes<RNG>;
 
-        return AmeeMulti<CellType, AgentType, Modeltypes, Adaptionfunc<AgentType>, construction, decay>(
+        return AmeeMulti<CellType, AgentType, Modeltypes, Adaptionfunction<AgentType>, construction, decay>(
             name, parentmodel, cellmanager.cells(),
             adaptionfunctionmap[adaptionfunctionname], agentadaptors, celladaptors);
     }
 };
-
-template <typename Agent>
-using Adaptionfunction = std::function<std::vector<double>(Agent&)>;
 
 int main(int argc, char** argv)
 {
@@ -122,7 +122,7 @@ int main(int argc, char** argv)
 
     try
     {
-        using RNG = Utopia::Models::Amee::Xoroshiro<>;
+        using RNG = Utopia::Models::Amee::Xoroshiro256starstar;
         using CT = std::vector<double>;
         using CS = Utopia::Models::Amee::Cellstate<CT, std::vector<double>>;
 
@@ -150,7 +150,7 @@ int main(int argc, char** argv)
         {
             using Genotype = std::vector<double>;
             using Phenotype = std::vector<double>;
-            Modelfactory<Utopia::Models::Amee::Agentstate_policy_simple, Genotype, Phenotype, RNG, Adaptionfunction, true, true> factory;
+            Modelfactory<Utopia::Models::Amee::Agentstate_policy_simple, Genotype, Phenotype, RNG, true, true> factory;
 
             auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
             model.run();
@@ -160,7 +160,7 @@ int main(int argc, char** argv)
         {
             using Genotype = std::vector<int>;
             using Phenotype = std::vector<double>;
-            Modelfactory<Utopia::Models::Amee::Agentstate_policy_complex, Genotype, Phenotype, RNG, Adaptionfunction, true, true> factory;
+            Modelfactory<Utopia::Models::Amee::Agentstate_policy_complex, Genotype, Phenotype, RNG, true, true> factory;
 
             auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
             model.run();
@@ -170,7 +170,7 @@ int main(int argc, char** argv)
         {
             using Genotype = std::vector<double>;
             using Phenotype = std::vector<double>;
-            Modelfactory<Utopia::Models::Amee::Agentstate_policy_simple, Genotype, Phenotype, RNG, Adaptionfunction, true, false> factory;
+            Modelfactory<Utopia::Models::Amee::Agentstate_policy_simple, Genotype, Phenotype, RNG, true, false> factory;
 
             auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
             model.run();
@@ -180,7 +180,7 @@ int main(int argc, char** argv)
         {
             using Genotype = std::vector<int>;
             using Phenotype = std::vector<double>;
-            Modelfactory<Utopia::Models::Amee::Agentstate_policy_complex, Genotype, Phenotype, RNG, Adaptionfunction, false, false> factory;
+            Modelfactory<Utopia::Models::Amee::Agentstate_policy_complex, Genotype, Phenotype, RNG, false, false> factory;
 
             auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
             model.run();

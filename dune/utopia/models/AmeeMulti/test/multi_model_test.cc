@@ -592,7 +592,7 @@ int main(int argc, char** argv)
 
     try
     {
-        using RNG = Utopia::Models::Amee::Xoroshiro<>;
+        using RNG = Utopia::Models::Amee::Xoroshiro512starstar;
         using CT = std::vector<double>;
         using CS = Utopia::Models::Amee::Cellstate<CT, std::vector<double>>;
 
