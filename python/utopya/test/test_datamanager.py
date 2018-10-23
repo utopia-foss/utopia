@@ -100,14 +100,14 @@ def test_load_single(dm_after_single):
     assert 'cfg/model' in dm
     assert 'cfg/run' in dm
 
-    # Check that 'uni' is a MultiverseGroup
-    assert 'uni' in dm
-    assert isinstance(dm['uni'], udg.MultiverseGroup)
-    assert isinstance(dm['uni'].pspace, ParamSpace)
+    # Check that 'multiverse' is a MultiverseGroup
+    assert 'multiverse' in dm
+    assert isinstance(dm['multiverse'], udg.MultiverseGroup)
+    assert isinstance(dm['multiverse'].pspace, ParamSpace)
 
-    assert len(dm['uni']) == 1
-    assert 0 in dm['uni']
-    uni = dm['uni'][0]
+    assert len(dm['multiverse']) == 1
+    assert 0 in dm['multiverse']
+    uni = dm['multiverse'][0]
     
     # Check that the uni config is loaded
     assert 'cfg' in uni
@@ -144,15 +144,15 @@ def test_load_sweep(dm_after_sweep):
     assert 'cfg/model' in dm
     assert 'cfg/run' in dm
 
-    # Check that 'uni' is a MultiverseGroup of right length
-    assert 'uni' in dm
-    assert isinstance(dm['uni'], udg.MultiverseGroup)
-    assert isinstance(dm['uni'].pspace, ParamSpace)
-    assert 0 not in dm['uni']
-    assert len(dm['uni']) == dm['uni'].pspace.volume
+    # Check that 'multiverse' is a MultiverseGroup of right length
+    assert 'multiverse' in dm
+    assert isinstance(dm['multiverse'], udg.MultiverseGroup)
+    assert isinstance(dm['multiverse'].pspace, ParamSpace)
+    assert 0 not in dm['multiverse']
+    assert len(dm['multiverse']) == dm['multiverse'].pspace.volume
 
     # Now go over all available universes
-    for uni_no, uni in dm['uni'].items():
+    for uni_no, uni in dm['multiverse'].items():
         # Check that the uni config is loaded
         assert 'cfg' in uni
 

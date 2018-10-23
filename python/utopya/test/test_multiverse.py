@@ -119,7 +119,7 @@ def test_create_run_dir(default_mv):
     latest = folders[-1]
 
     # Check if the subdirectories are present
-    for folder in ["config", "eval", "universes"]:
+    for folder in ['config', 'data', 'eval']:
         assert os.path.isdir(os.path.join(path_base, latest, folder)) is True
 
 def test_detect_doubled_folders(mv_kwargs):
@@ -145,7 +145,7 @@ def test_run_single(default_mv):
     default_mv.run_single()
 
     # Test that the universe directory was created as proxy of run finished
-    assert os.path.isdir(os.path.join(default_mv.dirs['universes'], 'uni0'))
+    assert os.path.isdir(os.path.join(default_mv.dirs['data'], 'uni0'))
 
 def test_run_sweep(mv_kwargs):
     """Tests a run with a single simulation"""
