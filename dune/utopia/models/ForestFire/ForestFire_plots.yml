@@ -63,11 +63,6 @@ state_map:
   step_size: 1
   dpi: 96
 
-  # For the 'frames' writer, the following additional kwargs can be passed
-  frames_kwargs:
-    name_padding: 5
-    file_format: png
-
 
 cluster_map:
   creator: universe
@@ -103,7 +98,3 @@ cluster_map:
   step_size: 1
   dpi: 96
 
-  # For the 'frames' writer, the following additional kwargs can be passed
-  frames_kwargs:
-    name_padding: 5
-    file_format: png

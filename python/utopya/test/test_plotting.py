@@ -34,3 +34,15 @@ def test_dummy_plotting(tmpdir):
                plot_func="lineplot",
                y="dummy/state"
                )
+
+def test_ca_plotting(tmpdir):
+    """Tests the plot_funcs submodule using the SimpleEG model"""
+    mv = Multiverse(model_name='SimpleEG',
+                    update_meta_cfg=dict(paths=dict(out_dir=str(tmpdir))))
+    mv.run_single()
+
+    # Load
+    mv.dm.load_from_cfg(print_tree=True)
+
+    # Plot the default configuration
+    mv.pm.plot_from_cfg()

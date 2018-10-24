@@ -51,8 +51,8 @@ class StopCondition:
         # Carry over descriptive attributes
         self.enabled = enabled
         self.description = description
-        self.name = name if name else " && ".join([e.get('func_name')
-                                                   for e in to_check])
+        self.name = name if name else " && ".join([fspec[1]
+                                                   for fspec in self.to_check])
 
         log.debug("Initialized stop condition '%s' with %d checking "
                   "function(s).", self.name, len(self.to_check))
@@ -68,9 +68,14 @@ class StopCondition:
             return [(func, func.__name__, func_kwargs)]
 
         elif to_check and (func or func_kwargs):
-            warnings.warn("Got both `to_check` and `func` or `func_kwargs` "
-                          "argument. `func` and `func_kwargs` will be "
-                          "ignored!")
+            raise ValueError("Got arguments `to_check` and (one or more of) "
+                             "`func` or `func_kwargs`! Please pass either the "
+                             "`to_check` (list of dicts) or a single `func` "
+                             "with a dict of `func_kwargs`.")
+
+        elif to_check is None and func is None:
+            raise TypeError("Need at least one of the required "
+                            "keyword-arguments `to_check` or `func`!")
 
         # Everything ok, resolve the to_check list
         funcs_and_kws = []

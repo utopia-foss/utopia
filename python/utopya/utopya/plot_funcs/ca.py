@@ -29,12 +29,22 @@ class FileWriter():
     It adheres to the corresponding matplotlib animation interface.
     """
     def __init__(self, *,
-                 name_padding: int=6,
                  file_format: str='png',
-                 fstr: str="{path:}/{num:0{pad:}d}.{ext:}",
+                 name_padding: int=6,
+                 fstr: str="{dir:}/{num:0{pad:}d}.{ext:}",
                  **savefig_kwargs):
+        """
+        Initialize a FileWriter, which adheres to the matplotlib.animation
+        interface and can be used to write individual files.
+
+        Args:
+            name_padding (int, optional): How wide the numbering should be
+            file_format (str, optional): The file extension
+            fstr (str, optional): The format string to generate the name
+            **savefig_kwargs: kwargs to pass to figure.savefig
+        """
         # Save arguments
-        self.index = 0
+        self.cntr = 0
         self.name_padding = name_padding
         self.fstr = fstr
         self.file_format = file_format
@@ -43,39 +53,47 @@ class FileWriter():
         # Other attributes
         self.cm = None
 
-    def saving(self, fig, out_path: str, *,dpi):
+    def saving(self, fig, base_outfile: str, **kwargs):
         """Create an instance of the context manager"""
-        self.cm = FileWriterContextManager(fig=fig, out_path=out_path, dpi=dpi)
+        # Parse the given base file path to get a directory
+        out_dir = os.path.splitext(base_outfile)[0]
+
+        # Create and store the context manager
+        self.cm = FileWriterContextManager(fig=fig, out_dir=out_dir, **kwargs)
         return self.cm
 
     def grab_frame(self):
         """Stores a single frame"""
         # Build the output path from the info of the context manager
-        path_wo_ext = os.path.splitext(self.cm.out_path)[0]
-        out_path = self.fstr.format(path=path_wo_ext,
-                                    num=self.index, pad=self.name_padding,
-                                    ext=self.file_format)
+        outfile = self.fstr.format(dir=self.cm.out_dir,
+                                   num=self.cntr,
+                                   pad=self.name_padding,
+                                   ext=self.file_format)
 
-        # Save the frame using the context manager, then increment the index
-        self.cm.fig.savefig(out_path, format=self.file_format,
+        # Save the frame using the context manager, then increment the cntr
+        self.cm.fig.savefig(outfile, format=self.file_format,
                             **self.cm.kwargs, **self.savefig_kwargs)
-        self.index += 1
+        self.cntr += 1
 
 class FileWriterContextManager():
     """This class is needed by the file writer to provide the same interface
     as the matplotlib movie writers do.
     """
 
-    def __init__(self, *, fig, out_path, **kwargs):
+    def __init__(self, *, fig, out_dir: str, **kwargs):
         # Store arguments
         self.fig = fig
-        self.out_path = out_path
+        self.out_dir = out_dir
         self.kwargs = kwargs
 
     def __enter__(self):
-        pass
+        """Called when entering context"""
+        # Create the directory of the output file
+        os.makedirs(self.out_dir)
 
     def __exit__(self, *args):
+        """Called when exiting context"""
+        # Need to close the figure
         plt.close(self.fig)
 
 # -----------------------------------------------------------------------------
@@ -86,7 +104,7 @@ def state_anim(dm: DataManager, *,
                model_name: str,
                to_plot: dict,
                writer: str,
-               frames_kwargs: dict, 
+               frames_kwargs: dict=None, 
                fps: int=2, 
                step_size: int=1, 
                dpi: int=96,
@@ -108,8 +126,8 @@ def state_anim(dm: DataManager, *,
         writer (str): The writer that should be used. Additional to the
             external writers such as 'ffmpeg', it is possible to create and
             save the individual frames with 'frames'
-        frames_kwargs (dict): The frames configuration that is used if the
-            'frames' writer is used.
+        frames_kwargs (dict, optional): The frames configuration that is used
+            if the 'frames' writer is used.
         fps (int, optional): The frames per second
         step_size (int, optional): The step size
         dpi (int, optional): The dpi setting
@@ -187,6 +205,27 @@ def state_anim(dm: DataManager, *,
 
         return data
 
+
+    # Prepare the data ........................................................
+    # Get the group that all datasets are in
+    grp = uni['data'][model_name]
+
+    # Get the shape of the 2D grid
+    cfg = uni['cfg']
+    grid_size = cfg[model_name]['grid_size']
+    steps = int(cfg['num_steps']/cfg.get('write_every', 1))
+    # NOTE The steps variable does not correspond to the actual _time_ of the
+    #      simulation at those frames!
+
+    # ...and reshape the data
+    new_shape = (steps+1, grid_size[1], grid_size[0])
+
+    # Extract the data of the strategies in the CA and bring them into the
+    # correct shape
+    data_1d = {p: grp[p] for p in to_plot.keys()}
+    data_2d = {k: np.reshape(v, new_shape) for k,v in data_1d.items()}
+
+
     # Prepare the writer ......................................................
     if mpl.animation.writers.is_available(writer):
         # Create animation writer if the writer is available
@@ -197,28 +236,13 @@ def state_anim(dm: DataManager, *,
                                artist="Utopia")))
 
     elif writer == 'frames':
-        # Just create the frames, save them later
-        w = FileWriter(**frames_kwargs)
+        # Use the file writer to create individual frames
+        w = FileWriter(name_padding=len(str(steps+1)),
+                       **(frames_kwargs if frames_kwargs else {}))
 
     else:
         raise ValueError("The writer '{}' is not available on your system!"
                          "".format(writer))
-
-
-    # Prepare the data ........................................................
-    # Get the group that all datasets are in
-    grp = uni['data'][model_name]
-
-    # Get the shape of the 2D grid to later reshape the data
-    cfg = uni['cfg']
-    grid_size = cfg[model_name]['grid_size']
-    steps = int(cfg['num_steps']/cfg.get('write_every', 1))
-    new_shape = (steps+1, grid_size[1], grid_size[0])
-
-    # Extract the data of the strategies in the CA and bring them into the
-    # correct shape
-    data_1d = {p: grp[p] for p in to_plot.keys()}
-    data_2d = {k: np.reshape(v, new_shape) for k,v in data_1d.items()}
 
 
     # Set up plotting .........................................................

@@ -23,7 +23,7 @@ frequencies:
 
 
 # plot the spatial development in the CA of the strategy
-strategy_and_payoff:
+strategy_and_payoff: &strategy_and_payoff
   creator: universe
   universes: all
 
@@ -71,9 +71,16 @@ strategy_and_payoff:
   step_size: 1
   dpi: 96
 
+
+# another plot that stores things as frames
+strategy_and_payoff_frames:
+  <<: *strategy_and_payoff
+
+  # Writer options
+  writer: frames  # can be: frames, ffmpeg (if installed), ...
+  
   # For the 'frames' writer, the following additional kwargs can be passed
-  frames_kwargs: 
-    name_padding: 5
+  frames_kwargs:
     file_format: png
 
 
@@ -113,7 +120,3 @@ strategy:
   step_size: 1
   dpi: 96
 
-  # For the 'frames' writer, the following additional kwargs can be passed
-  frames_kwargs: 
-    name_padding: 5
-    file_format: png

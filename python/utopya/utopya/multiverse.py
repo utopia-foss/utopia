@@ -166,9 +166,7 @@ class Multiverse:
         Note that (currently) each Multiverse instance can _not_ perform
         multiple runs!
         """
-        log.info("Preparing to run Multiverse ...")
-
-        # Depending on the configuration, the corresponding methods can already be called.
+        # Depending on the configuration, call the corresponding run method
         if self.meta_cfg.get('perform_sweep'):
             self.run_sweep()
         else:
