@@ -1,0 +1,17 @@
+# Config for testing the different initial states of the model
+---
+parameter_space:
+  # Disable steps; not needed
+  num_steps: 2
+
+  # Load the model config
+  ForestFire: !model
+    model_name: ForestFire
+
+    # Work on a smaller grid size
+    grid_size: [31, 31]
+
+    initial_density: 1.0
+    growth_rate: 0.01
+    lightning_frequency: 0.01
+

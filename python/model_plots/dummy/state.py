@@ -3,26 +3,26 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from utopya import DataManager
+from utopya import DataManager, UniverseGroup
 
 from ..tools import save_and_close
 
 # -----------------------------------------------------------------------------
 
-def single_state(dm: DataManager, *, out_path: str, uni: int, step: int, fmt: str=None, save_kwargs: dict=None, **plot_kwargs):
+def single_state(dm: DataManager, *, out_path: str, uni: UniverseGroup, step: int, fmt: str=None, save_kwargs: dict=None, **plot_kwargs):
     """Plots the state for a single time step
     
     Args:
         dm (DataManager): The data manager from which to retrieve the data
         out_path (str): Where to store the plot to
-        uni (int): The universe to use
+        uni (UniverseGroup): The selected universe data
         step (int): The time step to plot
         fmt (str, optional): the plt.plot format argument
         save_kwargs (dict, optional): kwargs to the plt.savefig function
         **plot_kwargs: Passed on to plt.plot
     """
     # Get the state dataset
-    state = dm['uni'][uni]['data/dummy/state']
+    state = uni['data/dummy/state']
 
     # Select the time step
     state_at_step = state[step, :]
@@ -39,19 +39,19 @@ def single_state(dm: DataManager, *, out_path: str, uni: int, step: int, fmt: st
     save_and_close(out_path, save_kwargs=save_kwargs)
 
 
-def state_mean(dm: DataManager, *, out_path: str, uni: int, fmt: str=None, save_kwargs: dict=None, **plot_kwargs):
+def state_mean(dm: DataManager, *, out_path: str, uni: UniverseGroup, fmt: str=None, save_kwargs: dict=None, **plot_kwargs):
     """Plots the state mean over time.
     
     Args:
         dm (DataManager): The data manager from which to retrieve the data
         out_path (str): Where to store the plot to
-        uni (int): The universe to use
+        uni (UniverseGroup): The selected universe data
         fmt (str, optional): the plt.plot format argument
         save_kwargs (dict, optional): kwargs to the plt.savefig function
         **plot_kwargs: Passed on to plt.plot
     """
     # Get the state dataset
-    state = dm['uni'][uni]['data/dummy/state']
+    state = uni['data/dummy/state']
 
     # Calculate the mean by averaging over the columns
     y_data = np.mean(state, axis=1)

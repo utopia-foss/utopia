@@ -18,7 +18,6 @@ def testdict():
     """Create a dummy dictionary."""
     return dict(foo="bar", bar=123.456,
                 baz=dict(foo="more_bar", bar=456.123, baz=[1,2,dict(three=3)]),
-                a_tuple=(1,2,3),
                 nothing=None, more_nothing=None)
 
 
@@ -170,7 +169,6 @@ def test_recursive_update(testdict):
     u['more_entries'] = dict(a=1, b=2)
     u['foo'] = "changed_bar"
     u['bar'] = 654.321
-    del u['a_tuple']
     u['baz'] = dict(another_entry="hello", foo="more_changed_bars",
                     nothing=dict(some="thing"))
     u['nothing'] = dict(some="thing")
@@ -183,7 +181,6 @@ def test_recursive_update(testdict):
     assert d['more_entries'] == dict(a=1, b=2)
     assert d['foo'] == "changed_bar"
     assert d['bar'] == 654.321
-    assert d['a_tuple'] == (1,2,3)
     assert d['baz'] == dict(another_entry="hello", foo="more_changed_bars",
                             bar=456.123, baz=[1,2,dict(three=3)],
                             nothing=dict(some="thing"))

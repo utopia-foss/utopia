@@ -6,7 +6,7 @@ import logging
 import warnings
 from typing import List, Callable
 
-import yaml
+import ruamel.yaml
 
 import utopya.stopcond_funcs as sc_funcs
 from utopya.task import Task
@@ -14,6 +14,7 @@ from utopya.task import Task
 # Initialise logger
 log = logging.getLogger(__name__)
 
+# -----------------------------------------------------------------------------
 
 class StopCondition:
     """A StopCondition object holds information on the conditions in which a worker process should be stopped.
@@ -50,8 +51,8 @@ class StopCondition:
         # Carry over descriptive attributes
         self.enabled = enabled
         self.description = description
-        self.name = name if name else " && ".join([e.get('func_name')
-                                                   for e in to_check])
+        self.name = name if name else " && ".join([fspec[1]
+                                                   for fspec in self.to_check])
 
         log.debug("Initialized stop condition '%s' with %d checking "
                   "function(s).", self.name, len(self.to_check))
@@ -67,9 +68,14 @@ class StopCondition:
             return [(func, func.__name__, func_kwargs)]
 
         elif to_check and (func or func_kwargs):
-            warnings.warn("Got both `to_check` and `func` or `func_kwargs` "
-                          "argument. `func` and `func_kwargs` will be "
-                          "ignored!")
+            raise ValueError("Got arguments `to_check` and (one or more of) "
+                             "`func` or `func_kwargs`! Please pass either the "
+                             "`to_check` (list of dicts) or a single `func` "
+                             "with a dict of `func_kwargs`.")
+
+        elif to_check is None and func is None:
+            raise TypeError("Need at least one of the required "
+                            "keyword-arguments `to_check` or `func`!")
 
         # Everything ok, resolve the to_check list
         funcs_and_kws = []
@@ -137,7 +143,7 @@ def stop_cond_constructor(loader, node) -> StopCondition:
     """Constructor for creating a StopCondition object from a mapping"""
     log.debug("Encountered tag associated with StopCondition.")
 
-    if isinstance(node, yaml.nodes.MappingNode):
+    if isinstance(node, ruamel.yaml.nodes.MappingNode):
         log.debug("Constructing mapping ...")
         mapping = loader.construct_mapping(node, deep=True)
         stop_cond = StopCondition(**mapping)
@@ -156,9 +162,9 @@ def sc_func_constructor(loader, node) -> Callable:
     """
     log.debug("Encountered tag associated with stop condition function.")
 
-    if isinstance(node, yaml.nodes.ScalarNode):
+    if isinstance(node, ruamel.yaml.nodes.ScalarNode):
         log.debug("Constructing python string from scalar ...")
-        sc_func_name = loader.construct_python_str(node)
+        sc_func_name = str(loader.construct_scalar(node))
         log.debug("  Resolved string:  %s", sc_func_name)
     else:
         raise TypeError("A stop condition function can only be constructed "
