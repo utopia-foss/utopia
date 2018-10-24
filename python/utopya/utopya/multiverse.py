@@ -487,6 +487,9 @@ class Multiverse:
             uni_id_str (str): The zero-padded uni id string
             uni_cfg (dict): given by ParamSpace. Defines how many simulations
                 should be started
+            is_sweep (bool): Flag is needed to distinguish between sweeps
+                and single simulations. With this information, the forwarding
+                of a simulation's output stream can be controlled.
         
         Raises:
             RuntimeError: If adding the simulation task failed

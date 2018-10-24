@@ -76,6 +76,5 @@ class PlotManager(dtr.plot_mngr.PlotManager):
     """
 
     # Register the supported plot creators
-    CREATORS = dict(external=ExternalPlotCreator,
-                    universe=UniversePlotCreator,
+    CREATORS = dict(universe=UniversePlotCreator,
                     multiverse=MultiversePlotCreator)
