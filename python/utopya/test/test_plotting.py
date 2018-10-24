@@ -27,10 +27,10 @@ def test_dummy_plotting(tmpdir):
 
     # Perform a custom plot that tests the utopya plotting functions
     mv.pm.plot("all_states",
-               creator="external",
+               creator='universe',
+               universes='all',
                out_dir=str(tmpdir),
                module=".basic",
                plot_func="lineplot",
-               uni=0,
                y="dummy/state"
                )

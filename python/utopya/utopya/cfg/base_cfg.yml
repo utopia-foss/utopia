@@ -231,21 +231,17 @@ data_manager:
 plot_manager:
   # Save the plots to the same directory as that of the data manager
   out_dir: ""
-  # TODO check if reasonable decision
 
   # Whether to raise exceptions for plotting errors. false: only log them
   raise_exc: false
 
   # Save all plot configurations alongside the plots
   save_plot_cfg: true
-
-  # As default, use the external plot creator
-  default_creator: external
   
-  # Creator initialization arguments
+  # Can set creator initialization arguments here
   creator_init_kwargs:
-    # For the Utopia-specific external plot creator: none yet.
-    external: {}
+    universe: {}
+    multiverse: {}
 
 
 # Parameter Space .............................................................
