@@ -11,14 +11,14 @@ INSTALL_DEPS = ['numpy>=1.13',
                 'pytest-cov>=2.5.1',
                 # From private repositories:
                 # NOTE Versions need also be set in python/CMakeLists.txt
-                'paramspace>=2.0.0rc6', # TODO use release version once ready
-                'dantro>=0.4.0rc5'      # TODO use release version once ready
+                'paramspace>=2.0.0',
+                'dantro>=0.4.0'
                 ]
 
 setup(name='utopya',
       #
       # Package information
-      version='0.1.0-pre.2',
+      version='0.2.0',
       # NOTE This needs to correspond to utopya.__init__.__version__
       description='The Utopia frontend package.',
       url='https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia',
