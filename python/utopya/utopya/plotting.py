@@ -60,7 +60,7 @@ class UniversePlotCreator(dtr.plot_creators.UniversePlotCreator,
     PSGRP_PATH = 'multiverse'
 
 
-class MultiversePlotCreator(dtr.plot_creators.UniversePlotCreator,
+class MultiversePlotCreator(dtr.plot_creators.MultiversePlotCreator,
                             ExternalPlotCreator):
     """Makes plotting with data from a all universes more convenient"""
     PSGRP_PATH = 'multiverse'
