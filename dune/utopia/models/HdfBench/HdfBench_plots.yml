@@ -1,7 +1,8 @@
 # Default plots for the HdfBench model
 ---
-bench_results:
-  creator: external
+single_results:
+  creator: universe
+  universes: all
   
   # Use the HdfBench-specific plot functions
   module: model_plots.HdfBench

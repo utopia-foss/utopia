@@ -3,24 +3,24 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from utopya import DataManager
+from utopya import DataManager, UniverseGroup
 
 from ..tools import save_and_close
 
 # -----------------------------------------------------------------------------
 
-def times(dm: DataManager, *, out_path: str, uni: int=0, save_kwargs: dict=None,  **plot_kwargs):
+def times(dm: DataManager, *, uni: UniverseGroup, out_path: str, save_kwargs: dict=None,  **plot_kwargs):
     """Plots all benchmark times for the selected universe
     
     Args:
         dm (DataManager): The data manager that supplies the results
+        uni (UniverseGroup): The universe data
         out_path (str): The output path for the plot
-        uni (int): The state number to plot
         save_kwargs (dict, optional): passed to the plt.savefig function
         **plot_kwargs: passed to plt.plot
     """
     # Get the times dataset for the selected universe
-    times = dm['uni'][uni]['data/HdfBench/times']
+    times = uni['data/HdfBench/times']
 
     # Get the names of the coordinates and decode them to utf-8 strings
     bench_names = [n.decode('utf-8') for n in times.attrs['coords_benchmark']]

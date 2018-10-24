@@ -20,7 +20,7 @@ def test_default():
     # Create a multiverse, run it and load the data
     mv, dm = mtc.create_run_load()
 
-    for uni_no, uni in dm['uni'].items():
+    for uni_no, uni in dm['multiverse'].items():
         times = uni['data/HdfBench/times']
         assert times.shape == (4, 3)
         assert np.min(times) > 0.
@@ -31,7 +31,7 @@ def test_write():
     mv, dm = mtc.create_run_load(from_cfg="write_funcs.yml",
                                  perform_sweep=True)
 
-    for uni_no, uni in dm['uni'].items():
+    for uni_no, uni in dm['multiverse'].items():
         times = uni['data/HdfBench/times']
         bench_cfg = uni['cfg']['HdfBench']
         benchmarks = bench_cfg['benchmarks']
