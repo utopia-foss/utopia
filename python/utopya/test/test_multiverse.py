@@ -70,6 +70,16 @@ def test_simple_init(mv_kwargs):
     with pytest.raises(ValueError, match="There was a 'parameter_space' key"):
         Multiverse(**mv_kwargs)
 
+    # No user config path given -> search at default location
+    mv_kwargs['user_cfg_path'] = None
+    mv_kwargs['paths']['model_note'] = "_user_cfg_path_none"
+    Multiverse(**mv_kwargs)
+    
+    # No user config at default search location
+    Multiverse.USER_CFG_SEARCH_PATH = "this_is_not_a_path"
+    mv_kwargs['paths']['model_note'] = "_user_cfg_path_none_and_no_class_var"
+    Multiverse(**mv_kwargs)
+
 def test_invalid_model_name_and_operation(default_mv, mv_kwargs):
     """Tests for correct behaviour upon invalid model names"""
     # Try to change the model name although it was already set
@@ -119,7 +129,7 @@ def test_create_run_dir(default_mv):
     latest = folders[-1]
 
     # Check if the subdirectories are present
-    for folder in ["config", "eval", "universes"]:
+    for folder in ['config', 'data', 'eval']:
         assert os.path.isdir(os.path.join(path_base, latest, folder)) is True
 
 def test_detect_doubled_folders(mv_kwargs):
@@ -142,10 +152,16 @@ def test_detect_doubled_folders(mv_kwargs):
 def test_run_single(default_mv):
     """Tests a run with a single simulation"""
     # Run a single simulation using the default multiverse
-    default_mv.run_single()
+    default_mv.run()
+    # NOTE run will check the meta configuration for perform_sweep parameter
+    #      and accordingly call run_single
 
-    # Test that the universe directory was created as proxy of run finished
-    assert os.path.isdir(os.path.join(default_mv.dirs['universes'], 'uni0'))
+    # Test that the universe directory was created as a proxy for the run
+    # being finished
+    assert os.path.isdir(os.path.join(default_mv.dirs['data'], 'uni0'))
+
+    # ... and nothing else in the data directory
+    assert len(os.listdir(default_mv.dirs['data'])) == 1
 
 def test_run_sweep(mv_kwargs):
     """Tests a run with a single simulation"""
@@ -154,7 +170,10 @@ def test_run_sweep(mv_kwargs):
     mv = Multiverse(**mv_kwargs)
 
     # Run the sweep
-    mv.run_sweep()
+    mv.run()
+
+    # There should now be four directories in the data directory
+    assert len(os.listdir(mv.dirs['data'])) == 4
 
     # With a parameter space without volume, i.e. without any sweeps added,
     # the sweep should not be possible

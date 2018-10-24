@@ -47,11 +47,11 @@ def test_output():
     print("meta config: ", mcfg)
 
     # Assert that the number of runs matches the specified ones
-    assert len(dm['uni']) == mcfg['parameter_space'].volume
+    assert len(dm['multiverse']) == mcfg['parameter_space'].volume
 
     # For each universe, iterate over the output data and assert the shape
     # and the content of the output data
-    for uni_no, uni in dm['uni'].items():
+    for uni_no, uni in dm['multiverse'].items():
         # Get the data
         data = uni['data']['ForestFire']
 
@@ -80,7 +80,7 @@ def test_initial_state_random():
                                  perform_sweep=True)
 
     # For all universes, perform checks on the state
-    for uni in dm['uni'].values():
+    for uni in dm['multiverse'].values():
         data = uni['data']['ForestFire']
 
         # Get the grid size
@@ -104,7 +104,7 @@ def test_initial_state_random():
                                  perform_sweep=True,
                                  **model_cfg(initial_density=initial_density))
 
-    for uni in dm['uni'].values():
+    for uni in dm['multiverse'].values():
         data = uni['data']['ForestFire']
 
         # check, that no cell is burning
@@ -120,7 +120,7 @@ def test_initial_state_random():
                                  perform_sweep=True,
                                  **model_cfg(initial_density=initial_density))
 
-    for uni in dm['uni'].values():
+    for uni in dm['multiverse'].values():
         data = uni['data']['ForestFire']
 
         # check, that no cell is burning
@@ -135,7 +135,7 @@ def test_initial_state_random():
                                  perform_sweep=True,
                                  **model_cfg(initial_density=initial_density))
 
-    for uni in dm['uni'].values():
+    for uni in dm['multiverse'].values():
         data = uni['data']['ForestFire']
 
         # check, that no cell is burning

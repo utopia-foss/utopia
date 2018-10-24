@@ -1,5 +1,7 @@
 # Tests the dummy model with increased number of steps and a write_every value
 ---
+perform_sweep: false
+
 parameter_space:
   seed: 1337
   num_steps: 10
