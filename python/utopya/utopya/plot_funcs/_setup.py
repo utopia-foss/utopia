@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 
 # Import some names from utopya
 from .. import DataManager
+from ..datagroup import UniverseGroup, MultiverseGroup
 
 # Local constants
 log = logging.getLogger(__name__)

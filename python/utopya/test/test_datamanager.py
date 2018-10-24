@@ -8,7 +8,10 @@ import numpy as np
 
 import pytest
 
+from paramspace import ParamSpace
+
 from utopya import Multiverse, DataManager
+import utopya.datagroup as udg
 import utopya.datacontainer as udc
 
 # Local constants
@@ -97,10 +100,14 @@ def test_load_single(dm_after_single):
     assert 'cfg/model' in dm
     assert 'cfg/run' in dm
 
-    assert len(dm['uni']) == 1
-    assert 'uni' in dm
-    assert 0 in dm['uni']
-    uni = dm['uni'][0]
+    # Check that 'multiverse' is a MultiverseGroup
+    assert 'multiverse' in dm
+    assert isinstance(dm['multiverse'], udg.MultiverseGroup)
+    assert isinstance(dm['multiverse'].pspace, ParamSpace)
+
+    assert len(dm['multiverse']) == 1
+    assert 0 in dm['multiverse']
+    uni = dm['multiverse'][0]
     
     # Check that the uni config is loaded
     assert 'cfg' in uni
@@ -137,7 +144,15 @@ def test_load_sweep(dm_after_sweep):
     assert 'cfg/model' in dm
     assert 'cfg/run' in dm
 
-    for uni_no, uni in dm['uni'].items():
+    # Check that 'multiverse' is a MultiverseGroup of right length
+    assert 'multiverse' in dm
+    assert isinstance(dm['multiverse'], udg.MultiverseGroup)
+    assert isinstance(dm['multiverse'].pspace, ParamSpace)
+    assert 0 not in dm['multiverse']
+    assert len(dm['multiverse']) == dm['multiverse'].pspace.volume
+
+    # Now go over all available universes
+    for uni_no, uni in dm['multiverse'].items():
         # Check that the uni config is loaded
         assert 'cfg' in uni
 
@@ -152,21 +167,3 @@ def test_load_sweep(dm_after_sweep):
         assert isinstance(dset, udc.NumpyDC)
         assert dset.shape == (uni['cfg']['num_steps'] + 1, 1000)
         assert np.issubdtype(dset.dtype, float)
-
-def test_MultiverseGroup(dm_after_large_sweep):
-    """Tests the MultiverseGroup"""
-    dm = dm_after_large_sweep
-
-    # Load and print a tree of the loaded data
-    dm.load_from_cfg(print_tree=True)
-
-    # Check integer acccess, also for double digits
-    assert 0 in dm['uni']
-    assert 15 in dm['uni']
-
-    # Bad integer keys should not work
-    with pytest.raises(KeyError, match="No universe with ID 42 available"):
-        dm['uni'][42]
-    
-    with pytest.raises(KeyError, match="Universe IDs cannot be negative!"):
-        dm['uni'][-1]

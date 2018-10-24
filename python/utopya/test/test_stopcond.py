@@ -1,11 +1,11 @@
 """Test the stopcond module"""
 
-import yaml
 import time
 import subprocess
 
 import pytest
 
+from utopya.tools import yaml
 import utopya.stopcond as sc
 import utopya.stopcond_funcs as sc_funcs
 from utopya.task import WorkerTask
@@ -30,22 +30,28 @@ def task() -> WorkerTask:
 
 def test_init():
     """Test StopCondition initialization"""
+    sc.StopCondition(to_check=[dict(func=sc_funcs.timeout_wall, seconds=123)])
+
+    # Empty should also work
     sc.StopCondition(to_check=[])
     
     # These should fail
     # no to_check argument
-    with pytest.raises(TypeError):
+    with pytest.raises(TypeError, match="Need at least one of the required"):
         sc.StopCondition()
     
     # invalid function name
-    with pytest.raises(TypeError):
+    with pytest.raises(TypeError, match="`func` needs to be a callable"):
         sc.StopCondition(to_check=[dict(func="I am not a function.")])
+
+    # too many arguments
+    with pytest.raises(ValueError, match="Please pass either"):
+        sc.StopCondition(to_check=[dict(func=sc_funcs.timeout_wall,
+                                        seconds=123)],
+                         func=sc_funcs.timeout_wall)
 
 def test_constructors():
     """Tests the YAML constructor"""
-    yaml.add_constructor(u'!stop-condition', sc.stop_cond_constructor)
-    yaml.add_constructor(u'!sc-func', sc.sc_func_constructor)
-
     ymlstr1 = "sc: !stop-condition {to_check: [], name: foo, description: bar}"
     assert isinstance(yaml.load(ymlstr1)['sc'], sc.StopCondition)
 
