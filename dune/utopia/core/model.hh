@@ -224,7 +224,7 @@ public:
      */
     void iterate () {
         // -- Perform the simulation step -- //
-        perform_step();     
+        __perform_step();     
         increment_time();
 
         // -- Monitoring -- //
@@ -236,7 +236,7 @@ public:
          */ 
         if (_level == 1) {
             _monitor.get_monitor_manager()->check_timer();
-            monitor();
+            __monitor();
             
             // If enabled for this step, perform the emission of monitor data
             // NOTE At this point, we can be sure that all submodels have
@@ -245,13 +245,13 @@ public:
             _monitor.get_monitor_manager()->emit_if_enabled();
         }
         else {
-            monitor();
+            __monitor();
         }
 
         // -- Data output -- //
         if (_time % _write_every == 0) {
             _log->debug("Calling write_data ...");
-            write_data();
+            __write_data();
         }
 
         _log->debug("Finished iteration: {:9d} / {:d}", _time, _time_max);
@@ -275,7 +275,7 @@ public:
     // -- User-defined implementations -- //
 
     /// Perform the computation of a step
-    void perform_step () {
+    void __perform_step () {
         impl().perform_step();
     }
 
@@ -285,7 +285,7 @@ public:
      *         because it only makes sense to collect data if it will be
      *         emitted in this step.
      */
-    void monitor () {
+    void __monitor () {
         if (_monitor.get_monitor_manager()->emit_enabled()) {
             // Supply the global time to the monitor manager once
             // from the monitor on the first level
@@ -299,7 +299,7 @@ public:
     }
     
     /// Write data
-    void write_data () {
+    void __write_data () {
         impl().write_data();
     }
 
