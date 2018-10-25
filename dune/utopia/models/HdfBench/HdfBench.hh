@@ -67,10 +67,10 @@ private:
 
     // -- Members of this model -- //
     /// A map of implemented setup functions for datasets
-    const std::map<std::string, BenchFunc> _setup_funcs;
+    std::map<std::string, BenchFunc> _setup_funcs;
 
     /// A map of implemented write functions
-    const std::map<std::string, BenchFunc> _write_funcs;
+    std::map<std::string, BenchFunc> _write_funcs;
     
     /// Names of benchmarks
     const std::vector<std::string> _benchmarks;
@@ -145,9 +145,8 @@ public:
         Base(name, parent),
 
         // Set maps for setup and write functions
-        _setup_funcs({{"setup_nd", setup_nd},
-                      {"setup_nd_with_chunks", setup_nd_with_chunks}}),
-        _write_funcs({{"write_const", write_const}}),
+        _setup_funcs(),
+        _write_funcs(),
 
         // Get the set of enabled benchmarks from the config
         _benchmarks(as_vector<std::string>(this->_cfg["benchmarks"])),
@@ -168,9 +167,21 @@ public:
             throw std::invalid_argument("delete_afterwards feature is not yet "
                                         "implemented!");
         }
+                
+        // Set up the function mappings . . . . . . . . . . . . . . . . . . . .
+        // FIXME Creating func maps should be possible in initializer list, but
+        //       although it compiles, it leads to segfaults ...
+
+        this->_log->debug("Associating setup functions ...");
+        _setup_funcs["setup_nd"] = setup_nd;
+        _setup_funcs["setup_nd_with_chunks"] = setup_nd_with_chunks;
         
-        // Some info on how many setup and write functions are available.
-        this->_log->debug("Have {} setup and {} write function(s) available.",
+
+        this->_log->debug("Associating write functions ...");
+        _write_funcs["write_const"] = write_const;
+
+        
+        this->_log->debug("Associated {} setup and {} write function(s).",
                           _setup_funcs.size(), _write_funcs.size());
 
 
