@@ -233,18 +233,18 @@ test:models:
     - $ENTER_DUNE_ENV
     #
     # First, the test and benchmark models:
-    - utopia run dummy
-    - utopia run CopyMe
-    - utopia run CopyMeBare --no-plot
-    - utopia run HdfBench
+    - utopia run dummy --debug
+    - utopia run CopyMe --debug
+    - utopia run CopyMeBare --debug --no-plot
+    - utopia run HdfBench --debug
     #
     # Now the actual models:
-    - utopia run ForestFire
-    - utopia run Hierarnet
-    - utopia run SimpleEG
-    # TODO add calls for all models here
-    # TODO find an automatic way to do this, perhaps via a --test flag?
-    # TODO use --debug in all of these?
+    - utopia run ForestFire --debug
+    - utopia run Hierarnet --debug
+    - utopia run SimpleEG --debug
+    # TODO add a call for your model here
+    #
+    # FIXME find an automatic way, perhaps via a --test-all flag to utopia run?
 
 test:cli:
   stage: test
