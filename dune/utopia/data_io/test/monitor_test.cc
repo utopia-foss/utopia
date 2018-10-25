@@ -55,11 +55,11 @@ void test_MonitorManager_and_Monitor(){
     Monitor n("n", std::make_shared<MonitorManager>(rm));
 
     // Set some values
-    m.set_by_value("an_int", 1);  // Is set to another value below!
-    mm.set_by_func("a_double", [](){return 3.578;});
-    mn.set_by_func("a_vector", [](){return std::vector<int>{1,2,3};});
-    mn.set_by_func("an_array", [](){return std::array<float, 3>{{.1,.2,.3}};});
-    mmm.set_by_func("a_string", [](){return "string";});
+    m.set_entry("an_int", 1);  // Is set to another value below!
+    mm.set_entry("a_double", [](){return 3.578;});
+    mn.set_entry("a_vector", [](){return std::vector<int>{1,2,3};});
+    mn.set_entry("an_array", [](){return std::array<float, 3>{{.1,.2,.3}};});
+    mmm.set_entry("a_string", [](){return "string";});
 
     // Check that the data is emited in the desired form
     // For this track the buffer of std::cout 
@@ -72,18 +72,18 @@ void test_MonitorManager_and_Monitor(){
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(10ms);
 
-    m.set_by_func("hopefully_written", [](){return "needed_info";});
-    m.set_by_func("hopefully_again_written", [](){return "additional_info";});
+    m.set_entry("hopefully_written", [](){return "needed_info";});
+    m.set_entry("hopefully_again_written", [](){return "additional_info";});
 
     // Overwrite a previously set value
-    m.set_by_func("an_int", [](){return 3;});
+    m.set_entry("an_int", [](){return 3;});
 
     // Emit should work now
     rm.emit_if_enabled();
 
     // Setting an entry should work, but it will not be emitted as not enough
     // time will have passed.
-    m.set_by_value("hopefully_not_written!", "undesired_info");
+    m.set_entry("hopefully_not_written!", "undesired_info");
     rm.emit_if_enabled();
 
     // Assert that the std::cout buffer only contains content from the first

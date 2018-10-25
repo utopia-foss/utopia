@@ -6,7 +6,7 @@
 # sure that no circular includes occur.
 ---
 # Grid parameters
-grid_size: [512, 512]
+grid_size: [64, 64]
 periodic: true          # false: cells at boundary have fewer neighbors
 
 # Initial state
