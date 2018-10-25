@@ -239,8 +239,9 @@ test:models:
     - utopia run HdfBench
     #
     # Now the actual models:
-    - utopia run SimpleEG
+    - utopia run ForestFire
     - utopia run Hierarnet
+    - utopia run SimpleEG
     # TODO add calls for all models here
     # TODO find an automatic way to do this, perhaps via a --test flag?
     # TODO use --debug in all of these?
