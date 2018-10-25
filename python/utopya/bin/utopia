@@ -195,8 +195,8 @@ if __name__ == '__main__':
         update_dict['parameter_space']['num_steps'] = args.num_steps
 
     # Set seeds to a parameter dimension
-    if args.mode == 'run' and args.num_seeds:
-        if not args.num_seeds >= 1:
+    if args.mode == 'run' and args.num_seeds is not None:
+        if args.num_seeds < 1:
             raise ValueError("Argument --num-seeds needs to be >= 1, was "
                              "{}.".format(args.num_seeds))
 
