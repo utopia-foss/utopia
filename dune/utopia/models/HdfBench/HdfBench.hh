@@ -62,15 +62,15 @@ public:
 
 
 private:
-    // Base members: _time, _name, _cfg, _hdfgrp, _rng
+    // Base members: _time, _name, _cfg, _hdfgrp, _rng, _monitor
 
 
     // -- Members of this model -- //
     /// A map of implemented setup functions for datasets
-    std::map<std::string, BenchFunc> _setup_funcs;
+    const std::map<std::string, BenchFunc> _setup_funcs;
 
     /// A map of implemented write functions
-    std::map<std::string, BenchFunc> _write_funcs;
+    const std::map<std::string, BenchFunc> _write_funcs;
     
     /// Names of benchmarks
     const std::vector<std::string> _benchmarks;
@@ -108,7 +108,7 @@ private:
         this->_log->debug("Loading benchmark configurations ...");
         std::map<std::string, Config> cfg;
 
-        for (auto &bname : _benchmarks) {
+        for (const auto &bname : _benchmarks) {
             this->_log->trace("Loading benchmark configuration '{}' ...",
                               bname);
 
@@ -130,7 +130,11 @@ private:
 
 public:
     /// Construct the HdfBench model
-    /** \param name     Name of this model instance
+    /** This model aims to allow benchmarking of the Utopia Hdf5 library in a
+     *  setting that is close to the actual use case, i.e.: as means for
+     *  storing model output.
+     *
+     *  \param name     Name of this model instance
      *  \param parent   The parent model this model instance resides in
      */
     template<class ParentModel>
@@ -141,8 +145,9 @@ public:
         Base(name, parent),
 
         // Set maps for setup and write functions
-        _setup_funcs(),
-        _write_funcs(),
+        _setup_funcs({{"setup_nd", setup_nd},
+                      {"setup_nd_with_chunks", setup_nd_with_chunks}}),
+        _write_funcs({{"write_const", write_const}}),
 
         // Get the set of enabled benchmarks from the config
         _benchmarks(as_vector<std::string>(this->_cfg["benchmarks"])),
@@ -163,21 +168,9 @@ public:
             throw std::invalid_argument("delete_afterwards feature is not yet "
                                         "implemented!");
         }
-
-
-        // Set up the function mappings . . . . . . . . . . . . . . . . . . . .
-        // FIXME Creating func maps should be possible in initializer list!
-
-        this->_log->debug("Associating setup functions ...");
-        _setup_funcs["setup_nd"] = setup_nd;
-        _setup_funcs["setup_nd_with_chunks"] = setup_nd_with_chunks;
         
-
-        this->_log->debug("Associating write functions ...");
-        _write_funcs["write_const"] = write_const;
-
-        
-        this->_log->debug("Associated {} setup and {} write function(s).",
+        // Some info on how many setup and write functions are available.
+        this->_log->debug("Have {} setup and {} write function(s) available.",
                           _setup_funcs.size(), _write_funcs.size());
 
 
@@ -189,7 +182,7 @@ public:
 
         this->_log->info("Performing setup and initial benchmarks ...");
 
-        for (auto &bname : _benchmarks) {
+        for (const auto &bname : _benchmarks) {
             // Setup the dataset and store the time needed
             _times[bname] = this->benchmark<true>(bname);
 
@@ -237,7 +230,7 @@ public:
         // NOTE Duration might be zero, not triggering a sleep. Same below.
 
         // Carry out the benchmarks, optionally sleeping some time before that
-        for (auto &bname : _benchmarks) {
+        for (const auto &bname : _benchmarks) {
             std::this_thread::sleep_for(_sleep_bench);
 
             _times[bname] = this->benchmark(bname);
@@ -314,7 +307,7 @@ protected:
      * @detail The dataset shape corresponds to the write_shape argument, but
      *         with an extra dimension in front that has as extend time_max + 1
      */
-    BenchFunc setup_nd = [this](auto bname, auto cfg){
+    BenchFunc setup_nd = [this](const auto& bname, auto cfg){
         // Determine the shape of the final dataset
         auto shape = as_vector<hsize_t>(cfg["write_shape"]);
         shape.insert(shape.begin(), this->get_time_max() + 1);
@@ -331,7 +324,7 @@ protected:
     };
 
 
-    BenchFunc setup_nd_with_chunks = [this](auto bname, auto cfg){
+    BenchFunc setup_nd_with_chunks = [this](const auto& bname, auto cfg){
         // Call the regular setup_nd to set up the dataset
         const auto time_setup = this->setup_nd(bname, cfg);
 
@@ -352,7 +345,7 @@ protected:
     // Write functions ........................................................
 
     /// Writes a constant value into the dataset
-    BenchFunc write_const = [this](auto bname, auto cfg){
+    BenchFunc write_const = [this](const auto& bname, auto cfg){
         // Determine the value to write
         const auto val = as_double(cfg["const_val"]);
 
