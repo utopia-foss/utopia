@@ -255,7 +255,7 @@ public:
     /// Write the result times of each benchmark
     void write_data () {   
         _dset_times->write(_benchmarks.begin(), _benchmarks.end(),
-                           [this](auto& bname) {
+                           [this](const auto& bname) {
                                 return this->_times.at(bname);
                             });
     }
