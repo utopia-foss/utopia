@@ -61,6 +61,10 @@ p_run.add_argument('--sim-errors',
 p_run.add_argument('--num-steps',
                    default=None, nargs='?', type=int,
                    help="Sets the number of simulation steps to this value.")
+p_run.add_argument('--num-seeds',
+                   default=None, nargs='?', type=int,
+                   help="Creates a parameter dimension for the seeds with the "
+                        "given number of seed values.")
 
 # plotting after the run
 p_run.add_argument('--no-plot',
@@ -128,7 +132,9 @@ args = parser.parse_args()
 
 
 # -----------------------------------------------------------------------------
-# If continuing further, need utopya
+# If continuing further, need some imports
+from paramspace import ParamDim
+
 import utopya
 import utopya.cltools
 
@@ -187,6 +193,19 @@ if __name__ == '__main__':
             update_dict['parameter_space'] = {}
 
         update_dict['parameter_space']['num_steps'] = args.num_steps
+
+    # Set seeds to a parameter dimension
+    if args.mode == 'run' and args.num_seeds:
+        if not args.num_seeds >= 1:
+            raise ValueError("Argument --num-seeds needs to be >= 1, was "
+                             "{}.".format(args.num_seeds))
+
+        # Check if key already exists in order to not overwrite anything
+        if 'parameter_space' not in update_dict:
+            update_dict['parameter_space'] = {}
+
+        seed_pdim = ParamDim(default=42, range=[args.num_seeds])
+        update_dict['parameter_space']['seed'] = seed_pdim
 
     # Preparations finished now
     
