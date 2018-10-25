@@ -239,11 +239,12 @@ test:models:
     - utopia run HdfBench --sweep --num-seeds 3 --debug
     #
     # Now the actual models:
-    - utopia run ForestFire --debug
-    - utopia run Hierarnet --debug
-    - utopia run SimpleEG --debug
+    - utopia run ForestFire
+    - utopia run Hierarnet
+    - utopia run SimpleEG
     # TODO add a call for your model here
     #
+    # FIXME use --debug in models, too! Need ffmpeg in docker image for that...
     # FIXME find an automatic way, perhaps via a --test-all flag to utopia run?
 
 test:cli:
@@ -277,7 +278,7 @@ test:cli:
     - if utopia run dummy --num-steps -1; then exit 1; else echo "all good"; fi
     # Test setting the number of seeds (<1 should fail)
     - utopia run dummy --num-seeds 1 --sweep --no-plot --note sweep_via_cli
-    - if utopia run dummy --num-steps 0; then exit 1; else echo "all good"; fi
+    - if utopia run dummy --num-seeds 0; then exit 1; else echo "all good"; fi
     # Test debug mode and setting simulation errors level
     - utopia run dummy --note debug0 --num-steps 3 --debug
     - utopia run dummy --note debug1 --num-steps 3 --debug --sim-errors warn
