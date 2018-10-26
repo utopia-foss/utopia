@@ -8,7 +8,6 @@ from datetime import timedelta
 import pytest
 
 from utopya.workermanager import WorkerManager
-from utopya.task import enqueue_lines, parse_json
 from utopya.reporter import Reporter, WorkerManagerReporter
 
 # Local constants
