@@ -16,7 +16,6 @@ import paramspace as psp
 from utopya.datamanager import DataManager
 from utopya.workermanager import WorkerManager
 from utopya.plotting import PlotManager
-from utopya.task import enqueue_json
 from utopya.reporter import WorkerManagerReporter
 from utopya.tools import recursive_update, read_yml, write_yml, load_model_cfg
 from utopya.info import MODELS
@@ -533,7 +532,7 @@ class Multiverse:
             # Generate a new worker_kwargs dict, carrying over the given ones
             wk = dict(args=args,
                       read_stdout=True,
-                      line_read_func=enqueue_json,
+                      stdout_parser="yaml_dict",
                       **(worker_kwargs if worker_kwargs else {}))
 
             # Determine whether to save the streams

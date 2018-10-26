@@ -9,7 +9,6 @@ from typing import List, Callable
 import ruamel.yaml
 
 import utopya.stopcond_funcs as sc_funcs
-from utopya.task import Task
 
 # Initialise logger
 log = logging.getLogger(__name__)
@@ -108,7 +107,7 @@ class StopCondition:
         return ("StopCondition '{name:}':\n"
                 "  {desc:}\n".format(name=self.name, desc=self.description))
 
-    def fulfilled(self, task: Task) -> bool:
+    def fulfilled(self, task) -> bool:
         """Checks if the stop condition is fulfilled for the given worker, using the information from the dict.
         
         All given stop condition functions are evaluated; if all of them return
