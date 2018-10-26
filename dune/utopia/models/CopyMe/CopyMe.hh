@@ -248,16 +248,15 @@ public:
     /** @detail Here, functions and values can be supplied to the monitor that
      *          are then available to the frontend. The monitor() function is
      *          _only_ called if a certain emit interval has passed; thus, the
-     *          performance hit is small. Also, if using set_by_func, the given
-     *          lambda will only be called if an emission will happen.
+     *          performance hit is small.
      */
     void monitor ()
     {
         // Supply some number -- for illustration -- directly by value
-        this->_monitor.set_by_value("some_value", 42);
+        this->_monitor.set_entry("some_value", 42);
 
         // Supply the state mean to the monitor
-        this->_monitor.set_by_func("state_mean", [this](){
+        this->_monitor.set_entry("state_mean", [this](){
             double state_sum = 0.;
             for (const auto &cell : this->_manager.cells()) {
                 state_sum += cell->state().some_state;

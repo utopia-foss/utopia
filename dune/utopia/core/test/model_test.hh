@@ -59,7 +59,7 @@ public:
 
     /// Monitor the mean of the state
     void monitor () {
-        _monitor.set_by_func("state_mean", [this](){
+        _monitor.set_entry("state_mean", [this](){
             const double sum = std::accumulate(this->_state.begin(),
                                                this->_state.end(),
                                                0);
