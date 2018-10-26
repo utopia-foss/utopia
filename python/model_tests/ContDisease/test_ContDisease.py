@@ -24,11 +24,11 @@ def test_initial_state_empty():
     mv, dm = mtc.create_run_load(from_cfg="initial_state_empty.yml")
 
     # Get data
-    grp = dm['uni'][0]['data/ContDisease']
+    grp = dm['multiverse'][0]['data/ContDisease']
     data_ = grp["state"]
 
     # Get the grid size
-    uni_cfg = dm['uni'][0]['cfg']
+    uni_cfg = dm['multiverse'][0]['cfg']
     grid_size = uni_cfg['ContDisease']['grid_size']
     num_cells = grid_size[0] * grid_size[1]
 
@@ -45,11 +45,11 @@ def test_initial_stones():
     mv, dm = mtc.create_run_load(from_cfg="initial_stones.yml")
 
     # Get data
-    grp = dm['uni'][0]['data/ContDisease']
+    grp = dm['multiverse'][0]['data/ContDisease']
     data_ = grp["state"]
 
     # Get the grid size
-    uni_cfg = dm['uni'][0]['cfg']
+    uni_cfg = dm['multiverse'][0]['cfg']
     grid_size = uni_cfg['ContDisease']['grid_size']
     num_cells = grid_size[0] * grid_size[1]
 
@@ -68,10 +68,10 @@ def test_initial_state_herd_south():
     mv, dm = mtc.create_run_load(from_cfg="initial_state_empty_herd_south.yml")
 
     # Get data
-    grp = dm['uni'][0]['data/ContDisease']
+    grp = dm['multiverse'][0]['data/ContDisease']
 
     # Get the grid size
-    uni_cfg = dm['uni'][0]['cfg']
+    uni_cfg = dm['multiverse'][0]['cfg']
     grid_size = uni_cfg['ContDisease']['grid_size']
     num_cells = grid_size[0] * grid_size[1]
     num_steps = uni_cfg['num_steps']
@@ -95,11 +95,11 @@ def test_growing_dynamic():
     mv, dm = mtc.create_run_load(from_cfg="growing_dynamic.yml")
 
     # Get data
-    grp = dm['uni'][0]['data/ContDisease']
+    grp = dm['multiverse'][0]['data/ContDisease']
     data_ = grp["state"]
 
     # Get the grid size
-    uni_cfg = dm['uni'][0]['cfg']
+    uni_cfg = dm['multiverse'][0]['cfg']
     grid_size = uni_cfg['ContDisease']['grid_size']
     num_cells = grid_size[0] * grid_size[1]
 
@@ -119,11 +119,11 @@ def test_infection_dynamic():
     mv, dm = mtc.create_run_load(from_cfg="infection_dynamic.yml")
 
     # Get data
-    grp = dm['uni'][0]['data/ContDisease']
+    grp = dm['multiverse'][0]['data/ContDisease']
     data_ = grp["state"]
 
     # Get the grid size
-    uni_cfg = dm['uni'][0]['cfg']
+    uni_cfg = dm['multiverse'][0]['cfg']
     grid_size = uni_cfg['ContDisease']['grid_size']
     num_cells = grid_size[0] * grid_size[1]
     num_steps = uni_cfg['num_steps']
