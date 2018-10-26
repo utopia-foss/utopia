@@ -73,6 +73,15 @@ public:
     using NextNeighbor = Utopia::Neighborhoods::NextNeighbor;
     using MooreNeighbor = Utopia::Neighborhoods::MooreNeighbor;
 
+private:
+    // Base members: _time, _name, _cfg, _hdfgrp, _rng, _monitor
+
+    // -- Members of this model -- //
+    /// The grid manager
+    ManagerType _manager;
+
+public:
+    // -- Parameters that determine model dynamics, publicly available -- //
     /// Probability for the appearance of a tree
     double _p_growth;
 
@@ -83,12 +92,6 @@ public:
     double _p_rd_infect;
 
 private:
-    // Base members: _time, _name, _cfg, _hdfgrp, _rng, _monitor
-
-    // -- Members of this model -- //
-    /// The grid manager
-    ManagerType _manager;
-
     // -- Datasets -- //
     std::shared_ptr<DataSet> _dset_state;
 
@@ -126,25 +129,27 @@ private:
     };
 
     // -- Rule functions -- //
-    // Sets the given cell to state "empty"
-    RuleFunc _set_initial_state_empty = [](const auto cell){
+    /// Sets the given cell to state "empty"
+    RuleFunc _set_initial_state_empty = []([[maybe_unused]] const auto cell){
         return empty;
     };
 
-    // Sets an infection herd at the southern end of the grid
-    RuleFunc _set_infection_herd_south = [&](const auto cell){
-        auto cellstate = cell->state();
+    /// Sets an infection herd at the southern end of the grid
+    RuleFunc _set_infection_herd_south = [this](const auto cell){
+        auto old_state = cell->state();
 
         // Get postion of the Cell, grid extensions and number of cells
         const auto& pos = cell->position();
-        const auto& grid_ext = _manager.extensions();
-        const auto& grid_num_cells = _manager.grid_cells();
+
+        const auto& grid_ext = this->_manager.extensions();
+        const auto& grid_num_cells = this->_manager.grid_cells();
         const auto& cell_size_y = grid_ext[1]  / grid_num_cells[1];
 
-        if (pos[1] < cell_size_y){
-            cellstate = herd;
-          }
-          return cellstate;
+        // If in the southern-most row of cells, this is an infection herd
+        if (pos[1] < cell_size_y) {
+            return herd;
+        }
+        return old_state;
     };
 
     /// Define the update rule
