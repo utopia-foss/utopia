@@ -14,6 +14,7 @@ add_subdirectory(CopyMe)
 add_subdirectory(CopyMeBare)
 add_subdirectory(dummy)
 add_subdirectory(ForestFire)
+add_subdirectory(HdfBench)
 add_subdirectory(Hierarnet)
 add_subdirectory(SimpleEG)
 # ...

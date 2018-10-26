@@ -157,7 +157,7 @@ public:
         _hdfgrp->add_attribute("write_every", _write_every);
 
         // Provide some informative log messages
-        _log->info("Model instance '{}' constructed.", _name);
+        _log->info("Base constructor of model instance '{}' finished.", _name);
         _log->debug("time_max:     {} step(s)", _time_max);
         _log->debug("write_every:  {} step(s)", _write_every);
     }
@@ -405,7 +405,7 @@ public:
         set_log_level(); // this log level
 
         _log->info("Initialized PseudoParent from config file");
-        _log->debug("cfg_path:      {}", cfg_path);
+        _log->debug("cfg_path:  {}", cfg_path);
     }
     
 
