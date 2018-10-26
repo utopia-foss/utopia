@@ -1,0 +1,17 @@
+# Configuration file used to test that the growing dynamic of the model is correct
+
+---
+
+parameter_space:
+  num_steps: 1
+
+# Load the model config
+  ContDisease: !model
+    model_name: ContDisease  # imports the model config for the ContDisease model
+    initial_state: empty
+    stones: false
+    infection_herd: false
+    p_growth: 1
+    p_rd_infect: 0
+
+    grid_size: [3, 3]

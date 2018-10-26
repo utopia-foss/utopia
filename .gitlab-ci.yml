@@ -239,6 +239,7 @@ test:models:
     - utopia run HdfBench --sweep --num-seeds 3 --debug
     #
     # Now the actual models:
+    - utopia run ContDisease
     - utopia run ForestFire
     - utopia run Hierarnet
     - utopia run SimpleEG

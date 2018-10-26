@@ -10,6 +10,7 @@
 message(STATUS "Starting Utopia model registration ...")
 
 # Register the model directories
+add_subdirectory(ContDisease)
 add_subdirectory(CopyMe)
 add_subdirectory(CopyMeBare)
 add_subdirectory(dummy)
