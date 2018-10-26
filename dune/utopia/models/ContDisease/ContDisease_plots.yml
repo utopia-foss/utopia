@@ -1,14 +1,19 @@
 # Default plots for the ContDisease model
 ---
+# Creates a CA anmiation of the grid over time
 forest_ca:
   creator: universe
+  universes: all
+  
   module: model_plots.ContDisease
-  plot_func: plot_forest
-  file_format: png
+  plot_func: plot_ca_anim
+
+  file_ext: png
+
+# Plots the tree density over time
+tree_density:
+  creator: universe
   universes: all
 
-frequencies:
-  creator: universe
   module: model_plots.ContDisease
-  plot_func: plot_frequency
-  universes: all
+  plot_func: plot_tree_density

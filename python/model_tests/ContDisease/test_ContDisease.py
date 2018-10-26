@@ -9,12 +9,7 @@ from utopya.testtools import ModelTest
 # Configure the ModelTest class for ContDisease
 mtc = ModelTest("ContDisease", test_file=__file__)
 
-# Fixtures --------------------------------------------------------------------
-# Define fixtures
-
-
 # Tests -----------------------------------------------------------------------
-
 
 def test_initial_state_empty():
     """
@@ -112,8 +107,8 @@ def test_growing_dynamic():
 def test_infection_dynamic():
     """
     Test that with a p_infect probability of 1, a p_growth probability of 1
-    and an empty initial state, with an infection herd south the infection spreads
-    according to the expectations.
+    and an empty initial state, with an infection herd south the infection
+    spreads according to the expectations.
     """
 
     mv, dm = mtc.create_run_load(from_cfg="infection_dynamic.yml")

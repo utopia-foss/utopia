@@ -15,7 +15,13 @@ namespace Models {
 namespace ContDisease {
 
 /// State of forest cell
-enum CellState : unsigned short int {empty = 0, tree = 1, infected = 2, herd = 3, stone = 4};
+enum CellState : unsigned short {
+    empty = 0,
+    tree = 1,
+    infected = 2,
+    herd = 3,
+    stone = 4
+};
 
 
 /// Typehelper to define data types of ContDisease model
@@ -27,13 +33,15 @@ using ContDiseaseModelTypes = ModelTypes<>;
  * a 2D grid. Each cell can have one of five different states: empty, tree,
  * infected, herd or empty. Each time step cells update their state according
  * to the update rules. Empty cells will convert with a certain probability
- * to tress, while trees represent cells that can be infected. Infection can
- * happen either through a neighboring cells, or through random point infection.
- * A infected cells reverts back to empty after one time step. Stones represent
- * cells that can not be infected, therefore represent a blockade for the spread
- * of the infection. Infection herds are cells that continously spread infection
- * without dying themselves. Different starting conditions, and update
- * mechanisms can be configured.
+ * to tress, while trees represent cells that can be infected.
+ * Infection can happen either through a neighboring cells, or through random
+ * point infection. An infected cells reverts back to empty after one time
+ * step.
+ * Stones represent cells that can not be infected, therefore represent a
+ * blockade for the spread of the infection.
+ * Infection herds are cells that continously spread infection without dying
+ * themselves.
+ * Different starting conditions, and update mechanisms can be configured.
  */
 template<class ManagerType>
 class ContDiseaseModel:
@@ -75,7 +83,7 @@ public:
     double _p_rd_infect;
 
 private:
-    // Base members: _time, _name, _cfg, _hdfgrp, _rng
+    // Base members: _time, _name, _cfg, _hdfgrp, _rng, _monitor
 
     // -- Members of this model -- //
     /// The grid manager
@@ -85,9 +93,9 @@ private:
     std::shared_ptr<DataSet> _dset_state;
 
     // -- Helper functions -- //
-
-    // initialize stones at random so a certain areal density is reached
-    void _init_stones_rd(const double stone_density, const double stone_cluster){
+    /// Initialize stones at random so a certain areal density is reached
+    void _init_stones_rd (const double stone_density,
+                          const double stone_cluster) {
         std::uniform_real_distribution<> dist(0., 1.);
 
         auto cells_rd = _manager.cells();
@@ -118,7 +126,6 @@ private:
     };
 
     // -- Rule functions -- //
-
     // Sets the given cell to state "empty"
     RuleFunc _set_initial_state_empty = [](const auto cell){
         return empty;
@@ -147,30 +154,30 @@ private:
      * probability _p_infect.
      * Infected cells die and become an empty cell.
      */
-
     RuleFunc _update = [this](const auto cell){
-
         // Get the state of the cell
         auto cellstate = cell->state();
 
+        // Distinguish by current state
         if (cellstate == empty){
-            // With a probablity of _p_growth set the treestate of the cell to tree.
+            // With a probablity of _p_growth, set the cell's state to tree
             std::uniform_real_distribution<> dist(0., 1.);
             if (dist(*this->_rng) < _p_growth){
                 cellstate = tree;
             }
         }
-
         else if (cellstate == tree){
             // Tree can be infected by neighbor our by random-point-infection.
             std::uniform_real_distribution<> dist(0., 1.);
-            // infection by random point infection
+
+            // Infection by random point infection
             if (dist(*this->_rng) < _p_rd_infect){
                 cellstate = infected;
             }
 
-            // Go through neighbor cells (here 5-cell neighbourhood), look if they
-            // are infected (or an infection herd), if yes, infect cell with the probability _p_infect.
+            // Go through neighbor cells (here 5-cell neighbourhood), look if
+            // they are infected (or an infection herd), if yes, infect cell
+            // with the probability _p_infect.
             // TODO implement neighborhood as template argument
             for (auto nb : NextNeighbor::neighbors(cell, this->_manager)){
                 if (cellstate == tree){
@@ -186,7 +193,6 @@ private:
                 }
             }
         }
-
         else if (cellstate == infected){
             cellstate = empty;
         }
@@ -203,20 +209,20 @@ public:
      */
     template<class ParentModel>
     ContDiseaseModel (const std::string name,
-                 ParentModel &parent,
-                 ManagerType&& manager)
+                      ParentModel &parent,
+                      ManagerType&& manager)
     :
         // Initialize first via base model
         Base(name, parent),
         // Now initialize members specific to this class
         _manager(manager),
 
-        // initialize probabilities
+        // Initialize probabilities from config parameters
         _p_growth(as_double(this->_cfg["p_growth"])),
         _p_infect(as_double(this->_cfg["p_infect"])),
         _p_rd_infect(as_double(this->_cfg["p_rd_infect"])),
 
-        // create dataset for treestates
+        // Create dataset for the cell states
         _dset_state(this->_hdfgrp->open_dataset("state"))
 
     {
@@ -267,40 +273,42 @@ public:
         this->_log->info("Initializing cells in '{}' mode ...", initial_state);
 
         // Different initialization methods for the forest
-
-        //empty forest
         if (initial_state == "empty"){
             //Apply rule to all cells in the forest.
             apply_rule(_set_initial_state_empty, _manager.cells());
         }
         else {
-            throw std::invalid_argument("The initial state ''" + initial_state + "'' is not valid! Valid options: 'empty'");
+            throw std::invalid_argument("The initial state ''" + initial_state
+                                        + "'' is not valid! Valid options: "
+                                        "'empty'");
         }
 
-        // Different initializations for possible infection herds.
+        // Different initializations for possible infection herds
         if (infection_herd){
-
             if (infection_herd_src == "south"){
                 // Set infection herd at the southern border of the grid
                 apply_rule(_set_infection_herd_south, _manager.cells());
             }
             else {
-                throw std::invalid_argument("The infection herd source ''" + infection_herd_src + "'' is not valid! Valid options: 'south'");
+                throw std::invalid_argument("The infection herd source ''"
+                                            + infection_herd_src + "'' is not "
+                                            "valid! Valid options: 'south'");
             }
         }
         else {
             this->_log->debug("Not using an infection herd.");
         }
 
-        // Different intilaizations for stones.
+        // -- Different intilaizations for stones
         if (stones){
-
-          if (stone_init == "random"){
-              _init_stones_rd(stone_density, stone_cluster);
-          }
-          else {
-              throw std::invalid_argument("The stone initialization ''" + stone_init + "'' is not valid! Valid options: 'random'");
-          }
+            if (stone_init == "random"){
+                _init_stones_rd(stone_density, stone_cluster);
+            }
+            else {
+                throw std::invalid_argument("The stone initialization ''"
+                                            + stone_init + "'' is not valid! "
+                                            "Valid options: 'random'");
+            }
         }
         else {
             this->_log->debug("Not using stones.");
@@ -318,16 +326,14 @@ public:
      *          neighbouring cells according to the following update rules:
      *          1: Infected --> Empty
      *          2: Empty    --> Tree
-     *              -with a probability p_growth
+     *               - with a probability p_growth
      *          3: Tree     --> Infected
-     *            -with the probability p_infect for each infected
-     *            or herd cell in the neighbourhood
-     *            -with probability p_rd_infect for random-point infections
+     *               - with the probability p_infect for each infected
+     *                 or herd cell in the neighbourhood
+     *               - with probability p_rd_infect for random-point infections
      *          4: Herd or stone cells remain in their respective state.
-     *
      */
-    void perform_step ()
-    {
+    void perform_step () {
         // Apply the rules to all cells, first the interaction, then the update
         apply_rule(_update, _manager.cells());
     }
@@ -340,8 +346,7 @@ public:
      *          performance hit is small. Also, if using set_by_func, the given
      *          lambda will only be called if an emission will happen.
      */
-    void monitor ()
-    {
+    void monitor () {
         // Can supply information to the monitor here in two ways:
         // this->_monitor.set_by_value("key", value);
         // this->_monitor.set_by_func("key", [this](){return 42.;});
@@ -349,12 +354,11 @@ public:
 
 
     /// Write data
-    void write_data ()
-    {
+    void write_data () {
         // _dset_state
         _dset_state->write(_manager.cells().begin(), _manager.cells().end(),
                            [](auto& cell) {
-                              return static_cast<unsigned short int>(cell->state());
+                             return static_cast<unsigned short>(cell->state());
                            });
     }
 
@@ -369,6 +373,7 @@ public:
  *
  * @tparam periodic=true Use periodic boundary conditions
  * @tparam ParentModel The parent model type
+ *
  * @param name The name of the model
  * @param parent_model The parent model
  * @return auto The manager
