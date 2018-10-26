@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
         // Wait a while, such that the emit interval is surpassed
         using namespace std::chrono_literals;
         assert(model.get_monitor_manager()->get_emit_counter() == 1);
-        std::this_thread::sleep_for(100ms);
+        std::this_thread::sleep_for(500ms);
         model.iterate();
         assert(model.get_monitor_manager()->get_emit_counter() == 2);
 
