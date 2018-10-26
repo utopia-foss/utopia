@@ -386,6 +386,7 @@ class WorkerTask(Task):
         save_streams_to = worker_kwargs.get('save_streams_to')
 
         forward_streams = worker_kwargs.get('forward_streams', False)
+        forward_raw = worker_kwargs.get('forward_raw', True)
         streams_log_lvl = worker_kwargs.get('streams_log_lvl', None)
 
         # Perform some checks
@@ -452,6 +453,7 @@ class WorkerTask(Task):
                                        log=[], log_raw=[], log_parsed=[],
                                        save=save_streams, save_path=None, 
                                        forward=forward_streams,
+                                       forward_raw=forward_raw,
                                        log_level=streams_log_lvl,
                                        lines_saved=0, lines_forwarded=0)
             # NOTE could have more streams here, but focus on stdout right now
@@ -691,6 +693,7 @@ class WorkerTask(Task):
             # else: this stream is to be forwarded
             
             # Determine lines to write
+            forward_raw = stream.get('forward_raw', True)
             stream_log = stream['log_raw'] if forward_raw else stream['log']
             lines = stream_log[stream['lines_forwarded']:]
             if not lines:

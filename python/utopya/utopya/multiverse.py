@@ -558,6 +558,7 @@ class Multiverse:
         if wk and wk.get('forward_streams') == 'in_single_run':
             # Reverse the flag to determine whether to forward streams
             wk['forward_streams'] = (not is_sweep)
+            wk['forward_kwargs'] = dict(forward_raw=True)
 
         # Try to add a task to the worker manager
         try:
