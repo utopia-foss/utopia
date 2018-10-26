@@ -1,16 +1,14 @@
 # Default plots for the ContDisease model
 ---
 forest_ca:
-  creator: external
+  creator: universe
   module: model_plots.ContDisease
   plot_func: plot_forest
-
   file_format: png
-  uni: 0
+  universes: all
 
 frequencies:
-  creator: external
+  creator: universe
   module: model_plots.ContDisease
   plot_func: plot_frequency
-
-  uni: 0
+  universes: all

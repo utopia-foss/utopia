@@ -5,13 +5,13 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-from utopya import DataManager
+from utopya import DataManager, UniverseGroup
 
 from ..tools import save_and_close
 
 # -----------------------------------------------------------------------------
 
-def plot_frequency(dm: DataManager, *, out_path: str, file_format: str='png', uni: int, fmt: str=None, save_kwargs: dict=None, **plot_kwargs):
+def plot_frequency(dm: DataManager, *, out_path: str, file_format: str='png', uni: UniverseGroup, fmt: str=None, save_kwargs: dict=None, **plot_kwargs):
     """Calculates the the density of trees and perfoms a lineplot
 
     Args:
@@ -23,10 +23,10 @@ def plot_frequency(dm: DataManager, *, out_path: str, file_format: str='png', un
         **plot_kwargs: Passed on to plt.plot
     """
     # Get the group that all datasets are in
-    grp = dm['uni'][str(uni)]['data/ContDisease']
+    grp = uni['data/ContDisease']
 
     # Get the shape of the data
-    uni_cfg = dm['uni'][str(uni)]['cfg']
+    uni_cfg = uni['cfg']
     num_steps = uni_cfg['num_steps']
     grid_size = uni_cfg['ContDisease']['grid_size']
     num_cells = grid_size[0] * grid_size[1]

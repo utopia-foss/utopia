@@ -5,7 +5,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-from utopya import DataManager
+from utopya import DataManager, UniverseGroup
 
 from ..tools import save_and_close
 
@@ -13,7 +13,7 @@ from ..tools import save_and_close
 
 
 
-def plot_forest(dm: DataManager, *, out_path: str, file_format: str='png', uni: int, save_kwargs: dict=None, **plot_kwargs):
+def plot_forest(dm: DataManager, *, out_path: str, file_format: str='png', uni: UniverseGroup, save_kwargs: dict=None, **plot_kwargs):
     """Plots the forest state for each time step of the two dimensional celluar automaton
 
     Args:
@@ -24,10 +24,10 @@ def plot_forest(dm: DataManager, *, out_path: str, file_format: str='png', uni: 
         **plot_kwargs: Passed on to plt.plot
     """
     # Get the group that all datasets are in
-    grp = dm['uni'][str(uni)]['data/ContDisease']
+    grp = uni['data/ContDisease']
 
     # Get the shape of the data
-    uni_cfg = dm['uni'][str(uni)]['cfg']
+    uni_cfg = uni['cfg']
     num_steps = uni_cfg['num_steps']
     grid_size = uni_cfg['ContDisease']['grid_size']
 
