@@ -45,6 +45,10 @@ def test_init():
     # invalid function name
     with pytest.raises(ImportError, match="Could not find a callable named"):
         sc.StopCondition(to_check=[dict(func="I am not a function.")])
+    
+    # non-callable
+    with pytest.raises(TypeError, match="Given `func` needs to be a callable"):
+        sc.StopCondition(to_check=[dict(func=123.456)])
 
     # too many arguments
     with pytest.raises(ValueError, match="Please pass either"):
@@ -67,10 +71,9 @@ def test_representer():
 
     with io.StringIO() as f:
         yaml.dump(sc1, stream=f)
-        assert f.getvalue() == ("!stop-condition {description: null, "
-                                "enabled: true, func: timeout_wall, "
-                                "name: null,\n"
-                                "  seconds: 123, to_check: null}\n")
+        print(f.getvalue())
+        assert f.getvalue() == ("!stop-condition {func: timeout_wall, "
+                                "seconds: 123}\n")
 
 def test_magic_methods(basic_sc):
     """Tests magic methods of the StopCond class."""

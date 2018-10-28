@@ -16,7 +16,8 @@ log = logging.getLogger(__name__)
 # -----------------------------------------------------------------------------
 
 class StopCondition:
-    """A StopCondition object holds information on the conditions in which a worker process should be stopped.
+    """A StopCondition object holds information on the conditions in which a
+    worker process should be stopped.
 
     It is formulated in a general way, applying to all Workers. The attributes
     of this class store the information required to deduce whether the
@@ -120,8 +121,8 @@ class StopCondition:
                 func = retrieve_func(func)
 
             elif not callable(func):
-                raise TypeError("Given value of key `func` needs to be a "
-                                "callable, but was {} with value {}."
+                raise TypeError("Given `func` needs to be a callable, but was "
+                                "{} with value {}."
                                 "".format(type(func), func))
 
             # else: is callable, has the __name__ attribute
@@ -140,7 +141,8 @@ class StopCondition:
                 "  {desc:}\n".format(name=self.name, desc=self.description))
 
     def fulfilled(self, task) -> bool:
-        """Checks if the stop condition is fulfilled for the given worker, using the information from the dict.
+        """Checks if the stop condition is fulfilled for the given worker,
+        using the information from the dict.
         
         All given stop condition functions are evaluated; if all of them return
         True, this method will also return True.
@@ -172,7 +174,9 @@ class StopCondition:
 
     @classmethod
     def to_yaml(cls, representer, node):
-        """
+        """Creates a yaml representation of the StopCondition object by storing
+        the initialization kwargs as a yaml mapping.
+
         Args:
             representer (ruamel.yaml.representer): The representer module
             node (type(self)): The node, i.e. an instance of this class
@@ -180,10 +184,19 @@ class StopCondition:
         Returns:
             a yaml mapping that is able to recreate this object
         """
-        # The initialization kwargs contain all information
-        return representer.represent_mapping(cls.yaml_tag, node._init_kwargs)
+        # Filter out certain entries that are None
+        d = copy.deepcopy(node._init_kwargs)
+        d = {k:v for k, v in d.items()
+             if not  (k in ['name', 'description', 'func', 'to_check']
+                      and v is None)
+             and not (k in ['enabled'] and v is True)}
+
+        # Create the mapping representation from the filtered dict
+        return representer.represent_mapping(cls.yaml_tag, d)
 
     @classmethod
     def from_yaml(cls, constructor, node):
-        """The default constructor for ParamDim-derived objects"""
+        """Creates a StopCondition object by unpacking the given mapping such
+        that all stored arguments are available to __init__.
+        """
         return cls(**constructor.construct_mapping(node, deep=True))
