@@ -145,7 +145,7 @@ worker_kwargs:
   forward_raw: true
 
   # The log level at which the streams should be forwarded to stdout
-  streams_log_level: ~  # if None, uses print instead of the logging module
+  streams_log_lvl: ~  # if None, uses print instead of the logging module
 
   # Changes to entries below here have not been tested!
   popen_kwargs: {}
