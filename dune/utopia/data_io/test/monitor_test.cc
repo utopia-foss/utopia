@@ -88,7 +88,8 @@ void test_MonitorManager_and_Monitor(){
 
     // Assert that the std::cout buffer only contains content from the first
     // emit operation
-    std::string expected_output = "{m.an_int: 3,"
+    std::string expected_output = "!!map "
+                                  "{m.an_int: 3,"
                                   " m.mm.a_double: 3.578,"
                                   " m.mn.a_vector: [1, 2, 3],"
                                   " m.mn.an_array: [0.1, 0.2, 0.3],"
