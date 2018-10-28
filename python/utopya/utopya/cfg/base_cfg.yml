@@ -87,7 +87,7 @@ worker_manager:
   #       read from the line buffer frequently enough.
 
   # How to react upon a simulation exiting with non-zero exit code
-  nonzero_exit_handling: warn
+  nonzero_exit_handling: warn_all
   # can be: ignore, warn, warn_all, raise
   # warn_all will also warn if the simulation was terminated by the frontend
   # raise will lead to a SystemExit with the error code of the simulation
