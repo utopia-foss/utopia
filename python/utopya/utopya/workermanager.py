@@ -390,9 +390,11 @@ class WorkerManager:
                     # Yes. => Try to grab a task and start working on it
                     try:
                         new_task = self._grab_task()
+
                     except queue.Empty:
                         # There were no tasks left in the task queue
                         pass
+                        
                     else:
                         # Succeeded in grabbing a task; worker spawned
                         self.active_tasks.append(new_task)
