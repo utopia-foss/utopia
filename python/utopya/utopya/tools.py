@@ -90,19 +90,16 @@ def _model_cfg_constructor(loader, node) -> dict:
     return mcfg
 
 # .............................................................................
-# Attaching constructors and representers # TODO ..............................
+# Attaching representers and constructors .....................................
+# First register the classes, which directly implemented dumping/loading
+yaml.register_class(utopya.stopcond.StopCondition)
 
-# Add the constructors to the yaml module
+# Now, add (additional, potentially overwriting) constructors for certain tags
+# For the expression and model config objects.
 yaml.constructor.add_constructor(u'!expr',
                                  _expr_constructor)
 yaml.constructor.add_constructor(u'!model',
                                  _model_cfg_constructor)
-
-# TODO add representers for these objects
-yaml.constructor.add_constructor(u'!stop-condition',
-                                 utopya.stopcond.stop_cond_constructor)
-yaml.constructor.add_constructor(u'!sc-func',
-                                 utopya.stopcond.sc_func_constructor)
 
 # Add aliases for the (coupled) parameter dimensions
 yaml.constructor.add_constructor(u'!sweep',

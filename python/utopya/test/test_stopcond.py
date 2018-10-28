@@ -1,9 +1,11 @@
 """Test the stopcond module"""
 
+import io
 import time
 import subprocess
 
 import pytest
+import ruamel.yaml
 
 from utopya.tools import yaml
 import utopya.stopcond as sc
@@ -41,7 +43,7 @@ def test_init():
         sc.StopCondition()
     
     # invalid function name
-    with pytest.raises(TypeError, match="`func` needs to be a callable"):
+    with pytest.raises(ImportError, match="Could not find a callable named"):
         sc.StopCondition(to_check=[dict(func="I am not a function.")])
 
     # too many arguments
@@ -50,28 +52,25 @@ def test_init():
                                         seconds=123)],
                          func=sc_funcs.timeout_wall)
 
-def test_constructors():
+def test_constructor():
     """Tests the YAML constructor"""
     ymlstr1 = "sc: !stop-condition {to_check: [], name: foo, description: bar}"
     assert isinstance(yaml.load(ymlstr1)['sc'], sc.StopCondition)
 
     ymlstr2 = "sc: !stop-condition [1, 2, 3]"
-    with pytest.raises(TypeError):
+    with pytest.raises(ruamel.yaml.constructor.ConstructorError):
         yaml.load(ymlstr2)
 
-    ymlstr3 = "scf: !sc-func timeout_wall"
-    assert yaml.load(ymlstr3)['scf'] is sc_funcs.timeout_wall
+def test_representer():
+    """Tests the YAML constructor"""
+    sc1 = sc.StopCondition(func="timeout_wall", seconds=123)
 
-    # non-scalar node type
-    ymlstr4 = "scf: !sc-func [timeout_wall, foo, bar]"
-    with pytest.raises(TypeError):
-        yaml.load(ymlstr4)
-    
-    # non-scalar node type
-    ymlstr5 = "scf: !sc-func non_existant_function"
-    with pytest.raises(ImportError):
-        yaml.load(ymlstr5)
-        
+    with io.StringIO() as f:
+        yaml.dump(sc1, stream=f)
+        assert f.getvalue() == ("!stop-condition {description: null, "
+                                "enabled: true, func: timeout_wall, "
+                                "name: null,\n"
+                                "  seconds: 123, to_check: null}\n")
 
 def test_magic_methods(basic_sc):
     """Tests magic methods of the StopCond class."""
