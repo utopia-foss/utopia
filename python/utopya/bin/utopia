@@ -55,7 +55,7 @@ p_run.add_argument('--sim-errors',
                    help="Controls the value of the WorkerManager's "
                         "`nonzero_exit_handling` flag which defines how "
                         "errors in simulations are handled. Allowed values "
-                        "are: 'ignore', 'warn', 'raise'. "
+                        "are: 'ignore', 'warn', 'warn_all', 'raise'. "
                         "If not given, the default from the base config or "
                         "(if set) the user configuration is used.")
 p_run.add_argument('--num-steps',

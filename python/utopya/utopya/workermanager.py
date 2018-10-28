@@ -70,9 +70,14 @@ class WorkerManager:
                 registered with the WorkerManagerReporter
             nonzero_exit_handling (str, optional): How to react if a WorkerTask
                 exits with a non-zero exit code. For 'ignore', nothing happens.
-                For 'warn', a warning is printed. For 'raise', the log is shown
-                and the WorkerManager exits with the same exit code as the
-                WorkerTask exited with.
+                For 'warn', a warning is printed and the last 5 lines of the
+                log are shown. For 'raise', the last 20 lines of the log is
+                shown, all other tasks are terminated, and the WorkerManager
+                exits with the same exit code as the WorkerTask exited with.
+                Note that 'warn' will not lead to any messages if the worker
+                died by SIGTERM, which presumable originated from a fulfilled
+                stop condition. Use 'warn_all' to also receive warnings in
+                this case.
         
         Raises:
             ValueError: For too negative `num_workers` argument
@@ -85,6 +90,7 @@ class WorkerManager:
         self._tasks = TaskList()
         self._task_q = QueueCls()
         self._active_tasks = []
+        self.stopped_tasks = TaskList()
         self._reporter = None
         self._num_finished_tasks = 0
         self._nonzero_exit_handling = None
@@ -224,7 +230,7 @@ class WorkerManager:
         Raises:
             ValueError: For invalid value
         """
-        allowed_vals = ['ignore', 'warn', 'raise']
+        allowed_vals = ['ignore', 'warn', 'warn_all', 'raise']
         if val not in allowed_vals:
             raise ValueError("`nonzero_exit_handling` needs to be one of {}, "
                              "but was '{}'.".format(allowed_vals, val))
@@ -410,10 +416,14 @@ class WorkerManager:
                 self._invoke_report('while_working')
 
                 # Check stop conditions
-                if stop_conditions is not None:
-                    # Compile a list of workers that need to be terminated
-                    to_terminate = self._check_stop_conds(stop_conditions)
-                    self._signal_workers(to_terminate, signal='SIGTERM')
+                if stop_conditions:
+                    # Compile a list of workers where the stop conditions
+                    # were fulfilled and store them.
+                    fulfilled = self._check_stop_conds(stop_conditions)
+                    self.stopped_tasks += fulfilled
+
+                    # Now signal those workers such that they terminate.
+                    self._signal_workers(fulfilled, signal='SIGTERM')
 
                 # Poll the workers. (Will also remove no longer active workers)
                 self._poll_workers()
@@ -548,7 +558,8 @@ class WorkerManager:
         return
 
     def _check_stop_conds(self, stop_conds: Sequence[StopCondition]) -> Set[WorkerTask]:
-        """Checks the given stop conditions for the active tasks and compiles a list of workers that need to be terminated.
+        """Checks the given stop conditions for the active tasks and compiles
+        a list of tasks that needs to be terminated.
         
         Args:
             stop_conds (Sequence[StopCondition]): The stop conditions that
@@ -563,12 +574,16 @@ class WorkerManager:
 
         for sc in stop_conds:
             log.debug("Checking stop condition '%s' ...", sc.name)
-            fulfilled = [t for t in self.active_tasks if sc.fulfilled(t)]
+
+            # Compile the list of tasks that fulfil a stop condition, leaving
+            # out those that are already in the sc_fulfilled list.
+            fulfilled = [t for t in self.active_tasks
+                         if (t not in self.stopped_tasks and sc.fulfilled(t))]
 
             if fulfilled:
-                log.debug("Stop condition '%s' was fulfilled for %d task(s) "
-                          "with name(s):  %s", sc.name, len(fulfilled),
-                          ", ".join([t.name for t in fulfilled]))
+                log.warning("Stop condition '%s' fulfilled for "
+                            "%d task(s):  %s", sc.name, len(fulfilled),
+                            ", ".join([t.name for t in fulfilled]))
                 to_terminate += fulfilled
 
         # Return as set to be sure that they are unique
@@ -659,14 +674,19 @@ class WorkerManager:
 
             log.debug("Handling %s ...", exc.__class__.__name__)
 
-            # Else: add some custom exception handling for this exception type
-            # distinguish different ways of handling these exceptions
+            # Distinguish different ways of handling these exceptions
+            # Ignore all
             if self.nonzero_exit_handling == 'ignore':
                 # Done here. Continue with the next exception
                 continue
 
+            # Ignore terminated tasks for `warn` and `ignore` levels
+            elif (    exc.task.worker_status == -15
+                  and self.nonzero_exit_handling not in ['warn_all', 'raise']):
+                continue
+
             # else: will generate some log output, so need to adjust Reporter
-            # to not use CR characters which mingle up the output
+            #       to not use CR characters which would mangle up the output
             if self.reporter:
                 self.reporter.suppress_cr = True
 
@@ -674,7 +694,7 @@ class WorkerManager:
             log.warning("WorkerTask '%s' exited with non-zero exit status: %s",
                         exc.task.name, exc.task.worker_status)
             
-            if self.nonzero_exit_handling == 'warn':
+            if self.nonzero_exit_handling in ['warn', 'warn_all']:
                 # Print the last few lines of the error log
                 log_task_stream(exc.task, num_entries=5)
 
@@ -684,13 +704,6 @@ class WorkerManager:
             # At this stage, 'raise' is the desired handling mode
             # Show more lines of the log
             log_task_stream(exc.task, num_entries=20)
-            
-            # Inform about exiting
-            log.critical("Action upon non-zero exit of a simulation is set "
-                         "to '%s'. The WorkerManager will terminate the "
-                         "remaining tasks and then sys.exit with the exit "
-                         "code of the failed WorkerTask ...",
-                         self.nonzero_exit_handling)
 
             # By raising here, the except block in start_working will be
             # invoked and terminate workers before calling sys.exit

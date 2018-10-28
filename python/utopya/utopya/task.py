@@ -10,7 +10,7 @@ import subprocess
 import warnings
 import logging
 from functools import partial
-from typing import Callable, Union, Dict, List
+from typing import Callable, Union, Dict, List, Sequence
 from typing.io import BinaryIO
 
 import numpy as np
@@ -841,3 +841,9 @@ class TaskList:
 
         # else: Everything ok, append the object
         self._l.append(val)
+
+    def __add__(self, tasks: Sequence[Task]):
+        """Appends all the tasks in the given iterable to the task list"""
+        for t in tasks:
+            self.append(t)
+        return self

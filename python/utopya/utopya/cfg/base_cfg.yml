@@ -88,7 +88,8 @@ worker_manager:
 
   # How to react upon a simulation exiting with non-zero exit code
   nonzero_exit_handling: warn
-  # can be: ignore, warn, raise
+  # can be: ignore, warn, warn_all, raise
+  # warn_all will also warn if the simulation was terminated by the frontend
   # raise will lead to a SystemExit with the error code of the simulation
 
   # Report format specifications at different points of the WM's operation
@@ -120,11 +121,11 @@ run_kwargs:
     #   to_check:
     #     # The functions specified here are AND-connected, i.e.: _all_
     #     # need to return True for the stop condition to be fulfilled
-    #     - func_name: timeout_wall
+    #     - func: timeout_wall
     #       # will look for utopya.stopcond._sc_timeout_wall method
     #       seconds: !expr 60*10
     #       # further arguments to utopya.stopcond._sc_timeout_wall
-  # NOTE: Currently, the only `func_name` available is 'timeout_wall'.
+  # NOTE: For available function names, see the utopya.stopcond_funcs module
 
 
 # The defaults for the worker_kwargs
