@@ -337,6 +337,11 @@ class WorkerTask(Task):
         # Return the cached exit status
         return self._worker_status
 
+    @property
+    def outstream_objs(self) -> list:
+        """Returns the list of objects parsed from the 'out' stream"""
+        return self.streams['out']['log_parsed']
+
     # Magic methods ...........................................................
 
     def __str__(self) -> str:

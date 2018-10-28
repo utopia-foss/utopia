@@ -22,9 +22,13 @@ def basic_sc():
 
 @pytest.fixture
 def task() -> WorkerTask:
-    """Generates a WorkerTask object, manipulating it somewhat"""
+    """Generates a WorkerTask object, manipulating it somewhat to act as a
+    mock object.
+    """
     task = WorkerTask(name="foo", worker_kwargs=dict(args=('echo','$?')))
+
     task.profiling['create_time'] = time.time() - 124.
+    task.streams['out'] = dict(log_parsed=[])
 
     return task
 
@@ -88,4 +92,19 @@ def test_fulfilled(basic_sc, task):
     basic_sc.enabled = False
     assert basic_sc.fulfilled(task) is False
 
+
 # Tests of the stop condition methods -----------------------------------------
+
+def test_check_monitor_entry(task):
+    """Test the check_monitor_entry stop condition function"""
+    check_monitor_entry = sc_funcs.check_monitor_entry
+
+    # Without a parsed object, this is always false, and no other checks are
+    # actually performed
+    assert not check_monitor_entry(task, entry_name="foo",
+                                   operator="bar", value="baz")
+
+    # Add a mock object
+    task.outstream_objs.append(dict(foo="bar"))
+    assert check_monitor_entry(task, entry_name="foo",
+                               operator="==", value="bar")
