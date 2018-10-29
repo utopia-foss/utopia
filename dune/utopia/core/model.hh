@@ -157,7 +157,7 @@ public:
         _hdfgrp->add_attribute("write_every", _write_every);
 
         // Provide some informative log messages
-        _log->info("Base constructor of model instance '{}' finished.", _name);
+        _log->info("Model base constructor finished.");
         _log->debug("time_max:     {} step(s)", _time_max);
         _log->debug("write_every:  {} step(s)", _write_every);
     }
@@ -262,7 +262,7 @@ public:
       *         is reached.
       */
     void run () {
-        _log->info("Running model from current time  {}  to time  {}  ...",
+        _log->info("Running from current time  {}  to  {}  ...",
                    _time, _time_max);
 
         while (_time < _time_max) {
@@ -272,7 +272,7 @@ public:
     }
 
 
-    // -- User-defined implementations -- //
+    // -- Functions requiring user-defined implementations -- //
 
     /// Perform the computation of a step
     void __perform_step () {
@@ -287,9 +287,11 @@ public:
      */
     void __monitor () {
         if (_monitor.get_monitor_manager()->emit_enabled()) {
-            // Supply the global time to the monitor manager once
-            // from the monitor on the first level
+            // Perform actions that should only happen once by the monitor at
+            // the highest level of the model hierarchy.
             if (_level == 1){
+                // Supply the global time. When reaching this point, all sub-
+                // models will also have reached this time.
                 _monitor.get_monitor_manager()->set_time(_time);
             }
 

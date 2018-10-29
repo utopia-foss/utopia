@@ -122,13 +122,24 @@ private:
     /// Counts the number of emit operations
     std::size_t _emit_counter;
 
+    /// A prefix to the emitted string
+    const std::string _emit_prefix;
+    
+    /// A suffix to the emitted string
+    const std::string _emit_suffix;
+
 public:
     /// Constructor
     /**
      * @param emit_interval The emit interval that specifies after how much
-     * time to emit the monitor data.
+     *                      time to emit the monitor data.
+     * @param emit_prefix   A prefix to the emitted string, default: "!!map "
+     * @param emit_suffix   A suffix to the emitted string, default: "". Note
+     *                      that std::endl is always appended.
      */
-    MonitorManager (const double emit_interval)
+    MonitorManager (const double emit_interval,
+                    const std::string emit_prefix="!!map ",
+                    const std::string emit_suffix="")
     :
         // Create a new MonitorTimer object
         _timer(std::make_shared<MonitorTimer>(emit_interval)),
@@ -136,7 +147,9 @@ public:
         _entries(YAML::Node()),
         // Initialially set the collect data flag to true
         _emit_enabled(true),
-        _emit_counter(0)
+        _emit_counter(0),
+        _emit_prefix(emit_prefix),
+        _emit_suffix(emit_suffix)
     { 
         _entries.SetStyle(YAML::EmitterStyle::Flow);
     };
@@ -144,8 +157,8 @@ public:
     /// Perform an emission of the data to the terminal, if the flag was set
     void emit_if_enabled () {
         if (_emit_enabled){
-            // Emit the monitor entries to the terminal
-            std::cout << _entries << std::endl;
+            // Emit the monitor entries to the terminal, adding a prefix
+            std::cout << _emit_prefix << _entries << _emit_suffix << std::endl;
 
             // Take care of the counter, reset the timer and the emit flag
             _emit_counter++;
