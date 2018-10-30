@@ -16,9 +16,11 @@ This MR implements the ... model.
 - [ ] Added model README
 - [ ] Linked to this model in the main README under "Currently implemented models"
 - [ ] [Model requirements](dune/utopia/models/ModelRequirements.md) are all fulfilled
+- [ ] Added model to `test:models` job in [`.gitlab-ci.yml`](.gitlab-ci.yml)
+- [ ] Reasonably up-to-date with current master
 - [ ] Pipeline passing
 - [ ] Approved by @ ...
-<!-- Add reviewer(s) here once no longer in WIP -->
+<!-- Add reviewer(s) here once no longer WIP -->
 
 
 ### Related issues

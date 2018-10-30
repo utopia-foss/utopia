@@ -1,0 +1,71 @@
+# The model configuration for the HdfBench model
+#
+# This file should ONLY contain model-specific configuration and needs to be
+# written such that it can be used by _every_ model instance, regardless
+# of the level within a model hierarchy.
+# 
+# To that end, it needs to specify the parameters at the level of the instance
+# of a Model class.
+# 
+# This file is usually handled by the frontend: usage of advanced yaml features
+# like anchors and tags is supported.
+# 
+# Note, however, that this file should hold the _default_ values for a single
+# instance. Therefore, parameter sweeps should not be specified here!
+# Furthermore, if including other models' parameters via the `!model` tag, make
+# sure that no circular includes occur.
+---
+# The following sequence defines the names of the benchmarks to carry out
+# NOTE Each entry needs to match with a config entry below.
+#      Also, duplicates are not allowed!
+benchmarks:
+  - basic
+  - 1M
+  - 1M_large_chunks
+
+# If true, the initial setup is followed by a write operation and the
+# _combined_ time is saved.
+initial_write: true
+
+# Delete the test datasets after the run went through
+delete_afterwards: false  # TODO implement
+
+# Sleep time (in seconds, can be float) at the beginning of each step, or
+# between individual benchmarks. Choose 0 to deactivate.
+# These simulate a simulation taking place, giving the OS time to do its thing.
+sleep_step: 0
+sleep_bench: 0
+
+# .............................................................................
+# Settings for the individual benchmarks
+# These define the setup and write functions to use for the benchmark and their
+# parameters. The configurations are only loaded if a benchmark with such a
+# name appears in the list of benchmarks above.
+
+basic: &basic
+  # Define the names of the setup and benchmark functions
+  setup_func: setup_nd
+  write_func: write_const
+  
+  # Shared arguments start below
+  # The shape of the data to write
+  write_shape: [1]
+  # NOTE For writing, an iterator with length equal to the product of the
+  #      shape extends is created.
+  # NOTE The setup functions using this parameter prepend one extra dimension
+  #      in front with the extend being the maximum number of time steps + 1.
+
+  # The constant value to write (always a double)
+  const_val: 42.
+
+
+1M:
+  <<: *basic
+  write_shape: [1048576]  # 1M
+
+1M_large_chunks:
+  <<: *basic
+  setup_func: setup_nd_with_chunks
+
+  write_shape: [1048576]  # 1M
+  chunks: [4, 1048576]    # 1M * typesize

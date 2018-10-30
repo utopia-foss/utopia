@@ -1,0 +1,23 @@
+# Test the write functions
+---
+parameter_space:
+  num_steps: 10
+
+  HdfBench: !model
+    model_name: HdfBench
+
+    benchmarks:
+      - write_const
+
+    write_const:
+      setup_func: setup_nd
+      write_func: write_const
+
+      write_shape: [7]
+
+      const_val: !sweep
+        default: 23.
+        values:
+          - 23.
+          - 42.
+          - -1.

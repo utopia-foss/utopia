@@ -167,8 +167,10 @@ This will also show you a README of the model which contains further information
 
 | Model Name | Description |
 | ---------- | ----------- |
+| [`ContDisease`](dune/utopia/models/ContDisease) | The contagious disease model on a cellular automaton |
 | [`ForestFire`](dune/utopia/models/ForestFire) | A model of a two state ForestFire, using percolation to burn |
 | [`SimpleEG`](dune/utopia/models/SimpleEG) | A model of simple evolutionary games on grids |
+| [`Hierarnet`](dune/utopia/models/Hierarnet) | Evolutionary network with continuous public goods games played around each node |
 
 
 #### Model templates, tests, benchmarks ...
@@ -179,6 +181,7 @@ Additionally, some models are only needed to assert that Utopia functions as des
 | [`dummy`](dune/utopia/models/dummy) | Main testing model |
 | [`CopyMe`](dune/utopia/models/CopyMe) | A template for creating new models _(see below)_ |
 | [`CopyMeBare`](dune/utopia/models/CopyMeBare) | A _minimal_ template for creating new models |
+| [`HdfBench`](dune/utopia/models/HdfBench) | Benchmarking capabilities for the Utopia Hdf5 library |
 
 
 
