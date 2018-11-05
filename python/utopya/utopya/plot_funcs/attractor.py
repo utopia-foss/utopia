@@ -86,7 +86,6 @@ def bifurcation_codimension_one(dm: DataManager, *,
 
         # Get the shape of the data
         cfg = uni['cfg']
-        grid_size = cfg[model_name]['grid_size']
         steps = int(cfg['num_steps']/cfg.get('write_every', 1))
         # NOTE The steps variable does not correspond to the actual _time_ of the
         #      simulation at those frames!
