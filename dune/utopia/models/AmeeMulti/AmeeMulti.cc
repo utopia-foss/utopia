@@ -109,6 +109,7 @@ struct Modelfactory
                              }}};
         // making model types
         using Modeltypes = Utopia::ModelTypes<RNG>;
+        std::cout << " producing model" << std::endl;
 
         return AmeeMulti<CellType, AgentType, Modeltypes, Adaptionfunction<AgentType>, construction, decay>(
             name, parentmodel, cellmanager.cells(),
@@ -131,7 +132,8 @@ int main(int argc, char** argv)
 
         // make managers first -> this has to be wrapped in a factory function
         auto cellmanager = Utopia::Models::Amee::Setup::create_grid_manager_cells<
-            Utopia::Models::Amee::StaticCell, CS, true, 2, true, false>("Amee", pp);
+            Utopia::Models::Amee::StaticCell, CS, true, 2, true, false>(
+            "AmeeMulti", pp);
 
         // read stuff from the config
         bool construction =
@@ -140,10 +142,10 @@ int main(int argc, char** argv)
         bool decay = Utopia::as_bool(pp.get_cfg()["AmeeMulti"]["decay"]);
 
         std::string agenttype =
-            Utopia::as_str(pp.get_cfg()["AmeeMulti"]["Agenttype"]);
+            Utopia::as_str(pp.get_cfg()["AmeeMulti"]["agenttype"]);
 
         std::string adaptionfunction =
-            Utopia::as_str(pp.get_cfg()["AmeeMulti"]["Adaptionfunction"]);
+            Utopia::as_str(pp.get_cfg()["AmeeMulti"]["adaptionfunction"]);
 
         if (std::make_tuple(construction, decay, agenttype) ==
             std::tuple<bool, bool, std::string>{true, true, "simple"})

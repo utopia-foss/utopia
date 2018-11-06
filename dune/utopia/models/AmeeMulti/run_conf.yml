@@ -66,9 +66,8 @@ parameter_space:
     construction: true
     decay: true
     highresinterval: [[0, 2500], [50000, 52500], [500000,502500], [997500, 1000000]]
-    Agenttype: !sweep 
-      default: complex 
-      values: [simple, complex]
+    agenttype: simple
+    infotime: 100
 
     # stuff for worker manager
 worker_manager:
@@ -80,5 +79,5 @@ paths:
   out_dir: ~/utopia_output
 
   # model note is added to the output directory path
-  model_note: "test_run_1000000_complex"
+  model_note: "test"
 
