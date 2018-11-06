@@ -87,8 +87,9 @@ worker_manager:
   #       read from the line buffer frequently enough.
 
   # How to react upon a simulation exiting with non-zero exit code
-  nonzero_exit_handling: warn
-  # can be: ignore, warn, raise
+  nonzero_exit_handling: warn_all
+  # can be: ignore, warn, warn_all, raise
+  # warn_all will also warn if the simulation was terminated by the frontend
   # raise will lead to a SystemExit with the error code of the simulation
 
   # Report format specifications at different points of the WM's operation
@@ -120,11 +121,11 @@ run_kwargs:
     #   to_check:
     #     # The functions specified here are AND-connected, i.e.: _all_
     #     # need to return True for the stop condition to be fulfilled
-    #     - func_name: timeout_wall
+    #     - func: timeout_wall
     #       # will look for utopya.stopcond._sc_timeout_wall method
     #       seconds: !expr 60*10
     #       # further arguments to utopya.stopcond._sc_timeout_wall
-  # NOTE: Currently, the only `func_name` available is 'timeout_wall'.
+  # NOTE: For available function names, see the utopya.stopcond_funcs module
 
 
 # The defaults for the worker_kwargs
@@ -138,6 +139,10 @@ worker_kwargs:
   # Whether to forward the streams to stdout
   forward_streams: in_single_run
   # can be: true, false, or 'in_single_run' (print only in single runs)
+
+  # Whether to forward the raw stream output or only those lines that were not
+  # parsable to yaml, i.e.: only the lines that came _not_ from the monitor
+  forward_raw: true
 
   # The log level at which the streams should be forwarded to stdout
   streams_log_lvl: ~  # if None, uses print instead of the logging module
@@ -165,7 +170,7 @@ data_manager:
   # NOTE The strings given to the Cls argument are mapped to a type using a
   #      class variable of the DataManager
   create_groups:
-    - path: uni
+    - path: multiverse
       Cls: MultiverseGroup
 
   # Supply a default load configuration for the DataManager
@@ -177,27 +182,37 @@ data_manager:
     cfg:
       loader: yaml                          # The loader function to use
       glob_str: 'config/*.yml'              # Which files to load
+      ignore: [config/parameter_space.yml]  # Which files to ignore
       required: true                        # Whether these files are required
       path_regex: config/(\w+)_cfg.yml      # Extract info from the file path
       target_path: cfg/{match:}             # ...and use in target path
+
+    # Load the parameter space object into the MultiverseGroup attributes
+    pspace:
+      loader: yaml_to_object                # Load into ObjectContainer
+      glob_str: config/parameter_space.yml
+      required: true
+      load_as_attr: true
+      unpack_data: true                     # ... and store as ParamSpace obj.
+      target_path: multiverse
 
     # Load the configuration files that are generated for _each_ simulation
     # These hold all information that is available to a single simulation and
     # are in an explicit, human-readable form.
     uni_cfg:
       loader: yaml
-      glob_str: universes/uni*/config.yml
+      glob_str: data/uni*/config.yml
       required: true
-      path_regex: universes/uni(\d+)/config.yml
-      target_path: uni/{match:}/cfg
+      path_regex: data/uni(\d+)/config.yml
+      target_path: multiverse/{match:}/cfg
 
     # Load the binary output data from each simulation.
     data:
       loader: hdf5_proxy
-      glob_str: universes/uni*/data.h5
+      glob_str: data/uni*/data.h5
       required: true
-      path_regex: universes/uni(\d+)/data.h5
-      target_path: uni/{match:}/data
+      path_regex: data/uni(\d+)/data.h5
+      target_path: multiverse/{match:}/data
 
     # The resulting data tree is then:
     #  └┬ cfg
@@ -206,7 +221,7 @@ data_manager:
     #      ├ model
     #      ├ run
     #      └ update
-    #   └ uni
+    #   └ data
     #     └┬ 0
     #        └┬ cfg
     #         └ data
@@ -221,21 +236,17 @@ data_manager:
 plot_manager:
   # Save the plots to the same directory as that of the data manager
   out_dir: ""
-  # TODO check if reasonable decision
 
   # Whether to raise exceptions for plotting errors. false: only log them
   raise_exc: false
 
   # Save all plot configurations alongside the plots
   save_plot_cfg: true
-
-  # As default, use the external plot creator
-  default_creator: external
   
-  # Creator initialization arguments
+  # Can set creator initialization arguments here
   creator_init_kwargs:
-    # For the Utopia-specific external plot creator: none yet.
-    external: {}
+    universe: {}
+    multiverse: {}
 
 
 # Parameter Space .............................................................
@@ -260,6 +271,9 @@ parameter_space:
   write_every: 1
   # This value is passed along to sub-models. Every sub model can also define
   # the key on their level to change it (analogous to log_levels.)
+
+  # By default, emit monitor data to the terminal every two seconds:
+  monitor_emit_interval: 2.
 
   # The default logging levels
   log_levels:

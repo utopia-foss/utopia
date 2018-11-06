@@ -1,0 +1,13 @@
+# Configuration file used to test that the output of the model is correct
+---
+perform_sweep: true
+
+parameter_space:
+  num_steps: 3
+
+  seed: !sweep
+    default: 42
+    range: [4]
+
+  ForestFire: !model  
+    model_name: ForestFire  # imports the model config for the ForestFire model

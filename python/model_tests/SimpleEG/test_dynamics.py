@@ -22,7 +22,7 @@ def test_nonstatic():
     """Check that a randomly initialized grid generates non-static output."""
     mv, dm = mtc.create_run_load(from_cfg="nonstatic.yml")
 
-    for uni_name, uni in dm['uni'].items():
+    for uni_name, uni in dm['multiverse'].items():
         # For debugging, print the IA matrix value
         print("Testing that output is non-static for:")
         print("  Initial state: ", uni['cfg']['SimpleEG']['initial_state'])
@@ -50,51 +50,53 @@ def test_nonstatic():
 def test_specific_scenario():
     """Test a specific case of the SimpleEG model"""
     # Create a multiverse, run a single univers and save the data in the DataManager dm
-    mv, dm = mtc.create_run_load(from_cfg="specific_scenario.yml", perform_sweep=False)
+    mv, dm = mtc.create_run_load(from_cfg="specific_scenario.yml",
+                                 perform_sweep=False)
 
-    payoff = dm['uni'][0]['data']['SimpleEG']['payoff'].reshape(11, 11, 11)
-    strategy = dm['uni'][0]['data']['SimpleEG']['strategy'].reshape(11, 11, 11)
+    for uni in dm['multiverse'].values():
+        payoff = uni['data']['SimpleEG']['payoff'].reshape(11, 11, 11)
+        strategy = uni['data']['SimpleEG']['strategy'].reshape(11, 11, 11)
 
-    ### Check specific values 
-    ## First iteration
-    p1 = payoff[1]
-    s1 = strategy[1]
+        ### Check specific values 
+        ## First iteration
+        p1 = payoff[1]
+        s1 = strategy[1]
 
-    # The centred cell should have a payoff 8*2 and keep strategy S1
-    assert_eq(p1[5][5], 8*2)
-    assert_eq(s1[5][5], 1)
+        # The centred cell should have a payoff 8*2 and keep strategy S1
+        assert_eq(p1[5][5], 8*2)
+        assert_eq(s1[5][5], 1)
 
-    # Its neighbors should have a payoff 7*1 + 1*0.1 and change their strategy to S1
-    for dx in [-1, 0, 1]:
-        for dy in [-1, 0, 1]:
-            if (dx != 0 and dy != 0):
-                assert_eq(p1[5+dx][5+dy], 7.*1. + 1.*0.1)
-                assert_eq(s1[5+dx][5+dy], 1)
+        # Its neighbors should have a payoff 7*1 + 1*0.1 and change their strategy to S1
+        for dx in [-1, 0, 1]:
+            for dy in [-1, 0, 1]:
+                if (dx != 0 and dy != 0):
+                    assert_eq(p1[5+dx][5+dy], 7.*1. + 1.*0.1)
+                    assert_eq(s1[5+dx][5+dy], 1)
 
-    # The cell in the upper left corner should have a payoff 8*1 and startegy S0
-    assert_eq(p1[0][0], 8.)
-    assert_eq(s1[0][0], 0)
+        # The cell in the upper left corner should have a payoff 8*1 and startegy S0
+        assert_eq(p1[0][0], 8.)
+        assert_eq(s1[0][0], 0)
 
-    ## Second iteration
-    p2 = payoff[2]
-    s2 = strategy[2]
+        ## Second iteration
+        p2 = payoff[2]
+        s2 = strategy[2]
 
-    # The centred cell should have a payoff 8*0.2 and keep strategy S1
-    assert_eq(p2[5][5], 8*0.2)
-    assert_eq(s2[5][5], 1)
-    
-    # Its neighbors on the side should have a payoff 5*0.2 + 3*2 and keep their strategy to S1
-    # Its neighbors in the corners should have a payoff 3*0.2 + 5*2 and change their strategy to S0
-    for dx in [-1, 0, 1]:
-        for dy in [-1, 0, 1]:
-            if (dx != 0 and dy != 0):
-                if dx == 0 or dy == 0:
-                    print(dx, dy)
-                    assert_eq(p2[5+dx][5+dy], 5.*0.2 + 3.*2.)
-                    assert_eq(s2[5+dx][5+dy], 1)
-                else:
-                    assert_eq(p2[5+dx][5+dy], 3.*0.2 + 5.*2.)
-                    assert_eq(s2[5+dx][5+dy], 1)
+        # The centred cell should have a payoff 8*0.2 and keep strategy S1
+        assert_eq(p2[5][5], 8*0.2)
+        assert_eq(s2[5][5], 1)
+        
+        # Its neighbors on the side should have a payoff 5*0.2 + 3*2 and keep their strategy to S1
+        # Its neighbors in the corners should have a payoff 3*0.2 + 5*2 and change their strategy to S0
+        for dx in [-1, 0, 1]:
+            for dy in [-1, 0, 1]:
+                if (dx != 0 and dy != 0):
+                    if dx == 0 or dy == 0:
+                        print(dx, dy)
+                        assert_eq(p2[5+dx][5+dy], 5.*0.2 + 3.*2.)
+                        assert_eq(s2[5+dx][5+dy], 1)
+                    else:
+                        assert_eq(p2[5+dx][5+dy], 3.*0.2 + 5.*2.)
+                        assert_eq(s2[5+dx][5+dy], 1)
 
 
 def test_macroscopic_values():
@@ -104,24 +106,24 @@ def test_macroscopic_values():
     mv, dm = mtc.create_run_load(from_cfg="macroscopic_value.yml",
                                  perform_sweep=False)
 
-    # Get the universe (via integer access!)
-    uni = dm['uni'][0]
+    for uni_no, uni in dm['multiverse'].items():
+        # Get the strategy
+        strategy = uni['data']['SimpleEG']['strategy']
+        
+        # Get the grid size
+        cfg = uni['cfg']['SimpleEG']
+        grid_size = cfg['grid_size']
 
-    # Get the strategy
-    strategy = uni['data']['SimpleEG']['strategy']
-    
-    # Get the grid size
-    cfg = uni['cfg']['SimpleEG']
-    grid_size = cfg['grid_size']
+        # Calculate the frequency of S0 and S1 for the last five time steps
+        counts = [np.bincount(strategy[i]) for i in [-1, -2, -3, -4, -5]]
+        frequency = [c / (grid_size[0] * grid_size[1]) for c in counts]
 
-    # Calculate the frequency of S0 and S1 for the last five time steps
-    counts = [np.bincount(strategy[i]) for i in [-1, -2, -3, -4, -5]]
-    frequency = [c / (grid_size[0] * grid_size[1]) for c in counts]
-
-    # Assert that the frequency of S0 (here: cooperators) is around 0.41+-0.2
-    for f in frequency:
-        assert_eq(f[0], 0.41, epsilon=0.1)
-    # NOTE: In the paper of Nowak & May 1992 the final frequency is at about 0.31.
-    #       However, they have self-interactions included we do not want to have.
-    #       Nevertherless, this test should check whether a rather stable final frequency
-    #       is reached and does not change a lot within the last five time steps
+        # Assert that the frequency of S0 (here: cooperators) is ~ 0.41+-0.2
+        for f in frequency:
+            assert_eq(f[0], 0.41, epsilon=0.1)
+        
+        # NOTE In the paper of Nowak & May 1992 the final frequency is at
+        #      about 0.31. However, they have self-interactions included we do
+        #      not want to have.  Nevertherless, this test should check
+        #      whether a rather stable final frequency is reached and does not
+        #      change a lot within the last five time steps

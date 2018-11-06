@@ -40,7 +40,9 @@ def parse_model_info() -> dict:
     rel_bin_paths = _UTOPIA_MODEL_BINPATHS.split(";")
     rel_src_paths = _UTOPIA_MODEL_SRC_DIRS.split(";")
 
-    if len(targets) != len(rel_bin_paths) != len(rel_src_paths):
+    if (   len(targets)       != len(rel_bin_paths)
+        or len(targets)       != len(rel_src_paths)
+        or len(rel_bin_paths) != len(rel_src_paths)):
         raise ValueError("Utopia model information lists need to be of the "
                          "same length, but were:\n"
                          "targets: {}\n"

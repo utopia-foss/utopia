@@ -1,0 +1,24 @@
+# Default plots for the HdfBench model
+---
+# The bast plot configuration; not plotted
+_base: &base
+  # Use the HdfBench-specific plot functions
+  module: model_plots.HdfBench
+
+times:
+  <<: *base
+  plot_func: times
+
+  creator: universe
+  universes: all
+
+mean_times:
+  <<: *base
+  plot_func: mean_times
+
+  creator: multiverse
+  select:
+    fields:
+      times:
+        path: data/HdfBench/times
+        dims: [time, benchmark]

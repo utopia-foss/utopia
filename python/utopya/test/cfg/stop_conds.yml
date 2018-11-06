@@ -11,12 +11,12 @@ run_kwargs:
       to_check:
         # The functions specified here are AND-connected, i.e.: _all_
         # need to return True for the stop condition to be fulfilled
-        - func: !sc-func timeout_wall
+        - func: timeout_wall
           # will look for utopya.stopcond_funcs.timeout_wall method
           seconds: 0.4
           # further arguments to utopya.stopcond_funcs.timeout_wall
     - !stop-condition
       name: single simulation timeout (in short syntax)
-      func: !sc-func timeout_wall
+      func: timeout_wall
       seconds: 0.4
       # further arguments to utopya.stopcond._sc_timeout_wall

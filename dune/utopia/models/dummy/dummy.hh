@@ -83,6 +83,22 @@ public:
     }
 
 
+    /// Monitor model information
+    /** @detail Supply a function that calculates the state mean, if the
+     *          monitor will perform an emission.
+     */
+    void monitor ()
+    {
+        // Supply the state mean to the monitor
+        _monitor.set_by_func("state_mean", [this](){
+            const double sum = std::accumulate(this->_state.begin(),
+                                               this->_state.end(),
+                                               0);
+            return sum / this->_state.size();
+        });
+    }
+
+
     /// Write data into a dataset that corresponds to the current step
     void write_data()
     {
