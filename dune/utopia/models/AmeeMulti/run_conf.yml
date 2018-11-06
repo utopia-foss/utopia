@@ -65,11 +65,9 @@ parameter_space:
     # Model structure: Agent- & cell types etc
     construction: true
     decay: true
-    highresinterval: [[0, 2500], [50000, 52500], [500000,502500], [997500, 1000000], [1100000, 1102500], [1250000, 1252500], [1500000,1502500], [1997500, 2000000]]
-    agenttype: !sweep 
-      default: simple 
-      values: [simple, complex]
-    threadnum: 2
+    highresinterval: [[0, 2500], [50000, 52500], [500000,502500], [997500, 1000000]]
+    agenttype: simple
+    infotime: 100
 
     # stuff for worker manager
 worker_manager:
@@ -81,5 +79,5 @@ paths:
   out_dir: ~/utopia_output
 
   # model note is added to the output directory path
-  model_note: "test_run_long"
+  model_note: "test"
 

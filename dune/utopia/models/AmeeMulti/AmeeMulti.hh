@@ -124,6 +124,7 @@ private:
     std::size_t _idx;
 
     std::chrono::time_point<std::chrono::high_resolution_clock> _begintime;
+    unsigned int _infotime;
 
 public:
     // update sub functions
@@ -427,7 +428,8 @@ public:
           _agent_adaptors(agentadaptors),
           _cell_adaptors(celladaptors),
           _idx(0),
-          _begintime(std::chrono::high_resolution_clock::now())
+          _begintime(std::chrono::high_resolution_clock::now()),
+          _infotime(as_<unsigned>(this->_cfg["infotime"]))
     {
         this->_log->info(" initializing cells");
         initialize_cells();
@@ -680,17 +682,22 @@ public:
      */
     void perform_step()
     {
-        if constexpr (!Updatepolicy::parallel)
+        if ((this->_time % _infotime == 0))
         {
-            // if ((this->_time % 10000 == 0))
-            // {
-            //     this->_log->info("T {}, N {}, elapsed time {} s", this->_time,
-            //                      this->_population.size(),
-            //                      std::chrono::duration_cast<std::chrono::seconds>(
-            //                          std::chrono::high_resolution_clock::now() - _begintime)
-            //                          .count());
-            //     // print_statistics();
-            // }
+            auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(
+                               std::chrono::high_resolution_clock::now() - _begintime)
+                               .count();
+
+            auto remaining =
+                this->_time == 0
+                    ? 1
+                    : (((static_cast<double>(elapsed) / this->_time) * this->_time_max) -
+                       static_cast<double>(elapsed));
+
+            this->_log->info(
+                "T {}, N {}, elapsed time {} s, estimated remaining time {} s",
+                this->_time, _population.size(), elapsed, remaining);
+        }
 
             if (this->_population.size() == 0)
             {
