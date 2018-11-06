@@ -1,5 +1,4 @@
 #include <dune/utopia/core/tags.hh>
-#include <dune/utopia/models/Amee/agentpolicies/agent_updatepolicy.hh>
 #include <dune/utopia/models/Amee/agentstates/agentstate.hh>
 #include <dune/utopia/models/Amee/agentstates/agentstate_policy_complex.hh>
 #include <dune/utopia/models/Amee/agentstates/agentstate_policy_simple.hh>
@@ -7,7 +6,6 @@
 #include <dune/utopia/models/Amee/utils/custom_setup.hh>
 #include <dune/utopia/models/Amee/utils/generators.hh>
 #include <dune/utopia/models/AmeeMulti/AmeeMulti.hh>
-
 #include <iostream>
 #include <thread>
 
@@ -40,7 +38,7 @@ struct Modelfactory
             {"simple_notnormed", simple_notnormed},
             {"simple_normed", simple_normed}};
 
-        using AgentAdaptor = std::function<double(const std::shared_ptr<AgentType>&)>;
+        using AgentAdaptor = std::function<double(std::shared_ptr<AgentType>)>;
         using AgentAdaptortuple = std::tuple<std::string, AgentAdaptor>;
 
         using CellAdaptor = std::function<double(const std::shared_ptr<CellType>)>;

@@ -36,7 +36,6 @@ parameter_space:
     init_cellresourceinflux_kind: "random"
     cellresourcecapacity_kind: "random"
     cellresourcecapacity_limits: [150., 500.]
-    # cellresourcecapacities: [10., 10., 10., 10., 10.]
     resourceinflux_limits: [0., 4.]
     init_celltrait_values: [-5., 5.]
     removethreshold: 1e-3
@@ -53,7 +52,7 @@ parameter_space:
 
     # mutationrates, important for evolution speed and stability
     insertionrate: 1e-3
-    substitution_std: 0.6
+    substitution_std: 0.2
     substitutionrate: 1e-3
 
     modifiercost: 0.
@@ -67,11 +66,12 @@ parameter_space:
     decay: true
     highresinterval: [[0, 2500], [50000, 52500], [500000,502500], [997500, 1000000]]
     agenttype: simple
-    infotime: 100
+    infotime: 10000
+    all_at_once: false
 
     # stuff for worker manager
 worker_manager:
-  num_workers: 2
+  num_workers: 4
 
 # These are passed to Multiverse._create_run_dir
 paths:
@@ -79,5 +79,5 @@ paths:
   out_dir: ~/utopia_output
 
   # model note is added to the output directory path
-  model_note: "test"
+  model_note: "test_run_long_simple_segregated_agentupdate"
 
