@@ -112,9 +112,9 @@ def bifurcation_codimension_one(dm: DataManager, *,
                             " `to_plot/{}/time_fraction` not valid."
                             " Was: {} with value: '{}'"
                             " for a simulation with {} steps."
-                            " Min: 1./steps (or None), Max: 1.0"
+                            " Min: {} (or None), Max: 1.0"
                             "".format(prop_name, type(props['time_fraction']),
-                                      props['time_fraction'], steps))
+                                      props['time_fraction'], steps, 1./steps))
             # else only last data point
             else:
                 time = 1
