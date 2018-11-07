@@ -43,7 +43,7 @@ def bifurcation_codimension_one(dm: DataManager, *,
             navigate to data of submodels.
         param_dim (str): The parameter dimension of the bifurcation diagram
         fmt (str, optional): the plt.plot format argument
-        plot_kwargs (dict, optional): Passed on to plt.plot
+        plot_kwargs (dict, optional): Passed on to ax.set
         save_kwargs (dict, optional): kwargs to the plt.savefig function
 
     Raises:
@@ -133,10 +133,9 @@ def bifurcation_codimension_one(dm: DataManager, *,
     if len(handles) > 0:
         ax.legend(handles=handles)
 
-
     ax.set_xlabel(param_dim)
     ax.set_ylabel("final State")
-    ax.set(**plot_kwargs)
+    ax.set(**(plot_kwargs if plot_kwargs else {}))
 
     # Save and close figure
     plt.savefig(out_path, **(save_kwargs if save_kwargs else {}))
