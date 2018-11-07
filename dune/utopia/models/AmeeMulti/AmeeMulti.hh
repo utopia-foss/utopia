@@ -819,6 +819,10 @@ public:
             "##################################################\n");
     }
 
+    void monitor()
+    {
+    }
+
     /**
      * @brief Perform a single timestep
      *

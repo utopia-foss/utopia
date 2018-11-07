@@ -24,7 +24,7 @@
 parameter_space: 
   num_steps: 2000000
   periodic: true          # false: cells at boundary have fewer neighbors
-  write_every: 1
+  write_every: 1          # dummy, the write is determined extra
   grid_size: [32,32]
   seed: 594472
 
@@ -64,8 +64,19 @@ parameter_space:
     # Model structure: Agent- & cell types etc
     construction: true
     decay: true
-    highresinterval: [[0, 2500], [50000, 52500], [500000,502500], [997500, 1000000]]
-    agenttype: simple
+    highresinterval: 
+        - [0, 2500]
+        - [50000, 52500]
+        - [500000,502500]
+        - [997500, 1000000]
+        - [1250000, 1252500]
+        - [1500000, 1502500]
+        - [1990000, 1992500]
+    agenttype: !sweep 
+        default: 
+        values: 
+        - simple
+        - complex
     infotime: 10000
     all_at_once: false
 
@@ -79,5 +90,5 @@ paths:
   out_dir: ~/utopia_output
 
   # model note is added to the output directory path
-  model_note: "test_run_long_simple_segregated_agentupdate"
+  model_note: "test_run_segregated_agentupdate"
 
