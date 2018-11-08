@@ -22,7 +22,7 @@ log = logging.getLogger(__name__)
 
 def bifurcation_codimension_one(dm: DataManager, *,
                                 out_path: str,
-                                uni: UniverseGroup,
+                                mv_data,
                                 model_name: str,
                                 to_plot: dict,
                                 param_dim: str,
@@ -35,7 +35,7 @@ def bifurcation_codimension_one(dm: DataManager, *,
     Arguments:
         dm (DataManager): The data manager from which to retrieve the data
         out_path (str): Where to store the plot to
-        uni (int): The universe to use
+        mv_data (xr.Dataset): The extracted multidimensional dataset
         model_name (str): The name of the model instance, in which the data is
             located.
         to_plot (dict): The plotting configuration. The entries of this key
@@ -48,22 +48,34 @@ def bifurcation_codimension_one(dm: DataManager, *,
 
     Raises:
         ValueError: for an invalid `param_dim` value
+        ValueError: for an invalid or non-matching `prop_name` value
         ValueError: for an invalid `to_plot/*/time_fraction` value
         Warning: no color defined for `to_plot` entry (coloring misleading)
     """
-    
+    if not param_dim in mv_data.dims:
+        raise ValueError("Dimension param_dim not available in multiverse data."
+                         " Was: {} with value: '{}'."
+                         " Available: {}"
+                         "".format(type(param_dim), param_dim, mv_data.dims))
+
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    # get plot configuration
-    handles = []
-    plot_min_max_only = dict()
+    legend_handles = []    
+    ## scatter data for all properties to plot
     for (prop_name, props) in to_plot.items():
+        if not prop_name in mv_data.data_vars:
+            raise ValueError("Key to_plot/prop_name not available in multiverse data."
+                             " Was: {} with value: '{}'."
+                             " Available in multiverse field: {}"
+                             "".format(type(prop_name), prop_name, mv_data.data_vars))
+
+        ## get plot configuration
         # if plot_min_max_only
         if 'plot_min_max_only' in props.keys():
-            plot_min_max_only[prop_name] = props['plot_min_max_only']
+            plot_min_max_only = props['plot_min_max_only']
         else:
-            plot_min_max_only[prop_name] = False
+            plot_min_max_only = False
 
         # get label
         if 'label' in props.keys(): 
@@ -73,65 +85,41 @@ def bifurcation_codimension_one(dm: DataManager, *,
 
         # add legend
         if 'plot_kwargs' in props.keys() and 'color' in props['plot_kwargs']:
-            handles.append(mpatches.Patch(label=label, 
+            legend_handles.append(mpatches.Patch(label=label, 
                            color=props['plot_kwargs']['color']))
         else:
             # coloring misleading
             log.warning("Warning: No color defined for to_plot "+ prop_name)
 
-	# plot for parameter dimension sweep
-    for uni in dm['multiverse'].values():
-        # Get the group that all datasets are in
-        grp = uni['data'][model_name]
-
-        # Get the shape of the data
-        cfg = uni['cfg']
-        steps = int(cfg['num_steps']/cfg.get('write_every', 1))
-        # NOTE The steps variable does not correspond to the actual _time_ of the
-        #      simulation at those frames!
-
-        # get value of parameter
-        try:
-            param_value = cfg[model_name][param_dim]
-        except:
-            raise ValueError("Argument param_dim not available in Model."
-                            " Was: {} with value: '{}'"
-                            "".format(type(param_dim), param_dim))
-        
-        # Extract the densities
-        data = {p: grp[p] for p in to_plot.keys()}
-        
-		# scatter data for all properties to plot
-        for (prop_name, props) in to_plot.items():
-            # if time_fraction defined
-            # consider end of data with length time_fraction*steps
+        for data in mv_data[prop_name]:
             if 'time_fraction' in props.keys():
-                time = int(props['time_fraction'] * steps)
-                if time < 1 or time > steps:
+                # plot fraction of datapoints
+                time = int(props['time_fraction'] * len(data))
+                if time < 1 or time > len(data):
                     raise ValueError("Value of argument"
                             " `to_plot/{}/time_fraction` not valid."
                             " Was: {} with value: '{}'"
                             " for a simulation with {} steps."
                             " Min: {} (or None), Max: 1.0"
                             "".format(prop_name, type(props['time_fraction']),
-                                      props['time_fraction'], steps, 1./steps))
-            # else only last data point
+                                      props['time_fraction'], len(data), 1./len(data)))
             else:
+                # plot last datapoint
                 time = 1
 
             # plot minimum and maximum
-            if plot_min_max_only[prop_name]:
-                plt.scatter(param_value, np.amin(data[prop_name][-time:]), 
+            if plot_min_max_only:
+                plt.scatter(data[param_dim], np.amin(data[-time:]), 
 							**props['plot_kwargs'])
-                plt.scatter(param_value, np.amax(data[prop_name][-time:]), 
+                plt.scatter(data[param_dim], np.amax(data[-time:]), 
 							**props['plot_kwargs'])
             # plot final state(s)
             else:
-                plt.scatter([param_value]*time, data[prop_name][-time:], 
+                plt.scatter([data[param_dim]]*time, data[-time:], 
 							**props['plot_kwargs'])
 
-    if len(handles) > 0:
-        ax.legend(handles=handles)
+    if len(legend_handles) > 0:
+        ax.legend(handles=legend_handles)
 
     ax.set_xlabel(param_dim)
     ax.set_ylabel("final State")
