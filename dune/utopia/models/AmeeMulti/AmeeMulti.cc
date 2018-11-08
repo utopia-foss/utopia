@@ -87,8 +87,12 @@ struct Modelfactory
             AgentAdaptortuple{
                 "age",
                 [](const auto& agent) -> double { return agent->state().age; }},
-            AgentAdaptortuple{"traitlen", [](const auto& agent) -> double {
+            AgentAdaptortuple{"traitlen",
+                              [](const auto& agent) -> double {
                                   return agent->state().phenotype.size();
+                              }},
+            AgentAdaptortuple{"genotypelen", [](const auto& agent) -> double {
+                                  return agent->state().genotype.size();
                               }}};
 
         std::vector<CellAdaptortuple> celladaptors{
