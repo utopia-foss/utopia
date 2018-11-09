@@ -208,8 +208,8 @@ public:
         auto cell = agent.state().habitat;
         auto& trt = agent.state().phenotype;
         auto& ctrt = cell->state().celltrait;
-        int start = agent.state().start_mod;
-        int end = agent.state().end_mod;
+        unsigned start = agent.state().start_mod;
+        unsigned end = agent.state().end_mod;
         double intensity = agent.state().intensity;
 
         if (std::abs(intensity) < 1e-16)
@@ -221,12 +221,13 @@ public:
             return;
         }
 
-        int min_m = std::min({end, int(ctrt.size()), int(trt.size())});
-        int min_a = std::min(end, int(trt.size()));
+        unsigned min_m = std::min({end, unsigned(ctrt.size()), unsigned(trt.size())});
+        unsigned min_a = std::min(end, unsigned(trt.size()));
 
-        for (int i = start; i < min_m; ++i)
+        for (unsigned i = start; i < min_m; ++i)
         {
-            // //this->_log->debug("  modifying: i = {} , end = {}, ctrtsize = {}",
+            // //this->_log->debug("  modifying: i = {} , end = {}, ctrtsize =
+            // {}",
             //                   i, end, ctrt.size());
 
             if (agent.state().resources < (_reproductioncost + _offspringresources))
@@ -256,7 +257,7 @@ public:
             }
         }
 
-        for (int i = min_m; i < min_a; ++i)
+        for (unsigned i = min_m; i < min_a; ++i)
         {
             // //this->_log->debug("  appending: i = {} , end = {}", i, end);
             if (agent.state().resources < (_reproductioncost + _offspringresources))
