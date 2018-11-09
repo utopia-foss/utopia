@@ -738,7 +738,7 @@ public:
      */
     void print_statistics()
     {
-        Amee::ArithmeticMean Mean;
+        Amee::ArithmeticMean<double> Mean;
         Amee::Maximum Max;
         this->_log->info("Current time: {}\n current populationsize: {}\n",
                          this->_time, _population.size());
