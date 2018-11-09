@@ -56,7 +56,7 @@ parameter_space:
     substitutionrate: 1e-3
 
     modifiercost: 0.
-    adaptionfunction: "multi_notnormed"
+    adaptionfunction: "multi_normed"
     upper_resourcelimit: 40.
     highrestime: 100
     statisticstime: 50
@@ -78,7 +78,7 @@ parameter_space:
         - simple
         - complex
     infotime: 10000
-    all_at_once: false
+    all_at_once: true
 
     # stuff for worker manager
 worker_manager:
@@ -90,5 +90,5 @@ paths:
   out_dir: ~/utopia_output
 
   # model note is added to the output directory path
-  model_note: "test_run_segregated_agentupdate"
+  model_note: "test_run_normed_all_at_once_agentupdate"
 
