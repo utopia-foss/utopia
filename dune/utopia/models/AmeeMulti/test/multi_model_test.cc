@@ -16,6 +16,7 @@ using namespace Utopia;
 template <typename Model>
 void test_model_construction(Model& model)
 {
+    model.get_logger()->info("testing construction");
     auto& agents = model.population();
     auto& cells = model.cells();
     auto cfg = model.get_cfg();
@@ -120,8 +121,8 @@ void test_model_construction(Model& model)
                 *std::min_element(state.celltrait.begin(), state.celltrait.end()),
                 init_celltrait_values[0]);
 
-            ASSERT_EQ(state.resourceinfluxes, init_cell_resourceinflux_values);
-            ASSERT_EQ(state.resource_capacities, cell_resourcecapacities);
+            ASSERT_EQ(state.resourceinflux, init_cell_resourceinflux_values);
+            ASSERT_EQ(state.resource_capacity, cell_resourcecapacities);
 
             ASSERT_EQ(state.celltrait, state.original);
             ASSERT_EQ(state.modtimes, std::vector<double>(state.celltrait.size(), 0.));
@@ -153,7 +154,7 @@ void test_model_functions(Model& model, Cellmanager& cellmanager)
     adamstate.phenotype = std::vector<double>{1., 2., -1., 2., 4.};
     edenstate.celltrait = std::vector<double>{-1., 1., 2., 1., 3.};
     edenstate.resources = std::vector<double>{1., 1., 1., 1., 1.};
-    edenstate.resourceinfluxes = std::vector<double>{1., 1., 1., 1., 1.};
+    edenstate.resourceinflux = std::vector<double>{1., 1., 1., 1., 1.};
     adamstate.start = 0;
     adamstate.end = 5;
     adamstate.adaption = {0., 0., 0., 0., 0.};
@@ -195,7 +196,7 @@ void test_model_functions(Model& model, Cellmanager& cellmanager)
 
     auto neighbors = Utopia::Neighborhoods::MooreNeighbor::neighbors(eden, cellmanager);
     edenstate.celltrait = std::vector<double>(8, 0.);
-    edenstate.resourceinfluxes = std::vector<double>(8, 10.);
+    edenstate.resourceinflux = std::vector<double>(8, 10.);
     edenstate.resources = std::vector<double>(8, 10.);
     adamstate.phenotype = std::vector<double>(8, 1);
     adamstate.start = 1;
@@ -209,7 +210,7 @@ void test_model_functions(Model& model, Cellmanager& cellmanager)
     {
         neighbor->state().celltrait = std::vector<double>(8, 0);
         neighbor->state().resources = std::vector<double>(8, 10.);
-        neighbor->state().resourceinfluxes = std::vector<double>(8, 10.);
+        neighbor->state().resourceinflux = std::vector<double>(8, 10.);
     }
 
     neighbors[2]->state().celltrait = adamstate.phenotype;
@@ -227,7 +228,7 @@ void test_model_functions(Model& model, Cellmanager& cellmanager)
     // random movement
     adamstate.resources = 0.5; // has to move
     edenstate.celltrait = std::vector<double>(8, 1.);
-    edenstate.resourceinfluxes = std::vector<double>(8, 10.);
+    edenstate.resourceinflux = std::vector<double>(8, 10.);
     edenstate.resources = std::vector<double>(8, 10.);
     adamstate.phenotype = std::vector<double>(8, 1.);
     neighbors = Utopia::Neighborhoods::MooreNeighbor::neighbors(eden, cellmanager);
@@ -240,7 +241,7 @@ void test_model_functions(Model& model, Cellmanager& cellmanager)
     for (auto& neighbor : neighbors)
     {
         neighbor->state().celltrait = std::vector<double>(8, 1.);
-        neighbor->state().resourceinfluxes = std::vector<double>(8, 10.);
+        neighbor->state().resourceinflux = std::vector<double>(8, 10.);
         neighbor->state().resources = std::vector<double>(8, 10.);
     }
     model.update_adaption(*adam);
@@ -271,7 +272,7 @@ void test_model_functions(Model& model, Cellmanager& cellmanager)
     model.increment_time(1);
     adam->state().habitat->state().celltrait = std::vector<double>(6, 6.);
     adam->state().habitat->state().resources = std::vector<double>(6, 1.);
-    adam->state().habitat->state().resourceinfluxes = std::vector<double>(6, 1.);
+    adam->state().habitat->state().resourceinflux = std::vector<double>(6, 1.);
     adam->state().habitat->state().modtimes = std::vector<double>(6, 0.);
     adamstate.phenotype = std::vector<double>(6, 4.);
     adamstate.resources = 10.;
@@ -291,7 +292,7 @@ void test_model_functions(Model& model, Cellmanager& cellmanager)
     adamstate.phenotype = std::vector<double>(8, 4.);
     adam->state().habitat->state().celltrait = std::vector<double>(6, 6.);
     adam->state().habitat->state().resources = std::vector<double>(6, 1.);
-    adam->state().habitat->state().resourceinfluxes = std::vector<double>(6, 1.);
+    adam->state().habitat->state().resourceinflux = std::vector<double>(6, 1.);
     adam->state().habitat->state().modtimes = std::vector<double>(6, 0.);
     adam->state().resources = 10.;
     model.set_modifiercost(0.1);
@@ -325,7 +326,7 @@ void test_model_functions(Model& model, Cellmanager& cellmanager)
     adamstate.phenotype = std::vector<double>(6, 2.);
     adamstate.habitat->state().celltrait = std::vector<double>(6, 6.);
     adam->state().habitat->state().resources = std::vector<double>(6, 1.);
-    adam->state().habitat->state().resourceinfluxes = std::vector<double>(6, 1.);
+    adam->state().habitat->state().resourceinflux = std::vector<double>(6, 1.);
     adam->state().habitat->state().modtimes = std::vector<double>(6, 0.);
     adamstate.resources = 10.;
     model.set_modifiercost(2.);
@@ -349,14 +350,14 @@ void test_model_functions(Model& model, Cellmanager& cellmanager)
 
     adam->state().habitat->state().celltrait = std::vector<double>(6, 6.);
     adam->state().habitat->state().resources = std::vector<double>(6, 1.);
-    adam->state().habitat->state().resourceinfluxes = std::vector<double>(6, 1.);
+    adam->state().habitat->state().resourceinflux = std::vector<double>(6, 1.);
     adam->state().resources = 15.;
     model.set_modifiercost(1);
 
     model.modify(*adam);
 
     ASSERT_EQ(adamstate.resources, 3.);
-    ASSERT_EQ(adam->state().habitat->state().resourceinfluxes.size(), (unsigned long)7);
+    ASSERT_EQ(adam->state().habitat->state().resourceinflux.size(), (unsigned long)7);
 
     ASSERT_EQ(adam->state().habitat->state().celltrait,
               (std::vector<double>{6., 6., 4., 4., 4., 4., 4.}));
@@ -375,7 +376,7 @@ void test_model_functions(Model& model, Cellmanager& cellmanager)
 
     adam->state().habitat->state().celltrait = std::vector<double>(11, 6.);
     adam->state().habitat->state().resources = std::vector<double>(11, 1.);
-    adam->state().habitat->state().resourceinfluxes = std::vector<double>(11, 1.);
+    adam->state().habitat->state().resourceinflux = std::vector<double>(11, 1.);
     adam->state().habitat->state().modtimes = std::vector<double>(11, 0.);
     adam->state().resources = 15.;
     model.set_modifiercost(0.5);
@@ -405,7 +406,7 @@ void test_model_functions(Model& model, Cellmanager& cellmanager)
     adam->state().habitat->state().celltrait[7] =
         std::numeric_limits<double>::quiet_NaN(); // add this for testing nan
     adam->state().habitat->state().resources = std::vector<double>(9, 1.);
-    adam->state().habitat->state().resourceinfluxes = std::vector<double>(9, 1.);
+    adam->state().habitat->state().resourceinflux = std::vector<double>(9, 1.);
     adam->state().habitat->state().modtimes = std::vector<double>(9, 0.);
     adam->state().resources = 15.;
     model.set_modifiercost(0.5);
@@ -459,7 +460,7 @@ void test_model_functions(Model& model, Cellmanager& cellmanager)
     auto cell = model.cells().front();
     cell->state().celltrait = std::vector<double>(10, 1.);
     cell->state().original = std::vector<double>(10, 1.);
-    cell->state().resourceinfluxes =
+    cell->state().resourceinflux =
         std::vector<double>(cell->state().celltrait.size(), 10);
 
     // if has no resources, is set to resourceinfluxes
@@ -472,9 +473,9 @@ void test_model_functions(Model& model, Cellmanager& cellmanager)
     // resources: u(t) = (K*u(t-1)*exp(-rt))/(K + u(t-1)*(exp(-rt) - 1))
 
     cell->state().resources = std::vector<double>(cell->state().celltrait.size(), 1.5);
-    cell->state().resourceinfluxes =
+    cell->state().resourceinflux =
         std::vector<double>(cell->state().celltrait.size(), 3.);
-    cell->state().resource_capacities =
+    cell->state().resource_capacity =
         std::vector<double>(cell->state().celltrait.size(), 50.);
     model.update_cell(cell);
 
@@ -495,7 +496,7 @@ void test_model_functions(Model& model, Cellmanager& cellmanager)
     cell->state().original = std::vector<double>(5, 1.);
     cell->state().modtimes = std::vector<double>(7, 2);
     cell->state().resources = std::vector<double>(7, 2);
-    cell->state().resourceinfluxes = std::vector<double>(7, 5);
+    cell->state().resourceinflux = std::vector<double>(7, 5);
 
     model.increment_time(5);
     ASSERT_EQ(model.get_time(), std::size_t(5));
@@ -515,7 +516,7 @@ void test_model_functions(Model& model, Cellmanager& cellmanager)
     cell->state().original = std::vector<double>(5, 1.);
     cell->state().modtimes = std::vector<double>{4, 4, 4, 4, 4, 1, 4};
     cell->state().resources = std::vector<double>(7, 2);
-    cell->state().resourceinfluxes = std::vector<double>(7, 5);
+    cell->state().resourceinflux = std::vector<double>(7, 5);
     model.celltrait_decay(cell);
 
     for (std::size_t i = 0; i < 5; ++i)
@@ -530,7 +531,7 @@ void test_model_functions(Model& model, Cellmanager& cellmanager)
     ASSERT_EQ(cell->state().celltrait[6], 0.002765421850739168);
     ASSERT_EQ(cell->state().modtimes[6], 4.);
 
-    ASSERT_EQ(cell->state().resourceinfluxes, (std::vector<double>{5, 5, 5, 5, 5, 0, 5}));
+    ASSERT_EQ(cell->state().resourceinflux, (std::vector<double>{5, 5, 5, 5, 5, 0, 5}));
     ASSERT_EQ(cell->state().resources, std::vector<double>(7, 2));
 }
 
@@ -596,64 +597,75 @@ int main(int argc, char** argv)
         using CT = std::vector<double>;
         using CS = Utopia::Models::Amee::Cellstate<CT, std::vector<double>>;
 
-        // Initialize the PseudoParent from config file path
-        Utopia::PseudoParent<RNG> pp(argv[1]);
-
-        // make managers first -> this has to be wrapped in a factory function
-        auto cellmanager = Utopia::Models::Amee::Setup::create_grid_manager_cells<
-            Utopia::Models::Amee::StaticCell, CS, true, 2, true, false>("Amee", pp);
-
-        // read stuff from the config
-        bool construction =
-            Utopia::as_bool(pp.get_cfg()["AmeeMulti"]["construction"]);
-
-        bool decay = Utopia::as_bool(pp.get_cfg()["AmeeMulti"]["decay"]);
-
-        std::string agenttype =
-            Utopia::as_str(pp.get_cfg()["AmeeMulti"]["Agenttype"]);
-
-        std::string adaptionfunction =
-            Utopia::as_str(pp.get_cfg()["AmeeMulti"]["Adaptionfunction"]);
-
-        if (std::make_tuple(construction, decay, agenttype) ==
-            std::tuple<bool, bool, std::string>{true, true, "simple"})
+        for (auto cfg :
+             {"multi_test_config_simple.yml", "multi_test_config_complex.yml"})
         {
-            using Genotype = std::vector<double>;
-            using Phenotype = std::vector<double>;
-            Modelfactory<Utopia::Models::Amee::Agentstate_policy_simple, Genotype, Phenotype, RNG, Adaptionfunction, true, true> factory;
+            std::cout << cfg << std::endl;
+            // Initialize the PseudoParent from config file path
+            Utopia::PseudoParent<RNG> pp(cfg);
 
-            auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
-            model.run();
-        }
-        else if (std::make_tuple(construction, decay, agenttype) ==
-                 std::tuple<bool, bool, std::string>{true, true, "complex"})
-        {
-            using Genotype = std::vector<int>;
-            using Phenotype = std::vector<double>;
-            Modelfactory<Utopia::Models::Amee::Agentstate_policy_complex, Genotype, Phenotype, RNG, Adaptionfunction, true, true> factory;
+            // make managers first -> this has to be wrapped in a factory function
+            auto cellmanager = Utopia::Models::Amee::Setup::create_grid_manager_cells<
+                Utopia::Models::Amee::StaticCell, CS, true, 2, true, false>(
+                "AmeeMulti", pp);
 
-            auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
-            model.run();
-        }
-        else if (std::make_tuple(construction, decay, agenttype) ==
-                 std::tuple<bool, bool, std::string>{true, false, "simple"})
-        {
-            using Genotype = std::vector<double>;
-            using Phenotype = std::vector<double>;
-            Modelfactory<Utopia::Models::Amee::Agentstate_policy_simple, Genotype, Phenotype, RNG, Adaptionfunction, true, false> factory;
+            // read stuff from the config
+            bool construction =
+                Utopia::as_bool(pp.get_cfg()["AmeeMulti"]["construction"]);
 
-            auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
-            model.run();
-        }
-        else if (std::make_tuple(construction, decay, agenttype) ==
-                 std::tuple<bool, bool, std::string>{false, false, "complex"})
-        {
-            using Genotype = std::vector<int>;
-            using Phenotype = std::vector<double>;
-            Modelfactory<Utopia::Models::Amee::Agentstate_policy_complex, Genotype, Phenotype, RNG, Adaptionfunction, false, false> factory;
+            bool decay = Utopia::as_bool(pp.get_cfg()["AmeeMulti"]["decay"]);
 
-            auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
-            model.run();
+            std::string agenttype =
+                Utopia::as_str(pp.get_cfg()["AmeeMulti"]["agenttype"]);
+
+            std::string adaptionfunction =
+                Utopia::as_str(pp.get_cfg()["AmeeMulti"]["adaptionfunction"]);
+
+            if (std::make_tuple(construction, decay, agenttype) ==
+                std::tuple<bool, bool, std::string>{true, true, "simple"})
+            {
+                using Genotype = std::vector<double>;
+                using Phenotype = std::vector<double>;
+                Modelfactory<Utopia::Models::Amee::Agentstate_policy_simple, Genotype, Phenotype, RNG, Adaptionfunction, true, true> factory;
+
+                auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                test_model_construction(model);
+                test_model_functions(model, cellmanager);
+            }
+            else if (std::make_tuple(construction, decay, agenttype) ==
+                     std::tuple<bool, bool, std::string>{true, true, "complex"})
+            {
+                using Genotype = std::vector<int>;
+                using Phenotype = std::vector<double>;
+                Modelfactory<Utopia::Models::Amee::Agentstate_policy_complex, Genotype, Phenotype, RNG, Adaptionfunction, true, true> factory;
+
+                auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                test_model_construction(model);
+                test_model_functions(model, cellmanager);
+            }
+            else if (std::make_tuple(construction, decay, agenttype) ==
+                     std::tuple<bool, bool, std::string>{true, false, "simple"})
+            {
+                using Genotype = std::vector<double>;
+                using Phenotype = std::vector<double>;
+                Modelfactory<Utopia::Models::Amee::Agentstate_policy_simple, Genotype, Phenotype, RNG, Adaptionfunction, true, false> factory;
+
+                auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                test_model_construction(model);
+                test_model_functions(model, cellmanager);
+            }
+            else if (std::make_tuple(construction, decay, agenttype) ==
+                     std::tuple<bool, bool, std::string>{false, false,
+                                                         "complex"})
+            {
+                using Genotype = std::vector<int>;
+                using Phenotype = std::vector<double>;
+                Modelfactory<Utopia::Models::Amee::Agentstate_policy_complex, Genotype, Phenotype, RNG, Adaptionfunction, false, false> factory;
+
+                auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                test_model_construction(model);
+                test_model_functions(model, cellmanager);
+            }
         }
         return 0;
     }

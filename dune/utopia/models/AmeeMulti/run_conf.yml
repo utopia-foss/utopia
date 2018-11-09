@@ -58,7 +58,6 @@ parameter_space:
     modifiercost: 0.
     adaptionfunction: "multi_normed"
     upper_resourcelimit: 40. # upper limit which can be taken in at once by an organism
-    highrestime: 100
     statisticstime: 50
 
     # Model structure: Agent- & cell types etc

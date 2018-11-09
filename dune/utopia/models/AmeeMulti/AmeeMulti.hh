@@ -216,7 +216,7 @@ public:
         {
             return;
         }
-        if (start < 0 or end < 0 or start >= (int)trt.size() or end < start)
+        if (start < 0 or end < 0 or start >= trt.size() or end < start)
         {
             return;
         }
@@ -583,13 +583,12 @@ public:
         }
         else if (init_cell_resourceinflux_kind == "given")
         {
-            init_cellresourceinflux =
-                as_vector<double>(this->_cfg["init_cell_influxvalues"]);
-            if (init_celltrait_len != init_cellresourceinflux.size())
-            {
-                throw std::runtime_error(
-                    "init_cell_influxvalues must be as long as "
-                    "init_celltraitlen");
+          init_cellresourceinflux =
+              as_vector<double>(this->_cfg["init_cell_influxvalues"]);
+          if (init_celltrait_len != init_cellresourceinflux.size()) {
+            throw std::runtime_error(
+                "init_cell_influxvalues must be as long as "
+                "init_celltraitlen");
             }
         }
         else
@@ -617,8 +616,8 @@ public:
         }
         else if (cell_resourcecapacity_kind == "given")
         {
-            resourcecapacity =
-                as_vector<double>(this->_cfg["cellresourcecapacity"]);
+          resourcecapacity =
+              as_vector<double>(this->_cfg["cellresourcecapacities"]);
         }
         else
         {
@@ -630,7 +629,7 @@ public:
         std::vector<double> init_cellresources(init_celltrait_len, 1.);
 
         const auto init_celltrait_values =
-            as_array<double, 2>(this->_cfg["init_celltrait_values"]);
+            as_vector<double>(this->_cfg["init_celltrait_values"]);
 
         CT init_celltrait(init_celltrait_len);
         std::uniform_real_distribution<CTV> dist(init_celltrait_values[0],

@@ -1,61 +1,54 @@
-AmeeMultiSimple:
-  Agenttype: simple
+AmeeMulti:
   adaptionfunction: multi_notnormed
-  construction: true
-  deathprobability: 1e-2
-  decay: true
-  decayintensity: 1e-2
-  grid_size:
-  - 32
-  - 32
-  highresinterval: [[0, 2000], [50000, 52000], [200000, 202500], [248000, 250000]]
-
-  highresoutput: true
-  highrestime: 100
-  statisticstime: 20
-  init_cellresourceinflux_kind: "given"
-  init_cell_influxvalues: [10., 10., 10., 10., 10., 10.,10., 10., 10., 10., 10., 10.,10., 10., 10., 10., 10., 10.,10., 10., 10., 10., 10., 10.]
-  init_cell_resources: [1., 1., 1., 1., 1., 1.,1., 1., 1., 1., 1., 1.,1., 1., 1., 1., 1., 1.,1., 1., 1., 1., 1., 1.]
+  agenttype: simple
+  all_at_once: true
   cellresourcecapacity_kind: "given"
   cellresourcecapacities: [1000., 1000., 1000., 1000., 1000., 1000.,1000., 1000., 1000., 1000., 1000., 1000.,1000., 1000., 1000., 1000., 1.000, 1.000,1000., 1000., 1000., 1000., 1000., 1000.]
+  cellresourcecapacity_limits: [150.0, 500.0]
+  construction: true
+  deathprobability: 0.01
+  decay: true
+  decayintensity: 0.01
+  grid_size: [32, 32]
+  highresinterval:
+  - [0, 2500]
+  - [50000, 52500]
+  - [500000, 502500]
+  - [997500, 1000000]
+  - [1250000, 1252500]
+  - [1500000, 1502500]
+  - [1990000, 1992500]
+  highresoutput: false
+  highrestime: 100
+  infotime: 10000
   init_cell_traitlen: 24
-  init_celltrait_max: 5.0
-  init_celltrait_min: -5.0
-  init_celltrait_values:
-  - -5.0
-  - 5.0
-  init_end: 3
-  init_genotype_values:
-  - -5.0
-  - 5.0
+  init_cellresourceinflux_kind: "given"
+  init_cell_influxvalues: [10., 10., 10., 10., 10., 10.,10., 10., 10., 10., 10., 10.,10., 10., 10., 10., 10., 10.,10., 10., 10., 10., 10., 10.]
+  init_celltrait_values: [-5.0, 5.0]
+  init_genotype_values: [-5.0, 5.0]
   init_genotypelen: 64
   init_intensity: 0.0
   init_resources: 5.0
   init_start: 2
-  insertionrate: 1e-3
-  livingcost: 5.0
-  metabolism_inefficiency: 0.2
-  modifiercost: 0.1
+  insertionrate: 0.001
+  livingcost: 2.0
+  model_name: AmeeMulti
+  modifiercost: 0.0
   offspringresources: 1.0
   periodic: true
-  removethreshold: 1e-3
+  removethreshold: 0.001
   reproductioncost: 1.0
-  resourceinflux_limits:
-  - 0.0
-  - 10.0
+  resourceinflux_limits: [0.0, 4.0]
   seed: 4378573
-  substitution_std: 1e-3
-  substitutionrate: 1e-3
-  upper_influxlimit: 1000.0
-  upper_resourcelimit: 15.0
-
-log_levels:
-  core: warning
-  data_io: warning
-  model: info
+  statisticstime: 50
+  substitution_std: 0.2
+  substitutionrate: 0.001
+  upper_resourcelimit: 40.0
+grid_size: [32, 32]
+log_levels: {core: warning, data_io: warning, model: info}
+monitor_emit_interval: 2.0
 num_steps: 10000
 output_path: "simple_data.h5"
 periodic: true
-seed: 519472
-write_every: 500
-model_name: AmeeMultiSimple
+seed: 594472
+write_every: 1
