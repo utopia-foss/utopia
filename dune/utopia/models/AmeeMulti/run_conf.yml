@@ -24,7 +24,7 @@
 parameter_space: 
   num_steps: 2000000
   periodic: true          # false: cells at boundary have fewer neighbors
-  write_every: 1          # dummy, the write is determined extra
+  write_every: 1          # dummy, the write is determined in the program through extra parameters
   grid_size: [32,32]
   seed: 594472
 
@@ -32,7 +32,7 @@ parameter_space:
     model_name: AmeeMulti
     
     # Cell parameters
-    init_cell_traitlen: 24
+    init_cell_traitlen: 6
     init_cellresourceinflux_kind: "random"
     cellresourcecapacity_kind: "random"
     cellresourcecapacity_limits: [150., 500.]
@@ -57,7 +57,7 @@ parameter_space:
 
     modifiercost: 0.
     adaptionfunction: "multi_normed"
-    upper_resourcelimit: 40.
+    upper_resourcelimit: 40. # upper limit which can be taken in at once by an organism
     highrestime: 100
     statisticstime: 50
 
@@ -90,5 +90,5 @@ paths:
   out_dir: ~/utopia_output
 
   # model note is added to the output directory path
-  model_note: "test_run_normed_all_at_once_agentupdate"
+  model_note: "test_run_normed_all_at_once_agentupdate_small_celltraitlen"
 
