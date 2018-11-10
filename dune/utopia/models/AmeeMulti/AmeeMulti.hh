@@ -221,6 +221,8 @@ public:
             return;
         }
 
+
+        // FIXME: check if the algorithm is correct!
         unsigned min_m = std::min({end, unsigned(ctrt.size()), unsigned(trt.size())});
         unsigned min_a = std::min(end, unsigned(trt.size()));
 
@@ -264,14 +266,12 @@ public:
                 double value = intensity * trt[i];
                 double cost = _modifiercost * std::abs(value);
 
-                // FIXME: Lookup if the fucking indexing in the inserts is correct, 
-                // not checked at the moment.
                 if (cost < agent.state().resources)
                 {
-                    ctrt.insert(i + 1, value);
-                    cell->state().modtimes.insert(i + 1, this->_time);
-                    cell->state().resources.insert(i + 1, 0.);
-                    cell->state().resourceinflux.insert(i + 1, _resdist(*this->_rng));
+                    ctrt.push_back(value);
+                    cell->state().modtimes.push_back(this->_time);
+                    cell->state().resources.push_back(0.);
+                    cell->state().resourceinflux.push_back(_resdist(*this->_rng));
                     agent.state().resources -= cost;
                 }
             }
