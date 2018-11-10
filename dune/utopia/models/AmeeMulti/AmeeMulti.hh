@@ -226,10 +226,6 @@ public:
 
         for (unsigned i = start; i < min_m; ++i)
         {
-            // //this->_log->debug("  modifying: i = {} , end = {}, ctrtsize =
-            // {}",
-            //                   i, end, ctrt.size());
-
             if (agent.state().resources < (_reproductioncost + _offspringresources))
             {
                 break;
@@ -269,12 +265,14 @@ public:
                 double value = intensity * trt[i];
                 double cost = _modifiercost * std::abs(value);
 
+                // FIXME: Lookup if the fucking indexing in the inserts is correct, 
+                // not checked at the moment.
                 if (cost < agent.state().resources)
                 {
-                    ctrt.emplace_back(intensity * trt[i]);
-                    cell->state().modtimes.emplace_back(this->_time);
-                    cell->state().resources.emplace_back(0.);
-                    cell->state().resourceinflux.emplace_back(_resdist(*this->_rng));
+                    ctrt.insert(i + 1, value);
+                    cell->state().modtimes.insert(i + 1, this->_time);
+                    cell->state().resources.insert(i + 1, 0.);
+                    cell->state().resourceinflux.insert(i + 1, _resdist(*this->_rng));
                     agent.state().resources -= cost;
                 }
             }
@@ -583,12 +581,13 @@ public:
         }
         else if (init_cell_resourceinflux_kind == "given")
         {
-          init_cellresourceinflux =
-              as_vector<double>(this->_cfg["init_cell_influxvalues"]);
-          if (init_celltrait_len != init_cellresourceinflux.size()) {
-            throw std::runtime_error(
-                "init_cell_influxvalues must be as long as "
-                "init_celltraitlen");
+            init_cellresourceinflux =
+                as_vector<double>(this->_cfg["init_cell_influxvalues"]);
+            if (init_celltrait_len != init_cellresourceinflux.size())
+            {
+                throw std::runtime_error(
+                    "init_cell_influxvalues must be as long as "
+                    "init_celltraitlen");
             }
         }
         else
@@ -616,8 +615,8 @@ public:
         }
         else if (cell_resourcecapacity_kind == "given")
         {
-          resourcecapacity =
-              as_vector<double>(this->_cfg["cellresourcecapacities"]);
+            resourcecapacity =
+                as_vector<double>(this->_cfg["cellresourcecapacities"]);
         }
         else
         {
