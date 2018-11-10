@@ -255,7 +255,6 @@ public:
 
         for (unsigned i = min_m; i < min_a; ++i)
         {
-            // //this->_log->debug("  appending: i = {} , end = {}", i, end);
             if (agent.state().resources < (_reproductioncost + _offspringresources))
             {
                 break;
@@ -730,96 +729,10 @@ public:
         this->_time += dt;
     }
 
-    /**
-     * @brief Print statistics of agents and cells, mean and max of quantities.
-     *
-     */
-    void print_statistics()
-    {
-        Amee::ArithmeticMean<double> Mean;
-        Amee::Maximum Max;
-        this->_log->info("Current time: {}\n current populationsize: {}\n",
-                         this->_time, _population.size());
-
-        this->_log->info(
-            "Agents: \n"
-            "\n <cum_adaption> {}\n <adaption_size> {}\n <genome_size> {}\n "
-            "<phenotype_size> {}\n <resources> {}\n",
-            Mean(_population.begin(), _population.end(),
-                 [](auto agent) {
-                     return std::accumulate(agent->state().adaption.begin(),
-                                            agent->state().adaption.end(), 0.);
-                 }),
-            Mean(_population.begin(), _population.end(),
-                 [](auto agent) { return agent->state().adaption.size(); }),
-            Mean(_population.begin(), _population.end(),
-                 [](auto agent) { return agent->state().genotype.size(); }),
-            Mean(_population.begin(), _population.end(),
-                 [](auto agent) { return agent->state().phenotype.size(); }),
-            Mean(_population.begin(), _population.end(),
-                 [](auto agent) { return agent->state().resources; }));
-
-        this->_log->info(
-            "\n MAX(cum_adaption) {}\n MAX(adaption_size) {}\n "
-            "MAX(genome_size) "
-            "{}\n "
-            "MAX(phenotype_size) {}\n MAX(resources) {}\n",
-            Max(_population.begin(), _population.end(),
-                [](auto agent) {
-                    return std::accumulate(agent->state().adaption.begin(),
-                                           agent->state().adaption.end(), 0.);
-                }),
-            Max(_population.begin(), _population.end(),
-                [](auto agent) { return agent->state().adaption.size(); }),
-            Max(_population.begin(), _population.end(),
-                [](auto agent) { return agent->state().genotype.size(); }),
-            Max(_population.begin(), _population.end(),
-                [](auto agent) { return agent->state().phenotype.size(); }),
-            Max(_population.begin(), _population.end(),
-                [](auto agent) { return agent->state().resources; }));
-
-        this->_log->info(
-            "\n Cells: "
-            "\n <cum_resourceinflux> {}\n"
-            " <resourceinfluxize> {}\n <celltraitsize> {}\n <resources> {}",
-            Mean(_cells.begin(), _cells.end(),
-                 [](auto cell) {
-                     return std::accumulate(cell->state().resourceinflux.begin(),
-                                            cell->state().resourceinflux.end(), 0.);
-                 }),
-            Mean(_cells.begin(), _cells.end(),
-                 [](auto cell) { return cell->state().resourceinflux.size(); }),
-            Mean(_cells.begin(), _cells.end(),
-                 [](auto cell) { return cell->state().celltrait.size(); }),
-            Mean(_cells.begin(), _cells.end(), [](auto cell) {
-                return std::accumulate(cell->state().resources.begin(),
-                                       cell->state().resources.end(), 0.);
-            }));
-
-        this->_log->info(
-            "\n MAX(cum_resourceinflux) {}"
-            "\n MAX(resourceinfluxize) {} \n MAX(celltraitsize) {}"
-            "\n MAX(resources) {}",
-            Max(_cells.begin(), _cells.end(),
-                [](auto cell) {
-                    return std::accumulate(cell->state().resourceinflux.begin(),
-                                           cell->state().resourceinflux.end(), 0.);
-                }),
-            Max(_cells.begin(), _cells.end(),
-                [](auto cell) { return cell->state().resourceinflux.size(); }),
-            Max(_cells.begin(), _cells.end(),
-                [](auto cell) { return cell->state().celltrait.size(); }),
-            Max(_cells.begin(), _cells.end(), [](auto cell) {
-                return std::accumulate(cell->state().resources.begin(),
-                                       cell->state().resources.end(), 0.);
-            }));
-
-        this->_log->info(
-            "##################################################\n");
-    }
-
+    
     void monitor()
     {
+        // fucking empty monitor function of which I do not know what to do
     }
 
     /**
@@ -932,11 +845,6 @@ public:
                            [](auto agent) { return agent->state().deathflag; }),
             _population.end());
 
-        // print statistics at end
-        if (this->_time == this->_time_max - 1)
-        {
-            print_statistics();
-        }
     }
 
     /**
