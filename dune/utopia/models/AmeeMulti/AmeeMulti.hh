@@ -208,23 +208,26 @@ public:
         auto cell = agent.state().habitat;
         auto& trt = agent.state().phenotype;
         auto& ctrt = cell->state().celltrait;
-        unsigned start = agent.state().start_mod;
-        unsigned end = agent.state().end_mod;
+        unsigned startmod = agent.state().start_mod;
+        unsigned endmod = agent.state().end_mod;
         double intensity = agent.state().intensity;
 
         if (std::abs(intensity) < 1e-16)
         {
             return;
         }
-        if (start < 0 or end < 0 or start >= trt.size() or end < start)
+        if (startmod < 0 or endmod < 0 or startmod >= trt.size() or endmod < startmod)
         {
             return;
         }
 
-        unsigned min_m = std::min({end, unsigned(ctrt.size()), unsigned(trt.size())});
-        unsigned min_a = std::min(end, unsigned(trt.size()));
+        // not entirely sure if this really makes sense,
+        // I do not think that it suffices for all possible cases!
+        unsigned min_m =
+            std::min({endmod, unsigned(ctrt.size()), unsigned(trt.size())});
+        unsigned min_a = std::min(endmod, unsigned(trt.size()));
 
-        for (unsigned i = start; i < min_m; ++i)
+        for (unsigned i = startmod; i < min_m; ++i)
         {
             // //this->_log->debug("  modifying: i = {} , end = {}, ctrtsize =
             // {}",
@@ -583,12 +586,13 @@ public:
         }
         else if (init_cell_resourceinflux_kind == "given")
         {
-          init_cellresourceinflux =
-              as_vector<double>(this->_cfg["init_cell_influxvalues"]);
-          if (init_celltrait_len != init_cellresourceinflux.size()) {
-            throw std::runtime_error(
-                "init_cell_influxvalues must be as long as "
-                "init_celltraitlen");
+            init_cellresourceinflux =
+                as_vector<double>(this->_cfg["init_cell_influxvalues"]);
+            if (init_celltrait_len != init_cellresourceinflux.size())
+            {
+                throw std::runtime_error(
+                    "init_cell_influxvalues must be as long as "
+                    "init_celltraitlen");
             }
         }
         else
@@ -616,8 +620,8 @@ public:
         }
         else if (cell_resourcecapacity_kind == "given")
         {
-          resourcecapacity =
-              as_vector<double>(this->_cfg["cellresourcecapacities"]);
+            resourcecapacity =
+                as_vector<double>(this->_cfg["cellresourcecapacities"]);
         }
         else
         {
