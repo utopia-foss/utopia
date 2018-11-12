@@ -833,6 +833,8 @@ public:
                 reproduce(*_population[i]);
             }
 
+            std::shuffle(_population.begin(), _population.begin()+size,
+                         *(this->_rng));
             for (std::size_t i = 0; i < size; ++i)
             {
                 kill(*_population[i]);
