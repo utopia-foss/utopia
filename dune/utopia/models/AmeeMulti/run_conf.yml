@@ -77,7 +77,7 @@ parameter_space:
         - simple
         - complex
     infotime: 10000
-    all_at_once: true
+    all_at_once: false
 
     # stuff for worker manager
 worker_manager:
@@ -89,5 +89,5 @@ paths:
   out_dir: ~/utopia_output
 
   # model note is added to the output directory path
-  model_note: "test_run_normed_all_at_once_agentupdate_small_celltraitlen"
+  model_note: "test_run_normed_segregated_agentupdate_small_celltraitlen"
 

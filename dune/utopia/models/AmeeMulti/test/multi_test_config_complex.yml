@@ -1,4 +1,4 @@
-AmeeMulti:
+AmeeMultiComplex:
   adaptionfunction: multi_notnormed
   agenttype: complex
   all_at_once: true
@@ -24,11 +24,9 @@ AmeeMulti:
   init_cell_traitlen: 24
   init_cellresourceinflux_kind: "given"
   init_cell_influxvalues: [10., 10., 10., 10., 10., 10.,10., 10., 10., 10., 10., 10.,10., 10., 10., 10., 10., 10.,10., 10., 10., 10., 10., 10.]
-  init_celltrait_max: 5.0
-  init_celltrait_min: -5.0
   init_celltrait_values:
-    -5.0
-    5.0
+    - -5.0
+    - 5.0
   init_end: 3
   init_genotype_max: 5.0
   init_genotype_min: -5.0
@@ -39,7 +37,6 @@ AmeeMulti:
   init_start: 2
   insertionrate: 0.001
   livingcost: 2.0
-  model_name: AmeeMulti
   modifiercost: 0.0
   offspringresources: 1.0
   periodic: true

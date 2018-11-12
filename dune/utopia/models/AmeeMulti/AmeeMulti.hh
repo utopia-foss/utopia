@@ -221,18 +221,12 @@ public:
             return;
         }
 
-        // not entirely sure if this really makes sense,
-        // I do not think that it suffices for all possible cases!
-        unsigned min_m =
-            std::min({endmod, unsigned(ctrt.size()), unsigned(trt.size())});
-        unsigned min_a = std::min(endmod, unsigned(trt.size()));
+        // FIXME: check if the algorithm is correct!
+        unsigned min_m = std::min({end, unsigned(ctrt.size()), unsigned(trt.size())});
+        unsigned min_a = std::min(end, unsigned(trt.size()));
 
         for (unsigned i = startmod; i < min_m; ++i)
         {
-            // //this->_log->debug("  modifying: i = {} , end = {}, ctrtsize =
-            // {}",
-            //                   i, end, ctrt.size());
-
             if (agent.state().resources < (_reproductioncost + _offspringresources))
             {
                 break;
@@ -262,7 +256,6 @@ public:
 
         for (unsigned i = min_m; i < min_a; ++i)
         {
-            // //this->_log->debug("  appending: i = {} , end = {}", i, end);
             if (agent.state().resources < (_reproductioncost + _offspringresources))
             {
                 break;
@@ -274,10 +267,10 @@ public:
 
                 if (cost < agent.state().resources)
                 {
-                    ctrt.emplace_back(intensity * trt[i]);
-                    cell->state().modtimes.emplace_back(this->_time);
-                    cell->state().resources.emplace_back(0.);
-                    cell->state().resourceinflux.emplace_back(_resdist(*this->_rng));
+                    ctrt.push_back(value);
+                    cell->state().modtimes.push_back(this->_time);
+                    cell->state().resources.push_back(0.);
+                    cell->state().resourceinflux.push_back(_resdist(*this->_rng));
                     agent.state().resources -= cost;
                 }
             }
@@ -735,96 +728,9 @@ public:
         this->_time += dt;
     }
 
-    /**
-     * @brief Print statistics of agents and cells, mean and max of quantities.
-     *
-     */
-    void print_statistics()
-    {
-        Amee::ArithmeticMean<double> Mean;
-        Amee::Maximum Max;
-        this->_log->info("Current time: {}\n current populationsize: {}\n",
-                         this->_time, _population.size());
-
-        this->_log->info(
-            "Agents: \n"
-            "\n <cum_adaption> {}\n <adaption_size> {}\n <genome_size> {}\n "
-            "<phenotype_size> {}\n <resources> {}\n",
-            Mean(_population.begin(), _population.end(),
-                 [](auto agent) {
-                     return std::accumulate(agent->state().adaption.begin(),
-                                            agent->state().adaption.end(), 0.);
-                 }),
-            Mean(_population.begin(), _population.end(),
-                 [](auto agent) { return agent->state().adaption.size(); }),
-            Mean(_population.begin(), _population.end(),
-                 [](auto agent) { return agent->state().genotype.size(); }),
-            Mean(_population.begin(), _population.end(),
-                 [](auto agent) { return agent->state().phenotype.size(); }),
-            Mean(_population.begin(), _population.end(),
-                 [](auto agent) { return agent->state().resources; }));
-
-        this->_log->info(
-            "\n MAX(cum_adaption) {}\n MAX(adaption_size) {}\n "
-            "MAX(genome_size) "
-            "{}\n "
-            "MAX(phenotype_size) {}\n MAX(resources) {}\n",
-            Max(_population.begin(), _population.end(),
-                [](auto agent) {
-                    return std::accumulate(agent->state().adaption.begin(),
-                                           agent->state().adaption.end(), 0.);
-                }),
-            Max(_population.begin(), _population.end(),
-                [](auto agent) { return agent->state().adaption.size(); }),
-            Max(_population.begin(), _population.end(),
-                [](auto agent) { return agent->state().genotype.size(); }),
-            Max(_population.begin(), _population.end(),
-                [](auto agent) { return agent->state().phenotype.size(); }),
-            Max(_population.begin(), _population.end(),
-                [](auto agent) { return agent->state().resources; }));
-
-        this->_log->info(
-            "\n Cells: "
-            "\n <cum_resourceinflux> {}\n"
-            " <resourceinfluxize> {}\n <celltraitsize> {}\n <resources> {}",
-            Mean(_cells.begin(), _cells.end(),
-                 [](auto cell) {
-                     return std::accumulate(cell->state().resourceinflux.begin(),
-                                            cell->state().resourceinflux.end(), 0.);
-                 }),
-            Mean(_cells.begin(), _cells.end(),
-                 [](auto cell) { return cell->state().resourceinflux.size(); }),
-            Mean(_cells.begin(), _cells.end(),
-                 [](auto cell) { return cell->state().celltrait.size(); }),
-            Mean(_cells.begin(), _cells.end(), [](auto cell) {
-                return std::accumulate(cell->state().resources.begin(),
-                                       cell->state().resources.end(), 0.);
-            }));
-
-        this->_log->info(
-            "\n MAX(cum_resourceinflux) {}"
-            "\n MAX(resourceinfluxize) {} \n MAX(celltraitsize) {}"
-            "\n MAX(resources) {}",
-            Max(_cells.begin(), _cells.end(),
-                [](auto cell) {
-                    return std::accumulate(cell->state().resourceinflux.begin(),
-                                           cell->state().resourceinflux.end(), 0.);
-                }),
-            Max(_cells.begin(), _cells.end(),
-                [](auto cell) { return cell->state().resourceinflux.size(); }),
-            Max(_cells.begin(), _cells.end(),
-                [](auto cell) { return cell->state().celltrait.size(); }),
-            Max(_cells.begin(), _cells.end(), [](auto cell) {
-                return std::accumulate(cell->state().resources.begin(),
-                                       cell->state().resources.end(), 0.);
-            }));
-
-        this->_log->info(
-            "##################################################\n");
-    }
-
     void monitor()
     {
+        // fucking empty monitor function of which I do not know what to do
     }
 
     /**
@@ -925,6 +831,7 @@ public:
                 reproduce(*_population[i]);
             }
 
+            std::shuffle(_population.begin(), _population.begin() + size, *(this->_rng));
             for (std::size_t i = 0; i < size; ++i)
             {
                 kill(*_population[i]);
@@ -936,12 +843,6 @@ public:
             std::remove_if(_population.begin(), _population.end(),
                            [](auto agent) { return agent->state().deathflag; }),
             _population.end());
-
-        // print statistics at end
-        if (this->_time == this->_time_max - 1)
-        {
-            print_statistics();
-        }
     }
 
     /**
