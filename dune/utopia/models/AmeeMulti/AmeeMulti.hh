@@ -208,25 +208,24 @@ public:
         auto cell = agent.state().habitat;
         auto& trt = agent.state().phenotype;
         auto& ctrt = cell->state().celltrait;
-        unsigned start = agent.state().start_mod;
-        unsigned end = agent.state().end_mod;
+        unsigned startmod = agent.state().start_mod;
+        unsigned endmod = agent.state().end_mod;
         double intensity = agent.state().intensity;
 
         if (std::abs(intensity) < 1e-16)
         {
             return;
         }
-        if (start < 0 or end < 0 or start >= trt.size() or end < start)
+        if (startmod < 0 or endmod < 0 or startmod >= trt.size() or endmod < startmod)
         {
             return;
         }
-
 
         // FIXME: check if the algorithm is correct!
         unsigned min_m = std::min({end, unsigned(ctrt.size()), unsigned(trt.size())});
         unsigned min_a = std::min(end, unsigned(trt.size()));
 
-        for (unsigned i = start; i < min_m; ++i)
+        for (unsigned i = startmod; i < min_m; ++i)
         {
             if (agent.state().resources < (_reproductioncost + _offspringresources))
             {
@@ -729,7 +728,6 @@ public:
         this->_time += dt;
     }
 
-    
     void monitor()
     {
         // fucking empty monitor function of which I do not know what to do
@@ -833,8 +831,7 @@ public:
                 reproduce(*_population[i]);
             }
 
-            std::shuffle(_population.begin(), _population.begin()+size,
-                         *(this->_rng));
+            std::shuffle(_population.begin(), _population.begin() + size, *(this->_rng));
             for (std::size_t i = 0; i < size; ++i)
             {
                 kill(*_population[i]);
@@ -846,7 +843,6 @@ public:
             std::remove_if(_population.begin(), _population.end(),
                            [](auto agent) { return agent->state().deathflag; }),
             _population.end());
-
     }
 
     /**
