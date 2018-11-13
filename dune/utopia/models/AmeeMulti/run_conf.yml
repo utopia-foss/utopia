@@ -32,7 +32,11 @@ parameter_space:
     model_name: AmeeMulti
     
     # Cell parameters
-    init_cell_traitlen: 6
+    init_cell_traitlen: !sweep 
+        default: 24
+        values: 
+        - 6
+        - 24
     init_cellresourceinflux_kind: "random"
     cellresourcecapacity_kind: "random"
     cellresourcecapacity_limits: [150., 500.]
@@ -72,12 +76,16 @@ parameter_space:
         - [1500000, 1502500]
         - [1990000, 1992500]
     agenttype: !sweep 
-        default: 
+        default: simple
         values: 
         - simple
         - complex
     infotime: 10000
-    all_at_once: false
+    all_at_once: !sweep 
+        default: true
+        values:
+        - true 
+        - false
 
     # stuff for worker manager
 worker_manager:
@@ -89,5 +97,5 @@ paths:
   out_dir: ~/utopia_output
 
   # model note is added to the output directory path
-  model_note: "test_run_normed_segregated_agentupdate_small_celltraitlen"
+  model_note: "test_run_normed_agentupdate_celltraitlen"
 
