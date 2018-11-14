@@ -19,16 +19,20 @@
 grid_size: [500, 500]
 periodic: true          # false: cells at boundary have fewer neighbors
 
-# Initial state parameters, each cell is populated randomly, in mode random a certain probability is chosen,
-# in mode random a fraction is chosen and cells are populated until the specified fraction is reached
-# mode random -> prey_prob and pred_prob have to be specified
-# mode fraction -> prey_frac and pred_frac have to be specified
+# Initial state parameters, each cell is populated randomly, in mode random a 
+# certain probability is chosen, in mode random a fraction is chosen and cells 
+# are populated until the specified fraction is reached
+# mode random -> prey_prob and pred_prob and predprey_prob have to be specified
+# mode fraction -> prey_frac and pred_frac and predprey_frac have to be 
+# specified
+# probabilities and fractions have to sum up to one and be greater than zero
 initial_state: random 
 prey_prob: 0.2         # probability to initialize as prey   
 pred_prob: 0.285       # probability to initialize as predator
-
+predprey_prob: 0.0     # probability to initialize cell with predator and prey
 
 # Model specific parameters:
+cost_of_living: 1 # cost for an individual to uphold its structure
 delta_e: 2   # resource increase by food uptake             
 e_max: 200   # maximum resource level
 e_min: 3     # threshold for reproduction

@@ -68,8 +68,8 @@ population_and_resources:
 
       cmap: viridis
 
-    resource_pred:
-      title: resource_pred
+    resource_predator:
+      title: resource_predator
       limits: [0, 12]
       cmap: viridis
 

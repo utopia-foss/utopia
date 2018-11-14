@@ -168,6 +168,7 @@ This will also show you a README of the model which contains further information
 | Model Name | Description |
 | ---------- | ----------- |
 | [`SimpleEG`](dune/utopia/models/SimpleEG) | A model of simple evolutionary games on grids |
+| [`PredatorPrey`](dune/utopia/models/PredatorPrey) | A simple predator prey model |
 
 
 #### Model templates, tests, benchmarks ...

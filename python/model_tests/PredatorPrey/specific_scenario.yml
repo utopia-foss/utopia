@@ -20,3 +20,4 @@ parameter_space:
 
     # Set to fraction for better control
     initial_state: fraction
+    predprey_frac: 0.0

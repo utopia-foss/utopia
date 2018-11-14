@@ -1,4 +1,4 @@
-"""SimpleEG-model specific plot function for time-series"""
+"""PredatorPrey-model plot function for time-series"""
 
 import logging
 from typing import Union
