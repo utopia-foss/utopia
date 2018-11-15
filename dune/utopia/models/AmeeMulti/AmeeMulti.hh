@@ -222,8 +222,9 @@ public:
         }
 
         // FIXME: check if the algorithm is correct!
-        unsigned min_m = std::min({end, unsigned(ctrt.size()), unsigned(trt.size())});
-        unsigned min_a = std::min(end, unsigned(trt.size()));
+        unsigned min_m =
+            std::min({endmod, unsigned(ctrt.size()), unsigned(trt.size())});
+        unsigned min_a = std::min(endmod, unsigned(trt.size()));
 
         for (unsigned i = startmod; i < min_m; ++i)
         {
