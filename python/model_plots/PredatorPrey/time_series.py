@@ -15,7 +15,9 @@ log = logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------------
 
-def frequency(dm: DataManager, *, out_path: str, uni: int, Population: Union[str, list] = ['prey', 'predator'], save_kwargs: dict=None, **plot_kwargs):
+def frequency(dm: DataManager, *, out_path: str, uni: int, 
+              Population: Union[str, list] = ['prey', 'predator'], 
+              save_kwargs: dict=None, **plot_kwargs):
     """Calculates the frequency of a given Population and performs a lineplot
     
     Args:
@@ -35,13 +37,15 @@ def frequency(dm: DataManager, *, out_path: str, uni: int, Population: Union[str
     # Extract the data of the frequency
     population_data = grp['Population'] 
     num_cells = len(population_data[0])
-    frequencies = [np.bincount(p, minlength=4)[[1, 2]] / num_cells for p in population_data] 
+    frequencies = [np.bincount(p, minlength=4)[[1, 2]] / num_cells 
+                   for p in population_data] 
     
 
     # Get the frequencies of the desired Population and plot it
     # Single population
     if isinstance(Population, str):
-        y_data = [f[np.where(np.asarray(['prey', 'predator']) == Population)] for f in frequencies]
+        y_data = [f[np.where(np.asarray(['prey', 'predator']) == Population)] 
+                  for f in frequencies]
 
         # Create the plot
         plt.plot(y_data, label=Population, **plot_kwargs)
@@ -50,7 +54,8 @@ def frequency(dm: DataManager, *, out_path: str, uni: int, Population: Union[str
     # Multiple strategies
     elif isinstance(Population, list):
         for p in Population:
-            y_data = [f[np.where(np.asarray(['prey', 'predator']) == p)] for f in frequencies]
+            y_data = [f[np.where(np.asarray(['prey', 'predator']) == p)] 
+                      for f in frequencies]
 
             # Create the plot
             plt.plot(y_data, label=p, **plot_kwargs)

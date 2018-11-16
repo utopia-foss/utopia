@@ -1,16 +1,6 @@
 # This defines the default plots for the PredatorPrey model
 ---
 
-# plot the frequency of the prey
-population_prey:
-  creator: external
-
-  module: model_plots.PredatorPrey
-  plot_func: frequency
-
-  uni: 0
-  Population: prey
-
 # plot the frequency of predators and preys in one plot
 frequencies:
   creator: external

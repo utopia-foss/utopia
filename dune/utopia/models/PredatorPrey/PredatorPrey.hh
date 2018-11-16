@@ -176,7 +176,7 @@ private:
             _prey_cell.clear();
             _empty_cell.clear();
 
-            for (auto&& nb : MooreNeighbor::neighbors(cell, this->_manager))
+            for (const auto& nb : MooreNeighbor::neighbors(cell, this->_manager))
             {
                 auto nb_state = nb->state();
 
@@ -243,7 +243,7 @@ private:
             // clear container for empty cells
             _empty_cell.clear();
 
-            for (auto&& nb : MooreNeighbor::neighbors(cell, this->_manager))
+            for (const auto& nb : MooreNeighbor::neighbors(cell, this->_manager))
             {
                 auto nb_state = nb->state();
 
@@ -323,7 +323,7 @@ private:
         {
             _repro_cell.clear();
 
-            for (auto&& nb : MooreNeighbor::neighbors(cell, this->_manager))
+            for (const auto& nb : MooreNeighbor::neighbors(cell, this->_manager))
             {
                 auto nb_state = nb->state();
 
@@ -363,7 +363,7 @@ private:
         {
             _repro_cell.clear();
 
-            for (auto&& nb : MooreNeighbor::neighbors(cell, this->_manager))
+            for (const auto& nb : MooreNeighbor::neighbors(cell, this->_manager))
             {
                 auto nb_state = nb->state();
 
@@ -583,7 +583,7 @@ public:
             std::shuffle(random_cells.begin(), random_cells.end(), *this->_rng);
 
             // Set the cells accordingly
-            for (auto&& cell : random_cells)
+            for (const auto& cell : random_cells)
             {
                 // If the desired number of cells populated by prey is
                 // not yet reached change another cell's strategy
