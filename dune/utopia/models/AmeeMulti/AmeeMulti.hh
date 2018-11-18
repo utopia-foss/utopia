@@ -244,7 +244,7 @@ public:
                 }
 
                 // replace value at locus with scaled value of organism phenotype
-                double value = intensity * trt[i];
+                CTV value = intensity * trt[i];
                 double cost = _modifiercost * std::abs(value - ctrt[i]);
                 if (cost < agent.state().resources)
                 {
@@ -263,7 +263,7 @@ public:
             }
             else
             {
-                double value = intensity * trt[i];
+                CTV value = intensity * trt[i];
                 double cost = _modifiercost * std::abs(value);
 
                 if (cost < agent.state().resources)
@@ -668,8 +668,8 @@ public:
             Agentstate({}, eden, init_resources, this->_rng), ++_idx, eden->position()));
         auto agent = _population[0];
 
-        std::uniform_real_distribution<double> dist(init_genotype_values[0],
-                                                    init_genotype_values[1]);
+        std::uniform_real_distribution<CTV> dist(init_genotype_values[0],
+                                                 init_genotype_values[1]);
 
         bool found = false;
 
