@@ -9,6 +9,7 @@
 #include <dune/utopia/core/types.hh>
 #include <dune/utopia/models/Amee/Amee.hh>
 #include <dune/utopia/models/Amee/cell_state.hh>
+#include <dune/utopia/models/Amee/utils/modeltraits.hh>
 #include <dune/utopia/models/Amee/utils/statistics.hh>
 #include <dune/utopia/models/Amee/utils/test_utils.hh>
 #include <dune/utopia/models/Amee/utils/utils.hh>
@@ -37,9 +38,34 @@ template <typename Modeltraits, typename Modeltypes>
 class AmeeMulti : public Model<AmeeMulti<Modeltraits, Modeltypes>, Modeltypes>
 {
 public:
-    using Gridcell = Cell;
-    using Organism = Agent;
+    using Base = Model<Amee<Modeltraits, Modeltypes>, Modeltypes>;
+
+    using Traits = Modeltraits;
+
+    using Types = Modeltypes;
+
+    /// Data type of the shared RNG
+    using RNG = typename Types::RNG;
+
+    /// Data type that holds the configuration
+    using Config = typename Types::Config;
+
+    /// Data type of the group to write model data to, holding datasets
+    using DataGroup = typename Types::DataGroup;
+
+    /// Data type for a dataset
+    using DataSet = typename Types::DataSet;
+
+    // organism and cell
+    using Organism = typename Traits::Organism;
+
+    // gridcell type
+    using Gridcell = typename Traits::Cell;
+
+    /// CellState
     using Cellstate = typename Gridcell::State;
+
+    /// Agentstate
     using Agentstate = typename Organism::State;
 
     // cell traits typedefs
@@ -52,46 +78,37 @@ public:
     using AG = typename Agentstate::Genotype;
     using AGV = typename AG::value_type;
 
-    using Types = Modeltypes;
-
-    /// The base model type
-    using Base =
-        Model<AmeeMulti<Cell, Agent, Modeltypes, Adaptionfunction, construction, decay>, Modeltypes>;
-
-    /// Data type that holds the configuration
-    using Config = typename Base::Config;
-
-    /// Data type of the group to write model data to, holding datasets
-    using DataGroup = typename Base::DataGroup;
-
-    /// Data type for a dataset
-    using DataSet = typename Base::DataSet;
-
-    /// Data type of the shared RNG
-    using RNG = typename Base::RNG;
-
     // Alias the neighborhood classes to make access more convenient
     using NextNeighbor = Utopia::Neighborhoods::NextNeighbor;
+
     using MooreNeighbor = Utopia::Neighborhoods::MooreNeighbor;
 
-private:
-    using AgentContainer = std::vector<std::shared_ptr<Organism>>;
+    using Adaptionfunc = typename Traits::Adaptionchecker;
 
-    using Cellcontainer = std::vector<std::shared_ptr<Gridcell>>;
+protected:
+    using AgentContainer = typename Traits::AgentContainer;
 
-    using AgentFunction = std::function<void(Organism*)>;
+    using CellContainer = typename Traits::CellContainer;
 
-    using CellFunction = std::function<void(const std::shared_ptr<Gridcell>)>;
+    using AgentAdaptor = typename Traits::AgentAdaptor;
 
-    using AgentAdaptor = std::function<double(std::shared_ptr<Organism>)>;
+    using CellAdaptor = typename Traits::CellAdaptor;
+
+    using AgentUpdateFunction = typename Traits::AgentUpdateFunction;
+
+    using CellUpdateFunction = typename Traits::CellUpdateFunction;
+
     using AgentAdaptortuple = std::tuple<std::string, AgentAdaptor>;
 
-    using CellAdaptor = std::function<double(const std::shared_ptr<Gridcell>)>;
     using CellAdaptortuple = std::tuple<std::string, CellAdaptor>;
 
-    using AgentUpdateFunction = std::function<void(Organism&)>;
-    using CellUpdateFunction = std::function<void(const std::shared_ptr<Gridcell>)>;
-
+    static constexpr bool construction = Traits::construction;
+    static constexpr bool decay = Traits::decay;
+    static constexpr bool multi = Traits::multi;
+    static constexpr bool normed = Traits::normed;
+    // population& grid
+    AgentContainer _population;
+    CellContainer _cells;
     // population& grid
     AgentContainer _population;
     Cellcontainer _cells;
