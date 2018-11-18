@@ -33,10 +33,8 @@ namespace AmeeMulti
  * @tparam construction
  * @tparam decay
  */
-template <typename Cell, typename Agent, typename Modeltypes, typename Adaptionfunction, bool construction, bool decay>
-class AmeeMulti
-    : public Model<AmeeMulti<Cell, Agent, Modeltypes, Adaptionfunction, construction, decay>, Modeltypes>
-
+template <typename Modeltraits, typename Modeltypes>
+class AmeeMulti : public Model<AmeeMulti<Modeltraits, Modeltypes>, Modeltypes>
 {
 public:
     using Gridcell = Cell;
@@ -473,7 +471,6 @@ public:
               ParentModel& parent,
               const Cellcontainer& cells,
               Adaptionfunction adaptionfunc,
-
               std::vector<AgentAdaptortuple> agentadaptors,
               std::vector<CellAdaptortuple> celladaptors)
         : Base(name, parent),
