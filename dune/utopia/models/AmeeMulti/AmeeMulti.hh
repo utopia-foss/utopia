@@ -1,7 +1,6 @@
 #ifndef UTOPIA_MODELS_AMEEMULTI_HH
 #define UTOPIA_MODELS_AMEEMULTI_HH
 
-#include <cassert>
 #include <dune/utopia/base.hh>
 #include <dune/utopia/core/apply.hh>
 #include <dune/utopia/core/model.hh>
@@ -14,9 +13,6 @@
 #include <dune/utopia/models/Amee/utils/test_utils.hh>
 #include <dune/utopia/models/Amee/utils/utils.hh>
 #include <dune/utopia/models/AmeeMulti/adaptionfunctions.hh>
-
-#include <fstream>
-#include <functional>
 
 namespace Utopia
 {
