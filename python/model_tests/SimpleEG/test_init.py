@@ -64,7 +64,7 @@ def test_initial_state_random():
                                  **model_cfg(initial_state='random'))
 
     # For all universes, perform checks on the payoff and strategy data
-    for uni in dm['uni'].values():
+    for uni in dm['multiverse'].values():
         data = uni['data']['SimpleEG']
 
         # Get the grid size
@@ -90,7 +90,7 @@ def test_initial_state_random():
                                  **model_cfg(initial_state='random',
                                              s1_prob=s1_prob))
 
-    for uni in dm['uni'].values():
+    for uni in dm['multiverse'].values():
         data = uni['data']['SimpleEG']
 
         # All payoffs should be zero
@@ -113,7 +113,7 @@ def test_initial_state_fraction():
                                              s1_fraction=s1_fraction))
 
     # For all universes, check that the fraction is met
-    for uni in dm['uni'].values():
+    for uni in dm['multiverse'].values():
         data = uni['data']['SimpleEG']
 
         # All payoffs should be zero
@@ -140,7 +140,7 @@ def test_initial_state_single():
 
     # For all multiverses, go over all universes and check that all cells are
     # of the desired strategy
-    for uni in chain(*[dm['uni'].values() for dm in dms]):
+    for uni in chain(*[dm['multiverse'].values() for dm in dms]):
         # Get the data
         data = uni['data']['SimpleEG']
 
@@ -230,8 +230,9 @@ def test_ia_matrix_extraction():
     for i, expected_matrix in enumerate(ia_matrices):
         _, dm = mtc.create_run_load(from_cfg="ia_matrix_case{}.yml".format(i))
 
-        # Get the interaction matrix from the data attributes
-        grp = dm['uni'][0]['data']['SimpleEG']
-        
+        # Get default universe from multiverse
+        uni = dm['multiverse'][0]
+
         # Now, check whether the ia_matrix is correct
-        check_ia_matrices(grp.attrs['ia_matrix'], expected_matrix)
+        check_ia_matrices(uni['data']['SimpleEG'].attrs['ia_matrix'],
+                          expected_matrix)

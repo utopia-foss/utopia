@@ -20,6 +20,7 @@ set(TESTS_DATAIO
     hdfintegration_test
     hdfgroup_test
     hdfutilities_test
+    monitor_test
     )
 
 # add DATAIO tests

@@ -73,7 +73,7 @@ public:
 
 
 private:
-    // Base members: _time, _name, _cfg, _hdfgrp, _rng
+    // Base members: _time, _name, _cfg, _hdfgrp, _rng, _log, _monitor
 
     // -- Members of this model -- //
     /// The grid manager
@@ -407,6 +407,13 @@ public:
         // Apply the rules to all cells
         apply_rule(_interaction, _manager.cells());
         apply_rule(_update, _manager.cells());
+    }
+
+
+    /// Monitor model information
+    void monitor ()
+    {
+
     }
 
 

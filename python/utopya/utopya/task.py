@@ -4,20 +4,103 @@ The WorkerTask specialises on tasks for the WorkerManager."""
 
 import uuid
 import time
-import json
 import queue
 import threading
 import subprocess
 import warnings
 import logging
-from typing import Callable, Union, Dict, List
+from functools import partial
+from typing import Callable, Union, Dict, List, Sequence
 from typing.io import BinaryIO
 
 import numpy as np
 
+from .tools import yaml
+
 # Initialise logger
 log = logging.getLogger(__name__)
 
+# -----------------------------------------------------------------------------
+# Helper methods
+# These solely relate to the WorkerTask class, thus not in the tools module
+
+def enqueue_lines(*, queue: queue.Queue, stream: BinaryIO, parse_func: Callable=None) -> None:
+    """From the given stream, read line-buffered lines and add them to the
+    provided queue.
+
+    They are added to the queue in form (decoded string, parsed object)
+
+    Args:
+        queue (queue.Queue): The queue object to put the read line into
+        stream (BinaryIO): The stream identifier
+        parse_func (Callable, optional): A parse function that the read line
+            is passed through
+    """
+    # Define a parse function, if none was given
+    if not parse_func:
+        # ...a lambda that always returns None -> no parser
+        parse_func = lambda line: None
+
+    # Read the lines and put them into the queue
+    for line in iter(stream.readline, b''): # <-- thread waits here for new
+                                            #     lines, without idle looping
+        # Got a line (byte-string, assumed utf8-encoded)
+        try:
+            # Try to decode and strip newline
+            line = line.decode('utf8').rstrip()
+
+        except UnicodeDecodeError:
+            # Remains a bytestring
+            pass
+
+        # else: successfully decoded
+
+        # Add it to the queue as a tuple: (decoded string, parsed object),
+        # where the parsed object can also be None
+        queue.put_nowait((line, parse_func(line)))
+
+    # Everything read. Close the stream
+    stream.close()
+    # Thread dies here.
+
+# Custom parse methods ........................................................
+
+def parse_yaml_dict(line: str, *, start_str: str="!!map") -> Union[None, dict]:
+    """A yaml parse function that can be passed to enqueue_lines. It only tries
+    parsing the line if it starts with the provided start string.
+    
+    It tries to decode the line, and parse it as a yaml. If that fails, it
+    will still try to decode the string. If that fails yet again, the
+    unchanged line will be returned.
+    
+    Args:
+        line (str): The line to decode, assumed byte-string, utf8-encoded
+        start_str (str, optional): Description
+    
+    Returns:
+        Union[None, dict]: either the decoded dict, or, if that failed:
+    """
+    # Check if it should be attempted to parse this line
+    if not line.startswith(start_str):
+        # Nope, return None
+        return None
+
+    # Try to load the object, ensuring it is a dict
+    try:
+        obj = dict(yaml.load(line))
+    
+    except Exception as err:
+        # Failed to do that, regardless why; be verbose about it
+        log.warning("Got %s while trying to parse line '%s': %s",
+                    err.__class__.__name__, line, err)
+
+        return None
+
+    # Was able to parse it. Return the parsed object.
+    return obj
+
+
+# -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 
 class Task:
@@ -110,6 +193,7 @@ class Task:
         if self.callbacks and name in self.callbacks:
             self.callbacks[name](self)
 
+
 # -----------------------------------------------------------------------------
 
 class WorkerTask(Task):
@@ -133,6 +217,10 @@ class WorkerTask(Task):
     __slots__ = ('setup_func', 'setup_kwargs', 'worker_kwargs',
                  '_worker', '_worker_pid', '_worker_status',
                  'streams', 'profiling')
+
+    # A mapping of functions that are used in parsing the streams
+    STREAM_PARSE_FUNCS = dict(default=None,
+                              yaml_dict=parse_yaml_dict)
 
     def __init__(self, *, setup_func: Callable=None, setup_kwargs: dict=None, worker_kwargs: dict=None, callbacks: Dict[str, Callable]=None, **task_kwargs):
         """Initialize a WorkerTask object, a specialization of a task for use in the WorkerManager.
@@ -249,6 +337,11 @@ class WorkerTask(Task):
         # Return the cached exit status
         return self._worker_status
 
+    @property
+    def outstream_objs(self) -> list:
+        """Returns the list of objects parsed from the 'out' stream"""
+        return self.streams['out']['log_parsed']
+
     # Magic methods ...........................................................
 
     def __str__(self) -> str:
@@ -292,12 +385,13 @@ class WorkerTask(Task):
         popen_kwargs = worker_kwargs.get('popen_kwargs', {})
 
         read_stdout = worker_kwargs.get('read_stdout', True)
-        line_read_func = worker_kwargs.get('line_read_func')
+        stdout_parser = worker_kwargs.get('stdout_parser', 'default')
 
         save_streams = worker_kwargs.get('save_streams', False)
         save_streams_to = worker_kwargs.get('save_streams_to')
 
         forward_streams = worker_kwargs.get('forward_streams', False)
+        forward_raw = worker_kwargs.get('forward_raw', True)
         streams_log_lvl = worker_kwargs.get('streams_log_lvl', None)
 
         # Perform some checks
@@ -307,11 +401,12 @@ class WorkerTask(Task):
                             "spawn a worker process.".format(type(args), args))
 
         if read_stdout:
-            # If no `line_read_func` was given, read the default
-            if not line_read_func:
-                log.debug("No `line_read_func` given; will use "
-                          "`enqueue_lines` instead.")
-                line_read_func = enqueue_lines
+            # Resolve and assemble the enqueue function, passing the parser
+            # function to it ... (parse_func=None is a valid argument)
+            log.debug("Using stream parse function: %s", stdout_parser)
+
+            _parse_func = self.STREAM_PARSE_FUNCS[stdout_parser]
+            enqueue_func = partial(enqueue_lines, parse_func=_parse_func)
 
             # Establish queue for stream reading, creating a new pipe for
             # STDOUT and _forwarding_ STDERR into that same pipe. For the
@@ -348,20 +443,22 @@ class WorkerTask(Task):
         # If enabled, prepare for reading the output
         if read_stdout:
             # Generate the thread that reads the stream and populates the queue
-            t = threading.Thread(target=line_read_func,
+            t = threading.Thread(target=enqueue_func,
                                  kwargs=dict(queue=q, stream=proc.stdout))
             # Set to be a daemon thread => will die with the parent thread
             t.daemon = True
 
-            # Start the thread; this will lead to line_read_func being called
+            # Start the thread; this will lead to enqueue_func being called
             t.start()
 
             # Save the stream information in the WorkerTask object
             # This includes two counters for the number of lines saved and
             # forwarded, which are used by the save_/forward_streams methods
-            self.streams['out'] = dict(queue=q, thread=t, log=[],
+            self.streams['out'] = dict(queue=q, thread=t,
+                                       log=[], log_raw=[], log_parsed=[],
                                        save=save_streams, save_path=None, 
                                        forward=forward_streams,
+                                       forward_raw=forward_raw,
                                        log_level=streams_log_lvl,
                                        lines_saved=0, lines_forwarded=0)
             # NOTE could have more streams here, but focus on stdout right now
@@ -386,7 +483,7 @@ class WorkerTask(Task):
 
         return self.worker
 
-    def read_streams(self, stream_names: list='all', max_num_reads: int=1) -> None:
+    def read_streams(self, stream_names: list='all', max_num_reads: int=5) -> None:
         """Read the streams associated with this task's worker.
         
         Args:
@@ -411,14 +508,26 @@ class WorkerTask(Task):
 
             # Perform the read operations
             for _ in range(max_num_reads):
-                # Try to read a single entry
+                # Try to read a single entry, i.e.: the tuple enqueued by
+                # enqueue_lines, being: (decoded string, parsed object)
                 try:
-                    entry = q.get_nowait()
+                    line, obj = q.get_nowait()
+
                 except queue.Empty:
                     break
+
                 else:
-                    # Got entry, write it to the stream's log
-                    stream['log'].append(entry)
+                    # Got entries, write it to the stream's raw log
+                    stream['log_raw'].append(line)
+
+                    # If there was an object, additionally write it to the
+                    # parsed log. If not, also write the line to the regular
+                    # log. This way, the regular log only contains this entry
+                    # if no object could be parsed.
+                    if obj is not None:
+                        stream['log_parsed'].append(obj)
+                    else:
+                        stream['log'].append(line)
 
         if not self.streams:
             # There are no streams to read
@@ -441,7 +550,7 @@ class WorkerTask(Task):
 
         return
 
-    def save_streams(self, stream_names: list='all', final: bool=False) -> None:
+    def save_streams(self, stream_names: list='all', save_raw: bool=True, final: bool=False) -> None:
         """For each stream, checks if it is to be saved, and if yes: saves it.
         
         The saving location is stored in the streams dict. The relevant keys
@@ -456,6 +565,9 @@ class WorkerTask(Task):
             stream_names (list, optional): The list of stream names to _check_.
                 If 'all' (default), will check all streams whether the `save`
                 flag is set.
+            save_raw (bool, optional): If True, stores the raw log; otherwise
+                stores the regular log, i.e. the lines that were parseable not
+                included.
             final (bool, optional): If True, this is regarded as the final
                 save operation for the stream, which will lead to additional
                 information being saved to the end of the log.
@@ -486,7 +598,8 @@ class WorkerTask(Task):
             # else: this stream is to be saved
 
             # Determine the lines to save
-            lines_to_save = stream['log'][slice(stream['lines_saved'], None)]
+            stream_log = stream['log_raw'] if save_raw else stream['log']
+            lines_to_save = stream_log[slice(stream['lines_saved'], None)]
 
             if not lines_to_save:
                 log.debug("No lines to save for stream '%s'. Lines already "
@@ -525,7 +638,7 @@ class WorkerTask(Task):
             log.debug("Saved %d lines of stream '%s'.",
                       len(lines_to_save), stream_name)
 
-    def forward_streams(self, stream_names: list='all') -> bool:
+    def forward_streams(self, stream_names: list='all', forward_raw: bool=False) -> bool:
         """Forwards the streams to stdout, either via logging module or print
         
         This function can be periodically called to forward the part of the 
@@ -585,7 +698,9 @@ class WorkerTask(Task):
             # else: this stream is to be forwarded
             
             # Determine lines to write
-            lines = stream['log'][stream['lines_forwarded']:]
+            forward_raw = stream.get('forward_raw', True)
+            stream_log = stream['log_raw'] if forward_raw else stream['log']
+            lines = stream_log[stream['lines_forwarded']:]
             if not lines:
                 # Nothing to print
                 continue
@@ -658,6 +773,7 @@ class WorkerTask(Task):
         log.debug("Task %s: worker finished with status %s.",
                   self.name, self.worker_status)
 
+
 # -----------------------------------------------------------------------------
 
 class TaskList:
@@ -726,79 +842,8 @@ class TaskList:
         # else: Everything ok, append the object
         self._l.append(val)
 
-# -----------------------------------------------------------------------------
-# These solely relate to the WorkerTask class, thus not in the tools module
-
-def enqueue_lines(*, queue: queue.Queue, stream: BinaryIO, parse_func: Callable=None) -> None:
-    """From the given stream, read line-buffered lines and add them to the provided queue. If they are json-parsable, parse them and add the parsed dictionary to the queue.
-
-    Args:
-        queue (queue.Queue): The queue object to put the read line into
-        stream (BinaryIO): The stream identifier
-        parse_func (Callable, optional): A parse function that the read line
-            is passed through
-    """
-
-    if not parse_func:
-        # Define a pass-through function, doing nothing
-        parse_func = lambda line: line
-
-    # Read the lines and put them into the queue
-    for line in iter(stream.readline, b''): # <-- thread waits here for new
-                                            #     lines, without idle looping
-        # Got a line (byte-string, assumed utf8-encoded)
-        try:
-            # Try to decode and strip newline
-            line = line.decode('utf8').rstrip()
-
-        except UnicodeDecodeError:
-            # Remains a bytestring
-            pass
-
-        # else: could decode
-
-        # Send it through the parse function and add it to the queue
-        queue.put_nowait(parse_func(line))
-
-    # Everything read. Close the stream
-    stream.close()
-    # Thread also finishes here.
-
-def parse_json(line: str) -> Union[dict, str]:
-    """A json parser that can be passed to enqueue_lines.
-
-    It tries to decode the line, and parse it as a json.
-    If that fails, it will still try to decode the string.
-    If that fails yet again, the unchanged line will be returned.
-
-    Args:
-        line (str): The line to decode, assumed byte-string, utf8-encoded
-
-    Returns:
-        Union[dict, str]: Either the decoded json, or, if that failed, the str
-    """
-    try:
-        d = json.loads(line, encoding='utf8')
-    
-    except (json.JSONDecodeError, TypeError) as err:
-        # One of the expected errors occured
-        log.debug("%s: %s for line '%s'.", err.__class__.__name__, err, line)
-        
-        # Just return it as the string representation
-        return str(line)
-
-    except Exception as err:
-        # Failed to do that for another reason; be more verbose about it
-        log.error("%s: %s for line '%s'.", err.__class__.__name__, err, line)
-
-        # Still return the string representation
-        return str(line)
-
-    # Could load it. Still check, if it is a dictionary. If not, return as str
-    if isinstance(d, dict):
-        return d
-    return str(d)
-
-def enqueue_json(*, queue: queue.Queue, stream: BinaryIO, parse_func: Callable=parse_json) -> None:
-    """Wrapper function for enqueue_lines with parse_json set as parse_func."""
-    return enqueue_lines(queue=queue, stream=stream, parse_func=parse_func)
+    def __add__(self, tasks: Sequence[Task]):
+        """Appends all the tasks in the given iterable to the task list"""
+        for t in tasks:
+            self.append(t)
+        return self

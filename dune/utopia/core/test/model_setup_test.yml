@@ -3,6 +3,7 @@
 seed: 42
 output_path: model_setup_test_tmpfile.h5
 num_steps: 3
+monitor_emit_interval: 5.
 
 # How frequently to call write_data; passed along to submodels
 write_every: 3

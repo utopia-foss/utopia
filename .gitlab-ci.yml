@@ -7,8 +7,8 @@
 ---
 variables:
   # Setting number of processes
-  CPUS_MULTICORE: 4
-  CPUS_DIND: 3
+  CPUS_DIND: 2
+  CPUS_BUILD: 4
 
   # Variables needed for docker image deployment
   # The image to use is based on the currently selected DUNE version
@@ -30,7 +30,7 @@ variables:
   CONFIG_FLAGS:
       -DDUNE_PYTHON_VIRTUALENV_SETUP=True
       -DDUNE_PYTHON_ALLOW_GET_PIP=True
-  MAKE_FLAGS_BUILD: "" # none for now
+  MAKE_FLAGS_BUILD: -j$CPUS_BUILD
 
   # Directories
   MODEL_DIR: $CI_PROJECT_DIR/dune/utopia/models
@@ -224,19 +224,29 @@ test:models:
   dependencies:
     - build:models
   script:
-    - $DUNECTRL --only=utopia configure
     # Test all models using the testing framework
+    - $DUNECTRL --only=utopia configure
     - $DUNECTRL --only=utopia make test_models
-    # Also test each model via the CLI. Need to enter the virtual env first
+    #
+    # Also test each model via the CLI.
+    # Need to enter the virtual env first
     - $ENTER_DUNE_ENV
-    # First, the test models:
-    - utopia run dummy
-    - utopia run CopyMe
-    - utopia run CopyMeBare --no-plot
-    # ...and now the actual models:
+    #
+    # First, the test and benchmark models:
+    - utopia run dummy --debug
+    - utopia run CopyMe --debug
+    - utopia run CopyMeBare --debug --no-plot
+    - utopia run HdfBench --sweep --num-seeds 3 --debug
+    #
+    # Now the actual models:
+    - utopia run ContDisease
+    - utopia run ForestFire
+    - utopia run Hierarnet
     - utopia run SimpleEG
-    # TODO add calls for all models here
-    # TODO find an automatic way to do this, perhaps via a --test flag?
+    # TODO add a call for your model here
+    #
+    # FIXME use --debug in models, too! Need ffmpeg in docker image for that...
+    # FIXME find an automatic way, perhaps via a --test-all flag to utopia run?
 
 test:cli:
   stage: test
@@ -267,6 +277,9 @@ test:cli:
     # Test setting the number of steps (negative should fail)
     - utopia run dummy --num-steps 1 --no-plot
     - if utopia run dummy --num-steps -1; then exit 1; else echo "all good"; fi
+    # Test setting the number of seeds (<1 should fail)
+    - utopia run dummy --num-seeds 1 --sweep --no-plot --note sweep_via_cli
+    - if utopia run dummy --num-seeds 0; then exit 1; else echo "all good"; fi
     # Test debug mode and setting simulation errors level
     - utopia run dummy --note debug0 --num-steps 3 --debug
     - utopia run dummy --note debug1 --num-steps 3 --debug --sim-errors warn

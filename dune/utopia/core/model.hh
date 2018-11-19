@@ -4,15 +4,11 @@
 #include <dune/utopia/data_io/hdffile.hh>
 #include <dune/utopia/data_io/hdfgroup.hh>
 #include <dune/utopia/data_io/cfg_utils.hh>
+#include <dune/utopia/data_io/monitor.hh>
 #include <dune/utopia/core/logging.hh>
 
 
 namespace Utopia {
-
-
-/// Dummy type for boundary conditions; this is used as a default value
-struct BCDummy {};
-
 
 /// Wrapper struct for defining base class data types
 /** \tparam DataType              Type of the data the model operates on
@@ -23,12 +19,15 @@ struct BCDummy {};
  *  \tparam DataGroupType         The data group class to store datasets in
  *  \tparam DataSetType           The data group class to store data in
  *  \tparam TimeType              The type to use for the time members
+ *  \tparam MonitorType           The type to use for the Monitor member
  */
 template<typename RNGType=DefaultRNG,
          typename ConfigType=Utopia::DataIO::Config,
          typename DataGroupType=Utopia::DataIO::HDFGroup,
          typename DataSetType=Utopia::DataIO::HDFDataset<Utopia::DataIO::HDFGroup>,
-         typename TimeType=std::size_t
+         typename TimeType=std::size_t,
+         typename MonitorType=Utopia::DataIO::Monitor,
+         typename MonitorManagerType=Utopia::DataIO::MonitorManager
          >
 struct ModelTypes
 {
@@ -37,6 +36,9 @@ struct ModelTypes
     using DataGroup = DataGroupType;
     using DataSet = DataSetType;
     using Time = TimeType;
+    using Monitor = MonitorType;
+    using MonitorManager = MonitorManagerType;
+    using Level = std::size_t;
 };
 
 
@@ -66,6 +68,15 @@ public:
     /// Data type for the model time
     using Time = typename ModelTypes::Time;
 
+    /// Data type for the monitor
+    using Monitor = typename ModelTypes::Monitor;
+
+    /// Data type for the monitor manager
+    using MonitorManager = typename ModelTypes::MonitorManager;
+
+    /// Data type for the hierarchical level
+    using Level = typename ModelTypes::Level;
+
 protected:
     // -- Member declarations -- //
     /// Model-internal current time stamp
@@ -91,6 +102,12 @@ protected:
 
     /// The (model) logger
     const std::shared_ptr<spdlog::logger> _log;
+
+    /// The monitor
+    Monitor _monitor;
+
+    /// The hierarchical level
+    const Level _level;
 
 public:
     // -- Constructor -- //
@@ -120,7 +137,9 @@ public:
         _write_every(this->determine_write_every(parent_model)),
         _rng(parent_model.get_rng()),
         _log(spdlog::stdout_color_mt(parent_model.get_logger()->name() + "."
-                                     + _name))
+                                     + _name)),
+        _monitor(Monitor(name, parent_model.get_monitor_manager())),
+        _level(parent_model.get_level() + 1)
     {
         // Set this model instance's log level
         if (_cfg["log_level"]) {
@@ -138,7 +157,7 @@ public:
         _hdfgrp->add_attribute("write_every", _write_every);
 
         // Provide some informative log messages
-        _log->info("Model instance '{}' constructed.", _name);
+        _log->info("Model base constructor finished.");
         _log->debug("time_max:     {} step(s)", _time_max);
         _log->debug("write_every:  {} step(s)", _write_every);
     }
@@ -181,30 +200,69 @@ public:
         return _log;
     }
 
+    /// Return the monitor of this model
+    Monitor get_monitor() const {
+        return _monitor;
+    }
+
+    /// Get the monitor manager of the root model
+    std::shared_ptr<MonitorManager> get_monitor_manager() const {
+        return _monitor.get_monitor_manager();
+    }
+
+    /// Return the hierarchical level within the model hierarchy
+    Level get_level() const {
+        return _level;
+    }
 
     // -- Default implementations -- //
 
     /// Iterate one (time) step of this model
-    /** Increment time, perform step, then write data. If the write_every
-     *  argument was set, will call write_data only in that interval.
+    /** Increment time, perform step, emit monitor data, and write data.
+     *  Monitoring is performed differently depending on the model level. Also,
+     *  the write_data function may be called only every `write_every` steps.
      */
     void iterate () {
-        perform_step();
+        // -- Perform the simulation step -- //
+        __perform_step();     
         increment_time();
 
+        // -- Monitoring -- //
+        /* If the model is at the first hierarchical level, check whether the
+         * monitor entries should be collected and emitted. This leads to a
+         * flag being set in the monitor manager, such that the submodels do
+         * not have to do the check against the timer as well and that all
+         * collected data stems from the same time step.
+         */ 
+        if (_level == 1) {
+            _monitor.get_monitor_manager()->check_timer();
+            __monitor();
+            
+            // If enabled for this step, perform the emission of monitor data
+            // NOTE At this point, we can be sure that all submodels have
+            //      already run, because their iterate functions were called
+            //      in the perform_step of the level 1 model.
+            _monitor.get_monitor_manager()->emit_if_enabled();
+        }
+        else {
+            __monitor();
+        }
+
+        // -- Data output -- //
         if (_time % _write_every == 0) {
             _log->debug("Calling write_data ...");
-            write_data();
+            __write_data();
         }
+
         _log->debug("Finished iteration: {:9d} / {:d}", _time, _time_max);
     }
 
     /// Run the model from the current time to the maximum time
-    /** @detail This repeatedly calls the iterate method, which increments time
-      *
+    /** @detail This repeatedly calls the iterate method until the maximum time
+      *         is reached.
       */
     void run () {
-        _log->info("Running model from current time  {}  to time  {}  ...",
+        _log->info("Running from current time  {}  to  {}  ...",
                    _time, _time_max);
 
         while (_time < _time_max) {
@@ -214,15 +272,36 @@ public:
     }
 
 
-    // -- User-defined implementations -- //
+    // -- Functions requiring user-defined implementations -- //
 
     /// Perform the computation of a step
-    void perform_step () {
+    void __perform_step () {
         impl().perform_step();
+    }
+
+    /// Monitor information in the terminal
+    /* @detail The child implementation of this function will only be called if
+     *         the monitor manager has determined that an emission will occur,
+     *         because it only makes sense to collect data if it will be
+     *         emitted in this step.
+     */
+    void __monitor () {
+        if (_monitor.get_monitor_manager()->emit_enabled()) {
+            // Perform actions that should only happen once by the monitor at
+            // the highest level of the model hierarchy.
+            if (_level == 1){
+                // Supply the global time. When reaching this point, all sub-
+                // models will also have reached this time.
+                _monitor.get_monitor_manager()->set_time(_time);
+            }
+
+            // Call the child's implementation of the monitor functions.
+            impl().monitor();
+        }
     }
     
     /// Write data
-    void write_data () {
+    void __write_data () {
         impl().write_data();
     }
 
@@ -276,6 +355,11 @@ protected:
     using HDFFile = Utopia::DataIO::HDFFile;
     using HDFGroup = Utopia::DataIO::HDFGroup;
     using Time = std::size_t;
+    using MonitorManager = Utopia::DataIO::MonitorManager;
+    using Level = std::size_t;
+
+    /// The hierarchical level
+    const Level _level;
 
     /// The config node
     const Config _cfg;
@@ -292,6 +376,9 @@ protected:
      */
     const std::shared_ptr<spdlog::logger> _log;
 
+    /// The monitor manager
+    MonitorManager _monitor_mgr;
+
 public:
     /// Constructor that only requires path to a config file
     /** \detail From the config file, all necessary information is extracted,
@@ -303,6 +390,8 @@ public:
      */
     PseudoParent (const std::string cfg_path)
     :
+    // The hierarchical level is 0
+    _level(0),
     // Initialize the config node from the path to the config file
     _cfg(YAML::LoadFile(cfg_path)),
     // Create a file at the specified output path and store the shared pointer
@@ -310,13 +399,15 @@ public:
     // Initialize the RNG from a seed
     _rng(std::make_shared<RNG>(as_<int>(_cfg["seed"]))),
     // And initialize the root logger at warning level
-    _log(Utopia::init_logger("root", spdlog::level::warn, false))
+    _log(Utopia::init_logger("root", spdlog::level::warn, false)),
+    // Create a monitor manager
+    _monitor_mgr(as_double(_cfg["monitor_emit_interval"]))
     {
         setup_loggers(); // global loggers
         set_log_level(); // this log level
 
         _log->info("Initialized PseudoParent from config file");
-        _log->debug("cfg_path:      {}", cfg_path);
+        _log->debug("cfg_path:  {}", cfg_path);
     }
     
 
@@ -330,8 +421,11 @@ public:
     PseudoParent (const std::string cfg_path,
                   const std::string output_path,
                   const int seed=42,
-                  const std::string output_file_mode="w")
+                  const std::string output_file_mode="w",
+                  const double emit_interval=5.)
     :
+    // The hierarchical level is 0
+    _level(0),
     // Initialize the config node from the path to the config file
     _cfg(YAML::LoadFile(cfg_path)),
     // Create a file at the specified output path
@@ -339,7 +433,9 @@ public:
     // Initialize the RNG from a seed
     _rng(std::make_shared<RNG>(seed)),
     // And initialize the root logger at warning level
-    _log(Utopia::init_logger("root", spdlog::level::warn, false))
+    _log(Utopia::init_logger("root", spdlog::level::warn, false)),
+    // Create a monitor manager
+    _monitor_mgr(emit_interval)
     {
         setup_loggers(); // global loggers
         set_log_level(); // this log level
@@ -349,11 +445,17 @@ public:
         _log->debug("output_path:   {}  (mode: {})",
                     output_path, output_file_mode);
         _log->debug("seed:          {}", seed);
+        _log->debug("emit_interval: {}", emit_interval);
     }
 
 
 
     // -- Getters -- //
+
+    /// Return the hierarchical level within the model hierarchy
+    Level get_level() const {
+        return _level;
+    }
 
     /// Return the config node of the Pseudo model, i.e. the root node
     Config get_cfg() const {
@@ -393,7 +495,10 @@ public:
         return as_<Time>(_cfg["num_steps"]);
     }
 
-
+    /// Return the monitor manager of this model
+    std::shared_ptr<MonitorManager> get_monitor_manager() const {
+        return std::make_shared<MonitorManager>(_monitor_mgr);
+    }
 
 
 private:

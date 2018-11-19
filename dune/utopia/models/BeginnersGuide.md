@@ -76,21 +76,16 @@ The `state.py` script is provided to show you how a model specific plotting scri
 ## Adapting your code 
 Depending on what model you want to implement, you will need to delete or adapt some provided functions. So, feel free to remove anything, you do not need.
 
-- [ ] All variables, functions, etc. that are just there to show how you would use and implement them are denoted with the prefix 'some_ ' or '_ some', e.g. '_ some_ variable', 'some_ function', 'some_interaction', ...
+- [ ] All variables, functions, etc. that are just there to show how you would use and implement them are denoted with the prefix `some_` or `_some`, e.g. `_ some_variable`, `some_function`, `some_interaction`, ...
 If you write your model, you should change these.
 
 - [ ] Keep in mind to adapt the plotting and testing functions such that they belong to your model.
 
 
-## Inspiration From Other Models
-If you want to learn more about the capabilities of Utopia and how models can look like, we recommend that you have a look at the already implemented models, e.g.:
-
-* [`SimpleEG`](SimpleEG): A simple evolutionary game model with cells on a grid
-
-<!-- TODO: add more models here -->
-
-
 ## Some Final Remarks and Advice
+
+### Inspiration from other models
+If you want to learn more about the capabilities of Utopia and how models can look like, we recommend that you have a look at [the already implemented models](https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia#currently-implemented-models).
 
 ### `log->debug` instead of `std::cout`
 
@@ -103,15 +98,21 @@ As a rough guideline:
 
 - Use `log->info("Some info")` for information that is not repetitive, e.g. not inside a loop, and contains rather general information.
 - Use `log->debug("Some more detailed info, e.g. for helping you debug")` 
+- Use the python-like formatting syntax: `log->debug("Some parameter: {:.3f}", param)` to output parameters.
 
-More information about how to use `spdlog` and what functionality is provided can be found [here](https://github.com/gabime/spdlog).
+More information about how to use `spdlog`, what functionality is provided, and formatting schemes can be found [in their documentation](https://github.com/gabime/spdlog).
+
+### Monitoring
+Utopia models have the ability to communicate the model's current state to the frontend, e.g. the number of cells with a certain state, or the density of agents or the like.
+This is done only after a certain `monitor_emit_interval`, to save computing resources. As this data is communicated to the frontend via `std::cout`, try to keep it to the bare minimum.
+
+For examples, check out the `monitor` function of the `CopyMe` model.
 
 
 ## Finished! 
-
 Congratulations, you have build a new model! :)
 
 Your next guide will be the [Model Requirements](ModelRequirements.md).
-It contains information what requirements your code must fulfill such that it can be accepted as a model within _Utopia_, e.g. that it can be merged into _Utopia_'s `master` branch. 
+It contains information what requirements your code must fulfill such that it can be accepted as a model within _Utopia_, e.g. that it can be merged into _Utopia_'s `master` branch.
 
 Have fun implementing your own _Utopia_ model! :) 
