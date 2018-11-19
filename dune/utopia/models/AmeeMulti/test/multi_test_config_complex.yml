@@ -1,5 +1,7 @@
 AmeeMultiComplex:
-  adaptionfunction: multi_notnormed
+  adaptionfunction: 
+    normed: false 
+    multi: true  
   agenttype: complex
   all_at_once: true
   cellresourcecapacity_kind: "given"

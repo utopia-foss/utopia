@@ -14,6 +14,8 @@
 #include <dune/utopia/models/Amee/utils/utils.hh>
 #include <dune/utopia/models/AmeeMulti/adaptionfunctions.hh>
 
+using namespace Utopia::Models::Amee;
+
 namespace Utopia
 {
 namespace Models
@@ -34,7 +36,7 @@ template <typename Modeltraits, typename Modeltypes>
 class AmeeMulti : public Model<AmeeMulti<Modeltraits, Modeltypes>, Modeltypes>
 {
 public:
-    using Base = Model<Amee<Modeltraits, Modeltypes>, Modeltypes>;
+    using Base = Model<AmeeMulti<Modeltraits, Modeltypes>, Modeltypes>;
 
     using Traits = Modeltraits;
 
@@ -105,9 +107,6 @@ protected:
     // population& grid
     AgentContainer _population;
     CellContainer _cells;
-    // population& grid
-    AgentContainer _population;
-    Cellcontainer _cells;
 
     // global cell parameters
     double _decayintensity;
@@ -126,7 +125,7 @@ protected:
 
     std::vector<std::array<unsigned, 2>> _highres_interval;
     unsigned _statisticstime;
-    Adaptionfunction _check_adaption;
+    Adaptionfunc _check_adaption;
     std::uniform_real_distribution<double> _deathdist;
     std::uniform_real_distribution<double> _resdist;
     std::uniform_int_distribution<std::size_t> _movedist;
@@ -147,6 +146,16 @@ protected:
     std::chrono::time_point<std::chrono::high_resolution_clock> _begintime;
     unsigned int _infotime;
     bool _all_at_once;
+
+    Utils::Statistician<double,
+                        Utils::ArithmeticMean<double>,
+                        Utils::Variance<double>,
+                        Utils::Minimum<double>,
+                        Utils::Quantile<double, 25>,
+                        Utils::Median<double>,
+                        Utils::Quantile<double, 75>,
+                        Utils::Maximum<double>>
+        _describe;
 
 public:
     // update sub functions
@@ -219,25 +228,24 @@ public:
         auto cell = agent.state().habitat;
         auto& trt = agent.state().phenotype;
         auto& ctrt = cell->state().celltrait;
-        unsigned startmod = agent.state().start_mod;
-        unsigned endmod = agent.state().end_mod;
+        int startmod = agent.state().start_mod;
+        int endmod = agent.state().end_mod;
         double intensity = agent.state().intensity;
 
         if (std::abs(intensity) < 1e-16)
         {
             return;
         }
-        if (startmod < 0 or endmod < 0 or startmod >= trt.size() or endmod < startmod)
+        if (startmod < 0 or endmod < 0 or startmod >= int(trt.size()) or endmod < startmod)
         {
             return;
         }
 
         // FIXME: check if the algorithm is correct!
-        unsigned min_m =
-            std::min({endmod, unsigned(ctrt.size()), unsigned(trt.size())});
-        unsigned min_a = std::min(endmod, unsigned(trt.size()));
+        int min_m = std::min({endmod, int(ctrt.size()), int(trt.size())});
+        int min_a = std::min(endmod, int(trt.size()));
 
-        for (unsigned i = startmod; i < min_m; ++i)
+        for (int i = startmod; i < min_m; ++i)
         {
             if (agent.state().resources < (_reproductioncost + _offspringresources))
             {
@@ -266,7 +274,7 @@ public:
             }
         }
 
-        for (unsigned i = min_m; i < min_a; ++i)
+        for (int i = min_m; i < min_a; ++i)
         {
             if (agent.state().resources < (_reproductioncost + _offspringresources))
             {
@@ -290,17 +298,18 @@ public:
     }
 
     /**
-     * @brief Function for moving an agent. An agent has to move when its resources
-     *        do not suffice to reproduce, and it first searches for a cell
+     * @brief Function for moving an agent. An agent has to move when its
+     * resources do not suffice to reproduce, and it first searches for a cell
      *        where it is better adapted in it's current cell's neighborhood,
-     *        and if there is no such cell, it moves randomly in said neighborhood.
+     *        and if there is no such cell, it moves randomly in said
+     * neighborhood.
      * @param agent
      */
     void move(Organism& agent)
     {
-        std::shared_ptr<Cell> old_home = agent.state().habitat;
+        std::shared_ptr<Gridcell> old_home = agent.state().habitat;
 
-        std::shared_ptr<Cell> new_home = nullptr;
+        std::shared_ptr<Gridcell> new_home = nullptr;
 
         if (agent.state().resources < (_offspringresources + _reproductioncost))
         {
@@ -367,7 +376,7 @@ public:
      */
     void kill(Organism& agent)
     {
-        if (Amee::Utils::is_equal(agent.state().resources, 0.) or
+        if (Amee::Utils::IsEqual()(agent.state().resources, 0.) or
             _deathdist(*(this->_rng)) < _deathprobability)
         {
             agent.state().deathflag = true;
@@ -375,7 +384,8 @@ public:
     }
 
     /**
-     * @brief Function for decaying back the trait of a cell towards its original state
+     * @brief Function for decaying back the trait of a cell towards its
+     * original state
      *
      * @param cell
      */
@@ -404,7 +414,8 @@ public:
                 cell->state().resourceinflux[i] = 0.;
                 times[i] = std::numeric_limits<double>::quiet_NaN();
 
-                // cellresources are left alone, can still be used, but nothing else anymore is done
+                // cellresources are left alone, can still be used, but nothing
+                // else anymore is done
             }
         }
     }
@@ -425,7 +436,7 @@ public:
             //     cell->state().resources[i] = cell->state().resource_capacities[i];
             // }
 
-            if (Amee::Utils::is_equal(cell->state().resources[i], 0., 1e-7))
+            if (Amee::Utils::IsEqual()(cell->state().resources[i], 0., 1e-7))
             {
                 cell->state().resources[i] = cell->state().resourceinflux[i];
             }
@@ -482,8 +493,7 @@ public:
     template <class ParentModel>
     AmeeMulti(const std::string name,
               ParentModel& parent,
-              const Cellcontainer& cells,
-              Adaptionfunction adaptionfunc,
+              const CellContainer& cells,
               std::vector<AgentAdaptortuple> agentadaptors,
               std::vector<CellAdaptortuple> celladaptors)
         : Base(name, parent),
@@ -502,7 +512,7 @@ public:
           _highres_interval(as_vector<std::array<unsigned, 2>>(
               this->_cfg["highresinterval"])),
           _statisticstime(as_<unsigned>(this->_cfg["statisticstime"])),
-          _check_adaption(adaptionfunc),
+          _check_adaption(Adaptionfunc()),
           _deathdist(std::uniform_real_distribution<double>(0., 1.)),
           _resdist(std::uniform_real_distribution<double>(
               as_vector<double>(this->_cfg["resourceinflux_limits"])[0],
@@ -518,7 +528,8 @@ public:
           _idx(0),
           _begintime(std::chrono::high_resolution_clock::now()),
           _infotime(as_<unsigned>(this->_cfg["infotime"])),
-          _all_at_once(as_bool(this->_cfg["all_at_once"]))
+          _all_at_once(as_bool(this->_cfg["all_at_once"])),
+          _describe(decltype(_describe)())
     {
         this->_log->info(" initializing cells");
         initialize_cells();
@@ -671,7 +682,7 @@ public:
 
         // reserve states for agents
         _population.reserve(1000000);
-        std::shared_ptr<Cell> eden =
+        std::shared_ptr<Gridcell> eden =
             _cells[std::uniform_int_distribution<std::size_t>(0, _cells.size() - 1)(*this->_rng)];
 
         _population.push_back(std::make_shared<Organism>(
@@ -700,27 +711,30 @@ public:
             }
 
             agent->state() = Agentstate(trait, eden, init_resources, this->_rng);
-
             agent->state().adaption = _check_adaption(*agent);
 
-            double cum_res = 0;
-            int s = agent->state().start;
-            int e = agent->state().end;
-            int amin =
-                std::min({e, int(agent->state().habitat->state().celltrait.size()),
-                          int(agent->state().phenotype.size())});
-            for (int i = s; i < amin; ++i)
-            {
-                cum_res += (agent->state().habitat->state().resourceinflux[i] >
-                            agent->state().adaption[i - s])
-                               ? agent->state().adaption[i - s]
-                               : agent->state().habitat->state().resourceinflux[i];
-            }
 
-            if (cum_res > _livingcost)
+            if (agent->state().adaption.size() > 0)
             {
-                found = true;
-                break;
+                double cum_res = 0;
+                int s = agent->state().start;
+                int e = agent->state().end;
+                int amin =
+                    std::min({e, int(agent->state().habitat->state().celltrait.size()),
+                              int(agent->state().phenotype.size())});
+                for (int i = s; i < amin; ++i)
+                {
+                    cum_res += (agent->state().habitat->state().resourceinflux[i] >
+                                agent->state().adaption[i - s])
+                                   ? agent->state().adaption[i - s]
+                                   : agent->state().habitat->state().resourceinflux[i];
+                }
+
+                if (cum_res > _livingcost)
+                {
+                    found = true;
+                    break;
+                }
             }
         }
         if (!found)
@@ -856,6 +870,41 @@ public:
             _population.end());
     }
 
+    void make_statistics()
+    {
+        if (this->_time % _statisticstime == 0)
+        {
+            for (std::size_t i = 0; i < _agent_adaptors.size(); ++i)
+            {
+                _agent_statistics_data[i].push_back(
+                    _describe(_population.begin(), _population.end(),
+                              std::get<1>(_agent_adaptors[i])));
+            }
+
+            for (std::size_t i = 0; i < _cell_adaptors.size(); ++i)
+            {
+                _cell_statistics_data[i].push_back(_describe(
+                    _cells.begin(), _cells.end(), std::get<1>(_cell_adaptors[i])));
+            }
+        }
+
+        if (this->_time > 0 and (this->_time % (_statisticstime * 10) == 0 or
+                                 this->_time == this->_time_max))
+        {
+            for (std::size_t i = 0; i < _dsets_agent_statistics.size(); ++i)
+            {
+                _dsets_agent_statistics[i]->write(_agent_statistics_data[i]);
+                _agent_statistics_data[i].clear();
+            }
+
+            for (std::size_t i = 0; i < _dsets_cell_statistics.size(); ++i)
+            {
+                _dsets_cell_statistics[i]->write(_cell_statistics_data[i]);
+                _cell_statistics_data[i].clear();
+            }
+        }
+    }
+
     /**
      * @brief write out data stuff
      *
@@ -899,37 +948,7 @@ public:
             }
         }
 
-        if (this->_time % _statisticstime == 0)
-        {
-            for (std::size_t i = 0; i < _agent_adaptors.size(); ++i)
-            {
-                _agent_statistics_data[i].push_back(Amee::Utils::Describe()(
-                    _population.begin(), _population.end(),
-                    std::get<1>(_agent_adaptors[i])));
-            }
-
-            for (std::size_t i = 0; i < _cell_adaptors.size(); ++i)
-            {
-                _cell_statistics_data[i].push_back(Amee::Utils::Describe()(
-                    _cells.begin(), _cells.end(), std::get<1>(_cell_adaptors[i])));
-            }
-        }
-
-        if (this->_time > 0 and (this->_time % (_statisticstime * 10) == 0 or
-                                 this->_time == this->_time_max))
-        {
-            for (std::size_t i = 0; i < _dsets_agent_statistics.size(); ++i)
-            {
-                _dsets_agent_statistics[i]->write(_agent_statistics_data[i]);
-                _agent_statistics_data[i].clear();
-            }
-
-            for (std::size_t i = 0; i < _dsets_cell_statistics.size(); ++i)
-            {
-                _dsets_cell_statistics[i]->write(_cell_statistics_data[i]);
-                _cell_statistics_data[i].clear();
-            }
-        }
+        make_statistics();
     }
 
     const auto& population()
@@ -942,12 +961,12 @@ public:
         return _cells;
     }
 
-    Adaptionfunction get_adaptionfunction()
+    Adaptionfunc get_adaptionfunction()
     {
         return _check_adaption;
     }
 
-    void set_adaptionfunction(Adaptionfunction new_adaptionfunc)
+    void set_adaptionfunction(Adaptionfunc new_adaptionfunc)
     {
         _check_adaption = new_adaptionfunc;
     }

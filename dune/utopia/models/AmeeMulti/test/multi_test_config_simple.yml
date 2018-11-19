@@ -1,5 +1,7 @@
 AmeeMultiSimple:
-  adaptionfunction: multi_notnormed
+  adaptionfunction: 
+    normed: false 
+    multi: true  
   agenttype: simple
   all_at_once: true
   cellresourcecapacity_kind: "given"
@@ -11,13 +13,13 @@ AmeeMultiSimple:
   decayintensity: 0.01
   grid_size: [32, 32]
   highresinterval:
-  - [0, 2500]
-  - [50000, 52500]
-  - [500000, 502500]
-  - [997500, 1000000]
-  - [1250000, 1252500]
-  - [1500000, 1502500]
-  - [1990000, 1992500]
+    - [0, 2500]
+    - [50000, 52500]
+    - [500000, 502500]
+    - [997500, 1000000]
+    - [1250000, 1252500]
+    - [1500000, 1502500]
+    - [1990000, 1992500]
   highresoutput: false
   highrestime: 100
   infotime: 10000

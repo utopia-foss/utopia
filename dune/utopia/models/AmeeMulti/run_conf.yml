@@ -60,7 +60,9 @@ parameter_space:
     substitutionrate: 1e-3
 
     modifiercost: 0.
-    adaptionfunction: "multi_normed"
+    adaptionfunction: 
+        normed: true 
+        multi: true
     upper_resourcelimit: 40. # upper limit which can be taken in at once by an organism
     statisticstime: 50
 

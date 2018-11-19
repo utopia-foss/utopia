@@ -1,4 +1,5 @@
 #include <dune/utopia/core/tags.hh>
+#include <dune/utopia/models/Amee/adaptionfunctions.hh>
 #include <dune/utopia/models/Amee/agentstates/agentstate.hh>
 #include <dune/utopia/models/Amee/agentstates/agentstate_policy_complex.hh>
 #include <dune/utopia/models/Amee/agentstates/agentstate_policy_simple.hh>
@@ -8,44 +9,51 @@
 #include <dune/utopia/models/AmeeMulti/AmeeMulti.hh>
 #include <iostream>
 #include <thread>
-
 using namespace Utopia::Models::AmeeMulti;
+using namespace Utopia::Models::Amee;
 using namespace std::literals::chrono_literals;
 
 // build a struct which makes setup simpler
-template <template <typename, typename, typename> class AgentPolicy, typename G, typename P, typename RNG, bool construction, bool decay>
+template <template <typename Gt, typename Pt, typename RNG> class AgentPolicy,
+          template <typename, bool, bool> class Adaptionfunction,
+          typename G,
+          typename P,
+          typename RNG,
+          typename Adaptiontype,
+          bool construction,
+          bool decay,
+          bool multi,
+          bool normed>
 struct Modelfactory
 {
-    template <typename Agent>
-    using Adaptionfunction = std::function<std::vector<double>(Agent&)>;
-
     template <typename Model, typename Cellmanager>
     auto operator()(std::string name, Model& parentmodel, Cellmanager& cellmanager, std::string adaptionfunctionname)
     {
-        using CellType = typename Cellmanager::Cell;
+        using namespace Utopia;
+        // making model types
         using Genotype = G;
         using Phenotype = P;
         using Policy = AgentPolicy<Genotype, Phenotype, RNG>;
-        using Agentstate =
-            Utopia::Models::Amee::AgentState<CellType, Policy, std::vector<double>>;
         using Position = Dune::FieldVector<double, 2>;
-        using AgentType =
-            Utopia::Agent<Agentstate, Utopia::EmptyTag, std::size_t, Position>;
+        using CellType = typename Cellmanager::Cell;
 
-        std::map<std::string, Adaptionfunction<AgentType>> adaptionfunctionmap = {
-            {"multi_notnormed", multi_notnormed},
-            {"multi_normed", multi_normed},
-            {"simple_notnormed", simple_notnormed},
-            {"simple_normed", simple_normed}};
+        using Agentstate = AgentState<CellType, Policy, Adaptiontype>;
+        using AgentType = Agent<Agentstate, EmptyTag, std::size_t, Position>;
 
-        using AgentAdaptor = std::function<double(std::shared_ptr<AgentType>)>;
+        using Modeltypes = ModelTypes<RNG>;
+
+        using Modeltraits =
+            Modeltraits<CellType, AgentType, Adaptionfunction, Adaptiontype, construction, decay, multi, normed>;
+
+        using AgentAdaptor = typename Modeltraits::AgentAdaptor;
         using AgentAdaptortuple = std::tuple<std::string, AgentAdaptor>;
 
-        using CellAdaptor = std::function<double(const std::shared_ptr<CellType>)>;
+        using CellAdaptor = typename Modeltraits::CellAdaptor;
+
         using CellAdaptortuple = std::tuple<std::string, CellAdaptor>;
 
         std::vector<AgentAdaptortuple> agentadaptors{
-            AgentAdaptortuple{"accumulated_adaption",
+            AgentAdaptortuple{"cummulative_adaption",
                               [](const auto& agent) -> double {
                                   return std::accumulate(
                                       agent->state().adaption.begin(),
@@ -87,12 +95,8 @@ struct Modelfactory
             AgentAdaptortuple{
                 "age",
                 [](const auto& agent) -> double { return agent->state().age; }},
-            AgentAdaptortuple{"traitlen",
-                              [](const auto& agent) -> double {
+            AgentAdaptortuple{"traitlen", [](const auto& agent) -> double {
                                   return agent->state().phenotype.size();
-                              }},
-            AgentAdaptortuple{"genotypelen", [](const auto& agent) -> double {
-                                  return agent->state().genotype.size();
                               }}};
 
         std::vector<CellAdaptortuple> celladaptors{
@@ -102,7 +106,7 @@ struct Modelfactory
                                      cell->state().resources.begin(),
                                      cell->state().resources.end(), 0.);
                              }},
-            CellAdaptortuple{"resourceinfluxes",
+            CellAdaptortuple{"resourceinflux",
                              [](const auto& cell) -> double {
                                  return std::accumulate(
                                      cell->state().resourceinflux.begin(),
@@ -111,15 +115,21 @@ struct Modelfactory
             CellAdaptortuple{"cell_traitlen", [](const auto& cell) -> double {
                                  return cell->state().celltrait.size();
                              }}};
-        // making model types
-        using Modeltypes = Utopia::ModelTypes<RNG>;
-        std::cout << " producing model" << std::endl;
 
-        return AmeeMulti<CellType, AgentType, Modeltypes, Adaptionfunction<AgentType>, construction, decay>(
-            name, parentmodel, cellmanager.cells(),
-            adaptionfunctionmap[adaptionfunctionname], agentadaptors, celladaptors);
+        return AmeeMulti<Modeltraits, Modeltypes>(
+            name, parentmodel, cellmanager.cells(), agentadaptors, celladaptors);
     }
 };
+
+// type aliases for later usage
+using RNG = Utils::Xoroshiro512starstar;
+using Celltrait = std::vector<double>;
+using Resourcetype = std::vector<double>;
+using Adaptiontype = std::vector<double>;
+using CS = Cellstate<Celltrait, Resourcetype>;
+
+template <typename Adaptiontype, bool multi, bool normed>
+using Adaptiongenerator = SchurproductLike<Adaptiontype, multi, normed>;
 
 int main(int argc, char** argv)
 {
@@ -127,17 +137,13 @@ int main(int argc, char** argv)
 
     try
     {
-        using RNG = Utopia::Models::Amee::Xoroshiro256starstar;
-        using CT = std::vector<double>;
-        using CS = Utopia::Models::Amee::Cellstate<CT, std::vector<double>>;
-
         // Initialize the PseudoParent from config file path
         Utopia::PseudoParent<RNG> pp(argv[1]);
 
         // make managers first -> this has to be wrapped in a factory function
-        auto cellmanager = Utopia::Models::Amee::Setup::create_grid_manager_cells<
-            Utopia::Models::Amee::StaticCell, CS, true, 2, true, false>(
-            "AmeeMulti", pp);
+        auto cellmanager =
+            Setup::create_grid_manager_cells<StaticCell, CS, true, 2, true, false>(
+                "AmeeMulti", pp);
 
         // read stuff from the config
         bool construction =
@@ -145,52 +151,407 @@ int main(int argc, char** argv)
 
         bool decay = Utopia::as_bool(pp.get_cfg()["AmeeMulti"]["decay"]);
 
+        bool multi = Utopia::as_bool(
+            pp.get_cfg()["AmeeMulti"]["adaptionfunction"]["multi"]);
+
+        bool normed = Utopia::as_bool(
+            pp.get_cfg()["AmeeMulti"]["adaptionfunction"]["normed"]);
+
         std::string agenttype =
             Utopia::as_str(pp.get_cfg()["AmeeMulti"]["agenttype"]);
 
         std::string adaptionfunction =
             Utopia::as_str(pp.get_cfg()["AmeeMulti"]["adaptionfunction"]);
 
-        if (std::make_tuple(construction, decay, agenttype) ==
-            std::tuple<bool, bool, std::string>{true, true, "simple"})
+        if (agenttype == "simple")
         {
-            using Genotype = std::vector<double>;
-            using Phenotype = std::vector<double>;
-            Modelfactory<Utopia::Models::Amee::Agentstate_policy_simple, Genotype, Phenotype, RNG, true, true> factory;
+            if (construction && decay)
+            {
+                if (multi && normed)
+                {
+                    using Genotype = std::vector<double>;
+                    using Phenotype = std::vector<double>;
 
-            auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
-            model.run();
+                    Modelfactory<Agentstate_policy_simple, Adaptiongenerator, Genotype,
+                                 Phenotype, RNG, Adaptiontype, true, true, true, true>
+                        factory;
+
+                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    model.run();
+                }
+
+                else if (multi && !normed)
+                {
+                    using Genotype = std::vector<double>;
+                    using Phenotype = std::vector<double>;
+                    Modelfactory<Agentstate_policy_simple, Adaptiongenerator, Genotype,
+                                 Phenotype, RNG, Adaptiontype, true, true, true, false>
+                        factory;
+
+                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    model.run();
+                }
+                else if (!multi && normed)
+                {
+                    using Genotype = std::vector<double>;
+                    using Phenotype = std::vector<double>;
+                    Modelfactory<Agentstate_policy_simple, Adaptiongenerator, Genotype,
+                                 Phenotype, RNG, Adaptiontype, true, true, false, true>
+                        factory;
+
+                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    model.run();
+                }
+                else
+                {
+                    using Genotype = std::vector<double>;
+                    using Phenotype = std::vector<double>;
+                    Modelfactory<Agentstate_policy_simple, Adaptiongenerator, Genotype,
+                                 Phenotype, RNG, Adaptiontype, true, true, false, false>
+                        factory;
+
+                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    model.run();
+                }
+            }
+            else if (construction && !decay)
+            {
+                if (multi && normed)
+                {
+                    using Genotype = std::vector<double>;
+                    using Phenotype = std::vector<double>;
+                    Modelfactory<Agentstate_policy_simple, Adaptiongenerator, Genotype,
+                                 Phenotype, RNG, Adaptiontype, true, false, true, true>
+                        factory;
+
+                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    model.run();
+                }
+                else if (multi && !normed)
+                {
+                    using Genotype = std::vector<double>;
+                    using Phenotype = std::vector<double>;
+                    Modelfactory<Agentstate_policy_simple, Adaptiongenerator, Genotype,
+                                 Phenotype, RNG, Adaptiontype, true, false, true, false>
+                        factory;
+
+                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    model.run();
+                }
+                else if (!multi && normed)
+                {
+                    using Genotype = std::vector<double>;
+                    using Phenotype = std::vector<double>;
+                    Modelfactory<Agentstate_policy_simple, Adaptiongenerator, Genotype,
+                                 Phenotype, RNG, Adaptiontype, true, false, false, true>
+                        factory;
+
+                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    model.run();
+                }
+                else
+                {
+                    using Genotype = std::vector<double>;
+                    using Phenotype = std::vector<double>;
+                    Modelfactory<Agentstate_policy_simple, Adaptiongenerator, Genotype,
+                                 Phenotype, RNG, Adaptiontype, true, false, false, false>
+                        factory;
+
+                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    model.run();
+                }
+            }
+            else if (!construction && decay)
+            {
+                if (multi && normed)
+                {
+                    using Genotype = std::vector<double>;
+                    using Phenotype = std::vector<double>;
+                    Modelfactory<Agentstate_policy_simple, Adaptiongenerator, Genotype,
+                                 Phenotype, RNG, Adaptiontype, false, true, true, true>
+                        factory;
+
+                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    model.run();
+                }
+                else if (multi && !normed)
+                {
+                    using Genotype = std::vector<double>;
+                    using Phenotype = std::vector<double>;
+                    Modelfactory<Agentstate_policy_simple, Adaptiongenerator, Genotype,
+                                 Phenotype, RNG, Adaptiontype, false, true, true, false>
+                        factory;
+
+                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    model.run();
+                }
+                else if (!multi && normed)
+                {
+                    using Genotype = std::vector<double>;
+                    using Phenotype = std::vector<double>;
+                    Modelfactory<Agentstate_policy_simple, Adaptiongenerator, Genotype,
+                                 Phenotype, RNG, Adaptiontype, false, true, false, true>
+                        factory;
+
+                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    model.run();
+                }
+                else
+                {
+                    using Genotype = std::vector<double>;
+                    using Phenotype = std::vector<double>;
+                    Modelfactory<Agentstate_policy_simple, Adaptiongenerator, Genotype,
+                                 Phenotype, RNG, Adaptiontype, false, true, false, false>
+                        factory;
+
+                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    model.run();
+                }
+            }
+            else
+            {
+                if (multi && normed)
+                {
+                    using Genotype = std::vector<double>;
+                    using Phenotype = std::vector<double>;
+                    Modelfactory<Agentstate_policy_simple, Adaptiongenerator, Genotype,
+                                 Phenotype, RNG, Adaptiontype, false, false, true, true>
+                        factory;
+
+                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    model.run();
+                }
+                else if (multi && !normed)
+                {
+                    using Genotype = std::vector<double>;
+                    using Phenotype = std::vector<double>;
+                    Modelfactory<Agentstate_policy_simple, Adaptiongenerator, Genotype,
+                                 Phenotype, RNG, Adaptiontype, true, true, true, false>
+                        factory;
+
+                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    model.run();
+                }
+                else if (!multi && normed)
+                {
+                    using Genotype = std::vector<double>;
+                    using Phenotype = std::vector<double>;
+                    Modelfactory<Agentstate_policy_simple, Adaptiongenerator, Genotype,
+                                 Phenotype, RNG, Adaptiontype, false, false, false, true>
+                        factory;
+
+                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    model.run();
+                }
+                else
+                {
+                    using Genotype = std::vector<double>;
+                    using Phenotype = std::vector<double>;
+                    Modelfactory<Agentstate_policy_simple, Adaptiongenerator, Genotype,
+                                 Phenotype, RNG, Adaptiontype, false, false, false, false>
+                        factory;
+
+                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    model.run();
+                }
+            }
         }
-        else if (std::make_tuple(construction, decay, agenttype) ==
-                 std::tuple<bool, bool, std::string>{true, true, "complex"})
+        else if (agenttype == "complex")
         {
-            using Genotype = std::vector<int>;
-            using Phenotype = std::vector<double>;
-            Modelfactory<Utopia::Models::Amee::Agentstate_policy_complex, Genotype, Phenotype, RNG, true, true> factory;
+            if (construction && decay)
+            {
+                if (multi && normed)
+                {
+                    using Genotype = std::vector<double>;
+                    using Phenotype = std::vector<double>;
+                    Modelfactory<Agentstate_policy_complex, Adaptiongenerator, Genotype,
+                                 Phenotype, RNG, Adaptiontype, true, true, true, true>
+                        factory;
 
-            auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
-            model.run();
+                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    model.run();
+                }
+                else if (multi && !normed)
+                {
+                    using Genotype = std::vector<double>;
+                    using Phenotype = std::vector<double>;
+                    Modelfactory<Agentstate_policy_complex, Adaptiongenerator, Genotype,
+                                 Phenotype, RNG, Adaptiontype, true, true, true, false>
+                        factory;
+
+                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    model.run();
+                }
+                else if (!multi && normed)
+                {
+                    using Genotype = std::vector<double>;
+                    using Phenotype = std::vector<double>;
+                    Modelfactory<Agentstate_policy_complex, Adaptiongenerator, Genotype,
+                                 Phenotype, RNG, Adaptiontype, true, true, false, true>
+                        factory;
+
+                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    model.run();
+                }
+                else
+                {
+                    using Genotype = std::vector<double>;
+                    using Phenotype = std::vector<double>;
+                    Modelfactory<Agentstate_policy_complex, Adaptiongenerator, Genotype,
+                                 Phenotype, RNG, Adaptiontype, true, true, false, false>
+                        factory;
+
+                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    model.run();
+                }
+            }
+            else if (construction && !decay)
+            {
+                if (multi && normed)
+                {
+                    using Genotype = std::vector<double>;
+                    using Phenotype = std::vector<double>;
+                    Modelfactory<Agentstate_policy_complex, Adaptiongenerator, Genotype,
+                                 Phenotype, RNG, Adaptiontype, true, false, true, true>
+                        factory;
+
+                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    model.run();
+                }
+                else if (multi && !normed)
+                {
+                    using Genotype = std::vector<double>;
+                    using Phenotype = std::vector<double>;
+                    Modelfactory<Agentstate_policy_complex, Adaptiongenerator, Genotype,
+                                 Phenotype, RNG, Adaptiontype, true, false, true, false>
+                        factory;
+
+                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    model.run();
+                }
+                else if (!multi && normed)
+                {
+                    using Genotype = std::vector<double>;
+                    using Phenotype = std::vector<double>;
+                    Modelfactory<Agentstate_policy_complex, Adaptiongenerator, Genotype,
+                                 Phenotype, RNG, Adaptiontype, true, false, false, true>
+                        factory;
+
+                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    model.run();
+                }
+                else
+                {
+                    using Genotype = std::vector<double>;
+                    using Phenotype = std::vector<double>;
+                    Modelfactory<Agentstate_policy_complex, Adaptiongenerator, Genotype,
+                                 Phenotype, RNG, Adaptiontype, true, false, false, false>
+                        factory;
+
+                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    model.run();
+                }
+            }
+            else if (!construction && decay)
+            {
+                if (multi && normed)
+                {
+                    using Genotype = std::vector<double>;
+                    using Phenotype = std::vector<double>;
+                    Modelfactory<Agentstate_policy_complex, Adaptiongenerator, Genotype,
+                                 Phenotype, RNG, Adaptiontype, false, true, true, true>
+                        factory;
+
+                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    model.run();
+                }
+                else if (multi && !normed)
+                {
+                    using Genotype = std::vector<double>;
+                    using Phenotype = std::vector<double>;
+                    Modelfactory<Agentstate_policy_complex, Adaptiongenerator, Genotype,
+                                 Phenotype, RNG, Adaptiontype, false, true, true, false>
+                        factory;
+
+                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    model.run();
+                }
+                else if (!multi && normed)
+                {
+                    using Genotype = std::vector<double>;
+                    using Phenotype = std::vector<double>;
+                    Modelfactory<Agentstate_policy_complex, Adaptiongenerator, Genotype,
+                                 Phenotype, RNG, Adaptiontype, false, true, false, true>
+                        factory;
+
+                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    model.run();
+                }
+                else
+                {
+                    using Genotype = std::vector<double>;
+                    using Phenotype = std::vector<double>;
+                    Modelfactory<Agentstate_policy_complex, Adaptiongenerator, Genotype,
+                                 Phenotype, RNG, Adaptiontype, false, true, false, false>
+                        factory;
+
+                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    model.run();
+                }
+            }
+            else
+            {
+                if (multi && normed)
+                {
+                    using Genotype = std::vector<double>;
+                    using Phenotype = std::vector<double>;
+                    Modelfactory<Agentstate_policy_complex, Adaptiongenerator, Genotype,
+                                 Phenotype, RNG, Adaptiontype, false, false, true, true>
+                        factory;
+
+                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    model.run();
+                }
+                else if (multi && !normed)
+                {
+                    using Genotype = std::vector<double>;
+                    using Phenotype = std::vector<double>;
+                    Modelfactory<Agentstate_policy_complex, Adaptiongenerator, Genotype,
+                                 Phenotype, RNG, Adaptiontype, true, true, true, false>
+                        factory;
+
+                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    model.run();
+                }
+                else if (!multi && normed)
+                {
+                    using Genotype = std::vector<double>;
+                    using Phenotype = std::vector<double>;
+                    Modelfactory<Agentstate_policy_complex, Adaptiongenerator, Genotype,
+                                 Phenotype, RNG, Adaptiontype, false, false, false, true>
+                        factory;
+
+                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    model.run();
+                }
+                else
+                {
+                    using Genotype = std::vector<double>;
+                    using Phenotype = std::vector<double>;
+                    Modelfactory<Agentstate_policy_complex, Adaptiongenerator, Genotype,
+                                 Phenotype, RNG, Adaptiontype, false, false, false, false>
+                        factory;
+
+                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    model.run();
+                }
+            }
         }
-        else if (std::make_tuple(construction, decay, agenttype) ==
-                 std::tuple<bool, bool, std::string>{true, false, "simple"})
+        else
         {
-            using Genotype = std::vector<double>;
-            using Phenotype = std::vector<double>;
-            Modelfactory<Utopia::Models::Amee::Agentstate_policy_simple, Genotype, Phenotype, RNG, true, false> factory;
-
-            auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
-            model.run();
+            throw std::runtime_error("unknown agenttype");
         }
-        else if (std::make_tuple(construction, decay, agenttype) ==
-                 std::tuple<bool, bool, std::string>{false, false, "complex"})
-        {
-            using Genotype = std::vector<int>;
-            using Phenotype = std::vector<double>;
-            Modelfactory<Utopia::Models::Amee::Agentstate_policy_complex, Genotype, Phenotype, RNG, false, false> factory;
 
-            auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
-            model.run();
-        }
         return 0;
     }
     catch (std::exception& e)
