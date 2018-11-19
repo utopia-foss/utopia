@@ -81,7 +81,7 @@ public:
     using Rule = std::function<State(std::shared_ptr<CellType>)>;
 
 private:
-    // Base members: _time, _name, _cfg, _hdfgrp, _rng
+    // Base members: _time, _name, _cfg, _hdfgrp, _rng, _monitor
 
     // -- Members of this model -- //
     /// The grid manager
@@ -647,6 +647,12 @@ public:
 
         // reproduction
         apply_rule(_repro, _manager.cells(), *this->_rng);
+    }
+
+    /// Monitor model information
+    void monitor ()
+    {
+
     }
 
     /// Write data

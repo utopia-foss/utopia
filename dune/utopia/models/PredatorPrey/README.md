@@ -10,11 +10,11 @@ case of population dynamics on a grid.
 Two species are present in this model: the prey species which has a steady
 inflow of resources (e.g. by eating plants whose population dynamics are 
 not represented in this model) and the predator species that feeds on the 
-prey. Both species reproduce in a non-sexual manner. Their interactions 
-consists of the predator moving on the grid and looking for prey in its 
+prey. Both species reproduce in a non-sexual manner. The interactions 
+consist of the predator moving on the grid and looking for prey in its 
 neighborhood and eventually eating it upon making contact. The prey flees 
-with a certain probability. A general cost is applied to both species to 
-uphold their internal structure.
+with a certain probability. A general cost to 
+uphold their internal structure is applied to both species.
 
 ## Implementation
 
@@ -37,7 +37,7 @@ Individuals with negative or zero resources are removed.
 neighborhood or to an empty cell if there is no prey. Prey that are on a 
 cell together with a predator flee to an empty cell in their neighborhood 
 with a certain probability. If there are several cells in the neigborhood 
-that meet the above condition, one is chosen randomly.
+that meet the above condition, one is chosen at random.
 3. Eat: Prey take up resources and predators eat prey if they are on the 
 same cell.
 4. Reproduction: If an individual's resources exceed a certain value and if 
@@ -46,7 +46,7 @@ individual of the same species, it reproduces and an individual of the same
 species is set on the empty cell. 2 resource units are transferred to the 
 descendant.
 
-All cell updates are performed asynchronously to all cells. The order for 
+All cells are updated asxnchronously. The order for 
 the cell update is random for rules 2 and 4. 
 
 ## Initialization

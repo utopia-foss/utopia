@@ -59,7 +59,7 @@ def test_initial_state_random():
                                  predprey_prob=predprey_prob))
 
     # For all universes, perform checks on the data
-    for uni in dm['uni'].values():
+    for uni in dm['multiverse'].values():
         
 
         data = uni['data']['PredatorPrey']
@@ -106,7 +106,7 @@ def test_initial_state_random():
                                              pred_prob=pred_prob,
                                              predprey_prob=predprey_prob))
 
-    for uni in dm['uni'].values():
+    for uni in dm['multiverse'].values():
         data = uni['data']['PredatorPrey']
 
         # Get the grid size
@@ -154,7 +154,7 @@ def test_initial_state_fraction():
                                              predprey_frac=predprey_frac))
 
     # For all universes, check that the fraction is met
-    for uni in dm['uni'].values():
+    for uni in dm['multiverse'].values():
         data = uni['data']['PredatorPrey']
 
         # Print the data (useful if something fails)

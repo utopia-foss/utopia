@@ -3,18 +3,18 @@
 
 # plot the frequency of predators and preys in one plot
 frequencies:
-  creator: external
+  creator: universe
 
   module: model_plots.PredatorPrey
   plot_func: frequency
 
-  uni: 0
+  universes: all
   Population: [prey, predator]
 
 
 # plot the spatial development in the CA of the strategy
 population_and_resources:
-  creator: external
+  creator: universe
   file_ext: mp4
 
   module: .ca
@@ -22,7 +22,7 @@ population_and_resources:
 
   # Select the universe
   model_name: PredatorPrey
-  uni: 0
+  universes: all
 
   # Select the properties to plot
   to_plot:

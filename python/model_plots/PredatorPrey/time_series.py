@@ -6,7 +6,7 @@ from typing import Union
 import numpy as np
 import matplotlib.pyplot as plt
 
-from utopya import DataManager
+from utopya import DataManager, UniverseGroup
 
 from ..tools import save_and_close
 
@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------------
 
-def frequency(dm: DataManager, *, out_path: str, uni: int, 
+def frequency(dm: DataManager, *, out_path: str, uni: UniverseGroup, 
               Population: Union[str, list] = ['prey', 'predator'], 
               save_kwargs: dict=None, **plot_kwargs):
     """Calculates the frequency of a given Population and performs a lineplot
@@ -23,7 +23,7 @@ def frequency(dm: DataManager, *, out_path: str, uni: int,
     Args:
         dm (DataManager): The data manager from which to retrieve the data
         out_path (str): Where to store the plot to
-        uni (int): The universe to use
+        uni (UniverseGroup): The universe from which to plot the data
         Population (Union[str, list], optional): The population to plot
         save_kwargs (dict, optional): kwargs to the plt.savefig function
         **plot_kwargs: Passed on to plt.plot
@@ -32,7 +32,7 @@ def frequency(dm: DataManager, *, out_path: str, uni: int,
         TypeError: For invalid population argument
     """
     # Get the group that all datasets are in
-    grp = dm['uni'][str(uni)]['data/PredatorPrey']
+    grp = uni['data']['PredatorPrey']
 
     # Extract the data of the frequency
     population_data = grp['Population'] 

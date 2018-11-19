@@ -37,10 +37,11 @@ def test_basic_interactions():
                                  perform_sweep=False,
                                  **model_cfg(grid_size=[1, 1], prey_frac=1.0, 
                                              pred_frac=0.0, delta_e=0))
+    
+    data = dm['multiverse'][0]['data']
 
-    pop = dm['uni'][0]['data']['PredatorPrey']['Population'].reshape(3, 1, 1)
-    res_prey = np.reshape(dm['uni'][0]['data']['PredatorPrey']['resource_prey'],
-                          (3, 1, 1))
+    pop = data['PredatorPrey']['Population'].reshape(3, 1, 1)
+    res_prey = np.reshape(data['PredatorPrey']['resource_prey'],(3, 1, 1))
 
     assert res_prey[1, 0, 0] == 1
     assert res_prey[2, 0, 0] == 0
@@ -55,10 +56,10 @@ def test_basic_interactions():
                                  **model_cfg(grid_size=[1, 1], prey_frac=0.0, 
                                              pred_frac=1.0, delta_e=0))
 
-    pop = dm['uni'][0]['data']['PredatorPrey']['Population'].reshape(3, 1, 1)
-    res_pred = np.reshape(
-                     dm['uni'][0]['data']['PredatorPrey']['resource_predator'],
-                     (3, 1, 1))
+    data = dm['multiverse'][0]['data']
+
+    pop = data['PredatorPrey']['Population'].reshape(3, 1, 1)
+    res_pred = np.reshape(data['PredatorPrey']['resource_predator'],(3, 1, 1))
 
     assert res_pred[1, 0, 0] == 1
     assert res_pred[2, 0, 0] == 0
@@ -76,9 +77,10 @@ def test_basic_interactions():
                                  **model_cfg(grid_size=[1, 1], prey_frac=1.0, 
                                             pred_frac=0.0, delta_e=2))
 
-    pop = dm['uni'][0]['data']['PredatorPrey']['Population'].reshape(3, 1, 1)
-    res_prey = np.reshape(dm['uni'][0]['data']['PredatorPrey']['resource_prey'],
-                          (3, 1, 1))
+    data = dm['multiverse'][0]['data']
+
+    pop = data['PredatorPrey']['Population'].reshape(3, 1, 1)
+    res_prey = np.reshape(data['PredatorPrey']['resource_prey'], (3, 1, 1))
 
     assert res_prey[1, 0, 0] == 3
     assert res_prey[2, 0, 0] == 4
@@ -99,13 +101,12 @@ def test_basic_interactions():
     mv, dm = mtc.create_run_load(from_cfg="specific_scenario.yml", 
                                  perform_sweep=False, **model_conf)
 
-    pop = dm['uni'][0]['data']['PredatorPrey']['Population'].reshape(42, 2, 1)
-    res_prey = np.reshape(dm['uni'][0]['data']['PredatorPrey']['resource_prey'],
+    data = dm['multiverse'][0]['data']
+    
+    pop = data['PredatorPrey']['Population'].reshape(42, 2, 1)
+    res_prey = np.reshape(data['PredatorPrey']['resource_prey'],
                           (42, 2, 1))
-    res_pred = np.reshape(
-                      dm['uni'][0]['data']['PredatorPrey']['resource_predator'],
-                      (42, 2, 1)
-                      ).astype(int)
+    res_pred = np.reshape(data['PredatorPrey']['resource_predator'], (42, 2, 1))
 
     if pop[0, 0, 0] == 2:
         # in the last time step, depending on the update order, 
@@ -147,8 +148,10 @@ def test_basic_interactions():
     # DataManager dm
     mv, dm = mtc.create_run_load(from_cfg="specific_scenario.yml", 
                                  perform_sweep=False, **model_config)
+    
+    data = dm['multiverse'][0]['data']
 
-    pop = dm['uni'][0]['data']['PredatorPrey']['Population'].reshape(31, 30, 1)
+    pop = data['PredatorPrey']['Population'].reshape(31, 30, 1)
     pop = pop.astype(int)
 
     diff = np.diff(pop, axis=0)
@@ -167,8 +170,10 @@ def test_basic_interactions():
                                              pred_frac=0, delta_e=2, e_min=3, 
                                              p_repro=1.0))
 
-    pop = dm['uni'][0]['data']['PredatorPrey']['Population'].reshape(3, 2, 1)
-    res_prey = np.reshape(dm['uni'][0]['data']['PredatorPrey']['resource_prey'],
+    data = dm['multiverse'][0]['data']
+
+    pop = data['PredatorPrey']['Population'].reshape(3, 2, 1)
+    res_prey = np.reshape(data['PredatorPrey']['resource_prey'],
                           (3, 2, 1))
 
     assert np.all(res_prey[: , : , :] == [[[2], [0]], [[1],[2]], [[2], [1]]]) \
