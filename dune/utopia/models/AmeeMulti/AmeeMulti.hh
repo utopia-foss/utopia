@@ -138,8 +138,6 @@ protected:
 
     std::vector<AgentAdaptortuple> _agent_adaptors;
     std::vector<CellAdaptortuple> _cell_adaptors;
-    std::vector<std::vector<std::array<double, 7>>> _agent_statistics_data;
-    std::vector<std::vector<std::array<double, 7>>> _cell_statistics_data;
 
     std::size_t _idx;
 
@@ -151,13 +149,16 @@ protected:
                         Utils::ArithmeticMean<double>,
                         Utils::Variance<double>,
                         Utils::Minimum<double>,
-                        Utils::Quantile<double, 25>,
-                        Utils::Median<double>,
-                        Utils::Quantile<double, 75>,
+                        // Utils::Quantile<double, 25>,
+                        // Utils::Median<double>,
+                        // Utils::Quantile<double, 75>,
                         Utils::Maximum<double>>
         _describe;
 
-public:
+    std::vector<std::vector<typename decltype(_describe)::ResArr>> _agent_statistics_data;
+    std::vector<std::vector<typename decltype(_describe)::ResArr>> _cell_statistics_data;
+
+  public:
     // update sub functions
 
     // FIXME!
@@ -546,7 +547,7 @@ public:
             _dsets_agent_statistics.push_back(_dgroup_agent_statistics->open_dataset(
                 std::get<0>(_agent_adaptors[i])));
 
-            _agent_statistics_data.push_back(std::vector<std::array<double, 7>>());
+            _agent_statistics_data.push_back(std::vector<typename decltype(_describe)::ResArr>());
             _agent_statistics_data.back().reserve(1 + this->_time_max / _statisticstime);
         }
 
@@ -559,7 +560,7 @@ public:
             _dsets_cell_statistics.push_back(_dgroup_cell_statistics->open_dataset(
                 std::get<0>(_cell_adaptors[i])));
 
-            _cell_statistics_data.push_back(std::vector<std::array<double, 7>>());
+            _cell_statistics_data.push_back(std::vector<typename decltype(_describe)::ResArr>());
             _cell_statistics_data.back().reserve(1 + this->_time_max / _statisticstime);
         }
 
