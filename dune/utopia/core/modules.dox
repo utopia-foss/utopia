@@ -1,0 +1,58 @@
+/**
+
+\defgroup Core Core
+\{
+
+\brief Interface definitions and utility functions for building models
+
+Core contains the main structures for building and running models.
+Most importantly, it defines the Model base interface every model needs to
+implement in order to be used within Utopia.
+
+\}
+
+\defgroup Neighborhoods Neighborhoods of Entities
+\{
+\ingroup Core
+\brief Querying neighborhoods of cells on a grid or custom neighbors of entities
+
+## Overview
+
+Neighborhood functions are typically "free" functions or static methods which
+return a ::CellContainer.
+
+## Neighborhoods of cells on grids
+
+A grid defines a spacial neighborhood via intersections of grid cells.
+For querying the neighborhood of a cell on a grid, it is therefore required
+to pass the grid information via the GridManager. Depending on the type of the
+underlying grid, the function will dispatch to the most efficient
+implementation.
+
+\code{.cc}
+    auto neighborhood = Utopia::Neighborhoods::NextNeighbor(cell, manager);
+\endcode
+
+## Custom neighborhoods of entities
+
+Any Entity (a Cell or an Agent) can store a set of "custom" neighbors.
+This is useful for defining interaction parters of agents based on non-spatial
+properties, or for storing the neighbors of cells located on an unstructured
+grid or a graph. The implementation uses more storage space to avoid
+inefficient queries. Notice that these structures only store pointers to
+the exact same data type.
+
+The number of custom neighborhoods stored in an Entity has to be given as
+template parameter of said Entity. The query functions take the number of the
+custom neighborhood (or, equivalently, an `enum`) as template parameter.
+Accessing a custom neighborhood that has not been defined is hence avoided
+at compile time.
+
+\code{.cc}
+    enum class NB { Friends, Foes };
+    Utopia::Neighborhoods::Custom<NB::Friends>::add_neighbor(nb, entity);
+    auto foes = Utopia::Neighborhoods::Custom<NB::Foes>::neighbors(entity);
+\endcode
+\}
+
+*/
