@@ -24,64 +24,73 @@ log = logging.getLogger(__name__)
 def bifurcation_codimension_one(dm: DataManager, *,
                                 out_path: str,
                                 mv_data,
-                                model_name: str,
-                                to_plot: dict,
-                                param_dim: str,
+                                dim: str,
                                 fmt: str=None,
                                 spin_up_fraction: float=0,
                                 find_peaks_kwargs: dict=None,
+                                to_plot_kwargs: dict,
                                 plot_kwargs: dict=None,
                                 save_kwargs: dict=None):
-    """Plots a bifurcation diagram for one parameter dimension (param_dim)
+    """Plots a bifurcation diagram for one parameter dimension (dim)
         i.e. plots the final state over the parameter
+
+    Configuration:
+        creator: multiverse
+        use the `select/field` key to associate one or multiple datasets
+        add a matching entry in `to_plot_kwargs` with at least a 
+        `plot_kwargs/color` sub_key
+        choose the dimension (dim) in which the sweep was performed
     
     Arguments:
         dm (DataManager): The data manager from which to retrieve the data
         out_path (str): Where to store the plot to
         mv_data (xr.Dataset): The extracted multidimensional dataset
-        model_name (str): The name of the model instance, in which the data is
-            located.
-        to_plot (dict): The plotting configuration. The entries of this key
-            refer to a path within the data and can include forward slashes to
-            navigate to data of submodels.
-            sub_keys: 
-                label (str, optional): label in plot
-                time_fraction (str, optional): fraction of simulation scattered
-                plot_kwargs (dict, optional): passed to scatter for every universe
-                    color (str, recommended): unique color for multiverses
-        param_dim (str): The parameter dimension of the bifurcation diagram
+        dim (str): The parameter dimension of the bifurcation diagram
         fmt (str, optional): the plt.plot format argument
         spin_up_fraction(float, optional): fraction of the simulation for 
             equilibration of system
         find_peaks_kwargs (dict, optional): if given requires `height` key
             passed on to find_peaks
             then only the return points are plotted (for stable oscillations)
-            may be overwritten by `to_plot/*/find_peak_kwargs`
+            may be overwritten by `to_plot_kwargs/*/find_peak_kwargs`
+        to_plot_kwargs (dict): The plotting configuration. The entries of this key
+            need to match the data_vars selected in mv_data.
+            sub_keys: 
+                label (str, optional): label in plot
+                time_fraction (str, optional): fraction of simulation scattered
+                plot_kwargs (dict, optional): passed to scatter for every universe
+                    color (str, recommended): unique color for multiverses
         plot_kwargs (dict, optional): Passed on to ax.set
         save_kwargs (dict, optional): kwargs to the plt.savefig function
 
     Raises:
-        ValueError: for an invalid `param_dim` value
+        ValueError: for an invalid `dim` value
         ValueError: for an invalid or non-matching `prop_name` value
-        ValueError: for an invalid `to_plot/*/time_fraction` value
-        Warning: no color defined for `to_plot` entry (coloring misleading)
+        TypeError: for a parameter dimesion higher than 1
+        ValueError: for an invalid `to_plot_kwargs/*/time_fraction` value
+        Warning: no color defined for `to_plot_kwargs` entry (coloring misleading)
     """
-    if not param_dim in mv_data.dims:
-        raise ValueError("Dimension param_dim not available in multiverse data."
+    if not dim in mv_data.dims:
+        raise ValueError("Dimension dim not available in multiverse data."
                          " Was: {} with value: '{}'."
                          " Available: {}"
-                         "".format(type(param_dim), 
-                                   param_dim,
+                         "".format(type(dim), 
+                                   dim,
                                    mv_data.dims))
+    if len(mv_data.dims) > 2:
+        raise TypeError("mv_data has more than one parameter dimensions."
+                        " Are: {}. Chosen dim: {}"
+                        "".format(mv_data.dims, dim))
+    
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    legend_handles = []    
+    legend_handles = []
     ## scatter data for all properties to plot
-    for (prop_name, props) in to_plot.items():
+    for (prop_name, props) in to_plot_kwargs.items():
         if not prop_name in mv_data.data_vars:
-            raise ValueError("Key to_plot/prop_name not available"
+            raise ValueError("Key to_plot_kwargs/prop_name not available"
                              " in multiverse data."
                              " Was: {} with value: '{}'."
                              " Available in multiverse field: {}"
@@ -101,7 +110,7 @@ def bifurcation_codimension_one(dm: DataManager, *,
                            color=props['plot_kwargs']['color']))
         else:
             # coloring misleading
-            log.warning("Warning: No color defined for to_plot "+ prop_name)
+            log.warning("Warning: No color defined for to_plot_kwargs "+ prop_name)
 
         for data in mv_data[prop_name]:
             if 'time_fraction' in props.keys():
@@ -109,7 +118,7 @@ def bifurcation_codimension_one(dm: DataManager, *,
                 plot_time = int(props['time_fraction'] * len(data))
                 if plot_time < 1 or plot_time > len(data):
                     raise ValueError("Value of argument"
-                            " `to_plot/{}/time_fraction` not valid."
+                            " `to_plot_kwargs/{}/time_fraction` not valid."
                             " Was: {} with value: '{}'"
                             " for a simulation with {} steps."
                             " Min: {} (or None), Max: 1.0"
@@ -139,19 +148,19 @@ def bifurcation_codimension_one(dm: DataManager, *,
                                             if find_peaks_kwargs_prop
                                             else {}))
                 if maxima.size is 0:
-                    plt.scatter(data[param_dim], data[-1],
+                    plt.scatter(data[dim], data[-1],
 							**props['plot_kwargs'])
                 else:
-                    plt.scatter([ data[param_dim] ]*len(maxima), 
+                    plt.scatter([ data[dim] ]*len(maxima), 
                                 max_props['peak_heights'], 
                                 **props['plot_kwargs'])
-                    plt.scatter([ data[param_dim] ]*len(minima), 
+                    plt.scatter([ data[dim] ]*len(minima), 
                                 [ amax ]*len(minima) - min_props['peak_heights'], 
                                 **props['plot_kwargs'])
             
             # plot final state(s)
             else:
-                plt.scatter([data[param_dim]]*plot_time, data[-plot_time:],
+                plt.scatter([data[dim]]*plot_time, data[-plot_time:],
 							**props['plot_kwargs'])
             
 
@@ -159,7 +168,7 @@ def bifurcation_codimension_one(dm: DataManager, *,
     if len(legend_handles) > 0:
         ax.legend(handles=legend_handles)
 
-    ax.set_xlabel(param_dim)
+    ax.set_xlabel(dim)
     ax.set_ylabel("final State")
     ax.set(**(plot_kwargs if plot_kwargs else {}))
 
