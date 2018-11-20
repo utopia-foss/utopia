@@ -22,33 +22,38 @@
     # cell_influxvalues: [1., 1., 1., 1., 1., 1.,1., 1., 1., 1., 1., 1.]
 
 parameter_space: 
-  num_steps: 2000000
+  num_steps: 1000
   periodic: true          # false: cells at boundary have fewer neighbors
   write_every: 1          # dummy, the write is determined in the program through extra parameters
   grid_size: [32,32]
   seed: 594472
+  monitor_emit_interval: 10.0
 
   AmeeMulti:
     model_name: AmeeMulti
     
     # Cell parameters
-    init_cell_traitlen: !sweep 
-        default: 24
-        values: 
-        - 6
-        - 24
+    init_cell_traitlen: 6
     init_cellresourceinflux_kind: "random"
     cellresourcecapacity_kind: "random"
-    cellresourcecapacity_limits: [150., 500.]
-    resourceinflux_limits: [0., 4.]
-    init_celltrait_values: [-5., 5.]
+    cellresourcecapacity_limits: 
+        - 150.
+        - 500. 
+    resourceinflux_limits: 
+        - 0.
+        - 4.
+    init_celltrait_values: 
+        - -5.
+        -  5.
     removethreshold: 1e-3
     decayintensity: 1e-2
 
     # Agent parameters
     init_genotypelen: 64
     init_resources: 5.
-    init_genotype_values: [-5., 5.]
+    init_genotype_values: 
+        - -5.
+        -  5.
     livingcost: 2.
     reproductioncost: 1.
     offspringresources: 1.
@@ -82,12 +87,7 @@ parameter_space:
         values: 
         - simple
         - complex
-    infotime: 10000
-    all_at_once: !sweep 
-        default: true
-        values:
-        - true 
-        - false
+    all_at_once: false
 
     # stuff for worker manager
 worker_manager:
@@ -99,5 +99,5 @@ paths:
   out_dir: ~/utopia_output
 
   # model note is added to the output directory path
-  model_note: "test_run_normed_agentupdate_celltraitlen"
+  model_note: "after_change_test_run"
 

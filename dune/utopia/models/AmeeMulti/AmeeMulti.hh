@@ -142,23 +142,12 @@ protected:
     std::size_t _idx;
 
     std::chrono::time_point<std::chrono::high_resolution_clock> _begintime;
-    unsigned int _infotime;
     bool _all_at_once;
 
-    Utils::Statistician<double,
-                        Utils::ArithmeticMean<double>,
-                        Utils::Variance<double>,
-                        Utils::Minimum<double>,
-                        // Utils::Quantile<double, 25>,
-                        // Utils::Median<double>,
-                        // Utils::Quantile<double, 75>,
-                        Utils::Maximum<double>>
-        _describe;
+    std::vector<std::vector<std::array<double, 10>>> _agent_statistics_data;
+    std::vector<std::vector<std::array<double, 10>>> _cell_statistics_data;
 
-    std::vector<std::vector<typename decltype(_describe)::ResArr>> _agent_statistics_data;
-    std::vector<std::vector<typename decltype(_describe)::ResArr>> _cell_statistics_data;
-
-  public:
+public:
     // update sub functions
 
     // FIXME!
@@ -198,24 +187,32 @@ protected:
         std::size_t j = 0;
         double resourcecredit = 0.;
         auto& cell = agent.state().habitat;
-
-        for (; i < unsigned(agent.state().end) && i < cell->state().resources.size();
-             ++i, ++j)
+        if (agent.state().adaption.size() == 0)
         {
-            resourcecredit = (cell->state().resources[i] > agent.state().adaption[j])
-                                 ? agent.state().adaption[j]
-                                 : cell->state().resources[i];
-
-            resourcecredit = (resourcecredit > _upper_resourcelimit) ? _upper_resourcelimit
-                                                                     : resourcecredit;
-
-            agent.state().resources += resourcecredit;
-            cell->state().resources[i] -= resourcecredit;
+            return;
         }
+        else
+        {
+            for (; i < unsigned(agent.state().end) &&
+                   i < cell->state().resources.size();
+                 ++i, ++j)
+            {
+                resourcecredit = (cell->state().resources[i] > agent.state().adaption[j])
+                                     ? agent.state().adaption[j]
+                                     : cell->state().resources[i];
 
+                resourcecredit = (resourcecredit > _upper_resourcelimit)
+                                     ? _upper_resourcelimit
+                                     : resourcecredit;
+
+                agent.state().resources += resourcecredit;
+                cell->state().resources[i] -= resourcecredit;
+            }
+        }
         agent.state().resources = (agent.state().resources > _livingcost)
                                       ? (agent.state().resources - _livingcost)
                                       : 0.;
+
         agent.state().age += 1;
     }
 
@@ -226,27 +223,27 @@ protected:
      */
     void modify(Organism& agent)
     {
-        auto cell = agent.state().habitat;
-        auto& trt = agent.state().phenotype;
-        auto& ctrt = cell->state().celltrait;
-        int startmod = agent.state().start_mod;
-        int endmod = agent.state().end_mod;
         double intensity = agent.state().intensity;
 
         if (std::abs(intensity) < 1e-16)
         {
             return;
         }
-        if (startmod < 0 or endmod < 0 or startmod >= int(trt.size()) or endmod < startmod)
+        if (agent.state().start_mod < 0 or agent.state().end_mod < 0 or
+            agent.state().start_mod >= int(agent.state().phenotype.size()) or
+            agent.state().end_mod < agent.state().start_mod)
         {
             return;
         }
 
         // FIXME: check if the algorithm is correct!
-        int min_m = std::min({endmod, int(ctrt.size()), int(trt.size())});
-        int min_a = std::min(endmod, int(trt.size()));
+        int min_m = std::min({agent.state().end_mod,
+                              int(agent.state().habitat->state().celltrait.size()),
+                              int(agent.state().phenotype.size())});
+        int min_a =
+            std::min(agent.state().end_mod, int(agent.state().phenotype.size()));
 
-        for (int i = startmod; i < min_m; ++i)
+        for (int i = agent.state().start_mod; i < min_m; ++i)
         {
             if (agent.state().resources < (_reproductioncost + _offspringresources))
             {
@@ -255,21 +252,24 @@ protected:
             else
             {
                 // when decayed to naught, revive with random influx
-                if (std::isnan(ctrt[i]))
+                if (std::isnan(agent.state().habitat->state().celltrait[i]))
                 {
-                    ctrt[i] = 0.;
-                    cell->state().resources[i] = 0.;
-                    cell->state().resourceinflux[i] = _resdist(*this->_rng);
-                    cell->state().modtimes[i] = this->_time;
+                    agent.state().habitat->state().celltrait[i] = 0.;
+                    agent.state().habitat->state().resources[i] = 0.;
+                    agent.state().habitat->state().resourceinflux[i] =
+                        _resdist(*this->_rng);
+                    agent.state().habitat->state().modtimes[i] = this->_time;
                 }
 
                 // replace value at locus with scaled value of organism phenotype
-                CTV value = intensity * trt[i];
-                double cost = _modifiercost * std::abs(value - ctrt[i]);
+                CTV value = agent.state().intensity * agent.state().phenotype[i];
+                double cost =
+                    _modifiercost *
+                    std::abs(value - agent.state().habitat->state().celltrait[i]);
                 if (cost < agent.state().resources)
                 {
-                    ctrt[i] = value;
-                    cell->state().modtimes[i] = this->_time;
+                    agent.state().habitat->state().celltrait[i] = value;
+                    agent.state().habitat->state().modtimes[i] = this->_time;
                     agent.state().resources -= cost;
                 }
             }
@@ -283,15 +283,16 @@ protected:
             }
             else
             {
-                CTV value = intensity * trt[i];
+                CTV value = agent.state().intensity * agent.state().phenotype[i];
                 double cost = _modifiercost * std::abs(value);
 
                 if (cost < agent.state().resources)
                 {
-                    ctrt.push_back(value);
-                    cell->state().modtimes.push_back(this->_time);
-                    cell->state().resources.push_back(0.);
-                    cell->state().resourceinflux.push_back(_resdist(*this->_rng));
+                    agent.state().habitat->state().celltrait.push_back(value);
+                    agent.state().habitat->state().modtimes.push_back(this->_time);
+                    agent.state().habitat->state().resources.push_back(0.);
+                    agent.state().habitat->state().resourceinflux.push_back(
+                        _resdist(*this->_rng));
                     agent.state().resources -= cost;
                 }
             }
@@ -355,8 +356,6 @@ protected:
      */
     void reproduce(Organism& agent)
     {
-        auto cell = agent.state().habitat;
-
         while (agent.state().resources > (_offspringresources + _reproductioncost))
         {
             _population.push_back(std::make_shared<Organism>(
@@ -392,28 +391,28 @@ protected:
      */
     void celltrait_decay(const std::shared_ptr<Gridcell> cell)
     {
-        auto& org = cell->state().original;
-        auto& ctrt = cell->state().celltrait;
-        auto& times = cell->state().modtimes;
-        auto t = this->_time;
-        for (std::size_t i = 0; i < org.size(); ++i)
+        for (std::size_t i = 0; i < cell->state().original.size(); ++i)
         {
-            ctrt[i] = org[i] + (ctrt[i] - org[i]) *
-                                   std::exp(-_decayintensity * (t - times[i]));
+            cell->state().celltrait[i] =
+                cell->state().original[i] +
+                (cell->state().celltrait[i] - cell->state().original[i]) *
+                    std::exp(-_decayintensity * (this->_time - cell->state().modtimes[i]));
         }
 
-        for (std::size_t i = org.size(); i < ctrt.size(); ++i)
+        for (std::size_t i = cell->state().original.size();
+             i < cell->state().celltrait.size(); ++i)
         {
-            if (std::isnan(ctrt[i]))
+            if (std::isnan(cell->state().celltrait[i]))
             {
                 continue;
             }
-            ctrt[i] *= std::exp(-_decayintensity * (t - times[i]));
-            if (std::abs(ctrt[i]) < _removethreshold)
+            cell->state().celltrait[i] *=
+                std::exp(-_decayintensity * (this->_time - cell->state().modtimes[i]));
+            if (std::abs(cell->state().celltrait[i]) < _removethreshold)
             {
-                ctrt[i] = std::numeric_limits<CTV>::quiet_NaN();
+                cell->state().celltrait[i] = std::numeric_limits<CTV>::quiet_NaN();
                 cell->state().resourceinflux[i] = 0.;
-                times[i] = std::numeric_limits<double>::quiet_NaN();
+                cell->state().modtimes[i] = std::numeric_limits<double>::quiet_NaN();
 
                 // cellresources are left alone, can still be used, but nothing
                 // else anymore is done
@@ -456,32 +455,7 @@ protected:
         }
     }
 
-    /**
-     * @brief Function for carrying out the update algorithm for an agent
-     *
-     * @param agent
-     */
-    void update_agent(Organism& agent)
-    {
-        update_adaption(agent);
 
-        move(agent);
-
-        update_adaption(agent);
-
-        if constexpr (construction)
-        {
-            modify(agent);
-        }
-
-        update_adaption(agent);
-
-        metabolism(agent);
-
-        reproduce(agent);
-
-        kill(agent);
-    };
 
     /**
      * @brief Construct a new Amee Multi object
@@ -528,9 +502,7 @@ protected:
           _cell_adaptors(celladaptors),
           _idx(0),
           _begintime(std::chrono::high_resolution_clock::now()),
-          _infotime(as_<unsigned>(this->_cfg["infotime"])),
-          _all_at_once(as_bool(this->_cfg["all_at_once"])),
-          _describe(decltype(_describe)())
+          _all_at_once(as_bool(this->_cfg["all_at_once"]))
     {
         this->_log->info(" initializing cells");
         initialize_cells();
@@ -539,7 +511,7 @@ protected:
         initialize_agents();
 
         _dgroup_agent_statistics->add_attribute(
-            "Stored quantities", "mean, var, mode, min, q25, q50, q75, max");
+            "Stored quantities", "mean, var, mode, min, first_quartile, median, third_quartile, max");
         _dgroup_agent_statistics->add_attribute("Save time", _statisticstime);
 
         for (std::size_t i = 0; i < _agent_adaptors.size(); ++i)
@@ -547,12 +519,13 @@ protected:
             _dsets_agent_statistics.push_back(_dgroup_agent_statistics->open_dataset(
                 std::get<0>(_agent_adaptors[i])));
 
-            _agent_statistics_data.push_back(std::vector<typename decltype(_describe)::ResArr>());
+            _agent_statistics_data.push_back(
+                std::vector<std::array<double, 10>>());
             _agent_statistics_data.back().reserve(1 + this->_time_max / _statisticstime);
         }
 
         _dgroup_cell_statistics->add_attribute(
-            "Stored quantities", "mean, var, mode, min, q25, q50, q75, max");
+            "Stored quantities", "mean, var, mode, min, first_quartile, median, third_quartile, max");
         _dgroup_cell_statistics->add_attribute("Save time", _statisticstime);
 
         for (std::size_t i = 0; i < _cell_adaptors.size(); ++i)
@@ -560,7 +533,8 @@ protected:
             _dsets_cell_statistics.push_back(_dgroup_cell_statistics->open_dataset(
                 std::get<0>(_cell_adaptors[i])));
 
-            _cell_statistics_data.push_back(std::vector<typename decltype(_describe)::ResArr>());
+            _cell_statistics_data.push_back(
+                std::vector<std::array<double, 10>>());
             _cell_statistics_data.back().reserve(1 + this->_time_max / _statisticstime);
         }
 
@@ -714,7 +688,6 @@ protected:
             agent->state() = Agentstate(trait, eden, init_resources, this->_rng);
             agent->state().adaption = _check_adaption(*agent);
 
-
             if (agent->state().adaption.size() > 0)
             {
                 double cum_res = 0;
@@ -754,9 +727,25 @@ protected:
         this->_time += dt;
     }
 
+    /**
+     * @brief output for monitoring stuff
+     * 
+     */
     void monitor()
     {
-        // fucking empty monitor function of which I do not know what to do
+        auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(
+                           std::chrono::high_resolution_clock::now() - _begintime)
+                           .count();
+
+        auto remaining =
+            this->_time == 0
+                ? 1
+                : (((static_cast<double>(elapsed) / this->_time) * this->_time_max) -
+                   static_cast<double>(elapsed));
+
+        this->_log->info(
+            "T {}, N {}, elapsed time {} s, estimated remaining time {} s",
+            this->_time, _population.size(), elapsed, remaining);
     }
 
     /**
@@ -765,26 +754,22 @@ protected:
      */
     void perform_step()
     {
-        if ((this->_time % _infotime == 0))
-        {
-            auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(
-                               std::chrono::high_resolution_clock::now() - _begintime)
-                               .count();
-
-            auto remaining =
-                this->_time == 0
-                    ? 1
-                    : (((static_cast<double>(elapsed) / this->_time) * this->_time_max) -
-                       static_cast<double>(elapsed));
-
-            this->_log->info(
-                "T {}, N {}, elapsed time {} s, estimated remaining time {} s",
-                this->_time, _population.size(), elapsed, remaining);
-        }
-
         if (_population.size() == 0)
         {
             return;
+        }
+
+        for (auto& agent : _population)
+        {
+            if ((agent->state().start < 0 or agent->state().end < 0 or
+                agent->state().end < agent->state().start) and agent->state().age > 0)
+            {
+                this->_log->info("found strange agent");
+                this->_log->info(
+                    " start {}\n end {}\n adaptionsize {}\n age {}\n",
+                    agent->state().start, agent->state().end,
+                    agent->state().adaption.size(), agent->state().age);
+            }
         }
 
         for (auto& agent : _population)
@@ -808,7 +793,24 @@ protected:
 
             for (std::size_t i = 0; i < size; ++i)
             {
-                update_agent(*_population[i]);
+                update_adaption(*_population[i]);
+
+                move(*_population[i]);
+
+                update_adaption(*_population[i]);
+
+                if constexpr (construction)
+                {
+                    modify(*_population[i]);
+                }
+
+                update_adaption(*_population[i]);
+
+                metabolism(*_population[i]);
+
+                reproduce(*_population[i]);
+
+                kill(*_population[i]);
             }
         }
         else
@@ -878,15 +880,19 @@ protected:
             for (std::size_t i = 0; i < _agent_adaptors.size(); ++i)
             {
                 _agent_statistics_data[i].push_back(
-                    _describe(_population.begin(), _population.end(),
+                    Utils::describe(_population.begin(), _population.end(),
                               std::get<1>(_agent_adaptors[i])));
+
+                
             }
 
             for (std::size_t i = 0; i < _cell_adaptors.size(); ++i)
             {
-                _cell_statistics_data[i].push_back(_describe(
-                    _cells.begin(), _cells.end(), std::get<1>(_cell_adaptors[i])));
+              _cell_statistics_data[i].push_back(
+                  Utils::describe(_cells.begin(), _cells.end(),
+                           std::get<1>(_cell_adaptors[i])));
             }
+
         }
 
         if (this->_time > 0 and (this->_time % (_statisticstime * 10) == 0 or

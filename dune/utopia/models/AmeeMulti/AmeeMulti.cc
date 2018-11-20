@@ -27,7 +27,7 @@ template <template <typename Gt, typename Pt, typename RNG> class AgentPolicy,
 struct Modelfactory
 {
     template <typename Model, typename Cellmanager>
-    auto operator()(std::string name, Model& parentmodel, Cellmanager& cellmanager, std::string adaptionfunctionname)
+    auto operator()(std::string name, Model& parentmodel, Cellmanager& cellmanager)
     {
         using namespace Utopia;
         // making model types
@@ -160,8 +160,6 @@ int main(int argc, char** argv)
         std::string agenttype =
             Utopia::as_str(pp.get_cfg()["AmeeMulti"]["agenttype"]);
 
-        std::string adaptionfunction =
-            Utopia::as_str(pp.get_cfg()["AmeeMulti"]["adaptionfunction"]);
 
         if (agenttype == "simple")
         {
@@ -176,7 +174,7 @@ int main(int argc, char** argv)
                                  Phenotype, RNG, Adaptiontype, true, true, true, true>
                         factory;
 
-                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    auto model = factory("AmeeMulti", pp, cellmanager);
                     model.run();
                 }
 
@@ -188,7 +186,7 @@ int main(int argc, char** argv)
                                  Phenotype, RNG, Adaptiontype, true, true, true, false>
                         factory;
 
-                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    auto model = factory("AmeeMulti", pp, cellmanager);
                     model.run();
                 }
                 else if (!multi && normed)
@@ -199,7 +197,7 @@ int main(int argc, char** argv)
                                  Phenotype, RNG, Adaptiontype, true, true, false, true>
                         factory;
 
-                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    auto model = factory("AmeeMulti", pp, cellmanager);
                     model.run();
                 }
                 else
@@ -210,7 +208,7 @@ int main(int argc, char** argv)
                                  Phenotype, RNG, Adaptiontype, true, true, false, false>
                         factory;
 
-                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    auto model = factory("AmeeMulti", pp, cellmanager);
                     model.run();
                 }
             }
@@ -224,7 +222,7 @@ int main(int argc, char** argv)
                                  Phenotype, RNG, Adaptiontype, true, false, true, true>
                         factory;
 
-                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    auto model = factory("AmeeMulti", pp, cellmanager);
                     model.run();
                 }
                 else if (multi && !normed)
@@ -235,7 +233,7 @@ int main(int argc, char** argv)
                                  Phenotype, RNG, Adaptiontype, true, false, true, false>
                         factory;
 
-                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    auto model = factory("AmeeMulti", pp, cellmanager);
                     model.run();
                 }
                 else if (!multi && normed)
@@ -246,7 +244,7 @@ int main(int argc, char** argv)
                                  Phenotype, RNG, Adaptiontype, true, false, false, true>
                         factory;
 
-                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    auto model = factory("AmeeMulti", pp, cellmanager);
                     model.run();
                 }
                 else
@@ -257,7 +255,7 @@ int main(int argc, char** argv)
                                  Phenotype, RNG, Adaptiontype, true, false, false, false>
                         factory;
 
-                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    auto model = factory("AmeeMulti", pp, cellmanager);
                     model.run();
                 }
             }
@@ -271,7 +269,7 @@ int main(int argc, char** argv)
                                  Phenotype, RNG, Adaptiontype, false, true, true, true>
                         factory;
 
-                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    auto model = factory("AmeeMulti", pp, cellmanager);
                     model.run();
                 }
                 else if (multi && !normed)
@@ -282,7 +280,7 @@ int main(int argc, char** argv)
                                  Phenotype, RNG, Adaptiontype, false, true, true, false>
                         factory;
 
-                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    auto model = factory("AmeeMulti", pp, cellmanager);
                     model.run();
                 }
                 else if (!multi && normed)
@@ -293,7 +291,7 @@ int main(int argc, char** argv)
                                  Phenotype, RNG, Adaptiontype, false, true, false, true>
                         factory;
 
-                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    auto model = factory("AmeeMulti", pp, cellmanager);
                     model.run();
                 }
                 else
@@ -304,7 +302,7 @@ int main(int argc, char** argv)
                                  Phenotype, RNG, Adaptiontype, false, true, false, false>
                         factory;
 
-                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    auto model = factory("AmeeMulti", pp, cellmanager);
                     model.run();
                 }
             }
@@ -318,7 +316,7 @@ int main(int argc, char** argv)
                                  Phenotype, RNG, Adaptiontype, false, false, true, true>
                         factory;
 
-                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    auto model = factory("AmeeMulti", pp, cellmanager);
                     model.run();
                 }
                 else if (multi && !normed)
@@ -329,7 +327,7 @@ int main(int argc, char** argv)
                                  Phenotype, RNG, Adaptiontype, true, true, true, false>
                         factory;
 
-                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    auto model = factory("AmeeMulti", pp, cellmanager);
                     model.run();
                 }
                 else if (!multi && normed)
@@ -340,7 +338,7 @@ int main(int argc, char** argv)
                                  Phenotype, RNG, Adaptiontype, false, false, false, true>
                         factory;
 
-                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    auto model = factory("AmeeMulti", pp, cellmanager);
                     model.run();
                 }
                 else
@@ -351,7 +349,7 @@ int main(int argc, char** argv)
                                  Phenotype, RNG, Adaptiontype, false, false, false, false>
                         factory;
 
-                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    auto model = factory("AmeeMulti", pp, cellmanager);
                     model.run();
                 }
             }
@@ -368,7 +366,7 @@ int main(int argc, char** argv)
                                  Phenotype, RNG, Adaptiontype, true, true, true, true>
                         factory;
 
-                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    auto model = factory("AmeeMulti", pp, cellmanager);
                     model.run();
                 }
                 else if (multi && !normed)
@@ -379,7 +377,7 @@ int main(int argc, char** argv)
                                  Phenotype, RNG, Adaptiontype, true, true, true, false>
                         factory;
 
-                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    auto model = factory("AmeeMulti", pp, cellmanager);
                     model.run();
                 }
                 else if (!multi && normed)
@@ -390,7 +388,7 @@ int main(int argc, char** argv)
                                  Phenotype, RNG, Adaptiontype, true, true, false, true>
                         factory;
 
-                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    auto model = factory("AmeeMulti", pp, cellmanager);
                     model.run();
                 }
                 else
@@ -401,7 +399,7 @@ int main(int argc, char** argv)
                                  Phenotype, RNG, Adaptiontype, true, true, false, false>
                         factory;
 
-                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    auto model = factory("AmeeMulti", pp, cellmanager);
                     model.run();
                 }
             }
@@ -415,7 +413,7 @@ int main(int argc, char** argv)
                                  Phenotype, RNG, Adaptiontype, true, false, true, true>
                         factory;
 
-                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    auto model = factory("AmeeMulti", pp, cellmanager);
                     model.run();
                 }
                 else if (multi && !normed)
@@ -426,7 +424,7 @@ int main(int argc, char** argv)
                                  Phenotype, RNG, Adaptiontype, true, false, true, false>
                         factory;
 
-                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    auto model = factory("AmeeMulti", pp, cellmanager);
                     model.run();
                 }
                 else if (!multi && normed)
@@ -437,7 +435,7 @@ int main(int argc, char** argv)
                                  Phenotype, RNG, Adaptiontype, true, false, false, true>
                         factory;
 
-                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    auto model = factory("AmeeMulti", pp, cellmanager);
                     model.run();
                 }
                 else
@@ -448,7 +446,7 @@ int main(int argc, char** argv)
                                  Phenotype, RNG, Adaptiontype, true, false, false, false>
                         factory;
 
-                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    auto model = factory("AmeeMulti", pp, cellmanager);
                     model.run();
                 }
             }
@@ -462,7 +460,7 @@ int main(int argc, char** argv)
                                  Phenotype, RNG, Adaptiontype, false, true, true, true>
                         factory;
 
-                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    auto model = factory("AmeeMulti", pp, cellmanager);
                     model.run();
                 }
                 else if (multi && !normed)
@@ -473,7 +471,7 @@ int main(int argc, char** argv)
                                  Phenotype, RNG, Adaptiontype, false, true, true, false>
                         factory;
 
-                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    auto model = factory("AmeeMulti", pp, cellmanager);
                     model.run();
                 }
                 else if (!multi && normed)
@@ -484,7 +482,7 @@ int main(int argc, char** argv)
                                  Phenotype, RNG, Adaptiontype, false, true, false, true>
                         factory;
 
-                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    auto model = factory("AmeeMulti", pp, cellmanager);
                     model.run();
                 }
                 else
@@ -495,7 +493,7 @@ int main(int argc, char** argv)
                                  Phenotype, RNG, Adaptiontype, false, true, false, false>
                         factory;
 
-                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    auto model = factory("AmeeMulti", pp, cellmanager);
                     model.run();
                 }
             }
@@ -509,7 +507,7 @@ int main(int argc, char** argv)
                                  Phenotype, RNG, Adaptiontype, false, false, true, true>
                         factory;
 
-                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    auto model = factory("AmeeMulti", pp, cellmanager);
                     model.run();
                 }
                 else if (multi && !normed)
@@ -520,7 +518,7 @@ int main(int argc, char** argv)
                                  Phenotype, RNG, Adaptiontype, true, true, true, false>
                         factory;
 
-                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    auto model = factory("AmeeMulti", pp, cellmanager);
                     model.run();
                 }
                 else if (!multi && normed)
@@ -531,7 +529,7 @@ int main(int argc, char** argv)
                                  Phenotype, RNG, Adaptiontype, false, false, false, true>
                         factory;
 
-                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    auto model = factory("AmeeMulti", pp, cellmanager);
                     model.run();
                 }
                 else
@@ -542,7 +540,7 @@ int main(int argc, char** argv)
                                  Phenotype, RNG, Adaptiontype, false, false, false, false>
                         factory;
 
-                    auto model = factory("AmeeMulti", pp, cellmanager, adaptionfunction);
+                    auto model = factory("AmeeMulti", pp, cellmanager);
                     model.run();
                 }
             }
