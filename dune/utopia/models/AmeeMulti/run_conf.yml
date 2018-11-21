@@ -22,7 +22,7 @@
     # cell_influxvalues: [1., 1., 1., 1., 1., 1.,1., 1., 1., 1., 1., 1.]
 
 parameter_space: 
-  num_steps: 5000000
+  num_steps: 2000000
   periodic: true          # false: cells at boundary have fewer neighbors
   write_every: 1          # dummy, the write is determined in the program through extra parameters
   grid_size: [32,32]
@@ -99,5 +99,5 @@ paths:
   out_dir: ~/utopia_output
 
   # model note is added to the output directory path
-  model_note: "after_change_test_run"
+  model_note: "test_run_long_normed_agentupdate_relaxed_parameter_restrictions"
 
