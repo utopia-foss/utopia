@@ -66,7 +66,9 @@ parameter_space:
 
     modifiercost: 0.
     adaptionfunction: 
-        normed: true 
+        normed: !sweep
+          default: true
+          values: [true, false] 
         multi: true
     upper_resourcelimit: 40. # upper limit which can be taken in at once by an organism
     statisticstime: 50
