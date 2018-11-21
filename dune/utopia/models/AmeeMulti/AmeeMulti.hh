@@ -12,7 +12,6 @@
 #include <dune/utopia/models/Amee/utils/statistics.hh>
 #include <dune/utopia/models/Amee/utils/test_utils.hh>
 #include <dune/utopia/models/Amee/utils/utils.hh>
-#include <dune/utopia/models/AmeeMulti/adaptionfunctions.hh>
 
 using namespace Utopia::Models::Amee;
 
