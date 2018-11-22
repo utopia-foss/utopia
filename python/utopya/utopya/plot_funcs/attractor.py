@@ -82,19 +82,19 @@ def bifurcation_codimension_one(dm: DataManager, *,
     Raises:
         ValueError: for an invalid `dim` value
         ValueError: for an invalid or non-matching `prop_name` value
-        TypeError: for a parameter dimesion higher than 1
+        TypeError: for a parameter dimesion higher than 2
         ValueError: for an invalid `to_plot_kwargs/*/time_fraction` value
         Warning: no color defined for `to_plot_kwargs` entry (coloring misleading)
     """
     if not dim in mv_data.dims:
-        raise ValueError("Dimension dim not available in multiverse data."
+        raise ValueError("Dimension `dim` not available in multiverse data."
                          " Was: {} with value: '{}'."
                          " Available: {}"
                          "".format(type(dim), 
                                    dim,
                                    mv_data.dims))
-    if len(mv_data.dims) > 2:
-        raise TypeError("mv_data has more than one parameter dimensions."
+    if len(mv_data.coords) > 2:
+        raise TypeError("mv_data has more than two parameter dimensions."
                         " Are: {}. Chosen dim: {}"
                         "".format(mv_data.dims, dim))
     
@@ -106,7 +106,7 @@ def bifurcation_codimension_one(dm: DataManager, *,
             time_fraction = diagram_kwargs['time_fraction']
             plot_time = int(max(time_fraction * len(raw_data), 1.))
 
-            ax.scatter([ raw_data[dim] ] *plot_time, data[-plot_time:],
+            ax.scatter([ raw_data[dim] ] *plot_time, raw_data[-plot_time:],
                        **plot_kwargs)
         
         # use signal analysis: find_peaks
@@ -230,8 +230,14 @@ def bifurcation_codimension_one(dm: DataManager, *,
                                       spin_up_fraction))
 
         # plot data
-        for data in mv_data[prop_name]:
-            scatter(data, ax, diagram_kwargs)
+        if (len(mv_data.coords) == 1):
+            for data in mv_data[prop_name]:
+                scatter(data, ax, diagram_kwargs)
+        elif (len(mv_data.coords) == 2):
+            for datasets in mv_data[prop_name]:
+                for data in datasets:
+                    scatter(data, ax, diagram_kwargs)
+        # else: Error raised
     # end for: property
             
     # plot legend
