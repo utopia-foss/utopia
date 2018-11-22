@@ -1,4 +1,5 @@
 #include <dune/utopia/core/tags.hh>
+#include <dune/utopia/models/Amee/adaptionfunctions.hh>
 #include <dune/utopia/models/Amee/agentstates/agentstate.hh>
 #include <dune/utopia/models/Amee/agentstates/agentstate_policy_complex.hh>
 #include <dune/utopia/models/Amee/agentstates/agentstate_policy_simple.hh>
@@ -7,7 +8,6 @@
 #include <dune/utopia/models/Amee/utils/generators.hh>
 #include <dune/utopia/models/Amee/utils/test_utils.hh>
 #include <dune/utopia/models/AmeeMulti/AmeeMulti.hh>
-#include <dune/utopia/models/Amee/adaptionfunctions.hh>
 
 using namespace Utopia::Models::Amee::Utils;
 using namespace Utopia::Models::AmeeMulti;
@@ -92,7 +92,7 @@ void test_model_construction(Model& model)
                    livingcost);
     }
 
-    ASSERT_EQ(model.get_upperresourcelimit(), upper_resourcelimit);
+    ASSERT_EQ(model.get_upper_resourcelimit(), upper_resourcelimit);
     ASSERT_EQ(model.get_livingcost(), livingcost);
     ASSERT_EQ(model.get_reproductioncost(), reproductioncost);
     ASSERT_EQ(model.get_offspringresources(), offspringresources);
@@ -538,56 +538,59 @@ void test_model_functions(Model& model, Cellmanager& cellmanager)
 // build a struct which makes setup simpler
 // build a struct which makes setup simpler
 template <template <typename Gt, typename Pt, typename RNG> class AgentPolicy,
-          template <typename, bool, bool> class Adaptionfunction, typename G,
-          typename P, typename RNG, typename Adaptiontype, bool construction,
-          bool decay, bool multi, bool normed>
-struct Modelfactory {
-  template <typename Model, typename Cellmanager>
-  auto operator()(std::string name, Model &parentmodel,
-                  Cellmanager &cellmanager) {
-    using namespace Utopia;
-    // making model types
-    using Genotype = G;
-    using Phenotype = P;
-    using Policy = AgentPolicy<Genotype, Phenotype, RNG>;
-    using Position = Dune::FieldVector<double, 2>;
-    using CellType = typename Cellmanager::Cell;
+          template <typename, bool, bool>
+          class Adaptionfunction,
+          typename G,
+          typename P,
+          typename RNG,
+          typename Adaptiontype,
+          bool construction,
+          bool decay,
+          bool multi,
+          bool normed>
+struct Modelfactory
+{
+    template <typename Model, typename Cellmanager>
+    auto operator()(std::string name, Model& parentmodel, Cellmanager& cellmanager)
+    {
+        using namespace Utopia;
+        // making model types
+        using Genotype = G;
+        using Phenotype = P;
+        using Policy = AgentPolicy<Genotype, Phenotype, RNG>;
+        using Position = Dune::FieldVector<double, 2>;
+        using CellType = typename Cellmanager::Cell;
 
-    using Agentstate = AgentState<CellType, Policy, Adaptiontype>;
-    using AgentType = Agent<Agentstate, EmptyTag, std::size_t, Position>;
+        using Agentstate = AgentState<CellType, Policy, Adaptiontype>;
+        using AgentType = Agent<Agentstate, EmptyTag, std::size_t, Position>;
 
-    using Modeltypes = ModelTypes<RNG>;
+        using Modeltypes = ModelTypes<RNG>;
 
-    using Modeltraits =
-        Modeltraits<CellType, AgentType, Adaptionfunction, Adaptiontype,
-                    construction, decay, multi, normed>;
+        using Modeltraits =
+            Modeltraits<CellType, AgentType, Adaptionfunction, Adaptiontype, construction, decay, multi, normed>;
 
-    using AgentAdaptor = typename Modeltraits::AgentAdaptor;
-    using AgentAdaptortuple = std::tuple<std::string, AgentAdaptor>;
+        using AgentAdaptor = typename Modeltraits::AgentAdaptor;
+        using AgentAdaptortuple = std::tuple<std::string, AgentAdaptor>;
 
-    using CellAdaptor = typename Modeltraits::CellAdaptor;
+        using CellAdaptor = typename Modeltraits::CellAdaptor;
 
-    using CellAdaptortuple = std::tuple<std::string, CellAdaptor>;
+        using CellAdaptortuple = std::tuple<std::string, CellAdaptor>;
 
-    std::vector<AgentAdaptortuple> agentadaptors{
-        AgentAdaptortuple{"cummulative_adaption",
-                          [](const auto &agent) -> double {
-                            return std::accumulate(
-                                agent->state().adaption.begin(),
-                                agent->state().adaption.end(), 0.);
-                          }}};
+        std::vector<AgentAdaptortuple> agentadaptors{AgentAdaptortuple{
+            "cummulative_adaption", [](const auto& agent) -> double {
+                return std::accumulate(agent->state().adaption.begin(),
+                                       agent->state().adaption.end(), 0.);
+            }}};
 
-    std::vector<CellAdaptortuple> celladaptors{
-        CellAdaptortuple{"resources",
-                         [](const auto &cell) -> double {
-                           return std::accumulate(
-                               cell->state().resources.begin(),
-                               cell->state().resources.end(), 0.);
-                         }}};
+        std::vector<CellAdaptortuple> celladaptors{CellAdaptortuple{
+            "resources", [](const auto& cell) -> double {
+                return std::accumulate(cell->state().resources.begin(),
+                                       cell->state().resources.end(), 0.);
+            }}};
 
-    return AmeeMulti<Modeltraits, Modeltypes>(
-        name, parentmodel, cellmanager.cells(), agentadaptors, celladaptors);
-  }
+        return AmeeMulti<Modeltraits, Modeltypes>(
+            name, parentmodel, cellmanager.cells(), agentadaptors, celladaptors);
+    }
 };
 
 // type aliases for later usage
@@ -637,8 +640,6 @@ int main(int argc, char** argv)
 
             std::string agenttype =
                 Utopia::as_str(pp.get_cfg()[modelname]["agenttype"]);
-
-
 
             if (agenttype == "simple")
             {
@@ -1062,7 +1063,6 @@ int main(int argc, char** argv)
             }
         }
         return 0;
-
     }
     catch (std::exception& e)
     {

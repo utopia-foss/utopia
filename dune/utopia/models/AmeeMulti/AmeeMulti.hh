@@ -1052,7 +1052,7 @@ public:
         _mutationrates = mutationrates;
     }
 
-    auto get_upperresourcelimit()
+    auto get_upper_resourcelimit()
     {
         return _upper_resourcelimit;
     }
