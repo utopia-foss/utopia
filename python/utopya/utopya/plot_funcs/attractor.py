@@ -26,6 +26,7 @@ def bifurcation_codimension_one(dm: DataManager, *,
                                 mv_data,
                                 dim: str,
                                 fmt: str=None,
+                                time_fraction: float=0,
                                 spin_up_fraction: float=0,
                                 find_peaks_kwargs: dict=None,
                                 to_plot_kwargs: dict,
@@ -47,8 +48,15 @@ def bifurcation_codimension_one(dm: DataManager, *,
         mv_data (xr.Dataset): The extracted multidimensional dataset
         dim (str): The parameter dimension of the bifurcation diagram
         fmt (str, optional): the plt.plot format argument
-        spin_up_fraction(float, optional): fraction of the simulation for 
-            equilibration of system
+        time_fraction(float, optional): fraction of the simulation
+            used for analysis.
+            Spin up fraction is `1 - time_fraction`.
+                Default: eq. of 1 step.
+            Will be overwritten by specific `to_plot_kwargs/time_fraction`.
+            Unused if analysis performed.
+        spin_up_fraction(float, optional): fraction of the simulation
+            snot used for analysis in case on signal analysis, e.g. find_peaks.
+            Unused if no analysis performed.
         find_peaks_kwargs (dict, optional): if given requires `height` key
             passed on to find_peaks
             then only the return points are plotted (for stable oscillations)
@@ -57,7 +65,15 @@ def bifurcation_codimension_one(dm: DataManager, *,
             need to match the data_vars selected in mv_data.
             sub_keys: 
                 label (str, optional): label in plot
-                time_fraction (str, optional): fraction of simulation scattered
+                time_fraction (str, optional): fraction of the simulation
+                    used for analysis.
+                    Spin up fraction is `1 - time_fraction`.
+                    Default: eq. of 1 step.
+                    Unused if analysis performed.
+                spin_up_fraction(float, optional): fraction of the simulation
+                    snot used for analysis in case on signal analysis, 
+                    e.g. find_peaks.
+                    Unused if no analysis performed.
                 plot_kwargs (dict, optional): passed to scatter for every universe
                     color (str, recommended): unique color for multiverses
         plot_kwargs (dict, optional): Passed on to ax.set
@@ -82,6 +98,45 @@ def bifurcation_codimension_one(dm: DataManager, *,
                         " Are: {}. Chosen dim: {}"
                         "".format(mv_data.dims, dim))
     
+    def scatter(raw_data, ax, diagram_kwargs):
+        plot_kwargs = diagram_kwargs['plot_kwargs']
+
+        # scatter data
+        if diagram_kwargs['find_peaks_kwargs'] is None:
+            time_fraction = diagram_kwargs['time_fraction']
+            plot_time = int(max(time_fraction * len(raw_data), 1.))
+
+            ax.scatter([ raw_data[dim] ] *plot_time, data[-plot_time:],
+                       **plot_kwargs)
+        
+        # use signal analysis: find_peaks
+        else:
+            spin_up_fraction = diagram_kwargs['spin_up_fraction']
+            spin_up_time = int(spin_up_fraction * len(raw_data))
+            plot_time = len(raw_data) - spin_up_time
+
+            find_peaks_kwargs = diagram_kwargs['find_peaks_kwargs']
+            # find maxima
+            maxima, max_props = find_peaks(raw_data[-plot_time:],
+                                           **find_peak_kwargs)
+            
+            # find minima
+            amax = np.amax(raw_data)
+            minima, min_props = find_peaks(amax - raw_data[-plot_time:],
+                                           **find_peaks_kwargs)
+            
+            # print result
+            if maxima.size is 0:
+                plt.scatter(raw_data[dim], raw_data[-1],
+                            **plot_kwargs)
+            else:
+                plt.scatter([ raw_data[dim] ]*len(maxima), 
+                            max_props['peak_heights'], 
+                            **props['plot_kwargs'])
+                plt.scatter([ raw_data[dim] ]*len(minima), 
+                        [ amax ]*len(minima) - min_props['peak_heights'],
+                        **props['plot_kwargs'])
+            
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -104,7 +159,7 @@ def bifurcation_codimension_one(dm: DataManager, *,
         else:
             label = prop_name
 
-        # add legend
+        # add label to legend
         if 'plot_kwargs' in props.keys() and 'color' in props['plot_kwargs']:
             legend_handles.append(mpatches.Patch(label=label, 
                            color=props['plot_kwargs']['color']))
@@ -112,62 +167,78 @@ def bifurcation_codimension_one(dm: DataManager, *,
             # coloring misleading
             log.warning("Warning: No color defined for to_plot_kwargs "+ prop_name)
 
-        for data in mv_data[prop_name]:
+
+        diagram_kwargs = dict()
+        if 'plot_kwargs' in props.keys():
+            diagram_kwargs['plot_kwargs'] = props['plot_kwargs']
+        else:
+            diagram_kwargs['plot_kwargs'] = {}
+        ## get cfg of plot mode
+        # use find_peaks function
+        diagram_kwargs['find_peaks_kwargs'] = find_peaks_kwargs
+        # update the find_peaks_kwargs from props
+        if 'find_peaks_kwargs' in props.keys():
+            diagram_kwargs['find_peaks_kwargs'] = props['find_peaks_kwargs']
+
+        # get time of simulation used for analysis
+        if diagram_kwargs['find_peaks_kwargs'] is None:
+            diagram_kwargs['time_fraction'] = time_fraction
+            # check validity
+            if time_fraction > 1:
+                raise ValueError("Value of argument"
+                        " `time_fraction` not valid."
+                        " Was: {} with value: '{}'."
+                        " Must be in [0., 1.]."
+                        "".format(type(props['time_fraction']),
+                                  props['time_fraction']))
+            
+            # update from props
             if 'time_fraction' in props.keys():
-                # plot fraction of datapoints
-                plot_time = int(props['time_fraction'] * len(data))
-                if plot_time < 1 or plot_time > len(data):
+                diagram_kwargs['time_fraction'] = time_fraction
+                # check validity
+                if time_fraction > 1:
                     raise ValueError("Value of argument"
                             " `to_plot_kwargs/{}/time_fraction` not valid."
-                            " Was: {} with value: '{}'"
-                            " for a simulation with {} steps."
-                            " Min: {} (or None), Max: 1.0"
-                            "".format(prop_name, 
+                            " Was: {} with value: '{}'."
+                            " Must be in [0., 1.]."
+                            "".format(prop_name,
                                       type(props['time_fraction']),
-                                      props['time_fraction'], 
-                                      len(data), 1./len(data)))
-            else:
-                # plot last datapoint
-                time = 1
-            spin_up_time = int(spin_up_fraction * len(data))
+                                      props['time_fraction']))
+        
+        else:
+            diagram_kwargs['spin_up_fraction'] = spin_up_fraction
+            # check validity
+            if spin_up_fraction < 0 or spin_up_fraction > 1:
+                raise ValueError("Value of argument"
+                        " `spin_up_fraction` not valid."
+                        " Was: {} with value: '{}'."
+                        " Must be in [0., 1.]."
+                        "".format(type(spin_up_fraction),
+                                  spin_up_fraction))
+            # update from props
+            if 'spin_up_time' in props.keys():
+                spin_up_fraction = props['spin_up_fraction']
+                diagram_kwargs['spin_up_fraction'] = spin_up_fraction
+                # check validity
+                if spin_up_fraction < 0 or spin_up_fraction > 1:
+                    raise ValueError("Value of argument"
+                            " `to_plot_kwargs/{}/spin_up_fraction` not valid."
+                            " Was: {} with value: '{}'."
+                            " Must be in [0., 1.]."
+                            "".format(prop_name,
+                                      type(spin_up_fraction),
+                                      spin_up_fraction))
 
-            if 'find_peaks_kwargs' in props.keys():
-                find_peaks_kwargs_prop = props['find_peaks_kwargs']
-            else:
-                find_peaks_kwargs_prop = find_peaks_kwargs
-
-            # plot peaks
-            if find_peaks_kwargs is not None:
-                maxima, max_props = find_peaks(data[spin_up_time:],
-                                        **(find_peaks_kwargs_prop
-                                            if find_peaks_kwargs_prop
-                                            else {}))
-                amax = np.amax(data)
-                minima, min_props = find_peaks(amax-data[spin_up_time:],
-                                        **(find_peaks_kwargs_prop
-                                            if find_peaks_kwargs_prop
-                                            else {}))
-                if maxima.size is 0:
-                    plt.scatter(data[dim], data[-1],
-							**props['plot_kwargs'])
-                else:
-                    plt.scatter([ data[dim] ]*len(maxima), 
-                                max_props['peak_heights'], 
-                                **props['plot_kwargs'])
-                    plt.scatter([ data[dim] ]*len(minima), 
-                                [ amax ]*len(minima) - min_props['peak_heights'], 
-                                **props['plot_kwargs'])
+        # plot data
+        for data in mv_data[prop_name]:
+            scatter(data, ax, diagram_kwargs)
+    # end for: property
             
-            # plot final state(s)
-            else:
-                plt.scatter([data[dim]]*plot_time, data[-plot_time:],
-							**props['plot_kwargs'])
-            
-
-
+    # plot legend
     if len(legend_handles) > 0:
         ax.legend(handles=legend_handles)
 
+    # set figure kwargs
     ax.set_xlabel(dim)
     ax.set_ylabel("final State")
     ax.set(**(plot_kwargs if plot_kwargs else {}))
