@@ -8,7 +8,7 @@
 #include <dune/utopia/core/types.hh>
 #include <dune/utopia/models/Amee/Amee.hh>
 #include <dune/utopia/models/Amee/cell_state.hh>
-#include <dune/utopia/models/Amee/utils/modeltraits.hh>
+#include <dune/utopia/models/Amee/modeltraits.hh>
 #include <dune/utopia/models/Amee/utils/statistics.hh>
 #include <dune/utopia/models/Amee/utils/test_utils.hh>
 #include <dune/utopia/models/Amee/utils/utils.hh>
