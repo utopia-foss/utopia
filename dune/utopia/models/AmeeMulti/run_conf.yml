@@ -29,9 +29,7 @@ parameter_space:
   seed: 594472
   monitor_emit_interval: 10.0
 
-  AmeeMulti:
-    model_name: AmeeMulti
-    
+  AmeeMulti:    
     # Cell parameters
     init_cell_traitlen: 6
     init_cellresourceinflux_kind: "random"

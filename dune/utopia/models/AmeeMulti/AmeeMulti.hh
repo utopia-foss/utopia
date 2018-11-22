@@ -424,17 +424,10 @@ public:
      *
      * @param cell
      */
-    void update_cell(const std::shared_ptr<Gridcell> cell)
+    void update_cell(const std::shared_ptr<Gridcell>& cell)
     {
         for (std::size_t i = 0; i < cell->state().celltrait.size(); ++i)
         {
-            // cell->state().resources[i] += cell->state().resourceinflux[i];
-
-            // if (cell->state().resources[i] > cell->state().resource_capacities[i])
-            // {
-            //     cell->state().resources[i] = cell->state().resource_capacities[i];
-            // }
-
             if (Amee::Utils::IsEqual()(cell->state().resources[i], 0., 1e-7))
             {
                 cell->state().resources[i] = cell->state().resourceinflux[i];
@@ -453,8 +446,6 @@ public:
             celltrait_decay(cell);
         }
     }
-
-
 
     /**
      * @brief Construct a new Amee Multi object
@@ -510,7 +501,9 @@ public:
         initialize_agents();
 
         _dgroup_agent_statistics->add_attribute(
-            "Stored quantities", "mean, var, mode, min, first_quartile, median, third_quartile, max");
+            "Stored quantities",
+            "mean, var, mode, min, first_quartile, median, third_quartile, "
+            "max");
         _dgroup_agent_statistics->add_attribute("Save time", _statisticstime);
 
         for (std::size_t i = 0; i < _agent_adaptors.size(); ++i)
@@ -518,13 +511,14 @@ public:
             _dsets_agent_statistics.push_back(_dgroup_agent_statistics->open_dataset(
                 std::get<0>(_agent_adaptors[i])));
 
-            _agent_statistics_data.push_back(
-                std::vector<std::array<double, 10>>());
+            _agent_statistics_data.push_back(std::vector<std::array<double, 10>>());
             _agent_statistics_data.back().reserve(1 + this->_time_max / _statisticstime);
         }
 
         _dgroup_cell_statistics->add_attribute(
-            "Stored quantities", "mean, var, mode, min, first_quartile, median, third_quartile, max");
+            "Stored quantities",
+            "mean, var, mode, min, first_quartile, median, third_quartile, "
+            "max");
         _dgroup_cell_statistics->add_attribute("Save time", _statisticstime);
 
         for (std::size_t i = 0; i < _cell_adaptors.size(); ++i)
@@ -532,8 +526,7 @@ public:
             _dsets_cell_statistics.push_back(_dgroup_cell_statistics->open_dataset(
                 std::get<0>(_cell_adaptors[i])));
 
-            _cell_statistics_data.push_back(
-                std::vector<std::array<double, 10>>());
+            _cell_statistics_data.push_back(std::vector<std::array<double, 10>>());
             _cell_statistics_data.back().reserve(1 + this->_time_max / _statisticstime);
         }
 
@@ -728,7 +721,7 @@ public:
 
     /**
      * @brief output for monitoring stuff
-     * 
+     *
      */
     void monitor()
     {
@@ -761,7 +754,8 @@ public:
         for (auto& agent : _population)
         {
             if ((agent->state().start < 0 or agent->state().end < 0 or
-                agent->state().end < agent->state().start) and agent->state().age > 0)
+                 agent->state().end < agent->state().start) and
+                agent->state().age > 0)
             {
                 this->_log->info("found strange agent");
                 this->_log->info(
@@ -880,18 +874,14 @@ public:
             {
                 _agent_statistics_data[i].push_back(
                     Utils::describe(_population.begin(), _population.end(),
-                              std::get<1>(_agent_adaptors[i])));
-
-                
+                                    std::get<1>(_agent_adaptors[i])));
             }
 
             for (std::size_t i = 0; i < _cell_adaptors.size(); ++i)
             {
-              _cell_statistics_data[i].push_back(
-                  Utils::describe(_cells.begin(), _cells.end(),
-                           std::get<1>(_cell_adaptors[i])));
+                _cell_statistics_data[i].push_back(Utils::describe(
+                    _cells.begin(), _cells.end(), std::get<1>(_cell_adaptors[i])));
             }
-
         }
 
         if (this->_time > 0 and (this->_time % (_statisticstime * 10) == 0 or
