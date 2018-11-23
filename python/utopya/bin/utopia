@@ -60,7 +60,10 @@ p_run.add_argument('--sim-errors',
                         "(if set) the user configuration is used.")
 p_run.add_argument('--num-steps',
                    default=None, nargs='?', type=int,
-                   help="Sets the number of simulation steps to this value.")
+                   help="Sets the number of simulation steps.")
+p_run.add_argument('--write-every',
+                   default=None, nargs='?', type=int,
+                   help="Sets the root-level `write_every` parameter.")
 p_run.add_argument('--num-seeds',
                    default=None, nargs='?', type=int,
                    help="Creates a parameter dimension for the seeds with the "
@@ -182,6 +185,8 @@ if __name__ == '__main__':
         
         update_dict['worker_manager']['nonzero_exit_handling']=args.sim_errors
 
+
+    # TODO Can perhaps modularise the following?!
     # Set number of simulation steps
     if args.mode == 'run' and args.num_steps:
         if args.num_steps < 0:
@@ -193,6 +198,18 @@ if __name__ == '__main__':
             update_dict['parameter_space'] = {}
 
         update_dict['parameter_space']['num_steps'] = args.num_steps
+
+    # Set write_every parameter
+    if args.mode == 'run' and args.write_every:
+        if args.write_every < 0:
+            raise ValueError("Argument --write-every needs to be positive, "
+                             "was {}.".format(args.write_every))
+
+        # Check if key already exists in order to not overwrite anything
+        if 'parameter_space' not in update_dict:
+            update_dict['parameter_space'] = {}
+
+        update_dict['parameter_space']['write_every'] = args.write_every
 
     # Set seeds to a parameter dimension
     if args.mode == 'run' and args.num_seeds is not None:
