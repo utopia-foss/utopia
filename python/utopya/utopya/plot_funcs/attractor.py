@@ -85,6 +85,7 @@ def bifurcation_codimension_one(dm: DataManager, *,
         TypeError: for a parameter dimesion higher than 2
         ValueError: for an invalid `to_plot_kwargs/*/time_fraction` value
         Warning: no color defined for `to_plot_kwargs` entry (coloring misleading)
+        Warning: Simulation has one codimension, may be hard to read
     """
     if not dim in mv_data.dims:
         raise ValueError("Dimension `dim` not available in multiverse data."
@@ -92,11 +93,17 @@ def bifurcation_codimension_one(dm: DataManager, *,
                          " Available: {}"
                          "".format(type(dim), 
                                    dim,
-                                   mv_data.dims))
+                                   mv_data.coords))
     if len(mv_data.coords) > 2:
         raise TypeError("mv_data has more than two parameter dimensions."
                         " Are: {}. Chosen dim: {}"
-                        "".format(mv_data.dims, dim))
+                        "".format(mv_data.coords, dim))
+    elif len(mv_data.coords) > 1:
+        log.warning("mv_data has codimensional parameter space."
+                    " It may be difficult to read."
+                    " Dimension of bifurcation: {}."
+                    " Available dimensions: {}."
+                    "".format(dim, mv_data.coords))
     
     def scatter(raw_data, ax, diagram_kwargs):
         plot_kwargs = diagram_kwargs['plot_kwargs']
@@ -118,7 +125,7 @@ def bifurcation_codimension_one(dm: DataManager, *,
             find_peaks_kwargs = diagram_kwargs['find_peaks_kwargs']
             # find maxima
             maxima, max_props = find_peaks(raw_data[-plot_time:],
-                                           **find_peak_kwargs)
+                                           **find_peaks_kwargs)
             
             # find minima
             amax = np.amax(raw_data)
@@ -173,13 +180,14 @@ def bifurcation_codimension_one(dm: DataManager, *,
             diagram_kwargs['plot_kwargs'] = props['plot_kwargs']
         else:
             diagram_kwargs['plot_kwargs'] = {}
+        
         ## get cfg of plot mode
         # use find_peaks function
         diagram_kwargs['find_peaks_kwargs'] = find_peaks_kwargs
         # update the find_peaks_kwargs from props
         if 'find_peaks_kwargs' in props.keys():
             diagram_kwargs['find_peaks_kwargs'] = props['find_peaks_kwargs']
-
+        
         # get time of simulation used for analysis
         if diagram_kwargs['find_peaks_kwargs'] is None:
             diagram_kwargs['time_fraction'] = time_fraction
