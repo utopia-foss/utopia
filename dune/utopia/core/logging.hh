@@ -6,29 +6,9 @@
 
 namespace Utopia {
 
-/** \defgroup logging Output Logging
- *  Utility functions for all logging output based on the spdlog backend.
- *  (see https://github.com/gabime/spdlog).
- * 
- *  \detail
- *  All output of the simulation backend is intended to be controlled via
- *  loggers. Regular output via the standard pipes `std::cout` and `std::cerr`
- *  is strongly discouraged.
- * 
- *  Utopia generates three types of loggers: One logger for Data I/O functions,
- *  one for Core (backend) functions, and one for each model instance. 
- *  The Utopia::Model base class holds a logger instance which should be used
- *  for information on the current model. To write log messages from within
- *  Data I/O or Core backend functions, the respective logger first has to be
- *  retrieved. This is achieved by using `spdlog::get`
- *  (https://github.com/gabime/spdlog/wiki/2.-Creating-loggers#accessing-loggers-using-spdlogget).
- *  The names for the two loggers are exported within the Utopia namespace.
- *  All log levels are handled through the input configuration files.
- * 
- *  The Utopia::PseudoParent automatically creates the utility loggers. For
- *  executables without Models (like tests), the loggers have to be created
- *  explicitly by manually calling Utopia::setup_loggers.
- * @{
+/**
+ *  \addtogroup Logging
+ *  \{
  */
 
 inline const std::string log_data_io = "data_io";
@@ -86,7 +66,7 @@ inline void setup_loggers (
 
 // end group logging
 /**
- * @}
+ *  \}
  */
 
 } // namespace Utopia
