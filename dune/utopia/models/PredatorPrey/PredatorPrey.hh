@@ -412,13 +412,12 @@ public:
           _prey_cell(),
           _empty_cell(),
           _repro_cell(),
-          // uniform real distribution
-          _rand(0, 1),
           // datasets
           _dset_population(this->_hdfgrp->open_dataset("population")),
           _dset_resource_prey(this->_hdfgrp->open_dataset("resource_prey")),
-          _dset_resource_pred(this->_hdfgrp->open_dataset("resource_predator"))
-
+          _dset_resource_pred(this->_hdfgrp->open_dataset("resource_predator")),
+          // uniform real distribution
+          _rand(0, 1)
     {
         // Check if _cost_of_repro is in the allowed range
         if (_cost_of_repro > _e_min)
