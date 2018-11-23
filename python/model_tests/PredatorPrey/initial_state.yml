@@ -18,3 +18,5 @@ parameter_space:
 
     # Work on a smaller grid size
     grid_size: [21, 21]
+    init_res_prey: 2.0
+    init_res_pred: 2.0

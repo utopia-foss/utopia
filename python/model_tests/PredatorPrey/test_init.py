@@ -69,14 +69,14 @@ def test_initial_state_random():
         num_cells = grid_size[0] * grid_size[1]
 
         # Get the number of predators and prey for the population of the cell
-        num_predprey = np.sum(data['Population'] == 3)
-        num_prey = np.sum(data['Population'] == 1)
-        num_predator = np.sum(data['Population'] == 2)
-        num_empty = np.sum(data['Population'] == 0)
+        num_predprey = np.sum(data['population'] == 3)
+        num_prey = np.sum(data['population'] == 1)
+        num_predator = np.sum(data['population'] == 2)
+        num_empty = np.sum(data['population'] == 0)
 
 
         # Check that only a single step was written and the extent is correct
-        assert data['Population'].shape == (1, num_cells)
+        assert data['population'].shape == (1, num_cells)
         assert data['resource_prey'].shape == (1, num_cells)
         assert data['resource_predator'].shape == (1, num_cells)
 
@@ -114,13 +114,13 @@ def test_initial_state_random():
         num_cells = grid_size[0] * grid_size[1]
 
         # Get the number of predators and prey for the population of the cell
-        num_prey = np.sum(data['Population'] == 1)
-        num_predator = np.sum(data['Population'] == 2)
-        num_empty = np.sum(data['Population'] == 0)
+        num_prey = np.sum(data['population'] == 1)
+        num_predator = np.sum(data['population'] == 2)
+        num_empty = np.sum(data['population'] == 0)
 
 
         # Check that only a single step was written and the extent is correct
-        assert data['Population'].shape == (1, num_cells)
+        assert data['population'].shape == (1, num_cells)
         assert data['resource_prey'].shape == (1, num_cells)
         assert data['resource_predator'].shape == (1, num_cells)
 
@@ -158,17 +158,17 @@ def test_initial_state_fraction():
         data = uni['data']['PredatorPrey']
 
         # Print the data (useful if something fails)
-        print(data['Population'].data)
+        print(data['population'].data)
 
         # Count the cells populated with prey and predators
-        num_prey = np.sum(data['Population'] == 1)
-        num_pred = np.sum(data['Population'] == 2)
-        num_predprey = np.sum(data['Population'] == 3)
+        num_prey = np.sum(data['population'] == 1)
+        num_pred = np.sum(data['population'] == 2)
+        num_predprey = np.sum(data['population'] == 3)
         # Check that the correct number of cells was initiliazied in the
         # prescribed way, floor
-        assert num_prey == int(prey_frac * data['Population'].shape[1])
-        assert num_pred == int(pred_frac * data['Population'].shape[1])
-        assert num_predprey == int(predprey_frac * data['Population'].shape[1])
+        assert num_prey == int(prey_frac * data['population'].shape[1])
+        assert num_pred == int(pred_frac * data['population'].shape[1])
+        assert num_predprey == int(predprey_frac * data['population'].shape[1])
 
 
 

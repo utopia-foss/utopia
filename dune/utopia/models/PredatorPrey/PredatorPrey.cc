@@ -6,10 +6,15 @@ using namespace Utopia::Models::PredatorPrey;
 using Utopia::Setup::create_grid_manager_cells;
 
 int main (int argc, char** argv)
-{
+{   
+    
+    constexpr unsigned short dim = 2;
+    constexpr bool structured = true;
+    constexpr bool sync = false;
+
     try {
         Dune::MPIHelper::instance(argc, argv);
-
+        
 
         // Initialize the PseudoParent from config file path
         Utopia::PseudoParent pp(argv[1]);
@@ -17,18 +22,23 @@ int main (int argc, char** argv)
         // Initialize the main model instance with different template arguments
         if (Utopia::as_bool(pp.get_cfg()["PredatorPrey"]["periodic"])) {
             // Periodic grid
+            constexpr bool periodic = true;
+            
             PredatorPreyModel model("PredatorPrey", pp,
-                create_grid_manager_cells<State, true, 2, true,
-                                          false>("PredatorPrey", pp));
+                create_grid_manager_cells<State, periodic, dim, structured, 
+                                          sync>("PredatorPrey", pp));
 
             model.run();
 
         }
         else {
             // Non-periodic grid
+            constexpr bool periodic = false;
+            
             PredatorPreyModel model("PredatorPrey", pp,
-                create_grid_manager_cells<State, false, 2, true, 
-                                          false>("PredatorPrey", pp));
+                create_grid_manager_cells<State, periodic, dim, structured, 
+                                          sync>("PredatorPrey", pp));
+
 
             model.run();
         }

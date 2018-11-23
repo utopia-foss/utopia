@@ -35,7 +35,7 @@ def frequency(dm: DataManager, *, out_path: str, uni: UniverseGroup,
     grp = uni['data']['PredatorPrey']
 
     # Extract the data of the frequency
-    population_data = grp['Population'] 
+    population_data = grp['population'] 
     num_cells = len(population_data[0])
     frequencies = [np.bincount(p, minlength=4)[[1, 2]] / num_cells 
                    for p in population_data] 
@@ -51,7 +51,7 @@ def frequency(dm: DataManager, *, out_path: str, uni: UniverseGroup,
         plt.plot(y_data, label=Population, **plot_kwargs)
         
     
-    # Multiple strategies
+    # Multiple populations
     elif isinstance(Population, list):
         for p in Population:
             y_data = [f[np.where(np.asarray(['prey', 'predator']) == p)] 

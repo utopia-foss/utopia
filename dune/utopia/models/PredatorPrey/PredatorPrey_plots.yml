@@ -4,30 +4,31 @@
 # plot the frequency of predators and preys in one plot
 frequencies:
   creator: universe
+  universes: all
 
   module: model_plots.PredatorPrey
   plot_func: frequency
 
-  universes: all
   Population: [prey, predator]
 
 
 # plot the spatial development in the CA of the strategy
 population_and_resources:
   creator: universe
+  universes: all
+
   file_ext: mp4
 
   module: .ca
   plot_func: state_anim
 
-  # Select the universe
   model_name: PredatorPrey
-  universes: all
+  
 
   # Select the properties to plot
   to_plot:
     # The name of the property to plot with its options
-    Population:
+    population:
       title: Population
       limits: [0, 3]
 
@@ -48,13 +49,6 @@ population_and_resources:
     resource_prey:
       title: resource_prey
       limits: [0, 12]
-    
-     # Specify the colormap
-      # This can be done in two ways:
-      #   1. use a matplotlib colormap such as 'viridis'
-      #   2. provide a dictionary from which a discrete colormap
-      #      is derived. The keys correspond to the labels,
-      #      and the values define the color
 
       cmap: viridis
 

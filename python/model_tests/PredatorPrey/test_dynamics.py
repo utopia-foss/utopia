@@ -40,7 +40,7 @@ def test_basic_interactions():
     
     data = dm['multiverse'][0]['data']
 
-    pop = data['PredatorPrey']['Population'].reshape(3, 1, 1)
+    pop = data['PredatorPrey']['population'].reshape(3, 1, 1)
     res_prey = np.reshape(data['PredatorPrey']['resource_prey'],(3, 1, 1))
 
     assert res_prey[1, 0, 0] == 1
@@ -58,7 +58,7 @@ def test_basic_interactions():
 
     data = dm['multiverse'][0]['data']
 
-    pop = data['PredatorPrey']['Population'].reshape(3, 1, 1)
+    pop = data['PredatorPrey']['population'].reshape(3, 1, 1)
     res_pred = np.reshape(data['PredatorPrey']['resource_predator'],(3, 1, 1))
 
     assert res_pred[1, 0, 0] == 1
@@ -79,7 +79,7 @@ def test_basic_interactions():
 
     data = dm['multiverse'][0]['data']
 
-    pop = data['PredatorPrey']['Population'].reshape(3, 1, 1)
+    pop = data['PredatorPrey']['population'].reshape(3, 1, 1)
     res_prey = np.reshape(data['PredatorPrey']['resource_prey'], (3, 1, 1))
 
     assert res_prey[1, 0, 0] == 3
@@ -103,7 +103,7 @@ def test_basic_interactions():
 
     data = dm['multiverse'][0]['data']
     
-    pop = data['PredatorPrey']['Population'].reshape(42, 2, 1)
+    pop = data['PredatorPrey']['population'].reshape(42, 2, 1).astype(int)
     res_prey = np.reshape(data['PredatorPrey']['resource_prey'],
                           (42, 2, 1))
     res_pred = np.reshape(data['PredatorPrey']['resource_predator'], (42, 2, 1))
@@ -151,7 +151,7 @@ def test_basic_interactions():
     
     data = dm['multiverse'][0]['data']
 
-    pop = data['PredatorPrey']['Population'].reshape(31, 30, 1)
+    pop = data['PredatorPrey']['population'].reshape(31, 30, 1)
     pop = pop.astype(int)
 
     diff = np.diff(pop, axis=0)
@@ -172,7 +172,7 @@ def test_basic_interactions():
 
     data = dm['multiverse'][0]['data']
 
-    pop = data['PredatorPrey']['Population'].reshape(3, 2, 1)
+    pop = data['PredatorPrey']['population'].reshape(3, 2, 1)
     res_prey = np.reshape(data['PredatorPrey']['resource_prey'],
                           (3, 2, 1))
 

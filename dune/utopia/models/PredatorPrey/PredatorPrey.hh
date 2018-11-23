@@ -16,8 +16,8 @@ namespace Models
 {
 namespace PredatorPrey
 {
-/// Population enum
-enum Population : int
+/// Population enum, changing the numeration will lead to failing tests/plots
+enum Population : unsigned short
 {
     empty = 0,
     prey = 1,
@@ -29,8 +29,8 @@ enum Population : int
 struct State
 {
     Population population;
-    int resource_predator;
-    int resource_prey;
+    double resource_predator;
+    double resource_prey;
 };
 
 // Alias the neighborhood classes
@@ -89,22 +89,27 @@ private:
 
     /// The model parameters
     // The cost of living
-    int _cost_of_living;
+    double _cost_of_living;
 
     // The resource uptake of an idividual
-    int _delta_e;
+    double _delta_e;
 
     // The maximum of resources an individual can carry
-    int _e_max;
+    double _e_max;
 
     // The minimum resource level necessary for reproduction
-    int _e_min;
+    double _e_min;
+
+    // The cost of reproduction, i.e. the resources transferred to the offspring
+    double _cost_of_repro;
 
     // The probability to reproduce
     double _p_repro;
 
     // The probability for prey to flee
     double _p_flee;
+
+
 
 
     // -- Temporary objects -- //
@@ -114,58 +119,65 @@ private:
     CellContainer<typename ManagerType::Cell> _empty_cell;
     CellContainer<typename ManagerType::Cell> _repro_cell;
 
-    // Array of size 1 to hold a neighbouring cell temporarily to update
-    std::array<std::shared_ptr<CellType>, 1> _temp_randnb;
-
     // -- Datasets -- //
     std::shared_ptr<DataSet> _dset_population;
     std::shared_ptr<DataSet> _dset_resource_prey;
     std::shared_ptr<DataSet> _dset_resource_pred;
 
+    // -- uniform real distribution [0, 1) for drawing of random numbers
+    std::uniform_real_distribution<> _rand;
+
     // -- Rule functions -- //
 
     /// Cost of Living
+    /** subtract the cost of living from the resources of an individual and 
+     * map the values below zero back to zero, then remove all individuals that
+     * do not have sufficient resources 
+     */
     Rule _cost = [this](const auto cell) {
         // Get the state of the cell
         auto state = cell->state();
 
-
-        // subtract the cost of living from the resources for all cells and 
-        // map values below zero back to zero
         state.resource_predator = std::clamp(state.resource_predator 
-                                             - _cost_of_living, 0, _e_max);
+                                             - _cost_of_living, 0.0, _e_max);
         state.resource_prey = std::clamp(state.resource_prey 
-                                         - _cost_of_living, 0, _e_max);
+                                         - _cost_of_living, 0.0, _e_max);
 
         // Check for the predators and preys that have no resources and remove
         // them
-        if (state.population > 1 && state.resource_predator == 0)
+        if (state.population == predator && state.resource_predator == 0.0)
         {
-            // Remove the predator if present (population > 1) by substracting 
-            // 2 from the current population state
-            state.population = static_cast<Population>(state.population - 2);
+            // Remove the predator if present
+            state.population = empty;
+        }
+        else if (state.population == prey && state.resource_prey == 0)
+        {
+            // Remove the prey
+            state.population = empty;
         }
 
-        if ((state.population == prey || state.population == pred_prey) 
-            && state.resource_prey == 0)
+        else if (state.population == pred_prey)
         {
-            // Remove the prey by substracting 1 of the current population
-            // state
-            state.population = static_cast<Population>(state.population - 1);
+            if (state.resource_predator == 0.0 && state.resource_prey == 0.0)
+                state.population = empty;
+            else if (state.resource_predator == 0.0)
+                state.population = prey;
+            else if (state.resource_prey == 0.0)
+                state.population = predator;
         }
 
         return state;
     };
 
-    /// Define the movement of individuals
+    /// Define the movement rule of an individual
+    /*+ Go through cells, if only a predator populates it, look for prey in
+     * the neighbourhood and move to that cell or go to an empty cell if no
+     * prey is found. If both predator and prey live on the same cell, the
+     * prey flees with a certain probability 
+     */
     Rule _move = [this](const auto cell) {
         // Get the state of the Cell
         auto state = cell->state();
-
-        // Go through cells, if only a predator populates it, look for prey in
-        // the neighbourhood and move to that cell or go to an empty cell if no
-        //  prey is found. If both predator and prey live on the same cell, the
-        // prey flees with a certain probability
 
         if (state.population == predator)
         {
@@ -190,49 +202,37 @@ private:
                     _empty_cell.push_back(nb);
                 }
             }
-            // distributions to choose a random cell for the movement if there
-            // is more than one
-            std::uniform_int_distribution<> dist_prey(0, 
-                                                    _prey_cell.size() - 1);
-            std::uniform_int_distribution<> dist_empty(0, 
-                                                       _empty_cell.size() - 1);
 
             // now update the cell state and the respective neighbor
             if (_prey_cell.size() > 0)
             {
-                // write a random cell containing prey
-                // into the intended container
-                _temp_randnb[0] = _prey_cell[dist_prey(*this->_rng)];
+                // distribution to choose a random cell for the movement if 
+                // there is more than one
+                std::uniform_int_distribution<> dist_prey(0, 
+                                                         _prey_cell.size() - 1);
 
-                apply_rule<false>(
-                    [state](const auto cell) {
-                        auto nb_state = cell->state();
-                        nb_state.population = pred_prey;
-                        nb_state.resource_predator = state.resource_predator;
-                        return nb_state;
-                    },
-                    _temp_randnb);
-
+                auto nb_cell = _prey_cell[dist_prey(*this->_rng)];
+                nb_cell->state().population = pred_prey;
+                nb_cell->state().resource_predator = state.resource_predator;
+                    
                 state.population = empty;
-                state.resource_predator = 0;
+                state.resource_predator = 0.0;
             }
 
             else if (_empty_cell.size() > 0)
-            {
-                // write a random empty cell into the intended container
-                _temp_randnb[0] = _empty_cell[dist_empty(*this->_rng)];
+            {   
+                // distribution to choose a random cell for the movement if 
+                // there is more than one
+                std::uniform_int_distribution<> dist_empty(0, 
+                                                        _empty_cell.size() - 1);
 
-                apply_rule<false>(
-                    [state](const auto cell) {
-                        auto nb_state = cell->state();
-                        nb_state.population = predator;
-                        nb_state.resource_predator = state.resource_predator;
-                        return nb_state;
-                    },
-                    _temp_randnb);
+
+                auto nb_cell = _empty_cell[dist_empty(*this->_rng)];
+                nb_cell->state().population = predator;
+                nb_cell->state().resource_predator = state.resource_predator;
 
                 state.population = empty;
-                state.resource_predator = 0;
+                state.resource_predator = 0.0;
             }
         }
 
@@ -245,9 +245,7 @@ private:
 
             for (const auto& nb : MooreNeighbor::neighbors(cell, this->_manager))
             {
-                auto nb_state = nb->state();
-
-                if (nb_state.population == empty)
+                if (nb->state().population == empty)
                 {
                     _empty_cell.push_back(nb);
                 }
@@ -256,36 +254,25 @@ private:
             // choose a random cell for the movement if there is more than one
             std::uniform_int_distribution<> dist(0, _empty_cell.size() - 1);
 
-            // random number for flight
-            std::uniform_real_distribution<> rand(0, 1);
-
-            if (rand(*this->_rng) < _p_flee && _empty_cell.size() > 0)
+            if (_empty_cell.size() > 0 && _rand(*this->_rng) < _p_flee)
             {
-                // write a random empty cell into the intended container
-                _temp_randnb[0] = _empty_cell[dist(*this->_rng)];
-
-                apply_rule<false>(
-                    [state](const auto cell) {
-                        auto nb_state = cell->state();
-                        nb_state.population = prey;
-                        nb_state.resource_prey = state.resource_prey;
-                        return nb_state;
-                    },
-                    _temp_randnb);
+                auto nb_cell = _empty_cell[dist(*this->_rng)];
+                nb_cell->state().population = prey;
+                nb_cell->state().resource_prey = state.resource_prey;
 
                 state.population = predator;
-                state.resource_prey = 0;
+                state.resource_prey = 0.0;
             }
         }
         return state;
     };
 
     /// Define the eating rule
+    /** Update procedure is as follows:
+     * prey is consumed if predator and prey on the same cell
+     * prey resource is increased if there is just prey on the cell
+     */
     Rule _eat = [this](const auto cell) {
-        // Update procedure is as follows:
-        // prey is consumed if predator and prey on the same cell
-        // prey resource is increased if there is just prey on the cell
-
         // Get the state of the cell
         auto state = cell->state();
 
@@ -294,31 +281,28 @@ private:
         {
             state.population = predator;
             // increase the resources and clamp to the allowed range [0, e_max]
-            state.resource_predator = 
-            std::clamp(state.resource_predator + _delta_e, 0, _e_max);
-            state.resource_prey = 0;
+            state.resource_predator = std::clamp(state.resource_predator 
+                                                 + _delta_e, 0.0, _e_max);
+            state.resource_prey = 0.0;
         }
         else if (state.population == prey)
         {
             // increase the resources and clamp to the allowed range [0, e_max]
-            state.resource_prey =
-            std::clamp(state.resource_prey + _delta_e, 0, _e_max);
+            state.resource_prey = std::clamp(state.resource_prey + _delta_e, 
+                                             0.0, _e_max);
         }
         return state;
     };
 
     /// Define the reproduction rule
+    /** Reproduction with probability p_repro if empty space available 
+     */
     Rule _repro = [this](const auto cell) {
-        // Reproduction with probability p_repro if empty space available
-
         // Get the state of the cell
         auto state = cell->state();
 
-        // random number for reproduction, distribution
-        std::uniform_real_distribution<> rand(0, 1);
-
         if (state.population == predator
-             && rand(*this->_rng) < _p_repro
+             && _rand(*this->_rng) < _p_repro
              && state.resource_predator >= _e_min)
         {
             _repro_cell.clear();
@@ -327,7 +311,8 @@ private:
             {
                 auto nb_state = nb->state();
 
-                if (nb_state.population == prey || nb_state.population == empty)
+                if (nb_state.population == prey 
+                    || nb_state.population == empty)
                 {
                     _repro_cell.push_back(nb);
                 }
@@ -337,28 +322,28 @@ private:
             {
                 // choose a random cell for the offspring to be placed on
                 std::uniform_int_distribution<> dist(0, _repro_cell.size() - 1);
-                _temp_randnb[0] = _repro_cell[dist(*this->_rng)];
 
-                apply_rule<false>(
-                    [](const auto cell) {
-                        auto nb_state = cell->state();
+                auto nb_cell = _repro_cell[dist(*this->_rng)];
 
-                        // new state will be predator or pred_prey
-                        nb_state.population =
-                            static_cast<Population>(nb_state.population + 2);
-                        // give 2 units to offspring
-                        nb_state.resource_predator = 2; 
-                        return nb_state;
-                    },
-                    _temp_randnb);
+                // new state will be predator or pred_prey
+                if (nb_cell->state().population == empty)
+                {
+                    nb_cell->state().population = predator;
+                }
+                else
+                {
+                    nb_cell->state().population = pred_prey;
+                }                            
+                // give 2 units to offspring
+                nb_cell->state().resource_predator = _cost_of_repro;
 
                 // deduct cost of reproduction
-                state.resource_predator -= 2;
+                state.resource_predator -= _cost_of_repro;
             }
         }
 
         else if (state.population == prey
-                 && rand(*this->_rng) < _p_repro
+                 && _rand(*this->_rng) < _p_repro
                  && state.resource_prey >= _e_min)
         {
             _repro_cell.clear();
@@ -378,25 +363,23 @@ private:
             {
                 // choose a random cell for the offspring to be placed on
                 std::uniform_int_distribution<> dist(0, _repro_cell.size() - 1);
-                _temp_randnb[0] = _repro_cell[dist(*this->_rng)];
 
-                apply_rule<false>(
-                    [](const auto cell) {
-                        auto nb_state = cell->state();
+                auto nb_cell = _repro_cell[dist(*this->_rng)];
 
-                        // new state will be predator or pred_prey
-                        nb_state.population =
-                            static_cast<Population>(nb_state.population + 1);
-
-                        // give 2 units of resource to offspring
-                        nb_state.resource_prey = 2;
-
-                        return nb_state;
-                    },
-                    _temp_randnb);
+                // new state will be prey or pred_prey
+                if (nb_cell->state().population == empty)
+                {
+                    nb_cell->state().population = prey;
+                }
+                else
+                {
+                    nb_cell->state().population = pred_prey;
+                }                            
+                // give 2 units to offspring
+                nb_cell->state().resource_prey = _cost_of_repro;
 
                 // deduct cost of reproduction
-                state.resource_prey -= 2;
+                state.resource_prey -= _cost_of_repro;
             }
         }
 
@@ -418,23 +401,29 @@ public:
           // Now initialize members specific to this class
           _manager(manager),
           // the model parameters
-          _cost_of_living(as_<int>(this->_cfg["cost_of_living"])),
-          _delta_e(as_<int>(this->_cfg["delta_e"])),
-          _e_max(as_<int>(this->_cfg["e_max"])),
-          _e_min(as_<int>(this->_cfg["e_min"])),
+          _cost_of_living(as_double(this->_cfg["cost_of_living"])),
+          _delta_e(as_double(this->_cfg["delta_e"])),
+          _e_max(as_double(this->_cfg["e_max"])),
+          _e_min(as_double(this->_cfg["e_min"])),
+          _cost_of_repro(as_double(this->_cfg["cost_of_repro"])),
           _p_repro(as_double(this->_cfg["p_repro"])),
           _p_flee(as_double(this->_cfg["p_flee"])),
           // temporary cell containers
           _prey_cell(),
           _empty_cell(),
           _repro_cell(),
-          _temp_randnb(),
+          // uniform real distribution
+          _rand(0, 1),
           // datasets
-          _dset_population(this->_hdfgrp->open_dataset("Population")),
+          _dset_population(this->_hdfgrp->open_dataset("population")),
           _dset_resource_prey(this->_hdfgrp->open_dataset("resource_prey")),
           _dset_resource_pred(this->_hdfgrp->open_dataset("resource_predator"))
 
     {
+        // Check if _cost_of_repro is in the allowed range
+        if (_cost_of_repro > _e_min)
+            throw std::invalid_argument("cost_of_repro needs to be " 
+                                       "smaller than or equal to e_min");
         // Initialize cells
         this->initialize_cells();
         // Set dataset capacities
@@ -460,6 +449,10 @@ public:
     {
         // Extract the mode that determines the initial strategy
         auto initial_state = as_str(this->_cfg["initial_state"]);
+
+        // Get the initial resources for predator and prey
+        const auto init_res_prey = as_double(this->_cfg["init_res_prey"]);
+        const auto init_res_predator = as_double(this->_cfg["init_res_pred"]);
 
         this->_log->info("Initializing cells in '{}' mode ...", initial_state);
 
@@ -491,7 +484,8 @@ public:
 
             // Define the update rule
             auto set_random_population = [&rand, &prey_prob, &pred_prob, 
-                                          &predprey_prob]
+                                          &predprey_prob, &init_res_prey, 
+                                          &init_res_predator]
                                          (const auto cell) {
                 // Get the state
                 auto state = cell->state();
@@ -503,14 +497,14 @@ public:
                 {
                     // put prey on the cell and give 2 resource units to it
                     state.population = Population::prey;
-                    state.resource_prey = 2;
+                    state.resource_prey = init_res_prey;
                     state.resource_predator = 0;
                 }
                 else if (random_number < (prey_prob + pred_prob))
                 {
                     // put a predator on the cell and give it 2 resource units
                     state.population = Population::predator;
-                    state.resource_predator = 2;
+                    state.resource_predator = init_res_predator;
                     state.resource_prey = 0;
                 }
                 else if (random_number < prey_prob + pred_prob + predprey_prob)
@@ -518,8 +512,8 @@ public:
                     // put a predator and a prey on the cell and give each 2 
                     // resource units
                     state.population = Population::pred_prey;
-                    state.resource_predator = 2;
-                    state.resource_prey = 2;
+                    state.resource_predator = init_res_predator;
+                    state.resource_prey = init_res_prey;
                 }
                 else
                 {
@@ -590,7 +584,7 @@ public:
                 if (num_set_prey < num_prey)
                 {
                     cell->state().population = Population::prey;
-                    cell->state().resource_prey = 2;
+                    cell->state().resource_prey = init_res_prey;
                     cell->state().resource_predator = 0;
 
                     num_set_prey++;
@@ -598,7 +592,7 @@ public:
                 else if (num_set_pred < num_pred)
                 {
                     cell->state().population = Population::predator;
-                    cell->state().resource_predator = 2;
+                    cell->state().resource_predator = init_res_predator;
                     cell->state().resource_prey = 0;
 
                     num_set_pred++;
@@ -606,8 +600,8 @@ public:
                 else if (num_set_predprey < num_predprey)
                 {
                     cell->state().population = Population::pred_prey;
-                    cell->state().resource_predator = 2;
-                    cell->state().resource_prey = 2;
+                    cell->state().resource_predator = init_res_predator;
+                    cell->state().resource_prey = init_res_prey;
 
                     num_set_predprey++;
                 }
@@ -663,7 +657,7 @@ public:
 
         // Population
         _dset_population->write(cells.begin(), cells.end(), [](auto& cell) {
-            return static_cast<int>(cell->state().population);
+            return static_cast<unsigned short>(cell->state().population);
         });
 
         // resource of prey
