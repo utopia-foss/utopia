@@ -19,7 +19,6 @@ add_subdirectory(HdfBench)
 add_subdirectory(Hierarnet)
 add_subdirectory(SimpleEG)
 add_subdirectory(Amee)
-add_subdirectory(AmeeMulti)
 
 # ...
 # NOTE add your subdirectory above (alphabetically sorted)
