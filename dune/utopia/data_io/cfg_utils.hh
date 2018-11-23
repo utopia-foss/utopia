@@ -88,6 +88,11 @@ ReturnType as_(const Utopia::DataIO::Config& node) {
 
 // -- Shortcuts -- //
 
+/// Shortcut to retrieve a config entry as int
+double as_int(const Utopia::DataIO::Config& node) {
+    return as_<int>(node);
+}
+
 /// Shortcut to retrieve a config entry as double
 double as_double(const Utopia::DataIO::Config& node) {
     return as_<double>(node);
