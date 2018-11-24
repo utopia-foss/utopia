@@ -160,7 +160,10 @@ auto add_neighbors_in_dim (const long root_id,
     }
 }
 
-
+/**
+ *  \addtogroup Neighborhoods
+ *  \{
+ */
 
 namespace Neighborhoods {
 
@@ -556,6 +559,11 @@ public:
     }
 
 };
+
+// endgroup Neighborhoods
+/**
+ *  \}
+ */
 
 
 } // namespace Neighborhoods

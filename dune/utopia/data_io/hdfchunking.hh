@@ -85,6 +85,26 @@ void opt_chunks_target(Cont& chunks,
         return typesize * std::accumulate(c.begin(), c.end(), 1, std::multiplies<>());
     };
 
+    // Helper lambda for string representation of vectors
+    auto vec2str = [](const std::vector<hsize_t> vec) {
+        std::stringstream s;
+        s << "{ ";
+        for (auto& extd : vec)
+        {
+            if (extd < H5S_UNLIMITED)
+            {
+                s << extd << " ";
+            }
+            else
+            {
+                s << "∞ ";
+            }
+        }
+        s << "}";
+        return s.str();
+    };
+
+
     // Check the case of typesize larger than CHUNKSIZE_MAX; cannot do anything
     // in that case -> safer to throw an exception.
     if (typesize > CHUNKSIZE_MAX)
@@ -135,20 +155,18 @@ void opt_chunks_target(Cont& chunks,
      *   AND
      *   within bounds of minimum and maximum chunk size
      *
-     * NOTE Limiting the optimization to 23 iterations per dimension;
-     *      usually, we will eave the loop much earlier; the _mean_ extend of
-     *      the dataset would have to be ~8M (2^23) entries _per dimension_ to
-     *      exhaust this optimization loop.
+     * NOTE Limiting the optimization to 42 iterations in order to be on the
+     *      safe side. This goes through all entries (rank / 42) times and
+     *      halves or doubles the chunk extent.
      */
-    for (unsigned short i = 0; i < 23 * rank; i++)
+    for (unsigned short i = 0; i < 42 * rank; i++)
     {
         // With the current values of the chunks, calculate the chunk size
         bytes_chunks = bytes(chunks);
 
         log->debug(
-            "Chunk size:"
-            "  {:7d}B  ({:.1f} kiB)",
-            bytes_chunks, bytes_chunks / 1024);
+            "Chunks:  {}  ->  {:7d} B  ({:.1f} kiB)",
+            vec2str(chunks), bytes_chunks, bytes_chunks / 1024.);
 
         // If close enough to target size, optimization is finished
         if ((std::abs(bytes_chunks - bytes_target) / bytes_target < 0.5) &&
@@ -165,7 +183,10 @@ void opt_chunks_target(Cont& chunks,
         // Adjust the chunksize towards the target size
         if (bytes_chunks < bytes_target)
         {
-            // If high dimensions should be favoured, change the dim to work on
+            // Can increase the size of the chunk extend in the current dim
+            
+            // If high dimensions should be favoured, change the dim to work
+            // on such that first the high dimensions are increased in size
             if (larger_high_dims)
             {
                 dim = (rank - 1) - dim;
@@ -177,16 +198,22 @@ void opt_chunks_target(Cont& chunks,
         }
         else
         {
-            if (larger_high_dims && rank > 1)
+            // Need to decrease the size of the chunk extend in the current dim
+
+            // For the larger_high_dims option, smaller dimensions are to be
+            // favoured. However, in order to allow a reduction, these need to
+            // have a chunk extend that is larger than one; once that is no
+            // longer fulfilled, the below if condition will not perform
+            // any change of the dim variable.
+            if (larger_high_dims && rank > 1 && dim > 0 && chunks[dim-1] > 1)
             {
-                // Stay on low dimensions one step longer // TODO generalise!
+                // Stay on low dimensions one step longer
                 if (dim > 0)
                 {
                     dim--;
                 }
 
-                // Skip the reduction if this is the last dim and it should
-                // not be reduced
+                // Skip the reduction if this is the last dim
                 if (dim == rank - 1)
                 {
                     log->debug(
@@ -196,6 +223,18 @@ void opt_chunks_target(Cont& chunks,
                     continue;
                 }
             }
+
+            // Do not continue if halving is not possible
+            if (chunks[dim] == 1) {
+                log->debug("Extend of chunk dimension {} is already 1.", dim);
+                continue;
+            }
+
+            // TODO generalise the above if blocks! The cleanest way would be
+            //      to determine which chunk dimensions _can_ be reduced before
+            //      determining the dimension that is to be reduced. This would
+            //      alleviate the iterations in which the chunk extent is 1
+            //      and no halving can take place ...
 
             // Divide the chunk size of the current dim by two
             log->debug("Halving extend of chunk dimension {} ...", dim);
@@ -697,6 +736,7 @@ const Cont calc_chunksize(const hsize_t typesize,
         return Cont(max_extend);
     }
 
+
     // -- Step 1: Optimize for one I/O operation fitting into chunk -- //
     log->debug(
         "Cannot apply simple optimizations. Try to fit single I/O "
@@ -760,6 +800,7 @@ const Cont calc_chunksize(const hsize_t typesize,
         }
     }
 
+
     // -- Step 2: Optimize by taking the max_extend into account -- //
 
     // This is only possible if the current chunk size is not already above the
@@ -778,7 +819,16 @@ const Cont calc_chunksize(const hsize_t typesize,
     }
     // else: no further optimization possible
 
+
     // -- Done. -- //
+
+    // Make sure that chunksize is smaller than maximum chunksize
+    if (bytes(_chunks) > CHUNKSIZE_MAX)
+    {
+        throw std::runtime_error("Byte size of chunks " + vec2str(_chunks)
+                                 + " is larger than CHUNKSIZE_MAX! This "
+                                 "should not have happened.");
+    }
 
     // Create a const version of the temporary chunks vector
     const Cont chunks(_chunks);

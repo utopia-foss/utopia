@@ -4,18 +4,21 @@ from ._setup import *
 
 import os
 import logging
-from typing import Union
+from typing import Union, Dict, Callable
 
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib import animation as anim
-from matplotlib import rcParams
+
 import matplotlib as mpl
+import matplotlib.pyplot as plt
+import matplotlib.animation
 
 from utopya import DataManager
 
 # Get a logger
 log = logging.getLogger(__name__)
+
+# Increase log threshold for animation plotting
+logging.getLogger('matplotlib.animation').setLevel(logging.WARNING)
 
 # -----------------------------------------------------------------------------
 # Helper function
@@ -26,12 +29,22 @@ class FileWriter():
     It adheres to the corresponding matplotlib animation interface.
     """
     def __init__(self, *,
-                 name_padding: int=6,
                  file_format: str='png',
-                 fstr: str="{path:}/{num:0{pad:}d}.{ext:}",
+                 name_padding: int=6,
+                 fstr: str="{dir:}/{num:0{pad:}d}.{ext:}",
                  **savefig_kwargs):
+        """
+        Initialize a FileWriter, which adheres to the matplotlib.animation
+        interface and can be used to write individual files.
+
+        Args:
+            name_padding (int, optional): How wide the numbering should be
+            file_format (str, optional): The file extension
+            fstr (str, optional): The format string to generate the name
+            **savefig_kwargs: kwargs to pass to figure.savefig
+        """
         # Save arguments
-        self.index = 0
+        self.cntr = 0
         self.name_padding = name_padding
         self.fstr = fstr
         self.file_format = file_format
@@ -40,53 +53,62 @@ class FileWriter():
         # Other attributes
         self.cm = None
 
-    def saving(self, fig, out_path: str, *,dpi):
+    def saving(self, fig, base_outfile: str, **kwargs):
         """Create an instance of the context manager"""
-        self.cm = FileWriterContextManager(fig=fig, out_path=out_path, dpi=dpi)
+        # Parse the given base file path to get a directory
+        out_dir = os.path.splitext(base_outfile)[0]
+
+        # Create and store the context manager
+        self.cm = FileWriterContextManager(fig=fig, out_dir=out_dir, **kwargs)
         return self.cm
 
     def grab_frame(self):
         """Stores a single frame"""
         # Build the output path from the info of the context manager
-        path_wo_ext = os.path.splitext(self.cm.out_path)[0]
-        out_path = self.fstr.format(path=path_wo_ext,
-                                    num=self.index, pad=self.name_padding,
-                                    ext=self.file_format)
+        outfile = self.fstr.format(dir=self.cm.out_dir,
+                                   num=self.cntr,
+                                   pad=self.name_padding,
+                                   ext=self.file_format)
 
-        # Save the frame using the context manager, then increment the index
-        self.cm.fig.savefig(out_path, format=self.file_format,
+        # Save the frame using the context manager, then increment the cntr
+        self.cm.fig.savefig(outfile, format=self.file_format,
                             **self.cm.kwargs, **self.savefig_kwargs)
-        self.index += 1
+        self.cntr += 1
 
 class FileWriterContextManager():
     """This class is needed by the file writer to provide the same interface
     as the matplotlib movie writers do.
     """
 
-    def __init__(self, *, fig, out_path, **kwargs):
+    def __init__(self, *, fig, out_dir: str, **kwargs):
         # Store arguments
         self.fig = fig
-        self.out_path = out_path
+        self.out_dir = out_dir
         self.kwargs = kwargs
 
     def __enter__(self):
-        pass
+        """Called when entering context"""
+        # Create the directory of the output file
+        os.makedirs(self.out_dir)
 
     def __exit__(self, *args):
+        """Called when exiting context"""
+        # Need to close the figure
         plt.close(self.fig)
 
 # -----------------------------------------------------------------------------
 
 def state_anim(dm: DataManager, *, 
                out_path: str, 
-               uni: int, 
+               uni: UniverseGroup, 
                model_name: str,
                to_plot: dict,
                writer: str,
-               frames_kwargs: dict, 
+               frames_kwargs: dict=None, 
                fps: int=2, 
                step_size: int=1, 
-               dpi: int=96) -> None:
+               dpi: int=96,
+               preprocess_funcs: Dict[str, Callable]=None) -> None:
     """Create an animation of the states of a two dimensional cellular automaton.
     The function can use different writers, e.g. write out only the frames or create
     an animation with an external programm (e.g. ffmpeg). 
@@ -95,7 +117,7 @@ def state_anim(dm: DataManager, *,
     Arguments:
         dm (DataManager): The DataManager object containing the data
         out_path (str): The output path
-        uni (int): The universum
+        uni (UniverseGroup): The selected universe data
         model_name (str): The name of the model instance, in which the data is
             located.
         to_plot (dict): The plotting configuration. The entries of this key
@@ -104,11 +126,14 @@ def state_anim(dm: DataManager, *,
         writer (str): The writer that should be used. Additional to the
             external writers such as 'ffmpeg', it is possible to create and
             save the individual frames with 'frames'
-        frames_kwargs (dict): The frames configuration that is used if the
-            'frames' writer is used.
+        frames_kwargs (dict, optional): The frames configuration that is used
+            if the 'frames' writer is used.
         fps (int, optional): The frames per second
         step_size (int, optional): The step size
         dpi (int, optional): The dpi setting
+        preprocess_funcs (Dict[str, Callable], optional): For keys matching
+            the keys in `to_plot`, the given function is called before the
+            data is passed on to the plotting function.
     
     Raises:
         ValueError: For an invalid `writer` argument
@@ -123,8 +148,11 @@ def state_anim(dm: DataManager, *,
 
         return colormap
 
-    def plot_property(name, *, initial_data, ax, cmap, limits: list, title: str=None):
-        """Helper function to plot a property on a given axis"""
+    def plot_property(*, data, ax, cmap, limits: list, title: str=None):
+        """Helper function to plot a property on a given axis and return
+        an imshow object
+        """
+
         # Get colormap
         # Case continuous colormap
         if isinstance(cmap, str):
@@ -145,7 +173,7 @@ def state_anim(dm: DataManager, *,
                             "".format(type(cmap), cmap))
 
         # Create imshow
-        im = ax.imshow(initial_data, cmap=colormap, animated=True,
+        im = ax.imshow(data, cmap=colormap, animated=True,
                        origin='lower', vmin=limits[0], vmax=limits[1])
 
         # Set title
@@ -160,120 +188,101 @@ def state_anim(dm: DataManager, *,
         if bounds is not None:
             # vertical color bar ticks
             yticklabels = cmap.keys()
+            cbar.set_ticks(np.arange(bounds[0], bounds[1]+1))
             cbar.ax.set_yticklabels(yticklabels) 
         ax.axis('off')
 
         return im
 
-    # Get the group that all datasets are in
-    grp = dm['uni'][uni]['data'][model_name]
+    def prepare_data(*, data_2d: dict, prop_name: str, t: int) -> np.ndarray:
+        """Prepares the data for plotting"""
+        # Get the data from the dict of 2d data
+        data = data_2d[prop_name][t]
 
-    # Get the shape of the 2D grid to later reshape the data
-    cfg = dm['uni'][uni]['cfg']
+        # If preprocessing is available for this property, call that function
+        if preprocess_funcs and prop_name in preprocess_funcs:
+            data = preprocess_funcs[prop_name](data)
+
+        return data
+
+
+    # Prepare the data ........................................................
+    # Get the group that all datasets are in
+    grp = uni['data'][model_name]
+
+    # Get the shape of the 2D grid
+    cfg = uni['cfg']
     grid_size = cfg[model_name]['grid_size']
-    steps = cfg['num_steps']
+    steps = int(cfg['num_steps']/cfg.get('write_every', 1))
+    # NOTE The steps variable does not correspond to the actual _time_ of the
+    #      simulation at those frames!
+
+    # ...and reshape the data
     new_shape = (steps+1, grid_size[1], grid_size[0])
 
-    # Extract the data of the strategies in the CA    
+    # Extract the data of the strategies in the CA and bring them into the
+    # correct shape
     data_1d = {p: grp[p] for p in to_plot.keys()}
-    data = {k: np.reshape(v, new_shape) for k,v in data_1d.items()}
-        
-    # Distinguish writer classes
-    if anim.writers.is_available(writer):
+    data_2d = {k: np.reshape(v, new_shape) for k,v in data_1d.items()}
+
+
+    # Prepare the writer ......................................................
+    if mpl.animation.writers.is_available(writer):
         # Create animation writer if the writer is available
-        wCls = anim.writers[writer]
+        wCls = mpl.animation.writers[writer]
         w = wCls(fps=fps,
                  metadata=dict(title="Grid Animation — {}"
                                      "".format(", ".join(to_plot.keys()),
                                artist="Utopia")))
 
     elif writer == 'frames':
-        # Just create the frames, save them later
-        w = FileWriter(**frames_kwargs)
+        # Use the file writer to create individual frames
+        w = FileWriter(name_padding=len(str(steps+1)),
+                       **(frames_kwargs if frames_kwargs else {}))
 
     else:
         raise ValueError("The writer '{}' is not available on your system!"
                          "".format(writer))
 
-    # Set plot parameters
-    rcParams.update({'font.size': 20})
-    rcParams['figure.figsize'] = (6.0 * len(to_plot), 5.0)
-    
-    # Create figure
-    fig, axs = plt.subplots(1, len(to_plot))
 
-    # Assert that the axes are stored in a list even if it is only one axis.
-    if len(to_plot) == 1:
-         axs = [axs] 
+    # Set up plotting .........................................................
+    # Adjust some rc parameters
+    mpl.rcParams.update({'font.size': 20})
+    mpl.rcParams['figure.figsize'] = (6.0 * len(to_plot), 5.0)
+    
+    # Create figure, not squeezing to always have axs be something iterable
+    fig, axs = plt.subplots(1, len(to_plot), squeeze=False)
 
     # Store the imshow objects such that only the data has to be updated in a
-    # following iteration step
-    ims = []
+    # following iteration step. Keys will be the property names
+    ims = dict()
     
+    log.info("Plotting %d frames of %d properties each ...",
+             steps+1, len(to_plot))
+
     with w.saving(fig, out_path, dpi=dpi):
-        
-        # Loop through time steps
-        for t in range(steps):
+        # Loop through time steps, corresponding to rows in the 2d arrays
+        for t in range(steps+1):
+            log.debug("Plotting frame %d ...", t)
 
             # Loop through the subfigures
-            for i, (ax, (key, props)) in enumerate(zip(axs, to_plot.items())):
-                    # In the first time step create a new imshow object
-                    if t == 0:
-                        im = plot_property(key, initial_data=data[key][t],
-                                           ax=ax, **props)
-                        ims.append(im)
+            for ax, (prop_name, props) in zip(axs.flat, to_plot.items()):
+                # Get the data for this time step
+                data = prepare_data(data_2d=data_2d, prop_name=prop_name, t=t)
+                
+                # In the first time step create a new imshow object
+                if t == 0:
+                    ims[prop_name] = plot_property(data=data, ax=ax, **props)
 
-                        # Important to not continue with the rest
-                        continue
+                    # Important to not continue with the rest
+                    continue
 
-                    # In later steps just update imshow data without creating
-                    # a new object
-                    ims[i].set_data(data[key][t])                  
+                # For t>0, it is better to update imshow data without creating
+                # a new object
+                ims[prop_name].set_data(data)
             
-            # Updated both subfigures now
-            # Tell the writer that the frame is finished
+            # Updated all subfigures now and can now tell the writer that the
+            # frame is finished and can be grabbed.
             w.grab_frame()
 
-
-
-# -----------------------------------------------------------------------------
-
-def average_state_over_time(dm: DataManager, *, 
-                            out_path: str, 
-                            uni: int, 
-                            model_name: str,
-                            state: str,
-                            fmt: str=None, 
-                            save_kwargs: dict=None, **plot_kwargs):
-    """Calculates the state mean and performs a lineplot
-    
-    Args:
-        dm (DataManager): The data manager from which to retrieve the data
-        out_path (str): Where to store the plot to
-        uni (int): The universe to use
-        model_name (str): The name of the model instance
-        state (str): The name of state (i.e. data set) to plot
-        fmt (str, optional): the plt.plot format argument
-        save_kwargs (dict, optional): kwargs to the plt.savefig function
-        **plot_kwargs: Passed on to plt.plot
-    """
-    # Get the group that all datasets are in
-    grp = dm['uni'][uni]['data'][model_name]
-
-    # Extract the y data which is 'state' avaraged over all grid cells for every time step
-    y_data = np.mean(grp[state], axis=1)
-    x_data = np.linspace(0, len(y_data), len(y_data))
-
-    # Assemble the arguments
-    args = [x_data, y_data]
-    if fmt:
-        args.append(fmt)
-
-    # Call the plot function
-    plt.plot(*args, **plot_kwargs)
-    plt.xlabel('Time')
-    plt.ylabel(state)
-
-    # Save and close figure
-    plt.savefig(out_path, **(save_kwargs if save_kwargs else {}))
-    plt.close()
+    log.info("Finished plotting of %d frames.", steps+1)

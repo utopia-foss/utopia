@@ -10,11 +10,7 @@ namespace Models {
 namespace Dummy {
 
 /// Define data types of dummy model
-using DummyTypes = ModelTypes<
-    std::vector<double>,  // state
-    std::vector<double>   // boundary condition
-    // can change other types here
->;
+using DummyTypes = ModelTypes<>;
 
 /// Dummy model with simple update rule
 /** Holds a vector of doubles and increments its entries by random numbers
@@ -26,6 +22,9 @@ public:
     /// The base model class
     using Base = Model<Dummy, DummyTypes>;
 
+    /// The data type to use for _state and _bc members
+    using Data = std::vector<double>;
+
     // Type shortcut for dataset
     using DataSet = Base::DataSet;
 
@@ -34,7 +33,7 @@ private:
     Data _state;
 
     /// The boundary conditions of the model
-    BCType _bc;
+    Data _bc;
 
     /// Dataset to write the state to
     std::shared_ptr<DataSet> _dset_state;
@@ -84,6 +83,22 @@ public:
     }
 
 
+    /// Monitor model information
+    /** @detail Supply a function that calculates the state mean, if the
+     *          monitor will perform an emission.
+     */
+    void monitor ()
+    {
+        // Supply the state mean to the monitor
+        _monitor.set_by_func("state_mean", [this](){
+            const double sum = std::accumulate(this->_state.begin(),
+                                               this->_state.end(),
+                                               0);
+            return sum / this->_state.size();
+        });
+    }
+
+
     /// Write data into a dataset that corresponds to the current step
     void write_data()
     {
@@ -94,23 +109,6 @@ public:
 
     // -- Getters and Setters -- //
 
-    // Set model boundary condition
-    void set_boundary_condition(const BCType& new_bc)
-    {
-        _bc = new_bc;
-    }
-
-    /// Set model initial condition
-    void set_initial_condition(const Data& ic)
-    {
-        _state = ic;
-    }
-
-    /// Return const reference to stored data
-    const Data& data() const
-    {
-        return _state;
-    }
 };
 
 } // namespace Dummy

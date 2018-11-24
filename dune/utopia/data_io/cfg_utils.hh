@@ -1,5 +1,5 @@
-#ifndef DATAIO_UTILS_HH
-#define DATAIO_UTILS_HH
+#ifndef DATAIO_CFG_UTILS_HH
+#define DATAIO_CFG_UTILS_HH
 
 #include <boost/core/demangle.hpp>
 #include <yaml-cpp/yaml.h>
@@ -88,6 +88,11 @@ ReturnType as_(const Utopia::DataIO::Config& node) {
 
 // -- Shortcuts -- //
 
+/// Shortcut to retrieve a config entry as int
+int as_int(const Utopia::DataIO::Config& node) {
+    return as_<int>(node);
+}
+
 /// Shortcut to retrieve a config entry as double
 double as_double(const Utopia::DataIO::Config& node) {
     return as_<double>(node);
@@ -117,4 +122,4 @@ std::array<T, len> as_array(const Utopia::DataIO::Config& node) {
 
 
 } // namespace Utopia
-#endif // DATAIO_UTILS_HH
+#endif // DATAIO_CFG_UTILS_HH

@@ -8,7 +8,6 @@ import numpy as np
 import pytest
 
 from utopya.workermanager import WorkerManager, WorkerManagerTotalTimeout, WorkerTaskNonZeroExit
-from utopya.task import enqueue_lines, parse_json
 from utopya.tools import read_yml
 
 # Some constants
@@ -44,11 +43,6 @@ def longer_sleep_task() -> dict:
 @pytest.fixture
 def wm_with_tasks(sleep_task):
     """Create a WorkerManager instance and add some tasks"""
-    # Set a json-reading function
-    line_read_json = lambda queue, stream: enqueue_lines(queue=queue,
-                                                         stream=stream,
-                                                         parse_func=parse_json)
-
     # A few tasks
     tasks = []
     tasks.append(dict(worker_kwargs=dict(args=('python3', '-c',
@@ -63,7 +57,7 @@ def wm_with_tasks(sleep_task):
     tasks.append(dict(worker_kwargs=dict(args=('python3', '-c',
                                                'print("{\'key\': \'1.23\'}")'),
                                          read_stdout=True,
-                                         line_read_func=line_read_json)))
+                                         stdout_parser="yaml_dict")))
     tasks.append(sleep_task)
 
     # Now initialise the worker manager

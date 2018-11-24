@@ -3,28 +3,28 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from utopya import DataManager
+from utopya import DataManager, UniverseGroup
 
 from ..tools import save_and_close
 
 # -----------------------------------------------------------------------------
 
-def state_mean(dm: DataManager, *, out_path: str, uni: int, fmt: str=None, save_kwargs: dict=None, **plot_kwargs):
+def state_mean(dm: DataManager, *, uni: UniverseGroup, out_path: str, fmt: str=None, save_kwargs: dict=None, **plot_kwargs):
     """Calculates the state mean and performs a lineplot
     
     Args:
         dm (DataManager): The data manager from which to retrieve the data
+        uni (UniverseGroup): The selected universe data
         out_path (str): Where to store the plot to
-        uni (int): The universe to use
         fmt (str, optional): the plt.plot format argument
         save_kwargs (dict, optional): kwargs to the plt.savefig function
         **plot_kwargs: Passed on to plt.plot
     """
     # Get the group that all datasets are in
-    grp = dm['uni'][uni]['data/CopyMe']
+    grp = uni['data/CopyMe']
 
     # Get the shape of the data
-    uni_cfg = dm['uni'][uni]['cfg']
+    uni_cfg = uni['cfg']
     num_steps = uni_cfg['num_steps']
     grid_size = uni_cfg['CopyMe']['grid_size']
 

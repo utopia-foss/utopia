@@ -1,0 +1,16 @@
+# Configuration file used to test that the initialization of the model is correct
+
+---
+
+parameter_space:
+  num_steps: 0
+
+# Load the model config
+  ContDisease: !model
+    model_name: ContDisease  # imports the model config for the CopyMe model
+    initial_state: empty
+    stones: false
+    infection_herd: true
+    infection_herd_src: south
+
+    grid_size: [32,32]
