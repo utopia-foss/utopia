@@ -34,31 +34,29 @@ struct VegetationParameters {
     double seeding_rate;
 };
 
-template<class Manager>
-using VegetationTypes = ModelTypes<typename Manager::Container, VegetationParameters>;
-
+/// Typehelper to define data types of Vegetation model
+using VegetationTypes = ModelTypes<>;
 
 /// A very simple vegetation model
-template<class Manager>
+template<class ManagerType>
 class Vegetation:
-    public Model<Vegetation<Manager>, VegetationTypes<Manager>>
+    public Model<Vegetation<ManagerType>, VegetationTypes>
 {
 public:
 
     /// Type helpers
-    using Base = Model<Vegetation<Manager>, VegetationTypes<Manager>>;
-    using BCType = typename Base::BCType;
-    using Data = typename Base::Data;
+    using Base = Model<Vegetation<ManagerType>, VegetationTypes>;
+    using CellType = typename ManagerType::Cell;
+    using CellIndexType = typename CellType::Index;
     using DataSet = DataIO::HDFDataset<DataIO::HDFGroup>;
-    using CellType = typename Manager::Cell;
 
 private:
 
     /// The grid manager
-    Manager _manager;
+    ManagerType _manager;
 
-    /// The boundary conditions (aka parameters) of the model
-    BCType _bc;
+    /// The parameters of the model
+    VegetationParameters _params;
     
     /// Dataset 
     std::shared_ptr<DataSet> _dset_plant_mass;
@@ -74,14 +72,14 @@ private:
      */
     std::function<State(std::shared_ptr<CellType>)> _growth_seeding = [this](const auto cell){
         auto state = cell->state();
-        auto rain = _bc.rain(*(this->_rng));
+        auto rain = _params.rain(*(this->_rng));
         auto mass = state.plant_mass;
 
         // regular logistic growth
-        if (mass != 0) { state.plant_mass += mass * _bc.growth_rate*(1 - mass/rain); }
+        if (mass != 0) { state.plant_mass += mass * _params.growth_rate*(1 - mass/rain); }
 
         // seeding
-        else { state.plant_mass = _bc.seeding_rate*rain; }
+        else { state.plant_mass = _params.seeding_rate*rain; }
 
         return state;
     };
@@ -105,7 +103,7 @@ public:
     template<class ParentModel>
     Vegetation (const std::string name,
                 const ParentModel & parent_model,
-                Manager manager) 
+                ManagerType manager) 
     :
         // Construct the base class
         Base(name, parent_model),
@@ -114,7 +112,7 @@ public:
         _manager(manager),
 
         // Initialize model parameters from config file
-        _bc(this->_cfg["rain_mean"].template as<double>(), 
+        _params(this->_cfg["rain_mean"].template as<double>(), 
             this->_cfg["rain_var"].template as<double>(),
             this->_cfg["growth"].template as<double>(),
             this->_cfg["seeding"].template as<double>()),
@@ -166,55 +164,9 @@ public:
                                );
     }
 
-    /// Return const reference to stored data
-    const Data& data () const { return _manager.cells(); }
-    
-    /// Set model boundary condition
-    void set_boundary_condition (const BCType& new_bc) { _bc = new_bc; }
+    /// Monitor model information
+    void monitor () { }
 
-    /// Set model initial condition
-    void set_initial_condition (const Data& ic)
-    {
-        assert(check_ic_compatibility(ic));
-
-        auto& cells = _manager.cells();
-        for (size_t i = 0; i < cells.size(); ++i) {
-            cells[i]->state_new() = ic[i]->state();
-            cells[i]->update();
-        }
-    }
-
-private:
-
-    // Verify that the inserted initial condition can be used
-    /** This function checks if
-     *      - the inserted container has the appropriate size
-     *      - the coordinates of all cells match individually
-     *  \param ic Initial condition to be used
-     */
-    bool check_ic_compatibility (const Data& ic)
-    {
-        const auto& cells = _manager.cells();
-
-        // check size
-        if (ic.size() != cells.size()) {
-            throw std::runtime_error("Container inserted as initial condition "
-                "has incorrect size " + std::to_string(ic.size())
-                + " (should be " + std::to_string(cells.size() + ")"));
-        }
-
-        // check coordinates
-        for (size_t i = 0; i < cells.size(); ++i)
-        {
-            const auto& coord_1 = cells[i]->position();
-            const auto& coord_2 = ic[i]->position();
-            for (size_t j = 0; j < coord_1.size(); j++) {
-                if (coord_1[j] != coord_2[j])
-                    return false;
-            }
-        }
-        return true;
-    }
 };
 
 

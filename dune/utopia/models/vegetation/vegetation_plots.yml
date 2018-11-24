@@ -3,17 +3,19 @@
 
 # plot the average plant mass per cell over time
 average_plant_mass_time:
-  creator: external
-  module: .ca
+  creator: universe
+  universes: all
+  module: model_plots.vegetation
   plot_func: average_state_over_time
   model_name: vegetation
-  uni: 0
   state: plant_mass
-  fmt: g
+  fmt: png
 
 # plot the spatial development in the CA
 plant_mass_spatial:
-  creator: external
+  creator: universe
+  universes: all
+
   file_ext: mp4
 
   module: .ca
@@ -21,7 +23,6 @@ plant_mass_spatial:
 
   # Select the universe
   model_name: vegetation
-  uni: 0
 
   # Select the properties to plot
   to_plot:
