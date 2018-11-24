@@ -36,41 +36,40 @@ struct GeomorphologyParameters {
     double erodibility;
 };
 
-template<class Manager>
-using GeomorphologyTypes = ModelTypes<typename Manager::Container, GeomorphologyParameters>;
+/// Typehelper to define data types of Geomorphology model
+using GeomorphologyTypes = ModelTypes<>;
 
 /// A very simple geomorphology model
-template<class Manager>
+template<class ManagerType>
 class Geomorphology:
-    public Model<Geomorphology<Manager>, GeomorphologyTypes<Manager>>
+    public Model<Geomorphology<ManagerType>, GeomorphologyTypes>
 {
 public:
 
-    /// Type helpers
-    using Base = Model<Geomorphology<Manager>, GeomorphologyTypes<Manager>>;
-    using BCType = typename Base::BCType;
-    using Data = typename Base::Data;
+    // -- Type helpers -- //
+    using Base = Model<Geomorphology<ManagerType>, GeomorphologyTypes>;
+    using CellType = typename ManagerType::Cell;
+    using CellIndexType = typename CellType::Index;
     using DataSet = DataIO::HDFDataset<DataIO::HDFGroup>;
-    using CellType = typename Manager::Cell;
 
 private:
 
     /// The grid manager
-    Manager _manager;
-
+    ManagerType _manager;
+  
     /// The boundary conditions (aka parameters) of the model
-    BCType _bc;
+    GeomorphologyParameters _params;
 
     /// Datasets
     std::shared_ptr<DataSet> _dset_water_content;
     std::shared_ptr<DataSet> _dset_height;
 
     // A map of lowest neighbors
-    std::map<typename Manager::Cell::Index, std::shared_ptr<typename Manager::Cell>> _lowest_neighbors;
+    std::map<CellIndexType, std::shared_ptr<CellType>> _lowest_neighbors;
 
     // Rule functions
     std::function<State(std::shared_ptr<CellType>)> _rain = [this](const auto cell){
-        auto rain = _bc.rain(*(this->_rng));
+        auto rain = _params.rain(*(this->_rng));
         auto state = cell->state();
         state.watercontent += rain; 
         return state;
@@ -87,16 +86,16 @@ public:
     template<class ParentModel>
     Geomorphology (const std::string name,
                    const ParentModel& parent_model,
-                   Manager manager)
+                   ManagerType manager)
     :
         // Construct the base class
         Base(name, parent_model),
 
-        // Initialise the reference to the Manager object
+        // Initialise the reference to the ManagerType object
         _manager(manager),
 
         // Initialize model parameters from config file
-        _bc(this->_cfg["rain_mean"].template as<double>(), 
+        _params(this->_cfg["rain_mean"].template as<double>(), 
             this->_cfg["rain_var"].template as<double>(),
             this->_cfg["height"].template as<double>(),
             this->_cfg["uplift"].template as<double>(),
@@ -174,7 +173,7 @@ public:
             if (delta_height > 0 && cell->state().watercontent > 0) {
 
                 // Compute sediment flow and substract from cell height
-                double sediment_flow = delta_height*_bc.erodibility*std::sqrt(cell->state().watercontent);
+                double sediment_flow = delta_height*_params.erodibility*std::sqrt(cell->state().watercontent);
                 cell->state_new().height -= sediment_flow;
                    
                 // Check if new height is nan or inf, in that case set to zero
@@ -209,7 +208,7 @@ public:
 
         // Uplift  
         for (auto& cell : cells) {
-            cell->state_new().height += _bc.uplift;
+            cell->state_new().height += _params.uplift;
         }
 
         // Update cells
@@ -235,24 +234,8 @@ public:
                                   );
     }
 
-    /// Return const reference to cell container
-    const Data& data () const { return _manager.cells(); }
-
-    /// Set model boundary condition
-    void set_boundary_condition (const BCType& new_bc) { _bc = new_bc; }
-
-
-    /// Set model initial condition
-    void set_initial_condition (const Data& ic)
-    {
-        assert(check_ic_compatibility(ic));
-
-        auto& cells = _manager.cells();
-        for (size_t i = 0; i < cells.size(); ++i) {
-            cells[i]->state_new() = ic[i]->state();
-            cells[i]->update();
-        }
-    }
+    /// Monitor model information
+    void monitor () { }
 
 private:
 
@@ -263,7 +246,7 @@ private:
 
             // Find lowest neighbour
             auto neighbors = Neighborhoods::MooreNeighbor::neighbors(cell, _manager);
-            CellContainer<typename Manager::Cell> lowest_neighbors;
+            CellContainer<CellType> lowest_neighbors;
             auto lowest_neighbor = cell; // _lowest_neighbors of a cell is itself, if it is a sink
             lowest_neighbors.push_back(lowest_neighbor);
             for (auto neighbor : neighbors) {
@@ -301,29 +284,29 @@ private:
      *      - the coordinates of all cells match individually
      *  \param ic Initial condition to be used
      */
-    bool check_ic_compatibility (const Data& ic)
-    {
-        const auto& cells = _manager.cells();
-
-        // check size
-        if (ic.size() != cells.size()) {
-            throw std::runtime_error("Container inserted as initial condition "
-                "has incorrect size " + std::to_string(ic.size())
-                + " (should be " + std::to_string(cells.size() + ")"));
-        }
-
-        // check coordinates
-        for (size_t i = 0; i < cells.size(); ++i)
-        {
-            const auto& coord_1 = cells[i]->position();
-            const auto& coord_2 = ic[i]->position();
-            for (size_t j = 0; j < coord_1.size(); j++) {
-                if (coord_1[j] != coord_2[j])
-                    return false;
-            }
-        }
-        return true;
-    }
+ //   bool check_ic_compatibility (const Data& ic)
+ //   {
+ //       const auto& cells = _manager.cells();
+ //
+ //       // check size
+ //       if (ic.size() != cells.size()) {
+ //           throw std::runtime_error("Container inserted as initial condition "
+ //               "has incorrect size " + std::to_string(ic.size())
+ //               + " (should be " + std::to_string(cells.size() + ")"));
+ //       }
+ //
+ //       // check coordinates
+ //       for (size_t i = 0; i < cells.size(); ++i)
+ //       {
+ //           const auto& coord_1 = cells[i]->position();
+ //           const auto& coord_2 = ic[i]->position();
+ //           for (size_t j = 0; j < coord_1.size(); j++) {
+ //               if (coord_1[j] != coord_2[j])
+ //                   return false;
+ //           }
+ //       }
+ //       return true;
+ //   }
 };
 
 

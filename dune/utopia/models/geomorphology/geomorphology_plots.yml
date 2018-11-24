@@ -3,7 +3,8 @@
 
 # plot the spatial development in the CA 
 geomorphology:
-  creator: external
+  creator: universe
+  universes: all
   file_ext: mp4
 
   module: .ca
@@ -11,7 +12,6 @@ geomorphology:
 
   # Select the universe
   model_name: geomorphology
-  uni: 0
 
   # Select the properties to plot
   to_plot:
