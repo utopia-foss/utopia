@@ -9,10 +9,10 @@ import subprocess
 from datetime import timedelta
 from typing import Union, Tuple
 
-import yaml
 import numpy as np
 
-import paramspace.yaml_constructors as psp_constrs
+from paramspace import yaml
+import paramspace.yaml_constructors as pspyc
 
 import utopya.stopcond
 from utopya.info import MODELS
@@ -89,13 +89,31 @@ def _model_cfg_constructor(loader, node) -> dict:
     # Return the updated dictionary
     return mcfg
 
-# Add the constructors to the yaml module
-yaml.add_constructor(u'!expr', _expr_constructor)
-yaml.add_constructor(u'!model', _model_cfg_constructor)
-yaml.add_constructor(u'!stop-condition', utopya.stopcond.stop_cond_constructor)
-yaml.add_constructor(u'!sc-func', utopya.stopcond.sc_func_constructor)
-yaml.add_constructor(u'!sweep', psp_constrs.pdim_enabled_only)
-yaml.add_constructor(u'!sweep-default', psp_constrs.pdim_get_default)
+# .............................................................................
+# Attaching representers and constructors .....................................
+# First register the classes, which directly implemented dumping/loading
+yaml.register_class(utopya.stopcond.StopCondition)
+
+# Now, add (additional, potentially overwriting) constructors for certain tags
+# For the expression and model config objects.
+yaml.constructor.add_constructor(u'!expr',
+                                 _expr_constructor)
+yaml.constructor.add_constructor(u'!model',
+                                 _model_cfg_constructor)
+
+# Add aliases for the (coupled) parameter dimensions
+yaml.constructor.add_constructor(u'!sweep',
+                                 pspyc.pdim)
+yaml.constructor.add_constructor(u'!sweep-default',
+                                 pspyc.pdim_default)
+
+yaml.constructor.add_constructor(u'!coupled-sweep',
+                                 pspyc.coupled_pdim)
+yaml.constructor.add_constructor(u'!coupled-sweep-default',
+                                 pspyc.coupled_pdim_default)
+
+# Set the flow style
+yaml.default_flow_style = False
 
 
 # input/output ----------------------------------------------------------------
@@ -120,6 +138,7 @@ def read_yml(path: str, *, error_msg: str=None) -> dict:
     try:
         with open(path, 'r') as ymlfile:
             d = yaml.load(ymlfile)
+
     except FileNotFoundError as err:
         if error_msg:  # is None by default
             raise FileNotFoundError(error_msg) from err
@@ -149,7 +168,7 @@ def write_yml(d: dict, *, path: str) -> None:
     
     # else: dump the dict into the config file
     with open(path, 'w') as ymlout:
-        yaml.dump(d, ymlout, default_flow_style=False)
+        yaml.dump(d, ymlout)
 
 def load_model_cfg(model_name: str) -> Tuple[dict, str]:
     """Loads the model configuration for the given model name using the info

@@ -17,14 +17,16 @@ namespace SimpleEG {
 /// Strategy enum
 enum Strategy : unsigned short int { S0=0, S1=1 };
 
+
 /// State struct for SimpleEG model, consisting of strategy and payoff
 struct State {
     Strategy strategy;
     double payoff;
 };
 
+
 /// Typehelper to define data types of SimpleEG model 
-using SimpleEGModelTypes = ModelTypes<State>;
+using SimpleEGModelTypes = ModelTypes<>;
 
 
 
@@ -48,15 +50,9 @@ public:
     /// The base model
     using Base = Model<SimpleEGModel<ManagerType>, SimpleEGModelTypes>;
     
-    /// Data type of the state
-    using Data = typename Base::Data;
-    
     /// Cell type
     using CellType = typename ManagerType::Cell;
 
-    /// Data type of the boundary condition
-    using BCType = typename Base::BCType;
-    
     /// Data type that holds the configuration
     using Config = typename Base::Config;
     
@@ -78,7 +74,7 @@ public:
 
 
 private:
-    // Base members: _time, _name, _cfg, _hdfgrp, _rng
+    // Base members: _time, _name, _cfg, _hdfgrp, _rng, _log, _monitor
 
     // -- Members of this model -- //
     /// The grid manager
@@ -412,6 +408,13 @@ public:
         // Apply the rules to all cells
         apply_rule(_interaction, _manager.cells());
         apply_rule(_update, _manager.cells());
+    }
+
+
+    /// Monitor model information
+    void monitor ()
+    {
+
     }
 
 

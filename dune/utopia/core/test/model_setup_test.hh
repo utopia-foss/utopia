@@ -7,7 +7,7 @@
 namespace Utopia {
 
 /// Define a dummy data type
-using DoNothingModelType = ModelTypes<bool, bool>;
+using DoNothingModelType = ModelTypes<>;
 
 /// A model that does nothing
 class DoNothingModel:
@@ -32,6 +32,9 @@ public:
 
     /// Perform a single step (nothing to do here)
     void perform_step () {}
+
+    /// Monitor data (does nothing)
+    void monitor () {}
 
     /// Data write method (does nothing)
     void write_data () {}

@@ -16,7 +16,6 @@ import paramspace as psp
 from utopya.datamanager import DataManager
 from utopya.workermanager import WorkerManager
 from utopya.plotting import PlotManager
-from utopya.task import enqueue_json
 from utopya.reporter import WorkerManagerReporter
 from utopya.tools import recursive_update, read_yml, write_yml, load_model_cfg
 from utopya.info import MODELS
@@ -78,7 +77,8 @@ class Multiverse:
                                       update_meta_cfg=update_meta_cfg)
         # NOTE this already stores it in self._meta_cfg
 
-        # Create the run directory and write the meta configuration into it
+        # Create the run directory and write the meta configuration into it.
+        # This already performs the backup of the configuration files.
         self._create_run_dir(**self.meta_cfg['paths'], cfg_parts=files)
 
         # Provide some information
@@ -165,9 +165,7 @@ class Multiverse:
         Note that (currently) each Multiverse instance can _not_ perform
         multiple runs!
         """
-        log.info("Preparing to run Multiverse ...")
-
-        # Depending on the configuration, the corresponding methods can already be called.
+        # Depending on the configuration, call the corresponding run method
         if self.meta_cfg.get('perform_sweep'):
             self.run_sweep()
         else:
@@ -179,21 +177,15 @@ class Multiverse:
         Note that (currently) each Multiverse instance can _not_ perform
         multiple runs!
         """
-
         # Get the parameter space from the config
         pspace = self.meta_cfg['parameter_space']
-        
-        # If this is a ParamSpace, we need to retrieve the default point
-        if isinstance(pspace, psp.ParamSpace):
-            log.info("Got a ParamSpace object. Retrieving default point ...")
-            uni_cfg = pspace.default
 
-        else:
-            uni_cfg = copy.deepcopy(pspace)
+        # Get the default state of the parameter space
+        uni_cfg = pspace.default
 
         # Add the task to the worker manager.
         log.info("Adding task for simulation of a single universe ...")
-        self._add_sim_task(uni_id=0, max_uni_id=0, uni_cfg=uni_cfg)
+        self._add_sim_task(uni_id_str="0", uni_cfg=uni_cfg, is_sweep=False)
 
         # Prevent adding further tasks to disallow further runs
         self.wm.tasks.lock()
@@ -222,11 +214,10 @@ class Multiverse:
         log.info("Adding tasks for simulation of %d universes ...",
                  pspace.volume)
 
-        max_uni_id = pspace.volume - 1
+        for uni_cfg, uni_id_str in pspace.iterator(with_info='state_no_str'):
+            self._add_sim_task(uni_id_str=uni_id_str, uni_cfg=uni_cfg,
+                               is_sweep=True)
 
-        for uni_cfg, uni_id in pspace.all_points(with_info=('state_no',)):
-            self._add_sim_task(uni_id=uni_id, max_uni_id=max_uni_id,
-                               uni_cfg=uni_cfg)
         log.info("Tasks added.")
 
         # Prevent adding further tasks to disallow further runs
@@ -386,11 +377,11 @@ class Multiverse:
             model_a/
                 180301-125410_my_model_note/
                     config/
-                    eval/
-                    universes/
+                    data/
                         uni000/
                         uni001/
                         ...
+                    eval/
             model_b/
                 180301-125412_my_first_sim/
                 180301-125413_my_second_sim/
@@ -440,7 +431,7 @@ class Multiverse:
                                "simulation again.") from err
 
         # Make subfolders
-        for subdir in ('config', 'eval', 'universes'):
+        for subdir in ('config', 'data', 'eval'):
             subdir_path = os.path.join(run_dir, subdir)
             os.mkdir(subdir_path)
             self.dirs[subdir] = subdir_path
@@ -451,7 +442,13 @@ class Multiverse:
         # Write the meta config to the config directory.
         write_yml(self.meta_cfg,
                   path=os.path.join(self.dirs['config'], "meta_cfg.yml"))
-        log.debug("Wrote meta configuration to config directory.")
+        log.debug("Stored meta configuration in config directory.")
+
+        # Separately, store the parameter space there
+        write_yml(self.meta_cfg['parameter_space'],
+                  path=os.path.join(self.dirs['config'],
+                                    "parameter_space.yml"))
+        log.debug("Stored parameter space.")
 
         # If configured, backup the other cfg files one by one
         if backup_involved_cfg_files and cfg_parts:
@@ -471,36 +468,7 @@ class Multiverse:
 
         log.debug("Finished creating run directory and backing up config.")
 
-    @staticmethod
-    def _create_uni_basename(*, uni_id: int, max_uni_id: int) -> str:
-        """Returns the formatted universe basename, zero-padded, for usage
-        in WorkerTask names and universe directory creation.
-        
-        Args:
-            uni_id (int): ID of the universe whose folder should be created.
-                Needs to be positive or zero.
-            max_uni_id (int): highest ID, needed for correct zero-padding.
-                Needs to be larger or equal to uni_id.
-        
-        Returns:
-            str: The zero-padded universe basename, e.g. uni0042
-        
-        Raises:
-            ValueError: For invalid `uni_id` or `max_uni_id` arguments 
-        """
-
-        # Check if uni_id and max_uni_id are positive
-        if uni_id < 0 or uni_id > max_uni_id:
-            raise ValueError("Input variables don't match prerequisites: "
-                             "uni_id >= 0, max_uni_id >= uni_id. Given "
-                             "arguments: uni_id {}, max_uni_id {}"
-                             "".format(uni_id, max_uni_id))
-
-        # Use a format string to create the zero-padded universe basename
-        return "uni{id:>0{digits:}d}".format(id=uni_id,
-                                             digits=len(str(max_uni_id)))
-
-    def _add_sim_task(self, *, uni_id: int, max_uni_id: int, uni_cfg: dict) -> None:
+    def _add_sim_task(self, *, uni_id_str: str, uni_cfg: dict, is_sweep: bool) -> None:
         """Helper function that handles task assignment to the WorkerManager.
         
         This function creates a WorkerTask that will perform the following
@@ -508,15 +476,20 @@ class Multiverse:
           - Create a universe (folder) for the task (simulation)
           - Write that universe's configuration to a yaml file in that folder
           - Create the correct arguments for the call to the model binary
-    
+        
         To that end, this method gathers all necessary arguments and registers
         a WorkerTask with the WorkerManager.
         
         Args:
-            uni_id (int): ID of the universe whose folder should be created
-            max_uni_id (int): highest ID, needed for correct zero-padding
+            uni_id_str (str): The zero-padded uni id string
             uni_cfg (dict): given by ParamSpace. Defines how many simulations
                 should be started
+            is_sweep (bool): Flag is needed to distinguish between sweeps
+                and single simulations. With this information, the forwarding
+                of a simulation's output stream can be controlled.
+        
+        Raises:
+            RuntimeError: If adding the simulation task failed
         """
         def setup_universe(*, worker_kwargs: dict, model_name: str, model_binpath: str, uni_cfg: dict, uni_basename: str) -> dict:
             """The callable that will setup everything needed for a universe.
@@ -538,7 +511,7 @@ class Multiverse:
                     Worker.
             """
             # create universe directory path using the basename
-            uni_dir = os.path.join(self.dirs['universes'], uni_basename)
+            uni_dir = os.path.join(self.dirs['data'], uni_basename)
 
             # Now create the folder
             os.mkdir(uni_dir)
@@ -559,7 +532,7 @@ class Multiverse:
             # Generate a new worker_kwargs dict, carrying over the given ones
             wk = dict(args=args,
                       read_stdout=True,
-                      line_read_func=enqueue_json,
+                      stdout_parser="yaml_dict",
                       **(worker_kwargs if worker_kwargs else {}))
 
             # Determine whether to save the streams
@@ -569,9 +542,9 @@ class Multiverse:
 
             return wk
 
-        # Generate the universe basename, which will be used for the folder and the task name
-        uni_basename = self._create_uni_basename(uni_id=uni_id,
-                                                 max_uni_id=max_uni_id)
+        # Generate the universe basename, which will be used for the folder
+        # and the task name
+        uni_basename = "uni" + uni_id_str
 
         # Create the dict that will be passed as arguments to setup_universe
         setup_kwargs = dict(model_name=self.model_name,
@@ -583,8 +556,9 @@ class Multiverse:
         wk = self.meta_cfg.get('worker_kwargs')
 
         if wk and wk.get('forward_streams') == 'in_single_run':
-            # Check for the max_uni_id as indicator for a single run
-            wk['forward_streams'] = bool(max_uni_id == 0)
+            # Reverse the flag to determine whether to forward streams
+            wk['forward_streams'] = (not is_sweep)
+            wk['forward_kwargs'] = dict(forward_raw=True)
 
         # Try to add a task to the worker manager
         try:
@@ -602,7 +576,7 @@ class Multiverse:
                                "Multiverse?"
                                "".format(uni_basename)) from err
 
-        log.debug("Added simulation task for universe %d.", uni_id)
+        log.debug("Added simulation task: %s.", uni_basename)
 
 
 # -----------------------------------------------------------------------------
@@ -753,7 +727,7 @@ class FrozenMultiverse(Multiverse):
         self.dirs['run'] = run_dir
 
         # Also associate the sub directories
-        for subdir in ('config', 'eval', 'universes'):
+        for subdir in ('config', 'eval', 'data'):
             # Check if the directory exists
             subdir_path = os.path.join(run_dir, subdir)
 

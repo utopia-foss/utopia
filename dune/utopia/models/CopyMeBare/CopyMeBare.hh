@@ -20,14 +20,9 @@ struct State {
     // TODO Define the state a cell of this model can have
 };
 
-/// Boundary condition type
-struct Boundary {};
-// NOTE if you do not use the boundary condition type, you can delete the
-//      definition of the struct above and the passing to the type helper
 
-
-/// Typehelper to define data types of CopyMeBare model 
-using CopyMeBareModelTypes = ModelTypes<State, Boundary>;
+/// Typehelper to define types of CopyMeBare model 
+using CopyMeBareModelTypes = ModelTypes<>;
 
 
 /// The CopyMeBare Model
@@ -42,11 +37,11 @@ public:
     /// The base model type
     using Base = Model<CopyMeBareModel<ManagerType>, CopyMeBareModelTypes>;
     
-    /// Data type of the state
-    using Data = typename Base::Data;
-    
     /// Cell type
     using CellType = typename ManagerType::Cell;
+
+    /// Supply a type for rule functions that are applied to cells
+    using RuleFunc = typename std::function<State(std::shared_ptr<CellType>)>;
 
     /// Data type that holds the configuration
     using Config = typename Base::Config;
@@ -65,7 +60,7 @@ public:
     using MooreNeighbor = Utopia::Neighborhoods::MooreNeighbor;
 
 private:
-    // Base members: _time, _name, _cfg, _hdfgrp, _rng
+    // Base members: _time, _name, _cfg, _hdfgrp, _rng, _monitor
 
     // -- Members of this model -- //
     /// The grid manager
@@ -124,11 +119,30 @@ public:
     }
 
 
+    /// Monitor model information
+    /** @detail Here, functions and values can be supplied to the monitor that
+     *          are then available to the frontend. The monitor() function is
+     *          _only_ called if a certain emit interval has passed; thus, the
+     *          performance hit is small. 
+     */
+    void monitor ()
+    {
+        // Can supply information to the monitor here in two ways:
+        // this->_monitor.set_entry("key", value);
+        // this->_monitor.set_entry("key", [this](){return 42.;});
+    }
+
+
     /// Write data
     void write_data ()
     {   
         // State which data should be written
     }
+
+    
+    // Getters and setters ....................................................
+    // Add getters and setters here to interface with other model
+    
 };
 
 } // namespace CopyMeBare

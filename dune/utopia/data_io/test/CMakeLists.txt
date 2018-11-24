@@ -5,6 +5,7 @@ file(COPY "cfg_utils_test.yml"
 # register targets
 set(TESTS_DATAIO
     cfg_utils_test
+    graph_utils_test
     hdfbufferfactory_test
     hdfchunking_test
     hdftypefactory_test
@@ -19,6 +20,7 @@ set(TESTS_DATAIO
     hdfintegration_test
     hdfgroup_test
     hdfutilities_test
+    monitor_test
     )
 
 # add DATAIO tests

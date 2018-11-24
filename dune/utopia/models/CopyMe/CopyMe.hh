@@ -17,6 +17,7 @@ namespace CopyMe {
 /// Enum that will be part of the internal state of a cell
 enum SomeEnum : unsigned short int {Enum0, Enum1};
 
+
 /// State struct for CopyMe model.
 struct State {
     int some_state;
@@ -24,14 +25,9 @@ struct State {
     SomeEnum some_enum;
 };
 
-/// Boundary condition type
-struct Boundary {};
 
-
-/// Typehelper to define data types of CopyMe model 
-using CopyMeModelTypes = ModelTypes<State, Boundary>;
-// NOTE if you do not use the boundary condition type, you can delete the
-//      definition of the struct above and the passing to the type helper
+/// Typehelper to define types of CopyMe model 
+using CopyMeModelTypes = ModelTypes<>;
 
 
 /// The CopyMe Model
@@ -48,11 +44,11 @@ public:
     /// The base model type
     using Base = Model<CopyMeModel<ManagerType>, CopyMeModelTypes>;
     
-    /// Data type of the state
-    using Data = typename Base::Data;
-    
     /// Cell type
     using CellType = typename ManagerType::Cell;
+
+    /// Supply a type for rule functions that are applied to cells
+    using RuleFunc = typename std::function<State(std::shared_ptr<CellType>)>;
 
     /// Data type that holds the configuration
     using Config = typename Base::Config;
@@ -72,7 +68,7 @@ public:
 
 
 private:
-    // Base members: _time, _name, _cfg, _hdfgrp, _rng
+    // Base members: _time, _name, _cfg, _hdfgrp, _rng, _monitor
 
     // -- Members of this model -- //
     /// The grid manager
@@ -97,7 +93,7 @@ private:
     // NOTE The below are examples; delete and/or adjust them to your needs!
 
     /// Sets the given cell to state "A"
-    std::function<State(std::shared_ptr<CellType>)> _set_initial_state_A = [](const auto cell){
+    RuleFunc _set_initial_state_A = [](const auto cell){
         // Get the state of the Cell
         auto state = cell->state();
 
@@ -111,7 +107,7 @@ private:
 
 
     /// Sets the given cell to state "B"
-    std::function<State(std::shared_ptr<CellType>)> _set_initial_state_B = [](const auto cell){
+    RuleFunc _set_initial_state_B = [](const auto cell){
         // Get the state of the Cell
         auto state = cell->state();
 
@@ -125,7 +121,7 @@ private:
 
 
     /// Define some interaction for a cell
-    std::function<State(std::shared_ptr<CellType>)> _some_interaction = [this](const auto cell){
+    RuleFunc _some_interaction = [this](const auto cell){
         // Get the state of the Cell
         auto state = cell->state();
 
@@ -150,7 +146,7 @@ private:
 
 
     /// Define the update rule for a cell
-    std::function<State(std::shared_ptr<CellType>)> _some_update = [this](const auto cell){
+    RuleFunc _some_update = [this](const auto cell){
         // Here, you can write some update rule description
 
         // Get the state of the cell
@@ -248,6 +244,29 @@ public:
     }
 
 
+    /// Monitor model information
+    /** @detail Here, functions and values can be supplied to the monitor that
+     *          are then available to the frontend. The monitor() function is
+     *          _only_ called if a certain emit interval has passed; thus, the
+     *          performance hit is small.
+     */
+    void monitor ()
+    {
+        // Supply some number -- for illustration -- directly by value
+        this->_monitor.set_entry("some_value", 42);
+
+        // Supply the state mean to the monitor
+        this->_monitor.set_entry("state_mean", [this](){
+            double state_sum = 0.;
+            for (const auto &cell : this->_manager.cells()) {
+                state_sum += cell->state().some_state;
+            }
+            return state_sum / std::distance(this->_manager.cells().begin(),
+                                             this->_manager.cells().end());
+        });
+    }
+
+
     /// Write data
     void write_data ()
     {   
@@ -268,7 +287,8 @@ public:
 
 
     // Getters and setters ....................................................
-    // Can add some getters and setters here to interface with other model
+    // Add getters and setters here to interface with other model
+    
 };
 
 } // namespace CopyMe

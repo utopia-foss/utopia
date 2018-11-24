@@ -1,0 +1,16 @@
+/**
+
+\mainpage Utopia Doxygen Documentation
+
+Utopia is a software toolbox for creating, running, and analyzing hierarchical
+models.
+
+\section Introduction
+
+This is the documentation of the Utopia C++ source code.
+For a guide on how to start with Utopia, please refer to the Cook Book.
+
+A good starting point for diving in is the **Modules** page.
+It contains a structured overview of the documented classes and functions.
+
+*/

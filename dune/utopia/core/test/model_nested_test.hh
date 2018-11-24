@@ -7,10 +7,7 @@
 namespace Utopia {
 
 /// Define data types for use in all models
-using CommonModelTypes = ModelTypes<
-    std::vector<double>,
-    std::vector<double>
->;
+using CommonModelTypes = ModelTypes<>;
 
 
 /// Test model that is used within the nested models
@@ -43,6 +40,9 @@ public:
 
     /// Perform a single step (nothing to do here)
     void perform_step () {}
+
+    /// Monitor data (does nothing)
+    void monitor () {}
 
     /// Data write method (does nothing here)
     void write_data () {}
@@ -88,6 +88,9 @@ public:
     {
         lazy.iterate();
     }
+
+    /// Monitor data (do nothing here)
+    void monitor () {}
 
     /// Data write method (does nothing here)
     void write_data () {}
@@ -139,6 +142,9 @@ public:
         sub_lazy.iterate();
     }
 
+    /// Monitor data (do nothing here)
+    void monitor () {}
+
     /// Data write method (does nothing here)
     void write_data () {}
 
@@ -185,6 +191,9 @@ public:
         sub_one.iterate();
         sub_another.iterate();
     }
+
+    /// Monitor data (do nothing here)
+    void monitor () {}
 
     /// Data write method (does nothing here)
     void write_data () {}

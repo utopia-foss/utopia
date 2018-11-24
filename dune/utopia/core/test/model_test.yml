@@ -3,6 +3,7 @@ seed: 42
 output_path: model_test_tmpfile.h5
 num_steps: 3
 write_every: 1
+monitor_emit_interval: 0.5
 
 test:
   foo: bar

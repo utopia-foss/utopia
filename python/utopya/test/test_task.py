@@ -3,11 +3,12 @@
 import queue
 import io
 from time import sleep
+from functools import partial
 
 import numpy as np
 import pytest
 
-from utopya.task import Task, WorkerTask, TaskList, enqueue_lines, enqueue_json
+from utopya.task import Task, WorkerTask, TaskList, enqueue_lines, parse_yaml_dict
 
 
 # Fixtures ----------------------------------------------------------------
@@ -113,10 +114,10 @@ def test_workertask_streams(tmpdir):
 
     t = WorkerTask(name="stream_test", 
                    worker_kwargs=dict(args=("echo", "foo\nbar\nbaz"),
-                                            read_stdout=True,
-                                            line_read_func=enqueue_json,
-                                            save_streams=True,
-                                            save_streams_to=str(save_path)))
+                                      read_stdout=True,
+                                      stdout_parser="yaml_dict",
+                                      save_streams=True,
+                                      save_streams_to=str(save_path)))
 
     # There are no streams yet, so trying to save streams now should not
     # generate a file at save_path
@@ -132,10 +133,10 @@ def test_workertask_streams(tmpdir):
         sleep(0.05)
 
     # Add additional sleep to avoid any form of race condition
-    sleep(0.5)
+    sleep(0.2)
 
     # Read a single line
-    t.read_streams()
+    t.read_streams(max_num_reads=1)
     assert len(t.streams['out']['log']) == 1
 
     # Read all the remaining stream content
@@ -156,6 +157,49 @@ def test_workertask_streams(tmpdir):
 
     # Trying to save the streams again, there should be no more lines available
     t.save_streams()
+
+def test_workertask_streams_stderr(tmpdir):
+    """Tests that not only the stdout is read, but also stderr"""
+    save_path = tmpdir.join("out.log")
+
+    # Define the arguments tuple and the WorkerTask
+    write_to_stderr = ("python", "-c",
+                       # Python commands start here; needs double-escaping!
+                       'import sys;'
+                       'print("start");'
+                       'sys.stderr.write("err1\\nerr2\\n");'
+                       'sys.stderr.flush();'
+                       'print("end")')
+    # This should create four lines, though not necessarily in that order
+
+    t = WorkerTask(name="stderr_test", 
+                   worker_kwargs=dict(args=write_to_stderr,
+                                      read_stdout=True,
+                                      stdout_parser="yaml_dict",
+                                      save_streams=True,
+                                      save_streams_to=str(save_path)))
+
+
+    # Now spawn the worker and wait until done
+    t.spawn_worker()
+
+    while t.worker.poll() is None:
+        sleep(0.05)
+
+    # Add additional sleep to avoid any form of race condition
+    sleep(0.2)
+
+    # Read the stream's content until empty
+    t.read_streams(max_num_reads=-1)
+    out_log = t.streams['out']['log']
+    print(out_log)
+
+    # Check that the content is as expected
+    assert len(out_log) == 4
+    assert "err1" in out_log
+    assert "err2" in out_log
+    assert "start" in out_log
+    assert "end" in out_log
 
 # TaskList tests --------------------------------------------------------------
 
@@ -192,40 +236,43 @@ def test_enqueue_lines():
     # Test a working example
     enqueue_lines(queue=q,
                   stream=io.BytesIO(bytes("hello", 'utf-8')))
-    assert q.get_nowait() == "hello"
+    assert q.get_nowait() == ("hello", None)
 
     # Test passing a custom parse function
     enqueue_lines(queue=q,
                   stream=io.BytesIO(bytes("hello yourself", 'utf-8')),
                   parse_func=lambda s: s + "!")
-    assert q.get_nowait() == "hello yourself!"
+    assert q.get_nowait() == ("hello yourself", "hello yourself!")
 
     # should not fail with bad encoding either, just remain bytestring
     enqueue_lines(queue=q,
                   stream=io.BytesIO(bytes("hellö", 'latin-1')))
-    assert q.get_nowait() == bytes("hellö", 'latin-1')
+    assert q.get_nowait() == (bytes("hellö", 'latin-1'), None)
 
     # integer parsable should remain strings
     enqueue_lines(queue=q,
                   stream=io.BytesIO(bytes("1", 'latin-1')))
-    assert q.get_nowait() == "1"
+    assert q.get_nowait() == ("1", None)
 
 def test_enqueue_json():
     """Test the enqueue json method"""
     # Create a queue to add to and check the output in
     q = queue.Queue()
 
+    enqueue_json = partial(enqueue_lines, parse_func=parse_yaml_dict)
+
     # Working example
     enqueue_json(queue=q,
-                 stream=io.BytesIO(bytes("{\"foo\": 123}", 'utf-8')))
-    assert q.get_nowait() == dict(foo=123)
+                 stream=io.BytesIO(bytes("!!map {\"foo\": 123}", 'utf-8')))
+    assert q.get_nowait()[1] == dict(foo=123)
     
-    # Something integer-parsable (but not json) should remain string
+    # Something not matching the start string should yield no parsed object
     enqueue_json(queue=q,
                  stream=io.BytesIO(bytes("1", 'utf-8')))
-    assert q.get_nowait() == "1"
+    assert q.get_nowait()[1] == None
 
-    # Invalid json should be returned as string
+    # Invalid syntax should also return None instead of a parsed object
     enqueue_json(queue=q,
-                 stream=io.BytesIO(bytes("{\"foo\": 123, invalid}", 'utf-8')))
-    assert q.get_nowait() == "{\"foo\": 123, invalid}"
+                 stream=io.BytesIO(bytes("!!map {\"foo\": 123, !!invalid}",
+                                         'utf-8')))
+    assert q.get_nowait()[1] == None
