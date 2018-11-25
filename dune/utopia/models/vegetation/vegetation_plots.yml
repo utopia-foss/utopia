@@ -41,6 +41,5 @@ plant_mass_spatial:
 
   # For the 'frames' writer, the following additional kwargs can be passed
   frames_kwargs: 
-    name_padding: 5
     file_format: png
 
