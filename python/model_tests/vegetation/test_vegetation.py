@@ -21,23 +21,21 @@ def test_basics():
     # Assert that data was loaded, i.e. that data was written
     assert len(mv.dm)
 
-# TODO Adapt this to the data you are putting out
 def test_output(): 
     """Test that the output structure is correct"""
     # Create a Multiverse and let it run
     mv, dm = mtc.create_run_load(from_cfg="output.yml", perform_sweep=True)
-    # NOTE this is a shortcut. It creates the mv, lets it run, then loads data
 
     # Get the meta-config from the DataManager
     mcfg = dm['cfg']['meta']
     print("meta config: ", mcfg)
 
     # Assert that the number of runs matches the specified ones
-    assert len(dm['uni']) == mcfg['parameter_space'].volume
+    assert len(dm['multiverse']) == mcfg['parameter_space'].volume
 
     # For each universe, iterate over the output data and assert the shape
     # and the content of the output data
-    for uni_no, uni in dm['uni'].items():
+    for uni_no, uni in dm['multiverse'].items():
         # Get the data
         data = uni['data']['vegetation']
 
