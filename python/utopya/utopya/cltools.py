@@ -1,6 +1,7 @@
 """Methods needed to implement the utopia command line interface"""
 
 import os
+import re
 import logging
 from pkg_resources import resource_filename
 
@@ -14,6 +15,76 @@ USER_CFG_HEADER_PATH = resource_filename('utopya', 'cfg/user_cfg_header.yml')
 BASE_CFG_PATH = resource_filename('utopya', 'cfg/base_cfg.yml')
 
 # -----------------------------------------------------------------------------
+
+def add_from_kv_pairs(*pairs, add_to: dict, attempt_conversion: bool=True, allow_eval: bool=False):
+    """Parses the key=value pairs and adds them to the given dict.
+    
+    Args:
+        *pairs: Sequence of key=value strings
+        base_dict (dict): The dict to add the keys to
+        attempt_conversion (bool, optional): Whether to attempt converting the
+            strings to bool, float, int types. This also tries calling eval on
+            the string!
+    """
+    def conversions(val):
+        # Boolean
+        if val.lower() in ["true", "false"]:
+            return bool(val.lower() == "true")
+
+        # Floating point number (requiring '.' being present)
+        if re.match(r'^[-+]?[0-9]*\.[0-9]*([eE][-+]?[0-9]+)?$', val):
+            try:
+                return float(val)
+            except:
+                pass
+
+        # Integer
+        if re.match(r'^[-+]?[0-9]+$', val):
+            try:
+                return int(val)
+            except:
+                pass
+
+        # Last resort, if activated: eval
+        if allow_eval:
+            try:
+                return eval(val)
+            except:
+                pass
+
+        # Just return the string
+        return val
+
+
+    # Go over all pairs and add them to the given base dict
+    for kv in pairs:
+        # Split key and value
+        key, val = kv.split("=")
+
+        # Process the key
+        key_sequence = key.split(".")
+        traverse_keys, last_key = key_sequence[:-1], key_sequence[-1]
+
+        # Set temporary variable to root dict
+        d = add_to
+
+        # Traverse through the key sequence, if available
+        for _key in traverse_keys:
+            # Check if a new entry is needed
+            if _key not in d:
+                d[_key] = dict()
+
+            # Select the new entry
+            d = d[_key]
+
+        # Attempt conversion
+        if attempt_conversion:
+            val = conversions(val)
+
+        # Write the value
+        d[last_key] = val
+
+    # No need to return the base dict as it is a mutable!
 
 def deploy_user_cfg(user_cfg_path: str=Multiverse.USER_CFG_SEARCH_PATH) -> None:
     """Deploys a copy of the full config to the specified location (usually

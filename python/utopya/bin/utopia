@@ -36,7 +36,7 @@ p_run.add_argument('-p', '--sweep',
                    help="If given, forces a parameter sweep. Is ignored, if "
                         "the --single flag was also given.")
 
-# updating meta configuration
+# updating specific meta configuration entries
 p_run.add_argument('--note',
                    default=None, nargs='?',
                    help="Overwrites the `paths->model_note` entry which is "
@@ -52,6 +52,7 @@ p_run.add_argument('--debug',
                         "here.")
 p_run.add_argument('--sim-errors',
                    default=None, nargs='?',
+                   choices=['ignore', 'warn', 'warn_all', 'raise'],
                    help="Controls the value of the WorkerManager's "
                         "`nonzero_exit_handling` flag which defines how "
                         "errors in simulations are handled. Allowed values "
@@ -68,6 +69,21 @@ p_run.add_argument('--num-seeds',
                    default=None, nargs='?', type=int,
                    help="Creates a parameter dimension for the seeds with the "
                         "given number of seed values.")
+
+# arguments for generically updating meta configuration keys
+p_run.add_argument('--set-params',
+                   default=None, nargs='+', type=str,
+                   help="Sets key-value pairs in the `parameter_space` entry "
+                        "of the meta configuration. Example: foo.bar=42 sets "
+                        "the 'bar' entry in the 'foo' dict to 42. "
+                        "Note that multiple parameter can be set at once by "
+                        "separating them with a space; if a space needs to be "
+                        "in the argument value, put the strings into '...' or "
+                        "\"...\".")
+p_run.add_argument('--set-cfg',
+                   default=None, nargs='+', type=str,
+                   help="Like --set-params but attaching to the root level of "
+                        "the meta configuration.")
 
 # plotting after the run
 p_run.add_argument('--no-plot',
@@ -136,9 +152,13 @@ args = parser.parse_args()
 
 # -----------------------------------------------------------------------------
 # If continuing further, need some imports
+import logging
+log = logging.getLogger(__name__)
+
 from paramspace import ParamDim
 
 import utopya
+import utopya.tools
 import utopya.cltools
 
 
@@ -224,7 +244,28 @@ if __name__ == '__main__':
         seed_pdim = ParamDim(default=42, range=[args.num_seeds])
         update_dict['parameter_space']['seed'] = seed_pdim
 
-    # Preparations finished now
+    # Set general configuration entries
+    if args.mode == 'run' and args.set_params:
+        # Check if key already exists in order to not overwrite anything
+        if 'parameter_space' not in update_dict:
+            update_dict['parameter_space'] = {}
+
+        # For each key-value pair, already split up by argparse, add an entry
+        utopya.cltools.add_from_kv_pairs(*args.set_params,
+                                         add_to=update_dict['parameter_space'])
+        # NOTE Is mutable, thus does not require return value
+    
+    if args.mode == 'run' and args.set_cfg:
+        # For each key-value pair, already split up by argparse, add an entry
+        utopya.cltools.add_from_kv_pairs(*args.set_params, add_to=update_dict)
+
+
+    # Finished with generating the update dict; give some info on it
+    if update_dict:
+        log.info("Update to meta config from command line arguments:\n\n%s",
+                 utopya.tools.pprint(update_dict))
+
+    # Preparations finished now . . . . . . . . . . . . . . . . . . . . . . . .
     
     
     # Create Multiverse and perform the run
