@@ -26,12 +26,11 @@ geomorphology:
       title: Water Content
 
   # Video options
-  writer: ffmpeg  # can be: frames, ffmpeg (if installed), ...
+  writer: frames  # can be: frames, ffmpeg (if installed), ...
   fps: 2
   step_size: 1
   dpi: 96
 
   # For the 'frames' writer, the following additional kwargs can be passed
   frames_kwargs: 
-    name_padding: 5
     file_format: png
