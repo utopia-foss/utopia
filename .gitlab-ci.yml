@@ -237,6 +237,7 @@ test:models:
     - utopia run CopyMe --debug
     - utopia run CopyMeBare --debug --no-plot
     - utopia run HdfBench --sweep --num-seeds 3 --debug
+    - utopia run geomorphology --debug
     #
     # Now the actual models:
     - utopia run ContDisease
