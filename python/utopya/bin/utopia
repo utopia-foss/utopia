@@ -175,6 +175,8 @@ if __name__ == '__main__':
     # NOTE the subcommands only differ in which Multiverse class is created and
     #      whether a run is performed or not
 
+    log.info("Parsing additional command line arguments ...")
+
     # Prepare Multiverse
     # Set an empty update dict. It will hold adjustments to the given configs
     update_dict = {}
@@ -262,13 +264,13 @@ if __name__ == '__main__':
 
     # Finished with generating the update dict; give some info on it
     if update_dict:
-        log.info("Update to meta config from command line arguments:\n\n%s",
+        log.info("Updates to meta configuration:\n\n%s",
                  utopya.tools.pprint(update_dict))
 
-    # Preparations finished now . . . . . . . . . . . . . . . . . . . . . . . .
+    # Preparations finished now.
     
     
-    # Create Multiverse and perform the run
+    # Create Multiverse and perform the run  . . . . . . . . . . . . . . . . . 
     if args.mode in ['run']:
         # Instantiate a Multiverse object
         mv = utopya.Multiverse(model_name=args.model_name,
@@ -294,7 +296,10 @@ if __name__ == '__main__':
 
         # Only need to continue if plots are to be created
         if args.no_plot:
+            log.debug("Received --no-plot. Exiting now.")
             sys.exit()
+
+        log.info("Simulation run finished.\n")
 
 
     elif args.mode in ['eval']:
@@ -307,13 +312,25 @@ if __name__ == '__main__':
 
     # else: should not occur!
 
-    # Loading and plotting
+    # Loading  . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+    log.info("Loading data...")
+
     # Tell the DataManager to load
     mv.dm.load_from_cfg(print_tree=True)
     # NOTE This will load the data using the utopya default configuration
+
+    log.info("Loading data finished.\n")
+
+
+    # Plotting . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+    log.info("Plotting...")
 
     # Tell the PlotManager to plot
     mv.pm.plot_from_cfg(plots_cfg=args.plots_cfg, plot_only=args.plot_only)
     # NOTE If plots_cfg was not given, this uses the plot configuration that
     #      belongs to the model. If it is given, the configuration is loaded
     #      from the given file path.
+    
+    log.info("Plotting finished.\n")
+
+    log.info("All done.\n")
