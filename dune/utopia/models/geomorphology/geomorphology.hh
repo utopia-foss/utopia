@@ -166,29 +166,36 @@ public:
 
         // Sediment flow
         for (auto& cell : cells) {
+            //std::cout << cell->position()[0] << ' ' << cell->position()[1] << std::endl;
 
-            // Compute height difference to lowest neighbor
-            auto lowest_neighbor = _lowest_neighbors[cell->id()];
-            double delta_height = cell->state().height - lowest_neighbor->state().height;
-            if (delta_height > 0 && cell->state().watercontent > 0) {
+            double sediment_flow = _params.erodibility*std::sqrt(cell->state().watercontent);
+
+            // Constant outflow for cells on the lower boundary
+            if (is_on_lower_boundary(cell)) {
+                cell->state_new().height -= sediment_flow;
+            } 
+            else {
+                // Compute height difference to lowest neighbor
+                auto lowest_neighbor = _lowest_neighbors[cell->id()];
+                double delta_height = cell->state().height - lowest_neighbor->state().height;
+                if (delta_height < 0 || cell->state().watercontent < 0) continue;
 
                 // Compute sediment flow and substract from cell height
-                double sediment_flow = delta_height*_params.erodibility*std::sqrt(cell->state().watercontent);
-                cell->state_new().height -= sediment_flow;
+                cell->state_new().height -= sediment_flow * delta_height;
                    
-                // Check if new height is nan or inf, in that case set to zero
-                if (std::isnan(cell->state_new().height) || std::isinf(cell->state_new().height)) {
-                    this->_log->debug("Cell ID {}, delta_height {}, water {}, new height {}",
-                                  cell->id(), delta_height, cell->state().watercontent, cell->state_new().height);
-                    cell->state_new().height = 0;
-                }
+            // Check if new height is nan or inf, in that case set to zero
+            if (std::isnan(cell->state_new().height) || std::isinf(cell->state_new().height)) {
+                this->_log->debug("Cell ID {}, delta_height {}, water {}, new height {}",
+                              cell->id(), delta_height, cell->state().watercontent, cell->state_new().height);
+                cell->state_new().height = 0;
+            }
 
-                // Check if new height is negative, in that case set to zero
-                if (cell->state_new().height < 0)
-                    cell->state_new().height = 0;
+            // Check if new height is negative, in that case set to zero
+            if (cell->state_new().height < 0)
+                cell->state_new().height = 0;
 
-                // Would be reasonable but gives not so nice results: Add sediment flow to lowest neighbor...
-                //if (cell->id() >= 20) // Let sediments flow out of lower boundary, really badly hard-coded.
+            // Would be reasonable but gives not so nice results: Add sediment flow to lowest neighbor...
+            //if (cell->id() >= 20) // Let sediments flow out of lower boundary, really badly hard-coded.
                 //    _lowest_neighbors[cell->id()]->state_new().height += sediment_flow;
             }
         }
@@ -238,6 +245,14 @@ public:
     void monitor () { }
 
 private:
+
+    /// Check if the cell is on the "lower" boundary 
+    /** The lower boundary is the boundary, where the cell heights are minimal
+     * (at least in the initial configuration) 
+     */
+    bool is_on_lower_boundary(std::shared_ptr<CellType> cell) {
+        return cell->position()[1] < 1;
+    }
 
     /// Update the map of lowest neighbors
     void update_lowest_neighbors() {
