@@ -31,22 +31,22 @@ which the resource level of the respective individual is stored. The
 interaction is calculated for each time step and consists of four 
 consecutively applied rules:
 
-1. Cost: Resources of each individual are reduced by the cost of living. 
+1. _Cost_: Resources of each individual are reduced by the cost of living. 
 Individuals with negative or zero resources are removed.
-2. Movement: Predators move to a cell populated by prey in their 
+2. _Movement_: Predators move to a cell populated by prey in their 
 neighborhood or to an empty cell if there is no prey. Prey that are on a 
 cell together with a predator flee to an empty cell in their neighborhood 
 with a certain probability. If there are several cells in the neigborhood 
 that meet the above condition, one is chosen at random.
-3. Eat: Prey take up resources and predators eat prey if they are on the 
+3. _Eat_: Prey take up resources and predators eat prey if they are on the 
 same cell.
-4. Reproduction: If an individual's resources exceed a certain value and if 
+4. _Reproduction_: If an individual's resources exceed a certain value and if 
 there is a cell in its neighborhood that is not already populated by an 
 individual of the same species, it reproduces and an individual of the same 
 species is set on the empty cell. 2 resource units are transferred to the 
 descendant.
 
-All cells are updated asxnchronously. The order for 
+All cells are updated asynchronously. The order for 
 the cell update is random for rules 2 and 4. 
 
 ## Initialization
