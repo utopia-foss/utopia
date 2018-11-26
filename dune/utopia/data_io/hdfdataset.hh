@@ -183,7 +183,8 @@ private:
             // typefactory creates vlen data or string data
             if constexpr (is_container_v<base_type> and is_array_like_v<base_type>)
             {
-                typesize = std::tuple_size<base_type>::value;
+                // typesize = std::tuple_size<base_type>::value;
+                typesize = get_size<base_type>::value;
             }
 
             if (_dataset == -1)

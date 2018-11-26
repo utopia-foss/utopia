@@ -15,32 +15,26 @@
 #include <type_traits>
 #include <vector>
 
-namespace std
-{
-// dirty trick: overload tuple_size for dune fieldvector
+// namespace std {
+// // dirty trick: overload tuple_size for dune fieldvector
 
-template <typename T, std::size_t N>
-class tuple_size<Dune::FieldVector<T, N>> : public integral_constant<size_t, N>
-{
-};
-} // namespace std
+// template <typename T, std::size_t N>
+// class tuple_size<Dune::FieldVector<T, N>>
+//     : public integral_constant<size_t, N> {};
+// } // namespace std
 
 // Functions for determining if a type is an STL-container are provided here.
 // This is used if we wish to make hdf5 types for storing such data in an
 // hdf5 dataset.
-namespace Utopia
-{
-namespace DataIO
-{
+namespace Utopia {
+namespace DataIO {
 /**
  * @brief Helper function for removing pointer qualifiers from a type recursivly
  *        - recursion base case which provides a type equal to T
  * @tparam T
  * @tparam 0
  */
-template <typename T, typename U = std::void_t<>>
-struct remove_pointer
-{
+template <typename T, typename U = std::void_t<>> struct remove_pointer {
     using type = T;
 };
 
@@ -52,8 +46,8 @@ struct remove_pointer
  * @tparam 0
  */
 template <typename T>
-struct remove_pointer<T, std::enable_if_t<std::is_pointer_v<T>, std::void_t<>>>
-{
+struct remove_pointer<T,
+                      std::enable_if_t<std::is_pointer_v<T>, std::void_t<>>> {
     using type = typename remove_pointer<std::remove_pointer_t<T>>::type;
 };
 
@@ -62,17 +56,16 @@ struct remove_pointer<T, std::enable_if_t<std::is_pointer_v<T>, std::void_t<>>>
  *
  * @tparam T
  */
-template <typename T>
-using remove_pointer_t = typename remove_pointer<T>::type;
+template <typename T> using remove_pointer_t = typename remove_pointer<T>::type;
 
 /**
- * @brief Oveload of 'remove_pointer' metafunction for array types (stack allocated)
+ * @brief Oveload of 'remove_pointer' metafunction for array types (stack
+ * allocated)
  *
  * @tparam T
  */
 template <typename T>
-struct remove_pointer<T, std::enable_if_t<std::is_array_v<T>, std::void_t<>>>
-{
+struct remove_pointer<T, std::enable_if_t<std::is_array_v<T>, std::void_t<>>> {
     using type = typename remove_pointer<std::remove_all_extents_t<T>>::type;
 };
 
@@ -84,9 +77,7 @@ struct remove_pointer<T, std::enable_if_t<std::is_array_v<T>, std::void_t<>>>
  *
  * @tparam T
  */
-template <typename T>
-struct remove_qualifier
-{
+template <typename T> struct remove_qualifier {
     using type = std::remove_cv_t<remove_pointer_t<std::remove_reference_t<T>>>;
 };
 
@@ -104,20 +95,14 @@ using remove_qualifier_t = typename remove_qualifier<T>::type;
  *
  * @tparam T
  */
-template <typename T>
-struct is_string_helper : public std::false_type
-{
-};
+template <typename T> struct is_string_helper : public std::false_type {};
 
 /**
  * @brief Specialization of 'is_string_helper' for std::string
  *
  * @tparam
  */
-template <>
-struct is_string_helper<std::string> : public std::true_type
-{
-};
+template <> struct is_string_helper<std::string> : public std::true_type {};
 
 /**
  * @brief Metafunction for determining if a type is a string-like type, i.e.
@@ -125,9 +110,7 @@ struct is_string_helper<std::string> : public std::true_type
  * @tparam T
  */
 template <typename T>
-struct is_string : public is_string_helper<remove_qualifier_t<T>>
-{
-};
+struct is_string : public is_string_helper<remove_qualifier_t<T>> {};
 
 /**
  * @brief Overload of is_string for pure const char*, which would loose its
@@ -135,9 +118,9 @@ struct is_string : public is_string_helper<remove_qualifier_t<T>>
  * @tparam
  */
 template <>
-struct is_string<const char*> : public std::true_type // is_string_helper<const char*>
-{
-};
+struct is_string<const char*>
+    : public std::true_type // is_string_helper<const char*>
+{};
 
 /**
  * @brief Overload of is_string for pure const char*, which would loose its
@@ -145,17 +128,16 @@ struct is_string<const char*> : public std::true_type // is_string_helper<const 
  * @tparam
  */
 template <>
-struct is_string<char*> : public std::true_type // public is_string_helper<char*>
-{
-};
+struct is_string<char*>
+    : public std::true_type // public is_string_helper<char*>
+{};
 
 /**
  * @brief Shorthand for 'is_string<T>::value'
  *
 
  */
-template <typename T>
-constexpr inline bool is_string_v = is_string<T>::value;
+template <typename T> constexpr inline bool is_string_v = is_string<T>::value;
 
 /**
  * @brief Metafunction for checking if a type is a containertype, which does
@@ -165,9 +147,7 @@ constexpr inline bool is_string_v = is_string<T>::value;
  * @tparam std::void_t<>
  */
 template <class T, class U = std::void_t<>>
-struct is_container : public std::false_type
-{
-};
+struct is_container : public std::false_type {};
 
 /**
  * @brief Metafunction for checking if a type is a containertype, which does
@@ -176,10 +156,9 @@ struct is_container : public std::false_type
  * @tparam T
  */
 template <typename T>
-struct is_container<T, std::void_t<typename remove_qualifier_t<T>::iterator, std::enable_if_t<!is_string_v<T>, int>>>
-    : public std::true_type
-{
-};
+struct is_container<T, std::void_t<typename remove_qualifier_t<T>::iterator,
+                                   std::enable_if_t<!is_string_v<T>, int>>>
+    : public std::true_type {};
 
 /**
  * @brief Shorthand for 'is_container::value
@@ -196,9 +175,7 @@ inline constexpr bool is_container_v = is_container<T>::value;
  * @tparam std::void_t<>
  */
 template <typename T, typename U = std::void_t<>>
-struct is_array_like : std::false_type
-{
-};
+struct is_array_like : std::false_type {};
 
 /**
  * @brief Metafunction for checking if a container is a std::array
@@ -208,13 +185,24 @@ struct is_array_like : std::false_type
  * @tparam T
  */
 template <typename T>
-struct is_array_like<T, std::void_t<decltype(std::tuple_size<T>::value)>> : std::true_type
-{
+struct is_array_like<T, std::void_t<decltype(std::tuple_size<T>::value)>>
+    : std::true_type {};
+
+
+/**
+ * @brief Overload of is_arrayvlike for dune fieldvector
+ * 
+ * @tparam T 
+ * @tparam N 
+ */
+template <typename T, std::size_t N>
+struct is_array_like<Dune::FieldVector<T, N>, std::void_t<T>> : std::true_type {
 };
 
 // FIXME Using tuple_size here is not optimal, but it gives a unique
 //       representation of the tuple
-// See: https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/merge_requests/109/diffs#note_11774
+// See:
+// https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/merge_requests/109/diffs#note_11774
 
 /**
  * @brief Shorthand for is_array_like
@@ -224,6 +212,43 @@ struct is_array_like<T, std::void_t<decltype(std::tuple_size<T>::value)>> : std:
 template <typename T>
 inline constexpr bool is_array_like_v = is_array_like<T>::value;
 
+
+
+/**
+ * @brief Functor which generalizes the acquisition of compile time sizes
+ * 
+ * @tparam T 
+ * @tparam 0 
+ */
+template<typename T, typename U = std::void_t<>> 
+struct get_size{
+    inline static constexpr std::size_t value = std::tuple_size<T>::value;
+};
+
+/**
+ * @brief Functor which generalizes the acquisition of compile time sizes
+ *
+ * @tparam T
+ * @tparam 0
+ */
+template <typename T> 
+struct get_size<T,  std::void_t<is_array_like<T>>> {
+    inline static constexpr std::size_t value = std::tuple_size<T>::value;
+};
+
+/**
+ * @brief Overload for dune fieldvector
+ * 
+ * @tparam T 
+ * @tparam N 
+ */
+template <typename T, std::size_t N>
+struct get_size<Dune::FieldVector<T, N>, std::void_t<T>> {
+    inline static constexpr std::size_t value = N;
+};
+
+
+
 /**
  * @brief Output operator for std::arrays
  *
@@ -234,11 +259,9 @@ inline constexpr bool is_array_like_v = is_array_like<T>::value;
  * @return std::ostream&
  */
 template <class T, std::size_t N>
-inline std::ostream& operator<<(std::ostream& os, const std::array<T, N>& v)
-{
+inline std::ostream& operator<<(std::ostream& os, const std::array<T, N>& v) {
     os << "[";
-    for (auto ii = v.begin(); ii != v.end(); ++ii)
-    {
+    for (auto ii = v.begin(); ii != v.end(); ++ii) {
         os << " " << *ii;
     }
     os << " ]";
@@ -255,11 +278,9 @@ inline std::ostream& operator<<(std::ostream& os, const std::array<T, N>& v)
  * @return std::ostream&
  */
 template <class T, std::size_t N>
-inline std::ostream& operator<<(std::ostream& os, std::array<T, N>&& v)
-{
+inline std::ostream& operator<<(std::ostream& os, std::array<T, N>&& v) {
     os << "[";
-    for (auto ii = v.begin(); ii != v.end(); ++ii)
-    {
+    for (auto ii = v.begin(); ii != v.end(); ++ii) {
         os << " " << *ii;
     }
     os << " ]";
@@ -274,12 +295,12 @@ inline std::ostream& operator<<(std::ostream& os, std::array<T, N>&& v)
  * @param v container to put out
  * @return std::ostream& outstream used
  */
-template <template <typename...> class Container, class T, std::enable_if_t<!is_string_v<Container<T>>, int> = 0>
-inline std::ostream& operator<<(std::ostream& os, const Container<T>& v)
-{
+template <template <typename...> class Container, class T,
+          std::enable_if_t<!is_string_v<Container<T>>, int> = 0>
+inline std::ostream& operator<<(std::ostream& os, const Container<T>& v) {
     os << "[";
-    for (typename Container<T>::const_iterator ii = v.begin(); ii != v.end(); ++ii)
-    {
+    for (typename Container<T>::const_iterator ii = v.begin(); ii != v.end();
+         ++ii) {
         os << " " << *ii;
     }
     os << " ]";
@@ -294,12 +315,11 @@ inline std::ostream& operator<<(std::ostream& os, const Container<T>& v)
  * @param v container to put out
  * @return std::ostream& outstream used
  */
-template <template <typename...> class Container, class T, std::enable_if_t<!is_string_v<Container<T>>, int> = 0>
-inline std::ostream& operator<<(std::ostream& os, Container<T>&& v)
-{
+template <template <typename...> class Container, class T,
+          std::enable_if_t<!is_string_v<Container<T>>, int> = 0>
+inline std::ostream& operator<<(std::ostream& os, Container<T>&& v) {
     os << "[";
-    for (auto ii = v.begin(); ii != v.end(); ++ii)
-    {
+    for (auto ii = v.begin(); ii != v.end(); ++ii) {
         os << " " << *ii;
     }
     os << " ]";
