@@ -9,7 +9,6 @@
 
 #include <functional>
 
-
 namespace Utopia {
 namespace Models {
 namespace SimpleEG {
@@ -517,5 +516,4 @@ private:
 } // namespace SimpleEG
 } // namespace Models
 } // namespace Utopia
-
 #endif // UTOPIA_MODELS_SIMPLEEG_HH

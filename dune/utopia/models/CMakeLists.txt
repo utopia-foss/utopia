@@ -20,6 +20,7 @@ add_subdirectory(Hierarnet)
 add_subdirectory(SavannaHeterogeneous)
 add_subdirectory(SavannaHomogeneous)
 add_subdirectory(SimpleEG)
+add_subdirectory(PredatorPrey)
 # ...
 # NOTE add your subdirectory above (alphabetically sorted)
 

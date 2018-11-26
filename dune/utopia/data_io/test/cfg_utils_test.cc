@@ -34,6 +34,7 @@ int main(int argc, char** argv)
         // Double, bool, int
         assert(as_double(cfg["a_double"]) == 3.14159);
         assert(as_bool(cfg["a_bool"]));
+        assert(as_int(cfg["an_int"]) == 42);
         assert(as_<int>(cfg["an_int"]) == 42);
 
         // vector
