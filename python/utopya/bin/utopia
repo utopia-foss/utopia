@@ -92,10 +92,8 @@ p_run.add_argument('--set-cfg',
 # plotting after the run
 p_run.add_argument('--no-plot',
                    action='store_true',
-                   help="If set, no plots will be created. Note that plotting "
-                        "capabilities via the Multiverse or the CLI are not "
-                        "yet implemented, thus you will have to do the plots "
-                        "manually if you pass this option.") # TODO implement
+                   help="If set, no plots will be created. To perform plots "
+                        "a later point, use the `utopia eval` subcommand.")
 p_run.add_argument('--plots-cfg',
                    default=None, nargs='?',
                    help="If given, uses the plots configuration file found "
@@ -145,12 +143,12 @@ p_cfg.add_argument('--deploy',
 # TODO add --get and --set to easily manipulate entries
 
 
-# subcommand: TODO ............................................................
-# ...
+# subcommand: ...  ............................................................
+# ... can add more sub commands here ...
 
 
 
-# CLI defined now. Parse the arguments...
+# CLI defined now. Parse the given arguments...
 args = parser.parse_args()
 
 
