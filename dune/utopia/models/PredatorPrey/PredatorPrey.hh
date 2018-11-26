@@ -644,8 +644,28 @@ public:
 
     /// Monitor model information
     void monitor ()
-    {
+    {   
+        /// Calculate the densities for both species
+        auto [pred_density, prey_density] = [this](){
+                double pred_sum = 0.;
+                double prey_sum = 0.;
+                double num_cells = this->_manager.cells().size();
+                for (const auto& cell : this->_manager.cells()) {
+                    auto state = cell->state();
+                    if (state.population == prey)
+                        prey_sum++;
+                    else if (state.population == predator)
+                        pred_sum++;
+                    else if (state.population == pred_prey) {
+                        prey_sum++;
+                        pred_sum++;
+                    }
+                }
+                return std::pair{pred_sum / num_cells, prey_sum / num_cells};
+    }();
 
+        this->_monitor.set_entry("predator_density", pred_density);
+        this->_monitor.set_entry("prey_density", prey_density);
     }
 
     /// Write data

@@ -16,7 +16,7 @@
 # sure that no circular includes occur.
 ---
 # Grid parameters
-grid_size: [500, 500]
+grid_size: [128, 128]
 periodic: true          # false: cells at boundary have fewer neighbors
 
 # Initial state parameters, each cell is populated randomly, in mode random a 
