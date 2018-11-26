@@ -17,11 +17,25 @@ BASE_CFG_PATH = resource_filename('utopya', 'cfg/base_cfg.yml')
 
 # -----------------------------------------------------------------------------
 
-def add_entry(value, *, add_to: dict, key_path: list, is_valid: Callable=None, ErrorMsg: Callable=None):
+def add_entry(value, *, add_to: dict, key_path: list, value_func: Callable=None, is_valid: Callable=None, ErrorMsg: Callable=None):
     """Adds the given value to the `add_to` dict at the given key path.
-
+    
     If `value` is a callable, that function is called and the return value is
     what is stored in the dict.
+    
+    Args:
+        value: The value of what is to be stored
+        add_to (dict): The dict to add the entry to
+        key_path (list): The path at which to add it
+        value_func (Callable, optional): If given, calls it with `value` as
+            argument and uses the return value to add to the dict
+        is_valid (Callable, optional): Used to determine whether `value` is
+            valid or not; should take single positional argument, return bool
+        ErrorMsg (Callable, optional): A raisable object that prints an error
+            message; gets passed `value` as positional argument.
+    
+    Raises:
+        ErrorMsg: Description
     """
     log.debug("Adding CLI entry '%s' at %s ...")
 
@@ -49,8 +63,8 @@ def add_entry(value, *, add_to: dict, key_path: list, is_valid: Callable=None, E
 
     # Now d is where the value should be added
     # If applicable
-    if callable(value):
-        value = value()
+    if value_func is not None:
+        value = value_func(value)
         log.debug("Resolved value from callable:  %s", value)
     
     # Store in dict, mutable

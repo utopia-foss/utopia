@@ -227,12 +227,13 @@ if __name__ == '__main__':
 
         # Set seeds to a parameter dimension object
         if args.num_seeds is not None:
-            add_entry(lambda: ParamDim(default=42, range=[args.num_seeds]),
+            add_entry(args.num_seeds,
+                      value_func=lambda v: ParamDim(default=42, range=[v]),
                       add_to=update_dict,
                       key_path=['parameter_space', 'seed'],
-                      is_valid= lambda v: args.num_seeds > 1,
+                      is_valid= lambda v: bool(v > 1),
                       ErrorMsg= lambda v: ValueError("Argument --num-seeds "
-                                                     "needs to be >= 1, "
+                                                     "needs to be > 1, "
                                                      "was {}.".format(v)))
 
         # Set general configuration entries
