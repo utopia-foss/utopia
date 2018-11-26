@@ -158,15 +158,15 @@ log = logging.getLogger(__name__)
 from paramspace import ParamDim
 
 import utopya
-import utopya.tools
-import utopya.cltools
+from utopya.tools import pprint
+from utopya.cltools import deploy_user_cfg, add_entry, add_from_kv_pairs
 
 
 if __name__ == '__main__':
     # Config subcommand .......................................................
     if args.mode == 'config':
         if args.deploy:
-            utopya.cltools.deploy_user_cfg()
+            deploy_user_cfg()
 
         # End here.
         sys.exit()
@@ -184,6 +184,12 @@ if __name__ == '__main__':
     # If a model_note was given, add it to the paths
     if args.mode == 'run' and args.note:
         update_dict['paths'] = dict(model_note=args.note)
+        add_entry(args.note, key_path=['paths', 'model_note'],
+                  add_to=update_dict,
+                  is_valid=lambda v: bool(len(v) >= 1),
+                  ErrorMsg=lambda v: ValueError("--note argument needs to be "
+                                                "a string of length >= 1, was "
+                                                "'{}'!".format(v)))
 
     # In debug mode, set a number of configuration keys
     if args.debug:
@@ -253,19 +259,18 @@ if __name__ == '__main__':
             update_dict['parameter_space'] = {}
 
         # For each key-value pair, already split up by argparse, add an entry
-        utopya.cltools.add_from_kv_pairs(*args.set_params,
-                                         add_to=update_dict['parameter_space'])
+        add_from_kv_pairs(*args.set_params,
+                          add_to=update_dict['parameter_space'])
         # NOTE Is mutable, thus does not require return value
     
     if args.mode == 'run' and args.set_cfg:
         # For each key-value pair, already split up by argparse, add an entry
-        utopya.cltools.add_from_kv_pairs(*args.set_params, add_to=update_dict)
+        add_from_kv_pairs(*args.set_params, add_to=update_dict)
 
 
     # Finished with generating the update dict; give some info on it
     if update_dict:
-        log.info("Updates to meta configuration:\n\n%s",
-                 utopya.tools.pprint(update_dict))
+        log.info("Updates to meta configuration:\n\n%s", pprint(update_dict))
 
     # Preparations finished now.
     
