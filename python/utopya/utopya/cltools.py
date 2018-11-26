@@ -99,7 +99,7 @@ def add_from_kv_pairs(*pairs, add_to: dict, attempt_conversion: bool=True, allow
         if re.match(r'^[-+]?[0-9]+$', val):
             try:
                 return int(val)
-            except:
+            except: # very unlike to be reached; regex is quite restrictive
                 pass
 
         # Last resort, if activated: eval
