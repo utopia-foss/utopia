@@ -89,6 +89,13 @@ p_run.add_argument('--set-cfg',
                         "after --set-params, such that it can overwrite any "
                         "of the previously defined arguments.")
 
+# arguments referring to loading of data
+p_run.add_argument('--suppress-data-tree',
+                   action='store_true',
+                   help="If set, loading of data will not print out the data "
+                        "tree.")
+
+
 # plotting after the run
 p_run.add_argument('--no-plot',
                    action='store_true',
@@ -115,6 +122,14 @@ p_eval.add_argument('run_dir_path',
                          "timestamp (including model note, if present) of the "
                          "directory. If not given, the directory with the "
                          "most recent timestamp is used.")
+
+# arguments referring to loading of data
+p_eval.add_argument('--suppress-data-tree',
+                    action='store_true',
+                    help="If set, loading of data will not print out the data "
+                         "tree.")
+
+# arguments regarding plotting
 p_eval.add_argument('--plots-cfg',
                     default=None, nargs='?',
                     help="If given, uses the plots configuration file found "
@@ -308,7 +323,7 @@ if __name__ == '__main__':
     log.info("Loading data...")
 
     # Tell the DataManager to load
-    mv.dm.load_from_cfg(print_tree=True)
+    mv.dm.load_from_cfg(print_tree=bool(not args.suppress_data_tree))
     # NOTE This will load the data using the utopya default configuration
 
     log.info("Loading data finished.\n")
