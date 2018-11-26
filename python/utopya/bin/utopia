@@ -256,6 +256,21 @@ if __name__ == '__main__':
             # Make it, by default, perform a sweep
             add_entry(True, add_to=update_dict, key_path=['perform_sweep'])
 
+        # Set the perform_sweep parameter
+        if args.single:
+            if args.sweep:
+                warnings.warn("Received both --single and --sweep command "
+                              "line arguments; will perform a single "
+                              "simulation.",
+                              UserWarning)
+                # TODO use utopya-specific warning class
+
+            add_entry(False, add_to=update_dict, key_path=['perform_sweep'])
+
+        elif args.sweep:
+            add_entry(True, add_to=update_dict, key_path=['perform_sweep'])
+
+
         # Set general configuration entries
         if args.set_params:
             # Add an entry for each pair
@@ -284,29 +299,15 @@ if __name__ == '__main__':
                                run_cfg_path=args.run_cfg_path,
                                **update_dict)
 
-        # Distinguish single and sweep
-        if args.single:
-            if args.sweep:
-                warnings.warn("Received both --single and --sweep command "
-                              "line arguments; will perform a single "
-                              "simulation.",
-                              UserWarning)
-                # TODO use utopya-specific warning class
-
-            mv.run_single()
-
-        elif args.sweep:
-            mv.run_sweep()
-
-        else:
-            mv.run()
+        # Run. Which mode is used depends on the `perform_sweep` entry
+        mv.run()
+        
+        log.info("Simulation run finished.\n")
 
         # Only need to continue if plots are to be created
         if args.no_plot:
-            log.debug("Received --no-plot. Exiting now.")
+            log.info("Received --no-plot. Exiting now.")
             sys.exit()
-
-        log.info("Simulation run finished.\n")
 
 
     elif args.mode in ['eval']:
