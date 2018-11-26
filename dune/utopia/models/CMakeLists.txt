@@ -18,6 +18,7 @@ add_subdirectory(ForestFire)
 add_subdirectory(HdfBench)
 add_subdirectory(Hierarnet)
 add_subdirectory(SimpleEG)
+add_subdirectory(PredatorPrey)
 # ...
 # NOTE add your subdirectory above (alphabetically sorted)
 

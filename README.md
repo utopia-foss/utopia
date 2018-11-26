@@ -170,6 +170,7 @@ This will also show you a README of the model which contains further information
 | [`ContDisease`](dune/utopia/models/ContDisease) | The contagious disease model on a cellular automaton |
 | [`ForestFire`](dune/utopia/models/ForestFire) | A model of a two state ForestFire, using percolation to burn |
 | [`SimpleEG`](dune/utopia/models/SimpleEG) | A model of simple evolutionary games on grids |
+| [`PredatorPrey`](dune/utopia/models/PredatorPrey) | A simple predator prey model |
 | [`Hierarnet`](dune/utopia/models/Hierarnet) | Evolutionary network with continuous public goods games played around each node |
 
 

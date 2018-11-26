@@ -1,0 +1,58 @@
+# The model configuration for the Predator-Prey model
+#
+# This file should ONLY contain model-specific configuration and needs to be
+# written such that it can be used by _every_ model instance, regardless
+# of the level within a model hierarchy.
+# 
+# To that end, it needs to specify the parameters at the level of the instance
+# of a Model class.
+# 
+# This file is usually handled by the frontend: usage of advanced yaml features
+# like anchors and tags is supported.
+# 
+# Note, however, that this file should hold the _default_ values for a single
+# instance. Therefore, parameter sweeps should not be specified here!
+# Furthermore, if including other models' parameters via the `!model` tag, make
+# sure that no circular includes occur.
+---
+# Grid parameters
+grid_size: [128, 128]
+periodic: true          # false: cells at boundary have fewer neighbors
+
+# Initial state parameters, each cell is populated randomly, in mode random a 
+# certain probability is chosen, in mode random a fraction is chosen and cells 
+# are populated until the specified fraction is reached and given the amount of
+# resources specified by init_res_prey and init_res_pred
+# mode random -> prey_prob and pred_prob and predprey_prob have to be specified
+# mode fraction -> prey_frac and pred_frac and predprey_frac have to be 
+# specified
+# probabilities and fractions have to sum up to one and be greater than zero
+
+# initial resource levels
+init_res_prey: 2.0
+init_res_pred: 2.0
+
+# initialization mode
+initial_state: random 
+
+# Parameters for random initialization
+prey_prob: 0.2         # probability to initialize as prey   
+pred_prob: 0.285       # probability to initialize as predator
+predprey_prob: 0.0     # probability to initialize cell with predator and prey
+
+# Parameters for fraction initialization
+# prey_frac: 0.2         # fraction of cells to be initialized as prey
+# pred_frac: 0.285       # fraction of cells to be initialized as predator
+# predprey_frac: 0.0     # fraction of cells to be initialized as predprey
+
+# Model specific parameters, cost_of_repro cannot be greater than e_min:
+cost_of_living: 1 # cost for an individual to uphold its structure
+delta_e: 2   # resource increase by food uptake             
+e_max: 200   # maximum resource level
+e_min: 3     # threshold for reproduction
+cost_of_repro: 2 # resources transferred to offspring, cost_of_repro <= e_min
+p_repro: 0.5 # probability to reproduce
+p_flee: 0.5  # probability for prey to flee from predator if on same cell
+
+
+
