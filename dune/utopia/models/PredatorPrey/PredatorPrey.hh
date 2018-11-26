@@ -420,9 +420,10 @@ public:
           _rand(0, 1)
     {
         // Check if _cost_of_repro is in the allowed range
-        if (_cost_of_repro > _e_min)
+        if (_cost_of_repro > _e_min) {
             throw std::invalid_argument("cost_of_repro needs to be " 
                                        "smaller than or equal to e_min");
+        }
         // Initialize cells
         this->initialize_cells();
         // Set dataset capacities
@@ -652,10 +653,12 @@ public:
                 double num_cells = this->_manager.cells().size();
                 for (const auto& cell : this->_manager.cells()) {
                     auto state = cell->state();
-                    if (state.population == prey)
+                    if (state.population == prey) {
                         prey_sum++;
-                    else if (state.population == predator)
+                    }
+                    else if (state.population == predator) {
                         pred_sum++;
+                    }
                     else if (state.population == pred_prey) {
                         prey_sum++;
                         pred_sum++;
