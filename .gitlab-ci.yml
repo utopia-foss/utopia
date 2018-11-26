@@ -243,6 +243,7 @@ test:models:
     - utopia run ForestFire
     - utopia run Hierarnet
     - utopia run SimpleEG
+    - utopia run PredatorPrey
     # TODO add a call for your model here
     #
     # FIXME use --debug in models, too! Need ffmpeg in docker image for that...
