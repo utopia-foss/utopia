@@ -68,7 +68,9 @@ p_run.add_argument('--write-every',
 p_run.add_argument('--num-seeds',
                    default=None, nargs='?', type=int,
                    help="Creates a parameter dimension for the seeds with the "
-                        "given number of seed values.")
+                        "given number of seed values. This also sets the "
+                        "`perform_sweep` parameter to True, such that a sweep "
+                        "is invoked.")
 
 # arguments for generically updating meta configuration keys
 p_run.add_argument('--set-params',
@@ -83,7 +85,9 @@ p_run.add_argument('--set-params',
 p_run.add_argument('--set-cfg',
                    default=None, nargs='+', type=str,
                    help="Like --set-params but attaching to the root level of "
-                        "the meta configuration.")
+                        "the meta configuration. This function is carried out "
+                        "after --set-params, such that it can overwrite any "
+                        "of the previously defined arguments.")
 
 # plotting after the run
 p_run.add_argument('--no-plot',
@@ -235,6 +239,9 @@ if __name__ == '__main__':
                       ErrorMsg= lambda v: ValueError("Argument --num-seeds "
                                                      "needs to be > 1, "
                                                      "was {}.".format(v)))
+
+            # Make it, by default, perform a sweep
+            add_entry(True, add_to=update_dict, key_path=['perform_sweep'])
 
         # Set general configuration entries
         if args.set_params:
