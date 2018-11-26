@@ -278,9 +278,9 @@ test:cli:
     # Test setting the number of steps (negative should fail)
     - utopia run dummy --num-steps 1 --no-plot
     - if utopia run dummy --num-steps -1; then exit 1; else echo "all good"; fi
-    # Test setting the number of seeds (<1 should fail)
-    - utopia run dummy --num-seeds 1 --sweep --no-plot --note sweep_via_cli
-    - if utopia run dummy --num-seeds 0; then exit 1; else echo "all good"; fi
+    # Test setting the number of seeds (<= 1 should fail)
+    - utopia run dummy --num-seeds 2 --sweep --no-plot --note sweep_via_cli
+    - if utopia run dummy --num-seeds 1; then exit 1; else echo "all good"; fi
     # Test debug mode and setting simulation errors level
     - utopia run dummy --note debug0 --num-steps 3 --debug
     - utopia run dummy --note debug1 --num-steps 3 --debug --sim-errors warn
