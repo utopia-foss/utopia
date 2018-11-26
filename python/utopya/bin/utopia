@@ -172,100 +172,78 @@ if __name__ == '__main__':
         sys.exit()
 
     # Run & eval subcommands ..................................................
-    # NOTE the subcommands only differ in which Multiverse class is created and
-    #      whether a run is performed or not
+    # Prepare arguments for Multiverse . . . . . . . . . . . . . . . . . . . . 
 
     log.info("Parsing additional command line arguments ...")
 
-    # Prepare Multiverse
     # Set an empty update dict. It will hold adjustments to the given configs
     update_dict = {}
-
-    # If a model_note was given, add it to the paths
-    if args.mode == 'run' and args.note:
-        update_dict['paths'] = dict(model_note=args.note)
-        add_entry(args.note, key_path=['paths', 'model_note'],
-                  add_to=update_dict,
-                  is_valid=lambda v: bool(len(v) >= 1),
-                  ErrorMsg=lambda v: ValueError("--note argument needs to be "
-                                                "a string of length >= 1, was "
-                                                "'{}'!".format(v)))
+    # NOTE The following updates to the update_dict rely on it being mutable
 
     # In debug mode, set a number of configuration keys
     if args.debug:
-        # NOTE Relies on update_dict not containig the top-level entries that
-        #      are set here.
-
         # Set model log level to DEBUG
-        update_dict['parameter_space'] = dict(log_levels=dict(model='debug'))
+        add_entry('debug', add_to=update_dict,
+                  key_path=['parameter_space', 'log_levels', 'model'])
         
         # Let PlotManager raise exceptions
-        update_dict['plot_manager'] = dict(raise_exc=True)
+        add_entry(True, add_to=update_dict,
+                  key_path=['plot_manager', 'raise_exc'])
 
         # Let WorkerManager raise exceptions
-        update_dict['worker_manager'] = dict(nonzero_exit_handling='raise')
-
-    # Set the WorkerManager's non-zero exit handling, if in debug mode
-    if args.mode == 'run' and args.sim_errors:
-        # Check if an entry already exists; if not, need an empty dict there
-        if 'worker_manager' not in update_dict:
-            update_dict['worker_manager'] = {}
-        
-        update_dict['worker_manager']['nonzero_exit_handling']=args.sim_errors
+        add_entry('raise', add_to=update_dict,
+                  key_path=['worker_manager', 'nonzero_exit_handling'])
 
 
-    # TODO Can perhaps modularise the following?!
-    # Set number of simulation steps
-    if args.mode == 'run' and args.num_steps:
-        if args.num_steps < 0:
-            raise ValueError("Argument --num-steps needs to be positive, was "
-                             "{}.".format(args.num_steps))
+    # Additional arguments relevant in run mode
+    if args.mode == 'run':
+        # If a model_note was given, add it to the paths
+        if args.note:
+            add_entry(args.note, add_to=update_dict,
+                      key_path=['paths', 'model_note'])
 
-        # Check if key already exists in order to not overwrite anything
-        if 'parameter_space' not in update_dict:
-            update_dict['parameter_space'] = {}
+        # The WorkerManager's non-zero exit handling, if in debug mode
+        if args.sim_errors:
+            add_entry(args.sim_errors, add_to=update_dict,
+                      key_path=['worker_manager', 'nonzero_exit_handling'])
 
-        update_dict['parameter_space']['num_steps'] = args.num_steps
+        # Number of simulation steps
+        if args.num_steps:
+            add_entry(args.num_steps, add_to=update_dict,
+                      key_path=['parameter_space', 'num_steps'],
+                      is_valid= lambda v: v >= 0,
+                      ErrorMsg= lambda v: ValueError("Argument --num-steps "
+                                                     "needs to be positive, "
+                                                     "was {}.".format(v)))
 
-    # Set write_every parameter
-    if args.mode == 'run' and args.write_every:
-        if args.write_every < 0:
-            raise ValueError("Argument --write-every needs to be positive, "
-                             "was {}.".format(args.write_every))
+        # The root-level write_every parameter
+        if args.write_every:
+            add_entry(args.write_every, add_to=update_dict,
+                      key_path=['parameter_space', 'write_every'],
+                      is_valid= lambda v: v >= 1,
+                      ErrorMsg= lambda v: ValueError("Argument --write-every "
+                                                     "needs to be >= 1, "
+                                                     "was {}.".format(v)))
 
-        # Check if key already exists in order to not overwrite anything
-        if 'parameter_space' not in update_dict:
-            update_dict['parameter_space'] = {}
+        # Set seeds to a parameter dimension object
+        if args.num_seeds is not None:
+            add_entry(lambda: ParamDim(default=42, range=[args.num_seeds]),
+                      add_to=update_dict,
+                      key_path=['parameter_space', 'seed'],
+                      is_valid= lambda v: args.num_seeds > 1,
+                      ErrorMsg= lambda v: ValueError("Argument --num-seeds "
+                                                     "needs to be >= 1, "
+                                                     "was {}.".format(v)))
 
-        update_dict['parameter_space']['write_every'] = args.write_every
-
-    # Set seeds to a parameter dimension
-    if args.mode == 'run' and args.num_seeds is not None:
-        if args.num_seeds < 1:
-            raise ValueError("Argument --num-seeds needs to be >= 1, was "
-                             "{}.".format(args.num_seeds))
-
-        # Check if key already exists in order to not overwrite anything
-        if 'parameter_space' not in update_dict:
-            update_dict['parameter_space'] = {}
-
-        seed_pdim = ParamDim(default=42, range=[args.num_seeds])
-        update_dict['parameter_space']['seed'] = seed_pdim
-
-    # Set general configuration entries
-    if args.mode == 'run' and args.set_params:
-        # Check if key already exists in order to not overwrite anything
-        if 'parameter_space' not in update_dict:
-            update_dict['parameter_space'] = {}
-
-        # For each key-value pair, already split up by argparse, add an entry
-        add_from_kv_pairs(*args.set_params,
-                          add_to=update_dict['parameter_space'])
-        # NOTE Is mutable, thus does not require return value
+        # Set general configuration entries
+        if args.set_params:
+            # Add an entry for each pair
+            add_from_kv_pairs(*args.set_params,
+                              add_to=update_dict['parameter_space'])
     
-    if args.mode == 'run' and args.set_cfg:
-        # For each key-value pair, already split up by argparse, add an entry
-        add_from_kv_pairs(*args.set_params, add_to=update_dict)
+        if args.set_cfg:
+            # Add an entry for each pair
+            add_from_kv_pairs(*args.set_params, add_to=update_dict)
 
 
     # Finished with generating the update dict; give some info on it
@@ -276,6 +254,9 @@ if __name__ == '__main__':
     
     
     # Create Multiverse and perform the run  . . . . . . . . . . . . . . . . . 
+    # NOTE the subcommands only differ in which Multiverse class is created and
+    #      whether a run is performed or not
+
     if args.mode in ['run']:
         # Instantiate a Multiverse object
         mv = utopya.Multiverse(model_name=args.model_name,

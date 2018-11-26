@@ -17,7 +17,7 @@ BASE_CFG_PATH = resource_filename('utopya', 'cfg/base_cfg.yml')
 
 # -----------------------------------------------------------------------------
 
-def add_entry(value, *, key_path: list, add_to: dict, is_valid: Callable=None, ErrorMsg: Callable=None):
+def add_entry(value, *, add_to: dict, key_path: list, is_valid: Callable=None, ErrorMsg: Callable=None):
     """Adds the given value to the `add_to` dict at the given key path.
 
     If `value` is a callable, that function is called and the return value is
