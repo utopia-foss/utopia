@@ -12,7 +12,7 @@ INSTALL_DEPS = ['numpy>=1.13',
                 # From private repositories:
                 # NOTE Versions need also be set in python/CMakeLists.txt
                 'paramspace>=2.1.0',
-                'dantro>=0.5.0'
+                'dantro>=0.5.2'
                 ]
 
 setup(name='utopya',

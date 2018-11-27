@@ -123,7 +123,7 @@ Check out the troubleshooting section there if this fails.
 | Software | Version | Purpose |
 | ---------| ------- | ------- |
 | [paramspace](https://ts-gitlab.iup.uni-heidelberg.de/yunus/paramspace) | >= 2.0 | Makes parameter sweeps easy |
-| [dantro](https://ts-gitlab.iup.uni-heidelberg.de/utopia/dantro) | >= 0.5 | A data loading and plotting framework |
+| [dantro](https://ts-gitlab.iup.uni-heidelberg.de/utopia/dantro) | >= 0.5.2 | A data loading and plotting framework |
 
 #### Recommended
 
