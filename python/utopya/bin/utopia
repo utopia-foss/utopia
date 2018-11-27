@@ -36,7 +36,7 @@ p_run.add_argument('-p', '--sweep',
                    help="If given, forces a parameter sweep. Is ignored, if "
                         "the --single flag was also given.")
 
-# updating meta configuration
+# updating specific meta configuration entries
 p_run.add_argument('--note',
                    default=None, nargs='?',
                    help="Overwrites the `paths->model_note` entry which is "
@@ -52,6 +52,7 @@ p_run.add_argument('--debug',
                         "here.")
 p_run.add_argument('--sim-errors',
                    default=None, nargs='?',
+                   choices=['ignore', 'warn', 'warn_all', 'raise'],
                    help="Controls the value of the WorkerManager's "
                         "`nonzero_exit_handling` flag which defines how "
                         "errors in simulations are handled. Allowed values "
@@ -60,19 +61,46 @@ p_run.add_argument('--sim-errors',
                         "(if set) the user configuration is used.")
 p_run.add_argument('--num-steps',
                    default=None, nargs='?', type=int,
-                   help="Sets the number of simulation steps to this value.")
+                   help="Sets the number of simulation steps.")
+p_run.add_argument('--write-every',
+                   default=None, nargs='?', type=int,
+                   help="Sets the root-level `write_every` parameter.")
 p_run.add_argument('--num-seeds',
                    default=None, nargs='?', type=int,
                    help="Creates a parameter dimension for the seeds with the "
-                        "given number of seed values.")
+                        "given number of seed values. This also sets the "
+                        "`perform_sweep` parameter to True, such that a sweep "
+                        "is invoked.")
+
+# arguments for generically updating meta configuration keys
+p_run.add_argument('--set-params',
+                   default=None, nargs='+', type=str,
+                   help="Sets key-value pairs in the `parameter_space` entry "
+                        "of the meta configuration. Example: foo.bar=42 sets "
+                        "the 'bar' entry in the 'foo' dict to 42. "
+                        "Note that multiple parameter can be set at once by "
+                        "separating them with a space; if a space needs to be "
+                        "in the argument value, put the strings into '...' or "
+                        "\"...\".")
+p_run.add_argument('--set-cfg',
+                   default=None, nargs='+', type=str,
+                   help="Like --set-params but attaching to the root level of "
+                        "the meta configuration. This function is carried out "
+                        "after --set-params, such that it can overwrite any "
+                        "of the previously defined arguments.")
+
+# arguments referring to loading of data
+p_run.add_argument('--suppress-data-tree',
+                   action='store_true',
+                   help="If set, loading of data will not print out the data "
+                        "tree.")
+
 
 # plotting after the run
 p_run.add_argument('--no-plot',
                    action='store_true',
-                   help="If set, no plots will be created. Note that plotting "
-                        "capabilities via the Multiverse or the CLI are not "
-                        "yet implemented, thus you will have to do the plots "
-                        "manually if you pass this option.") # TODO implement
+                   help="If set, no plots will be created. To perform plots "
+                        "a later point, use the `utopia eval` subcommand.")
 p_run.add_argument('--plots-cfg',
                    default=None, nargs='?',
                    help="If given, uses the plots configuration file found "
@@ -94,6 +122,14 @@ p_eval.add_argument('run_dir_path',
                          "timestamp (including model note, if present) of the "
                          "directory. If not given, the directory with the "
                          "most recent timestamp is used.")
+
+# arguments referring to loading of data
+p_eval.add_argument('--suppress-data-tree',
+                    action='store_true',
+                    help="If set, loading of data will not print out the data "
+                         "tree.")
+
+# arguments regarding plotting
 p_eval.add_argument('--plots-cfg',
                     default=None, nargs='?',
                     help="If given, uses the plots configuration file found "
@@ -122,102 +158,105 @@ p_cfg.add_argument('--deploy',
 # TODO add --get and --set to easily manipulate entries
 
 
-# subcommand: TODO ............................................................
-# ...
+# subcommand: ...  ............................................................
+# ... can add more sub commands here ...
 
 
 
-# CLI defined now. Parse the arguments...
+# CLI defined now. Parse the given arguments...
 args = parser.parse_args()
 
 
 # -----------------------------------------------------------------------------
 # If continuing further, need some imports
+import logging
+log = logging.getLogger(__name__)
+
 from paramspace import ParamDim
 
 import utopya
-import utopya.cltools
+from utopya.tools import pprint
+from utopya.cltools import deploy_user_cfg, add_entry, add_from_kv_pairs
 
 
 if __name__ == '__main__':
     # Config subcommand .......................................................
     if args.mode == 'config':
         if args.deploy:
-            utopya.cltools.deploy_user_cfg()
+            deploy_user_cfg()
 
         # End here.
         sys.exit()
 
     # Run & eval subcommands ..................................................
-    # NOTE the subcommands only differ in which Multiverse class is created and
-    #      whether a run is performed or not
+    # Prepare arguments for Multiverse . . . . . . . . . . . . . . . . . . . . 
 
-    # Prepare Multiverse
+    log.info("Parsing additional command line arguments ...")
+
     # Set an empty update dict. It will hold adjustments to the given configs
     update_dict = {}
-
-    # If a model_note was given, add it to the paths
-    if args.mode == 'run' and args.note:
-        update_dict['paths'] = dict(model_note=args.note)
+    # NOTE The following updates to the update_dict rely on it being mutable
 
     # In debug mode, set a number of configuration keys
     if args.debug:
-        # NOTE Relies on update_dict not containig the top-level entries that
-        #      are set here.
-
         # Set model log level to DEBUG
-        update_dict['parameter_space'] = dict(log_levels=dict(model='debug'))
+        add_entry('debug', add_to=update_dict,
+                  key_path=['parameter_space', 'log_levels', 'model'])
         
         # Let PlotManager raise exceptions
-        update_dict['plot_manager'] = dict(raise_exc=True)
+        add_entry(True, add_to=update_dict,
+                  key_path=['plot_manager', 'raise_exc'])
 
         # Let WorkerManager raise exceptions
-        update_dict['worker_manager'] = dict(nonzero_exit_handling='raise')
+        add_entry('raise', add_to=update_dict,
+                  key_path=['worker_manager', 'nonzero_exit_handling'])
 
-    # Set the WorkerManager's non-zero exit handling, if in debug mode
-    if args.mode == 'run' and args.sim_errors:
-        # Check if an entry already exists; if not, need an empty dict there
-        if 'worker_manager' not in update_dict:
-            update_dict['worker_manager'] = {}
-        
-        update_dict['worker_manager']['nonzero_exit_handling']=args.sim_errors
 
-    # Set number of simulation steps
-    if args.mode == 'run' and args.num_steps:
-        if args.num_steps < 0:
-            raise ValueError("Argument --num-steps needs to be positive, was "
-                             "{}.".format(args.num_steps))
+    # Additional arguments relevant in run mode
+    if args.mode == 'run':
+        # If a model_note was given, add it to the paths
+        if args.note:
+            add_entry(args.note, add_to=update_dict,
+                      key_path=['paths', 'model_note'])
 
-        # Check if key already exists in order to not overwrite anything
-        if 'parameter_space' not in update_dict:
-            update_dict['parameter_space'] = {}
+        # The WorkerManager's non-zero exit handling, if in debug mode
+        if args.sim_errors:
+            add_entry(args.sim_errors, add_to=update_dict,
+                      key_path=['worker_manager', 'nonzero_exit_handling'])
 
-        update_dict['parameter_space']['num_steps'] = args.num_steps
+        # Number of simulation steps
+        if args.num_steps:
+            add_entry(args.num_steps, add_to=update_dict,
+                      key_path=['parameter_space', 'num_steps'],
+                      is_valid= lambda v: v >= 0,
+                      ErrorMsg= lambda v: ValueError("Argument --num-steps "
+                                                     "needs to be positive, "
+                                                     "was {}.".format(v)))
 
-    # Set seeds to a parameter dimension
-    if args.mode == 'run' and args.num_seeds is not None:
-        if args.num_seeds < 1:
-            raise ValueError("Argument --num-seeds needs to be >= 1, was "
-                             "{}.".format(args.num_seeds))
+        # The root-level write_every parameter
+        if args.write_every:
+            add_entry(args.write_every, add_to=update_dict,
+                      key_path=['parameter_space', 'write_every'],
+                      is_valid= lambda v: v >= 1,
+                      ErrorMsg= lambda v: ValueError("Argument --write-every "
+                                                     "needs to be >= 1, "
+                                                     "was {}.".format(v)))
 
-        # Check if key already exists in order to not overwrite anything
-        if 'parameter_space' not in update_dict:
-            update_dict['parameter_space'] = {}
+        # Set seeds to a parameter dimension object
+        if args.num_seeds is not None:
+            add_entry(args.num_seeds,
+                      value_func=lambda v: ParamDim(default=42, range=[v]),
+                      add_to=update_dict,
+                      key_path=['parameter_space', 'seed'],
+                      is_valid= lambda v: bool(v > 1),
+                      ErrorMsg= lambda v: ValueError("Argument --num-seeds "
+                                                     "needs to be > 1, "
+                                                     "was {}.".format(v)))
 
-        seed_pdim = ParamDim(default=42, range=[args.num_seeds])
-        update_dict['parameter_space']['seed'] = seed_pdim
+            # Make it, by default, perform a sweep
+            add_entry(True, add_to=update_dict, key_path=['perform_sweep'])
 
-    # Preparations finished now
-    
-    
-    # Create Multiverse and perform the run
-    if args.mode in ['run']:
-        # Instantiate a Multiverse object
-        mv = utopya.Multiverse(model_name=args.model_name,
-                               run_cfg_path=args.run_cfg_path,
-                               **update_dict)
-
-        # Distinguish single and sweep
+        # Set the perform_sweep parameter
         if args.single:
             if args.sweep:
                 warnings.warn("Received both --single and --sweep command "
@@ -226,16 +265,48 @@ if __name__ == '__main__':
                               UserWarning)
                 # TODO use utopya-specific warning class
 
-            mv.run_single()
+            add_entry(False, add_to=update_dict, key_path=['perform_sweep'])
 
         elif args.sweep:
-            mv.run_sweep()
+            add_entry(True, add_to=update_dict, key_path=['perform_sweep'])
 
-        else:
-            mv.run()
+
+        # Set general configuration entries
+        if args.set_params:
+            # Add an entry for each pair
+            add_from_kv_pairs(*args.set_params,
+                              add_to=update_dict['parameter_space'])
+    
+        if args.set_cfg:
+            # Add an entry for each pair
+            add_from_kv_pairs(*args.set_params, add_to=update_dict)
+
+
+    # Finished with generating the update dict; give some info on it
+    if update_dict:
+        log.info("Updates to meta configuration:\n\n%s", pprint(update_dict))
+
+    # Preparations finished now.
+    
+    
+    # Create Multiverse and perform the run  . . . . . . . . . . . . . . . . . 
+    # NOTE the subcommands only differ in which Multiverse class is created and
+    #      whether a run is performed or not
+
+    if args.mode in ['run']:
+        # Instantiate a Multiverse object
+        mv = utopya.Multiverse(model_name=args.model_name,
+                               run_cfg_path=args.run_cfg_path,
+                               **update_dict)
+
+        # Run. Which mode is used depends on the `perform_sweep` entry
+        mv.run()
+        
+        log.info("Simulation run finished.\n")
 
         # Only need to continue if plots are to be created
         if args.no_plot:
+            log.info("Received --no-plot. Exiting now.")
             sys.exit()
 
 
@@ -249,13 +320,25 @@ if __name__ == '__main__':
 
     # else: should not occur!
 
-    # Loading and plotting
+    # Loading  . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+    log.info("Loading data...")
+
     # Tell the DataManager to load
-    mv.dm.load_from_cfg(print_tree=True)
+    mv.dm.load_from_cfg(print_tree=bool(not args.suppress_data_tree))
     # NOTE This will load the data using the utopya default configuration
+
+    log.info("Loading data finished.\n")
+
+
+    # Plotting . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+    log.info("Plotting...")
 
     # Tell the PlotManager to plot
     mv.pm.plot_from_cfg(plots_cfg=args.plots_cfg, plot_only=args.plot_only)
     # NOTE If plots_cfg was not given, this uses the plot configuration that
     #      belongs to the model. If it is given, the configuration is loaded
     #      from the given file path.
+    
+    log.info("Plotting finished.\n")
+
+    log.info("All done.\n")
