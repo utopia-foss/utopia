@@ -41,7 +41,7 @@ std::shared_ptr<HDFGroup> save_graph(GraphType &g,
     // Create the group for the graph and store metadata in its attributes
     auto grp = parent_grp->open_group(name);
 
-    grp->add_attribute("custom_container_type", "NetworkGroup");
+    grp->add_attribute("content", "network");
     grp->add_attribute("is_directed", boost::is_directed(g));
     grp->add_attribute("is_parallel", false); // FIXME Make general
     grp->add_attribute("num_vertices", num_vertices);
@@ -112,7 +112,7 @@ std::shared_ptr<HDFGroup> save_graph(GraphType &g,
     // Create the group for the graph and store metadata in its attributes
     auto grp = parent_grp->open_group(name);
 
-    grp->add_attribute("custom_container_type", "NetworkGroup");
+    grp->add_attribute("content", "network");
     grp->add_attribute("is_directed", boost::is_directed(g));
     grp->add_attribute("is_parallel", false); // FIXME Make general
     grp->add_attribute("num_vertices", num_vertices);
