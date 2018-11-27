@@ -39,7 +39,7 @@ RUN apt-get update \
         python3-dev \
         python3-pip \
         ffmpeg \
-        fftw \
+        libfftw3-dev libfftw3-doc \
     && apt-get clean
 
 # manage locales
