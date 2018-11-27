@@ -5,8 +5,8 @@ They are based on the dantro's OrderedDataGroup class.
 
 import logging
 
-from dantro.base import BaseDataGroup
-from dantro.group import ParamSpaceGroup, ParamSpaceStateGroup
+import dantro as dtr
+import dantro.groups
 
 # Configure and get logger
 log = logging.getLogger(__name__)
@@ -15,11 +15,11 @@ log = logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------------
 
-class UniverseGroup(ParamSpaceStateGroup):
+class UniverseGroup(dtr.groups.ParamSpaceStateGroup):
     """This group represents the data of a single universe"""
 
 
-class MultiverseGroup(ParamSpaceGroup):
+class MultiverseGroup(dtr.groups.ParamSpaceGroup):
     """This group is meant to manage the `uni` group of the loaded data, i.e.
     the group where output of all universe groups is stored in.
 
@@ -30,3 +30,21 @@ class MultiverseGroup(ParamSpaceGroup):
     Furthermore, via dantro, an easy data selector is available
     """
     _NEW_GROUP_CLS = UniverseGroup
+
+
+class NetworkGroup(dtr.groups.NetworkGroup):
+    """This group is meant to manage network data and create a NetworkX graph
+    from it."""
+
+    # Expected names for the containers that hold vertex/edge information
+    _NWG_node_container = "_vertices"
+    _NWG_edge_container = "_edges"
+
+    # Expected _group_ attribute names determining the type of graph
+    _NWG_attr_directed = "is_directed"
+    _NWG_attr_parallel = "is_parallel"
+
+    # Expected _container_ attributes for containers holding vertex/edge data
+    _NWG_attr_is_node_property = "is_vertex_property"
+    _NWG_attr_is_edge_property = "is_edge_property"
+    
