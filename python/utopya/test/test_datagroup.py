@@ -22,4 +22,11 @@ def test_networkgroup():
     for uni in dm['multiverse'].values():
         nwg = uni['data/Hierarnet/nw']
 
+        # Check that it was loaded correctly
         assert(isinstance(nwg, NetworkGroup))
+
+        # Test that the graph can be created as desired
+        nwg.create_graph()
+
+        # ... also including vector properties
+        # nwg.

@@ -48,9 +48,10 @@ std::shared_ptr<HDFGroup> save_graph(GraphType &g,
     grp->add_attribute("num_edges", num_edges);
     grp->add_attribute("custom_ids", false);
     
-    // Initialize datasets to store vertices and adjacency lists in
+    // Initialize datasets to store vertices and edges in
     auto dset_vl = grp->open_dataset("_vertices", {num_vertices});
-    auto dset_al = grp->open_dataset("_edges", {num_edges});
+    auto dset_al = grp->open_dataset("_edges", {2, num_edges});
+    // NOTE Need shape to be {2, num_edges} because write writes line by line.
 
     // Save vertex list 
     auto [v, v_end] = boost::vertices(g);
@@ -58,17 +59,20 @@ std::shared_ptr<HDFGroup> save_graph(GraphType &g,
         [&](auto vd){return boost::get(boost::vertex_index_t(), g, vd);}
     );
 
-    // Save adjacency list
+    // Save edges
+    // NOTE Need to call write twice to achieve the desired data shape.
     auto [e, e_end] = boost::edges(g);
     dset_al->write(e, e_end,
         [&](auto ed){
-            // TODO If possible, use boost::index_type instead of size_t
-            return std::array<std::size_t, 2>(
-                {{boost::get(boost::vertex_index_t(), g,
-                             boost::source(ed, g)),
-                  boost::get(boost::vertex_index_t(), g,
-                             boost::target(ed, g))}}
-            );
+            return boost::get(boost::vertex_index_t(), g,
+                              boost::source(ed, g));
+        }
+    );
+
+    dset_al->write(e, e_end,
+        [&](auto ed){
+            return boost::get(boost::vertex_index_t(), g,
+                              boost::target(ed, g));
         }
     );
 
