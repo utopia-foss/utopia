@@ -28,7 +28,8 @@ class DataManager(Hdf5LoaderMixin, YamlLoaderMixin, dtr.data_mngr.DataManager):
     """
 
     # Register known group types
-    _DATA_GROUP_CLASSES = dict(MultiverseGroup=udg.MultiverseGroup)
+    _DATA_GROUP_CLASSES = dict(MultiverseGroup=udg.MultiverseGroup,
+                               NetworkGroup=udg.NetworkGroup)
 
     # Tell the HDF5 loader which container class to use
     _HDF5_DSET_DEFAULT_CLS = udc.NumpyDC

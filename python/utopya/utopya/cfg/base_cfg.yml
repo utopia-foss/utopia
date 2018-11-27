@@ -221,7 +221,7 @@ data_manager:
     #      ├ model
     #      ├ run
     #      └ update
-    #   └ data
+    #   └ multiverse
     #     └┬ 0
     #        └┬ cfg
     #         └ data

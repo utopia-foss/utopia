@@ -47,4 +47,3 @@ class NetworkGroup(dtr.groups.NetworkGroup):
     # Expected _container_ attributes for containers holding vertex/edge data
     _NWG_attr_is_node_property = "is_vertex_property"
     _NWG_attr_is_edge_property = "is_edge_property"
-    

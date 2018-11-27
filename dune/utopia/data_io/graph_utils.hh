@@ -41,15 +41,16 @@ std::shared_ptr<HDFGroup> save_graph(GraphType &g,
     // Create the group for the graph and store metadata in its attributes
     auto grp = parent_grp->open_group(name);
 
-    grp->add_attribute("is_graph_group", true);
-    grp->add_attribute("directed", boost::is_directed(g));
+    grp->add_attribute("custom_container_type", "NetworkGroup");
+    grp->add_attribute("is_directed", boost::is_directed(g));
+    grp->add_attribute("is_parallel", false); // FIXME Make general
     grp->add_attribute("num_vertices", num_vertices);
     grp->add_attribute("num_edges", num_edges);
     grp->add_attribute("custom_ids", false);
     
     // Initialize datasets to store vertices and adjacency lists in
-    auto dset_vl = grp->open_dataset("_vertex_list", {num_vertices});
-    auto dset_al = grp->open_dataset("_adjacency_list", {num_edges});
+    auto dset_vl = grp->open_dataset("_vertices", {num_vertices});
+    auto dset_al = grp->open_dataset("_edges", {num_edges});
 
     // Save vertex list 
     auto [v, v_end] = boost::vertices(g);
@@ -111,15 +112,16 @@ std::shared_ptr<HDFGroup> save_graph(GraphType &g,
     // Create the group for the graph and store metadata in its attributes
     auto grp = parent_grp->open_group(name);
 
-    grp->add_attribute("is_graph_group", true);
-    grp->add_attribute("directed", boost::is_directed(g));
+    grp->add_attribute("custom_container_type", "NetworkGroup");
+    grp->add_attribute("is_directed", boost::is_directed(g));
+    grp->add_attribute("is_parallel", false); // FIXME Make general
     grp->add_attribute("num_vertices", num_vertices);
     grp->add_attribute("num_edges", num_edges);
     grp->add_attribute("custom_ids", true);
     
     // Initialize datasets to store vertices and adjacency lists in
-    auto dset_vl = grp->open_dataset("_vertex_list", {num_vertices});
-    auto dset_al = grp->open_dataset("_adjacency_list", {num_edges});
+    auto dset_vl = grp->open_dataset("_vertices", {num_vertices});
+    auto dset_al = grp->open_dataset("_edges", {num_edges});
 
     // Save vertex list
     auto [v, v_end] = boost::vertices(g);
