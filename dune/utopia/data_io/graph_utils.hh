@@ -51,7 +51,7 @@ std::shared_ptr<HDFGroup> save_graph(GraphType &g,
     grp->add_attribute("num_edges", num_edges);
     grp->add_attribute("custom_ids", false);
     
-    
+
     // Initialize datasets to store vertices and edges in
     auto dset_vl = grp->open_dataset("_vertices", {num_vertices});
     auto dset_al = grp->open_dataset("_edges", {2, num_edges});
@@ -174,7 +174,9 @@ open_vertex_dataset(std::string name,
                                         chunksizes, compress_level);
     
     // Add the attribute that denotes this as holding vertex attribute data
-    dset->add_attribute("is_vertex_attribute", true);
+    // dset->add_attribute("is_vertex_attribute", true);
+    // dset->add_attribute("content", "vertex_data");
+    // FIXME Make it possible to set them here, i.e.: before first write
 
     return dset;
 }
@@ -193,6 +195,7 @@ open_edge_dataset(std::string name,
     
     // Add the attribute that denotes this as holding edge attribute data
     dset->add_attribute("is_edge_attribute", true);
+    dset->add_attribute("content", "edge_data");
 
     return dset;
 }
