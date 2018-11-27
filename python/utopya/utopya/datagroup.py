@@ -45,5 +45,5 @@ class NetworkGroup(dtr.groups.NetworkGroup):
     _NWG_attr_parallel = "is_parallel"
 
     # Expected _container_ attributes for containers holding vertex/edge data
-    _NWG_attr_is_node_property = "is_vertex_property"
-    _NWG_attr_is_edge_property = "is_edge_property"
+    _NWG_attr_is_node_property = "is_vertex_attribute"
+    _NWG_attr_is_edge_property = "is_edge_attribute"
