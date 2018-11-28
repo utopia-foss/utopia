@@ -263,16 +263,16 @@ class Multiverse:
             # These include the following values:
             #    num_nodes:  The total number of nodes to simulate on. This is
             #                what determines the modulo value.
-            #    sim_every:  The modulo offset, which depends on the position
+            #    run_every:  The modulo offset, which depends on the position
             #                of this Multiverse's node in the sequence of all
             #                nodes.
             rcps = self.resolved_cluster_params
             num_nodes = rcps['num_nodes']
-            sim_every = rcps['sim_every']
+            run_every = rcps['run_every']
 
             # Determine which universes to simulate
             unis_to_simulate = [s for i, s in enumerate(uni_id_strs)
-                                if (i - sim_every) % num_nodes == 0]
+                                if (i - run_every) % num_nodes == 0]
 
             # Inform about the number of universes to be simulated
             log.info("Adding tasks for cluster-mode simulation of "
@@ -655,9 +655,11 @@ class Multiverse:
 
         # Ensure reproducible node list format: ordered list
         # Achieve this by removing whitespace, then splitting and sorting
-        node_list = resolved['node_list'].replace(" ", "")
         delim = cps['node_list_delimiters'][mngr]
-        resolved['node_list'] = sorted(node_list.split(delim))
+        
+        node_list = resolved['node_list'].replace(" ", "")
+        node_list = sorted(node_list.split(delim))
+        resolved['node_list'] = node_list
 
         # Consistency checks
         if resolved['num_nodes'] != len(resolved['node_list']):
@@ -666,6 +668,14 @@ class Multiverse:
                              "parameter ({})."
                              "".format(len(resolved['node_list']),
                                        resolved['num_nodes']))
+
+        if resolved['node_name'] not in node_list:
+            raise ValueError("`node_name` '{}' is not part of `node_list` {}!"
+                             "".format(resolved['node_name'], node_list))
+
+        # Calculated values, needed in Multiverse.run
+        # run_every: the offset in the modulo operation
+        resolved['run_every'] = node_list.index(resolved['node_name'])
 
         # Return the resolved values
         log.debug("Resolved cluster parameters:\n%s", pformat(resolved))

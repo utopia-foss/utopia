@@ -46,6 +46,19 @@ def default_mv(mv_kwargs) -> Multiverse:
     """
     return Multiverse(**mv_kwargs)
 
+@pytest.fixture
+def cluster_env() -> dict:
+    return dict(TEST_JOB_ID="123",
+                TEST_JOB_NUM_NODES="5",
+                TEST_JOB_NODELIST="node03, node02, node05, node06, node11",
+                TEST_NODENAME="node06",
+                TEST_JOB_NAME="testjob",
+                TEST_JOB_ACCOUNT="testaccount",
+                TEST_CPUS_ON_NODE="42",
+                TEST_CLUSTER_NAME="testcluster",
+                TEST_TIMESTAMP=str(int(time.time()))
+                )
+
 # Initialisation tests --------------------------------------------------------
 
 def test_simple_init(mv_kwargs):
@@ -196,37 +209,46 @@ def test_multiple_runs_not_allowed(mv_kwargs):
     with pytest.raises(RuntimeError, match="Could not add simulation task"):
         mv.run_single()
 
-def test_cluster_mode_resolve_params(mv_kwargs):
+def test_cluster_mode_resolve_params(mv_kwargs, cluster_env):
     """Tests cluster mode resolution of parameters"""
-
     # Define a custom test environment
-    test_env = dict(TEST_JOB_ID="123",
-                    TEST_JOB_NUM_NODES="5",
-                    TEST_JOB_NODELIST="node03, node02, node05, node06, node11",
-                    TEST_NODENAME="node06",
-                    TEST_JOB_NAME="testjob",
-                    TEST_JOB_ACCOUNT="testaccount",
-                    TEST_CPUS_ON_NODE="42",
-                    TEST_CLUSTER_NAME="testcluster",
-                    TEST_TIMESTAMP=str(int(time.time())),
-                    )
     mv_kwargs['run_cfg_path'] = CLUSTER_MODE_CFG_PATH
-    mv_kwargs['cluster_params'] = dict(env=test_env)
+    mv_kwargs['cluster_params'] = dict(env=cluster_env)
 
+    # Create the Multiverse
     mv = Multiverse(**mv_kwargs)
 
     rcps = mv.resolved_cluster_params
-    assert len(rcps) == 9
+    assert len(rcps) == 9 + 1
     assert isinstance(rcps['job_id'], int)
     assert isinstance(rcps['num_nodes'], int)
     assert isinstance(rcps['num_procs'], int)
     assert isinstance(rcps['node_list'], list)
 
 
-    # Test again with wrong num_nodes parameter
-    test_env['TEST_JOB_NUM_NODES'] = '3'
+    # Test error messages
+    # Node name not in node list
+    cluster_env['TEST_NODENAME'] = 'node42'
+    with pytest.raises(ValueError, match="`node_name` 'node42' is not part"):
+        Multiverse(**mv_kwargs)
+
+    # Wrong number of nodes
+    cluster_env['TEST_NODENAME'] = 'node03'
+    cluster_env['TEST_JOB_NUM_NODES'] = '3'
     with pytest.raises(ValueError, match="`node_list` has a different length"):
         Multiverse(**mv_kwargs)
+
+def test_cluster_mode_run(mv_kwargs, cluster_env):
+    # Define a custom test environment
+    mv_kwargs['run_cfg_path'] = CLUSTER_MODE_CFG_PATH
+    mv_kwargs['cluster_params'] = dict(env=cluster_env)
+
+    # Create the Multiverse
+    mv = Multiverse(**mv_kwargs)
+
+    # Run it ...
+    mv.run()
+
 
 # FrozenMultiverse tests ------------------------------------------------------
 
