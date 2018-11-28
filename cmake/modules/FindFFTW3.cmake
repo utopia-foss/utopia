@@ -16,7 +16,7 @@
 find_package(PkgConfig)
 pkg_check_modules(FFTW3
     QUIET REQUIRED IMPORTED_TARGET
-    FFTW3)
+    fftw3)
 
 # tell CMake that these variables are consumed
 mark_as_advanced(FFTW3_FOUND FFTW3_VERSION)
