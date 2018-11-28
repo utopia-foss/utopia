@@ -17,7 +17,7 @@ from utopya.datamanager import DataManager
 from utopya.workermanager import WorkerManager
 from utopya.plotting import PlotManager
 from utopya.reporter import WorkerManagerReporter
-from utopya.tools import recursive_update, read_yml, write_yml, load_model_cfg
+from utopya.tools import recursive_update, read_yml, write_yml, load_model_cfg, pformat
 from utopya.info import MODELS
 
 # Configure and get logger
@@ -60,6 +60,7 @@ class Multiverse:
         self._meta_cfg = None
         self._model_name = None
         self._dirs = {}
+        self._resolved_cluster_params = None
 
         # Set the model name
         self.model_name = model_name
@@ -142,6 +143,28 @@ class Multiverse:
         return self._dirs
 
     @property
+    def cluster_mode(self) -> bool:
+        """Whether the Multiverse should run in cluster mode"""
+        return self.meta_cfg['cluster_mode']
+
+    @property
+    def cluster_params(self) -> dict:
+        """Returns a copy of the cluster mode configuration parameters"""
+        return copy.deepcopy(self.meta_cfg['cluster_params'])
+
+    @property
+    def resolved_cluster_params(self) -> dict:
+        """Returns a copy of the cluster configuration with all parameters
+        resolved. This makes some additional keys available on the top level.
+        """
+        # Cache it
+        if not self._resolved_cluster_params:
+            self._resolved_cluster_params = self._resolve_cluster_params()
+
+        # Return the cached value as a copy to secure it against changes
+        return copy.deepcopy(self._resolved_cluster_params)
+
+    @property
     def dm(self) -> DataManager:
         """The Multiverse's DataManager."""
         return self._dm
@@ -198,6 +221,10 @@ class Multiverse:
     def run_sweep(self):
         """Runs a parameter sweep.
 
+        If cluster mode is enabled, this will split up the parameter space into
+        (ideally) equally sized parts and only run one of these parts,
+        depending on the node this Multiverse runs on.
+
         Note that (currently) each Multiverse instance can _not_ perform
         multiple runs!
         """
@@ -211,14 +238,56 @@ class Multiverse:
                              "the run_single method or add sweeps to your "
                              "run configuration using the !sweep YAML tags.")
 
-        log.info("Adding tasks for simulation of %d universes ...",
-                 pspace.volume)
+        # Get the parameter space iterator
+        psp_iter = pspace.iterator(with_info='state_no_str')
 
-        for uni_cfg, uni_id_str in pspace.iterator(with_info='state_no_str'):
-            self._add_sim_task(uni_id_str=uni_id_str, uni_cfg=uni_cfg,
-                               is_sweep=True)
+        # Distinguish whether to do a regular sweep or we are in cluster mode
+        if not self.cluster_mode:
+            # Do a sweep over the whole activated parameter space
+            log.info("Adding tasks for simulation of %d universes ...",
+                     pspace.volume)
 
-        log.info("Tasks added.")
+            for uni_cfg, uni_id_str in psp_iter:
+                self._add_sim_task(uni_id_str=uni_id_str, uni_cfg=uni_cfg,
+                                   is_sweep=True)
+
+        else:
+            # Prepare a cluster mode sweep
+            log.info("Preparing cluster mode sweep ...")
+
+            # Get the universe state number strings; these will determine
+            # whether a simulation will be skipped or not.
+            uni_id_strs = list(pspace.iterator(with_info='state_no_str'))
+
+            # Get the resolved cluster parameters
+            # These include the following values:
+            #    num_nodes:  The total number of nodes to simulate on. This is
+            #                what determines the modulo value.
+            #    sim_every:  The modulo offset, which depends on the position
+            #                of this Multiverse's node in the sequence of all
+            #                nodes.
+            rcps = self.resolved_cluster_params
+            num_nodes = rcps['num_nodes']
+            sim_every = rcps['sim_every']
+
+            # Determine which universes to simulate
+            unis_to_simulate = [s for i, s in enumerate(uni_id_strs)
+                                if (i - sim_every) % num_nodes == 0]
+
+            # Inform about the number of universes to be simulated
+            log.info("Adding tasks for cluster-mode simulation of "
+                     "%d universes  ...", len(sns_to_simulate))
+
+            for uni_cfg, uni_id_str in psp_iter:
+                # Skip if it should not be simulated on this node
+                if uni_id_str not in unis_to_simulate:
+                    continue
+
+                # Is valid for this node, add the simulation task
+                self._add_sim_task(uni_id_str=uni_id_str, uni_cfg=uni_cfg,
+                                   is_sweep=True)
+
+        log.info("Added %d tasks.", len(self.wm.tasks))
 
         # Prevent adding further tasks to disallow further runs
         self.wm.tasks.lock()
@@ -226,27 +295,32 @@ class Multiverse:
         # Tell the WorkerManager to start working (is a blocking call)
         self.wm.start_working(**self.meta_cfg['run_kwargs'])
 
-        log.info("Finished Multiverse parameter sweep. Wohoo. :)")
+        log.info("Finished parameter sweep. Wohoo. :)")
 
     # "Private" methods .......................................................
 
     def _create_meta_cfg(self, *, run_cfg_path: str, user_cfg_path: str, update_meta_cfg: dict) -> dict:
         """Create the meta configuration from several parts and store it.
         
-        The final configuration dict is built from up to five components,
+        The final configuration dict is built from up to four components,
         where one is always recursively updating the previous level:
             1. base: the default configuration, which is always present
             2. user (optional): configuration of user- and machine-related
                parameters
-            3. model: the model configuration, depending on self.model_name
-            4. run (optional): the configuration for the current Multiverse
+            3. run (optional): the configuration for the current Multiverse
                instance
-            5. update: if given, this dict can be used for a last update step
+            4. update (optional): can be used for a last update step
 
         The resulting configuration is the meta configuration and is stored
         to the `meta_cfg` attribute.
 
-        The parts are recorded in the `cfg_parts` dict and returned.
+        Note that all model configurations can be loaded into the meta config
+        via the yaml !model tag; this will already have occurred during
+        loading of that file and does not depend on the model chosen in this
+        Multiverse object.
+
+        The parts are recorded in the `cfg_parts` dict and returned such that
+        a backup can be created.
         
         Args:
             run_cfg_path (str): path to run_config
@@ -386,7 +460,16 @@ class Multiverse:
                 180301-125412_my_first_sim/
                 180301-125413_my_second_sim/
         
-        
+        If running in cluster mode, the cluster parameters are resolved and
+        used to determine the name of the simulation. The pattern then does not
+        include a timestamp as each node might return not quite the same value.
+        Instead, a value from an environment variable is used.
+        The resulting path can have different forms, depending on which
+        environment variables were present; optional parts are denoted by a *
+        in the following pattern; if the value is not available, the connecting
+        underscore will not be used.
+            {timestamp*}_{job id}_{job account}_{job name}_{model note}
+
         Args:
             out_dir (str): The base output directory, where all simulation data
                 is stored
@@ -403,23 +486,67 @@ class Multiverse:
                 something is seriously wrong. Strange time zone perhaps?
         """
         # Create the folder path to the simulation directory
-        # NOTE the str case ensures that out_dir is not a path-like object
-        # which causes problems for python < 3.6
+        # NOTE The str cast ensures that out_dir is not a path-like object
+        #      which causes problems for python < 3.6
         log.debug("Creating path for run directory inside %s ...", out_dir)
         out_dir = os.path.expanduser(str(out_dir))
-        run_dir = os.path.join(out_dir,
-                               self.model_name,
-                               time.strftime(self.RUN_DIR_TIME_FSTR))
 
-        # Append a model note, if needed
-        if model_note:
-            run_dir += "_" + model_note
+        # Distinguish between regular mode and cluster mode
+        if not self.cluster_mode:
+            # Not in cluster mode; can use the timestamp directly
+            timestamp = time.strftime(self.RUN_DIR_TIME_FSTR)
 
-        # Inform and store to directory dict
-        log.debug("Expanded user and time stamp to %s", run_dir)
+            # Define format string and build kwargs
+            fstr = "{ts:}{note:}"
+            fstr_kwargs = dict(ts=timestamp,
+                               note=("" if not model_note
+                                     else "_" + model_note))
+
+        else:
+            # In cluster mode, need to resolve cluster parameters first
+            rcps = self.resolved_cluster_params
+
+            # Define parts of the format string. Those in if ... are optional
+            if rcps.get('timestamp'):
+                # Build the timestamp string from the given seconds since epoch
+                timestamp = time.strftime(self.RUN_DIR_TIME_FSTR,
+                                          time.gmtime(rcps['timestamp']))
+                fstr_parts += ["{timestamp:}"]
+                fstr_kwargs['timestamp'] = timestamp
+
+            fstr_parts = ["job-{job_id:07d}"]
+            fstr_kwargs = dict(job_id=rcps['job_id'])
+
+            if rcps.get('job_account'):
+                fstr_parts += ["{job_account:}"]
+                fstr_kwargs['job_account'] = rcps['job_account']
+
+            if rcps.get('cluster_name'):
+                fstr_parts += ["{cluster_name:}"]
+                fstr_kwargs['cluster_name'] = rcps['cluster_name']
+
+            if rcps.get('job_name'):
+                fstr_parts += ["{job_name:}"]
+                fstr_kwargs['job_name'] = rcps['job_name']
+
+            if model_note:
+                fstr_parts += ["{model_note:}"]
+                fstr_kwargs['model_note'] = model_note
+
+            # Connect all parts with an underscore to generate the actual fstr
+            fstr = "_".join(fstr_parts)
+
+        # fstr and fstr_kwargs ready now. Carry out the format operation
+        run_dir_name = fstr.format(**fstr_kwargs)
+        log.debug("Determined run directory name:  %s", run_dir_name)
+        
+        # Built the run directory path
+        run_dir = os.path.join(out_dir, self.model_name, run_dir_name)
+        log.debug("Built run directory path:  %s", run_dir)
         self.dirs['run'] = run_dir
 
-        # Recursively create the whole path to the simulation directory
+
+        # Recursively create the whole path to the run directory
         try:
             os.makedirs(run_dir)
 
@@ -467,6 +594,67 @@ class Multiverse:
                     write_yml(val, path=_path)
 
         log.debug("Finished creating run directory and backing up config.")
+
+    def _resolve_cluster_params(self, *, env: dict=None) -> dict:
+        """This resolves the cluster parameters, e.g. by setting parameters
+        depending on certain environment variables. This function is called by
+        the resolved_cluster_params property.
+        
+        Args:
+            env (dict, optional): Can be given for testing purposes; if not
+                given, os.environ is used instead.
+        
+        Returns:
+            dict: The resolved cluster configuration parameters
+        
+        Raises:
+            ValueError: If a required environment variable was missing or empty
+        """
+        log.debug("Resolving cluster parameters from environment variables...")
+        env = env if env is not None else dict(os.environ)
+
+        # Get a copy of the meta configuration parameters
+        cps = self.cluster_params
+
+        # Get the mapping of environment variables to target variables
+        mngr = cps['manager']
+        var_map = cps['env_var_names'][mngr]
+
+        # Resolve the variables from the environment, requiring them to not
+        # be empty
+        resolved = {target_key: env.get(var_name)
+                    for target_key, var_name in var_map.items()
+                    if env.get(var_name)}
+
+        # Check that all required keys are available
+        required = ('job_id', 'num_nodes', 'node_list', 'node_name')
+        if any([var not in resolved for var in required]):
+            raise ValueError("Missing environment variable for any one of the "
+                             "required parameters: {}.  Make sure that the "
+                             "corresponding environment variables are set!\n"
+                             "Manager: '{}'\nMapping:\n{}\nEnvironment:\n{}"
+                             "".format(", ".join(required), mngr,
+                                       pformat(var_map), pformat(env)))
+
+        # Now do some postprocessing on some of the values
+        # Ensure integers
+        resolved['job_id'] = int(resolved['job_id'])
+        resolved['num_nodes'] = int(resolved['num_nodes'])
+
+        if 'num_procs' in resolved:
+            resolved['num_procs'] = int(resolved['num_procs'])
+        
+        if 'timestamp' in resolved:
+            resolved['timestamp'] = int(resolved['timestamp'])
+
+        # Ensure list by removing whitespace and then splitting
+        delim = rcps['node_list_delimiters'][mngr]
+        node_list = resolved['node_list'].replace(" ", "")
+        resolved['node_list'] = node_list.split(delim)
+
+        # Return the resolved values
+        log.debug("Resolved cluster parameters:\n%s", pformat(resolved))
+        return resolved
 
     def _add_sim_task(self, *, uni_id_str: str, uni_cfg: dict, is_sweep: bool) -> None:
         """Helper function that handles task assignment to the WorkerManager.
@@ -580,6 +768,7 @@ class Multiverse:
 
 
 # -----------------------------------------------------------------------------
+# TODO Add cluster mode support when determining run directory
 
 class FrozenMultiverse(Multiverse):
     """A frozen Multiverse is like a Multiverse, but frozen.

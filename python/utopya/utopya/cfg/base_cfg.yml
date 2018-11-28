@@ -151,6 +151,56 @@ worker_kwargs:
   popen_kwargs: {}
 
 
+# Cluster mode configuration
+# Whether cluster mode is enabled
+cluster_mode: false
+
+# Parameters to configure the cluster mode
+cluster_params:
+  # Specify the workload manager to use.
+  # The names of environment variables are chosen accordingly.
+  manager: slurm   # available:  slurm
+
+  # Specify the name of environment variables for each supported manager
+  # The resolved values are available at the top level of the dict that is
+  # returned by Multiverse.resolved_cluster_params
+  env_var_names:
+    slurm:
+      # --- Required variables ---
+      # ID of the job
+      job_id: SLURM_JOB_ID
+
+      # Number of available nodes
+      num_nodes: SLURM_JOB_NUM_NODES
+
+      # List of node names
+      node_list: SLURM_JOB_NODELIST
+
+      # Name of the current node
+      node_name: SLURM_NODENAME
+
+      # --- Optional values ---
+      # Name of the job
+      job_name: SLURM_JOB_NAME
+
+      # Account from which the job is run
+      job_account: SLURM_JOB_ACCOUNT
+
+      # Number of processes on current node
+      num_procs: SLURM_CPUS_ON_NODE
+
+      # Cluster name
+      cluster_name: SLURM_CLUSTER_NAME
+
+      # If a unix timestamp is given, this is used for the name of the run
+      timestamp: RUN_TIMESTAMP
+
+    # Could have more managers here, e.g.: docker
+
+  # The delimiters used in the string of node names
+  node_list_delimiters:
+    slurm: ","
+
 # Data Manager ................................................................
 # The DataManager takes care of loading the data into a tree-like structure
 # after the simulations are finished.
