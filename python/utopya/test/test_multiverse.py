@@ -243,11 +243,16 @@ def test_cluster_mode_run(mv_kwargs, cluster_env):
     mv_kwargs['run_cfg_path'] = CLUSTER_MODE_CFG_PATH
     mv_kwargs['cluster_params'] = dict(env=cluster_env)
 
-    # Create the Multiverse
-    mv = Multiverse(**mv_kwargs)
+    # Parameter space has 12 points
+    # Five nodes are being used
+    # Test for first node, should perform 3 simulations
+    cluster_env['TEST_NODENAME'] = "node02"
 
-    # Run it ...
-    mv.run()
+    mv = Multiverse(**mv_kwargs)
+    mv.run_sweep()
+    assert len(mv.wm.tasks) == 3
+
+    # FIXME continue here
 
 
 # FrozenMultiverse tests ------------------------------------------------------

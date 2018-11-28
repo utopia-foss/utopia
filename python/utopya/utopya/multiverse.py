@@ -276,7 +276,7 @@ class Multiverse:
 
             # Inform about the number of universes to be simulated
             log.info("Adding tasks for cluster-mode simulation of "
-                     "%d universes  ...", len(sns_to_simulate))
+                     "%d universes  ...", len(unis_to_simulate))
 
             for uni_cfg, uni_id_str in psp_iter:
                 # Skip if it should not be simulated on this node

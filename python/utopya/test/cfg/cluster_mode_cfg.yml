@@ -49,5 +49,9 @@ cluster_params:
 parameter_space:
   num_steps: 3
 
+  seed: !sweep
+    default: 0
+    range: [12]
+
   dummy: !model
     model_name: dummy
