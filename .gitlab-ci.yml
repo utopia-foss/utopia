@@ -94,7 +94,6 @@ setup:dune4utopia: &setup
   stage: setup
   only:
     - web  # can only activate this via web interface: "run pipeline"
-    - 210-update-utopia-dependencies-and-docker-image  # FIXME remove
   tags:
     - dind
   image: docker:stable
