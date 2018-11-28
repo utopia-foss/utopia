@@ -8,34 +8,60 @@
 #
 #   - FFTW3_FOUND           True if FFTW was found
 #   - FFTW3_INCLUDE_DIRS    Location of fftw3.h
-#   - FFTW3_LIBRARIES       List of FFTW libraries
+#   - FFTW3_LIBRARIES       List of libraries when using FFTW
 #
 
-# use pkg-config to determine module parameters
-# and immediately import a target
+# use pkg-config to help with module parameters
+# the found variables are prefixed with "PC_FFTW3"
 find_package(PkgConfig)
-pkg_check_modules(FFTW3
-    QUIET REQUIRED IMPORTED_TARGET
-    fftw3)
+pkg_check_modules(PC_FFTW3 QUIET fftw3)
+
+# extract version
+set(FFTW3_VERSION ${PC_FFTW3_VERSION})
+
+# find the path to the header based on pkg config information
+find_path(FFTW3_INCLUDE_DIR
+    NAMES fftw3.h
+    PATHS ${PC_FFTW3_INCLUDE_DIRS}
+    PATH_SUFFIXES fftw
+)
+
+# path to the library
+find_library(FFTW3_LIBRARY
+    NAMES fftw3 ${PC_FFTW3_LIBRARIES}
+    PATHS ${PC_FFTW3_LIBRARY_DIRS}
+    PATH_SUFFIXES fftw
+)
 
 # tell CMake that these variables are consumed
-mark_as_advanced(FFTW3_FOUND FFTW3_VERSION)
+mark_as_advanced(FFTW3_FOUND FFTW3_INCLUDE_DIR FFTW3_LIBRARY FFTW3_VERSION)
 
-# have CMake check that these variables are set
+# set "FFTW3_FOUND" if the specified variables have values
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(
     FFTW3
-    REQUIRED_VARS FFTW3_LIBRARIES FFTW3_INCLUDE_DIRS
+    REQUIRED_VARS FFTW3_INCLUDE_DIR FFTW3_LIBRARY
     VERSION_VAR FFTW3_VERSION
 )
 
-if(FFTW3_FOUND)
-    # promote pkg config target to global scope
-    set_target_properties(PkgConfig::FFTW3
-        PROPERTIES
-            IMPORTED_GLOBAL TRUE
+# most important part: actually define the imported target
+if(FFTW3_FOUND AND NOT TARGET FFTW3::fftw3)
+    # add the target
+    add_library(FFTW3::fftw3 MODULE IMPORTED)
+    # specify its include directory
+    target_include_directories(FFTW3::fftw3
+        INTERFACE
+            ${FFTW3_INCLUDE_DIR}
     )
+    # add the library location
+    set_target_properties(FFTW3::fftw3
+        PROPERTIES
+            IMPORTED_LOCATION ${FFTW3_LIBRARY}
+    )
+endif()
 
-    # add an alias target
-    add_library(FFTW3::fftw3 ALIAS PkgConfig::FFTW3)
+# export variables mentioned above if everything checks out
+if(FFTW3_FOUND)
+    set(FFTW3_INCLUDE_DIRS ${FFTW3_INCLUDE_DIR})
+    set(FFTW3_LIBRARIES ${FFTW3_LIBRARY})
 endif()
