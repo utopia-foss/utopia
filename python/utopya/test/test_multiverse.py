@@ -5,6 +5,7 @@ As the Multiverse will always generate a folder structure, it needs to be taken 
 
 import os
 import uuid
+import time
 from pkg_resources import resource_filename
 
 import pytest
@@ -16,6 +17,7 @@ RUN_CFG_PATH = resource_filename('test', 'cfg/run_cfg.yml')
 USER_CFG_PATH = resource_filename('test', 'cfg/user_cfg.yml')
 BAD_USER_CFG_PATH = resource_filename('test', 'cfg/bad_user_cfg.yml')
 SWEEP_CFG_PATH = resource_filename('test', 'cfg/sweep_cfg.yml')
+CLUSTER_MODE_CFG_PATH = resource_filename('test', 'cfg/cluster_mode_cfg.yml')
 
 # Fixtures ----------------------------------------------------------------
 @pytest.fixture
@@ -194,6 +196,37 @@ def test_multiple_runs_not_allowed(mv_kwargs):
     with pytest.raises(RuntimeError, match="Could not add simulation task"):
         mv.run_single()
 
+def test_cluster_mode_resolve_params(mv_kwargs):
+    """Tests cluster mode resolution of parameters"""
+
+    # Define a custom test environment
+    test_env = dict(TEST_JOB_ID="123",
+                    TEST_JOB_NUM_NODES="5",
+                    TEST_JOB_NODELIST="node03, node02, node05, node06, node11",
+                    TEST_NODENAME="node06",
+                    TEST_JOB_NAME="testjob",
+                    TEST_JOB_ACCOUNT="testaccount",
+                    TEST_CPUS_ON_NODE="42",
+                    TEST_CLUSTER_NAME="testcluster",
+                    TEST_TIMESTAMP=str(int(time.time())),
+                    )
+    mv_kwargs['run_cfg_path'] = CLUSTER_MODE_CFG_PATH
+    mv_kwargs['cluster_params'] = dict(env=test_env)
+
+    mv = Multiverse(**mv_kwargs)
+
+    rcps = mv.resolved_cluster_params
+    assert len(rcps) == 9
+    assert isinstance(rcps['job_id'], int)
+    assert isinstance(rcps['num_nodes'], int)
+    assert isinstance(rcps['num_procs'], int)
+    assert isinstance(rcps['node_list'], list)
+
+
+    # Test again with wrong num_nodes parameter
+    test_env['TEST_JOB_NUM_NODES'] = '3'
+    with pytest.raises(ValueError, match="`node_list` has a different length"):
+        Multiverse(**mv_kwargs)
 
 # FrozenMultiverse tests ------------------------------------------------------
 

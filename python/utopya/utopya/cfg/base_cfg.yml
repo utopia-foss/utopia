@@ -161,6 +161,9 @@ cluster_params:
   # The names of environment variables are chosen accordingly.
   manager: slurm   # available:  slurm
 
+  # The environment to look for parameters in. If not given, uses os.environ
+  env: ~
+
   # Specify the name of environment variables for each supported manager
   # The resolved values are available at the top level of the dict that is
   # returned by Multiverse.resolved_cluster_params

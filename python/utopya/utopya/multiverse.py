@@ -44,7 +44,7 @@ class Multiverse:
     USER_CFG_SEARCH_PATH = os.path.expanduser("~/.config/utopia/user_cfg.yml")
     RUN_DIR_TIME_FSTR = "%y%m%d-%H%M%S"
 
-    def __init__(self, *, model_name: str, run_cfg_path: str=None, user_cfg_path: str=None, **update_meta_cfg):
+    def __init__(self, *, model_name: str, run_cfg_path: str=None, user_cfg_path: str=None, custom_env: dict=None, **update_meta_cfg):
         """Initialize the Multiverse.
         
         Args:
@@ -507,6 +507,9 @@ class Multiverse:
             rcps = self.resolved_cluster_params
 
             # Define parts of the format string. Those in if ... are optional
+            fstr_parts = []
+            fstr_kwargs = dict()
+
             if rcps.get('timestamp'):
                 # Build the timestamp string from the given seconds since epoch
                 timestamp = time.strftime(self.RUN_DIR_TIME_FSTR,
@@ -595,14 +598,10 @@ class Multiverse:
 
         log.debug("Finished creating run directory and backing up config.")
 
-    def _resolve_cluster_params(self, *, env: dict=None) -> dict:
+    def _resolve_cluster_params(self) -> dict:
         """This resolves the cluster parameters, e.g. by setting parameters
         depending on certain environment variables. This function is called by
         the resolved_cluster_params property.
-        
-        Args:
-            env (dict, optional): Can be given for testing purposes; if not
-                given, os.environ is used instead.
         
         Returns:
             dict: The resolved cluster configuration parameters
@@ -610,11 +609,13 @@ class Multiverse:
         Raises:
             ValueError: If a required environment variable was missing or empty
         """
-        log.debug("Resolving cluster parameters from environment variables...")
-        env = env if env is not None else dict(os.environ)
+        log.debug("Resolving cluster parameters from environment ...")
 
         # Get a copy of the meta configuration parameters
         cps = self.cluster_params
+
+        # Determine the environment to use; defaults to os.environ
+        env = cps.get('env') if cps.get('env') else dict(os.environ)
 
         # Get the mapping of environment variables to target variables
         mngr = cps['manager']
@@ -629,12 +630,17 @@ class Multiverse:
         # Check that all required keys are available
         required = ('job_id', 'num_nodes', 'node_list', 'node_name')
         if any([var not in resolved for var in required]):
-            raise ValueError("Missing environment variable for any one of the "
-                             "required parameters: {}.  Make sure that the "
-                             "corresponding environment variables are set!\n"
-                             "Manager: '{}'\nMapping:\n{}\nEnvironment:\n{}"
+            raise ValueError("Missing environment variable for one or more of "
+                             "the required parameters:  {}.  Make sure that "
+                             "the corresponding environment variables are set!"
+                             "\nManager: '{}'\n"
+                             "Mapping:\n{}\n"
+                             "Environment keys:\n  - {}\n\n"
+                             "Full environment:\n{}"
                              "".format(", ".join(required), mngr,
-                                       pformat(var_map), pformat(env)))
+                                       pformat(var_map),
+                                       "\n  - ".join(env.keys()),
+                                       pformat(env)))
 
         # Now do some postprocessing on some of the values
         # Ensure integers
@@ -647,10 +653,19 @@ class Multiverse:
         if 'timestamp' in resolved:
             resolved['timestamp'] = int(resolved['timestamp'])
 
-        # Ensure list by removing whitespace and then splitting
-        delim = rcps['node_list_delimiters'][mngr]
+        # Ensure reproducible node list format: ordered list
+        # Achieve this by removing whitespace, then splitting and sorting
         node_list = resolved['node_list'].replace(" ", "")
-        resolved['node_list'] = node_list.split(delim)
+        delim = cps['node_list_delimiters'][mngr]
+        resolved['node_list'] = sorted(node_list.split(delim))
+
+        # Consistency checks
+        if resolved['num_nodes'] != len(resolved['node_list']):
+            raise ValueError("Cluster parameter `node_list` has a different "
+                             "length ({}) than specified by the  `num_nodes` "
+                             "parameter ({})."
+                             "".format(len(resolved['node_list']),
+                                       resolved['num_nodes']))
 
         # Return the resolved values
         log.debug("Resolved cluster parameters:\n%s", pformat(resolved))

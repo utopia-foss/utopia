@@ -1,0 +1,53 @@
+# Configuration for testing cluster mode
+---
+perform_sweep: true
+
+cluster_mode: true
+
+cluster_params:
+  # Here, choose a custom test manager
+  manager: test
+
+  env_var_names:
+    test:
+      # --- Required variables ---
+      # ID of the job
+      job_id: TEST_JOB_ID
+
+      # Number of available nodes
+      num_nodes: TEST_JOB_NUM_NODES
+
+      # List of node names
+      node_list: TEST_JOB_NODELIST
+
+      # Name of the current node
+      node_name: TEST_NODENAME
+
+      # --- Optional values ---
+      # Name of the job
+      job_name: TEST_JOB_NAME
+
+      # Account from which the job is run
+      job_account: TEST_JOB_ACCOUNT
+
+      # Number of processes on current node
+      num_procs: TEST_CPUS_ON_NODE
+
+      # Cluster name
+      cluster_name: TEST_CLUSTER_NAME
+
+      # If a unix timestamp is given, this is used for the name of the run
+      timestamp: TEST_TIMESTAMP
+
+    # Could have more managers here, e.g.: docker
+
+  # The delimiters used in the string of node names
+  node_list_delimiters:
+    test: ","
+
+
+parameter_space:
+  num_steps: 3
+
+  dummy: !model
+    model_name: dummy
