@@ -92,7 +92,9 @@ For more information on how to use the command line interface (and a prettier co
 
         git submodule update
 
-    This will perform a `git checkout` of the specified commit in all submodules.
+    This will perform a `git checkout` of the specified commit in all submodules. To fetch data of submodules that were not previously available on your branch, call the following command:
+
+        git submodule update --init --recursive
 
 
 ### Dependencies
