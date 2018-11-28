@@ -1,4 +1,4 @@
-# -----------------------------------------------------------------------------
+# NOTE ------------------------------------------------------------------------
 # IMPORTANT:
 #     Do not forget to increment the $IMAGE_VERSION variable in gitlab CI
 #     The version has the shape x.y, where x is incremented only for changes
@@ -46,11 +46,6 @@ RUN apt-get update \
 RUN rm -rf /var/lib/apt/lists/* \
     && localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
 ENV LANG en_US.utf8
-
-# install custom CA of Heidelberg University to access our servers
-RUN curl https://pki.pca.dfn.de/uni-heidelberg-ca/pub/cacert/chain.txt \
-    -o /usr/local/share/ca-certificates/uniheidelberg.crt \
-    && update-ca-certificates
 
 # change working directory and clone DUNE dependencies
 WORKDIR /opt/dune
