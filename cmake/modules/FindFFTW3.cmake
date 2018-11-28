@@ -48,15 +48,11 @@ find_package_handle_standard_args(
 if(FFTW3_FOUND AND NOT TARGET FFTW3::fftw3)
     # add the target
     add_library(FFTW3::fftw3 MODULE IMPORTED)
-    # specify its include directory
-    target_include_directories(FFTW3::fftw3
-        INTERFACE
-            ${FFTW3_INCLUDE_DIR}
-    )
-    # add the library location
+    # add the library location and include directories
     set_target_properties(FFTW3::fftw3
         PROPERTIES
             IMPORTED_LOCATION ${FFTW3_LIBRARY}
+            INTERFACE_INCLUDE_DIRECTORIES ${FFTW3_INCLUDE_DIR}
     )
 endif()
 
