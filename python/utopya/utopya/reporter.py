@@ -511,7 +511,12 @@ class WorkerManagerReporter(Reporter):
     """This class reports on the state of the WorkerManager."""
 
     def __init__(self, wm, **reporter_kwargs):
-        """Initialize the Reporter for the WorkerManager."""
+        """Initialize the Reporter for the WorkerManager.
+        
+        Args:
+            wm (WorkerManager): The associated WorkerManager
+            **reporter_kwargs: Passed on to parent method
+        """
 
         super().__init__(**reporter_kwargs)
 
@@ -914,3 +919,41 @@ class WorkerManagerReporter(Reporter):
 
         return " \n".join(parts)
       
+
+    # Writer methods ..........................................................
+
+    def _write_to_file(self, *args, path: str='_report.txt',
+                       cluster_mode_path: str='{0:}_{node_name:}.{ext:}',
+                       **kwargs):
+        """Overloads the parent method with capabilities needed in cluster mode
+        
+        All args and kwargs are passed through. If in cluster mode, the path
+        is changed such that it includes the name of the node.
+        
+        Args:
+            *args: Passed on to parent method
+            path (str, optional): The path to save to
+            cluster_mode_path (str, optional): The format string to use for the
+                path in cluster mode. _Requires_ to contain the format key '{0:}' which retains the given `path`, extension split off.
+                Extension can be used via 'ext'. Additional format keys that
+                are always available: 'node_name', 'job_id'.
+            **kwargs: Passed on to parent method
+        """
+        if not self.wm.cluster_mode:
+            return super()._write_to_file(*args, path=path, **kwargs)
+
+        # else: in cluster mode. Use the information to build a new path
+        # Existing information
+        base_path, ext = os.path.splitext(path)
+        fstr_args = [base_path]
+        fstr_kwargs = dict(ext=ext)
+
+        # Gather cluster mode arguments
+        fstr_kwargs['node_name'] = self.wm.resolved_cluster_params['node_name']
+        fstr_kwargs['job_id'] = self.wm.resolved_cluster_params['job_id']
+
+        # Build the new path
+        path = cluster_mode_path.format(*fstr_args, **fstr_kwargs)
+
+        # And call the parent method
+        return super()._write_to_file(*args, path=path, **kwargs)
