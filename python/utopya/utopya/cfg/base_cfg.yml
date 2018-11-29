@@ -293,6 +293,10 @@ plot_manager:
   # Whether to raise exceptions for plotting errors. false: only log them
   raise_exc: false
 
+  # How to handle already existing plot configuration files
+  cfg_exists_action: raise
+  # NOTE If in cluster mode, this value is set to 'skip' by the Multiverse
+
   # Save all plot configurations alongside the plots
   save_plot_cfg: true
   

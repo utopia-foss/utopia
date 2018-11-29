@@ -78,9 +78,13 @@ class Multiverse:
                                       update_meta_cfg=update_meta_cfg)
         # NOTE this already stores it in self._meta_cfg
 
-        # Resolve the cluster parameters, if in cluster mode
+        # Resolve the cluster parameters, if in cluster mode, and make some
+        # minor (!!) adjustments.
         if self.cluster_mode:
             self._resolved_cluster_params = self._resolve_cluster_params()
+
+            # To avoid config file collisions in the PlotManager:
+            self._meta_cfg['plot_manager']['cfg_exists_action'] = 'skip'
 
         # Create the run directory and write the meta configuration into it.
         # This already performs the backup of the configuration files.
