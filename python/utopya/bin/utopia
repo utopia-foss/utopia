@@ -279,7 +279,7 @@ if __name__ == '__main__':
     
         if args.set_cfg:
             # Add an entry for each pair
-            add_from_kv_pairs(*args.set_params, add_to=update_dict)
+            add_from_kv_pairs(*args.set_cfg, add_to=update_dict)
 
 
     # Finished with generating the update dict; give some info on it
