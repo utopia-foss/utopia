@@ -180,7 +180,7 @@ cluster_params:
       node_list: SLURM_JOB_NODELIST
 
       # Name of the current node
-      node_name: SLURM_NODENAME
+      node_name: SLURMD_NODENAME  # sic!
 
       # This is used for the name of the run
       timestamp: RUN_TIMESTAMP
