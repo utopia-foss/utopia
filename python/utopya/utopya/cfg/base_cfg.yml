@@ -182,6 +182,9 @@ cluster_params:
       # Name of the current node
       node_name: SLURM_NODENAME
 
+      # This is used for the name of the run
+      timestamp: RUN_TIMESTAMP
+
       # --- Optional values ---
       # Name of the job
       job_name: SLURM_JOB_NAME
@@ -194,9 +197,6 @@ cluster_params:
 
       # Cluster name
       cluster_name: SLURM_CLUSTER_NAME
-
-      # If a unix timestamp is given, this is used for the name of the run
-      timestamp: RUN_TIMESTAMP
 
     # Could have more managers here, e.g.: docker
 
@@ -212,8 +212,8 @@ cluster_params:
 data_manager:
   # Where to create the output directory for this DataManager, relative to
   # the run directory of the Multiverse.
-  out_dir: eval/{date:}
-  # The {date:} placeholder is replaced by the current timestamp such that
+  out_dir: eval/{timestamp:}
+  # The {timestamp:} placeholder is replaced by the current timestamp such that
   # future DataManager instances that operate on the same data directory do
   # not create collisions.
   # Directories are created recursively, if they do not exist.

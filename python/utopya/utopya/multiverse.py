@@ -351,9 +351,9 @@ class Multiverse:
 
         if user_cfg_path:
             user_cfg = read_yml(user_cfg_path,
-                                error_msg="Did not find user "
-                                "configuration at the specified "
-                                "path {}!".format(user_cfg_path))
+                                error_msg="Did not find user configuration at "
+                                          "the specified path {}!"
+                                          "".format(user_cfg_path))
 
             # Check that it does not contain parameter_space
             if user_cfg and 'parameter_space' in user_cfg:
@@ -374,8 +374,8 @@ class Multiverse:
         # Read in the run configuration
         if run_cfg_path:
             run_cfg = read_yml(run_cfg_path,
-                               error_msg="{0} was given but run_config could "
-                                         "not be found.".format(run_cfg_path))
+                               error_msg="No run config could be found at {}!"
+                                         "".format(run_cfg_path))
         else:
             run_cfg = None
 
@@ -533,20 +533,21 @@ class Multiverse:
             # In cluster mode, need to resolve cluster parameters first
             rcps = self.resolved_cluster_params
 
-            # Define parts of the format string. Those in if ... are optional
+            # Define parts of the format string and the corresponding kwargs
             fstr_parts = []
             fstr_kwargs = dict()
+        
+            # required: timestamp
+            timestamp = time.strftime(self.RUN_DIR_TIME_FSTR,
+                                      time.gmtime(rcps['timestamp']))
+            fstr_parts += ["{timestamp:}"]
+            fstr_kwargs['timestamp'] = timestamp
 
-            if rcps.get('timestamp'):
-                # Build the timestamp string from the given seconds since epoch
-                timestamp = time.strftime(self.RUN_DIR_TIME_FSTR,
-                                          time.gmtime(rcps['timestamp']))
-                fstr_parts += ["{timestamp:}"]
-                fstr_kwargs['timestamp'] = timestamp
-
+            # required: job id
             fstr_parts = ["job{job_id:07d}"]
             fstr_kwargs = dict(job_id=rcps['job_id'])
 
+            # optional
             if rcps.get('job_account'):
                 fstr_parts += ["{job_account:}"]
                 fstr_kwargs['job_account'] = rcps['job_account']
