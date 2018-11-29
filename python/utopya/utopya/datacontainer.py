@@ -61,11 +61,14 @@ class GridDC(NumpyDC):
 
         # Check that the number of total elements before reshaping equals the
         # number of elements after reshaping in the data
-        if reduce(mul, new_shape) != reduce(mul, data_shape):
-            raise ValueError("Rescaling the data results in different total"
-                             "number of elements in the data. The new shape {}"
-                             "cannot substitute the old shape {}."
-                             "".format(new_shape, data_shape))
         
-        # Reshape the data using Fortran-like index ordering
-        self._data = np.reshape(self.data, new_shape, order='F')
+        try:
+            # Reshape the data
+            self._data = np.reshape(self.data, new_shape, order='C')
+        except ValueError as err:
+            raise ValueError("Cannot reshape array of size {} into shape {}. "
+                             "To reshape the model configuration the parameter "
+                             "grid_size is used, which probably is not provided."
+                             "".format(data_shape, new_shape)
+                             ) from err
+

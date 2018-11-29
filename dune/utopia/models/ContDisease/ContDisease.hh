@@ -246,6 +246,12 @@ public:
 
         // Write initial state
         this->write_data();
+
+        // Add attributes to the datasets
+        _dset_state->add_attribute("content", "grid");
+        const auto grid_size = as_<std::array<std::size_t,2>>(this->_cfg["grid_size"]);
+        _dset_state->add_attribute("grid_shape", grid_size);
+
     }
 
     // Setup functions ........................................................
