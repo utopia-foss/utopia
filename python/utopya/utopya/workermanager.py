@@ -5,6 +5,7 @@ import sys
 import queue
 import warnings
 import logging
+import copy
 import time
 from datetime import datetime as dt
 from typing import Union, Callable, Sequence, List, Set, Dict

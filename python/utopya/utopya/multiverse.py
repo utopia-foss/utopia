@@ -83,8 +83,27 @@ class Multiverse:
         if self.cluster_mode:
             self._resolved_cluster_params = self._resolve_cluster_params()
 
+            # Changes to the meta configuration
             # To avoid config file collisions in the PlotManager:
             self._meta_cfg['plot_manager']['cfg_exists_action'] = 'skip'
+
+            # _Additional_ arguments to pass to *Manager initializations below
+            # Need the resolved parameters for that
+            rcps = self.resolved_cluster_params
+            
+            # DataManager
+            timestamp = rcps['timestamp']
+            dm_cluster_kwargs = dict(out_dir_kwargs=dict(timestamp=timestamp,
+                                                         exist_ok=True))
+
+            # WorkerManager
+            wm_cluster_kwargs = dict(cluster_mode=True,
+                                     resolved_cluster_params=rcps)
+
+        else:
+            # Empty dicts for the initializations below
+            dm_cluster_kwargs = dict()
+            wm_cluster_kwargs = dict()
 
         # Create the run directory and write the meta configuration into it.
         # This already performs the backup of the configuration files.
@@ -96,10 +115,12 @@ class Multiverse:
         # Create a data manager
         self._dm = DataManager(self.dirs['run'],
                                name=self.model_name + "_data",
-                               **self.meta_cfg['data_manager'])
+                               **self.meta_cfg['data_manager'],
+                               **dm_cluster_kwargs)
 
         # Create a WorkerManager instance and pass the reporter to it
-        self._wm = WorkerManager(**self.meta_cfg['worker_manager'])
+        self._wm = WorkerManager(**self.meta_cfg['worker_manager'],
+                                 **wm_cluster_kwargs)
 
         # Instantiate the Reporter
         self._reporter = WorkerManagerReporter(self.wm,
@@ -525,11 +546,11 @@ class Multiverse:
         # Distinguish between regular mode and cluster mode
         if not self.cluster_mode:
             # Not in cluster mode; can use the timestamp directly
-            timestamp = time.strftime(self.RUN_DIR_TIME_FSTR)
+            timestr = time.strftime(self.RUN_DIR_TIME_FSTR)
 
             # Define format string and build kwargs
-            fstr = "{ts:}{note:}"
-            fstr_kwargs = dict(ts=timestamp,
+            fstr = "{timestamp:}{note:}"
+            fstr_kwargs = dict(timestamp=timestr,
                                note=("" if not model_note
                                      else "_" + model_note))
 
@@ -542,14 +563,14 @@ class Multiverse:
             fstr_kwargs = dict()
         
             # required: timestamp
-            timestamp = time.strftime(self.RUN_DIR_TIME_FSTR,
+            timestr = time.strftime(self.RUN_DIR_TIME_FSTR,
                                       time.gmtime(rcps['timestamp']))
             fstr_parts += ["{timestamp:}"]
-            fstr_kwargs['timestamp'] = timestamp
+            fstr_kwargs['timestamp'] = timestr
 
             # required: job id
-            fstr_parts = ["job{job_id:07d}"]
-            fstr_kwargs = dict(job_id=rcps['job_id'])
+            fstr_parts += ["job{job_id:07d}"]
+            fstr_kwargs['job_id'] = rcps['job_id']
 
             # optional
             if rcps.get('job_account'):

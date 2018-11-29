@@ -923,7 +923,7 @@ class WorkerManagerReporter(Reporter):
     # Writer methods ..........................................................
 
     def _write_to_file(self, *args, path: str='_report.txt',
-                       cluster_mode_path: str='{0:}_{node_name:}.{ext:}',
+                       cluster_mode_path: str='{0:}_{node_name:}{ext:}',
                        **kwargs):
         """Overloads the parent method with capabilities needed in cluster mode
         
@@ -935,8 +935,8 @@ class WorkerManagerReporter(Reporter):
             path (str, optional): The path to save to
             cluster_mode_path (str, optional): The format string to use for the
                 path in cluster mode. _Requires_ to contain the format key '{0:}' which retains the given `path`, extension split off.
-                Extension can be used via 'ext'. Additional format keys that
-                are always available: 'node_name', 'job_id'.
+                Extension can be used via 'ext' (already includes the dot).
+                Additional format keys: 'node_name', 'job_id'.
             **kwargs: Passed on to parent method
         """
         if not self.wm.cluster_mode:
