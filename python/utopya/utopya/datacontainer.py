@@ -6,7 +6,7 @@ the NumpyDataContainer.
 
 import logging
 
-from dantro.container import NumpyDataContainer
+from dantro.containers import NumpyDataContainer
 from dantro.mixins import Hdf5ProxyMixin
 
 # Configure and get logger
