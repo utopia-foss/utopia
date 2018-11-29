@@ -899,23 +899,40 @@ class WorkerManagerReporter(Reporter):
         rtstats = self.calc_runtime_statistics(min_num=min_num)
 
         if rtstats is None:
-            return "No simulation report generated because no runtime statistics was calculated."
+            return ("No simulation report generated because no runtime "
+                    "statistics were calculated.")
 
         # List that contains the parts that will be written
         parts = []
         
         # Add header 
-        parts.append("Runtime Statistics")
-        parts.append("------------------")
-        parts.append("")
-        parts.append("This report contains the runtime statistics of a multiverse simulation run.")
-        parts.append("The statistics is calculated from universe run times.")
-        parts.append("")
-        parts.append("  # universes:  {}".format(len(self.runtimes)))
-        parts.append("")
+        parts += ["Runtime Statistics"]
+        parts += ["------------------"]
+        parts += [""]
+        parts += ["This report contains the runtime statistics of a "
+                  "multiverse simulation run."]
+        parts += ["The statistics are calculated from universe run times."]
+        parts += [""]
+        parts += ["  # universes:  {} / {}".format(len(self.runtimes),
+                                                   len(self.wm.tasks))]
+        parts += [""]
     
+        # Add the runtime statistics
         parts += [fstr.format(k=k, v=tools.format_time(v, ms_precision=1))
-                for k, v in rtstats.items()]
+                  for k, v in rtstats.items()]
+
+        # In cluster mode, add more information
+        if self.wm.cluster_mode:
+            rcps = self.wm.resolved_cluster_params
+
+            parts += [""]
+            parts += ["Cluster mode is enabled."]
+            parts += [""]
+            parts += [fstr.format(k=k, v=rcps[k])
+                      for k in ('node_name', 'node_index', 'num_nodes',
+                                'node_list', 'job_id', 'job_name',
+                                'job_account', 'cluster_name', 'num_procs')
+                      if rcps.get(k)]
 
         return " \n".join(parts)
       
