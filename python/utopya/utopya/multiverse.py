@@ -56,7 +56,7 @@ class Multiverse:
             **update_meta_cfg: Can be used to update the meta configuration
                 generated from the previous configuration levels
         """
-        # Initialize empty attributes (partly property-managed)
+        # Initialize property-managed attributes
         self._meta_cfg = None
         self._model_name = None
         self._dirs = {}
@@ -77,6 +77,10 @@ class Multiverse:
                                       user_cfg_path=user_cfg_path,
                                       update_meta_cfg=update_meta_cfg)
         # NOTE this already stores it in self._meta_cfg
+
+        # Resolve the cluster parameters, if in cluster mode
+        if self.cluster_mode:
+            self._resolved_cluster_params = self._resolve_cluster_params()
 
         # Create the run directory and write the meta configuration into it.
         # This already performs the backup of the configuration files.
@@ -157,11 +161,7 @@ class Multiverse:
         """Returns a copy of the cluster configuration with all parameters
         resolved. This makes some additional keys available on the top level.
         """
-        # Cache it
-        if not self._resolved_cluster_params:
-            self._resolved_cluster_params = self._resolve_cluster_params()
-
-        # Return the cached value as a copy to secure it against changes
+        # Return the cached value as a _copy_ to secure it against changes
         return copy.deepcopy(self._resolved_cluster_params)
 
     @property
@@ -257,25 +257,25 @@ class Multiverse:
 
             # Get the resolved cluster parameters
             # These include the following values:
-            #    num_nodes:    The total number of nodes to simulate on. This
-            #                  is what determines the modulo value.
-            #    iter_offset:  The modulo offset, which depends on the position
-            #                  of this Multiverse's node in the sequence of all
-            #                  nodes.
+            #    num_nodes:   The total number of nodes to simulate on. This
+            #                 is what determines the modulo value.
+            #    node_index:  Equivalent to the modulo offset, which depends
+            #                 on the position of this Multiverse's node in the
+            #                 sequence of all nodes.
             rcps = self.resolved_cluster_params
             num_nodes = rcps['num_nodes']
-            iter_offset = rcps['iter_offset']
+            node_index = rcps['node_index']
 
             # Inform about the number of universes to be simulated
             log.info("Adding tasks for cluster-mode simulation of "
                      "%d universes on this node (%d of %d) ...",
                      (   pspace.volume//num_nodes
-                      + (pspace.volume%num_nodes > iter_offset)),
-                     iter_offset + 1, num_nodes)
+                      + (pspace.volume%num_nodes > node_index)),
+                     node_index + 1, num_nodes)
 
             for i, (uni_cfg, uni_id_str) in enumerate(psp_iter):
                 # Skip if this node is not responsible
-                if (i - iter_offset) % num_nodes != 0:
+                if (i - node_index) % num_nodes != 0:
                     log.debug("Skipping:  %s", uni_id_str)
                     continue
 
@@ -481,6 +481,37 @@ class Multiverse:
                 you either started two simulations very close to each other or 
                 something is seriously wrong. Strange time zone perhaps?
         """
+        def backup_config():
+            # Write the meta config to the config directory.
+            write_yml(self.meta_cfg,
+                      path=os.path.join(self.dirs['config'], "meta_cfg.yml"))
+            log.debug("Stored meta configuration in config directory.")
+
+            # Separately, store the parameter space there
+            write_yml(self.meta_cfg['parameter_space'],
+                      path=os.path.join(self.dirs['config'],
+                                        "parameter_space.yml"))
+            log.debug("Stored parameter space.")
+
+            # If configured, backup the other cfg files one by one
+            if backup_involved_cfg_files and cfg_parts:
+                log.debug("Backing up %d config parts...", len(cfg_parts))
+
+                for part_name, val in cfg_parts.items():
+                    _path = os.path.join(self.dirs['config'],
+                                         part_name + "_cfg.yml")
+                    # Distinguish two types of payload that will be saved:
+                    if isinstance(val, str):
+                        # Assumed to be path to a config file; copy it
+                        log.debug("Copying %s config ...", part_name)
+                        copyfile(val, _path)
+
+                    elif isinstance(val, dict):
+                        log.debug("Dumping %s config dict ...", part_name)
+                        write_yml(val, path=_path)
+
+            log.info("Backed up configuration files.")
+
         # Create the folder path to the simulation directory
         # NOTE The str cast ensures that out_dir is not a path-like object
         #      which causes problems for python < 3.6
@@ -513,7 +544,7 @@ class Multiverse:
                 fstr_parts += ["{timestamp:}"]
                 fstr_kwargs['timestamp'] = timestamp
 
-            fstr_parts = ["job-{job_id:07d}"]
+            fstr_parts = ["job{job_id:07d}"]
             fstr_kwargs = dict(job_id=rcps['job_id'])
 
             if rcps.get('job_account'):
@@ -547,7 +578,7 @@ class Multiverse:
 
         # Recursively create the whole path to the run directory
         try:
-            os.makedirs(run_dir)
+            os.makedirs(run_dir, exist_ok=self.cluster_mode)
 
         except OSError as err:
             raise RuntimeError("Simulation directory already exists. This "
@@ -559,40 +590,29 @@ class Multiverse:
         # Make subfolders
         for subdir in ('config', 'data', 'eval'):
             subdir_path = os.path.join(run_dir, subdir)
-            os.mkdir(subdir_path)
+            os.makedirs(subdir_path, exist_ok=self.cluster_mode)
             self.dirs[subdir] = subdir_path
 
-        log.debug("Finished creating simulation directory. Now registered: %s",
-                  self._dirs)
+        log.debug("Finished creating run directory.")
+        log.debug("Paths registered:  %s", self._dirs)
 
-        # Write the meta config to the config directory.
-        write_yml(self.meta_cfg,
-                  path=os.path.join(self.dirs['config'], "meta_cfg.yml"))
-        log.debug("Stored meta configuration in config directory.")
+        if not self.cluster_mode:
+            # Should backup in any case
+            backup_config()
 
-        # Separately, store the parameter space there
-        write_yml(self.meta_cfg['parameter_space'],
-                  path=os.path.join(self.dirs['config'],
-                                    "parameter_space.yml"))
-        log.debug("Stored parameter space.")
+        elif self.resolved_cluster_params['node_index'] == 0:
+            # In cluster mode, the first node is responsible for backing up
+            # the configuration; all others can relax.
+            backup_config()
 
-        # If configured, backup the other cfg files one by one
-        if backup_involved_cfg_files and cfg_parts:
-            log.debug("Backing up %d config parts...", len(cfg_parts))
+        else:
+            log.debug("Not backing up config files, because it was already "
+                      "taken care of by the first node.")
+            # NOTE Not taking a try-except approach here because it might get
+            #      messy when multiple nodes try to backup the configuration
+            #      at the same time ...
 
-            for part_name, val in cfg_parts.items():
-                _path = os.path.join(self.dirs['config'], part_name+"_cfg.yml")
-                # Distinguish two types of payload that will be saved:
-                if isinstance(val, str):
-                    # Assumed to be path to a config file; copy it
-                    log.debug("Copying %s config ...", part_name)
-                    copyfile(val, _path)
-
-                elif isinstance(val, dict):
-                    log.debug("Dumping %s config dict ...", part_name)
-                    write_yml(val, path=_path)
-
-        log.debug("Finished creating run directory and backing up config.")
+        # Done.
 
     def _resolve_cluster_params(self) -> dict:
         """This resolves the cluster parameters, e.g. by setting parameters
@@ -670,8 +690,8 @@ class Multiverse:
                              "".format(resolved['node_name'], node_list))
 
         # Calculated values, needed in Multiverse.run
-        # iter_offset: the offset in the modulo operation
-        resolved['iter_offset'] = node_list.index(resolved['node_name'])
+        # node_index: the offset in the modulo operation
+        resolved['node_index'] = node_list.index(resolved['node_name'])
 
         # Return the resolved values
         log.debug("Resolved cluster parameters:\n%s", pformat(resolved))
@@ -789,7 +809,7 @@ class Multiverse:
 
 
 # -----------------------------------------------------------------------------
-# TODO Add cluster mode support when determining run directory
+# TODO Add cluster mode support when automatically determining run directory
 
 class FrozenMultiverse(Multiverse):
     """A frozen Multiverse is like a Multiverse, but frozen.
@@ -825,10 +845,11 @@ class FrozenMultiverse(Multiverse):
             **update_meta_cfg: Can be used to update the meta configuration
                 generated from the previous configuration levels
         """
-        # Initialize empty attributes (partly property-managed)
+        # Initialize property-managed attributes
         self._meta_cfg = None
         self._model_name = None
         self._dirs = {}
+        self._resolved_cluster_params = None
 
         # Set the model name
         self.model_name = model_name
@@ -862,7 +883,12 @@ class FrozenMultiverse(Multiverse):
         # not needed and is deleted in order to not confuse the user with
         # potentially varying versions of the meta config.
         self._meta_cfg = {k: v for k, v in self._meta_cfg.items()
-                          if k in ('paths', 'data_manager', 'plot_manager')}
+                          if k in ('paths', 'data_manager', 'plot_manager',
+                                   'cluster_mode', 'cluster_params')}
+
+        # Resolve the cluster parameters, if in cluster mode
+        if self.cluster_mode:
+            self._resolved_cluster_params = self._resolve_cluster_params()
 
         # Generate the path to the run directory that is to be loaded
         self._create_run_dir(**self.meta_cfg['paths'], run_dir=run_dir)
@@ -885,7 +911,13 @@ class FrozenMultiverse(Multiverse):
         to __init__.
         
         Args:
-            run_dir (str): See __init__
+            out_dir (str): The output directory
+            run_dir (str): The run directory to use
+            **kwargs: ignored
+        
+        Raises:
+            IOError: No directory found to use as run directory
+            TypeError: When run_dir was not a string
         """
         # Create model directory
         out_dir = os.path.expanduser(str(out_dir))
@@ -925,8 +957,8 @@ class FrozenMultiverse(Multiverse):
 
         else:
             raise TypeError("Argument run_dir needs to be None, an absolute "
-                            "path or a path relative to the model output "
-                            "directory, was: {}".format(run_dir))
+                            "path, or a path relative to the model output "
+                            "directory, but it was: {}".format(run_dir))
             
         # Check if the directory exists
         if not os.path.isdir(run_dir):
