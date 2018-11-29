@@ -188,7 +188,7 @@ int main(int argc, char** argv)
 
     std::vector<Dune::FieldVector<double, 2>> dunefieldvectordata_expected(100);
 
-    for (int i = 0; i < dunefieldvectordata_expected.size(); ++i)
+    for (int i = 0; i < int(dunefieldvectordata_expected.size()); ++i)
     {
         dunefieldvectordata_expected[i] = Dune::FieldVector<double, 2>{
             {static_cast<double>(i), static_cast<double>(-i)}};
@@ -284,13 +284,14 @@ int main(int argc, char** argv)
     assert(fireandforget2dshape == (std::vector<hsize_t>{5, 100}));
     assert(fireandforgetdata2d == read_fireandforgetdata2d);
 
-    auto [dunefieldvectordata, dunefieldvectorshape] =
+    auto [dunefieldvectorshape, dfv] =
         dunefieldvectordataset->read<std::vector<Dune::FieldVector<double, 2>>>();
 
-    assert(dunefieldvectordata.size() == dunefieldvectordata_expected.size());
+    assert(dfv.size() == dunefieldvectordata_expected.size());
     for (std::size_t i = 0; i < 100; ++i)
     {
-        assert(std::abs(dunefieldvectordata_expected[i] - dunefieldvectordata[i]) < 1e-16);
+        assert(std::abs(dunefieldvectordata_expected[i][0] - dfv[i][0]) < 1e-16);
+        assert(std::abs(dunefieldvectordata_expected[i][1] - dfv[i][1]) < 1e-16);
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -374,16 +375,17 @@ int main(int argc, char** argv)
     assert(singlestring == stringcontainerdata[3]); // reuse value from stringcontainerdata
 
     // try to read dune fieldvector dataset partially
-    auto [dfv_partial, dfv_shape] =
+    auto [dfv_shape, dfv_partial] =
         dunefieldvectordataset->read<std::vector<Dune::FieldVector<double, 2>>>(
             {5}, {65}, {3});
-    assert(dfvshape.size() == 1);
-    assert(dfvshape[0] == 20);
+    assert(dfv_shape.size() == 1);
+    assert(dfv_shape[0] == 20);
 
     std::size_t k = 0;
     for (std::size_t i = 5; i <= 25; i += 3, ++k)
     {
-        assert(std::abs(dunefieldvectordata_expected[i] - dfv_partial[k]) < 1e-16);
+        assert(std::abs(dunefieldvectordata_expected[i][0] - dfv_partial[k][0]) < 1e-16);
+        assert(std::abs(dunefieldvectordata_expected[i][1] - dfv_partial[k][1]) < 1e-16);
     }
 
     return 0;
