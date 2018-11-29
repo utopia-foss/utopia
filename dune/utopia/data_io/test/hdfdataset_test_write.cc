@@ -76,7 +76,7 @@ int main(int argc, char** argv)
 
     std::vector<Dune::FieldVector<double, 2>> dunefieldvectordata(100);
 
-    for (int i = 0; i < dunefieldvectordata.size(); ++i)
+    for (int i = 0; i < int(dunefieldvectordata.size()); ++i)
     {
         dunefieldvectordata[i] = Dune::FieldVector<double, 2>{
             {static_cast<double>(i), static_cast<double>(-i)}};
