@@ -220,11 +220,21 @@ def test_cluster_mode_resolve_params(mv_kwargs, cluster_env):
 
     rcps = mv.resolved_cluster_params
     assert len(rcps) == 9 + 1
+
+    # Make sure the required keys are available
+    assert all([k in rcps for k in ('job_id', 'num_nodes', 'node_list',
+                                    'node_name', 'timestamp')])
+
+    # Check some types
     assert isinstance(rcps['job_id'], int)
     assert isinstance(rcps['num_nodes'], int)
     assert isinstance(rcps['num_procs'], int)
     assert isinstance(rcps['node_list'], list)
-    assert rcps['iter_offset'] == 3  # for node06
+    assert isinstance(rcps['timestamp'], int)
+
+    # Check some values
+    assert rcps['node_index'] == 3  # for node06
+    assert rcps['timestamp'] > 0
 
     # Test error messages
     # Node name not in node list
