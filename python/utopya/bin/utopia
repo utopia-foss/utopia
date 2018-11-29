@@ -123,6 +123,16 @@ p_eval.add_argument('run_dir_path',
                          "directory. If not given, the directory with the "
                          "most recent timestamp is used.")
 
+# arguments for generically changing the meta configuration
+p_eval.add_argument('--set-cfg',
+                    default=None, nargs='+', type=str,
+                    help="Sets key-value pairs in the meta configuration. "
+                         "Example: foo.bar=42 sets the 'bar' entry in the "
+                         "'foo' dict to 42. Note that multiple parameter can "
+                         "be set at once by separating them with a space; if "
+                         "a space needs to be in the argument value, put the "
+                         "strings into '...' or \"...\".")
+
 # arguments referring to loading of data
 p_eval.add_argument('--suppress-data-tree',
                     action='store_true',
@@ -277,6 +287,13 @@ if __name__ == '__main__':
             add_from_kv_pairs(*args.set_params,
                               add_to=update_dict['parameter_space'])
     
+        if args.set_cfg:
+            # Add an entry for each pair
+            add_from_kv_pairs(*args.set_cfg, add_to=update_dict)
+
+
+    # Adjustments in eval mode
+    if args.mode == 'eval':
         if args.set_cfg:
             # Add an entry for each pair
             add_from_kv_pairs(*args.set_cfg, add_to=update_dict)

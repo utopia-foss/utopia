@@ -83,14 +83,17 @@ class Multiverse:
         if self.cluster_mode:
             self._resolved_cluster_params = self._resolve_cluster_params()
 
+            # Get via attribute (is a copy)
+            rcps = self.resolved_cluster_params
+
+            log.info("Running in cluster mode. This is node %d of %d.",
+                     rcps['node_index'] + 1, rcps['num_nodes'])
+
             # Changes to the meta configuration
             # To avoid config file collisions in the PlotManager:
             self._meta_cfg['plot_manager']['cfg_exists_action'] = 'skip'
 
             # _Additional_ arguments to pass to *Manager initializations below
-            # Need the resolved parameters for that
-            rcps = self.resolved_cluster_params
-            
             # DataManager
             timestamp = rcps['timestamp']
             dm_cluster_kwargs = dict(out_dir_kwargs=dict(timestamp=timestamp,
@@ -835,7 +838,7 @@ class Multiverse:
 
 
 # -----------------------------------------------------------------------------
-# TODO Add cluster mode support when automatically determining run directory
+# TODO return errors in properties that are unavailable?!
 
 class FrozenMultiverse(Multiverse):
     """A frozen Multiverse is like a Multiverse, but frozen.
@@ -847,7 +850,9 @@ class FrozenMultiverse(Multiverse):
     Note that it is no longer able to perform any simulations.
     """
 
-    def __init__(self, *, model_name: str, run_dir: str=None, run_cfg_path: str=None, user_cfg_path: str=None, use_meta_cfg_from_run_dir: bool=False, **update_meta_cfg):
+    def __init__(self, *, model_name: str, run_dir: str=None,
+                 run_cfg_path: str=None, user_cfg_path: str=None,
+                 use_meta_cfg_from_run_dir: bool=False, **update_meta_cfg):
         """Initializes the FrozenMultiverse from a model name and the name 
         of a run directory.
         
@@ -885,7 +890,7 @@ class FrozenMultiverse(Multiverse):
 
         # Decide whether to load the meta configuration from the given run
         # directory or the currently available one.
-        if (use_meta_cfg_from_run_dir
+        if (    use_meta_cfg_from_run_dir
             and isinstance(run_dir, str)
             and os.path.isabs(run_dir)):
             # Find the meta config backup file and load it
@@ -912,9 +917,30 @@ class FrozenMultiverse(Multiverse):
                           if k in ('paths', 'data_manager', 'plot_manager',
                                    'cluster_mode', 'cluster_params')}
 
-        # Resolve the cluster parameters, if in cluster mode
+        # Resolve the cluster parameters, if in cluster mode, and make some
+        # minor (!!) adjustments.
         if self.cluster_mode:
             self._resolved_cluster_params = self._resolve_cluster_params()
+
+            # Get via attribute (is a copy)
+            rcps = self.resolved_cluster_params
+
+            log.info("Running in cluster mode. This is node %d of %d.",
+                     rcps['node_index'] + 1, rcps['num_nodes'])
+
+            # Changes to the meta configuration
+            # To avoid config file collisions in the PlotManager:
+            self._meta_cfg['plot_manager']['cfg_exists_action'] = 'skip'
+
+            # _Additional_ arguments to pass to *Manager initializations below
+            # DataManager
+            timestamp = rcps['timestamp']
+            dm_cluster_kwargs = dict(out_dir_kwargs=dict(timestamp=timestamp,
+                                                         exist_ok=True))
+
+        else:
+            # Empty dicts for the initializations below
+            dm_cluster_kwargs = dict()
 
         # Generate the path to the run directory that is to be loaded
         self._create_run_dir(**self.meta_cfg['paths'], run_dir=run_dir)
@@ -923,7 +949,8 @@ class FrozenMultiverse(Multiverse):
         # Create a data manager
         self._dm = DataManager(self.dirs['run'],
                                name=self.model_name + "_data",
-                               **self.meta_cfg['data_manager'])
+                               **self.meta_cfg['data_manager'],
+                               **dm_cluster_kwargs)
 
         # Instantiate the PlotManager with the model-specific plot config
         self._pm = PlotManager(dm=self.dm,
@@ -996,12 +1023,9 @@ class FrozenMultiverse(Multiverse):
 
         # Also associate the sub directories
         for subdir in ('config', 'eval', 'data'):
-            # Check if the directory exists
+            # Generate the path and store
             subdir_path = os.path.join(run_dir, subdir)
-
-            # Now store
             self.dirs[subdir] = subdir_path
+            # TODO Consider checking if it exists?
 
         # Done
-
-    # TODO return errors in properties that are unavailable?!
