@@ -755,9 +755,9 @@ class Multiverse:
 
         # Ensure reproducible node list format: ordered list
         # Achieve this by removing whitespace, then splitting and sorting
-        resolved['node_list'] = parse_node_list(resolved['node_list'],
-                                                rcps=resolved,
-                                                manager=mngr)
+        node_list = parse_node_list(resolved['node_list'],
+                                    rcps=resolved, manager=mngr)
+        resolved['node_list'] = node_list
 
         # Calculated values, needed in Multiverse.run
         # node_index: the offset in the modulo operation
