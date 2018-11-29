@@ -287,6 +287,11 @@ int main(int argc, char** argv)
 
     auto [dunefieldvectorshape, dfv] =
         dunefieldvectordataset->read<std::vector<Dune::FieldVector<double, 2>>>();
+    bool same = std::is_same_v<Dune::FieldVector<double, 2>, typename decltype(dfv)::value_type>;
+    assert(same == true);
+
+    assert(dunefieldvectorshape.size() == 1);
+    assert(dunefieldvectorshape[0] == 100);
 
     assert(dfv.size() == dunefieldvectordata_expected.size());
     for (std::size_t i = 0; i < 100; ++i)
