@@ -6,9 +6,9 @@
  */
 #ifndef HDFUTILITIES_HH
 #define HDFUTILITIES_HH
-
 #include <array>
 #include <cmath>
+#include <dune/common/fvector.hh>
 #include <iostream>
 #include <string>
 #include <type_traits>
@@ -170,14 +170,6 @@ struct is_container<T, std::void_t<typename remove_qualifier_t<T>::iterator, std
 };
 
 /**
- * @brief Shorthand for 'is_container::value
- *
- * @tparam T
- */
-template <typename T>
-inline constexpr bool is_container_v = is_container<T>::value;
-
-/**
  * @brief Prototype for is_array_like
  *
  * @tparam T
@@ -199,9 +191,17 @@ template <typename T>
 struct is_array_like<T, std::void_t<decltype(std::tuple_size<T>::value)>> : std::true_type
 {
 };
-// FIXME Using tuple_size here is not optimal, but it gives a unique
-//       representation of the tuple
-// See: https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/merge_requests/109/diffs#note_11774
+
+/**
+ * @brief Metafunction overload for dune fieldvectors
+ *
+ * @tparam T value type stored in fieldvector
+ * @tparam N size of fieldvector
+ */
+template <typename T, std::size_t N>
+struct is_array_like<Dune::FieldVector<T, N>, std::void_t<T>> : std::true_type
+{
+};
 
 /**
  * @brief Shorthand for is_array_like
@@ -210,6 +210,50 @@ struct is_array_like<T, std::void_t<decltype(std::tuple_size<T>::value)>> : std:
  */
 template <typename T>
 inline constexpr bool is_array_like_v = is_array_like<T>::value;
+
+/**
+ * @brief Shorthand for 'is_container::value
+ *
+ * @tparam T
+ */
+template <typename T>
+inline constexpr bool is_container_v = is_container<T>::value;
+
+/**
+ * @brief Functor which generalizes the acquisition of compile time sizes
+ *
+ * @tparam T
+ * @tparam 0
+ */
+template <typename T, typename U = std::void_t<>>
+struct get_size
+{
+    inline static constexpr std::size_t value = std::tuple_size<T>::value;
+};
+
+/**
+ * @brief Functor which generalizes the acquisition of compile time sizes
+ *
+ * @tparam T
+ * @tparam 0
+ */
+template <typename T>
+struct get_size<T, std::void_t<is_array_like<T>>>
+{
+    inline static constexpr std::size_t value = std::tuple_size<T>::value;
+};
+
+/**
+ * @brief Overload for dune fieldvector
+ *
+ * @tparam T
+ * @tparam N
+ */
+template <typename T, std::size_t N>
+struct get_size<Dune::FieldVector<T, N>, std::void_t<T>>
+{
+    inline static constexpr std::size_t value = N;
+};
 
 /**
  * @brief Output operator for std::arrays
