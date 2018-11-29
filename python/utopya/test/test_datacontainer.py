@@ -1,9 +1,16 @@
 """Test the data container""" 
 
+from pkg_resources import resource_filename
+
 import numpy as np
 import pytest
 
 from utopya.datacontainer import GridDC
+from utopya.testtools import ModelTest
+
+# Configure the ModelTest class for ContDisease
+mtc = ModelTest("ContDisease", test_file=__file__)
+
 
 def test_griddc() -> None:
     """Test the functionality of the GridDC."""
@@ -68,3 +75,11 @@ def test_griddc() -> None:
     attrs_3d = dict(content="grid", grid_shape=(2,3))
     gdc_3d = GridDC(name="data_3d", data=data_3d, attrs=attrs_3d)
     assert(gdc_3d.shape == (2,2,2,3))
+
+def test_griddc_integration():
+    """Integration test for the GridDC."""
+    # Create and run a multiverse and load the data
+    _, dm = mtc.create_run_load(from_cfg="cfg/griddc_cfg.yml")
+
+    # Assert the type of the state is a GridDC
+    assert(type(dm['multiverse'][0]['data/ContDisease/state']) == GridDC)
