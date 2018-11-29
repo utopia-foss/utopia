@@ -224,7 +224,7 @@ def test_cluster_mode_resolve_params(mv_kwargs, cluster_env):
     assert isinstance(rcps['num_nodes'], int)
     assert isinstance(rcps['num_procs'], int)
     assert isinstance(rcps['node_list'], list)
-
+    assert rcps['iter_offset'] == 3  # for node06
 
     # Test error messages
     # Node name not in node list
@@ -238,21 +238,45 @@ def test_cluster_mode_resolve_params(mv_kwargs, cluster_env):
     with pytest.raises(ValueError, match="`node_list` has a different length"):
         Multiverse(**mv_kwargs)
 
+    # Missing environment variables
+    cluster_env.pop('TEST_NODENAME')
+    with pytest.raises(ValueError, match="Missing environment variable for"):
+        Multiverse(**mv_kwargs)
+
 def test_cluster_mode_run(mv_kwargs, cluster_env):
     # Define a custom test environment
     mv_kwargs['run_cfg_path'] = CLUSTER_MODE_CFG_PATH
     mv_kwargs['cluster_params'] = dict(env=cluster_env)
 
     # Parameter space has 12 points
-    # Five nodes are being used
+    # Five nodes are being used: node02, node03, node05, node06, node11
     # Test for first node, should perform 3 simulations
     cluster_env['TEST_NODENAME'] = "node02"
+    mv_kwargs['paths']['model_note'] = "node02"
 
     mv = Multiverse(**mv_kwargs)
     mv.run_sweep()
-    assert len(mv.wm.tasks) == 3
+    assert mv.wm.num_finished_tasks == 3
+    assert [t.name for t in mv.wm.tasks] == ['uni01', 'uni06', 'uni11']
+    # NOTE: simulated universes are uni01 ... uni12
 
-    # FIXME continue here
+    # Test for second node, should also perform 3 simulations
+    cluster_env['TEST_NODENAME'] = "node03"
+    mv_kwargs['paths']['model_note'] = "node03"
+
+    mv = Multiverse(**mv_kwargs)
+    mv.run_sweep()
+    assert mv.wm.num_finished_tasks == 3
+    assert [t.name for t in mv.wm.tasks] == ['uni02', 'uni07', 'uni12']
+
+    # The third node should only perform 2 simulations
+    cluster_env['TEST_NODENAME'] = "node05"
+    mv_kwargs['paths']['model_note'] = "node05"
+
+    mv = Multiverse(**mv_kwargs)
+    mv.run_sweep()
+    assert mv.wm.num_finished_tasks == 2
+    assert [t.name for t in mv.wm.tasks] == ['uni03', 'uni08']
 
 
 # FrozenMultiverse tests ------------------------------------------------------

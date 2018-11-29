@@ -255,32 +255,28 @@ class Multiverse:
             # Prepare a cluster mode sweep
             log.info("Preparing cluster mode sweep ...")
 
-            # Get the universe state number strings; these will determine
-            # whether a simulation will be skipped or not.
-            uni_id_strs = list(pspace.iterator(with_info='state_no_str'))
-
             # Get the resolved cluster parameters
             # These include the following values:
-            #    num_nodes:  The total number of nodes to simulate on. This is
-            #                what determines the modulo value.
-            #    run_every:  The modulo offset, which depends on the position
-            #                of this Multiverse's node in the sequence of all
-            #                nodes.
+            #    num_nodes:    The total number of nodes to simulate on. This
+            #                  is what determines the modulo value.
+            #    iter_offset:  The modulo offset, which depends on the position
+            #                  of this Multiverse's node in the sequence of all
+            #                  nodes.
             rcps = self.resolved_cluster_params
             num_nodes = rcps['num_nodes']
-            run_every = rcps['run_every']
-
-            # Determine which universes to simulate
-            unis_to_simulate = [s for i, s in enumerate(uni_id_strs)
-                                if (i - run_every) % num_nodes == 0]
+            iter_offset = rcps['iter_offset']
 
             # Inform about the number of universes to be simulated
             log.info("Adding tasks for cluster-mode simulation of "
-                     "%d universes  ...", len(unis_to_simulate))
+                     "%d universes on this node (%d of %d) ...",
+                     (   pspace.volume//num_nodes
+                      + (pspace.volume%num_nodes > iter_offset)),
+                     iter_offset + 1, num_nodes)
 
-            for uni_cfg, uni_id_str in psp_iter:
-                # Skip if it should not be simulated on this node
-                if uni_id_str not in unis_to_simulate:
+            for i, (uni_cfg, uni_id_str) in enumerate(psp_iter):
+                # Skip if this node is not responsible
+                if (i - iter_offset) % num_nodes != 0:
+                    log.debug("Skipping:  %s", uni_id_str)
                     continue
 
                 # Is valid for this node, add the simulation task
@@ -465,10 +461,10 @@ class Multiverse:
         include a timestamp as each node might return not quite the same value.
         Instead, a value from an environment variable is used.
         The resulting path can have different forms, depending on which
-        environment variables were present; optional parts are denoted by a *
-        in the following pattern; if the value is not available, the connecting
-        underscore will not be used.
-            {timestamp*}_{job id}_{job account}_{job name}_{model note}
+        environment variables were present; required parts are denoted by a *
+        in the following pattern; if the value of the other entries is not
+        available, the connecting underscore will not be used.
+            {timestamp}_{job id*}_{cluster}_{job account}_{job name}_{note}
 
         Args:
             out_dir (str): The base output directory, where all simulation data
@@ -674,8 +670,8 @@ class Multiverse:
                              "".format(resolved['node_name'], node_list))
 
         # Calculated values, needed in Multiverse.run
-        # run_every: the offset in the modulo operation
-        resolved['run_every'] = node_list.index(resolved['node_name'])
+        # iter_offset: the offset in the modulo operation
+        resolved['iter_offset'] = node_list.index(resolved['node_name'])
 
         # Return the resolved values
         log.debug("Resolved cluster parameters:\n%s", pformat(resolved))
