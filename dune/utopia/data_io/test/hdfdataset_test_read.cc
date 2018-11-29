@@ -186,6 +186,7 @@ int main(int argc, char** argv)
                       [&]() -> int { return i + 1; });
     }
 
+    // make expected data for dune fieldvector dataset
     std::vector<Dune::FieldVector<double, 2>> dunefieldvectordata_expected(100);
 
     for (int i = 0; i < int(dunefieldvectordata_expected.size()); ++i)
@@ -387,6 +388,5 @@ int main(int argc, char** argv)
         assert(std::abs(dunefieldvectordata_expected[i][0] - dfv_partial[k][0]) < 1e-16);
         assert(std::abs(dunefieldvectordata_expected[i][1] - dfv_partial[k][1]) < 1e-16);
     }
-
     return 0;
 }
