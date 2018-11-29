@@ -50,8 +50,8 @@ def default_mv(mv_kwargs) -> Multiverse:
 def cluster_env() -> dict:
     return dict(TEST_JOB_ID="123",
                 TEST_JOB_NUM_NODES="5",
-                TEST_JOB_NODELIST="node03, node02, node05, node06, node11",
-                TEST_NODENAME="node06",
+                TEST_JOB_NODELIST="node[02-04,11,06]",
+                TEST_NODENAME="stek001",
                 TEST_JOB_NAME="testjob",
                 TEST_JOB_ACCOUNT="testaccount",
                 TEST_CPUS_ON_NODE="42",
@@ -235,6 +235,8 @@ def test_cluster_mode_resolve_params(mv_kwargs, cluster_env):
     # Check some values
     assert rcps['node_index'] == 3  # for node06
     assert rcps['timestamp'] > 0
+    assert rcps['node_list'] == ["node02", "node03", "node04",
+                                 "node06", "node11"]
 
     # Test error messages
     # Node name not in node list
@@ -259,7 +261,7 @@ def test_cluster_mode_run(mv_kwargs, cluster_env):
     mv_kwargs['cluster_params'] = dict(env=cluster_env)
 
     # Parameter space has 12 points
-    # Five nodes are being used: node02, node03, node05, node06, node11
+    # Five nodes are being used: node02, node03, node04, node06, node11
     # Test for first node, should perform 3 simulations
     cluster_env['TEST_NODENAME'] = "node02"
     mv_kwargs['paths']['model_note'] = "node02"
@@ -280,8 +282,8 @@ def test_cluster_mode_run(mv_kwargs, cluster_env):
     assert [t.name for t in mv.wm.tasks] == ['uni02', 'uni07', 'uni12']
 
     # The third node should only perform 2 simulations
-    cluster_env['TEST_NODENAME'] = "node05"
-    mv_kwargs['paths']['model_note'] = "node05"
+    cluster_env['TEST_NODENAME'] = "node04"
+    mv_kwargs['paths']['model_note'] = "node04"
 
     mv = Multiverse(**mv_kwargs)
     mv.run_sweep()

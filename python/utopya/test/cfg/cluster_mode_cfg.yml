@@ -41,9 +41,9 @@ cluster_params:
 
     # Could have more managers here, e.g.: docker
 
-  # The delimiters used in the string of node names
-  node_list_delimiters:
-    test: ","
+  # Which parser to use to extract node names from node list
+  node_list_parser_params:
+    test: condensed
 
 
 parameter_space:

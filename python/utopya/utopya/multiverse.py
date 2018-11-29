@@ -8,6 +8,7 @@ import copy
 import glob
 import re
 import logging
+from functools import reduce
 from shutil import copyfile
 from pkg_resources import resource_filename
 
@@ -654,6 +655,60 @@ class Multiverse:
         Raises:
             ValueError: If a required environment variable was missing or empty
         """
+        def parse_node_list(node_list: str, *, rcps, manager: str) -> list:
+            """Parses the node list to a list of node names"""
+            mode = self.cluster_params['node_list_parser_params'][manager]
+
+            if mode == 'condensed':
+                # Is in the following form:  node[002,004-011,016]
+                # FIXME make more elegant!
+
+                prefix, nodes = node_list.split("[")
+                nodes = nodes[:-1]  # remove trailing "]"
+
+                # Split into segements
+                segments = nodes.split(",")
+                segments = [seg.split("-") for seg in segments]
+
+                # In segments, lists longer than 1 are intervals, the others
+                # are node numbers of a single node
+                # Expand intervals
+                segments = [[int(seg)] if len(seg) == 1
+                            else list(range(int(seg[0]), int(seg[1])+1))
+                            for seg in segments]
+
+                # Parse to node numbers
+                node_nos = []
+                for seg in segments:
+                    node_nos += seg
+
+                # Need the numbers as strings
+                # FIXME get width somehow ...
+                node_nos = ["{val:0{digs:}d}".format(val=no, digs=3)
+                            for no in node_nos]
+
+                # Now, finally, parse the list
+                node_list = [prefix+no for no in node_nos]
+
+            else:
+                raise ValueError("Invalid parser '{}' for manager '{}'!")
+
+            # Have node_list now
+            # Consistency checks
+            if rcps['num_nodes'] != len(node_list):
+                raise ValueError("Cluster parameter `node_list` has a "
+                                 "different length ({}) than specified by "
+                                 "the  `num_nodes` parameter ({})."
+                                 "".format(len(node_list),
+                                           rcps['num_nodes']))
+
+            if rcps['node_name'] not in node_list:
+                raise ValueError("`node_name` '{}' is not part of `node_list` "
+                                 "{}!".format(rcps['node_name'], node_list))
+
+            # All ok. Sort and return
+            return sorted(node_list)
+
         log.debug("Resolving cluster parameters from environment ...")
 
         # Get a copy of the meta configuration parameters
@@ -700,23 +755,11 @@ class Multiverse:
 
         # Ensure reproducible node list format: ordered list
         # Achieve this by removing whitespace, then splitting and sorting
-        delim = cps['node_list_delimiters'][mngr]
+        node_list_kwargs = cps['node_list_kwargs'][mngr]
         
-        node_list = resolved['node_list'].replace(" ", "")
-        node_list = sorted(node_list.split(delim))
-        resolved['node_list'] = node_list
-
-        # Consistency checks
-        if resolved['num_nodes'] != len(resolved['node_list']):
-            raise ValueError("Cluster parameter `node_list` has a different "
-                             "length ({}) than specified by the  `num_nodes` "
-                             "parameter ({})."
-                             "".format(len(resolved['node_list']),
-                                       resolved['num_nodes']))
-
-        if resolved['node_name'] not in node_list:
-            raise ValueError("`node_name` '{}' is not part of `node_list` {}!"
-                             "".format(resolved['node_name'], node_list))
+        resolved['node_list'] = parse_node_list(resolved['node_list'],
+                                                rcps=resolved,
+                                                manager=mngr)
 
         # Calculated values, needed in Multiverse.run
         # node_index: the offset in the modulo operation

@@ -200,9 +200,10 @@ cluster_params:
 
     # Could have more managers here, e.g.: docker
 
-  # The delimiters used in the string of node names
-  node_list_delimiters:
-    slurm: ","
+  # Which parser to use to extract node names from node list
+  node_list_parser_params:
+    slurm: condensed  # e.g.: node[002,004-011,016]
+
 
 # Data Manager ................................................................
 # The DataManager takes care of loading the data into a tree-like structure
