@@ -320,7 +320,7 @@ private:
                     "in attribute " +
                     _path + " into vector containers!");
             }
-            else if constexpr (!std::is_same_v<std::vector<value_type_1>, Type>)
+            if constexpr (!std::is_same_v<std::vector<value_type_1>, Type>)
             {
                 throw std::runtime_error("Dataset" + _path +
                                          ": Can only read data"
@@ -348,7 +348,7 @@ private:
 
                     throw std::invalid_argument(
                         "Dataset " + _path +
-                        ": Cannot read into container of non std::arrays "
+                        ": Cannot read into container of non arrays "
                         "when data type in file is fixed array type");
                 }
 
@@ -389,6 +389,7 @@ private:
                      */
                     hid_t vlentype = H5Tcopy(H5T_C_S1);
                     H5Tset_size(vlentype, H5T_VARIABLE);
+
                     if (H5Tequal(vlentype, type))
                     {
                         std::vector<char*> temp_buffer(buffer.size());
