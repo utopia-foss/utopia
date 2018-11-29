@@ -8,6 +8,8 @@ find_package(HDF5 1.10 REQUIRED COMPONENTS C HL)
 include_directories(${HDF5_INCLUDE_DIRS})
 list(APPEND DUNE_LIBS ${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES})
 
+# FFTW3
+find_package(FFTW3 3.3 REQUIRED)
 
 # include Utopia macros
 include(PythonInstallPackageRemote)

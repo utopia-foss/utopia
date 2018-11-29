@@ -27,13 +27,13 @@ endif()
 
 # -- dantro --
 dune_python_find_package(PACKAGE dantro
-                         VERSION 0.4.1
+                         VERSION 0.5.3
                          INTERPRETER ${DUNE_PYTHON_VIRTUALENV_EXECUTABLE})
 
 if(NOT DUNE_PYTHON_dantro_FOUND)
     # install from current _master_ branch
     python_install_package_remote(
-        URL ssh://git@ts-gitlab.iup.uni-heidelberg.de:10022/utopia/dantro.git@release/v0.4
+        URL ssh://git@ts-gitlab.iup.uni-heidelberg.de:10022/utopia/dantro.git@release/v0.5
         TRUSTED_HOST ts-gitlab.iup.uni-heidelberg.de)
 endif()
 
