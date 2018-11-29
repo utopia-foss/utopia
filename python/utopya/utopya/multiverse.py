@@ -755,8 +755,6 @@ class Multiverse:
 
         # Ensure reproducible node list format: ordered list
         # Achieve this by removing whitespace, then splitting and sorting
-        node_list_kwargs = cps['node_list_kwargs'][mngr]
-        
         resolved['node_list'] = parse_node_list(resolved['node_list'],
                                                 rcps=resolved,
                                                 manager=mngr)
