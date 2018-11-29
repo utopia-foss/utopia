@@ -183,6 +183,7 @@ private:
             // typefactory creates vlen data or string data
             if constexpr (is_container_v<base_type> and is_array_like_v<base_type>)
             {
+                // get_size is a metafunction defined in hdfutilities.hh
                 typesize = get_size<base_type>::value;
             }
 
