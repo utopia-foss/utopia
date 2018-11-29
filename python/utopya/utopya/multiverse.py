@@ -675,17 +675,16 @@ class Multiverse:
         # Check that all required keys are available
         required = ('job_id', 'num_nodes', 'node_list', 'node_name')
         if any([var not in resolved for var in required]):
+            missing_keys = [k for k in required if k not in resolved]
             raise ValueError("Missing environment variable for one or more of "
                              "the required parameters:  {}.  Make sure that "
                              "the corresponding environment variables are set!"
                              "\nManager: '{}'\n"
+                             "Missing environment keys:  {}\n"
                              "Mapping:\n{}\n"
-                             "Environment keys:\n  - {}\n\n"
-                             "Full environment:\n{}"
                              "".format(", ".join(required), mngr,
-                                       pformat(var_map),
-                                       "\n  - ".join(env.keys()),
-                                       pformat(env)))
+                                       ", ".join(missing_keys),
+                                       pformat(var_map)))
 
         # Now do some postprocessing on some of the values
         # Ensure integers
