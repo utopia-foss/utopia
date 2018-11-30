@@ -37,7 +37,7 @@ def test_nonstatic():
             diff = np.diff(dset, axis=0)
 
             # Sum up absolute differences along grid index dimension
-            abs_diff_sum = np.sum(np.abs(diff), axis=1)
+            abs_diff_sum = np.sum(np.abs(diff), axis=(1,2))
             # Is now a 1D-array of length (num_steps-1)
 
             # Assert that all elements are non-zero, i.e. that the sum of the
