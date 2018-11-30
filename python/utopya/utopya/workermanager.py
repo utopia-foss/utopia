@@ -5,6 +5,7 @@ import sys
 import queue
 import warnings
 import logging
+import copy
 import time
 from datetime import datetime as dt
 from typing import Union, Callable, Sequence, List, Set, Dict
@@ -44,7 +45,15 @@ class WorkerManager:
         times (dict): Holds profiling information for the WorkerManager
     """
 
-    def __init__(self, num_workers: Union[int, str]='auto', poll_delay: float=0.05, QueueCls=queue.Queue, reporter: WorkerManagerReporter=None, rf_spec: Dict[str, Union[str, List[str]]]=None, nonzero_exit_handling: str='ignore'):
+    def __init__(self,
+                 num_workers: Union[int, str]='auto',
+                 poll_delay: float=0.05,
+                 QueueCls=queue.Queue,
+                 reporter: WorkerManagerReporter=None,
+                 rf_spec: Dict[str, Union[str, List[str]]]=None,
+                 nonzero_exit_handling: str='ignore',
+                 cluster_mode: bool=False,
+                 resolved_cluster_params: dict=None):
         """Initialize the worker manager.
         
         Args:
@@ -78,6 +87,15 @@ class WorkerManager:
                 died by SIGTERM, which presumable originated from a fulfilled
                 stop condition. Use 'warn_all' to also receive warnings in
                 this case.
+            cluster_mode (bool, optional): Whether similar tasks to those that
+                are managed by this WorkerManager are, at the same time, worked
+                on by other WorkerManager. This is relevant because the output
+                of files might be affected by whether another WorkerManager
+                instance is currently working on the same output directory.
+                Also, in the future, this argument might be used to communicate
+                between nodes.
+            resolved_cluster_params (dict, optional): The corresponding cluster
+                parameters.
         
         Raises:
             ValueError: For too negative `num_workers` argument
@@ -100,6 +118,8 @@ class WorkerManager:
         # Hand over arguments
         self.poll_delay = poll_delay
         self.nonzero_exit_handling = nonzero_exit_handling
+        self._cluster_mode = cluster_mode
+        self._resolved_cluster_params = resolved_cluster_params
 
         if num_workers == 'auto':
             self.num_workers = os.cpu_count()
@@ -258,6 +278,19 @@ class WorkerManager:
         self._reporter = reporter
 
         log.debug("Set reporter of WorkerManager.")
+
+    @property
+    def cluster_mode(self) -> bool:
+        """Returns whether the WorkerManager is in cluster mode"""
+        return self._cluster_mode
+
+    @property
+    def resolved_cluster_params(self) -> dict:
+        """Returns a copy of the cluster configuration with all parameters
+        resolved. This makes some additional keys available on the top level.
+        """
+        # Return the cached value as a _copy_ to secure it against changes
+        return copy.deepcopy(self._resolved_cluster_params)
 
     # Public API ..............................................................
 
