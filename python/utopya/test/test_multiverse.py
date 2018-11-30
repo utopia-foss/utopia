@@ -5,6 +5,7 @@ As the Multiverse will always generate a folder structure, it needs to be taken 
 
 import os
 import uuid
+import time
 from pkg_resources import resource_filename
 
 import pytest
@@ -16,6 +17,7 @@ RUN_CFG_PATH = resource_filename('test', 'cfg/run_cfg.yml')
 USER_CFG_PATH = resource_filename('test', 'cfg/user_cfg.yml')
 BAD_USER_CFG_PATH = resource_filename('test', 'cfg/bad_user_cfg.yml')
 SWEEP_CFG_PATH = resource_filename('test', 'cfg/sweep_cfg.yml')
+CLUSTER_MODE_CFG_PATH = resource_filename('test', 'cfg/cluster_mode_cfg.yml')
 
 # Fixtures ----------------------------------------------------------------
 @pytest.fixture
@@ -43,6 +45,19 @@ def default_mv(mv_kwargs) -> Multiverse:
     unique.
     """
     return Multiverse(**mv_kwargs)
+
+@pytest.fixture
+def cluster_env() -> dict:
+    return dict(TEST_JOB_ID="123",
+                TEST_JOB_NUM_NODES="5",
+                TEST_JOB_NODELIST="node[02-04,11,06]",
+                TEST_NODENAME="stek001",
+                TEST_JOB_NAME="testjob",
+                TEST_JOB_ACCOUNT="testaccount",
+                TEST_CPUS_ON_NODE="42",
+                TEST_CLUSTER_NAME="testcluster",
+                TEST_TIMESTAMP=str(int(time.time()))
+                )
 
 # Initialisation tests --------------------------------------------------------
 
@@ -194,6 +209,87 @@ def test_multiple_runs_not_allowed(mv_kwargs):
     with pytest.raises(RuntimeError, match="Could not add simulation task"):
         mv.run_single()
 
+def test_cluster_mode_resolve_params(mv_kwargs, cluster_env):
+    """Tests cluster mode resolution of parameters"""
+    # Define a custom test environment
+    mv_kwargs['run_cfg_path'] = CLUSTER_MODE_CFG_PATH
+    mv_kwargs['cluster_params'] = dict(env=cluster_env)
+
+    # Create the Multiverse
+    mv = Multiverse(**mv_kwargs)
+
+    rcps = mv.resolved_cluster_params
+    assert len(rcps) == 9 + 1
+
+    # Make sure the required keys are available
+    assert all([k in rcps for k in ('job_id', 'num_nodes', 'node_list',
+                                    'node_name', 'timestamp')])
+
+    # Check some types
+    assert isinstance(rcps['job_id'], int)
+    assert isinstance(rcps['num_nodes'], int)
+    assert isinstance(rcps['num_procs'], int)
+    assert isinstance(rcps['node_list'], list)
+    assert isinstance(rcps['timestamp'], int)
+
+    # Check some values
+    assert rcps['node_index'] == 3  # for node06
+    assert rcps['timestamp'] > 0
+    assert rcps['node_list'] == ["node02", "node03", "node04",
+                                 "node06", "node11"]
+
+    # Test error messages
+    # Node name not in node list
+    cluster_env['TEST_NODENAME'] = 'node42'
+    with pytest.raises(ValueError, match="`node_name` 'node42' is not part"):
+        Multiverse(**mv_kwargs)
+
+    # Wrong number of nodes
+    cluster_env['TEST_NODENAME'] = 'node03'
+    cluster_env['TEST_JOB_NUM_NODES'] = '3'
+    with pytest.raises(ValueError, match="`node_list` has a different length"):
+        Multiverse(**mv_kwargs)
+
+    # Missing environment variables
+    cluster_env.pop('TEST_NODENAME')
+    with pytest.raises(ValueError, match="Missing environment variable for"):
+        Multiverse(**mv_kwargs)
+
+def test_cluster_mode_run(mv_kwargs, cluster_env):
+    # Define a custom test environment
+    mv_kwargs['run_cfg_path'] = CLUSTER_MODE_CFG_PATH
+    mv_kwargs['cluster_params'] = dict(env=cluster_env)
+
+    # Parameter space has 12 points
+    # Five nodes are being used: node02, node03, node04, node06, node11
+    # Test for first node, should perform 3 simulations
+    cluster_env['TEST_NODENAME'] = "node02"
+    mv_kwargs['paths']['model_note'] = "node02"
+
+    mv = Multiverse(**mv_kwargs)
+    mv.run_sweep()
+    assert mv.wm.num_finished_tasks == 3
+    assert [t.name for t in mv.wm.tasks] == ['uni01', 'uni06', 'uni11']
+    # NOTE: simulated universes are uni01 ... uni12
+
+    # Test for second node, should also perform 3 simulations
+    cluster_env['TEST_NODENAME'] = "node03"
+    mv_kwargs['paths']['model_note'] = "node03"
+
+    mv = Multiverse(**mv_kwargs)
+    mv.run_sweep()
+    assert mv.wm.num_finished_tasks == 3
+    assert [t.name for t in mv.wm.tasks] == ['uni02', 'uni07', 'uni12']
+
+    # The third node should only perform 2 simulations
+    cluster_env['TEST_NODENAME'] = "node04"
+    mv_kwargs['paths']['model_note'] = "node04"
+
+    mv = Multiverse(**mv_kwargs)
+    mv.run_sweep()
+    assert mv.wm.num_finished_tasks == 2
+    assert [t.name for t in mv.wm.tasks] == ['uni03', 'uni08']
+
 
 # FrozenMultiverse tests ------------------------------------------------------
 
@@ -210,32 +306,32 @@ def test_FrozenMultiverse(mv_kwargs):
     # Without run directory, the latest one should be loaded
     print("\nInitializing FrozenMultiverse without further kwargs")
     FrozenMultiverse(**mv_kwargs,
-                     data_manager=dict(out_dir="eval/{date:}_1"))
+                     data_manager=dict(out_dir="eval/{timestamp:}_1"))
 
 
     # With a relative path, the corresponding directory should be found
     print("\nInitializing FrozenMultiverse with timestamp as run_dir")
     FrozenMultiverse(**mv_kwargs, run_dir=os.path.basename(mv.dirs['run']),
-                     data_manager=dict(out_dir="eval/{date:}_2"))
+                     data_manager=dict(out_dir="eval/{timestamp:}_2"))
 
     # With an absolute path, that path should be used directly
     print("\nInitializing FrozenMultiverse with absolute path to run_dir")
     FrozenMultiverse(**mv_kwargs, run_dir=mv.dirs['run'],
-                     data_manager=dict(out_dir="eval/{date:}_3"))
+                     data_manager=dict(out_dir="eval/{timestamp:}_3"))
 
     # With a relative path, the path relative to the CWD should be used
     print("\nInitializing FrozenMultiverse with relative path to run_dir")
     FrozenMultiverse(**mv_kwargs, run_dir=os.path.relpath(mv.dirs['run'],
                                                           start=os.getcwd()),
-                     data_manager=dict(out_dir="eval/{date:}_4"))
+                     data_manager=dict(out_dir="eval/{timestamp:}_4"))
 
     # Bad type of run directory should fail
     with pytest.raises(TypeError, match="Argument run_dir needs"):
         FrozenMultiverse(**mv_kwargs, run_dir=123,
-                         data_manager=dict(out_dir="eval/{date:}_5"))
+                         data_manager=dict(out_dir="eval/{timestamp:}_5"))
 
     # Non-existing directory should fail
     with pytest.raises(IOError, match="No directory found at"):
         FrozenMultiverse(**mv_kwargs, run_dir="my_non-existing_directory",
-                         data_manager=dict(out_dir="eval/{date:}_6"))
+                         data_manager=dict(out_dir="eval/{timestamp:}_6"))
 
