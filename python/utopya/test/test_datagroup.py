@@ -29,14 +29,13 @@ def test_networkgroup():
         # Test that the graph can be created as desired
         nwg.create_graph()
 
-        # ... also when including node properties
-        g = nwg.create_graph(with_node_properties=True)
-        # FIXME rename to node_attributes!!
+        # ... also when including node attributes
+        g = nwg.create_graph(with_node_attributes=True)
 
         # Check that the number of vertices matches
         assert g.number_of_nodes() == cfg['Hierarnet']['num_vertices']
 
-        # Check that the node properties are available    
+        # Check that the node attributes are available    
         assert nx.get_node_attributes(g, 'payoff')
         assert nx.get_node_attributes(g, 'cost')
         assert not nx.get_node_attributes(g, 'some_other_attribute')
