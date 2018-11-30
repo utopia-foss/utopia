@@ -62,10 +62,12 @@ class GridDC(NumpyDC):
 
         # Check that the number of total elements before reshaping equals the
         # number of elements after reshaping in the data
-        
+        log.debug("Reshaping data of shape %s to %s "
+                  "to match given grid shape %s ...", 
+                  data_shape, new_shape, grid_shape)
         try:
-            # Reshape the data using C-style ordering. 
-            self._data = np.reshape(self.data, new_shape, order='C')
+            # Reshape the data 
+            self._data = np.reshape(self.data, new_shape)
 
         except ValueError as err:
             raise ValueError("Reshaping failed! This is probably due to a "
