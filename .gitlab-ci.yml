@@ -10,37 +10,44 @@ variables:
   CPUS_DIND: 2
   CPUS_BUILD: 4
 
-  # Variables needed for docker image deployment
-  # The image to use is based on the currently selected DUNE version
-  DUNE_VERSION: "2.6"
-  DUNE_IMAGE_NAME: ccees/dune4utopia
-  DUNE_IMAGE: "${DUNE_IMAGE_NAME}:${DUNE_VERSION}"
-
-  # Shortcuts for directories
-  MODEL_SRC: $CI_PROJECT_DIR/dune/utopia/models
-  MODEL_TESTS: $CI_PROJECT_DIR/python/model_tests
-
-  # Shortcut variables for certain commands
-  DUNE_CONTROL_PATH: /opt/dune:$CI_PROJECT_DIR  # such that DUNE finds Utopia
-  DUNECTRL: ./dune-common/bin/dunecontrol
-  RUN_IN_DUNE_ENV: $CI_PROJECT_DIR/build-cmake/run-in-dune-env
-  ENTER_DUNE_ENV: source $CI_PROJECT_DIR/build-cmake/activate
-
-  # Flags
+  # Build flags
   CONFIG_FLAGS:
       -DDUNE_PYTHON_VIRTUALENV_SETUP=True
       -DDUNE_PYTHON_ALLOW_GET_PIP=True
   MAKE_FLAGS_BUILD: -j$CPUS_BUILD
 
-  # Directories
-  MODEL_DIR: $CI_PROJECT_DIR/dune/utopia/models
+
+  # Variables needed for docker image deployment
+  # The DUNE version to use for cloning during building of docker image
+  DUNE_VERSION: "2.6"
+
+  # The different segments of the resulting test image tag
+  BASE_IMAGE_NAME: ccees/dune4utopia
+  IMAGE_VERSION: "2.0"
+  TEST_IMAGE: "${BASE_IMAGE_NAME}:img-v${IMAGE_VERSION}"
+  # NOTE Do not forget to increment the IMAGE_VERSION when changes to the
+  #      docker file are introduced.
+
+
+  # Shortcuts
+  # ... for directories
+  MODEL_SRC: $CI_PROJECT_DIR/dune/utopia/models
+  MODEL_TESTS: $CI_PROJECT_DIR/python/model_tests
+
+  # ... for certain commands
+  DUNE_CONTROL_PATH: /opt/dune:$CI_PROJECT_DIR  # such that DUNE finds Utopia
+  DUNECTRL: ./dune-common/bin/dunecontrol
+  RUN_IN_DUNE_ENV: $CI_PROJECT_DIR/build-cmake/run-in-dune-env
+  ENTER_DUNE_ENV: source $CI_PROJECT_DIR/build-cmake/activate
+
 
   # Load submodules and submodules of submodules by default
   GIT_SUBMODULE_STRATEGY: recursive
 
+
 # Define the image to use as base for all stages
 # NOTE that some jobs overwrite this setting locally
-image: ${DUNE_IMAGE}
+image: ${TEST_IMAGE}
 
 # Define the four stages of this CI, of which 'setup' is ran only manually and
 # 'prep' only runs in the master branch.
@@ -100,8 +107,8 @@ setup:dune4utopia: &setup
   script:
     - docker build -f docker/dune4utopia.dockerfile
       --build-arg PROCNUM=$CPUS_DIND
-      -t $DUNE_IMAGE .
-    - docker push $DUNE_IMAGE
+      -t $TEST_IMAGE .
+    - docker push $TEST_IMAGE
 
 setup:dune4utopia-clang:
   <<: *setup
@@ -110,8 +117,8 @@ setup:dune4utopia-clang:
       --build-arg CC=clang
       --build-arg CXX=clang++
       --build-arg PROCNUM=$CPUS_DIND
-      -t ${DUNE_IMAGE}-clang .
-    - docker push ${DUNE_IMAGE}-clang
+      -t ${TEST_IMAGE}-clang .
+    - docker push ${TEST_IMAGE}-clang
 
 
 # Preparation of DUNE environment ---------------------------------------------
@@ -123,21 +130,21 @@ prep:update-dune: &update
     - master
   script:
     - docker build -f docker/dune4utopia-update.dockerfile
-      --build-arg BASE_IMAGE=$DUNE_IMAGE
+      --build-arg BASE_IMAGE=$TEST_IMAGE
       --build-arg PROCNUM=$CPUS_DIND
-      -t $DUNE_IMAGE .
-    - docker push $DUNE_IMAGE
+      -t $TEST_IMAGE .
+    - docker push $TEST_IMAGE
 
 prep:update-dune-clang:
   <<: *update
   script:
     - docker build -f docker/dune4utopia-update.dockerfile
-      --build-arg BASE_IMAGE=${DUNE_IMAGE}-clang
+      --build-arg BASE_IMAGE=${TEST_IMAGE}-clang
       --build-arg CC=clang
       --build-arg CXX=clang++
       --build-arg PROCNUM=$CPUS_DIND
-      -t ${DUNE_IMAGE}-clang .
-    - docker push ${DUNE_IMAGE}-clang
+      -t ${TEST_IMAGE}-clang .
+    - docker push ${TEST_IMAGE}-clang
 
 
 # Build stage -----------------------------------------------------------------
@@ -180,7 +187,7 @@ build:debug: &build_debug
 
 build:debug-clang:
   <<: *build_debug
-  image: ${DUNE_IMAGE}-clang
+  image: ${TEST_IMAGE}-clang
   script:
     - CMAKE_FLAGS="
       -DCMAKE_BUILD_TYPE=Debug

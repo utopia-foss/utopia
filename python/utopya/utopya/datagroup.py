@@ -1,6 +1,7 @@
 """Implements data group classes specific to the Utopia output data structure.
 
-They are based on the dantro's OrderedDataGroup class.
+They are based on dantro BaseDataGroup-derived implementations. In this module,
+they are imported and configured using class variables.
 """
 
 import logging
