@@ -440,6 +440,17 @@ public:
         // Write initial state
         this->write_data();
 
+        // Add attributes to the datasets
+        // NOTE Currently, attributes can be set only after the first write
+        //      operation because else the datasets are not yet created.
+        const auto grid_size = as_<std::array<std::size_t,2>>(this->_cfg["grid_size"]);
+        _dset_population->add_attribute("content", "grid");
+        _dset_population->add_attribute("grid_shape", grid_size);
+        _dset_resource_prey->add_attribute("content", "grid");
+        _dset_resource_prey->add_attribute("grid_shape", grid_size);
+        _dset_resource_pred->add_attribute("content", "grid");
+        _dset_resource_pred->add_attribute("grid_shape", grid_size);
+
         // Create
     }
 

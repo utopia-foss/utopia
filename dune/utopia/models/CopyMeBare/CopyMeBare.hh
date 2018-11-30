@@ -102,6 +102,10 @@ public:
         // Set dataset capacities
 
         // Write out the initial state
+
+        // Set dataset attributes
+        // NOTE Currently, attributes can be set only after the first write
+        //      operation because else the datasets are not yet created.
     }
 
     // Setup functions ........................................................
