@@ -32,6 +32,8 @@ parameter_space:
         - fraction
         # TODO add more here?!
 
+    b: 1.58
+
     # Choose a low number of s1 strategy cells (here, defectors)
     s1_prob: 0.1
     s1_fraction: 0.02

@@ -54,8 +54,8 @@ def test_specific_scenario():
                                  perform_sweep=False)
 
     for uni in dm['multiverse'].values():
-        payoff = uni['data']['SimpleEG']['payoff'].reshape(11, 11, 11)
-        strategy = uni['data']['SimpleEG']['strategy'].reshape(11, 11, 11)
+        payoff = uni['data']['SimpleEG']['payoff']
+        strategy = uni['data']['SimpleEG']['strategy']
 
         ### Check specific values 
         ## First iteration
@@ -115,7 +115,7 @@ def test_macroscopic_values():
         grid_size = cfg['grid_size']
 
         # Calculate the frequency of S0 and S1 for the last five time steps
-        counts = [np.bincount(strategy[i]) for i in [-1, -2, -3, -4, -5]]
+        counts = [np.bincount(strategy[i].flatten()) for i in [-1, -2, -3, -4, -5]]
         frequency = [c / (grid_size[0] * grid_size[1]) for c in counts]
 
         # Assert that the frequency of S0 (here: cooperators) is ~ 0.41+-0.2

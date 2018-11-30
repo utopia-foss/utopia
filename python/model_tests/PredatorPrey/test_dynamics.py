@@ -58,8 +58,8 @@ def test_basic_interactions():
 
     data = dm['multiverse'][0]['data']
 
-    pop = data['PredatorPrey']['population'].reshape(3, 1, 1)
-    res_pred = np.reshape(data['PredatorPrey']['resource_predator'],(3, 1, 1))
+    pop = data['PredatorPrey']['population']
+    res_pred = data['PredatorPrey']['resource_predator']
 
     assert res_pred[1, 0, 0] == 1
     assert res_pred[2, 0, 0] == 0
@@ -79,8 +79,8 @@ def test_basic_interactions():
 
     data = dm['multiverse'][0]['data']
 
-    pop = data['PredatorPrey']['population'].reshape(3, 1, 1)
-    res_prey = np.reshape(data['PredatorPrey']['resource_prey'], (3, 1, 1))
+    pop = data['PredatorPrey']['population']
+    res_prey = data['PredatorPrey']['resource_prey']
 
     assert res_prey[1, 0, 0] == 3
     assert res_prey[2, 0, 0] == 4
@@ -103,10 +103,9 @@ def test_basic_interactions():
 
     data = dm['multiverse'][0]['data']
     
-    pop = data['PredatorPrey']['population'].reshape(42, 2, 1).astype(int)
-    res_prey = np.reshape(data['PredatorPrey']['resource_prey'],
-                          (42, 2, 1))
-    res_pred = np.reshape(data['PredatorPrey']['resource_predator'], (42, 2, 1))
+    pop = data['PredatorPrey']['population'].astype(int)
+    res_prey = data['PredatorPrey']['resource_prey']
+    res_pred = data['PredatorPrey']['resource_predator']
 
     if pop[0, 0, 0] == 2:
         # in the last time step, depending on the update order, 
@@ -151,8 +150,7 @@ def test_basic_interactions():
     
     data = dm['multiverse'][0]['data']
 
-    pop = data['PredatorPrey']['population'].reshape(31, 30, 1)
-    pop = pop.astype(int)
+    pop = data['PredatorPrey']['population'].astype(int)
 
     diff = np.diff(pop, axis=0)
 
@@ -172,10 +170,9 @@ def test_basic_interactions():
 
     data = dm['multiverse'][0]['data']
 
-    pop = data['PredatorPrey']['population'].reshape(3, 2, 1)
-    res_prey = np.reshape(data['PredatorPrey']['resource_prey'],
-                          (3, 2, 1))
-
+    pop = data['PredatorPrey']['population']
+    res_prey = data['PredatorPrey']['resource_prey']
+                         
     assert np.all(res_prey[: , : , :] == [[[2], [0]], [[1],[2]], [[2], [1]]]) \
         or np.all(res_prey[: , : , :] == [[[0], [2]], [[2],[1]], [[1], [2]]])
     assert np.all(pop[ : , :, :] == [[[1], [0]], [[1],[1]], [[1], [1]]]) \

@@ -26,24 +26,21 @@ def test_dynamics_two_state_model():
 
     # For the universe with f=0, ignited bottom and two_state_model=true
     for uni_no, uni in dm['multiverse'].items():
-        data = uni['data']['ForestFire']
+        data = uni['data']['ForestFire']['state']
 
         # Get the grid size
         grid_size = uni['cfg']['ForestFire']['grid_size']
         num_cells = grid_size[0] * grid_size[1]
         steps =  uni['cfg']['num_steps']
-        new_shape = (steps+1, grid_size[1], grid_size[0])
-
-        data_state = np.reshape(data['state'], new_shape)
-
+        
         # all cells tree
-        density = np.sum(data_state[0,:,:])/num_cells
+        density = np.sum(data[0])/num_cells
         assert density==1.0
 
         # all cells burned + 1% growth
-        density = np.sum(data_state[1,:,:])/num_cells
+        density = np.sum(data[1,:,:])/num_cells
         assert 0 <= density <= 0.01
 
         # 1% growth
-        density = np.sum(data_state[2,:,:])/num_cells
+        density = np.sum(data[2,:,:])/num_cells
         assert 0.01 <= density <= 0.01 + 0.05

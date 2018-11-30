@@ -33,8 +33,9 @@ def frequency(dm: DataManager, *, uni: UniverseGroup, out_path: str, strategy: U
     # Extract the data of the frequency
     strategy_data = uni['data']['SimpleEG']['strategy']
 
-    num_cells = len(strategy_data[0])
-    frequencies = [np.bincount(s) / num_cells for s in strategy_data]
+    grid_shape = strategy_data[0].shape 
+    num_cells = grid_shape[0] * grid_shape[1]
+    frequencies = [np.bincount(s.flatten()) / num_cells for s in strategy_data]
 
     # Get the frequencies of the desired strategy and plot it
     # Single strategy
