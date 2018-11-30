@@ -202,6 +202,16 @@ public:
 
         // Write initial state
         this->write_data();
+
+        // Add attributes to the datasets
+        // NOTE Currently, attributes can be set only after the first write
+        //      operation because else the datasets are not yet created.
+        const auto grid_size = as_<std::array<std::size_t,2>>(this->_cfg["grid_size"]);
+        
+        _dset_some_state->add_attribute("content", "grid");
+        _dset_some_state->add_attribute("grid_shape", grid_size);
+        _dset_some_trait->add_attribute("content", "grid");
+        _dset_some_trait->add_attribute("grid_shape", grid_size);
     }
 
     // Setup functions ........................................................

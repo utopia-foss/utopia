@@ -21,6 +21,8 @@ parameter_space:
     # Choose a smaller grid size to speed up tests
     grid_size: [11, 11]
 
+    b: 1.58
+
     # Chose a single s1-cell in the middle of a s0-world
     initial_state: single_s1
 

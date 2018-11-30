@@ -34,10 +34,13 @@ def frequency(dm: DataManager, *, out_path: str, uni: UniverseGroup,
     # Get the group that all datasets are in
     grp = uni['data']['PredatorPrey']
 
+    # Get the gridsize 
+    grid_size = uni['cfg']['PredatorPrey']['grid_size']
+
     # Extract the data of the frequency
     population_data = grp['population'] 
-    num_cells = len(population_data[0])
-    frequencies = [np.bincount(p, minlength=4)[[1, 2]] / num_cells 
+    num_cells = grid_size[0] * grid_size[1]
+    frequencies = [np.bincount(p.flatten(), minlength=4)[[1, 2]] / num_cells 
                    for p in population_data] 
     
 

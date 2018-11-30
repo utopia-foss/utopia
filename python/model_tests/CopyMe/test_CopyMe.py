@@ -59,7 +59,6 @@ def test_output():
 
         # Calculate the number of cells
         grid_size = uni_cfg['CopyMe']['grid_size']
-        num_cells = grid_size[0] * grid_size[1]
 
         # Check that all datasets are available
         assert 'some_state' in data
@@ -67,8 +66,8 @@ def test_output():
 
         # Assert they have the correct shape
         assert data['some_state'].shape == (uni_cfg['num_steps'] + 1,
-                                            num_cells)
+                                            grid_size[1], grid_size[0])
         assert data['some_trait'].shape == (uni_cfg['num_steps'] + 1,
-                                            num_cells)
+                                            grid_size[1], grid_size[0])
 
         # Can do further tests here ...

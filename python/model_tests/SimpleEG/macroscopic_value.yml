@@ -18,6 +18,8 @@ parameter_space:
   SimpleEG: !model
     model_name: SimpleEG
 
+    b: 1.58
+    
     # Choose a smaller grid size to speed up tests
     grid_size: [61, 61]
 
