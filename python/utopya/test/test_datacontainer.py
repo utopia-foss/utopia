@@ -8,9 +8,6 @@ import pytest
 from utopya.datacontainer import GridDC
 from utopya.testtools import ModelTest
 
-# Configure the ModelTest class for ContDisease
-mtc = ModelTest("ContDisease", test_file=__file__)
-
 
 def test_griddc() -> None:
     """Test the functionality of the GridDC."""
@@ -28,11 +25,13 @@ def test_griddc() -> None:
     # Assert that the data is correct and have the form
     # [[ 0  1  2 ]
     #  [ 3  4  5 ]]
+    # To check this, iterate through all elements in the data and check 
+    # that each value is at the expected location. 
     for i in range(6):
         assert(gdc_1d[i//3][i%3] == i)
 
     # Test the case where the grid_size 
-    with pytest.raises(ValueError, match="Cannot reshape array of size"):
+    with pytest.raises(ValueError, match="Reshaping failed! "):
         data_1d = np.arange(5)
         gdc_1d = GridDC(name="data_1d", data=data_1d, attrs=attrs_1d)
 
@@ -54,6 +53,8 @@ def test_griddc() -> None:
     #  [ 3  4  5 ]]
     # [[ 6  7  8 ]
     #  [ 9 10 11 ]]]
+    # To check this, iterate through all elements in the data and check 
+    # that each value is at the expected location.
     for i in range(12):
         if (i//6 == 0 ):
             assert(gdc_2d[0][i//3][i%3] == i)
@@ -78,6 +79,10 @@ def test_griddc() -> None:
 
 def test_griddc_integration():
     """Integration test for the GridDC."""
+
+    # Configure the ModelTest class for ContDisease
+    mtc = ModelTest("ContDisease", test_file=__file__)
+
     # Create and run a multiverse and load the data
     _, dm = mtc.create_run_load(from_cfg="cfg/griddc_cfg.yml")
 

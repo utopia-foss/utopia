@@ -33,7 +33,8 @@ class GridDC(NumpyDC):
     """This is the base class for all grid data used in Utopia.
 
     It is based on the NumpyDC and reshapes the data to the grid shape.
-    The last ID is assumed to be the grid dimension
+    The last dimension is assumed to be the dimension that goes along the 
+    grid cell IDs.
     """
     
     # Define as class variable the attribute that determines the shape of the data.
@@ -44,7 +45,7 @@ class GridDC(NumpyDC):
         
         Args:
             name (str): The name of the data container
-            data (np.ndarray): The data that is stored in the container
+            data (np.ndarray): The not yet reshaped data
             **kwargs: Further initialization kwargs, e.g. `attrs` ...
         """
         # Call the __init__ function of the base class
@@ -63,12 +64,15 @@ class GridDC(NumpyDC):
         # number of elements after reshaping in the data
         
         try:
-            # Reshape the data
+            # Reshape the data using C-style ordering. 
             self._data = np.reshape(self.data, new_shape, order='C')
+
         except ValueError as err:
-            raise ValueError("Cannot reshape array of size {} into shape {}. "
-                             "To reshape the model configuration the parameter "
-                             "grid_size is used, which probably is not provided."
-                             "".format(data_shape, new_shape)
-                             ) from err
+            raise ValueError("Reshaping failed! This is probably due to a "
+                             "mismatch between the written dataset attribute " 
+                             "for the grid shape ('{}': {}, configured by " 
+                             "class variable `_GDC_attrs_grid_shape`) and the "
+                             "actual shape {} of the written data."
+                             "".format( self._GDC_attrs_grid_shape, 
+                                        grid_shape, data_shape)) from err
 
