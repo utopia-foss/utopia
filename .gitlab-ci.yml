@@ -244,7 +244,6 @@ test:models:
     - utopia run CopyMe --debug
     - utopia run CopyMeBare --debug --no-plot
     - utopia run HdfBench --sweep --num-seeds 3 --debug
-    - utopia run Amee --no-plot --sweep
     #
     # Now the actual models:
     - utopia run ContDisease
@@ -252,7 +251,7 @@ test:models:
     - utopia run Hierarnet
     - utopia run SimpleEG
     - utopia run PredatorPrey
-    - utopia run Amee
+    - utopia run Amee --no-plot --sweep
     # TODO add a call for your model here
     #
     # FIXME use --debug in models, too! Need ffmpeg in docker image for that...
