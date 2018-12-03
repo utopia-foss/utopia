@@ -221,6 +221,15 @@ public:
 
         // Write _ia_matrix in _hdfgrp attribute
         this->_hdfgrp->add_attribute("ia_matrix", _ia_matrix);
+
+        // Add attributes to the datasets
+        // NOTE Currently, attributes can be set only after the first write
+        //      operation because else the datasets are not yet created.
+        const auto grid_size = as_<std::array<std::size_t,2>>(this->_cfg["grid_size"]);
+        _dset_strategy->add_attribute("content", "grid");
+        _dset_strategy->add_attribute("grid_shape", grid_size);
+        _dset_payoff->add_attribute("content", "grid");
+        _dset_payoff->add_attribute("grid_shape", grid_size);
     }
 
 

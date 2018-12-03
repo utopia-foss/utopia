@@ -32,3 +32,9 @@ class DataManager(Hdf5LoaderMixin, YamlLoaderMixin, dtr.data_mngr.DataManager):
 
     # Tell the HDF5 loader which container class to use
     _HDF5_DSET_DEFAULT_CLS = udc.NumpyDC
+
+    # The name of the attribute to read for the mapping
+    _HDF5_MAP_FROM_ATTR = "content"
+
+    # The mapping of different content values to a data container types
+    _HDF5_DSET_MAP = dict(grid=udc.GridDC)

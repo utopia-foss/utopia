@@ -25,10 +25,9 @@ def test_initial_state_empty():
     # Get the grid size
     uni_cfg = dm['multiverse'][0]['cfg']
     grid_size = uni_cfg['ContDisease']['grid_size']
-    num_cells = grid_size[0] * grid_size[1]
 
     # Check that only one step was performed and written
-    assert data_.shape == (1, num_cells)
+    assert data_.shape == (1, grid_size[1], grid_size[0])
 
     # Check if all cells are empty
     assert (data_ == 0).all()
@@ -46,10 +45,9 @@ def test_initial_stones():
     # Get the grid size
     uni_cfg = dm['multiverse'][0]['cfg']
     grid_size = uni_cfg['ContDisease']['grid_size']
-    num_cells = grid_size[0] * grid_size[1]
 
     # Check that only one step was performed and written
-    assert data_.shape == (1, num_cells)
+    assert data_.shape == (1, grid_size[1], grid_size[0])
 
     # Check if any cell is in stone state
     assert (data_ == 4).any()
@@ -64,16 +62,14 @@ def test_initial_state_herd_south():
 
     # Get data
     grp = dm['multiverse'][0]['data/ContDisease']
+    data = grp["state"]
 
     # Get the grid size
     uni_cfg = dm['multiverse'][0]['cfg']
     grid_size = uni_cfg['ContDisease']['grid_size']
-    num_cells = grid_size[0] * grid_size[1]
-    num_steps = uni_cfg['num_steps']
-    data = np.reshape(grp["state"], (num_steps+1, grid_size[1], grid_size[0]))
 
     # Check that only one step was written
-    assert grp["state"].shape == (1, num_cells)
+    assert grp["state"].shape == (1, grid_size[1], grid_size[0])
 
     # Check if all Cells are empty, apart from the lowest horizontal row
     assert (data[0][1:] == 0).all()
@@ -96,10 +92,9 @@ def test_growing_dynamic():
     # Get the grid size
     uni_cfg = dm['multiverse'][0]['cfg']
     grid_size = uni_cfg['ContDisease']['grid_size']
-    num_cells = grid_size[0] * grid_size[1]
 
     # Check that only two steps were written
-    assert data_.shape == (2, num_cells)
+    assert data_.shape == (2, grid_size[1], grid_size[0])
 
     # Check that all cells are trees after one timestep
     assert (data_[1] == 1).all()
@@ -115,17 +110,14 @@ def test_infection_dynamic():
 
     # Get data
     grp = dm['multiverse'][0]['data/ContDisease']
-    data_ = grp["state"]
+    data = grp["state"]
 
     # Get the grid size
     uni_cfg = dm['multiverse'][0]['cfg']
     grid_size = uni_cfg['ContDisease']['grid_size']
-    num_cells = grid_size[0] * grid_size[1]
-    num_steps = uni_cfg['num_steps']
-    data = np.reshape(data_, (num_steps+1, grid_size[1], grid_size[0]))
 
     # Check that only three steps were written
-    assert data_.shape == (4, num_cells)
+    assert data.shape == (4, grid_size[1], grid_size[0])
 
     #Check that the last row is an infection herd
     assert (data[0][0] == 3).all()
