@@ -219,7 +219,8 @@ def bifurcation_codimension_one(dm: DataManager, *,
         ## get cfg of plot mode
         # use find_peaks function
         diagram_kwargs['find_peaks_kwargs'] = find_peaks_kwargs
-        if not 'height' in diagram_kwargs['find_peaks_kwargs'].keys():
+        if not diagram_kwargs['find_peaks_kwargs'] is None and \
+           not 'height' in diagram_kwargs['find_peaks_kwargs'].keys():
             raise ValueError("No argument `height` given in"
                                 " `find_peaks_kwargs` dict.")
         # update the find_peaks_kwargs from props

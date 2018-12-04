@@ -1,0 +1,106 @@
+---
+bifurcation_alpha:
+  creator: multiverse
+  select:
+    fields:
+      density_G: 
+        path: data/SavannaHomogeneous/density_G
+        dims: [time]
+      density_S: 
+        path: data/SavannaHomogeneous/density_S
+        dims: [time]
+
+  module: .attractor
+  plot_func: bifurcation_codimension_one
+
+  dim: alpha
+
+  to_plot_kwargs: 
+    density_G:
+      label: grass
+
+      plot_kwargs:
+        color: green
+        s: 10
+
+    density_S:
+      label: saplings
+
+      plot_kwargs:
+        color: yellow
+        s: 6
+
+bifurcation_alpha_scatter:
+  creator: multiverse
+  select:
+    fields:
+      density_G: 
+        path: data/SavannaHomogeneous/density_G
+        dims: [time]
+      density_S: 
+        path: data/SavannaHomogeneous/density_S
+        dims: [time]
+
+  module: .attractor
+  plot_func: bifurcation_codimension_one
+
+  dim: alpha
+  
+  time_fraction: 0.1
+
+  to_plot_kwargs: 
+    density_G:
+      label: grass
+
+      plot_kwargs:
+        color: green
+        s: 10
+
+    density_S:
+      label: saplings
+
+      plot_kwargs:
+        color: yellow
+        s: 6
+      time_fraction: 0.05
+
+bifurcation_alpha_find_peaks:
+  creator: multiverse
+  select:
+    fields:
+      density_G: 
+        path: data/SavannaHomogeneous/density_G
+        dims: [time]
+      density_S: 
+        path: data/SavannaHomogeneous/density_S
+        dims: [time]
+
+  module: .attractor
+  plot_func: bifurcation_codimension_one
+
+  dim: alpha
+  
+  spin_up_fraction: 0.1
+
+  find_peaks_kwargs:    # if given, height is needed
+    height: 0.
+    prominence: 0.075
+
+  to_plot_kwargs: 
+    density_G:
+      label: grass
+
+      plot_kwargs:
+        color: green
+        s: 10
+
+    density_S:
+      label: saplings
+
+      plot_kwargs:
+        color: yellow
+        s: 6
+      find_peaks_kwargs:    # if given, height is needed
+        height: 0.
+        prominence: 0.01
+
