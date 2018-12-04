@@ -25,7 +25,6 @@ def bifurcation_codimension_one(dm: DataManager, *,
                                 out_path: str,
                                 mv_data,
                                 dim: str,
-                                fmt: str=None,
                                 time_fraction: float=0,
                                 spin_up_fraction: float=0,
                                 find_peaks_kwargs: dict=None,
@@ -47,7 +46,6 @@ def bifurcation_codimension_one(dm: DataManager, *,
         out_path (str): Where to store the plot to
         mv_data (xr.Dataset): The extracted multidimensional dataset
         dim (str): The parameter dimension of the bifurcation diagram
-        fmt (str, optional): the plt.plot format argument
         time_fraction(float, optional): fraction of the simulation
             used for analysis.
             Spin up fraction is `1 - time_fraction`.
