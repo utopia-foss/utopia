@@ -73,7 +73,7 @@ def bifurcation_codimension_one(dm: DataManager, *,
             of this key need to match the data_vars selected in mv_data.
             sub_keys: 
                 label (str, optional): label in plot
-                time_fraction (str, optional): fraction of the simulation
+                time_fraction (float, optional): fraction of the simulation
                     used for analysis. Overwrites the `time_fraction` key.
                     See above.
                     Default: equivalent of 1 step.
@@ -115,7 +115,29 @@ def bifurcation_codimension_one(dm: DataManager, *,
                     " Available dimensions: {}."
                     "".format(dim, mv_data.coords))
     
-    def scatter(raw_data, ax, diagram_kwargs):
+    def scatter(*, raw_data, ax, diagram_kwargs: dict):
+        """ The function that scatters the data at a single dimension
+            value.
+
+            Argument:
+                raw_data (xdarray): The data at a specific `dim` value
+                ax (mplt.axis): The axis where to plot the data
+                diagram_kwargs: The updated kwargs that are used to 
+                    process the data.
+                    subkeys:
+                    - plot_kwargs (dict): passed to ax.scatter
+                    - find_peaks_kwargs (dict): passed to 
+                         scipy.find_peaks.
+                         if given must have an `height` key.
+                    either of the following subkeys:
+                    - time_fraction (float): fraction of the simulation
+                        used for analysis.
+                        Only needed if no analysis performed.
+                    - spin_up_fraction (float): fraction of the simulation
+                        snot used for analysis in case on signal analysis, 
+                        e.g. find_peaks.
+                        Only needed if analysis performed.
+        """
         plot_kwargs = diagram_kwargs['plot_kwargs']
 
         # scatter data
@@ -144,23 +166,27 @@ def bifurcation_codimension_one(dm: DataManager, *,
             
             # print result
             if maxima.size is 0:
-                plt.scatter(raw_data[dim], raw_data[-1],
+                ax.scatter(raw_data[dim], raw_data[-1],
                             **plot_kwargs)
             else:
-                plt.scatter([ raw_data[dim] ]*len(maxima), 
+                ax.scatter([ raw_data[dim] ]*len(maxima), 
                             max_props['peak_heights'], 
                             **props['plot_kwargs'])
-                plt.scatter([ raw_data[dim] ]*len(minima), 
+                ax.scatter([ raw_data[dim] ]*len(minima), 
                         [ amax ]*len(minima) - min_props['peak_heights'],
                         **props['plot_kwargs'])
+    # end def scatter
             
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
     legend_handles = []
-    ## scatter data for all properties to plot
+    ## iterate to_plot items, the different properties of the data
+    # get the properties of the plot from the configs
+    # scatter the data
     for (prop_name, props) in to_plot_kwargs.items():
+        # check existence in mv_data
         if not prop_name in mv_data.data_vars:
             raise ValueError("Key to_plot_kwargs/prop_name not available"
                              " in multiverse data."
@@ -171,10 +197,9 @@ def bifurcation_codimension_one(dm: DataManager, *,
                                        mv_data.data_vars))
 
         # get label
-        if 'label' in props.keys(): 
-            label = props['label']
-        else:
-            label = prop_name
+        label = props.get('label', prop_name)
+
+
 
         # add label to legend
         if 'plot_kwargs' in props.keys() and 'color' in props['plot_kwargs']:
@@ -182,21 +207,28 @@ def bifurcation_codimension_one(dm: DataManager, *,
                            color=props['plot_kwargs']['color']))
         else:
             # coloring misleading
-            log.warning("Warning: No color defined for to_plot_kwargs "+ prop_name)
+            log.warning("No color defined for to_plot_kwargs {}"
+                        "".foramt(prop_name))
 
-
+        # the kwargs passed to the scatter function for this `prop_name`
         diagram_kwargs = dict()
-        if 'plot_kwargs' in props.keys():
-            diagram_kwargs['plot_kwargs'] = props['plot_kwargs']
-        else:
-            diagram_kwargs['plot_kwargs'] = {}
+
+        # get the `plot_kwargs`
+        diagram_kwargs['plot_kwargs'] = props.get('plot_kwargs', {})
         
         ## get cfg of plot mode
         # use find_peaks function
         diagram_kwargs['find_peaks_kwargs'] = find_peaks_kwargs
+        if not 'height' in diagram_kwargs['find_peaks_kwargs'].keys():
+            raise ValueError("No argument `height` given in"
+                                " `find_peaks_kwargs` dict.")
         # update the find_peaks_kwargs from props
         if 'find_peaks_kwargs' in props.keys():
             diagram_kwargs['find_peaks_kwargs'] = props['find_peaks_kwargs']
+            if not 'height' in diagram_kwargs['find_peaks_kwargs'].keys():
+                raise ValueError("No argument `height` given in"
+                                 " `to_plot_kwargs/{}/find_peaks_kwargs`"
+                                 " dict.".format(prop_name))
         
         # get time of simulation used for analysis
         if diagram_kwargs['find_peaks_kwargs'] is None:
@@ -222,7 +254,7 @@ def bifurcation_codimension_one(dm: DataManager, *,
                             "".format(prop_name,
                                       type(props['time_fraction']),
                                       props['time_fraction']))
-        
+        # use signal analysis
         else:
             diagram_kwargs['spin_up_fraction'] = spin_up_fraction
             # check validity
@@ -247,17 +279,19 @@ def bifurcation_codimension_one(dm: DataManager, *,
                                       type(spin_up_fraction),
                                       spin_up_fraction))
 
-        # plot data
+        ### plot data
+        # iterate the parameter dimension 
         if (len(mv_data.coords) == 1):
             for data in mv_data[prop_name]:
-                scatter(data, ax, diagram_kwargs)
+                scatter(raw_data=data, ax=ax, diagram_kwargs=diagram_kwargs)
+        # iterate the parameter dimension and a second dimension
         elif (len(mv_data.coords) == 2):
             for datasets in mv_data[prop_name]:
                 for data in datasets:
-                    scatter(data, ax, diagram_kwargs)
+                    scatter(raw_data=data, ax=ax, diagram_kwargs=diagram_kwargs)
         # else: Error raised
     # end for: property
-            
+
     # plot legend
     if len(legend_handles) > 0:
         ax.legend(handles=legend_handles)
