@@ -84,7 +84,8 @@ def bifurcation_codimension_one(dm: DataManager, *,
                     See above.
                     Unused if no analysis performed.
                 plot_kwargs (dict, optional): passed to scatter for every universe
-                    color (str, recommended): unique color for multiverses
+                    - color (str, recommended): unique color for every
+                      `to_plot` data_variable
         plot_kwargs (dict, optional): Passed on to ax.set
         save_kwargs (dict, optional): kwargs to the plt.savefig function
 
