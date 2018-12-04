@@ -47,30 +47,41 @@ def bifurcation_codimension_one(dm: DataManager, *,
         mv_data (xr.Dataset): The extracted multidimensional dataset
         dim (str): The parameter dimension of the bifurcation diagram
         time_fraction(float, optional): fraction of the simulation
-            used for analysis.
-            Spin up fraction is `1 - time_fraction`.
-                Default: eq. of 1 step.
-            Will be overwritten by specific `to_plot_kwargs/time_fraction`.
+            scattered.
+            Default: 0 --> equivalent of 1 step, the asymptotically 
+            reached final state.
+            Use values > 0 to evaluate maximum spread of the attractor, 
+            e.g. for oscillations, which will plot the full amplitude 
+            of the oscillation. Coloring or dot-size changing with time
+            may improve readability (not implemented).
+            Will be overwritten by specific `to_plot_kwargs/*/time_fraction`.
             Unused if analysis performed.
         spin_up_fraction(float, optional): fraction of the simulation
-            snot used for analysis in case on signal analysis, e.g. find_peaks.
+            not used for analysis in case on signal analysis, 
+            e.g. find_peaks.
+            Only used together with `find_peaks`, other than with
+            `time_fraction` the data is processed. Hence, a dataset is
+            needed. A fraction of the simulation (the beginning) often
+            if dropped, the so called `spin up` part.
+            Will be overwritten by specific `to_plot_kwargs/*/time_fraction`.
             Unused if no analysis performed.
         find_peaks_kwargs (dict, optional): if given requires `height` key
             passed on to find_peaks
             then only the return points are plotted (for stable oscillations)
             may be overwritten by `to_plot_kwargs/*/find_peak_kwargs`
-        to_plot_kwargs (dict): The plotting configuration. The entries of this key
-            need to match the data_vars selected in mv_data.
+        to_plot_kwargs (dict): The plotting configuration. The entries
+            of this key need to match the data_vars selected in mv_data.
             sub_keys: 
                 label (str, optional): label in plot
                 time_fraction (str, optional): fraction of the simulation
-                    used for analysis.
-                    Spin up fraction is `1 - time_fraction`.
-                    Default: eq. of 1 step.
+                    used for analysis. Overwrites the `time_fraction` key.
+                    See above.
+                    Default: equivalent of 1 step.
                     Unused if analysis performed.
                 spin_up_fraction(float, optional): fraction of the simulation
                     snot used for analysis in case on signal analysis, 
-                    e.g. find_peaks.
+                    e.g. find_peaks. Overwrites the `spin_up_fraction` key.
+                    See above.
                     Unused if no analysis performed.
                 plot_kwargs (dict, optional): passed to scatter for every universe
                     color (str, recommended): unique color for multiverses
