@@ -44,7 +44,3 @@ class NetworkGroup(dtr.groups.NetworkGroup):
     # Expected _group_ attribute names determining the type of graph
     _NWG_attr_directed = "is_directed"
     _NWG_attr_parallel = "is_parallel"
-
-    # Expected _container_ attributes for containers holding vertex/edge data
-    _NWG_attr_is_node_attribute = "is_vertex_attribute"
-    _NWG_attr_is_edge_attribute = "is_edge_attribute"

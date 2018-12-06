@@ -159,7 +159,7 @@ worker_kwargs:
 data_manager:
   # Where to create the output directory for this DataManager, relative to
   # the run directory of the Multiverse.
-  out_dir: eval/{date:}
+  out_dir: eval/{timestamp:}
   # The {date:} placeholder is replaced by the current timestamp such that
   # future DataManager instances that operate on the same data directory do
   # not create collisions.
