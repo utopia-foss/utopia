@@ -28,7 +28,17 @@ class DataManager(Hdf5LoaderMixin, YamlLoaderMixin, dtr.data_mngr.DataManager):
     """
 
     # Register known group types
-    _DATA_GROUP_CLASSES = dict(MultiverseGroup=udg.MultiverseGroup)
+    _DATA_GROUP_CLASSES = dict(MultiverseGroup=udg.MultiverseGroup,
+                               NetworkGroup=udg.NetworkGroup)
 
     # Tell the HDF5 loader which container class to use
     _HDF5_DSET_DEFAULT_CLS = udc.NumpyDC
+
+    # The name of the attribute to read for the mapping
+    _HDF5_MAP_FROM_ATTR = "content"
+
+    # The mapping of different content values to a data group type
+    _HDF5_GROUP_MAP = dict(network=udg.NetworkGroup)
+
+    # The mapping of different content values to a data container types
+    _HDF5_DSET_MAP = dict(grid=udc.GridDC)

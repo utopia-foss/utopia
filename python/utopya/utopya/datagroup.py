@@ -31,3 +31,16 @@ class MultiverseGroup(dtr.groups.ParamSpaceGroup):
     Furthermore, via dantro, an easy data selector is available
     """
     _NEW_GROUP_CLS = UniverseGroup
+
+
+class NetworkGroup(dtr.groups.NetworkGroup):
+    """This group is meant to manage network data and create a NetworkX graph
+    from it."""
+
+    # Expected names for the containers that hold vertex/edge information
+    _NWG_node_container = "_vertices"
+    _NWG_edge_container = "_edges"
+
+    # Expected _group_ attribute names determining the type of graph
+    _NWG_attr_directed = "is_directed"
+    _NWG_attr_parallel = "is_parallel"

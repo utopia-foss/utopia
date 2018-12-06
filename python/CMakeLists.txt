@@ -14,6 +14,7 @@ message(STATUS "Installing required Python packages ...")
 
 # Manually install dependencies for utopya, if they are not already satisfied
 # NOTE Take care that the versions used here match those in the README.md
+#      and those in the utopya setup.py file.
 # -- paramspace --
 dune_python_find_package(PACKAGE paramspace
                          VERSION 2.1.0
@@ -27,7 +28,7 @@ endif()
 
 # -- dantro --
 dune_python_find_package(PACKAGE dantro
-                         VERSION 0.6.0rc0  # FIXME Use release-version
+                         VERSION 0.6.0
                          INTERPRETER ${DUNE_PYTHON_VIRTUALENV_EXECUTABLE})
 
 if(NOT DUNE_PYTHON_dantro_FOUND)

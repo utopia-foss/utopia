@@ -60,14 +60,13 @@ def test_output():
 
         # Calculate the number of cells
         grid_size = uni_cfg['ForestFire']['grid_size']
-        num_cells = grid_size[0] * grid_size[1]
 
         # Check that all datasets are available
         assert 'state' in data
 
         # Assert they have the correct shape
         assert data['state'].shape == (uni_cfg['num_steps'] + 1,
-                                            num_cells)
+                                       grid_size[1], grid_size[0])
 
 def test_initial_state_random(): 
     """Test that the initial states are random.
@@ -81,20 +80,19 @@ def test_initial_state_random():
 
     # For all universes, perform checks on the state
     for uni in dm['multiverse'].values():
-        data = uni['data']['ForestFire']
+        data = uni['data']['ForestFire']['state']
 
         # Get the grid size
         grid_size = uni['cfg']['ForestFire']['grid_size']
-        num_cells = grid_size[0] * grid_size[1]
 
         # Check that only a single step was written and the extent is correct
-        assert data['state'].shape == (1, num_cells)
+        assert data.shape == (1, grid_size[1], grid_size[0])
 
         # check, that no cell is burning
-        assert 0 <= np.amax(data['state']) <= 1
+        assert 0 <= np.amax(data) <= 1
 
         # Strategies should be random; calculate the ratio and check limits
-        density = np.sum(data['state'])/data['state'].shape[1]
+        density = np.sum(data)/(data.shape[1] * data.shape[2])
         assert 0.45 <= density <= 0.55  # TODO values ok?
 
 
@@ -105,13 +103,13 @@ def test_initial_state_random():
                                  **model_cfg(initial_density=initial_density))
 
     for uni in dm['multiverse'].values():
-        data = uni['data']['ForestFire']
+        data = uni['data']['ForestFire']['state']
 
         # check, that no cell is burning
-        assert 0 <= np.amax(data['state']) <= 1
+        assert 0 <= np.amax(data) <= 1
 
         # Calculate fraction and compare to desired probability
-        density = np.sum(data['state'])/data['state'].shape[1]
+        density = np.sum(data)/(data.shape[1] * data.shape[2])
         assert initial_density - 0.05 <= density <= initial_density + 0.05
 
     # Test again for another probability value - implies _set_initial_state_empty function
@@ -136,11 +134,11 @@ def test_initial_state_random():
                                  **model_cfg(initial_density=initial_density))
 
     for uni in dm['multiverse'].values():
-        data = uni['data']['ForestFire']
+        data = uni['data']['ForestFire']['state']
 
         # check, that no cell is burning
-        assert 0 <= np.amax(data['state']) <= 1
+        assert 0 <= np.amax(data) <= 1
 
         # Calculate fraction and compare to desired probability
-        density = np.sum(data['state'])/data['state'].shape[1]
+        density = np.sum(data)/(data.shape[1] * data.shape[2])
         assert density == initial_density
