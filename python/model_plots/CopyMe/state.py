@@ -9,7 +9,12 @@ from ..tools import save_and_close
 
 # -----------------------------------------------------------------------------
 
-def state_mean(dm: DataManager, *, uni: UniverseGroup, out_path: str, fmt: str=None, save_kwargs: dict=None, **plot_kwargs):
+def state_mean( dm: DataManager, *, 
+                uni: UniverseGroup, 
+                out_path: str, 
+                fmt: str=None, 
+                save_kwargs: dict=None, 
+                **plot_kwargs):
     """Calculates the state mean and performs a lineplot
     
     Args:
@@ -23,13 +28,9 @@ def state_mean(dm: DataManager, *, uni: UniverseGroup, out_path: str, fmt: str=N
     # Get the group that all datasets are in
     grp = uni['data/CopyMe']
 
-    # Get the shape of the data
-    uni_cfg = uni['cfg']
-    num_steps = uni_cfg['num_steps']
-    grid_size = uni_cfg['CopyMe']['grid_size']
-
-    # Extract the y data which is 'some_state' avaraged over all grid cells for every time step
-    data = grp['some_state'].reshape(grid_size[0], grid_size[1], num_steps+1)
+    # Extract the y_data which is 'some_state' averaged over all grid cells 
+    # for every time step
+    data = grp['some_state']
     y_data = [np.mean(d) for d in data]
 
     # Assemble the arguments

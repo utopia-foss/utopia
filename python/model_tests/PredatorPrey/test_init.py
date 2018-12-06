@@ -76,9 +76,9 @@ def test_initial_state_random():
 
 
         # Check that only a single step was written and the extent is correct
-        assert data['population'].shape == (1, num_cells)
-        assert data['resource_prey'].shape == (1, num_cells)
-        assert data['resource_predator'].shape == (1, num_cells)
+        assert data['population'].shape == (1, grid_size[1], grid_size[0])
+        assert data['resource_prey'].shape == (1, grid_size[1], grid_size[0])
+        assert data['resource_predator'].shape == (1, grid_size[1], grid_size[0])
 
         # Number of cells should be prey + predators + empty, every cell should
         # either be empty or populated by either predator or prey
@@ -120,9 +120,9 @@ def test_initial_state_random():
 
 
         # Check that only a single step was written and the extent is correct
-        assert data['population'].shape == (1, num_cells)
-        assert data['resource_prey'].shape == (1, num_cells)
-        assert data['resource_predator'].shape == (1, num_cells)
+        assert data['population'].shape == (1, grid_size[1], grid_size[0])
+        assert data['resource_prey'].shape == (1, grid_size[1], grid_size[0])
+        assert data['resource_predator'].shape == (1, grid_size[1], grid_size[0])
 
         # Number of cells should be prey + predators + empty, every cell should
         # either be empty or populated by either predator or prey
@@ -166,9 +166,11 @@ def test_initial_state_fraction():
         num_predprey = np.sum(data['population'] == 3)
         # Check that the correct number of cells was initiliazied in the
         # prescribed way, floor
-        assert num_prey == int(prey_frac * data['population'].shape[1])
-        assert num_pred == int(pred_frac * data['population'].shape[1])
-        assert num_predprey == int(predprey_frac * data['population'].shape[1])
+        shape = (data['population'].shape[1], data['population'].shape[2])
+
+        assert num_prey == int(prey_frac * shape[0] * shape[1])
+        assert num_pred == int(pred_frac * shape[0] * shape[1])
+        assert num_predprey == int(predprey_frac * shape[0] * shape[1])
 
 
 

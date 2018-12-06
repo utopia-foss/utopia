@@ -69,17 +69,17 @@ def test_initial_state_random():
 
         # Get the grid size
         grid_size = uni['cfg']['SimpleEG']['grid_size']
-        num_cells = grid_size[0] * grid_size[1]
 
         # Check that only a single step was written and the extent is correct
-        assert data['payoff'].shape == (1, num_cells)
-        assert data['strategy'].shape == (1, num_cells)
+        assert data['payoff'].shape == (1, grid_size[1], grid_size[0])
+        assert data['strategy'].shape == (1, grid_size[1], grid_size[0])
 
         # All payoffs should be zero
         assert not np.any(data['payoff'])
 
         # Strategies should be random; calculate the ratio and check limits
-        s1_fraction = np.sum(data['strategy'])/data['strategy'].shape[1]
+        shape = (data['strategy'].shape[1], data['strategy'].shape[2])
+        s1_fraction = np.sum(data['strategy'])/(shape[0] * shape[1])
         assert 0.45 <= s1_fraction <= 0.55  # TODO values ok?
 
 
@@ -97,7 +97,8 @@ def test_initial_state_random():
         assert not np.any(data['payoff'])
 
         # Calculate fraction and compare to desired probability
-        s1_fraction = np.sum(data['strategy'])/data['strategy'].shape[1]
+        shape = data['strategy'].shape[1:]
+        s1_fraction = np.sum(data['strategy']) / (shape[0] * shape[1])
         assert s1_prob - 0.05 <= s1_fraction <= s1_prob + 0.05
 
 
@@ -124,7 +125,8 @@ def test_initial_state_fraction():
 
         # Count the cells with strategy 1
         num_s1 = np.sum(data['strategy'])
-        assert num_s1 == int(s1_fraction * data['strategy'].shape[1])  # floor
+        shape = (data['strategy'].shape[1], data['strategy'].shape[2])
+        assert num_s1 == int(s1_fraction * shape[0] * shape[1])  # floor
 
 
 def test_initial_state_single(): 
@@ -155,21 +157,18 @@ def test_initial_state_single():
             # Cannot continue
             continue
 
-        # For others, calculate the central cell (integer division!)
-        c_idx = (grid_size[0]//2) * grid_size[1] + grid_size[1]//2
-
         # Check the center cell strategy
         print(data['strategy'].data)
 
         # Check the data, depending on what the strategy ought to be
         if uni['cfg']['SimpleEG']['initial_state'] == "single_s0":
             # Central 0, all others 1
-            assert data['strategy'][0, c_idx] == 0
+            assert data['strategy'][0, grid_size[1]//2, grid_size[0]//2] == 0
             assert np.sum(data['strategy']) == grid_size[0] * grid_size[1] - 1
         
         else:
             # Central 1, all others 0
-            assert data['strategy'][0, c_idx] == 1
+            assert data['strategy'][0, grid_size[1]//2, grid_size[0]//2] == 1
             assert np.sum(data['strategy']) == 1
         
         # Finally, all payoffs should be zero
