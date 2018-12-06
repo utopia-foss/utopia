@@ -160,46 +160,7 @@ std::shared_ptr<HDFGroup> save_graph(GraphType &g,
     return grp;
 }
 
-
-/// Opens a dataset that holds vertex data
-std::shared_ptr<HDFDataset<HDFGroup>>
-open_vertex_dataset(std::string name,
-                    std::shared_ptr<HDFGroup> &graph_grp,
-                    std::vector<hsize_t> capacity = {},
-                    std::vector<hsize_t> chunksizes = {},
-                    hsize_t compress_level = 0)
-{
-    // Create the dataset, passing all default arguments over
-    auto dset = graph_grp->open_dataset(name, capacity,
-                                        chunksizes, compress_level);
-    
-    // Add the attribute that denotes this as holding vertex attribute data
-    // dset->add_attribute("is_vertex_attribute", true);
-    // dset->add_attribute("content", "vertex_data");
-    // FIXME Make it possible to set them here, i.e.: before first write
-
-    return dset;
-}
-
-/// Opens a dataset that holds edge data
-std::shared_ptr<HDFDataset<HDFGroup>>
-open_edge_dataset(std::string name,
-                  std::shared_ptr<HDFGroup> &graph_grp,
-                  std::vector<hsize_t> capacity = {},
-                  std::vector<hsize_t> chunksizes = {},
-                  hsize_t compress_level = 0)
-{
-    // Create the dataset, passing all default arguments over
-    auto dset = graph_grp->open_dataset(name, capacity,
-                                        chunksizes, compress_level);
-    
-    // Add the attribute that denotes this as holding edge attribute data
-    dset->add_attribute("is_edge_attribute", true);
-    dset->add_attribute("content", "edge_data");
-
-    return dset;
-}
-
+// TODO add functions here to open datasets for edge or node attributes.
 
 } // namespace DataIO
 } // namespace Utopia
