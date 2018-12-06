@@ -267,7 +267,7 @@ data_manager:
       required: true
       path_regex: data/uni(\d+)/data.h5
       target_path: multiverse/{match:}/data
-      enable_mapping: true
+      enable_mapping: true   # see DataManager for content -> type mapping
 
     # The resulting data tree is then:
     #  └┬ cfg
@@ -276,7 +276,7 @@ data_manager:
     #      ├ model
     #      ├ run
     #      └ update
-    #   └ data
+    #   └ multiverse
     #     └┬ 0
     #        └┬ cfg
     #         └ data

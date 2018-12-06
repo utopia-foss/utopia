@@ -50,8 +50,8 @@ def default_mv(mv_kwargs) -> Multiverse:
 def cluster_env() -> dict:
     return dict(TEST_JOB_ID="123",
                 TEST_JOB_NUM_NODES="5",
-                TEST_JOB_NODELIST="node[02-04,11,06]",
-                TEST_NODENAME="stek001",
+                TEST_JOB_NODELIST="node[002-004,011,006]",
+                TEST_NODENAME="node006",
                 TEST_JOB_NAME="testjob",
                 TEST_JOB_ACCOUNT="testaccount",
                 TEST_CPUS_ON_NODE="42",
@@ -233,26 +233,27 @@ def test_cluster_mode_resolve_params(mv_kwargs, cluster_env):
     assert isinstance(rcps['timestamp'], int)
 
     # Check some values
-    assert rcps['node_index'] == 3  # for node06
+    assert rcps['node_index'] == 3  # for node006
     assert rcps['timestamp'] > 0
-    assert rcps['node_list'] == ["node02", "node03", "node04",
-                                 "node06", "node11"]
+    assert rcps['node_list'] == ["node002", "node003", "node004",
+                                 "node006", "node011"]
 
     # Test error messages
     # Node name not in node list
-    cluster_env['TEST_NODENAME'] = 'node42'
-    with pytest.raises(ValueError, match="`node_name` 'node42' is not part"):
+    cluster_env['TEST_NODENAME'] = 'node042'
+    with pytest.raises(ValueError, match="`node_name` 'node042' is not part"):
         Multiverse(**mv_kwargs)
 
     # Wrong number of nodes
-    cluster_env['TEST_NODENAME'] = 'node03'
+    cluster_env['TEST_NODENAME'] = 'node003'
     cluster_env['TEST_JOB_NUM_NODES'] = '3'
     with pytest.raises(ValueError, match="`node_list` has a different length"):
         Multiverse(**mv_kwargs)
 
     # Missing environment variables
     cluster_env.pop('TEST_NODENAME')
-    with pytest.raises(ValueError, match="Missing environment variable for"):
+    with pytest.raises(ValueError,
+                       match="Missing required environment variable"):
         Multiverse(**mv_kwargs)
 
 def test_cluster_mode_run(mv_kwargs, cluster_env):
@@ -261,10 +262,10 @@ def test_cluster_mode_run(mv_kwargs, cluster_env):
     mv_kwargs['cluster_params'] = dict(env=cluster_env)
 
     # Parameter space has 12 points
-    # Five nodes are being used: node02, node03, node04, node06, node11
+    # Five nodes are being used: node002, node003, node004, node006, node011
     # Test for first node, should perform 3 simulations
-    cluster_env['TEST_NODENAME'] = "node02"
-    mv_kwargs['paths']['model_note'] = "node02"
+    cluster_env['TEST_NODENAME'] = "node002"
+    mv_kwargs['paths']['model_note'] = "node002"
 
     mv = Multiverse(**mv_kwargs)
     mv.run_sweep()
@@ -273,8 +274,8 @@ def test_cluster_mode_run(mv_kwargs, cluster_env):
     # NOTE: simulated universes are uni01 ... uni12
 
     # Test for second node, should also perform 3 simulations
-    cluster_env['TEST_NODENAME'] = "node03"
-    mv_kwargs['paths']['model_note'] = "node03"
+    cluster_env['TEST_NODENAME'] = "node003"
+    mv_kwargs['paths']['model_note'] = "node003"
 
     mv = Multiverse(**mv_kwargs)
     mv.run_sweep()
@@ -282,18 +283,35 @@ def test_cluster_mode_run(mv_kwargs, cluster_env):
     assert [t.name for t in mv.wm.tasks] == ['uni02', 'uni07', 'uni12']
 
     # The third node should only perform 2 simulations
-    cluster_env['TEST_NODENAME'] = "node04"
-    mv_kwargs['paths']['model_note'] = "node04"
+    cluster_env['TEST_NODENAME'] = "node004"
+    mv_kwargs['paths']['model_note'] = "node004"
 
     mv = Multiverse(**mv_kwargs)
     mv.run_sweep()
     assert mv.wm.num_finished_tasks == 2
     assert [t.name for t in mv.wm.tasks] == ['uni03', 'uni08']
 
+    # The fourth and fifth node should also perform only 2 simulations
+    cluster_env['TEST_NODENAME'] = "node006"
+    mv_kwargs['paths']['model_note'] = "node006"
+
+    mv = Multiverse(**mv_kwargs)
+    mv.run_sweep()
+    assert mv.wm.num_finished_tasks == 2
+    assert [t.name for t in mv.wm.tasks] == ['uni04', 'uni09']
+
+    cluster_env['TEST_NODENAME'] = "node011"
+    mv_kwargs['paths']['model_note'] = "node011"
+
+    mv = Multiverse(**mv_kwargs)
+    mv.run_sweep()
+    assert mv.wm.num_finished_tasks == 2
+    assert [t.name for t in mv.wm.tasks] == ['uni05', 'uni10']
+
 
 # FrozenMultiverse tests ------------------------------------------------------
 
-def test_FrozenMultiverse(mv_kwargs):
+def test_FrozenMultiverse(mv_kwargs, cluster_env):
     """Test the FrozenMultiverse class"""
     # Need a regular Multiverse and corresponding output for that
     mv = Multiverse(**mv_kwargs)
@@ -335,3 +353,10 @@ def test_FrozenMultiverse(mv_kwargs):
         FrozenMultiverse(**mv_kwargs, run_dir="my_non-existing_directory",
                          data_manager=dict(out_dir="eval/{timestamp:}_6"))
 
+    # Cluster mode
+    print("\nInitializing FrozenMultiverse in cluster mode")
+    mv_kwargs['run_cfg_path'] = CLUSTER_MODE_CFG_PATH
+    mv_kwargs['cluster_params'] = dict(env=cluster_env)
+    FrozenMultiverse(**mv_kwargs, run_dir=os.path.relpath(mv.dirs['run'],
+                                                          start=os.getcwd()),
+                     data_manager=dict(out_dir="eval/{timestamp:}_7"))

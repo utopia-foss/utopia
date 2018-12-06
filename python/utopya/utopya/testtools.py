@@ -111,7 +111,10 @@ class ModelTest:
                              "ModelTest; pass one during initialization to be "
                              "able to generate absolute paths.")
 
-        abs_path = self.test_dir.join(rel_path)
+        if not os.path.isabs(rel_path):
+            abs_path = self.test_dir.join(rel_path)
+        else:
+            abs_path = py.path.local(rel_path)
 
         if not abs_path.exists() or not abs_path.isfile():
             raise FileNotFoundError("No file '{}' found relative to test "
