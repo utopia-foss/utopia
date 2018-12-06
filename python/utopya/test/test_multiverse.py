@@ -210,32 +210,32 @@ def test_FrozenMultiverse(mv_kwargs):
     # Without run directory, the latest one should be loaded
     print("\nInitializing FrozenMultiverse without further kwargs")
     FrozenMultiverse(**mv_kwargs,
-                     data_manager=dict(out_dir="eval/{date:}_1"))
+                     data_manager=dict(out_dir="eval/{timestamp:}_1"))
 
 
     # With a relative path, the corresponding directory should be found
     print("\nInitializing FrozenMultiverse with timestamp as run_dir")
     FrozenMultiverse(**mv_kwargs, run_dir=os.path.basename(mv.dirs['run']),
-                     data_manager=dict(out_dir="eval/{date:}_2"))
+                     data_manager=dict(out_dir="eval/{timestamp:}_2"))
 
     # With an absolute path, that path should be used directly
     print("\nInitializing FrozenMultiverse with absolute path to run_dir")
     FrozenMultiverse(**mv_kwargs, run_dir=mv.dirs['run'],
-                     data_manager=dict(out_dir="eval/{date:}_3"))
+                     data_manager=dict(out_dir="eval/{timestamp:}_3"))
 
     # With a relative path, the path relative to the CWD should be used
     print("\nInitializing FrozenMultiverse with relative path to run_dir")
     FrozenMultiverse(**mv_kwargs, run_dir=os.path.relpath(mv.dirs['run'],
                                                           start=os.getcwd()),
-                     data_manager=dict(out_dir="eval/{date:}_4"))
+                     data_manager=dict(out_dir="eval/{timestamp:}_4"))
 
     # Bad type of run directory should fail
     with pytest.raises(TypeError, match="Argument run_dir needs"):
         FrozenMultiverse(**mv_kwargs, run_dir=123,
-                         data_manager=dict(out_dir="eval/{date:}_5"))
+                         data_manager=dict(out_dir="eval/{timestamp:}_5"))
 
     # Non-existing directory should fail
     with pytest.raises(IOError, match="No directory found at"):
         FrozenMultiverse(**mv_kwargs, run_dir="my_non-existing_directory",
-                         data_manager=dict(out_dir="eval/{date:}_6"))
+                         data_manager=dict(out_dir="eval/{timestamp:}_6"))
 

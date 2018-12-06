@@ -6,8 +6,11 @@
 #include <boost/graph/adjacency_matrix.hpp>
 #include <boost/graph/graph_traits.hpp>
 
+#include <hdf5.h>
+
 #include <dune/utopia/core/logging.hh>
 #include <dune/utopia/data_io/hdfgroup.hh>
+#include <dune/utopia/data_io/hdfdataset.hh>
 
 namespace Utopia {
 namespace DataIO {
@@ -41,15 +44,18 @@ std::shared_ptr<HDFGroup> save_graph(GraphType &g,
     // Create the group for the graph and store metadata in its attributes
     auto grp = parent_grp->open_group(name);
 
-    grp->add_attribute("is_graph_group", true);
-    grp->add_attribute("directed", boost::is_directed(g));
+    grp->add_attribute("content", "network");
+    grp->add_attribute("is_directed", boost::is_directed(g));
+    grp->add_attribute("is_parallel", false); // FIXME Make general
     grp->add_attribute("num_vertices", num_vertices);
     grp->add_attribute("num_edges", num_edges);
     grp->add_attribute("custom_ids", false);
     
-    // Initialize datasets to store vertices and adjacency lists in
-    auto dset_vl = grp->open_dataset("_vertex_list", {num_vertices});
-    auto dset_al = grp->open_dataset("_adjacency_list", {num_edges});
+
+    // Initialize datasets to store vertices and edges in
+    auto dset_vl = grp->open_dataset("_vertices", {num_vertices});
+    auto dset_al = grp->open_dataset("_edges", {2, num_edges});
+    // NOTE Need shape to be {2, num_edges} because write writes line by line.
 
     // Save vertex list 
     auto [v, v_end] = boost::vertices(g);
@@ -57,17 +63,20 @@ std::shared_ptr<HDFGroup> save_graph(GraphType &g,
         [&](auto vd){return boost::get(boost::vertex_index_t(), g, vd);}
     );
 
-    // Save adjacency list
+    // Save edges
+    // NOTE Need to call write twice to achieve the desired data shape.
     auto [e, e_end] = boost::edges(g);
     dset_al->write(e, e_end,
         [&](auto ed){
-            // TODO If possible, use boost::index_type instead of size_t
-            return std::array<std::size_t, 2>(
-                {{boost::get(boost::vertex_index_t(), g,
-                             boost::source(ed, g)),
-                  boost::get(boost::vertex_index_t(), g,
-                             boost::target(ed, g))}}
-            );
+            return boost::get(boost::vertex_index_t(), g,
+                              boost::source(ed, g));
+        }
+    );
+
+    dset_al->write(e, e_end,
+        [&](auto ed){
+            return boost::get(boost::vertex_index_t(), g,
+                              boost::target(ed, g));
         }
     );
 
@@ -111,15 +120,18 @@ std::shared_ptr<HDFGroup> save_graph(GraphType &g,
     // Create the group for the graph and store metadata in its attributes
     auto grp = parent_grp->open_group(name);
 
-    grp->add_attribute("is_graph_group", true);
-    grp->add_attribute("directed", boost::is_directed(g));
+    grp->add_attribute("content", "network");
+    grp->add_attribute("is_directed", boost::is_directed(g));
+    grp->add_attribute("is_parallel", false); // FIXME Make general
     grp->add_attribute("num_vertices", num_vertices);
     grp->add_attribute("num_edges", num_edges);
     grp->add_attribute("custom_ids", true);
     
+    
     // Initialize datasets to store vertices and adjacency lists in
-    auto dset_vl = grp->open_dataset("_vertex_list", {num_vertices});
-    auto dset_al = grp->open_dataset("_adjacency_list", {num_edges});
+    auto dset_vl = grp->open_dataset("_vertices", {num_vertices});
+    auto dset_al = grp->open_dataset("_edges", {2, num_edges});
+    // NOTE Need shape to be {2, num_edges} because write writes line by line.
 
     // Save vertex list
     auto [v, v_end] = boost::vertices(g);
@@ -127,15 +139,18 @@ std::shared_ptr<HDFGroup> save_graph(GraphType &g,
         [&](auto vd){return boost::get(vertex_ids, vd);}
     );
 
-    // Save adjacency list
+    // Save edges
+    // NOTE Need to call write twice to achieve the desired data shape.
     auto [e, e_end] = boost::edges(g);
     dset_al->write(e, e_end,
         [&](auto ed){
-            // TODO If possible, use boost::index_type instead of size_t
-            return std::array<std::size_t, 2>(
-                {{boost::get(vertex_ids, boost::source(ed, g)),
-                  boost::get(vertex_ids, boost::target(ed, g))}}
-            );
+            return boost::get(vertex_ids, boost::source(ed, g));
+        }
+    );
+
+    dset_al->write(e, e_end,
+        [&](auto ed){
+            return boost::get(vertex_ids, boost::target(ed, g));
         }
     );
     
@@ -144,6 +159,8 @@ std::shared_ptr<HDFGroup> save_graph(GraphType &g,
     // Return the newly created group
     return grp;
 }
+
+// TODO add functions here to open datasets for edge or node attributes.
 
 } // namespace DataIO
 } // namespace Utopia

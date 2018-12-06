@@ -422,8 +422,9 @@ public:
         if (H5Iis_valid(_parent_object->get_id()) == false)
         {
             throw std::invalid_argument(
-                "parent_object of attribute " + _name +
-                " is invalid, has it been closed already?");
+                "Parent object ('" + _parent_object->get_path() + "') of "
+                "attribute '" + _name + "' is invalid! Has it been closed "
+                "already or not been opened yet?");
         }
         else
         {
