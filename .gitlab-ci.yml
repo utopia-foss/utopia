@@ -251,7 +251,7 @@ test:models:
     - utopia run Hierarnet
     - utopia run SimpleEG
     - utopia run PredatorPrey
-    - utopia run Amee --no-plot --sweep
+    - utopia run Amee --sweep
     # TODO add a call for your model here
     #
     # FIXME use --debug in models, too! Need ffmpeg in docker image for that...
