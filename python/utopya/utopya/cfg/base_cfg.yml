@@ -159,7 +159,7 @@ worker_kwargs:
 data_manager:
   # Where to create the output directory for this DataManager, relative to
   # the run directory of the Multiverse.
-  out_dir: eval/{date:}
+  out_dir: eval/{timestamp:}
   # The {date:} placeholder is replaced by the current timestamp such that
   # future DataManager instances that operate on the same data directory do
   # not create collisions.
@@ -213,7 +213,7 @@ data_manager:
       required: true
       path_regex: data/uni(\d+)/data.h5
       target_path: multiverse/{match:}/data
-      enable_mapping: true
+      enable_mapping: true   # see DataManager for content -> type mapping
 
     # The resulting data tree is then:
     #  └┬ cfg
@@ -222,7 +222,7 @@ data_manager:
     #      ├ model
     #      ├ run
     #      └ update
-    #   └ data
+    #   └ multiverse
     #     └┬ 0
     #        └┬ cfg
     #         └ data
