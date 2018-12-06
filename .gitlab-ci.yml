@@ -251,10 +251,10 @@ test:models:
     - utopia run Hierarnet
     - utopia run SimpleEG
     - utopia run PredatorPrey
-    - utopia run Amee --sweep
+    - utopia run Amee --sweep --no-plot
     # TODO add a call for your model here
     #
-    # FIXME use --debug in models, too! Need ffmpeg in docker image for that...
+    # FIXME use --debug in models, too!
     # FIXME find an automatic way, perhaps via a --test-all flag to utopia run?
 
 test:cli:
