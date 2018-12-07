@@ -83,7 +83,7 @@ private:
             // fixed size array types. Else we use variable length arrays.
             if constexpr (is_array_like_v<value_type_1>)
             {
-                constexpr std::size_t s = std::tuple_size<value_type_1>::value;
+                constexpr std::size_t s = get_size<value_type_1>::value;
                 if (_attribute == -1)
                 {
                     _attribute = __create_attribute__<base_type>(s);

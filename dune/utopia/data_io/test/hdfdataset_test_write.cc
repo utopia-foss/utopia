@@ -51,6 +51,7 @@ int main(int argc, char** argv)
     auto fireandforgetdataset2d = file.open_dataset("/fireandforget2d", {5, 100});
     auto latestarterdataset = file.open_dataset("/latestarter");
     auto latestarterdataset2 = file.open_dataset("/latestarter2");
+    auto dunefieldvectordataset = file.open_dataset("/dunefieldvector");
 
     ///////////////////////////////////////////////////////////////////////////
     ////////////////////// MAKE DATA NEEDED LATER /////////////////////////////
@@ -71,6 +72,14 @@ int main(int argc, char** argv)
         points[i].x = 3.14;
         points[i].y = 3.14 + 1;
         points[i].z = 3.14 + 2;
+    }
+
+    std::vector<Dune::FieldVector<double, 2>> dunefieldvectordata(100);
+
+    for (int i = 0; i < int(dunefieldvectordata.size()); ++i)
+    {
+        dunefieldvectordata[i] = Dune::FieldVector<double, 2>{
+            {static_cast<double>(i), static_cast<double>(-i)}};
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -297,5 +306,12 @@ int main(int argc, char** argv)
             "created";
         assert(e.what() == message);
     }
+
+    // try to write dune fieldvector data
+    // 0, 0
+    // 1, -1
+    // 2, -2
+    // ...
+    dunefieldvectordataset->write(dunefieldvectordata);
     return 0;
 }
