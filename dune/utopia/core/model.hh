@@ -273,6 +273,7 @@ public:
         // Forward to the create_dset function that requires a parent hdf group
         return create_dset(name, 
                            _hdfgrp, 
+                           add_shape_dims,
                            with_initial_write, 
                            chunksize, 
                            compression_level);
