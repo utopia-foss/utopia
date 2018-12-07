@@ -99,13 +99,13 @@ int main(int argc, char *argv[])
         auto cap_no_init = dset_mean_no_init_write->get_capacity();
         
         // and the configuration file
-        auto cfg = YAML::Load("model_test.yml");
+        auto cfg = YAML::LoadFile("model_test.yml");
 
         // Check that the sizes of the capacities are correct ...
         assert(cap_with_init.size() == 2);
         assert(cap_no_init.size() == 1);
         // ... and that the size of the time dimension is correct, too.
-        auto num_steps = Utopia::as_<std::size_t>(cfg["num_steps"]);
+        std::size_t num_steps = Utopia::as_<unsigned int>(cfg["num_steps"]);
         assert(cap_with_init[0] == num_steps + 1);
         assert(cap_no_init[0] == num_steps);
 
