@@ -47,7 +47,7 @@ public:
         {
             hvl_t value;
             value.len = source.size();
-            value.p = source.data();
+            value.p = &(source[0]);
             return value;
         }
     }

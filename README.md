@@ -176,7 +176,7 @@ This will also show you a README of the model which contains further information
 | [`SimpleEG`](dune/utopia/models/SimpleEG) | A model of simple evolutionary games on grids |
 | [`PredatorPrey`](dune/utopia/models/PredatorPrey) | A simple predator prey model |
 | [`Hierarnet`](dune/utopia/models/Hierarnet) | Evolutionary network with continuous public goods games played around each node |
-
+| [`Amee`](dune/utopia/models/Amee) | A spacial model for eco-evolutionary dynamics and niche construction |
 
 #### Model templates, tests, benchmarks ...
 Additionally, some models are only needed to assert that Utopia functions as desired:
