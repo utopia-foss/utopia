@@ -27,10 +27,20 @@ public:
     /// Define the data type to use
     using Data = std::vector<double>;
 
+    /// Data type of the group to write model data to, holding datasets
+    using DataGroup = typename Base::DataGroup;
+
+    /// Data type for the datasets
+    using DataSet = typename Base::DataSet;
+
 private:
     // Declare members
     Data _state;
     Data _bc;
+
+    // -- Datasets -- //
+    std::shared_ptr<DataSet> _dset_with_init_write;
+    std::shared_ptr<DataSet> _dset_mean_no_init_write;
 
 public:
     /// Construct the test model with an initial state
@@ -45,8 +55,13 @@ public:
         Base(name, parent_model),
         // Initialize state and boundary condition members
         _state(initial_state),
-        _bc(_state.size(), 1.0)
-    { }
+        _bc(_state.size(), 1.0),
+        // Initialize datatsets
+        _dset_with_init_write(
+            this->create_dset("with_init_write", {initial_state.size()}, true)),
+        _dset_mean_no_init_write(
+            this->create_dset("mean_no_init_write", {}, false))
+    {}
 
     /// Iterate by one time step
     void perform_step ()
@@ -67,7 +82,7 @@ public:
         });
     }
 
-    /// Do nothing for now
+    /// Do nothing yet
     void write_data () {}
 
     // Set model boundary condition
@@ -78,6 +93,15 @@ public:
 
     /// Return const reference to stored data
     const Data& state () const { return _state; }
+
+    // -- Getters -- //
+    std::shared_ptr<DataSet> get_dset_with_init_write () {
+        return _dset_with_init_write;
+    }
+
+    std::shared_ptr<DataSet> get_dset_mean_no_init_write () {
+        return _dset_mean_no_init_write;
+    }
 };
 
 
