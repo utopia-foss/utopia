@@ -26,6 +26,14 @@ struct State {
 };
 
 
+/// Struct for all Dataset
+template <typename DataSet>
+struct DataSets {
+    const std::shared_ptr<DataSet> some_state;
+    const std::shared_ptr<DataSet> some_trait;
+};
+
+
 /// Typehelper to define types of CopyMe model 
 using CopyMeModelTypes = ModelTypes<>;
 
@@ -79,13 +87,11 @@ private:
 
 
     // -- Temporary objects -- //
-    
+    const std::size_t _num_cells;
+
 
     // -- Datasets -- //
-    // NOTE They should be named '_dset_<name>', where <name> is the
-    //      dataset's actual name as set in the constructor.
-    std::shared_ptr<DataSet> _dset_some_state;
-    std::shared_ptr<DataSet> _dset_some_trait;
+    DataSets<DataSet> _dsets;
 
 
     // -- Rule functions -- //
@@ -183,22 +189,16 @@ public:
         // Now initialize members specific to this class
         _manager(manager),
         _some_parameter(as_double(this->_cfg["some_parameter"])),
-        // create datasets
-        _dset_some_state(this->_hdfgrp->open_dataset("some_state")),
-        _dset_some_trait(this->_hdfgrp->open_dataset("some_trait"))        
+        // Temporary variables
+        _num_cells(std::distance(_manager.cells().begin(), 
+                                 _manager.cells().end())),
+        // Datasets
+        // Create two datasets with 2d shape {num_write_steps, num_cells}
+        _dsets({this->create_dset("some_state", {_num_cells}),
+                this->create_dset("some_trait", {_num_cells})})
     {
         // Call the method that initializes the cells
         this->initialize_cells();
-
-        // Set the capacity of the datasets
-        // We know the maximum number of steps (== #rows), and the number of
-        // grid cells (== #columns); that is the final extend of the dataset.
-        const hsize_t num_cells = std::distance(_manager.cells().begin(),
-                                                _manager.cells().end());
-        this->_log->debug("Setting dataset capacities to {} x {} ...",
-                          this->get_time_max() + 1, num_cells);
-        _dset_some_state->set_capacity({this->get_time_max() + 1, num_cells});
-        _dset_some_trait->set_capacity({this->get_time_max() + 1, num_cells});
 
         // Write initial state
         this->write_data();
@@ -208,10 +208,10 @@ public:
         //      operation because else the datasets are not yet created.
         const auto grid_size = as_<std::array<std::size_t,2>>(this->_cfg["grid_size"]);
         
-        _dset_some_state->add_attribute("content", "grid");
-        _dset_some_state->add_attribute("grid_shape", grid_size);
-        _dset_some_trait->add_attribute("content", "grid");
-        _dset_some_trait->add_attribute("grid_shape", grid_size);
+        _dsets.some_state->add_attribute("content", "grid");
+        _dsets.some_state->add_attribute("grid_shape", grid_size);
+        _dsets.some_trait->add_attribute("content", "grid");
+        _dsets.some_trait->add_attribute("grid_shape", grid_size);
     }
 
     // Setup functions ........................................................
@@ -281,14 +281,14 @@ public:
     void write_data ()
     {   
         // some_state
-        _dset_some_state->write(_manager.cells().begin(),
+        _dsets.some_state->write(_manager.cells().begin(),
                                 _manager.cells().end(),
                                 [](auto& cell) {
                                     return cell->state().some_state;
                                 });
 
         // some_trait
-        _dset_some_trait->write(_manager.cells().begin(),
+        _dsets.some_trait->write(_manager.cells().begin(),
                                 _manager.cells().end(),
                                 [](auto& cell) {
                                     return cell->state().some_trait;
