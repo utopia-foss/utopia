@@ -38,6 +38,8 @@ int main(int argc, char** argv)
     auto ptrset = file.open_dataset("/pointerdataset");
     auto scalarset = file.open_dataset("/scalardataset");
     auto twoDdataset = file.open_dataset("/2ddataset");
+    auto twoDdataset_unlimited = file.open_dataset("/2ddataset_unlimited");
+
     auto adapteddataset = file.open_dataset("/adapteddataset");
     auto fireandforgetdataset = file.open_dataset("/fireandforget");
     auto fireandforgetdataset2d = file.open_dataset("/fireandforget2d");
@@ -45,6 +47,7 @@ int main(int argc, char** argv)
     // this is only used to check that capacity and chunksize setter work
     // it is not read, as the read functionality for it is tested at contset
     auto latestarterdataset2 = file.open_dataset("/latestarter2");
+    auto dunefieldvectordataset = file.open_dataset("/dunefieldvector");
 
     // check that parameters are read out correctly
     assert(contset->get_capacity() == hsizevec{100});
@@ -76,7 +79,6 @@ int main(int argc, char** argv)
     assert(twoDdataset->get_chunksizes() == (hsizevec{1, 5}));
     assert(adapteddataset->get_chunksizes() == (hsizevec{1, 10}));
     assert(latestarterdataset2->get_chunksizes() == (hsizevec{10}));
-    // fireandforget & fireandforget2d unknown...
 
     // offset should be at end of data currently contained
     assert(contset->get_offset() == hsizevec{30});
@@ -125,6 +127,11 @@ int main(int argc, char** argv)
         twoddata[i].insert(twoddata[i].begin(), 100, i);
     }
 
+    // ... for 2d dataset unlimited
+    std::vector<std::vector<int>> twoddata_unlimited(55, std::vector<int>());
+    for (std::size_t i = 0; i < 55; ++i){
+        twoddata_unlimited[i] = std::vector<int>(100, i);
+    }
     std::vector<std::vector<double>> partial_twoddata(2, std::vector<double>());
     for (std::size_t i = 0; i < 2; ++i)
     {
@@ -184,6 +191,15 @@ int main(int argc, char** argv)
         std::generate(fireandforgetdata2d.begin() + i * 100,
                       fireandforgetdata2d.begin() + (i + 1) * 100,
                       [&]() -> int { return i + 1; });
+    }
+
+    // make expected data for dune fieldvector dataset
+    std::vector<Dune::FieldVector<double, 2>> dunefieldvectordata_expected(100);
+
+    for (int i = 0; i < int(dunefieldvectordata_expected.size()); ++i)
+    {
+        dunefieldvectordata_expected[i] = Dune::FieldVector<double, 2>{
+            {static_cast<double>(i), static_cast<double>(-i)}};
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -246,6 +262,22 @@ int main(int argc, char** argv)
         }
     }
 
+
+    // read 2d unlimited dataset
+    auto [twodshape_unlimited, read_twoddata_unlimited] = twoDdataset_unlimited->read<std::vector<int>>();
+    assert(twodshape_unlimited.size() == 2);
+    assert(twodshape_unlimited[0] == 55);
+    assert(twodshape_unlimited[1] == 100);
+    assert(read_twoddata_unlimited.size() == 5500);
+    for (std::size_t i = 0; i < 55; ++i)
+    {
+        for (std::size_t j = 0; j < 100; ++j)
+        {
+            assert(twoddata_unlimited[i][j] == read_twoddata_unlimited[i * 100 + j]);
+        }
+    }
+
+
     // read adaptedset
     auto [adaptedshape, read_adaptedata] = adapteddataset->read<std::vector<double>>();
     assert(adaptedshape.size() == 2);
@@ -275,6 +307,21 @@ int main(int argc, char** argv)
         fireandforgetdataset2d->read<std::vector<int>>();
     assert(fireandforget2dshape == (std::vector<hsize_t>{5, 100}));
     assert(fireandforgetdata2d == read_fireandforgetdata2d);
+
+    auto [dunefieldvectorshape, dfv] =
+        dunefieldvectordataset->read<std::vector<Dune::FieldVector<double, 2>>>();
+    bool same = std::is_same_v<Dune::FieldVector<double, 2>, typename decltype(dfv)::value_type>;
+    assert(same == true);
+
+    assert(dunefieldvectorshape.size() == 1);
+    assert(dunefieldvectorshape[0] == 100);
+
+    assert(dfv.size() == dunefieldvectordata_expected.size());
+    for (std::size_t i = 0; i < 100; ++i)
+    {
+        assert(std::abs(dunefieldvectordata_expected[i][0] - dfv[i][0]) < 1e-16);
+        assert(std::abs(dunefieldvectordata_expected[i][1] - dfv[i][1]) < 1e-16);
+    }
 
     ////////////////////////////////////////////////////////////////////////////
     /////////////////// PARTIAL READING TAKES PLACE NOW ////////////////////////
@@ -356,5 +403,18 @@ int main(int argc, char** argv)
     assert(singlestringshape[0] == 1);
     assert(singlestring == stringcontainerdata[3]); // reuse value from stringcontainerdata
 
+    // try to read dune fieldvector dataset partially
+    auto [dfv_shape, dfv_partial] =
+        dunefieldvectordataset->read<std::vector<Dune::FieldVector<double, 2>>>(
+            {5}, {65}, {3});
+    assert(dfv_shape.size() == 1);
+    assert(dfv_shape[0] == 20);
+
+    std::size_t k = 0;
+    for (std::size_t i = 5; i <= 25; i += 3, ++k)
+    {
+        assert(std::abs(dunefieldvectordata_expected[i][0] - dfv_partial[k][0]) < 1e-16);
+        assert(std::abs(dunefieldvectordata_expected[i][1] - dfv_partial[k][1]) < 1e-16);
+    }
     return 0;
 }

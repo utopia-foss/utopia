@@ -82,7 +82,7 @@ stages:
     ## Create the SSH directory and give it the right permissions
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
-    ## 
+    ##
     ## Add the known hosts lists to ensure this ssh connection is the right one
     - echo "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
@@ -251,9 +251,10 @@ test:models:
     - utopia run Hierarnet
     - utopia run SimpleEG
     - utopia run PredatorPrey
+    - utopia run Amee --sweep --no-plot
     # TODO add a call for your model here
     #
-    # FIXME use --debug in models, too! Need ffmpeg in docker image for that...
+    # FIXME use --debug in models, too!
     # FIXME find an automatic way, perhaps via a --test-all flag to utopia run?
 
 test:cli:

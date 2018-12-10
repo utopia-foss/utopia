@@ -1,14 +1,15 @@
 /**
  * @brief This file provides metafunctions for automatically determining the
- *        nature of a C/C++ type at compile time (container or not, string or
- * not), and getting the base type of pointer and cv-qualified types.
+ *        nature of a C/C++ types at compile time (container or not, string or
+ *         not, fixed-size array ), and getting the base type of pointer and 
+ *         cv-qualified types.
  * @file hdfutilities.hh
  */
 #ifndef HDFUTILITIES_HH
 #define HDFUTILITIES_HH
-
 #include <array>
 #include <cmath>
+#include <dune/common/fvector.hh>
 #include <iostream>
 #include <string>
 #include <type_traits>
@@ -145,6 +146,23 @@ struct is_string<char*> : public std::true_type // public is_string_helper<char*
 template <typename T>
 constexpr inline bool is_string_v = is_string<T>::value;
 
+/*
+README:
+The following are metafunctions to determine type classifications.
+The logic is like this:
+the prototype of, say, is_container has two template args, the second of which is
+defaulted to std::void_t<>. It inherits from std::false_type. Then overloads for
+based on conditions to be fullfilled or for certain types are supplied , 
+are casted to std::void_t<Whatever> and inherit from std::true_type. 
+As always in such cases, this relies on SFINAE. When a type is given to one 
+of the metafunctions, if the tested condition is true or an overload for a  
+given type is found, the second template arg becomes std::void_t<Whatever> 
+and the respective metafunction, inheriting from std::true_type is instantiated.
+The type test, is_container for instance, evaluates to true. 
+Otherwise, the second template parameter is std::void_t<>, and the 
+prototype  is used, which inherits from std::false_type.
+*/
+
 /**
  * @brief Metafunction for checking if a type is a containertype, which does
  *        not include string types - prototype
@@ -158,6 +176,14 @@ struct is_container : public std::false_type
 };
 
 /**
+ * @brief Shorthand for 'is_container::value
+ *
+ * @tparam T
+ */
+template <typename T>
+inline constexpr bool is_container_v = is_container<T>::value;
+
+/**
  * @brief Metafunction for checking if a type is a containertype, which does
  *        not include string types
  *
@@ -169,14 +195,56 @@ struct is_container<T, std::void_t<typename remove_qualifier_t<T>::iterator, std
 {
 };
 
+
+/*
+README: get_size supplies the condition which is tested for a type to be 
+        considered array_like. It establishes that the type in question 
+        has compile time constant size.
+*/
 /**
- * @brief Shorthand for 'is_container::value
+ * @brief Prototype for get_size functor for constexpr size containers
  *
  * @tparam T
  */
 template <typename T>
-inline constexpr bool is_container_v = is_container<T>::value;
+struct get_size;
+/**
+ * @brief get_size overload for std::array
+ *
+ * @tparam T
+ * @tparam N
+ */
+template <typename T, std::size_t N>
+struct get_size<std::array<T, N>> : std::integral_constant<std::size_t, N>
+{
+};
 
+/**
+ * @brief get_size overload for Dune::FieldVector
+ *
+ * @tparam T
+ * @tparam N
+ */
+template <typename T, int N>
+struct get_size<Dune::FieldVector<T, N>> : std::integral_constant<std::size_t, N>
+{
+};
+
+/**
+ * @brief shorthand for get_size
+ *
+ * @tparam T type to get size of. Only works for types with constant expr size
+ *         given as a template parameter
+ */
+template <typename T>
+inline constexpr std::size_t get_size_v = get_size<T>::value;
+
+
+/*
+README: is_array_like checks if a get_size version for the given type T exists. 
+        Hence, if a new type shall be considered array_like, get_size has to 
+        be overloaded for it.
+*/
 /**
  * @brief Prototype for is_array_like
  *
@@ -189,19 +257,28 @@ struct is_array_like : std::false_type
 };
 
 /**
- * @brief Metafunction for checking if a container is a std::array
- *        by checking if std::tuple_size can be applied to it.
+ * @brief Specialization for std::array
  *
- *
- * @tparam T
+ * @tparam T element type
+ * @tparam N number of elements to store
  */
-template <typename T>
-struct is_array_like<T, std::void_t<decltype(std::tuple_size<T>::value)>> : std::true_type
+template <typename T, std::size_t N>
+struct is_array_like<std::array<T, N>, std::void_t<decltype(get_size<std::array<T, N>>::value)>>
+    : std::true_type
 {
 };
-// FIXME Using tuple_size here is not optimal, but it gives a unique
-//       representation of the tuple
-// See: https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/merge_requests/109/diffs#note_11774
+
+/**
+ * @brief Specialization for Dune::FieldVector
+ *
+ * @tparam T element type
+ * @tparam N number of elements to store
+ */
+template <typename T, int N>
+struct is_array_like<Dune::FieldVector<T, N>, std::void_t<decltype(get_size<std::array<T, N>>::value)>>
+    : std::true_type
+{
+};
 
 /**
  * @brief Shorthand for is_array_like
