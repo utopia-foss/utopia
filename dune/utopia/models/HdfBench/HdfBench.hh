@@ -154,7 +154,7 @@ public:
 
         // Create the temporary map for measured times and the times dataset
         _times(),
-        _dset_times(this->create_dset("time", {_benchmarks.size()})),
+        _dset_times(this->create_dset("times", {_benchmarks.size()})),
         _dsets(),
 
         // Extract config parameters applicable to all benchmarks
