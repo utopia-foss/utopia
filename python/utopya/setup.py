@@ -4,6 +4,7 @@ from setuptools import setup, find_packages
 
 # Dependency lists
 INSTALL_DEPS = ['numpy>=1.13',
+                'scipy>=1.1.0',
                 'matplotlib>=2.2.3',
                 'coloredlogs>=10.0',
                 'ruamel.yaml',

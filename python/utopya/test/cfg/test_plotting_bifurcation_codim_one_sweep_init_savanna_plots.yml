@@ -1,0 +1,33 @@
+---
+bifurcation_alpha_sweep_init:
+  creator: multiverse
+  select:
+    fields:
+      density_G: 
+        path: data/SavannaHomogeneous/density_G
+        dims: [time]
+      density_S: 
+        path: data/SavannaHomogeneous/density_S
+        dims: [time]
+
+  module: .attractor
+  plot_func: bifurcation_codimension_one
+
+  dim: alpha
+
+  time_fraction: 0.1
+
+  to_plot_kwargs: 
+    density_G:
+      label: grass
+
+      plot_kwargs:
+        color: green
+        s: 10
+
+    density_S:
+      label: saplings
+
+      plot_kwargs:
+        color: yellow
+        s: 6

@@ -10,6 +10,7 @@
 message(STATUS "Starting Utopia model registration ...")
 
 # Register the model directories
+add_subdirectory(Amee)
 add_subdirectory(ContDisease)
 add_subdirectory(CopyMe)
 add_subdirectory(CopyMeBare)
@@ -17,9 +18,11 @@ add_subdirectory(dummy)
 add_subdirectory(ForestFire)
 add_subdirectory(HdfBench)
 add_subdirectory(Hierarnet)
-add_subdirectory(SimpleEG)
 add_subdirectory(PredatorPrey)
+add_subdirectory(SavannaHeterogeneous)
+add_subdirectory(SavannaHomogeneous)
+add_subdirectory(SimpleEG)
 # ...
-# NOTE add your subdirectory above (alphabetically sorted)
+# NOTE Add your subdirectory above (alphabetically sorted)
 
 message(STATUS "Model registration finished.")

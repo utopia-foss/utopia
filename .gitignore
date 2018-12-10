@@ -17,4 +17,3 @@ __pychache__
 
 # Ignore cmake-configured files
 python/utopya/utopya/info.py
-
