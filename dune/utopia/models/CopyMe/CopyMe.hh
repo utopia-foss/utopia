@@ -87,7 +87,6 @@ private:
 
 
     // -- Temporary objects -- //
-    const std::size_t _num_cells;
 
 
     // -- Datasets -- //
@@ -189,13 +188,10 @@ public:
         // Now initialize members specific to this class
         _manager(manager),
         _some_parameter(as_double(this->_cfg["some_parameter"])),
-        // Temporary variables
-        _num_cells(std::distance(_manager.cells().begin(), 
-                                 _manager.cells().end())),
         // Datasets
         // Create two datasets with 2d shape {num_write_steps, num_cells}
-        _dsets({this->create_dset("some_state", {_num_cells}),
-                this->create_dset("some_trait", {_num_cells})})
+        _dsets({this->create_dset("some_state", {_manager.cells().size()}),
+                this->create_dset("some_trait", {_manager.cells().size()})})
     {
         // Call the method that initializes the cells
         this->initialize_cells();
