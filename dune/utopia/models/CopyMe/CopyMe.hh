@@ -192,6 +192,8 @@ public:
         // Create two datasets with 2d shape {num_write_steps, num_cells}
         _dsets({this->create_dset("some_state", {_manager.cells().size()}),
                 this->create_dset("some_trait", {_manager.cells().size()})})
+        // NOTE: To create a 1d dataset with one entry per time step just use
+        //       _dset.mean_state(this->create_dset("mean_state", {}))
     {
         // Call the method that initializes the cells
         this->initialize_cells();

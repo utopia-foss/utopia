@@ -95,7 +95,8 @@ public:
         // Now initialize members specific to this class
         _manager(manager)
         // Open the datasets
-        // e.g. via this->_hdfgrp->open_dataset("my_var")
+        // e.g. via _dset_state(this->create_dset("state", {})) <- 1d
+        //      or  _dset_state(this->create_dset("state", {num_states})) <- 2d
     {
         // Initialize grid cells
 

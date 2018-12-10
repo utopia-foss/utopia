@@ -33,6 +33,14 @@ struct State
     double resource_prey;
 };
 
+/// Struct for the datasets
+template <typename DataSet>
+struct DataSets {
+    std::shared_ptr<DataSet> population;
+    std::shared_ptr<DataSet> resource_prey;
+    std::shared_ptr<DataSet> resource_predator;
+};
+
 // Alias the neighborhood classes
 using NextNeighbor = Utopia::Neighborhoods::NextNeighbor;
 using MooreNeighbor = Utopia::Neighborhoods::MooreNeighbor;
@@ -120,9 +128,7 @@ private:
     CellContainer<typename ManagerType::Cell> _repro_cell;
 
     // -- Datasets -- //
-    std::shared_ptr<DataSet> _dset_population;
-    std::shared_ptr<DataSet> _dset_resource_prey;
-    std::shared_ptr<DataSet> _dset_resource_pred;
+    DataSets<DataSet> _dsets;
 
     // -- uniform real distribution [0, 1) for drawing of random numbers
     std::uniform_real_distribution<> _rand;
@@ -412,10 +418,10 @@ public:
           _prey_cell(),
           _empty_cell(),
           _repro_cell(),
-          // datasets
-          _dset_population(this->_hdfgrp->open_dataset("population")),
-          _dset_resource_prey(this->_hdfgrp->open_dataset("resource_prey")),
-          _dset_resource_pred(this->_hdfgrp->open_dataset("resource_predator")),
+          // create datasets
+          _dsets({this->create_dset("population", {_manager.cells().size()}),
+                  this->create_dset("resource_prey", {_manager.cells().size()}),
+                  this->create_dset("resource_predator", {_manager.cells().size()})}),
           // uniform real distribution
           _rand(0, 1)
     {
@@ -426,17 +432,7 @@ public:
         }
         // Initialize cells
         this->initialize_cells();
-        // Set dataset capacities
-        // We already know the maximum number of steps and the number of cells
-        const hsize_t num_cells =
-            std::distance(_manager.cells().begin(), _manager.cells().end());
-        this->_log->debug("Setting dataset capacities to {} x {} ...",
-                          this->get_time_max() + 1, num_cells);
-        _dset_population->set_capacity({this->get_time_max() + 1, num_cells});
-        _dset_resource_prey->set_capacity({this->get_time_max() + 1,
-                                           num_cells});
-        _dset_resource_pred->set_capacity({this->get_time_max() + 1, 
-                                           num_cells});
+        
         // Write initial state
         this->write_data();
 
@@ -444,12 +440,12 @@ public:
         // NOTE Currently, attributes can be set only after the first write
         //      operation because else the datasets are not yet created.
         const auto grid_size = as_<std::array<std::size_t,2>>(this->_cfg["grid_size"]);
-        _dset_population->add_attribute("content", "grid");
-        _dset_population->add_attribute("grid_shape", grid_size);
-        _dset_resource_prey->add_attribute("content", "grid");
-        _dset_resource_prey->add_attribute("grid_shape", grid_size);
-        _dset_resource_pred->add_attribute("content", "grid");
-        _dset_resource_pred->add_attribute("grid_shape", grid_size);
+        _dsets.population->add_attribute("content", "grid");
+        _dsets.population->add_attribute("grid_shape", grid_size);
+        _dsets.resource_prey->add_attribute("content", "grid");
+        _dsets.resource_prey->add_attribute("grid_shape", grid_size);
+        _dsets.resource_predator->add_attribute("content", "grid");
+        _dsets.resource_predator->add_attribute("grid_shape", grid_size);
 
         // Create
     }
@@ -689,20 +685,26 @@ public:
         auto cells = _manager.cells();
 
         // Population
-        _dset_population->write(cells.begin(), cells.end(), [](auto& cell) {
-            return static_cast<unsigned short>(cell->state().population);
-        });
+        _dsets.population->write(cells.begin(), cells.end(), 
+            [](auto& cell) {
+                return static_cast<unsigned short>(cell->state().population);
+            }
+        );
 
         // resource of prey
-        _dset_resource_prey->write(cells.begin(), cells.end(), [](auto& cell) {
-            return cell->state().resource_prey;
-        });
+        _dsets.resource_prey->write(cells.begin(), cells.end(), 
+            [](auto& cell) {
+                return cell->state().resource_prey;
+            }
+        );
 
         // resource of pred
 
-        _dset_resource_pred->write(cells.begin(), cells.end(), [](auto& cell) {
-            return cell->state().resource_predator;
-        });
+        _dsets.resource_predator->write(cells.begin(), cells.end(), 
+            [](auto& cell) {
+                return cell->state().resource_predator;
+            }
+        );
     }
 };
 
