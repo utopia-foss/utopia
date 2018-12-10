@@ -233,11 +233,11 @@ public:
      * @return std::shared_ptr<DataSet> The hdf dataset
      */
     std::shared_ptr<DataSet> create_dset(const std::string name,
-                                         const std::shared_ptr<DataGroup> hdfgrp,
+                                         const std::shared_ptr<DataGroup>& hdfgrp,
                                          std::vector<hsize_t> add_shape_dims,
                                          const bool with_initial_write = true,
                                          const std::vector<hsize_t> chunksize={},
-                                         const std::size_t compression_level=9){
+                                         const std::size_t compression_level=1){
         // Calculate the number of time steps to be written
         hsize_t num_steps = this->get_time_max() / this->get_write_every();
         if (with_initial_write){
@@ -269,7 +269,7 @@ public:
                                          const std::vector<hsize_t> add_shape_dims,
                                          const bool with_initial_write = true,
                                          const std::vector<hsize_t> chunksize={},
-                                         const std::size_t compression_level=9){
+                                         const std::size_t compression_level=1){
         // Forward to the create_dset function that requires a parent hdf group
         return create_dset(name, 
                            _hdfgrp, 
