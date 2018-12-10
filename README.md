@@ -171,14 +171,14 @@ This will also show you a README of the model which contains further information
 
 | Model Name | Description |
 | ---------- | ----------- |
+| [`Amee`](dune/utopia/models/Amee) | A spatial model of eco-evolutionary dynamics and niche construction |
 | [`ContDisease`](dune/utopia/models/ContDisease) | The contagious disease model on a cellular automaton |
-| [`ForestFire`](dune/utopia/models/ForestFire) | A model of a two state ForestFire, using percolation to burn |
-| [`SimpleEG`](dune/utopia/models/SimpleEG) | A model of simple evolutionary games on grids |
-| [`PredatorPrey`](dune/utopia/models/PredatorPrey) | A simple predator prey model |
+| [`ForestFire`](dune/utopia/models/ForestFire) | A model of a two state forest fire, using percolation to burn |
 | [`Hierarnet`](dune/utopia/models/Hierarnet) | Evolutionary network with continuous public goods games played around each node |
-| [`Amee`](dune/utopia/models/Amee) | A spacial model for eco-evolutionary dynamics and niche construction |
-| [`SavannaHomogeneous`](dune/utopia/models/ForestFire) | A model of a four state Savanna, using numeric representation of percolating fires |
+| [`PredatorPrey`](dune/utopia/models/PredatorPrey) | A simple predator prey model |
 | [`SavannaHeterogeneous`](dune/utopia/models/ForestFire) | A spatial model of a four state savanna, using explicit representation of percolating fires |
+| [`SavannaHomogeneous`](dune/utopia/models/ForestFire) | A model of a four state Savanna, using numeric representation of percolating fires |
+| [`SimpleEG`](dune/utopia/models/SimpleEG) | A model of simple evolutionary games on grids |
 
 #### Model templates, tests, benchmarks ...
 Additionally, some models are only needed to assert that Utopia functions as desired:
