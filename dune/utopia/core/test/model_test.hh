@@ -39,8 +39,8 @@ private:
     Data _bc;
 
     // -- Datasets -- //
-    std::shared_ptr<DataSet> _dset_with_init_write;
-    std::shared_ptr<DataSet> _dset_mean_no_init_write;
+    std::shared_ptr<DataSet> _dset_state;
+    std::shared_ptr<DataSet> _dset_mean;
 
 public:
     /// Construct the test model with an initial state
@@ -57,10 +57,10 @@ public:
         _state(initial_state),
         _bc(_state.size(), 1.0),
         // Initialize datatsets
-        _dset_with_init_write(
-            this->create_dset("with_init_write", {initial_state.size()}, true)),
-        _dset_mean_no_init_write(
-            this->create_dset("mean_no_init_write", {}, false))
+        _dset_state(
+            this->create_dset("state", {initial_state.size()}, true)),
+        _dset_mean(
+            this->create_dset("mean", {}, false))
     {}
 
     /// Iterate by one time step
@@ -95,12 +95,12 @@ public:
     const Data& state () const { return _state; }
 
     // -- Getters -- //
-    std::shared_ptr<DataSet> get_dset_with_init_write () {
-        return _dset_with_init_write;
+    std::shared_ptr<DataSet> get_dset_state () {
+        return _dset_state;
     }
 
-    std::shared_ptr<DataSet> get_dset_mean_no_init_write () {
-        return _dset_mean_no_init_write;
+    std::shared_ptr<DataSet> get_dset_mean () {
+        return _dset_mean;
     }
 };
 

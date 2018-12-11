@@ -91,12 +91,12 @@ int main(int argc, char *argv[])
 
 
         // Test the datasets
-        auto dset_with_init_write = model.get_dset_with_init_write();
-        auto dset_mean_no_init_write = model.get_dset_mean_no_init_write();
+        auto dset_state = model.get_dset_state();
+        auto dset_mean = model.get_dset_mean();
 
         // Get the datasets
-        auto cap_with_init = dset_with_init_write->get_capacity();
-        auto cap_no_init = dset_mean_no_init_write->get_capacity();
+        auto cap_with_init = dset_state->get_capacity();
+        auto cap_no_init = dset_mean->get_capacity();
         
         // and the configuration file
         auto cfg = YAML::LoadFile("model_test.yml");

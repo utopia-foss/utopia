@@ -224,59 +224,56 @@ public:
      * 
      * @param name The name of the dataset
      * @param hdfgrp The parent HDFGroup
-     * @param add_shape_dims The shape dimensions which together with the number
-     *                       of write steps equals the capacity of the dataset
-     *                       (capacity = (num_writesteps, add_shape_dims)).
-     * @param with_initial_write Account for the initial write step in the capacity.
-     * @param chunksize The chunk size
+     * @param add_write_shape Additional write shape which, together with the 
+     *                        number of time steps, is used to calculate
+     *                        the capacity of the dataset:
+     *                        (capacity = (num_time_steps, add_write_shape)).
      * @param compression_level The compression level
+     * @param chunksize The chunk size
      * @return std::shared_ptr<DataSet> The hdf dataset
      */
     std::shared_ptr<DataSet> create_dset(const std::string name,
                                          const std::shared_ptr<DataGroup>& hdfgrp,
-                                         std::vector<hsize_t> add_shape_dims,
-                                         const bool with_initial_write = true,
-                                         const std::vector<hsize_t> chunksize={},
-                                         const std::size_t compression_level=1){
+                                         std::vector<hsize_t> add_write_shape,
+                                         const std::size_t compression_level=1,
+                                         const std::vector<hsize_t> chunksize={}){    
+        _log->debug("Creating the {} dataset...", name);
+
         // Calculate the number of time steps to be written
         hsize_t num_steps = this->get_time_max() / this->get_write_every();
-        if (with_initial_write){
-            ++num_steps;
-        }
 
         // Calculate the shape of the dataset
-        add_shape_dims.insert(add_shape_dims.begin(), num_steps);
-        auto capacity = add_shape_dims;
+        add_write_shape.insert(add_write_shape.begin(), num_steps);
+        auto capacity = add_write_shape;
 
         // Create the dataset and return it.
         return hdfgrp->open_dataset(name, capacity, chunksize, compression_level);
     }
 
     /// Create and setup a new HDFDataset object
-    /** @brief Create a HDFDataset object within the _hdfgrp class member. 
+    /** @brief Create a HDFDataset object within the model HDFGroup object.
      *         The capacity - the shape of the dataset - is calculated 
      *         automatically from the num_steps and write_every parameter.
      * 
      * @param name The name of the dataset
-     * @param add_shape_dims The shape dimensions which together with the number
-     *                       of write steps equals the capacity of the dataset
-     *                       (capacity = (num_writesteps, add_shape_dims)).
-     * @param with_initial_write Account for the initial write step in the capacity.
-     * @param chunksize The chunk size
+     * @param add_write_shape Additional write shape which, together with the 
+     *                        number of time steps, is used to calculate
+     *                        the capacity of the dataset:
+     *                        (capacity = (num_time_steps, add_write_shape)).
      * @param compression_level The compression level
+     * @param chunksize The chunk size
      * @return std::shared_ptr<DataSet> The hdf dataset
-     */    std::shared_ptr<DataSet> create_dset(const std::string name,
-                                         const std::vector<hsize_t> add_shape_dims,
-                                         const bool with_initial_write = true,
-                                         const std::vector<hsize_t> chunksize={},
-                                         const std::size_t compression_level=1){
+     */
+    std::shared_ptr<DataSet> create_dset(const std::string name,
+                                         const std::vector<hsize_t> add_write_shape,
+                                         const std::size_t compression_level=1,
+                                         const std::vector<hsize_t> chunksize={}){
         // Forward to the create_dset function that requires a parent hdf group
         return create_dset(name, 
                            _hdfgrp, 
-                           add_shape_dims,
-                           with_initial_write, 
-                           chunksize, 
-                           compression_level);
+                           add_write_shape,
+                           compression_level,
+                           chunksize);
     }
 
     // -- Default implementations -- //
