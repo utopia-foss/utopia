@@ -230,6 +230,25 @@ struct get_size<Dune::FieldVector<T, N>> : std::integral_constant<std::size_t, N
 {
 };
 
+
+/**
+ * @brief Overload for tuples
+ * 
+ * @tparam Ts 
+ */
+template<typename... Ts> 
+struct get_size<std::tuple<Ts...>> : std::integral_constant<std::size_t, sizeof...(Ts)>{};
+
+
+/**
+ * @brief Overload for pairs
+ * 
+ * @tparam Ts 
+ */
+template<typename A, typename B> 
+struct get_size<std::pair<A,B>> : std::integral_constant<std::size_t, 2>{};
+
+
 /**
  * @brief shorthand for get_size
  *
@@ -238,6 +257,9 @@ struct get_size<Dune::FieldVector<T, N>> : std::integral_constant<std::size_t, N
  */
 template <typename T>
 inline constexpr std::size_t get_size_v = get_size<T>::value;
+
+
+
 
 
 /*
