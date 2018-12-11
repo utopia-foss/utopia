@@ -240,7 +240,7 @@ public:
         _log->debug("Creating the {} dataset...", name);
 
         // Calculate the number of time steps to be written
-        hsize_t num_steps = this->get_time_max() / this->get_write_every();
+        hsize_t num_steps = this->get_time_max() / this->get_write_every() + 1;
 
         // Calculate the shape of the dataset
         add_write_shape.insert(add_write_shape.begin(), num_steps);
