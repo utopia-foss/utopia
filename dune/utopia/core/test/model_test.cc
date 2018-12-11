@@ -95,19 +95,19 @@ int main(int argc, char *argv[])
         auto dset_mean = model.get_dset_mean();
 
         // Get the datasets
-        auto cap_with_init = dset_state->get_capacity();
-        auto cap_no_init = dset_mean->get_capacity();
+        auto cap_state = dset_state->get_capacity();
+        auto cap_mean = dset_mean->get_capacity();
         
         // and the configuration file
         auto cfg = YAML::LoadFile("model_test.yml");
 
         // Check that the sizes of the capacities are correct ...
-        assert(cap_with_init.size() == 2);
-        assert(cap_no_init.size() == 1);
+        assert(cap_state.size() == 2);
+        assert(cap_mean.size() == 1);
         // ... and that the size of the time dimension is correct, too.
         std::size_t num_steps = Utopia::as_<unsigned int>(cfg["num_steps"]);
-        assert(cap_with_init[0] == num_steps + 1);
-        assert(cap_no_init[0] == num_steps);
+        assert(cap_state[0] == num_steps + 1);
+        assert(cap_mean[0] == num_steps + 1);
 
 
         std::cout << "Tests successful. :)" << std::endl;
