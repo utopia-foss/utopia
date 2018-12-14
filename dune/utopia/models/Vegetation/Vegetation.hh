@@ -68,11 +68,27 @@ private:
         auto rain = _rain_dist(*(this->_rng));
         auto mass = state.plant_mass;
 
+        if(rain < 1e-16){
+            rain = 0.;
+        }
+
         // Distinguish by mass whether to grow or to seed
-        if (mass != 0.) {
+        // if negative or smaller than machine epsilon at 1.0 for doubles, 
+        // consider invalid and reseed
+        if (not (mass < 1e-16)) {
             // regular logistic growth
-            state.plant_mass += mass * _growth_rate*(1. - mass/rain);
-            // TODO consider using Beverton-Holt model?
+            // state.plant_mass += mass * _growth_rate*(1. - mass/rain);
+
+            // use Beverton-Holt to approximate discretized logistic growth.
+            // however, be careful that when using the wikipedia version
+            // [https://en.wikipedia.org/wiki/Beverton–Holt_model]
+            // the R0 parameter therein is >= 1 -> proliferation rate!
+            // this means that, as given therein, we have: 
+            // n_{t+1} = (r*n_t)/(1 + (n_t*(r-1)/K)) with r >= 1, 
+            // which has to be turned into 
+            // n_{t+1} =((r+1.)*n_t)/(1 +(n_t*r)/K) when r is given  
+            // as a growth rate proper
+            state.plant_mass = ((_growth_rate+1.)*mass)/(1. + (mass*(_growth_rate))/(rain));
         }
         else {
             // seeding
