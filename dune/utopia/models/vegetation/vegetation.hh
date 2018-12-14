@@ -49,7 +49,7 @@ public:
     using CellType = typename ManagerType::Cell;
     using CellIndexType = typename CellType::Index;
     using DataSet = DataIO::HDFDataset<DataIO::HDFGroup>;
-    using RuleFunc = typename std::function<State(std::shared_ptr<CellType>)>;
+    using RuleFunc = typename std::function<State(const std::shared_ptr<CellType>)>;
 
 private:
 
