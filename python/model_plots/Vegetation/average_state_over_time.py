@@ -26,7 +26,7 @@ def average_state_over_time(dm: DataManager, *,
         **plot_kwargs: Passed on to plt.plot
     """
     # Get the dataset
-    dset = uni['data']['vegetation/plant_mass']
+    dset = uni['data']['Vegetation/plant_mass']
 
     # Extract the y data which is 'state' avaraged over all grid cells for every time step
     y_data = np.mean(dset, axis=1)

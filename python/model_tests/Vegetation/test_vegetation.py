@@ -5,7 +5,7 @@ import pytest
 
 from utopya.testtools import ModelTest
 
-mtc = ModelTest("vegetation", test_file=__file__)
+mtc = ModelTest("Vegetation", test_file=__file__)
 
 def test_basics():
     """Test the most basic features of the model"""
@@ -37,13 +37,13 @@ def test_output():
     # and the content of the output data
     for uni_no, uni in dm['multiverse'].items():
         # Get the data
-        data = uni['data']['vegetation']
+        data = uni['data']['Vegetation']
 
         # Get the config of this universe
         uni_cfg = uni['cfg']
 
         # Calculate the number of cells
-        grid_size = uni_cfg['vegetation']['grid_size']
+        grid_size = uni_cfg['Vegetation']['grid_size']
         num_cells = grid_size[0] * grid_size[1]
 
         # Check that all datasets are available

@@ -252,7 +252,7 @@ test:models:
     - utopia run Hierarnet
     - utopia run PredatorPrey
     - utopia run SimpleEG
-    - utopia run vegetation --debug
+    - utopia run Vegetation --debug
     # TODO add a call for your model here
     #
     # FIXME use --debug in models, too!

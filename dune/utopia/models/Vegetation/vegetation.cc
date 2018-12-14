@@ -1,6 +1,6 @@
 #include <dune/utopia/core/setup.hh>
 
-#include "vegetation.hh"
+#include "Vegetation.hh"
 
 using namespace Utopia::Models::Vegetation;
 using Utopia::Setup::create_grid_manager_cells;
@@ -14,8 +14,8 @@ int main (int argc, char** argv)
         Utopia::PseudoParent pp(argv[1]);
 
         // Set the initial state, then create the model instance
-        Vegetation model("vegetation", pp,
-            create_grid_manager_cells<State, true>("vegetation", pp));
+        Vegetation model("Vegetation", pp,
+            create_grid_manager_cells<State, true>("Vegetation", pp));
 
         // Just run!
         model.run();

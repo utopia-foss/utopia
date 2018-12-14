@@ -6,7 +6,7 @@ average_plant_mass_time:
   creator: universe
   universes: all
 
-  module: model_plots.vegetation
+  module: model_plots.Vegetation
   plot_func: average_state_over_time
 
   save_kwargs:
@@ -25,7 +25,7 @@ plant_mass_spatial:
   plot_func: state_anim
 
   # Select the universe
-  model_name: vegetation
+  model_name: Vegetation
 
   # Select the properties to plot
   to_plot:
