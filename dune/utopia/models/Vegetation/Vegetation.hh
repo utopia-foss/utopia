@@ -155,7 +155,6 @@ public:
     void perform_step ()
     {
         apply_rule(_growth_seeding, _manager.cells());
-        apply_rule(_sanitize_states, _manager.cells());
         // TODO consider doing this in one step!
     }
 
