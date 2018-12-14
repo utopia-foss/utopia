@@ -7,12 +7,11 @@ from utopya.datagroup import UniverseGroup
 import logging
 log = logging.getLogger(__name__)
 
+# -----------------------------------------------------------------------------
+
 def average_state_over_time(dm: DataManager, *, 
                             out_path: str, 
-                            uni: UniverseGroup, 
-                            model_name: str,
-                            state: str,
-                            fmt: str=None, 
+                            uni: UniverseGroup,
                             save_kwargs: dict=None, **plot_kwargs):
     """Calculates the state mean and performs a lineplot
     
@@ -26,11 +25,11 @@ def average_state_over_time(dm: DataManager, *,
         save_kwargs (dict, optional): kwargs to the plt.savefig function
         **plot_kwargs: Passed on to plt.plot
     """
-    # Get the group that all datasets are in
-    grp = uni['data'][model_name]
+    # Get the dataset
+    dset = uni['data']['vegetation/plant_mass']
 
     # Extract the y data which is 'state' avaraged over all grid cells for every time step
-    y_data = np.mean(grp[state], axis=1)
+    y_data = np.mean(dset, axis=1)
     x_data = np.linspace(0, len(y_data), len(y_data))
 
     # Assemble the arguments
@@ -38,8 +37,13 @@ def average_state_over_time(dm: DataManager, *,
 
     # Call the plot function
     plt.plot(*args, **plot_kwargs)
-    plt.xlabel('Time')
-    plt.ylabel(state)
+
+    # Add some labels
+    plt.xlabel("Time")
+    plt.ylabel("Plant Mass")
+
+    plt.xlim(left=0)
+    plt.ylim(bottom=0)
 
     # Save and close figure
     plt.savefig(out_path, **(save_kwargs if save_kwargs else {}))

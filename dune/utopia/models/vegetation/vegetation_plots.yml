@@ -1,17 +1,20 @@
 # This defines the default plots for the Vegetation model
 ---
 
-# plot the average plant mass per cell over time
+# Plot the average plant mass per cell over time
 average_plant_mass_time:
   creator: universe
   universes: all
+
   module: model_plots.vegetation
   plot_func: average_state_over_time
-  model_name: vegetation
-  state: plant_mass
-  fmt: png
 
-# plot the spatial development in the CA
+  save_kwargs:
+    bbox_inches: tight
+
+  # ... can add plt.plot kwargs here
+
+# Plot the spatial development in the CA
 plant_mass_spatial:
   creator: universe
   universes: all

@@ -49,6 +49,7 @@ public:
     using CellType = typename ManagerType::Cell;
     using CellIndexType = typename CellType::Index;
     using DataSet = DataIO::HDFDataset<DataIO::HDFGroup>;
+    using RuleFunc = typename std::function<State(std::shared_ptr<CellType>)>;
 
 private:
 
@@ -61,32 +62,36 @@ private:
     /// Dataset 
     std::shared_ptr<DataSet> _dset_plant_mass;
 
-    /// Rule functions
-
-    // Apply logistic growth and seeding
+    // -- Rule functions -- //
+    /// Apply logistic growth and seeding
     /** For each cell, a random gauss-distributed number is drawn that 
      *  represents the rainfall onto that cell. If the plant bio-mass at that 
-     *  cell is already non-zero, it is increased according to a logistic growth
-     *  model. If it is zero, than the plant bio-mass is set proportional to the 
-     *  seeding rate and the amount of rain.
+     *  cell is already non-zero, it is increased according to a logistic
+     *  growth model. If it is zero, than the plant bio-mass is set
+     *  proportional to the seeding rate and the amount of rain.
      */
-    std::function<State(std::shared_ptr<CellType>)> _growth_seeding = [this](const auto cell){
+    RuleFunc _growth_seeding = [this](const auto& cell){
         auto state = cell->state();
         auto rain = _params.rain(*(this->_rng));
         auto mass = state.plant_mass;
 
-        // regular logistic growth
-        if (mass != 0) { state.plant_mass += mass * _params.growth_rate*(1 - mass/rain); }
-
-        // seeding
-        else { state.plant_mass = _params.seeding_rate*rain; }
+        // Distinguish by mass whether to grow or to seed
+        if (mass != 0) {
+            // regular logistic growth
+            state.plant_mass += mass * _params.growth_rate*(1 - mass/rain);
+        }
+        else {
+            // seeding
+            state.plant_mass = _params.seeding_rate * rain;
+        }
 
         return state;
     };
 
-    // Set negative plant masses to zero
-    std::function<State(std::shared_ptr<CellType>)> _sanitize_states = [](const auto cell){
+    /// Set negative plant masses to zero
+    RuleFunc _sanitize_states = [](const auto& cell){
         auto state = cell->state();
+
         if (state.plant_mass < 0. or std::isinf(state.plant_mass)) {
             state.plant_mass = 0.;
         }
@@ -112,37 +117,22 @@ public:
         _manager(manager),
 
         // Initialize model parameters from config file
-        _params(this->_cfg["rain_mean"].template as<double>(), 
-            this->_cfg["rain_var"].template as<double>(),
-            this->_cfg["growth"].template as<double>(),
-            this->_cfg["seeding"].template as<double>()),
+        _params(as_double(this->_cfg["rain_mean"]), 
+                as_double(this->_cfg["rain_var"]),
+                as_double(this->_cfg["growth"]),
+                as_double(this->_cfg["seeding"])),
 
-        // Open dataset for output of cell states 
-        _dset_plant_mass(this->_hdfgrp->open_dataset("plant_mass",
-                                                     {this->get_time_max() + 1,
-                                                      _manager.cells().size()}))
+        // Open dataset for output of cell states
+        _dset_plant_mass(this->create_dset("plant_mass",
+                                           {_manager.cells().size()}))
     {
-        // Add the model parameters as attributes
-        this->_hdfgrp->add_attribute("rain_mean",
-                                     as_double(this->_cfg["rain_mean"]));
-        this->_hdfgrp->add_attribute("rain_var",
-                                     as_double(this->_cfg["rain_var"]));
-        this->_hdfgrp->add_attribute("growth",
-                                     as_double(this->_cfg["growth"]));
-        this->_hdfgrp->add_attribute("seeding",
-                                     as_double(this->_cfg["seeding"]));
-
-        // Write the cell coordinates
+        // Write out the cell coordinates
         auto coords = this->_hdfgrp->open_dataset("cell_positions",
                                                   {_manager.cells().size()});
-        coords->write(_manager.cells().begin(),
-                      _manager.cells().end(),
-                      [](const auto& cell) {
-                        return std::array<double,2>
-                            {{cell->position()[0],
-                              cell->position()[1]}};
-                      }
-        );
+
+        coords->write(_manager.cells().begin(), _manager.cells().end(),
+                      [](const auto& cell) { return cell->position();}
+                      );
 
         // Write initial state
         write_data();
@@ -160,12 +150,15 @@ public:
     {
         _dset_plant_mass->write(_manager.cells().begin(),
                                 _manager.cells().end(),
-                                [](auto& cell) { return cell->state().plant_mass; }
-                               );
+                                [](auto& cell) {
+                                    return cell->state().plant_mass; }
+                                );
     }
 
     /// Monitor model information
-    void monitor () { }
+    void monitor () {
+        // TODO add function to calculate mean mass
+    }
 
 };
 
