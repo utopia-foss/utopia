@@ -84,7 +84,6 @@ decltype(auto) setup_manager(const unsigned int grid_size)
     auto grid = Utopia::Setup::create_grid(grid_size);
     auto cells = Utopia::Setup::create_cells_on_grid<sync, State, Tag>(
         grid, 0.0);
-    auto manager = Utopia::Setup::create_manager_cells<true, true>(grid, cells);
 
     // can now create and return a GridManager
     return Utopia::Setup::create_manager_cells<true, true>(grid, cells);

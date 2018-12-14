@@ -98,25 +98,15 @@ private:
         return state;
     };
 
-    /// Set negative plant masses to zero
-    RuleFunc _sanitize_states = [](const auto& cell){
-        auto state = cell->state();
-
-        if (state.plant_mass < 0. or std::isinf(state.plant_mass)) {
-            state.plant_mass = 0.;
-        }
-        return state;
-    };
-
     /// Calculate the mean plant mass
     double calc_mean_mass () {
-        auto m_tot = std::accumulate(_manager.cells().begin(),
-                                     _manager.cells().end(),
-                                     0.,
-                                     [&](double sum, const auto& cell) {
-                                        return sum + cell->state().plant_mass; 
-                                     });
-        return m_tot/_manager.cells().size();
+
+        return std::accumulate(_manager.cells().begin(), _manager.cells().end(),
+                               0.,
+                               [&](double sum, const auto& cell) {
+                                   return sum + cell->state().plant_mass;
+                               }) /
+               _manager.cells().size();
     }
 
 public:
