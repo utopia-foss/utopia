@@ -98,6 +98,17 @@ private:
         return state;
     };
 
+    /// Calculate the mean plant mass
+    double calc_mean_mass () {
+        auto m_tot = std::accumulate(_manager.cells().begin(),
+                                     _manager.cells().end(),
+                                     0.,
+                                     [&](double sum, const auto& cell) {
+                                        return sum + cell->state().plant_mass; 
+                                     });
+        return m_tot/_manager.cells().size();
+    }
+
 public:
 
     /// Construct the Vegetation model
@@ -155,9 +166,9 @@ public:
                                 );
     }
 
-    /// Monitor model information
+    /// Monitor the current model state; supplies the mean plant mass
     void monitor () {
-        // TODO add function to calculate mean mass
+        this->_monitor.set_entry("mean_mass", calc_mean_mass());
     }
 
 };
