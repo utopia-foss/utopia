@@ -68,14 +68,15 @@ def cluster_distribution(dm: DataManager, *,
     try:
         data = grp['cluster_id'][time,:]
     except:
-        raise TypeError("Argument time needs to be a int within the number of timesteps or -1. "
-                            "Was: {} with value: '{}'"
-                            "".format(type(time), time))
+        raise TypeError("Argument time needs to be a int within " 
+                        "the number of timesteps or -1. "
+                        "Was: {} with value: '{}'"
+                        "".format(type(time), time))
 
-    # custer sizes
+    # cluster sizes
     id_max = np.amax(data)
     cluster_sizes = np.zeros(id_max+1, int)
-    for id in data:
+    for id in data.flatten():
         if (id >= 0):           # id -1 is grass state
             cluster_sizes[id] += 1
 

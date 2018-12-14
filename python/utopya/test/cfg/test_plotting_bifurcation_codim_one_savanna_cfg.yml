@@ -1,0 +1,11 @@
+---
+perform_sweep: true
+parameter_space:
+  num_steps: 10000
+  
+  SavannaHomogeneous: !model
+    model_name: SavannaHomogeneous
+    alpha: !sweep
+      default: 0.2
+      linspace: [0.33,0.66,2]
+    beta: 0.4

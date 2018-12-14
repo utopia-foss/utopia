@@ -511,7 +511,12 @@ class WorkerManagerReporter(Reporter):
     """This class reports on the state of the WorkerManager."""
 
     def __init__(self, wm, **reporter_kwargs):
-        """Initialize the Reporter for the WorkerManager."""
+        """Initialize the Reporter for the WorkerManager.
+        
+        Args:
+            wm (WorkerManager): The associated WorkerManager
+            **reporter_kwargs: Passed on to parent method
+        """
 
         super().__init__(**reporter_kwargs)
 
@@ -894,23 +899,78 @@ class WorkerManagerReporter(Reporter):
         rtstats = self.calc_runtime_statistics(min_num=min_num)
 
         if rtstats is None:
-            return "No simulation report generated because no runtime statistics was calculated."
+            return ("No simulation report generated because no runtime "
+                    "statistics were calculated.")
 
         # List that contains the parts that will be written
         parts = []
         
         # Add header 
-        parts.append("Runtime Statistics")
-        parts.append("------------------")
-        parts.append("")
-        parts.append("This report contains the runtime statistics of a multiverse simulation run.")
-        parts.append("The statistics is calculated from universe run times.")
-        parts.append("")
-        parts.append("  # universes:  {}".format(len(self.runtimes)))
-        parts.append("")
+        parts += ["Runtime Statistics"]
+        parts += ["------------------"]
+        parts += [""]
+        parts += ["This report contains the runtime statistics of a "
+                  "multiverse simulation run."]
+        parts += ["The statistics are calculated from universe run times."]
+        parts += [""]
+        parts += ["  # universes:  {} / {}".format(len(self.runtimes),
+                                                   len(self.wm.tasks))]
+        parts += [""]
     
+        # Add the runtime statistics
         parts += [fstr.format(k=k, v=tools.format_time(v, ms_precision=1))
-                for k, v in rtstats.items()]
+                  for k, v in rtstats.items()]
+
+        # In cluster mode, add more information
+        if self.wm.cluster_mode:
+            rcps = self.wm.resolved_cluster_params
+
+            parts += [""]
+            parts += ["Cluster mode is enabled."]
+            parts += [""]
+            parts += [fstr.format(k=k, v=rcps[k])
+                      for k in ('node_name', 'node_index', 'num_nodes',
+                                'node_list', 'job_id', 'job_name',
+                                'job_account', 'cluster_name', 'num_procs')
+                      if rcps.get(k)]
 
         return " \n".join(parts)
       
+
+    # Writer methods ..........................................................
+
+    def _write_to_file(self, *args, path: str='_report.txt',
+                       cluster_mode_path: str='{0:}_{node_name:}{ext:}',
+                       **kwargs):
+        """Overloads the parent method with capabilities needed in cluster mode
+        
+        All args and kwargs are passed through. If in cluster mode, the path
+        is changed such that it includes the name of the node.
+        
+        Args:
+            *args: Passed on to parent method
+            path (str, optional): The path to save to
+            cluster_mode_path (str, optional): The format string to use for the
+                path in cluster mode. _Requires_ to contain the format key '{0:}' which retains the given `path`, extension split off.
+                Extension can be used via 'ext' (already includes the dot).
+                Additional format keys: 'node_name', 'job_id'.
+            **kwargs: Passed on to parent method
+        """
+        if not self.wm.cluster_mode:
+            return super()._write_to_file(*args, path=path, **kwargs)
+
+        # else: in cluster mode. Use the information to build a new path
+        # Existing information
+        base_path, ext = os.path.splitext(path)
+        fstr_args = [base_path]
+        fstr_kwargs = dict(ext=ext)
+
+        # Gather cluster mode arguments
+        fstr_kwargs['node_name'] = self.wm.resolved_cluster_params['node_name']
+        fstr_kwargs['job_id'] = self.wm.resolved_cluster_params['job_id']
+
+        # Build the new path
+        path = cluster_mode_path.format(*fstr_args, **fstr_kwargs)
+
+        # And call the parent method
+        return super()._write_to_file(*args, path=path, **kwargs)

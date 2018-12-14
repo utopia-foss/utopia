@@ -48,6 +48,8 @@ foreach(test ${TESTS_CORE})
     )
 endforeach(test)
 
+# custom dependencies of dependency test
+target_link_libraries(CORE_dependency_test FFTW3::fftw3)
 
 # add custom target for 'CORE' prefix
 add_custom_target(test_core

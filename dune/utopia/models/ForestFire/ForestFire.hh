@@ -63,6 +63,14 @@ struct Param {
     }
 };
 
+
+template <typename DataSet>
+struct DataSets {
+    const std::shared_ptr<DataSet> state;
+    const std::shared_ptr<DataSet> cluster_id;
+};
+
+
 /// Typehelper to define data types of ForestFire model
 using ForestFireTypes = ModelTypes<>;
 
@@ -108,8 +116,7 @@ private:
     unsigned int _cluster_tag_cnt;
 
     // -- Datasets -- //
-    std::shared_ptr<DataSet> _dset_state;
-    std::shared_ptr<DataSet> _dset_cluster_id;
+    DataSets<DataSet> _dsets;
 
     // -- Helper functions // 
     std::function<double()> _calculate_density = [this]() {
@@ -272,24 +279,23 @@ public:
         _cluster_tag_cnt(0),
 
         // create datasets
-        _dset_state(this->_hdfgrp->open_dataset("state")),
-        _dset_cluster_id(this->_hdfgrp->open_dataset("cluster_id"))
+        _dsets({this->create_dset("state", {_manager.cells().size()}),
+                this->create_dset("cluster_id", {_manager.cells().size()})})
     {
         // Call the method that initializes the cells
         this->initialize_cells();
 
-        // Set the capacity of the datasets
-        // We know the maximum number of steps (== #rows), and the number of
-        // grid cells (== #columns); that is the final extend of the dataset.
-        const hsize_t num_cells = std::distance(_manager.cells().begin(),
-                                                _manager.cells().end());
-        this->_log->debug("Setting dataset capacities to {} x {} ...",
-                          this->get_time_max() + 1, num_cells);
-        _dset_state->set_capacity({this->get_time_max() + 1, num_cells});
-        _dset_cluster_id->set_capacity({this->get_time_max() + 1, num_cells});
-
         // Write initial state
         this->write_data();
+
+        // Add attributes to the datasets
+        // NOTE Currently, attributes can be set only after the first write
+        //      operation because else the datasets are not yet created.
+        const auto grid_size = as_<std::array<std::size_t,2>>(this->_cfg["grid_size"]);
+        _dsets.state->add_attribute("content", "grid");
+        _dsets.state->add_attribute("grid_shape", grid_size);
+        _dsets.cluster_id->add_attribute("content", "grid");
+        _dsets.cluster_id->add_attribute("grid_shape", grid_size);
     }
 
 
@@ -338,14 +344,14 @@ public:
     void write_data ()
     {   
         // state
-        _dset_state->write(_manager.cells().begin(),
+        _dsets.state->write(_manager.cells().begin(),
                            _manager.cells().end(),
                            [](auto& cell) {
                                return static_cast<unsigned short int>(cell->state().state);
                            });
 
         // cluster id
-        _dset_cluster_id->write(_manager.cells().begin(),
+        _dsets.cluster_id->write(_manager.cells().begin(),
                                 _manager.cells().end(),
                                 [](auto& cell) {
                                     return cell->state().cluster_tag;

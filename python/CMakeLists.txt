@@ -14,6 +14,7 @@ message(STATUS "Installing required Python packages ...")
 
 # Manually install dependencies for utopya, if they are not already satisfied
 # NOTE Take care that the versions used here match those in the README.md
+#      and those in the utopya setup.py file.
 # -- paramspace --
 dune_python_find_package(PACKAGE paramspace
                          VERSION 2.1.0
@@ -27,13 +28,13 @@ endif()
 
 # -- dantro --
 dune_python_find_package(PACKAGE dantro
-                         VERSION 0.4.1
+                         VERSION 0.6.0
                          INTERPRETER ${DUNE_PYTHON_VIRTUALENV_EXECUTABLE})
 
 if(NOT DUNE_PYTHON_dantro_FOUND)
     # install from current _master_ branch
     python_install_package_remote(
-        URL ssh://git@ts-gitlab.iup.uni-heidelberg.de:10022/utopia/dantro.git@release/v0.4
+        URL ssh://git@ts-gitlab.iup.uni-heidelberg.de:10022/utopia/dantro.git@release/v0.6
         TRUSTED_HOST ts-gitlab.iup.uni-heidelberg.de)
 endif()
 

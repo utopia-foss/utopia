@@ -83,7 +83,7 @@ private:
             // fixed size array types. Else we use variable length arrays.
             if constexpr (is_array_like_v<value_type_1>)
             {
-                constexpr std::size_t s = std::tuple_size<value_type_1>::value;
+                constexpr std::size_t s = get_size<value_type_1>::value;
                 if (_attribute == -1)
                 {
                     _attribute = __create_attribute__<base_type>(s);
@@ -422,8 +422,9 @@ public:
         if (H5Iis_valid(_parent_object->get_id()) == false)
         {
             throw std::invalid_argument(
-                "parent_object of attribute " + _name +
-                " is invalid, has it been closed already?");
+                "Parent object ('" + _parent_object->get_path() + "') of "
+                "attribute '" + _name + "' is invalid! Has it been closed "
+                "already or not been opened yet?");
         }
         else
         {

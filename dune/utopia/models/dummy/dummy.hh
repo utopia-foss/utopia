@@ -55,12 +55,8 @@ public:
           // Initialise state and boundary condition members
           _state(initial_state),
           _bc(_state.size(), 1.0),
-          _dset_state(this->_hdfgrp->open_dataset("state"))
-    {
-        // Set capacity to a 2D dataset with as many rows as there are steps
-        // and as many columns as the state is large.
-        _dset_state->set_capacity({this->get_time_max() + 1, _state.size()});
-        
+          _dset_state(this->create_dset("state", {_state.size()}))
+    {        
         // Now write the initial state
         this->write_data();
     }

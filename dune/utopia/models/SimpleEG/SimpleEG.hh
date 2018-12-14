@@ -9,7 +9,6 @@
 
 #include <functional>
 
-
 namespace Utopia {
 namespace Models {
 namespace SimpleEG {
@@ -22,6 +21,14 @@ enum Strategy : unsigned short int { S0=0, S1=1 };
 struct State {
     Strategy strategy;
     double payoff;
+};
+
+
+/// Dataset struct
+template <typename DataSet>
+struct DataSets {
+    std::shared_ptr<DataSet> strategy;
+    std::shared_ptr<DataSet> payoff;
 };
 
 
@@ -90,9 +97,7 @@ private:
 
     
     // -- Datasets -- //
-    std::shared_ptr<DataSet> _dset_strategy;
-    std::shared_ptr<DataSet> _dset_payoff;
-
+    DataSets<DataSet> _dsets;
 
     // -- Rule functions -- //
     /// Define the interaction between players
@@ -202,26 +207,26 @@ public:
         _ia_matrix(this->extract_ia_matrix()),
         _fittest_cells_in_nbhood(),
         // And open datasets for strategy and payoff
-        _dset_strategy(this->_hdfgrp->open_dataset("strategy")),
-        _dset_payoff(this->_hdfgrp->open_dataset("payoff"))
+        _dsets({this->create_dset("strategy", {_manager.cells().size()}),
+                this->create_dset("payoff", {_manager.cells().size()})})
     {   
         // Initialize cells
         this->initialize_cells();
-
-        // Set dataset capacities
-        // We already know the maximum number of steps and the number of cells
-        const hsize_t num_cells = std::distance(_manager.cells().begin(),
-                                                _manager.cells().end());
-        this->_log->debug("Setting dataset capacities to {} x {} ...",
-                          this->get_time_max() + 1, num_cells);
-        _dset_strategy->set_capacity({this->get_time_max() + 1, num_cells});
-        _dset_payoff->set_capacity(  {this->get_time_max() + 1, num_cells});
 
         // Write initial state
         this->write_data();
 
         // Write _ia_matrix in _hdfgrp attribute
         this->_hdfgrp->add_attribute("ia_matrix", _ia_matrix);
+
+        // Add attributes to the datasets
+        // NOTE Currently, attributes can be set only after the first write
+        //      operation because else the datasets are not yet created.
+        const auto grid_size = as_<std::array<std::size_t,2>>(this->_cfg["grid_size"]);
+        _dsets.strategy->add_attribute("content", "grid");
+        _dsets.strategy->add_attribute("grid_shape", grid_size);
+        _dsets.payoff->add_attribute("content", "grid");
+        _dsets.payoff->add_attribute("grid_shape", grid_size);
     }
 
 
@@ -422,13 +427,13 @@ public:
     void write_data ()
     {
         // strategy
-        _dset_strategy->write(_manager.cells().begin(), _manager.cells().end(),
+        _dsets.strategy->write(_manager.cells().begin(), _manager.cells().end(),
                               [](auto& cell) {
                                 return static_cast<unsigned short int>(cell->state().strategy);
                               });
 
         // payoffs
-        _dset_payoff->write(_manager.cells().begin(), _manager.cells().end(),
+        _dsets.payoff->write(_manager.cells().begin(), _manager.cells().end(),
                             [](auto& cell) {
                                 return cell->state().payoff;
                             });
@@ -517,5 +522,4 @@ private:
 } // namespace SimpleEG
 } // namespace Models
 } // namespace Utopia
-
 #endif // UTOPIA_MODELS_SIMPLEEG_HH
