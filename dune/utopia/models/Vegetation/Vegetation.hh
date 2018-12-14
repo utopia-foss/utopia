@@ -13,8 +13,7 @@ namespace Utopia {
 namespace Models {
 namespace Vegetation {
 
-
-/// State of a cell in the vegetation model
+/// State of a cell in the Vegetation model, consisting only of plant mass
 struct State {
     double plant_mass;
 };
@@ -22,13 +21,13 @@ struct State {
 /// Typehelper to define data types of Vegetation model
 using VegetationTypes = ModelTypes<>;
 
+
 /// A very simple vegetation model
 template<class ManagerType>
 class Vegetation:
     public Model<Vegetation<ManagerType>, VegetationTypes>
 {
 public:
-
     /// Type helpers
     using Base = Model<Vegetation<ManagerType>, VegetationTypes>;
     using CellType = typename ManagerType::Cell;
@@ -37,61 +36,65 @@ public:
     using RuleFunc = typename std::function<State(const std::shared_ptr<CellType>)>;
 
 private:
-
     /// The grid manager
     ManagerType _manager;
 
-    ///
+    // -- The parameters of the model -- //
+    // TODO Consider making these public or implementing setters & getters
+
+    /// Normal distribution for drawing random rain values
     std::normal_distribution<double> _rain_dist;
 
-    // -- The parameters of the model -- //
     /// The growth rate (logistic growth model)
     double _growth_rate;
 
     /// The seeding rate
     double _seeding_rate;
+
     
     // Datasets -- //
     /// Plant mass dataset
     std::shared_ptr<DataSet> _dset_plant_mass;
 
+
     // -- Rule functions -- //
     /// Apply logistic growth and seeding
-    /** For each cell, a random gauss-distributed number is drawn that 
-     *  represents the rainfall onto that cell. If the plant bio-mass at that 
-     *  cell is already non-zero, it is increased according to a logistic
-     *  growth model. If it is zero, than the plant bio-mass is set
-     *  proportional to the seeding rate and the amount of rain.
+    /** @detail For each cell, a random gauss-distributed number is drawn that 
+     *          represents the rainfall onto that cell. If the plant bio-mass
+     *          at that cell is already non-zero, it is increased according to
+     *          a logistic growth model, modelled by the Beverton-Holt
+     *          discretisation of the logistic function. If it is zero, then
+     *          the plant bio-mass is set proportional to the seeding rate and
+     *          the amount of rain.
      */
     RuleFunc _growth_seeding = [this](const auto& cell){
         auto state = cell->state();
         auto rain = _rain_dist(*(this->_rng));
         auto mass = state.plant_mass;
 
-        if(rain < 1e-16){
+        if (rain < 1e-16) {
             rain = 0.;
         }
 
         // Distinguish by mass whether to grow or to seed
-        // if negative or smaller than machine epsilon at 1.0 for doubles, 
+        // If negative or smaller than machine epsilon at 1.0 for doubles, 
         // consider invalid and reseed
         if (not (mass < 1e-16)) {
-            // regular logistic growth
-            // state.plant_mass += mass * _growth_rate*(1. - mass/rain);
-
-            // use Beverton-Holt to approximate discretized logistic growth.
-            // however, be careful that when using the wikipedia version
-            // [https://en.wikipedia.org/wiki/Beverton–Holt_model]
-            // the R0 parameter therein is >= 1 -> proliferation rate!
-            // this means that, as given therein, we have: 
-            // n_{t+1} = (r*n_t)/(1 + (n_t*(r-1)/K)) with r >= 1, 
-            // which has to be turned into 
-            // n_{t+1} =((r+1.)*n_t)/(1 +(n_t*r)/K) when r is given  
-            // as a growth rate proper
-            state.plant_mass = ((_growth_rate+1.)*mass)/(1. + (mass*(_growth_rate))/(rain));
+            // Logistic Growth
+            /* Use Beverton-Holt to approximate discretized logistic growth.
+             * Be careful that when using the Wikipedia version
+             *   [https://en.wikipedia.org/wiki/Beverton–Holt_model], the R0
+             * parameter therein is >= 1 -> proliferation rate!
+             * This means that, as given therein, we have: 
+             *   n_{t+1} = (r*n_t)/(1 + (n_t*(r-1)/K))
+             *  with r >= 1, which has to be turned into 
+             *   n_{t+1} =((r+1.)*n_t)/(1 +(n_t*r)/K)
+             * when r is given as a growth rate proper.
+             */
+            state.plant_mass = ((_growth_rate + 1.) * mass)/(1. + (mass * (_growth_rate))/rain);
         }
         else {
-            // seeding
+            // Seeding
             state.plant_mass = _seeding_rate * rain;
         }
 
@@ -100,13 +103,12 @@ private:
 
     /// Calculate the mean plant mass
     double calc_mean_mass () {
-
-        return std::accumulate(_manager.cells().begin(), _manager.cells().end(),
+        return std::accumulate(_manager.cells().begin(),
+                               _manager.cells().end(),
                                0.,
                                [&](double sum, const auto& cell) {
                                    return sum + cell->state().plant_mass;
-                               }) /
-               _manager.cells().size();
+                               }) / _manager.cells().size();
     }
 
 public:

@@ -1,8 +1,6 @@
 #ifndef APPLY_HH
 #define APPLY_HH
 
-// #include <dune/utopia/core/types.hh>
-
 namespace Utopia {
 
 /** \page rule The Rule Concept
