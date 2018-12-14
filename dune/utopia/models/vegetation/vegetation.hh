@@ -76,9 +76,10 @@ private:
         auto mass = state.plant_mass;
 
         // Distinguish by mass whether to grow or to seed
-        if (mass != 0) {
+        if (mass != 0.) {
             // regular logistic growth
-            state.plant_mass += mass * _params.growth_rate*(1 - mass/rain);
+            state.plant_mass += mass * _params.growth_rate*(1. - mass/rain);
+            // TODO consider using Beverton-Holt model?
         }
         else {
             // seeding
@@ -154,6 +155,7 @@ public:
     {
         apply_rule(_growth_seeding, _manager.cells());
         apply_rule(_sanitize_states, _manager.cells());
+        // TODO consider doing this in one step!
     }
 
     /// Write the cell states (aka plant bio-mass)
