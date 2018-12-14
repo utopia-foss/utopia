@@ -19,21 +19,6 @@ struct State {
     double plant_mass;
 };
 
-/// Define parameters of vegetation model
-using Rain = std::normal_distribution<>;
-struct VegetationParameters {
-
-    // Constructor
-    VegetationParameters(double _rain_mean, double _rain_var, 
-            double _growth_rate, double _seeding_rate) : 
-        rain{_rain_mean, _rain_var}, 
-        growth_rate(_growth_rate), seeding_rate(_seeding_rate) {}
-
-    Rain rain;
-    double growth_rate;
-    double seeding_rate;
-};
-
 /// Typehelper to define data types of Vegetation model
 using VegetationTypes = ModelTypes<>;
 
@@ -56,10 +41,18 @@ private:
     /// The grid manager
     ManagerType _manager;
 
-    /// The parameters of the model
-    VegetationParameters _params;
+    ///
+    std::normal_distribution<double> _rain_dist;
+
+    // -- The parameters of the model -- //
+    /// The growth rate (logistic growth model)
+    double _growth_rate;
+
+    /// The seeding rate
+    double _seeding_rate;
     
-    /// Dataset 
+    // Datasets -- //
+    /// Plant mass dataset
     std::shared_ptr<DataSet> _dset_plant_mass;
 
     // -- Rule functions -- //
@@ -72,18 +65,18 @@ private:
      */
     RuleFunc _growth_seeding = [this](const auto& cell){
         auto state = cell->state();
-        auto rain = _params.rain(*(this->_rng));
+        auto rain = _rain_dist(*(this->_rng));
         auto mass = state.plant_mass;
 
         // Distinguish by mass whether to grow or to seed
         if (mass != 0.) {
             // regular logistic growth
-            state.plant_mass += mass * _params.growth_rate*(1. - mass/rain);
+            state.plant_mass += mass * _growth_rate*(1. - mass/rain);
             // TODO consider using Beverton-Holt model?
         }
         else {
             // seeding
-            state.plant_mass = _params.seeding_rate * rain;
+            state.plant_mass = _seeding_rate * rain;
         }
 
         return state;
@@ -125,14 +118,16 @@ public:
         // Construct the base class
         Base(name, parent_model),
 
-        // Initialise the reference to the Manager object
+        // Initialize the reference to the Manager object
         _manager(manager),
 
+        // Initialize the rain distribution
+        _rain_dist{as_double(this->_cfg["rain_mean"]),
+                   as_double(this->_cfg["rain_std"])},
+
         // Initialize model parameters from config file
-        _params(as_double(this->_cfg["rain_mean"]), 
-                as_double(this->_cfg["rain_var"]),
-                as_double(this->_cfg["growth"]),
-                as_double(this->_cfg["seeding"])),
+        _growth_rate(as_double(this->_cfg["growth_rate"])),
+        _seeding_rate(as_double(this->_cfg["seeding_rate"])),
 
         // Open dataset for output of cell states
         _dset_plant_mass(this->create_dset("plant_mass",

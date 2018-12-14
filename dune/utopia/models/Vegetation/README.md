@@ -6,10 +6,10 @@ So far, the only driver for a change in the plant bio-mass is rainfall, implemen
 
 ## Model parameters
 
-* mean rainfall $`\langle r \rangle`$
-* rainfall standard deviation $`\sigma_r`$
-* growth rate $`g`$
-* seeding rate $`s`$
+* `rain_mean`: mean rainfall $`\langle r \rangle`$
+* `rain_std`: rainfall standard deviation $`\sigma_r`$
+* `growth_rate`: growth rate $`g`$
+* `seeding_rate`: seeding rate $`s`$
 
 ## Growth process
 

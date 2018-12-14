@@ -14,12 +14,12 @@
 grid_size: [10, 10]
 
 # Rain parameters
-# The actual rain value is drawn from a normal distribution
+# The actual rain value is drawn from the following normal distribution
 rain_mean: 10
-rain_var: 2
+rain_std: 2
 
 # Growth rate (used in logistic growth)
-growth: 0.1
+growth_rate: 0.1
 
 # Seeding rate (used when plant mass is zero)
-seeding: 0.2
+seeding_rate: 0.2
