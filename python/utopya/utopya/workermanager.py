@@ -481,7 +481,7 @@ class WorkerManager:
             # Handle any remaining pending exceptions
             self._handle_pending_exceptions()
 
-        except WorkerManagerError as err:
+        except (WorkerManagerError, KeyboardInterrupt) as err:
             # Some error not related to the non-zero exit code occured
             # Gracefully terminate remaining tasks before re-raising the
             # exception
@@ -490,8 +490,12 @@ class WorkerManager:
             if self.reporter:
                 self.reporter.suppress_cr = True
 
-            log.warning("Did not finish working due to a %s: %s",
-                        err.__class__.__name__, str(err))
+            if str(err):
+                log.error("Did not finish working due to a %s: %s",
+                          err.__class__.__name__, str(err))
+            else:
+                log.error("Did not finish working due to a %s!",
+                          err.__class__.__name__)
             
             # Not terminate the remaining active tasks
             log.warning("Terminating active tasks ...")
@@ -501,14 +505,17 @@ class WorkerManager:
             self.times['end_working'] = dt.now()
             self._invoke_report('after_abort', force=True)
 
-            # For a non-zero exit code case, do not raise but sys.exit
+            # For some specific error types, do not raise but exit with status
             if isinstance(err, WorkerTaskNonZeroExit):
                 log.critical("Exiting now ...")
-
-                # Extract the tasks exit code from the exception and exit
                 sys.exit(err.task.worker_status)
 
+            elif isinstance(err, KeyboardInterrupt):
+                log.critical("Exiting now ...")
+                sys.exit(1)
+
             # Otherwise, just raise
+            log.critical("Re-raising error ...")
             raise
 
         # Register end time and invoke final report
