@@ -6,19 +6,19 @@
 
 namespace Utopia {
 
-/// The flag indicating whether a signal was received
-std::atomic<bool> got_signal;
+/// The flag indicating whether to stop whatever is being done right now
+std::atomic<bool> stop_now;
 
-/// Default signal handler functions, only setting the `got_signal` global flag
-void default_signal_handler(int signum) {
-    got_signal.store(true);
+/// Default signal handler functions, only setting the `stop_now` global flag
+void default_signal_handler([[maybe_unused]] int signum) {
+    stop_now.store(true);
 }
 
 /// Attaches a signal handler for the given signal via sigaction
 template<typename signum_t, typename Handler>
 void attach_signal_handler(signum_t signum, Handler handler) {
     // Initialize the signal flag to make sure it is false
-    got_signal.store(false);
+    stop_now.store(false);
 
     // Use POSIX-style sigaction definition rather than deprecated signal
     struct sigaction sa;

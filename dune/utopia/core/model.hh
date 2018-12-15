@@ -339,8 +339,8 @@ public:
         while (_time < _time_max) {
             iterate();
 
-            if (got_signal.load()) {
-                _log->warn("Received interrupt signal. Aborting run ...");
+            if (stop_now.load()) {
+                _log->warn("Was told to stop. Not iterating further ...");
                 break;
             }
         }
