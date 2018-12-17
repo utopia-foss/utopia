@@ -14,7 +14,7 @@ namespace Utopia {
   */
 std::atomic<bool> stop_now;
 
-/// Default signal handler functions, only setting the `stop_now` global flag
+/// Default signal handler function, only setting the `stop_now` global flag
 void default_signal_handler(int) {
     stop_now.store(true);
 }
@@ -33,9 +33,11 @@ void attach_signal_handler(int signum, Handler handler) {
 
     // Use POSIX-style sigaction definition rather than deprecated signal
     struct sigaction sa;
-
     sa.sa_handler = handler;
     sa.sa_flags = 0;
+
+    // Add only the given signal to the set of actions
+    // See sigaddset documentation: https://linux.die.net/man/3/sigfillset
     sigaddset(&sa.sa_mask, signum);
 
     sigaction(signum, &sa, NULL);
