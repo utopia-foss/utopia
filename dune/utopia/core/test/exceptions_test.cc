@@ -1,5 +1,6 @@
 #include <cassert>
 #include <cstring>
+#include <csignal>
 
 #include <dune/utopia/base.hh>
 #include <dune/utopia/core/exceptions.hh>

@@ -1,14 +1,6 @@
 #include <cassert>
 #include <iostream>
 
-#ifndef SIGINT
-#define SIGINT 2
-#endif
-
-#ifndef SIGTERM
-#define SIGTERM 15
-#endif
-
 #include <dune/utopia/base.hh>
 #include <dune/utopia/core/signal.hh>
 
