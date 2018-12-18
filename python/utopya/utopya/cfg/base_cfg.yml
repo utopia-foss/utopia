@@ -101,7 +101,7 @@ worker_manager:
     grace_period: 5.
 
     # Whether to exit after working; exit code will be 128 + abs(signum)
-    exit: true
+    exit: false
 
   # Report format specifications at different points of the WM's operation
   # These report formats were defined in the reporter and can be referred to

@@ -200,10 +200,10 @@ def test_interrupt_handling(wm, sleep_task, tmpdir):
     """
     # Define a post poll function that is to simulate the KeyboardInterrupt
     def ppf():
-        time.sleep(0.1)
+        time.sleep(0.2)  # To give the task enough time to start up ...
         raise KeyboardInterrupt
     
-    # Change some worker manager parameters to good defaults
+    # Work with specific worker parameters
     wm.num_workers = 4
     wm.interrupt_params['send_signal'] = 'SIGTERM'
     wm.interrupt_params['grace_period'] = 10.
