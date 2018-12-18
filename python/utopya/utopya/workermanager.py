@@ -545,8 +545,8 @@ class WorkerManager:
                         signal, len(self.active_tasks))
             self._signal_workers(self.active_tasks, signal=signal)
 
-            # Give the workers some time to shut down
-            # time.sleep(0.2)
+            # Give the workers some time to shut down, then do a first poll
+            time.sleep(0.2)
             self._poll_workers()
 
             # If they are still active, continuously poll them for a certain
