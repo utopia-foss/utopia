@@ -721,19 +721,23 @@ class WorkerTask(Task):
         """Sends a signal to this WorkerTask's worker.
         
         Args:
-            signal (Union[str, int]): The signal to send. Can be SIGTERM or
-                SIGKILL or a valid signal number.
+            signal (Union[str, int]): The signal to send. Can be SIGTERM,
+                SIGINT, SIGKILL, or a valid signal number.
         
         Raises:
             ValueError: When an invalid `signal` argument was given
         """
-        if signal == 'SIGTERM':
+        if signal in ['SIGTERM', 15]:
             log.debug("Terminating worker of task %s ...", self.name)
             self.worker.terminate()
 
-        elif signal == 'SIGKILL':
+        elif signal in ['SIGKILL', 9]:
             log.debug("Killing worker of task %s ...", self.name)
             self.worker.kill()
+
+        elif signal in ['SIGINT', 2]:
+            log.debug("Interrupting worker of task %s ...", self.name)
+            self.worker.send_signal(2)
 
         elif isinstance(signal, int):
             log.debug("Sending signal %d to worker of task %s ...",
@@ -742,8 +746,8 @@ class WorkerTask(Task):
 
         else:
             raise ValueError("Invalid argument `signal`: Got '{}', but need "
-                             "either SIGTERM, SIGKILL, or an integer signal "
-                             "number.".format(signal))
+                             "either SIGTERM, SIGINT, SIGKILL, or an integer "
+                             "signal number.".format(signal))
 
         self._invoke_callback('after_signal')
 

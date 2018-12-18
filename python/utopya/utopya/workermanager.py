@@ -14,6 +14,7 @@ from typing.io import BinaryIO
 from utopya.task import WorkerTask, TaskList
 from utopya.stopcond import StopCondition
 from utopya.reporter import WorkerManagerReporter
+from utopya.tools import format_time
 
 # Initialise logger
 log = logging.getLogger(__name__)
@@ -52,6 +53,7 @@ class WorkerManager:
                  reporter: WorkerManagerReporter=None,
                  rf_spec: Dict[str, Union[str, List[str]]]=None,
                  nonzero_exit_handling: str='ignore',
+                 interrupt_params: dict=None,
                  cluster_mode: bool=False,
                  resolved_cluster_params: dict=None):
         """Initialize the worker manager.
@@ -87,6 +89,18 @@ class WorkerManager:
                 died by SIGTERM, which presumable originated from a fulfilled
                 stop condition. Use 'warn_all' to also receive warnings in
                 this case.
+            interrupt_params (dict, optional): Parameters that determine how
+                the WorkerManager behaves when receiving KeyboardInterrupts
+                during working.
+                Possible keys:
+                    'send_signal': Which signal to send to the workers. Can be
+                        SIGINT (default), SIGTERM, SIGKILL, or any valid signal
+                        as integer.
+                    'grace_period': how long to wait for the other workers to
+                        gracefully shut down. After this period (in seconds),
+                        the workers will be killed via SIGKILL. Default is 5s
+                    'exit': whether to sys.exit at the end of start_working.
+                        Default is True.
             cluster_mode (bool, optional): Whether similar tasks to those that
                 are managed by this WorkerManager are, at the same time, worked
                 on by other WorkerManager. This is relevant because the output
@@ -120,6 +134,7 @@ class WorkerManager:
         self.nonzero_exit_handling = nonzero_exit_handling
         self._cluster_mode = cluster_mode
         self._resolved_cluster_params = resolved_cluster_params
+        self.interrupt_params = (interrupt_params if interrupt_params else {})
 
         if num_workers == 'auto':
             self.num_workers = os.cpu_count()
@@ -356,7 +371,9 @@ class WorkerManager:
         log.debug("Task %s (uid: %s) added.", task.name, task.uid)
         return task
 
-    def start_working(self, *, detach: bool=False, timeout: float=None, stop_conditions: Sequence[StopCondition]=None, post_poll_func: Callable=None) -> None:
+    def start_working(self, *, detach: bool=False, timeout: float=None,
+                      stop_conditions: Sequence[StopCondition]=None,
+                      post_poll_func: Callable=None) -> None:
         """Upon call, all enqueued tasks will be worked on sequentially.
         
         Args:
@@ -365,7 +382,8 @@ class WorkerManager:
                 distributes tasks.
             timeout (float, optional): If given, the number of seconds this
                 work session is allowed to take. Workers will be aborted if
-                the number is exceeded. Note that this is not measured in CPU time, but the host systems wall time.
+                the number is exceeded. Note that this is not measured in CPU
+                time, but the host systems wall time.
             stop_conditions (Sequence[StopCondition], optional): During the
                 run these StopCondition objects will be checked
             post_poll_func (Callable, optional): If given, this is called after
@@ -481,8 +499,8 @@ class WorkerManager:
             # Handle any remaining pending exceptions
             self._handle_pending_exceptions()
 
-        except (WorkerManagerError, KeyboardInterrupt) as err:
-            # Some error not related to the non-zero exit code occured
+        except WorkerManagerError as err:
+            # Some error not related to the non-zero exit code occured.
             # Gracefully terminate remaining tasks before re-raising the
             # exception
 
@@ -490,14 +508,10 @@ class WorkerManager:
             if self.reporter:
                 self.reporter.suppress_cr = True
 
-            if str(err):
-                log.error("Did not finish working due to a %s: %s",
-                          err.__class__.__name__, str(err))
-            else:
-                log.error("Did not finish working due to a %s!",
-                          err.__class__.__name__)
+            log.error("Did not finish working due to a %s: %s",
+                      err.__class__.__name__, str(err))
             
-            # Not terminate the remaining active tasks
+            # Now terminate the remaining active tasks
             log.warning("Terminating active tasks ...")
             self._signal_workers(self.active_tasks, signal='SIGTERM')
 
@@ -509,14 +523,79 @@ class WorkerManager:
             if isinstance(err, WorkerTaskNonZeroExit):
                 log.critical("Exiting now ...")
                 sys.exit(err.task.worker_status)
-
-            elif isinstance(err, KeyboardInterrupt):
-                log.critical("Exiting now ...")
-                sys.exit(1)
-
-            # Otherwise, just raise
+            
+            # Some other error occured; just raise
             log.critical("Re-raising error ...")
             raise
+
+        except KeyboardInterrupt as err:
+            # Got interrupted. Also interrupt the workers, giving them some
+            # time to shut down ...
+
+            # Suppress reporter to use CR; then inform via log messages
+            if self.reporter:
+                self.reporter.suppress_cr = True
+
+            log.warning("Received KeyboardInterrupt.")
+
+            # Find out which signal to send and which number belongs to it
+            signal = self.interrupt_params.get('send_signal', 'SIGINT')
+
+            log.warning("Sending signal %s to %d active task(s) ...",
+                        signal, len(self.active_tasks))
+            self._signal_workers(self.active_tasks, signal=signal)
+
+            # Give the workers some time to shut down
+            # time.sleep(0.2)
+            self._poll_workers()
+
+            # If they are still active, continuously poll them for a certain
+            # grace period in order to find out if they have shut down.
+            if self.active_tasks:
+                grace_period = self.interrupt_params.get('grace_period', 5.)
+                
+                log.warning("Allowing %s for %d task(s) to shut down ... "
+                            "(Ctrl + C to kill them now.)",
+                            format_time(grace_period, ms_precision=1),
+                            len(self.active_tasks))
+                grace_start = time.time()
+
+                try:
+                    while True:
+                        self._poll_workers()
+
+                        # Check whether to leave the loop
+                        if not self.active_tasks:
+                            break
+                        elif time.time() > grace_start + grace_period:
+                            raise KeyboardInterrupt
+
+                        # Need to continue. Delay polling ...
+                        time.sleep(self.poll_delay)
+
+                except KeyboardInterrupt:
+                    log.critical("Killing workers of %d tasks now ...",
+                                 len(self.active_tasks))
+                    self._signal_workers(self.active_tasks, signal='SIGKILL')
+
+                    # Wait briefly (killing shouldn't take long), then poll
+                    # one last time ...
+                    time.sleep(0.5)
+                    self._poll_workers()
+
+            # Store end time and invoke a report
+            self.times['end_working'] = dt.now()
+            self._invoke_report('after_abort', force=True)
+
+            if self.interrupt_params.get('exit', True):
+                # Exit with appropriate exit code (Ctrl + C == SIGINT == 2)
+                log.warning("Exiting after KeyboardInterrupt ...")
+                signum = (signal if isinstance(signal, int)
+                          else dict(SIGINT=2, SIGKILL=9, SIGTERM=15)[signal])
+                sys.exit(128 + signum)
+
+            log.warning("Continuing after KeyboardInterrupt ...")
+            return
 
         # Register end time and invoke final report
         self.times['end_working'] = dt.now()
