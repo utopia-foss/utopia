@@ -1,0 +1,25 @@
+# The model configuration for the vegetation model
+#
+# This file should ONLY contain model-specific configuration. It should specify
+# all available parameters and their default values.
+# These should be specified under the `parameter_space` key.
+#
+# This file should NOT be used to overwrite any other parts of the utopya
+# configuration.
+# 
+# As this file is (usually) handled by the frontend, it is possible to use
+# yaml features like anchors, inheritance, ...
+---
+# Size of the grid
+grid_size: [10, 10]
+
+# Rain parameters
+# The actual rain value is drawn from the following normal distribution
+rain_mean: 10
+rain_std: 2
+
+# Growth rate (used in logistic growth)
+growth_rate: 0.1
+
+# Seeding rate (used when plant mass is zero)
+seeding_rate: 0.2

@@ -22,6 +22,7 @@ add_subdirectory(PredatorPrey)
 add_subdirectory(SavannaHeterogeneous)
 add_subdirectory(SavannaHomogeneous)
 add_subdirectory(SimpleEG)
+add_subdirectory(Vegetation)
 # ...
 # NOTE Add your subdirectory above (alphabetically sorted)
 
