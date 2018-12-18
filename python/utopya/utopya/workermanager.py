@@ -538,50 +538,48 @@ class WorkerManager:
 
             log.warning("Received KeyboardInterrupt.")
 
-            # Find out which signal to send and which number belongs to it
+            # Extract parameters from config
+            # Which signal to send to workers
             signal = self.interrupt_params.get('send_signal', 'SIGINT')
 
+            # The grace period within which the tasks have to shut down
+            grace_period = self.interrupt_params.get('grace_period', 5.)
+
+            # Send the signal
             log.warning("Sending signal %s to %d active task(s) ...",
                         signal, len(self.active_tasks))
             self._signal_workers(self.active_tasks, signal=signal)
 
-            # Give the workers some time to shut down, then do a first poll
-            time.sleep(0.2)
-            self._poll_workers()
+            # Continuously poll them for a certain grace period in order to
+            # find out if they have shut down.
+            log.warning("Allowing %s for %d task(s) to shut down ... "
+                        "(Ctrl + C to kill them now.)",
+                        format_time(grace_period, ms_precision=1),
+                        len(self.active_tasks))
+            grace_start = time.time()
 
-            # If they are still active, continuously poll them for a certain
-            # grace period in order to find out if they have shut down.
-            if self.active_tasks:
-                grace_period = self.interrupt_params.get('grace_period', 5.)
-                
-                log.warning("Allowing %s for %d task(s) to shut down ... "
-                            "(Ctrl + C to kill them now.)",
-                            format_time(grace_period, ms_precision=1),
-                            len(self.active_tasks))
-                grace_start = time.time()
-
-                try:
-                    while True:
-                        self._poll_workers()
-
-                        # Check whether to leave the loop
-                        if not self.active_tasks:
-                            break
-                        elif time.time() > grace_start + grace_period:
-                            raise KeyboardInterrupt
-
-                        # Need to continue. Delay polling ...
-                        time.sleep(self.poll_delay)
-
-                except KeyboardInterrupt:
-                    log.critical("Killing workers of %d tasks now ...",
-                                 len(self.active_tasks))
-                    self._signal_workers(self.active_tasks, signal='SIGKILL')
-
-                    # Wait briefly (killing shouldn't take long), then poll
-                    # one last time ...
-                    time.sleep(0.5)
+            try:
+                while True:
                     self._poll_workers()
+
+                    # Check whether to leave the loop
+                    if not self.active_tasks:
+                        break
+                    elif time.time() > grace_start + grace_period:
+                        raise KeyboardInterrupt
+
+                    # Need to continue. Delay polling ...
+                    time.sleep(self.poll_delay)
+
+            except KeyboardInterrupt:
+                log.critical("Killing workers of %d tasks now ...",
+                             len(self.active_tasks))
+                self._signal_workers(self.active_tasks, signal='SIGKILL')
+
+                # Wait briefly (killing shouldn't take long), then poll
+                # one last time ...
+                time.sleep(0.5)
+                self._poll_workers()
 
             # Store end time and invoke a report
             self.times['end_working'] = dt.now()
@@ -839,18 +837,12 @@ class WorkerManager:
 
 class WorkerManagerError(BaseException):
     """The base exception class for WorkerManager errors"""
-    pass
-
 
 class WorkerManagerTotalTimeout(WorkerManagerError):
     """Raised when a total timeout occured"""
-    pass
-
 
 class WorkerTaskError(WorkerManagerError):
     """Raised when there was an error in a WorkerTask"""
-    pass
-
 
 class WorkerTaskNonZeroExit(WorkerTaskError):
     """Can be raised when a WorkerTask exited with a non-zero exit code."""

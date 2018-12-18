@@ -1,6 +1,7 @@
 """Tests the WorkerManager class"""
 
 import os
+import time
 import queue
 import pkg_resources
 
@@ -192,6 +193,68 @@ def test_nonzero_exit_handling(wm):
     assert pytest_wrapped_e.type == SystemExit
     assert pytest_wrapped_e.value.code == 1
     assert wm.num_finished_tasks == 5
+
+def test_interrupt_handling(wm, sleep_task, tmpdir):
+    """Tests the keyboard interrupt handling of the WorkerManager.start_working
+    method.
+    """
+    # Define a post poll function that is to simulate the KeyboardInterrupt
+    def ppf():
+        time.sleep(0.1)
+        raise KeyboardInterrupt
+    
+    # Change some worker manager parameters to good defaults
+    wm.num_workers = 4
+    wm.interrupt_params['send_signal'] = 'SIGTERM'
+    wm.interrupt_params['grace_period'] = 10.
+    wm.interrupt_params['exit'] = True
+
+    # -- Case 1 --
+    # Check that working on these tasks leads to system exit
+    wm.add_task(**sleep_task)
+
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        wm.start_working(post_poll_func=ppf)
+
+    assert pytest_wrapped_e.type == SystemExit
+    assert pytest_wrapped_e.value.code == 128 + 15
+    assert wm.tasks[-1].worker_status == -15  # SIGTERM
+
+    # -- Case 2 --
+    # Don't exit after interrupt
+    wm.interrupt_params['exit'] = False
+    wm.add_task(**sleep_task)
+    wm.start_working(post_poll_func=ppf)
+    assert wm.tasks[-1].worker_status == -15  # SIGTERM
+
+    # -- Case 3 --
+    # Check the case where the task is not quitting fast enough. For that, use
+    # a bash script that sleeps, but catches the keyboard interrupt and then
+    # does not quit immediately
+    sh_script = tmpdir.join('deep_sleep.sh')
+    with sh_script.open('w') as f:
+        f.write("#!/bin/sh\n"
+                "trap 'sleep 42' SIGINT\n"
+                "sleep 42\n")
+    sh_script.chmod(888)  # full permission needed
+    # NOTE The actual sleep time is not important; it just needs to be long
+    #      enough such that the script does not exit before the signal can be
+    #      sent to it. Due to the reduced grace period (see below), the kill
+    #      signal will be sent directly afterwards...
+
+    deep_sleep = dict(worker_kwargs=dict(args=(str(sh_script),)))
+    wm.add_task(**deep_sleep)
+
+    wm.interrupt_params['grace_period'] = 0.5  # needs to be shorter than sleep
+    wm.interrupt_params['send_signal'] = 'SIGINT'  # Such that caught in task
+    wm.interrupt_params['exit'] = True
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        wm.start_working(post_poll_func=ppf)
+
+    assert pytest_wrapped_e.type == SystemExit
+    assert pytest_wrapped_e.value.code == 128 + 2
+    assert wm.tasks[-1].worker_status == -9 # SIGKILL, b/c SIGINT was handled
+
 
 def test_signal_workers(wm, sleep_task):
     """Tests the signalling of workers"""
