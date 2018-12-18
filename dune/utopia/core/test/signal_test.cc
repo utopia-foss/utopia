@@ -1,5 +1,6 @@
 #include <cassert>
 #include <iostream>
+#include <csignal>
 
 #include <dune/utopia/base.hh>
 #include <dune/utopia/core/signal.hh>
