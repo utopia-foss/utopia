@@ -100,7 +100,7 @@ worker_manager:
     # How long to wait for workers to shutdown before calling SIGKILL on them
     grace_period: 5.
 
-    # Whether to exit after working; exit code will be 130
+    # Whether to exit after working; exit code will be 128 + abs(signum)
     exit: true
 
   # Report format specifications at different points of the WM's operation

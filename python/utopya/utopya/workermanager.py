@@ -590,7 +590,7 @@ class WorkerManager:
                 log.warning("Exiting after KeyboardInterrupt ...")
                 signum = (signal if isinstance(signal, int)
                           else dict(SIGINT=2, SIGKILL=9, SIGTERM=15)[signal])
-                sys.exit(128 + signum)
+                sys.exit(128 + abs(signum))
 
             log.warning("Continuing after KeyboardInterrupt ...")
             return
@@ -846,7 +846,7 @@ class WorkerTaskError(WorkerManagerError):
 
 class WorkerTaskNonZeroExit(WorkerTaskError):
     """Can be raised when a WorkerTask exited with a non-zero exit code."""
-    
+
     def __init__(self, task: WorkerTask, *args, **kwargs):
         # Store the task        
         self.task = task
