@@ -7,6 +7,7 @@
 #include <dune/utopia/data_io/monitor.hh>
 #include <dune/utopia/core/logging.hh>
 #include <dune/utopia/core/signal.hh>
+#include <dune/utopia/core/exceptions.hh>
 
 
 namespace Utopia {
@@ -330,7 +331,7 @@ public:
     void run () {
         // First, attach the signal handler, such that the while loop below can
         // be left upon receiving of a signal.
-        __attach_sig_handler();
+        __attach_sig_handlers();
 
         // Now, let's go repeatedly iterate the model ...
         _log->info("Running from current time  {}  to  {}  ...",
@@ -341,7 +342,7 @@ public:
 
             if (stop_now.load()) {
                 _log->warn("Was told to stop. Not iterating further ...");
-                break;
+                throw GotSignal(received_signum.load());
             }
         }
         _log->info("Run finished. Current time:  {}", _time);
@@ -409,11 +410,15 @@ private:
     }
 
 
-    /// Helper function that attaches a signal handler to this instance
-    void __attach_sig_handler() {
-        _log->debug("Attaching signal handler ...");
+    /// Attaches the desired signal handlers for SIGINT and SIGTERM
+    /** These signals are caught and handled such that the run method is able
+      * to finish in an ordered manner, preventing data corruption.
+      */
+    void __attach_sig_handlers() {
+        _log->debug("Attaching signal handlers for SIGINT and SIGTERM ...");
         
         attach_signal_handler(SIGINT);
+        attach_signal_handler(SIGTERM);
 
         _log->debug("Signal handler attached.");
     }

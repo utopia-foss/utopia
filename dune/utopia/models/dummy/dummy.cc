@@ -28,12 +28,15 @@ int main (int argc, char** argv)
         pp.get_logger()->info("Really.");
         return 0;
     }
+    catch (Utopia::Exception& e) {
+        return Utopia::handle_exception(e);
+    }
     catch (std::exception& e) {
         std::cerr << e.what() << std::endl;
         return 1;
     }
     catch (...) {
-        std::cerr << "Exception occured!" << std::endl;
+        std::cerr << "An unexpected exception occured!" << std::endl;
         return 1;
     }
 }
