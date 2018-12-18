@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
         assert(gs0.exit_code == 128 + 2);
 
         Utopia::GotSignal gs1(-2);
-        assert(strcmp(gs1.what() == "Received signal: -2") == 0);
+        assert(strcmp(gs1.what(), "Received signal: -2") == 0);
         assert(gs1.exit_code == 128 + abs(-2));
 
         return 0;
