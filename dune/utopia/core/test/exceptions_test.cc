@@ -14,10 +14,10 @@ int main(int argc, char *argv[]) {
         assert(strcmp(e0.what(), "what") == 0);
         assert(e0.exit_code == 1);
 
-        // Test specific classes
+        // Test specific exception classes
         // GotSignal
         Utopia::GotSignal gs0(SIGINT);
-        assert((gs0.what(), "Received signal: 2") == 0);
+        assert(strcmp(gs0.what(), "Received signal: 2") == 0);
         assert(gs0.exit_code == 128 + 2);
 
         Utopia::GotSignal gs1(-2);
@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
 
         return 0;
     }
-    catch(...){
+    catch (...) {
         std::cerr << "Unknown exception thrown!" << std::endl;
         return 1;
     }

@@ -15,13 +15,27 @@ public:
     const int exit_code;
 
     // -- Constructors -- //
-    /// Construct an Utopia-specific exception
-    /** @param  what_arg  The std::exception what argument
+    /// Construct an Utopia-specific exception with default exit code (1)
+    explicit Exception(const std::string& what_arg)
+    :
+        std::runtime_error(what_arg),
+        exit_code(1)
+    {};
+
+    /// Construct an Utopia-specific exception with default exit code (1)
+    explicit Exception(const char* what_arg)
+    :
+        std::runtime_error(what_arg),
+        exit_code(1)
+    {};
+
+    /// Construct an Utopia-specific exception with a custom exit code
+    /** @param  what_arg  The std::runtime_error `what` argument
       * @param  exit_code The code that can (and should) be used in case this
       *                   exceptions leads to exiting of the program.
       */
     template<class what_arg_t>
-    Exception(const what_arg_t what_arg, int exit_code = 1)
+    Exception(const what_arg_t what_arg, int exit_code)
     :
         // Pass the what argument on to base class constructor
         std::runtime_error(what_arg),
@@ -38,6 +52,11 @@ public:
   */
 class GotSignal : public Exception {
 public:
+    /// Construct a GotSignal exception, which has a standardized what message
+    /** @detail The constructor takes the number of the signal that triggered
+      *         this exception and computes an exit code from that according to
+      *         Unix convention, i.e.: 128 + abs(signum)
+      */
     GotSignal(const int signum)
     :
         Exception("Received signal: " + std::to_string(signum),
@@ -51,7 +70,7 @@ public:
   * @returns  int  The exit code from the exception
   */
 template<class exc_t>
-int handle_exception(exc_t exc) {
+int handle_exception(exc_t& exc) {
     std::cerr << exc.what() << std::endl;
     return exc.exit_code;
 }
