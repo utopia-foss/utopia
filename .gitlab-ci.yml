@@ -246,12 +246,13 @@ test:models:
     - utopia run HdfBench --sweep --num-seeds 3 --debug
     #
     # Now the actual models:
+    - utopia run Amee --sweep --no-plot
     - utopia run ContDisease
     - utopia run ForestFire
     - utopia run Hierarnet
-    - utopia run SimpleEG
     - utopia run PredatorPrey
-    - utopia run Amee --sweep --no-plot
+    - utopia run SimpleEG
+    - utopia run Vegetation --debug
     # TODO add a call for your model here
     #
     # FIXME use --debug in models, too!

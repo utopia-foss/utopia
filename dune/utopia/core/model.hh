@@ -215,6 +215,67 @@ public:
         return _level;
     }
 
+    // -- Convenient functions -- //
+
+    /// Create and setup a new HDFDataset object
+    /** @brief Create a HDFDataset object within a HDFGroup. The capacity
+     *         - the shape of the dataset - is calculated automatically from
+     *         the num_steps and write_every parameter.
+     * 
+     * @param name The name of the dataset
+     * @param hdfgrp The parent HDFGroup
+     * @param add_write_shape Additional write shape which, together with the 
+     *                        number of time steps, is used to calculate
+     *                        the capacity of the dataset:
+     *                        (capacity = (num_time_steps, add_write_shape)).
+     * @param compression_level The compression level
+     * @param chunksize The chunk size
+     * @return std::shared_ptr<DataSet> The hdf dataset
+     */
+    std::shared_ptr<DataSet> create_dset(const std::string name,
+                                         const std::shared_ptr<DataGroup>& hdfgrp,
+                                         std::vector<hsize_t> add_write_shape,
+                                         const std::size_t compression_level=1,
+                                         const std::vector<hsize_t> chunksize={}){    
+        _log->debug("Creating the {} dataset...", name);
+
+        // Calculate the number of time steps to be written
+        hsize_t num_steps = this->get_time_max() / this->get_write_every() + 1;
+
+        // Calculate the shape of the dataset
+        add_write_shape.insert(add_write_shape.begin(), num_steps);
+        auto capacity = add_write_shape;
+
+        // Create the dataset and return it.
+        return hdfgrp->open_dataset(name, capacity, chunksize, compression_level);
+    }
+
+    /// Create and setup a new HDFDataset object
+    /** @brief Create a HDFDataset object within the model HDFGroup object.
+     *         The capacity - the shape of the dataset - is calculated 
+     *         automatically from the num_steps and write_every parameter.
+     * 
+     * @param name The name of the dataset
+     * @param add_write_shape Additional write shape which, together with the 
+     *                        number of time steps, is used to calculate
+     *                        the capacity of the dataset:
+     *                        (capacity = (num_time_steps, add_write_shape)).
+     * @param compression_level The compression level
+     * @param chunksize The chunk size
+     * @return std::shared_ptr<DataSet> The hdf dataset
+     */
+    std::shared_ptr<DataSet> create_dset(const std::string name,
+                                         const std::vector<hsize_t> add_write_shape,
+                                         const std::size_t compression_level=1,
+                                         const std::vector<hsize_t> chunksize={}){
+        // Forward to the create_dset function that requires a parent hdf group
+        return create_dset(name, 
+                           _hdfgrp, 
+                           add_write_shape,
+                           compression_level,
+                           chunksize);
+    }
+
     // -- Default implementations -- //
 
     /// Iterate one (time) step of this model

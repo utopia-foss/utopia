@@ -179,6 +179,7 @@ This will also show you a README of the model which contains further information
 | [`SavannaHeterogeneous`](dune/utopia/models/ForestFire) | A spatial model of a four state savanna, using explicit representation of percolating fires |
 | [`SavannaHomogeneous`](dune/utopia/models/ForestFire) | A model of a four state Savanna, using numeric representation of percolating fires |
 | [`SimpleEG`](dune/utopia/models/SimpleEG) | A model of simple evolutionary games on grids |
+| [`Vegetation`](dune/utopia/models/Vegetation) | A simple vegetation model using logistic growth |
 
 #### Model templates, tests, benchmarks ...
 Additionally, some models are only needed to assert that Utopia functions as desired:

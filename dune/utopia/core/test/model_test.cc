@@ -2,9 +2,11 @@
 #include <thread>
 #include <chrono>
 #include <numeric>
+#include <yaml-cpp/yaml.h>
 
 #include <dune/utopia/data_io/hdffile.hh>
 #include <dune/utopia/data_io/test/monitor_test.hh>
+#include <dune/utopia/data_io/cfg_utils.hh>
 
 #include "model_test.hh"
 
@@ -86,6 +88,26 @@ int main(int argc, char *argv[])
         state = std::vector<double>(1E6, 2.0);
         assert(compare_containers(model_it.state(), state));
         std::cout << "  correct" << std::endl;
+
+
+        // Test the datasets
+        auto dset_state = model.get_dset_state();
+        auto dset_mean = model.get_dset_mean();
+
+        // Get the datasets
+        auto cap_state = dset_state->get_capacity();
+        auto cap_mean = dset_mean->get_capacity();
+        
+        // and the configuration file
+        auto cfg = YAML::LoadFile("model_test.yml");
+
+        // Check that the sizes of the capacities are correct ...
+        assert(cap_state.size() == 2);
+        assert(cap_mean.size() == 1);
+        // ... and that the size of the time dimension is correct, too.
+        std::size_t num_steps = Utopia::as_<unsigned int>(cfg["num_steps"]);
+        assert(cap_state[0] == num_steps + 1);
+        assert(cap_mean[0] == num_steps + 1);
 
 
         std::cout << "Tests successful. :)" << std::endl;

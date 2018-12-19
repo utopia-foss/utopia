@@ -228,21 +228,10 @@ public:
         _p_rd_infect(as_double(this->_cfg["p_rd_infect"])),
 
         // Create dataset for the cell states
-        _dset_state(this->_hdfgrp->open_dataset("state"))
-
+        _dset_state(this->create_dset("state", {manager.cells().size()}))
     {
         // Call the method that initializes the cells
         this->initialize_cells();
-
-        // Set the capacity of the datasets
-        // We know the maximum number of steps (== #rows), and the number of
-        // grid cells (== #columns); that is the final extend of the dataset.
-        const hsize_t num_cells = std::distance(_manager.cells().begin(),
-                                                _manager.cells().end());
-        this->_log->debug("Setting dataset capacities to {} x {} ...",
-                          this->get_time_max() + 1, num_cells);
-        _dset_state->set_capacity({this->get_time_max() + 1, num_cells});
-
 
         // Write initial state
         this->write_data();

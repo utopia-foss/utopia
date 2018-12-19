@@ -154,7 +154,7 @@ public:
 
         // Create the temporary map for measured times and the times dataset
         _times(),
-        _dset_times(this->_hdfgrp->open_dataset("times")),
+        _dset_times(this->create_dset("times", {_benchmarks.size()})),
         _dsets(),
 
         // Extract config parameters applicable to all benchmarks
@@ -205,12 +205,7 @@ public:
         }
 
 
-        // Set up the times dataset and write initial data . . . . . . . . . . 
-        // Set dataset capacities for the times dataset
-        this->_log->debug("Setting capacity of 'times' dataset to {} x {} ...",
-                          this->get_time_max() + 1, _benchmarks.size());
-        _dset_times->set_capacity({this->get_time_max() + 1,
-                                   _benchmarks.size()});
+        // Write initial data . . . . . . . . . . . . . . . . . . . . . . . . .
 
         // Write out the times needed for setup
         this->write_data();

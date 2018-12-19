@@ -238,7 +238,7 @@ namespace Setup
              [](const auto& ext){
                  return std::uniform_real_distribution<Coordinate>(0.0,ext);
          });
-         DefaultRNG ran(123456); //TODO
+         DefaultRNG ran(123456);
 
          // create agents
          for(std::size_t i = 0; i<count; ++i)
