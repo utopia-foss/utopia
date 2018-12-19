@@ -15,33 +15,29 @@ public:
     const int exit_code;
 
     // -- Constructors -- //
-    /// Construct an Utopia-specific exception with default exit code (1)
-    explicit Exception(const std::string& what_arg)
-    :
-        std::runtime_error(what_arg),
-        exit_code(1)
-    {};
-
-    /// Construct an Utopia-specific exception with default exit code (1)
-    explicit Exception(const char* what_arg)
-    :
-        std::runtime_error(what_arg),
-        exit_code(1)
-    {};
-
-    /// Construct an Utopia-specific exception with a custom exit code
+    /// Construct an Utopia-specific exception
     /** @param  what_arg  The std::runtime_error `what` argument
       * @param  exit_code The code that can (and should) be used in case this
-      *                   exceptions leads to exiting of the program.
+      *                   exceptions leads to exiting of the program. It is
+      *                   accessible via the exit_code member.
       */
-    template<class what_arg_t>
-    Exception(const what_arg_t what_arg, int exit_code)
+    explicit Exception(const std::string& what_arg, const int exit_code_arg=1)
     :
-        // Pass the what argument on to base class constructor
         std::runtime_error(what_arg),
-        // Store the exit code
-        exit_code(exit_code)
-    {}
+        exit_code(exit_code_arg)
+    {};
+
+    /// Construct an Utopia-specific exception
+    /** @param  what_arg  The std::runtime_error `what` argument
+      * @param  exit_code The code that can (and should) be used in case this
+      *                   exceptions leads to exiting of the program. It is
+      *                   accessible via the exit_code member.
+      */
+    explicit Exception(const char* what_arg, const int exit_code_arg=1)
+    :
+        std::runtime_error(what_arg),
+        exit_code(exit_code_arg)
+    {};
 };
 
 
