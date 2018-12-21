@@ -9,6 +9,7 @@ import numpy as np
 import pytest
 
 from utopya.workermanager import WorkerManager, WorkerManagerTotalTimeout, WorkerTaskNonZeroExit
+from utopya.task import sigmap
 from utopya.tools import read_yml
 
 # Some constants
@@ -255,37 +256,47 @@ def test_interrupt_handling(wm, sleep_task, tmpdir):
     assert pytest_wrapped_e.value.code == 128 + 2
     assert wm.tasks[-1].worker_status == -9 # SIGKILL, b/c SIGINT was handled
 
-
 def test_signal_workers(wm, sleep_task):
     """Tests the signalling of workers"""
-    # Start running with a post-poll function that directly kills off the workers
+    # Start running with post-poll function that directly kills off the workers
     for _ in range(3):
         wm.add_task(**sleep_task)
     ppf = lambda: wm._signal_workers('active', signal='SIGKILL')
     wm.start_working(post_poll_func=ppf)
 
-    # Same thing with an integer signal
-    for _ in range(3):
-        wm.add_task(**sleep_task)
-    ppf = lambda: wm._signal_workers('active', signal=9)
-    wm.start_working(post_poll_func=ppf)
-
     # Check if they were all killed
     for task in wm.tasks:
-        assert task.worker_status == -9
+        assert task.worker_status == -sigmap['SIGKILL']
 
-    # And invalid signalling value
+    # Same again for other specific signals
+    for _ in range(3):
+        wm.add_task(**sleep_task)
+    ppf = lambda: wm._signal_workers('active', signal='SIGTERM')
+    wm.start_working(post_poll_func=ppf)
+
+    for task in wm.tasks[-3:]:
+        assert task.worker_status == -sigmap['SIGTERM']
+    
+    for _ in range(3):
+        wm.add_task(**sleep_task)
+    ppf = lambda: wm._signal_workers('active', signal='SIGINT')
+    wm.start_working(post_poll_func=ppf)
+
+    for task in wm.tasks[-3:]:
+        assert task.worker_status == -sigmap['SIGINT']
+
+    # And invalid signalling value; needs to be a valid signal _name_
     wm.add_task(**sleep_task)
-    ppf = lambda: wm._signal_workers('active', signal=3.14)
-    with pytest.raises(ValueError):
+    ppf = lambda: wm._signal_workers('active', signal="NOT_A_SIGNAL")
+    with pytest.raises(ValueError, match="No signal named 'NOT_A_SIGNAL'"):
         wm.start_working(post_poll_func=ppf)
 
     # Invalid list to signal
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Tasks cannot be specified by "):
         wm._signal_workers('foo', signal=9)
 
     # Signal all tasks (they all ended anyway)
-    wm._signal_workers('all', signal=15)
+    wm._signal_workers('all', signal='SIGTERM')
 
 @pytest.mark.skip("Feature not yet implemented.")
 def test_detach(wm):

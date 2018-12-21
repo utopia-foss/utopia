@@ -7,6 +7,7 @@ import time
 import queue
 import threading
 import subprocess
+import signal
 import warnings
 import logging
 from functools import partial
@@ -17,8 +18,9 @@ import numpy as np
 
 from .tools import yaml
 
-# Initialise logger
+# Local variables
 log = logging.getLogger(__name__)
+sigmap = {a: int(getattr(signal, a)) for a in dir(signal) if a[:3] == "SIG"}
 
 # -----------------------------------------------------------------------------
 # Helper methods
@@ -717,39 +719,48 @@ class WorkerTask(Task):
         # Done.
         return rv
 
-    def signal_worker(self, signal: Union[str, int]):
+    def signal_worker(self, signal: str) -> tuple:
         """Sends a signal to this WorkerTask's worker.
         
         Args:
-            signal (Union[str, int]): The signal to send. Can be SIGTERM,
-                SIGINT, SIGKILL, or a valid signal number.
+            signal (str): The signal to send. Needs to be a valid signal name,
+                i.e.: available in python signal module.
         
         Raises:
             ValueError: When an invalid `signal` argument was given
+        
+        Returns:
+            tuple: (signal: str, signum: int) sent to the worker
         """
-        if signal in ['SIGTERM', 15]:
+        # Determine the signal number
+        try:
+            signum = sigmap[signal]
+        
+        except KeyError as err:
+            raise ValueError("No signal named '{}' available! Valid signals "
+                             "are: {}".format(signal, ", ".join(sigmap.keys()))
+                             ) from err
+
+        # Handle some specific cases, then all the other signals ...
+        if signal == 'SIGTERM':
             log.debug("Terminating worker of task %s ...", self.name)
             self.worker.terminate()
 
-        elif signal in ['SIGKILL', 9]:
+        elif signal == 'SIGKILL':
             log.debug("Killing worker of task %s ...", self.name)
             self.worker.kill()
 
-        elif signal in ['SIGINT', 2]:
+        elif signal == 'SIGINT':
             log.debug("Interrupting worker of task %s ...", self.name)
-            self.worker.send_signal(2)
-
-        elif isinstance(signal, int):
-            log.debug("Sending signal %d to worker of task %s ...",
-                      signal, self.name)
-            self.worker.send_signal(signal)
+            self.worker.send_signal(sigmap['SIGINT'])
 
         else:
-            raise ValueError("Invalid argument `signal`: Got '{}', but need "
-                             "either SIGTERM, SIGINT, SIGKILL, or an integer "
-                             "signal number.".format(signal))
+            log.debug("Sending %s (%d) to worker of task %s ...",
+                      signal, signum, self.name)
+            self.worker.send_signal(signal)
 
         self._invoke_callback('after_signal')
+        return signal, signum
 
     # Private API .............................................................
 
