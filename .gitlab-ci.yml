@@ -254,8 +254,10 @@ test:models:
     - utopia run SavannaHomogeneous --debug
     - utopia run SimpleEG --debug
     - utopia run PredatorPrey --debug
-    # TODO add a call for your model here, alphabetically. Don't forget to add
-    #      the --debug flag. If you'd rather not plot, add --no-plot.
+    - utopia run Vegetation --debug
+    # TODO Add a call for your model here, alphabetically sorted!
+    #      Don't forget to add the --debug flag. If you'd rather not plot, add
+    #      the --no-plot flag as well.
 
 test:cli:
   stage: test
@@ -277,7 +279,7 @@ test:cli:
     # Adjust the user configuration to store to a local directory
     - "echo \"\npaths: {out_dir: ${CI_PROJECT_DIR}/utopia_output}\"
        > $HOME/.config/utopia/user_cfg.yml"
-    # FIXME Ugly. Once available, use the utopia config CLI to set this value
+    # TODO Once available, use the utopia config CLI to set this value.
     #
     # Test the CLI with the dummy model and its default configuration
     - utopia run dummy
