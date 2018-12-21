@@ -31,7 +31,7 @@ void default_signal_handler(int signum) {
   *                 specified signal is received.
   */
 template<typename Handler>
-void attach_signal_handler(int signum, Handler handler) {
+void attach_signal_handler(int signum, Handler&& handler) {
     // Initialize the signal flag to make sure it is false
     stop_now.store(false);
 
@@ -52,7 +52,7 @@ void attach_signal_handler(int signum, Handler handler) {
 
 /// Attaches the default signal handler for the given signal
 void attach_signal_handler(int signum) {
-    attach_signal_handler(signum, &default_signal_handler);
+    attach_signal_handler(signum, default_signal_handler);
 }
 
 } // namespace Utopia

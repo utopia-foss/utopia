@@ -30,17 +30,13 @@ int main(int argc, char *argv[]) {
         assert(received_signum.load() == SIGINT);
 
         // Attach a custom signal handler function
-        attach_signal_handler(SIGTERM, &custom_signal_handler);
+        attach_signal_handler(SIGTERM, custom_signal_handler);
         raise(SIGTERM);
         // If this point is reached, the signal was handled and did not lead to
-        // a premature exit.
-
-        // Left to check: if other signals remain without handling
-        // ... but can't really check that. TODO Find a way.
-
+        // an exit... can now return with 0.
         return 0;
     }
-    catch(...){
+    catch (...) {
         std::cerr << "Unknown exception thrown!" << std::endl;
         return 1;
     }
