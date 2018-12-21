@@ -246,17 +246,18 @@ test:models:
     - utopia run HdfBench --sweep --num-seeds 3 --debug
     #
     # Now the actual models:
-    - utopia run Amee --sweep --no-plot
-    - utopia run ContDisease
-    - utopia run ForestFire
-    - utopia run Hierarnet
-    - utopia run PredatorPrey
-    - utopia run SimpleEG
+    - utopia run Amee --sweep --no-plot --debug
+    - utopia run ContDisease --debug
+    - utopia run ForestFire --debug
+    - utopia run Hierarnet --debug
+    - utopia run SavannaHeterogeneous --debug
+    - utopia run SavannaHomogeneous --debug
+    - utopia run SimpleEG --debug
+    - utopia run PredatorPrey --debug
     - utopia run Vegetation --debug
-    # TODO add a call for your model here
-    #
-    # FIXME use --debug in models, too!
-    # FIXME find an automatic way, perhaps via a --test-all flag to utopia run?
+    # TODO Add a call for your model here, alphabetically sorted!
+    #      Don't forget to add the --debug flag. If you'd rather not plot, add
+    #      the --no-plot flag as well.
 
 test:cli:
   stage: test
@@ -278,7 +279,7 @@ test:cli:
     # Adjust the user configuration to store to a local directory
     - "echo \"\npaths: {out_dir: ${CI_PROJECT_DIR}/utopia_output}\"
        > $HOME/.config/utopia/user_cfg.yml"
-    # FIXME Ugly. Once available, use the utopia config CLI to set this value
+    # TODO Once available, use the utopia config CLI to set this value.
     #
     # Test the CLI with the dummy model and its default configuration
     - utopia run dummy
