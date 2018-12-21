@@ -32,6 +32,9 @@ int main (int argc, char** argv)
 
         return 0;
     }
+    catch (Utopia::Exception& e) {
+        return Utopia::handle_exception(e);
+    }
     catch (std::exception& e) {
         std::cerr << e.what() << std::endl;
         return 1;

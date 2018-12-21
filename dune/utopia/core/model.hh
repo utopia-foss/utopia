@@ -6,9 +6,12 @@
 #include <dune/utopia/data_io/cfg_utils.hh>
 #include <dune/utopia/data_io/monitor.hh>
 #include <dune/utopia/core/logging.hh>
+#include <dune/utopia/core/signal.hh>
+#include <dune/utopia/core/exceptions.hh>
 
 
 namespace Utopia {
+
 
 /// Wrapper struct for defining base class data types
 /** \tparam DataType              Type of the data the model operates on
@@ -20,6 +23,7 @@ namespace Utopia {
  *  \tparam DataSetType           The data group class to store data in
  *  \tparam TimeType              The type to use for the time members
  *  \tparam MonitorType           The type to use for the Monitor member
+ *  \tparam MonitorManagerType    The type to use for the Monitor manager
  */
 template<typename RNGType=DefaultRNG,
          typename ConfigType=Utopia::DataIO::Config,
@@ -215,7 +219,8 @@ public:
         return _level;
     }
 
-    // -- Convenient functions -- //
+
+    // -- Convenience functions -- //
 
     /// Create and setup a new HDFDataset object
     /** @brief Create a HDFDataset object within a HDFGroup. The capacity
@@ -276,6 +281,7 @@ public:
                            chunksize);
     }
 
+
     // -- Default implementations -- //
 
     /// Iterate one (time) step of this model
@@ -323,11 +329,21 @@ public:
       *         is reached.
       */
     void run () {
+        // First, attach the signal handler, such that the while loop below can
+        // be left upon receiving of a signal.
+        __attach_sig_handlers();
+
+        // Now, let's go repeatedly iterate the model ...
         _log->info("Running from current time  {}  to  {}  ...",
                    _time, _time_max);
 
         while (_time < _time_max) {
             iterate();
+
+            if (stop_now.load()) {
+                _log->warn("Was told to stop. Not iterating further ...");
+                throw GotSignal(received_signum.load());
+            }
         }
         _log->info("Run finished. Current time:  {}", _time);
     }
@@ -393,7 +409,21 @@ private:
         return parent_model.get_write_every();
     }
 
+
+    /// Attaches the desired signal handlers for SIGINT and SIGTERM
+    /** These signals are caught and handled such that the run method is able
+      * to finish in an ordered manner, preventing data corruption.
+      */
+    void __attach_sig_handlers() {
+        _log->debug("Attaching signal handlers for SIGINT and SIGTERM ...");
+        
+        attach_signal_handler(SIGINT);
+        attach_signal_handler(SIGTERM);
+
+        _log->debug("Signal handler attached.");
+    }
 };
+
 
 
 /// A class to use at the top level of the model hierarchy as a mock parent

@@ -1,6 +1,7 @@
 """Tests the WorkerManager class"""
 
 import os
+import time
 import queue
 import pkg_resources
 
@@ -8,6 +9,7 @@ import numpy as np
 import pytest
 
 from utopya.workermanager import WorkerManager, WorkerManagerTotalTimeout, WorkerTaskNonZeroExit
+from utopya.task import sigmap
 from utopya.tools import read_yml
 
 # Some constants
@@ -193,36 +195,108 @@ def test_nonzero_exit_handling(wm):
     assert pytest_wrapped_e.value.code == 1
     assert wm.num_finished_tasks == 5
 
+def test_interrupt_handling(wm, sleep_task, tmpdir):
+    """Tests the keyboard interrupt handling of the WorkerManager.start_working
+    method.
+    """
+    # Define a post poll function that is to simulate the KeyboardInterrupt
+    def ppf():
+        time.sleep(0.2)  # To give the task enough time to start up ...
+        raise KeyboardInterrupt
+    
+    # Work with specific worker parameters
+    wm.num_workers = 4
+    wm.interrupt_params['send_signal'] = 'SIGTERM'
+    wm.interrupt_params['grace_period'] = 10.
+    wm.interrupt_params['exit'] = True
+
+    # -- Case 1 --
+    # Check that working on these tasks leads to system exit
+    wm.add_task(**sleep_task)
+
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        wm.start_working(post_poll_func=ppf)
+
+    assert pytest_wrapped_e.type == SystemExit
+    assert pytest_wrapped_e.value.code == 128 + 15
+    assert wm.tasks[-1].worker_status == -15  # SIGTERM
+
+    # -- Case 2 --
+    # Don't exit after interrupt
+    wm.interrupt_params['exit'] = False
+    wm.add_task(**sleep_task)
+    wm.start_working(post_poll_func=ppf)
+    assert wm.tasks[-1].worker_status == -15  # SIGTERM
+
+    # -- Case 3 --
+    # Check the case where the task is not quitting fast enough. For that, use
+    # a bash script that sleeps, but catches the keyboard interrupt and then
+    # does not quit immediately
+    sh_script = tmpdir.join('deep_sleep.sh')
+    with sh_script.open('w') as f:
+        f.write("#!/bin/sh\n"
+                "trap 'sleep 42' SIGINT\n"
+                "sleep 42\n")
+    sh_script.chmod(888)  # full permission needed
+    # NOTE The actual sleep time is not important; it just needs to be long
+    #      enough such that the script does not exit before the signal can be
+    #      sent to it. Due to the reduced grace period (see below), the kill
+    #      signal will be sent directly afterwards...
+
+    deep_sleep = dict(worker_kwargs=dict(args=(str(sh_script),)))
+    wm.add_task(**deep_sleep)
+
+    wm.interrupt_params['grace_period'] = 0.5  # needs to be shorter than sleep
+    wm.interrupt_params['send_signal'] = 'SIGINT'  # Such that caught in task
+    wm.interrupt_params['exit'] = True
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        wm.start_working(post_poll_func=ppf)
+
+    assert pytest_wrapped_e.type == SystemExit
+    assert pytest_wrapped_e.value.code == 128 + 2
+    assert wm.tasks[-1].worker_status == -9 # SIGKILL, b/c SIGINT was handled
+
 def test_signal_workers(wm, sleep_task):
     """Tests the signalling of workers"""
-    # Start running with a post-poll function that directly kills off the workers
+    # Start running with post-poll function that directly kills off the workers
     for _ in range(3):
         wm.add_task(**sleep_task)
     ppf = lambda: wm._signal_workers('active', signal='SIGKILL')
     wm.start_working(post_poll_func=ppf)
 
-    # Same thing with an integer signal
-    for _ in range(3):
-        wm.add_task(**sleep_task)
-    ppf = lambda: wm._signal_workers('active', signal=9)
-    wm.start_working(post_poll_func=ppf)
-
     # Check if they were all killed
     for task in wm.tasks:
-        assert task.worker_status == -9
+        assert task.worker_status == -sigmap['SIGKILL']
 
-    # And invalid signalling value
+    # Same again for other specific signals
+    for _ in range(3):
+        wm.add_task(**sleep_task)
+    ppf = lambda: wm._signal_workers('active', signal='SIGTERM')
+    wm.start_working(post_poll_func=ppf)
+
+    for task in wm.tasks[-3:]:
+        assert task.worker_status == -sigmap['SIGTERM']
+    
+    for _ in range(3):
+        wm.add_task(**sleep_task)
+    ppf = lambda: wm._signal_workers('active', signal='SIGINT')
+    wm.start_working(post_poll_func=ppf)
+
+    for task in wm.tasks[-3:]:
+        assert task.worker_status == -sigmap['SIGINT']
+
+    # And invalid signalling value; needs to be a valid signal _name_
     wm.add_task(**sleep_task)
-    ppf = lambda: wm._signal_workers('active', signal=3.14)
-    with pytest.raises(ValueError):
+    ppf = lambda: wm._signal_workers('active', signal="NOT_A_SIGNAL")
+    with pytest.raises(ValueError, match="No signal named 'NOT_A_SIGNAL'"):
         wm.start_working(post_poll_func=ppf)
 
     # Invalid list to signal
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Tasks cannot be specified by "):
         wm._signal_workers('foo', signal=9)
 
     # Signal all tasks (they all ended anyway)
-    wm._signal_workers('all', signal=15)
+    wm._signal_workers('all', signal='SIGTERM')
 
 @pytest.mark.skip("Feature not yet implemented.")
 def test_detach(wm):

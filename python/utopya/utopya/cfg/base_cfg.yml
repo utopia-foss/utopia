@@ -92,6 +92,18 @@ worker_manager:
   # warn_all will also warn if the simulation was terminated by the frontend
   # raise will lead to a SystemExit with the error code of the simulation
 
+  # How to handle keyboard interrupts
+  interrupt_params:
+    # Which signal to send to the workers
+    send_signal: SIGINT  # can be any valid signal name
+    # NOTE that only SIGINT and SIGTERM lead to a graceful shutdown on C++ side
+
+    # How long to wait for workers to shut down before calling SIGKILL on them
+    grace_period: 5.
+
+    # Whether to exit after working; exit code will be 128 + abs(signum)
+    exit: false
+
   # Report format specifications at different points of the WM's operation
   # These report formats were defined in the reporter and can be referred to
   # by name here. They can also be lists, if multiple report formats should
