@@ -16,7 +16,6 @@ int main (int argc, char** argv)
 
         // Initialize the main model instance with different template arguments
         // and then iterate it ... Need separate cases for this.
-        // TODO find a better way to check for this argument?!
         if (Utopia::as_bool(pp.get_cfg()["SimpleEG"]["periodic"])) {
             // Periodic grid
             SimpleEGModel model("SimpleEG", pp,
@@ -34,6 +33,9 @@ int main (int argc, char** argv)
         }
 
         return 0;
+    }
+    catch (Utopia::Exception& e) {
+        return Utopia::handle_exception(e);
     }
     catch (std::exception& e) {
         std::cerr << e.what() << std::endl;

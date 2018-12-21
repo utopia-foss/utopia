@@ -17,20 +17,23 @@ int main (int argc, char** argv)
         // and then iterate it ... Need separate cases for this.
         if (Utopia::as_bool(pp.get_cfg()["CopyMeBare"]["periodic"])) {
             // Periodic grid
-            CopyMeBareModel model("CopyMe", pp,
+            CopyMeBareModel model("CopyMeBare", pp,
                 create_grid_manager_cells<State, true>("CopyMeBare", pp)
             );
             model.run();
         }
         else {
             // Non-periodic grid
-            CopyMeBareModel model("CopyMe", pp,
+            CopyMeBareModel model("CopyMeBare", pp,
                 create_grid_manager_cells<State, false>("CopyMeBare", pp)
             );
             model.run();
         }
 
         return 0;
+    }
+    catch (Utopia::Exception& e) {
+        return Utopia::handle_exception(e);
     }
     catch (std::exception& e) {
         std::cerr << e.what() << std::endl;

@@ -1,3 +1,4 @@
+#include <iostream>
 #include "dummy.hh"
 
 // Declare the model
@@ -26,6 +27,7 @@ int main (int argc, char** argv)
         // Test messages needed to assert that all output is read by frontend:
         pp.get_logger()->info("All done.");
         pp.get_logger()->info("Really.");
+        
         return 0;
     }
     catch (Utopia::Exception& e) {

@@ -246,16 +246,16 @@ test:models:
     - utopia run HdfBench --sweep --num-seeds 3 --debug
     #
     # Now the actual models:
-    - utopia run ContDisease
-    - utopia run ForestFire
-    - utopia run Hierarnet
-    - utopia run SimpleEG
-    - utopia run PredatorPrey
-    - utopia run Amee --sweep --no-plot
-    # TODO add a call for your model here
-    #
-    # FIXME use --debug in models, too!
-    # FIXME find an automatic way, perhaps via a --test-all flag to utopia run?
+    - utopia run Amee --sweep --no-plot --debug
+    - utopia run ContDisease --debug
+    - utopia run ForestFire --debug
+    - utopia run Hierarnet --debug
+    - utopia run SavannaHeterogeneous --debug
+    - utopia run SavannaHomogeneous --debug
+    - utopia run SimpleEG --debug
+    - utopia run PredatorPrey --debug
+    # TODO add a call for your model here, alphabetically. Don't forget to add
+    #      the --debug flag. If you'd rather not plot, add --no-plot.
 
 test:cli:
   stage: test
