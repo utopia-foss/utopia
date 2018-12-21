@@ -95,9 +95,10 @@ worker_manager:
   # How to handle keyboard interrupts
   interrupt_params:
     # Which signal to send to the workers
-    send_signal: SIGINT  # can be: SIGKILL, SIGTERM, SIGINT, or valid integer
+    send_signal: SIGINT  # can be any valid signal name
+    # NOTE that only SIGINT and SIGTERM lead to a graceful shutdown on C++ side
 
-    # How long to wait for workers to shutdown before calling SIGKILL on them
+    # How long to wait for workers to shut down before calling SIGKILL on them
     grace_period: 5.
 
     # Whether to exit after working; exit code will be 128 + abs(signum)

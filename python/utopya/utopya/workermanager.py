@@ -11,7 +11,7 @@ from datetime import datetime as dt
 from typing import Union, Callable, Sequence, List, Set, Dict
 from typing.io import BinaryIO
 
-from utopya.task import WorkerTask, TaskList
+from utopya.task import WorkerTask, TaskList, sigmap
 from utopya.stopcond import StopCondition
 from utopya.reporter import WorkerManagerReporter
 from utopya.tools import format_time
@@ -556,7 +556,7 @@ class WorkerManager:
                         "(Ctrl + C to kill them now.)",
                         format_time(grace_period, ms_precision=1),
                         len(self.active_tasks))
-            grace_start = time.time()
+            grace_period_start = time.time()
 
             try:
                 while True:
@@ -565,7 +565,7 @@ class WorkerManager:
                     # Check whether to leave the loop
                     if not self.active_tasks:
                         break
-                    elif time.time() > grace_start + grace_period:
+                    elif time.time() > grace_period_start + grace_period:
                         raise KeyboardInterrupt
 
                     # Need to continue. Delay polling ...
@@ -577,7 +577,7 @@ class WorkerManager:
                 self._signal_workers(self.active_tasks, signal='SIGKILL')
 
                 # Wait briefly (killing shouldn't take long), then poll
-                # one last time ...
+                # one last time to update all task's status.
                 time.sleep(0.5)
                 self._poll_workers()
 
@@ -586,11 +586,9 @@ class WorkerManager:
             self._invoke_report('after_abort', force=True)
 
             if self.interrupt_params.get('exit', True):
-                # Exit with appropriate exit code (Ctrl + C == SIGINT == 2)
+                # Exit with appropriate exit code (128 + abs(signum))
                 log.warning("Exiting after KeyboardInterrupt ...")
-                signum = (signal if isinstance(signal, int)
-                          else dict(SIGINT=2, SIGKILL=9, SIGTERM=15)[signal])
-                sys.exit(128 + abs(signum))
+                sys.exit(128 + sigmap[signal])
 
             log.warning("Continuing after KeyboardInterrupt ...")
             return
