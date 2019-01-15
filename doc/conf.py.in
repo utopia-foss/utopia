@@ -22,8 +22,6 @@
 #### Python imports ----------------------------------------------------------
 import sys
 import shlex
-import recommonmark
-from recommonmark.parser import CommonMarkParser
 from recommonmark.transform import AutoStructify
 
 # -- Project information -----------------------------------------------------
@@ -57,17 +55,21 @@ extensions = [
     'sphinx.ext.viewcode',
     ### Additional extensions
     'sphinxarg.ext',
-    'breathe'
+    'breathe', # include doxygen docs
+    'recommonmark', # render markdown files
+    'sphinx_markdown_tables' # render tables in markdown files
 ]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
 # The suffix(es) of source filenames.
-# You can specify multiple suffix as a list of string:
+# You can specify multiple suffix as a dict mapping to file types:
 #
-# source_suffix = ['.rst', '.md']
-source_suffix = '.rst'
+source_suffix = {
+    '.rst': 'restructuredtext',
+    '.md': 'markdown'
+}
 
 # The master toctree document.
 master_doc = 'index'
@@ -213,5 +215,8 @@ breathe_default_project = "utopia"
 #### Pass special options to build setup -------------------------------------
 
 def setup(app):
-    app.add_config_value('recommonmark_config', {}, True)
+    app.add_config_value('recommonmark_config', {
+        'enable_math': True,
+        'enable_inline_math': True
+    }, True)
     app.add_transform(AutoStructify)
