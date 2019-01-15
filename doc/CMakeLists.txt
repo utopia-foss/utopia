@@ -22,32 +22,19 @@ endfunction()
 # ... and run it
 utopia_install_doc_utils()
 
-
 # Register subdirectories
 add_subdirectory("doxygen")
 
-
-# Copy static files to build directory
-file(COPY ${CMAKE_CURRENT_LIST_DIR}/examples
-     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-file(COPY ${CMAKE_CURRENT_LIST_DIR}/_static
-     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-file(COPY ${CMAKE_CURRENT_LIST_DIR}/_templates
-     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-file(COPY ${CMAKE_CURRENT_LIST_DIR}/figures
-     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-file(COPY ${CMAKE_SOURCE_DIR}/README.md
-     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-
-
 # Configure sphinx and register associated files
-include(DuneSphinxCMakeDoc)
-dune_cmake_sphinx_doc(
-    SPHINX_CONF ${CMAKE_CURRENT_SOURCE_DIR}/conf.py.in
-    RST_SOURCES
-        index.rst
-    MODULE_ONLY)
+configure_file(conf.py.in conf.py)
+add_custom_target(sphinx_html
+    COMMAND ${SPHINX_EXECUTABLE}
+            -T -b html
+            -c ${CMAKE_CURRENT_BINARY_DIR} # conf.py dir
+            -d ${CMAKE_CURRENT_BINARY_DIR}/_doctrees # doctree pickles dir
+            ${CMAKE_CURRENT_SOURCE_DIR} # input dir
+            ${CMAKE_CURRENT_BINARY_DIR}/html # output dir
+)
 
-if(TARGET sphinx_html)
-  add_dependencies(sphinx_html doxygen_utopia)
-endif()
+add_dependencies(sphinx_html doxygen_utopia)
+add_dependencies(doc sphinx_html)

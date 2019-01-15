@@ -199,6 +199,11 @@ epub_exclude_files = ['search.html']
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
 
+#### Mathjax configuration ---------------------------------------------------
+# see http://www.sphinx-doc.org/en/master/usage/extensions/math.html#module-sphinx.ext.mathjax
+
+mathjax_path = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"
+
 
 #### Breathe configuration ---------------------------------------------------
 
@@ -208,6 +213,5 @@ breathe_default_project = "utopia"
 #### Pass special options to build setup -------------------------------------
 
 def setup(app):
-    app.add_config_value('deploy_mode', '', 'env')
     app.add_config_value('recommonmark_config', {}, True)
     app.add_transform(AutoStructify)
