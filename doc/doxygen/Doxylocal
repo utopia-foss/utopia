@@ -32,3 +32,9 @@ FILE_PATTERNS += *.dox
 # the \image command).
 
 # IMAGE_PATH            += @top_srcdir@/dune/utopia/pics
+
+# Generate XML files
+# This data can the used by the Breathe module to include it into the
+# Sphinx user docs
+
+GENERATE_XML           = YES

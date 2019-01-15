@@ -209,7 +209,7 @@ mathjax_path = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?
 
 #### Breathe configuration ---------------------------------------------------
 
-breathe_projects = { "utopia": "@CMAKE_CURRENT_BINARY_DIR@/doxygen/xml" }
+breathe_projects = { "utopia": "@CMAKE_CURRENT_BINARY_DIR@/doxygen/xml/" }
 breathe_default_project = "utopia"
 
 #### Pass special options to build setup -------------------------------------
