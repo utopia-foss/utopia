@@ -8,15 +8,16 @@
 #include <dune/utopia/core/logging.hh>
 #include <dune/utopia/core/signal.hh>
 #include <dune/utopia/core/exceptions.hh>
-
+#include <dune/utopia/core/space.hh>
 
 namespace Utopia {
 
 
-/// Wrapper struct for defining base class data types
-/** \tparam DataType              Type of the data the model operates on
- *  \tparam BoundaryConditionType Data type of the boundary condition. If not
- *                                set, an empty struct is used as default.
+/// Wrapper struct for defining model class data types
+/** \detail Using the template parameters, derived classes can specify the
+ *          types they desire to use.
+ *
+ *  \tparam Spacetype             The SpaceType to use, defaults to a 2D space
  *  \tparam RNGType               The RNG class to use
  *  \tparam ConfigType            The class to use for reading the config
  *  \tparam DataGroupType         The data group class to store datasets in
@@ -26,6 +27,7 @@ namespace Utopia {
  *  \tparam MonitorManagerType    The type to use for the Monitor manager
  */
 template<typename RNGType=DefaultRNG,
+         typename SpaceType=DefaultSpace,
          typename ConfigType=Utopia::DataIO::Config,
          typename DataGroupType=Utopia::DataIO::HDFGroup,
          typename DataSetType=Utopia::DataIO::HDFDataset<Utopia::DataIO::HDFGroup>,
@@ -36,6 +38,7 @@ template<typename RNGType=DefaultRNG,
 struct ModelTypes
 {
     using RNG = RNGType;
+    using Space = SpaceType;
     using Config = ConfigType;
     using DataGroup = DataGroupType;
     using DataSet = DataSetType;
@@ -69,6 +72,9 @@ public:
     /// Data type of the shared RNG
     using RNG = typename ModelTypes::RNG;
 
+    /// Data type of the space this model resides in
+    using Space = typename ModelTypes::Space;
+
     /// Data type for the model time
     using Time = typename ModelTypes::Time;
 
@@ -83,17 +89,23 @@ public:
 
 protected:
     // -- Member declarations -- //
-    /// Model-internal current time stamp
-    Time _time;
-
-    /// Model-internal maximum time stamp
-    const Time _time_max;
-    
     /// Name of the model instance
     const std::string _name;
 
     /// Config node belonging to this model instance
     const Config _cfg;
+
+    /// The hierarchical level
+    const Level _level;
+    
+    /// The space this model resides in
+    const Space _space;
+
+    /// Model-internal current time stamp
+    Time _time;
+
+    /// Model-internal maximum time stamp
+    const Time _time_max;
 
     /// The HDF group this model instance should write its data to
     const std::shared_ptr<DataGroup> _hdfgrp;
@@ -109,9 +121,6 @@ protected:
 
     /// The monitor
     Monitor _monitor;
-
-    /// The hierarchical level
-    const Level _level;
 
 public:
     // -- Constructor -- //
@@ -132,18 +141,21 @@ public:
     Model (const std::string name,
            const ParentModel &parent_model)
     :
+        // First thing: setup name, configuration, and level in hierarchy
+        _name(name),
+        _cfg(parent_model.get_cfg()[_name]),
+        _level(parent_model.get_level() + 1),
+        // Determine space and time
+        _space(this->setup_space()),
         _time(0),
         _time_max(parent_model.get_time_max()),
-        _name(name),
-        //extract the other information from the parent model object
-        _cfg(parent_model.get_cfg()[_name]),
+        // Extract the other information from the parent model object
         _hdfgrp(parent_model.get_hdfgrp()->open_group(_name)),
         _write_every(this->determine_write_every(parent_model)),
         _rng(parent_model.get_rng()),
         _log(spdlog::stdout_color_mt(parent_model.get_logger()->name() + "."
                                      + _name)),
-        _monitor(Monitor(name, parent_model.get_monitor_manager())),
-        _level(parent_model.get_level() + 1)
+        _monitor(Monitor(name, parent_model.get_monitor_manager()))
     {
         // Set this model instance's log level
         if (_cfg["log_level"]) {
@@ -168,6 +180,11 @@ public:
 
 
     // -- Getters -- //
+
+    /// Return the space this model resides in
+    Space get_space() const {
+        return _space;
+    }
 
     /// Return the current time of this model
     Time get_time() const {
@@ -398,6 +415,18 @@ protected:
     const Derived& impl () const { return static_cast<const Derived&>(*this); }
 
 private:
+    Space setup_space() const {
+        if (_cfg["space"]) {
+            // Build a space with the given parameters
+            return Space(_cfg["space"]);
+        }
+        else {
+            // Use the default space
+            return Space();
+        }
+    }
+
+
     /// Helper function to initialize the write_every member
     template<typename ParentModel>
     Time determine_write_every(ParentModel &parent_model) const {

@@ -55,7 +55,16 @@ using pointer_t = typename Container::value_type;
 template<class Container>
 using entity_t = typename Container::value_type::element_type;
 
-} // namespace impl 
+} // namespace impl
+
+
+// -- Types introduces with the new CellManager ------------------------------
+
+/// Type for indices
+using IndexType = std::size_t;
+
+/// Type for dimensions
+using DimType = unsigned short;
 
 } // namespace Utopia
 
