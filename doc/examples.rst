@@ -10,6 +10,10 @@ A loose collection of directives and their usage.
 
     This is an extremely dumb page!
 
+.. warning::
+
+    I mean **really** dumb!
+
 Math and Formulae
 -----------------
 
