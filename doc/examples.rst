@@ -25,6 +25,13 @@ Let :math:`x \rightarrow \infty`, then
 
 Very smart!
 
+Python Documentation Bits
+-------------------------
+
+The typical use case of Sphinx is rendering a documentation of Python modules.
+
+.. autoclass:: utopya.Multiverse
+
 Doxygen Documentation Bits
 --------------------------
 

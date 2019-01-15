@@ -54,6 +54,7 @@ extensions = [
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
     ### Additional extensions
+    'sphinx.ext.napoleon', # pre-process Google-style Python docstrings
     'sphinxarg.ext',
     'breathe', # include doxygen docs
     'recommonmark', # render markdown files
