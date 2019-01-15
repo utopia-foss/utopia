@@ -1,0 +1,19 @@
+# Configuration file for the CellManager integration test
+---
+seed: 42
+output_path: cell_manager_test_tmpfile.h5
+
+num_steps: 1
+write_every: 999
+
+monitor_emit_interval: 1.
+
+cm_test:
+  space:
+    periodic: true
+    extent: [2., 3.]
+
+log_levels:
+  core: debug
+  model: debug
+  data_io: debug

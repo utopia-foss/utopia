@@ -1,6 +1,7 @@
 # place mesh and config files in build directory
 file(COPY "square.msh" "cube.msh"
           "cell_manager_test.yml"
+          "cell_manager_integration_test.yml"
           "model_test.yml"
           "model_nested_test.yml"
           "model_setup_test.yml"
@@ -14,6 +15,7 @@ set(TESTS_CORE
     agent_test_2d
     agent_test_3d
     cell_manager_test
+    cell_manager_integration_test
     cell_test
     dependency_test
     exceptions_test

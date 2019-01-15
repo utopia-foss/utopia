@@ -1,2 +1,5 @@
-# Configuration file for the CellManager test
+# Configuration parameter for the CellManager test
 ---
+space:
+  periodic: true
+  extent: [2., .3]

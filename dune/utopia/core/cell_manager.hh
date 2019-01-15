@@ -17,7 +17,7 @@ namespace Utopia {
  *  \{
  */
 
-template<class Model, class CellTraits>
+template<class CellTraits, class Model>
 class CellManager {
 public:
     /// Type of the managed cells
@@ -26,8 +26,8 @@ public:
     /// The space type this cell manager maps to
     using Space = typename Model::Space;
 
-    /// Dimension
-    static constexpr DimType dim = Model::Space::dim;
+    /// Dimensionality of the space this cell manager is to discretize
+    static constexpr DimType dim = Space::dim;
 
 private:
     // -- Members ------------------------------------------------------------
@@ -42,28 +42,23 @@ private:
 
 public:
     // -- Constructors -------------------------------------------------------
-    /// Construct a cell manager from a space and a config node
-    CellManager (const Space &space, const DataIO::Config &cfg)
-    :
-        _space(space),
-        _grid(setup_grid(cfg)),
-        _cells(setup_cells(cfg))
-    {}
-
     /// Construct a cell manager from the model it resides in
-    CellManager (Model &model)
+    CellManager (Model& model)
     :
-        CellManager(model.get_space(), model.get_cfg())
+        _space(model.get_space()),
+        _grid(setup_grid(model.get_cfg())),
+        _cells(setup_cells(model.get_cfg()))
     {}
 
 private:
     // -- Setup functions ----------------------------------------------------
-    Grid<Space> setup_grid(DataIO::Config& cfg) {
+    Grid<Space> setup_grid(const DataIO::Config& cfg) {
         return Grid<Space>();
     }
 
-    CellContainer<Cell> setup_cells(DataIO::Config& cfg) {
-
+    CellContainer<Cell> setup_cells(const DataIO::Config& cfg) {
+        CellContainer<Cell> cont;
+        return cont;
     }
 
 
