@@ -234,11 +234,16 @@ Available testing groups:
 
 
 ### Building the Documentation
-Utopia builds a Doxygen documentation from its source files. Use `dunecontrol` to execute the appropriate command:
+Utopia builds a documentation with
+[Sphinx](http://www.sphinx-doc.org/en/master/index.html), including all
+relevant information for the every-day user. Additionally, a C++ code
+documentation is built by Doxygen. To build the docs locally, navigate to
+the `utopia/build-cmake` directory and execute
 
-    ./dune-common/bin/dunecontrol --only=utopia make doc
+    make doc
 
-You will find the files inside the build directory `utopia/build-cmake/doc`.
+The user docs will be located at `utopia/build-cmake/doc/html/`, and the
+Doxygen documentation at `utopia/build-cmake/doc/doxygen/html/`.
 
 ### Build Types
 If you followed the instructions above, you have a `Release` build which is
@@ -258,4 +263,3 @@ The build type (as most other CMake flags) persists until it is explicitly
 changed by the user. To build optimized executables again, reconfigure with
 
     cmake -DCMAKE_BUILD_TYPE=Release ..
-
