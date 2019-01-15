@@ -10,7 +10,23 @@ Welcome!
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents
+   :caption: Basics
 
    The README <readme>
    examples
+
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Guides
+   :glob:
+
+   guides/*
+
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Models
+   :glob:
+
+   models/*
