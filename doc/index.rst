@@ -19,3 +19,4 @@ Some math lol :math:`a^2 + b^2 = c^2`.
    :caption: Contents
 
    The README <readme>
+   examples
