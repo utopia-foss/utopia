@@ -171,6 +171,17 @@ build:models:
     - CMAKE_FLAGS="$CONFIG_FLAGS" $DUNECTRL --module=utopia configure
     - $DUNECTRL --only=utopia make $MAKE_FLAGS_BUILD all
 
+# Build the documentation
+# Add to shared artifacts for inspection
+build:docs:
+  stage: build
+  <<: *ssh_access
+  artifacts:
+    <<: *shared_artifacts
+  script:
+    - CMAKE_FLAGS="$CONFIG_FLAGS" $DUNECTRL --module=utopia configure
+    - $DUNECTRL --only=utopia make doc
+
 # Build in debug mode, once with gcc and once with clang
 build:debug: &build_debug
   stage: build

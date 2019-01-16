@@ -14,6 +14,10 @@ INPUT                 += @top_srcdir@/dune/
 # Include documents with other extesions
 FILE_PATTERNS += *.dox
 
+# Extraction rules
+EXTRACT_ALL             = YES # extract undocumented entities
+EXTRACT_PRIVATE         = YES # extract private entities
+EXTRACT_STATIC          = YES # extract static entities
 
 # The EXCLUDE tag can be used to specify files and/or directories that should
 # excluded from the INPUT source files. This way you can easily exclude a
@@ -32,3 +36,9 @@ FILE_PATTERNS += *.dox
 # the \image command).
 
 # IMAGE_PATH            += @top_srcdir@/dune/utopia/pics
+
+# Generate XML files
+# This data can the used by the Breathe module to include it into the
+# Sphinx user docs
+
+GENERATE_XML           = YES
