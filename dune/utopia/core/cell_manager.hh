@@ -24,6 +24,9 @@ public:
     /// Type of the managed cells
     using Cell = __Cell<CellTraits>; // NOTE Use Cell eventually
 
+    /// Type of the cell state
+    using CellStateType = typename CellTraits::State;
+
     /// The space type this cell manager maps to
     using Space = typename Model::Space;
 
@@ -40,6 +43,7 @@ private:
 
     /// The grid that discretely maps cells into space
     std::shared_ptr<Grid<Space>> _grid;
+    // TODO Consider making unique?!
 
     /// Storage container for cells
     CellContainer<Cell> _cells;
@@ -52,8 +56,9 @@ public:
         _log(model.get_logger()),
         _space(model.get_space()),
         _grid(setup_grid(model.get_cfg())),
-        _cells(setup_cells(model.get_cfg()))
+        _cells(setup_cells())
     {}
+    // TODO make possible to pass initial state explicitly
 
 
     /// -- Getters -----------------------------------------------------------
@@ -100,18 +105,18 @@ private:
         }
 
         // Get the parameters
-        auto grid_shape = as_<GridShapeType<dim>>(cfg["grid"]["shape"]); 
+        const auto shape = as_<GridShapeType<dim>>(cfg["grid"]["shape"]); 
         auto disc_type = as_str(cfg["grid"]["discretization"]);
         
         // Distinguish by discretization
         if (disc_type == "tri" or disc_type == "triangular") {
-            return std::make_shared<TriangularGrid<Space>>(_space, grid_shape);
+            return std::make_shared<TriangularGrid<Space>>(_space, shape);
         }
         else if (disc_type == "rect" or disc_type == "rectangular") {
-            return std::make_shared<RectangularGrid<Space>>(_space, grid_shape);
+            return std::make_shared<RectangularGrid<Space>>(_space, shape);
         }
         else if (disc_type == "hex" or disc_type == "hexagonal") {
-            return std::make_shared<HexagonalGrid<Space>>(_space, grid_shape);
+            return std::make_shared<HexagonalGrid<Space>>(_space, shape);
         }
         else {
             throw std::invalid_argument("Invalid value for grid "
@@ -121,11 +126,30 @@ private:
         }
     }
 
-    /// Set up the cells according to the discretization
-    CellContainer<Cell> setup_cells(const DataIO::Config& cfg) {
+
+    /// Set up the cells container
+    CellContainer<Cell> setup_cells() {
         CellContainer<Cell> cont;
+
+        // Make sure the static Cell ID counter starts at 0
+        if (Cell::_next_id != 0) {
+            throw std::runtime_error("An instance of a cell of the same type "
+                                     "as it is used in the CellManager was "
+                                     "already initialized somewhere!");
+        }
+
+        // Construct all the cells using the default
+        // TODO consider using auto-loop based on _grid and then providing the
+        //      cells' IDs explicitly
+        for (IndexType i=0; i<_grid->num_cells(); i++) {
+            // Emplace new element using default constructor
+            cont.emplace_back(std::make_shared<Cell>());
+        }
+
         return cont;
     }
+
+    // TODO add a setup function that allows setting up cell state via cfg node
 };
 
 
