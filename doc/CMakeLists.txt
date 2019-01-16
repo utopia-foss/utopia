@@ -1,1 +1,40 @@
+# --- Setup Sphinx ---
+# Define a function to install the utilities needed for sphinx ...
+function(utopia_install_doc_utils)
+    # Install requirements into dune virtualenv
+    set(INSTALL_CMD -m pip install -r ${CMAKE_CURRENT_SOURCE_DIR}/requirements.txt)
+    dune_execute_process(
+        COMMAND "${DUNE_PYTHON_VIRTUALENV_EXECUTABLE}" "${INSTALL_CMD}"
+        ERROR_MESSAGE "dune_python_install_package: error installing doc utilities into virtualenv!")
+
+    # Find Sphinx in dune virtualenv directory
+    unset(SPHINX_EXECUTABLE CACHE)
+
+    find_program(SPHINX_EXECUTABLE
+        NAMES sphinx-build
+        PATHS ${DUNE_PYTHON_VIRTUALENV_PATH}/bin
+        NO_DEFAULT_PATH)
+
+    include(FindPackageHandleStandardArgs)
+    find_package_handle_standard_args("Sphinx" DEFAULT_MSG SPHINX_EXECUTABLE)
+endfunction()
+
+# ... and run it
+utopia_install_doc_utils()
+
+# Register subdirectories
 add_subdirectory("doxygen")
+
+# Configure sphinx and register associated files
+configure_file(conf.py.in conf.py)
+add_custom_target(sphinx_html
+    COMMAND ${SPHINX_EXECUTABLE}
+            -T -b html
+            -c ${CMAKE_CURRENT_BINARY_DIR} # conf.py dir
+            -d ${CMAKE_CURRENT_BINARY_DIR}/_doctrees # doctree pickles dir
+            ${CMAKE_CURRENT_SOURCE_DIR} # input dir
+            ${CMAKE_CURRENT_BINARY_DIR}/html # output dir
+)
+
+add_dependencies(sphinx_html doxygen_utopia)
+add_dependencies(doc sphinx_html)

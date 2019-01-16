@@ -8,6 +8,13 @@ Powered by [DUNE](https://dune-project.org/)
 | :------------: | :------------------: |
 | [![pipeline status](https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/badges/master/pipeline.svg)](https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/commits/master) | [![coverage report](https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/badges/master/coverage.svg)](https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/commits/master) |
 
+#### Contents of this Readme
+* [Installation](#installation)
+* [Documentation and Guides](#utopia-documentation)
+* [Quickstart](#quickstart)
+* [Information for Developers](#information-for-developers)
+
+---
 
 ## Installation
 
@@ -44,13 +51,13 @@ Install third-party packages using a package manager.
 __macOS:__ On macOS, we recommend [Homebrew](https://brew.sh/). (If you prefer to use [MacPorts](https://www.macports.org/), notice that some packages might need to be installed differently.)
 
     brew update
-    brew install boost cmake doxygen gcc pkg-config python yaml-cpp hdf5 fftw python3
+    brew install boost cmake doxygen gcc pkg-config python yaml-cpp hdf5 fftw python3 doxygen
 
 __Ubuntu:__
 
     apt update
     apt install cmake doxygen gcc g++ gfortran git libboost-dev \
-        libhdf5-dev libyaml-cpp-dev libfftw3-dev pkg-config python3-dev python3-pip
+        libhdf5-dev libyaml-cpp-dev libfftw3-dev pkg-config python3-dev python3-pip doxygen
 
 _Note:_ You will _probably_ need administrator rights on Ubuntu. ([`sudo`, anyone?](https://xkcd.com/149/))
 
@@ -120,11 +127,12 @@ For more information on how to use the command line interface (and a prettier co
 #### Python
 Utopia's frontend, `utopya`, uses some custom packages.
 
-These packages and their dependencies are _automatically_ installed into a virtual environment when the `dunecontrol` command (last step of the [instructions](#7-run-a-model-)) is carried out.
+These packages and their dependencies are _automatically_ installed into a virtual environment when the `cmake ..` command is carried out (as done via `dunecontrol` in [step 6 of the installation](#6-configure-and-build)).
 Check out the troubleshooting section there if this fails.
 
 | Software | Version | Purpose |
 | ---------| ------- | ------- |
+| [Sphinx](https://www.sphinx-doc.org/en/master/) | 1.8 | Documentation generator |
 | [paramspace](https://ts-gitlab.iup.uni-heidelberg.de/yunus/paramspace) | >= 2.0 | Makes parameter sweeps easy |
 | [dantro](https://ts-gitlab.iup.uni-heidelberg.de/utopia/dantro) | >= 0.6 | A data loading and plotting framework |
 
@@ -132,11 +140,24 @@ Check out the troubleshooting section there if this fails.
 
 | Software | Version | Purpose |
 | ---------| ------- | ------- |
-| [doxygen](http://www.stack.nl/~dimitri/doxygen/) | >= 1.8.14 | Builds the code documentation upon installation |
+| [doxygen](http://www.stack.nl/~dimitri/doxygen/) | >= 1.8.14 | Builds the C++ code documentation |
 | [ffmpeg](https://www.ffmpeg.org) | >= 4.0 | Used for creating videos |
 
 
-## Information for Users
+## Utopia Documentation
+This Readme only covers the basics. For all further documentation, guides, model descriptions etc., you can find more information in the documentation. It is highly recommended to do this.
+
+Utopia builds a documentation with [Sphinx](http://www.sphinx-doc.org/en/master/index.html), including all relevant information for the every-day user.
+Additionally, a C++ code documentation is built by Doxygen. To build the docs locally, navigate to the `utopia/build-cmake` directory and execute
+
+    make doc
+
+The user documentation will be located at `utopia/build-cmake/doc/html/`, and the Doxygen documentation at `utopia/build-cmake/doc/doxygen/html/`. Open the respective `index.html` files to browse the documentation.
+
+
+
+## Quickstart
+This section gives a glimpse into working with Utopia. It's not more than a glimpse; after playing around with this, [build the documentation](#utopia-documentation) to have access to more information material.
 
 ### How to run a model?
 The Utopia command line interface (CLI) is, by default, only available in a Python virtual environment, in which `utopya` (the Utopia frontend) and its dependencies are installed.
@@ -150,95 +171,22 @@ The basic command to run the `SomeModel` model is
 
     utopia run SomeModel
 
-This carries out a pre-configured simulation for that model, loads the data, and performs automated plots.  
-_Careful:_ The script will always run through, even if there were errors in the individual parts. Thus, you should check the terminal output for errors and warnings.
+where `SomeModel` needs to be replaced with a valid model name; available models can be found under [`dune/utopia/models`](dune/utopia/models).
+This command carries out a pre-configured simulation for that model, loads the data, and performs automated plots.
 
-By default, you can find the simulation output in `~/utopia_output/SomeModel/<timestamp>`. It contains the written data, all the used configuration files, and the automated plots.
+_Note:_
+* The script will always run through, even if there were errors in the individual parts. Thus, you should check the terminal output for errors and warnings.
+* By default, you can find the simulation output in `~/utopia_output/SomeModel/<timestamp>`. It contains the written data, all the used configuration files, and the automated plots.
 
 For further information, e.g. on how you can pass a custom configuration, check the CLI help:
 
+    utopia --help
     utopia run --help
-
-One often-used CLI option is to set the number of simulation steps:
-
-    utopia run SomeModel --num-steps 42
-
-
-### Currently implemented models
-Below you find an overview over the models currently implemented in Utopia.
-By clicking on the model name, you will be guided to the corresponding directory inside `dune/utopia/models`, where all models reside.
-This will also show you a README of the model which contains further information about the aims and the implementation of the model.
-
-| Model Name | Description |
-| ---------- | ----------- |
-| [`Amee`](dune/utopia/models/Amee) | A spatial model of eco-evolutionary dynamics and niche construction |
-| [`ContDisease`](dune/utopia/models/ContDisease) | The contagious disease model on a cellular automaton |
-| [`ForestFire`](dune/utopia/models/ForestFire) | A model of a two state forest fire, using percolation to burn |
-| [`Hierarnet`](dune/utopia/models/Hierarnet) | Evolutionary network with continuous public goods games played around each node |
-| [`PredatorPrey`](dune/utopia/models/PredatorPrey) | A simple predator prey model |
-| [`SavannaHeterogeneous`](dune/utopia/models/ForestFire) | A spatial model of a four state savanna, using explicit representation of percolating fires |
-| [`SavannaHomogeneous`](dune/utopia/models/ForestFire) | A model of a four state Savanna, using numeric representation of percolating fires |
-| [`SimpleEG`](dune/utopia/models/SimpleEG) | A model of simple evolutionary games on grids |
-| [`Vegetation`](dune/utopia/models/Vegetation) | A simple vegetation model using logistic growth |
-
-#### Model templates, tests, benchmarks ...
-Additionally, some models are only needed to assert that Utopia functions as desired:
-
-| Model Name | Description |
-| ---------- | ----------- |
-| [`dummy`](dune/utopia/models/dummy) | Main testing model |
-| [`CopyMe`](dune/utopia/models/CopyMe) | A template for creating new models _(see below)_ |
-| [`CopyMeBare`](dune/utopia/models/CopyMeBare) | A _minimal_ template for creating new models |
-| [`HdfBench`](dune/utopia/models/HdfBench) | Benchmarking capabilities for the Utopia Hdf5 library |
-
 
 
 ## Information for Developers
-<!-- TODO Need a contribution guide! -->
-
 ### New to Utopia? How do I build a model?
-Aside exploring the already existing models listed above, you should check out the __[Beginners Guide](dune/utopia/models/BeginnersGuide.md),__ which will guide you through the first steps of building your own, fancy, new Utopia model. :tada:
-
-<!-- TODO Add a few lines here on how to expand models? -->
-
-### Unit Tests
-Utopia contains unit tests to ensure consistency by checking if class members and functions are working correctly. The tests are integrated into the GitLab Continuous Integration build process, meaning that failing tests cause an entire build to fail.
-
-Tests can also be executed locally, to test a (possibly altered) version of Utopia *before* committing changes. To build them, execute
-
-    CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=Debug" ./dune-common/bin/dunecontrol --only=utopia make build_tests
-
-and perform all tests by calling
-
-    ARGS="--output-on-failure" ./dune-common/bin/dunecontrol --only=utopia make test
-
-If the test executables are not built before executing `make test`, the corresponding tests will inevitably fail.
-
-#### Grouped Unit Tests
-We grouped the tests to receive more granular information from the CI system.
-You can choose to perform only tests from a specific group by calling
-
-    make test_<group>
-
-Replace `<group>` by the appropriate testing group identifier.
-
-Available testing groups:
-
-| Group | Info |
-| ----- | ---- |
-| `core` | Backend functions for models |
-| `dataio` | Backend functions for reading config files and writing data |
-| `utopya` | Frontend package for performing simulations, reading and analyzing data |
-| `models` | Models tests (implemented in `python/model_tests`) |
-| `python` | All python tests |
-
-
-### Building the Documentation
-Utopia builds a Doxygen documentation from its source files. Use `dunecontrol` to execute the appropriate command:
-
-    ./dune-common/bin/dunecontrol --only=utopia make doc
-
-You will find the files inside the build directory `utopia/build-cmake/doc`.
+Aside exploring the already existing models, you should check out the Beginner's Guide in the documentation (see above on [how to build it](#building-the-documentation)) which will guide you through the first steps of building your own, fancy, new Utopia model. :tada:
 
 ### Build Types
 If you followed the instructions above, you have a `Release` build which is
@@ -259,3 +207,35 @@ changed by the user. To build optimized executables again, reconfigure with
 
     cmake -DCMAKE_BUILD_TYPE=Release ..
 
+
+### Unit Tests
+Utopia contains unit tests to ensure consistency by checking if class members and functions are working correctly. This is done both for the C++ and the Python code.
+The tests are integrated into the GitLab Continuous Integration build process, meaning that failing tests can be easily detected.
+
+Tests can also be executed locally, to test a (possibly altered) version of Utopia *before* committing changes. To build them, set build flags to `Debug` as described [above](#build-types) and then execute
+
+    make build_tests -j4
+
+where the `-j4` argument builds four test targets in parallel. To perform all tests, call
+
+    ARGS="--output-on-failure" make test
+
+If the test executables are not built before executing `make test`, the corresponding tests will inevitably fail.
+
+#### Grouped Unit Tests
+We grouped the tests to receive more granular information from the CI system.
+You can choose to perform only tests from a specific group by calling
+
+    make test_<group>
+
+Replace `<group>` by the appropriate testing group identifier. Note that the `ARGS` environment variable is not needed here.
+
+Available testing groups:
+
+| Group | Info |
+| ----- | ---- |
+| `core` | Backend functions for models |
+| `dataio` | Backend functions for reading config files and writing data |
+| `utopya` | Frontend package for performing simulations, reading and analyzing data |
+| `models` | Models tests (implemented in `python/model_tests`, not the C++ ones!) |
+| `python` | All python tests |
