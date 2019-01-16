@@ -28,19 +28,19 @@ The dynamics in a well mixed situation can be described by the coupled equations
 
    \dot{F} = \left(\alpha \cdot (1-F) - \phi \left( G + \gamma_s S + \gamma_t T + \gamma_f F \right) \right) F
 
-with growth rates $\ ``\alpha``\ $ and $\ ``\beta``\ $, and mortality rates $\ ``\mu``\ $ and $\ ``\nu``\ $ for sapling and savanna trees respectively, furthermore two sigmoidal functions $\ ``\omega \left(G + \gamma_s S + \gamma_t T + \gamma_f F \right)``\ $ and $\ ``\phi \left(G + \gamma_s S + \gamma_t T + \gamma_f F \right)``\ $ describing the transition from sapling to savanna tree and the mortality rate of forest trees respectively.
+with growth rates :math:`\alpha` and :math:`\beta`, and mortality rates :math:`\mu` and :math:`\nu` for sapling and savanna trees respectively, furthermore two sigmoidal functions :math:`\omega \left(G + \gamma_s S + \gamma_t T + \gamma_f F \right)` and :math:`\phi \left(G + \gamma_s S + \gamma_t T + \gamma_f F \right)` describing the transition from sapling to savanna tree and the mortality rate of forest trees respectively.
 
 The sigmoidal functions are a numerical description of a classical percolation model for fire or disease spread, which states, that above a certain threshold density connectivity of cells increases drastically and hence connected clusters have infinit extend, whereas below the cluster extend is limited to strongly localized domains.
 In the case of savanna fire spread this translates to a sharp decrease in the probability to survive a fire. 
-From ecology we know that \omega and \phi depend on whether the associated species burned during a fire event [Touboul, 2018], hence transiting from $\ ``\omega_0``\ $ and $\ ``\omega_1``\ $ (resp. $\ ``\phi_0``\ $ and $\ ``\phi_1``\ $) at the threshold density of flammable species $\ ``G,\ \gamma_s S,\ \gamma_t T,\ \gamma_f F``\ $ with $\ ``\gamma_x``\ $ a fire propagation factor for a species relative to grass.
+From ecology we know that \omega and \phi depend on whether the associated species burned during a fire event [Touboul, 2018], hence transiting from :math:`\omega_0` and :math:`\omega_1` (resp. :math:`\phi_0` and :math:`\phi_1`) at the threshold density of flammable species :math:`G,\ \gamma_s S,\ \gamma_t T,\ \gamma_f F` with :math:`\gamma_x` a fire propagation factor for a species relative to grass.
 
 Here, we want to expand this model to a full cellular automaton description in heterogeneous space with explicit description of the percolation-like fire spread.
-Therefore, instead of using the two sigmoidal functions $\ ``\omega``\ $ and $\ ``\phi``\ $ we perform a percolation from grass cells, ignited by lightning with frequency $\ ``f``\ $ per cell, within a connected domain of flammable species $\ ``G,\ \gamma_s S,\ \gamma_t T,\ \gamma_f F``\ $, where $\ ``\gamma``\ $ denotes the probability to catch fire from a neighboring cell.
-The transition rates are then the two limits of the sigmoidal function $\ ``\omega_0``\ $ and $\ ``\omega_1``\ $ (resp. $\ ``\phi_0``\ $ and $\ ``\phi_1``\ $).
+Therefore, instead of using the two sigmoidal functions :math:`\omega` and :math:`\phi` we perform a percolation from grass cells, ignited by lightning with frequency :math:`f` per cell, within a connected domain of flammable species :math:`G,\ \gamma_s S,\ \gamma_t T,\ \gamma_f F`, where :math:`\gamma` denotes the probability to catch fire from a neighboring cell.
+The transition rates are then the two limits of the sigmoidal function :math:`\omega_0` and :math:`\omega_1` (resp. :math:`\phi_0` and :math:`\phi_1`).
 
 All other rates can be directly applied to a cell of unique state (G, S, T, or F) in the form of conditional transition probabilities.
 
-Furthermore, the growth process is localized, such that offspring plants (new forest trees, and saplings) grow according to a gaussian distribution with width $\ ``\sigma``\ $ around existing parent trees. This translates to an effective (local) density $\ ``T_\sigma(z)``\ $ and $\ ``F_\sigma(z)``\ $. Uniform growth rates is restored for $\ ``\sigma``\ $ -> infinity (hard-coded at $\ ``\sigma = 0``\ $ using global densities).
+Furthermore, the growth process is localized, such that offspring plants (new forest trees, and saplings) grow according to a gaussian distribution with width :math:`\sigma` around existing parent trees. This translates to an effective (local) density :math:`T_\sigma(z)` and :math:`F_\sigma(z)`. Uniform growth rates is restored for :math:`\sigma` -> infinity (hard-coded at :math:`\sigma = 0` using global densities).
 
 Implementation Details
 ----------------------
@@ -50,17 +50,17 @@ The translation to a CA
 
 The dynamics of the dynamical system can be restored easily since all terms represent transitions from one species to another and are multiplicatives of a rate with one or two species densities.
 
-Rates depending on the own density (e.g. $\ ``\dot{T} = - \nu T``\ $ with corresponding $\ ``\dot{G} = \nu T``\ $) can be directly translated to a probability evaluation of the form:
+Rates depending on the own density (e.g. :math:`\dot{T} = - \nu T` with corresponding :math:`\dot{G} = \nu T`) can be directly translated to a probability evaluation of the form:
 
 
-* if cell has state T: pull random number $\ ``p \in [0,1]``\ $
-* if further $\ ``p < \nu``\ $: change state T -> G
+* if cell has state T: pull random number :math:`p \in [0,1]`
+* if further :math:`p < \nu`: change state T -> G
 
-Rates depending on two densities (eg. $\ ``\dot{T} = - \alpha T F``\ $) the translation to CA is the following:
+Rates depending on two densities (eg. :math:`\dot{T} = - \alpha T F`) the translation to CA is the following:
 
 
-* if cell has state T: pull random number $\ ``p \in [0,1]``\ $
-* if further $\ ``p < \alpha F_\sigma(z)``\ $: change state T -> F
+* if cell has state T: pull random number :math:`p \in [0,1]`
+* if further :math:`p < \alpha F_\sigma(z)`: change state T -> F
 
 using the effective density
 
@@ -84,7 +84,7 @@ The ignition returns a burned tag to the concernced cells, which is used in the 
 1. Calculation of effective density.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Trees are assumed to have finite reach to spread their seeds, hence new forest trees and saplings can grow only within a certain distance of a tree. (1) represents a convolution of the tree's CA with a gaussian of variance $\ ``\sigma^2``\ $ and is performed as a multiplication in fourier space (using the Fastest Fourier Transform in the West, FFTW, library).
+Trees are assumed to have finite reach to spread their seeds, hence new forest trees and saplings can grow only within a certain distance of a tree. (1) represents a convolution of the tree's CA with a gaussian of variance :math:`\sigma^2` and is performed as a multiplication in fourier space (using the Fastest Fourier Transform in the West, FFTW, library).
 
 From this every cell becomes two effective density tags, one from savanna trees and one from forest trees.
 
@@ -103,7 +103,7 @@ Details
 ^^^^^^^
 
 The equations above have been transformed to dimensionless equations, indeed this can be easily done, since all terms depend on a single rate and a dimensionless density.
-As characteristic time is considered the characteristic lifetime of a savanna tree state ($\ ``t_c = 1/\nu``\ $). However, we stick to the parameter values given by Touboul (2018) and instead scale all equations with a time step resolution dt. All rates transform to a multiple of dt.
+As characteristic time is considered the characteristic lifetime of a savanna tree state (:math:`t_c = 1/\nu`). However, we stick to the parameter values given by Touboul (2018) and instead scale all equations with a time step resolution dt. All rates transform to a multiple of dt.
 
 Simulation Results – A Selection Process
 ----------------------------------------

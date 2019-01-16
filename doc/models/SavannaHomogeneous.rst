@@ -24,13 +24,13 @@ The model is based on the following coupled equations
 
    \dot{F} = \left(\alpha \cdot (1-F) - \phi \left( G + \gamma_s S + \gamma_t T + \gamma_f F \right) \right) F
 
-with growth rates $\ ``\alpha``\ $ and $\ ``\beta``\ $ for forest- and savanna-trees respecitvely, 
-mortality rates $\ ``\mu``\ $ and $\ ``\nu``\ $ for sapling and savanna trees respectively, 
-and two sigmoidal functions $\ ``\omega \left(G + \gamma_s S + \gamma_t T + \gamma_f F \right)``\ $ and $\ ``\phi \left(G + \gamma_s S + \gamma_t T + \gamma_f F \right)``\ $ describing the transition from sapling to savanna tree and the mortality rate of forest trees respectively.
+with growth rates :math:`\alpha` and :math:`\beta` for forest- and savanna-trees respecitvely, 
+mortality rates :math:`\mu` and :math:`\nu` for sapling and savanna trees respectively, 
+and two sigmoidal functions :math:`\omega \left(G + \gamma_s S + \gamma_t T + \gamma_f F \right)` and :math:`\phi \left(G + \gamma_s S + \gamma_t T + \gamma_f F \right)` describing the transition from sapling to savanna tree and the mortality rate of forest trees respectively.
 
 The sigmoidal functions are a numerical description of a classical percolation model for fire or disease spread, which states, that above a certain threshold density connectivity of cells increase drastically and hence connected clusters have infinit extend, whereas below the cluster extend is limited to strongly localized connected domains.
 In the case of savanna fire spread this translates to a sharp decrease in the probability to survive a fire. 
-From ecology we know that $\ ``\omega``\ $ and $\ ``\phi``\ $ depend on whether the associated species burned during a fire event [Touboul, 2018], hence transiting from $\ ``\omega_0``\ $ to $\ ``\omega_1``\ $ (resp. $\ ``\phi_0``\ $ to $\ ``\phi_1``\ $) at the threshold density of flammable species $\ ``G,\ \gamma_s S,\ \gamma_t T,\ \gamma_f F``\ $ with $\ ``\gamma_x``\ $ a fire propagation factor for a species relative to grass.
+From ecology we know that :math:`\omega` and :math:`\phi` depend on whether the associated species burned during a fire event [Touboul, 2018], hence transiting from :math:`\omega_0` to :math:`\omega_1` (resp. :math:`\phi_0` to :math:`\phi_1`) at the threshold density of flammable species :math:`G,\ \gamma_s S,\ \gamma_t T,\ \gamma_f F` with :math:`\gamma_x` a fire propagation factor for a species relative to grass.
 
 Implementation Details
 ----------------------
@@ -44,13 +44,15 @@ The default parameters are chosen following Table 1 of Touboul et al. (2018).
 
 The heterogeneous approach in mind, the following parameters should be considered:
 
-param | value | reasoning
-| --- | --- | ---
-$\ ``\gamma_S``\ $ | 1.0 | is flammable
-$\ ``\gamma_F``\ $ | 1.0 | is flammable
-$\ ``s_2``\ $ | 0.01 | symmetry in percolation
-$\ ``\alpha``\ $ | 0.6 | better suitable for oscillations
-$\ ``\beta``\ $ | 0.6 | better suitable for oscillations
+================  =====  ================================
+parameter         value  reasoning
+================  =====  ================================
+:math:`\gamma_S`  1.0    is flammable
+:math:`\gamma_F`  1.0    is flammable
+:math:`s_2`       0.01   symmetry in percolation
+:math:`\alpha`    0.6    better suitable for oscillations
+:math:`\beta`     0.6    better suitable for oscillations
+================  =====  ================================
 
 Simulation Results – A Selection Process
 ----------------------------------------
@@ -66,11 +68,10 @@ Theory of heterogeneous Savannas
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The model was adapted from Touboul (2018) in the way, that it is possible to be extended to a explicit representation of the fire spread in a percolation model (see SavannaHeterogeneous for full detail).
-For this the proposed factor $\ ``\gamma``\ $ - acting to the same extend on S and T, never on F - was replaced with species proper $\ ``\gamma_S,\ \gamma_T``\ $, and $\ ``\gamma_F``\ $. Indeed, $\ ``\gamma_F = 0``\ $ and $\ ``\gamma_S = \gamma_T = \gamma``\ $ directly relates the two models.
-However, in the storyline is, that saplings and forest trees transition rates depend on whether the plant burned or not, therefore we consider it crutial, that it itself is indeed flammable, while Touboul  et al. assume, that savanna trees and their saplings propagate the fire to a certain extend $\ ``\gamma``\ $ and never forest trees do so.
+For this the proposed factor :math:`\gamma` - acting to the same extend on S and T, never on F - was replaced with species proper :math:`\gamma_S,\ \gamma_T`, and :math:`\gamma_F`. Indeed, :math:`\gamma_F = 0` and :math:`\gamma_S = \gamma_T = \gamma` directly relates the two models.
+However, in the storyline is, that saplings and forest trees transition rates depend on whether the plant burned or not, therefore we consider it crutial, that it itself is indeed flammable, while Touboul  et al. assume, that savanna trees and their saplings propagate the fire to a certain extend :math:`\gamma` and never forest trees do so.
 
 References
 ----------
-
 
 * Touboul, J.D., Staver, A.C., Levin, S.A., 2018. On the complex dynamics of savanna landscapes. Proceedings of the National Academy of Sciences 115, E1336–E1345. https://doi.org/10.1073/pnas.1712356115

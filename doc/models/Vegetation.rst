@@ -10,27 +10,27 @@ Model parameters
 ----------------
 
 
-* ``rain_mean``\ : mean rainfall $\ ``\langle r \rangle``\ $
-* ``rain_std``\ : rainfall standard deviation $\ ``\sigma_r``\ $
-* ``growth_rate``\ : growth rate $\ ``g``\ $
-* ``seeding_rate``\ : seeding rate $\ ``s``\ $
+* ``rain_mean``\ : mean rainfall :math:`\langle r \rangle`
+* ``rain_std``\ : rainfall standard deviation :math:`\sigma_r`
+* ``growth_rate``\ : growth rate :math:`g`
+* ``seeding_rate``\ : seeding rate :math:`s`
 
 Growth process
 --------------
 
-In each time step, the plant bio-mass on a cell is increased according to a logistic growth model. Let $\ ``m_{t,i}``\ $ be the plant bio-mass on cell $\ ``i``\ $ at time $\ ``t``\ $ and $\ ``r_{t,i}``\ $ the rainfall at time $\ ``t``\ $ onto cell $\ ``i``\ $. The plant bio-mass at time $\ ``t+1``\ $ is then determined as
+In each time step, the plant bio-mass on a cell is increased according to a logistic growth model. Let :math:`m_{t,i}` be the plant bio-mass on cell :math:`i` at time :math:`t` and :math:`r_{t,i}` the rainfall at time :math:`t` onto cell :math:`i`. The plant bio-mass at time :math:`t+1` is then determined as
 
-$\ ``m_{t+1,i} = m_{t,i} + m_{t,i} \cdot g \cdot (1 - m_{t,i}/r_{t,i})``\ $.
+:math:`m_{t+1,i} = m_{t,i} + m_{t,i} \cdot g \cdot (1 - m_{t,i}/r_{t,i})`.
 
 It is possible that the result yields a negative value. In this case, the
-population density is silenty set to zero, $\ ``m_{t+1,i} = 0``\ $.
+population density is silenty set to zero, :math:`m_{t+1,i} = 0`.
 
 Seeding process
 ---------------
 
-Since logistic growth does never get started if the initial plant bio-mass is zero, a seeding process is included into the model. If $\ ``m_{t,i} = 0``\ $, the plant bio-mass at time $\ ``t+1``\ $ is then determined as
+Since logistic growth does never get started if the initial plant bio-mass is zero, a seeding process is included into the model. If :math:`m_{t,i} = 0`, the plant bio-mass at time :math:`t+1` is then determined as
 
-$\ ``m_{t+1,i} = s \cdot r_{t,i}``\ $.
+:math:`m_{t+1,i} = s \cdot r_{t,i}`.
 
 Behaviour for the default parameters
 ------------------------------------
@@ -38,9 +38,9 @@ Behaviour for the default parameters
 The current default parameters (as defined in the file ``vegetation_cfg.yml``\ ) are:
 
 
-* $\ ``\langle r \rangle = 10``\ $
-* $\ ``\sigma_r = 2``\ $
-* $\ ``g = 0.1``\ $
-* $\ ``s = 0.2``\ $
+* :math:`\langle r \rangle = 10`
+* :math:`\sigma_r = 2`
+* :math:`g = 0.1`
+* :math:`s = 0.2`
 
-For these parameters and a grid size of $\ ``10 \times 10``\ $ the system takes roughly $\ ``50``\ $ time steps to reach a dynamic equilibrium, in which the plant bio-mass on all cells fluctuates around $\ ``9.5``\ $.
+For these parameters and a grid size of :math:`10 \times 10` the system takes roughly :math:`50` time steps to reach a dynamic equilibrium, in which the plant bio-mass on all cells fluctuates around :math:`9.5`.

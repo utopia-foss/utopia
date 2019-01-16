@@ -2,7 +2,7 @@
 ``Hierarnet``
 =============
 
-The *Hierarnet* model is described in detail in Herdeanu (\ `2018 <#literature>`_\ ).
+*Note:* The Hierarnet model is described in more detail in :ref:`Herdeanu (2018) <literature-ref>`.
 
 Abstract
 --------
@@ -16,7 +16,6 @@ Fundamental concepts
 --------------------
 
 My intention is to provide a rather general and abstract model and extract therefore rather general statements out of it. In future work, it could be adapted to more specific storylines. However, in the current model, agents are abstract objects, that can potentially represent a huge variety of entities, such as for example humans, animals, plants, but also ideas, information, public opinion in a certain sense even technological or cultural entities. Agents represent any entities that are 
-
 
 #. connected to each, creating a social population structure, and 
 #. interact with each other through a mechanism in which an entity pays a personal cost to create a benefit for itself and other entities. 
@@ -38,19 +37,19 @@ In the first step, the model is initialized. This means that all agents are set 
 Interaction
 ^^^^^^^^^^^
 
-For an unstructured, well-mixed population of ``N`` agents, the total wealth produced in an expanded version of the continuous public goods game is given by:
+For an unstructured, well-mixed population of :math:`N` agents, the total wealth produced in an expanded version of the continuous public goods game is given by:
 
 .. math::
 
    W = \sum_{i=1}^N r c_i = r \sum_{i=1}^N c_i
 
-with $\ ``c_i \in (-\infty , \infty) \forall i``\ $ being the agents’ costs, and 𝑟 being the synergy factor that determines how much wealth of the public good is created from a given invested cost. This wealth can be seen as a gross wealth, where the values of the agents’ cost contributions are not yet subtracted. It is equally shared among the population such that an agent $\ ``a``\ $ gets an individual net payoff:
+with :math:`c_i \in (-\infty , \infty) \forall i` being the agents’ costs, and 𝑟 being the synergy factor that determines how much wealth of the public good is created from a given invested cost. This wealth can be seen as a gross wealth, where the values of the agents’ cost contributions are not yet subtracted. It is equally shared among the population such that an agent :math:`a` gets an individual net payoff:
 
 .. math::
 
    P_a = W/N - c_a = r/N \sum_{i=1}^N c_i - c_a
 
-with $\ ``c_i, c_a \in (-\infty , \infty) \forall i,a``\ $. Here, the payoff represents the net benefit an agent receives from the interaction, meaning the share from the created ”group wealth” minus its individual cost for creating its part of the shared wealth.
+with :math:`c_i, c_a \in (-\infty , \infty) \forall i,a`. Here, the payoff represents the net benefit an agent receives from the interaction, meaning the share from the created ”group wealth” minus its individual cost for creating its part of the shared wealth.
 
 Agents are located on a network. That means that in each round they participate in multiple games, namely the one centered around them and the ones centered around their neighbors. The total payoff an agent receives in one interaction step is the summed up payoff from the individual subgames. Further, the cost is split up among the individual subgames each agent participates (in the normalized interaction mode). In total, this results in the total payoff an agent on a network receives:
 
@@ -58,7 +57,7 @@ Agents are located on a network. That means that in each round they participate 
 
    \Pi_a = \sum_{l \in N_a} \left[ \frac{r}{n_l} \sum_{j \in N_l} \frac{c_j}{n_j} \right] - c_a
 
-with $\ ``N_x``\ $ being the set of neighbors of agent $\ ``x``\ $ and $\ ``n_x = |N_x|``\ $. For a detailed derivation of this formula see Herdeanu (\ `2018 <##literature>`_\ ).
+with :math:`N_x` being the set of neighbors of agent :math:`x` and :math:`n_x = |N_x|`. For a detailed derivation of this formula see :ref:`Herdeanu (2018) <literature-ref>`.
 
 This continuous version of a Public Goods Game follows the framework of a classical Public Goods Game because the agents create public goods or rather resources from which everybody in their interacting group profits. All agents are given the ability to interact with each other in a cooperative way, but with ever decreasing costs, they can create a more and more selfish and defective population. On the contrary, with rising costs, they can create a more and more cooperative population.
 
@@ -75,7 +74,7 @@ This evolutionary process is implemented using a death-birth process. In each it
 
 The fitness-dependent selection of the neighbor can be either deterministic or stochastic. In the deterministic case the fittest, thus, most successful neighbor is always selected to spread its strategy by creating an offspring. In the stochastic case there is a chance that errors occur, meaning that less fit neighbors occasionally get selected to reproduce. The probability to get selected is hereby proportionally to the exponential payoffs. Hence, the fittest neighbor within a neighborhood will still be selected most of the times.
 
-For a more detailed description see Herdeanu (\ `2018 <##literature>`_\ ).
+For a more detailed description see :ref:`Herdeanu (2018) <literature-ref>`.
 
 Counteracting Pressures
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -88,8 +87,8 @@ The Darwinian evolutionary process introduces a fitness-dependent selection towa
 
 The intensity of the two different competing selection pressures is expected to be mainly dependent on the synergy factor, thus by the amount of created wealth, and the population structure, provided by network topology.
 
+.. _literature-ref:
 Literature
 ----------
-
 
 * Herdeanu, Benjamin (2018). Master's thesis: *Emergence of Cooperation in Evolutionary Social Interaction Networks*. Ruprecht-Karls Universität Heidelberg.

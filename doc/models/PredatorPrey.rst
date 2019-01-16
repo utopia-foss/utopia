@@ -24,11 +24,10 @@ Implementation
 
 This is modeled using a CA. Each cell of the CA has 4 possible states:
 
-
-* empty
-* prey
-* predator
-* predator and prey
+* ``empty``
+* ``prey``
+* ``predator``
+* ``predator and prey``
 
 There cannot be two individuals of the same species on the same cell at the 
 same time. Consequently, each cell contains a variable for each species in 
@@ -37,23 +36,22 @@ interaction is calculated for each time step and consists of four
 consecutively applied rules:
 
 
-#. *Cost*\ : Resources of each individual are reduced by the cost of living. 
+#. **Cost:** Resources of each individual are reduced by the cost of living. 
    Individuals with negative or zero resources are removed.
-#. *Movement*\ : Predators move to a cell populated by prey in their 
+#. **Movement:** Predators move to a cell populated by prey in their 
    neighborhood or to an empty cell if there is no prey. Prey that are on a 
    cell together with a predator flee to an empty cell in their neighborhood 
    with a certain probability. If there are several cells in the neigborhood 
    that meet the above condition, one is chosen at random.
-#. *Eat*\ : Prey take up resources and predators eat prey if they are on the 
-   same cell.
-#. *Reproduction*\ : If an individual's resources exceed a certain value and if 
-   there is a cell in its neighborhood that is not already populated by an 
+#. **Eating:**: Prey take up resources and predators eat prey if they are on
+   the same cell.
+#. **Reproduction:** If an individual's resources exceed a certain value and
+   if there is a cell in its neighborhood that is not already populated by an 
    individual of the same species, it reproduces and an individual of the same 
    species is set on the empty cell. 2 resource units are transferred to the 
    descendant.
 
-All cells are updated asynchronously. The order for 
-the cell update is random for rules 2 and 4. 
+All cells are updated asynchronously. The order for the cell update is random for rules 2 and 4. 
 
 Initialization
 --------------
