@@ -10,9 +10,9 @@ Powered by [DUNE](https://dune-project.org/)
 
 #### Contents of this Readme
 * [Installation](#installation)
-* [Further documentation](#further-documentation)
+* [Documentation and Guides](#utopia-documentation)
 * [Quickstart](#quickstart)
-* [Information for developers](#information-for-developers)
+* [Information for Developers](#information-for-developers)
 
 ---
 
@@ -144,7 +144,7 @@ Check out the troubleshooting section there if this fails.
 | [ffmpeg](https://www.ffmpeg.org) | >= 4.0 | Used for creating videos |
 
 
-## Further Documentation
+## Utopia Documentation
 This Readme only covers the basics. For all further documentation, guides, model descriptions etc., you can find more information in the documentation. It is highly recommended to do this.
 
 Utopia builds a documentation with [Sphinx](http://www.sphinx-doc.org/en/master/index.html), including all relevant information for the every-day user.
@@ -157,7 +157,7 @@ The user documentation will be located at `utopia/build-cmake/doc/html/`, and th
 
 
 ## Quickstart
-This section gives a glimpse into working with Utopia. It's not more than a glimpse; after playing around with this, [build the documentation](#further-documentation) to have access to more information material.
+This section gives a glimpse into working with Utopia. It's not more than a glimpse; after playing around with this, [build the documentation](#utopia-documentation) to have access to more information material.
 
 ### How to run a model?
 The Utopia command line interface (CLI) is, by default, only available in a Python virtual environment, in which `utopya` (the Utopia frontend) and its dependencies are installed.
