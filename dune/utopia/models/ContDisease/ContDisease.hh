@@ -57,17 +57,8 @@ public:
     /// Rule Function
     using RuleFunc = typename std::function<CellState(std::shared_ptr<CellType>)>;
 
-    /// Data type that holds the configuration
-    using Config = typename Base::Config;
-
-    /// Data type of the group to write model data to, holding datasets
-    using DataGroup = typename Base::DataGroup;
-
     /// Data type for a dataset
     using DataSet = typename Base::DataSet;
-
-    /// Data type of the shared RNG
-    using RNG = typename Base::RNG;
 
     // Alias the neighborhood classes to make access more convenient
     using NextNeighbor = Utopia::Neighborhoods::NextNeighbor;
@@ -94,8 +85,42 @@ public:
 private:
     // -- Datasets -- //
     std::shared_ptr<DataSet> _dset_state;
+    std::shared_ptr<DataSet> _dset_density_tree;
+    std::shared_ptr<DataSet> _dset_density_infected;
+    
+    // -- Temporary objects -- //
+    std::array<double, 5> _density; // not automatically updated
 
     // -- Helper functions -- //
+    /// Calculate global averaged state densities
+    std::function<std::array<double, 5>()> _calculate_density = [this](){
+        unsigned int cnt_tree = 0, cnt_infected = 0;
+        
+        for (const auto& cell : this->_manager.cells()) 
+        {
+            const auto state = cell->state();
+            
+            if (state == tree) {
+                ++cnt_tree;
+            }
+            else if (state == infected) {
+                ++cnt_infected;
+            }
+        }
+
+        unsigned int num_cells = this->_manager.cells().size();
+
+        double density_tree = cnt_tree/double(num_cells);
+        double density_infected = cnt_infected/double(num_cells);
+        double density_empty = 1. - density_tree - density_infected -
+                               _density[3] /*herd*/ - _density[4] /*stone*/;
+
+        return std::array<double, 5>({{
+                 density_empty, density_tree, density_infected, 
+                 _density[3], _density[4]
+               }});
+    };
+
     /// Initialize stones at random so a certain areal density is reached
     void _init_stones_rd (const double stone_density,
                           const double stone_cluster) {
@@ -136,7 +161,7 @@ private:
 
     /// Sets an infection herd at the southern end of the grid
     RuleFunc _set_infection_herd_south = [this](const auto cell){
-        auto old_state = cell->state();
+        auto state = cell->state();
 
         // Get postion of the Cell, grid extensions and number of cells
         const auto& pos = cell->position();
@@ -149,7 +174,7 @@ private:
         if (pos[1] < cell_size_y) {
             return herd;
         }
-        return old_state;
+        return state;
     };
 
     /// Define the update rule
@@ -227,8 +252,11 @@ public:
         _p_infect(as_double(this->_cfg["p_infect"])),
         _p_rd_infect(as_double(this->_cfg["p_rd_infect"])),
 
-        // Create dataset for the cell states
-        _dset_state(this->create_dset("state", {manager.cells().size()}))
+        // Create dataset with compression level 1
+        _dset_state(this->create_dset("state", {_manager.cells().size()})),
+
+        _dset_density_tree(this->create_dset("density_tree", {})),
+        _dset_density_infected(this->create_dset("density_infected", {}))
     {
         // Call the method that initializes the cells
         this->initialize_cells();
@@ -361,6 +389,9 @@ public:
                            [](auto& cell) {
                              return static_cast<unsigned short>(cell->state());
                            });
+        _density = _calculate_density();
+        _dset_density_tree->write(_density[2]);
+        _dset_density_infected->write(_density[3]);
     }
 
 
