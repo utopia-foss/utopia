@@ -4,6 +4,7 @@
 // TODO Clean up includes
 #include "../base.hh"
 #include "../data_io/cfg_utils.hh"
+#include "logging.hh"
 
 #include "space.hh"
 #include "cell_new.hh" // NOTE Final name will be cell.hh
@@ -27,15 +28,18 @@ public:
     using Space = typename Model::Space;
 
     /// Dimensionality of the space this cell manager is to discretize
-    static constexpr DimType dim = Space::dim;
+    static constexpr DimType dim = Model::Space::dim;
 
 private:
     // -- Members ------------------------------------------------------------
+    /// The logger (same as the model this manager resides in)
+    std::shared_ptr<spdlog::logger> _log;
+
     /// The physical space the cells are to reside in
     std::shared_ptr<Space> _space;
 
     /// The grid that discretely maps cells into space
-    Grid<Space> _grid;
+    std::shared_ptr<Grid<Space>> _grid;
 
     /// Storage container for cells
     CellContainer<Cell> _cells;
@@ -45,33 +49,82 @@ public:
     /// Construct a cell manager from the model it resides in
     CellManager (Model& model)
     :
+        _log(model.get_logger()),
         _space(model.get_space()),
         _grid(setup_grid(model.get_cfg())),
         _cells(setup_cells(model.get_cfg()))
     {}
 
-private:
-    // -- Setup functions ----------------------------------------------------
-    Grid<Space> setup_grid(const DataIO::Config& cfg) {
-        return Grid<Space>();
+
+    /// -- Getters -----------------------------------------------------------
+    /// Return pointer to the space, for convenience
+    std::shared_ptr<Space> space () const {
+        return _space;
     }
 
-    CellContainer<Cell> setup_cells(const DataIO::Config& cfg) {
-        CellContainer<Cell> cont;
-        return cont;
+    /// Return const reference to the grid
+    std::shared_ptr<Grid<Space>> grid () const {
+        return _grid;
     }
 
-
-    // -- Public interface ---------------------------------------------------
-    /// Return const reference to the managed cells
+    /// Return const reference to the managed CA cells
     const CellContainer<Cell>& cells () const {
         return _cells;
     }
 
-    CellContainer<Cell>& get_neighbors (Cell& cell) {
-        // Access private cell member
+
+    // -- Public interface ---------------------------------------------------
+    /// Access the neighbors of a specific cell
+    CellContainer<Cell>& neighbors_of (Cell& cell) {
+        // TODO distinguish between case where this is calculated and the case
+        //      where it was computed in the beginning and stored in each cell
+
+        // Neighbors were already stored; can access private cell member
         return cell._neighbors;
-        // NOTE Can do this because we're friends <3
+        // NOTE Allowed to do this because we're friends <3
+    }
+
+private:
+    // -- Setup functions ----------------------------------------------------
+    /// Set up the grid discretization from config parameters
+    std::shared_ptr<Grid<Space>> setup_grid(const DataIO::Config& cfg) {
+        // Check if the required parameter nodes are available
+        if (!cfg["grid"]) {
+            throw std::invalid_argument("Missing entry 'grid' in the config "
+                                        "node supplied to the CellManager!");
+        }
+        else if (!cfg["grid"]["shape"] or !cfg["grid"]["discretization"]) {
+            throw std::invalid_argument("Missing one or more of the grid "
+                                        "configuration entries 'shape' and "
+                                        "'discretization'.");
+        }
+
+        // Get the parameters
+        auto grid_shape = as_<GridShapeType<dim>>(cfg["grid"]["shape"]); 
+        auto disc_type = as_str(cfg["grid"]["discretization"]);
+        
+        // Distinguish by discretization
+        if (disc_type == "tri" or disc_type == "triangular") {
+            return std::make_shared<TriangularGrid<Space>>(_space, grid_shape);
+        }
+        else if (disc_type == "rect" or disc_type == "rectangular") {
+            return std::make_shared<RectangularGrid<Space>>(_space, grid_shape);
+        }
+        else if (disc_type == "hex" or disc_type == "hexagonal") {
+            return std::make_shared<HexagonalGrid<Space>>(_space, grid_shape);
+        }
+        else {
+            throw std::invalid_argument("Invalid value for grid "
+                                        "'discretization' argument: '"
+                                        + disc_type + "'! Need be 'tri', "
+                                        "'rect', 'hex'.");
+        }
+    }
+
+    /// Set up the cells according to the discretization
+    CellContainer<Cell> setup_cells(const DataIO::Config& cfg) {
+        CellContainer<Cell> cont;
+        return cont;
     }
 };
 

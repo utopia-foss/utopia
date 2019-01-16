@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include <dune/utopia/core/cell_manager.hh>
+#include <dune/utopia/core/logging.hh>
 #include <dune/utopia/data_io/cfg_utils.hh>
 
 
@@ -40,6 +41,13 @@ public:
     {}
 
 
+    /// Return a mock logger
+    std::shared_ptr<spdlog::logger> get_logger() {
+        auto logger = spdlog::get("mock_logger");
+        logger->set_level(spdlog::level::debug);
+        return logger;
+    }
+
     /// Return the space this model resides in
     std::shared_ptr<Space> get_space() const {
         return std::make_shared<Space>(_space);
@@ -58,11 +66,16 @@ int main(int argc, char *argv[]) {
     try {
         Dune::MPIHelper::instance(argc,argv);
 
-        // Get a config node from file
-        const YAML::Node cfg = YAML::LoadFile("cell_manager_test.yml");
-
         // Initialize the mock model with it
-        MockModel mm(cfg);
+        MockModel mm(YAML::LoadFile("cell_manager_test.yml"));
+
+        // Retrieve the cell manager
+        auto cm = mm._cm;
+
+        // Check its getters
+        cm.space();
+        cm.grid();
+        cm.cells();
 
         return 0;
     }

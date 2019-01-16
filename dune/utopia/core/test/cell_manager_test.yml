@@ -3,3 +3,9 @@
 space:
   periodic: true
   extent: [2., .3]
+
+grid:
+  discretization: rectangular
+  shape: [10, 10]
+
+cells: {}

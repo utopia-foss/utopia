@@ -66,6 +66,10 @@ using IndexType = std::size_t;
 /// Type for dimensions
 using DimType = unsigned short;
 
+/// Type for dimensions
+template<DimType dim>
+using GridShapeType = std::array<IndexType, dim>;
+
 } // namespace Utopia
 
 #endif // UTOPIA_CORE_TYPES_HH

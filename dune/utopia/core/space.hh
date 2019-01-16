@@ -11,15 +11,19 @@ namespace Utopia {
  *  \{
  */
 
-template<DimType dim>
+template<DimType num_dims>
 class Space {
 public:
     /// The type of the extent container
-    using ExtentType = std::array<double, dim>;
-
+    using ExtentType = std::array<double, num_dims>;
 
     // -- Members -- //
+    static constexpr DimType dim = num_dims;
+
+    /// Whether the space is to be assumed periodic
     const bool periodic;
+
+    /// The physical extent of the space
     const ExtentType extent;
 
 
