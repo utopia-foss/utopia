@@ -111,6 +111,7 @@ private:
         unsigned int num_cells = this->_manager.cells().size();
 
         double density_tree = cnt_tree/double(num_cells);
+        
         double density_infected = cnt_infected/double(num_cells);
         double density_empty = 1. - density_tree - density_infected -
                                _density[3] /*herd*/ - _density[4] /*stone*/;
@@ -375,10 +376,9 @@ public:
      *          performance hit is small. Also, if using set_by_func, the given
      *          lambda will only be called if an emission will happen.
      */
-    void monitor () {
-        // Can supply information to the monitor here in two ways:
-        // this->_monitor.set_by_value("key", value);
-        // this->_monitor.set_by_func("key", [this](){return 42.;});
+    void monitor () {        
+        _density = _calculate_density();
+        this->_monitor.set_entry("density", _density);
     }
 
 
@@ -389,9 +389,11 @@ public:
                            [](auto& cell) {
                              return static_cast<unsigned short>(cell->state());
                            });
+        
+        // state densities
         _density = _calculate_density();
-        _dset_density_tree->write(_density[2]);
-        _dset_density_infected->write(_density[3]);
+        _dset_density_tree->write(_density[1]);
+        _dset_density_infected->write(_density[2]);
     }
 
 

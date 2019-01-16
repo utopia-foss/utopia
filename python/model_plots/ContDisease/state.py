@@ -9,7 +9,12 @@ from ..tools import save_and_close
 
 # -----------------------------------------------------------------------------
 
-def plot_tree_density(dm: DataManager, *, out_path: str, uni: UniverseGroup, fmt: str=None, save_kwargs: dict=None, **plot_kwargs):
+def plot_tree_density(dm: DataManager, *, 
+                      out_path: str, 
+                      uni: UniverseGroup, 
+                      fmt: str=None, 
+                      save_kwargs: dict=None, 
+                      **plot_kwargs):
     """Calculates the the density of trees and perfoms a lineplot
     
     Args:
@@ -30,21 +35,18 @@ def plot_tree_density(dm: DataManager, *, out_path: str, uni: UniverseGroup, fmt
     num_cells = grid_size[0] * grid_size[1]
     
     # Extract the data for the tree states and convert it into a 3d-array
-    data_ = grp["state"]
+    data = grp["density_tree"]
 
-    # Calculates for each time step the ratio of trees to the grid size
-    ratio_tree = []
-    timesteps = list(range(num_steps))
-
-    for i in range(num_steps):
-        ratio_tree.append(np.sum(data_[i] == 1) / num_cells)
+    # Assemble the arguments
+    args = [data]
+    if fmt:
+        args.append(fmt)
 
     plt.figure()
     plt.title("Tree density")
 
-    plt.plot(timesteps, ratio_tree,
-             color='green', label='tree density', **plot_kwargs)
-
+    # Call the plot function
+    plt.plot(*args, color='green', label='tree density', **plot_kwargs)
     plt.xlabel("time steps")
     plt.xlabel("tree density")
     plt.legend()
