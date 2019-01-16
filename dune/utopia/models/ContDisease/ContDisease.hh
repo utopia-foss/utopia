@@ -61,8 +61,7 @@ public:
     using DataSet = typename Base::DataSet;
 
     // Alias the neighborhood classes to make access more convenient
-    using NextNeighbor = Utopia::Neighborhoods::NextNeighbor;
-    using MooreNeighbor = Utopia::Neighborhoods::MooreNeighbor;
+    using Neighborhood = Utopia::Neighborhoods::MooreNeighbor;
 
 private:
     // Base members: _time, _name, _cfg, _hdfgrp, _rng, _monitor
@@ -139,7 +138,7 @@ private:
 
         // Attempt to encourage the stones to form continous clusters
         for (auto&& cell: cells_rd ){
-            for (auto nb : MooreNeighbor::neighbors(cell, this->_manager)){
+            for (auto nb : Neighborhood::neighbors(cell, this->_manager)){
                 if (   (cell->state() == empty)
                     && (nb->state() == stone)
                     && (dist(*this->_rng) < stone_cluster))
@@ -205,24 +204,23 @@ private:
             if (dist(*this->_rng) < _p_rd_infect){
                 cellstate = infected;
             }
-
             // Go through neighbor cells (here 5-cell neighbourhood), look if
             // they are infected (or an infection herd), if yes, infect cell
             // with the probability _p_infect.
-            // TODO implement neighborhood as template argument
-            for (auto nb : NextNeighbor::neighbors(cell, this->_manager)){
-                if (cellstate == tree){
-                    auto nb_cellstate = nb->state();
-                    if (nb_cellstate == infected || nb_cellstate == herd){
-                        if (dist(*this->_rng) < _p_infect){
-                            cellstate = infected;
+            else 
+            {               
+                // TODO implement neighborhood as template argument
+                for (auto nb : Neighborhood::neighbors(cell, this->_manager)){
+                    if (cellstate == tree){
+                        auto nb_cellstate = nb->state();
+                        if (nb_cellstate == infected || nb_cellstate == herd){
+                            if (dist(*this->_rng) < _p_infect){
+                                cellstate = infected;
+                            }
                         }
                     }
                 }
-                else {
-                    break;
-                }
-            }
+            }            
         }
         else if (cellstate == infected){
             cellstate = empty;
