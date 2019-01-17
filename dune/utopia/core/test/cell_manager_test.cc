@@ -137,24 +137,51 @@ int main(int argc, char *argv[]) {
 
         std::cout << "Getting config file ..." << std::endl;
         auto cfg = YAML::LoadFile("cell_manager_test.yml");
+        std::cout << "Success." << std::endl << std::endl;
 
-        std::cout << "------ Initializing ... mock models ------" << std::endl;
+
+        std::cout << "------ Testing mock model initialization via ... ------"
+                  << std::endl;
         
         // Initialize the mock model with default-constructible cell type
-        std::cout << "--- ... default-constructible ..." << std::endl;
+        std::cout << "... default-constructible state" << std::endl;
         MockModel<CellTraitsDC> mm_dc("mm_dc", cfg["default"]);
-        std::cout << "success." << std::endl << std::endl;
+        std::cout << "Success." << std::endl << std::endl;
         
         // Initialize the mock model with config-constructible cell type
-        std::cout << "--- ... config-constructible ..." << std::endl;
+        std::cout << "... DataIO::Config-constructible state" << std::endl;
         MockModel<CellTraitsCC> mm_cc("mm_cc", cfg["config"]);
-        std::cout << "success." << std::endl << std::endl;
+        std::cout << "Success." << std::endl << std::endl;
         
         // Initialize the mock model with config-constructible cell type
-        std::cout << "--- ... explicitly constructible ..." << std::endl;
+        std::cout << "... only explicitly constructible state" << std::endl;
         const auto initial_state = CellStateEC(2.34, "foobar", true);
         MockModel<CellTraitsEC> mm_ec("mm_ec", cfg["explicit"], initial_state);
-        std::cout << "success." << std::endl << std::endl;
+        std::cout << "Success." << std::endl << std::endl;
+
+
+        std::cout << "------ Testing member access ------" << std::endl;
+        // Check that parameters were passed correctly
+        auto cm = mm_dc._cm;  // All mm_* should have the same parameters.
+
+        auto space = cm.space();  // shared pointer
+        auto grid = cm.grid();    // shared pointer
+        auto cells = cm.cells();  // const reference
+        
+        assert(space->dim == 2);
+        assert(space->periodic == true);
+        assert(space->extent[0] == 42.);
+        assert(space->extent[1] == 42.);
+
+        assert(grid->shape()[0] == 23);
+        assert(grid->shape()[1] == 32);
+
+        assert(cells.size() == (23*32));
+
+        std::cout << "Success." << std::endl << std::endl;
+        
+
+        std::cout << "------ Testing error messages ------" << std::endl;
 
         return 0;
     }

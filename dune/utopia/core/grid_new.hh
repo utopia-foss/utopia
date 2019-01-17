@@ -40,8 +40,14 @@ public:
 
 
     // -- Getters -- //
-    IndexType num_cells() {
+    /// Get number of cells
+    IndexType num_cells() const {
         return _num_cells;
+    }
+    
+    /// Get const reference to grid shape
+    const GridShapeType<Space::dim>& shape() const {
+        return _shape;
     }
 
     // -- Public interface -- //

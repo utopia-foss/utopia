@@ -128,13 +128,13 @@ private:
         
         // Create the respective grids, distinguishing by discretization
         // TODO consider passing config node to make more arguments available
-        if (disc_type == "tri" or disc_type == "triangular") {
+        if (disc_type == "triangular") {
             return std::make_shared<TriangularGrid<Space>>(_space, shape);
         }
-        else if (disc_type == "rect" or disc_type == "rectangular") {
+        else if (disc_type == "rectangular") {
             return std::make_shared<RectangularGrid<Space>>(_space, shape);
         }
-        else if (disc_type == "hex" or disc_type == "hexagonal") {
+        else if (disc_type == "hexagonal") {
             return std::make_shared<HexagonalGrid<Space>>(_space, shape);
         }
         else {

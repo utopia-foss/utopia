@@ -4,11 +4,11 @@
 default:
   space:
     periodic: true
-    extent: [2., .3]
+    extent: [42., 42.]
 
   grid:
     discretization: rectangular
-    shape: [10, 10]
+    shape: [23, 32]
 
   cell_initialize_from: default  # can be: config, default… (potentially more)
   cell_initial_state:
@@ -20,11 +20,11 @@ default:
 config:
   space:
     periodic: true
-    extent: [2., .3]
+    extent: [42., 42.]
 
   grid:
     discretization: rectangular
-    shape: [10, 10]
+    shape: [23, 32]
 
   cell_initialize_from: config  # can be: config, default… (potentially more)
   cell_initial_state:
@@ -37,8 +37,11 @@ config:
 explicit:
   space:
     periodic: true
-    extent: [2., .3]
+    extent: [42., 42.]
 
   grid:
     discretization: rectangular
-    shape: [10, 10]
+    shape: [23, 32]
+
+
+# Missing parameters

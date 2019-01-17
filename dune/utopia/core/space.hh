@@ -12,8 +12,7 @@ namespace Utopia {
  */
 
 template<DimType num_dims>
-class Space {
-public:
+struct Space {
     /// The type of the extent container
     using ExtentType = std::array<double, num_dims>;
 
