@@ -159,6 +159,26 @@ private:
         return empty;
     };
 
+    /// Sets the given cell to state "tree" with probability p, else to "empty"
+    // TODO write test
+    RuleFunc _set_initial_density = [this](const auto& cell){
+        // Get the state of the Cell
+        auto state = cell->state();
+
+        std::uniform_real_distribution<> dist(0., 1.);
+
+        // Set the internal variables
+        if (dist(*this->_rng) < _density[1])
+        {
+            state = tree;
+        }
+        else
+        {
+            state = empty;
+        }
+
+        return state;
+    };
     /// Sets an infection herd at the southern end of the grid
     RuleFunc _set_infection_herd_south = [this](const auto cell){
         auto state = cell->state();
@@ -305,6 +325,18 @@ public:
             //Apply rule to all cells in the forest.
             apply_rule(_set_initial_state_empty, _manager.cells());
         }
+        else if (initial_state == "init_density") {
+            if (!stones) {
+                _density[1] = as_double(this->_cfg["initial_density"]);
+                apply_rule(_set_initial_density, _manager.cells());
+            }
+            // TODO write proper init function
+            else {
+                 throw std::invalid_argument("The stone initialization"
+                                             " with init_density is not valid!"
+                                             " Valid options: 'init_empty'");
+            }
+        }
         else {
             throw std::invalid_argument("The initial state ''" + initial_state
                                         + "'' is not valid! Valid options: "
@@ -389,6 +421,7 @@ public:
                            });
         
         // state densities
+        // TODO write test
         _density = _calculate_density();
         _dset_density_tree->write(_density[1]);
         _dset_density_infected->write(_density[2]);

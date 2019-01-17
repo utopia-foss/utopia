@@ -8,10 +8,27 @@ tree_density:
   module: model_plots.ContDisease
   plot_func: plot_tree_density
 
+phase_diagram:
+  creator: universe
+  universes: all
+  
+  module: .basic
+  plot_func: lineplot
+
+  # Further kwargs to the lineplot method
+  # Select the data
+  x: ContDisease/density_tree
+  y: ContDisease/density_infected
+
+  # Set line style format and arguments for saving
+  fmt: g
+
 # plot the spatial development of the state in the CA
 state_map:
   creator: universe
   universes: all
+
+  enabled: true
 
   file_ext: mp4
 
