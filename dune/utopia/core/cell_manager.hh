@@ -57,20 +57,25 @@ private:
 public:
     // -- Constructors -------------------------------------------------------
     /// Construct a cell manager from the model it resides in
-    CellManager (Model& model)
+    // TODO document parameters
+    CellManager (Model& model,
+                 const DataIO::Config& custom_cfg = {})
     :
         _log(model.get_logger()),
         _space(model.get_space()),
-        _grid(setup_grid(model.get_cfg())),
-        _cells(setup_cells(model.get_cfg()))
+        _grid(setup_grid(model.get_cfg(), custom_cfg)),
+        _cells(setup_cells(model.get_cfg(), custom_cfg))
     {}
     
     /// Construct a cell manager explicitly passing an initial cell state
-    CellManager (Model& model, const CellStateType initial_state)
+    // TODO document parameters
+    CellManager (Model& model,
+                 const CellStateType initial_state,
+                 const DataIO::Config& custom_cfg = {})
     :
         _log(model.get_logger()),
         _space(model.get_space()),
-        _grid(setup_grid(model.get_cfg())),
+        _grid(setup_grid(model.get_cfg(), custom_cfg)),
         _cells(setup_cells(initial_state))
     {}
 
@@ -106,7 +111,19 @@ public:
 private:
     // -- Setup functions ----------------------------------------------------
     /// Set up the grid discretization from config parameters
-    std::shared_ptr<Grid<Space>> setup_grid(const DataIO::Config& cfg) {
+    std::shared_ptr<Grid<Space>> setup_grid(const DataIO::Config& model_cfg,
+                                            const DataIO::Config& custom_cfg)
+    {
+        // Determine which configuration to use
+        auto cfg = model_cfg;
+
+        if (custom_cfg.size() > 0) {
+            _log->debug("Using custom config for grid setup ...");
+            cfg = custom_cfg;
+        }
+        else {
+            _log->debug("Using model config for grid setup ...");
+        }
 
         // Check if the required parameter nodes are available
         if (!cfg["grid"]) {
@@ -150,13 +167,14 @@ private:
         CellContainer<Cell> cont;
 
         // Construct all the cells using the default
-        // TODO consider using auto-loop based on _grid and then providing the
-        //      cells' IDs explicitly
+        // TODO consider using some construct provided by _grid
         for (IndexType i=0; i<_grid->num_cells(); i++) {
             // Emplace new element using default constructor
             cont.emplace_back(std::make_shared<Cell>(i, initial_state));
         }
 
+        // Done. Shrink it.
+        cont.shrink_to_fit();
         _log->info("Populated cell container with {:d} cells.", cont.size());
 
         return cont;
@@ -171,7 +189,20 @@ private:
       *         to try the default constructor to construct the object. If both
       *         are not possible, a compile-time error message is emitted.
       */
-    CellContainer<Cell> setup_cells(const DataIO::Config& cfg) {
+    CellContainer<Cell> setup_cells(const DataIO::Config& model_cfg,
+                                    const DataIO::Config& custom_cfg)
+    {
+        // Determine which configuration to use
+        auto cfg = model_cfg;
+
+        if (custom_cfg.size() > 0) {
+            _log->debug("Using custom config for cell setup ...");
+            cfg = custom_cfg;
+        }
+        else {
+            _log->debug("Using model config for cell setup ...");
+        }
+
         // Find out the cell initialization mode
         if (!cfg["cell_initialize_from"]) {
             throw std::invalid_argument("Missing required configuration key "

@@ -203,6 +203,9 @@ int main(int argc, char *argv[]) {
         std::cout << "Success." << std::endl << std::endl;
 
 
+        // TODO Test passing of custom config
+
+
         std::cout << "------ Testing init. of discretizations ... ------"
                   << std::endl;
         MockModel<CellTraitsDC> mm_dc_rect("mm_dc_rect", cfg["default_rect"]);
