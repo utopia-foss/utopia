@@ -11,10 +11,6 @@ default:
     shape: [23, 32]
 
   cell_initialize_from: default  # can be: config, default… (potentially more)
-  cell_initial_state:
-    a_double: 2.34
-    a_string: foobar
-    a_bool: true
 
 # For config-constructible
 config:
@@ -44,4 +40,84 @@ explicit:
     shape: [23, 32]
 
 
-# Missing parameters
+# Testing discretizations ----------------------------------------------------
+default_rect:
+  space:
+    periodic: true
+    extent: [42., 42.]
+
+  grid:
+    discretization: rectangular
+    shape: [23, 32]
+
+  cell_initialize_from: default  # can be: config, default… (potentially more)
+
+default_hex:
+  space:
+    periodic: true
+    extent: [42., 42.]
+
+  grid:
+    discretization: hexagonal
+    shape: [23, 32]
+
+  cell_initialize_from: default  # can be: config, default… (potentially more)
+
+default_tri:
+  space:
+    periodic: true
+    extent: [42., 42.]
+
+  grid:
+    discretization: triagonal
+    shape: [23, 32]
+
+  cell_initialize_from: default  # can be: config, default… (potentially more)
+
+
+# Missing/bad parameters -----------------------------------------------------
+missing_grid_cfg: {} # Missing grid entry here
+# NOTE Need no space config; then uses the default constructor
+
+missing_grid_cfg2:
+  grid:
+    discretization: rectangular
+    # Missing shape
+
+missing_grid_cfg3:
+  grid:
+    shape: [123, 456]
+    # Missing discretization
+
+bad_grid_cfg:
+  grid:
+    shape: [123, 456]
+    discretization: not_a_valid_discretization
+
+missing_cell_init1:
+  grid:
+    discretization: rectangular
+    shape: [23, 32]
+
+bad_cell_init1:
+  grid:
+    discretization: rectangular
+    shape: [23, 32]
+
+  cell_initialize_from: bad_value
+
+bad_cell_init2:
+  grid:
+    discretization: rectangular
+    shape: [23, 32]
+
+  cell_initialize_from: default  # in principle valid, but not for this state
+
+bad_cell_init3:
+  grid:
+    discretization: rectangular
+    shape: [23, 32]
+
+  cell_initialize_from: config
+  # missing: cell_initial_state
+  

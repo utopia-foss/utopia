@@ -15,12 +15,19 @@ namespace Utopia {
 // ---------------------------------------------------------------------------
 template<class Space>
 class Grid {
+public:
+    /// A description of this discretization's type
+    static std::string_view type_desc;
+
 protected:
     // -- Members -- //
+    /// The space that is to be discretized
     std::shared_ptr<Space> _space;
 
+    /// The rectangular (multi-index) shape of the discretization
     const GridShapeType<Space::dim> _shape;
 
+    /// The number of cells required by this discretization
     const IndexType _num_cells;
 
 public:
@@ -71,6 +78,9 @@ template<class Space>
 class RectangularGrid
     : public Grid<Space>
 {
+public:
+    inline static std::string_view type_desc = "rectangular";
+
 private:
     // -- RectangularGrid-specific members -- //
 
@@ -91,6 +101,9 @@ template<class Space>
 class HexagonalGrid
     : public Grid<Space>
 {    
+public:
+    inline static std::string_view type_desc = "hexagonal";
+
 private:
     // -- HexagonalGrid-specific members -- //
 
@@ -111,6 +124,9 @@ template<class Space>
 class TriangularGrid
     : public Grid<Space>
 {
+public:
+    inline static std::string_view type_desc = "triangular";
+
 private:
     // -- TriagonalGrid-specific members -- //
 

@@ -82,7 +82,7 @@ public:
     :
         _cfg(cfg),
         _log(setup_logger(model_name)),
-        _space(cfg["space"]),
+        _space(setup_space()),
         _cm(*this)
     {}
 
@@ -92,7 +92,7 @@ public:
     :
         _cfg(cfg),
         _log(setup_logger(model_name)),
-        _space(cfg["space"]),
+        _space(setup_space()),
         _cm(*this, cell_initial_state)
     {}
 
@@ -111,6 +111,18 @@ public:
         return logger;
     }
 
+
+    Space setup_space() const {
+        if (_cfg["space"]) {
+            // Build a space with the given parameters
+            return Space(_cfg["space"]);
+        }
+        else {
+            // Use the default space
+            return Space();
+        }
+    }
+
     /// Return a mock logger
     std::shared_ptr<spdlog::logger> get_logger() {
         return _log;
@@ -126,6 +138,36 @@ public:
         return _cfg;
     }
 };
+
+
+template<typename err_t>
+bool check_error_message(std::string desc,
+                         std::function<void()> func,
+                         std::string to_find) {
+    std::cout << "Checking exceptions for case:  " << desc << std::endl;
+    try {
+        func();
+
+        std::cerr << "Did not throw!" << std::endl;
+        return false;
+    }
+    catch (err_t& e) {
+        if (((std::string) e.what()).find(to_find) == -1) {
+            std::cerr << "Did not throw expected error message!" << std::endl;
+            std::cerr << "  Expected to find:  " << to_find << std::endl;
+            std::cerr << "  But got         :  " << e.what() << std::endl;
+
+            return false;
+        }
+    }
+    catch (...) {
+        std::cerr << "Threw error of unexpected type!" << std::endl;
+        throw;
+    }
+    std::cout << "... success."
+              << std::endl << std::endl;
+    return true;
+}
 
 
 
@@ -156,13 +198,23 @@ int main(int argc, char *argv[]) {
         // Initialize the mock model with config-constructible cell type
         std::cout << "... only explicitly constructible state" << std::endl;
         const auto initial_state = CellStateEC(2.34, "foobar", true);
-        MockModel<CellTraitsEC> mm_ec("mm_ec", cfg["explicit"], initial_state);
+        MockModel<CellTraitsEC> mm_ec("mm_ec", cfg["explicit"],
+                                      initial_state);
         std::cout << "Success." << std::endl << std::endl;
 
 
-        std::cout << "------ Testing member access ------" << std::endl;
+        std::cout << "------ Testing init. of discretizations ... ------"
+                  << std::endl;
+        MockModel<CellTraitsDC> mm_dc_rect("mm_dc_rect", cfg["default_rect"]);
+        MockModel<CellTraitsDC> mm_dc_hex("mm_dc_hex", cfg["default_hex"]);
+        MockModel<CellTraitsDC> mm_dc_tri("mm_dc_tri", cfg["default_tri"]);
+
+        std::cout << "Success." << std::endl << std::endl;
+
+
+        std::cout << "------ Testing member access ... ------" << std::endl;
         // Check that parameters were passed correctly
-        auto cm = mm_dc._cm;  // All mm_* should have the same parameters.
+        auto cm = mm_ec._cm;  // All mm_* should have the same parameters.
 
         auto space = cm.space();  // shared pointer
         auto grid = cm.grid();    // shared pointer
@@ -177,12 +229,77 @@ int main(int argc, char *argv[]) {
         assert(grid->shape()[1] == 32);
 
         assert(cells.size() == (23*32));
+        assert(cells[0]->state().a_double == 2.34);
+        assert(cells[0]->state().a_string == "foobar");
+        assert(cells[0]->state().a_bool == true);
 
         std::cout << "Success." << std::endl << std::endl;
         
 
         std::cout << "------ Testing error messages ------" << std::endl;
+        assert(check_error_message<std::invalid_argument>(
+            "missing_grid_cfg",
+            [&](){
+                MockModel<CellTraitsEC> mm_ec("missing_grid_cfg",
+                                              cfg["missing_grid_cfg"],
+                                              initial_state);
+            }, "Missing entry 'grid' in the config"));
 
+        assert(check_error_message<std::invalid_argument>(
+            "missing_grid_cfg2",
+            [&](){
+                MockModel<CellTraitsEC> mm_ec("missing_grid_cfg2",
+                                              cfg["missing_grid_cfg2"],
+                                              initial_state);
+            }, "Missing one or both of the grid configuration entries"));
+
+        assert(check_error_message<std::invalid_argument>(
+            "missing_grid_cfg3",
+            [&](){
+                MockModel<CellTraitsEC> mm_ec("missing_grid_cfg3",
+                                              cfg["missing_grid_cfg3"],
+                                              initial_state);
+            }, "Missing one or both of the grid configuration entries"));
+
+        assert(check_error_message<std::invalid_argument>(
+            "bad_grid_cfg",
+            [&](){
+                MockModel<CellTraitsEC> mm_ec("bad_grid_cfg",
+                                              cfg["bad_grid_cfg"],
+                                              initial_state);
+            }, "Invalid value for grid 'discretization' argument: 'not_a"));
+
+        assert(check_error_message<std::invalid_argument>(
+            "missing_cell_init1",
+            [&](){
+                MockModel<CellTraitsCC> mm_cc("missing_cell_init1",
+                                              cfg["missing_cell_init1"]);
+            }, "Missing required configuration key 'cell_initialize_from'"));
+
+        assert(check_error_message<std::invalid_argument>(
+            "bad_cell_init1",
+            [&](){
+                MockModel<CellTraitsCC> mm_cc("bad_cell_init1",
+                                              cfg["bad_cell_init1"]);
+            }, "No valid constructor for the cells' initial state"));
+
+        assert(check_error_message<std::invalid_argument>(
+            "bad_cell_init2",
+            [&](){
+                MockModel<CellTraitsCC> mm_cc("bad_cell_init2",
+                                              cfg["bad_cell_init2"]);
+            }, "No valid constructor for the cells' initial state"));
+
+        assert(check_error_message<std::invalid_argument>(
+            "bad_cell_init3",
+            [&](){
+                MockModel<CellTraitsCC> mm_cc("bad_cell_init3",
+                                              cfg["bad_cell_init3"]);
+            }, "from a config node but a node with the key 'cell_initial_"));
+        
+        std::cout << "Success." << std::endl << std::endl;
+
+        std::cout << "Total success." << std::endl << std::endl;
         return 0;
     }
     catch (std::exception& e) {

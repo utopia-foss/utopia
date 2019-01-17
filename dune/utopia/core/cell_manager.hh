@@ -110,13 +110,13 @@ private:
 
         // Check if the required parameter nodes are available
         if (!cfg["grid"]) {
-            throw std::invalid_argument("Missing entry 'grid' in the config "
-                                        "node supplied to the CellManager!");
+            throw std::invalid_argument("Missing entry 'grid' in the "
+                "configuration node supplied to the CellManager! Check that "
+                "the model configuration includes such an entry.");
         }
         else if (!cfg["grid"]["shape"] or !cfg["grid"]["discretization"]) {
-            throw std::invalid_argument("Missing one or more of the grid "
-                                        "configuration entries 'shape' and "
-                                        "'discretization'.");
+            throw std::invalid_argument("Missing one or both of the grid "
+                "configuration entries 'shape' and 'discretization'.");
         }
         
         // Get the parameters: shape and discretization type
@@ -128,7 +128,7 @@ private:
         
         // Create the respective grids, distinguishing by discretization
         // TODO consider passing config node to make more arguments available
-        if (disc_type == "triangular") {
+        if (disc_type == "triagonal") {
             return std::make_shared<TriangularGrid<Space>>(_space, shape);
         }
         else if (disc_type == "rectangular") {
@@ -139,9 +139,8 @@ private:
         }
         else {
             throw std::invalid_argument("Invalid value for grid "
-                                        "'discretization' argument: '"
-                                        + disc_type + "'! Need be 'tri', "
-                                        "'rect', 'hex'.");
+                "'discretization' argument: '" + disc_type + "'! Allowed "
+                "values: 'rectangular', 'hexagonal', 'triagonal'");
         }
     }
 
