@@ -1,6 +1,8 @@
 #ifndef UTOPIA_CORE_MANAGER_HH
 #define UTOPIA_CORE_MANAGER_HH
 
+#include <type_traits>
+
 // TODO Clean up includes
 #include "../base.hh"
 #include "../data_io/cfg_utils.hh"
@@ -17,6 +19,10 @@ namespace Utopia {
  *  \addtogroup CellManager
  *  \{
  */
+
+
+
+
 
 template<class CellTraits, class Model>
 class CellManager {
@@ -56,9 +62,17 @@ public:
         _log(model.get_logger()),
         _space(model.get_space()),
         _grid(setup_grid(model.get_cfg())),
-        _cells(setup_cells())
+        _cells(setup_cells(model.get_cfg()))
     {}
-    // TODO make possible to pass initial state explicitly
+    
+    /// Construct a cell manager explicitly passing an initial cell state
+    CellManager (Model& model, const CellStateType initial_state)
+    :
+        _log(model.get_logger()),
+        _space(model.get_space()),
+        _grid(setup_grid(model.get_cfg())),
+        _cells(setup_cells(initial_state))
+    {}
 
 
     /// -- Getters -----------------------------------------------------------
@@ -93,6 +107,7 @@ private:
     // -- Setup functions ----------------------------------------------------
     /// Set up the grid discretization from config parameters
     std::shared_ptr<Grid<Space>> setup_grid(const DataIO::Config& cfg) {
+
         // Check if the required parameter nodes are available
         if (!cfg["grid"]) {
             throw std::invalid_argument("Missing entry 'grid' in the config "
@@ -103,12 +118,16 @@ private:
                                         "configuration entries 'shape' and "
                                         "'discretization'.");
         }
-
-        // Get the parameters
+        
+        // Get the parameters: shape and discretization type
         const auto shape = as_<GridShapeType<dim>>(cfg["grid"]["shape"]); 
         auto disc_type = as_str(cfg["grid"]["discretization"]);
+
+        _log->info("Setting up '{}' grid discretization ...", disc_type);
+        // TODO inform about shape
         
-        // Distinguish by discretization
+        // Create the respective grids, distinguishing by discretization
+        // TODO consider passing config node to make more arguments available
         if (disc_type == "tri" or disc_type == "triangular") {
             return std::make_shared<TriangularGrid<Space>>(_space, shape);
         }
@@ -128,28 +147,89 @@ private:
 
 
     /// Set up the cells container
-    CellContainer<Cell> setup_cells() {
+    CellContainer<Cell> setup_cells(const CellStateType initial_state) {
         CellContainer<Cell> cont;
-
-        // Make sure the static Cell ID counter starts at 0
-        if (Cell::_next_id != 0) {
-            throw std::runtime_error("An instance of a cell of the same type "
-                                     "as it is used in the CellManager was "
-                                     "already initialized somewhere!");
-        }
 
         // Construct all the cells using the default
         // TODO consider using auto-loop based on _grid and then providing the
         //      cells' IDs explicitly
         for (IndexType i=0; i<_grid->num_cells(); i++) {
             // Emplace new element using default constructor
-            cont.emplace_back(std::make_shared<Cell>());
+            cont.emplace_back(std::make_shared<Cell>(i, initial_state));
         }
+
+        _log->info("Populated cell container with {:d} cells.", cont.size());
 
         return cont;
     }
 
-    // TODO add a setup function that allows setting up cell state via cfg node
+    
+    /// Set up cells container via initial state from config or default constr
+    /** \detail This function creates an initial state object and then passes
+      *         over to setup_cells(initial_state). It checks whether the
+      *         CellStateType is constructible via a config node and if the
+      *         config entries to construct it are available. It can fall back
+      *         to try the default constructor to construct the object. If both
+      *         are not possible, a compile-time error message is emitted.
+      */
+    CellContainer<Cell> setup_cells(const DataIO::Config& cfg) {
+        // Find out the cell initialization mode
+        if (!cfg["cell_initialize_from"]) {
+            throw std::invalid_argument("Missing required configuration key "
+                "'cell_initialize_from' for setting up cells via the "
+                "configuration.");
+        }
+        const auto cell_init_from = as_str(cfg["cell_initialize_from"]);
+
+        _log->info("Creating initial cell state from '{}' ...",
+                   cell_init_from);
+
+        // Find out if the initial state is constructible via a config node and
+        // setup the cells with that information, if configured to do so.
+        if constexpr (std::is_constructible<CellStateType, DataIO::Config&>()){
+            // Find out if this constructor was set to be used
+            if (cell_init_from == "config") {
+                // Yes. Should now check if the required config parameters were
+                // also provided and add helpful error message
+                if (!cfg["cell_initial_state"]) {
+                    throw std::invalid_argument("Was configured to create the "
+                        "initial cell state from a config node but a node "
+                        "with the key 'cell_initial_state' was not provided!");
+                }
+
+                // Everything ok. Create state object and pass it on ...
+                return setup_cells(CellStateType(cfg["cell_initial_state"]));
+            }
+            // else: do not return but continue with the rest of the function,
+            // i.e. trying the other constructors
+        }
+        
+        // Either not Config-constructible or not configured to do so.
+
+        // TODO could add a case here where the cell state constructor takes
+        //      care of setting up each _individual_ cell such that cells can
+        //      have varying initial states.
+
+        // Last resort: Can and should the default constructor be used?
+        if constexpr (std::is_default_constructible<CellStateType>()) {
+            if (cell_init_from == "default") {
+                // Construct a cell state and pass it on
+                return setup_cells(CellStateType{});
+            }
+        }
+        
+        // If we reached this point, construction does not work.
+        // TODO Consider a compile-time error message if possible?!
+        throw std::invalid_argument("No valid constructor for the cells' "
+            "initial state was available! Check that the config parameter "
+            "'cell_initialize_from' is valid (was: '" + cell_init_from + "', "
+            "may be 'config' or 'default') and make sure CellTraits::State is "
+            "constructible via the chosen way: "
+            "This requires either `const Utopia::DataIO::Config&` as argument "
+            "or being default-constructible, respectively. Alternatively, "
+            "pass the initial state directly to the CellManager constructor.");
+    
+    }
 };
 
 

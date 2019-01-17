@@ -23,7 +23,7 @@ public:
     /// Whether the space is to be assumed periodic
     const bool periodic;
 
-    /// The physical extent of the space
+    /// The physical (euclidean) extent of the space
     const ExtentType extent;
 
 

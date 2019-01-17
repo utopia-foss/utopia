@@ -1,20 +1,22 @@
 #ifndef UTOPIA_STATE_HH
 #define UTOPIA_STATE_HH
 
+#include <type_traits>
+
 /// Container for states
-/** \tparam T Type of state
+/** \tparam StateType Type of state
  *  \tparam sync Boolean if sync or async state is implemented
  */
-template<typename T, bool sync>
+template<typename StateType, bool sync>
 class StateContainer;
 
 /// State Container specialization for async states
-template<typename T>
-class StateContainer<T, false>
+template<typename StateType>
+class StateContainer<StateType, false>
 {
 public:
     /// Type of state
-    using State = T;
+    using State = StateType;
 
     /// Export implementation type
     static constexpr bool is_sync () { return false; }
@@ -34,12 +36,12 @@ private:
 };
 
 /// State Container specialization for sync states
-template<typename T>
-class StateContainer<T, true>
+template<typename StateType>
+class StateContainer<StateType, true>
 {
 public:
     /// Type of state
-    using State = T;
+    using State = StateType;
 
     /// Export implementation type
     static constexpr bool is_sync () { return true; }

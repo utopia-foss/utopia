@@ -36,9 +36,7 @@ public:
     {}
 
     /// Virtual destructor to allow polymorphic destruction
-    virtual ~Grid() {
-        // TODO Do we need to do something here? :thinking:
-    };
+    virtual ~Grid() = default;
 
 
     // -- Getters -- //

@@ -57,24 +57,13 @@ private:
 
 public:
     // -- Constructors -- //
-    /// Construct with default state constructor
-    __Cell()
+    /// Construct a cell
+    __Cell(const IndexType id, const State initial_state)
     :
-        StateContainer<State, sync>(), // FIXME
+        // Store arguments and initialize Tags via default constructor
+        StateContainer<State, sync>(initial_state),
         Tags(),
-        // Initialize ID by incrementing static member
-        _id(_next_id++),
-        // Initialize neighborhood empty
-        _neighbors()
-    {}
-
-    /// Construct with initial state
-    __Cell(const State state)
-    :
-        StateContainer<State, sync>(state),
-        Tags(),
-        // Initialize ID by incrementing static member
-        _id(_next_id++),
+        _id(id),
         // Initialize neighborhood empty
         _neighbors()
     {}

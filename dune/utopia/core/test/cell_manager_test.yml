@@ -1,11 +1,44 @@
 # Configuration parameter for the CellManager test
 ---
-space:
-  periodic: true
-  extent: [2., .3]
+# For default-constructible
+default:
+  space:
+    periodic: true
+    extent: [2., .3]
 
-grid:
-  discretization: rectangular
-  shape: [10, 10]
+  grid:
+    discretization: rectangular
+    shape: [10, 10]
 
-cells: {}
+  cell_initialize_from: default  # can be: config, default… (potentially more)
+  cell_initial_state:
+    a_double: 2.34
+    a_string: foobar
+    a_bool: true
+
+# For config-constructible
+config:
+  space:
+    periodic: true
+    extent: [2., .3]
+
+  grid:
+    discretization: rectangular
+    shape: [10, 10]
+
+  cell_initialize_from: config  # can be: config, default… (potentially more)
+  cell_initial_state:
+    a_double: 2.34
+    a_string: foobar
+    a_bool: true
+
+
+# For explicitly-constructible
+explicit:
+  space:
+    periodic: true
+    extent: [2., .3]
+
+  grid:
+    discretization: rectangular
+    shape: [10, 10]
