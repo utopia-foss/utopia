@@ -200,6 +200,11 @@ public:
     Config get_cfg() const {
         return _cfg;
     }
+
+    /// Return the name of this model instance
+    std::string get_name() const {
+        return _name;
+    }
     
     /// Return a pointer to the HDF group this model stores data in
     std::shared_ptr<DataGroup> get_hdfgrp() const {

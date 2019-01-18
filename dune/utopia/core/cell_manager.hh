@@ -63,8 +63,8 @@ public:
     :
         _log(model.get_logger()),
         _space(model.get_space()),
-        _grid(setup_grid(model.get_cfg(), custom_cfg)),
-        _cells(setup_cells(model.get_cfg(), custom_cfg))
+        _grid(setup_grid(model, custom_cfg)),
+        _cells(setup_cells(model, custom_cfg))
     {}
     
     /// Construct a cell manager explicitly passing an initial cell state
@@ -75,7 +75,7 @@ public:
     :
         _log(model.get_logger()),
         _space(model.get_space()),
-        _grid(setup_grid(model.get_cfg(), custom_cfg)),
+        _grid(setup_grid(model, custom_cfg)),
         _cells(setup_cells(initial_state))
     {}
 
@@ -111,18 +111,19 @@ public:
 private:
     // -- Setup functions ----------------------------------------------------
     /// Set up the grid discretization from config parameters
-    std::shared_ptr<Grid<Space>> setup_grid(const DataIO::Config& model_cfg,
+    std::shared_ptr<Grid<Space>> setup_grid(Model& model,
                                             const DataIO::Config& custom_cfg)
     {
         // Determine which configuration to use
-        auto cfg = model_cfg;
+        auto cfg = model.get_cfg();
 
         if (custom_cfg.size() > 0) {
             _log->debug("Using custom config for grid setup ...");
             cfg = custom_cfg;
         }
         else {
-            _log->debug("Using model config for grid setup ...");
+            _log->debug("Using '{}' model config for grid setup ...",
+                        model.get_name());
         }
 
         // Check if the required parameter nodes are available
@@ -189,18 +190,19 @@ private:
       *         to try the default constructor to construct the object. If both
       *         are not possible, a compile-time error message is emitted.
       */
-    CellContainer<Cell> setup_cells(const DataIO::Config& model_cfg,
+    CellContainer<Cell> setup_cells(Model& model,
                                     const DataIO::Config& custom_cfg)
     {
         // Determine which configuration to use
-        auto cfg = model_cfg;
+        auto cfg = model.get_cfg();
 
         if (custom_cfg.size() > 0) {
             _log->debug("Using custom config for cell setup ...");
             cfg = custom_cfg;
         }
         else {
-            _log->debug("Using model config for cell setup ...");
+            _log->debug("Using '{}' model config for cell setup ...",
+                        model.get_name());
         }
 
         // Find out the cell initialization mode
