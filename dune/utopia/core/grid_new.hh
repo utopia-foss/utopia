@@ -17,7 +17,7 @@ template<class Space>
 class Grid {
 public:
     /// A description of this discretization's type
-    static std::string_view type_desc;
+    static constexpr std::string_view type_desc;
 
 protected:
     // -- Members -- //
@@ -72,15 +72,11 @@ protected:
     };
 };
 
-
 // ---------------------------------------------------------------------------
 template<class Space>
 class RectangularGrid
     : public Grid<Space>
 {
-public:
-    inline static std::string_view type_desc = "rectangular";
-
 private:
     // -- RectangularGrid-specific members -- //
 
@@ -100,10 +96,7 @@ protected:
 template<class Space>
 class HexagonalGrid
     : public Grid<Space>
-{    
-public:
-    inline static std::string_view type_desc = "hexagonal";
-
+{
 private:
     // -- HexagonalGrid-specific members -- //
 
@@ -124,9 +117,6 @@ template<class Space>
 class TriangularGrid
     : public Grid<Space>
 {
-public:
-    inline static std::string_view type_desc = "triangular";
-
 private:
     // -- TriagonalGrid-specific members -- //
 
@@ -140,6 +130,7 @@ public:
 protected:
     // -- Custom implementations of virtual base class functions -- //
 };
+
 
 
 // end group CellManager

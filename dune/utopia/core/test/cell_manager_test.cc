@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include <dune/utopia/core/cell_manager.hh>
+#include <dune/utopia/core/grid_new.hh>  // final name: grid.hh
 #include <dune/utopia/core/logging.hh>
 #include <dune/utopia/data_io/cfg_utils.hh>
 
@@ -68,6 +69,7 @@ public:
     using Space = Utopia::DefaultSpace;
     using CellStateType = typename CellTraits::State;
 
+    const std::string _name;
     const Config _cfg;
     std::shared_ptr<spdlog::logger> _log;
 
@@ -80,6 +82,7 @@ public:
     /// Basic constructor
     MockModel(const std::string model_name, const Config& cfg)
     :
+        _name(model_name),
         _cfg(cfg),
         _log(setup_logger(model_name)),
         _space(setup_space()),
@@ -90,6 +93,7 @@ public:
     MockModel(const std::string model_name, const Config& cfg,
               const CellStateType cell_initial_state)
     :
+        _name(model_name),
         _cfg(cfg),
         _log(setup_logger(model_name)),
         _space(setup_space()),
@@ -137,9 +141,15 @@ public:
     Config get_cfg() const {
         return _cfg;
     }
+
+    /// Return the name of this model instance
+    std::string get_name() const {
+        return _name;
+    }
 };
 
 
+/// Helper method to test whether the expected error type and message is thrown
 template<typename err_t>
 bool check_error_message(std::string desc,
                          std::function<void()> func,
@@ -208,11 +218,36 @@ int main(int argc, char *argv[]) {
 
         std::cout << "------ Testing init. of discretizations ... ------"
                   << std::endl;
-        MockModel<CellTraitsDC> mm_dc_rect("mm_dc_rect", cfg["default_rect"]);
-        MockModel<CellTraitsDC> mm_dc_hex("mm_dc_hex", cfg["default_hex"]);
-        MockModel<CellTraitsDC> mm_dc_tri("mm_dc_tri", cfg["default_tri"]);
+        
+        using Space = Utopia::DefaultSpace;
 
+        std::cout << "... rectangular" << std::endl;
+        MockModel<CellTraitsDC> mm_dc_rect("mm_dc_rect", cfg["default_rect"]);
+        auto grid_rect = mm_dc_rect._cm.grid().get();
+        if (!dynamic_cast<Utopia::RectangularGrid<Space>*>(grid_rect)) {
+            throw std::runtime_error("Grid initialized with wrong type in "
+                                     "line: " + std::to_string(__LINE__));
+        };
         std::cout << "Success." << std::endl << std::endl;
+
+        std::cout << "... hexagonal" << std::endl;
+        MockModel<CellTraitsDC> mm_dc_hex("mm_dc_hex", cfg["default_hex"]);
+        auto grid_hex = mm_dc_hex._cm.grid().get();
+        if (!dynamic_cast<Utopia::HexagonalGrid<Space>*>(grid_hex)) {
+            throw std::runtime_error("Grid initialized with wrong type in "
+                                     "line: " + std::to_string(__LINE__));
+        };
+        std::cout << "Success." << std::endl << std::endl;
+        
+        std::cout << "... triangular" << std::endl;
+        MockModel<CellTraitsDC> mm_dc_tri("mm_dc_tri", cfg["default_tri"]);
+        auto grid_tri = mm_dc_tri._cm.grid().get();
+        if (!dynamic_cast<Utopia::TriangularGrid<Space>*>(grid_tri)) {
+            throw std::runtime_error("Grid initialized with wrong type in "
+                                     "line: " + std::to_string(__LINE__));
+        };
+        std::cout << "Success." << std::endl << std::endl;
+
 
 
         std::cout << "------ Testing member access ... ------" << std::endl;

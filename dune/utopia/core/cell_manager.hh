@@ -213,7 +213,7 @@ private:
         }
         const auto cell_init_from = as_str(cfg["cell_initialize_from"]);
 
-        _log->info("Creating initial cell state from '{}' ...",
+        _log->info("Creating initial cell state using '{}' constructor ...",
                    cell_init_from);
 
         // Find out if the initial state is constructible via a config node and
