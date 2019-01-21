@@ -51,21 +51,47 @@ private:
     /// Storage container for cells
     CellContainer<Cell> _cells;
 
+    /// Storage container for pre-calculated (!) cell neighbors
+    std::vector<CellContainer<Cell>> _cell_neighbors;
+
+    /// The currently chosen neighborhood mode, i.e. "moore", "vonNeumann", ...
+    std::string _nb_mode;
+
 public:
     // -- Constructors -------------------------------------------------------
-    /// Construct a cell manager from the model it resides in
-    // TODO document parameters
+    /// Construct a cell manager
+    /** \detail With the model available, the CellManager can extract the
+      *         required information from the model without the need to pass
+      *         it explicitly. Furthermore, this constructor differs to the
+      *         one with the `initial_state` parameter such that the way the
+      *         initial state of the cells is determined can be controlled via
+      *         the configuration.
+      * 
+      * \param  model       The model this CellManager belongs to  
+      * \param  custom_cfg  A custom config node to use to use for grid and
+      *                     cell setup. If not given, the model's configuration
+      *                     is used to extract the required entries.
+      */
     CellManager (Model& model,
                  const DataIO::Config& custom_cfg = {})
     :
         _log(model.get_logger()),
         _space(model.get_space()),
         _grid(setup_grid(model, custom_cfg)),
-        _cells(setup_cells(model, custom_cfg))
+        _cells(setup_cells(model, custom_cfg)),
+        _cell_neighbors(),
+        _nb_mode()
     {}
     
+
     /// Construct a cell manager explicitly passing an initial cell state
-    // TODO document parameters
+    /** \param  model          The model this CellManager belongs to  
+      * \param  initial_state  The initial state of the cells
+      * \param  custom_cfg     A custom config node to use to use for grid and
+      *                        cell setup. If not given, the model's
+      *                        configuration is used to extract the required
+      *                        entries.
+      */
     CellManager (Model& model,
                  const CellStateType initial_state,
                  const DataIO::Config& custom_cfg = {})
@@ -73,7 +99,9 @@ public:
         _log(model.get_logger()),
         _space(model.get_space()),
         _grid(setup_grid(model, custom_cfg)),
-        _cells(setup_cells(initial_state))
+        _cells(setup_cells(initial_state)),
+        _cell_neighbors(),
+        _nb_mode()
     {}
 
 
@@ -95,7 +123,45 @@ public:
 
 
     // -- Public interface ---------------------------------------------------
-    // TODO Continue here
+    /// The function to retrieve a single cell's neighbors
+    /** \detail This member is a function that is changed depending on whether
+      *         the cell neighbors are computed every time using the grid or
+      *         whether the neighbors were calculated once and stored.
+      */
+    std::function<const CellContainer<Cell>&(Cell&)> neighbors_of;
+
+
+    /// Set the neighborhood mode
+    void set_neighborhood_mode(std::string nb_mode,
+                               bool compute_neighbors_now = false)
+    {
+
+        // TODO * Check if mode differs from the one currently set
+        //      * Check if _cell_neighbors needs to be invalidated
+        //      * If configured, re-calculate all cell neighbors
+        //      * Set the corresponding neighbors_of method accordingly
+
+        _log->info("Set neighborhood mode to '{}'.", nb_mode);
+        _nb_mode = nb_mode;
+
+        if (compute_neighbors_now) {
+            compute_cell_neighbors();
+        }
+    }
+
+    /// Compute (and store) all cells' neighbors
+    /** \detail After this function was called, the cell neighbors will be
+      *         returned from the storage container rather than re-calculated
+      *         for every access.
+      */
+    void compute_cell_neighbors() {
+        _log->info("Computing and storing '{}' neighbors of all {} cells ...",
+                   _nb_mode, _cells.size());
+
+        // TODO Compute and store
+
+        _log->info("Computed and stored cell neighbors.");
+    }
 
 
 private:

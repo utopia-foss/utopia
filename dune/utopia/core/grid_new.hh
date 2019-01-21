@@ -13,6 +13,8 @@ namespace Utopia {
  */
 
 // ---------------------------------------------------------------------------
+
+/// The base class for all grid discretizations used by the CellManager
 template<class Space>
 class Grid {
 public:
@@ -72,7 +74,11 @@ protected:
     };
 };
 
+
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+
+/// A grid discretization using rectangular cells
 template<class Space>
 class RectangularGrid
     : public Grid<Space>
@@ -93,6 +99,9 @@ protected:
 
 
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+
+/// A grid discretization using hexagonal cells
 template<class Space>
 class HexagonalGrid
     : public Grid<Space>
@@ -113,6 +122,9 @@ protected:
 
 
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+
+/// A grid discretization using triangular cells
 template<class Space>
 class TriangularGrid
     : public Grid<Space>

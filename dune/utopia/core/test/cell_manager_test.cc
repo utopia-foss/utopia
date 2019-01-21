@@ -204,6 +204,7 @@ int main(int argc, char *argv[]) {
         std::cout << "Success." << std::endl << std::endl;
 
 
+        // -------------------------------------------------------------------
         std::cout << "------ Testing mock model initialization via ... ------"
                   << std::endl;
         
@@ -228,6 +229,8 @@ int main(int argc, char *argv[]) {
         // TODO Test passing of custom config
 
 
+
+        // -------------------------------------------------------------------
         std::cout << "------ Testing init. of discretizations ... ------"
                   << std::endl;
         
@@ -262,6 +265,7 @@ int main(int argc, char *argv[]) {
 
 
 
+        // -------------------------------------------------------------------
         std::cout << "------ Testing member access ... ------" << std::endl;
         // Check that parameters were passed correctly
         auto cm = mm_ec._cm;  // All mm_* should have the same parameters.
@@ -286,6 +290,8 @@ int main(int argc, char *argv[]) {
         std::cout << "Success." << std::endl << std::endl;
         
 
+
+        // -------------------------------------------------------------------
         std::cout << "------ Testing error messages ------" << std::endl;
         assert(check_error_message<std::invalid_argument>(
             "missing_grid_cfg",
@@ -351,6 +357,7 @@ int main(int argc, char *argv[]) {
 
 
 
+        // -------------------------------------------------------------------
         std::cout << "------ Testing custom links ... ------"
                   << std::endl;
 
@@ -375,6 +382,18 @@ int main(int argc, char *argv[]) {
         std::cout << "Success." << std::endl << std::endl;
 
 
+
+
+        // -------------------------------------------------------------------
+        std::cout << "------ Testing neighborhood choice ... ------"
+                  << std::endl;
+
+        std::cout << "Success." << std::endl << std::endl;
+
+
+
+
+        // -------------------------------------------------------------------
         // Done.
         std::cout << "------ Total success. ------" << std::endl << std::endl;
         return 0;
