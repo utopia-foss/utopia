@@ -7,11 +7,12 @@
 #include "../base.hh"
 #include "../data_io/cfg_utils.hh"
 #include "logging.hh"
+#include "types.hh"
 
 #include "space.hh"
-#include "cell_new.hh" // NOTE Final name will be cell.hh
-#include "grid_new.hh" // NOTE Final name will be grid.hh
-#include "types.hh"
+#include "cell_new.hh"          // NOTE Final name will be cell.hh
+#include "grid_new.hh"          // NOTE Final name will be grid.hh
+#include "neighborhoods_new.hh" // NOTE Final name will be neighborhood.hh
 
 
 namespace Utopia {
@@ -123,7 +124,7 @@ public:
 
 
     // -- Public interface ---------------------------------------------------
-    /// The function to retrieve a single cell's neighbors
+    /// Retrieve the given cell's neighbors
     /** \detail This member is a function that is changed depending on whether
       *         the cell neighbors are computed every time using the grid or
       *         whether the neighbors were calculated once and stored.
@@ -135,14 +136,29 @@ public:
     void set_neighborhood_mode(std::string nb_mode,
                                bool compute_neighbors_now = false)
     {
-
         // TODO * Check if mode differs from the one currently set
         //      * Check if _cell_neighbors needs to be invalidated
         //      * If configured, re-calculate all cell neighbors
         //      * Set the corresponding neighbors_of method accordingly
 
-        _log->info("Set neighborhood mode to '{}'.", nb_mode);
-        _nb_mode = nb_mode;
+        if (nb_mode != _nb_mode) {
+            _log->info("Setting neighborhood mode to '{}' ...", nb_mode);
+
+            // Retrieve the neighborhood function from the
+            // discretization
+
+            // Store it as member
+
+            // Everything ok, now set the member variable
+            _nb_mode = nb_mode;
+            _log->info("Set neighborhood mode to '{}'.", _nb_mode);
+        }
+        else {
+            _log->debug("Neighborhood mode already was '{}'. Not changing.",
+                        _nb_mode);
+        }
+
+        // Adjust the 
 
         if (compute_neighbors_now) {
             compute_cell_neighbors();
@@ -158,7 +174,12 @@ public:
         _log->info("Computing and storing '{}' neighbors of all {} cells ...",
                    _nb_mode, _cells.size());
 
-        // TODO Compute and store
+        // TODO implement the below
+        // Compute cell neighbors
+
+        // Store cell neighbors in _cell_neighbors member
+
+        // Change access function to access the storage rather than computing
 
         _log->info("Computed and stored cell neighbors.");
     }

@@ -6,6 +6,7 @@
 #include "space.hh"
 #include "types.hh"
 
+
 namespace Utopia {
 /**
  *  \addtogroup CellManager
@@ -50,6 +51,9 @@ public:
 
     // -- Getters -- //
     /// Get number of cells
+    /** \detail This information is used by the CellManager to populate the
+      *         cell container with the returned number of cells
+      */
     IndexType num_cells() const {
         return _num_cells;
     }
@@ -62,12 +66,13 @@ public:
     // -- Public interface -- //
     // ...
 
+
 protected:
     // -- Helper functions -- //
     // NOTE Some of these are best be made virtual such that the child
     //      classes can take care of the implementation.
 
-    /// Calculate the number of cells given the grid shape
+    /// Calculate the number of cells given the current grid shape
     IndexType __calc_num_cells() {  // NOTE Could make this (non-pure) virtual
         return std::accumulate(_shape.begin(), _shape.end(),
                                1, std::multiplies<IndexType>());
