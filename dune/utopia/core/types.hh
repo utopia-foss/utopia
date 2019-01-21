@@ -63,10 +63,13 @@ using entity_t = typename Container::value_type::element_type;
 /// Type for indices
 using IndexType = std::size_t;
 
+/// Type for container of indices
+using IndexContainer = std::vector<IndexType>;
+
 /// Type for dimensions
 using DimType = unsigned short;
 
-/// Type for dimensions
+/// Type for grid shape
 template<DimType dim>
 using GridShapeType = std::array<IndexType, dim>;
 

@@ -238,29 +238,17 @@ int main(int argc, char *argv[]) {
 
         std::cout << "... rectangular" << std::endl;
         MockModel<CellTraitsDC> mm_dc_rect("mm_dc_rect", cfg["default_rect"]);
-        auto grid_rect = mm_dc_rect._cm.grid().get();
-        if (!dynamic_cast<Utopia::RectangularGrid<Space>*>(grid_rect)) {
-            throw std::runtime_error("Grid initialized with wrong type in "
-                                     "line: " + std::to_string(__LINE__));
-        };
+        assert(mm_dc_rect._cm.grid()->structure == "rectangular");
         std::cout << "Success." << std::endl << std::endl;
 
         std::cout << "... hexagonal" << std::endl;
         MockModel<CellTraitsDC> mm_dc_hex("mm_dc_hex", cfg["default_hex"]);
-        auto grid_hex = mm_dc_hex._cm.grid().get();
-        if (!dynamic_cast<Utopia::HexagonalGrid<Space>*>(grid_hex)) {
-            throw std::runtime_error("Grid initialized with wrong type in "
-                                     "line: " + std::to_string(__LINE__));
-        };
+        assert(mm_dc_hex._cm.grid()->structure == "hexagonal");        
         std::cout << "Success." << std::endl << std::endl;
         
         std::cout << "... triangular" << std::endl;
         MockModel<CellTraitsDC> mm_dc_tri("mm_dc_tri", cfg["default_tri"]);
-        auto grid_tri = mm_dc_tri._cm.grid().get();
-        if (!dynamic_cast<Utopia::TriangularGrid<Space>*>(grid_tri)) {
-            throw std::runtime_error("Grid initialized with wrong type in "
-                                     "line: " + std::to_string(__LINE__));
-        };
+        assert(mm_dc_tri._cm.grid()->structure == "triangular");
         std::cout << "Success." << std::endl << std::endl;
 
 
@@ -387,6 +375,8 @@ int main(int argc, char *argv[]) {
         // -------------------------------------------------------------------
         std::cout << "------ Testing neighborhood choice ... ------"
                   << std::endl;
+
+        // TODO
 
         std::cout << "Success." << std::endl << std::endl;
 

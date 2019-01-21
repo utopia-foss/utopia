@@ -26,6 +26,9 @@ namespace Utopia {
 template<class CellTraits, class Model>
 class CellManager {
 public:
+    /// The type of this CellManager
+    using Self = CellManager<CellTraits, Model>;
+
     /// Type of the managed cells
     using Cell = __Cell<CellTraits>; // NOTE Use Cell eventually
 
@@ -37,6 +40,10 @@ public:
 
     /// Dimensionality of the space this cell manager is to discretize
     static constexpr DimType dim = Model::Space::dim;
+
+    /// Neighborhood function used in public interface
+    using NBFunc = std::function<const CellContainer<Cell>&(Cell&)>;
+
 
 private:
     // -- Members ------------------------------------------------------------
@@ -82,7 +89,10 @@ public:
         _cells(setup_cells(model, custom_cfg)),
         _cell_neighbors(),
         _nb_mode()
-    {}
+    {
+        // Set neighborhood function to one that throws an error
+        neighbors_of = _nb_unset;
+    }
     
 
     /// Construct a cell manager explicitly passing an initial cell state
@@ -129,7 +139,7 @@ public:
       *         the cell neighbors are computed every time using the grid or
       *         whether the neighbors were calculated once and stored.
       */
-    std::function<const CellContainer<Cell>&(Cell&)> neighbors_of;
+    NBFunc neighbors_of;
 
 
     /// Set the neighborhood mode
@@ -144,8 +154,7 @@ public:
         if (nb_mode != _nb_mode) {
             _log->info("Setting neighborhood mode to '{}' ...", nb_mode);
 
-            // Retrieve the neighborhood function from the
-            // discretization
+            // Retrieve the neighborhood function from the grid
 
             // Store it as member
 
@@ -186,6 +195,42 @@ public:
 
 
 private:
+    // -- Helper functions ---------------------------------------------------
+    /// Given a container of cell IDs, convert it to container of cell pointers
+    CellContainer<Cell> cells_from_ids(IndexContainer& ids) {
+        // Initialize container to be returned and fix it in size
+        CellContainer<Cell> ret;
+        ret.reserve(ids.size());
+
+        const auto& cells = mngr.cells();
+        for (auto id : ids) {
+            ret.emplace_back(std::shared_ptr<Cell>(cells.at(id)));
+        }
+
+        return ret;
+    }
+
+
+    // -- Functions to use for getting neighbors -----------------------------
+    /// Return the pre-computed neighbors of the given cell
+    NBFunc _nb_from_cache = [this](Cell& cell) {
+        return this->_cell_neighbors.at(cell.id());
+    };
+
+    /// Compute the neighbors for the given cell using the grid
+    NBFunc _nb_computed = [this](Cell& cell) {
+        return this->cells_from_ids(this->_grid->neighbors_of(cell.id()));
+    };
+
+    /// Compute the neighbors for the given cell using the grid
+    NBFunc _nb_unset = [](Cell&) {
+        throw std::runtime_error("Cannot compute neighborhood because the "
+            "neighborhood mode was not set! Make sure to specify it either "
+            "at initialization of the CellManager or by calling the "
+            "`set_neighborhood_mode` method.");
+    };
+
+
     // -- Setup functions ----------------------------------------------------
     /// Set up the grid discretization from config parameters
     std::shared_ptr<Grid<Space>> setup_grid(Model& model,
@@ -225,13 +270,16 @@ private:
         // Create the respective grids, distinguishing by structure
         // TODO consider passing config node to make more arguments available
         if (structure == "triagonal") {
-            return std::make_shared<TriangularGrid<Space>>(_space, shape);
+            using GridSpec = TriangularGrid<Space>;
+            return std::make_shared<GridSpec>(_space, shape);
         }
         else if (structure == "rectangular") {
-            return std::make_shared<RectangularGrid<Space>>(_space, shape);
+            using GridSpec = RectangularGrid<Space>;
+            return std::make_shared<GridSpec>(_space, shape);
         }
         else if (structure == "hexagonal") {
-            return std::make_shared<HexagonalGrid<Space>>(_space, shape);
+            using GridSpec = HexagonalGrid<Space>;
+            return std::make_shared<GridSpec>(_space, shape);
         }
         else {
             throw std::invalid_argument("Invalid value for grid "
