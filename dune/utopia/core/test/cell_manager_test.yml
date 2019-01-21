@@ -7,7 +7,7 @@ default:
     extent: [42., 42.]
 
   grid:
-    discretization: rectangular
+    structure: rectangular
     shape: [23, 32]
 
   cell_initialize_from: default  # can be: config, default… (potentially more)
@@ -19,7 +19,7 @@ config:
     extent: [42., 42.]
 
   grid:
-    discretization: rectangular
+    structure: rectangular
     shape: [23, 32]
 
   cell_initialize_from: config  # can be: config, default… (potentially more)
@@ -36,18 +36,18 @@ explicit:
     extent: [42., 42.]
 
   grid:
-    discretization: rectangular
+    structure: rectangular
     shape: [23, 32]
 
 
-# Testing discretizations ----------------------------------------------------
+# Testing structures ----------------------------------------------------
 default_rect:
   space:
     periodic: true
     extent: [42., 42.]
 
   grid:
-    discretization: rectangular
+    structure: rectangular
     shape: [23, 32]
 
   cell_initialize_from: default  # can be: config, default… (potentially more)
@@ -58,7 +58,7 @@ default_hex:
     extent: [42., 42.]
 
   grid:
-    discretization: hexagonal
+    structure: hexagonal
     shape: [23, 32]
 
   cell_initialize_from: default  # can be: config, default… (potentially more)
@@ -69,7 +69,7 @@ default_tri:
     extent: [42., 42.]
 
   grid:
-    discretization: triagonal
+    structure: triagonal
     shape: [23, 32]
 
   cell_initialize_from: default  # can be: config, default… (potentially more)
@@ -81,41 +81,41 @@ missing_grid_cfg: {} # Missing grid entry here
 
 missing_grid_cfg2:
   grid:
-    discretization: rectangular
+    structure: rectangular
     # Missing shape
 
 missing_grid_cfg3:
   grid:
     shape: [123, 456]
-    # Missing discretization
+    # Missing structure
 
 bad_grid_cfg:
   grid:
     shape: [123, 456]
-    discretization: not_a_valid_discretization
+    structure: not_a_valid_structure
 
 missing_cell_init1:
   grid:
-    discretization: rectangular
+    structure: rectangular
     shape: [23, 32]
 
 bad_cell_init1:
   grid:
-    discretization: rectangular
+    structure: rectangular
     shape: [23, 32]
 
   cell_initialize_from: bad_value
 
 bad_cell_init2:
   grid:
-    discretization: rectangular
+    structure: rectangular
     shape: [23, 32]
 
   cell_initialize_from: default  # in principle valid, but not for this state
 
 bad_cell_init3:
   grid:
-    discretization: rectangular
+    structure: rectangular
     shape: [23, 32]
 
   cell_initialize_from: config

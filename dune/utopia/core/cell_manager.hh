@@ -209,32 +209,33 @@ private:
                 "configuration node supplied to the CellManager! Check that "
                 "the model configuration includes such an entry.");
         }
-        else if (!cfg["grid"]["shape"] or !cfg["grid"]["discretization"]) {
+        else if (!cfg["grid"]["shape"] or !cfg["grid"]["structure"]) {
             throw std::invalid_argument("Missing one or both of the grid "
-                "configuration entries 'shape' and 'discretization'.");
+                "configuration entries 'shape' and 'structure'.");
         }
         
-        // Get the parameters: shape and discretization type
+        // Get the parameters: shape and structure type
         const auto shape = as_<GridShapeType<dim>>(cfg["grid"]["shape"]); 
-        auto disc_type = as_str(cfg["grid"]["discretization"]);
+        auto structure = as_str(cfg["grid"]["structure"]);
 
-        _log->info("Setting up '{}' grid discretization ...", disc_type);
-        // TODO inform about shape
+        _log->info("Setting up {}ly structured grid discretization ...",
+                   structure);
+        // TODO inform about shape?
         
-        // Create the respective grids, distinguishing by discretization
+        // Create the respective grids, distinguishing by structure
         // TODO consider passing config node to make more arguments available
-        if (disc_type == "triagonal") {
+        if (structure == "triagonal") {
             return std::make_shared<TriangularGrid<Space>>(_space, shape);
         }
-        else if (disc_type == "rectangular") {
+        else if (structure == "rectangular") {
             return std::make_shared<RectangularGrid<Space>>(_space, shape);
         }
-        else if (disc_type == "hexagonal") {
+        else if (structure == "hexagonal") {
             return std::make_shared<HexagonalGrid<Space>>(_space, shape);
         }
         else {
             throw std::invalid_argument("Invalid value for grid "
-                "'discretization' argument: '" + disc_type + "'! Allowed "
+                "'structure' argument: '" + structure + "'! Allowed "
                 "values: 'rectangular', 'hexagonal', 'triagonal'");
         }
     }

@@ -231,7 +231,7 @@ int main(int argc, char *argv[]) {
 
 
         // -------------------------------------------------------------------
-        std::cout << "------ Testing init. of discretizations ... ------"
+        std::cout << "------ Testing grid structures ... ------"
                   << std::endl;
         
         using Space = Utopia::DefaultSpace;
@@ -323,7 +323,7 @@ int main(int argc, char *argv[]) {
                 MockModel<CellTraitsEC> mm_ec("bad_grid_cfg",
                                               cfg["bad_grid_cfg"],
                                               initial_state);
-            }, "Invalid value for grid 'discretization' argument: 'not_a"));
+            }, "Invalid value for grid 'structure' argument: 'not_a_valid_"));
 
         assert(check_error_message<std::invalid_argument>(
             "missing_cell_init1",
