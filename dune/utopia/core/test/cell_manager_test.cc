@@ -47,6 +47,14 @@ struct CellStateEC {
 };
 
 
+/// A custom links definition
+template<typename CellContainerType>
+struct TestLinks {
+    /// A container of other cells that are "followed" by this cell ...
+    CellContainerType following;
+};
+
+
 // Create some cell traits definitions, i.e. bundling the cell traits together
 // The second and third template parameters for sync and tags, respectively,
 // are optional.
@@ -59,6 +67,10 @@ using CellTraitsCC = Utopia::CellTraits<CellStateCC>;
 /// For an explicitly-constructible cell state
 using CellTraitsEC = Utopia::CellTraits<CellStateEC>;
 
+
+/// Cell traits with custom links
+using CellTraitsCL = Utopia::CellTraits<CellStateDC, false, Utopia::EmptyTag,
+                                        TestLinks>;
 
 
 /// A mock model class to hold the cell manager
@@ -337,7 +349,34 @@ int main(int argc, char *argv[]) {
         
         std::cout << "Success." << std::endl << std::endl;
 
-        std::cout << "Total success." << std::endl << std::endl;
+
+
+        std::cout << "------ Testing custom links ... ------"
+                  << std::endl;
+
+        // Initialize a model with a custom link container
+        MockModel<CellTraitsCL> mm_cl("mm_cl", cfg["default"]);
+
+        // Get cell manager and two cells
+        auto cmcl = mm_cl._cm;
+        auto c0 = cmcl.cells()[0]; // shared pointer
+        auto c1 = cmcl.cells()[1]; // shared pointer
+
+        // Associate them with each other
+        c0->custom_links().following.push_back(c1);
+        c1->custom_links().following.push_back(c0);
+        std::cout << "Linked two cells." << std::endl;
+
+        // Test access
+        assert(c0->custom_links().following[0]->id() == 1);
+        assert(c1->custom_links().following[0]->id() == 0);
+        std::cout << "IDs match." << std::endl;
+
+        std::cout << "Success." << std::endl << std::endl;
+
+
+        // Done.
+        std::cout << "------ Total success. ------" << std::endl << std::endl;
         return 0;
     }
     catch (std::exception& e) {

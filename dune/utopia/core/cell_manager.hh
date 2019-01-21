@@ -22,8 +22,6 @@ namespace Utopia {
 
 
 
-
-
 template<class CellTraits, class Model>
 class CellManager {
 public:
@@ -49,7 +47,6 @@ private:
 
     /// The grid that discretely maps cells into space
     std::shared_ptr<Grid<Space>> _grid;
-    // TODO Consider making unique?!
 
     /// Storage container for cells
     CellContainer<Cell> _cells;
@@ -98,15 +95,8 @@ public:
 
 
     // -- Public interface ---------------------------------------------------
-    /// Access the neighbors of a specific cell
-    CellContainer<Cell>& neighbors_of (Cell& cell) {
-        // TODO distinguish between case where this is calculated and the case
-        //      where it was computed in the beginning and stored in each cell
+    // TODO Continue here
 
-        // Neighbors were already stored; can access private cell member
-        return cell._neighbors;
-        // NOTE Allowed to do this because we're friends <3
-    }
 
 private:
     // -- Setup functions ----------------------------------------------------
