@@ -236,17 +236,17 @@ int main(int argc, char *argv[]) {
 
         std::cout << "... rectangular" << std::endl;
         MockModel<CellTraitsDC> mm_dc_rect("mm_dc_rect", cfg["default_rect"]);
-        assert(mm_dc_rect._cm.grid()->structure == "rectangular");
+        assert(mm_dc_rect._cm.grid()->structure() == "rectangular");
         std::cout << "Success." << std::endl << std::endl;
 
         std::cout << "... hexagonal" << std::endl;
         MockModel<CellTraitsDC> mm_dc_hex("mm_dc_hex", cfg["default_hex"]);
-        assert(mm_dc_hex._cm.grid()->structure == "hexagonal");        
+        assert(mm_dc_hex._cm.grid()->structure() == "hexagonal");        
         std::cout << "Success." << std::endl << std::endl;
         
         std::cout << "... triangular" << std::endl;
         MockModel<CellTraitsDC> mm_dc_tri("mm_dc_tri", cfg["default_tri"]);
-        assert(mm_dc_tri._cm.grid()->structure == "triangular");
+        assert(mm_dc_tri._cm.grid()->structure() == "triangular");
         std::cout << "Success." << std::endl << std::endl;
 
 
@@ -374,8 +374,44 @@ int main(int argc, char *argv[]) {
         std::cout << "------ Testing neighborhood choice ... ------"
                   << std::endl;
 
-        // TODO
+        // without any neighborhood configuration
+        std::cout << "... empty" << std::endl;
+        MockModel<CellTraitsDC> mm_nb_empty("mm_nb_empty",
+                                            cfg["nb_empty"]);
+        assert(mm_nb_empty._cm.nb_mode() == "empty");
+        std::cout << "Success." << std::endl << std::endl;
 
+        // nearest neighbor
+        std::cout << "... nearest" << std::endl;
+        MockModel<CellTraitsDC> mm_nb_nearest("mm_nb_nearest",
+                                              cfg["nb_nearest"]);
+        assert(mm_nb_nearest._cm.nb_mode() == "nearest");
+        // TODO
+        std::cout << "Success." << std::endl << std::endl;
+
+        // pre-computing and storing the values
+        std::cout << "... nearest (computed and stored)" << std::endl;
+        MockModel<CellTraitsDC> mm_nb_computed("mm_nb_computed",
+                                               cfg["nb_computed"]);
+        assert(mm_nb_computed._cm.nb_mode() == "nearest");
+        // TODO
+        std::cout << "Success." << std::endl << std::endl;
+
+        // bad neighborhood specification
+        std::cout << "... bad neighborhood mode" << std::endl;
+        assert(check_error_message<std::invalid_argument>(
+            "nb_bad1",
+            [&](){
+                MockModel<CellTraitsDC> mm_nb_bad1("mm_nb_bad1",
+                                                   cfg["nb_bad1"]);
+            }, "No 'bad' neighborhood available! Check the 'mode' argument"));
+
+        assert(check_error_message<std::invalid_argument>(
+            "nb_bad2",
+            [&](){
+                MockModel<CellTraitsDC> mm_nb_bad2("mm_nb_bad2",
+                                                   cfg["nb_bad2"]);
+            }, "No 'nearest' neighborhood available for 'triangular' grid!"));
         std::cout << "Success." << std::endl << std::endl;
 
 

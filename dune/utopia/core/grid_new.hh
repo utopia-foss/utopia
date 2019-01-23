@@ -31,22 +31,15 @@ protected:
     const IndexType _num_cells;
 
 public:
-    /// The structure of the specialization
-    const std::string structure;
-    // TODO consider making static somehow (no priority right now)
-
-public:
     // -- Constructor and Destructor -- //
     /// Construct a discretization for the given space using the specified
     /// grid shape
     Grid (std::shared_ptr<Space> space,
-          const GridShapeType<Space::dim> shape,
-          const std::string grid_structure)
+          const GridShapeType<Space::dim> shape)
     :
         _space(space),
         _shape(shape),
-        _num_cells(__calc_num_cells()),
-        structure(grid_structure)
+        _num_cells(__calc_num_cells())
     {}
 
     /// Virtual destructor to allow polymorphic destruction
@@ -69,6 +62,9 @@ public:
     const GridShapeType<Space::dim>& shape() const {
         return _shape;
     }
+
+    /// Get this grid's structure descriptor
+    virtual const std::string structure() const = 0;
 
 
 
@@ -101,11 +97,17 @@ private:
     // -- RectangularGrid-specific members -- //
 
 public:
+    /// Construct a rectangular grid discretization
     RectangularGrid (std::shared_ptr<Space> space,
                      const GridShapeType<Space::dim> shape)
     :
-        Grid<Space>(space, shape, "rectangular")
+        Grid<Space>(space, shape)
     {}
+
+    /// The structure descriptor of this grid
+    const std::string structure() const {
+        return "rectangular";
+    }
 
 protected:
     // -- Custom implementations of virtual base class functions -- //
@@ -124,11 +126,17 @@ private:
     // -- HexagonalGrid-specific members -- //
 
 public:
+    /// Construct a hexagonal grid discretization
     HexagonalGrid (std::shared_ptr<Space> space,
                    const GridShapeType<Space::dim> shape)
     :
-        Grid<Space>(space, shape, "hexagonal")
+        Grid<Space>(space, shape)
     {}
+
+    /// The structure descriptor of this grid
+    const std::string structure() const {
+        return "hexagonal";
+    }
 
 protected:
     // -- Custom implementations of virtual base class functions -- //
@@ -147,11 +155,17 @@ private:
     // -- TriagonalGrid-specific members -- //
 
 public:
+    /// Construct a triangular grid discretization
     TriangularGrid (std::shared_ptr<Space> space,
                     const GridShapeType<Space::dim> shape)
     :
-        Grid<Space>(space, shape, "triangular")
+        Grid<Space>(space, shape)
     {}
+
+    /// The structure descriptor of this grid
+    const std::string structure() const {
+        return "triangular";
+    }
 
 protected:
     // -- Custom implementations of virtual base class functions -- //

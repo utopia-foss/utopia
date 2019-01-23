@@ -69,7 +69,7 @@ default_tri:
     extent: [42., 42.]
 
   grid:
-    structure: triagonal
+    structure: triangular
     shape: [23, 32]
 
   cell_initialize_from: default  # can be: config, default… (potentially more)
@@ -121,3 +121,76 @@ bad_cell_init3:
   cell_initialize_from: config
   # missing: cell_initial_state
   
+
+# Neighborhood tests ---------------------------------------------------------
+
+nb_empty:
+  space:
+    periodic: true
+    extent: [42., 42.]
+
+  grid:
+    structure: rectangular
+    shape: [23, 32]
+
+  cell_initialize_from: default  # can be: config, default… (potentially more)
+
+  # neighborhood key is optional
+
+nb_nearest:
+  space:
+    periodic: true
+    extent: [42., 42.]
+
+  grid:
+    structure: rectangular
+    shape: [23, 32]
+
+  cell_initialize_from: default
+
+  neighborhood:
+    mode: nearest
+    # compute_and_store key is optional
+
+nb_computed:
+  space:
+    periodic: true
+    extent: [42., 42.]
+
+  grid:
+    structure: rectangular
+    shape: [23, 32]
+
+  cell_initialize_from: default
+
+  neighborhood:
+    mode: nearest
+    compute_and_store: true
+
+nb_bad1:
+  space:
+    periodic: true
+    extent: [42., 42.]
+
+  grid:
+    structure: rectangular
+    shape: [23, 32]
+
+  cell_initialize_from: default
+
+  neighborhood:
+    mode: bad
+
+nb_bad2:
+  space:
+    periodic: true
+    extent: [42., 42.]
+
+  grid:
+    structure: triangular
+    shape: [23, 32]
+
+  cell_initialize_from: default
+
+  neighborhood:
+    mode: nearest  # not available for triangular
