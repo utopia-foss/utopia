@@ -113,12 +113,12 @@ public:
 
 
     // -- Public interface -- //
-    /// Return cell ID
-    IndexType id() const {
+    /// Return const reference to cell ID
+    const IndexType& id() const {
         return _id;
     }
 
-    /// Return const reference to custom link containers
+    /// Return reference to custom link containers
     CustomLinkContainers& custom_links() {
         return _custom_links;
     }

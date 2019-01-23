@@ -9,7 +9,6 @@
 #include "logging.hh"
 #include "types.hh"
 
-#include "space.hh"
 #include "cell_new.hh"          // NOTE Final name will be cell.hh
 #include "grid_new.hh"          // NOTE Final name will be grid.hh
 #include "neighborhoods_new.hh" // NOTE Final name will be neighborhood.hh
@@ -41,8 +40,14 @@ public:
     /// Dimensionality of the space this cell manager is to discretize
     static constexpr DimType dim = Model::Space::dim;
 
-    /// Neighborhood function used in public interface
-    using NBFunc = std::function<const CellContainer<Cell>&(Cell&)>;
+    /// Grid type; this refers to the base type of the stored (derived) object
+    using GridType = Grid<Space>;
+
+    /// Neighborhood function used in public interface with (cell as argument)
+    using NBFuncCell = std::function<const CellContainer<Cell>&(Cell&)>;
+
+    /// Neighborhood function used in internal interface (ID as argument)
+    using NBFuncID = Neighborhoods::NBFuncID<GridType>;
 
 
 private:
@@ -54,7 +59,7 @@ private:
     std::shared_ptr<Space> _space;
 
     /// The grid that discretely maps cells into space
-    std::shared_ptr<Grid<Space>> _grid;
+    std::shared_ptr<GridType> _grid;
 
     /// Storage container for cells
     CellContainer<Cell> _cells;
@@ -64,6 +69,18 @@ private:
 
     /// The currently chosen neighborhood mode, i.e. "moore", "vonNeumann", ...
     std::string _nb_mode;
+
+    /// The currently chosen neighborhood function
+    NBFuncID _nb_func;
+
+public:
+    /// Retrieve the given cell's neighbors
+    /** \detail This member is a function that is changed depending on whether
+      *         the cell neighbors are computed every time using the grid or
+      *         whether the neighbors were calculated once and stored.
+      */
+    NBFuncCell neighbors_of;
+
 
 public:
     // -- Constructors -------------------------------------------------------
@@ -88,7 +105,8 @@ public:
         _grid(setup_grid(model, custom_cfg)),
         _cells(setup_cells(model, custom_cfg)),
         _cell_neighbors(),
-        _nb_mode()
+        _nb_mode(),
+        _nb_func(get_nb_func("empty"))
     {
         // Set neighborhood function to one that throws an error
         neighbors_of = _nb_unset;
@@ -112,18 +130,22 @@ public:
         _grid(setup_grid(model, custom_cfg)),
         _cells(setup_cells(initial_state)),
         _cell_neighbors(),
-        _nb_mode()
-    {}
+        _nb_mode(),
+        _nb_func(get_nb_func("empty"))
+    {
+        // Set neighborhood function to one that throws an error
+        neighbors_of = _nb_unset;
+    }
 
 
     /// -- Getters -----------------------------------------------------------
     /// Return pointer to the space, for convenience
-    std::shared_ptr<Space> space () const {
+    const std::shared_ptr<Space>& space () const {
         return _space;
     }
 
     /// Return const reference to the grid
-    std::shared_ptr<Grid<Space>> grid () const {
+    const std::shared_ptr<GridType>& grid () const {
         return _grid;
     }
 
@@ -134,14 +156,6 @@ public:
 
 
     // -- Public interface ---------------------------------------------------
-    /// Retrieve the given cell's neighbors
-    /** \detail This member is a function that is changed depending on whether
-      *         the cell neighbors are computed every time using the grid or
-      *         whether the neighbors were calculated once and stored.
-      */
-    NBFunc neighbors_of;
-
-
     /// Set the neighborhood mode
     void set_neighborhood_mode(std::string nb_mode,
                                bool compute_neighbors_now = false)
@@ -154,9 +168,16 @@ public:
         if (nb_mode != _nb_mode) {
             _log->info("Setting neighborhood mode to '{}' ...", nb_mode);
 
-            // Retrieve the neighborhood function from the grid
+            // Retrieve the neighborhood function and store as member
+            _nb_func = get_nb_func(nb_mode);
 
-            // Store it as member
+            // Adjust the frontend methods
+
+            // Clear the no-longer valid neighborhood relationships
+            if (_cell_neighbors.size() > 0) {
+                _cell_neighbors.clear();
+                _log->debug("Cleared cell neighborhood cache.");
+            }
 
             // Everything ok, now set the member variable
             _nb_mode = nb_mode;
@@ -166,8 +187,6 @@ public:
             _log->debug("Neighborhood mode already was '{}'. Not changing.",
                         _nb_mode);
         }
-
-        // Adjust the 
 
         if (compute_neighbors_now) {
             compute_cell_neighbors();
@@ -202,9 +221,23 @@ private:
         CellContainer<Cell> ret;
         ret.reserve(ids.size());
 
-        const auto& cells = mngr.cells();
-        for (auto id : ids) {
-            ret.emplace_back(std::shared_ptr<Cell>(cells.at(id)));
+        for (const auto& id : ids) {
+            ret.emplace_back(std::shared_ptr<Cell>(_cells.at(id)));
+        }
+
+        return ret;
+    }
+
+    /// Given a container of cell IDs, convert it to container of cell pointers
+    /** \detail
+      */ 
+    CellContainer<Cell> cells_from_ids(IndexContainer&& ids) {
+        // Initialize container to be returned and fix it in size
+        CellContainer<Cell> ret;
+        ret.reserve(ids.size());
+
+        for (const auto& id : ids) {
+            ret.emplace_back(std::shared_ptr<Cell>(_cells.at(id)));
         }
 
         return ret;
@@ -213,28 +246,32 @@ private:
 
     // -- Functions to use for getting neighbors -----------------------------
     /// Return the pre-computed neighbors of the given cell
-    NBFunc _nb_from_cache = [this](Cell& cell) {
+    NBFuncCell _nb_from_cache = [this](Cell& cell) {
         return this->_cell_neighbors.at(cell.id());
     };
 
     /// Compute the neighbors for the given cell using the grid
-    NBFunc _nb_computed = [this](Cell& cell) {
-        return this->cells_from_ids(this->_grid->neighbors_of(cell.id()));
+    NBFuncCell _nb_compute_each_time = [this](Cell& cell) {
+        // auto ids = _nb_func(cell.id(), grid());
+        return cells_from_ids(_nb_func(cell.id(), grid()));
     };
 
     /// Compute the neighbors for the given cell using the grid
-    NBFunc _nb_unset = [](Cell&) {
+    NBFuncCell _nb_unset = [](Cell&) {
         throw std::runtime_error("Cannot compute neighborhood because the "
             "neighborhood mode was not set! Make sure to specify it either "
             "at initialization of the CellManager or by calling the "
             "`set_neighborhood_mode` method.");
+
+        // Need return statement (here with empty cell container) to fit type
+        return CellContainer<Cell>();
     };
 
 
     // -- Setup functions ----------------------------------------------------
     /// Set up the grid discretization from config parameters
-    std::shared_ptr<Grid<Space>> setup_grid(Model& model,
-                                            const DataIO::Config& custom_cfg)
+    std::shared_ptr<GridType> setup_grid(Model& model,
+                                         const DataIO::Config& custom_cfg)
     {
         // Determine which configuration to use
         auto cfg = model.get_cfg();
@@ -386,7 +423,18 @@ private:
             "This requires either `const Utopia::DataIO::Config&` as argument "
             "or being default-constructible, respectively. Alternatively, "
             "pass the initial state directly to the CellManager constructor.");
-    
+    }
+
+
+    /// Retrieve a neighborhood function from its mode
+    NBFuncID get_nb_func(std::string name) {
+        if (name == "empty") {
+            return Neighborhoods::AllAlone<GridType>;
+        }
+        // TODO add others here
+        else {
+            throw std::invalid_argument("Invalid nb_func name '"+name+"'!");
+        }
     }
 };
 

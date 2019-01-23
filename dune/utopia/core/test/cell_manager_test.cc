@@ -233,8 +233,6 @@ int main(int argc, char *argv[]) {
         // -------------------------------------------------------------------
         std::cout << "------ Testing grid structures ... ------"
                   << std::endl;
-        
-        using Space = Utopia::DefaultSpace;
 
         std::cout << "... rectangular" << std::endl;
         MockModel<CellTraitsDC> mm_dc_rect("mm_dc_rect", cfg["default_rect"]);

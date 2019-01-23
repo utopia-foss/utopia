@@ -19,10 +19,6 @@ namespace Utopia {
 /// The base class for all grid discretizations used by the CellManager
 template<class Space>
 class Grid {
-public:
-    /// Type of the neighborhood functions
-    using NBFunc = std::function<IndexContainer(IndexType&)>;
-
 protected:
     // -- Members -- //
     /// The space that is to be discretized
@@ -58,19 +54,6 @@ public:
 
 
     // -- Public interface -- //
-    /// The neighborhood function
-    NBFunc neighbors_of;
-
-    /// Select which neighborhood function is to be used 
-    void select_neighborhood_func(std::string name) {
-        try {
-            neighbors_of = __select_nb_func(name);
-        }
-        catch (std::exception& e) {
-            throw std::invalid_argument("Failed to retrieve neighborhood "
-                "function for '" + structure + "'' grid! " + e.what());
-        }
-    }
 
 
     // -- Getters -- //
@@ -103,10 +86,6 @@ protected:
         return std::accumulate(_shape.begin(), _shape.end(),
                                1, std::multiplies<IndexType>());
     };
-
-
-    /// Return a neighborhood function by name; called from public interface
-    virtual NBFunc __select_nb_func(std::string name) = 0;
 };
 
 
@@ -130,10 +109,6 @@ public:
 
 protected:
     // -- Custom implementations of virtual base class functions -- //
-    /// Choose from the available neighborhood functions for this grid
-    NBFunc __select_nb_func(std::string name) {
-        return Neighborhoods::NextNeighbor<RectangularGrid<Space>>;
-    }
 };
 
 
@@ -157,12 +132,6 @@ public:
 
 protected:
     // -- Custom implementations of virtual base class functions -- //
-    /// Choose from the available neighborhood functions for this grid
-    NBFunc __select_nb_func(std::string name) {
-        throw std::invalid_argument("No neighborhood functions available for "
-                                    "HexagonalGrid!");
-    }
-
 };
 
 
@@ -186,12 +155,6 @@ public:
 
 protected:
     // -- Custom implementations of virtual base class functions -- //
-    /// Choose from the available neighborhood functions for this grid
-    NBFunc __select_nb_func(std::string name) {
-        throw std::invalid_argument("No neighborhood functions available for "
-                                    "HexagonalGrid!");
-    }
-
 };
 
 
