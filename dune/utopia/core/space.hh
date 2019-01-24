@@ -20,7 +20,7 @@ struct Space {
     static constexpr DimType dim = num_dims;
 
     /// Whether the space is to be assumed periodic
-    const bool periodic;
+    bool periodic;
 
     /// The physical (euclidean) extent of the space
     const ExtentType extent;

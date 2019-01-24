@@ -162,7 +162,7 @@ public:
     /** \detail The behaviour of this method is different depending on the
       *         choice of neighborhood.
       */
-    CellContainer<Cell> neighbors_of(const Cell& cell) {
+    CellContainer<Cell> neighbors_of(const Cell& cell) const {
         return _nb_func_cell(cell);
     }
 
@@ -171,7 +171,7 @@ public:
     /** \detail The behaviour of this method is different depending on the
       *         choice of neighborhood.
       */
-    CellContainer<Cell> neighbors_of(std::shared_ptr<Cell> cell) {
+    CellContainer<Cell> neighbors_of(const std::shared_ptr<Cell>& cell) const {
         return _nb_func_cell(*cell);
     }
 
@@ -193,8 +193,8 @@ public:
 
             // Adjust function object that the public interface calls
             if (nb_mode == "empty") {
-                // No neighborhood set; raise exception upon call
-                _nb_func_cell = _nb_unset;
+                // Issue a warning alongside the neighborhood calculation
+                _nb_func_cell = _nb_compute_each_time_empty;
             }
             else {
                 // Compute the cell neighbors each time
@@ -317,20 +317,17 @@ private:
 
     /// Compute the neighbors for the given cell using the grid
     NBFuncCell _nb_compute_each_time = [this](Cell& cell) {
-        // auto ids = _nb_func(cell.id(), grid());
         return this->cells_from_ids(this->_nb_func_id(cell.id(), *_grid));
     };
 
     /// Compute the neighbors for the given cell using the grid
-    NBFuncCell _nb_unset = [](Cell&) {
-        throw std::runtime_error("Cannot compute neighborhood because the "
-            "neighborhood mode was not set! Make sure to specify it either "
-            "at initialization of the CellManager or by calling the "
-            "`set_neighborhood_mode` method.");
-
-        // Need return statement (here with empty cell container) to fit type
-        return CellContainer<Cell>();
+    NBFuncCell _nb_compute_each_time_empty = [this](Cell& cell) {
+        this->_log->warn("No neighborhood selected! Calls to the "
+            "CellManager::neighbors_of method will always return an empty "
+            "container.");
+        return this->cells_from_ids(this->_nb_func_id(cell.id(), *_grid));
     };
+
 
     // -- Setup functions ----------------------------------------------------
     /// Set up the grid discretization from config parameters

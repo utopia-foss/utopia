@@ -5,8 +5,12 @@ output_path: cell_manager_integration_test_tmpfile.h5
 
 num_steps: 1
 write_every: 999
-
 monitor_emit_interval: 1.
+
+log_levels:
+  core: debug
+  model: debug
+  data_io: debug
 
 cm_test:
   space:
@@ -19,7 +23,3 @@ cm_test:
 
   cell_initialize_from: default
 
-log_levels:
-  core: debug
-  model: debug
-  data_io: debug

@@ -6,6 +6,7 @@ file(COPY "square.msh" "cube.msh"
           "model_nested_test.yml"
           "model_setup_test.yml"
           "model_with_manager_test.yml"
+          "neighborhood_test.yml"
      DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 # collect CORE tests
@@ -27,6 +28,7 @@ set(TESTS_CORE
     model_nested_test
     model_setup_test
     model_with_manager_test
+    neighborhood_test
     signal_test
     state_test
     tags_test

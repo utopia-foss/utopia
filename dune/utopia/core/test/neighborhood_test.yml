@@ -1,0 +1,42 @@
+# Test configurations for the CellManager for tests of neighborhood
+---
+seed: 42
+output_path: neighborhood_test_tmpfile.h5
+num_steps: 3
+write_every: 1000
+monitor_emit_interval: 1.0
+
+log_levels:
+  core: debug
+  model: debug
+  data_io: debug
+
+# ----------------------------------------------------------------------------
+# Model configurations starting below, one for each scenario
+
+rect_2D_alone:
+  space:
+    periodic: true
+    extent: [5., 5.]
+  grid:
+    structure: rectangular
+    shape: [5, 5]
+
+  cell_initialize_from: default
+
+  # no neighborhood given -> use default, i.e.: empty neighborhood
+
+
+rect_2D_nearest:
+  space:
+    periodic: true
+    extent: [5., 5.]
+
+  grid:
+    structure: rectangular
+    shape: [5, 5]
+
+  cell_initialize_from: default
+
+  neighborhood:
+    mode: nearest

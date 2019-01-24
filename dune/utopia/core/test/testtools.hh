@@ -28,8 +28,7 @@ bool check_error_message(std::string desc,
         std::cerr << "Threw error of unexpected type!" << std::endl;
         throw;
     }
-    std::cout << "... success."
-              << std::endl << std::endl;
+    std::cout << "Exception raised as expected." << std::endl << std::endl;
     return true;
 }
 
