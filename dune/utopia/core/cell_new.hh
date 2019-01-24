@@ -122,6 +122,11 @@ public:
     CustomLinkContainers& custom_links() {
         return _custom_links;
     }
+    
+    /// Return const reference to custom link containers
+    const CustomLinkContainers& custom_links() const {
+        return _custom_links;
+    }
 };
 
 

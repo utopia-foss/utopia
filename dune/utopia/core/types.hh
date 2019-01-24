@@ -65,16 +65,13 @@ using entity_t = typename Container::value_type::element_type;
 // -- Types introduces with the new CellManager ------------------------------
 
 /// Type for indices
-using IndexType = std::uint_fast32_t;
+using IndexType = std::size_t;
 
 /// Type for container of indices
 using IndexContainer = std::vector<IndexType>;
 
-/// Type for dimension numbers, i.e.: small unsigned integers
-using DimType = uint_fast8_t;
-
 /// Type for grid shape
-template<DimType dim>
+template<std::size_t dim>
 using GridShapeType = std::array<IndexType, dim>;
 
 } // namespace Utopia

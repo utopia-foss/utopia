@@ -19,7 +19,7 @@ public:
     using Base = Grid<Space>;
 
     /// The dimensionality of the space to be discretized (for easier access)
-    static constexpr DimType dim = Space::dim;
+    static constexpr std::size_t dim = Space::dim;
 
     /// The type of the grid shape array
     using GridShape = GridShapeType<dim>;

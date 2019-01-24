@@ -36,7 +36,7 @@ public:
     using Space = typename Model::Space;
 
     /// Dimensionality of the space this cell manager is to discretize
-    static constexpr DimType dim = Model::Space::dim;
+    static constexpr std::size_t dim = Model::Space::dim;
 
     /// Grid type; this refers to the base type of the stored (derived) object
     using GridType = Grid<Space>;
@@ -332,12 +332,12 @@ private:
         }
 
         // Check if the required parameter nodes are available
-        if (!cfg["grid"]) {
+        if (not cfg["grid"]) {
             throw std::invalid_argument("Missing entry 'grid' in the "
                 "configuration node supplied to the CellManager! Check that "
                 "the model configuration includes such an entry.");
         }
-        else if (!cfg["grid"]["shape"] or !cfg["grid"]["structure"]) {
+        else if (not cfg["grid"]["shape"] or not cfg["grid"]["structure"]) {
             throw std::invalid_argument("Missing one or both of the grid "
                 "configuration entries 'shape' and 'structure'.");
         }
@@ -418,7 +418,7 @@ private:
         }
 
         // Find out the cell initialization mode
-        if (!cfg["cell_initialize_from"]) {
+        if (not cfg["cell_initialize_from"]) {
             throw std::invalid_argument("Missing required configuration key "
                 "'cell_initialize_from' for setting up cells via a "
                 "DataIO::Config& constructor or default constructor.");
@@ -435,7 +435,7 @@ private:
             if (cell_init_from == "config") {
                 // Yes. Should now check if the required config parameters were
                 // also provided and add helpful error message
-                if (!cfg["cell_initial_state"]) {
+                if (not cfg["cell_initial_state"]) {
                     throw std::invalid_argument("Was configured to create the "
                         "initial cell state from a config node but a node "
                         "with the key 'cell_initial_state' was not provided!");
@@ -491,7 +491,7 @@ private:
         // Set neighborhood from config key, if available; else: empty
         if (cfg["neighborhood"]) {
             // Extract the desired values
-            if (!cfg["neighborhood"]["mode"]) {
+            if (not cfg["neighborhood"]["mode"]) {
                 throw std::invalid_argument("Missing key 'mode' in neighbor"
                                             "hood config! A typo perhaps?");
             }

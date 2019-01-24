@@ -19,7 +19,7 @@ public:
     using Base = Grid<Space>;
 
     /// The dimensionality of the space to be discretized (for easier access)
-    static constexpr DimType dim = Space::dim;
+    static constexpr std::size_t dim = Space::dim;
 
     /// The type of the grid shape array
     using GridShape = GridShapeType<dim>;
@@ -93,7 +93,7 @@ protected:
     // -- Neighborhood helper functions -- //
 
     /// Return i-dimensional shift in cell indices, depending on grid shape
-    template<DimType shift_dim>
+    template<std::size_t shift_dim>
     constexpr typename GridShape::value_type id_shift_in_dim_ () {
         if constexpr (shift_dim == 0) {
             return 1;
@@ -119,7 +119,7 @@ protected:
      * 
      * \return void
      */
-    template<DimType dim>
+    template<std::size_t dim>
     void add_neighbors_in_dim_ (const IndexType& root_id,
                                 IndexContainer& neighbor_ids)
     {

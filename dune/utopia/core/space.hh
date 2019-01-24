@@ -11,13 +11,13 @@ namespace Utopia {
  *  \{
  */
 
-template<DimType num_dims>
+template<std::size_t num_dims>
 struct Space {
     /// The type of the extent container
     using ExtentType = std::array<double, num_dims>;
 
     // -- Members -- //
-    static constexpr DimType dim = num_dims;
+    static constexpr std::size_t dim = num_dims;
 
     /// Whether the space is to be assumed periodic
     bool periodic;
