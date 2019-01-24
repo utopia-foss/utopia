@@ -3,6 +3,8 @@
 
 #include <cstdint>
 
+#include "../base.hh"
+
 namespace Utopia
 {
     

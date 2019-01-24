@@ -10,7 +10,8 @@
 #include "types.hh"
 
 #include "cell_new.hh"          // NOTE Final name will be cell.hh
-#include "grid_new.hh"          // NOTE Final name will be grid.hh
+#include "grids.hh"
+
 #include "neighborhoods_new.hh" // NOTE Final name will be neighborhood.hh
 
 
@@ -19,7 +20,6 @@ namespace Utopia {
  *  \addtogroup CellManager
  *  \{
  */
-
 
 
 template<class CellTraits, class Model>

@@ -1,10 +1,10 @@
 #include <cassert>
 #include <iostream>
 
-#include <dune/utopia/core/cell_manager.hh>
-#include <dune/utopia/core/grid_new.hh>  // final name: grid.hh
 #include <dune/utopia/core/logging.hh>
 #include <dune/utopia/data_io/cfg_utils.hh>
+#include <dune/utopia/core/cell_manager.hh>
+
 
 #include "testtools.hh"
 
@@ -219,6 +219,7 @@ int main(int argc, char *argv[]) {
         assert(mm_dc_tri._cm.grid()->structure() == "triangular");
         std::cout << "Success." << std::endl << std::endl;
 
+        // TODO Do this all via dynamic casts
 
 
         // -------------------------------------------------------------------
