@@ -1,20 +1,37 @@
 #include <cassert>
 #include <iostream>
 
-#include <dune/utopia/core/cell_manager.hh>
-
 #include "cell_manager_integration_test.hh"
+#include "testtools.hh"
+
+using namespace Utopia::Test;
 
 int main(int argc, char *argv[]) {
     try {
         Dune::MPIHelper::instance(argc,argv);
 
-        // TODO Initialize a model with a cell manager
+        std::cout << "Initializing pseudo parent ..." << std::endl;
+        Utopia::PseudoParent pp("cell_manager_integration_test.yml");
+        std::cout << "Success." << std::endl << std::endl;
 
+
+        // -------------------------------------------------------------------
+        std::cout << "------ Testing cell manager integration ... ------"
+                  << std::endl;
+        
+        // Initialize the test model from the pseudo parent
+        CMTest cm_test("cm_test", pp);
+
+        std::cout << "Success." << std::endl << std::endl;
+        
+
+        // -------------------------------------------------------------------
+        // Done.
+        std::cout << "------ Total success. ------" << std::endl << std::endl;
         return 0;
     }
     catch (std::exception& e) {
-        std::cerr << e.what() << std::endl;
+        std::cerr << "Exception occured: " << e.what() << std::endl;
         // NOTE cannot call cleanup here because the scope is not shared
         return 1;
     }

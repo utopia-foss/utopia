@@ -1,7 +1,7 @@
 # Configuration file for the CellManager integration test
 ---
 seed: 42
-output_path: cell_manager_test_tmpfile.h5
+output_path: cell_manager_integration_test_tmpfile.h5
 
 num_steps: 1
 write_every: 999
@@ -12,6 +12,12 @@ cm_test:
   space:
     periodic: true
     extent: [2., 3.]
+
+  grid:
+    structure: rectangular
+    shape: [23, 42]
+
+  cell_initialize_from: default
 
 log_levels:
   core: debug

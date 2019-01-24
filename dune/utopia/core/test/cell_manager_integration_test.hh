@@ -14,7 +14,7 @@ using CMTestModelTypes = ModelTypes<DefaultRNG, DefaultSpace>;
 
 
 /// Specialize the cell traits struct with a dummy cell state type
-using CellTraits = CellTraits<bool>;
+using CMTestCellTraits = Utopia::CellTraits<int>;
 
 
 /// Model to test function and integration of CellManager
@@ -25,12 +25,8 @@ public:
     /// The base model class
     using Base = Model<CMTest, CMTestModelTypes>;
 
-    /// The Space type
-    using Space = Base::Space;
-
-private:
-    // Members
-    CellManager<CellTraits, CMTest> _cm;
+    /// Public cell manager (for easier testing)
+    CellManager<CMTestCellTraits, CMTest> cm;
 
 public:
     /// Construct the test model with an initial state
@@ -40,16 +36,14 @@ public:
     CMTest (const std::string name, const ParentModel &parent_model)
     :
         // Pass arguments to the base class constructor
-        Base(name, parent_model)
+        Base(name, parent_model),
+        cm(*this)
     {}
 
-    /// Iterate by one time step
     void perform_step () {}
 
-    /// Monitor the mean of the state
     void monitor () {}
 
-    /// Do nothing yet
     void write_data () {}
 };
 

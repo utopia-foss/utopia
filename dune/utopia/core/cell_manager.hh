@@ -409,6 +409,9 @@ private:
     }
 
     
+    // TODO Make default constructor the default?
+    // TODO Improve log messages
+
     /// Set up cells container via initial state from config or default constr
     /** \detail This function creates an initial state object and then passes
       *         over to setup_cells(initial_state). It checks whether the
@@ -435,8 +438,8 @@ private:
         // Find out the cell initialization mode
         if (!cfg["cell_initialize_from"]) {
             throw std::invalid_argument("Missing required configuration key "
-                "'cell_initialize_from' for setting up cells via the "
-                "configuration.");
+                "'cell_initialize_from' for setting up cells via a "
+                "DataIO::Config& constructor or default constructor.");
         }
         const auto cell_init_from = as_str(cfg["cell_initialize_from"]);
 
@@ -472,7 +475,6 @@ private:
         // Last resort: Can and should the default constructor be used?
         if constexpr (std::is_default_constructible<CellStateType>()) {
             if (cell_init_from == "default") {
-                // Construct a cell state and pass it on
                 return setup_cells(CellStateType{});
             }
         }

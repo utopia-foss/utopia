@@ -45,6 +45,11 @@ NBFuncID<Grid> AllAlone = [](const IndexType&, const Grid&)
 
 namespace Rectangular {
 
+// TODO Consider moving the helper functions _into_ RectangularGrid; this would
+//      require to have the interface determined by the base class and that
+//      instead of template arguments + if constexpr multiple functions are
+//      defined...
+
 /// Return i-dimensional shift in cell indices, depending on grid shape
 template<DimType shift_dim,
          class GridShape,

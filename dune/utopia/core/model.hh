@@ -99,7 +99,7 @@ protected:
     const Level _level;
     
     /// The space this model resides in
-    const Space _space;
+    Space _space;
 
     /// Model-internal current time stamp
     Time _time;
@@ -182,8 +182,8 @@ public:
     // -- Getters -- //
 
     /// Return the space this model resides in
-    Space get_space() const {
-        return _space;
+    std::shared_ptr<Space> get_space() {
+        return std::make_shared<Space>(_space);
     }
 
     /// Return the current time of this model
