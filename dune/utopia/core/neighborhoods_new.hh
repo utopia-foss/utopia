@@ -45,14 +45,166 @@ NBFuncID<Grid> AllAlone = [](const IndexType&, const Grid&)
 
 namespace Rectangular {
 
-template<class Grid>
-NBFuncID<Grid> Nearest = [](const IndexType&, const Grid&)
+/// Return i-dimensional shift in cell indices, depending on grid shape
+template<DimType shift_dim,
+         class GridShape,
+         class return_t=typename GridShape::value_type>
+constexpr return_t id_shift_in_dim_ (const GridShape& shape) {
+    if constexpr (shift_dim == 0) {
+        return 1;
+    }
+    else {
+        return shape[shift_dim-1] * id_shift_in_dim_<shift_dim-1>(shape);
+    } 
+}
+
+/// Fill an index container with neighbors in different directions
+/** This function takes an index container and populates it with the indices of
+ *  neighboring cells in different dimensions, specified by template
+ *  parameter `dim`.
+ *  This only works on structured grids!
+ * 
+ *  The algorithm first calculates whether the given root cell index has a
+ *  front or back boundary in the chosen dimension. If so, the neighboring cell
+ *  is only added if the grid is periodic.
+ * 
+ * \param root_id      Which cell to find the agents of
+ * \param neighbor_ids The container to populate with the indices
+ * \param grid         The grid discretization to determine shape and
+ *                     periodicity from
+ * 
+ * \tparam dim_no      The dimensions in which to add neighbors
+ * \tparam Grid        The grid type to work on
+ * 
+ * \return void
+ */
+template<DimType dim, class Grid>
+void add_neighbors_in_dim_ (const IndexType& root_id,
+                            IndexContainer& neighbor_ids,
+                            const Grid& grid)
 {
-    IndexContainer idcs{};
+    // Assure the number of dimesions is supported
+    static_assert(Grid::dim >= 1 and Grid::dim <= 3,
+                  "Unsupported dimensionality! Need be 1, 2, or 3.");
 
-    // TODO
+    // Gather the grid information needed
+    const bool periodic = grid.is_periodic();
+    const auto& shape = grid.shape();
 
-    return idcs;
+    // Distinguish by dimension parameter
+    if constexpr (dim == 1) {
+        // check if at front boundary
+        if (root_id % shape[0] == 0) {
+            if (periodic) {
+                neighbor_ids.push_back(root_id
+                                       - id_shift_in_dim_<0>(shape)
+                                       + id_shift_in_dim_<1>(shape));
+            }
+        }
+        else {
+            neighbor_ids.push_back(root_id - id_shift_in_dim_<0>(shape));
+        }
+
+        // check if at back boundary
+        if (root_id % shape[0] == shape[0] - 1) {
+            if (periodic) {
+                neighbor_ids.push_back(root_id
+                                       + id_shift_in_dim_<0>(shape)
+                                       - id_shift_in_dim_<1>(shape));
+            }
+        }
+        else {
+            neighbor_ids.push_back(root_id + id_shift_in_dim_<0>(shape));
+        }
+    }
+
+
+    else if constexpr (dim == 2) {
+        // 'normalize' id to lowest height (if 3D)
+        const auto root_id_nrm = root_id % id_shift_in_dim_<2>(shape);
+
+        // check if at front boundary
+        // TODO Check what the cast is needed for and why this is not the same as with the other dimensions
+        if ((long) root_id_nrm / shape[0] == 0) {
+            if (periodic) {
+                neighbor_ids.push_back(root_id
+                                       - id_shift_in_dim_<1>(shape)
+                                       + id_shift_in_dim_<2>(shape));
+            }
+        }
+        else {
+            neighbor_ids.push_back(root_id - id_shift_in_dim_<1>(shape));
+        }
+
+        // check if at back boundary
+        if ((long) root_id_nrm / shape[0] == shape[1] - 1) {
+            if (periodic) {
+                neighbor_ids.push_back(root_id
+                                       + id_shift_in_dim_<1>(shape)
+                                       - id_shift_in_dim_<2>(shape));
+            }
+        }
+        else {
+            neighbor_ids.push_back(root_id + id_shift_in_dim_<1>(shape));
+        }
+    }
+
+
+    else if constexpr (dim == 3) {
+        const auto id_max = id_shift_in_dim_<3>(shape) - 1;
+
+        // check if at front boundary
+        if (root_id - id_shift_in_dim_<2>(shape) < 0) {
+            if (periodic) {
+                neighbor_ids.push_back(root_id
+                                       - id_shift_in_dim_<2>(shape)
+                                       + id_shift_in_dim_<3>(shape));
+            }
+        }
+        else {
+            neighbor_ids.push_back(root_id - id_shift_in_dim_<2>(shape));
+        }
+
+        // check if at back boundary
+        if (root_id + id_shift_in_dim_<2>(shape) > id_max) {
+            if (periodic) {
+                neighbor_ids.push_back(root_id
+                                       + id_shift_in_dim_<2>(shape)
+                                       - id_shift_in_dim_<3>(shape));
+            }
+        }
+        else {
+            neighbor_ids.push_back(root_id + id_shift_in_dim_<2>(shape));
+        }
+    }
+}
+
+
+template<class Grid>
+NBFuncID<Grid> Nearest = [](const IndexType& root_id, const Grid& grid)
+{
+    // Instantiate container in which to store the neighboring cell IDs
+    IndexContainer neighbor_ids;
+
+    // The number if neighbors is known; pre-allocating space brings a speed
+    // improvemet of about factor 2
+    neighbor_ids.reserve(2 * Grid::dim);
+
+    // Depending on the number of dimensions, add the IDs of neighboring cells
+    // in those dimensions
+    add_neighbors_in_dim_<1>(root_id, neighbor_ids, grid);
+
+    if constexpr (Grid::dim >= 2) {
+        add_neighbors_in_dim_<2>(root_id, neighbor_ids, grid);
+    }
+
+    if constexpr (Grid::dim >= 3) {
+        add_neighbors_in_dim_<3>(root_id, neighbor_ids, grid);
+    }
+    // ... _could_ continue here
+
+    // Return the container of cell indices
+    return neighbor_ids;
 };
     
 } // namespace Rectangular

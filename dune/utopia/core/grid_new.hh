@@ -19,23 +19,30 @@ namespace Utopia {
 /// The base class for all grid discretizations used by the CellManager
 template<class Space>
 class Grid {
+public:
+    /// The dimensionality of the space to be discretized (for easier access)
+    static constexpr DimType dim = Space::dim;
+
+    /// The type of the grid shape array
+    using GridShape = GridShapeType<dim>;
+
 protected:
     // -- Members -- //
     /// The space that is to be discretized
     std::shared_ptr<Space> _space;
 
     /// The rectangular (multi-index) shape of the discretization
-    const GridShapeType<Space::dim> _shape;
+    const GridShape _shape;
 
     /// The number of cells required by this discretization
     const IndexType _num_cells;
 
 public:
-    // -- Constructor and Destructor -- //
+    // -- Constructors and Destructors -- //
     /// Construct a discretization for the given space using the specified
     /// grid shape
     Grid (std::shared_ptr<Space> space,
-          const GridShapeType<Space::dim> shape)
+          const GridShape& shape)
     :
         _space(space),
         _shape(shape),
@@ -46,10 +53,10 @@ public:
     virtual ~Grid() = default;
 
 
-    // -- Public interface -- //
-
-
     // -- Getters -- //
+    /// Get this grid's structure descriptor
+    virtual const std::string structure() const = 0;
+
     /// Get number of cells
     /** \detail This information is used by the CellManager to populate the
       *         cell container with the returned number of cells
@@ -63,9 +70,10 @@ public:
         return _shape;
     }
 
-    /// Get this grid's structure descriptor
-    virtual const std::string structure() const = 0;
-
+    /// Whether the grid is periodic
+    bool is_periodic() const {
+        return _space->periodic;
+    }
 
 
 protected:
@@ -93,13 +101,20 @@ template<class Space>
 class RectangularGrid
     : public Grid<Space>
 {
+public:
+    /// The dimensionality of the space to be discretized (for easier access)
+    static constexpr DimType dim = Space::dim;
+
+    /// The type of the grid shape array
+    using GridShape = GridShapeType<dim>;
+
 private:
     // -- RectangularGrid-specific members -- //
 
 public:
     /// Construct a rectangular grid discretization
     RectangularGrid (std::shared_ptr<Space> space,
-                     const GridShapeType<Space::dim> shape)
+                     const GridShape shape)
     :
         Grid<Space>(space, shape)
     {}
@@ -108,6 +123,7 @@ public:
     const std::string structure() const {
         return "rectangular";
     }
+
 
 protected:
     // -- Custom implementations of virtual base class functions -- //
@@ -122,13 +138,20 @@ template<class Space>
 class HexagonalGrid
     : public Grid<Space>
 {
+public:
+    /// The dimensionality of the space to be discretized (for easier access)
+    static constexpr DimType dim = Space::dim;
+
+    /// The type of the grid shape array
+    using GridShape = GridShapeType<dim>;
+
 private:
     // -- HexagonalGrid-specific members -- //
 
 public:
     /// Construct a hexagonal grid discretization
     HexagonalGrid (std::shared_ptr<Space> space,
-                   const GridShapeType<Space::dim> shape)
+                   const GridShape shape)
     :
         Grid<Space>(space, shape)
     {}
@@ -137,6 +160,7 @@ public:
     const std::string structure() const {
         return "hexagonal";
     }
+
 
 protected:
     // -- Custom implementations of virtual base class functions -- //
@@ -151,13 +175,20 @@ template<class Space>
 class TriangularGrid
     : public Grid<Space>
 {
+public:
+    /// The dimensionality of the space to be discretized (for easier access)
+    static constexpr DimType dim = Space::dim;
+
+    /// The type of the grid shape array
+    using GridShape = GridShapeType<dim>;
+
 private:
     // -- TriagonalGrid-specific members -- //
 
 public:
     /// Construct a triangular grid discretization
     TriangularGrid (std::shared_ptr<Space> space,
-                    const GridShapeType<Space::dim> shape)
+                    const GridShape shape)
     :
         Grid<Space>(space, shape)
     {}
@@ -166,6 +197,7 @@ public:
     const std::string structure() const {
         return "triangular";
     }
+
 
 protected:
     // -- Custom implementations of virtual base class functions -- //
