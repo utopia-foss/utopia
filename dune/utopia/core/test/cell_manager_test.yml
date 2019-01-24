@@ -137,7 +137,7 @@ nb_empty:
 
   # neighborhood key is optional
 
-nb_nearest:
+nb_vonNeumann:
   space:
     periodic: true
     extent: [42., 42.]
@@ -149,7 +149,7 @@ nb_nearest:
   cell_initialize_from: default
 
   neighborhood:
-    mode: nearest
+    mode: vonNeumann
     # compute_and_store key is optional
 
 nb_computed:
@@ -164,7 +164,7 @@ nb_computed:
   cell_initialize_from: default
 
   neighborhood:
-    mode: nearest
+    mode: vonNeumann
     compute_and_store: true
 
 nb_bad1:
@@ -193,4 +193,4 @@ nb_bad2:
   cell_initialize_from: default
 
   neighborhood:
-    mode: nearest  # not available for triangular
+    mode: vonNeumann  # not available for triangular

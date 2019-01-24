@@ -18,14 +18,14 @@ int main(int argc, char *argv[]) {
         // -------------------------------------------------------------------
         std::cout << "------ Testing rectangular 2D grid ... ------"
                   << std::endl;
-        
+
         // Initialize the test model
         std::cout << ".....  Neighborhood:  Empty  ..." << std::endl;
-        NBTest rect_2D_alone("rect_2D_alone", pp);
+        NBTest rect_2D_empty("rect_2D_empty", pp);
         std::cout << "Test model set up." << std::endl;
 
         { // Test scope
-        auto cm = rect_2D_alone.cm;
+        auto cm = rect_2D_empty.cm;
         auto grid = cm.grid();
 
         // Check grid shape
@@ -35,23 +35,21 @@ int main(int argc, char *argv[]) {
         std::cout << "Grid shape and periodicity matches." << std::endl;
 
         // Check neighbors count for all cells
+        std::cout << "Testing neighbor count ..." << std::endl;
         check_num_neighbors(cm, 0);
         std::cout << "Neighbor count matches." << std::endl;
-
-        // Check that the neighbors are the expected neighbors
-        // TODO
 
         } // End of test scope
         std::cout << "Success." << std::endl << std::endl;
 
 
         // Initialize the test model
-        std::cout << ".....  Neighborhood:  Nearest  ..." << std::endl;
-        NBTest rect_2D_nearest("rect_2D_nearest", pp);
+        std::cout << ".....  Neighborhood:  vonNeumann  ..." << std::endl;
+        NBTest rect_2D_vonNeumann("rect_2D_vonNeumann", pp);
         std::cout << "Test model set up." << std::endl;
 
         { // Test scope
-        auto cm = rect_2D_nearest.cm;
+        auto cm = rect_2D_vonNeumann.cm;
         auto grid = cm.grid();
 
         // Check grid shape
@@ -61,6 +59,7 @@ int main(int argc, char *argv[]) {
         std::cout << "Grid shape and periodicity matches." << std::endl;
 
         // Check neighbors count for all cells
+        std::cout << "Testing neighbor count ..." << std::endl;
         check_num_neighbors(cm, 4);
         std::cout << "Neighbor count matches." << std::endl;
 

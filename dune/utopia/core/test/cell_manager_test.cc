@@ -11,6 +11,7 @@
 // Import some types
 using Utopia::DataIO::Config;
 using Utopia::CellManager;
+using Utopia::NBMode;
 
 
 /// A cell state definition that is default-constructible
@@ -206,20 +207,26 @@ int main(int argc, char *argv[]) {
 
         std::cout << "... rectangular" << std::endl;
         MockModel<CellTraitsDC> mm_dc_rect("mm_dc_rect", cfg["default_rect"]);
-        assert(mm_dc_rect._cm.grid()->structure() == "rectangular");
+        const auto grid_rect = mm_dc_rect._cm.grid().get();
+        using exp_t_rect = const Utopia::RectangularGrid<Utopia::DefaultSpace>;
+        assert(dynamic_cast<exp_t_rect*>(grid_rect));
         std::cout << "Success." << std::endl << std::endl;
 
         std::cout << "... hexagonal" << std::endl;
         MockModel<CellTraitsDC> mm_dc_hex("mm_dc_hex", cfg["default_hex"]);
-        assert(mm_dc_hex._cm.grid()->structure() == "hexagonal");        
+        const auto grid_hex = mm_dc_hex._cm.grid().get();
+        using exp_t_hex = const Utopia::HexagonalGrid<Utopia::DefaultSpace>;
+        assert(dynamic_cast<exp_t_hex*>(grid_hex));
         std::cout << "Success." << std::endl << std::endl;
         
         std::cout << "... triangular" << std::endl;
         MockModel<CellTraitsDC> mm_dc_tri("mm_dc_tri", cfg["default_tri"]);
-        assert(mm_dc_tri._cm.grid()->structure() == "triangular");
+        const auto grid_tri = mm_dc_tri._cm.grid().get();
+        using exp_t_tri = const Utopia::TriangularGrid<Utopia::DefaultSpace>;
+        assert(dynamic_cast<exp_t_tri*>(grid_tri));
         std::cout << "Success." << std::endl << std::endl;
 
-        // TODO Do this all via dynamic casts
+        // // TODO Do this all via dynamic casts
 
 
         // -------------------------------------------------------------------
@@ -349,22 +356,22 @@ int main(int argc, char *argv[]) {
         std::cout << "... empty" << std::endl;
         MockModel<CellTraitsDC> mm_nb_empty("mm_nb_empty",
                                             cfg["nb_empty"]);
-        assert(mm_nb_empty._cm.nb_mode() == "empty");
+        assert(mm_nb_empty._cm.nb_mode() == NBMode::empty);
         std::cout << "Success." << std::endl << std::endl;
 
-        // nearest neighbor
-        std::cout << "... nearest" << std::endl;
-        MockModel<CellTraitsDC> mm_nb_nearest("mm_nb_nearest",
-                                              cfg["nb_nearest"]);
-        assert(mm_nb_nearest._cm.nb_mode() == "nearest");
+        // vonNeumann neighbor
+        std::cout << "... vonNeumann" << std::endl;
+        MockModel<CellTraitsDC> mm_nb_vonNeumann("mm_nb_vonNeumann",
+                                              cfg["nb_vonNeumann"]);
+        assert(mm_nb_vonNeumann._cm.nb_mode() == NBMode::vonNeumann);
         // TODO
         std::cout << "Success." << std::endl << std::endl;
 
         // pre-computing and storing the values
-        std::cout << "... nearest (computed and stored)" << std::endl;
+        std::cout << "... vonNeumann (computed and stored)" << std::endl;
         MockModel<CellTraitsDC> mm_nb_computed("mm_nb_computed",
                                                cfg["nb_computed"]);
-        assert(mm_nb_computed._cm.nb_mode() == "nearest");
+        assert(mm_nb_computed._cm.nb_mode() == NBMode::vonNeumann);
         // TODO
         std::cout << "Success." << std::endl << std::endl;
 
@@ -382,7 +389,7 @@ int main(int argc, char *argv[]) {
             [&](){
                 MockModel<CellTraitsDC> mm_nb_bad2("mm_nb_bad2",
                                                    cfg["nb_bad2"]);
-            }, "No 'nearest' neighborhood available for 'triangular' grid!"));
+            }, "No 'vonNeumann' neighborhood available for 'triangular'"));
         std::cout << "Success." << std::endl << std::endl;
 
         // NOTE The actual neighborhood tests are performed separately

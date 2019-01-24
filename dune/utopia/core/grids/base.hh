@@ -11,13 +11,40 @@ namespace Utopia {
 
 /// Type of the neighborhood calculating function
 template<class Grid>
-using NBFuncID = std::function<IndexContainer(const IndexType&, const Grid&)>;
+using NBFuncID = std::function<IndexContainer(const IndexType&)>;
+
+
+/// Possible neighborhood types
+enum NBMode {
+    empty = 0,
+    vonNeumann = 1,
+    Moore = 2
+    // TODO to be continued ...
+};
+
+
+/// A map from strings to neighborhood enum values
+const std::map<std::string, NBMode> nb_mode_from_string {
+    {"empty",       NBMode::empty},
+    {"vonNeumann",  NBMode::vonNeumann},
+    {"Moore",       NBMode::Moore}
+};
+
+/// A map from neighborhood enum values to strings
+const std::map<NBMode, std::string> nb_mode_to_string {
+    {NBMode::empty,         "empty"},
+    {NBMode::vonNeumann,    "vonNeumann"},
+    {NBMode::Moore,         "Moore"}
+};
 
 
 /// The base class for all grid discretizations used by the CellManager
 template<class Space>
 class Grid {
 public:
+    /// Type of this class, i.e. the base grid class
+    using Self = Grid<Space>;
+
     /// The dimensionality of the space to be discretized (for easier access)
     static constexpr DimType dim = Space::dim;
 
@@ -32,8 +59,11 @@ protected:
     /// The rectangular (multi-index) shape of the discretization
     const GridShape _shape;
 
-    /// The number of cells required by this discretization
-    const IndexType _num_cells;
+    /// Neighborhood mode
+    NBMode _nb_mode;
+
+    /// Neighborhood function (working on cell IDs)
+    NBFuncID<Self> _nb_func;
 
 public:
     // -- Constructors and Destructors -- //
@@ -44,23 +74,41 @@ public:
     :
         _space(space),
         _shape(shape),
-        _num_cells(__calc_num_cells())
-    {}
+        _nb_mode(NBMode::empty)
+    {
+        _nb_func = _nb_empty;
+    }
 
     /// Virtual destructor to allow polymorphic destruction
     virtual ~Grid() = default;
 
 
-    // -- Getters -- //
-    /// Get this grid's structure descriptor
-    virtual const std::string structure() const = 0;
+    // -- Neighborhood interface -- //
 
+    IndexContainer neighbors_of(const IndexType& id) {
+        return _nb_func(id);
+    }
+
+    void select_neighborhood(NBMode nb_mode) {
+        try {
+            _nb_func = get_nb_func(nb_mode);
+        }
+        catch (std::exception& e) {
+            throw std::invalid_argument("Failed to select neighborhood: "
+                                        + ((std::string) e.what()));
+        }
+        // Set the member to the new value
+        _nb_mode = nb_mode;
+    }
+
+
+    // -- Getters -- //
     /// Get number of cells
     /** \detail This information is used by the CellManager to populate the
       *         cell container with the returned number of cells
       */
-    IndexType num_cells() const {
-        return _num_cells;
+    IndexType num_cells() {
+        return calc_num_cells();
     }
     
     /// Get const reference to grid shape
@@ -74,6 +122,7 @@ public:
     }
 
 
+
 protected:
     // -- Helper functions -- //
     // NOTE Some of these are best be made virtual such that the child
@@ -83,11 +132,24 @@ protected:
     //      errors. For non-pure virtual methods, the errors will emerge during
     //      linking and also be quite cryptic ...
 
-    /// Calculate the number of cells given the current grid shape
-    IndexType __calc_num_cells() {  // NOTE Could make this (non-pure) virtual
-        return std::accumulate(_shape.begin(), _shape.end(),
-                               1, std::multiplies<IndexType>());
+    /// Calculate the number of cells required to fill the current grid shape
+    virtual IndexType calc_num_cells() = 0;
+
+
+    // -- Neighborhood implementations -- //
+
+    /// Retrieve the neighborhood function depending on the mode
+    virtual NBFuncID<Self> get_nb_func(NBMode mode) = 0;
+
+
+    /// A neighborhood function for empty neighborhood
+    NBFuncID<Self> _nb_empty = [](const IndexType&) {
+        IndexContainer idcs{};
+        idcs.reserve(0);
+        return idcs;
     };
+
+
 };
 
 

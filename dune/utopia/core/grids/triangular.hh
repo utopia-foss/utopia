@@ -35,14 +35,29 @@ public:
         Base(space, shape)
     {}
 
-    /// The structure descriptor of this grid
-    const std::string structure() const {
-        return "triangular";
-    }
-
 
 protected:
     // -- Custom implementations of virtual base class functions -- //
+
+    /// Calculate the number of cells required to fill the current grid shape
+    IndexType calc_num_cells() {
+        // Requires twice as many cells as a rectangular grid
+        return 2 * std::accumulate(this->_shape.begin(), this->_shape.end(),
+                                   1, std::multiplies<IndexType>());
+    };
+
+    // -- Neighborhood implementations -- //
+
+    /// Retrieve the neighborhood function depending on the mode
+    NBFuncID<Base> get_nb_func(NBMode nb_mode) {
+        if (nb_mode == NBMode::empty) {
+            return this->_nb_empty;
+        }
+        else {
+            throw std::invalid_argument("No '" + nb_mode_to_string.at(nb_mode)
+                + "' available for triangular grid discretization!");
+        }
+    }
 };
 
 // end group CellManager

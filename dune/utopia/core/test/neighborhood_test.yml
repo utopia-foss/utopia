@@ -14,7 +14,7 @@ log_levels:
 # ----------------------------------------------------------------------------
 # Model configurations starting below, one for each scenario
 
-rect_2D_alone:
+rect_2D_empty:
   space:
     periodic: true
     extent: [5., 5.]
@@ -27,7 +27,7 @@ rect_2D_alone:
   # no neighborhood given -> use default, i.e.: empty neighborhood
 
 
-rect_2D_nearest:
+rect_2D_vonNeumann:
   space:
     periodic: true
     extent: [5., 5.]
@@ -39,4 +39,4 @@ rect_2D_nearest:
   cell_initialize_from: default
 
   neighborhood:
-    mode: nearest
+    mode: vonNeumann

@@ -1,11 +1,10 @@
 #ifndef UTOPIA_TEST_NEIGHBORHOOD_TEST_HH
 #define UTOPIA_TEST_NEIGHBORHOOD_TEST_HH
 
-#include <dune/utopia/core/cell_manager.hh>
-#include <dune/utopia/core/grid_new.hh>  // final name: grid.hh
 #include <dune/utopia/core/logging.hh>
 #include <dune/utopia/core/model.hh>
 #include <dune/utopia/data_io/cfg_utils.hh>
+#include <dune/utopia/core/cell_manager.hh>
 
 
 namespace Utopia {
@@ -66,21 +65,22 @@ public:
 /// Assure that a periodic grid has the correct Neighbor count
 template<typename CellManager>
 void check_num_neighbors (const CellManager& cm, unsigned int expected) {
-    bool exception = false;
+    bool err = false;
 
-    for (auto& cell : cm.cells()) {
+    for (const auto& cell : cm.cells()) {
         auto neighbors = cm.neighbors_of(cell);
         
         if (neighbors.size() != expected) {
             std::cerr << "Cell No. " << cell->id()
                 << " has " << neighbors.size()
                 << " neighbors! Expected " << expected << std::endl;
-            exception = true;
+            err = true;
         }
     }
 
-    if (exception) {
-        std::runtime_error("At least one cell had the wrong neighbor count!");
+    if (err) {
+        throw std::runtime_error("At least one cell had the wrong neighbor "
+                                 "count!");
     }
 }
 
