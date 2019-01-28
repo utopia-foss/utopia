@@ -14,6 +14,8 @@ log_levels:
 # ----------------------------------------------------------------------------
 # Model configurations starting below, one for each scenario
 
+# periodic ...................................................................
+
 rect_2D_empty:
   space:
     periodic: true
@@ -25,7 +27,6 @@ rect_2D_empty:
   cell_initialize_from: default
 
   # no neighborhood given -> use default, i.e.: empty neighborhood
-
 
 rect_2D_vonNeumann:
   space:
@@ -45,6 +46,38 @@ rect_2D_vonNeumann:
 rect_2D_Moore:
   space:
     periodic: true
+    extent: [5., 5.]
+
+  grid:
+    structure: rectangular
+    shape: [5, 5]
+
+  cell_initialize_from: default
+
+  neighborhood:
+    mode: Moore
+
+
+# not periodic ...............................................................
+
+rect_2D_vonNeumann_np:
+  space:
+    periodic: false
+    extent: [5., 5.]
+
+  grid:
+    structure: rectangular
+    shape: [5, 5]
+
+  cell_initialize_from: default
+
+  neighborhood:
+    mode: vonNeumann
+
+
+rect_2D_Moore_np:
+  space:
+    periodic: false
     extent: [5., 5.]
 
   grid:

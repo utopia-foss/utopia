@@ -1,6 +1,8 @@
 #ifndef UTOPIA_TEST_NEIGHBORHOOD_TEST_HH
 #define UTOPIA_TEST_NEIGHBORHOOD_TEST_HH
 
+#include <algorithm>
+
 #include <dune/utopia/core/logging.hh>
 #include <dune/utopia/core/model.hh>
 #include <dune/utopia/data_io/cfg_utils.hh>
@@ -63,7 +65,7 @@ public:
 // Testing functions ---------------------------------------------------------
 
 /// Assure that a periodic grid has the correct Neighbor count
-template<typename CellManager>
+template<class CellManager>
 void check_num_neighbors (const CellManager& cm, unsigned int expected) {
     bool err = false;
 
@@ -85,7 +87,65 @@ void check_num_neighbors (const CellManager& cm, unsigned int expected) {
 }
 
 
+/// Assert all members were there only once
+template<class CellManager>
+bool unique_neighbors (const CellManager& cm) {
+    bool err = false;
 
+    for (const auto& cell : cm.cells()) {
+        auto neighbors = cm.neighbors_of(cell);
+        
+        // Create list of neighborhood IDs
+        Utopia::IndexContainer nb_ids;
+        std::transform(neighbors.begin(), neighbors.end(),
+                       std::back_inserter(nb_ids),
+                       [](const auto& cell){ return cell->id(); });
+
+        // Make sure they are unique
+        std::sort(nb_ids.begin(), nb_ids.end()); // needed for std::unique
+        nb_ids.erase(std::unique(nb_ids.begin(), nb_ids.end()), nb_ids.end());
+
+        if (nb_ids.size() != neighbors.size()) {
+            std::cerr << "There were duplicate neighbors for cell with ID "
+                      << cell->id() << "!" << std::endl;
+            err = true;
+        }
+    }
+
+    return (not err);
+}
+
+
+/// Check the expected neighbors by ID
+template<class CellManager, class Cell>
+bool expected_neighbors (const CellManager& cm, const Cell& cell,
+                         std::vector<std::size_t> expected_ids)
+{
+    auto neighbors = cm.neighbors_of(cell);
+
+    // Check the count matches
+    if (neighbors.size() != expected_ids.size()) {
+        std::cerr << "Expected " << expected_ids.size() << " neighbors, but "
+                  << "cell " << cell->id() << " was calculated to have "
+                  << neighbors.size() << " neighbors!" << std::endl;
+        return false;
+    }
+
+    // Check by ID
+    for (const auto& nb : neighbors) {
+        if (std::find(expected_ids.begin(), expected_ids.end(),
+                      nb->id()) == expected_ids.end())
+        {
+            std::cerr << "Neighborhood cell with ID " << nb->id() << " was "
+                      << "not among the expected neighborhood cell IDs for "
+                      << "cell " << cell->id() << "!" << std::endl;
+            return false;
+        }
+    }
+
+    // All good.
+    return true;
+}
 
 
 #endif // UTOPIA_TEST_NEIGHBORHOOD_TEST_HH
