@@ -54,7 +54,7 @@ public:
 protected:
     // -- Members -- //
     /// The space that is to be discretized
-    std::shared_ptr<Space> _space;
+    const std::shared_ptr<Space> _space;
 
     /// The rectangular (multi-index) shape of the discretization
     const GridShape _shape;
@@ -67,8 +67,10 @@ protected:
 
 public:
     // -- Constructors and Destructors -- //
-    /// Construct a discretization for the given space using the specified
-    /// grid shape
+    /// Construct a grid discretization
+    /** \param  space     The space to construct the discretization for
+      * \param  shape     The shape of the grid
+      */
     Grid (std::shared_ptr<Space> space,
           const GridShape& shape)
     :
@@ -76,6 +78,7 @@ public:
         _shape(shape),
         _nb_mode(NBMode::empty)
     {
+        // Set the neighborhood function to not return anything
         _nb_func = _nb_empty;
     }
 

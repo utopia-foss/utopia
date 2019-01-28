@@ -50,6 +50,9 @@ private:
     /// The logger (same as the model this manager resides in)
     const std::shared_ptr<spdlog::logger> _log;
 
+    /// Cell manager configuration node
+    const DataIO::Config _cfg;
+
     /// The physical space the cells are to reside in
     const std::shared_ptr<Space> _space;
 
@@ -88,9 +91,10 @@ public:
                  const DataIO::Config& custom_cfg = {})
     :
         _log(model.get_logger()),
+        _cfg(setup_cfg(model, custom_cfg)),
         _space(model.get_space()),
-        _grid(setup_grid(model, custom_cfg)),
-        _cells(setup_cells(model, custom_cfg)),
+        _grid(setup_grid()),
+        _cells(setup_cells()),
         _cell_neighbors(),
         _nb_mode(NBMode::empty)
     {
@@ -98,7 +102,7 @@ public:
         _nb_func = _nb_compute_each_time_empty;
 
         // Use setup function to set up neighborhood from configuration
-        setup_nb_funcs(model, custom_cfg);
+        setup_nb_funcs();
 
         _log->info("CellManager is all set up.");
     }
@@ -117,8 +121,9 @@ public:
                  const DataIO::Config& custom_cfg = {})
     :
         _log(model.get_logger()),
+        _cfg(setup_cfg(model, custom_cfg)),
         _space(model.get_space()),
-        _grid(setup_grid(model, custom_cfg)),
+        _grid(setup_grid()),
         _cells(setup_cells(initial_state)),
         _cell_neighbors(),
         _nb_mode(NBMode::empty)
@@ -127,7 +132,7 @@ public:
         _nb_func = _nb_compute_each_time_empty;
 
         // Use setup function to set up neighborhood from configuration
-        setup_nb_funcs(model, custom_cfg);
+        setup_nb_funcs();
 
         _log->info("CellManager is all set up.");
     }
@@ -190,12 +195,9 @@ public:
     void select_neighborhood(NBMode nb_mode,
                              bool compute_and_store = false)
     {
-        // TODO * Check if mode differs from the one currently set
-        //      * Check if _cell_neighbors needs to be invalidated
-        //      * If configured, re-calculate all cell neighbors
-        //      * Set the corresponding neighbors_of method accordingly
-
-        if (nb_mode != _nb_mode) {
+        // Only change the neighborhood, if it is different to the existing
+        // one or if it is set to be empty
+        if ((nb_mode != _nb_mode) or (nb_mode == NBMode::empty)) {
             _log->info("Selecting '{}' neighborhood ...",
                        nb_mode_to_string.at(nb_mode));
 
@@ -272,7 +274,7 @@ private:
         ret.reserve(ids.size());
 
         for (const auto& id : ids) {
-            ret.emplace_back(std::shared_ptr<Cell>(_cells.at(id)));
+            ret.emplace_back(std::shared_ptr<Cell>(_cells[id]));
         }
 
         return ret;
@@ -288,7 +290,7 @@ private:
         ret.reserve(ids.size());
 
         for (const auto& id : ids) {
-            ret.emplace_back(std::shared_ptr<Cell>(_cells.at(id)));
+            ret.emplace_back(std::shared_ptr<Cell>(_cells[id]));
         }
 
         return ret;
@@ -297,7 +299,7 @@ private:
     // .. std::functions to call from neighbors_of ...........................
     /// Return the pre-computed neighbors of the given cell
     NBFuncCell _nb_from_cache = [this](const Cell& cell) {
-        return this->_cell_neighbors.at(cell.id());
+        return this->_cell_neighbors[cell.id()];
     };
 
     /// Compute the neighbors for the given cell using the grid
@@ -315,36 +317,41 @@ private:
 
 
     // -- Setup functions ----------------------------------------------------
-    /// Set up the grid discretization from config parameters
-    std::shared_ptr<GridType> setup_grid(Model& model,
-                                         const DataIO::Config& custom_cfg)
-    {
-        // Determine which configuration to use
+
+    /// Set up the cell manager configuration member
+    /** \detail This function determines whether to use a custom configuration
+      *         or the one provided by the model this CellManager belongs to
+      */
+    DataIO::Config setup_cfg(Model& model, const DataIO::Config& custom_cfg) {
         auto cfg = model.get_cfg();
 
         if (custom_cfg.size() > 0) {
-            _log->debug("Using custom config for grid setup ...");
+            _log->debug("Using custom config for cell manager setup ...");
             cfg = custom_cfg;
         }
         else {
-            _log->debug("Using '{}' model config for grid setup ...",
-                        model.get_name());
+            _log->debug("Using '{}' model's configuration for cell manager "
+                        "setup ... ", model.get_name());
         }
+        return cfg;
+    }
 
+    /// Set up the grid discretization
+    std::shared_ptr<GridType> setup_grid() {
         // Check if the required parameter nodes are available
-        if (not cfg["grid"]) {
+        if (not _cfg["grid"]) {
             throw std::invalid_argument("Missing entry 'grid' in the "
                 "configuration node supplied to the CellManager! Check that "
                 "the model configuration includes such an entry.");
         }
-        else if (not cfg["grid"]["shape"] or not cfg["grid"]["structure"]) {
+        else if (not _cfg["grid"]["shape"] or not _cfg["grid"]["structure"]) {
             throw std::invalid_argument("Missing one or both of the grid "
                 "configuration entries 'shape' and 'structure'.");
         }
         
         // Get the parameters: shape and structure type
-        const auto shape = as_<GridShapeType<dim>>(cfg["grid"]["shape"]); 
-        auto structure = as_str(cfg["grid"]["structure"]);
+        const auto shape = as_<GridShapeType<dim>>(_cfg["grid"]["shape"]); 
+        auto structure = as_str(_cfg["grid"]["structure"]);
 
         _log->info("Setting up {}ly structured grid discretization ...",
                    structure);
@@ -390,9 +397,6 @@ private:
         return cont;
     }
 
-    
-    // TODO Make default constructor the default?
-    // TODO Improve log messages
 
     /// Set up cells container via initial state from config or default constr
     /** \detail This function creates an initial state object and then passes
@@ -402,28 +406,14 @@ private:
       *         to try the default constructor to construct the object. If both
       *         are not possible, a compile-time error message is emitted.
       */
-    CellContainer<Cell> setup_cells(Model& model,
-                                    const DataIO::Config& custom_cfg)
-    {
-        // Determine which configuration to use
-        auto cfg = model.get_cfg();
-
-        if (custom_cfg.size() > 0) {
-            _log->debug("Using custom config for cell setup ...");
-            cfg = custom_cfg;
-        }
-        else {
-            _log->debug("Using '{}' model config for cell setup ...",
-                        model.get_name());
-        }
-
+    CellContainer<Cell> setup_cells() {
         // Find out the cell initialization mode
-        if (not cfg["cell_initialize_from"]) {
+        if (not _cfg["cell_initialize_from"]) {
             throw std::invalid_argument("Missing required configuration key "
                 "'cell_initialize_from' for setting up cells via a "
                 "DataIO::Config& constructor or default constructor.");
         }
-        const auto cell_init_from = as_str(cfg["cell_initialize_from"]);
+        const auto cell_init_from = as_str(_cfg["cell_initialize_from"]);
 
         _log->info("Creating initial cell state using '{}' constructor ...",
                    cell_init_from);
@@ -435,14 +425,14 @@ private:
             if (cell_init_from == "config") {
                 // Yes. Should now check if the required config parameters were
                 // also provided and add helpful error message
-                if (not cfg["cell_initial_state"]) {
+                if (not _cfg["cell_initial_state"]) {
                     throw std::invalid_argument("Was configured to create the "
                         "initial cell state from a config node but a node "
                         "with the key 'cell_initial_state' was not provided!");
                 }
 
                 // Everything ok. Create state object and pass it on ...
-                return setup_cells(CellStateType(cfg["cell_initial_state"]));
+                return setup_cells(CellStateType(_cfg["cell_initial_state"]));
             }
             // else: do not return but continue with the rest of the function,
             // i.e. trying the other constructors
@@ -475,31 +465,21 @@ private:
 
 
     /// Setup the neighborhood functions using config entries
-    void setup_nb_funcs(Model& model, const DataIO::Config& custom_cfg) {
-        // Determine which configuration to use
-        auto cfg = model.get_cfg();
-
-        if (custom_cfg.size() > 0) {
-            _log->debug("Using custom config for neighborhood setup ...");
-            cfg = custom_cfg;
-        }
-        else {
-            _log->debug("Using '{}' model config for neighborhood setup ...",
-                        model.get_name());
-        }
-
+    void setup_nb_funcs() {
         // Set neighborhood from config key, if available; else: empty
-        if (cfg["neighborhood"]) {
+        if (_cfg["neighborhood"]) {
+            const auto nb_cfg = _cfg["neighborhood"];
+
             // Extract the desired values
-            if (not cfg["neighborhood"]["mode"]) {
+            if (not nb_cfg["mode"]) {
                 throw std::invalid_argument("Missing key 'mode' in neighbor"
                                             "hood config! A typo perhaps?");
             }
-            const auto nb_mode = as_str(cfg["neighborhood"]["mode"]);
+            const auto nb_mode = as_str(nb_cfg["mode"]);
 
             bool compute_nb = false;
-            if (cfg["neighborhood"]["compute_and_store"]) {
-                compute_nb = as_bool(cfg["neighborhood"]["compute_and_store"]);
+            if (nb_cfg["compute_and_store"]) {
+                compute_nb = as_bool(nb_cfg["compute_and_store"]);
             }
 
             // And call the public interface to setup all members
@@ -509,7 +489,6 @@ private:
         
         _log->debug("No neighborhood configuration given; using empty.");
         select_neighborhood(NBMode::empty);
-        _grid->select_neighborhood(NBMode::empty);
         return;
     }
 };
