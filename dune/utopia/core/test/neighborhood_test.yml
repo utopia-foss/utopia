@@ -40,3 +40,18 @@ rect_2D_vonNeumann:
 
   neighborhood:
     mode: vonNeumann
+
+
+rect_2D_Moore:
+  space:
+    periodic: true
+    extent: [5., 5.]
+
+  grid:
+    structure: rectangular
+    shape: [5, 5]
+
+  cell_initialize_from: default
+
+  neighborhood:
+    mode: Moore

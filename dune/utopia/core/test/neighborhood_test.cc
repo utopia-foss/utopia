@@ -16,59 +16,88 @@ int main(int argc, char *argv[]) {
 
 
         // -------------------------------------------------------------------
-        std::cout << "------ Testing rectangular 2D grid ... ------"
+        std::cout << "------ Rectangular periodic 2D grid ... ------"
                   << std::endl;
 
-        // Initialize the test model
         std::cout << ".....  Neighborhood:  Empty  ..." << std::endl;
         NBTest rect_2D_empty("rect_2D_empty", pp);
         std::cout << "Test model set up." << std::endl;
 
-        { // Test scope
-        auto cm = rect_2D_empty.cm;
-        auto grid = cm.grid();
+        { // Test scope - to keep the main scope clean
+            auto cm = rect_2D_empty.cm;
+            auto grid = cm.grid();
 
-        // Check grid shape
-        assert(grid->shape()[0] == 5);
-        assert(grid->shape()[1] == 5);
-        assert(grid->is_periodic());
-        std::cout << "Grid shape and periodicity matches." << std::endl;
+            // Check grid shape
+            assert(grid->shape()[0] == 5);
+            assert(grid->shape()[1] == 5);
+            assert(grid->is_periodic());
+            std::cout << "Grid shape and periodicity matches." << std::endl;
 
-        // Check neighbors count for all cells
-        std::cout << "Testing neighbor count ..." << std::endl;
-        check_num_neighbors(cm, 0);
-        std::cout << "Neighbor count matches." << std::endl;
+            // Check neighbors count for all cells
+            std::cout << "Testing neighbor count ..." << std::endl;
+            check_num_neighbors(cm, 0);
+            std::cout << "Neighbor count matches." << std::endl;
 
         } // End of test scope
         std::cout << "Success." << std::endl << std::endl;
 
 
-        // Initialize the test model
         std::cout << ".....  Neighborhood:  vonNeumann  ..." << std::endl;
         NBTest rect_2D_vonNeumann("rect_2D_vonNeumann", pp);
         std::cout << "Test model set up." << std::endl;
 
-        { // Test scope
-        auto cm = rect_2D_vonNeumann.cm;
-        auto grid = cm.grid();
+        {
+            auto cm = rect_2D_vonNeumann.cm;
+            auto grid = cm.grid();
 
-        // Check grid shape
-        assert(grid->shape()[0] == 5);
-        assert(grid->shape()[1] == 5);
-        assert(grid->is_periodic());
-        std::cout << "Grid shape and periodicity matches." << std::endl;
+            assert(grid->shape()[0] == 5);
+            assert(grid->shape()[1] == 5);
+            assert(grid->is_periodic());
+            std::cout << "Grid shape and periodicity matches." << std::endl;
 
-        // Check neighbors count for all cells
-        std::cout << "Testing neighbor count ..." << std::endl;
-        check_num_neighbors(cm, 4);
-        std::cout << "Neighbor count matches." << std::endl;
+            std::cout << "Testing neighbor count ..." << std::endl;
+            check_num_neighbors(cm, 4);
+            std::cout << "Neighbor count matches." << std::endl;
 
-        // Check that the neighbors are the expected neighbors
-        // TODO
+            // Check that the neighbors are the expected neighbors
+            // TODO
 
-        } // End of test scope
+        }
+        std::cout << "Success." << std::endl << std::endl;
+
+
+        std::cout << ".....  Neighborhood:  Moore  ..." << std::endl;
+        NBTest rect_2D_Moore("rect_2D_Moore", pp);
+        std::cout << "Test model set up." << std::endl;
+
+        {
+            auto cm = rect_2D_Moore.cm;
+            auto grid = cm.grid();
+
+            assert(grid->shape()[0] == 5);
+            assert(grid->shape()[1] == 5);
+            assert(grid->is_periodic());
+            std::cout << "Grid shape and periodicity matches." << std::endl;
+
+            std::cout << "Testing neighbor count ..." << std::endl;
+            check_num_neighbors(cm, 8);
+            std::cout << "Neighbor count matches." << std::endl;
+
+            // Check that the neighbors are the expected neighbors
+            // TODO
+
+        }
         std::cout << "Success." << std::endl << std::endl;
         
+
+
+        // -------------------------------------------------------------------
+        std::cout << "------ Rectangular non-periodic 2D grid ... ------"
+                  << std::endl;
+
+        // TODO
+        // std::cout << "Success." << std::endl << std::endl;
+
 
         // -------------------------------------------------------------------
         // Done.

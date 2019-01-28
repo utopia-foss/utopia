@@ -41,7 +41,7 @@ protected:
 
     /// Calculate the number of cells required to fill the current grid shape
     IndexType calc_num_cells() {
-        // TODO Check if this applies for hexagonal grids
+        // FIXME Check if this applies for hexagonal grids
         return std::accumulate(this->_shape.begin(), this->_shape.end(),
                                1, std::multiplies<IndexType>());
     };
