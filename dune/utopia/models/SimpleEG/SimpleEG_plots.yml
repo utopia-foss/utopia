@@ -68,7 +68,6 @@ strategy_and_payoff: &strategy_and_payoff
   # Video options
   writer: ffmpeg  # can be: frames, ffmpeg (if installed), ...
   fps: 2
-  step_size: 1
   dpi: 96
 
 
@@ -117,6 +116,5 @@ strategy:
   # Video options
   writer: ffmpeg  # can be: frames, ffmpeg (if installed), ...
   fps: 2
-  step_size: 1
   dpi: 96
 

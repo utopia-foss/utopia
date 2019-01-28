@@ -60,7 +60,6 @@ state_map:
   # Video options
   writer: ffmpeg  # can be: frames, ffmpeg (if installed), ...
   fps: 2
-  step_size: 1
   dpi: 96
 
 
@@ -95,6 +94,5 @@ cluster_map:
   # Video options
   writer: ffmpeg  # can be: frames, ffmpeg (if installed), ...
   fps: 2
-  step_size: 1
   dpi: 96
 
