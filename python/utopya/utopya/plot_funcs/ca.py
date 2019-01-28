@@ -106,7 +106,6 @@ def state_anim(dm: DataManager, *,
                writer: str,
                frames_kwargs: dict=None, 
                fps: int=2, 
-               step_size: int=1, 
                dpi: int=96,
                preprocess_funcs: Dict[str, Callable]=None) -> None:
     """Create an animation of the states of a two dimensional cellular automaton.
@@ -129,7 +128,6 @@ def state_anim(dm: DataManager, *,
         frames_kwargs (dict, optional): The frames configuration that is used
             if the 'frames' writer is used.
         fps (int, optional): The frames per second
-        step_size (int, optional): The step size
         dpi (int, optional): The dpi setting
         preprocess_funcs (Dict[str, Callable], optional): For keys matching
             the keys in `to_plot`, the given function is called before the
@@ -137,6 +135,8 @@ def state_anim(dm: DataManager, *,
     
     Raises:
         ValueError: For an invalid `writer` argument
+        TypeError: For non-consistent dataset sizes (steps)
+        TypeError: For unknown dataset shape
     """
 
     def get_discrete_colormap(cmap):        
@@ -213,19 +213,16 @@ def state_anim(dm: DataManager, *,
     # Get the shape of the 2D grid
     cfg = uni['cfg']
     grid_size = cfg[model_name]['grid_size']
-    steps = int(cfg['num_steps']/cfg.get('write_every', 1))
-    # NOTE The steps variable does not correspond to the actual _time_ of the
-    #      simulation at those frames!
 
-    # ...and reshape the data
-    new_shape = (steps+1, grid_size[1], grid_size[0])
+    data_2d = {p: grp[p] for p in to_plot.keys()}
+    shapes = [d.shape for p, d in data_2d.items()]
+    if any([shape != shapes[0] for shape in shapes]):
+        raise ValueError("Shape mismatch; cannot plot.")
 
-    # Extract the data of the strategies in the CA and bring them into the
-    # correct shape
-    data_1d = {p: grp[p] for p in to_plot.keys()}
-    data_2d = {k: np.reshape(v, new_shape) for k,v in data_1d.items()}
-
-
+    # Can now be sure they all have the same shape, 
+    # so its fine to take the first shape to extract the number of steps
+    steps = shapes[0][0]
+    
     # Prepare the writer ......................................................
     if mpl.animation.writers.is_available(writer):
         # Create animation writer if the writer is available
@@ -237,7 +234,7 @@ def state_anim(dm: DataManager, *,
 
     elif writer == 'frames':
         # Use the file writer to create individual frames
-        w = FileWriter(name_padding=len(str(steps+1)),
+        w = FileWriter(name_padding=len(str(steps)),
                        **(frames_kwargs if frames_kwargs else {}))
 
     else:
@@ -258,11 +255,11 @@ def state_anim(dm: DataManager, *,
     ims = dict()
     
     log.info("Plotting %d frames of %d properties each ...",
-             steps+1, len(to_plot))
+             steps, len(to_plot))
 
     with w.saving(fig, out_path, dpi=dpi):
         # Loop through time steps, corresponding to rows in the 2d arrays
-        for t in range(steps+1):
+        for t in range(steps):
             log.debug("Plotting frame %d ...", t)
 
             # Loop through the subfigures
@@ -285,4 +282,4 @@ def state_anim(dm: DataManager, *,
             # frame is finished and can be grabbed.
             w.grab_frame()
 
-    log.info("Finished plotting of %d frames.", steps+1)
+    log.info("Finished plotting of %d frames.", steps)
