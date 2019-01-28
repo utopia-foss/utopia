@@ -3,12 +3,7 @@
 
 #include <type_traits>
 
-// TODO Clean up includes
-#include "../base.hh"
-#include "../data_io/cfg_utils.hh"
-#include "logging.hh"
 #include "types.hh"
-
 #include "cell_new.hh"          // NOTE Final name will be cell.hh
 #include "grids.hh"
 
@@ -355,7 +350,6 @@ private:
 
         _log->info("Setting up {}ly structured grid discretization ...",
                    structure);
-        // TODO inform about shape?
         
         // Create the respective grids, distinguishing by structure
         // TODO consider passing config node to make more arguments available
@@ -383,10 +377,8 @@ private:
     CellContainer<Cell> setup_cells(const CellStateType initial_state) {
         CellContainer<Cell> cont;
 
-        // Construct all the cells using the default
-        // TODO consider using some construct provided by _grid
+        // Construct all the cells
         for (IndexType i=0; i<_grid->num_cells(); i++) {
-            // Emplace new element using default constructor
             cont.emplace_back(std::make_shared<Cell>(i, initial_state));
         }
 
@@ -404,7 +396,8 @@ private:
       *         CellStateType is constructible via a config node and if the
       *         config entries to construct it are available. It can fall back
       *         to try the default constructor to construct the object. If both
-      *         are not possible, a compile-time error message is emitted.
+      *         are not possible or the configuration was invalid, a run time
+      *         error message is emitted.
       */
     CellContainer<Cell> setup_cells() {
         // Find out the cell initialization mode
@@ -452,7 +445,6 @@ private:
         }
         
         // If we reached this point, construction does not work.
-        // TODO Consider a compile-time error message if possible?!
         throw std::invalid_argument("No valid constructor for the cells' "
             "initial state was available! Check that the config parameter "
             "'cell_initialize_from' is valid (was: '" + cell_init_from + "', "

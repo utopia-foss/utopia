@@ -46,8 +46,6 @@ protected:
                                    1, std::multiplies<IndexType>());
     };
 
-    // -- Neighborhood implementations -- //
-
     /// Retrieve the neighborhood function depending on the mode
     NBFuncID<Base> get_nb_func(NBMode nb_mode) {
         if (nb_mode == NBMode::empty) {
@@ -58,6 +56,9 @@ protected:
                 + "' available for triangular grid discretization!");
         }
     }
+
+    // -- Neighborhood interface -- //
+    // ...
 };
 
 // end group CellManager

@@ -14,12 +14,14 @@ template<class Grid>
 using NBFuncID = std::function<IndexContainer(const IndexType&)>;
 
 
-/// Possible neighborhood types
+/// Possible neighborhood types; availability depends on choice of grid
 enum NBMode {
+    /// Every entity is utterly alone in the world
     empty = 0,
+    /// The vonNeumann neighborhood, i.e. only nearest neighbors
     vonNeumann = 1,
+    /// The Moore neighborhood, i.e. nearest and next nearest neighbors
     Moore = 2
-    // TODO to be continued ...
 };
 
 
@@ -128,19 +130,11 @@ public:
 
 protected:
     // -- Helper functions -- //
-    // NOTE Some of these are best be made virtual such that the child
-    //      classes can take care of the implementation.
-    // NOTE Defining a pure virtual method here and forgetting to implement it
-    //      in the derived classes will lead to a loooong list of compiler
-    //      errors. For non-pure virtual methods, the errors will emerge during
-    //      linking and also be quite cryptic ...
-
     /// Calculate the number of cells required to fill the current grid shape
     virtual IndexType calc_num_cells() = 0;
 
 
-    // -- Neighborhood implementations -- //
-
+    // -- Neighborhood interface -- //
     /// Retrieve the neighborhood function depending on the mode
     virtual NBFuncID<Self> get_nb_func(NBMode mode) = 0;
 

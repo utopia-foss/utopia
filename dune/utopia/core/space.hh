@@ -11,6 +11,12 @@ namespace Utopia {
  *  \{
  */
 
+/// The Space bundles properties about the physical space a model resides in
+/** \detail It is, for example, used by the CellManager and its Grid
+  *         discretization.
+  * 
+  * \tparam num_dims  The dimensionality of the space
+  */
 template<std::size_t num_dims>
 struct Space {
     /// The type of the extent container
@@ -27,14 +33,20 @@ struct Space {
 
 
     // -- Constructors -- //
-    /// Constructor via config
+    /// Construct a Space using information from a config node
+    /** \param cfg  The config node to read the `periodic` and `extent` entries
+      *             from.
+      */
     Space(const DataIO::Config& cfg)
     :
-        periodic(as_bool(cfg["periodic"])),
+        periodic(setup_periodic(cfg)),
         extent(setup_extent(cfg))
     {}
 
     /// Constructor without any arguments, i.e. constructing a default space
+    /** \detail The default space is non-periodic and has default extent of 1.
+      *         into each dimension.
+      */
     Space()
     :
         periodic(false),
@@ -43,30 +55,38 @@ struct Space {
 
 private:
     // -- Setup functions ----------------------------------------------------
+    /// Setup the member `periodic` from a config node
+    bool setup_periodic(const DataIO::Config& cfg) {
+        if (not cfg["periodic"]) {
+            throw std::invalid_argument("Missing config entry `periodic` to "
+                                        "set up a Space object!");
+        }
+        return as_bool(cfg["periodic"]);
+    }
+
     /// Setup the extent type if no config parameter was available
     ExtentType setup_extent() {
         ExtentType extent;
-        extent.fill(1);
+        extent.fill(1.);
         return extent;
     }
 
     /// Setup the extent member from a config node
+    /** \param cfg  The config node to read the `extent` parameter from. If
+      *             that entry is missing, the default extent is used.
+      */
     ExtentType setup_extent(const DataIO::Config& cfg) {
-        ExtentType extent;
-
-        if (!cfg["extent"]) {
-            extent.fill(1.);
-        }
-        else {
-            extent = as_<ExtentType>(cfg["extent"]);
+        if (cfg["extent"]) {
+            return as_<ExtentType>(cfg["extent"]);
         }
 
-        return extent;
+        // Return the default extent
+        return setup_extent();
     }
 };
 
 
-/// The default space has dimensionality 2
+/// The default Space object to be used throughout Utopia
 using DefaultSpace = Space<2>;
 
 // end group Model

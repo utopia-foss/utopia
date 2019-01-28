@@ -45,8 +45,6 @@ protected:
                                1, std::multiplies<IndexType>());
     };
 
-    // -- Neighborhood mapping -- //
-
     /// Retrieve the neighborhood function depending on the mode
     NBFuncID<Base> get_nb_func(NBMode nb_mode) {
         if (nb_mode == NBMode::empty) {
@@ -73,6 +71,7 @@ protected:
                 + "' available for rectangular grid discretization!");
         }
     }
+
 
     // -- Neighborhood implementations -- //
     // NOTE With C++20, the below lambdas would allow template arguments

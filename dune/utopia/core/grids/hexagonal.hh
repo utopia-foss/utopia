@@ -41,13 +41,10 @@ protected:
 
     /// Calculate the number of cells required to fill the current grid shape
     IndexType calc_num_cells() {
-        // FIXME Check if this applies for hexagonal grids
+        // FIXME Most certainly does not apply for hexagonal grids!
         return std::accumulate(this->_shape.begin(), this->_shape.end(),
                                1, std::multiplies<IndexType>());
     };
-
-
-    // -- Neighborhood implementations -- //
 
     /// Retrieve the neighborhood function depending on the mode
     NBFuncID<Base> get_nb_func(NBMode nb_mode) {
@@ -59,6 +56,9 @@ protected:
                 + "' available for hexagonal grid discretization!");
         }
     }
+
+    // -- Neighborhood interface -- //
+    // ...
 };
 
 

@@ -2,6 +2,7 @@
 #define UTOPIA_CORE_CELL_HH
 
 // NOTE This file's final name will be cell.hh
+
 #include "state.hh"
 #include "tags.hh"
 #include "space.hh"
@@ -22,8 +23,6 @@ namespace Utopia {
 template<typename CellContainerType>
 struct NoCustomLinks {};
 
-// TODO Add a doxygen note on how to define custom links
-
 
 
 /// The cell traits struct gathers types to be used for specializing a Cell
@@ -34,19 +33,25 @@ struct NoCustomLinks {};
   *                       types of custom links. This construct is specialized
   *                       with the actual type of the cell container by the
   *                       CellManager, so there's no need to know the cell
-  *                       container type beforehand.
+  *                       container type beforehand. To define your own custom
+  *                       links, pass a template to a struct whose members are
+  *                       containers of the objects you want to link to.
   */
 template<typename StateType,
          bool is_sync=true,
          typename CellTags=EmptyTag,
          template<class> class CustomLinkContainers=NoCustomLinks>
 struct CellTraits {
+    /// Type of the cells' state container
     using State = StateType;
 
+    /// Whether the cells should be synchronous
     static constexpr bool sync = is_sync;
 
+    /// Custom cell tags
     using Tags = CellTags;
 
+    /// Template template parameter to specify type of custom links
     template<class CellContainerType>
     using CustomLinks = CustomLinkContainers<CellContainerType>;
 };
@@ -84,12 +89,6 @@ public:
 
 
 private:
-    // Be friends with the cell manager
-    // NOTE The second template argument is needed to match the signature of
-    //      the cell manager.
-    template<class Space, class CellManagerTraits>
-    friend class CellManager;
-
     // -- Members -- //
     /// ID of this cell
     const IndexType _id;

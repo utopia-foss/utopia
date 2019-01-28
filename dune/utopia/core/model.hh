@@ -12,6 +12,12 @@
 
 namespace Utopia {
 
+/**
+ *  \addtogroup Model
+ *  \{
+ */
+
+
 
 /// Wrapper struct for defining model class data types
 /** \detail Using the template parameters, derived classes can specify the
@@ -644,6 +650,11 @@ private:
     }
 };
 
+
+// end group Model
+/**
+ *  \}
+ */
 
 } // namespace Utopia
 

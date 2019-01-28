@@ -85,19 +85,24 @@ explicitly by manually calling Utopia::setup_loggers.
 
 
 
-defgroup Model Model
+\defgroup Model Model
 \{
 \ingroup Core
 \brief The Model framework is the foundation for your future model.
 
+By deriving from ::Utopia::Model, you have access to many infrastructure
+features and can place your model into a hierarchy of models.
 \}
 
 
-defgroup CellManager CellManager
+\defgroup CellManager CellManager
 \{
 \ingroup Core
 \brief An interface to build and use cellular automata
 
+The ::Utopia::CellManager and associated constructs allow convenient use of
+discretizations of physical space into rectangular, hexagonal, or triangular
+grids.
 \}
 
 
