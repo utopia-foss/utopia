@@ -210,10 +210,6 @@ def state_anim(dm: DataManager, *,
     # Get the group that all datasets are in
     grp = uni['data'][model_name]
 
-    # Get the shape of the 2D grid
-    cfg = uni['cfg']
-    grid_size = cfg[model_name]['grid_size']
-
     data_2d = {p: grp[p] for p in to_plot.keys()}
     shapes = [d.shape for p, d in data_2d.items()]
     if any([shape != shapes[0] for shape in shapes]):
