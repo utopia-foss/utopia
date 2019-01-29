@@ -51,7 +51,7 @@ def test_output():
 
         # Assert they have the correct shape
         assert data['plant_mass'].shape == (uni_cfg['num_steps'] + 1,
-                                            num_cells)
+                                            grid_size[0], grid_size[1])
 
         # Assert plant mass data is always positive
         assert not (data['plant_mass'] < 0).any()

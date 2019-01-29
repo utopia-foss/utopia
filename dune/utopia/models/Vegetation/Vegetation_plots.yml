@@ -39,7 +39,6 @@ plant_mass_spatial:
   # Video options
   writer: frames  # can be: frames, ffmpeg (if installed), ...
   fps: 2
-  step_size: 1
   dpi: 96
 
   # For the 'frames' writer, the following additional kwargs can be passed
