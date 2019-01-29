@@ -6,25 +6,31 @@ tree_density:
   universes: all
 
   module: model_plots.ContDisease
-  plot_func: plot_tree_density
+  plot_func: tree_density
 
+  color: green
+
+# Plot the phase space
 phase_diagram:
   creator: universe
   universes: all
   
-  module: .basic
-  plot_func: lineplot
+  module: model_plots.ContDisease
+  plot_func: phase_diagram
 
   # Further kwargs to the lineplot method
   # Select the data
-  x: ContDisease/density_tree
-  y: ContDisease/density_infected
+  x: density_tree
+  y: density_infected
+  xlabel: $\rho_{tree}$
+  ylabel: $\rho_{infected}$
 
   # Set line style format and arguments for saving
   fmt: g
 
-# plot the spatial development of the state in the CA
-state_map:
+
+# plot the spatial development of the state in the CA and create an animation
+state_map: &state_map
   creator: universe
   universes: all
 
@@ -63,3 +69,15 @@ state_map:
   writer: ffmpeg  # can be: frames, ffmpeg (if installed), ...
   fps: 2
   dpi: 96
+
+
+# plot the spatial development of the state in the CA and save the frames
+state_map_frames:
+  <<: *state_map
+
+  # Writer options
+  writer: frames  # can be: frames, ffmpeg (if installed), ...
+  
+  # For the 'frames' writer, the following additional kwargs can be passed
+  frames_kwargs:
+    file_format: png

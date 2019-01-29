@@ -88,16 +88,18 @@ private:
     std::shared_ptr<DataSet> _dset_density_infected;
     
     // -- Temporary objects -- //
-    std::array<double, 5> _density; // not automatically updated
+    // Array that holds the densities for all states
+    // NOTE: It is not automatically updated.
+    std::array<double, 5> _density;
 
     // -- Helper functions -- //
     /// Calculate global averaged state densities
     std::function<std::array<double, 5>()> _calculate_density = [this](){
+        // Count the trees and the infected trees
         unsigned int cnt_tree = 0, cnt_infected = 0;
-        
         for (const auto& cell : this->_manager.cells()) 
         {
-            const auto state = cell->state();
+            const auto& state = cell->state();
             
             if (state == tree) {
                 ++cnt_tree;
@@ -107,14 +109,24 @@ private:
             }
         }
 
-        unsigned int num_cells = this->_manager.cells().size();
+        // Calculate the densities for 
+        //   empty        (_density[0]),
+        //   tree         (_density[1]),
+        //   infected     (_density[2]),
+        //   herd         (_density[3]),
+        //   stone        (_density[4])
+        // The herd and stone density remain the same and do not need to be
+        // recalculated every time.
+        const unsigned int num_cells = this->_manager.cells().size();
 
-        double density_tree = cnt_tree/double(num_cells);
-        
-        double density_infected = cnt_infected/double(num_cells);
-        double density_empty = 1. - density_tree - density_infected -
-                               _density[3] /*herd*/ - _density[4] /*stone*/;
+        const double density_tree = cnt_tree/double(num_cells);
+        const double density_infected = cnt_infected/double(num_cells);
+        const double density_empty = 1. - density_tree 
+                                        - density_infected 
+                                        - _density[3] /*herd*/ 
+                                        - _density[4] /*stone*/;
 
+        // Return the density array
         return std::array<double, 5>({{
                  density_empty, density_tree, density_infected, 
                  _density[3], _density[4]
@@ -129,16 +141,17 @@ private:
         auto cells_rd = _manager.cells();
         std::shuffle(cells_rd.begin(),cells_rd.end(), *this->_rng);
 
-        for (auto&& cell: cells_rd ){
+        // Set the state of the cell to stone with probability stone_density
+        for (const auto& cell: cells_rd ){
             if (dist(*this->_rng) < stone_density){
                 cell->state_new() = stone;
                 cell->update();
             }
         }
 
-        // Attempt to encourage the stones to form continous clusters
-        for (auto&& cell: cells_rd ){
-            for (auto nb : Neighborhood::neighbors(cell, this->_manager)){
+        // Attempt to encourage the stones to form continuous clusters
+        for (const auto& cell: cells_rd ){
+            for (const auto& nb : Neighborhood::neighbors(cell, this->_manager)){
                 if (   (cell->state() == empty)
                     && (nb->state() == stone)
                     && (dist(*this->_rng) < stone_cluster))
@@ -155,7 +168,7 @@ private:
 
     // -- Rule functions -- //
     /// Sets the given cell to state "empty"
-    RuleFunc _set_initial_state_empty = []([[maybe_unused]] const auto cell){
+    RuleFunc _set_initial_state_empty = []([[maybe_unused]] const auto& cell){
         return empty;
     };
 
@@ -179,11 +192,12 @@ private:
 
         return state;
     };
+
     /// Sets an infection herd at the southern end of the grid
-    RuleFunc _set_infection_herd_south = [this](const auto cell){
+    RuleFunc _set_infection_herd_south = [this](const auto& cell){
         auto state = cell->state();
 
-        // Get postion of the Cell, grid extensions and number of cells
+        // Get position of the Cell, grid extensions and number of cells
         const auto& pos = cell->position();
 
         const auto& grid_ext = this->_manager.extensions();
@@ -204,13 +218,13 @@ private:
      * probability _p_infect.
      * Infected cells die and become an empty cell.
      */
-    RuleFunc _update = [this](const auto cell){
+    RuleFunc _update = [this](const auto& cell){
         // Get the state of the cell
         auto cellstate = cell->state();
 
         // Distinguish by current state
         if (cellstate == empty){
-            // With a probablity of _p_growth, set the cell's state to tree
+            // With a probability of _p_growth, set the cell's state to tree
             std::uniform_real_distribution<> dist(0., 1.);
             if (dist(*this->_rng) < _p_growth){
                 cellstate = tree;
@@ -230,7 +244,7 @@ private:
             else 
             {               
                 // TODO implement neighborhood as template argument
-                for (auto nb : Neighborhood::neighbors(cell, this->_manager)){
+                for (const auto& nb : Neighborhood::neighbors(cell, this->_manager)){
                     if (cellstate == tree){
                         auto nb_cellstate = nb->state();
                         if (nb_cellstate == infected || nb_cellstate == herd){
@@ -273,7 +287,6 @@ public:
 
         // Create dataset with compression level 1
         _dset_state(this->create_dset("state", {_manager.cells().size()})),
-
         _dset_density_tree(this->create_dset("density_tree", {})),
         _dset_density_infected(this->create_dset("density_infected", {}))
     {
@@ -303,7 +316,7 @@ public:
         // Extract if an infection herd is activated
         const bool infection_herd = as_bool(this->_cfg["infection_herd"]);
 
-        // Extract postion of possible infection herd
+        // Extract position of possible infection herd
         const auto infection_herd_src = as_str(this->_cfg["infection_herd_src"]);
 
         // Extract if stones are activated
@@ -326,7 +339,7 @@ public:
             apply_rule(_set_initial_state_empty, _manager.cells());
         }
         else if (initial_state == "init_density") {
-            if (!stones) {
+            if (not stones) {
                 _density[1] = as_double(this->_cfg["initial_density"]);
                 apply_rule(_set_initial_density, _manager.cells());
             }
@@ -359,7 +372,7 @@ public:
             this->_log->debug("Not using an infection herd.");
         }
 
-        // -- Different intilaizations for stones
+        // -- Different intializations for stones
         if (stones){
             if (stone_init == "random"){
                 _init_stones_rd(stone_density, stone_cluster);
@@ -416,7 +429,7 @@ public:
     void write_data () {
         // _dset_state
         _dset_state->write(_manager.cells().begin(), _manager.cells().end(),
-                           [](auto& cell) {
+                           [](const auto& cell) {
                              return static_cast<unsigned short>(cell->state());
                            });
         
