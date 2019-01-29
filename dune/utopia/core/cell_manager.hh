@@ -177,13 +177,12 @@ public:
     /// Set the neighborhood mode
     void select_neighborhood(std::string nb_mode,
                              bool compute_and_store = false) {
-        if (not nb_mode_from_string.count(nb_mode)) {
+        if (not nb_mode_map.count(nb_mode)) {
             throw std::invalid_argument("Could not translate given value for "
                 "neighborhood mode ('" + nb_mode + "') to valid enum entry!");
         }
 
-        select_neighborhood(nb_mode_from_string.at(nb_mode),
-                            compute_and_store);
+        select_neighborhood(nb_mode_map.at(nb_mode), compute_and_store);
     }
 
     /// Set the neighborhood mode
@@ -194,7 +193,7 @@ public:
         // one or if it is set to be empty
         if ((nb_mode != _nb_mode) or (nb_mode == NBMode::empty)) {
             _log->info("Selecting '{}' neighborhood ...",
-                       nb_mode_to_string.at(nb_mode));
+                       nb_mode_to_string(nb_mode));
 
             // Tell the grid which mode to use
             _grid->select_neighborhood(nb_mode);
@@ -218,11 +217,11 @@ public:
             // Everything ok, now set the member variable
             _nb_mode = nb_mode;
             _log->debug("Successfully selected '{}' neighborhood.",
-                        nb_mode_to_string.at(_nb_mode));
+                        nb_mode_to_string(_nb_mode));
         }
         else {
             _log->debug("Neighborhood was already set to '{}'; not changing.",
-                        nb_mode_to_string.at(_nb_mode));
+                        nb_mode_to_string(_nb_mode));
         }
 
         // Still allow to compute the neighbors, regardless of all the above
@@ -238,7 +237,7 @@ public:
       */
     void compute_cell_neighbors() {
         _log->info("Computing and storing '{}' neighbors of all {} cells ...",
-                   nb_mode_to_string.at(_nb_mode), _cells.size());
+                   nb_mode_to_string(_nb_mode), _cells.size());
 
         // Clear cell neighbors container and pre-allocate space
         _cell_neighbors.clear();

@@ -52,7 +52,7 @@ protected:
             return this->_nb_empty;
         }
         else {
-            throw std::invalid_argument("No '" + nb_mode_to_string.at(nb_mode)
+            throw std::invalid_argument("No '" + nb_mode_to_string(nb_mode)
                 + "' available for hexagonal grid discretization!");
         }
     }

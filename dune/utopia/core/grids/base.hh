@@ -23,20 +23,30 @@ enum NBMode {
     /// The Moore neighborhood, i.e. nearest and next nearest neighbors
     Moore = 2
 };
+// NOTE When adding new neighborhood types, take care to update nb_mode_map!
 
 
 /// A map from strings to neighborhood enum values
-const std::map<std::string, NBMode> nb_mode_from_string {
+const std::map<std::string, NBMode> nb_mode_map {
     {"empty",       NBMode::empty},
     {"vonNeumann",  NBMode::vonNeumann},
     {"Moore",       NBMode::Moore}
 };
 
-/// A map from neighborhood enum values to strings
-const std::map<NBMode, std::string> nb_mode_to_string {
-    {NBMode::empty,         "empty"},
-    {NBMode::vonNeumann,    "vonNeumann"},
-    {NBMode::Moore,         "Moore"}
+/// Given an NBMode enum value, return the corresponding string key
+/** \detail  This iterates over the nb_mode_map and returns the first key that
+  *          matches the given enum value.
+  */
+std::string nb_mode_to_string(NBMode nb_mode) {
+    for (const auto& m : nb_mode_map) {
+        if (m.second == nb_mode) {
+            return m.first;
+        }
+    }
+    // Entry is missing; this should not happen, as the nb_mode_map is meant to
+    // include all possible enum values. Inform about it ...
+    throw std::invalid_argument("The given nb_mode was not available in the "
+        "nb_mode_map! Are all NBMode values represented in the map?");
 };
 
 
