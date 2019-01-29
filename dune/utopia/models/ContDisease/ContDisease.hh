@@ -93,8 +93,61 @@ private:
     std::array<double, 5> _density;
 
     // -- Helper functions -- //
-    /// Calculate global averaged state densities
-    std::function<std::array<double, 5>()> _calculate_density = [this](){
+    /// Initially calculate global averaged state densities
+    void _initialize_densities()
+    {
+        // Count the trees, the infected trees, the herd, and the stones
+        std::size_t cnt_tree=0, cnt_infected=0, cnt_stone=0, cnt_herd=0;
+        for (const auto& cell : this->_manager.cells()) 
+        {
+            const auto& state = cell->state();
+            
+            if (state == tree) {
+                ++cnt_tree;
+            }
+            else if (state == infected) {
+                ++cnt_infected;
+            }
+            else if (state == stone) {
+                ++cnt_stone;
+            }
+            else if (state == herd) {
+                ++cnt_herd;
+            }
+        }
+
+        // Calculate the densities for 
+        //   empty        (_density[0]),
+        //   tree         (_density[1]),
+        //   infected     (_density[2]),
+        //   herd         (_density[3]),
+        //   stone        (_density[4])
+        // The herd and stone density remain the same and do not need to be
+        // recalculated every time.
+        const std::size_t num_cells = this->_manager.cells().size();
+
+        const double density_tree = cnt_tree/double(num_cells);
+        const double density_infected = cnt_infected/double(num_cells);
+        const double density_stone = cnt_stone/double(num_cells);
+        const double density_herd = cnt_herd/double(num_cells);
+
+        const double density_empty = 1. - density_tree 
+                                        - density_infected 
+                                        - density_herd
+                                        - density_stone;
+
+        // Store the densities in the array
+        _density[0] = density_empty;
+        _density[1] = density_tree;
+        _density[2] = density_infected;
+        _density[3] = density_herd;
+        _density[4] = density_stone;
+    };
+
+
+    /// Update the array with the densities by calculating globally averaged state densities
+    void _update_densities()
+    {
         // Count the trees and the infected trees
         unsigned int cnt_tree = 0, cnt_infected = 0;
         for (const auto& cell : this->_manager.cells()) 
@@ -126,11 +179,10 @@ private:
                                         - _density[3] /*herd*/ 
                                         - _density[4] /*stone*/;
 
-        // Return the density array
-        return std::array<double, 5>({{
-                 density_empty, density_tree, density_infected, 
-                 _density[3], _density[4]
-               }});
+        // Store the densities in the array (stones and herd remain constant)
+        _density[0] = density_empty;
+        _density[1] = density_tree;
+        _density[2] = density_infected;
     };
 
     /// Initialize stones at random so a certain areal density is reached
@@ -246,7 +298,8 @@ private:
                 // TODO implement neighborhood as template argument
                 for (const auto& nb : Neighborhood::neighbors(cell, this->_manager)){
                     if (cellstate == tree){
-                        auto nb_cellstate = nb->state();
+                        auto
+                         nb_cellstate = nb->state();
                         if (nb_cellstate == infected || nb_cellstate == herd){
                             if (dist(*this->_rng) < _p_infect){
                                 cellstate = infected;
@@ -389,6 +442,10 @@ public:
 
         // Write information that cells are initialized to the logger
         this->_log->info("Cells initialized.");
+
+        // Calculate all initial densities including the ones that stay
+        // constant afterwards (stones, herd)
+        _initialize_densities();
     }
 
 
@@ -420,7 +477,7 @@ public:
      *          lambda will only be called if an emission will happen.
      */
     void monitor () {        
-        _density = _calculate_density();
+        _update_densities();
         this->_monitor.set_entry("density", _density);
     }
 
@@ -435,7 +492,7 @@ public:
         
         // state densities
         // TODO write test
-        _density = _calculate_density();
+        _update_densities();
         _dset_density_tree->write(_density[1]);
         _dset_density_infected->write(_density[2]);
     }
