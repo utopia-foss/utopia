@@ -100,7 +100,7 @@ public:
 
     // -- Neighborhood interface -- //
 
-    IndexContainer neighbors_of(const IndexType& id) {
+    IndexContainer neighbors_of(const IndexType& id) const {
         return _nb_func(id);
     }
 

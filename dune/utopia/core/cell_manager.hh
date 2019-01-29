@@ -262,22 +262,7 @@ private:
     // -- Helpers for Neighbors interface ------------------------------------
 
     /// Given a container of cell IDs, convert it to container of cell pointers
-    CellContainer<Cell> cells_from_ids(IndexContainer& ids) {
-        // Initialize container to be returned and fix it in size
-        CellContainer<Cell> ret;
-        ret.reserve(ids.size());
-
-        for (const auto& id : ids) {
-            ret.emplace_back(std::shared_ptr<Cell>(_cells[id]));
-        }
-
-        return ret;
-    }
-
-    /// Given a container of cell IDs, convert it to container of cell pointers
-    /** \detail The rvalue reference version of this method allows calling with
-      *         a temporary object.
-      */ 
+    template<class IndexContainer>
     CellContainer<Cell> cells_from_ids(IndexContainer&& ids) {
         // Initialize container to be returned and fix it in size
         CellContainer<Cell> ret;
@@ -289,8 +274,10 @@ private:
 
         return ret;
     }
+
     
     // .. std::functions to call from neighbors_of ...........................
+    
     /// Return the pre-computed neighbors of the given cell
     NBFuncCell _nb_from_cache = [this](const Cell& cell) {
         return this->_cell_neighbors[cell.id()];

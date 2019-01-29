@@ -40,14 +40,14 @@ protected:
     // -- Custom implementations of virtual base class functions -- //
 
     /// Calculate the number of cells required to fill the current grid shape
-    IndexType calc_num_cells() {
+    IndexType calc_num_cells() override {
         // FIXME Most certainly does not apply for hexagonal grids!
         return std::accumulate(this->_shape.begin(), this->_shape.end(),
                                1, std::multiplies<IndexType>());
     };
 
     /// Retrieve the neighborhood function depending on the mode
-    NBFuncID<Base> get_nb_func(NBMode nb_mode) {
+    NBFuncID<Base> get_nb_func(NBMode nb_mode) override {
         if (nb_mode == NBMode::empty) {
             return this->_nb_empty;
         }
