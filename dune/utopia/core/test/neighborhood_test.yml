@@ -19,10 +19,11 @@ log_levels:
 rect_2D_empty:
   space:
     periodic: true
-    extent: [5., 5.]
+    # implied extent: [1, 1]
+
   grid:
-    structure: rectangular
-    shape: [5, 5]
+    structure: square
+    resolution: 5
 
   cell_initialize_from: default
 
@@ -31,11 +32,10 @@ rect_2D_empty:
 rect_2D_vonNeumann:
   space:
     periodic: true
-    extent: [5., 5.]
 
   grid:
-    structure: rectangular
-    shape: [5, 5]
+    structure: square
+    resolution: 5
 
   cell_initialize_from: default
 
@@ -46,11 +46,10 @@ rect_2D_vonNeumann:
 rect_2D_Moore:
   space:
     periodic: true
-    extent: [5., 5.]
 
   grid:
-    structure: rectangular
-    shape: [5, 5]
+    structure: square
+    resolution: 5
 
   cell_initialize_from: default
 
@@ -63,11 +62,10 @@ rect_2D_Moore:
 rect_2D_vonNeumann_np:
   space:
     periodic: false
-    extent: [5., 5.]
 
   grid:
-    structure: rectangular
-    shape: [5, 5]
+    structure: square
+    resolution: 5
 
   cell_initialize_from: default
 
@@ -78,11 +76,10 @@ rect_2D_vonNeumann_np:
 rect_2D_Moore_np:
   space:
     periodic: false
-    extent: [5., 5.]
 
   grid:
-    structure: rectangular
-    shape: [5, 5]
+    structure: square
+    resolution: 5
 
   cell_initialize_from: default
 

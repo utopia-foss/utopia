@@ -1,5 +1,5 @@
-#ifndef UTOPIA_CORE_GRIDS_RECTANGULAR_HH
-#define UTOPIA_CORE_GRIDS_RECTANGULAR_HH
+#ifndef UTOPIA_CORE_GRIDS_SQUARE_HH
+#define UTOPIA_CORE_GRIDS_SQUARE_HH
 
 #include "base.hh"
 
@@ -9,9 +9,9 @@ namespace Utopia {
  *  \{
  */
 
-/// A grid discretization using rectangular cells
+/// A grid discretization using square cells
 template<class Space>
-class RectangularGrid
+class SquareGrid
     : public Grid<Space>
 {
 public:
@@ -21,32 +21,80 @@ public:
     /// The dimensionality of the space to be discretized (for easier access)
     static constexpr std::size_t dim = Space::dim;
 
-    /// The type of the grid shape array
-    using GridShape = GridShapeType<dim>;
-
 private:
-    // -- RectangularGrid-specific members -- //
+    // -- SquareGrid-specific members -- //
+    /// The (multi-index) shape of the grid, resulting from resolution
+    /** \note For the exact interpretation of the shape and how it results from
+      *       the resolution, consult the derived classes documentation
+      */
+    const GridShapeType<dim> _shape;
 
 public:
     /// Construct a rectangular grid discretization
-    RectangularGrid (std::shared_ptr<Space> space,
-                     const GridShape shape)
+    /** \param  space   The space to construct the discretization for
+      * \param  cfg     Further configuration parameters
+      */
+    SquareGrid (std::shared_ptr<Space> space, const DataIO::Config& cfg)
     :
-        Base(space, shape)
+        Base(space, cfg),
+        _shape(shape_from_resolution())
     {}
 
 
-protected:
-    // -- Custom implementations of virtual base class functions -- //
+    // -- Implementations of virtual base class functions -- //
 
-    /// Calculate the number of cells required to fill the current grid shape
-    IndexType calc_num_cells() override {
+    /// Number of square cells required to fill the physical space
+    /** \detail Is calculated simply from the _shape member
+      */
+    IndexType num_cells() const override {
         return std::accumulate(this->_shape.begin(), this->_shape.end(),
                                1, std::multiplies<IndexType>());
     };
 
+    /// The effective cell resolution into each physical space dimension
+    /** \detail For a square lattice, this is just the quotient of grid shape
+      *         and extent of physical space, separately in each dimension
+      */
+    const std::array<double, dim> effective_resolution() const override {
+        std::array<double, dim> res_eff;
+
+        for (std::size_t i = 0; i < dim; i++) {
+            res_eff[i] = double(_shape[i]) / this->_space->extent[i];
+        }
+
+        return res_eff;
+    }
+
+    /// Get shape of the square grid
+    const GridShapeType<Space::dim> shape() const override {
+        // Can just return the calculated member here
+        return _shape;
+    }
+
+
+
+protected:
+    /// Given the resolution, return the grid shape required to fill the space
+    /** \detail Integer rounding takes place here. A physical space of extents
+      *         of 2.1 length units in each dimension and a resolution of two
+      *         cells per unit length will result in 4 cells in each dimension,
+      *         each cell's size scaled up slightly and the effective
+      *         effective resolution thus slightly smaller than the specified
+      *         resolution.
+      */
+    GridShapeType<dim> shape_from_resolution() const {
+        GridShapeType<dim> shape;
+
+        for (std::size_t i = 0; i < dim; i++) {
+            shape[i] = this->_space->extent[i] * this->_resolution;
+        }
+
+        return shape;
+    }
+
+
     /// Retrieve the neighborhood function depending on the mode
-    NBFuncID<Base> get_nb_func(NBMode nb_mode) override {
+    NBFuncID<Base> get_nb_func(NBMode nb_mode) const override {
         if (nb_mode == NBMode::empty) {
             return this->_nb_empty;
         }
@@ -191,7 +239,7 @@ protected:
 
     /// Return i-dimensional shift in cell indices, depending on grid shape
     template<std::size_t shift_dim>
-    constexpr typename GridShape::value_type id_shift_in_dim_ () {
+    constexpr typename GridShapeType<dim>::value_type id_shift_in_dim_ () {
         if constexpr (shift_dim == 0) {
             return 1;
         }
@@ -326,4 +374,4 @@ protected:
 
 } // namespace Utopia
 
-#endif // UTOPIA_CORE_GRIDS_RECTANGULAR_HH
+#endif // UTOPIA_CORE_GRIDS_SQUARE_HH

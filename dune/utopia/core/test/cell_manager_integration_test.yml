@@ -18,8 +18,8 @@ cm_test:
     extent: [2., 3.]
 
   grid:
-    structure: rectangular
-    shape: [23, 42]
+    structure: square
+    resolution: 32
 
   cell_initialize_from: default
 

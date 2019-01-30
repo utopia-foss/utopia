@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
 
 
         // -------------------------------------------------------------------
-        std::cout << "------ Rectangular periodic 2D grid ... ------"
+        std::cout << "------ Square periodic 2D grid ... ------"
                   << std::endl;
 
         std::cout << ".....  Neighborhood:  Empty  ..." << std::endl;
@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
 
 
         // -------------------------------------------------------------------
-        std::cout << "------ Rectangular non-periodic 2D grid ... ------"
+        std::cout << "------ Square non-periodic 2D grid ... ------"
                   << std::endl;
 
 

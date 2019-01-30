@@ -4,11 +4,11 @@
 default:
   space:
     periodic: true
-    extent: [42., 42.]
+    extent: [2., 2.]
 
   grid:
-    structure: rectangular
-    shape: [23, 32]
+    structure: square
+    resolution: 42
 
   cell_initialize_from: default  # can be: config, default… (potentially more)
 
@@ -16,11 +16,11 @@ default:
 config:
   space:
     periodic: true
-    extent: [42., 42.]
+    extent: [2., 2.]
 
   grid:
-    structure: rectangular
-    shape: [23, 32]
+    structure: square
+    resolution: 42
 
   cell_initialize_from: config  # can be: config, default… (potentially more)
   cell_initial_state:
@@ -33,44 +33,44 @@ config:
 explicit:
   space:
     periodic: true
-    extent: [42., 42.]
+    extent: [2., 2.]
 
   grid:
-    structure: rectangular
-    shape: [23, 32]
+    structure: square
+    resolution: 42
 
 
 # Testing structures ----------------------------------------------------
-default_rect:
+default_sqr:
   space:
     periodic: true
-    extent: [42., 42.]
+    extent: [2., 2.]
 
   grid:
-    structure: rectangular
-    shape: [23, 32]
+    structure: square
+    resolution: 42
 
   cell_initialize_from: default  # can be: config, default… (potentially more)
 
 default_hex:
   space:
     periodic: true
-    extent: [42., 42.]
+    extent: [2., 2.]
 
   grid:
     structure: hexagonal
-    shape: [23, 32]
+    resolution: 42
 
   cell_initialize_from: default  # can be: config, default… (potentially more)
 
 default_tri:
   space:
     periodic: true
-    extent: [42., 42.]
+    extent: [2., 2.]
 
   grid:
     structure: triangular
-    shape: [23, 32]
+    resolution: 42
 
   cell_initialize_from: default  # can be: config, default… (potentially more)
 
@@ -81,7 +81,7 @@ missing_grid_cfg: {} # Missing grid entry here
 
 missing_grid_cfg2:
   grid:
-    structure: rectangular
+    structure: square
     # Missing shape
 
 missing_grid_cfg3:
@@ -96,27 +96,27 @@ bad_grid_cfg:
 
 missing_cell_init1:
   grid:
-    structure: rectangular
-    shape: [23, 32]
+    structure: square
+    resolution: 42
 
 bad_cell_init1:
   grid:
-    structure: rectangular
-    shape: [23, 32]
+    structure: square
+    resolution: 42
 
   cell_initialize_from: bad_value
 
 bad_cell_init2:
   grid:
-    structure: rectangular
-    shape: [23, 32]
+    structure: square
+    resolution: 42
 
   cell_initialize_from: default  # in principle valid, but not for this state
 
 bad_cell_init3:
   grid:
-    structure: rectangular
-    shape: [23, 32]
+    structure: square
+    resolution: 42
 
   cell_initialize_from: config
   # missing: cell_initial_state
@@ -127,11 +127,11 @@ bad_cell_init3:
 nb_empty:
   space:
     periodic: true
-    extent: [42., 42.]
+    extent: [2., 2.]
 
   grid:
-    structure: rectangular
-    shape: [23, 32]
+    structure: square
+    resolution: 42
 
   cell_initialize_from: default  # can be: config, default… (potentially more)
 
@@ -140,11 +140,11 @@ nb_empty:
 nb_vonNeumann:
   space:
     periodic: true
-    extent: [42., 42.]
+    extent: [2., 2.]
 
   grid:
-    structure: rectangular
-    shape: [23, 32]
+    structure: square
+    resolution: 42
 
   cell_initialize_from: default
 
@@ -155,11 +155,11 @@ nb_vonNeumann:
 nb_computed:
   space:
     periodic: true
-    extent: [42., 42.]
+    extent: [2., 2.]
 
   grid:
-    structure: rectangular
-    shape: [23, 32]
+    structure: square
+    resolution: 42
 
   cell_initialize_from: default
 
@@ -170,11 +170,11 @@ nb_computed:
 nb_bad1:
   space:
     periodic: true
-    extent: [42., 42.]
+    extent: [2., 2.]
 
   grid:
-    structure: rectangular
-    shape: [23, 32]
+    structure: square
+    resolution: 42
 
   cell_initialize_from: default
 
@@ -184,11 +184,11 @@ nb_bad1:
 nb_bad2:
   space:
     periodic: true
-    extent: [42., 42.]
+    extent: [2., 2.]
 
   grid:
     structure: triangular
-    shape: [23, 32]
+    resolution: 42
 
   cell_initialize_from: default
 

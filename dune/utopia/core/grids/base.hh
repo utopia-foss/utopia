@@ -60,16 +60,18 @@ public:
     /// The dimensionality of the space to be discretized (for easier access)
     static constexpr std::size_t dim = Space::dim;
 
-    /// The type of the grid shape array
-    using GridShape = GridShapeType<dim>;
 
 protected:
     // -- Members -- //
     /// The space that is to be discretized
     const std::shared_ptr<Space> _space;
 
-    /// The rectangular (multi-index) shape of the discretization
-    const GridShape _shape;
+    /// How many cells to place per length unit of space
+    /** \note The effective resolution might differ from this number, depending
+      *       on the choice of resolution value and the physical extent of the
+      *       space in each dimension.
+      */
+    const std::size_t _resolution;
 
     /// Neighborhood mode
     NBMode _nb_mode;
@@ -77,17 +79,23 @@ protected:
     /// Neighborhood function (working on cell IDs)
     NBFuncID<Self> _nb_func;
 
+
 public:
     // -- Constructors and Destructors -- //
     /// Construct a grid discretization
-    /** \param  space     The space to construct the discretization for
-      * \param  shape     The shape of the grid
+    /** \param  space   The space to construct the discretization for
+      * \param  cfg     Further configuration parameters
       */
-    Grid (std::shared_ptr<Space> space,
-          const GridShape& shape)
+    Grid (std::shared_ptr<Space> space, const DataIO::Config& cfg)
     :
         _space(space),
-        _shape(shape),
+        _resolution([&](){
+            if (not cfg["resolution"]) {
+                throw std::invalid_argument("Missing grid configuration "
+                                            "parameter 'resolution'!");
+            }
+            return as_<std::size_t>(cfg["resolution"]);
+        }()),
         _nb_mode(NBMode::empty)
     {
         // Set the neighborhood function to not return anything
@@ -122,14 +130,24 @@ public:
     /** \detail This information is used by the CellManager to populate the
       *         cell container with the returned number of cells
       */
-    IndexType num_cells() {
-        return calc_num_cells();
-    }
+    virtual IndexType num_cells() const = 0;
     
-    /// Get const reference to grid shape
-    const GridShapeType<Space::dim>& shape() const {
-        return _shape;
+    /// Get const reference to resolution of this grid
+    std::size_t resolution() const {
+        return _resolution;
     }
+
+    /// Returns the effective resolution into each dimension of the grid
+    /** \detail Depending on choice of resolution and extent of physical space,
+      *         the resolution given at initialization might not represent the
+      *         density of cells per unit of space fully accurately.
+      *         The effective resolution accounts for the scaling that was
+      *         required to map an integer number of cells onto the space.
+      */
+    virtual const std::array<double, dim> effective_resolution() const = 0;
+
+    /// Get the shape of the grid discretization
+    virtual const GridShapeType<Space::dim> shape() const = 0;
 
     /// Whether the grid is periodic
     bool is_periodic() const {
@@ -137,16 +155,10 @@ public:
     }
 
 
-
 protected:
-    // -- Helper functions -- //
-    /// Calculate the number of cells required to fill the current grid shape
-    virtual IndexType calc_num_cells() = 0;
-
-
     // -- Neighborhood interface -- //
     /// Retrieve the neighborhood function depending on the mode
-    virtual NBFuncID<Self> get_nb_func(NBMode mode) = 0;
+    virtual NBFuncID<Self> get_nb_func(NBMode mode) const = 0;
 
 
     /// A neighborhood function for empty neighborhood
@@ -155,8 +167,6 @@ protected:
         idcs.reserve(0);
         return idcs;
     };
-
-
 };
 
 

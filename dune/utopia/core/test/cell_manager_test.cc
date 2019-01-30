@@ -205,11 +205,11 @@ int main(int argc, char *argv[]) {
         std::cout << "------ Testing grid structures ... ------"
                   << std::endl;
 
-        std::cout << "... rectangular" << std::endl;
-        MockModel<CellTraitsDC> mm_dc_rect("mm_dc_rect", cfg["default_rect"]);
-        const auto grid_rect = mm_dc_rect._cm.grid().get();
-        using exp_t_rect = const Utopia::RectangularGrid<Utopia::DefaultSpace>;
-        assert(dynamic_cast<exp_t_rect*>(grid_rect));
+        std::cout << "... square" << std::endl;
+        MockModel<CellTraitsDC> mm_dc_sqr("mm_dc_sqr", cfg["default_sqr"]);
+        const auto grid_sqr = mm_dc_sqr._cm.grid().get();
+        using exp_t_sqr = const Utopia::SquareGrid<Utopia::DefaultSpace>;
+        assert(dynamic_cast<exp_t_sqr*>(grid_sqr));
         std::cout << "Success." << std::endl << std::endl;
 
         std::cout << "... hexagonal" << std::endl;
@@ -226,7 +226,6 @@ int main(int argc, char *argv[]) {
         assert(dynamic_cast<exp_t_tri*>(grid_tri));
         std::cout << "Success." << std::endl << std::endl;
 
-        // // TODO Do this all via dynamic casts
 
 
         // -------------------------------------------------------------------
@@ -240,13 +239,13 @@ int main(int argc, char *argv[]) {
         
         assert(space->dim == 2);
         assert(space->periodic == true);
-        assert(space->extent[0] == 42.);
-        assert(space->extent[1] == 42.);
+        assert(space->extent[0] == 2.);
+        assert(space->extent[1] == 2.);
 
-        assert(grid->shape()[0] == 23);
-        assert(grid->shape()[1] == 32);
+        assert(grid->shape()[0] == 42 * 2);
+        assert(grid->shape()[1] == 42 * 2);
 
-        assert(cells.size() == (23*32));
+        assert(cells.size() == ((42 * 2) * (42 * 2)));
         assert(cells[0]->state().a_double == 2.34);
         assert(cells[0]->state().a_string == "foobar");
         assert(cells[0]->state().a_bool == true);

@@ -325,36 +325,34 @@ private:
                 "configuration node supplied to the CellManager! Check that "
                 "the model configuration includes such an entry.");
         }
-        else if (not _cfg["grid"]["shape"] or not _cfg["grid"]["structure"]) {
-            throw std::invalid_argument("Missing one or both of the grid "
-                "configuration entries 'shape' and 'structure'.");
+        else if (not _cfg["grid"]["structure"]) {
+            throw std::invalid_argument("Missing required grid configuration "
+                                        "entry 'structure'!");
         }
         
-        // Get the parameters: shape and structure type
-        const auto shape = as_<GridShapeType<dim>>(_cfg["grid"]["shape"]); 
+        // Get the structure parameter
         auto structure = as_str(_cfg["grid"]["structure"]);
 
-        _log->info("Setting up {}ly structured grid discretization ...",
+        _log->info("Setting up grid discretization with '{}' cells ...",
                    structure);
         
         // Create the respective grids, distinguishing by structure
-        // TODO consider passing config node to make more arguments available
         if (structure == "triangular") {
             using GridSpec = TriangularGrid<Space>;
-            return std::make_shared<GridSpec>(_space, shape);
+            return std::make_shared<GridSpec>(_space, _cfg["grid"]);
         }
-        else if (structure == "rectangular") {
-            using GridSpec = RectangularGrid<Space>;
-            return std::make_shared<GridSpec>(_space, shape);
+        else if (structure == "square") {
+            using GridSpec = SquareGrid<Space>;
+            return std::make_shared<GridSpec>(_space, _cfg["grid"]);
         }
         else if (structure == "hexagonal") {
             using GridSpec = HexagonalGrid<Space>;
-            return std::make_shared<GridSpec>(_space, shape);
+            return std::make_shared<GridSpec>(_space, _cfg["grid"]);
         }
         else {
             throw std::invalid_argument("Invalid value for grid "
                 "'structure' argument: '" + structure + "'! Allowed "
-                "values: 'rectangular', 'hexagonal', 'triangular'");
+                "values: 'square', 'hexagonal', 'triangular'");
         }
     }
 
