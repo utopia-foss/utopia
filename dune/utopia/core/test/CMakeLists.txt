@@ -2,6 +2,7 @@
 file(COPY "square.msh" "cube.msh"
           "cell_manager_test.yml"
           "cell_manager_integration_test.yml"
+          "grid_square_test.yml"
           "model_test.yml"
           "model_nested_test.yml"
           "model_setup_test.yml"
@@ -24,6 +25,7 @@ set(TESTS_CORE
     grid_cells_test_2d
     grid_cells_test_3d
     grid_test
+    grid_square_test
     model_test
     model_nested_test
     model_setup_test

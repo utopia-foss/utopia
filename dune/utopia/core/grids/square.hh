@@ -1,6 +1,8 @@
 #ifndef UTOPIA_CORE_GRIDS_SQUARE_HH
 #define UTOPIA_CORE_GRIDS_SQUARE_HH
 
+#include <sstream>
+
 #include "base.hh"
 
 namespace Utopia {
@@ -37,8 +39,34 @@ public:
     SquareGrid (std::shared_ptr<Space> space, const DataIO::Config& cfg)
     :
         Base(space, cfg),
-        _shape(shape_from_resolution())
-    {}
+        _shape(determine_shape())
+    {
+        if constexpr (dim > 1) {
+            // Make sure the cells really are square
+            auto eff_res = effective_resolution();
+
+            if (not std::equal(eff_res.begin() + 1, eff_res.end(),
+                               eff_res.begin()))
+            {
+                // Format effective resolution to show it in error message
+                std::stringstream efr_ss;
+                efr_ss.precision(8);
+                efr_ss << "(";
+                for (std::size_t i=0; i<dim-1; i++) {
+                    efr_ss << eff_res[i] << ", ";
+                }
+                efr_ss << eff_res[dim-1] << ")";
+
+                throw std::invalid_argument("Given the extent of the physical "
+                    "space and the specified resolution, a mapping with "
+                    "exactly square cells could not be found! Either adjust "
+                    "the physical space, the resolution of the grid, or "
+                    "choose another grid.\nEffective resolution was: "
+                    + efr_ss.str() + ", but should be the same in all "
+                    "dimensions!");
+            }
+        }
+    }
 
 
     // -- Implementations of virtual base class functions -- //
@@ -82,7 +110,7 @@ protected:
       *         effective resolution thus slightly smaller than the specified
       *         resolution.
       */
-    GridShapeType<dim> shape_from_resolution() const {
+    GridShapeType<dim> determine_shape() const {
         GridShapeType<dim> shape;
 
         for (std::size_t i = 0; i < dim; i++) {

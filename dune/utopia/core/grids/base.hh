@@ -92,9 +92,16 @@ public:
         _resolution([&](){
             if (not cfg["resolution"]) {
                 throw std::invalid_argument("Missing grid configuration "
-                                            "parameter 'resolution'!");
+                    "parameter 'resolution'! Please supply an integer >= 1.");
             }
-            return as_<std::size_t>(cfg["resolution"]);
+            auto res = as_<std::size_t>(cfg["resolution"]);
+
+            if (res < 1) {
+                throw std::invalid_argument("Grid resolution needs to be a "
+                                            "positive integer!");
+            }
+
+            return res;
         }()),
         _nb_mode(NBMode::empty)
     {

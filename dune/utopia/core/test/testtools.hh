@@ -11,13 +11,19 @@
   * \param func     The callable whose exception handling is to be checked
   * \param to_find  The string that is to be matched (via std::string::find)
   *                 in the produced error message
+  * \param prefix   A prefix string to all std::cout message
+  * \param cout_error_msg  Whether to cout the received error message even if
+  *                 it was the expected one.
   */
 template<typename err_t, typename Callable=std::function<void()>>
 bool check_error_message(std::string desc,
                          Callable func,
-                         std::string to_find)
+                         std::string to_find,
+                         std::string prefix = "",
+                         bool cout_error_msg = false)
 {
-    std::cout << "Checking exceptions for case:  " << desc << std::endl;
+    std::cout << prefix << "Checking exceptions for case:  " << desc
+              << std::endl;
     try {
         func();
 
@@ -32,12 +38,19 @@ bool check_error_message(std::string desc,
 
             return false;
         }
+        // else: found the string pattern in the error message
+
+        if (cout_error_msg) {
+            std::cout << prefix << "Received the expected error message:  "
+                      << e.what() << std::endl;
+        }
     }
     catch (...) {
         std::cerr << "Threw error of unexpected type!" << std::endl;
         throw;
     }
-    std::cout << "Exception raised as expected." << std::endl << std::endl;
+    std::cout << prefix << "Exception raised as expected."
+              << std::endl << std::endl;
     return true;
 }
 

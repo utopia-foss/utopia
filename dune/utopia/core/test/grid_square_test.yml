@@ -1,0 +1,69 @@
+# Configuration nodes for the test of the square grid
+---
+spaces:
+  # default: not configured from here
+
+  nice:
+    periodic: true
+    extent: [4., 4.]
+
+  uneven:
+    periodic: true
+    extent: [2., 3.]
+
+  nasty:
+    periodic: true
+    extent: [1.25, 3.2]
+  
+  devil:
+    periodic: true
+    extent: [1.23, 3.14]
+
+
+# Grids for testing all spaces
+grids:
+  small_res:
+    structure: square
+    resolution: 8
+
+    # For testing number of cells:
+    expected_num_cells:
+      default: 64    # 1*8 * 1*8
+      nice:    1024  # 4*8 * 4*8
+      uneven:  384   # 2*8 * 3*8
+      nasty:   -1    # does not work
+      devil:   -1    # does not work
+  
+  medium_res:
+    structure: square
+    resolution: 20   # ... to match 'nasty' space
+
+    # For testing number of cells:
+    expected_num_cells:
+      default: 400   # 1*20 * 1*20
+      nice:    6400  # 4*20 * 4*20
+      uneven:  2400  # 2*20 * 3*20
+      nasty:   1600  # 25   * 64  
+      devil:   -1    # still does not work
+
+  invalid_res:
+    structure: square
+    resolution: 0    # bad value!
+
+    expected_num_cells:
+      default: -2    # will check for bad value error message
+      nice:    -2
+      uneven:  -2
+      nasty:   -2
+      devil:   -2
+
+  missing_res:
+    structure: square
+    # resolution: 0    # missing value
+
+    expected_num_cells:
+      default: -3    # will check for missing value error message
+      nice:    -3
+      uneven:  -3
+      nasty:   -3
+      devil:   -3
