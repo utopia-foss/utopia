@@ -43,68 +43,67 @@ def get_times(uni: UniverseGroup, *, include_t0: bool=True):
         return np.linspace(write_every, num_steps, num_steps//write_every + 1)
 
 
-def colorline(x, y, *, ax=None, z=None, cmap='Blues', norm=plt.Normalize(0.0, 1.0), 
-                linewidth=3, alpha=1.0):
+def colorline(x, y, *, 
+              ax=None, 
+              z=None, 
+              cmap='Blues', 
+              norm=None, 
+              linewidth=3,
+              alpha=1.0):
     """Plot a (gradient) colorline with the coordinates x and y.
     
     Args:
         x (list): The x data
         y (list): The y data
-        ax (optional): Defaults to None. The axis on which to plot.
-        z (optional): Defaults to None. An array that specifies the colors
-        cmap (str, optional): Defaults to 'viridis'. The colormap
-        norm , optional): Defaults to plt.Normalize(0.0, 1.0). The norm
-        linewidth (int, optional): Defaults to 3. The linewidth
-        alpha (float, optional): Defaults to 1.0. The transparency alpha
+        ax: The axis on which to plot.
+        z: An array that specifies the colors
+        cmap (str): The colormap
+        norm : The norm
+        linewidth (float): The linewidth
+        alpha (float): The transparency alpha
     
     Returns:
         matplotlib.LineCollection: The line collection
     """
-    def make_segments(x, y):
-        """Create list of line segments from x and y coordinates in the correct 
-        format for LineCollection.
-        
-        Args:
-            x (array): The x data
-            y (array): The y data
-        
-        Returns:
-            np.ndarray: The data in the form: data[numlines][points per line][2d_data_array]
-        """
 
-        points = np.array([x, y]).T.reshape(-1, 1, 2)
-        segments = np.concatenate([points[:-1], points[1:]], axis=1)
-        
-        return segments
+    # -- Resolve defaults
+    ax = ax if ax is not None else plt.gca()
+    norm = norm if norm is not None else plt.Normalize(0.0, 1.0)
 
-    # Transform the arrays to list 
-    x = list(x)
-    y = list(y)
+    # Convert y and y into np.arrays
+    x = np.array(x)
+    y = np.array(y)
+
+    if x.ndim != 1 or y.ndim != 1:
+        raise ValueError()
+
+    if z is None:
+        z = np.linspace(0., 1., x.size)
+    elif not hasattr(z, '__iter__'):
+        # Presumably a single number; allow it being handled in the same way
+        z = np.array([z])
+    else:
+        # Make sure it is an array and of correct size
+        z = np.array(z)
+        if z.ndim != 1:
+            raise ValueError()
 
     # Get the colormap
     cmap = plt.get_cmap(cmap)
 
-    # Default colors equally spaced on [0,1]:
-    if z is None:
-        z = np.linspace(0.0, 1.0, len(x))
-           
-    # If z is a single number, make sure to create an array out of it.
-    if not hasattr(z, "__iter__"):  
-        z = np.array([z])
-        
-    z = np.asarray(z)
-    
-    segments = make_segments(x, y)
-    # Create a line collection object 
+    # -- Done with argument checks now.
+     
+    # Calculate the segments
+    points = np.array([x, y]).T.reshape(-1, 1, 2)
+    segments = np.concatenate([points[:-1], points[1:]], axis=1)
+
+    # Create the line collection
     lc = LineCollection(segments, array=z, cmap=cmap, norm=norm, 
                         linewidth=linewidth, alpha=alpha)
     
-    if ax is None:
-        ax = plt.gca()
-
+    # Register it with the axis and trigger autoscaling
     ax.add_collection(lc)
-    
-    # Automatically scale the limits
     ax.autoscale()
 
+    # Pass back the line collection if other things need to be done with it
     return lc
