@@ -3,6 +3,7 @@
 #include "ContDisease.hh"
 
 using namespace Utopia::Models::ContDisease;
+using Utopia::Setup::create_grid_manager_cells;
 
 int main (int argc, char** argv)
 {
@@ -17,13 +18,15 @@ int main (int argc, char** argv)
         if (Utopia::as_bool(pp.get_cfg()["ContDisease"]["periodic"])) {
             // Periodic grid
             ContDiseaseModel model("ContDisease", pp,
-                                   setup_manager<true>("ContDisease", pp));
+                create_grid_manager_cells<CellState, true>("ContDisease", pp)
+                );
             model.run();
         }
         else {
             // Non-periodic grid
             ContDiseaseModel model("ContDisease", pp,
-                                   setup_manager<false>("ContDisease", pp));
+                create_grid_manager_cells<CellState, false>("ContDisease", pp)
+                );
             model.run();
         }
 
@@ -37,7 +40,7 @@ int main (int argc, char** argv)
         return 1;
     }
     catch (...) {
-        std::cerr << "Exception occured!" << std::endl;
+        std::cerr << "Exception occurred!" << std::endl;
         return 1;
     }
 }

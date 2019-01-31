@@ -39,7 +39,7 @@ using ContDiseaseModelTypes = ModelTypes<>;
  * step.
  * Stones represent cells that can not be infected, therefore represent a
  * blockade for the spread of the infection.
- * Infection herds are cells that continously spread infection without dying
+ * Infection herds are cells that continuously spread infection without dying
  * themselves.
  * Different starting conditions, and update mechanisms can be configured.
  */
@@ -442,50 +442,6 @@ public:
     // Getters and setters ....................................................
     // Can add some getters and setters here to interface with other model
 };
-
-
-/**
- * @brief Set up the grid manager and initialize the cells
- *
- * @tparam periodic=true Use periodic boundary conditions
- * @tparam ParentModel The parent model type
- *
- * @param name The name of the model
- * @param parent_model The parent model
- * @return auto The manager
- */
-template<bool periodic=true, typename ParentModel>
-auto setup_manager(std::string name, ParentModel& parent_model)
-{
-    // Get the logger... and use it :)
-    auto log = parent_model.get_logger();
-    log->info("Setting up '{}' model ...", name);
-
-    // Get the configuration
-    auto cfg = parent_model.get_cfg()[name];
-
-    // Extract grid size from config
-    const auto gsize = as_array<unsigned int, 2>(cfg["grid_size"]);
-
-    // Inform about the size
-    log->info("Creating 2-dimensional grid of size: {} x {} ...",
-              gsize[0], gsize[1]);
-
-    // Create grid of that size
-    auto grid = Utopia::Setup::create_grid<2>(gsize);
-
-    // Create the ContDisease initial state:
-    CellState cellstate_0 = empty;
-
-    // Create cells on that grid, passing the initial state
-    auto cells = Utopia::Setup::create_cells_on_grid<true>(grid, cellstate_0);
-
-    // Create the grid manager, passing the template argument
-    log->info("Initializing GridManager with {} boundaries ...",
-              (periodic ? "periodic" : "fixed"));
-
-    return Utopia::Setup::create_manager_cells<true, periodic>(grid, cells);
-}
 
 
 } // namespace ContDisease
