@@ -438,7 +438,6 @@ public:
                            });
         
         // state densities
-        // TODO write test
         _update_densities();
         _dset_density_tree->write(_densities[1]);
         _dset_density_infected->write(_densities[2]);

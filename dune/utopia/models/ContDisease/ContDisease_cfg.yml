@@ -38,7 +38,7 @@ infection_herd_src: south
 # Stones - set true to activate.
 stones: true
 
-# Initialization mode for stonres (can be: random)
+# Initialization mode for stones (can be: random)
 stone_init: random
 
 # Additional parameters for stone initialization

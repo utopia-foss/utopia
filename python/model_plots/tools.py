@@ -99,7 +99,7 @@ def colorline(x, y, *, ax=None, z=None, cmap='Blues', norm=plt.Normalize(0.0, 1.
     lc = LineCollection(segments, array=z, cmap=cmap, norm=norm, 
                         linewidth=linewidth, alpha=alpha)
     
-    if ax == None:
+    if ax is None:
         ax = plt.gca()
 
     ax.add_collection(lc)

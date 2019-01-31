@@ -133,3 +133,34 @@ def test_infection_dynamic():
     assert (data[3][-1] == 2).all()
     assert (data[3][1] == 0).all()
     assert (data[3][0] == 3).all()
+
+
+def test_densities_calculation():
+    mv, dm = mtc.create_run_load(from_cfg="densities_calculation.yml")
+
+    # # Get the data
+    # data = dm['multiverse/0/data/ContDisease']
+    # d_infected = data['density_infected']
+    # d_tree = data['density_tree']
+
+    # # The densities for herds and stones are not written out,
+    # # so, we have to approximate them from the configuration
+    # cfg = dm['multiverse/0/cfg']
+    # grid_size = dm['multiverse/0/cfg/ContDisease']['grid_size']
+
+    # d_stones = cfg['stone_density'] + cfg['stone_cluster']
+
+    # # The herd is a line at the southern border, so equals the number of cells 
+    # # in one line divided by the total number of cells
+    # d_herd = grid_size[-1] / np.prod(grid_size)
+
+    # # Assert that the added up densities are smaller or equal to 1.
+    # # NOTE that the empty cells are not known here, thus, this should always be
+    # # the case
+    # assert([0 < (d_inf + d_t + d_stones + d_herd) < 1 for d_inf, d_t in zip(d_infected, d_tree)])
+
+    # # There should always be some trees
+    # assert([d > 0 for d in d_tree])
+
+    # # Initially, no tree should be infected
+    # assert(d_infected[0])
