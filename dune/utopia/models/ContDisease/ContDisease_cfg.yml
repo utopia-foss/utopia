@@ -26,7 +26,7 @@ periodic: false
 # --- Initialization parameters ---
 # Initial state of the whole grid. 
 # Possible values: empty, init_density
-initial_state: empty
+initial_state: init_density
 initial_density: 0.5    # uniform initial_density
 
 # Infection herd - set true to activate.

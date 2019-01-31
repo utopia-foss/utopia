@@ -152,7 +152,7 @@ private:
                     && (dist(*this->_rng) < stone_cluster))
                 {
                     cell->state_new() = stone;
-                    cell-> update();
+                    cell->update();
                 }
                 else {
                     break;
@@ -176,7 +176,7 @@ private:
         std::uniform_real_distribution<> dist(0., 1.);
 
         // Set the internal variables
-        if (dist(*this->_rng) < _densities[1])
+        if (dist(*this->_rng) < as_double(this->_cfg["initial_density"]))
         {
             state = tree;
         }
@@ -333,29 +333,24 @@ public:
 
         this->_log->info("Initializing cells in '{}' mode ...", initial_state);
 
-        // Different initialization methods for the forest
+        // -- Trees -- //
+        // First initialize the forest – set an initial tree density or no trees
+        // at all.
         if (initial_state == "empty"){
-            //Apply rule to all cells in the forest.
+            // Set all cell states to empty
             apply_rule(_set_initial_state_empty, _manager.cells());
         }
         else if (initial_state == "init_density") {
-            if (not stones) {
-                _densities[1] = as_double(this->_cfg["initial_density"]);
-                apply_rule(_set_initial_densities, _manager.cells());
-            }
-            // TODO write proper init function
-            else {
-                 throw std::invalid_argument("The stone initialization"
-                                             " with init_density is not valid!"
-                                             " Valid options: 'init_empty'");
-            }
+            // Set trees on the cells with probability initial_density
+            apply_rule(_set_initial_densities, _manager.cells());
         }
         else {
             throw std::invalid_argument("The initial state ''" + initial_state
                                         + "'' is not valid! Valid options: "
-                                        "'empty'");
+                                        "'empty' and 'init_density'");
         }
 
+        // -- Infection herd -- //
         // Different initializations for possible infection herds
         if (infection_herd){
             if (infection_herd_src == "south"){
@@ -372,7 +367,7 @@ public:
             this->_log->debug("Not using an infection herd.");
         }
 
-        // -- Different intializations for stones
+        // -- Stones -- //
         if (stones){
             if (stone_init == "random"){
                 _init_stones_rd(stone_density, stone_cluster);
