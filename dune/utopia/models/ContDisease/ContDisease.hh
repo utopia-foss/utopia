@@ -60,6 +60,9 @@ public:
     /// Data type for a dataset
     using DataSet = typename Base::DataSet;
 
+    /// Data type for a data group
+    using DataGroup = typename Base::DataGroup;
+
     // Alias the neighborhood classes to make access more convenient
     using Neighborhood = Utopia::Neighborhoods::MooreNeighbor;
 
@@ -82,10 +85,16 @@ public:
     double _p_rd_infect;
 
 private:
+    // -- Datagroups -- //
+    std::shared_ptr<DataGroup> _hdfgrp_densities;
+
     // -- Datasets -- //
     std::shared_ptr<DataSet> _dset_state;
+    std::shared_ptr<DataSet> _dset_density_empty;
     std::shared_ptr<DataSet> _dset_density_tree;
     std::shared_ptr<DataSet> _dset_density_infected;
+    std::shared_ptr<DataSet> _dset_density_herd;
+    std::shared_ptr<DataSet> _dset_density_stone;
     
     // -- Temporary objects -- //
     /// Densities for all states
@@ -123,8 +132,9 @@ private:
 
         // Calculate the densities by dividing the counts by the total number 
         // of cells.
-        std::for_each(_densities.begin(), _densities.end(), 
-                      [&num_cells](double d){return d/num_cells;});
+        for (auto&& d : _densities){
+            d/=num_cells;
+        }
     };
 
 
@@ -281,10 +291,16 @@ public:
         _p_infect(as_double(this->_cfg["p_infect"])),
         _p_rd_infect(as_double(this->_cfg["p_rd_infect"])),
 
+        // Create a data group
+        _hdfgrp_densities(this->_hdfgrp->open_group("densities")),
+
         // Create dataset with compression level 1
         _dset_state(this->create_dset("state", {_manager.cells().size()})),
-        _dset_density_tree(this->create_dset("density_tree", {})),
-        _dset_density_infected(this->create_dset("density_infected", {})),
+        _dset_density_empty(this->create_dset("empty", _hdfgrp_densities, {})),
+        _dset_density_tree(this->create_dset("tree", _hdfgrp_densities, {})),
+        _dset_density_infected(this->create_dset("infected", _hdfgrp_densities, {})),
+        _dset_density_herd(this->create_dset("herd", _hdfgrp_densities, {})),
+        _dset_density_stone(this->create_dset("stone", _hdfgrp_densities, {})),
 
         // Initialize the densities with NaN's which will be overwritten in the
         // actual initialization
@@ -294,7 +310,7 @@ public:
         this->initialize_cells();
 
         // Write initial state
-        this->write_data();
+        this->write_initial_data();
 
         // Add attributes to the datasets
         // NOTE Currently, attributes can be set only after the first write
@@ -434,8 +450,23 @@ public:
         
         // state densities
         _update_densities();
+        _dset_density_empty->write(_densities[0]);
         _dset_density_tree->write(_densities[1]);
         _dset_density_infected->write(_densities[2]);
+    }
+
+
+     /// Write initial data
+    void write_initial_data () {
+        // update the densities
+        _update_densities();
+        
+        // state densities that do not change throughout the simulation
+        _dset_density_stone->write(_densities[3]);
+        _dset_density_herd->write(_densities[4]);
+
+        // write all other data that is written each write_data call
+        this->write_data();
     }
 
 

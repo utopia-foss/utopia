@@ -29,7 +29,7 @@ def tree_density(dm: DataManager, *,
     grp = uni['data/ContDisease']
 
     # Extract the data for the tree states and convert it into a 3d-array
-    data = grp["density_tree"]
+    data = grp["densities/tree"]
 
     # Get the time steps
     times = get_times(uni)
@@ -46,6 +46,56 @@ def tree_density(dm: DataManager, *,
 
     plt.xlabel("time steps")
     plt.ylabel("tree density")
+
+    save_and_close(out_path, save_kwargs=save_kwargs)
+
+
+def densities(dm: DataManager, *, 
+              out_path: str, 
+              uni: UniverseGroup, 
+              save_kwargs: dict=None, 
+              **plot_kwargs):
+    """Extracts the densities and perfoms the lineplots
+    
+    Args:
+        dm (DataManager): The data manager
+        out_path (str): Where to store the plot to
+        uni (UniverseGroup): The universe data to use
+        save_kwargs (dict, optional): kwargs to the plt.savefig function
+        **plot_kwargs: Passed on to plt.plot
+    """
+    # Get the group that all datasets are in
+    grp = uni['data/ContDisease']
+
+    # Extract the data for the tree states and convert it into a 3d-array
+    d_empty = grp["densities/empty"]
+    d_tree = grp["densities/tree"]
+    d_infected = grp["densities/infected"]
+    d_herd = grp["densities/herd"]
+    d_stone = grp["densities/stone"]
+    
+    # Get the time steps
+    times = get_times(uni)
+    
+    # Expand the stone and herd dataset to have the same value for each time step
+    d_stone = np.full(len(times), d_stone) 
+    d_herd = np.full(len(times), d_herd)
+
+    # Create the figure and get the axes
+    fig = plt.figure()
+    ax = fig.gca()
+
+    # Call the plot function
+    ax.plot(times, d_empty, color='black', label='empty', **plot_kwargs)
+    ax.plot(times, d_tree, color='green', label='tree', **plot_kwargs)
+    ax.plot(times, d_infected, color='red', label='infected', **plot_kwargs)
+    ax.plot(times, d_herd, color='orange', label='herd', **plot_kwargs)
+    ax.plot(times, d_stone, color='gray', label='stone', **plot_kwargs)
+
+    plt.xlabel("time steps")
+    plt.ylabel("densities")
+
+    plt.legend(loc='best')
 
     save_and_close(out_path, save_kwargs=save_kwargs)
 

@@ -10,6 +10,16 @@ tree_density:
 
   color: green
 
+
+# Plots all densities over time
+densities:
+  creator: universe
+  universes: all
+
+  module: model_plots.ContDisease
+  plot_func: densities
+
+
 # Plot the phase space
 phase_diagram:
   creator: universe
@@ -20,8 +30,8 @@ phase_diagram:
 
   # Further kwargs to the lineplot method
   # Select the data
-  x: density_tree
-  y: density_infected
+  x: densities/tree
+  y: densities/infected
   xlabel: $\rho_{tree}$
   ylabel: $\rho_{infected}$
 
