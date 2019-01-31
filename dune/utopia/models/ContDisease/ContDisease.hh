@@ -88,102 +88,45 @@ private:
     std::shared_ptr<DataSet> _dset_density_infected;
     
     // -- Temporary objects -- //
-    // Array that holds the densities for all states
-    // NOTE: It is not automatically updated.
-    std::array<double, 5> _density;
+    /// Densities for all states
+    /** \note This array is used for temporary storage; it is not automatically updated!
+     * \detail The array entries map to the CellState enum:
+     *         0: empty
+     *         1: tree
+     *         2: infected
+     *         3: herd
+     *         4: stone
+     */
+    std::array<double, 5> _densities;
 
     // -- Helper functions -- //
-    /// Initially calculate global averaged state densities
-    void _initialize_densities()
-    {
-        // Count the trees, the infected trees, the herd, and the stones
-        std::size_t cnt_tree=0, cnt_infected=0, cnt_stone=0, cnt_herd=0;
-        for (const auto& cell : this->_manager.cells()) 
-        {
-            const auto& state = cell->state();
-            
-            if (state == tree) {
-                ++cnt_tree;
-            }
-            else if (state == infected) {
-                ++cnt_infected;
-            }
-            else if (state == stone) {
-                ++cnt_stone;
-            }
-            else if (state == herd) {
-                ++cnt_herd;
-            }
-        }
-
-        // Calculate the densities for 
-        //   empty        (_density[0]),
-        //   tree         (_density[1]),
-        //   infected     (_density[2]),
-        //   herd         (_density[3]),
-        //   stone        (_density[4])
-        // The herd and stone density remain the same and do not need to be
-        // recalculated every time.
-        const std::size_t num_cells = this->_manager.cells().size();
-
-        const double density_tree = cnt_tree/double(num_cells);
-        const double density_infected = cnt_infected/double(num_cells);
-        const double density_stone = cnt_stone/double(num_cells);
-        const double density_herd = cnt_herd/double(num_cells);
-
-        const double density_empty = 1. - density_tree 
-                                        - density_infected 
-                                        - density_herd
-                                        - density_stone;
-
-        // Store the densities in the array
-        _density[0] = density_empty;
-        _density[1] = density_tree;
-        _density[2] = density_infected;
-        _density[3] = density_herd;
-        _density[4] = density_stone;
-    };
-
-
-    /// Update the array with the densities by calculating globally averaged state densities
+    /// Update the densities array by calculating globally averaged state densities
+    /** @brief Each density is calculated by counting the number of state 
+     *         occurrences and afterwards dividing by the total number of cells.
+     * @attention It is possible that rounding errors occur due to the division,
+     *            thus, it is not guaranteed that the densities exactly add up to 1.
+     *            The errors should be neglectably small.
+     */
     void _update_densities()
     {
-        // Count the trees and the infected trees
-        unsigned int cnt_tree = 0, cnt_infected = 0;
-        for (const auto& cell : this->_manager.cells()) 
-        {
-            const auto& state = cell->state();
-            
-            if (state == tree) {
-                ++cnt_tree;
-            }
-            else if (state == infected) {
-                ++cnt_infected;
-            }
+        // Temporarily overwrite every entry in the densities with zeroes
+        _densities.fill(0);
+
+        // Count the occurrence of each possible state
+        // Afterwards, the _densities array contains the counts.
+        for (const auto& cell : this->_manager.cells()) {
+            // Cast enum to integer to arrive at the corresponding index
+            ++_densities[static_cast<std::size_t>(cell->state())];
         }
 
-        // Calculate the densities for 
-        //   empty        (_density[0]),
-        //   tree         (_density[1]),
-        //   infected     (_density[2]),
-        //   herd         (_density[3]),
-        //   stone        (_density[4])
-        // The herd and stone density remain the same and do not need to be
-        // recalculated every time.
-        const unsigned int num_cells = this->_manager.cells().size();
+        const double num_cells = this->_manager.cells().size();
 
-        const double density_tree = cnt_tree/double(num_cells);
-        const double density_infected = cnt_infected/double(num_cells);
-        const double density_empty = 1. - density_tree 
-                                        - density_infected 
-                                        - _density[3] /*herd*/ 
-                                        - _density[4] /*stone*/;
-
-        // Store the densities in the array (stones and herd remain constant)
-        _density[0] = density_empty;
-        _density[1] = density_tree;
-        _density[2] = density_infected;
+        // Calculate the densities by dividing the counts by the total number 
+        // of cells.
+        std::for_each(_densities.begin(), _densities.end(), 
+                      [&num_cells](double d){return d/num_cells;});
     };
+
 
     /// Initialize stones at random so a certain areal density is reached
     void _init_stones_rd (const double stone_density,
@@ -226,14 +169,14 @@ private:
 
     /// Sets the given cell to state "tree" with probability p, else to "empty"
     // TODO write test
-    RuleFunc _set_initial_density = [this](const auto& cell){
+    RuleFunc _set_initial_densities = [this](const auto& cell){
         // Get the state of the Cell
         auto state = cell->state();
 
         std::uniform_real_distribution<> dist(0., 1.);
 
         // Set the internal variables
-        if (dist(*this->_rng) < _density[1])
+        if (dist(*this->_rng) < _densities[1])
         {
             state = tree;
         }
@@ -341,7 +284,11 @@ public:
         // Create dataset with compression level 1
         _dset_state(this->create_dset("state", {_manager.cells().size()})),
         _dset_density_tree(this->create_dset("density_tree", {})),
-        _dset_density_infected(this->create_dset("density_infected", {}))
+        _dset_density_infected(this->create_dset("density_infected", {})),
+
+        // Initialize the densities with NaN's which will be overwritten in the
+        // actual initialization
+        _densities{NAN, NAN, NAN, NAN, NAN}
     {
         // Call the method that initializes the cells
         this->initialize_cells();
@@ -393,8 +340,8 @@ public:
         }
         else if (initial_state == "init_density") {
             if (not stones) {
-                _density[1] = as_double(this->_cfg["initial_density"]);
-                apply_rule(_set_initial_density, _manager.cells());
+                _densities[1] = as_double(this->_cfg["initial_density"]);
+                apply_rule(_set_initial_densities, _manager.cells());
             }
             // TODO write proper init function
             else {
@@ -443,9 +390,9 @@ public:
         // Write information that cells are initialized to the logger
         this->_log->info("Cells initialized.");
 
-        // Calculate all initial densities including the ones that stay
-        // constant afterwards (stones, herd)
-        _initialize_densities();
+        // Calculate the actual density of each state and store them in the
+        // _densities array.
+        _update_densities();
     }
 
 
@@ -478,7 +425,7 @@ public:
      */
     void monitor () {        
         _update_densities();
-        this->_monitor.set_entry("density", _density);
+        this->_monitor.set_entry("densities", _densities);
     }
 
 
@@ -493,8 +440,8 @@ public:
         // state densities
         // TODO write test
         _update_densities();
-        _dset_density_tree->write(_density[1]);
-        _dset_density_infected->write(_density[2]);
+        _dset_density_tree->write(_densities[1]);
+        _dset_density_infected->write(_densities[2]);
     }
 
 
