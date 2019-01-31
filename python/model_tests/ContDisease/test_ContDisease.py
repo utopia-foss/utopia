@@ -139,28 +139,23 @@ def test_densities_calculation():
     mv, dm = mtc.create_run_load(from_cfg="densities_calculation.yml")
 
     # Get the data
-    data = dm['multiverse/0/data/ContDisease']
-    d_infected = data['density_infected']
-    d_tree = data['density_tree']
+    densities = dm['multiverse/0/data/ContDisease/densities']
+    d_infected = densities['infected']
+    d_tree = densities['tree']
+    d_empty = densities['empty']
+    d_stones = densities['stone']
+    d_herd = densities['herd']
 
-    # The densities for herds and stones are not written out,
-    # so, we have to approximate them from the configuration
-    cfg = dm['multiverse/0/cfg/ContDisease']
-    grid_size = cfg['grid_size']
+    # Assert that the added up densities are approximately equal to 1
+    d_partial_sum = d_empty.data + d_tree.data + d_infected.data
+    assert [dps + d_stones.data + d_herd.data == pytest.approx(1.) for dps in d_partial_sum]
 
-    d_stones = cfg['stone_density'] + cfg['stone_cluster']
-
-    # The herd is a line at the southern border, so equals the number of cells 
-    # in one line divided by the total number of cells
-    d_herd = grid_size[-1] / np.prod(grid_size)
-
-    # Assert that the added up densities are smaller or equal to 1.
-    # NOTE that the empty cells are not known here, thus, this should always be
-    # the case
-    assert([0 < (d_inf + d_t + d_stones + d_herd) < 1 for d_inf, d_t in zip(d_infected, d_tree)])
-
-    # There should always be some trees
-    assert([d > 0 for d in d_tree])
-
+    # Densities should always be in the range 0<=d<=1
+    assert([0 <= d <= 0 for d in d_tree])
+    assert([0 <= d <= 0 for d in d_empty])
+    assert([0 <= d <= 0 for d in d_infected])
+    assert(0 <= d_stones <= 1)
+    assert(0 <= d_herd <= 1)
+    
     # Initially, no tree should be infected
     assert(d_infected[0] == 0)

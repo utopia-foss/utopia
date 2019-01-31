@@ -456,7 +456,7 @@ public:
     }
 
 
-     /// Write initial data
+    /// Write initial data
     void write_initial_data () {
         // update the densities
         _update_densities();
