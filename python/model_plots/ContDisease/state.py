@@ -131,10 +131,6 @@ def phase_diagram(dm: DataManager, *,
     d_tree = grp[x]
     d_infected = grp[y]
 
-    # Assemble the arguments
-
-    plt.figure()
-
     # Call the plot function
     colorline(d_tree, d_infected)
 
