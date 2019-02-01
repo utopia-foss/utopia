@@ -72,7 +72,7 @@ state_map: &state_map
         empty: white
         tree: green
         infected: red
-        herd: orange
+        source: orange
         stone: gray
 
   # Video options

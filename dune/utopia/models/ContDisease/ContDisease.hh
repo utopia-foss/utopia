@@ -19,7 +19,7 @@ enum CellState : unsigned short {
     empty = 0,
     tree = 1,
     infected = 2,
-    herd = 3,
+    source = 3,
     stone = 4
 };
 
@@ -31,7 +31,7 @@ using ContDiseaseModelTypes = ModelTypes<>;
 /// Contagious disease model on a grid
 /** In this model, we model the spread of a disease through a forest on
  * a 2D grid. Each cell can have one of five different states: empty, tree,
- * infected, herd or empty. Each time step cells update their state according
+ * infected, source or empty. Each time step cells update their state according
  * to the update rules. Empty cells will convert with a certain probability
  * to tress, while trees represent cells that can be infected.
  * Infection can happen either through a neighboring cells, or through random
@@ -39,7 +39,7 @@ using ContDiseaseModelTypes = ModelTypes<>;
  * step.
  * Stones represent cells that can not be infected, therefore represent a
  * blockade for the spread of the infection.
- * Infection herds are cells that continuously spread infection without dying
+ * Infection sources are cells that continuously spread infection without dying
  * themselves.
  * Different starting conditions, and update mechanisms can be configured.
  */
@@ -85,7 +85,7 @@ public:
     double _p_rd_infect;
 
 private:
-    // -- Datagroups -- //
+    // -- Data groups -- //
     std::shared_ptr<DataGroup> _hdfgrp_densities;
 
     // -- Datasets -- //
@@ -93,7 +93,7 @@ private:
     std::shared_ptr<DataSet> _dset_density_empty;
     std::shared_ptr<DataSet> _dset_density_tree;
     std::shared_ptr<DataSet> _dset_density_infected;
-    std::shared_ptr<DataSet> _dset_density_herd;
+    std::shared_ptr<DataSet> _dset_density_source;
     std::shared_ptr<DataSet> _dset_density_stone;
     
     // -- Temporary objects -- //
@@ -103,7 +103,7 @@ private:
      *         0: empty
      *         1: tree
      *         2: infected
-     *         3: herd
+     *         3: source
      *         4: stone
      */
     std::array<double, 5> _densities;
@@ -172,13 +172,7 @@ private:
     };
 
     // -- Rule functions -- //
-    /// Sets the given cell to state "empty"
-    RuleFunc _set_initial_state_empty = []([[maybe_unused]] const auto& cell){
-        return empty;
-    };
-
     /// Sets the given cell to state "tree" with probability p, else to "empty"
-    // TODO write test
     RuleFunc _set_initial_densities = [this](const auto& cell){
         // Get the state of the Cell
         auto state = cell->state();
@@ -198,8 +192,8 @@ private:
         return state;
     };
 
-    /// Sets an infection herd at the southern end of the grid
-    RuleFunc _set_infection_herd_south = [this](const auto& cell){
+    /// Sets an infection source at the southern end of the grid
+    RuleFunc _set_infection_source_south = [this](const auto& cell){
         auto state = cell->state();
 
         // Get position of the Cell, grid extensions and number of cells
@@ -209,9 +203,9 @@ private:
         const auto& grid_num_cells = this->_manager.grid_cells();
         const auto& cell_size_y = grid_ext[1]  / grid_num_cells[1];
 
-        // If in the southern-most row of cells, this is an infection herd
+        // If in the southern-most row of cells, this is an infection source
         if (pos[1] < cell_size_y) {
-            return herd;
+            return source;
         }
         return state;
     };
@@ -244,7 +238,7 @@ private:
                 cellstate = infected;
             }
             // Go through neighbor cells (here 5-cell neighbourhood), look if
-            // they are infected (or an infection herd), if yes, infect cell
+            // they are infected (or an infection source), if yes, infect cell
             // with the probability _p_infect.
             else 
             {               
@@ -253,7 +247,7 @@ private:
                     if (cellstate == tree){
                         auto
                          nb_cellstate = nb->state();
-                        if (nb_cellstate == infected || nb_cellstate == herd){
+                        if (nb_cellstate == infected || nb_cellstate == source){
                             if (dist(*this->_rng) < _p_infect){
                                 cellstate = infected;
                             }
@@ -299,7 +293,7 @@ public:
         _dset_density_empty(this->create_dset("empty", _hdfgrp_densities, {})),
         _dset_density_tree(this->create_dset("tree", _hdfgrp_densities, {})),
         _dset_density_infected(this->create_dset("infected", _hdfgrp_densities, {})),
-        _dset_density_herd(this->create_dset("herd", _hdfgrp_densities, {})),
+        _dset_density_source(this->create_dset("source", _hdfgrp_densities, {})),
         _dset_density_stone(this->create_dset("stone", _hdfgrp_densities, {})),
 
         // Initialize the densities with NaN's which will be overwritten in the
@@ -323,17 +317,17 @@ public:
     // Setup functions ........................................................
 
     /// Initialize the cells according to `initial_state` and
-    /// the 'infection_herd' and 'infection_herd_src' config parameters
+    /// the 'infection_source' and 'infection_source_loc' config parameters
     void initialize_cells()
     {
         // Extract the mode that determines the initial state
         const auto initial_state = as_str(this->_cfg["initial_state"]);
 
-        // Extract if an infection herd is activated
-        const bool infection_herd = as_bool(this->_cfg["infection_herd"]);
+        // Extract if an infection source is activated
+        const bool infection_source = as_bool(this->_cfg["infection_source"]);
 
-        // Extract position of possible infection herd
-        const auto infection_herd_src = as_str(this->_cfg["infection_herd_src"]);
+        // Extract position of possible infection source
+        const auto infection_source_loc = as_str(this->_cfg["infection_source_loc"]);
 
         // Extract if stones are activated
         const bool stones = as_bool(this->_cfg["stones"]);
@@ -354,7 +348,7 @@ public:
         // at all.
         if (initial_state == "empty"){
             // Set all cell states to empty
-            apply_rule(_set_initial_state_empty, _manager.cells());
+            apply_rule([](const auto&){return empty;}, _manager.cells());
         }
         else if (initial_state == "init_density") {
             // Set trees on the cells with probability initial_density
@@ -366,21 +360,21 @@ public:
                                         "'empty' and 'init_density'");
         }
 
-        // -- Infection herd -- //
-        // Different initializations for possible infection herds
-        if (infection_herd){
-            if (infection_herd_src == "south"){
-                // Set infection herd at the southern border of the grid
-                apply_rule(_set_infection_herd_south, _manager.cells());
+        // -- Infection source -- //
+        // Different initializations for possible infection sources
+        if (infection_source){
+            if (infection_source_loc == "south"){
+                // Set infection source at the southern border of the grid
+                apply_rule(_set_infection_source_south, _manager.cells());
             }
             else {
-                throw std::invalid_argument("The infection herd source ''"
-                                            + infection_herd_src + "'' is not "
+                throw std::invalid_argument("The infection source source ''"
+                                            + infection_source_loc + "'' is not "
                                             "valid! Valid options: 'south'");
             }
         }
         else {
-            this->_log->debug("Not using an infection herd.");
+            this->_log->debug("Not using an infection source.");
         }
 
         // -- Stones -- //
@@ -417,9 +411,9 @@ public:
      *               - with a probability p_growth
      *          3: Tree     --> Infected
      *               - with the probability p_infect for each infected
-     *                 or herd cell in the neighbourhood
+     *                 or source cell in the neighbourhood
      *               - with probability p_rd_infect for random-point infections
-     *          4: Herd or stone cells remain in their respective state.
+     *          4: source or stone cells remain in their respective state.
      */
     void perform_step () {
         // Apply the rules to all cells, first the interaction, then the update
@@ -463,7 +457,7 @@ public:
         
         // state densities that do not change throughout the simulation
         _dset_density_stone->write(_densities[3]);
-        _dset_density_herd->write(_densities[4]);
+        _dset_density_source->write(_densities[4]);
 
         // write all other data that is written each write_data call
         this->write_data();

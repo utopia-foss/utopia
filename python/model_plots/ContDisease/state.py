@@ -71,15 +71,15 @@ def densities(dm: DataManager, *,
     d_empty = grp["densities/empty"]
     d_tree = grp["densities/tree"]
     d_infected = grp["densities/infected"]
-    d_herd = grp["densities/herd"]
+    d_source = grp["densities/source"]
     d_stone = grp["densities/stone"]
     
     # Get the time steps
     times = get_times(uni)
     
-    # Expand the stone and herd dataset to have the same value for each time step
+    # Expand the stone and source dataset to have the same value for each time step
     d_stone = np.full(len(times), d_stone) 
-    d_herd = np.full(len(times), d_herd)
+    d_source = np.full(len(times), d_source)
 
     # Create the figure and get the axes
     fig = plt.figure()
@@ -89,7 +89,7 @@ def densities(dm: DataManager, *,
     ax.plot(times, d_empty, color='black', label='empty', **plot_kwargs)
     ax.plot(times, d_tree, color='green', label='tree', **plot_kwargs)
     ax.plot(times, d_infected, color='red', label='infected', **plot_kwargs)
-    ax.plot(times, d_herd, color='orange', label='herd', **plot_kwargs)
+    ax.plot(times, d_source, color='orange', label='source', **plot_kwargs)
     ax.plot(times, d_stone, color='gray', label='stone', **plot_kwargs)
 
     plt.xlabel("time steps")
