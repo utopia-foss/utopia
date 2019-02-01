@@ -46,8 +46,8 @@ to_plot : dict
                 state:
                     limits: [0, 1]
 
-Example plot configuration
---------------------------
+Example Plot Configuration Snippet
+----------------------------------
 
 This snippet can be copy-pasted into a plot configuration file. 
 The fictional parameter names need to be replaced by model-specific ones.
