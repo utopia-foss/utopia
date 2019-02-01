@@ -35,7 +35,6 @@ to_plot : dict
         .. code-block:: yaml
 
             to_plot:
-                # The name of the property to plot with its options
                 state:
                     title: State
 
@@ -44,6 +43,51 @@ to_plot : dict
         .. code-block:: yaml
 
             to_plot:
-                # The name of the property to plot with its options
                 state:
                     limits: [0, 1]
+
+Example plot configuration
+--------------------------
+
+This snippet can be copy-pasted into a plot configuration file. 
+The fictional parameter names need to be replaced by model-specific ones.
+Comments indicate where changes need to be applied.
+
+.. code-block:: yaml
+
+    ### Example snippet for a CA time-series plot with two states
+
+    # The name of the plot. Replace with the desired name!
+    state0_and_state1:
+        creator: universe
+        universes: all
+
+        file_ext: mp4
+
+        module: .ca
+        plot_func: state_anim
+
+        # Replace this name by the actual model name!
+        model_name: MyFancyModel 
+
+        # Select the properties to plot
+        to_plot:
+            # The name of the property to plot with its options
+            # Replace this name by the actual state name!
+            state0:
+                title: State 0
+                cmap: 
+                    set: blue
+                    empty: white
+
+            # The name of the property to plot with its options
+            # Replace this name by the actual state name!
+            state1:
+                title: State 1
+                limits: [0, 1]
+                cmap: viridis
+
+        # Video options
+        writer: ffmpeg
+        fps: 2
+        dpi: 96

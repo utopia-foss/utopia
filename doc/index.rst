@@ -33,8 +33,8 @@ Welcome!
 
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :caption: Frontend
    :glob:
 
-   frontend/**
+   frontend/*
