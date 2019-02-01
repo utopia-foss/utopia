@@ -137,79 +137,8 @@ private:
         }
     };
 
-
-    /// Initialize stones at random so a certain areal density is reached
-    void _init_stones_rd (const double stone_density,
-                          const double stone_cluster) {
-        std::uniform_real_distribution<> dist(0., 1.);
-
-        auto cells_rd = _manager.cells();
-        std::shuffle(cells_rd.begin(),cells_rd.end(), *this->_rng);
-
-        // Set the state of the cell to stone with probability stone_density
-        for (const auto& cell: cells_rd ){
-            if (dist(*this->_rng) < stone_density){
-                cell->state_new() = stone;
-                cell->update();
-            }
-        }
-
-        // Attempt to encourage the stones to form continuous clusters
-        for (const auto& cell: cells_rd ){
-            for (const auto& nb : Neighborhood::neighbors(cell, this->_manager)){
-                if (   (cell->state() == empty)
-                    && (nb->state() == stone)
-                    && (dist(*this->_rng) < stone_cluster))
-                {
-                    cell->state_new() = stone;
-                    cell->update();
-                }
-                else {
-                    break;
-                }
-            }
-        }
-    };
-
     // -- Rule functions -- //
-    /// Sets the given cell to state "tree" with probability p, else to "empty"
-    RuleFunc _set_initial_densities = [this](const auto& cell){
-        // Get the state of the Cell
-        auto state = cell->state();
-
-        std::uniform_real_distribution<> dist(0., 1.);
-
-        // Set the internal variables
-        if (dist(*this->_rng) < as_double(this->_cfg["initial_density"]))
-        {
-            state = tree;
-        }
-        else
-        {
-            state = empty;
-        }
-
-        return state;
-    };
-
-    /// Sets an infection source at the southern end of the grid
-    RuleFunc _set_infection_source_south = [this](const auto& cell){
-        auto state = cell->state();
-
-        // Get position of the Cell, grid extensions and number of cells
-        const auto& pos = cell->position();
-
-        const auto& grid_ext = this->_manager.extensions();
-        const auto& grid_num_cells = this->_manager.grid_cells();
-        const auto& cell_size_y = grid_ext[1]  / grid_num_cells[1];
-
-        // If in the southern-most row of cells, this is an infection source
-        if (pos[1] < cell_size_y) {
-            return source;
-        }
-        return state;
-    };
-
+    
     /// Define the update rule
     /** Update (all cells at the same time) according to the following rules:
      * Empty cells grow "trees with probability _p_growth.
@@ -320,6 +249,7 @@ public:
     /// the 'infection_source' and 'infection_source_loc' config parameters
     void initialize_cells()
     {
+        // -- Extract Parameters -- //
         // Extract the mode that determines the initial state
         const auto initial_state = as_str(this->_cfg["initial_state"]);
 
@@ -341,6 +271,48 @@ public:
         // Extract clustering weight for stone_init = random
         const double stone_cluster = as_double(this->_cfg["stone_cluster"]);
 
+
+        // -- Initialization functions -- //
+        /// Sets an infection source at the southern end of the grid
+        RuleFunc _set_infection_source_south = [this](const auto& cell){
+            auto state = cell->state();
+
+            // Get position of the Cell, grid extensions and number of cells
+            const auto& pos = cell->position();
+
+            const auto& grid_ext = this->_manager.extensions();
+            const auto& grid_num_cells = this->_manager.grid_cells();
+            const auto& cell_size_y = grid_ext[1]  / grid_num_cells[1];
+
+            // If in the southern-most row of cells, this is an infection source
+            if (pos[1] < cell_size_y) {
+                return source;
+            }
+            return state;
+        };
+
+        /// Sets the given cell to state "tree" with probability p, else to "empty"
+        RuleFunc _set_initial_densities = [this](const auto& cell){
+            // Get the state of the Cell
+            auto state = cell->state();
+
+            std::uniform_real_distribution<> dist(0., 1.);
+
+            // Set the internal variables
+            if (dist(*this->_rng) < as_double(this->_cfg["initial_density"]))
+            {
+                state = tree;
+            }
+            else
+            {
+                state = empty;
+            }
+
+            return state;
+        };
+
+
+        // -- Initialization -- //
         this->_log->info("Initializing cells in '{}' mode ...", initial_state);
 
         // -- Trees -- //
@@ -380,7 +352,62 @@ public:
         // -- Stones -- //
         if (stones){
             if (stone_init == "random"){
-                _init_stones_rd(stone_density, stone_cluster);
+                // Distribution to set stones
+                std::uniform_real_distribution<> dist_stones(0., 1.);
+
+                // Copy cells and shuffle them to randomize cluster formation
+                auto cells_shuffled = _manager.cells();
+                std::shuffle(cells_shuffled.begin(),cells_shuffled.end(), 
+                             *this->_rng);
+
+                // -- Stone initialization function -- // 
+                /// Initialize stones randomly with probability stone_density
+                RuleFunc _init_stones = [this, 
+                                         &stone_density, 
+                                         &dist_stones](const auto& cell){
+                    // Get the cell state and the cells
+                    auto state = cell->state();
+
+                    // Set the state of the cell to stone with probability stone_density
+                    if (dist_stones(*this->_rng) < stone_density){
+                        state = stone;
+                    }
+
+                    return state;
+                };
+
+
+                /// Initialize clustered stones
+                /**
+                 * Add a stone with probability stone_cluster to any cell with 
+                 * a neighboring stone.
+                 */
+                RuleFunc _init_stones_clusters = [this, 
+                                            &stone_cluster, 
+                                            &dist_stones](const auto& cell){
+                    // Get the cell state and the cells
+                    auto state = cell->state();
+
+                    // Add the clustered stones
+                    for (const auto& nb : Neighborhood::neighbors(cell, this->_manager)){
+                        if (   (cell->state() == empty)
+                            && (nb->state() == stone)
+                            && (dist_stones(*this->_rng) < stone_cluster))
+                        {
+                            state = stone;
+                        }
+                        else {
+                            break;
+                        }
+                    }
+
+                    return state;
+                };
+
+                // Set stones randomly
+                apply_rule(_init_stones, cells_shuffled);
+                // Cluster stones 
+                apply_rule(_init_stones_clusters, cells_shuffled);
             }
             else {
                 throw std::invalid_argument("The stone initialization ''"
