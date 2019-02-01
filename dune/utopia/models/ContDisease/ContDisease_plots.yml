@@ -60,14 +60,7 @@ state_map: &state_map
     state:
       title: State
       limits: [0, 4]
-
-      # Specify the colormap
-      # This can be done in two ways:
-      #   1. use a matplotlib colormap such as 'viridis'
-      #   2. provide a dictionary from which a discrete colormap
-      #      is derived. The keys correspond to the labels,
-      #      and the values define the color
-      # cmap: viridis
+      
       cmap: 
         empty: white
         tree: green

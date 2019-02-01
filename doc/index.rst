@@ -30,3 +30,11 @@ Welcome!
    :glob:
 
    models/*
+
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Frontend
+   :glob:
+
+   frontend/**
