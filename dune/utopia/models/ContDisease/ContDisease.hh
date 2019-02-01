@@ -271,6 +271,9 @@ public:
         // Extract clustering weight for stone_init = random
         const double stone_cluster = as_double(this->_cfg["stone_cluster"]);
 
+        // Distribution to set stones
+        std::uniform_real_distribution<> dist_stones(0., 1.);
+
 
         // -- Initialization functions -- //
         /// Sets an infection source at the southern end of the grid
@@ -306,6 +309,50 @@ public:
             else
             {
                 state = empty;
+            }
+
+            return state;
+        };
+
+        // -- Stone initialization function -- // 
+        /// Initialize stones randomly with probability stone_density
+        RuleFunc _init_stones = [this, 
+                                    &stone_density, 
+                                    &dist_stones](const auto& cell){
+            // Get the cell state and the cells
+            auto state = cell->state();
+
+            // Set the state of the cell to stone with probability stone_density
+            if (dist_stones(*this->_rng) < stone_density){
+                state = stone;
+            }
+
+            return state;
+        };
+
+
+        /// Initialize clustered stones
+        /**
+         * Add a stone with probability stone_cluster to any cell with 
+         * a neighboring stone.
+         */
+        RuleFunc _init_stone_clusters = [this, 
+                                    &stone_cluster, 
+                                    &dist_stones](const auto& cell){
+            // Get the cell state and the cells
+            auto state = cell->state();
+
+            // Add the clustered stones
+            for (const auto& nb : Neighborhood::neighbors(cell, this->_manager)){
+                if (   (cell->state() == empty)
+                    && (nb->state() == stone)
+                    && (dist_stones(*this->_rng) < stone_cluster))
+                {
+                    state = stone;
+                }
+                else {
+                    break;
+                }
             }
 
             return state;
@@ -352,62 +399,15 @@ public:
         // -- Stones -- //
         if (stones){
             if (stone_init == "random"){
-                // Distribution to set stones
-                std::uniform_real_distribution<> dist_stones(0., 1.);
-
                 // Copy cells and shuffle them to randomize cluster formation
                 auto cells_shuffled = _manager.cells();
                 std::shuffle(cells_shuffled.begin(),cells_shuffled.end(), 
                              *this->_rng);
 
-                // -- Stone initialization function -- // 
-                /// Initialize stones randomly with probability stone_density
-                RuleFunc _init_stones = [this, 
-                                         &stone_density, 
-                                         &dist_stones](const auto& cell){
-                    // Get the cell state and the cells
-                    auto state = cell->state();
-
-                    // Set the state of the cell to stone with probability stone_density
-                    if (dist_stones(*this->_rng) < stone_density){
-                        state = stone;
-                    }
-
-                    return state;
-                };
-
-
-                /// Initialize clustered stones
-                /**
-                 * Add a stone with probability stone_cluster to any cell with 
-                 * a neighboring stone.
-                 */
-                RuleFunc _init_stones_clusters = [this, 
-                                            &stone_cluster, 
-                                            &dist_stones](const auto& cell){
-                    // Get the cell state and the cells
-                    auto state = cell->state();
-
-                    // Add the clustered stones
-                    for (const auto& nb : Neighborhood::neighbors(cell, this->_manager)){
-                        if (   (cell->state() == empty)
-                            && (nb->state() == stone)
-                            && (dist_stones(*this->_rng) < stone_cluster))
-                        {
-                            state = stone;
-                        }
-                        else {
-                            break;
-                        }
-                    }
-
-                    return state;
-                };
-
                 // Set stones randomly
                 apply_rule(_init_stones, cells_shuffled);
                 // Cluster stones 
-                apply_rule(_init_stones_clusters, cells_shuffled);
+                apply_rule(_init_stone_clusters, cells_shuffled);
             }
             else {
                 throw std::invalid_argument("The stone initialization ''"
