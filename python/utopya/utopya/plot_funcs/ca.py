@@ -11,6 +11,7 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.animation
+from matplotlib.colors import ListedColormap
 
 from utopya import DataManager
 
@@ -105,6 +106,7 @@ def state_anim(dm: DataManager, *,
                to_plot: dict,
                writer: str,
                frames_kwargs: dict=None, 
+               base_figsize: tuple=None,
                fps: int=2, 
                dpi: int=96,
                preprocess_funcs: Dict[str, Callable]=None) -> None:
@@ -127,6 +129,8 @@ def state_anim(dm: DataManager, *,
             save the individual frames with 'frames'
         frames_kwargs (dict, optional): The frames configuration that is used
             if the 'frames' writer is used.
+        base_figsize (tuple, optional): The size of the figure to use for a
+            single property
         fps (int, optional): The frames per second
         dpi (int, optional): The dpi setting
         preprocess_funcs (Dict[str, Callable], optional): For keys matching
@@ -135,18 +139,10 @@ def state_anim(dm: DataManager, *,
     
     Raises:
         ValueError: For an invalid `writer` argument
-        TypeError: For non-consistent dataset sizes (steps)
+    
+    No Longer Raises:
         TypeError: For unknown dataset shape
     """
-
-    def get_discrete_colormap(cmap):        
-        # use _any_ colormap
-        colormap = plt.cm.jet  # yay, jet! :japanese_ogre:
-        
-        # replace it by the new colormap with the list of colours
-        colormap = colormap.from_list('custom_discrete', cmap, len(cmap))
-
-        return colormap
 
     def plot_property(*, data, ax, cmap, limits: list, title: str=None):
         """Helper function to plot a property on a given axis and return
@@ -162,7 +158,7 @@ def state_anim(dm: DataManager, *,
 
         # Case discrete colormap
         elif isinstance(cmap, dict):
-            colormap = get_discrete_colormap(list(cmap.values()))
+            colormap = ListedColormap(cmap.values())
             bounds = limits
             norm = mpl.colors.BoundaryNorm(bounds, colormap.N)
 
@@ -178,19 +174,24 @@ def state_anim(dm: DataManager, *,
 
         # Set title
         if title is not None:
-            ax.set_title(title)
+            ax.set_title(title, fontsize=20)
 
         # Create colorbars
         fig = plt.gcf()
-        cbar = fig.colorbar(im ,ax=ax, norm=norm, ticks=bounds,
-                            fraction=0.046, pad=0.04)
+        cbar = fig.colorbar(im, ax=ax, norm=norm, ticks=bounds,
+                            fraction=0.05, pad=0.02)
 
         if bounds is not None:
-            # vertical color bar ticks
-            yticklabels = cmap.keys()
-            cbar.set_ticks(np.arange(bounds[0], bounds[1]+1))
-            cbar.ax.set_yticklabels(yticklabels) 
+            # Adjust the ticks for the discrete colormap
+            num_colors = len(cmap)
+            tick_locs = (  (np.arange(num_colors) + 0.5)
+                         * (num_colors-1)/num_colors)
+            cbar.set_ticks(tick_locs)
+            cbar.ax.set_yticklabels(cmap.keys())
+
         ax.axis('off')
+
+        # Register the colorbar artist
 
         return im
 
@@ -212,6 +213,7 @@ def state_anim(dm: DataManager, *,
 
     data_2d = {p: grp[p] for p in to_plot.keys()}
     shapes = [d.shape for p, d in data_2d.items()]
+
     if any([shape != shapes[0] for shape in shapes]):
         raise ValueError("Shape mismatch; cannot plot.")
 
@@ -239,19 +241,21 @@ def state_anim(dm: DataManager, *,
 
 
     # Set up plotting .........................................................
-    # Adjust some rc parameters
-    mpl.rcParams.update({'font.size': 20})
-    mpl.rcParams['figure.figsize'] = (6.0 * len(to_plot), 5.0)
-    
     # Create figure, not squeezing to always have axs be something iterable
-    fig, axs = plt.subplots(1, len(to_plot), squeeze=False)
+    fig, axs = plt.subplots(1, len(to_plot), squeeze=False,
+                            figsize=base_figsize)
+
+    # Adjust figure size in width to accomodate all properties
+    figsize = fig.get_size_inches()
+    fig.set_size_inches(figsize[0] * len(to_plot), figsize[1])
 
     # Store the imshow objects such that only the data has to be updated in a
     # following iteration step. Keys will be the property names
     ims = dict()
     
-    log.info("Plotting %d frames of %d properties each ...",
-             steps, len(to_plot))
+    log.info("Plotting %d frames of %d %s each ...",
+             steps, len(to_plot),
+             "property" if len(to_plot) == 1 else "properties")
 
     with w.saving(fig, out_path, dpi=dpi):
         # Loop through time steps, corresponding to rows in the 2d arrays
