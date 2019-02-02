@@ -10,6 +10,9 @@ tree_density:
 
   color: green
 
+  save_kwargs:
+    bbox_inches: tight
+
 
 # Plots all densities over time
 densities:
@@ -19,8 +22,11 @@ densities:
   module: model_plots.ContDisease
   plot_func: densities
 
+  save_kwargs:
+    bbox_inches: tight
 
-# Plot the phase space
+
+# Plot the phase space of two variables
 phase_diagram:
   creator: universe
   universes: all
@@ -28,40 +34,45 @@ phase_diagram:
   module: model_plots.ContDisease
   plot_func: phase_diagram
 
-  # Further kwargs to the lineplot method
-  # Select the data
+  # Select what to create the phase diagram of
   x: densities/tree
   y: densities/infected
+
+  # Set the limits (optional)
+  # xlims: [0, 1]
+  # ylims: [0, 1]
+
+  # Specify the corresponding labels
   xlabel: $\rho_{tree}$
   ylabel: $\rho_{infected}$
 
-  # Set line style format and arguments for saving
-  fmt: g
+  save_kwargs:
+    bbox_inches: tight
+
+  # NOTE Additional arguments will be passed to matplotlib LineCollection
 
 
-# plot the spatial development of the state in the CA and create an animation
+# Plot the CA for all available time steps and store as video
 state_map: &state_map
   creator: universe
   universes: all
 
-  enabled: true
-
-  file_ext: mp4
-
+  # Select the state animation function from the generalized plotting functions
   module: .ca
   plot_func: state_anim
 
-  # Select the universe
+  file_ext: mp4
+
+  # Select which model to retrieve data from
   model_name: ContDisease
 
-  # Select the properties to plot
+  # Select which data to plot
   to_plot:
-    # The name of the property to plot with its options
     state:
       title: State
       limits: [0, 4]
       
-      cmap: 
+      cmap:
         empty: white
         tree: green
         infected: red
@@ -70,16 +81,20 @@ state_map: &state_map
 
   # Video options
   writer: ffmpeg  # can be: frames, ffmpeg (if installed), ...
-  fps: 2
+  fps: 10
   dpi: 96
 
 
-# plot the spatial development of the state in the CA and save the frames
+# Plot the CA for all available time steps and store as individual frames
 state_map_frames:
+  # Base this plot configuration on the one creating the video
   <<: *state_map
 
-  # Writer options
-  writer: frames  # can be: frames, ffmpeg (if installed), ...
+  # Disabled by default
+  enabled: false
+
+  # Use the frames writer, instead of the inherited ffmpeg write
+  writer: frames
   
   # For the 'frames' writer, the following additional kwargs can be passed
   frames_kwargs:

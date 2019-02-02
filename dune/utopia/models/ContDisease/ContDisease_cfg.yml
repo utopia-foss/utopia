@@ -27,7 +27,7 @@ periodic: false
 # Initial state of the whole grid. 
 # Possible values: empty, init_density
 initial_state: init_density
-initial_density: 0.5    # uniform initial_density
+initial_density: 0.5    # uniform initial_density, only with 'init_density'
 
 # Infection source - set true to activate.
 infection_source: true

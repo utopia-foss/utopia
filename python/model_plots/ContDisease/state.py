@@ -15,7 +15,7 @@ def tree_density(dm: DataManager, *,
                  fmt: str=None, 
                  save_kwargs: dict=None, 
                  **plot_kwargs):
-    """Calculates the the density of trees and perfoms a lineplot
+    """Plots the density of trees and perfoms a lineplot
     
     Args:
         dm (DataManager): The data manager
@@ -28,24 +28,21 @@ def tree_density(dm: DataManager, *,
     # Get the group that all datasets are in
     grp = uni['data/ContDisease']
 
-    # Extract the data for the tree states and convert it into a 3d-array
+    # Extract the data for the tree states
     data = grp["densities/tree"]
 
-    # Get the time steps
+    # Get the time steps array for this universe
     times = get_times(uni)
 
-    # Assemble the arguments
-    args = [times, data]
-    if fmt:
-        args.append(fmt)
-
-    plt.figure()
-
     # Call the plot function
-    plt.plot(*args, **plot_kwargs)
+    plt.plot(times, data, **plot_kwargs)
 
-    plt.xlabel("time steps")
-    plt.ylabel("tree density")
+    plt.title("Tree density")
+    plt.xlabel("Time [Steps]")
+    plt.ylabel("Density")
+
+    plt.xlim(0, max(times))
+    plt.ylim(0, 1)
 
     save_and_close(out_path, save_kwargs=save_kwargs)
 
@@ -55,7 +52,7 @@ def densities(dm: DataManager, *,
               uni: UniverseGroup, 
               save_kwargs: dict=None, 
               **plot_kwargs):
-    """Extracts the densities and perfoms the lineplots
+    """Plots the densities of all cell states
     
     Args:
         dm (DataManager): The data manager
@@ -74,26 +71,26 @@ def densities(dm: DataManager, *,
     d_source = grp["densities/source"]
     d_stone = grp["densities/stone"]
     
-    # Get the time steps
+    # Get the time steps array for the given universe
     times = get_times(uni)
     
-    # Expand the stone and source dataset to have the same value for each time step
+    # Expand the stone and source arrays (both constant) to be of valid length
     d_stone = np.full(len(times), d_stone) 
     d_source = np.full(len(times), d_source)
 
-    # Create the figure and get the axes
-    fig = plt.figure()
-    ax = fig.gca()
-
     # Call the plot function
-    ax.plot(times, d_empty, color='black', label='empty', **plot_kwargs)
-    ax.plot(times, d_tree, color='green', label='tree', **plot_kwargs)
-    ax.plot(times, d_infected, color='red', label='infected', **plot_kwargs)
-    ax.plot(times, d_source, color='orange', label='source', **plot_kwargs)
-    ax.plot(times, d_stone, color='gray', label='stone', **plot_kwargs)
+    plt.plot(times, d_empty, color='black', label='empty', **plot_kwargs)
+    plt.plot(times, d_tree, color='green', label='tree', **plot_kwargs)
+    plt.plot(times, d_infected, color='red', label='infected', **plot_kwargs)
+    plt.plot(times, d_source, color='orange', label='source', **plot_kwargs)
+    plt.plot(times, d_stone, color='gray', label='stone', **plot_kwargs)
 
-    plt.xlabel("time steps")
-    plt.ylabel("densities")
+    plt.title("State Densities")
+    plt.xlabel("Time [Steps]")
+    plt.ylabel("Density")
+
+    plt.xlim(0, max(times))
+    plt.ylim(0, 1)
 
     plt.legend(loc='best')
 
@@ -103,47 +100,51 @@ def densities(dm: DataManager, *,
 def phase_diagram(dm: DataManager, *, 
                   out_path: str, 
                   uni: UniverseGroup, 
-                  x: str,
-                  y: str,
+                  x: str='tree',
+                  y: str='infected',
+                  xlims: tuple=None,
+                  ylims: tuple=None,
                   xlabel: str=None,
                   ylabel: str=None,
                   fmt: str=None, 
                   save_kwargs: dict=None, 
-                  **plot_kwargs):
-    """Calculates the the phase diagram of trees and infected trees
+                  **lc_kwargs):
+    """Plots the the phase diagram of tree and infected tree densities
     
     Args:
         dm (DataManager): The data manager
-        out_path (str): Where to store the plot to
+        out_path (str): Where to save the plot to
         uni (UniverseGroup): The universe data to use
+        x (str, optional): What to plot on the x-axis
+        y (str, optional): What to plot on the y-axis
+        xlims (tuple, optional): The limits of the x-axis
+        ylims (tuple, optional): The limits of the y-axis
+        xlabel (str, optional): The x-axis label
+        ylabel (str, optional): The y-axis label
         fmt (str, optional): the plt.plot format argument
-        x (str): What to plot on the x_axis
-        y (str): What to plot on the y_axis
-        xlabel (str): The x-axis label
-        ylabel (str): The y-axis label
         save_kwargs (dict, optional): kwargs to the plt.savefig function
-        **plot_kwargs: Passed on to plt.plot
+        **lc_kwargs: Passed on to LineCollection.__init__
     """
     # Get the group that all datasets are in
     grp = uni['data/ContDisease']
 
-    # Extract the data for the tree states and convert it into a 3d-array
-    d_tree = grp[x]
-    d_infected = grp[y]
+    # Extract the data for the x and y coordinates
+    d_x = grp[x]
+    d_y = grp[y]
 
     # Call the plot function
-    colorline(d_tree, d_infected)
+    colorline(d_x, d_y, **lc_kwargs)
 
-    # Set the x label
-    if xlabel is not None:
-        plt.xlabel("{}".format(xlabel))
-    else:
-        plt.xlabel(x)
+    # Set title and labels
+    plt.title("Phase Diagram")
+    plt.xlabel("{}".format(xlabel) if xlabel is not None else x)
+    plt.ylabel("{}".format(ylabel) if ylabel is not None else y)
 
-    # Set the y label
-    if ylabel is not None:
-        plt.ylabel("{}".format(ylabel))
-    else:
-        plt.ylabel(y)
-        
+    # Set limits, if given
+    if xlims:
+        plt.xlim(*xlims)
+    
+    if ylims:
+        plt.ylim(*ylims)
+
     save_and_close(out_path, save_kwargs=save_kwargs)
