@@ -49,17 +49,18 @@ perform_sweep: false
 reporter:
   # Define report formats, which are accessible, e.g. from the WorkerManager
   report_formats:
-    while_working:  # This is the name of the report format specification
+    while_working: &while_working     # Name of the report format specification
       parser: progress_bar            # The parser to use
       write_to: stdout_noreturn       # The writer to use
       min_report_intv: 0.5            # Required time (in s) between writes
       # All further kwargs on this level are passed to the parser
       show_times: true
 
+    monitor_updated:
+      <<: *while_working
+
     after_work:
-      parser: progress_bar
-      show_times: true
-      write_to: stdout_noreturn
+      <<: *while_working
 
     # Creates a report file containing runtime statistics
     report_file:
@@ -111,6 +112,7 @@ worker_manager:
   rf_spec:
     while_working: while_working
     task_spawned: while_working
+    monitor_updated: monitor_updated
     task_finished: [while_working, report_file]
     after_work: [after_work, report_file]
     after_abort: [after_work, report_file]

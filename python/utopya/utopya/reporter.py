@@ -65,13 +65,15 @@ class ReportFormat:
         # Check time since last report
         return (dt.now() - self.last_report) < self.min_report_intv
 
-    def report(self, *, force: bool=False) -> bool:
+    def report(self, *, force: bool=False, parser_kwargs: dict=None) -> bool:
         """Parses and writes a report corresponding to this object's format.
         
         If within the minimum report interval, will return False.
         
         Args:
             force (bool, optional): If True, will ignore the min_report_intv
+            parser_kwargs (dict, optional): Keyword arguments passed on to the
+                parser
         
         Returns:
             bool: Whether a report was generated or not
@@ -83,7 +85,8 @@ class ReportFormat:
 
         # Generate the report
         log.debug("Creating report using parser %s ...", self.parser)
-        report = self.parser(report_no=self.num_reports)
+        report = self.parser(report_no=self.num_reports,
+                             **(parser_kwargs if parser_kwargs else {}))
         log.debug("Created report of length %d.", len(report))
 
         # Write the report
@@ -245,17 +248,20 @@ class Reporter:
         log.debug("Added report format '%s' to %s.",
                   name, self.__class__.__name__)
 
-    def report(self, report_format: str=None, *, force: bool=False) -> bool:
+    def report(self, report_format: str=None, **kwargs) -> bool:
         """Create a report with the given format; if none is given, the default
         format is used.
         
         Args:
             report_format (str, optional): The report format to use
-            force (bool, optional): If True, will ignore the minimum report
-                interval.
+            **kwargs: Passed on to the ReportFormat.report() call
         
         Returns:
             bool: Whether there was a report
+        
+        Raises:
+            ValueError: If no default format was set and no report format name
+                was given
         """
         # Get the report format to use
         if report_format is None:
@@ -271,7 +277,7 @@ class Reporter:
             rf = self.report_formats[report_format]
 
         # Delegate reporting to the ReportFormat class
-        return rf.report(force=force)
+        return rf.report(**kwargs)
 
     def parse_and_write(self, *, parser: Union[str, Callable], write_to: Union[str, Callable], **parser_kwargs):
         """This function allows to select a parser and writer explicitly.
@@ -571,9 +577,27 @@ class WorkerManagerReporter(Reporter):
     def wm_progress(self) -> float:
         """The WorkerManager progress, between 0 and 1."""
         cntr = self.task_counters
-        if cntr['total'] > 0:
-            return cntr['finished']/cntr['total']
-        # Invoked if no tasks were added yet
+
+        if cntr['total'] == 0:
+            # No tasks were added yet, progress is zero
+            return 0.
+
+        # Get the active tasks' progress, in range [0, 1]
+        active_progress = self.wm_active_tasks_progress
+
+        # Calculate the total progress
+        return (  cntr['finished']/cntr['total']
+                + active_progress * cntr['active']/cntr['total'])
+
+    @property
+    def wm_active_tasks_progress(self) -> float:
+        """The active tasks' progress
+
+        If there are no active tasks in the worker manager, returns 0
+        """
+        progs = [t.progress for t in self._wm.active_tasks]
+        if progs:
+            return np.mean(progs)
         return 0.
 
     @property
@@ -694,7 +718,10 @@ class WorkerManagerReporter(Reporter):
                           digs=len(str(cntr['total'])),
                           p=cntr['finished']/cntr['total'] * 100))
 
-    def _parse_progress_bar(self, *, num_cols: int=(tools.TTY_COLS - TTY_MARGIN), show_total: bool=False, show_times: bool=False, report_no: int=None) -> str:
+    def _parse_progress_bar(self, *,
+                            num_cols: int=(tools.TTY_COLS - TTY_MARGIN),
+                            show_total: bool=False, show_times: bool=False,
+                            report_no: int=None) -> str:
         """Returns a progress bar.
         
         It shows the amount of finished tasks, active tasks, and a percentage.
@@ -717,6 +744,7 @@ class WorkerManagerReporter(Reporter):
         if cntr['total'] <= 0:
             return "(No tasks assigned to WorkerManager yet.)"
 
+        # Determine the format string for the times
         if show_times and self.wm_progress < 1.:
             times_fstr = "| {elapsed:} elapsed | ~{est_left:} left "
             times = self._parse_times(fstr=times_fstr)
@@ -726,17 +754,23 @@ class WorkerManagerReporter(Reporter):
         else:
             times = ""
 
+        # Get the active tasks' mean progress and calculate the total progress
+        active_progress = self.wm_active_tasks_progress
+        total_progress = (  cntr['finished']/cntr['total']
+                          + active_progress*cntr['active']/cntr['total'])
+
         # Define the symbols and format strings to use, calculating the
         # progress bar width alongside
-        syms = dict(finished="▓", active="░", space=" ")
+        syms = dict(finished="▓", active_progress="▒", active="░", space=" ")
 
+        # Determine the format string and the progress bar width
         if show_total:
-            fstr = "  ╠{:}{:}{:}╣ {p:>5.1f}%  of {total:d} {times:} "
+            fstr = "  ╠{:}{:}{:}{:}╣ {p:>5.1f}%  of {total:d} {times:} "
             pb_width = num_cols - (13 + 5
                                    + len(str(cntr['total'])) + len(times))
         
         else:
-            fstr = "  ╠{:}{:}{:}╣ {p:>5.1f}% {times:} "
+            fstr = "  ╠{:}{:}{:}{:}╣ {p:>5.1f}% {times:} "
             pb_width = num_cols - (8 + 5 + len(times))
 
         # Only return percentage indicator if the width would be very short
@@ -747,18 +781,32 @@ class WorkerManagerReporter(Reporter):
         ticks = dict()
         factor = pb_width / cntr['total']
         ticks['finished'] = int(round(cntr['finished'] * factor))
-        ticks['active'] = int(round(cntr['active'] * factor))
+
+        # Calculate the active ticks and those in progress
+        # NOTE Important to round only one of the two, leads to artifacts
+        #      otherwise
+        ticks['active_progress'] = int(  active_progress
+                                       * round(cntr['active']*factor))
+        ticks['active'] = int(cntr['active']*factor) - ticks['active_progress']
+
+        # Calculate spaces from the sum of all of the above
         ticks['space'] = pb_width - sum(ticks.values())
-        # Note: the space ticks are needed as int is rounding down
 
         # Format the progress bar
         return (fstr.format(syms['finished'] * ticks['finished'],
+                            syms['active_progress'] * ticks['active_progress'],
                             syms['active'] * ticks['active'],
                             syms['space'] * ticks['space'],
-                            p=cntr['finished']/cntr['total'] * 100,
+                            p=total_progress * 100,
                             total=cntr['total'], times=times))
 
-    def _parse_times(self, *, fstr: str="Elapsed:  {elapsed:<8s}  |  Est. left:  {est_left:<8s}  |  Est. end:  {est_end:<10s}", timefstr_short: str="%H:%M:%S", timefstr_full: str="%d.%m., %H:%M:%S", use_relative: bool=True, times: dict=None, report_no: int=None) -> str:
+    def _parse_times(self, *,
+                     fstr: str="Elapsed:  {elapsed:<8s}  |  Est. left:  {est_left:<8s}  |  Est. end:  {est_end:<10s}",
+                     timefstr_short: str="%H:%M:%S",
+                     timefstr_full: str="%d.%m., %H:%M:%S",
+                     use_relative: bool=True,
+                     times: dict=None,
+                     report_no: int=None) -> str:
         """Parses the worker manager time information and est time left
         
         Args:
@@ -773,6 +821,8 @@ class WorkerManagerReporter(Reporter):
                 to use relative dates, e.g. "Today, 13:37"
             times (dict, optional): A dict of times to use; this is mainly
                 for testing purposes!
+            use_monitor_data (bool, optional): Whether to include the active
+                tasks' monitoring data into the calculations
             report_no (int, optional): The report number passed by ReportFormat
         
         Returns:
@@ -785,7 +835,7 @@ class WorkerManagerReporter(Reporter):
         # The dict of strings that is filled and passed to the fstr
         tstrs = dict()
 
-        # Convert some values to durations
+        # Convert some values to duration strings
         if times['elapsed']:
             tstrs['elapsed'] = tools.format_time(times['elapsed'])
         else:
