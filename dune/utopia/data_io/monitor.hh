@@ -51,6 +51,9 @@ private:
     /// The emit interval
     const DurationType _emit_interval;
 
+    /// The starting time of the timer
+    const Time _start_time;
+
     /// The time of the last emit
     Time _last_emit;
 
@@ -66,6 +69,8 @@ public:
     :
         // Store the emit interval
         _emit_interval(emit_interval),
+        // Set the starting time member
+        _start_time(Clock::now()),
         // Initialize _last_emit empty, setting it to 1.1.1970, 0:00, meaning
         // that no emit has occured yet.
         _last_emit()
@@ -77,7 +82,7 @@ public:
      *        if the _emit_interval has been exceeded.
      * @return true if the internal timer has exceeded the _last_emit time.
      */
-    bool time_has_come(){
+    bool time_has_come() const {
         // Calculate the time difference between now and the last emit
         const DurationType duration = Clock::now() - _last_emit;
         
@@ -85,13 +90,24 @@ public:
         return (duration > _emit_interval);
     }
 
-    /// Reset the timer to now
-    void reset(){
+    /// Reset the timer to the current time
+    void reset() {
         _last_emit = Clock::now();
     }
 
+    /// Get the time elapsed since the start of this timer
+    template<class DurationT=DurationType>
+    const DurationT get_time_elapsed() const {
+        return Clock::now() - _start_time;
+    }
+
+    /// Get the time elapsed since start of this timer, converted to seconds
+    double get_time_elapsed_seconds() const {
+        return get_time_elapsed<std::chrono::duration<double>>().count();
+    }
+
     /// Return the emit interval
-    const DurationType get_emit_interval() {
+    const DurationType get_emit_interval() const {
         return _emit_interval;
     }
 };
@@ -198,14 +214,21 @@ public:
         _entries[model_name + "." + key] = value;
     }
 
-    /// Set the time in the entries
-    /**
-     * @tparam Time The data type of the time
-     * @param time The time
+    /// Set time- and progress-related top level entries
+    /** @detail Using the given parameters, this method sets the top-level
+     *          entries 'time', 'progress' and 'elapsed' run time (in seconds).
+     *
+     *  @tparam Time The data type of the time
+     *  @param time     The current time
+     *  @param time_max The maximum time of the simulation
      */
     template<typename Time>
-    void set_time(const Time time){
+    void set_time_entries(const Time time, const Time time_max) {
         _entries["time"] = time;
+
+        // Add the progress indicator and the elapsed time
+        _entries["progress"] = float(time) / float(time_max);
+        _entries["elapsed"] = _timer->get_time_elapsed_seconds();
     }
 
     /// Get a shared pointer to the MonitorTimer object.
