@@ -22,7 +22,7 @@ enum CellState : unsigned short {
     tree = 1,
     /// Cell is infected
     infected = 2,
-    /// Cell is an infection source: constantly infected, spreding infection
+    /// Cell is an infection source: constantly infected, spreading infection
     source = 3,
     /// Cell cannot be infected
     stone = 4
@@ -278,8 +278,8 @@ public:
 
         // Now that all densities have been calculated (in write_data), write
         // those that do not change throughout the simulation (indices 3 and 4)
-        _dset_density_stone->write(_densities[3]);   // infection source
-        _dset_density_source->write(_densities[4]);  // stone
+        _dset_density_stone->write(_densities[3]);   // stone
+        _dset_density_source->write(_densities[4]);  // infection source
 
         // Can now specify attributes that declare the 'state' dataset to
         // be representing a 2D grid with a certain shape
