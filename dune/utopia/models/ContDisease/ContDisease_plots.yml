@@ -46,6 +46,11 @@ phase_diagram:
   xlabel: $\rho_{tree}$
   ylabel: $\rho_{infected}$
 
+  # Specify the colormap. Default: copper_r
+  # Another good choice is 'Blues', which is better suited if the focus is on
+  # the late and intermediate state development, with a less visible initial one.
+  cmap: copper_r
+
   save_kwargs:
     bbox_inches: tight
 
