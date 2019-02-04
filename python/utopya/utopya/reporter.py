@@ -821,8 +821,6 @@ class WorkerManagerReporter(Reporter):
                 to use relative dates, e.g. "Today, 13:37"
             times (dict, optional): A dict of times to use; this is mainly
                 for testing purposes!
-            use_monitor_data (bool, optional): Whether to include the active
-                tasks' monitoring data into the calculations
             report_no (int, optional): The report number passed by ReportFormat
         
         Returns:

@@ -216,7 +216,7 @@ public:
 
     /// Set time- and progress-related top level entries
     /** @detail Using the given parameters, this method sets the top-level
-     *          entries 'time', 'progress' and 'elapsed' run time (in seconds).
+     *          entries 'time' and 'progress'
      *
      *  @tparam Time The data type of the time
      *  @param time     The current time
@@ -228,7 +228,6 @@ public:
 
         // Add the progress indicator and the elapsed time
         _entries["progress"] = float(time) / float(time_max);
-        _entries["elapsed"] = _timer->get_time_elapsed_seconds();
     }
 
     /// Get a shared pointer to the MonitorTimer object.
