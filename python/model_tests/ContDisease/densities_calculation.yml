@@ -8,8 +8,8 @@ parameter_space:
 # Load the model config
   ContDisease: !model
     model_name: ContDisease  # imports the model config for the ContDisease model
-    initial_state: empty
-    stones: false
+    initial_state: init_density
+    stones: true
     infection_source: true
     infection_source_loc: south
 

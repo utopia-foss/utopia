@@ -10,7 +10,7 @@ parameter_space:
     model_name: ContDisease  # imports the model config for the ContDisease model
     initial_state: empty
     stones: false
-    infection_herd: false
+    infection_source: false
     p_growth: 1
     p_rd_infect: 0
 

@@ -14,7 +14,7 @@ mtc = ModelTest("ContDisease", test_file=__file__)
 def test_initial_state_empty():
     """
     Tests that the initial states are all empty,
-    for the initial state empty and no infection herd activated.
+    for the initial state empty and no infection source activated.
     """
     mv, dm = mtc.create_run_load(from_cfg="initial_state_empty.yml")
 
@@ -52,13 +52,13 @@ def test_initial_stones():
     # Check if any cell is in stone state
     assert (data_ == 4).any()
 
-def test_initial_state_herd_south():
+def test_initial_state_source_south():
     """
-    Initial state is 'empty', but an infection herd at the southern side
+    Initial state is 'empty', but an infection source at the southern side
     is activated.
     """
 
-    mv, dm = mtc.create_run_load(from_cfg="initial_state_empty_herd_south.yml")
+    mv, dm = mtc.create_run_load(from_cfg="initial_state_empty_source_south.yml")
 
     # Get data
     grp = dm['multiverse'][0]['data/ContDisease']
@@ -74,7 +74,7 @@ def test_initial_state_herd_south():
     # Check if all Cells are empty, apart from the lowest horizontal row
     assert (data[0][1:] == 0).all()
 
-    # Check if the lowest row is an infection herd
+    # Check if the lowest row is an infection source
     assert (data[0][0] == 3).all()
 
 def test_growing_dynamic():
@@ -102,7 +102,7 @@ def test_growing_dynamic():
 def test_infection_dynamic():
     """
     Test that with a p_infect probability of 1, a p_growth probability of 1
-    and an empty initial state, with an infection herd south the infection
+    and an empty initial state, with an infection source south the infection
     spreads according to the expectations.
     """
 
@@ -119,7 +119,7 @@ def test_infection_dynamic():
     # Check that only three steps were written
     assert data.shape == (4, grid_size[1], grid_size[0])
 
-    #Check that the last row is an infection herd
+    #Check that the last row is an infection source
     assert (data[0][0] == 3).all()
 
     # Check that only the second row is infected after two timesteps and the
@@ -133,3 +133,29 @@ def test_infection_dynamic():
     assert (data[3][-1] == 2).all()
     assert (data[3][1] == 0).all()
     assert (data[3][0] == 3).all()
+
+
+def test_densities_calculation():
+    mv, dm = mtc.create_run_load(from_cfg="densities_calculation.yml")
+
+    # Get the data
+    densities = dm['multiverse/0/data/ContDisease/densities']
+    d_infected = densities['infected']
+    d_tree = densities['tree']
+    d_empty = densities['empty']
+    d_stones = densities['stone']
+    d_source = densities['source']
+
+    # Assert that the added up densities are approximately equal to 1
+    d_partial_sum = d_empty.data + d_tree.data + d_infected.data
+    assert [dps + d_stones.data + d_source.data == pytest.approx(1.) for dps in d_partial_sum]
+
+    # Densities should always be in the range 0<=d<=1
+    assert([0 <= d <= 0 for d in d_tree])
+    assert([0 <= d <= 0 for d in d_empty])
+    assert([0 <= d <= 0 for d in d_infected])
+    assert(0 <= d_stones <= 1)
+    assert(0 <= d_source <= 1)
+    
+    # Initially, no tree should be infected
+    assert(d_infected[0] == 0)
