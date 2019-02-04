@@ -30,14 +30,14 @@ def wm_priQ():
 
 @pytest.fixture
 def sleep_task() -> dict:
-    """Returns a dict that can be used to call add_task and just sleeps 0.5 seconds"""
+    """A sleep task definition"""
     return dict(worker_kwargs=dict(args=('python3', '-c',
                                          'from time import sleep; sleep(0.5)'),
                                    read_stdout=True))
 
 @pytest.fixture
 def longer_sleep_task() -> dict:
-    """Returns a dict that can be used to call add_task and just sleeps 0.5 seconds"""
+    """A sleep task definition that is a bit longer"""
     return dict(worker_kwargs=dict(args=('python3', '-c',
                                          'from time import sleep; sleep(1.0)'),
                                    read_stdout=True))
@@ -256,8 +256,11 @@ def test_interrupt_handling(wm, sleep_task, tmpdir):
     assert pytest_wrapped_e.value.code == 128 + 2
     assert wm.tasks[-1].worker_status == -9 # SIGKILL, b/c SIGINT was handled
 
-def test_signal_workers(wm, sleep_task):
+def test_signal_workers(wm, longer_sleep_task):
     """Tests the signalling of workers"""
+    # Use the longer sleep task to avoid race conditions
+    sleep_task = longer_sleep_task
+
     # Start running with post-poll function that directly kills off the workers
     for _ in range(3):
         wm.add_task(**sleep_task)
