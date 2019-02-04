@@ -369,7 +369,9 @@ public:
             if (_level == 1){
                 // Supply the global time. When reaching this point, all sub-
                 // models will also have reached this time.
-                _monitor.get_monitor_manager()->set_time(_time);
+                _monitor.get_monitor_manager()->set_time_entries(_time,
+                                                                 _time_max);
+                // This method also sets the other top level entries
             }
 
             // Call the child's implementation of the monitor functions.

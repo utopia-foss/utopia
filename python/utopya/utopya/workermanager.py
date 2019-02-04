@@ -316,7 +316,21 @@ class WorkerManager:
             **task_kwargs: All arguments needed for WorkerTask initialization.
                 See utopya.task.WorkerTask.__init__ for all valid arguments.
         """
-        # Prepare the callback functions needed by the reporter
+        # Define the function needed to calculate the task's progress
+        def calc_progress(task) -> float:
+            """Uses the task's stream objects to calculate the progress.
+
+            If no stream objects are available, returns 0.
+            """
+            # Check if parsed objects were available
+            if not task.outstream_objs:
+                return 0.
+
+            # Extract the `progress` key from the latest entry; if it is not
+            # available, use the same behaviour as above and return 0
+            return task.outstream_objs[-1].get('progress', 0.)
+
+        # Prepare the callback functions needed by the reporter . . . . . . . .
         def task_spawned(task):
             """Performs action after a task was spawned.
 
@@ -358,11 +372,21 @@ class WorkerManager:
                 and task.worker_status not in [0, None]):
                 self.pending_exceptions.put_nowait(WorkerTaskNonZeroExit(task))
 
+        def monitor_updated(task):
+            """Performs actions when there was a parsed object in the task's
+            stream, i.e. when the monitor got an update.
+            """
+            self._invoke_report('monitor_updated')
+
+        # Prepare the arguments for the WorkerTask . . . . . . . . . . . . . .
+
         callbacks = dict(spawn=task_spawned,
-                         finished=task_finished)
+                         finished=task_finished,
+                         parsed_object_in_stream=monitor_updated)
 
         # Generate the WorkerTask object from the given parameters
-        task = WorkerTask(callbacks=callbacks, **task_kwargs)
+        task = WorkerTask(callbacks=callbacks, progress_func=calc_progress,
+                          **task_kwargs)
 
         # Append it to the task list and put it into the task queue
         self.tasks.append(task)
