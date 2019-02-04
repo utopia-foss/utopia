@@ -1,0 +1,196 @@
+# Configuration parameter for the CellManager test
+---
+# For default-constructible
+default:
+  space:
+    periodic: true
+    extent: [2., 2.]
+
+  grid:
+    structure: square
+    resolution: 42
+
+  cell_initialize_from: default  # can be: config, default… (potentially more)
+
+# For config-constructible
+config:
+  space:
+    periodic: true
+    extent: [2., 2.]
+
+  grid:
+    structure: square
+    resolution: 42
+
+  cell_initialize_from: config  # can be: config, default… (potentially more)
+  cell_initial_state:
+    a_double: 2.34
+    a_string: foobar
+    a_bool: true
+
+
+# For explicitly-constructible
+explicit:
+  space:
+    periodic: true
+    extent: [2., 2.]
+
+  grid:
+    structure: square
+    resolution: 42
+
+
+# Testing structures ----------------------------------------------------
+default_sqr:
+  space:
+    periodic: true
+    extent: [2., 2.]
+
+  grid:
+    structure: square
+    resolution: 42
+
+  cell_initialize_from: default  # can be: config, default… (potentially more)
+
+default_hex:
+  space:
+    periodic: true
+    extent: [2., 2.]
+
+  grid:
+    structure: hexagonal
+    resolution: 42
+
+  cell_initialize_from: default  # can be: config, default… (potentially more)
+
+default_tri:
+  space:
+    periodic: true
+    extent: [2., 2.]
+
+  grid:
+    structure: triangular
+    resolution: 42
+
+  cell_initialize_from: default  # can be: config, default… (potentially more)
+
+
+# Missing/bad parameters -----------------------------------------------------
+missing_grid_cfg: {} # Missing grid entry here
+# NOTE Need no space config; then uses the default constructor
+
+missing_grid_cfg2:
+  grid:
+    structure: square
+    # Missing shape
+
+missing_grid_cfg3:
+  grid:
+    shape: [123, 456]
+    # Missing structure
+
+bad_grid_cfg:
+  grid:
+    shape: [123, 456]
+    structure: not_a_valid_structure
+
+missing_cell_init1:
+  grid:
+    structure: square
+    resolution: 42
+
+bad_cell_init1:
+  grid:
+    structure: square
+    resolution: 42
+
+  cell_initialize_from: bad_value
+
+bad_cell_init2:
+  grid:
+    structure: square
+    resolution: 42
+
+  cell_initialize_from: default  # in principle valid, but not for this state
+
+bad_cell_init3:
+  grid:
+    structure: square
+    resolution: 42
+
+  cell_initialize_from: config
+  # missing: cell_initial_state
+  
+
+# Neighborhood tests ---------------------------------------------------------
+
+nb_empty:
+  space:
+    periodic: true
+    extent: [2., 2.]
+
+  grid:
+    structure: square
+    resolution: 42
+
+  cell_initialize_from: default  # can be: config, default… (potentially more)
+
+  # neighborhood key is optional
+
+nb_vonNeumann:
+  space:
+    periodic: true
+    extent: [2., 2.]
+
+  grid:
+    structure: square
+    resolution: 42
+
+  cell_initialize_from: default
+
+  neighborhood:
+    mode: vonNeumann
+    # compute_and_store key is optional
+
+nb_computed:
+  space:
+    periodic: true
+    extent: [2., 2.]
+
+  grid:
+    structure: square
+    resolution: 42
+
+  cell_initialize_from: default
+
+  neighborhood:
+    mode: vonNeumann
+    compute_and_store: true
+
+nb_bad1:
+  space:
+    periodic: true
+    extent: [2., 2.]
+
+  grid:
+    structure: square
+    resolution: 42
+
+  cell_initialize_from: default
+
+  neighborhood:
+    mode: bad
+
+nb_bad2:
+  space:
+    periodic: true
+    extent: [2., 2.]
+
+  grid:
+    structure: triangular
+    resolution: 42
+
+  cell_initialize_from: default
+
+  neighborhood:
+    mode: vonNeumann  # not available for triangular

@@ -1,6 +1,10 @@
 #ifndef UTOPIA_CORE_TYPES_HH
 #define UTOPIA_CORE_TYPES_HH
 
+#include <cstdint>
+
+#include "../base.hh"
+
 namespace Utopia
 {
     
@@ -55,7 +59,20 @@ using pointer_t = typename Container::value_type;
 template<class Container>
 using entity_t = typename Container::value_type::element_type;
 
-} // namespace impl 
+} // namespace impl
+
+
+// -- Types introduces with the new CellManager ------------------------------
+
+/// Type for indices
+using IndexType = std::size_t;
+
+/// Type for container of indices
+using IndexContainer = std::vector<IndexType>;
+
+/// Type for grid shape
+template<std::size_t dim>
+using GridShapeType = std::array<IndexType, dim>;
 
 } // namespace Utopia
 
