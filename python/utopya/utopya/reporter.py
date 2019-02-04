@@ -785,9 +785,9 @@ class WorkerManagerReporter(Reporter):
         # Calculate the active ticks and those in progress
         # NOTE Important to round only one of the two, leads to artifacts
         #      otherwise
-        ticks['active_progress'] = int(  active_progress
-                                       * round(cntr['active']*factor))
-        ticks['active'] = int(cntr['active']*factor) - ticks['active_progress']
+        ticks['active_progress'] = int(active_progress * cntr['active']*factor)
+        ticks['active'] = (  int(round(cntr['active']*factor))
+                           - ticks['active_progress'])
 
         # Calculate spaces from the sum of all of the above
         ticks['space'] = pb_width - sum(ticks.values())
