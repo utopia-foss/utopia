@@ -25,6 +25,10 @@ utopia_install_doc_utils()
 # Register subdirectories
 add_subdirectory("doxygen")
 
+# Copy README to this directory
+file(COPY "${CMAKE_SOURCE_DIR}/README.md"
+     DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
+
 # Configure sphinx and register associated files
 configure_file(conf.py.in conf.py)
 add_custom_target(sphinx_html

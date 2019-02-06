@@ -145,15 +145,16 @@ Check out the troubleshooting section there if this fails.
 
 
 ## Utopia Documentation
-This Readme only covers the basics. For all further documentation, guides, model descriptions etc., you can find more information in the documentation. It is highly recommended to do this.
+This Readme only covers the basics. For all further documentation, tutorials, guides, model descriptions, and more, have a look into the documentation. It is _highly_ recommended to do this.
 
-Utopia builds a documentation with [Sphinx](http://www.sphinx-doc.org/en/master/index.html), including all relevant information for the every-day user.
+Utopia builds a documentation with [Sphinx](http://www.sphinx-doc.org/en/master/index.html), including all relevant information for the every-day user as well as developers.
 Additionally, a C++ code documentation is built by Doxygen. To build the docs locally, navigate to the `utopia/build-cmake` directory and execute
 
     make doc
 
-The user documentation will be located at `utopia/build-cmake/doc/html/`, and the Doxygen documentation at `utopia/build-cmake/doc/doxygen/html/`. Open the respective `index.html` files to browse the documentation.
+The user documentation will then be located at `utopia/build-cmake/doc/html/`, and the Doxygen documentation at `utopia/build-cmake/doc/doxygen/html/`. Open the respective `index.html` files to browse the documentation.
 
+For first-time users, it is recommended to check out the tutorial there.
 
 
 ## Quickstart

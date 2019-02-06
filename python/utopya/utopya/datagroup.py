@@ -6,6 +6,8 @@ they are imported and configured using class variables.
 
 import logging
 
+import numpy as np
+
 import dantro as dtr
 import dantro.groups
 
@@ -18,6 +20,39 @@ log = logging.getLogger(__name__)
 
 class UniverseGroup(dtr.groups.ParamSpaceStateGroup):
     """This group represents the data of a single universe"""
+
+    def get_times_array(self, *, include_t0: bool=True) -> np.ndarray:
+        """Constructs a 1D np.array using the information from this universe's
+        configuration, i.e. the `num_steps` and `write_every` keys.
+        
+        Args:
+            include_t0 (bool, optional): Whether to include an initial time
+                step
+        
+        Returns:
+            np.ndarray: The array of time steps
+        """
+        # Check if a configuration was loaded
+        try:
+            cfg = self['cfg']
+
+        except KeyError as err:
+            raise ValueError("No configuration associated with {}! Check the "
+                             "load configuration of the root DataManager or "
+                             "manually add a configuration container.   "
+                             "".format(self.logstr)) from err
+        
+        # Retrieve the necessary parameters from the configuration
+        num_steps = cfg['num_steps']
+        write_every = cfg['write_every']
+
+        # Calculate the times array, either with or without initial time step
+        if include_t0:
+            return np.linspace(0, num_steps,
+                               num_steps//write_every + 1)
+        else:
+            return np.linspace(write_every, num_steps,
+                               num_steps//write_every)
 
 
 class MultiverseGroup(dtr.groups.ParamSpaceGroup):

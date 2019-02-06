@@ -54,3 +54,6 @@ __pycache__
 
 # Ignore result of cmake-configured files
 python/utopya/utopya/info.py
+
+# Ignore _copied_ version of root-level readme file
+doc/README.md
