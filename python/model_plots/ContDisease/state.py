@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 from utopya import DataManager, UniverseGroup
 
-from ..tools import save_and_close, get_times, colorline
+from ..tools import save_and_close, colorline
 
 # -----------------------------------------------------------------------------
 
@@ -32,7 +32,7 @@ def tree_density(dm: DataManager, *,
     data = grp["densities/tree"]
 
     # Get the time steps array for this universe
-    times = get_times(uni)
+    times = uni.get_times_array()
 
     # Call the plot function
     plt.plot(times, data, **plot_kwargs)
@@ -72,7 +72,7 @@ def densities(dm: DataManager, *,
     d_stone = grp["densities/stone"]
     
     # Get the time steps array for the given universe
-    times = get_times(uni)
+    times = uni.get_times_array()
     
     # Expand the stone and source arrays (both constant) to be of valid length
     d_stone = np.full(len(times), d_stone) 

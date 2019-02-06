@@ -2,8 +2,10 @@
 Multidimensional Data Generation and Plotting in Utopia
 =======================================================
 
-You want to sweep over multiple parameters?
-In Utopia we distinguish universes from multiverses: A multiverse is a collection of multiple universes where all universes are independent of each other. So, for example if you want to sweep over ``N`` different seeds of the random number generator you create ``N`` different universes within the run of the multiverse.
+You want to sweep over multiple parameters? *Utopia* has just the right tools for you! :)
+
+In Utopia, we distinguish universes and multiverses: A multiverse is a collection of multiple universes where all universes are independent of each other.
+So, for example if you want to sweep over ``N`` different seeds of the random number generator you create ``N`` different universes within the run of the multiverse.
 
 1. Create a run configuration file
 ----------------------------------

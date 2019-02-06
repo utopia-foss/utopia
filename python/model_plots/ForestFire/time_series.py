@@ -36,6 +36,7 @@ def state_mean(dm: DataManager, *, out_path: str, uni: UniverseGroup, fmt: str=N
     # Save and close figure
     save_and_close(out_path, save_kwargs=save_kwargs)
 
+
 # -----------------------------------------------------------------------------
 
 def cluster_distribution(dm: DataManager, *, 

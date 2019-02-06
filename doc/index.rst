@@ -6,13 +6,17 @@
 Welcome to Utopia's documentation!
 ==================================
 
-Welcome!
+And welcome to Utopia! We are happy that you found your way to the documentation.
+
+If you are **new to Utopia**, you should start with the :doc:`tutorial <guides/tutorial>`. You can then work your way through the other guides. :)
+
+----
 
 .. toctree::
    :maxdepth: 2
    :caption: Basics
 
-   The README <readme>
+   The README <README>
    examples
 
 
@@ -31,10 +35,15 @@ Welcome!
 
    models/*
 
-
 .. toctree::
-   :maxdepth: 2
    :caption: Frontend
    :glob:
 
    frontend/*
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Frequently Asked Questions
+      
+   Frontend <faq/frontend>
+   

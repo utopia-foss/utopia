@@ -1,5 +1,6 @@
 """Plotting tools that can be used from all model-specific plot functions"""
 
+import warnings
 from typing import Union
 
 import numpy as np
@@ -28,11 +29,16 @@ def get_times(uni: UniverseGroup, *, include_t0: bool=True):
     
     Args:
         uni (UniverseGroup): The universe group
-        include_t0 (bool): Include the initial time t=0 in the 
-
+        include_t0 (bool, optional): Include the initial time t=0 in the 
+    
     Returns:
         np.array: The times array
     """
+    warnings.warn("The get_times function is deprecated and might be removed "
+                  "at any time! Instead, use the object-oriented interface "
+                  "provided by the utopya.UniverseGroup.get_times_array "
+                  "function.", DeprecationWarning)
+
     # Retrive the necessary parameters from the configuration
     cfg = uni['cfg']
     num_steps = cfg['num_steps']
