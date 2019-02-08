@@ -209,22 +209,25 @@ protected:
             //                     { 2 * distance   for distance = 1
             // N(dim, distance) =  { 2 * sum_{distances} N(dim-1, distance)
             //                     {                for distance > 1)
-            std::function<std::size_t(const unsigned short int, std::size_t)> 
-                num_neighbors = [&num_neighbors]
-                                (const unsigned short int dim,
-                                 std::size_t distance) -> std::size_t{
-                if (dim == 1){
-                    return 2 * distance;
-                }
-                else{
-                    std::size_t counter = 0;
-                    while (distance > 0){
-                        counter += 2 * num_neighbors(dim - 1, distance);
-                        --distance;
+            const auto num_neighbors = [](const unsigned short int dim, 
+                                          std::size_t distance) -> std::size_t{
+                auto num_nbs_impl = [](const unsigned short int dim, 
+                                       std::size_t distance, auto& num_nbs_ref){
+                    if (dim == 1){
+                        return 2 * distance;
                     }
-                    return counter;
-                }
+                    else{
+                        std::size_t counter = 0;
+                        while (distance > 0){
+                            counter += 2 * num_nbs_ref(dim-1, distance, num_nbs_ref);
+                            --distance;
+                        }
+                        return counter;
+                    }                   
+                };
+                return num_nbs_impl(dim, distance, num_nbs_impl);
             };
+
 
             // Pre-allocating space brings a speed improvement of about factor 2
             neighbor_ids.reserve(num_neighbors(dim, distance));
