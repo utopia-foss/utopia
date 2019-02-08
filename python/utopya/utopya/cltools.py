@@ -17,7 +17,9 @@ BASE_CFG_PATH = resource_filename('utopya', 'cfg/base_cfg.yml')
 
 # -----------------------------------------------------------------------------
 
-def add_entry(value, *, add_to: dict, key_path: list, value_func: Callable=None, is_valid: Callable=None, ErrorMsg: Callable=None):
+def add_entry(value, *, add_to: dict, key_path: list,
+              value_func: Callable=None, is_valid: Callable=None,
+              ErrorMsg: Callable=None):
     """Adds the given value to the `add_to` dict at the given key path.
     
     If `value` is a callable, that function is called and the return value is
@@ -73,15 +75,20 @@ def add_entry(value, *, add_to: dict, key_path: list, value_func: Callable=None,
     log.debug("Successfully added entry.")
 
 
-def add_from_kv_pairs(*pairs, add_to: dict, attempt_conversion: bool=True, allow_eval: bool=False):
+def add_from_kv_pairs(*pairs, add_to: dict,
+                      attempt_conversion: bool=True,
+                      allow_eval: bool=False):
     """Parses the key=value pairs and adds them to the given dict.
     
     Args:
         *pairs: Sequence of key=value strings
-        base_dict (dict): The dict to add the keys to
+        add_to (dict): The dict to add the pairs to
+        base_path (list, optional): The path within `add_to` that is considered
+            as the base
         attempt_conversion (bool, optional): Whether to attempt converting the
-            strings to bool, float, int types. This also tries calling eval on
-            the string!
+            strings to bool, float, int types
+        allow_eval (bool, optional): Whether to try calling eval() on the
+            value strings during conversion
     """
     def conversions(val):
         # Boolean
