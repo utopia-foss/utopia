@@ -161,7 +161,7 @@ protected:
         IndexContainer neighbor_ids{};
 
         // The number of neighbors is known; pre-allocating space brings a
-        // speed improvemet of about factor 2
+        // speed improvement of about factor 2
         neighbor_ids.reserve(2 * dim);
 
         // Depending on the number of dimensions, add the IDs of neighboring
@@ -180,6 +180,66 @@ protected:
         return neighbor_ids;
     };
 
+    /// The Von-Neumann neighborhood for periodic grids and arbitrary Chebyshev distance
+    NBFuncID<Base> _nb_VonNeumann_periodic_with_Chebyshev_distance =
+    [this](const IndexType& root_id, std::size_t distance){
+        static_assert((dim >= 1 and dim <= 3),
+            "VonNeumann neighborhood is only implemented in 1-3 dimensions!");
+
+        static_assert(distance > 0,
+            "The Chebychev distance has to be >0!");
+
+        // Use the _nb_vonNeumann_periodic function for distance=1
+        if (distance == 1){
+            // TODO: Write warning to directly use the function without distance
+            //       specification.
+            return _nb_vonNeumann_periodic(root_id);
+        }
+        else{
+            // Instantiate container in which to store the neighboring cell IDs
+            IndexContainer neighbor_ids{};
+
+            // The number of neighbors can be calculated through:
+            //                     { 2 * distance   for distance = 1
+            // N(dim, distance) =  { 2 * sum_{distances} N(dim-1, distance)
+            //                     {                for distance > 1)
+            auto num_neighbors = [](const unsigned short int dim,
+                                    const std::size_t distance){
+                if (dim == 1){
+                    return 2 * distance;
+                }
+                else{
+                    std::size_t counter = 0;
+                    while (distance > 0){
+                        counter += 2 * num_neighbors(dim - 1, distance);
+                        --distance;
+                    }
+                    return counter;
+                }
+            }
+
+            // Pre-allocating space brings a speed improvement of about factor 2
+            neighbor_ids.reserve(num_neigbors(dim, distance));
+
+            // TODO Adapt the part below to general Chebychev distance.
+
+            // // Depending on the number of dimensions, add the IDs of neighboring
+            // // cells in those dimensions
+            // add_neighbors_in_dim_<1, true>(root_id, neighbor_ids, distance);
+
+            // if constexpr (dim >= 2) {
+            //     add_neighbors_in_dim_<2, true>(root_id, neighbor_ids, distance);
+            // }
+
+            // if constexpr (dim >= 3) {
+            //     add_neighbors_in_dim_<3, true>(root_id, neighbor_ids, distance);
+            // }
+
+            // Return the container of cell indices
+            return neighbor_ids;
+        }
+    };
+
     /// The Von-Neumann neighborhood for non-periodic grids
     NBFuncID<Base> _nb_vonNeumann_nonperiodic = [this](const IndexType& root_id){
         static_assert((dim >= 1 and dim <= 3),
@@ -189,7 +249,7 @@ protected:
         IndexContainer neighbor_ids{};
 
         // The number of neighbors is known; pre-allocating space brings a
-        // speed improvemet of about factor 2
+        // speed improvement of about factor 2
         neighbor_ids.reserve(2 * dim);
 
         // Depending on the number of dimensions, add the IDs of neighboring
@@ -288,7 +348,7 @@ protected:
      * \param root_id      Which cell to find the agents of
      * \param neighbor_ids The container to populate with the indices
      * 
-     * \tparam dim_no      The dimensions in which to add neighbors
+     * \tparam dim         The dimensions in which to add neighbors
      * \tparam periodic    Whether the grid is periodic
      * 
      * \return void
@@ -297,7 +357,7 @@ protected:
     void add_neighbors_in_dim_ (const IndexType& root_id,
                                 IndexContainer& neighbor_ids)
     {
-        // Assure the number of dimesions is supported
+        // Assure the number of dimensions is supported
         static_assert(dim >= 1 and dim <= 3,
                       "Unsupported dimensionality! Need be 1, 2, or 3.");
 
@@ -393,7 +453,6 @@ protected:
         }
     }
 
-};
 
 // end group CellManager
 /**
