@@ -283,6 +283,10 @@ if __name__ == '__main__':
 
         # Set general configuration entries
         if args.set_params:
+            # Make sure the parameter space entry is available
+            if not update_dict.get('parameter_space'):
+                update_dict['parameter_space'] = dict()
+
             # Add an entry for each pair
             add_from_kv_pairs(*args.set_params,
                               add_to=update_dict['parameter_space'])

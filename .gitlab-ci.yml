@@ -314,4 +314,6 @@ test:cli:
     - utopia run dummy --note plt2 --plot-only states
     - utopia run dummy --note plt3 --plots-cfg $MODEL_SRC/dummy/dummy_plots.yml
     #
-    # TODO add more tests here for other features of the CLI
+    # Test the setting of parameters and config parameters from CLI
+    - utopia run dummy --set-params num_steps=3 write_every=2
+    - utopia run dummy --set-cfg parameter_space.seed=23
