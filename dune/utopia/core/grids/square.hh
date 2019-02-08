@@ -20,6 +20,11 @@ public:
     /// Base class type
     using Base = Grid<Space>;
 
+    /// Type of the neighborhood calculation function with arbitrary distance
+    template<class Grid>
+    using NBFuncIDDist = std::function<IndexContainer(const IndexType&, 
+                                                      std::size_t)>;
+
     /// The dimensionality of the space to be discretized (for easier access)
     static constexpr std::size_t dim = Space::dim;
 
@@ -181,13 +186,14 @@ protected:
     };
 
     /// The Von-Neumann neighborhood for periodic grids and arbitrary Chebyshev distance
-    NBFuncID<Base> _nb_VonNeumann_periodic_with_Chebyshev_distance =
+    NBFuncIDDist<Base> _nb_VonNeumann_periodic_with_Chebyshev_distance =
     [this](const IndexType& root_id, std::size_t distance){
         static_assert((dim >= 1 and dim <= 3),
             "VonNeumann neighborhood is only implemented in 1-3 dimensions!");
 
-        static_assert(distance > 0,
-            "The Chebychev distance has to be >0!");
+        if (distance > 0){
+            std::runtime_error("The Chebychev distance has to be >0!");
+        }
 
         // Use the _nb_vonNeumann_periodic function for distance=1
         if (distance == 1){
@@ -203,8 +209,10 @@ protected:
             //                     { 2 * distance   for distance = 1
             // N(dim, distance) =  { 2 * sum_{distances} N(dim-1, distance)
             //                     {                for distance > 1)
-            auto num_neighbors = [](const unsigned short int dim,
-                                    const std::size_t distance){
+            std::function<std::size_t(const unsigned short int, std::size_t)> 
+                num_neighbors = [&num_neighbors]
+                                (const unsigned short int dim,
+                                 std::size_t distance) -> std::size_t{
                 if (dim == 1){
                     return 2 * distance;
                 }
@@ -216,23 +224,23 @@ protected:
                     }
                     return counter;
                 }
-            }
+            };
 
             // Pre-allocating space brings a speed improvement of about factor 2
-            neighbor_ids.reserve(num_neigbors(dim, distance));
+            neighbor_ids.reserve(num_neighbors(dim, distance));
 
             // TODO Adapt the part below to general Chebychev distance.
 
             // // Depending on the number of dimensions, add the IDs of neighboring
             // // cells in those dimensions
-            // add_neighbors_in_dim_<1, true>(root_id, neighbor_ids, distance);
+            // add_neighbors_in_dim_<1, true>(root_id, neighbor_ids);
 
             // if constexpr (dim >= 2) {
-            //     add_neighbors_in_dim_<2, true>(root_id, neighbor_ids, distance);
+            //     add_neighbors_in_dim_<2, true>(root_id, neighbor_ids);
             // }
 
             // if constexpr (dim >= 3) {
-            //     add_neighbors_in_dim_<3, true>(root_id, neighbor_ids, distance);
+            //     add_neighbors_in_dim_<3, true>(root_id, neighbor_ids);
             // }
 
             // Return the container of cell indices
@@ -364,95 +372,53 @@ protected:
         // Gather the required grid information
         const auto& shape = this->shape();
 
-        // Distinguish by dimension parameter
-        if constexpr (dim == 1) {
-            // check if at front boundary
-            if (root_id % shape[0] == 0) {
-                if constexpr (periodic) {
-                    neighbor_ids.push_back(root_id
-                                           - id_shift_in_dim_<0>()
-                                           + id_shift_in_dim_<1>());
-                }
-            }
-            else {
-                neighbor_ids.push_back(root_id - id_shift_in_dim_<0>());
-            }
+        // Conditions for the front and back boundary; the conditions are
+        // dependent on the dimension in which to add neighbors.
+        bool _cond_front;
+        bool _cond_back;
 
-            // check if at back boundary
-            if (root_id % shape[0] == shape[0] - 1) {
-                if constexpr (periodic) {
-                    neighbor_ids.push_back(root_id
-                                           + id_shift_in_dim_<0>()
-                                           - id_shift_in_dim_<1>());
-                }
-            }
-            else {
-                neighbor_ids.push_back(root_id + id_shift_in_dim_<0>());
-            }
+        // Set the boundary conditions for different dimensions
+        if constexpr (dim == 1){
+            _cond_front = (root_id % shape[0] == 0);
+            _cond_back = (root_id % shape[0] == shape[0] - 1);
+        }
+        else if constexpr (dim == 2){
+            // 'normalize' id to lowest height (in 3D)
+            const auto root_id_nrm = root_id % id_shift_in_dim_<dim>();
+
+            _cond_front = (root_id_nrm / shape[0] == 0);
+            _cond_back = (root_id_nrm / shape[0] == shape[1] - 1);
+        }
+        else if constexpr (dim == 3){
+            _cond_front = (root_id - id_shift_in_dim_<2>() < 0); 
+            _cond_back = (root_id + id_shift_in_dim_<2>() > id_shift_in_dim_<3>() - 1);
         }
 
-
-        else if constexpr (dim == 2) {
-            // 'normalize' id to lowest height (if 3D)
-            const auto root_id_nrm = root_id % id_shift_in_dim_<2>();
-
-            // check if at front boundary
-            // TODO Check what the cast is needed for and why this is not the
-            //      same as with the other dimensions
-            if ((long) root_id_nrm / shape[0] == 0) {
-                if constexpr (periodic) {
-                    neighbor_ids.push_back(root_id
-                                           - id_shift_in_dim_<1>()
-                                           + id_shift_in_dim_<2>());
-                }
-            }
-            else {
-                neighbor_ids.push_back(root_id - id_shift_in_dim_<1>());
-            }
-
-            // check if at back boundary
-            if ((long) root_id_nrm / shape[0] == shape[1] - 1) {
-                if constexpr (periodic) {
-                    neighbor_ids.push_back(root_id
-                                           + id_shift_in_dim_<1>()
-                                           - id_shift_in_dim_<2>());
-                }
-            }
-            else {
-                neighbor_ids.push_back(root_id + id_shift_in_dim_<1>());
+        // check if at front boundary
+        if (_cond_front) {
+            if constexpr (periodic) {
+                neighbor_ids.push_back(root_id
+                                        - id_shift_in_dim_<dim-1>()
+                                        + id_shift_in_dim_<dim>());
             }
         }
+        else {
+            neighbor_ids.push_back(root_id - id_shift_in_dim_<dim-1>());
+        }
 
-
-        else if constexpr (dim == 3) {
-            const auto id_max = id_shift_in_dim_<3>() - 1;
-
-            // check if at front boundary
-            if (root_id - id_shift_in_dim_<2>() < 0) {
-                if constexpr (periodic) {
-                    neighbor_ids.push_back(root_id
-                                           - id_shift_in_dim_<2>()
-                                           + id_shift_in_dim_<3>());
-                }
+        // check if at back boundary
+        if (_cond_back) {
+            if constexpr (periodic) {
+                neighbor_ids.push_back(root_id
+                                        + id_shift_in_dim_<dim-1>()
+                                        - id_shift_in_dim_<dim>());
             }
-            else {
-                neighbor_ids.push_back(root_id - id_shift_in_dim_<2>());
-            }
-
-            // check if at back boundary
-            if (root_id + id_shift_in_dim_<2>() > id_max) {
-                if constexpr (periodic) {
-                    neighbor_ids.push_back(root_id
-                                           + id_shift_in_dim_<2>()
-                                           - id_shift_in_dim_<3>());
-                }
-            }
-            else {
-                neighbor_ids.push_back(root_id + id_shift_in_dim_<2>());
-            }
+        }
+        else {
+            neighbor_ids.push_back(root_id + id_shift_in_dim_<dim-1>());
         }
     }
-
+};
 
 // end group CellManager
 /**
