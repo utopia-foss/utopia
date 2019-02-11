@@ -402,11 +402,29 @@ protected:
     {
         static_assert(dim == 2, "Moore neighborhood is only available in 2D!");
 
-        // Generate vector in which to store the neighbors and allocate space
+        // Generate vector in which to store the neighbors...
         IndexContainer neighbor_ids{};
         
-        // TODO Implement
+        // ... and allocate space
+        std::size_t num_nbs = std::pow(2 * this->_metric_distance + 1, dim) - 1; 
+        neighbor_ids.reserve(num_nbs);
 
+        // Get all neighbors in the second dimension
+        for (std::size_t dist=0; dist<this->_metric_distance; ++dist){
+            add_neighbors_pair_in_dim_<2, false>(root_id, dist, neighbor_ids);
+        }
+
+        // For these neighbors, add _their_ neighbors in the first dimension
+        for (const auto& nb : neighbor_ids){
+            for (std::size_t dist=1; dist<=this->_metric_distance; ++dist){
+                add_neighbors_pair_in_dim_<1, false>(nb, dist, neighbor_ids);
+            }
+        }
+
+        // And finally, add the root cell's neighbors in the first dimension
+        for (std::size_t dist=0; dist<this->_metric_distance; ++dist){
+            add_neighbors_pair_in_dim_<1, false>(root_id, dist, neighbor_ids);
+        }
         return neighbor_ids;
     };
 
