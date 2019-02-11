@@ -133,7 +133,7 @@ protected:
                     return _nb_vonNeumann_periodic;
                 }
                 else{
-                    return _nb_VonNeumann_periodic_with_Chebyshev_distance;
+                    return _nb_VonNeumann_periodic_with_Manahtten_distance;
                 }
             }
             else {
@@ -141,7 +141,7 @@ protected:
                     return _nb_vonNeumann_nonperiodic;
                 }
                 else{
-                    return _nb_vonNeumann_nonperiodic_with_Chebychev_distance;
+                    return _nb_vonNeumann_nonperiodic_with_Manhatten_distance;
                 }
             }
         }
@@ -151,7 +151,7 @@ protected:
                     return _nb_Moore_periodic;
                 }
                 else{
-                    return _nb_Moore_periodic_with_Manhatten_distance;
+                    return _nb_Moore_periodic_with_Chebychev_distance;
                 }
             }
             else {
@@ -159,7 +159,7 @@ protected:
                     return _nb_Moore_nonperiodic;
                 }
                 else{
-                    return _nb_Moore_nonperiodic_with_Manhatten_distance;
+                    return _nb_Moore_nonperiodic_with_Chebychev_distance;
                 }
             }
         }
@@ -199,15 +199,15 @@ protected:
         return neighbor_ids;
     };
 
-    /// The Von-Neumann neighborhood for periodic grids and arbitrary Chebyshev distance
-    NBFuncID<Base> _nb_VonNeumann_periodic_with_Chebyshev_distance =
+    /// The Von-Neumann neighborhood for periodic grids and arbitrary Manhatten distance
+    NBFuncID<Base> _nb_VonNeumann_periodic_with_Manahtten_distance =
     [this](const IndexType& root_id)
     {
         static_assert((dim >= 1 and dim <= 2),
             "VonNeumann neighborhood is only implemented in 1-3 dimensions!");
 
         if (this->_metric_distance > 0){
-            std::runtime_error("The Chebychev distance has to be >0!");
+            std::runtime_error("The Manhatten (taxicab) distance has to be >0!");
         }
 
         // Use the _nb_vonNeumann_periodic function for distance=1
@@ -247,7 +247,7 @@ protected:
             // Pre-allocating space brings a speed improvement of about factor 2
             neighbor_ids.reserve(num_neighbors(dim, this->_metric_distance));
 
-            // TODO Adapt the part below to general Chebychev distance.
+            // TODO Adapt the part below to general Manhatten distance.
 
             // // Depending on the number of dimensions, add the IDs of neighboring
             // // cells in those dimensions
@@ -289,8 +289,8 @@ protected:
         return neighbor_ids;
     };
 
-    /// The Von-Neumann neighborhood for non-periodic grids and arbitrary Chebychev distance
-    NBFuncID<Base> _nb_vonNeumann_nonperiodic_with_Chebychev_distance = 
+    /// The Von-Neumann neighborhood for non-periodic grids and arbitrary Manhatten distance
+    NBFuncID<Base> _nb_vonNeumann_nonperiodic_with_Manhatten_distance = 
         [this](const IndexType& root_id)
     {
         static_assert(((dim == 1) or (dim == 2)),
@@ -330,8 +330,8 @@ protected:
         return neighbor_ids;
     };
 
-    /// Moore neighbors for periodic 2D grid for arbitrary Manhatten distance
-    NBFuncID<Base> _nb_Moore_periodic_with_Manhatten_distance = 
+    /// Moore neighbors for periodic 2D grid for arbitrary Chebychev distance
+    NBFuncID<Base> _nb_Moore_periodic_with_Chebychev_distance = 
         [this](const IndexType& root_id)
     {
         static_assert(dim == 2, "Moore neighborhood is only available in 2D!");
@@ -378,7 +378,7 @@ protected:
     };
 
     /// Moore neighbors for non-periodic 2D grid
-    NBFuncID<Base> _nb_Moore_nonperiodic_with_Manhatten_distance = 
+    NBFuncID<Base> _nb_Moore_nonperiodic_with_Chebychev_distance = 
         [this](const IndexType& root_id)
     {
         static_assert(dim == 2, "Moore neighborhood is only available in 2D!");
@@ -526,7 +526,7 @@ protected:
         }
         else if constexpr (dim == 2){            
             _cond_front = ((root_id + distance) / shape[0] < distance);        // TODO adapt for arbitrary distance
-            _cond_back = (root_id / shape[0] == shape[1] - 1);  // TODO adapt for arbitrary distance
+            _cond_back = ((root_id + distance - 1) / shape[0] == shape[1] - 1);  // TODO adapt for arbitrary distance
         }
 
         // check if at front boundary
