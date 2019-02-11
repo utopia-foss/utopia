@@ -159,8 +159,8 @@ protected:
 
     /// The Von-Neumann neighborhood for periodic grids
     NBFuncID<Base> _nb_vonNeumann_periodic = [this](const IndexType& root_id){
-        static_assert((dim >= 1 and dim <= 3),
-            "VonNeumann neighborhood is only implemented in 1-3 dimensions!");
+        static_assert((dim >= 1 and dim <= 2),
+            "VonNeumann neighborhood is only implemented in 1-2 dimensions!");
 
         // Instantiate container in which to store the neighboring cell IDs
         IndexContainer neighbor_ids{};
@@ -177,10 +177,6 @@ protected:
             add_neighbors_in_dim_<2, true>(root_id, neighbor_ids);
         }
 
-        if constexpr (dim >= 3) {
-            add_neighbors_in_dim_<3, true>(root_id, neighbor_ids);
-        }
-
         // Return the container of cell indices
         return neighbor_ids;
     };
@@ -188,7 +184,7 @@ protected:
     /// The Von-Neumann neighborhood for periodic grids and arbitrary Chebyshev distance
     NBFuncIDDist<Base> _nb_VonNeumann_periodic_with_Chebyshev_distance =
     [this](const IndexType& root_id, std::size_t distance){
-        static_assert((dim >= 1 and dim <= 3),
+        static_assert((dim >= 1 and dim <= 2),
             "VonNeumann neighborhood is only implemented in 1-3 dimensions!");
 
         if (distance > 0){
@@ -242,10 +238,6 @@ protected:
             //     add_neighbors_in_dim_<2, true>(root_id, neighbor_ids);
             // }
 
-            // if constexpr (dim >= 3) {
-            //     add_neighbors_in_dim_<3, true>(root_id, neighbor_ids);
-            // }
-
             // Return the container of cell indices
             return neighbor_ids;
         }
@@ -253,8 +245,9 @@ protected:
 
     /// The Von-Neumann neighborhood for non-periodic grids
     NBFuncID<Base> _nb_vonNeumann_nonperiodic = [this](const IndexType& root_id){
-        static_assert((dim >= 1 and dim <= 3),
-            "VonNeumann neighborhood is only implemented in 1-3 dimensions!");
+        static_assert(((dim == 1) or (dim == 2)),
+            "VonNeumann neighborhood is only implemented in 1 or 2 dimensions "
+            "in space!");
 
         // Instantiate container in which to store the neighboring cell IDs
         IndexContainer neighbor_ids{};
@@ -270,10 +263,6 @@ protected:
         if constexpr (dim >= 2) {
             add_neighbors_in_dim_<2, false>(root_id, neighbor_ids);
         }
-        
-        if constexpr (dim >= 3) {
-            add_neighbors_in_dim_<3, false>(root_id, neighbor_ids);
-        }
 
         // Return the container of cell indices
         return neighbor_ids;
@@ -282,7 +271,7 @@ protected:
 
     /// Moore neighbors for periodic 2D grid
     NBFuncID<Base> _nb_Moore_periodic = [this](const IndexType& root_id){
-        static_assert(dim == 2, "Moore neighborhood only available in 2D!");
+        static_assert(dim == 2, "Moore neighborhood is only available in 2D!");
 
         // Generate vector in which to store the neighbors and allocate space
         IndexContainer neighbor_ids{};
@@ -304,7 +293,7 @@ protected:
 
     /// Moore neighbors for non-periodic 2D grid
     NBFuncID<Base> _nb_Moore_nonperiodic = [this](const IndexType& root_id){
-        static_assert(dim == 2, "Moore neighborhood only available in 2D!");
+        static_assert(dim == 2, "Moore neighborhood is only available in 2D!");
 
         // Generate vector in which to store the neighbors and allocate space
         IndexContainer neighbor_ids{};
@@ -379,8 +368,8 @@ protected:
                                 IndexContainer& neighbor_ids)
     {
         // Assure the number of dimensions is supported
-        static_assert(dim >= 1 and dim <= 3,
-                      "Unsupported dimensionality! Need be 1, 2, or 3.");
+        static_assert((dim == 1) or (dim == 2),
+                      "Unsupported dimensionality in space! Need be 1 or 2.");
 
         // Gather the required grid information
         const auto& shape = this->shape();
@@ -401,10 +390,6 @@ protected:
 
             _cond_front = (root_id_nrm / shape[0] == 0);
             _cond_back = (root_id_nrm / shape[0] == shape[1] - 1);
-        }
-        else if constexpr (dim == 3){
-            _cond_front = (root_id - id_shift_in_dim_<2>() < 0); 
-            _cond_back = (root_id + id_shift_in_dim_<2>() > id_shift_in_dim_<3>() - 1);
         }
 
         // check if at front boundary
@@ -455,8 +440,8 @@ protected:
                                      std::size_t distance)
     {
         // Assure the number of dimensions is supported
-        static_assert(dim >= 1 and dim <= 3,
-                      "Unsupported dimensionality! Need be 1, 2, or 3.");
+        static_assert((dim == 1) or (dim == 2),
+                      "Unsupported dimensionality in space! Need be 1 or 2.");
 
         // Gather the required grid information
         const auto& shape = this->shape();
@@ -471,16 +456,9 @@ protected:
             _cond_front = ((root_id + distance) % shape[0] < distance);
             _cond_back = ((root_id + distance - 1) % shape[0] == shape[0] - 1);
         }
-        else if constexpr (dim == 2){
-            // 'normalize' id to lowest height (in 3D)
-            const auto root_id_nrm = root_id % id_shift_in_dim_<dim>();
-            
-            _cond_front = ((root_id_nrm + distance) / shape[0] < distance);        // TODO adapt for arbitrary distance
-            _cond_back = (root_id_nrm / shape[0] == shape[1] - 1);  // TODO adapt for arbitrary distance
-        }
-        else if constexpr (dim == 3){
-            _cond_front = (root_id - id_shift_in_dim_<2>() < 0); // TODO adapt for arbitrary distance
-            _cond_back = (root_id + id_shift_in_dim_<2>() > id_shift_in_dim_<3>() - 1); // TODO adapt for arbitrary distance
+        else if constexpr (dim == 2){            
+            _cond_front = ((root_id + distance) / shape[0] < distance);        // TODO adapt for arbitrary distance
+            _cond_back = (root_id / shape[0] == shape[1] - 1);  // TODO adapt for arbitrary distance
         }
 
         // check if at front boundary
