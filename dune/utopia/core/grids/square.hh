@@ -20,11 +20,6 @@ public:
     /// Base class type
     using Base = Grid<Space>;
 
-    /// Type of the neighborhood calculation function with arbitrary distance
-    template<class Grid>
-    using NBFuncIDDist = std::function<IndexContainer(const IndexType&, 
-                                                      std::size_t)>;
-
     /// The dimensionality of the space to be discretized (for easier access)
     static constexpr std::size_t dim = Space::dim;
 
@@ -128,23 +123,44 @@ protected:
 
     /// Retrieve the neighborhood function depending on the mode
     NBFuncID<Base> get_nb_func(NBMode nb_mode) const override {
+        // Choose the appropriate neighborhood function
         if (nb_mode == NBMode::empty) {
             return this->_nb_empty;
         }
         else if (nb_mode == NBMode::vonNeumann) {
             if (this->is_periodic()) {
-                return _nb_vonNeumann_periodic;
+                if (this->_metric_distance == 1){
+                    return _nb_vonNeumann_periodic;
+                }
+                else{
+                    return _nb_VonNeumann_periodic_with_Chebyshev_distance;
+                }
             }
             else {
-                return _nb_vonNeumann_nonperiodic;
+                if (this->_metric_distance == 1){
+                    return _nb_vonNeumann_nonperiodic;
+                }
+                else{
+                    return _nb_vonNeumann_nonperiodic_with_Chebychev_distance;
+                }
             }
         }
         else if (nb_mode == NBMode::Moore) {
             if (this->is_periodic()) {
-                return _nb_Moore_periodic;
+                if (this->_metric_distance == 1){
+                    return _nb_Moore_periodic;
+                }
+                else{
+                    return _nb_Moore_periodic_with_Manhatten_distance;
+                }
             }
             else {
-                return _nb_Moore_nonperiodic;
+                if (this->_metric_distance == 1){
+                    return _nb_Moore_nonperiodic;
+                }
+                else{
+                    return _nb_Moore_nonperiodic_with_Manhatten_distance;
+                }
             }
         }
         else {
@@ -158,7 +174,9 @@ protected:
     // NOTE With C++20, the below lambdas would allow template arguments
 
     /// The Von-Neumann neighborhood for periodic grids
-    NBFuncID<Base> _nb_vonNeumann_periodic = [this](const IndexType& root_id){
+    NBFuncID<Base> _nb_vonNeumann_periodic = 
+    [this](const IndexType& root_id)
+    {
         static_assert((dim >= 1 and dim <= 2),
             "VonNeumann neighborhood is only implemented in 1-2 dimensions!");
 
@@ -182,17 +200,18 @@ protected:
     };
 
     /// The Von-Neumann neighborhood for periodic grids and arbitrary Chebyshev distance
-    NBFuncIDDist<Base> _nb_VonNeumann_periodic_with_Chebyshev_distance =
-    [this](const IndexType& root_id, std::size_t distance){
+    NBFuncID<Base> _nb_VonNeumann_periodic_with_Chebyshev_distance =
+    [this](const IndexType& root_id)
+    {
         static_assert((dim >= 1 and dim <= 2),
             "VonNeumann neighborhood is only implemented in 1-3 dimensions!");
 
-        if (distance > 0){
+        if (this->_metric_distance > 0){
             std::runtime_error("The Chebychev distance has to be >0!");
         }
 
         // Use the _nb_vonNeumann_periodic function for distance=1
-        if (distance == 1){
+        if (this->_metric_distance == 1){
             // TODO: Write warning to directly use the function without distance
             //       specification.
             return _nb_vonNeumann_periodic(root_id);
@@ -226,7 +245,7 @@ protected:
 
 
             // Pre-allocating space brings a speed improvement of about factor 2
-            neighbor_ids.reserve(num_neighbors(dim, distance));
+            neighbor_ids.reserve(num_neighbors(dim, this->_metric_distance));
 
             // TODO Adapt the part below to general Chebychev distance.
 
@@ -244,7 +263,9 @@ protected:
     };
 
     /// The Von-Neumann neighborhood for non-periodic grids
-    NBFuncID<Base> _nb_vonNeumann_nonperiodic = [this](const IndexType& root_id){
+    NBFuncID<Base> _nb_vonNeumann_nonperiodic = 
+    [this](const IndexType& root_id)
+    {
         static_assert(((dim == 1) or (dim == 2)),
             "VonNeumann neighborhood is only implemented in 1 or 2 dimensions "
             "in space!");
@@ -268,9 +289,27 @@ protected:
         return neighbor_ids;
     };
 
+    /// The Von-Neumann neighborhood for non-periodic grids and arbitrary Chebychev distance
+    NBFuncID<Base> _nb_vonNeumann_nonperiodic_with_Chebychev_distance = 
+        [this](const IndexType& root_id)
+    {
+        static_assert(((dim == 1) or (dim == 2)),
+            "VonNeumann neighborhood is only implemented in 1 or 2 dimensions "
+            "in space!");
 
+        // Instantiate container in which to store the neighboring cell IDs
+        IndexContainer neighbor_ids{};
+
+        // TODO Implement this one.
+
+        // Return the container of cell indices
+        return neighbor_ids;
+    };
+    
     /// Moore neighbors for periodic 2D grid
-    NBFuncID<Base> _nb_Moore_periodic = [this](const IndexType& root_id){
+    NBFuncID<Base> _nb_Moore_periodic = 
+       [this](const IndexType& root_id)
+    {
         static_assert(dim == 2, "Moore neighborhood is only available in 2D!");
 
         // Generate vector in which to store the neighbors and allocate space
@@ -291,8 +330,24 @@ protected:
         return neighbor_ids;
     };
 
+    /// Moore neighbors for periodic 2D grid for arbitrary Manhatten distance
+    NBFuncID<Base> _nb_Moore_periodic_with_Manhatten_distance = 
+        [this](const IndexType& root_id)
+    {
+        static_assert(dim == 2, "Moore neighborhood is only available in 2D!");
+
+        // Generate vector in which to store the neighbors and allocate space
+        IndexContainer neighbor_ids{};
+        
+        // TODO Implement
+
+        return neighbor_ids;
+    };
+
     /// Moore neighbors for non-periodic 2D grid
-    NBFuncID<Base> _nb_Moore_nonperiodic = [this](const IndexType& root_id){
+    NBFuncID<Base> _nb_Moore_nonperiodic = 
+    [this](const IndexType& root_id)
+    {
         static_assert(dim == 2, "Moore neighborhood is only available in 2D!");
 
         // Generate vector in which to store the neighbors and allocate space
@@ -322,6 +377,19 @@ protected:
         return neighbor_ids;
     };
 
+    /// Moore neighbors for non-periodic 2D grid
+    NBFuncID<Base> _nb_Moore_nonperiodic_with_Manhatten_distance = 
+        [this](const IndexType& root_id)
+    {
+        static_assert(dim == 2, "Moore neighborhood is only available in 2D!");
+
+        // Generate vector in which to store the neighbors and allocate space
+        IndexContainer neighbor_ids{};
+        
+        // TODO Implement
+
+        return neighbor_ids;
+    };
 
     // -- Neighborhood helper functions -- //
 

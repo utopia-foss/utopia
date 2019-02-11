@@ -79,6 +79,9 @@ protected:
     /// Neighborhood function (working on cell IDs)
     NBFuncID<Self> _nb_func;
 
+    /// The metric distance used in the neighborhood functions
+    std::size_t _metric_distance;
+
 
 public:
     // -- Constructors and Destructors -- //
@@ -103,7 +106,15 @@ public:
 
             return res;
         }()),
-        _nb_mode(NBMode::empty)
+        _nb_mode(NBMode::empty),
+        _metric_distance([&](){
+            if (not cfg["metric_distance"]) {
+                return static_cast<std::size_t>(1);
+            }
+            else{
+                return as_<std::size_t>(cfg["metric_distance"]);
+            }
+        }())
     {
         // Set the neighborhood function to not return anything
         _nb_func = _nb_empty;
