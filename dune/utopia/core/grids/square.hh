@@ -335,11 +335,30 @@ protected:
         [this](const IndexType& root_id)
     {
         static_assert(dim == 2, "Moore neighborhood is only available in 2D!");
-
-        // Generate vector in which to store the neighbors and allocate space
-        IndexContainer neighbor_ids{};
         
-        // TODO Implement
+        // Generate vector in which to store the neighbors... 
+        IndexContainer neighbor_ids{};
+
+        // ... and allocate space
+        std::size_t num_nbs = std::pow(2 * this->_metric_distance + 1, dim) - 1; 
+        neighbor_ids.reserve(num_nbs);
+
+        // Get all neighbors in the second dimension
+        for (std::size_t dist=0; dist<this->_metric_distance; ++dist){
+            add_neighbors_pair_in_dim_<2, true>(root_id, dist, neighbor_ids);
+        }
+
+        // For these neighbors, add _their_ neighbors in the first dimension
+        for (const auto& nb : neighbor_ids){
+            for (std::size_t dist=1; dist<=this->_metric_distance; ++dist){
+                add_neighbors_pair_in_dim_<1, true>(nb, dist, neighbor_ids);
+            }
+        }
+
+        // And finally, add the root cell's neighbors in the first dimension
+        for (std::size_t dist=0; dist<this->_metric_distance; ++dist){
+            add_neighbors_pair_in_dim_<1, true>(root_id, dist, neighbor_ids);
+        }
 
         return neighbor_ids;
     };
@@ -504,8 +523,8 @@ protected:
      */
     template<std::size_t dim, bool periodic>
     void add_neighbors_pair_in_dim_ (const IndexType& root_id,
-                                     IndexContainer& neighbor_ids,
-                                     std::size_t distance)
+                                     std::size_t distance,
+                                     IndexContainer& neighbor_ids)
     {
         // Assure the number of dimensions is supported
         static_assert((dim == 1) or (dim == 2),
