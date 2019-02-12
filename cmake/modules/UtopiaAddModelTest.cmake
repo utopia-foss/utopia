@@ -26,6 +26,7 @@ function(add_model_test)
     target_link_libraries(${target_name}
         spdlog
         yaml-cpp
+        armadillo
     )
 
     # yaml-cpp does not export interface include dirs

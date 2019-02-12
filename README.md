@@ -51,13 +51,15 @@ Install third-party packages using a package manager.
 __macOS:__ On macOS, we recommend [Homebrew](https://brew.sh/). (If you prefer to use [MacPorts](https://www.macports.org/), notice that some packages might need to be installed differently.)
 
     brew update
-    brew install boost cmake doxygen gcc pkg-config python yaml-cpp hdf5 fftw python3 doxygen
+    brew install armadillo boost cmake doxygen fftw hdf5 gcc pkg-config \
+                 python3 yaml-cpp
 
 __Ubuntu:__
 
     apt update
-    apt install cmake doxygen gcc g++ gfortran git libboost-dev \
-        libhdf5-dev libyaml-cpp-dev libfftw3-dev pkg-config python3-dev python3-pip doxygen
+    apt install cmake doxygen gcc g++ gfortran git libarmadillo-dev \
+                libboost-dev libhdf5-dev libyaml-cpp-dev libfftw3-dev \
+                pkg-config python3-dev python3-pip
 
 _Note:_ You will _probably_ need administrator rights on Ubuntu. ([`sudo`, anyone?](https://xkcd.com/149/))
 
@@ -115,6 +117,7 @@ For more information on how to use the command line interface (and a prettier co
 | pkg-config | | |
 | [HDF5](https://www.hdfgroup.org/solutions/hdf5/) | >= 1.10. | |
 | [Boost](http://www.boost.org/) | >= 1.65 | |
+| [Armadillo](http://arma.sourceforge.net/) | >= 8.400 | |
 | [yaml-cpp](https://github.com/jbeder/yaml-cpp) | 0.6.2 | Included as submodule |
 | [spdlog](https://github.com/gabime/spdlog) | >= 0.17.0 | Included as submodule |
 | [FFTW](http://www.fftw.org) | >= 3.3 | For fast fourier transformations |

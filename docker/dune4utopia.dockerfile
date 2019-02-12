@@ -32,6 +32,7 @@ RUN apt-get update \
         clang \
         gfortran \
         git \
+        libarmadillo-dev \
         libboost-dev \
         libhdf5-dev \
         locales \

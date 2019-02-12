@@ -3,6 +3,7 @@
 #include <hdf5.h>
 #include <boost/serialization/list.hpp>
 #include <fftw3.h>
+#include <armadillo>
 
 class Serial
 {
@@ -17,9 +18,21 @@ void fftw_test ()
     fftw_free(in);
 }
 
+void armadillo_test ()
+{
+    // define two objects
+    arma::mat A = arma::randu(3, 3);
+    arma::vec x = arma::randu(3);
+
+    // multiply and print result
+    auto b = A*x;
+    b.print("result:");
+}
+
 int main ()
 {
     YAML::Node config;
     fftw_test();
+    armadillo_test();
     return 0;
 }

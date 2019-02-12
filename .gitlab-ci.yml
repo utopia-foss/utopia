@@ -23,7 +23,7 @@ variables:
 
   # The different segments of the resulting test image tag
   BASE_IMAGE_NAME: ccees/dune4utopia
-  IMAGE_VERSION: "2.0"
+  IMAGE_VERSION: "2.1"
   TEST_IMAGE: "${BASE_IMAGE_NAME}:img-v${IMAGE_VERSION}"
   # NOTE Do not forget to increment the IMAGE_VERSION when changes to the
   #      docker file are introduced.

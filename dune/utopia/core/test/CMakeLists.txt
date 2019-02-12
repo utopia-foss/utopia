@@ -44,6 +44,7 @@ foreach(test ${TESTS_CORE})
     target_link_libraries(CORE_${test}
         spdlog
         yaml-cpp
+        armadillo
     )
 
     # yaml-cpp does not export interface include dirs
