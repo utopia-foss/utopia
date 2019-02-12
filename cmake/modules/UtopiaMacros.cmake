@@ -11,6 +11,14 @@ list(APPEND DUNE_LIBS ${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES})
 # FFTW3
 find_package(FFTW3 3.3 REQUIRED)
 
+# Armadillo
+# use the config if possible
+find_package(Armadillo CONFIG)
+# fall back to our module if no target is defined
+if (NOT TARGET armadillo)
+    find_package(Armadillo MODULE REQUIRED)
+endif()
+
 # include Utopia macros
 include(PythonInstallPackageRemote)
 include(UtopiaAddModel)
