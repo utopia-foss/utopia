@@ -79,6 +79,48 @@ int main(int argc, char *argv[]) {
         std::cout << "Success." << std::endl << std::endl;
 
 
+        std::cout << ".....  Neighborhood:  vonNeumann (d=2) ..." << std::endl;
+        NBTest rect_2D_vonNeumann_d2("rect_2D_vonNeumann_d2", pp);
+        {
+            auto cm = rect_2D_vonNeumann_d2.cm;
+            auto grid = cm.grid();
+
+            assert(grid->shape()[0] == 5);
+            assert(grid->shape()[1] == 5);
+            assert(grid->is_periodic());
+            std::cout << "Grid shape and periodicity matches." << std::endl;
+
+            std::cout << "Testing count and uniqueness ..." << std::endl;
+            check_num_neighbors(cm, 12);
+            std::cout << "  Neighbor count matches." << std::endl;
+            assert(unique_neighbors(cm));
+            std::cout << "  Neighbors are unique." << std::endl;
+
+            std::cout << "Testing neighborhoods explicitly ..." << std::endl;
+
+            assert(expected_neighbors(cm, cm.cells().at(0), // (0,0)
+                                      {1, 4, 5, 5*4,                    // d=1
+                                       2, 3, 6, 9, 10, 15, 21, 24}));   // d=2
+            std::cout << "  Neighbors match for cell (0, 0)." << std::endl;
+
+            assert(expected_neighbors(cm, cm.cells().at(6), // (1,1)
+                                      {5, 7, 1, 11,                     // d=1
+                                       0, 2, 8, 9, 10, 12, 16, 21}));   // d=2
+            std::cout << "  Neighbors match for cell (1, 1)." << std::endl;
+
+            assert(expected_neighbors(cm, cm.cells().at(13), // (3, 2)
+                                      {8, 12, 14, 18,                   // d=1
+                                       3, 7, 9, 10, 11, 17, 19, 23}));  // d=2
+            std::cout << "  Neighbors match for cell (3, 2)." << std::endl;
+
+            assert(expected_neighbors(cm, cm.cells().at(5*5 - 1), // (4,4)
+                                      {5*5-2, 5*4, 5*4-1, 4,            // d=1
+                                       3, 9, 14, 15, 18, 21, 22, 24})); // d=2
+            std::cout << "  Neighbors match for cell (4, 4)." << std::endl;
+        }
+        std::cout << "Success." << std::endl << std::endl;
+
+
         std::cout << ".....  Neighborhood:  Moore  ..." << std::endl;
         NBTest rect_2D_Moore("rect_2D_Moore", pp);
         {
@@ -209,7 +251,7 @@ int main(int argc, char *argv[]) {
         return 0;
     }
     catch (std::exception& e) {
-        std::cerr << "Exception occured: " << e.what() << std::endl;
+        std::cerr << "Exception occurred: " << e.what() << std::endl;
         // NOTE cannot call cleanup here because the scope is not shared
         return 1;
     }

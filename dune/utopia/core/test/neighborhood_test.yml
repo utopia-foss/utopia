@@ -42,6 +42,19 @@ rect_2D_vonNeumann:
   neighborhood:
     mode: vonNeumann
 
+rect_2D_vonNeumann_d2:
+  space:
+    periodic: true
+
+  grid:
+    structure: square
+    resolution: 5
+    metric_distance: 2
+
+  cell_initialize_from: default
+
+  neighborhood:
+    mode: vonNeumann
 
 rect_2D_Moore:
   space:
