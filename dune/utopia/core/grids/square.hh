@@ -675,6 +675,7 @@ protected:
         else {
             // NOTE Normalization by the number of cells is needed because
             //      otherwise the index could exceed the vector range.
+            //      It's literally the edge case (bottom right hand corner) ;D
             neighbor_ids.push_back((root_id + distance * id_shift_in_dim_<dim-1>()) 
                                     % num_cells);
         }
