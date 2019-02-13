@@ -261,11 +261,20 @@ protected:
                 // NOTE that this algorithm requires the neighbors nearest
                 //      to the root_id to have been pushed to the vector first.
                 //      The fixed ordering of the previous addition is required.
+                // NOTE: The nearest neighbor pair have the id 0,1 the next
+                //       nearest neighbor pair 1,2 etc.
+                //       Each pair needs to be mapped to the same distance
+                //       with the first pair at distance metric_distance-1
+                //       , the next pair at metric_distance-2, etc.
+                //       This results in the generalized condition:
+                //       i even: dist - (i/2 + 1)
+                //       i odd:  dist - ((i-1)/2 + 1)
+                //       Put together, this results in: dist - 1 - (i - i%2) / 2
                 const std::size_t nb_size = neighbor_ids.size(); 
                 for (std::size_t i=0; i<nb_size; ++i){
                     add_neighbors_pair_in_dim_<2, true>
                         (neighbor_ids[i], 
-                         this->_metric_distance - (i/2 + 1 - (i%2)), 
+                         this->_metric_distance - 1 - i/2 + (i%2)/2, 
                          neighbor_ids);
                 }
 
@@ -275,10 +284,6 @@ protected:
                 }
             }
 
-            for (const auto& nb : neighbor_ids){
-                std::cout << nb << ", ";
-            }
-            std::cout << std::endl;
             // Return the container of cell indices
             return neighbor_ids;
         }
@@ -622,9 +627,9 @@ protected:
         static_assert((dim == 1) or (dim == 2),
                       "Unsupported dimensionality in space! Need be 1 or 2.");
 
-        // Assure the distance is greater than 1
-        if (distance < 1){
-            std::runtime_error("The metric distance need not be smaller than 1!");
+        // If the distance is zero, no neighbor can be added; return nothing.
+        if (distance == 0){
+            return;
         }
 
         // Gather the required grid information
@@ -640,11 +645,11 @@ protected:
         // Set the boundary conditions for different dimensions
         if constexpr (dim == 1){
             _cond_front = (root_id % shape[0] < distance);
-            _cond_back  = (root_id % shape[0] > shape[0] - distance);
+            _cond_back  = (root_id % shape[0] >= shape[0] - distance);
         }
         else if constexpr (dim == 2){
             _cond_front = (root_id / shape[0] < distance);
-            _cond_back  = (root_id / shape[0] > shape[1] - distance);
+            _cond_back  = (root_id / shape[0] >= shape[1] - distance);
         }
 
         // check if at front boundary
@@ -669,7 +674,7 @@ protected:
         }
         else {
             // NOTE Normalization by the number of cells is needed because
-            // otherwise the index could exceed the vector range
+            //      otherwise the index could exceed the vector range.
             neighbor_ids.push_back((root_id + distance * id_shift_in_dim_<dim-1>()) 
                                     % num_cells);
         }

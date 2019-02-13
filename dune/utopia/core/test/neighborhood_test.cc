@@ -113,9 +113,9 @@ int main(int argc, char *argv[]) {
                                        3, 7, 9, 10, 11, 17, 19, 23}));  // d=2
             std::cout << "  Neighbors match for cell (3, 2)." << std::endl;
 
-            assert(expected_neighbors(cm, cm.cells().at(5*5 - 1), // (4,4)
-                                      {5*5-2, 5*4, 5*4-1, 4,            // d=1
-                                       3, 9, 14, 15, 18, 21, 22, 24})); // d=2
+            assert(expected_neighbors(cm, cm.cells().at(24), // (4,4)
+                                      {23, 20, 22, 21,                  // d=1
+                                       18, 3, 15, 0, 19, 4, 14, 9}));   // d=2
             std::cout << "  Neighbors match for cell (4, 4)." << std::endl;
         }
         std::cout << "Success." << std::endl << std::endl;
