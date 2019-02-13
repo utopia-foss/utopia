@@ -320,46 +320,46 @@ int main(int argc, char *argv[]) {
         std::cout << "Success." << std::endl << std::endl;
 
 
-        // std::cout << ".....  Neighborhood:  vonNeumann (d=2)  ..." << std::endl;
-        // NBTest rect_2D_vonNeumann_np_d2("rect_2D_vonNeumann_np_d2", pp);
+        std::cout << ".....  Neighborhood:  vonNeumann (d=2)  ..." << std::endl;
+        NBTest rect_2D_vonNeumann_np_d2("rect_2D_vonNeumann_np_d2", pp);
 
-        // {
-        //     auto cm = rect_2D_vonNeumann_np_d2.cm;
-        //     auto grid = cm.grid();
+        {
+            auto cm = rect_2D_vonNeumann_np_d2.cm;
+            auto grid = cm.grid();
 
-        //     assert(grid->shape()[0] == 5);
-        //     assert(grid->shape()[1] == 5);
-        //     assert(not grid->is_periodic());
-        //     std::cout << "Grid shape and periodicity matches." << std::endl;
+            assert(grid->shape()[0] == 5);
+            assert(grid->shape()[1] == 5);
+            assert(not grid->is_periodic());
+            std::cout << "Grid shape and periodicity matches." << std::endl;
 
-        //     std::cout << "Testing uniqueness ..." << std::endl;
-        //     assert(unique_neighbors(cm));
-        //     std::cout << "  Neighbors are unique." << std::endl;
+            std::cout << "Testing uniqueness ..." << std::endl;
+            assert(unique_neighbors(cm));
+            std::cout << "  Neighbors are unique." << std::endl;
 
-        //     std::cout << "Testing neighborhoods explicitly ..." << std::endl;
+            std::cout << "Testing neighborhoods explicitly ..." << std::endl;
 
-        //     assert(expected_neighbors(cm, cm.cells().at(0), // (0,0)
-        //                               {1, 5,
-        //                                2, 6, 10}));
-        //     std::cout << "  Neighbors match for cell (0, 0)." << std::endl;
+            assert(expected_neighbors(cm, cm.cells().at(0), // (0,0)
+                                      {1, 5,
+                                       2, 6, 10}));
+            std::cout << "  Neighbors match for cell (0, 0)." << std::endl;
 
-        //     assert(expected_neighbors(cm, cm.cells().at(6), // (1,1)
-        //                               {5, 7, 1, 11,
-        //                                0, 2, 8, 12, 16, 10}));
-        //     std::cout << "  Neighbors match for cell (1, 1)." << std::endl;
+            assert(expected_neighbors(cm, cm.cells().at(6), // (1,1)
+                                      {5, 7, 1, 11,
+                                       0, 2, 8, 12, 16, 10}));
+            std::cout << "  Neighbors match for cell (1, 1)." << std::endl;
 
-        //     assert(expected_neighbors(cm, cm.cells().at(13), // (2, 3)
-        //                               {8, 12, 14, 18,
-        //                                3, 9, 19, 23, 17, 11, 7}));
-        //     std::cout << "  Neighbors match for cell (2, 3)." << std::endl;
+            assert(expected_neighbors(cm, cm.cells().at(13), // (2, 3)
+                                      {8, 12, 14, 18,
+                                       3, 9, 19, 23, 17, 11, 7}));
+            std::cout << "  Neighbors match for cell (2, 3)." << std::endl;
 
-        //     assert(expected_neighbors(cm, cm.cells().at(5*5 - 1), // (4,4)
-        //                               {19, 23,
-        //                                14, 18, 22}));
-        //     std::cout << "  Neighbors match for cell (4, 4)." << std::endl;
+            assert(expected_neighbors(cm, cm.cells().at(5*5 - 1), // (4,4)
+                                      {19, 23,
+                                       14, 18, 22}));
+            std::cout << "  Neighbors match for cell (4, 4)." << std::endl;
 
-        // }
-        // std::cout << "Success." << std::endl << std::endl;
+        }
+        std::cout << "Success." << std::endl << std::endl;
 
 
         std::cout << ".....  Neighborhood:  Moore  ..." << std::endl;
