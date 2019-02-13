@@ -121,6 +121,64 @@ int main(int argc, char *argv[]) {
         std::cout << "Success." << std::endl << std::endl;
 
 
+        std::cout << ".....  Neighborhood:  vonNeumann (d=3) ..." << std::endl;
+        NBTest rect_2D_vonNeumann_d3("rect_2D_vonNeumann_d3", pp);
+        {
+            auto cm = rect_2D_vonNeumann_d3.cm;
+            auto grid = cm.grid();
+
+            assert(grid->shape()[0] == 7);
+            assert(grid->shape()[1] == 7);
+            assert(grid->is_periodic());
+            std::cout << "Grid shape and periodicity matches." << std::endl;
+
+            std::cout << "Testing count and uniqueness ..." << std::endl;
+            // check_num_neighbors(cm, 24);
+            std::cout << "  Neighbor count matches." << std::endl;
+            assert(unique_neighbors(cm));
+            std::cout << "  Neighbors are unique." << std::endl;
+
+            std::cout << "Testing neighborhoods explicitly ..." << std::endl;
+
+            assert(expected_neighbors(cm, cm.cells().at(0), // (0,0)
+                                      {1, 2, 3, 4, 5, 6,
+                                       8, 15, 36, 43,
+                                       13, 20, 48, 41,
+                                       9, 44,
+                                       12, 47,
+                                       7, 14, 21, 28, 35, 42}));
+            std::cout << "  Neighbors match for cell (0, 0)." << std::endl;
+
+            assert(expected_neighbors(cm, cm.cells().at(8), // (1,1)
+                                      {9, 10, 11, 7, 13, 12,
+                                       16, 2, 23, 44,
+                                       0, 42, 14, 21,
+                                       17, 3,
+                                       20, 6,
+                                       15, 22, 29, 1, 36, 43}));
+            std::cout << "  Neighbors match for cell (1, 1)." << std::endl;
+
+            assert(expected_neighbors(cm, cm.cells().at(17), // (3, 2)
+                                      {14, 15, 16, 18, 19, 20,
+                                       11, 4, 25, 32, 
+                                       9, 2, 23, 30,
+                                       12, 26,
+                                       8, 22,
+                                       3, 10, 45, 38, 31, 24}));
+            std::cout << "  Neighbors match for cell (3, 2)." << std::endl;
+
+            assert(expected_neighbors(cm, cm.cells().at(48), // (6,6)
+                                      {45, 46, 47, 42, 43, 44,
+                                       35, 28, 0, 7,
+                                       40, 33, 5, 12,
+                                       36, 1, 
+                                       39, 4,
+                                       41, 34, 27, 20, 13, 6}));
+            std::cout << "  Neighbors match for cell (6, 6)." << std::endl;
+        }
+        std::cout << "Success." << std::endl << std::endl;
+
+
         std::cout << ".....  Neighborhood:  Moore  ..." << std::endl;
         NBTest rect_2D_Moore("rect_2D_Moore", pp);
         {

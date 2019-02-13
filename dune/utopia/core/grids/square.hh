@@ -272,15 +272,24 @@ protected:
                 //       Put together, this results in: dist - 1 - (i - i%2) / 2
                 const std::size_t nb_size = neighbor_ids.size(); 
                 for (std::size_t i=0; i<nb_size; ++i){
-                    add_neighbors_pair_in_dim_<2, true>
-                        (neighbor_ids[i], 
-                         this->_metric_distance - 1 - i/2 + (i%2)/2, 
-                         neighbor_ids);
+                    // Add all neighbor ids up to the maximal distance along the
+                    // dimension 2.
+                    for (std::size_t dist=1; 
+                         dist<=this->_metric_distance - 1 - i/2 + (i%2)/2; 
+                         ++dist)
+                    {
+                        add_neighbors_pair_in_dim_<2, true>
+                            (neighbor_ids[i], 
+                            dist, 
+                            neighbor_ids);
+                    }
                 }
 
                 // Finally, add the root cell's neighbors in the second dimension
                 for (std::size_t dist=1; dist<=this->_metric_distance; ++dist){
-                    add_neighbors_pair_in_dim_<2, true>(root_id, dist, neighbor_ids);
+                    add_neighbors_pair_in_dim_<2, true>(root_id, 
+                                                        dist, 
+                                                        neighbor_ids);
                 }
             }
 
