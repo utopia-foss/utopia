@@ -85,6 +85,21 @@ rect_2D_Moore:
     mode: Moore
 
 
+rect_2D_Moore_d2:
+  space:
+    periodic: true
+
+  grid:
+    structure: square
+    resolution: 7
+    metric_distance: 2
+
+  cell_initialize_from: default
+
+  neighborhood:
+    mode: Moore
+
+
 # not periodic ...............................................................
 
 rect_2D_vonNeumann_np:
@@ -94,6 +109,21 @@ rect_2D_vonNeumann_np:
   grid:
     structure: square
     resolution: 5
+
+  cell_initialize_from: default
+
+  neighborhood:
+    mode: vonNeumann
+
+
+rect_2D_vonNeumann_np_d2:
+  space:
+    periodic: false
+
+  grid:
+    structure: square
+    resolution: 5
+    metric_distance: 2
 
   cell_initialize_from: default
 
