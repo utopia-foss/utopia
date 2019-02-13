@@ -143,3 +143,18 @@ rect_2D_Moore_np:
 
   neighborhood:
     mode: Moore
+
+
+rect_2D_Moore_np_d2:
+  space:
+    periodic: false
+
+  grid:
+    structure: square
+    resolution: 7
+    metric_distance: 2
+
+  cell_initialize_from: default
+
+  neighborhood:
+    mode: Moore
