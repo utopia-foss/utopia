@@ -115,6 +115,16 @@ public:
         _nb_func = _nb_empty;
     }
 
+    /// Construct a grid discretization
+    /** \param  space   The space to construct the discretization for; will be
+      *                 stored as shared pointer
+      * \param  cfg     Further configuration parameters
+      */
+    Grid (Space& space, const DataIO::Config& cfg)
+    :
+        Grid(std::make_shared<Space>(space), cfg)
+    {}
+
     /// Virtual destructor to allow polymorphic destruction
     virtual ~Grid() = default;
 
@@ -140,7 +150,14 @@ public:
 
 
     // .. Position-related methods ............................................
+    /// Returns the multi index of the cell with the given ID
+    /** \note This method does not perform bounds checking of the given ID!
+      */
+    virtual const MultiIndex midx_of(const IndexType& id) const = 0;
+
     /// Returns the barycenter of the cell with the given ID
+    /** \note This method does not perform bounds checking of the given ID!
+      */
     virtual const PhysVector barycenter_of(const IndexType& id) const = 0;
 
 

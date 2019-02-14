@@ -43,6 +43,16 @@ public:
         Base(space, cfg)
     {}
 
+    /// Construct a hexagonal grid discretization
+    /** \param  space   The space to construct the discretization for; will be
+      *                 stored as shared pointer
+      * \param  cfg     Further configuration parameters
+      */
+    HexagonalGrid (Space& space, const DataIO::Config& cfg)
+    :
+        HexagonalGrid(std::make_shared<Space>(space), cfg)
+    {}
+
 
     // -- Implementations of virtual base class functions ---------------------
     // .. Number of cells & shape .............................................
@@ -71,7 +81,18 @@ public:
 
 
     // .. Position-related methods ............................................
+    /// Returns the multi index of the cell with the given ID
+    /** \note This method does not perform bounds checking of the given ID!
+      */
+    const MultiIndex midx_of(const IndexType&) const override {
+        throw std::runtime_error("The HexagonalGrid::midx_of method is not "
+                                 "yet implemented!");
+        return {};
+    }
+
     /// Returns the barycenter of the cell with the given ID
+    /** \note This method does not perform bounds checking of the given ID!
+      */
     const PhysVector barycenter_of(const IndexType&) const override {
         throw std::runtime_error("The HexagonalGrid::barycenter_of method "
                                  "is not yet implemented!");

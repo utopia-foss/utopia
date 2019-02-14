@@ -70,6 +70,17 @@ public:
         }
     }
 
+    
+    /// Construct a rectangular grid discretization
+    /** \param  space   The space to construct the discretization for; will be
+      *                 stored as shared pointer
+      * \param  cfg     Further configuration parameters
+      */
+    SquareGrid (Space& space, const DataIO::Config& cfg)
+    :
+        SquareGrid(std::make_shared<Space>(space), cfg)
+    {}
+
 
     // -- Implementations of virtual base class functions ---------------------
     // .. Number of cells & shape .............................................
@@ -99,7 +110,24 @@ public:
 
 
     // .. Position-related methods ............................................
+    /// Returns the multi index of the cell with the given ID
+    /** \note This method does not perform bounds checking of the given ID!
+      */
+    const MultiIndex midx_of(const IndexType& id) const override {
+        static_assert(dim <= 2, "MultiIndex only implemented for 1D and 2D!");
+
+        if constexpr (dim == 1) {
+            return MultiIndex({id % _shape[0]});
+        }
+        else {
+            return MultiIndex({id % _shape[0],
+                               id / _shape[0]});
+        }
+    }
+
     /// Returns the barycenter of the cell with the given ID
+    /** \note This method does not perform bounds checking of the given ID!
+      */
     const PhysVector barycenter_of(const IndexType& id) const override {
         return {};
     }

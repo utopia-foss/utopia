@@ -215,12 +215,44 @@ int main(int, char *[]) {
 
 
         // -------------------------------------------------------------------
-        std::cout << "------ Testing position-related methods ... ------"
+        std::cout << "------ Testing multi-index queries ... ------"
                   << std::endl;
 
-        std::cout << "- - -  Grid:  tiny_res  - - -" << std::endl;
-        // TODO
+        { // Local test scope
 
+        // Use the tiny_res grid in combination with different spaces
+        const auto grid_cfg = cfg["grids"]["tiny_res"]; // resolution: 1
+
+        // Enough to test with these two, have shapes [1,1] and [2,3]
+        auto g11 = SquareGrid<DefaultSpace>(spaces["default"], grid_cfg);
+        auto g23 = SquareGrid<DefaultSpace>(spaces["uneven"], grid_cfg);
+
+        // Default space, only (0, 0) available
+        assert(arma::all(g11.midx_of(0) == MultiIndex({0, 0})));
+
+        // ... but no bounds checking, so this is also computed
+        assert(arma::all(g11.midx_of(1) == MultiIndex({0, 1})));
+
+        // For the uneven (2x3) space
+        assert(arma::all(g23.midx_of(0) == MultiIndex({0, 0})));
+        assert(arma::all(g23.midx_of(1) == MultiIndex({1, 0})));
+        assert(arma::all(g23.midx_of(2) == MultiIndex({0, 1})));
+        assert(arma::all(g23.midx_of(3) == MultiIndex({1, 1})));
+        assert(arma::all(g23.midx_of(4) == MultiIndex({0, 2})));
+        assert(arma::all(g23.midx_of(5) == MultiIndex({1, 2})));
+
+
+
+        } // End of local test scope
+
+        std::cout << "Success." << std::endl << std::endl;
+
+
+        // -------------------------------------------------------------------
+        std::cout << "------ Testing position-related methods ... ------"
+                  << std::endl;
+        // TODO
+        std::cout << "Success." << std::endl << std::endl;
 
         // -------------------------------------------------------------------
         // Done.
