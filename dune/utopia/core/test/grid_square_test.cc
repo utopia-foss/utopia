@@ -111,12 +111,13 @@ bool check_num_cells(std::string grid_name, SpaceMap spaces, Config cfg) {
 }
 
 
+
+
+
 // ----------------------------------------------------------------------------
 
-int main(int argc, char *argv[]) {
+int main(int, char *[]) {
     try {
-        Dune::MPIHelper::instance(argc,argv);
-
         std::cout << "Loading config file ..." << std::endl;
         auto cfg = YAML::LoadFile("grid_square_test.yml");
         std::cout << "Success." << std::endl << std::endl;
@@ -158,10 +159,18 @@ int main(int argc, char *argv[]) {
 
         std::cout << "Success." << std::endl << std::endl;
 
+        
+        std::cout << "Checking shapes ..." << std::endl;
+        // TODO
+        std::cout << "Success." << std::endl << std::endl;
+
 
         // -------------------------------------------------------------------
-        std::cout << "------ Testing grid methods ... ------"
+        std::cout << "------ Testing number of cells ... ------"
                   << std::endl;
+
+        std::cout << "- - -  Grid:  tiny_res  - - -" << std::endl;
+        assert(check_num_cells("tiny_res", spaces, cfg));
 
         std::cout << "- - -  Grid:  small_res  - - -" << std::endl;
         assert(check_num_cells("small_res", spaces, cfg));
@@ -175,6 +184,15 @@ int main(int argc, char *argv[]) {
         std::cout << "- - -  Grid:  missing_res  - - -" << std::endl;
         assert(check_num_cells("missing_res", spaces, cfg));
 
+
+
+
+        // -------------------------------------------------------------------
+        std::cout << "------ Testing position-related methods ... ------"
+                  << std::endl;
+
+        std::cout << "- - -  Grid:  tiny_res  - - -" << std::endl;
+        // TODO
 
 
         // -------------------------------------------------------------------

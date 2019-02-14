@@ -168,8 +168,6 @@ public:
 
 int main(int argc, char *argv[]) {
     try {
-        Dune::MPIHelper::instance(argc,argv);
-
         std::cout << "Getting config file ..." << std::endl;
         auto cfg = YAML::LoadFile("cell_manager_test.yml");
         std::cout << "Success." << std::endl << std::endl;

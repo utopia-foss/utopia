@@ -60,9 +60,15 @@ public:
     /// The dimensionality of the space to be discretized (for easier access)
     static constexpr std::size_t dim = Space::dim;
 
+    /// The type of vectors that have a relation to physical space
+    using PhysVector = typename Space::PhysVector;
+
+    /// The type of multi-index like arrays, e.g. the grid shape
+    using MultiIndex = MultiIndexType<dim>;
+
 
 protected:
-    // -- Members -- //
+    // -- Members -------------------------------------------------------------
     /// The space that is to be discretized
     const std::shared_ptr<Space> _space;
 
@@ -81,7 +87,7 @@ protected:
 
 
 public:
-    // -- Constructors and Destructors -- //
+    // -- Constructors and Destructors ----------------------------------------
     /// Construct a grid discretization
     /** \param  space   The space to construct the discretization for
       * \param  cfg     Further configuration parameters
@@ -113,7 +119,8 @@ public:
     virtual ~Grid() = default;
 
 
-    // -- Neighborhood interface -- //
+    // -- Public interface ----------------------------------------------------
+    // .. Neighborhood interface ..............................................
 
     IndexContainer neighbors_of(const IndexType& id) const {
         return _nb_func(id);
@@ -132,7 +139,12 @@ public:
     }
 
 
-    // -- Getters -- //
+    // .. Position-related methods ............................................
+    /// Returns the barycenter of the cell with the given ID
+    virtual const PhysVector barycenter_of(const IndexType& id) const = 0;
+
+
+    // .. Getters .............................................................
     /// Get number of cells
     /** \detail This information is used by the CellManager to populate the
       *         cell container with the returned number of cells
@@ -151,10 +163,10 @@ public:
       *         The effective resolution accounts for the scaling that was
       *         required to map an integer number of cells onto the space.
       */
-    virtual const std::array<double, dim> effective_resolution() const = 0;
+    virtual const PhysVector effective_resolution() const = 0;
 
     /// Get the shape of the grid discretization
-    virtual const GridShapeType<Space::dim> shape() const = 0;
+    virtual const MultiIndex shape() const = 0;
 
     /// Whether the grid is periodic
     bool is_periodic() const {
@@ -163,7 +175,7 @@ public:
 
 
 protected:
-    // -- Neighborhood interface -- //
+    // -- Neighborhood functions ----------------------------------------------
     /// Retrieve the neighborhood function depending on the mode
     virtual NBFuncID<Self> get_nb_func(NBMode mode) const = 0;
 

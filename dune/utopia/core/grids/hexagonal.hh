@@ -21,10 +21,19 @@ public:
     /// The dimensionality of the space to be discretized (for easier access)
     static constexpr std::size_t dim = Space::dim;
 
+    /// The type of vectors that have a relation to physical space
+    using PhysVector = typename Space::PhysVector;
+
+    /// The type of multi-index like arrays, e.g. the grid shape
+    using MultiIndex = MultiIndexType<dim>;
+
+
 private:
-    // -- HexagonalGrid-specific members -- //
+    // -- HexagonalGrid-specific members --------------------------------------
+
 
 public:
+    // -- Constructors --------------------------------------------------------
     /// Construct a hexagonal grid discretization
     /** \param  space   The space to construct the discretization for
       * \param  cfg     Further configuration parameters
@@ -35,31 +44,43 @@ public:
     {}
 
 
-    // -- Custom implementations of virtual base class functions -- //
+    // -- Implementations of virtual base class functions ---------------------
+    // .. Number of cells & shape .............................................
 
     /// Number of hexagonal cells required to fill the physical space
     IndexType num_cells() const override {
-        return 0; // TODO Implement
+        // TODO Implement
+        return 0;
     };
 
     /// The effective cell resolution into each physical space dimension
-    const std::array<double, dim> effective_resolution() const override {
+    const PhysVector effective_resolution() const override {
         // TODO Implement
-        std::array<double, dim> res_eff;
+        PhysVector res_eff;
         res_eff.fill(0.);
         return res_eff;
     }
 
     /// Shape of the triangular grid
-    const GridShapeType<Space::dim> shape() const override {
+    const MultiIndex shape() const override {
         //TODO Implement properly!
-        GridShapeType<Space::dim> shape;
+        MultiIndexType<Space::dim> shape;
         shape.fill(0);
         return shape;
     }
 
 
+    // .. Position-related methods ............................................
+    /// Returns the barycenter of the cell with the given ID
+    const PhysVector barycenter_of(const IndexType&) const override {
+        throw std::runtime_error("The HexagonalGrid::barycenter_of method "
+                                 "is not yet implemented!");
+        return {};
+    }
+
+
 protected:
+    // -- Neighborhood interface ----------------------------------------------
     /// Retrieve the neighborhood function depending on the mode
     NBFuncID<Base> get_nb_func(NBMode nb_mode) const override {
         if (nb_mode == NBMode::empty) {
@@ -71,7 +92,8 @@ protected:
         }
     }
 
-    // -- Neighborhood interface -- //
+
+    // .. Neighborhood implementations ........................................
     // ...
 };
 

@@ -19,20 +19,21 @@ namespace Utopia {
   */
 template<std::size_t num_dims>
 struct Space {
-    /// The type for vectors relating to physical space
-    using FieldVector = FieldVectorType<num_dims>;
-
-    // -- Members -- //
+    // -- Members -------------------------------------------------------------
+    /// The dimensionality of the space
     static constexpr std::size_t dim = num_dims;
+
+    /// The type for vectors relating to physical space
+    using PhysVector = PhysVectorType<dim>;
 
     /// Whether the space is to be assumed periodic
     const bool periodic;
 
     /// The physical (euclidean) extent of the space
-    const FieldVector extent;
+    const PhysVector extent;
 
 
-    // -- Constructors -- //
+    // -- Constructors --------------------------------------------------------
     /// Construct a Space using information from a config node
     /** \param cfg  The config node to read the `periodic` and `extent` entries
       *             from.
@@ -53,6 +54,7 @@ struct Space {
         extent(setup_extent())
     {}
 
+
 private:
     // -- Setup functions ----------------------------------------------------
     /// Setup the member `periodic` from a config node
@@ -65,8 +67,8 @@ private:
     }
 
     /// Setup the extent type if no config parameter was available
-    FieldVector setup_extent() {
-        FieldVector extent;
+    PhysVector setup_extent() {
+        PhysVector extent;
         extent.fill(1.);
         return extent;
     }
@@ -75,9 +77,9 @@ private:
     /** \param cfg  The config node to read the `extent` parameter from. If
       *             that entry is missing, the default extent is used.
       */
-    FieldVector setup_extent(const DataIO::Config& cfg) {
+    PhysVector setup_extent(const DataIO::Config& cfg) {
         if (cfg["extent"]) {
-            return as_FieldVector<dim>(cfg["extent"]);
+            return as_PhysVector<dim>(cfg["extent"]);
         }
 
         // Return the default extent

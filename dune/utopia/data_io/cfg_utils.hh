@@ -124,25 +124,25 @@ std::array<T, len> as_array(const Utopia::DataIO::Config& node) {
 
 /// Shortcut to retrieve a config entry as a field vector of rank `dim`
 template<std::size_t dim>
-FieldVectorType<dim> as_FieldVector(const Utopia::DataIO::Config& node) {
+PhysVectorType<dim> as_PhysVector(const Utopia::DataIO::Config& node) {
     // Extract the field vector element type; assuming Armadillo interface here
-    using FVec = FieldVectorType<dim>;
-    using element_t = typename FVec::elem_type;
+    using PVec = PhysVectorType<dim>;
+    using element_t = typename PVec::elem_type;
 
     // Check if it can be constructed from a vector
-    if constexpr (std::is_constructible<FVec, std::vector<element_t>>()) {
+    if constexpr (std::is_constructible<PVec, std::vector<element_t>>()) {
         return as_<std::vector<element_t>>(node);
     }
     else {
         // Needs to be constructed element-wise
-        FVec fvec;
+        PVec pvec;
         const auto vec = as_array<element_t, dim>(node);
 
         for (std::size_t i=0; i<dim; i++) {
-            fvec[i] = vec[i];
+            pvec[i] = vec[i];
         }
 
-        return fvec;
+        return pvec;
     }
 }
 

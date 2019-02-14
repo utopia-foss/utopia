@@ -72,9 +72,14 @@ using IndexType = std::size_t;
 /// Type for container of indices
 using IndexContainer = std::vector<IndexType>;
 
-/// Type for grid shape
+/// Type for vectors of index types that have some physical meaning
+/** \detail Uses a fixed-size Armadillo column vector
+  * \note   These are something else then the container types!
+  *
+  * \tparam dim  The dimensionality (or: rank) of the vector
+  */
 template<std::size_t dim>
-using GridShapeType = std::array<IndexType, dim>;
+using MultiIndexType = arma::Col<IndexType>::fixed<dim>;
 
 /// Type for vector-like data that has some physical meaning
 /** \detail Uses a fixed-size Armadillo column vector of doubles
@@ -82,7 +87,8 @@ using GridShapeType = std::array<IndexType, dim>;
   * \tparam dim  The dimensionality (or: rank) of the vector
   */
 template<std::size_t dim>
-using FieldVectorType = arma::vec::fixed<dim>;
+using PhysVectorType = arma::Col<double>::fixed<dim>;
+
 
 } // namespace Utopia
 

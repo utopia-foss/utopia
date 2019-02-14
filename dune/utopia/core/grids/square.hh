@@ -23,15 +23,24 @@ public:
     /// The dimensionality of the space to be discretized (for easier access)
     static constexpr std::size_t dim = Space::dim;
 
+    /// The type of vectors that have a relation to physical space
+    using PhysVector = typename Space::PhysVector;
+
+    /// The type of multi-index like arrays, e.g. the grid shape
+    using MultiIndex = MultiIndexType<dim>;
+
+
 private:
-    // -- SquareGrid-specific members -- //
+    // -- SquareGrid-specific members -----------------------------------------
     /// The (multi-index) shape of the grid, resulting from resolution
     /** \note For the exact interpretation of the shape and how it results from
       *       the resolution, consult the derived classes documentation
       */
-    const GridShapeType<dim> _shape;
+    const MultiIndex _shape;
+
 
 public:
+    // -- Constructors --------------------------------------------------------
     /// Construct a rectangular grid discretization
     /** \param  space   The space to construct the discretization for
       * \param  cfg     Further configuration parameters
@@ -43,25 +52,18 @@ public:
     {
         if constexpr (dim > 1) {
             // Make sure the cells really are square
-            auto eff_res = effective_resolution();
+            const auto eff_res = effective_resolution();
 
-            if (not std::equal(eff_res.begin() + 1, eff_res.end(),
-                               eff_res.begin()))
-            {
+            if (eff_res.min() != eff_res.max()) {
                 // Format effective resolution to show it in error message
                 std::stringstream efr_ss;
-                efr_ss.precision(8);
-                efr_ss << "(";
-                for (std::size_t i=0; i<dim-1; i++) {
-                    efr_ss << eff_res[i] << ", ";
-                }
-                efr_ss << eff_res[dim-1] << ")";
+                efr_ss << eff_res;
 
                 throw std::invalid_argument("Given the extent of the physical "
                     "space and the specified resolution, a mapping with "
                     "exactly square cells could not be found! Either adjust "
                     "the physical space, the resolution of the grid, or "
-                    "choose another grid.\nEffective resolution was: "
+                    "choose another grid. Effective resolution was:\n"
                     + efr_ss.str() + ", but should be the same in all "
                     "dimensions!");
             }
@@ -69,7 +71,8 @@ public:
     }
 
 
-    // -- Implementations of virtual base class functions -- //
+    // -- Implementations of virtual base class functions ---------------------
+    // .. Number of cells & shape .............................................
 
     /// Number of square cells required to fill the physical space
     /** \detail Is calculated simply from the _shape member
@@ -83,25 +86,27 @@ public:
     /** \detail For a square lattice, this is just the quotient of grid shape
       *         and extent of physical space, separately in each dimension
       */
-    const std::array<double, dim> effective_resolution() const override {
-        std::array<double, dim> res_eff;
-
-        for (std::size_t i = 0; i < dim; i++) {
-            res_eff[i] = double(_shape[i]) / this->_space->extent[i];
-        }
-
-        return res_eff;
+    const PhysVector effective_resolution() const override {
+        // Use element-wise division by the physical extent (double)
+        return _shape / this->_space->extent;
     }
 
     /// Get shape of the square grid
-    const GridShapeType<Space::dim> shape() const override {
+    const MultiIndex shape() const override {
         // Can just return the calculated member here
         return _shape;
     }
 
 
+    // .. Position-related methods ............................................
+    /// Returns the barycenter of the cell with the given ID
+    const PhysVector barycenter_of(const IndexType& id) const override {
+        return {};
+    }
 
-protected:
+
+private:
+    // -- Helper functions ----------------------------------------------------
     /// Given the resolution, return the grid shape required to fill the space
     /** \detail Integer rounding takes place here. A physical space of extents
       *         of 2.1 length units in each dimension and a resolution of two
@@ -110,8 +115,8 @@ protected:
       *         effective resolution thus slightly smaller than the specified
       *         resolution.
       */
-    GridShapeType<dim> determine_shape() const {
-        GridShapeType<dim> shape;
+    MultiIndex determine_shape() const {
+        MultiIndex shape;
 
         for (std::size_t i = 0; i < dim; i++) {
             shape[i] = this->_space->extent[i] * this->_resolution;
@@ -121,6 +126,8 @@ protected:
     }
 
 
+protected:
+    // -- Neighborhood interface ----------------------------------------------
     /// Retrieve the neighborhood function depending on the mode
     NBFuncID<Base> get_nb_func(NBMode nb_mode) const override {
         if (nb_mode == NBMode::empty) {
@@ -149,7 +156,7 @@ protected:
     }
 
 
-    // -- Neighborhood implementations -- //
+    // .. Neighborhood implementations ........................................
     // NOTE With C++20, the below lambdas would allow template arguments
 
     /// The Von-Neumann neighborhood for periodic grids
@@ -263,11 +270,11 @@ protected:
     };
 
 
-    // -- Neighborhood helper functions -- //
+    // .. Neighborhood helper functions .......................................
 
     /// Return i-dimensional shift in cell indices, depending on grid shape
     template<std::size_t shift_dim>
-    constexpr typename GridShapeType<dim>::value_type id_shift_in_dim_ () {
+    constexpr typename MultiIndexType<dim>::value_type id_shift_in_dim_ () {
         if constexpr (shift_dim == 0) {
             return 1;
         }

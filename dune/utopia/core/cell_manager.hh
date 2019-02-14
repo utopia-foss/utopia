@@ -41,7 +41,7 @@ public:
 
 
 private:
-    // -- Members ------------------------------------------------------------
+    // -- Members -------------------------------------------------------------
     /// The logger (same as the model this manager resides in)
     const std::shared_ptr<spdlog::logger> _log;
 
@@ -68,7 +68,7 @@ private:
 
 
 public:
-    // -- Constructors -------------------------------------------------------
+    // -- Constructors --------------------------------------------------------
     /// Construct a cell manager
     /** \detail With the model available, the CellManager can extract the
       *         required information from the model without the need to pass
@@ -133,7 +133,7 @@ public:
     }
 
 
-    /// -- Getters -----------------------------------------------------------
+    /// -- Getters ------------------------------------------------------------
     /// Return pointer to the space, for convenience
     const std::shared_ptr<Space>& space () const {
         return _space;
@@ -155,7 +155,8 @@ public:
     }
 
 
-    // -- Public interface ---------------------------------------------------
+    // -- Public interface ----------------------------------------------------
+    // .. Neighborhood-related ................................................
     /// Retrieve the given cell's neighbors
     /** \detail The behaviour of this method is different depending on the
       *         choice of neighborhood.
@@ -175,6 +176,11 @@ public:
 
 
     /// Set the neighborhood mode
+    /** \param nb_mode            The name of the neighborhood to select
+      * \param compute_and_store  Whether to directly compute all neighbors
+      *                           and henceforth use the buffer to get these
+      *                           neighbors.
+      */
     void select_neighborhood(std::string nb_mode,
                              bool compute_and_store = false) {
         if (not nb_mode_map.count(nb_mode)) {
@@ -186,6 +192,11 @@ public:
     }
 
     /// Set the neighborhood mode
+    /** \param nb_mode            The name of the neighborhood to select
+      * \param compute_and_store  Whether to directly compute all neighbors
+      *                           and henceforth use the buffer to get these
+      *                           neighbors.
+      */
     void select_neighborhood(NBMode nb_mode,
                              bool compute_and_store = false)
     {
@@ -254,12 +265,25 @@ public:
     }
 
 
+    // .. Position-related ....................................................
+
+    /// Returns the barycenter of the given cell
+    auto barycenter_of(const Cell& cell) const {
+        return _grid.barycenter_of(cell.id);
+    }
+    
+    /// Returns the barycenter of the given cell
+    auto barycenter_of(const std::shared_ptr<Cell>& cell) const {
+        return _grid.barycenter_of(cell->id);
+    }
+
+
 private:
-    // -- Helper functions ---------------------------------------------------
+    // -- Helper functions ----------------------------------------------------
     // ...
 
 
-    // -- Helpers for Neighbors interface ------------------------------------
+    // -- Helpers for Neighbors interface -------------------------------------
 
     /// Given a container of cell IDs, convert it to container of cell pointers
     template<class IndexContainer>
@@ -276,7 +300,7 @@ private:
     }
 
     
-    // .. std::functions to call from neighbors_of ...........................
+    // .. std::functions to call from neighbors_of ............................
     
     /// Return the pre-computed neighbors of the given cell
     NBFuncCell _nb_from_cache = [this](const Cell& cell) {
@@ -297,7 +321,7 @@ private:
     };
 
 
-    // -- Setup functions ----------------------------------------------------
+    // -- Setup functions -----------------------------------------------------
 
     /// Set up the cell manager configuration member
     /** \detail This function determines whether to use a custom configuration
