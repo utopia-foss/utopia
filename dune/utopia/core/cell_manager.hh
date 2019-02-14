@@ -156,6 +156,45 @@ public:
 
 
     // -- Public interface ----------------------------------------------------
+    // .. Position-related ....................................................
+
+    /// Returns the multi-index of the given cell
+    /** \note Consult the documentation of the selected grid discretization to
+      *       learn about the interpretation of the returned values.
+      */
+    auto midx_of(const Cell& cell) const {
+        return _grid->midx_of(cell.id());
+    }
+    
+    /// Returns the multi-index of the given cell
+    /** \note Consult the documentation of the selected grid discretization to
+      *       learn about the interpretation of the returned values.
+      */
+    auto midx_of(const std::shared_ptr<Cell>& cell) const {
+        return _grid->midx_of(cell->id());
+    }
+
+    /// Returns the barycenter of the given cell
+    auto barycenter_of(const Cell& cell) const {
+        return _grid->barycenter_of(cell.id());
+    }
+    
+    /// Returns the barycenter of the given cell
+    auto barycenter_of(const std::shared_ptr<Cell>& cell) const {
+        return _grid->barycenter_of(cell->id());
+    }
+
+    /// Returns the physical extent of the given cell
+    auto extent_of(const Cell& cell) const {
+        return _grid->extent_of(cell.id());
+    }
+    
+    /// Returns the physical extent of the given cell
+    auto extent_of(const std::shared_ptr<Cell>& cell) const {
+        return _grid->extent_of(cell->id());
+    }
+
+
     // .. Neighborhood-related ................................................
     /// Retrieve the given cell's neighbors
     /** \detail The behaviour of this method is different depending on the
@@ -262,19 +301,6 @@ public:
         // Change access function to access the storage directly. Done.
         _nb_func = _nb_from_cache;
         _log->info("Computed and stored cell neighbors.");
-    }
-
-
-    // .. Position-related ....................................................
-
-    /// Returns the barycenter of the given cell
-    auto barycenter_of(const Cell& cell) const {
-        return _grid.barycenter_of(cell.id);
-    }
-    
-    /// Returns the barycenter of the given cell
-    auto barycenter_of(const std::shared_ptr<Cell>& cell) const {
-        return _grid.barycenter_of(cell->id);
     }
 
 

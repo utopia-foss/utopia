@@ -166,7 +166,7 @@ public:
 
 // ----------------------------------------------------------------------------
 
-int main(int argc, char *argv[]) {
+int main(int, char *[]) {
     try {
         std::cout << "Getting config file ..." << std::endl;
         auto cfg = YAML::LoadFile("cell_manager_test.yml");
@@ -323,6 +323,8 @@ int main(int argc, char *argv[]) {
         std::cout << "------ Testing custom links ... ------"
                   << std::endl;
 
+        { // Local test scope
+
         // Initialize a model with a custom link container
         MockModel<CellTraitsCL> mm_cl("mm_cl", cfg["default"]);
 
@@ -343,7 +345,7 @@ int main(int argc, char *argv[]) {
 
         std::cout << "Success." << std::endl << std::endl;
 
-
+        } // End of local test scope
 
 
         // -------------------------------------------------------------------
@@ -393,6 +395,30 @@ int main(int argc, char *argv[]) {
         // NOTE The actual neighborhood tests are performed separately
 
 
+
+        // -------------------------------------------------------------------
+        std::cout << "------ Testing position-interface ... ------"
+                  << std::endl;
+
+        { // Local test scope
+
+        // Use a previously construct mock model's cell manager
+        auto cm = mm_dc._cm;     // shared pointer
+        auto c0 = cm.cells()[0]; // shared pointer
+
+        // Only test callability; function is tested in the grid tests
+        cm.midx_of(c0);
+        cm.midx_of(*c0);
+
+        cm.barycenter_of(c0);
+        cm.barycenter_of(*c0);
+
+        cm.extent_of(c0);
+        cm.extent_of(*c0);
+
+        std::cout << "Success." << std::endl << std::endl;
+
+        } // End of local test scope
 
         // -------------------------------------------------------------------
         // Done.
