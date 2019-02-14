@@ -26,43 +26,41 @@ grids:
     structure: square
     resolution: 1
 
-    # For testing number of cells:
-    expected_num_cells:
-      default: 1     # 1*1 * 1*1
-      nice:    16    # 4*1 * 4*1
-      uneven:  6     # 2*1 * 3*1
-      nasty:   -1    # does not work
-      devil:   -1    # does not work
+    # For testing the shape and the number of cells
+    expected_shapes:
+      default: [1, 1] # 1 cell
+      nice:    [4, 4] # 16
+      uneven:  [2, 3] # 6
+      nasty:   -1     # does not work
+      devil:   -1     # does not work
 
   small_res:
     structure: square
     resolution: 8
 
-    # For testing number of cells:
-    expected_num_cells:
-      default: 64    # 1*8 * 1*8
-      nice:    1024  # 4*8 * 4*8
-      uneven:  384   # 2*8 * 3*8
-      nasty:   -1    # does not work
-      devil:   -1    # does not work
+    expected_shapes:
+      default: [8, 8]    # 64 cells
+      nice:    [32, 32]  # 4*8 * 4*8 = 1024 cells
+      uneven:  [16, 24]  # 2*8 * 3*8 = 384 cells
+      nasty:   -1        # does not work
+      devil:   -1        # does not work
   
   medium_res:
     structure: square
     resolution: 20   # ... to match 'nasty' space
 
-    # For testing number of cells:
-    expected_num_cells:
-      default: 400   # 1*20 * 1*20
-      nice:    6400  # 4*20 * 4*20
-      uneven:  2400  # 2*20 * 3*20
-      nasty:   1600  # 25   * 64  
+    expected_shapes:
+      default: [20, 20] # 1*20 * 1*20 = 400 cells
+      nice:    [80, 80] # 4*20 * 4*20 = 6400
+      uneven:  [40, 60] # 2*20 * 3*20 = 2400
+      nasty:   [25, 64] # 25   * 64   = 1600
       devil:   -1    # still does not work
 
   invalid_res:
     structure: square
     resolution: 0    # bad value!
 
-    expected_num_cells:
+    expected_shapes:
       default: -2    # will check for bad value error message
       nice:    -2
       uneven:  -2
@@ -73,7 +71,7 @@ grids:
     structure: square
     # resolution: 0    # missing value
 
-    expected_num_cells:
+    expected_shapes:
       default: -3    # will check for missing value error message
       nice:    -3
       uneven:  -3

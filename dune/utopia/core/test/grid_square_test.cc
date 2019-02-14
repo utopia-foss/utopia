@@ -1,24 +1,30 @@
 #include <cassert>
 #include <iostream>
 
+#include <armadillo>
+
 #include <dune/utopia/core/logging.hh>
 #include <dune/utopia/data_io/cfg_utils.hh>
 #include <dune/utopia/core/space.hh>
 #include <dune/utopia/core/grids.hh>
 
-
 #include "testtools.hh"
+
 
 // Import some types
 using Utopia::DataIO::Config;
 using namespace Utopia;
-using SpaceMap = std::map<std::string, DefaultSpace>;
+using SpaceMap = std::map<std::string, DefaultSpace>;  // 2D space
+using MultiIndex = MultiIndexType<2>;
 
 
 /// Make sure the number of cells is as expected; values taken from config
-bool check_num_cells(std::string grid_name, SpaceMap spaces, Config cfg) {
-    std::cout << "Testing num_cells() method for grid '" << grid_name
-              << "' ..." << std::endl << std::endl;
+bool check_num_cells_and_shape(std::string grid_name,
+                               SpaceMap spaces,
+                               Config cfg)
+{
+    std::cout << "Testing num_cells() and shape() method for grid '"
+              << grid_name << "' ..." << std::endl << std::endl;
 
     if (not cfg["grids"][grid_name]) {
         throw std::invalid_argument("Missing grid config '"+grid_name+"'!");
@@ -26,11 +32,11 @@ bool check_num_cells(std::string grid_name, SpaceMap spaces, Config cfg) {
 
     const auto grid_cfg = cfg["grids"][grid_name];
 
-    if (not grid_cfg["expected_num_cells"]) {
-        throw std::invalid_argument("Missing expected_num_cells entry in grid "
-                                    "config of grid '"+grid_name+"'!");
+    if (not grid_cfg["expected_shapes"]) {
+        throw std::invalid_argument("Missing expected_shapes entry in grid "
+                                    "config of grid '" + grid_name + "'!");
     }
-    const auto expected_num_cells = grid_cfg["expected_num_cells"];
+    const auto expected_shapes = grid_cfg["expected_shapes"];
 
     // For each space, retrieve the expected number of cells, and construct
     // a grid from it. Then check the number or, if given negative, whether
@@ -42,13 +48,29 @@ bool check_num_cells(std::string grid_name, SpaceMap spaces, Config cfg) {
         std::cout << "... in combination with '" << space_name << "' space ..."
                   << std::endl;
 
-        if (not expected_num_cells[space_name]) {
-            throw std::invalid_argument("Missing expected_num_cells entry for "
+        if (not expected_shapes[space_name]) {
+            throw std::invalid_argument("Missing expected_shapes entry for "
                                         "space '" + space_name + "'!");
         }
-        const auto enc = as_int(expected_num_cells[space_name]);
 
-        if (enc >= 0) {
+        // Extract the expected shape or a failure code
+        MultiIndex exp_shape;
+        int fail_code = 0;
+
+        try {
+            exp_shape = as_MultiIndex<2>(expected_shapes[space_name]);
+        }
+        catch (std::runtime_error&) {
+            // No valid shape given; interpret as failure code
+            fail_code = as_int(expected_shapes[space_name]);
+        }
+
+        if (fail_code == 0) {
+            // Calculate expected number of cells
+            const auto enc = std::accumulate(exp_shape.begin(),
+                                             exp_shape.end(),
+                                             1, std::multiplies<IndexType>());
+
             SquareGrid<DefaultSpace> grid(space, grid_cfg);
 
             std::cout << "   Grid '" << grid_name << "' constructed "
@@ -65,23 +87,33 @@ bool check_num_cells(std::string grid_name, SpaceMap spaces, Config cfg) {
 
             std::cout << "   Number of cells match expected number."
                       << std::endl << std::endl;
-            continue;
+
+            // Also check the shape
+            if (arma::any(grid.shape() != exp_shape)) {
+                std::cerr << "ERROR: Shape did not match! Expected:"
+                          << std::endl << exp_shape << "But grid returned:"
+                          << std::endl << grid.shape() << std::endl;
+
+                return false;
+            }
+
+            continue; // ... with the next space
         }
 
         // else: expect it to fail
         std::cout << "   Expecting grid construction to fail ..." << std::endl;
 
         std::string expected_err_msg;
-        if (enc == -1) {
+        if (fail_code == -1) {
             expected_err_msg = "Given the extent of the physical space and "
                                "the specified resolution, a mapping with "
                                "exactly square cells could not be found!";
         }
-        else if (enc == -2) {
+        else if (fail_code == -2) {
             expected_err_msg = "Grid resolution needs to be a positive "
                                "integer!";
         }
-        else if (enc == -3) {
+        else if (fail_code == -3) {
             expected_err_msg = "Missing grid configuration parameter "
                                "'resolution'!";
         }
@@ -159,30 +191,25 @@ int main(int, char *[]) {
 
         std::cout << "Success." << std::endl << std::endl;
 
-        
-        std::cout << "Checking shapes ..." << std::endl;
-        // TODO
-        std::cout << "Success." << std::endl << std::endl;
-
 
         // -------------------------------------------------------------------
         std::cout << "------ Testing number of cells ... ------"
                   << std::endl;
 
         std::cout << "- - -  Grid:  tiny_res  - - -" << std::endl;
-        assert(check_num_cells("tiny_res", spaces, cfg));
+        assert(check_num_cells_and_shape("tiny_res", spaces, cfg));
 
         std::cout << "- - -  Grid:  small_res  - - -" << std::endl;
-        assert(check_num_cells("small_res", spaces, cfg));
+        assert(check_num_cells_and_shape("small_res", spaces, cfg));
 
         std::cout << "- - -  Grid:  medium_res  - - -" << std::endl;
-        assert(check_num_cells("medium_res", spaces, cfg));
+        assert(check_num_cells_and_shape("medium_res", spaces, cfg));
 
         std::cout << "- - -  Grid:  invalid_res  - - -" << std::endl;
-        assert(check_num_cells("invalid_res", spaces, cfg));
+        assert(check_num_cells_and_shape("invalid_res", spaces, cfg));
 
         std::cout << "- - -  Grid:  missing_res  - - -" << std::endl;
-        assert(check_num_cells("missing_res", spaces, cfg));
+        assert(check_num_cells_and_shape("missing_res", spaces, cfg));
 
 
 

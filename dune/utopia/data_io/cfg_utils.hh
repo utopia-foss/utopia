@@ -122,28 +122,50 @@ std::array<T, len> as_array(const Utopia::DataIO::Config& node) {
     return as_<std::array<T, len>>(node);
 }
 
-/// Shortcut to retrieve a config entry as a field vector of rank `dim`
-template<std::size_t dim>
-PhysVectorType<dim> as_PhysVector(const Utopia::DataIO::Config& node) {
+/// Retrieve a config entry as Armadillo column vector
+/** \note This method is necessary because arma::Col::fixed cannot be
+  *       constructed from std::vector. In such cases, the target vector is
+  *       constructed element-wise.
+  *
+  * \tparam CVecT The Armadillo vector type to return
+  * \tparam dim   The dimensionality of the vector (only needed for)
+  */
+template<typename CVecT, std::size_t dim=0>
+CVecT as_arma_vec(const Utopia::DataIO::Config& node) {
     // Extract the field vector element type; assuming Armadillo interface here
-    using PVec = PhysVectorType<dim>;
-    using element_t = typename PVec::elem_type;
+    using element_t = typename CVecT::elem_type;
 
     // Check if it can be constructed from a vector
-    if constexpr (std::is_constructible<PVec, std::vector<element_t>>()) {
+    if constexpr (std::is_constructible<CVecT, std::vector<element_t>>()) {
         return as_<std::vector<element_t>>(node);
     }
     else {
+        static_assert(dim > 0,
+                      "Need template argument dim given if target type is not "
+                      "constructible from std::vector.");
+
         // Needs to be constructed element-wise
-        PVec pvec;
+        CVecT cvec;
         const auto vec = as_array<element_t, dim>(node);
 
         for (std::size_t i=0; i<dim; i++) {
-            pvec[i] = vec[i];
+            cvec[i] = vec[i];
         }
 
-        return pvec;
+        return cvec;
     }
+}
+
+/// Shortcut to retrieve a config entry as PhysVector of given dimensionality
+template<std::size_t dim>
+PhysVectorType<dim> as_PhysVector(const Utopia::DataIO::Config& node) {
+    return as_arma_vec<PhysVectorType<dim>, dim>(node);
+}
+
+/// Shortcut to retrieve a config entry as MultiIndex of given dimensionality
+template<std::size_t dim>
+MultiIndexType<dim> as_MultiIndex(const Utopia::DataIO::Config& node) {
+    return as_arma_vec<MultiIndexType<dim>, dim>(node);
 }
 
 
