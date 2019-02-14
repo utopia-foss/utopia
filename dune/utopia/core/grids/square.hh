@@ -33,10 +33,10 @@ public:
 private:
     // -- SquareGrid-specific members -----------------------------------------
     /// The (multi-index) shape of the grid, resulting from resolution
-    /** \note For the exact interpretation of the shape and how it results from
-      *       the resolution, consult the derived classes documentation
-      */
     const MultiIndex _shape;
+
+    /// The extent of each cell of this square discretization (same for all)
+    const PhysVector _cell_extent;
 
 
 public:
@@ -48,7 +48,8 @@ public:
     SquareGrid (std::shared_ptr<Space> space, const DataIO::Config& cfg)
     :
         Base(space, cfg),
-        _shape(determine_shape())
+        _shape(determine_shape()),
+        _cell_extent(1./effective_resolution())
     {
         if constexpr (dim > 1) {
             // Make sure the cells really are square
@@ -69,7 +70,6 @@ public:
             }
         }
     }
-
     
     /// Construct a rectangular grid discretization
     /** \param  space   The space to construct the discretization for; will be
@@ -129,7 +129,16 @@ public:
     /** \note This method does not perform bounds checking of the given ID!
       */
     const PhysVector barycenter_of(const IndexType& id) const override {
-        return {};
+        // Offset on grid + offset within cell
+        // The %-operator performs element-wise multiplication
+        return (midx_of(id) % _cell_extent) + (_cell_extent/2.);
+    }
+
+    /// Returns the extent of the cell with the given ID
+    /** \note This method does not perform bounds checking of the given ID!
+      */
+    const PhysVector extent_of(const IndexType&) const override {
+        return _cell_extent;
     }
 
 

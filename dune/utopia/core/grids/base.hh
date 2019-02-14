@@ -160,6 +160,10 @@ public:
       */
     virtual const PhysVector barycenter_of(const IndexType& id) const = 0;
 
+    /// Returns the extent of the cell with the given ID
+    /** \note This method does not perform bounds checking of the given ID!
+      */
+    virtual const PhysVector extent_of(const IndexType& id) const = 0;
 
     // .. Getters .............................................................
     /// Get number of cells

@@ -16,6 +16,20 @@ using Utopia::DataIO::Config;
 using namespace Utopia;
 using SpaceMap = std::map<std::string, DefaultSpace>;  // 2D space
 using MultiIndex = MultiIndexType<2>;
+using PhysVector = PhysVectorType<2>;
+
+
+/// Compares two Armadillo vectors for equality
+template<class T1, class T2>
+bool check_eq(T1&& v1, T2&& v2) {
+    if (not arma::all(v1 == v2)) {
+        std::cerr << "The given vectors" << std::endl
+                  << v1 << "and" << std::endl << "are not equal!" << std::endl;
+        return false;
+    }
+    return true;
+}
+
 
 
 /// Make sure the number of cells is as expected; values taken from config
@@ -218,8 +232,6 @@ int main(int, char *[]) {
         std::cout << "------ Testing multi-index queries ... ------"
                   << std::endl;
 
-        { // Local test scope
-
         // Use the tiny_res grid in combination with different spaces
         const auto grid_cfg = cfg["grids"]["tiny_res"]; // resolution: 1
 
@@ -228,22 +240,18 @@ int main(int, char *[]) {
         auto g23 = SquareGrid<DefaultSpace>(spaces["uneven"], grid_cfg);
 
         // Default space, only (0, 0) available
-        assert(arma::all(g11.midx_of(0) == MultiIndex({0, 0})));
+        assert(check_eq(g11.midx_of(0), MultiIndex({0, 0})));
 
-        // ... but no bounds checking, so this is also computed
-        assert(arma::all(g11.midx_of(1) == MultiIndex({0, 1})));
+        // ... but NO bounds checking, so this is also computed
+        assert(check_eq(g11.midx_of(1), MultiIndex({0, 1})));
 
         // For the uneven (2x3) space
-        assert(arma::all(g23.midx_of(0) == MultiIndex({0, 0})));
-        assert(arma::all(g23.midx_of(1) == MultiIndex({1, 0})));
-        assert(arma::all(g23.midx_of(2) == MultiIndex({0, 1})));
-        assert(arma::all(g23.midx_of(3) == MultiIndex({1, 1})));
-        assert(arma::all(g23.midx_of(4) == MultiIndex({0, 2})));
-        assert(arma::all(g23.midx_of(5) == MultiIndex({1, 2})));
-
-
-
-        } // End of local test scope
+        assert(check_eq(g23.midx_of(0), MultiIndex({0, 0})));
+        assert(check_eq(g23.midx_of(1), MultiIndex({1, 0})));
+        assert(check_eq(g23.midx_of(2), MultiIndex({0, 1})));
+        assert(check_eq(g23.midx_of(3), MultiIndex({1, 1})));
+        assert(check_eq(g23.midx_of(4), MultiIndex({0, 2})));
+        assert(check_eq(g23.midx_of(5), MultiIndex({1, 2})));
 
         std::cout << "Success." << std::endl << std::endl;
 
@@ -251,7 +259,24 @@ int main(int, char *[]) {
         // -------------------------------------------------------------------
         std::cout << "------ Testing position-related methods ... ------"
                   << std::endl;
-        // TODO
+        
+        std::cout << "Testing cell extent ..." << std::endl;
+        assert(check_eq(g11.extent_of(0), PhysVector({1.0, 1.0})));
+        for (unsigned short i=0; i<6; i++) {
+            assert(check_eq(g23.extent_of(i), PhysVector({1.0, 1.0})));
+        }
+        std::cout << "Success." << std::endl << std::endl;
+        
+        std::cout << "Testing barycenters ..." << std::endl;
+        assert(check_eq(g11.barycenter_of(0), PhysVector({0.5, 0.5})));
+
+        assert(check_eq(g23.barycenter_of(0), PhysVector({0.5, 0.5})));
+        assert(check_eq(g23.barycenter_of(1), PhysVector({1.5, 0.5})));
+        assert(check_eq(g23.barycenter_of(2), PhysVector({0.5, 1.5})));
+        assert(check_eq(g23.barycenter_of(3), PhysVector({1.5, 1.5})));
+        assert(check_eq(g23.barycenter_of(4), PhysVector({0.5, 2.5})));
+        assert(check_eq(g23.barycenter_of(5), PhysVector({1.5, 2.5})));
+        
         std::cout << "Success." << std::endl << std::endl;
 
         // -------------------------------------------------------------------

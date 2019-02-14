@@ -99,6 +99,15 @@ public:
         return {};
     }
 
+    /// Returns the extent of the cell with the given ID
+    /** \note This method does not perform bounds checking of the given ID!
+      */
+    const PhysVector extent_of(const IndexType&) const override {
+        throw std::runtime_error("The HexagonalGrid::extent_of method is not "
+                                 "yet implemented!");
+        return {};
+    }
+
 
 protected:
     // -- Neighborhood interface ----------------------------------------------
