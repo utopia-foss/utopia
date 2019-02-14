@@ -19,8 +19,8 @@ namespace Utopia {
   */
 template<std::size_t num_dims>
 struct Space {
-    /// The type of the extent container
-    using ExtentType = std::array<double, num_dims>;
+    /// The type for vectors relating to physical space
+    using FieldVector = FieldVectorType<num_dims>;
 
     // -- Members -- //
     static constexpr std::size_t dim = num_dims;
@@ -29,7 +29,7 @@ struct Space {
     const bool periodic;
 
     /// The physical (euclidean) extent of the space
-    const ExtentType extent;
+    const FieldVector extent;
 
 
     // -- Constructors -- //
@@ -65,8 +65,8 @@ private:
     }
 
     /// Setup the extent type if no config parameter was available
-    ExtentType setup_extent() {
-        ExtentType extent;
+    FieldVector setup_extent() {
+        FieldVector extent;
         extent.fill(1.);
         return extent;
     }
@@ -75,9 +75,9 @@ private:
     /** \param cfg  The config node to read the `extent` parameter from. If
       *             that entry is missing, the default extent is used.
       */
-    ExtentType setup_extent(const DataIO::Config& cfg) {
+    FieldVector setup_extent(const DataIO::Config& cfg) {
         if (cfg["extent"]) {
-            return as_<ExtentType>(cfg["extent"]);
+            return as_FieldVector<dim>(cfg["extent"]);
         }
 
         // Return the default extent

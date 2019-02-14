@@ -3,6 +3,8 @@
 
 #include <cstdint>
 
+#include <armadillo>
+
 #include "../base.hh"
 
 namespace Utopia
@@ -73,6 +75,14 @@ using IndexContainer = std::vector<IndexType>;
 /// Type for grid shape
 template<std::size_t dim>
 using GridShapeType = std::array<IndexType, dim>;
+
+/// Type for vector-like data that has some physical meaning
+/** \detail Uses a fixed-size Armadillo column vector of doubles
+  *
+  * \tparam dim  The dimensionality (or: rank) of the vector
+  */
+template<std::size_t dim>
+using FieldVectorType = arma::vec::fixed<dim>;
 
 } // namespace Utopia
 

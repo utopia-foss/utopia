@@ -4,6 +4,8 @@
 #include <boost/core/demangle.hpp>
 #include <yaml-cpp/yaml.h>
 
+#include "../core/types.hh"
+
 
 namespace Utopia {
 
@@ -119,6 +121,31 @@ template<typename T, std::size_t len>
 std::array<T, len> as_array(const Utopia::DataIO::Config& node) {
     return as_<std::array<T, len>>(node);
 }
+
+/// Shortcut to retrieve a config entry as a field vector of rank `dim`
+template<std::size_t dim>
+FieldVectorType<dim> as_FieldVector(const Utopia::DataIO::Config& node) {
+    // Extract the field vector element type; assuming Armadillo interface here
+    using FVec = FieldVectorType<dim>;
+    using element_t = typename FVec::elem_type;
+
+    // Check if it can be constructed from a vector
+    if constexpr (std::is_constructible<FVec, std::vector<element_t>>()) {
+        return as_<std::vector<element_t>>(node);
+    }
+    else {
+        // Needs to be constructed element-wise
+        FVec fvec;
+        const auto vec = as_array<element_t, dim>(node);
+
+        for (std::size_t i=0; i<dim; i++) {
+            fvec[i] = vec[i];
+        }
+
+        return fvec;
+    }
+}
+
 
 
 } // namespace Utopia
