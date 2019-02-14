@@ -48,6 +48,11 @@ Install the Apple Command Line Tools by executing
 ##### 5 — Install dependencies
 Install third-party packages using a package manager.
 
+__Notice:__ If you have [Anaconda](https://www.anaconda.com/) installed, you
+already have a working Python installation on your system, and you can omit
+installing the `python` packages in this step. However, notice the hint in
+the next step for properly [configuring Utopia](#6-configure-and-build).
+
 __macOS:__ On macOS, we recommend [Homebrew](https://brew.sh/). (If you prefer to use [MacPorts](https://www.macports.org/), notice that some packages might need to be installed differently.)
 
     brew update
@@ -69,6 +74,16 @@ Configure and build DUNE and Utopia by executing the `dunecontrol` script:
     CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=Release -DDUNE_PYTHON_VIRTUALENV_SETUP=True -DDUNE_PYTHON_ALLOW_GET_PIP=True" ./dune-common/bin/dunecontrol --module=utopia all
 
 Afterwards, reconfiguring and rebuilding can also be done locally, instead of calling `dunecontrol`: Enter the `utopia/build-cmake` directory, and call `cmake ..` or `make` directly.
+
+__Notice:__ Anaconda ships its own version of the HDF5 library which is _not_
+compatible with Utopia. To tell CMake where to find the correct version of the
+library, append the following variable (without the comments!) to the
+`CMAKE_FLAGS` in the command above:
+
+```bash
+-DHDF5_ROOT=/usr/           # on Ubuntu
+-DHDF5_ROOT=/usr/local/     # on macOS (Homebrew)
+```
 
 ##### 7 — Run a model :tada:
 Now, you should be able to run a utopia model:
@@ -125,7 +140,7 @@ For more information on how to use the command line interface (and a prettier co
 | [dune-geometry](https://gitlab.dune-project.org/core/dune-geometry) | master | |
 | [dune-grid](https://gitlab.dune-project.org/core/dune-grid) | master | |
 | [dune-uggrid](https://gitlab.dune-project.org/staging/dune-uggrid) | master | |
-| [Python3](https://www.python.org/downloads/) | >= 3.6 | < 3.6 _might_ work, but is not tested |
+| [Python3](https://www.python.org/downloads/) | >= 3.6 | < v3.6 or recent versions of [Anaconda](https://www.anaconda.com/) _might_ work, but are not tested |
 
 #### Python
 Utopia's frontend, `utopya`, uses some custom packages.
