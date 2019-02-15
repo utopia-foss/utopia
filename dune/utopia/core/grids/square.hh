@@ -262,15 +262,6 @@ protected:
                 // NOTE that this algorithm requires the neighbors nearest
                 //      to the root_id to have been pushed to the vector first.
                 //      The fixed ordering of the previous addition is required.
-                // NOTE: The nearest neighbor pair have the id 0,1 the next
-                //       nearest neighbor pair 1,2 etc.
-                //       Each pair needs to be mapped to the same distance
-                //       with the first pair at distance metric_distance-1
-                //       , the next pair at metric_distance-2, etc.
-                //       This results in the generalized condition:
-                //       i even: dist - (i/2 + 1)
-                //       i odd:  dist - ((i-1)/2 + 1)
-                //       Put together, this results in: dist - 1 - (i - i%2) / 2
                 const std::size_t nb_size = neighbor_ids.size(); 
                 for (std::size_t i=0; i<nb_size; ++i){
                     // Add all neighbor ids up to the maximal distance along the
@@ -340,9 +331,6 @@ protected:
     };
 
     /// The Von-Neumann neighborhood for non-periodic grids and arbitrary Manhatten distance
-    // TODO: Fix this one: Check whether a pair of neighbors was added or just
-    //       a single neighbor. Then adapt the neighbor adding algorithm below
-    //       by making it dependent on this check.
     NBFuncID<Base> _nb_vonNeumann_nonperiodic_with_Manhatten_distance = 
         [this](const IndexType& root_id)
     {
@@ -350,8 +338,9 @@ protected:
             "VonNeumann neighborhood is only implemented in 1 or 2 dimensions "
             "in space!");
 
-        // Instantiate container in which to store the neighboring cell IDs
-        IndexContainer neighbor_ids{};
+        // Instantiate containers in which to store the neighboring cell IDs
+        IndexContainer front_neighbor_ids{};
+        IndexContainer back_neighbor_ids{};
 
         // The number of neighbors can be calculated through:
         //                     { 2 * distance   for distance = 1
@@ -378,70 +367,93 @@ protected:
 
 
         // Pre-allocating space brings a speed improvement of about factor 2
-        neighbor_ids.reserve(num_neighbors(dim, this->_metric_distance));
+        front_neighbor_ids.reserve(num_neighbors(dim, this->_metric_distance / 2));
+        front_neighbor_ids.reserve(num_neighbors(dim, this->_metric_distance / 2));
 
         // Depending on the number of dimensions, add the IDs of neighboring
         // cells in those dimensions
-        // Add neighbors in dimension 1
+        // Add front neighbors in dimension 1
         for (std::size_t dist=1; dist<=this->_metric_distance; ++dist){
-            add_front_neighbor_in_dim_<1, false>(root_id, dist, neighbor_ids);
-            add_back_neighbor_in_dim_<1, false>(root_id, dist, neighbor_ids);
+            add_front_neighbor_in_dim_<1, false>(root_id, dist, front_neighbor_ids);
+            add_back_neighbor_in_dim_<1, false>(root_id, dist, back_neighbor_ids);
         }
 
         // If the dimension exists, add neighbors in dimension 2
         if constexpr (dim >= 2) {
-            // Go through all the previously added neighbors
-                // and add the additional neighbors from the other dimension.
-                // NOTE that this algorithm requires the neighbors nearest
-                //      to the root_id to have been pushed to the vector first.
-                //      The fixed ordering of the previous addition is required.
-                // NOTE: The nearest neighbor pair have the id 0,1 the next
-                //       nearest neighbor pair 1,2 etc.
-                //       Each pair needs to be mapped to the same distance
-                //       with the first pair at distance metric_distance-1
-                //       , the next pair at metric_distance-2, etc.
-                //       This results in the generalized condition:
-                //       i even: dist - (i/2 + 1)
-                //       i odd:  dist - ((i-1)/2 + 1)
-                //       Put together, this results in: dist - 1 - (i - i%2) / 2
-                const std::size_t nb_size = neighbor_ids.size(); 
-                for (std::size_t i=0; i<nb_size; ++i){
-                    // Add all neighbor ids up to the maximal distance along the
-                    // dimension 2.
-                    for (std::size_t dist=1; 
-                         dist<=this->_metric_distance - 1 - i/2 + (i%2)/2; 
-                         ++dist)
-                    {
-                        // front neighbor
-                        add_front_neighbor_in_dim_<2, true>
-                            (neighbor_ids[i], 
-                            dist, 
-                            neighbor_ids);
-
-                        // back neighbor
-                        add_back_neighbor_in_dim_<2, true>
-                            (neighbor_ids[i], 
-                            dist, 
-                            neighbor_ids);
-                    }
-                }
-
-                // Finally, add the root cell's neighbors in the second dimension
-                for (std::size_t dist=1; dist<=this->_metric_distance; ++dist){
-                    // front neighbor
-                    add_front_neighbor_in_dim_<2, true>(root_id, 
-                                                        dist, 
-                                                        neighbor_ids);
-
-                    // back neighbor
-                    add_back_neighbor_in_dim_<2, true>(root_id, 
-                                                        dist, 
-                                                        neighbor_ids);
+            // Go through the front neighbor ids in dimension 1 and add
+            // the neighbor ids in dimension 2
+            // NOTE that this algorithm requires the neighbors nearest
+            //      to the root_id to have been pushed to the vector first.
+            //      The fixed ordering of the previous addition is required.
+            const std::size_t front_nb_size = front_neighbor_ids.size(); 
+            for (std::size_t i=0; i<front_nb_size; ++i){
+                // Add all front neighbor ids up to the maximal distance along
+                // dimension 2.
+                for (std::size_t dist=1; 
+                        dist<=this->_metric_distance - (i + 1); 
+                        ++dist)
+                {
+                    // add front neighbors ids in dimension 2
+                    add_front_neighbor_in_dim_<2, false>
+                        (front_neighbor_ids[i], 
+                        dist, 
+                        front_neighbor_ids);
+                    
+                    // add back neighbors ids in dimension 2
+                    add_back_neighbor_in_dim_<2, false>
+                        (front_neighbor_ids[i], 
+                        dist, 
+                        front_neighbor_ids);
                 }
             }
 
-        // Return the container of cell indices
-        return neighbor_ids;
+            // Go through the front neighbor ids in dimension 1 and add
+            // the neighbor ids in dimension 2
+            // NOTE that this algorithm requires the neighbors nearest
+            //      to the root_id to have been pushed to the vector first.
+            //      The fixed ordering of the previous addition is required.
+            const std::size_t back_nb_size = back_neighbor_ids.size(); 
+            for (std::size_t i=0; i<back_nb_size; ++i){
+                // Add all back neighbor ids up to the maximal distance along
+                // dimension 2.
+                for (std::size_t dist=1; 
+                        dist<=this->_metric_distance - (i + 1); 
+                        ++dist)
+                {
+                    // front neighbor ids in dimension 2
+                    add_front_neighbor_in_dim_<2, false>
+                        (back_neighbor_ids[i], 
+                        dist, 
+                        back_neighbor_ids);
+
+                    // back neighbors ids in dimension 2
+                    add_back_neighbor_in_dim_<2, false>
+                        (back_neighbor_ids[i], 
+                        dist, 
+                        back_neighbor_ids);
+                }
+            }
+
+            // Finally, add the root cell's neighbors in the second dimension
+            for (std::size_t dist=1; dist<=this->_metric_distance; ++dist){
+                // front neighbor ids
+                add_front_neighbor_in_dim_<2, false>(root_id, 
+                                                    dist, 
+                                                    front_neighbor_ids);
+
+                // back neighbor ids
+                add_back_neighbor_in_dim_<2, false>(root_id, 
+                                                    dist, 
+                                                    back_neighbor_ids);
+            }
+        }
+
+        // Return the container of cell indices, both front and back neighbors
+        front_neighbor_ids.insert(front_neighbor_ids.end(),
+                                         back_neighbor_ids.begin(), 
+                                         back_neighbor_ids.end());
+
+        return front_neighbor_ids;
     };
     
     /// Moore neighbors for periodic 2D grid
