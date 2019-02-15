@@ -159,7 +159,7 @@ public:
         static_assert(dim == 2,
                       "SquareGrid::vertices_of is only implemented for 2D!");
 
-        std::vector<const SpaceVec> vertices;
+        std::vector<const SpaceVec> vertices{};
         vertices.reserve(4);
 
         // NOTE The %-operator performs element-wise multiplication
