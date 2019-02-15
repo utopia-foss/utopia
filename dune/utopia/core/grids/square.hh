@@ -383,8 +383,11 @@ protected:
         IndexContainer back_neighbor_ids{};
 
         // Pre-allocating space brings a speed improvement of about factor 2
+        // NOTE The front_neighbor_ids vector needs to reserve memory for all
+        //      neighbors including the back neighbors because these will be
+        //      added to the container directly before returning it.
         front_neighbor_ids.reserve(expected_num_neighbors(NBMode::vonNeumann));
-        back_neighbor_ids.reserve(expected_num_neighbors(NBMode::vonNeumann));
+        back_neighbor_ids.reserve(expected_num_neighbors(NBMode::vonNeumann)/2);
 
         // Depending on the number of dimensions, add the IDs of neighboring
         // cells in those dimensions
@@ -647,9 +650,6 @@ protected:
         static_assert((dim == 1) or (dim == 2),
                       "Unsupported dimensionality in space! Need be 1 or 2.");
 
-        // Gather the required grid information
-        const auto& shape = this->shape();
-
         // Conditions for the front and back boundary; the conditions are
         // dependent on the dimension in which to add neighbors.
         bool _cond_front;
@@ -657,15 +657,15 @@ protected:
 
         // Set the boundary conditions for different dimensions
         if constexpr (dim == 1){
-            _cond_front = (root_id % shape[0] == 0);
-            _cond_back = (root_id % shape[0] == shape[0] - 1);
+            _cond_front = (root_id % this->_shape[0] == 0);
+            _cond_back = (root_id % this->_shape[0] == this->_shape[0] - 1);
         }
         else if constexpr (dim == 2){
             // 'normalize' id to lowest height (in 3D)
             const auto root_id_nrm = root_id % id_shift_in_dim_<dim>();            
 
-            _cond_front = (root_id_nrm / shape[0] == 0);
-            _cond_back = (root_id_nrm / shape[0] == shape[1] - 1);
+            _cond_front = (root_id_nrm / this->_shape[0] == 0);
+            _cond_back = (root_id_nrm / this->_shape[0] == this->_shape[1] - 1);
         }
 
         // check if at front boundary
@@ -726,19 +726,16 @@ protected:
             return;
         }
 
-        // Gather the required grid information
-        const auto& shape = this->shape();
-        
         // Conditions for the front boundary; the conditions are
         // dependent on the dimension in which to add neighbors.
         bool _cond_front;
 
         // Set the boundary conditions for different dimensions
         if constexpr (dim == 1){
-            _cond_front = (root_id % shape[0] < distance);
+            _cond_front = (root_id % this->_shape[0] < distance);
         }
         else if constexpr (dim == 2){
-            _cond_front = (root_id / shape[0] < distance);
+            _cond_front = (root_id / this->_shape[0] < distance);
         }
 
         // check if at front boundary
@@ -789,8 +786,9 @@ protected:
         }
 
         // Gather the required grid information
-        const auto& shape = this->shape();
-        const auto num_cells = std::accumulate(shape.begin(), shape.end(), 1, 
+        const auto num_cells = std::accumulate(this->_shape.begin(), 
+                                               this->_shape.end(), 
+                                               1, 
                                                std::multiplies<std::size_t>());
 
         // Conditions for the back boundary; the conditions are
@@ -799,10 +797,12 @@ protected:
 
         // Set the boundary conditions for different dimensions
         if constexpr (dim == 1){
-            _cond_back  = (root_id % shape[0] >= shape[0] - distance);
+            _cond_back  = (root_id % this->_shape[0] 
+                            >= this->_shape[0] - distance);
         }
         else if constexpr (dim == 2){
-            _cond_back  = (root_id / shape[0] >= shape[1] - distance);
+            _cond_back  = (root_id / this->_shape[0] 
+                            >= this->_shape[1] - distance);
         }
 
         // check if at back boundary
