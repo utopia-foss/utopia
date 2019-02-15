@@ -23,8 +23,9 @@ using PhysVector = PhysVectorType<2>;
 template<class T1, class T2>
 bool check_eq(T1&& v1, T2&& v2) {
     if (not arma::all(v1 == v2)) {
-        std::cerr << "The given vectors" << std::endl
-                  << v1 << "and" << std::endl << "are not equal!" << std::endl;
+        std::cerr << "ERROR: The given vectors" << std::endl
+                  << v1 << "and" << std::endl << v2 << "are not equal!"
+                  << std::endl;
         return false;
     }
     return true;
@@ -276,6 +277,21 @@ int main(int, char *[]) {
         assert(check_eq(g23.barycenter_of(3), PhysVector({1.5, 1.5})));
         assert(check_eq(g23.barycenter_of(4), PhysVector({0.5, 2.5})));
         assert(check_eq(g23.barycenter_of(5), PhysVector({1.5, 2.5})));
+        
+        std::cout << "Success." << std::endl << std::endl;
+        
+        std::cout << "Testing cell vertex positions ..." << std::endl;
+        auto g11_id0_vtcs = g11.vertices_of(0);
+        assert(check_eq(g11_id0_vtcs[0], PhysVector({0.0, 0.0})));
+        assert(check_eq(g11_id0_vtcs[1], PhysVector({1.0, 0.0})));
+        assert(check_eq(g11_id0_vtcs[2], PhysVector({1.0, 1.0})));
+        assert(check_eq(g11_id0_vtcs[3], PhysVector({0.0, 1.0})));
+
+        auto g23_id5_vtcs = g23.vertices_of(5);
+        assert(check_eq(g23_id5_vtcs[0], PhysVector({1.0, 2.0})));
+        assert(check_eq(g23_id5_vtcs[1], PhysVector({2.0, 2.0})));
+        assert(check_eq(g23_id5_vtcs[2], PhysVector({2.0, 3.0})));
+        assert(check_eq(g23_id5_vtcs[3], PhysVector({1.0, 3.0})));
         
         std::cout << "Success." << std::endl << std::endl;
 

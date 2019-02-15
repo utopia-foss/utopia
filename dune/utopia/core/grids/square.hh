@@ -12,6 +12,11 @@ namespace Utopia {
  */
 
 /// A grid discretization using square cells
+/** \detail This is a grid discretization where the cells are vector spaces
+  *         that are spanned by orthogonal basis vectors and each cell has the
+  *         same physical extent in each dimension. In the 2D case, this refers
+  *         to perfectly square cells; in 3D these would be perfect cubes, etc.
+  */
 template<class Space>
 class SquareGrid
     : public Grid<Space>
@@ -130,8 +135,8 @@ public:
       */
     const PhysVector barycenter_of(const IndexType& id) const override {
         // Offset on grid + offset within cell
-        // The %-operator performs element-wise multiplication
         return (midx_of(id) % _cell_extent) + (_cell_extent/2.);
+        // NOTE The %-operator performs element-wise multiplication
     }
 
     /// Returns the extent of the cell with the given ID
@@ -139,6 +144,31 @@ public:
       */
     const PhysVector extent_of(const IndexType&) const override {
         return _cell_extent;
+    }
+
+    /// Returns the vertices of the cell with the given ID
+    /** \detail Only available for 2D currently; the vertices are given in
+      *         counter-clockwise order, starting with the position of the
+      *         bottom left-hand vertex of the cell.
+      * \note   This method does not perform bounds checking of the given ID!
+      */
+    const std::vector<const PhysVector>
+        vertices_of(const IndexType& id) const override
+    {
+        static_assert(dim == 2,
+                      "SquareGrid::vertices_of is only implemented for 2D!");
+
+        std::vector<const PhysVector> vertices;
+        vertices.reserve(4);
+
+        // NOTE The %-operator performs element-wise multiplication
+        // Counter-clockwise, starting bottom left ...
+        vertices.push_back(midx_of(id) % _cell_extent);
+        vertices.push_back(vertices[0] + _cell_extent % PhysVector({1., 0.}));
+        vertices.push_back(vertices[0] + _cell_extent);
+        vertices.push_back(vertices[0] + _cell_extent % PhysVector({0., 1.}));
+
+        return vertices;
     }
 
 

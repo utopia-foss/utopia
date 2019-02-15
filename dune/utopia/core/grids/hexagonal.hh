@@ -108,6 +108,18 @@ public:
         return {};
     }
 
+    /// Returns the vertices of the cell with the given ID
+    /** \detail The order of the vertices is not guaranteed.
+      * \note   This method does not perform bounds checking of the given ID!
+      */
+    const std::vector<const PhysVector>
+        vertices_of(const IndexType&) const override
+    {
+        throw std::runtime_error("The HexagonalGrid::vertices_of method is "
+                                 "not yet implemented!");
+        return {};
+    }
+
 
 protected:
     // -- Neighborhood interface ----------------------------------------------

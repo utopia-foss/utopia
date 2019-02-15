@@ -416,6 +416,9 @@ int main(int, char *[]) {
         cm.extent_of(c0);
         cm.extent_of(*c0);
 
+        cm.vertices_of(c0);
+        cm.vertices_of(*c0);
+
         std::cout << "Success." << std::endl << std::endl;
 
         } // End of local test scope

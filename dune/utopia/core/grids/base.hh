@@ -165,6 +165,14 @@ public:
       */
     virtual const PhysVector extent_of(const IndexType& id) const = 0;
 
+    /// Returns the vertices of the cell with the given ID
+    /** \detail Consult the derived class implementation's documentation on
+      *         the order of the vertices in the returned container.
+      * \note   This method does not perform bounds checking of the given ID!
+      */
+    virtual const std::vector<const PhysVector>
+        vertices_of(const IndexType& id) const = 0;
+
     // .. Getters .............................................................
     /// Get number of cells
     /** \detail This information is used by the CellManager to populate the
