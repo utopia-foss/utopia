@@ -31,6 +31,20 @@ bool check_eq(T1&& v1, T2&& v2) {
     return true;
 }
 
+/// Checks whether the given position is mapped to the given cell ID
+template<class Grid>
+bool check_pos(Grid& grid, PhysVector pos, IndexType expected_id) {
+    const auto cell_id = grid.cell_at(pos);
+
+    if (cell_id != expected_id) {
+        std::cerr << "ERROR: The given position" << std::endl << pos
+                  << "was not correctly mapped to the expected cell ID "
+                  << expected_id << " but to: " << cell_id << std::endl;
+        return false;
+    }
+    return true;
+}
+
 
 
 /// Make sure the number of cells is as expected; values taken from config
@@ -293,6 +307,60 @@ int main(int, char *[]) {
         assert(check_eq(g23_id5_vtcs[2], PhysVector({2.0, 3.0})));
         assert(check_eq(g23_id5_vtcs[3], PhysVector({1.0, 3.0})));
         
+        std::cout << "Success." << std::endl << std::endl;
+
+
+        std::cout << "Testing cell ID retrieval from position ..."
+                  << std::endl;
+
+        // Within the space, cells of size (1., 1.)
+        assert(check_pos(g23, {0.0, 0.0},       0));
+        assert(check_pos(g23, {0.5, 0.5},       0));
+        assert(check_pos(g23, {0.314, 0.756},   0));
+
+        assert(check_pos(g23, {1.1, 0.6},       1));
+        assert(check_pos(g23, {1.1, 2.1},       5));
+
+        // High-level cell boundaries chosen correctly
+        assert(check_pos(g23, {1.0, 0.5},       1));
+        assert(check_pos(g23, {1.0, 1.0},       3));
+
+        // High-value space boundaries mapped periodically
+        assert(check_pos(g23, {2.0, 0.5},       0));
+        assert(check_pos(g23, {0.5, 3.0},       0));
+        assert(check_pos(g23, {2.0, 3.0},       0));
+
+        // Positions out of space mapped back into space
+        assert(check_pos(g23, {-0.5, 0.5},      1));
+        assert(check_pos(g23, {-1.0, 1.0},      3));
+        assert(check_pos(g23, {-3.0, 4.0},      3));
+        assert(check_pos(g23, {-1.5, 0.5},      0));
+        assert(check_pos(g23, {-1.5, -0.5},     4));
+        assert(check_pos(g23, {-2.0, 3.0},      0));
+        assert(check_pos(g23, {2.0, -3.0},      0));
+        assert(check_pos(g23, {-2.0, -3.0},     0));
+
+        // Positions waaaay out of space mapped back properly
+        assert(check_pos(g23, {22.0, 33.0},     0));
+        assert(check_pos(g23, {23.5, 33.5},     1));
+        assert(check_pos(g23, {23.0, 34.0},     3));
+        assert(check_pos(g23, {2222., 3333.},   0));
+        assert(check_pos(g23, {2223., 3334.},   3));
+        assert(check_pos(g23, {-19.5, 0.5},     0));
+        assert(check_pos(g23, {-20., 0.5},      0));
+        assert(check_pos(g23, {-20.5, 0.5},     1));
+        assert(check_pos(g23, {-22.0, -33.0},   0));
+        assert(check_pos(g23, {-23.0, -34.0},   3));
+        assert(check_pos(g23, {-2222., -3333.}, 0));
+        assert(check_pos(g23, {-2223., -3335.}, 3));
+
+
+        // Also test with non-periodic grid
+        auto g23_np = SquareGrid<DefaultSpace>(spaces["uneven_np"], grid_cfg);
+
+        // High-value space boundary mapped to the boundary cell
+        // TODO
+
         std::cout << "Success." << std::endl << std::endl;
 
         // -------------------------------------------------------------------

@@ -121,6 +121,26 @@ public:
         return {};
     }
 
+    /// Return the ID of the cell covering the given point in physical space
+    /** \detail Cells are interpreted as covering half-open intervals in space,
+      *         i.e., including their low-value edges and excluding their high-
+      *         value edges.
+      *         The special case of points on high-value edges for non-periodic
+      *         space behaves such that these points are associated with the
+      *         cells at the boundary.
+      *
+      * \note   This function always returns IDs of cells that are inside
+      *         physical space. For non-periodic space, a check is performed
+      *         whether the given point is inside the physical space
+      *         associated with this grid. For periodic space, the given
+      *         position is mapped back into the physical space.
+      */
+    IndexType cell_at(const PhysVector&) const override {
+        throw std::runtime_error("The TriangularGrid::cell_at method is not "
+                                 "yet implemented!");
+        return {};
+    }
+
 
 protected:
     // -- Neighborhood interface ----------------------------------------------

@@ -95,18 +95,19 @@ public:
     Grid (std::shared_ptr<Space> space, const DataIO::Config& cfg)
     :
         _space(space),
-        _resolution([&](){
+        _resolution([&cfg](){
             if (not cfg["resolution"]) {
                 throw std::invalid_argument("Missing grid configuration "
                     "parameter 'resolution'! Please supply an integer >= 1.");
             }
-            auto res = as_<std::size_t>(cfg["resolution"]);
+
+            // Read in as signed int (allows throwing error for negative value)
+            const auto res = as_<long long>(cfg["resolution"]);
 
             if (res < 1) {
                 throw std::invalid_argument("Grid resolution needs to be a "
-                                            "positive integer!");
+                                            "positive integer, was < 1!");
             }
-
             return res;
         }()),
         _nb_mode(NBMode::empty)
@@ -153,17 +154,17 @@ public:
     /// Returns the multi index of the cell with the given ID
     /** \note This method does not perform bounds checking of the given ID!
       */
-    virtual const MultiIndex midx_of(const IndexType& id) const = 0;
+    virtual const MultiIndex midx_of(const IndexType&) const = 0;
 
     /// Returns the barycenter of the cell with the given ID
     /** \note This method does not perform bounds checking of the given ID!
       */
-    virtual const PhysVector barycenter_of(const IndexType& id) const = 0;
+    virtual const PhysVector barycenter_of(const IndexType&) const = 0;
 
     /// Returns the extent of the cell with the given ID
     /** \note This method does not perform bounds checking of the given ID!
       */
-    virtual const PhysVector extent_of(const IndexType& id) const = 0;
+    virtual const PhysVector extent_of(const IndexType&) const = 0;
 
     /// Returns the vertices of the cell with the given ID
     /** \detail Consult the derived class implementation's documentation on
@@ -171,7 +172,23 @@ public:
       * \note   This method does not perform bounds checking of the given ID!
       */
     virtual const std::vector<const PhysVector>
-        vertices_of(const IndexType& id) const = 0;
+        vertices_of(const IndexType&) const = 0;
+
+    /// Return the ID of the cell covering the given point in physical space
+    /** \detail Cells are interpreted as covering half-open intervals in space,
+      *         i.e., including their low-value edges and excluding their high-
+      *         value edges.
+      *         The special case of points on high-value edges for non-periodic
+      *         space behaves such that these points are associated with the
+      *         cells at the boundary.
+      *
+      * \note   This function always returns IDs of cells that are inside
+      *         physical space. For non-periodic space, a check is performed
+      *         whether the given point is inside the physical space
+      *         associated with this grid. For periodic space, the given
+      *         position is mapped back into the physical space.
+      */
+    virtual IndexType cell_at(const PhysVector&) const = 0;
 
     // .. Getters .............................................................
     /// Get number of cells

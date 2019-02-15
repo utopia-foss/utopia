@@ -1,6 +1,7 @@
 #ifndef UTOPIA_CORE_GRIDS_SQUARE_HH
 #define UTOPIA_CORE_GRIDS_SQUARE_HH
 
+#include <cmath>
 #include <sstream>
 
 #include "base.hh"
@@ -169,6 +170,76 @@ public:
         vertices.push_back(vertices[0] + _cell_extent % PhysVector({0., 1.}));
 
         return vertices;
+    }
+
+    /// Return the ID of the cell covering the given point in physical space
+    /** \detail Cells are interpreted as covering half-open intervals in space,
+      *         i.e., including their low-value edges and excluding their high-
+      *         value edges.
+      *         The special case of points on high-value edges for non-periodic
+      *         space behaves such that these points are associated with the
+      *         cells at the boundary.
+      *
+      * \note   This function always returns IDs of cells that are inside
+      *         physical space. For non-periodic space, a check is performed
+      *         whether the given point is inside the physical space
+      *         associated with this grid. For periodic space, the given
+      *         position is mapped back into the physical space.
+      */
+    IndexType cell_at(const PhysVector& pos) const override {
+        static_assert(dim == 2,
+                      "SquareGrid::cell_at only implemented for 2D!");
+        
+        // The multi-index element type to use for static casts
+        using midx_et = typename MultiIndex::elem_type;
+
+        // The multi index to be calculated
+        MultiIndex midx;
+
+        // Distinguish periodic and non-periodic case
+        // NOTE While there is some duplicate code, this is the configuration
+        //      with the least amount of unnecessary / duplicate value checks.
+        if (this->is_periodic()) {
+            // Calculate the real-valued position in units of cell extents,
+            // using the position mapped back into space. That function takes
+            // care to map the high-value boundary to the low-value boundary.
+            const PhysVector ridx = (  this->_space->map_into_space(pos)
+                                     / _cell_extent);
+
+            // Can now calculate the integer multi index, rounding down
+            midx = {static_cast<midx_et>(ridx[0]),
+                    static_cast<midx_et>(ridx[1])};
+        }
+        else {
+            // Make sure the given coordinate is actually within the space
+            if (not this->_space->contains(pos)) {
+                throw std::invalid_argument("The given position is outside "
+                    "the non-periodic space associated with this grid!");
+            }
+
+            // Calculate the real-valued position in units of cell extents
+            const PhysVector ridx = pos / _cell_extent;
+
+            // Calculate the integer multi index, rounding down
+            midx = {static_cast<midx_et>(ridx[0]),
+                    static_cast<midx_et>(ridx[1])};
+
+            // Associate points on high-value boundaries with boundary cells
+            if (midx[0] == _shape[0]) {
+                midx[0]--;
+            }
+            if (midx[1] == _shape[1]) {
+                midx[1]--;
+            }
+            // Note that with _shape having only elements >= 1, the decrement
+            // does not cause any issues.
+        }
+
+        // From the multi index, calculate the corresponding ID
+        return midx[0] + (midx[1] * _shape[0]);
+        // Equivalent to:
+        //     midx[0] * id_shift_in_dim_<0>()
+        //   + midx[1] * id_shift_in_dim_<1>()
     }
 
 
