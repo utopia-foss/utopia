@@ -34,7 +34,16 @@ bool check_eq(T1&& v1, T2&& v2) {
 /// Checks whether the given position is mapped to the given cell ID
 template<class Grid>
 bool check_pos(Grid& grid, PhysVector pos, IndexType expected_id) {
-    const auto cell_id = grid.cell_at(pos);
+    IndexType cell_id;
+    try {
+        cell_id = grid.cell_at(pos);
+    }
+    catch (std::exception& e) {
+        std::cerr << "ERROR: While retrieving the cell ID for position "
+                  << std::endl << pos << ", the following exception occured: "
+                  << e.what() << std::endl;
+        return false;
+    }
 
     if (cell_id != expected_id) {
         std::cerr << "ERROR: The given position" << std::endl << pos
@@ -140,7 +149,7 @@ bool check_num_cells_and_shape(std::string grid_name,
         }
         else if (fail_code == -2) {
             expected_err_msg = "Grid resolution needs to be a positive "
-                               "integer!";
+                               "integer, was < 1!";
         }
         else if (fail_code == -3) {
             expected_err_msg = "Missing grid configuration parameter "
@@ -188,16 +197,30 @@ int main(int, char *[]) {
         
         SpaceMap spaces;
 
-        spaces.emplace(std::make_pair("default",
-                                      DefaultSpace()));
-        spaces.emplace(std::make_pair("nice",
-                                      DefaultSpace(cfg["spaces"]["nice"])));
-        spaces.emplace(std::make_pair("uneven",
-                                      DefaultSpace(cfg["spaces"]["uneven"])));
-        spaces.emplace(std::make_pair("nasty",
-                                      DefaultSpace(cfg["spaces"]["nasty"])));
-        spaces.emplace(std::make_pair("devil",
-                                      DefaultSpace(cfg["spaces"]["devil"])));
+        spaces.emplace(
+            std::make_pair("default",
+                           DefaultSpace())
+        );
+        spaces.emplace(
+            std::make_pair("nice",
+                           DefaultSpace(cfg["spaces"]["nice"]))
+        );
+        spaces.emplace(
+            std::make_pair("uneven",
+                           DefaultSpace(cfg["spaces"]["uneven"]))
+        );
+        spaces.emplace(
+            std::make_pair("uneven_np",
+                           DefaultSpace(cfg["spaces"]["uneven_np"]))
+        );
+        spaces.emplace(
+            std::make_pair("nasty",
+                           DefaultSpace(cfg["spaces"]["nasty"]))
+        );
+        spaces.emplace(
+            std::make_pair("devil",
+                           DefaultSpace(cfg["spaces"]["devil"]))
+        );
         std::cout << "Success." << std::endl << std::endl;
 
 
@@ -211,6 +234,9 @@ int main(int, char *[]) {
         
         assert(spaces["uneven"].extent[0] == 2.);
         assert(spaces["uneven"].extent[1] == 3.);
+        
+        assert(spaces["uneven_np"].extent[0] == 2.);
+        assert(spaces["uneven_np"].extent[1] == 3.);
         
         assert(spaces["nasty"].extent[0] == 1.25);
         assert(spaces["nasty"].extent[1] == 3.2);
@@ -313,6 +339,10 @@ int main(int, char *[]) {
         std::cout << "Testing cell ID retrieval from positive positions ..."
                   << std::endl;
 
+        assert(g23.is_periodic());
+        assert(g23.space()->extent[0] == 2.);
+        assert(g23.space()->extent[1] == 3.);
+
         // Within the space, cells of size (1., 1.)
         assert(check_pos(g23, {0.0, 0.0},       0));
         assert(check_pos(g23, {0.5, 0.5},       0));
@@ -392,14 +422,62 @@ int main(int, char *[]) {
         assert(check_pos(g23, {-2222., -3333.}, 0));
         assert(check_pos(g23, {-2223., -3335.}, 3));
 
+        std::cout << "Success." << std::endl << std::endl;
+
 
         // Also test with non-periodic grid
         auto g23_np = SquareGrid<DefaultSpace>(spaces["uneven_np"], grid_cfg);
+        assert(not g23_np.is_periodic());
+        assert(g23_np.space()->extent[0] == 2.);
+        assert(g23_np.space()->extent[1] == 3.);
 
-        // High-value space boundary mapped to the boundary cell
-        // TODO
+        // Again, with negative values (different internal calculation!)
+        std::cout << "Testing cell ID retrieval for non-periodic grid ..."
+                  << std::endl;
+
+        // Within the space, cells of size (1., 1.)
+        assert(check_pos(g23_np, {0.0, 0.0},       0));
+        assert(check_pos(g23_np, {0.5, 0.5},       0));
+        assert(check_pos(g23_np, {0.314, 0.756},   0));
+
+        assert(check_pos(g23_np, {0.1, 0.6},       0));
+        assert(check_pos(g23_np, {1.1, 0.6},       1));
+        assert(check_pos(g23_np, {0.1, 1.6},       2));
+        assert(check_pos(g23_np, {1.1, 1.6},       3));
+        assert(check_pos(g23_np, {0.1, 2.6},       4));
+        assert(check_pos(g23_np, {1.1, 2.6},       5));
+
+        // High-level cell boundaries chosen correctly
+        assert(check_pos(g23_np, {0.99, 0.5},      0));
+        assert(check_pos(g23_np, {1.0, 0.5},       1));
+        assert(check_pos(g23_np, {0.99, 0.99},     0));
+        assert(check_pos(g23_np, {1.0, 1.0},       3));
+
+        // High-value space boundaries map to boundary cells
+        assert(check_pos(g23_np, {1.999, 0.0},     1));
+        assert(check_pos(g23_np, {2.0,   0.0},     1));
+        assert(check_pos(g23_np, {0.0,   2.999},   4));
+        assert(check_pos(g23_np, {1.999, 2.999},   5));
+        assert(check_pos(g23_np, {2.0,   3.0},     5));
 
         std::cout << "Success." << std::endl << std::endl;
+
+        // Querying a position outside the space yields an error
+        assert(check_error_message<std::invalid_argument>(
+            "position query outside of space",
+            [&](){
+                g23_np.cell_at({2.0001, 3.0001});
+            },
+            "given position is outside the non-periodic space", "", true)
+        );
+        assert(check_error_message<std::invalid_argument>(
+            "position query outside of space",
+            [&](){
+                g23_np.cell_at({-0.0001, +0.0001});
+            },
+            "given position is outside the non-periodic space", "", true)
+        );
+
 
         // -------------------------------------------------------------------
         // Done.

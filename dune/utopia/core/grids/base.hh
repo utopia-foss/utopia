@@ -219,6 +219,11 @@ public:
         return _space->periodic;
     }
 
+    /// The space this grid is coupled to
+    std::shared_ptr<Space> space() const {
+        return _space;
+    }
+
 
 protected:
     // -- Neighborhood functions ----------------------------------------------
