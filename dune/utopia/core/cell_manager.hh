@@ -31,7 +31,7 @@ public:
     using Space = typename Model::Space;
 
     /// Dimensionality of the space this cell manager is to discretize
-    static constexpr std::size_t dim = Model::Space::dim;
+    static constexpr DimType dim = Model::Space::dim;
 
     /// Grid type; this refers to the base type of the stored (derived) object
     using GridType = Grid<Space>;
@@ -40,7 +40,7 @@ public:
     using NBFuncCell = std::function<CellContainer<Cell>(const Cell&)>;
 
     /// Type of vectors that represent a physical quantity
-    using PhysVector = PhysVectorType<dim>;
+    using SpaceVec = SpaceVecType<dim>;
 
 
 private:
@@ -227,7 +227,7 @@ public:
       *         For periodic space, the given position is mapped back into the
       *         physical space, thus always returning a valid cell.
       */
-    const std::shared_ptr<Cell>& cell_at(const PhysVector& pos) const {
+    const std::shared_ptr<Cell>& cell_at(const SpaceVec& pos) const {
         return _cells[_grid->cell_at(pos)];
     }
 

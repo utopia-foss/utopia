@@ -16,7 +16,7 @@ using Utopia::DataIO::Config;
 using namespace Utopia;
 using SpaceMap = std::map<std::string, DefaultSpace>;  // 2D space
 using MultiIndex = MultiIndexType<2>;
-using PhysVector = PhysVectorType<2>;
+using SpaceVec = SpaceVecType<2>;
 
 
 /// Compares two Armadillo vectors for equality
@@ -33,7 +33,7 @@ bool check_eq(T1&& v1, T2&& v2) {
 
 /// Checks whether the given position is mapped to the given cell ID
 template<class Grid>
-bool check_pos(Grid& grid, PhysVector pos, IndexType expected_id) {
+bool check_pos(Grid& grid, SpaceVec pos, IndexType expected_id) {
     IndexType cell_id;
     try {
         cell_id = grid.cell_at(pos);
@@ -302,36 +302,36 @@ int main(int, char *[]) {
                   << std::endl;
         
         std::cout << "Testing cell extent ..." << std::endl;
-        assert(check_eq(g11.extent_of(0), PhysVector({1.0, 1.0})));
+        assert(check_eq(g11.extent_of(0), SpaceVec({1.0, 1.0})));
         for (unsigned short i=0; i<6; i++) {
-            assert(check_eq(g23.extent_of(i), PhysVector({1.0, 1.0})));
+            assert(check_eq(g23.extent_of(i), SpaceVec({1.0, 1.0})));
         }
         std::cout << "Success." << std::endl << std::endl;
         
         std::cout << "Testing barycenters ..." << std::endl;
-        assert(check_eq(g11.barycenter_of(0), PhysVector({0.5, 0.5})));
+        assert(check_eq(g11.barycenter_of(0), SpaceVec({0.5, 0.5})));
 
-        assert(check_eq(g23.barycenter_of(0), PhysVector({0.5, 0.5})));
-        assert(check_eq(g23.barycenter_of(1), PhysVector({1.5, 0.5})));
-        assert(check_eq(g23.barycenter_of(2), PhysVector({0.5, 1.5})));
-        assert(check_eq(g23.barycenter_of(3), PhysVector({1.5, 1.5})));
-        assert(check_eq(g23.barycenter_of(4), PhysVector({0.5, 2.5})));
-        assert(check_eq(g23.barycenter_of(5), PhysVector({1.5, 2.5})));
+        assert(check_eq(g23.barycenter_of(0), SpaceVec({0.5, 0.5})));
+        assert(check_eq(g23.barycenter_of(1), SpaceVec({1.5, 0.5})));
+        assert(check_eq(g23.barycenter_of(2), SpaceVec({0.5, 1.5})));
+        assert(check_eq(g23.barycenter_of(3), SpaceVec({1.5, 1.5})));
+        assert(check_eq(g23.barycenter_of(4), SpaceVec({0.5, 2.5})));
+        assert(check_eq(g23.barycenter_of(5), SpaceVec({1.5, 2.5})));
         
         std::cout << "Success." << std::endl << std::endl;
         
         std::cout << "Testing cell vertex positions ..." << std::endl;
         auto g11_id0_vtcs = g11.vertices_of(0);
-        assert(check_eq(g11_id0_vtcs[0], PhysVector({0.0, 0.0})));
-        assert(check_eq(g11_id0_vtcs[1], PhysVector({1.0, 0.0})));
-        assert(check_eq(g11_id0_vtcs[2], PhysVector({1.0, 1.0})));
-        assert(check_eq(g11_id0_vtcs[3], PhysVector({0.0, 1.0})));
+        assert(check_eq(g11_id0_vtcs[0], SpaceVec({0.0, 0.0})));
+        assert(check_eq(g11_id0_vtcs[1], SpaceVec({1.0, 0.0})));
+        assert(check_eq(g11_id0_vtcs[2], SpaceVec({1.0, 1.0})));
+        assert(check_eq(g11_id0_vtcs[3], SpaceVec({0.0, 1.0})));
 
         auto g23_id5_vtcs = g23.vertices_of(5);
-        assert(check_eq(g23_id5_vtcs[0], PhysVector({1.0, 2.0})));
-        assert(check_eq(g23_id5_vtcs[1], PhysVector({2.0, 2.0})));
-        assert(check_eq(g23_id5_vtcs[2], PhysVector({2.0, 3.0})));
-        assert(check_eq(g23_id5_vtcs[3], PhysVector({1.0, 3.0})));
+        assert(check_eq(g23_id5_vtcs[0], SpaceVec({1.0, 2.0})));
+        assert(check_eq(g23_id5_vtcs[1], SpaceVec({2.0, 2.0})));
+        assert(check_eq(g23_id5_vtcs[2], SpaceVec({2.0, 3.0})));
+        assert(check_eq(g23_id5_vtcs[3], SpaceVec({1.0, 3.0})));
         
         std::cout << "Success." << std::endl << std::endl;
 

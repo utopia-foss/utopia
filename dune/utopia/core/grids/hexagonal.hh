@@ -19,10 +19,10 @@ public:
     using Base = Grid<Space>;
 
     /// The dimensionality of the space to be discretized (for easier access)
-    static constexpr std::size_t dim = Space::dim;
+    static constexpr DimType dim = Space::dim;
 
     /// The type of vectors that have a relation to physical space
-    using PhysVector = typename Space::PhysVector;
+    using SpaceVec = typename Space::SpaceVec;
 
     /// The type of multi-index like arrays, e.g. the grid shape
     using MultiIndex = MultiIndexType<dim>;
@@ -64,9 +64,9 @@ public:
     };
 
     /// The effective cell resolution into each physical space dimension
-    const PhysVector effective_resolution() const override {
+    const SpaceVec effective_resolution() const override {
         // TODO Implement
-        PhysVector res_eff;
+        SpaceVec res_eff;
         res_eff.fill(0.);
         return res_eff;
     }
@@ -93,7 +93,7 @@ public:
     /// Returns the barycenter of the cell with the given ID
     /** \note This method does not perform bounds checking of the given ID!
       */
-    const PhysVector barycenter_of(const IndexType&) const override {
+    const SpaceVec barycenter_of(const IndexType&) const override {
         throw std::runtime_error("The HexagonalGrid::barycenter_of method "
                                  "is not yet implemented!");
         return {};
@@ -102,7 +102,7 @@ public:
     /// Returns the extent of the cell with the given ID
     /** \note This method does not perform bounds checking of the given ID!
       */
-    const PhysVector extent_of(const IndexType&) const override {
+    const SpaceVec extent_of(const IndexType&) const override {
         throw std::runtime_error("The HexagonalGrid::extent_of method is not "
                                  "yet implemented!");
         return {};
@@ -112,7 +112,7 @@ public:
     /** \detail The order of the vertices is not guaranteed.
       * \note   This method does not perform bounds checking of the given ID!
       */
-    const std::vector<const PhysVector>
+    const std::vector<const SpaceVec>
         vertices_of(const IndexType&) const override
     {
         throw std::runtime_error("The HexagonalGrid::vertices_of method is "
@@ -134,7 +134,7 @@ public:
       *         associated with this grid. For periodic space, the given
       *         position is mapped back into the physical space.
       */
-    IndexType cell_at(const PhysVector&) const override {
+    IndexType cell_at(const SpaceVec&) const override {
         throw std::runtime_error("The HexagonalGrid::cell_at method is not "
                                  "yet implemented!");
         return {};

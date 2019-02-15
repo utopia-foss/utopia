@@ -28,13 +28,13 @@ struct Space {
     static constexpr std::size_t dim = num_dims;
 
     /// The type for vectors relating to physical space
-    using PhysVector = PhysVectorType<dim>;
+    using SpaceVec = SpaceVecType<dim>;
 
     /// Whether the space is to be assumed periodic
     const bool periodic;
 
     /// The physical (euclidean) extent of the space
-    const PhysVector extent;
+    const SpaceVec extent;
 
 
     // -- Constructors --------------------------------------------------------
@@ -77,7 +77,7 @@ struct Space {
       *         boundary back to the low-value boundary.
       */
     template<bool include_high_value_boundary=true>
-    bool contains(const PhysVector& pos) const {
+    bool contains(const SpaceVec& pos) const {
         // Calculate the relative position within the space
         const auto rel_pos = pos / extent;  // element-wise division
 
@@ -98,7 +98,7 @@ struct Space {
       * \note   The high-value boundary is is mapped back to the low-value
       *         boundary, such that all points are well-defined.
       */
-    PhysVector map_into_space(const PhysVector& pos) const {
+    SpaceVec map_into_space(const SpaceVec& pos) const {
         // If it is already within space, nothing to map
         // Check whether it is contained (_excluding_ high value boundary)
         if (contains<false>(pos)) {
@@ -110,22 +110,22 @@ struct Space {
         // For a description of the transformation, see the comments in the
         // std::transform binary operator lambda below.
         if constexpr (dim == 1) {
-            return PhysVector({  pos[0]
-                               - std::floor(pos[0]/extent[0]) * extent[0]});
+            return SpaceVec({  pos[0]
+                             - std::floor(pos[0]/extent[0]) * extent[0]});
         }
         else if constexpr (dim == 2) {
-            return PhysVector({  pos[0]
-                               - std::floor(pos[0]/extent[0]) * extent[0],
-                                 pos[1]
-                               - std::floor(pos[1]/extent[1]) * extent[1]});
+            return SpaceVec({  pos[0]
+                             - std::floor(pos[0]/extent[0]) * extent[0],
+                               pos[1]
+                             - std::floor(pos[1]/extent[1]) * extent[1]});
         }
         else if constexpr (dim == 3) {
-            return PhysVector({  pos[0]
-                               - std::floor(pos[0]/extent[0]) * extent[0],
-                                 pos[1]
-                               - std::floor(pos[1]/extent[1]) * extent[1],
-                                 pos[2]
-                               - std::floor(pos[2]/extent[2]) * extent[2]});
+            return SpaceVec({  pos[0]
+                             - std::floor(pos[0]/extent[0]) * extent[0],
+                               pos[1]
+                             - std::floor(pos[1]/extent[1]) * extent[1],
+                               pos[2]
+                             - std::floor(pos[2]/extent[2]) * extent[2]});
         }
         else {
             // The general case
@@ -165,8 +165,8 @@ private:
     }
 
     /// Setup the extent type if no config parameter was available
-    PhysVector setup_extent() {
-        PhysVector extent;
+    SpaceVec setup_extent() {
+        SpaceVec extent;
         extent.fill(1.);
         return extent;
     }
@@ -175,9 +175,9 @@ private:
     /** \param cfg  The config node to read the `extent` parameter from. If
       *             that entry is missing, the default extent is used.
       */
-    PhysVector setup_extent(const DataIO::Config& cfg) {
+    SpaceVec setup_extent(const DataIO::Config& cfg) {
         if (cfg["extent"]) {
-            return as_PhysVector<dim>(cfg["extent"]);
+            return as_SpaceVec<dim>(cfg["extent"]);
         }
 
         // Return the default extent

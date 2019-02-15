@@ -58,10 +58,10 @@ public:
     using Self = Grid<Space>;
 
     /// The dimensionality of the space to be discretized (for easier access)
-    static constexpr std::size_t dim = Space::dim;
+    static constexpr DimType dim = Space::dim;
 
     /// The type of vectors that have a relation to physical space
-    using PhysVector = typename Space::PhysVector;
+    using SpaceVec = typename Space::SpaceVec;
 
     /// The type of multi-index like arrays, e.g. the grid shape
     using MultiIndex = MultiIndexType<dim>;
@@ -159,19 +159,19 @@ public:
     /// Returns the barycenter of the cell with the given ID
     /** \note This method does not perform bounds checking of the given ID!
       */
-    virtual const PhysVector barycenter_of(const IndexType&) const = 0;
+    virtual const SpaceVec barycenter_of(const IndexType&) const = 0;
 
     /// Returns the extent of the cell with the given ID
     /** \note This method does not perform bounds checking of the given ID!
       */
-    virtual const PhysVector extent_of(const IndexType&) const = 0;
+    virtual const SpaceVec extent_of(const IndexType&) const = 0;
 
     /// Returns the vertices of the cell with the given ID
     /** \detail Consult the derived class implementation's documentation on
       *         the order of the vertices in the returned container.
       * \note   This method does not perform bounds checking of the given ID!
       */
-    virtual const std::vector<const PhysVector>
+    virtual const std::vector<const SpaceVec>
         vertices_of(const IndexType&) const = 0;
 
     /// Return the ID of the cell covering the given point in physical space
@@ -188,7 +188,7 @@ public:
       *         associated with this grid. For periodic space, the given
       *         position is mapped back into the physical space.
       */
-    virtual IndexType cell_at(const PhysVector&) const = 0;
+    virtual IndexType cell_at(const SpaceVec&) const = 0;
 
     // .. Getters .............................................................
     /// Get number of cells
@@ -209,7 +209,7 @@ public:
       *         The effective resolution accounts for the scaling that was
       *         required to map an integer number of cells onto the space.
       */
-    virtual const PhysVector effective_resolution() const = 0;
+    virtual const SpaceVec effective_resolution() const = 0;
 
     /// Get the shape of the grid discretization
     virtual const MultiIndex shape() const = 0;

@@ -27,10 +27,10 @@ public:
     using Base = Grid<Space>;
 
     /// The dimensionality of the space to be discretized (for easier access)
-    static constexpr std::size_t dim = Space::dim;
+    static constexpr DimType dim = Space::dim;
 
     /// The type of vectors that have a relation to physical space
-    using PhysVector = typename Space::PhysVector;
+    using SpaceVec = typename Space::SpaceVec;
 
     /// The type of multi-index like arrays, e.g. the grid shape
     using MultiIndex = MultiIndexType<dim>;
@@ -42,7 +42,7 @@ private:
     const MultiIndex _shape;
 
     /// The extent of each cell of this square discretization (same for all)
-    const PhysVector _cell_extent;
+    const SpaceVec _cell_extent;
 
 
 public:
@@ -103,7 +103,7 @@ public:
     /** \detail For a square lattice, this is just the quotient of grid shape
       *         and extent of physical space, separately in each dimension
       */
-    const PhysVector effective_resolution() const override {
+    const SpaceVec effective_resolution() const override {
         // Use element-wise division by the physical extent (double)
         return _shape / this->_space->extent;
     }
@@ -134,7 +134,7 @@ public:
     /// Returns the barycenter of the cell with the given ID
     /** \note This method does not perform bounds checking of the given ID!
       */
-    const PhysVector barycenter_of(const IndexType& id) const override {
+    const SpaceVec barycenter_of(const IndexType& id) const override {
         // Offset on grid + offset within cell
         return (midx_of(id) % _cell_extent) + (_cell_extent/2.);
         // NOTE The %-operator performs element-wise multiplication
@@ -143,7 +143,7 @@ public:
     /// Returns the extent of the cell with the given ID
     /** \note This method does not perform bounds checking of the given ID!
       */
-    const PhysVector extent_of(const IndexType&) const override {
+    const SpaceVec extent_of(const IndexType&) const override {
         return _cell_extent;
     }
 
@@ -153,21 +153,21 @@ public:
       *         bottom left-hand vertex of the cell.
       * \note   This method does not perform bounds checking of the given ID!
       */
-    const std::vector<const PhysVector>
+    const std::vector<const SpaceVec>
         vertices_of(const IndexType& id) const override
     {
         static_assert(dim == 2,
                       "SquareGrid::vertices_of is only implemented for 2D!");
 
-        std::vector<const PhysVector> vertices;
+        std::vector<const SpaceVec> vertices;
         vertices.reserve(4);
 
         // NOTE The %-operator performs element-wise multiplication
         // Counter-clockwise, starting bottom left ...
         vertices.push_back(midx_of(id) % _cell_extent);
-        vertices.push_back(vertices[0] + _cell_extent % PhysVector({1., 0.}));
+        vertices.push_back(vertices[0] + _cell_extent % SpaceVec({1., 0.}));
         vertices.push_back(vertices[0] + _cell_extent);
-        vertices.push_back(vertices[0] + _cell_extent % PhysVector({0., 1.}));
+        vertices.push_back(vertices[0] + _cell_extent % SpaceVec({0., 1.}));
 
         return vertices;
     }
@@ -186,7 +186,7 @@ public:
       *         associated with this grid. For periodic space, the given
       *         position is mapped back into the physical space.
       */
-    IndexType cell_at(const PhysVector& pos) const override {
+    IndexType cell_at(const SpaceVec& pos) const override {
         static_assert(dim == 2,
                       "SquareGrid::cell_at only implemented for 2D!");
         
@@ -203,8 +203,8 @@ public:
             // Calculate the real-valued position in units of cell extents,
             // using the position mapped back into space. That function takes
             // care to map the high-value boundary to the low-value boundary.
-            const PhysVector ridx = (  this->_space->map_into_space(pos)
-                                     / _cell_extent);
+            const SpaceVec ridx = (  this->_space->map_into_space(pos)
+                                   / _cell_extent);
 
             // Can now calculate the integer multi index, rounding down
             midx = {static_cast<midx_et>(ridx[0]),
@@ -218,7 +218,7 @@ public:
             }
 
             // Calculate the real-valued position in units of cell extents
-            const PhysVector ridx = pos / _cell_extent;
+            const SpaceVec ridx = pos / _cell_extent;
 
             // Calculate the integer multi index, rounding down
             midx = {static_cast<midx_et>(ridx[0]),
@@ -256,7 +256,7 @@ private:
     MultiIndex determine_shape() const {
         MultiIndex shape;
 
-        for (std::size_t i = 0; i < dim; i++) {
+        for (DimType i = 0; i < dim; i++) {
             shape[i] = this->_space->extent[i] * this->_resolution;
         }
 
@@ -411,7 +411,7 @@ protected:
     // .. Neighborhood helper functions .......................................
 
     /// Return i-dimensional shift in cell indices, depending on grid shape
-    template<std::size_t shift_dim>
+    template<DimType shift_dim>
     constexpr typename MultiIndexType<dim>::value_type id_shift_in_dim_ () {
         if constexpr (shift_dim == 0) {
             return 1;
@@ -438,7 +438,7 @@ protected:
      * 
      * \return void
      */
-    template<std::size_t dim, bool periodic>
+    template<DimType dim, bool periodic>
     void add_neighbors_in_dim_ (const IndexType& root_id,
                                 IndexContainer& neighbor_ids)
     {

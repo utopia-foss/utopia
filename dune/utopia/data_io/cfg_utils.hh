@@ -130,7 +130,7 @@ std::array<T, len> as_array(const Utopia::DataIO::Config& node) {
   * \tparam CVecT The Armadillo vector type to return
   * \tparam dim   The dimensionality of the vector (only needed for)
   */
-template<typename CVecT, std::size_t dim=0>
+template<typename CVecT, DimType dim=0>
 CVecT as_arma_vec(const Utopia::DataIO::Config& node) {
     // Extract the field vector element type; assuming Armadillo interface here
     using element_t = typename CVecT::elem_type;
@@ -148,7 +148,7 @@ CVecT as_arma_vec(const Utopia::DataIO::Config& node) {
         CVecT cvec;
         const auto vec = as_array<element_t, dim>(node);
 
-        for (std::size_t i=0; i<dim; i++) {
+        for (DimType i=0; i<dim; i++) {
             cvec[i] = vec[i];
         }
 
@@ -156,14 +156,14 @@ CVecT as_arma_vec(const Utopia::DataIO::Config& node) {
     }
 }
 
-/// Shortcut to retrieve a config entry as PhysVector of given dimensionality
-template<std::size_t dim>
-PhysVectorType<dim> as_PhysVector(const Utopia::DataIO::Config& node) {
-    return as_arma_vec<PhysVectorType<dim>, dim>(node);
+/// Shortcut to retrieve a config entry as SpaceVec of given dimensionality
+template<DimType dim>
+SpaceVecType<dim> as_SpaceVec(const Utopia::DataIO::Config& node) {
+    return as_arma_vec<SpaceVecType<dim>, dim>(node);
 }
 
 /// Shortcut to retrieve a config entry as MultiIndex of given dimensionality
-template<std::size_t dim>
+template<DimType dim>
 MultiIndexType<dim> as_MultiIndex(const Utopia::DataIO::Config& node) {
     return as_arma_vec<MultiIndexType<dim>, dim>(node);
 }
