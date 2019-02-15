@@ -269,7 +269,7 @@ int main(int, char *[]) {
                 MockModel<CellTraitsEC> mm_ec("missing_grid_cfg2",
                                               cfg["missing_grid_cfg2"],
                                               initial_state);
-            }, "Missing one or both of the grid configuration entries"));
+            }, "Missing grid configuration parameter 'resolution'!"));
 
         assert(check_error_message<std::invalid_argument>(
             "missing_grid_cfg3",
@@ -277,7 +277,7 @@ int main(int, char *[]) {
                 MockModel<CellTraitsEC> mm_ec("missing_grid_cfg3",
                                               cfg["missing_grid_cfg3"],
                                               initial_state);
-            }, "Missing one or both of the grid configuration entries"));
+            }, "Missing required grid configuration entry 'structure'!"));
 
         assert(check_error_message<std::invalid_argument>(
             "bad_grid_cfg",
@@ -382,14 +382,14 @@ int main(int, char *[]) {
             [&](){
                 MockModel<CellTraitsDC> mm_nb_bad1("mm_nb_bad1",
                                                    cfg["nb_bad1"]);
-            }, "No 'bad' neighborhood available! Check the 'mode' argument"));
+            }, "Could not translate given value for neighborhood mode"));
 
         assert(check_error_message<std::invalid_argument>(
             "nb_bad2",
             [&](){
                 MockModel<CellTraitsDC> mm_nb_bad2("mm_nb_bad2",
                                                    cfg["nb_bad2"]);
-            }, "No 'vonNeumann' neighborhood available for 'triangular'"));
+            }, "No 'vonNeumann' neighborhood available for TriangularGrid"));
         std::cout << "Success." << std::endl << std::endl;
 
         // NOTE The actual neighborhood tests are performed separately
@@ -418,6 +418,10 @@ int main(int, char *[]) {
 
         cm.vertices_of(c0);
         cm.vertices_of(*c0);
+
+        assert(cm.grid()->is_periodic());
+        cm.cell_at({3.14, 42.0});
+        cm.cell_at({-1.23, 3.45});
 
         std::cout << "Success." << std::endl << std::endl;
 

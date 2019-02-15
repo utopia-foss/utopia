@@ -39,6 +39,9 @@ public:
     /// Neighborhood function used in public interface (with cell as argument)
     using NBFuncCell = std::function<CellContainer<Cell>(const Cell&)>;
 
+    /// Type of vectors that represent a physical quantity
+    using PhysVector = PhysVectorType<dim>;
+
 
 private:
     // -- Members -------------------------------------------------------------
@@ -208,6 +211,24 @@ public:
       */
     auto vertices_of(const std::shared_ptr<Cell>& cell) const {
         return _grid->vertices_of(cell->id());
+    }
+
+    /// Return the cell covering the given point in physical space
+    /** \detail Cells are interpreted as covering half-open intervals in space,
+      *         i.e., including their low-value edges and excluding their high-
+      *         value edges.
+      *         The special case of points on high-value edges for non-periodic
+      *         space behaves such that these points are associated with the
+      *         cells at the boundary.
+      *
+      * \note   For non-periodic space, a check is performed whether the given
+      *         point is inside the physical space associated with the grid. If
+      *         that is not the case, an error is raised.
+      *         For periodic space, the given position is mapped back into the
+      *         physical space, thus always returning a valid cell.
+      */
+    const std::shared_ptr<Cell>& cell_at(const PhysVector& pos) const {
+        return _cells[_grid->cell_at(pos)];
     }
 
 

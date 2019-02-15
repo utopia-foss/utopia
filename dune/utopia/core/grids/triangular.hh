@@ -151,7 +151,7 @@ protected:
         }
         else {
             throw std::invalid_argument("No '" + nb_mode_to_string(nb_mode)
-                + "' available for triangular grid discretization!");
+                + "' neighborhood available for TriangularGrid!");
         }
     }
 
