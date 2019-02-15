@@ -251,7 +251,8 @@ protected:
             // cells in those dimensions
             // Add neighbors in dimension 1
             for (std::size_t dist=1; dist<=this->_metric_distance; ++dist){
-                add_neighbors_pair_in_dim_<1, true>(root_id, dist, neighbor_ids);
+                add_front_neighbor_in_dim_<1, true>(root_id, dist, neighbor_ids);
+                add_back_neighbor_in_dim_<1, true>(root_id, dist, neighbor_ids);
             }
 
             // If the dimension exists, add neighbors in dimension 2
@@ -278,7 +279,14 @@ protected:
                          dist<=this->_metric_distance - 1 - i/2 + (i%2)/2; 
                          ++dist)
                     {
-                        add_neighbors_pair_in_dim_<2, true>
+                        // front neighbor
+                        add_front_neighbor_in_dim_<2, true>
+                            (neighbor_ids[i], 
+                            dist, 
+                            neighbor_ids);
+
+                        // back neighbor
+                        add_back_neighbor_in_dim_<2, true>
                             (neighbor_ids[i], 
                             dist, 
                             neighbor_ids);
@@ -287,7 +295,13 @@ protected:
 
                 // Finally, add the root cell's neighbors in the second dimension
                 for (std::size_t dist=1; dist<=this->_metric_distance; ++dist){
-                    add_neighbors_pair_in_dim_<2, true>(root_id, 
+                    // front neighbor
+                    add_front_neighbor_in_dim_<2, true>(root_id, 
+                                                        dist, 
+                                                        neighbor_ids);
+
+                    // back neighbor
+                    add_back_neighbor_in_dim_<2, true>(root_id, 
                                                         dist, 
                                                         neighbor_ids);
                 }
@@ -370,7 +384,8 @@ protected:
         // cells in those dimensions
         // Add neighbors in dimension 1
         for (std::size_t dist=1; dist<=this->_metric_distance; ++dist){
-            add_neighbors_pair_in_dim_<1, false>(root_id, dist, neighbor_ids);
+            add_front_neighbor_in_dim_<1, false>(root_id, dist, neighbor_ids);
+            add_back_neighbor_in_dim_<1, false>(root_id, dist, neighbor_ids);
         }
 
         // If the dimension exists, add neighbors in dimension 2
@@ -397,7 +412,14 @@ protected:
                          dist<=this->_metric_distance - 1 - i/2 + (i%2)/2; 
                          ++dist)
                     {
-                        add_neighbors_pair_in_dim_<2, true>
+                        // front neighbor
+                        add_front_neighbor_in_dim_<2, true>
+                            (neighbor_ids[i], 
+                            dist, 
+                            neighbor_ids);
+
+                        // back neighbor
+                        add_back_neighbor_in_dim_<2, true>
                             (neighbor_ids[i], 
                             dist, 
                             neighbor_ids);
@@ -406,7 +428,13 @@ protected:
 
                 // Finally, add the root cell's neighbors in the second dimension
                 for (std::size_t dist=1; dist<=this->_metric_distance; ++dist){
-                    add_neighbors_pair_in_dim_<2, true>(root_id, 
+                    // front neighbor
+                    add_front_neighbor_in_dim_<2, true>(root_id, 
+                                                        dist, 
+                                                        neighbor_ids);
+
+                    // back neighbor
+                    add_back_neighbor_in_dim_<2, true>(root_id, 
                                                         dist, 
                                                         neighbor_ids);
                 }
@@ -455,19 +483,22 @@ protected:
 
         // Get all neighbors in the first dimension
         for (std::size_t dist=1; dist<=this->_metric_distance; ++dist){
-            add_neighbors_pair_in_dim_<1, true>(root_id, dist, neighbor_ids);
+            add_front_neighbor_in_dim_<1, true>(root_id, dist, neighbor_ids);
+            add_back_neighbor_in_dim_<1, true>(root_id, dist, neighbor_ids);
         }
 
         // For these neighbors, add _their_ neighbors in the second dimension
         for (const auto& nb : neighbor_ids){
             for (std::size_t dist=1; dist<=this->_metric_distance; ++dist){
-                add_neighbors_pair_in_dim_<2, true>(nb, dist, neighbor_ids);
+                add_front_neighbor_in_dim_<2, true>(nb, dist, neighbor_ids);
+                add_back_neighbor_in_dim_<2, true>(nb, dist, neighbor_ids);
             }
         }
 
         // And finally, add the root cell's neighbors in the second dimension
         for (std::size_t dist=1; dist<=this->_metric_distance; ++dist){
-            add_neighbors_pair_in_dim_<2, true>(root_id, dist, neighbor_ids);
+            add_front_neighbor_in_dim_<2, true>(root_id, dist, neighbor_ids);
+            add_back_neighbor_in_dim_<2, true>(root_id, dist, neighbor_ids);
         }
 
         return neighbor_ids;
@@ -521,19 +552,22 @@ protected:
 
         // Get all neighbors in the first dimension
         for (std::size_t dist=1; dist<=this->_metric_distance; ++dist){
-            add_neighbors_pair_in_dim_<1, false>(root_id, dist, neighbor_ids);
+            add_front_neighbor_in_dim_<1, false>(root_id, dist, neighbor_ids);
+            add_back_neighbor_in_dim_<1, false>(root_id, dist, neighbor_ids);
         }
 
         // For these neighbors, add _their_ neighbors in the second dimension
         for (const auto& nb : neighbor_ids){
             for (std::size_t dist=1; dist<=this->_metric_distance; ++dist){
-                add_neighbors_pair_in_dim_<2, false>(nb, dist, neighbor_ids);
+                add_front_neighbor_in_dim_<2, false>(nb, dist, neighbor_ids);
+                add_back_neighbor_in_dim_<2, false>(nb, dist, neighbor_ids);
             }
         }
 
         // And finally, add the root cell's neighbors in the second dimension
         for (std::size_t dist=1; dist<=this->_metric_distance; ++dist){
-            add_neighbors_pair_in_dim_<2, false>(root_id, dist, neighbor_ids);
+            add_front_neighbor_in_dim_<2, false>(root_id, dist, neighbor_ids);
+            add_back_neighbor_in_dim_<2, false>(root_id, dist, neighbor_ids);
         }
 
         return neighbor_ids;
@@ -633,16 +667,18 @@ protected:
         }
     }
 
-    /// Fill an index container with a pair of neighbors on opposite sides a given distance away from each other.
+
+    /// Fill an index container with a front neighbor.
     /** This function takes an index container and populates it with the
      *  indices of neighboring cells in different dimensions, specified by
      *  template parameter `dim`.
      * 
      *  The algorithm first calculates whether the given root cell index has a
-     *  front or back boundary in the chosen dimension. If so, the neighboring
+     *  front boundary in the chosen dimension. If so, the neighboring
      *  cell is only added if the grid is periodic.
      * 
      * \param root_id      Which cell to find the agents of
+     * \param distance     Which distance the neighbor has to the root cell
      * \param neighbor_ids The container to populate with the indices
      * 
      * \tparam dim         The dimensions in which to add neighbors
@@ -651,9 +687,71 @@ protected:
      * \return void
      */
     template<std::size_t dim, bool periodic>
-    void add_neighbors_pair_in_dim_ (const IndexType& root_id,
+    void add_front_neighbor_in_dim_ (const IndexType& root_id,
                                      std::size_t distance,
                                      IndexContainer& neighbor_ids)
+    {
+        // Assure the number of dimensions is supported
+        static_assert((dim == 1) or (dim == 2),
+                      "Unsupported dimensionality in space! Need be 1 or 2.");
+
+        // If the distance is zero, no neighbor can be added; return nothing.
+        if (distance == 0){
+            return;
+        }
+
+        // Gather the required grid information
+        const auto& shape = this->shape();
+        
+        // Conditions for the front boundary; the conditions are
+        // dependent on the dimension in which to add neighbors.
+        bool _cond_front;
+
+        // Set the boundary conditions for different dimensions
+        if constexpr (dim == 1){
+            _cond_front = (root_id % shape[0] < distance);
+        }
+        else if constexpr (dim == 2){
+            _cond_front = (root_id / shape[0] < distance);
+        }
+
+        // check if at front boundary
+        if (_cond_front) {
+            if constexpr (periodic) {
+                neighbor_ids.push_back(root_id
+                                        - distance * id_shift_in_dim_<dim-1>()
+                                        + id_shift_in_dim_<dim>());
+            }
+        }
+        else {
+            neighbor_ids.push_back(root_id 
+                                    - distance * id_shift_in_dim_<dim-1>());
+        }
+    }
+
+
+    /// Fill an index container with a back neighbor.
+    /** This function takes an index container and populates it with the
+     *  index of a neighboring cell in different dimensions, specified by
+     *  template parameter `dim`.
+     * 
+     *  The algorithm first calculates whether the given root cell index has a
+     *  back boundary in the chosen dimension. If so, the neighboring
+     *  cell is only added if the grid is periodic.
+     * 
+     * \param root_id      Which cell to find the agents of
+     * \param distance     Which distance the neighbor has to the root cell
+     * \param neighbor_ids The container to populate with the indices
+     * 
+     * \tparam dim         The dimensions in which to add neighbors
+     * \tparam periodic    Whether the grid is periodic
+     * 
+     * \return void
+     */
+    template<std::size_t dim, bool periodic>
+    void add_back_neighbor_in_dim_ (const IndexType& root_id,
+                                    std::size_t distance,
+                                    IndexContainer& neighbor_ids)
     {
         // Assure the number of dimensions is supported
         static_assert((dim == 1) or (dim == 2),
@@ -669,31 +767,16 @@ protected:
         const auto num_cells = std::accumulate(shape.begin(), shape.end(), 1, 
                                                std::multiplies<std::size_t>());
 
-        // Conditions for the front and back boundary; the conditions are
+        // Conditions for the back boundary; the conditions are
         // dependent on the dimension in which to add neighbors.
-        bool _cond_front;
         bool _cond_back;
 
         // Set the boundary conditions for different dimensions
         if constexpr (dim == 1){
-            _cond_front = (root_id % shape[0] < distance);
             _cond_back  = (root_id % shape[0] >= shape[0] - distance);
         }
         else if constexpr (dim == 2){
-            _cond_front = (root_id / shape[0] < distance);
             _cond_back  = (root_id / shape[0] >= shape[1] - distance);
-        }
-
-        // check if at front boundary
-        if (_cond_front) {
-            if constexpr (periodic) {
-                neighbor_ids.push_back(root_id
-                                        - distance * id_shift_in_dim_<dim-1>()
-                                        + id_shift_in_dim_<dim>());
-            }
-        }
-        else {
-            neighbor_ids.push_back(root_id - distance * id_shift_in_dim_<dim-1>());
         }
 
         // check if at back boundary
@@ -708,7 +791,8 @@ protected:
             // NOTE Normalization by the number of cells is needed because
             //      otherwise the index could exceed the vector range.
             //      It's literally the edge case (bottom right hand corner) ;D
-            neighbor_ids.push_back((root_id + distance * id_shift_in_dim_<dim-1>()) 
+            neighbor_ids.push_back((root_id 
+                                    + distance * id_shift_in_dim_<dim-1>()) 
                                     % num_cells);
         }
     }
