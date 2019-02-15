@@ -106,34 +106,50 @@ struct Space {
         }
         // else: Need to transform back into space
 
-        // Mapped position vector
-        auto mpos = pos;
-        std::cout << "before transform:" << std::endl << mpos;
-        
-        // Loop over position and extent and apply binary operation, storing
-        // it in mpos
-        std::transform(pos.begin(), pos.end(), extent.begin(), mpos.begin(),
-            [](const double& p, const double& e){
-                // Given the position in one dimension and the corresponding
-                // extent, calculate the remainder of the relative position,
-                // which can be in range [-0.5, 0.5]
-                const double rem = std::remainder(p/e, 1.);
-                std::cout.precision(17);
-                std::cout << "remainder: " << rem << " \t";
+        // Hard-code for often used dimensions to avoid std::transform overhead
+        // For a description of the transformation, see the comments in the
+        // std::transform binary operator lambda below.
+        if constexpr (dim == 1) {
+            return PhysVector({  pos[0]
+                               - std::floor(pos[0]/extent[0]) * extent[0]});
+        }
+        else if constexpr (dim == 2) {
+            return PhysVector({  pos[0]
+                               - std::floor(pos[0]/extent[0]) * extent[0],
+                                 pos[1]
+                               - std::floor(pos[1]/extent[1]) * extent[1]});
+        }
+        else if constexpr (dim == 3) {
+            return PhysVector({  pos[0]
+                               - std::floor(pos[0]/extent[0]) * extent[0],
+                                 pos[1]
+                               - std::floor(pos[1]/extent[1]) * extent[1],
+                                 pos[2]
+                               - std::floor(pos[2]/extent[2]) * extent[2]});
+        }
+        else {
+            // The general case
+            // Use a temporary vector to apply the transformation to
+            auto mpos = pos;
 
-                // Distinguish by sign of remainder calculation
-                if (rem < 0.) {
-                    std::cout << "new pos: " << (1. + rem) * e << std::endl;
-                    return (1. + rem) * e;
+            // Loop over position and extent and store the result of the
+            // transformation in the temporary vector
+            std::transform(pos.begin(), pos.end(),
+                           extent.begin(), mpos.begin(),
+                [](const double& p, const double& e){
+                    // Given the position in one dimension and the
+                    // corresponding extent, calculate the shift (in units of
+                    // the extend) to be back inside the space.
+                    // NOTE It is highly important to use a uniformly-rounding
+                    //      method here, i.e. rounding in the same direction
+                    //      regardless of the sign of the argument, otherwise
+                    //      an asymmetry is introduced!
+                    return (p - std::floor(p/e) * e);
                 }
-                else {
-                    std::cout << "new pos: " << rem * e << std::endl;
-                    return rem * e;
-                }
-            });
+            );
 
-        std::cout << "after transform:" << std::endl << mpos << std::endl;
-        return mpos;
+            return mpos;
+        }
     }
 
 

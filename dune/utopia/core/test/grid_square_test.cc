@@ -310,7 +310,7 @@ int main(int, char *[]) {
         std::cout << "Success." << std::endl << std::endl;
 
 
-        std::cout << "Testing cell ID retrieval from position ..."
+        std::cout << "Testing cell ID retrieval from positive positions ..."
                   << std::endl;
 
         // Within the space, cells of size (1., 1.)
@@ -318,39 +318,77 @@ int main(int, char *[]) {
         assert(check_pos(g23, {0.5, 0.5},       0));
         assert(check_pos(g23, {0.314, 0.756},   0));
 
+        assert(check_pos(g23, {0.1, 0.6},       0));
         assert(check_pos(g23, {1.1, 0.6},       1));
-        assert(check_pos(g23, {1.1, 2.1},       5));
+        assert(check_pos(g23, {0.1, 1.6},       2));
+        assert(check_pos(g23, {1.1, 1.6},       3));
+        assert(check_pos(g23, {0.1, 2.6},       4));
+        assert(check_pos(g23, {1.1, 2.6},       5));
 
         // High-level cell boundaries chosen correctly
+        assert(check_pos(g23, {0.99, 0.5},      0));
         assert(check_pos(g23, {1.0, 0.5},       1));
+        assert(check_pos(g23, {0.99, 0.99},     0));
         assert(check_pos(g23, {1.0, 1.0},       3));
 
         // High-value space boundaries mapped periodically
-        assert(check_pos(g23, {2.0, 0.5},       0));
-        assert(check_pos(g23, {0.5, 3.0},       0));
+        assert(check_pos(g23, {2.0, 0.0},       0));
+        assert(check_pos(g23, {0.0, 3.0},       0));
         assert(check_pos(g23, {2.0, 3.0},       0));
 
         // Positions out of space mapped back into space
-        assert(check_pos(g23, {-0.5, 0.5},      1));
-        assert(check_pos(g23, {-1.0, 1.0},      3));
-        assert(check_pos(g23, {-3.0, 4.0},      3));
-        assert(check_pos(g23, {-1.5, 0.5},      0));
-        assert(check_pos(g23, {-1.5, -0.5},     4));
-        assert(check_pos(g23, {-2.0, 3.0},      0));
-        assert(check_pos(g23, {2.0, -3.0},      0));
-        assert(check_pos(g23, {-2.0, -3.0},     0));
+        assert(check_pos(g23, {2.5, 3.5},       0));
+        assert(check_pos(g23, {3.5, 3.5},       1));
+        assert(check_pos(g23, {2.5, 4.5},       2));
+        assert(check_pos(g23, {3.5, 4.5},       3));
+        assert(check_pos(g23, {2.5, 5.5},       4));
+        assert(check_pos(g23, {3.5, 5.5},       5));
 
         // Positions waaaay out of space mapped back properly
         assert(check_pos(g23, {22.0, 33.0},     0));
+        assert(check_pos(g23, {22.5, 33.5},     0));
         assert(check_pos(g23, {23.5, 33.5},     1));
         assert(check_pos(g23, {23.0, 34.0},     3));
-        assert(check_pos(g23, {2222., 3333.},   0));
-        assert(check_pos(g23, {2223., 3334.},   3));
+        assert(check_pos(g23, {2222.0, 3333.0}, 0));
+        assert(check_pos(g23, {2222.5, 3333.5}, 0));
+        assert(check_pos(g23, {2223.0, 3333.5}, 1));
+        assert(check_pos(g23, {2223.0, 3334.0}, 3));
+
+        std::cout << "Success." << std::endl << std::endl;
+
+
+        // Again, with negative values (different internal calculation!)
+        std::cout << "Testing cell ID retrieval from negative positions ..."
+                  << std::endl;
+
+        // Positions out of space mapped back into space
+        assert(check_pos(g23, {-1.5, -2.5},     0));
+        assert(check_pos(g23, {-0.5, -2.5},     1));
+        assert(check_pos(g23, {-1.5, -1.5},     2));
+        assert(check_pos(g23, {-0.5, -1.5},     3));
+        assert(check_pos(g23, {-1.5, -0.5},     4));
+        assert(check_pos(g23, {-0.5, -0.5},     5));
+        
+        // High-value space boundaries mapped periodically
+        assert(check_pos(g23, {-2.0, 0.0},      0));
+        assert(check_pos(g23, {0.0, -3.0},      0));
+        assert(check_pos(g23, {-2.0, -3.0},     0));
+
+        // High-value cell boundaries mapped back properly
+        assert(check_pos(g23, {-1.0, -3.0},     1));
+        assert(check_pos(g23, {-1.0, -2.0},     3));
+        assert(check_pos(g23, {-1.0, -1.0},     5));
+        assert(check_pos(g23, {-2.0, -3.0},     0));
+        assert(check_pos(g23, {-2.0, -2.0},     2));
+        assert(check_pos(g23, {-2.0, -1.0},     4));
+        
+        // Positions waaaay out of space mapped back properly
         assert(check_pos(g23, {-19.5, 0.5},     0));
         assert(check_pos(g23, {-20., 0.5},      0));
         assert(check_pos(g23, {-20.5, 0.5},     1));
         assert(check_pos(g23, {-22.0, -33.0},   0));
-        assert(check_pos(g23, {-23.0, -34.0},   3));
+        assert(check_pos(g23, {-23.0, -34.0},   5));
+        assert(check_pos(g23, {-23.0, -35.0},   3));
         assert(check_pos(g23, {-2222., -3333.}, 0));
         assert(check_pos(g23, {-2223., -3335.}, 3));
 
