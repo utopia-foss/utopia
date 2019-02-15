@@ -121,6 +121,70 @@ protected:
     }
 
 
+    /// The expected number of neighbors dependent on the neighborhood
+    /** \detail This function is used to calculate the amount of memory
+     *          that should be reserved for the neighbor_ids vector.
+     *          For the calculation it uses the member variables: 
+     *          `dim` and `_metric_distance`
+     *  
+     * For a von Neumann neighborhood, the number of neighbors is:
+     *                      { 2 * distance   for distance = 1
+     *  N(dim, distance) =  { 2 * sum_{distances} N(dim-1, distance)
+     *                      {                for distance > 1)
+     *  
+     * For a Moore neighborhood, the number of neighbors is:
+     *     
+     *  N(dim, distance) = (2 * distance + 1)^2 - 1
+     * 
+     * 
+     *  \warning The expected number of neighbors is not equal to the actually
+     *           calculated number of neighbors. For example in a nonperiodic
+     *           grids the expected number of neighbors is greater than the
+     *           actual number of neighbors in the edge cases. Thus, this
+     *           function should only be used to reserve memory for the 
+     *           neighbor_ids vector.
+     * 
+     * @return const std::size_t The expected number of neighbors
+     */
+    std::size_t expected_num_neighbors(const NBMode nb_mode)
+    {
+        // empty neighborhood
+        if (nb_mode == NBMode::empty){
+            return 0;
+        }
+        
+        // Moore neighborhood
+        else if (nb_mode == NBMode::Moore){
+            return std::pow(2 * this->_metric_distance + 1, dim) - 1; 
+        }
+
+        // von Neumann neighborhood
+        else if (nb_mode == NBMode::vonNeumann){
+            auto num_nbs_impl = [](const unsigned short int dim, 
+                                    std::size_t distance, auto& num_nbs_ref){
+                if (dim == 1){
+                    return 2 * distance;
+                }
+                else{
+                    std::size_t counter = 0;
+                    while (distance > 0){
+                        counter += 2 * num_nbs_ref(dim-1, distance, num_nbs_ref);
+                        --distance;
+                    }
+                    return counter;
+                }                   
+            };
+            return num_nbs_impl(dim, this->_metric_distance, num_nbs_impl);
+        }
+
+        // no valid neighborhood mode
+        else {
+            throw std::invalid_argument("No '" + nb_mode_to_string(nb_mode)
+                + "' available for rectangular grid discretization!");
+        }
+    };
+
+
     /// Retrieve the neighborhood function depending on the mode
     NBFuncID<Base> get_nb_func(NBMode nb_mode) const override {
         // Choose the appropriate neighborhood function
@@ -220,32 +284,8 @@ protected:
             // Instantiate container in which to store the neighboring cell IDs
             IndexContainer neighbor_ids{};
 
-            // The number of neighbors can be calculated through:
-            //                     { 2 * distance   for distance = 1
-            // N(dim, distance) =  { 2 * sum_{distances} N(dim-1, distance)
-            //                     {                for distance > 1)
-            const auto num_neighbors = [](const unsigned short int dim, 
-                                          std::size_t distance) -> std::size_t{
-                auto num_nbs_impl = [](const unsigned short int dim, 
-                                       std::size_t distance, auto& num_nbs_ref){
-                    if (dim == 1){
-                        return 2 * distance;
-                    }
-                    else{
-                        std::size_t counter = 0;
-                        while (distance > 0){
-                            counter += 2 * num_nbs_ref(dim-1, distance, num_nbs_ref);
-                            --distance;
-                        }
-                        return counter;
-                    }                   
-                };
-                return num_nbs_impl(dim, distance, num_nbs_impl);
-            };
-
-
             // Pre-allocating space brings a speed improvement of about factor 2
-            neighbor_ids.reserve(num_neighbors(dim, this->_metric_distance));
+            neighbor_ids.reserve(expected_num_neighbors(NBMode::vonNeumann));
 
             // Depending on the number of dimensions, add the IDs of neighboring
             // cells in those dimensions
@@ -342,33 +382,9 @@ protected:
         IndexContainer front_neighbor_ids{};
         IndexContainer back_neighbor_ids{};
 
-        // The number of neighbors can be calculated through:
-        //                     { 2 * distance   for distance = 1
-        // N(dim, distance) =  { 2 * sum_{distances} N(dim-1, distance)
-        //                     {                for distance > 1)
-        const auto num_neighbors = [](const unsigned short int dim, 
-                                        std::size_t distance) -> std::size_t{
-            auto num_nbs_impl = [](const unsigned short int dim, 
-                                    std::size_t distance, auto& num_nbs_ref){
-                if (dim == 1){
-                    return 2 * distance;
-                }
-                else{
-                    std::size_t counter = 0;
-                    while (distance > 0){
-                        counter += 2 * num_nbs_ref(dim-1, distance, num_nbs_ref);
-                        --distance;
-                    }
-                    return counter;
-                }                   
-            };
-            return num_nbs_impl(dim, distance, num_nbs_impl);
-        };
-
-
         // Pre-allocating space brings a speed improvement of about factor 2
-        front_neighbor_ids.reserve(num_neighbors(dim, this->_metric_distance / 2));
-        front_neighbor_ids.reserve(num_neighbors(dim, this->_metric_distance / 2));
+        front_neighbor_ids.reserve(expected_num_neighbors(NBMode::vonNeumann));
+        back_neighbor_ids.reserve(expected_num_neighbors(NBMode::vonNeumann));
 
         // Depending on the number of dimensions, add the IDs of neighboring
         // cells in those dimensions
@@ -490,8 +506,7 @@ protected:
         IndexContainer neighbor_ids{};
 
         // ... and allocate space
-        std::size_t num_nbs = std::pow(2 * this->_metric_distance + 1, dim) - 1; 
-        neighbor_ids.reserve(num_nbs);
+        neighbor_ids.reserve(expected_num_neighbors(NBMode::Moore));
 
         // Get all neighbors in the first dimension
         for (std::size_t dist=1; dist<=this->_metric_distance; ++dist){
@@ -559,8 +574,7 @@ protected:
         IndexContainer neighbor_ids{};
         
         // ... and allocate space
-        std::size_t num_nbs = std::pow(2 * this->_metric_distance + 1, dim) - 1; 
-        neighbor_ids.reserve(num_nbs);
+        neighbor_ids.reserve(expected_num_neighbors(NBMode::Moore));
 
         // Get all neighbors in the first dimension
         for (std::size_t dist=1; dist<=this->_metric_distance; ++dist){
