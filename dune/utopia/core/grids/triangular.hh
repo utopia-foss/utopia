@@ -112,7 +112,7 @@ public:
     /** \detail The order of the vertices is not guaranteed.
       * \note   This method does not perform bounds checking of the given ID!
       */
-    const std::vector<const SpaceVec>
+    const std::vector<SpaceVec>
         vertices_of(const IndexType&) const override
     {
         throw std::runtime_error("The TriangularGrid::vertices_of method is "

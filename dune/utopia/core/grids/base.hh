@@ -133,10 +133,12 @@ public:
     // -- Public interface ----------------------------------------------------
     // .. Neighborhood interface ..............................................
 
+    /// Returns the indices of the neighbors of the cell with the given ID
     IndexContainer neighbors_of(const IndexType& id) const {
         return _nb_func(id);
     }
 
+    /// Choose the neighborhood mode
     void select_neighborhood(NBMode nb_mode) {
         try {
             _nb_func = get_nb_func(nb_mode);
@@ -171,7 +173,7 @@ public:
       *         the order of the vertices in the returned container.
       * \note   This method does not perform bounds checking of the given ID!
       */
-    virtual const std::vector<const SpaceVec>
+    virtual const std::vector<SpaceVec>
         vertices_of(const IndexType&) const = 0;
 
     /// Return the ID of the cell covering the given point in physical space

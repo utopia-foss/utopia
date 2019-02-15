@@ -153,13 +153,13 @@ public:
       *         bottom left-hand vertex of the cell.
       * \note   This method does not perform bounds checking of the given ID!
       */
-    const std::vector<const SpaceVec>
+    const std::vector<SpaceVec>
         vertices_of(const IndexType& id) const override
     {
         static_assert(dim == 2,
                       "SquareGrid::vertices_of is only implemented for 2D!");
 
-        std::vector<const SpaceVec> vertices{};
+        std::vector<SpaceVec> vertices{};
         vertices.reserve(4);
 
         // NOTE The %-operator performs element-wise multiplication
