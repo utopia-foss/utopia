@@ -131,6 +131,21 @@ rect_2D_vonNeumann_np_d2:
     mode: vonNeumann
 
 
+rect_2D_vonNeumann_np_d3:
+  space:
+    periodic: false
+
+  grid:
+    structure: square
+    resolution: 7
+    metric_distance: 3
+
+  cell_initialize_from: default
+
+  neighborhood:
+    mode: vonNeumann
+
+
 rect_2D_Moore_np:
   space:
     periodic: false
