@@ -125,7 +125,7 @@ protected:
     /** \detail This function is used to calculate the amount of memory
      *          that should be reserved for the neighbor_ids vector.
      *          For the calculation it uses the member variables: 
-     *          `dim` and `_metric_distance`
+     *          `dim` and `_nbh_distance`
      *  
      * For a von Neumann neighborhood, the number of neighbors is:
      *                      { 2 * distance   for distance = 1
@@ -155,7 +155,7 @@ protected:
         
         // Moore neighborhood
         else if (nb_mode == NBMode::Moore){
-            return std::pow(2 * this->_metric_distance + 1, dim) - 1; 
+            return std::pow(2 * this->_nbh_distance + 1, dim) - 1; 
         }
 
         // von Neumann neighborhood
@@ -174,7 +174,7 @@ protected:
                     return counter;
                 }                   
             };
-            return num_nbs_impl(dim, this->_metric_distance, num_nbs_impl);
+            return num_nbs_impl(dim, this->_nbh_distance, num_nbs_impl);
         }
 
         // no valid neighborhood mode
@@ -193,7 +193,7 @@ protected:
         }
         else if (nb_mode == NBMode::vonNeumann) {
             if (this->is_periodic()) {
-                if (this->_metric_distance == 1){
+                if (this->_nbh_distance == 1){
                     return _nb_vonNeumann_periodic;
                 }
                 else{
@@ -201,7 +201,7 @@ protected:
                 }
             }
             else {
-                if (this->_metric_distance == 1){
+                if (this->_nbh_distance == 1){
                     return _nb_vonNeumann_nonperiodic;
                 }
                 else{
@@ -211,7 +211,7 @@ protected:
         }
         else if (nb_mode == NBMode::Moore) {
             if (this->is_periodic()) {
-                if (this->_metric_distance == 1){
+                if (this->_nbh_distance == 1){
                     return _nb_Moore_periodic;
                 }
                 else{
@@ -219,7 +219,7 @@ protected:
                 }
             }
             else {
-                if (this->_metric_distance == 1){
+                if (this->_nbh_distance == 1){
                     return _nb_Moore_nonperiodic;
                 }
                 else{
@@ -270,12 +270,12 @@ protected:
         static_assert((dim >= 1 and dim <= 2),
             "VonNeumann neighborhood is only implemented in 1-2 dimensions!");
 
-        if (this->_metric_distance > 0){
+        if (this->_nbh_distance > 0){
             std::runtime_error("The Manhatten (taxicab) distance has to be >0!");
         }
 
-        // Use the _nb_vonNeumann_periodic function for _metric_distance=1
-        if (this->_metric_distance == 1){
+        // Use the _nb_vonNeumann_periodic function for _nbh_distance=1
+        if (this->_nbh_distance == 1){
             // TODO: Write warning to directly use the function without distance
             //       specification.
             return _nb_vonNeumann_periodic(root_id);
@@ -290,7 +290,7 @@ protected:
             // Depending on the number of dimensions, add the IDs of neighboring
             // cells in those dimensions
             // Add neighbors in dimension 1
-            for (std::size_t dist=1; dist<=this->_metric_distance; ++dist){
+            for (std::size_t dist=1; dist<=this->_nbh_distance; ++dist){
                 add_front_neighbor_in_dim_<1, true>(root_id, dist, neighbor_ids);
                 add_back_neighbor_in_dim_<1, true>(root_id, dist, neighbor_ids);
             }
@@ -307,7 +307,7 @@ protected:
                     // Add all neighbor ids up to the maximal distance along the
                     // dimension 2.
                     for (std::size_t dist=1; 
-                         dist<=this->_metric_distance - 1 - i/2 + (i%2)/2; 
+                         dist<=this->_nbh_distance - 1 - i/2 + (i%2)/2; 
                          ++dist)
                     {
                         // front neighbor
@@ -325,7 +325,7 @@ protected:
                 }
 
                 // Finally, add the root cell's neighbors in the second dimension
-                for (std::size_t dist=1; dist<=this->_metric_distance; ++dist){
+                for (std::size_t dist=1; dist<=this->_nbh_distance; ++dist){
                     // front neighbor
                     add_front_neighbor_in_dim_<2, true>(root_id, 
                                                         dist, 
@@ -392,7 +392,7 @@ protected:
         // Depending on the number of dimensions, add the IDs of neighboring
         // cells in those dimensions
         // Add front neighbors in dimension 1
-        for (std::size_t dist=1; dist<=this->_metric_distance; ++dist){
+        for (std::size_t dist=1; dist<=this->_nbh_distance; ++dist){
             add_front_neighbor_in_dim_<1, false>(root_id, dist, front_neighbor_ids);
             add_back_neighbor_in_dim_<1, false>(root_id, dist, back_neighbor_ids);
         }
@@ -409,7 +409,7 @@ protected:
                 // Add all front neighbor ids up to the maximal distance along
                 // dimension 2.
                 for (std::size_t dist=1; 
-                        dist<=this->_metric_distance - (i + 1); 
+                        dist<=this->_nbh_distance - (i + 1); 
                         ++dist)
                 {
                     // add front neighbors ids in dimension 2
@@ -436,7 +436,7 @@ protected:
                 // Add all back neighbor ids up to the maximal distance along
                 // dimension 2.
                 for (std::size_t dist=1; 
-                        dist<=this->_metric_distance - (i + 1); 
+                        dist<=this->_nbh_distance - (i + 1); 
                         ++dist)
                 {
                     // front neighbor ids in dimension 2
@@ -454,7 +454,7 @@ protected:
             }
 
             // Finally, add the root cell's neighbors in the second dimension
-            for (std::size_t dist=1; dist<=this->_metric_distance; ++dist){
+            for (std::size_t dist=1; dist<=this->_nbh_distance; ++dist){
                 // front neighbor ids
                 add_front_neighbor_in_dim_<2, false>(root_id, 
                                                     dist, 
@@ -512,21 +512,21 @@ protected:
         neighbor_ids.reserve(expected_num_neighbors(NBMode::Moore));
 
         // Get all neighbors in the first dimension
-        for (std::size_t dist=1; dist<=this->_metric_distance; ++dist){
+        for (std::size_t dist=1; dist<=this->_nbh_distance; ++dist){
             add_front_neighbor_in_dim_<1, true>(root_id, dist, neighbor_ids);
             add_back_neighbor_in_dim_<1, true>(root_id, dist, neighbor_ids);
         }
 
         // For these neighbors, add _their_ neighbors in the second dimension
         for (const auto& nb : neighbor_ids){
-            for (std::size_t dist=1; dist<=this->_metric_distance; ++dist){
+            for (std::size_t dist=1; dist<=this->_nbh_distance; ++dist){
                 add_front_neighbor_in_dim_<2, true>(nb, dist, neighbor_ids);
                 add_back_neighbor_in_dim_<2, true>(nb, dist, neighbor_ids);
             }
         }
 
         // And finally, add the root cell's neighbors in the second dimension
-        for (std::size_t dist=1; dist<=this->_metric_distance; ++dist){
+        for (std::size_t dist=1; dist<=this->_nbh_distance; ++dist){
             add_front_neighbor_in_dim_<2, true>(root_id, dist, neighbor_ids);
             add_back_neighbor_in_dim_<2, true>(root_id, dist, neighbor_ids);
         }
@@ -580,21 +580,21 @@ protected:
         neighbor_ids.reserve(expected_num_neighbors(NBMode::Moore));
 
         // Get all neighbors in the first dimension
-        for (std::size_t dist=1; dist<=this->_metric_distance; ++dist){
+        for (std::size_t dist=1; dist<=this->_nbh_distance; ++dist){
             add_front_neighbor_in_dim_<1, false>(root_id, dist, neighbor_ids);
             add_back_neighbor_in_dim_<1, false>(root_id, dist, neighbor_ids);
         }
 
         // For these neighbors, add _their_ neighbors in the second dimension
         for (const auto& nb : neighbor_ids){
-            for (std::size_t dist=1; dist<=this->_metric_distance; ++dist){
+            for (std::size_t dist=1; dist<=this->_nbh_distance; ++dist){
                 add_front_neighbor_in_dim_<2, false>(nb, dist, neighbor_ids);
                 add_back_neighbor_in_dim_<2, false>(nb, dist, neighbor_ids);
             }
         }
 
         // And finally, add the root cell's neighbors in the second dimension
-        for (std::size_t dist=1; dist<=this->_metric_distance; ++dist){
+        for (std::size_t dist=1; dist<=this->_nbh_distance; ++dist){
             add_front_neighbor_in_dim_<2, false>(root_id, dist, neighbor_ids);
             add_back_neighbor_in_dim_<2, false>(root_id, dist, neighbor_ids);
         }
