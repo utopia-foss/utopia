@@ -75,7 +75,8 @@ void check_num_neighbors (const CellManager& cm, unsigned int expected) {
         if (neighbors.size() != expected) {
             std::cerr << "Cell No. " << cell->id()
                 << " has " << neighbors.size()
-                << " neighbors! Expected " << expected << std::endl;
+                << " neighbors, not the expected " << expected << "!"
+                << std::endl;
             err = true;
         }
     }

@@ -6,10 +6,8 @@
 
 using namespace Utopia::Test;
 
-int main(int argc, char *argv[]) {
+int main(int, char *[]) {
     try {
-        Dune::MPIHelper::instance(argc,argv);
-
         std::cout << "Initializing pseudo parent ..." << std::endl;
         Utopia::PseudoParent pp("neighborhood_test.yml");
         std::cout << "Success." << std::endl << std::endl;

@@ -174,20 +174,46 @@ public:
     }
 
 
-    /// Set the neighborhood mode
-    void select_neighborhood(std::string nb_mode,
-                             bool compute_and_store = false) {
+    /// Select the neighborhood and all parameters fully from a config node
+    void select_neighborhood(const DataIO::Config& nb_cfg) {
+        // Extract the desired values
+        if (not nb_cfg["mode"]) {
+            throw std::invalid_argument("Missing key 'mode' in neighborhood "
+                "configuration! Perhaps a typo in 'neighborhood'?");
+        }
+        const auto nb_mode = as_str(nb_cfg["mode"]);
+
+        bool compute_nb = false;
+        if (nb_cfg["compute_and_store"]) {
+            compute_nb = as_bool(nb_cfg["compute_and_store"]);
+        }
+
+        // Call the string-based selection function, passing through the whole
+        // config node. The fact that the above two keys are also present in
+        // the node is not a problem.
+        select_neighborhood(nb_mode, compute_nb, nb_cfg);
+    }
+
+    /// Select the neighborhood mode using a string for the mode argument
+    void select_neighborhood(const std::string nb_mode,
+                             const bool compute_and_store = false,
+                             const DataIO::Config& nb_params = {})
+    {
+        // Check if the string is valid
         if (not nb_mode_map.count(nb_mode)) {
             throw std::invalid_argument("Could not translate given value for "
                 "neighborhood mode ('" + nb_mode + "') to valid enum entry!");
         }
 
-        select_neighborhood(nb_mode_map.at(nb_mode), compute_and_store);
+        // Translate string; pass all other arguments through
+        select_neighborhood(nb_mode_map.at(nb_mode),
+                            compute_and_store, nb_params);
     }
 
-    /// Set the neighborhood mode
-    void select_neighborhood(NBMode nb_mode,
-                             bool compute_and_store = false)
+    /// Select the neighborhood mode
+    void select_neighborhood(const NBMode nb_mode,
+                             const bool compute_and_store = false,
+                             const DataIO::Config& nb_params = {})
     {
         // Only change the neighborhood, if it is different to the existing
         // one or if it is set to be empty
@@ -196,7 +222,7 @@ public:
                        nb_mode_to_string(nb_mode));
 
             // Tell the grid which mode to use
-            _grid->select_neighborhood(nb_mode);
+            _grid->select_neighborhood(nb_mode, nb_params);
 
             // Adjust function object that the public interface calls
             if (nb_mode == NBMode::empty) {
@@ -442,30 +468,15 @@ private:
 
     /// Setup the neighborhood functions using config entries
     void setup_nb_funcs() {
-        // Set neighborhood from config key, if available; else: empty
+        // If there is a neighborhood key, use it to set up the neighborhood
         if (_cfg["neighborhood"]) {
-            const auto nb_cfg = _cfg["neighborhood"];
-
-            // Extract the desired values
-            if (not nb_cfg["mode"]) {
-                throw std::invalid_argument("Missing key 'mode' in neighbor"
-                                            "hood config! A typo perhaps?");
-            }
-            const auto nb_mode = as_str(nb_cfg["mode"]);
-
-            bool compute_nb = false;
-            if (nb_cfg["compute_and_store"]) {
-                compute_nb = as_bool(nb_cfg["compute_and_store"]);
-            }
-
-            // And call the public interface to setup all members
-            select_neighborhood(nb_mode, compute_nb);
+            _log->debug("Setting up neighborhood from config entry ...");
+            select_neighborhood(_cfg["neighborhood"]);
             return;
-        }        
-        
+        }
+        // else: Use empty.
         _log->debug("No neighborhood configuration given; using empty.");
         select_neighborhood(NBMode::empty);
-        return;
     }
 };
 

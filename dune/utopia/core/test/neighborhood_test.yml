@@ -49,12 +49,12 @@ rect_2D_vonNeumann_d2:
   grid:
     structure: square
     resolution: 5
-    nbh_distance: 2
 
   cell_initialize_from: default
 
   neighborhood:
     mode: vonNeumann
+    distance: 2
 
 rect_2D_vonNeumann_d3:
   space:
@@ -63,12 +63,12 @@ rect_2D_vonNeumann_d3:
   grid:
     structure: square
     resolution: 7
-    nbh_distance: 3
 
   cell_initialize_from: default
 
   neighborhood:
     mode: vonNeumann
+    distance: 3
 
   
 rect_2D_Moore:
@@ -92,12 +92,12 @@ rect_2D_Moore_d2:
   grid:
     structure: square
     resolution: 7
-    nbh_distance: 2
 
   cell_initialize_from: default
 
   neighborhood:
     mode: Moore
+    distance: 2
 
 
 # not periodic ...............................................................
@@ -123,12 +123,12 @@ rect_2D_vonNeumann_np_d2:
   grid:
     structure: square
     resolution: 5
-    nbh_distance: 2
 
   cell_initialize_from: default
 
   neighborhood:
     mode: vonNeumann
+    distance: 2
 
 
 rect_2D_vonNeumann_np_d3:
@@ -138,12 +138,12 @@ rect_2D_vonNeumann_np_d3:
   grid:
     structure: square
     resolution: 7
-    nbh_distance: 3
 
   cell_initialize_from: default
 
   neighborhood:
     mode: vonNeumann
+    distance: 3
 
 
 rect_2D_Moore_np:
@@ -167,9 +167,9 @@ rect_2D_Moore_np_d2:
   grid:
     structure: square
     resolution: 7
-    nbh_distance: 2
 
   cell_initialize_from: default
 
   neighborhood:
     mode: Moore
+    distance: 2

@@ -68,6 +68,8 @@ ReturnType as_(const Utopia::DataIO::Config& node) {
         // NOTE Mark() provides the line and column in the config file; the
         //      error message is created depending on whether the mark was null
     }
+    // TODO Catch other YAML exceptions
+    // TODO Check for zombie somehow?!
     catch (std::exception& e) {
         // This should catch all other exceptions thrown by yaml-cpp
         // Provide info on the type of error
@@ -85,6 +87,19 @@ ReturnType as_(const Utopia::DataIO::Config& node) {
 
 // TODO could add an optional argument to as_ for a fallback value
 
+
+/// Return the entry with the specified key from the specified node
+/** \detail Unlike as_, this method checks whether the key is present, and,
+  *         if not, throws an error.
+  */
+template<typename ReturnType>
+ReturnType get_as_(const Utopia::DataIO::Config& node, const std::string key) {
+    if (not node[key]) {
+        throw std::invalid_argument("KeyError: " + key);
+    }
+
+    return as_<ReturnType>(node[key]);
+}
 
 // -- Shortcuts -- //
 

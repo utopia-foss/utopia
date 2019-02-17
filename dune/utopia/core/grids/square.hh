@@ -146,28 +146,27 @@ protected:
      * 
      * @return const std::size_t The expected number of neighbors
      */
-    std::size_t expected_num_neighbors(const NBMode nb_mode)
-    {
+    std::size_t expected_num_neighbors(const NBMode nb_mode) {
         // empty neighborhood
-        if (nb_mode == NBMode::empty){
+        if (nb_mode == NBMode::empty) {
             return 0;
         }
         
         // Moore neighborhood
-        else if (nb_mode == NBMode::Moore){
+        else if (nb_mode == NBMode::Moore) {
             return std::pow(2 * this->_nbh_distance + 1, dim) - 1; 
         }
 
         // von Neumann neighborhood
-        else if (nb_mode == NBMode::vonNeumann){
+        else if (nb_mode == NBMode::vonNeumann) {
             auto num_nbs_impl = [](const unsigned short int dim, 
-                                    std::size_t distance, auto& num_nbs_ref){
-                if (dim == 1){
+                                    std::size_t distance, auto& num_nbs_ref) {
+                if (dim == 1) {
                     return 2 * distance;
                 }
-                else{
+                else {
                     std::size_t counter = 0;
-                    while (distance > 0){
+                    while (distance > 0) {
                         counter += 2 * num_nbs_ref(dim-1, distance, num_nbs_ref);
                         --distance;
                     }
@@ -186,43 +185,57 @@ protected:
 
 
     /// Retrieve the neighborhood function depending on the mode
-    NBFuncID<Base> get_nb_func(NBMode nb_mode) const override {
+    NBFuncID<Base> get_nb_func(NBMode nb_mode,
+                               const DataIO::Config& nbh_params) override
+    {
         // Choose the appropriate neighborhood function
         if (nb_mode == NBMode::empty) {
             return this->_nb_empty;
         }
         else if (nb_mode == NBMode::vonNeumann) {
+            // Supports the optional neighborhood parameter 'distance'
+            this->set_nbh_params(nbh_params,
+                                 // Container of (key, required?) pairs:
+                                 {{"distance", false}});
+            // If the distance was not given, _nbh_distance is 0
+
             if (this->is_periodic()) {
-                if (this->_nbh_distance == 1){
+                if (this->_nbh_distance <= 1) {
                     return _nb_vonNeumann_periodic;
                 }
-                else{
+                else {
                     return _nb_VonNeumann_periodic_with_Manhatten_distance;
                 }
             }
             else {
-                if (this->_nbh_distance == 1){
+                if (this->_nbh_distance <= 1) {
                     return _nb_vonNeumann_nonperiodic;
                 }
-                else{
+                else {
                     return _nb_vonNeumann_nonperiodic_with_Manhatten_distance;
                 }
             }
         }
         else if (nb_mode == NBMode::Moore) {
+            // Supports the optional neighborhood parameter 'distance'
+            this->set_nbh_params(nbh_params,
+                                 // Container of (key, required?) pairs:
+                                 {{"distance", false}});
+            // If the distance was not given, _nbh_distance is 0
+
             if (this->is_periodic()) {
-                if (this->_nbh_distance == 1){
+                if (this->_nbh_distance <= 1) {
                     return _nb_Moore_periodic;
                 }
-                else{
+                else {
                     return _nb_Moore_periodic_with_Chebychev_distance;
                 }
             }
             else {
-                if (this->_nbh_distance == 1){
+                if (this->_nbh_distance <= 1) {
                     return _nb_Moore_nonperiodic;
                 }
-                else{
+                else {
                     return _nb_Moore_nonperiodic_with_Chebychev_distance;
                 }
             }
@@ -270,17 +283,17 @@ protected:
         static_assert((dim >= 1 and dim <= 2),
             "VonNeumann neighborhood is only implemented in 1-2 dimensions!");
 
-        if (this->_nbh_distance > 0){
+        if (this->_nbh_distance > 0) {
             std::runtime_error("The Manhatten (taxicab) distance has to be >0!");
         }
 
         // Use the _nb_vonNeumann_periodic function for _nbh_distance=1
-        if (this->_nbh_distance == 1){
+        if (this->_nbh_distance == 1) {
             // TODO: Write warning to directly use the function without distance
             //       specification.
             return _nb_vonNeumann_periodic(root_id);
         }
-        else{
+        else {
             // Instantiate container in which to store the neighboring cell IDs
             IndexContainer neighbor_ids{};
 
@@ -290,7 +303,7 @@ protected:
             // Depending on the number of dimensions, add the IDs of neighboring
             // cells in those dimensions
             // Add neighbors in dimension 1
-            for (std::size_t dist=1; dist<=this->_nbh_distance; ++dist){
+            for (std::size_t dist=1; dist<=this->_nbh_distance; ++dist) {
                 add_front_neighbor_in_dim_<1, true>(root_id, dist, neighbor_ids);
                 add_back_neighbor_in_dim_<1, true>(root_id, dist, neighbor_ids);
             }
@@ -303,7 +316,7 @@ protected:
                 //      to the root_id to have been pushed to the vector first.
                 //      The fixed ordering of the previous addition is required.
                 const std::size_t nb_size = neighbor_ids.size(); 
-                for (std::size_t i=0; i<nb_size; ++i){
+                for (std::size_t i=0; i<nb_size; ++i) {
                     // Add all neighbor ids up to the maximal distance along the
                     // dimension 2.
                     for (std::size_t dist=1; 
@@ -325,7 +338,7 @@ protected:
                 }
 
                 // Finally, add the root cell's neighbors in the second dimension
-                for (std::size_t dist=1; dist<=this->_nbh_distance; ++dist){
+                for (std::size_t dist=1; dist<=this->_nbh_distance; ++dist) {
                     // front neighbor
                     add_front_neighbor_in_dim_<2, true>(root_id, 
                                                         dist, 
@@ -392,7 +405,7 @@ protected:
         // Depending on the number of dimensions, add the IDs of neighboring
         // cells in those dimensions
         // Add front neighbors in dimension 1
-        for (std::size_t dist=1; dist<=this->_nbh_distance; ++dist){
+        for (std::size_t dist=1; dist<=this->_nbh_distance; ++dist) {
             add_front_neighbor_in_dim_<1, false>(root_id, dist, front_neighbor_ids);
             add_back_neighbor_in_dim_<1, false>(root_id, dist, back_neighbor_ids);
         }
@@ -405,7 +418,7 @@ protected:
             //      to the root_id to have been pushed to the vector first.
             //      The fixed ordering of the previous addition is required.
             const std::size_t front_nb_size = front_neighbor_ids.size(); 
-            for (std::size_t i=0; i<front_nb_size; ++i){
+            for (std::size_t i=0; i<front_nb_size; ++i) {
                 // Add all front neighbor ids up to the maximal distance along
                 // dimension 2.
                 for (std::size_t dist=1; 
@@ -432,7 +445,7 @@ protected:
             //      to the root_id to have been pushed to the vector first.
             //      The fixed ordering of the previous addition is required.
             const std::size_t back_nb_size = back_neighbor_ids.size(); 
-            for (std::size_t i=0; i<back_nb_size; ++i){
+            for (std::size_t i=0; i<back_nb_size; ++i) {
                 // Add all back neighbor ids up to the maximal distance along
                 // dimension 2.
                 for (std::size_t dist=1; 
@@ -454,7 +467,7 @@ protected:
             }
 
             // Finally, add the root cell's neighbors in the second dimension
-            for (std::size_t dist=1; dist<=this->_nbh_distance; ++dist){
+            for (std::size_t dist=1; dist<=this->_nbh_distance; ++dist) {
                 // front neighbor ids
                 add_front_neighbor_in_dim_<2, false>(root_id, 
                                                     dist, 
@@ -512,21 +525,21 @@ protected:
         neighbor_ids.reserve(expected_num_neighbors(NBMode::Moore));
 
         // Get all neighbors in the first dimension
-        for (std::size_t dist=1; dist<=this->_nbh_distance; ++dist){
+        for (std::size_t dist=1; dist<=this->_nbh_distance; ++dist) {
             add_front_neighbor_in_dim_<1, true>(root_id, dist, neighbor_ids);
             add_back_neighbor_in_dim_<1, true>(root_id, dist, neighbor_ids);
         }
 
         // For these neighbors, add _their_ neighbors in the second dimension
-        for (const auto& nb : neighbor_ids){
-            for (std::size_t dist=1; dist<=this->_nbh_distance; ++dist){
+        for (const auto& nb : neighbor_ids) {
+            for (std::size_t dist=1; dist<=this->_nbh_distance; ++dist) {
                 add_front_neighbor_in_dim_<2, true>(nb, dist, neighbor_ids);
                 add_back_neighbor_in_dim_<2, true>(nb, dist, neighbor_ids);
             }
         }
 
         // And finally, add the root cell's neighbors in the second dimension
-        for (std::size_t dist=1; dist<=this->_nbh_distance; ++dist){
+        for (std::size_t dist=1; dist<=this->_nbh_distance; ++dist) {
             add_front_neighbor_in_dim_<2, true>(root_id, dist, neighbor_ids);
             add_back_neighbor_in_dim_<2, true>(root_id, dist, neighbor_ids);
         }
@@ -580,21 +593,21 @@ protected:
         neighbor_ids.reserve(expected_num_neighbors(NBMode::Moore));
 
         // Get all neighbors in the first dimension
-        for (std::size_t dist=1; dist<=this->_nbh_distance; ++dist){
+        for (std::size_t dist=1; dist<=this->_nbh_distance; ++dist) {
             add_front_neighbor_in_dim_<1, false>(root_id, dist, neighbor_ids);
             add_back_neighbor_in_dim_<1, false>(root_id, dist, neighbor_ids);
         }
 
         // For these neighbors, add _their_ neighbors in the second dimension
-        for (const auto& nb : neighbor_ids){
-            for (std::size_t dist=1; dist<=this->_nbh_distance; ++dist){
+        for (const auto& nb : neighbor_ids) {
+            for (std::size_t dist=1; dist<=this->_nbh_distance; ++dist) {
                 add_front_neighbor_in_dim_<2, false>(nb, dist, neighbor_ids);
                 add_back_neighbor_in_dim_<2, false>(nb, dist, neighbor_ids);
             }
         }
 
         // And finally, add the root cell's neighbors in the second dimension
-        for (std::size_t dist=1; dist<=this->_nbh_distance; ++dist){
+        for (std::size_t dist=1; dist<=this->_nbh_distance; ++dist) {
             add_front_neighbor_in_dim_<2, false>(root_id, dist, neighbor_ids);
             add_back_neighbor_in_dim_<2, false>(root_id, dist, neighbor_ids);
         }
@@ -616,7 +629,9 @@ protected:
      * @return constexpr GridShapeType<dim>::value_type 
      */
     template<std::size_t shift_dim>
-    constexpr typename GridShapeType<dim>::value_type id_shift_in_dim_ () {
+    constexpr typename GridShapeType<dim>::value_type
+        id_shift_in_dim_ () const
+    {
         if constexpr (shift_dim == 0) {
             return 1;
         }
@@ -644,7 +659,7 @@ protected:
      */
     template<std::size_t dim, bool periodic>
     void add_neighbors_in_dim_ (const IndexType& root_id,
-                                IndexContainer& neighbor_ids)
+                                IndexContainer& neighbor_ids) const
     {
         // Assure the number of dimensions is supported
         static_assert((dim == 1) or (dim == 2),
@@ -656,13 +671,13 @@ protected:
         bool _cond_back;
 
         // Set the boundary conditions for different dimensions
-        if constexpr (dim == 1){
+        if constexpr (dim == 1) {
             _cond_front = (root_id % this->_shape[0] == 0);
             _cond_back = (root_id % this->_shape[0] == this->_shape[0] - 1);
         }
-        else if constexpr (dim == 2){
+        else if constexpr (dim == 2) {
             // 'normalize' id to lowest height (in 3D)
-            const auto root_id_nrm = root_id % id_shift_in_dim_<dim>();            
+            const auto root_id_nrm = root_id % id_shift_in_dim_<dim>();
 
             _cond_front = (root_id_nrm / this->_shape[0] == 0);
             _cond_back = (root_id_nrm / this->_shape[0] == this->_shape[1] - 1);
@@ -714,15 +729,15 @@ protected:
      */
     template<std::size_t dim, bool periodic>
     void add_front_neighbor_in_dim_ (const IndexType& root_id,
-                                     std::size_t distance,
-                                     IndexContainer& neighbor_ids)
+                                     const std::size_t distance,
+                                     IndexContainer& neighbor_ids) const
     {
         // Assure the number of dimensions is supported
         static_assert((dim == 1) or (dim == 2),
                       "Unsupported dimensionality in space! Need be 1 or 2.");
 
         // If the distance is zero, no neighbor can be added; return nothing.
-        if (distance == 0){
+        if (distance == 0) {
             return;
         }
 
@@ -731,10 +746,10 @@ protected:
         bool _cond_front;
 
         // Set the boundary conditions for different dimensions
-        if constexpr (dim == 1){
+        if constexpr (dim == 1) {
             _cond_front = (root_id % this->_shape[0] < distance);
         }
-        else if constexpr (dim == 2){
+        else if constexpr (dim == 2) {
             _cond_front = (root_id / this->_shape[0] < distance);
         }
 
@@ -773,15 +788,15 @@ protected:
      */
     template<std::size_t dim, bool periodic>
     void add_back_neighbor_in_dim_ (const IndexType& root_id,
-                                    std::size_t distance,
-                                    IndexContainer& neighbor_ids)
+                                    const std::size_t distance,
+                                    IndexContainer& neighbor_ids) const
     {
         // Assure the number of dimensions is supported
         static_assert((dim == 1) or (dim == 2),
                       "Unsupported dimensionality in space! Need be 1 or 2.");
 
         // If the distance is zero, no neighbor can be added; return nothing.
-        if (distance == 0){
+        if (distance == 0) {
             return;
         }
 
@@ -796,11 +811,11 @@ protected:
         bool _cond_back;
 
         // Set the boundary conditions for different dimensions
-        if constexpr (dim == 1){
+        if constexpr (dim == 1) {
             _cond_back  = (root_id % this->_shape[0] 
                             >= this->_shape[0] - distance);
         }
-        else if constexpr (dim == 2){
+        else if constexpr (dim == 2) {
             _cond_back  = (root_id / this->_shape[0] 
                             >= this->_shape[1] - distance);
         }
