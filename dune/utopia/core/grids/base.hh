@@ -203,7 +203,8 @@ protected:
       */
     template<class opt_pair=std::pair<std::string, bool>>
     void set_nbh_params(const DataIO::Config& nbh_params,
-                        const std::vector<opt_pair> keys) {
+                        const std::vector<opt_pair> keys)
+    {
         // First, reset all parameters
         reset_nbh_params();
 
@@ -218,6 +219,18 @@ protected:
                     }
                     catch (...) {
                         if (required) throw;
+                    }
+
+                    // Needs to fit into the shape of the grid
+                    // TODO Use armadillo, once available
+                    if (  _nbh_distance * 2 + 1
+                        > *std::min_element(this->shape().begin(),
+                                            this->shape().end()))
+                    {
+                        throw std::invalid_argument("Grid shape is too small "
+                            "to accomodate a neighborhood with parameter "
+                            "'distance' set to"
+                            + as_str(nbh_params["distance"]) + "!");
                     }
                 }
                 // ... can add other parameter assignments here

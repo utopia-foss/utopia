@@ -390,15 +390,15 @@ protected:
             "VonNeumann neighborhood is implemented for 1D or 2D space!");
 
         // Instantiate containers in which to store the neighboring cell IDs
-        IndexContainer front_neighbor_ids{};
-        IndexContainer back_neighbor_ids{};
+        IndexContainer front_nb_ids{};
+        IndexContainer back_nb_ids{};
 
         // Pre-allocating space brings a speed improvement of about factor 2
-        // NOTE The front_neighbor_ids vector needs to reserve memory for all
+        // NOTE The front_nb_ids vector needs to reserve memory for all
         //      neighbors including the back neighbors because these will be
         //      added to the container directly before returning it.
-        front_neighbor_ids.reserve(expected_num_neighbors(NBMode::vonNeumann));
-        back_neighbor_ids.reserve(expected_num_neighbors(NBMode::vonNeumann)/2);
+        front_nb_ids.reserve(expected_num_neighbors(NBMode::vonNeumann));
+        back_nb_ids.reserve(expected_num_neighbors(NBMode::vonNeumann) / 2);
 
         // Depending on the number of dimensions, add the IDs of neighboring
         // cells in those dimensions
@@ -406,10 +406,10 @@ protected:
         for (std::size_t dist=1; dist <= this->_nbh_distance; ++dist) {
             add_front_neighbor_in_dim_<1, false>(root_id,
                                                  dist,
-                                                 front_neighbor_ids);
+                                                 front_nb_ids);
             add_back_neighbor_in_dim_<1, false>(root_id,
                                                 dist,
-                                                back_neighbor_ids);
+                                                back_nb_ids);
         }
 
         // If the dimension exists, add neighbors in dimension 2
@@ -419,7 +419,7 @@ protected:
             // NOTE that this algorithm requires the neighbors nearest
             //      to the root_id to have been pushed to the vector first.
             //      The fixed ordering of the previous addition is required.
-            const std::size_t front_nb_size = front_neighbor_ids.size();
+            const std::size_t front_nb_size = front_nb_ids.size();
 
             for (std::size_t i=0; i < front_nb_size; ++i) {
                 // Add all front neighbor ids up to the maximal distance along
@@ -429,14 +429,14 @@ protected:
                      ++dist)
                 {
                     // add front neighbors ids in dimension 2
-                    add_front_neighbor_in_dim_<2, false>(front_neighbor_ids[i],
+                    add_front_neighbor_in_dim_<2, false>(front_nb_ids[i],
                                                          dist,
-                                                         front_neighbor_ids);
+                                                         front_nb_ids);
                     
                     // add back neighbors ids in dimension 2
-                    add_back_neighbor_in_dim_<2, false>(front_neighbor_ids[i],
+                    add_back_neighbor_in_dim_<2, false>(front_nb_ids[i],
                                                         dist,
-                                                        front_neighbor_ids);
+                                                        front_nb_ids);
                 }
             }
 
@@ -445,7 +445,7 @@ protected:
             // NOTE that this algorithm requires the neighbors nearest
             //      to the root_id to have been pushed to the vector first.
             //      The fixed ordering of the previous addition is required.
-            const std::size_t back_nb_size = back_neighbor_ids.size();
+            const std::size_t back_nb_size = back_nb_ids.size();
 
             for (std::size_t i=0; i<back_nb_size; ++i) {
                 // Add all back neighbor ids up to the maximal distance along
@@ -455,14 +455,14 @@ protected:
                      ++dist)
                 {
                     // front neighbor ids in dimension 2
-                    add_front_neighbor_in_dim_<2, false>(back_neighbor_ids[i],
+                    add_front_neighbor_in_dim_<2, false>(back_nb_ids[i],
                                                          dist,
-                                                         back_neighbor_ids);
+                                                         back_nb_ids);
 
                     // back neighbors ids in dimension 2
-                    add_back_neighbor_in_dim_<2, false>(back_neighbor_ids[i],
+                    add_back_neighbor_in_dim_<2, false>(back_nb_ids[i],
                                                         dist,
-                                                        back_neighbor_ids);
+                                                        back_nb_ids);
                 }
             }
 
@@ -471,22 +471,21 @@ protected:
                 // front neighbor ids
                 add_front_neighbor_in_dim_<2, false>(root_id, 
                                                      dist, 
-                                                     front_neighbor_ids);
+                                                     front_nb_ids);
 
                 // back neighbor ids
                 add_back_neighbor_in_dim_<2, false>(root_id, 
                                                     dist, 
-                                                    back_neighbor_ids);
+                                                    back_nb_ids);
             }
         }
 
         // Combine the front and back neighbors container
-        front_neighbor_ids.insert(front_neighbor_ids.end(),
-                                  back_neighbor_ids.begin(), 
-                                  back_neighbor_ids.end());
+        front_nb_ids.insert(front_nb_ids.end(),
+                            back_nb_ids.begin(), back_nb_ids.end());
 
         // Done now. The front neighbor container contains all the IDs.
-        return front_neighbor_ids;
+        return front_nb_ids;
     };
     
     /// Moore neighbors for periodic 2D grid
