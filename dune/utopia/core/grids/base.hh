@@ -147,7 +147,7 @@ public:
             throw std::invalid_argument("Failed to select neighborhood: "
                                         + ((std::string) e.what()));
         }
-        // Set the member to the new value
+        
         _nb_mode = nb_mode;
     }
 
@@ -196,6 +196,19 @@ public:
       *         position is mapped back into the physical space.
       */
     virtual IndexType cell_at(const SpaceVec&) const = 0;
+
+    /// Retrieve a set of cell indices that are at a specified boundary
+    /** \note   For a periodic space, an empty container is returned; no error
+      *         or warning is emitted.
+      *
+      * \param  select  Which boundary to return the cell IDs of. If 'full',
+      *         all boundary cells are returned. Other available values depend
+      *         on the dimensionality of the grid:
+      *                1D:  left, right
+      *                2D:  bottom, top
+      *                3D:  back, front
+      */
+    virtual const std::set<IndexType> boundary_cells(std::string={}) const = 0;
 
 
     // .. Getters .............................................................

@@ -51,6 +51,18 @@ grids:
       nasty:      -1        # does not work
       devil:      -1        # does not work
   
+  decimal_res:
+    structure: square
+    resolution: 10
+
+    expected_shapes:
+      default:    [10, 10]  # 100 cells
+      nice:       [40, 40]  # 4*10 * 4*10 = 1600 cells
+      uneven:     [20, 30]  # 2*10 * 3*10 = 600 cells
+      uneven_np:  [20, 30]  # 2*10 * 3*10 = 600 cells
+      nasty:      -1        # does not work
+      devil:      -1        # does not work
+  
   medium_res:
     structure: square
     resolution: 20   # ... to match 'nasty' space

@@ -257,6 +257,9 @@ int main(int, char *[]) {
         std::cout << "- - -  Grid:  small_res  - - -" << std::endl;
         assert(check_num_cells_and_shape("small_res", spaces, cfg));
 
+        std::cout << "- - -  Grid:  decimal_res  - - -" << std::endl;
+        assert(check_num_cells_and_shape("decimal_res", spaces, cfg));
+
         std::cout << "- - -  Grid:  medium_res  - - -" << std::endl;
         assert(check_num_cells_and_shape("medium_res", spaces, cfg));
 
@@ -463,21 +466,149 @@ int main(int, char *[]) {
         std::cout << "Success." << std::endl << std::endl;
 
         // Querying a position outside the space yields an error
+        std::cout << "Testing the correct error messages are emitted ..."
+                  << std::endl;
+
         assert(check_error_message<std::invalid_argument>(
-            "position query outside of space",
+            "position query outside of space (for both arguments)",
             [&](){
                 g23_np.cell_at({2.0001, 3.0001});
             },
-            "given position is outside the non-periodic space", "", true)
+            "given position is outside the non-periodic space",
+            "   ", true)
         );
         assert(check_error_message<std::invalid_argument>(
-            "position query outside of space",
+            "position query outside of space (for single argument)",
             [&](){
                 g23_np.cell_at({-0.0001, +0.0001});
             },
-            "given position is outside the non-periodic space", "", true)
+            "given position is outside the non-periodic space",
+            "   ", true)
         );
 
+        std::cout << "Success." << std::endl << std::endl;
+
+
+        // -------------------------------------------------------------------
+        std::cout << "------ Testing boundary retrieval method ... ------"
+                  << std::endl;
+
+        // Use the decimal resolution (10 cells per length unit) to make
+        // calculations easier.
+        // Create a periodic and non-periodic grid
+        auto gdec_p  = SquareGrid<DefaultSpace>(spaces["uneven"],
+                                                cfg["grids"]["decimal_res"]);
+        auto gdec_np = SquareGrid<DefaultSpace>(spaces["uneven_np"],
+                                                cfg["grids"]["decimal_res"]);
+
+        // The periodic grid should always return an empty grid container
+        std::cout << "Testing periodic grid ..." << std::endl;
+
+        assert(gdec_p.boundary_cells().size() == 0);  // == full
+        assert(gdec_p.boundary_cells("full").size() == 0);
+        assert(gdec_p.boundary_cells("left").size() == 0);
+        assert(gdec_p.boundary_cells("right").size() == 0);
+        assert(gdec_p.boundary_cells("top").size() == 0);
+        assert(gdec_p.boundary_cells("bottom").size() == 0);
+
+        std::cout << "Success." << std::endl << std::endl;
+
+
+        std::cout << "Testing non-periodic grid ..." << std::endl;
+        
+        auto gdec_shape = gdec_np.shape();
+
+        // Check sizes
+        assert(   gdec_np.boundary_cells().size()
+               == 2 * gdec_shape[0] + 2 * gdec_shape[1] - 4);
+        assert(   gdec_np.boundary_cells("full").size()
+               == gdec_np.boundary_cells().size());
+        assert(   gdec_np.boundary_cells("left").size()
+               == gdec_shape[1]);
+        assert(   gdec_np.boundary_cells("right").size()
+               == gdec_shape[1]);
+        assert(   gdec_np.boundary_cells("bottom").size()
+               == gdec_shape[0]);
+        assert(   gdec_np.boundary_cells("top").size()
+               == gdec_shape[0]);
+
+        // Now check the actual elements for a specific shape
+        assert(gdec_shape[0] == 20);
+        assert(gdec_shape[1] == 30);
+
+        // Bottom row; as the size is correct, only need to check min and max
+        auto bc_bottom = gdec_np.boundary_cells("bottom");
+        assert(*bc_bottom.begin() == 0);
+        assert(*bc_bottom.rbegin() == 20 - 1);
+
+        // Top row; analogously ...
+        auto bc_top = gdec_np.boundary_cells("top");
+        assert(*bc_top.begin() == 20 * (30-1));
+        assert(*bc_top.rbegin() == (20*30) - 1);
+
+        // Left boundary; sporadic checks should be ok (more transparent even)
+        auto bc_left = gdec_np.boundary_cells("left");
+        assert(*bc_left.begin() == 0);
+        assert(bc_left.count(20));
+        assert(bc_left.count(40));
+        assert(bc_left.count(300));
+        assert(bc_left.count(560));
+        assert(*bc_left.rbegin() == 580);
+
+        // Right boundary
+        auto bc_right = gdec_np.boundary_cells("right");
+        assert(*bc_right.begin() == 20 - 1);
+        assert(bc_right.count(39));
+        assert(bc_right.count(59));
+        assert(bc_right.count(299));
+        assert(bc_right.count(539));
+        assert(bc_right.count(559));
+        assert(*bc_right.rbegin() == 20*30 - 1);
+
+        // Full boundary
+        auto bc_full = gdec_np.boundary_cells("full");
+        assert(*bc_full.begin() == 0);
+        assert(bc_full.count(1));
+        assert(bc_full.count(2));
+        assert(bc_full.count(10));
+        assert(bc_full.count(19));
+        assert(bc_full.count(20));
+        assert(bc_full.count(39));
+        assert(bc_full.count(40));
+        assert(bc_full.count(300));
+        assert(bc_full.count(319));
+        assert(bc_full.count(560));
+        assert(bc_full.count(579));
+        assert(bc_full.count(580));
+        assert(bc_full.count(581));
+        assert(bc_full.count(590));
+        assert(bc_full.count(598));
+        assert(*bc_full.rbegin() == 20*30 - 1);
+
+        std::cout << "Success." << std::endl << std::endl;
+        
+
+        std::cout << "Testing the correct error messages are emitted ..."
+                  << std::endl;
+                  
+        assert(check_error_message<std::invalid_argument>(
+            "invalid boundary cell argument",
+            [&](){
+                gdec_np.boundary_cells("not a valid argument");
+            },
+            "Invalid value for argument `select` in call to method",
+            "   ", true)
+        );
+        
+        assert(not check_error_message<std::invalid_argument>(
+            "invalid boundary cell argument does NOT throw for periodic grid",
+            [&](){
+                gdec_p.boundary_cells("not a valid argument");
+            },
+            "", "   ", true)
+        );
+        
+        std::cout << "Success." << std::endl << std::endl;
 
         // -------------------------------------------------------------------
         // Done.

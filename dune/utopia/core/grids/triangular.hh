@@ -140,6 +140,25 @@ public:
         return {};
     }
 
+    /// Retrieve a set of cell indices that are at a specified boundary
+    /** \note   For a periodic space, an empty container is returned; no error
+      *         or warning is emitted.
+      *
+      * \param  select  Which boundary to return the cell IDs of. If 'full',
+      *         all boundary cells are returned. Other available values depend
+      *         on the dimensionality of the grid:
+      *                1D:  left, right
+      *                2D:  bottom, top
+      *                3D:  back, front
+      */
+    const std::set<IndexType>
+        boundary_cells(std::string={}) const override
+    {
+        throw std::runtime_error("The TriangularGrid::boundary_cells method "
+                                 "is not yet implemented!");
+        return {};
+    }
+
 
 protected:
     // -- Neighborhood interface ----------------------------------------------

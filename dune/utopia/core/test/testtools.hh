@@ -27,7 +27,7 @@ bool check_error_message(std::string desc,
     try {
         func();
 
-        std::cerr << "Did not throw!" << std::endl;
+        std::cerr << prefix << "Did not throw!" << std::endl;
         return false;
     }
     catch (err_t& e) {
@@ -46,7 +46,7 @@ bool check_error_message(std::string desc,
         }
     }
     catch (...) {
-        std::cerr << "Threw error of unexpected type!" << std::endl;
+        std::cerr << prefix << "Threw error of unexpected type!" << std::endl;
         throw;
     }
     std::cout << prefix << "Exception raised as expected."

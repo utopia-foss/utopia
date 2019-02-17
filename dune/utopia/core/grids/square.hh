@@ -242,6 +242,134 @@ public:
         //   + midx[1] * id_shift_in_dim_<1>()
     }
 
+    /// Retrieve a set of cell indices that are at a specified boundary
+    /** \note   For a periodic space, an empty container is returned; no error
+      *         or warning is emitted.
+      *
+      * \param  select  Which boundary to return the cell IDs of. If 'full',
+      *         all boundary cells are returned. Other available values depend
+      *         on the dimensionality of the grid:
+      *                1D:  left, right
+      *                2D:  bottom, top
+      *                3D:  back, front
+      */
+    const std::set<IndexType>
+        boundary_cells(std::string select="full") const override
+    {
+        static_assert(dim <= 2,
+            "SquareGrid::boundary_cells only implemented for 1D and 2D!");
+
+        // For periodic space, this is easy:
+        if (this->is_periodic()) {
+            return {};
+        }
+        // else: non-periodic space
+
+        // The target set all IDs are to be emplaced in
+        std::set<IndexType> bc_ids;
+
+        // Distinguish by dimensionality of the space
+        if constexpr (dim == 1) {
+            if (select != "full" and select != "left" and select != "right") {
+                throw std::invalid_argument("Invalid value for argument "
+                    "`select` in call to method SquareGrid::boundary_cells! "
+                    "Available arguments (for currently selected "
+                    "dimensionality) are: "
+                    "'full', 'left', 'right'. Given value: '" + select + "'");
+            }
+
+            // Left boundary (consists only of one cell)
+            if (select == "full" or select == "left") {
+                bc_ids.emplace(0);
+            }
+
+            // Right boundary (also consists only of one cell)
+            if (select == "full" or select == "right") {
+                bc_ids.emplace_hint(bc_ids.end(), _shape[0] - 1);
+            }
+        }
+        else if constexpr (dim == 2) {
+            if (    select != "full"
+                and select != "left" and select != "right"
+                and select != "bottom" and select != "top")
+            {
+                throw std::invalid_argument("Invalid value for argument "
+                    "`select` in call to method SquareGrid::boundary_cells! "
+                    "Available arguments (for currently selected "
+                    "dimensionality) are: "
+                    "'full', 'left', 'right', 'bottom', 'top'. Given value: '"
+                    + select + "'");
+            }
+
+            // NOTE It is important to use the hinting features of std::set
+            //      here, which allow to run the following in amortized
+            //      constant time instead of logarithmic with set size.
+            //      Below, it always makes sense to hint at inserting right
+            //      before the end.
+            // Hint for the first element needs to be the beginning
+            auto hint = bc_ids.begin();
+
+            // Bottom boundary (lowest IDs)
+            if (select == "full" or select == "bottom") {
+                // 0, ..., _shape[0] - 1    
+                for (std::size_t id = 0; id < _shape[0]; id++) {
+                    bc_ids.emplace_hint(hint, id);
+                    hint = bc_ids.end();
+                }
+            }
+
+            // Left boundary
+            if (select == "left") {
+                // First IDs in _shape[1] rows:  0, _shape[0], 2*_shape[0], ...
+                for (std::size_t row = 0; row < _shape[1]; row++) {
+                    bc_ids.emplace_hint(hint, row * _shape[0]);
+                    hint = bc_ids.end();
+                }
+            }
+
+            // Right boundary
+            if (select == "right") {
+                // Last IDs in _shape[1] rows
+                const auto offset = _shape[0] - 1;
+
+                for (std::size_t row = 0; row < _shape[1]; row++) {
+                    bc_ids.emplace_hint(hint, offset + row * _shape[0]);
+                    hint = bc_ids.end();
+                }
+            }
+
+            // Left AND right (only for 'full' case, allows better hints)
+            if (select == "full") {
+                // First and last IDs in _shape[1] rows
+                const auto offset = _shape[0] - 1;
+
+                for (std::size_t row = 0; row < _shape[1]; row++) {
+                    // Left boundary cell
+                    bc_ids.emplace_hint(hint, row * _shape[0]);
+
+                    // Right boundary cell (higher than left cell ID)
+                    bc_ids.emplace_hint(bc_ids.end(),
+                                        offset + row * _shape[0]);
+
+                    hint = bc_ids.end();
+                }   
+            }
+
+            // Top boundary (highest IDs)
+            if (select == "full" or select == "top") {
+                // _shape[0] * (_shape[1]-1), ..., _shape[0] * _shape[1] - 1
+                for (std::size_t id = _shape[0] * (_shape[1]-1);
+                     id < _shape[0] * _shape[1]; id++)
+                {
+                    bc_ids.emplace_hint(hint, id);
+                    hint = bc_ids.end();
+                }
+            }
+        }
+
+        return bc_ids;
+    }
+
 
 private:
     // -- Helper functions ----------------------------------------------------
