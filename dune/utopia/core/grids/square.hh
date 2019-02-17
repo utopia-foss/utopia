@@ -619,13 +619,14 @@ protected:
 
     /// Return i-dimensional shift in cell indices, depending on grid shape
     /** It returns in the different cases:
-     *    - shift_dim=0 -> 1
-     *    - shift_dim=1 -> shape[0]
-     *    - shift_dim=2 -> shape[1] * shape[0]
-     *    - shift_dim=3 -> shape[2] * shape[1] * shape[0]
+     *    - shift_dim == 0 -> 1
+     *    - shift_dim == 1 -> shape[0] * 1
+     *    - shift_dim == 2 -> shape[1] * shape[0] * 1
+     *    - shift_dim == 3 -> shape[2] * shape[1] * shape[0] * 1
      *    - ...
      * 
-     * @tparam shift_dim 
+     * @tparam shift_dim  In which dimension the shift is desired
+     *
      * @return constexpr GridShapeType<dim>::value_type 
      */
     template<std::size_t shift_dim>
@@ -643,7 +644,7 @@ protected:
     /// Fill an index container with neighbors in different directions
     /** This function takes an index container and populates it with the
      *  indices of neighboring cells in different dimensions, specified by
-     *  template parameter `dim`.
+     *  template parameter `d`.
      * 
      *  The algorithm first calculates whether the given root cell index has a
      *  front or back boundary in the chosen dimension. If so, the neighboring
@@ -652,59 +653,60 @@ protected:
      * \param root_id      Which cell to find the agents of
      * \param neighbor_ids The container to populate with the indices
      * 
-     * \tparam dim         The dimensions in which to add neighbors
+     * \tparam d           The dimensions in which to add neighbors (1-based!)
      * \tparam periodic    Whether the grid is periodic
      * 
      * \return void
      */
-    template<std::size_t dim, bool periodic>
+    template<std::size_t d, bool periodic>
     void add_neighbors_in_dim_ (const IndexType& root_id,
                                 IndexContainer& neighbor_ids) const
     {
         // Assure the number of dimensions is supported
         static_assert((dim == 1) or (dim == 2),
-                      "Unsupported dimensionality in space! Need be 1 or 2.");
+            "Unsupported dimensionality of underlying space! Need be 1 or 2.");
+        static_assert(d >= 1 and d <= 2);
 
         // Conditions for the front and back boundary; the conditions are
         // dependent on the dimension in which to add neighbors.
-        bool _cond_front;
-        bool _cond_back;
+        bool at_front;
+        bool at_back;
 
         // Set the boundary conditions for different dimensions
-        if constexpr (dim == 1) {
-            _cond_front = (root_id % this->_shape[0] == 0);
-            _cond_back = (root_id % this->_shape[0] == this->_shape[0] - 1);
+        if constexpr (d == 1) {
+            at_front = (root_id % this->_shape[0] == 0);
+            at_back = (root_id % this->_shape[0] == this->_shape[0] - 1);
         }
-        else if constexpr (dim == 2) {
+        else if constexpr (d == 2) {
             // 'normalize' id to lowest height (in 3D)
-            const auto root_id_nrm = root_id % id_shift_in_dim_<dim>();
+            const auto root_id_nrm = root_id % id_shift_in_dim_<d>();
 
-            _cond_front = (root_id_nrm / this->_shape[0] == 0);
-            _cond_back = (root_id_nrm / this->_shape[0] == this->_shape[1] - 1);
+            at_front = (root_id_nrm / this->_shape[0] == 0);
+            at_back = (root_id_nrm / this->_shape[0] == this->_shape[1] - 1);
         }
 
         // check if at front boundary
-        if (_cond_front) {
+        if (at_front) {
             if constexpr (periodic) {
                 neighbor_ids.push_back(root_id
-                                        - id_shift_in_dim_<dim-1>()
-                                        + id_shift_in_dim_<dim>());
+                                        - id_shift_in_dim_<d-1>()
+                                        + id_shift_in_dim_<d>());
             }
         }
         else {
-            neighbor_ids.push_back(root_id - id_shift_in_dim_<dim-1>());
+            neighbor_ids.push_back(root_id - id_shift_in_dim_<d-1>());
         }
 
         // check if at back boundary
-        if (_cond_back) {
+        if (at_back) {
             if constexpr (periodic) {
                 neighbor_ids.push_back(root_id
-                                        + id_shift_in_dim_<dim-1>()
-                                        - id_shift_in_dim_<dim>());
+                                        + id_shift_in_dim_<d-1>()
+                                        - id_shift_in_dim_<d>());
             }
         }
         else {
-            neighbor_ids.push_back(root_id + id_shift_in_dim_<dim-1>());
+            neighbor_ids.push_back(root_id + id_shift_in_dim_<d-1>());
         }
     }
 
@@ -712,7 +714,7 @@ protected:
     /// Fill an index container with a front neighbor.
     /** This function takes an index container and populates it with the
      *  indices of neighboring cells in different dimensions, specified by
-     *  template parameter `dim`.
+     *  template parameter `d`.
      * 
      *  The algorithm first calculates whether the given root cell index has a
      *  front boundary in the chosen dimension. If so, the neighboring
@@ -722,19 +724,20 @@ protected:
      * \param distance     Which distance the neighbor has to the root cell
      * \param neighbor_ids The container to populate with the indices
      * 
-     * \tparam dim         The dimensions in which to add neighbors
+     * \tparam d           The dimensions in which to add neighbors (1-based!)
      * \tparam periodic    Whether the grid is periodic
      * 
      * \return void
      */
-    template<std::size_t dim, bool periodic>
+    template<std::size_t d, bool periodic>
     void add_front_neighbor_in_dim_ (const IndexType& root_id,
                                      const std::size_t distance,
                                      IndexContainer& neighbor_ids) const
     {
         // Assure the number of dimensions is supported
         static_assert((dim == 1) or (dim == 2),
-                      "Unsupported dimensionality in space! Need be 1 or 2.");
+            "Unsupported dimensionality of underlying space! Need be 1 or 2.");
+        static_assert(d >= 1 and d <= 2);
 
         // If the distance is zero, no neighbor can be added; return nothing.
         if (distance == 0) {
@@ -743,27 +746,27 @@ protected:
 
         // Conditions for the front boundary; the conditions are
         // dependent on the dimension in which to add neighbors.
-        bool _cond_front;
+        bool at_front;
 
         // Set the boundary conditions for different dimensions
-        if constexpr (dim == 1) {
-            _cond_front = (root_id % this->_shape[0] < distance);
+        if constexpr (d == 1) {
+            at_front = (root_id % this->_shape[0] < distance);
         }
-        else if constexpr (dim == 2) {
-            _cond_front = (root_id / this->_shape[0] < distance);
+        else if constexpr (d == 2) {
+            at_front = (root_id / this->_shape[0] < distance);
         }
 
         // check if at front boundary
-        if (_cond_front) {
+        if (at_front) {
             if constexpr (periodic) {
                 neighbor_ids.push_back(root_id
-                                        - distance * id_shift_in_dim_<dim-1>()
-                                        + id_shift_in_dim_<dim>());
+                                        - distance * id_shift_in_dim_<d-1>()
+                                        + id_shift_in_dim_<d>());
             }
         }
         else {
             neighbor_ids.push_back(root_id 
-                                    - distance * id_shift_in_dim_<dim-1>());
+                                    - distance * id_shift_in_dim_<d-1>());
         }
     }
 
@@ -771,7 +774,7 @@ protected:
     /// Fill an index container with a back neighbor.
     /** This function takes an index container and populates it with the
      *  index of a neighboring cell in different dimensions, specified by
-     *  template parameter `dim`.
+     *  template parameter `d`.
      * 
      *  The algorithm first calculates whether the given root cell index has a
      *  back boundary in the chosen dimension. If so, the neighboring
@@ -781,51 +784,46 @@ protected:
      * \param distance     Which distance the neighbor has to the root cell
      * \param neighbor_ids The container to populate with the indices
      * 
-     * \tparam dim         The dimensions in which to add neighbors
+     * \tparam d           The dimensions in which to add neighbors (1-based!)
      * \tparam periodic    Whether the grid is periodic
      * 
      * \return void
      */
-    template<std::size_t dim, bool periodic>
+    template<std::size_t d, bool periodic>
     void add_back_neighbor_in_dim_ (const IndexType& root_id,
                                     const std::size_t distance,
                                     IndexContainer& neighbor_ids) const
     {
         // Assure the number of dimensions is supported
         static_assert((dim == 1) or (dim == 2),
-                      "Unsupported dimensionality in space! Need be 1 or 2.");
+            "Unsupported dimensionality of underlying space! Need be 1 or 2.");
+        static_assert(d >= 1 and d <= 2);
 
         // If the distance is zero, no neighbor can be added; return nothing.
         if (distance == 0) {
             return;
         }
 
-        // Gather the required grid information
-        const auto num_cells = std::accumulate(this->_shape.begin(), 
-                                               this->_shape.end(), 
-                                               1, 
-                                               std::multiplies<std::size_t>());
-
         // Conditions for the back boundary; the conditions are
         // dependent on the dimension in which to add neighbors.
-        bool _cond_back;
+        bool at_back;
 
         // Set the boundary conditions for different dimensions
-        if constexpr (dim == 1) {
-            _cond_back  = (root_id % this->_shape[0] 
+        if constexpr (d == 1) {
+            at_back  = (root_id % this->_shape[0] 
                             >= this->_shape[0] - distance);
         }
-        else if constexpr (dim == 2) {
-            _cond_back  = (root_id / this->_shape[0] 
+        else if constexpr (d == 2) {
+            at_back  = (root_id / this->_shape[0] 
                             >= this->_shape[1] - distance);
         }
 
         // check if at back boundary
-        if (_cond_back) {
+        if (at_back) {
             if constexpr (periodic) {
                 neighbor_ids.push_back(root_id
-                                        + distance * id_shift_in_dim_<dim-1>()
-                                        - id_shift_in_dim_<dim>());
+                                       + distance * id_shift_in_dim_<d-1>()
+                                       - id_shift_in_dim_<d>());
             }
         }
         else {
@@ -833,8 +831,8 @@ protected:
             //      otherwise the index could exceed the vector range.
             //      It's literally the edge case (bottom right hand corner) ;D
             neighbor_ids.push_back((root_id 
-                                    + distance * id_shift_in_dim_<dim-1>()) 
-                                    % num_cells);
+                                    + distance * id_shift_in_dim_<d-1>()) 
+                                    % this->num_cells());
         }
     }
 };
