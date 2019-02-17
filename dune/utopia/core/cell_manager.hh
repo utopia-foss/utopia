@@ -221,6 +221,25 @@ public:
         return _cells[_grid->cell_at(pos)];
     }
 
+    /// Retrieve a container of cells that are at a specified boundary
+    /** \note   For a periodic space, an empty container is returned; no error
+      *         or warning is emitted!
+      *
+      * \detail Lets the grid compute the set of cell IDs at the boundary and
+      *         then converts them into pointers to cells. As the set is sorted
+      *         by cell IDs, the returned container is also sorted.
+      *
+      * \param  select  Which boundary to return the cell IDs of. If 'full',
+      *         all boundary cells are returned. Other available values depend
+      *         on the dimensionality of the grid:
+      *                1D:  left, right
+      *                2D:  bottom, top
+      *                3D:  back, front
+      */
+    CellContainer<Cell> boundary_cells(std::string select="full") const {
+        return cells_from_ids(_grid->boundary_cells(select));
+    }
+
 
     // .. Neighborhood-related ................................................
     /// Retrieve the given cell's neighbors
@@ -327,7 +346,7 @@ public:
         _nb_func = _nb_from_cache;
         _log->info("Computed and stored cell neighbors.");
     }
-    
+
     /// Return the currently selected neighborhood mode
     /** \note This is a shortcut that accesses the value set in the grid.
       */
@@ -345,7 +364,7 @@ private:
 
     /// Given a container of cell IDs, convert it to container of cell pointers
     template<class IndexContainer>
-    CellContainer<Cell> cells_from_ids(IndexContainer&& ids) {
+    CellContainer<Cell> cells_from_ids(IndexContainer&& ids) const {
         // Initialize container to be returned and fix it in size
         CellContainer<Cell> ret;
         ret.reserve(ids.size());

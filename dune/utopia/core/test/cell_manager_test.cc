@@ -422,6 +422,13 @@ int main(int, char *[]) {
         assert(cm.grid()->is_periodic());
         cm.cell_at({3.14, 42.0});
         cm.cell_at({-1.23, 3.45});
+        
+        cm.boundary_cells();
+        cm.boundary_cells("full");
+        cm.boundary_cells("left");
+        cm.boundary_cells("right");
+        cm.boundary_cells("top");
+        cm.boundary_cells("bottom");
 
         std::cout << "Success." << std::endl << std::endl;
 
