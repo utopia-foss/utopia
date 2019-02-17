@@ -63,9 +63,6 @@ private:
     /// Storage container for pre-calculated (!) cell neighbors
     std::vector<CellContainer<Cell>> _cell_neighbors;
 
-    /// The currently chosen neighborhood mode, i.e. "moore", "vonNeumann", ...
-    NBMode _nb_mode;
-
     /// The currently chosen neighborhood function (working directly on cells)
     NBFuncCell _nb_func;
 
@@ -93,8 +90,7 @@ public:
         _space(model.get_space()),
         _grid(setup_grid()),
         _cells(setup_cells()),
-        _cell_neighbors(),
-        _nb_mode(NBMode::empty)
+        _cell_neighbors()
     {
         // Set default value for _nb_func
         _nb_func = _nb_compute_each_time_empty;
@@ -123,8 +119,7 @@ public:
         _space(model.get_space()),
         _grid(setup_grid()),
         _cells(setup_cells(initial_state)),
-        _cell_neighbors(),
-        _nb_mode(NBMode::empty)
+        _cell_neighbors()
     {
         // Set default value for _nb_func
         _nb_func = _nb_compute_each_time_empty;
@@ -150,11 +145,6 @@ public:
     /// Return const reference to the managed CA cells
     const CellContainer<Cell>& cells () const {
         return _cells;
-    }
-
-    /// Return const reference to the neighborhood mode
-    NBMode nb_mode() {
-        return _nb_mode;
     }
 
 
@@ -276,9 +266,9 @@ public:
     void select_neighborhood(NBMode nb_mode,
                              bool compute_and_store = false)
     {
-        // Only change the neighborhood, if it is different to the existing
-        // one or if it is set to be empty
-        if ((nb_mode != _nb_mode) or (nb_mode == NBMode::empty)) {
+        // Only change the neighborhood, if it is different to the one already
+        // set in the grid or if it is set to be empty
+        if ((nb_mode != _grid->nb_mode()) or (nb_mode == NBMode::empty)) {
             _log->info("Selecting '{}' neighborhood ...",
                        nb_mode_to_string(nb_mode));
 
@@ -301,14 +291,12 @@ public:
                 _log->debug("Cleared cell neighborhood cache.");
             }
 
-            // Everything ok, now set the member variable
-            _nb_mode = nb_mode;
             _log->debug("Successfully selected '{}' neighborhood.",
-                        nb_mode_to_string(_nb_mode));
+                        nb_mode_to_string(_grid->nb_mode()));
         }
         else {
             _log->debug("Neighborhood was already set to '{}'; not changing.",
-                        nb_mode_to_string(_nb_mode));
+                        nb_mode_to_string(_grid->nb_mode()));
         }
 
         // Still allow to compute the neighbors, regardless of all the above
@@ -324,7 +312,7 @@ public:
       */
     void compute_cell_neighbors() {
         _log->info("Computing and storing '{}' neighbors of all {} cells ...",
-                   nb_mode_to_string(_nb_mode), _cells.size());
+                   nb_mode_to_string(_grid->nb_mode()), _cells.size());
 
         // Clear cell neighbors container and pre-allocate space
         _cell_neighbors.clear();
@@ -338,6 +326,13 @@ public:
         // Change access function to access the storage directly. Done.
         _nb_func = _nb_from_cache;
         _log->info("Computed and stored cell neighbors.");
+    }
+    
+    /// Return the currently selected neighborhood mode
+    /** \note This is a shortcut that accesses the value set in the grid.
+      */
+    const NBMode& nb_mode () const {
+        return _grid->nb_mode();
     }
 
 

@@ -151,6 +151,11 @@ public:
         _nb_mode = nb_mode;
     }
 
+    /// Const reference to the currently selected neighborhood mode
+    const NBMode& nb_mode() {
+        return _nb_mode;
+    }
+
 
     // .. Position-related methods ............................................
     /// Returns the multi index of the cell with the given ID
@@ -192,6 +197,7 @@ public:
       */
     virtual IndexType cell_at(const SpaceVec&) const = 0;
 
+
     // .. Getters .............................................................
     /// Get number of cells
     /** \detail This information is used by the CellManager to populate the
@@ -199,7 +205,7 @@ public:
       */
     virtual IndexType num_cells() const = 0;
     
-    /// Get const reference to resolution of this grid
+    /// Get scalar resolution value of this grid
     std::size_t resolution() const {
         return _resolution;
     }
@@ -216,14 +222,14 @@ public:
     /// Get the shape of the grid discretization
     virtual const MultiIndex shape() const = 0;
 
-    /// Whether the grid is periodic
-    bool is_periodic() const {
-        return _space->periodic;
+    /// Const reference to the space this grid maps to
+    const std::shared_ptr<Space>& space() const {
+        return _space;
     }
 
-    /// The space this grid is coupled to
-    std::shared_ptr<Space> space() const {
-        return _space;
+    /// Whether the space this grid maps to is periodic
+    bool is_periodic() const {
+        return _space->periodic;
     }
 
 
