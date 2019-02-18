@@ -424,7 +424,7 @@ int main(int, char *[]) {
         cm.cell_at({-1.23, 3.45});
         
         cm.boundary_cells();
-        cm.boundary_cells("full");
+        cm.boundary_cells("all");
         cm.boundary_cells("left");
         cm.boundary_cells("right");
         cm.boundary_cells("top");

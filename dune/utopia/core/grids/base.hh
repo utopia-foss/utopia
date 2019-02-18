@@ -158,7 +158,7 @@ public:
 
 
     // .. Position-related methods ............................................
-    /// Returns the multi index of the cell with the given ID
+    /// Returns the multi-index of the cell with the given ID
     /** \note This method does not perform bounds checking of the given ID!
       */
     virtual const MultiIndex midx_of(const IndexType&) const = 0;
@@ -201,7 +201,7 @@ public:
     /** \note   For a periodic space, an empty container is returned; no error
       *         or warning is emitted.
       *
-      * \param  select  Which boundary to return the cell IDs of. If 'full',
+      * \param  select  Which boundary to return the cell IDs of. If 'all',
       *         all boundary cells are returned. Other available values depend
       *         on the dimensionality of the grid:
       *                1D:  left, right

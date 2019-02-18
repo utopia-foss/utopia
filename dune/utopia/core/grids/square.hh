@@ -116,7 +116,7 @@ public:
 
 
     // .. Position-related methods ............................................
-    /// Returns the multi index of the cell with the given ID
+    /// Returns the multi-index of the cell with the given ID
     /** \note This method does not perform bounds checking of the given ID!
       */
     const MultiIndex midx_of(const IndexType& id) const override {
@@ -193,7 +193,7 @@ public:
         // The multi-index element type to use for static casts
         using midx_et = typename MultiIndex::elem_type;
 
-        // The multi index to be calculated
+        // The multi-index to be calculated
         MultiIndex midx;
 
         // Distinguish periodic and non-periodic case
@@ -246,7 +246,7 @@ public:
     /** \note   For a periodic space, an empty container is returned; no error
       *         or warning is emitted.
       *
-      * \param  select  Which boundary to return the cell IDs of. If 'full',
+      * \param  select  Which boundary to return the cell IDs of. If 'all',
       *         all boundary cells are returned. Other available values depend
       *         on the dimensionality of the grid:
       *                1D:  left, right
@@ -254,7 +254,7 @@ public:
       *                3D:  back, front
       */
     const std::set<IndexType>
-        boundary_cells(std::string select="full") const override
+        boundary_cells(std::string select="all") const override
     {
         static_assert(dim <= 2,
             "SquareGrid::boundary_cells only implemented for 1D and 2D!");
@@ -270,26 +270,26 @@ public:
 
         // Distinguish by dimensionality of the space
         if constexpr (dim == 1) {
-            if (select != "full" and select != "left" and select != "right") {
+            if (select != "all" and select != "left" and select != "right") {
                 throw std::invalid_argument("Invalid value for argument "
                     "`select` in call to method SquareGrid::boundary_cells! "
                     "Available arguments (for currently selected "
                     "dimensionality) are: "
-                    "'full', 'left', 'right'. Given value: '" + select + "'");
+                    "'all', 'left', 'right'. Given value: '" + select + "'");
             }
 
             // Left boundary (consists only of one cell)
-            if (select == "full" or select == "left") {
+            if (select == "all" or select == "left") {
                 bc_ids.emplace(0);
             }
 
             // Right boundary (also consists only of one cell)
-            if (select == "full" or select == "right") {
+            if (select == "all" or select == "right") {
                 bc_ids.emplace_hint(bc_ids.end(), _shape[0] - 1);
             }
         }
         else if constexpr (dim == 2) {
-            if (    select != "full"
+            if (    select != "all"
                 and select != "left" and select != "right"
                 and select != "bottom" and select != "top")
             {
@@ -297,7 +297,7 @@ public:
                     "`select` in call to method SquareGrid::boundary_cells! "
                     "Available arguments (for currently selected "
                     "dimensionality) are: "
-                    "'full', 'left', 'right', 'bottom', 'top'. Given value: '"
+                    "'all', 'left', 'right', 'bottom', 'top'. Given value: '"
                     + select + "'");
             }
 
@@ -310,7 +310,7 @@ public:
             auto hint = bc_ids.begin();
 
             // Bottom boundary (lowest IDs)
-            if (select == "full" or select == "bottom") {
+            if (select == "all" or select == "bottom") {
                 // 0, ..., _shape[0] - 1    
                 for (std::size_t id = 0; id < _shape[0]; id++) {
                     bc_ids.emplace_hint(hint, id);
@@ -338,8 +338,8 @@ public:
                 }
             }
 
-            // Left AND right (only for 'full' case, allows better hints)
-            if (select == "full") {
+            // Left AND right (only for 'all' case, allows better hints)
+            if (select == "all") {
                 // First and last IDs in _shape[1] rows
                 const auto offset = _shape[0] - 1;
 
@@ -356,7 +356,7 @@ public:
             }
 
             // Top boundary (highest IDs)
-            if (select == "full" or select == "top") {
+            if (select == "all" or select == "top") {
                 // _shape[0] * (_shape[1]-1), ..., _shape[0] * _shape[1] - 1
                 for (std::size_t id = _shape[0] * (_shape[1]-1);
                      id < _shape[0] * _shape[1]; id++)

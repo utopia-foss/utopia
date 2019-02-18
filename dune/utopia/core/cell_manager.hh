@@ -229,14 +229,14 @@ public:
       *         then converts them into pointers to cells. As the set is sorted
       *         by cell IDs, the returned container is also sorted.
       *
-      * \param  select  Which boundary to return the cell IDs of. If 'full',
+      * \param  Select which boundary to return the cell IDs of. If 'all',
       *         all boundary cells are returned. Other available values depend
       *         on the dimensionality of the grid:
       *                1D:  left, right
       *                2D:  bottom, top
       *                3D:  back, front
       */
-    CellContainer<Cell> boundary_cells(std::string select="full") const {
+    CellContainer<Cell> boundary_cells(std::string select="all") const {
         return cells_from_ids(_grid->boundary_cells(select));
     }
 
@@ -285,7 +285,7 @@ public:
     void select_neighborhood(NBMode nb_mode,
                              bool compute_and_store = false)
     {
-        // Only change the neighborhood, if it is different to the one already
+        // Only change the neighborhood if it is different to the one already
         // set in the grid or if it is set to be empty
         if ((nb_mode != _grid->nb_mode()) or (nb_mode == NBMode::empty)) {
             _log->info("Selecting '{}' neighborhood ...",

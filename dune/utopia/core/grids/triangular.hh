@@ -144,7 +144,7 @@ public:
     /** \note   For a periodic space, an empty container is returned; no error
       *         or warning is emitted.
       *
-      * \param  select  Which boundary to return the cell IDs of. If 'full',
+      * \param  select  Which boundary to return the cell IDs of. If 'all',
       *         all boundary cells are returned. Other available values depend
       *         on the dimensionality of the grid:
       *                1D:  left, right

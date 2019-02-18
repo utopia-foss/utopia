@@ -504,8 +504,8 @@ int main(int, char *[]) {
         // The periodic grid should always return an empty grid container
         std::cout << "Testing periodic grid ..." << std::endl;
 
-        assert(gdec_p.boundary_cells().size() == 0);  // == full
-        assert(gdec_p.boundary_cells("full").size() == 0);
+        assert(gdec_p.boundary_cells().size() == 0);  // == all
+        assert(gdec_p.boundary_cells("all").size() == 0);
         assert(gdec_p.boundary_cells("left").size() == 0);
         assert(gdec_p.boundary_cells("right").size() == 0);
         assert(gdec_p.boundary_cells("top").size() == 0);
@@ -521,7 +521,7 @@ int main(int, char *[]) {
         // Check sizes
         assert(   gdec_np.boundary_cells().size()
                == 2 * gdec_shape[0] + 2 * gdec_shape[1] - 4);
-        assert(   gdec_np.boundary_cells("full").size()
+        assert(   gdec_np.boundary_cells("all").size()
                == gdec_np.boundary_cells().size());
         assert(   gdec_np.boundary_cells("left").size()
                == gdec_shape[1]);
@@ -565,25 +565,25 @@ int main(int, char *[]) {
         assert(bc_right.count(559));
         assert(*bc_right.rbegin() == 20*30 - 1);
 
-        // Full boundary
-        auto bc_full = gdec_np.boundary_cells("full");
-        assert(*bc_full.begin() == 0);
-        assert(bc_full.count(1));
-        assert(bc_full.count(2));
-        assert(bc_full.count(10));
-        assert(bc_full.count(19));
-        assert(bc_full.count(20));
-        assert(bc_full.count(39));
-        assert(bc_full.count(40));
-        assert(bc_full.count(300));
-        assert(bc_full.count(319));
-        assert(bc_full.count(560));
-        assert(bc_full.count(579));
-        assert(bc_full.count(580));
-        assert(bc_full.count(581));
-        assert(bc_full.count(590));
-        assert(bc_full.count(598));
-        assert(*bc_full.rbegin() == 20*30 - 1);
+        // All boundary cells
+        auto bc_all = gdec_np.boundary_cells("all");
+        assert(*bc_all.begin() == 0);
+        assert(bc_all.count(1));
+        assert(bc_all.count(2));
+        assert(bc_all.count(10));
+        assert(bc_all.count(19));
+        assert(bc_all.count(20));
+        assert(bc_all.count(39));
+        assert(bc_all.count(40));
+        assert(bc_all.count(300));
+        assert(bc_all.count(319));
+        assert(bc_all.count(560));
+        assert(bc_all.count(579));
+        assert(bc_all.count(580));
+        assert(bc_all.count(581));
+        assert(bc_all.count(590));
+        assert(bc_all.count(598));
+        assert(*bc_all.rbegin() == 20*30 - 1);
 
         std::cout << "Success." << std::endl << std::endl;
         
@@ -616,7 +616,7 @@ int main(int, char *[]) {
         return 0;
     }
     catch (std::exception& e) {
-        std::cerr << "Exception occured: " << e.what() << std::endl;
+        std::cerr << "Exception occurred: " << e.what() << std::endl;
         // NOTE cannot call cleanup here because the scope is not shared
         return 1;
     }
