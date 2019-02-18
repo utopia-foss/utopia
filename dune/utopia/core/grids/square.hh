@@ -274,10 +274,10 @@ protected:
 
         // Depending on the number of dimensions, add the IDs of neighboring
         // cells in those dimensions
-        add_neighbors_in_dim_<1, true>(root_id, neighbor_ids);
+        add_neighbors_in_dim_<0, true>(root_id, neighbor_ids);
 
         if constexpr (dim >= 2) {
-            add_neighbors_in_dim_<2, true>(root_id, neighbor_ids);
+            add_neighbors_in_dim_<1, true>(root_id, neighbor_ids);
         }
 
         // Return the container of cell indices
@@ -304,8 +304,10 @@ protected:
         // cells in those dimensions
         // Add neighbors in dimension 1
         for (std::size_t dist=1; dist <= this->_nbh_distance; ++dist) {
-            add_front_neighbor_in_dim_<1, true>(root_id, dist, neighbor_ids);
-            add_back_neighbor_in_dim_<1, true>(root_id, dist, neighbor_ids);
+            add_low_val_neighbor_in_dim_<0, true>(root_id, dist,
+                                                  neighbor_ids);
+            add_high_val_neighbor_in_dim_<0, true>(root_id, dist,
+                                                   neighbor_ids);
         }
 
         // If the dimension exists, add neighbors in dimension 2
@@ -325,28 +327,28 @@ protected:
                      ++dist)
                 {
                     // front neighbor
-                    add_front_neighbor_in_dim_<2, true>(neighbor_ids[i],
-                                                        dist,
-                                                        neighbor_ids);
+                    add_low_val_neighbor_in_dim_<1, true>(neighbor_ids[i],
+                                                          dist,
+                                                          neighbor_ids);
 
                     // back neighbor
-                    add_back_neighbor_in_dim_<2, true>(neighbor_ids[i],
-                                                       dist,
-                                                       neighbor_ids);
+                    add_high_val_neighbor_in_dim_<1, true>(neighbor_ids[i],
+                                                           dist,
+                                                           neighbor_ids);
                 }
             }
 
             // Finally, add the root cell's neighbors in the second dimension
             for (std::size_t dist=1; dist <= this->_nbh_distance; ++dist) {
                 // front neighbor
-                add_front_neighbor_in_dim_<2, true>(root_id, 
-                                                    dist, 
-                                                    neighbor_ids);
+                add_low_val_neighbor_in_dim_<1, true>(root_id, 
+                                                      dist, 
+                                                      neighbor_ids);
 
                 // back neighbor
-                add_back_neighbor_in_dim_<2, true>(root_id, 
-                                                   dist, 
-                                                   neighbor_ids);
+                add_high_val_neighbor_in_dim_<1, true>(root_id, 
+                                                       dist, 
+                                                       neighbor_ids);
             }
         }
 
@@ -372,10 +374,10 @@ protected:
 
         // Depending on the number of dimensions, add the IDs of neighboring
         // cells in those dimensions
-        add_neighbors_in_dim_<1, false>(root_id, neighbor_ids);
+        add_neighbors_in_dim_<0, false>(root_id, neighbor_ids);
 
         if constexpr (dim >= 2) {
-            add_neighbors_in_dim_<2, false>(root_id, neighbor_ids);
+            add_neighbors_in_dim_<1, false>(root_id, neighbor_ids);
         }
 
         // Return the container of cell indices
@@ -404,12 +406,12 @@ protected:
         // cells in those dimensions
         // Add front neighbors in dimension 1
         for (std::size_t dist=1; dist <= this->_nbh_distance; ++dist) {
-            add_front_neighbor_in_dim_<1, false>(root_id,
-                                                 dist,
-                                                 front_nb_ids);
-            add_back_neighbor_in_dim_<1, false>(root_id,
-                                                dist,
-                                                back_nb_ids);
+            add_low_val_neighbor_in_dim_<0, false>(root_id,
+                                                   dist,
+                                                   front_nb_ids);
+            add_high_val_neighbor_in_dim_<0, false>(root_id,
+                                                    dist,
+                                                    back_nb_ids);
         }
 
         // If the dimension exists, add neighbors in dimension 2
@@ -429,14 +431,14 @@ protected:
                      ++dist)
                 {
                     // add front neighbors ids in dimension 2
-                    add_front_neighbor_in_dim_<2, false>(front_nb_ids[i],
-                                                         dist,
-                                                         front_nb_ids);
+                    add_low_val_neighbor_in_dim_<1, false>(front_nb_ids[i],
+                                                           dist,
+                                                           front_nb_ids);
                     
                     // add back neighbors ids in dimension 2
-                    add_back_neighbor_in_dim_<2, false>(front_nb_ids[i],
-                                                        dist,
-                                                        front_nb_ids);
+                    add_high_val_neighbor_in_dim_<1, false>(front_nb_ids[i],
+                                                            dist,
+                                                            front_nb_ids);
                 }
             }
 
@@ -455,28 +457,28 @@ protected:
                      ++dist)
                 {
                     // front neighbor ids in dimension 2
-                    add_front_neighbor_in_dim_<2, false>(back_nb_ids[i],
-                                                         dist,
-                                                         back_nb_ids);
+                    add_low_val_neighbor_in_dim_<1, false>(back_nb_ids[i],
+                                                           dist,
+                                                           back_nb_ids);
 
                     // back neighbors ids in dimension 2
-                    add_back_neighbor_in_dim_<2, false>(back_nb_ids[i],
-                                                        dist,
-                                                        back_nb_ids);
+                    add_high_val_neighbor_in_dim_<1, false>(back_nb_ids[i],
+                                                            dist,
+                                                            back_nb_ids);
                 }
             }
 
             // Finally, add the root cell's neighbors in the second dimension
             for (std::size_t dist=1; dist <= this->_nbh_distance; ++dist) {
                 // front neighbor ids
-                add_front_neighbor_in_dim_<2, false>(root_id, 
-                                                     dist, 
-                                                     front_nb_ids);
+                add_low_val_neighbor_in_dim_<1, false>(root_id,
+                                                       dist,
+                                                       front_nb_ids);
 
                 // back neighbor ids
-                add_back_neighbor_in_dim_<2, false>(root_id, 
-                                                    dist, 
-                                                    back_nb_ids);
+                add_high_val_neighbor_in_dim_<1, false>(root_id,
+                                                        dist,
+                                                        back_nb_ids);
             }
         }
 
@@ -499,15 +501,27 @@ protected:
         neighbor_ids.reserve(8);
 
         // Get the neighbors in the second dimension
-        add_neighbors_in_dim_<2, true>(root_id, neighbor_ids);
+        add_neighbors_in_dim_<1, true>(root_id, neighbor_ids);
         // ...have these neighbors at indices 0 and 1 now.
+        for (auto& nb_id : neighbor_ids) {
+            std::cout << nb_id << ", ";
+        }
+        std::cout << std::endl;
 
         // For these neighbors, add _their_ neighbors in the first dimension
-        add_neighbors_in_dim_<1, true>(neighbor_ids[0], neighbor_ids);
-        add_neighbors_in_dim_<1, true>(neighbor_ids[1], neighbor_ids);
+        add_neighbors_in_dim_<0, true>(neighbor_ids[0], neighbor_ids);
+        add_neighbors_in_dim_<0, true>(neighbor_ids[1], neighbor_ids);
+        for (auto& nb_id : neighbor_ids) {
+            std::cout << nb_id << ", ";
+        }
+        std::cout << std::endl;
 
         // And finally, add the root cell's neighbors in the first dimension
-        add_neighbors_in_dim_<1, true>(root_id, neighbor_ids);
+        add_neighbors_in_dim_<0, true>(root_id, neighbor_ids);
+        for (auto& nb_id : neighbor_ids) {
+            std::cout << nb_id << ", ";
+        }
+        std::cout << std::endl;
 
         return neighbor_ids;
     };
@@ -526,22 +540,34 @@ protected:
 
         // Get all neighbors in the first dimension
         for (std::size_t dist=1; dist <= this->_nbh_distance; ++dist) {
-            add_front_neighbor_in_dim_<1, true>(root_id, dist, neighbor_ids);
-            add_back_neighbor_in_dim_<1, true>(root_id, dist, neighbor_ids);
+            add_low_val_neighbor_in_dim_<0, true>(root_id,
+                                                  dist,
+                                                  neighbor_ids);
+            add_high_val_neighbor_in_dim_<0, true>(root_id,
+                                                   dist,
+                                                   neighbor_ids);
         }
 
         // For these neighbors, add _their_ neighbors in the second dimension
         for (const auto& nb : neighbor_ids) {
             for (std::size_t dist=1; dist <= this->_nbh_distance; ++dist) {
-                add_front_neighbor_in_dim_<2, true>(nb, dist, neighbor_ids);
-                add_back_neighbor_in_dim_<2, true>(nb, dist, neighbor_ids);
+                add_low_val_neighbor_in_dim_<1, true>(nb,
+                                                      dist,
+                                                      neighbor_ids);
+                add_high_val_neighbor_in_dim_<1, true>(nb,
+                                                       dist,
+                                                       neighbor_ids);
             }
         }
 
         // And finally, add the root cell's neighbors in the second dimension
         for (std::size_t dist=1; dist <= this->_nbh_distance; ++dist) {
-            add_front_neighbor_in_dim_<2, true>(root_id, dist, neighbor_ids);
-            add_back_neighbor_in_dim_<2, true>(root_id, dist, neighbor_ids);
+            add_low_val_neighbor_in_dim_<1, true>(root_id,
+                                                  dist,
+                                                  neighbor_ids);
+            add_high_val_neighbor_in_dim_<1, true>(root_id,
+                                                   dist,
+                                                   neighbor_ids);
         }
 
         return neighbor_ids;
@@ -558,24 +584,24 @@ protected:
         neighbor_ids.reserve(8);
 
         // Get the neighbors in the second dimension
-        add_neighbors_in_dim_<2, false>(root_id, neighbor_ids);
+        add_neighbors_in_dim_<1, false>(root_id, neighbor_ids);
         // root not at border: have them at indices 0 and 1 now
         // root at border: less than two neighbors were added
 
         // Distinguish these two cases
         if (neighbor_ids.size() == 2) {
             // Was not at a boundary.
-            add_neighbors_in_dim_<1, false>(neighbor_ids[0], neighbor_ids);
-            add_neighbors_in_dim_<1, false>(neighbor_ids[1], neighbor_ids);
+            add_neighbors_in_dim_<0, false>(neighbor_ids[0], neighbor_ids);
+            add_neighbors_in_dim_<0, false>(neighbor_ids[1], neighbor_ids);
         }
         else if (neighbor_ids.size() == 1) {
             // Was at a front XOR back boundary in dimension 2
-            add_neighbors_in_dim_<1, false>(neighbor_ids[0], neighbor_ids);
+            add_neighbors_in_dim_<0, false>(neighbor_ids[0], neighbor_ids);
         }
         // else: was at front AND back boundary (single row of cells in dim 2)
 
         // Finally, add the root's neighbors in the first dimension
-        add_neighbors_in_dim_<1, false>(root_id, neighbor_ids);
+        add_neighbors_in_dim_<0, false>(root_id, neighbor_ids);
 
         return neighbor_ids;
     };
@@ -594,22 +620,34 @@ protected:
 
         // Get all neighbors in the first dimension
         for (std::size_t dist=1; dist <= this->_nbh_distance; ++dist) {
-            add_front_neighbor_in_dim_<1, false>(root_id, dist, neighbor_ids);
-            add_back_neighbor_in_dim_<1, false>(root_id, dist, neighbor_ids);
+            add_low_val_neighbor_in_dim_<0, false>(root_id,
+                                                   dist,
+                                                   neighbor_ids);
+            add_high_val_neighbor_in_dim_<0, false>(root_id,
+                                                    dist,
+                                                    neighbor_ids);
         }
 
         // For these neighbors, add _their_ neighbors in the second dimension
         for (const auto& nb : neighbor_ids) {
             for (std::size_t dist=1; dist <= this->_nbh_distance; ++dist) {
-                add_front_neighbor_in_dim_<2, false>(nb, dist, neighbor_ids);
-                add_back_neighbor_in_dim_<2, false>(nb, dist, neighbor_ids);
+                add_low_val_neighbor_in_dim_<1, false>(nb,
+                                                       dist,
+                                                       neighbor_ids);
+                add_high_val_neighbor_in_dim_<1, false>(nb,
+                                                        dist,
+                                                        neighbor_ids);
             }
         }
 
         // And finally, add the root cell's neighbors in the second dimension
         for (std::size_t dist=1; dist <= this->_nbh_distance; ++dist) {
-            add_front_neighbor_in_dim_<2, false>(root_id, dist, neighbor_ids);
-            add_back_neighbor_in_dim_<2, false>(root_id, dist, neighbor_ids);
+            add_low_val_neighbor_in_dim_<1, false>(root_id,
+                                                   dist,
+                                                   neighbor_ids);
+            add_high_val_neighbor_in_dim_<1, false>(root_id,
+                                                    dist,
+                                                    neighbor_ids);
         }
 
         return neighbor_ids;
@@ -625,13 +663,13 @@ protected:
      *    - shift_dim == 3 -> shape[2] * shape[1] * shape[0] * 1
      *    - ...
      * 
-     * @tparam shift_dim  In which dimension the shift is desired
+     * \tparam shift_dim  In which dimension the shift is desired
      *
-     * @return constexpr GridShapeType<dim>::value_type 
+     * \return constexpr GridShapeType<dim>::value_type 
      */
     template<std::size_t shift_dim>
     constexpr typename GridShapeType<dim>::value_type
-        id_shift_in_dim_ () const
+        id_shift_in_dim_() const
     {
         if constexpr (shift_dim == 0) {
             return 1;
@@ -641,10 +679,10 @@ protected:
         } 
     }
 
-    /// Fill an index container with neighbors in different directions
+    /// Add both direct neighbors to a container of indices
     /** This function takes an index container and populates it with the
      *  indices of neighboring cells in different dimensions, specified by
-     *  template parameter `d`.
+     *  template parameter 0 < `d` < number of dimensions - 1.
      * 
      *  The algorithm first calculates whether the given root cell index has a
      *  front or back boundary in the chosen dimension. If so, the neighboring
@@ -653,68 +691,58 @@ protected:
      * \param root_id      Which cell to find the agents of
      * \param neighbor_ids The container to populate with the indices
      * 
-     * \tparam d           The dimensions in which to add neighbors (1-based!)
+     * \tparam d           The dimensions in which to add neighbors (0-based!)
      * \tparam periodic    Whether the grid is periodic
      * 
      * \return void
      */
     template<std::size_t d, bool periodic>
-    void add_neighbors_in_dim_ (const IndexType& root_id,
-                                IndexContainer& neighbor_ids) const
+    void add_neighbors_in_dim_(const IndexType& root_id,
+                               IndexContainer& neighbor_ids) const
     {
         // Assure the number of dimensions is supported
-        static_assert((dim == 1) or (dim == 2),
+        static_assert(dim <= 2,
             "Unsupported dimensionality of underlying space! Need be 1 or 2.");
-        static_assert(d >= 1 and d <= 2);
+        static_assert(d < dim);
 
-        // Conditions for the front and back boundary; the conditions are
-        // dependent on the dimension in which to add neighbors.
-        bool at_front;
-        bool at_back;
+        // Compute a "normalized" ID along the desired dimension in which the
+        // neighbors are to be added. Is always in [0, shape[d] - 1].
+        const auto nrm_id = (  (root_id % id_shift_in_dim_<d+1>())
+                             / id_shift_in_dim_<d>());
+        // NOTE _Should_ also work for d > 2, but need tests for that.
 
-        // Set the boundary conditions for different dimensions
-        if constexpr (d == 1) {
-            at_front = (root_id % this->_shape[0] == 0);
-            at_back = (root_id % this->_shape[0] == this->_shape[0] - 1);
-        }
-        else if constexpr (d == 2) {
-            // 'normalize' id to lowest height (in 3D)
-            const auto root_id_nrm = root_id % id_shift_in_dim_<d>();
-
-            at_front = (root_id_nrm / this->_shape[0] == 0);
-            at_back = (root_id_nrm / this->_shape[0] == this->_shape[1] - 1);
-        }
-
-        // check if at front boundary
-        if (at_front) {
+        // Check if at low value boundary
+        if (nrm_id == 0) {
             if constexpr (periodic) {
-                neighbor_ids.push_back(root_id
-                                       - id_shift_in_dim_<d-1>()
-                                       + id_shift_in_dim_<d>());
+                neighbor_ids.push_back(  root_id
+                                       - id_shift_in_dim_<d>()
+                                       + id_shift_in_dim_<d+1>());
+            }
+            // else: not periodic; nothing to add here
+        }
+        else {
+            // Not at boundary; no need for the correction term
+            neighbor_ids.push_back(root_id - id_shift_in_dim_<d>());
+        }
+
+        // Check if at high value boundary
+        if (nrm_id == _shape[d] - 1) {
+            if constexpr (periodic) {
+                neighbor_ids.push_back(  root_id
+                                       + id_shift_in_dim_<d>()
+                                       - id_shift_in_dim_<d+1>());
             }
         }
         else {
-            neighbor_ids.push_back(root_id - id_shift_in_dim_<d-1>());
-        }
-
-        // check if at back boundary
-        if (at_back) {
-            if constexpr (periodic) {
-                neighbor_ids.push_back(root_id
-                                       + id_shift_in_dim_<d-1>()
-                                       - id_shift_in_dim_<d>());
-            }
-        }
-        else {
-            neighbor_ids.push_back(root_id + id_shift_in_dim_<d-1>());
+            neighbor_ids.push_back(root_id + id_shift_in_dim_<d>());
         }
     }
 
 
-    /// Fill an index container with a front neighbor.
+    /// Add a neighbor on the low (ID) value side to an index container
     /** This function takes an index container and populates it with the
      *  indices of neighboring cells in different dimensions, specified by
-     *  template parameter `d`.
+     *  template parameter 0 < `d` < number of dimensions - 1.
      * 
      *  The algorithm first calculates whether the given root cell index has a
      *  front boundary in the chosen dimension. If so, the neighboring
@@ -724,57 +752,50 @@ protected:
      * \param distance     Which distance the neighbor has to the root cell
      * \param neighbor_ids The container to populate with the indices
      * 
-     * \tparam d           The dimensions in which to add neighbors (1-based!)
+     * \tparam d           The dimensions in which to add neighbors (0-based!)
      * \tparam periodic    Whether the grid is periodic
      * 
      * \return void
      */
     template<std::size_t d, bool periodic>
-    void add_front_neighbor_in_dim_ (const IndexType& root_id,
-                                     const std::size_t distance,
-                                     IndexContainer& neighbor_ids) const
+    void add_low_val_neighbor_in_dim_(const IndexType& root_id,
+                                      const std::size_t distance,
+                                      IndexContainer& neighbor_ids) const
     {
         // Assure the number of dimensions is supported
-        static_assert((dim == 1) or (dim == 2),
+        static_assert(dim <= 2,
             "Unsupported dimensionality of underlying space! Need be 1 or 2.");
-        static_assert(d >= 1 and d <= 2);
+        static_assert(d < dim);
 
         // If the distance is zero, no neighbor can be added; return nothing.
         if (distance == 0) {
             return;
         }
 
-        // Conditions for the front boundary; the conditions are
-        // dependent on the dimension in which to add neighbors.
-        bool at_front;
-
-        // Set the boundary conditions for different dimensions
-        if constexpr (d == 1) {
-            at_front = (root_id % this->_shape[0] < distance);
-        }
-        else if constexpr (d == 2) {
-            at_front = (root_id / this->_shape[0] < distance);
-        }
-
-        // check if at front boundary
-        if (at_front) {
+        // Check if the neighbor to be added would pass a low value boundary.
+        // Do so by computing a "normalized" ID along the desired dimension in
+        // which the neighbor is to be added (always in [0, shape[d] - 1]) and
+        // then compare to the distance
+        if (  (root_id % id_shift_in_dim_<d+1>()) / id_shift_in_dim_<d>()
+            < distance)
+        {
             if constexpr (periodic) {
-                neighbor_ids.push_back(root_id
-                                       - distance * id_shift_in_dim_<d-1>()
-                                       + id_shift_in_dim_<d>());
+                neighbor_ids.push_back(  root_id
+                                       - distance * id_shift_in_dim_<d>()
+                                       + id_shift_in_dim_<d+1>());
             }
         }
         else {
-            neighbor_ids.push_back(root_id 
-                                    - distance * id_shift_in_dim_<d-1>());
+            neighbor_ids.push_back(  root_id 
+                                   - distance * id_shift_in_dim_<d>());
         }
     }
 
 
-    /// Fill an index container with a back neighbor.
+    /// Add a neighbor on the high (ID) value side to an index container
     /** This function takes an index container and populates it with the
      *  index of a neighboring cell in different dimensions, specified by
-     *  template parameter `d`.
+     *  template parameter 0 < `d` < number of dimensions - 1.
      * 
      *  The algorithm first calculates whether the given root cell index has a
      *  back boundary in the chosen dimension. If so, the neighboring
@@ -784,53 +805,42 @@ protected:
      * \param distance     Which distance the neighbor has to the root cell
      * \param neighbor_ids The container to populate with the indices
      * 
-     * \tparam d           The dimensions in which to add neighbors (1-based!)
+     * \tparam d           The dimensions in which to add neighbors (0-based!)
      * \tparam periodic    Whether the grid is periodic
      * 
      * \return void
      */
     template<std::size_t d, bool periodic>
-    void add_back_neighbor_in_dim_ (const IndexType& root_id,
-                                    const std::size_t distance,
-                                    IndexContainer& neighbor_ids) const
+    void add_high_val_neighbor_in_dim_(const IndexType& root_id,
+                                       const std::size_t distance,
+                                       IndexContainer& neighbor_ids) const
     {
         // Assure the number of dimensions is supported
-        static_assert((dim == 1) or (dim == 2),
+        static_assert(dim <= 2,
             "Unsupported dimensionality of underlying space! Need be 1 or 2.");
-        static_assert(d >= 1 and d <= 2);
+        static_assert(d < dim);
 
         // If the distance is zero, no neighbor can be added; return nothing.
         if (distance == 0) {
             return;
         }
 
-        // Conditions for the back boundary; the conditions are
-        // dependent on the dimension in which to add neighbors.
-        bool at_back;
-
-        // Set the boundary conditions for different dimensions
-        if constexpr (d == 1) {
-            at_back = root_id % this->_shape[0] >= this->_shape[0] - distance;
-        }
-        else if constexpr (d == 2) {
-            at_back = root_id / this->_shape[0] >= this->_shape[1] - distance;
-        }
-
-        // check if at back boundary
-        if (at_back) {
+        // Check if the neighbor to be added would pass a high value boundary.
+        // Do so by computing a "normalized" ID along the desired dimension in
+        // which the neighbor is to be added (always in [0, shape[d] - 1]) and
+        // then compare to the distance from the high value boundary.
+        if (  (root_id % id_shift_in_dim_<d+1>()) / id_shift_in_dim_<d>()
+            >= _shape[d] - distance)
+        {
             if constexpr (periodic) {
-                neighbor_ids.push_back(root_id
-                                       + distance * id_shift_in_dim_<d-1>()
-                                       - id_shift_in_dim_<d>());
+                neighbor_ids.push_back(  root_id
+                                       + distance * id_shift_in_dim_<d>()
+                                       - id_shift_in_dim_<d+1>());
             }
         }
         else {
-            // NOTE Normalization by the number of cells is needed because
-            //      otherwise the index could exceed the vector range.
-            //      It's literally the edge case (bottom right hand corner) ;D
-            neighbor_ids.push_back(  (  root_id 
-                                      + distance * id_shift_in_dim_<d-1>())
-                                    % id_shift_in_dim_<dim>()); // == num cells
+            neighbor_ids.push_back(  root_id 
+                                   + distance * id_shift_in_dim_<d>());
         }
     }
 };
