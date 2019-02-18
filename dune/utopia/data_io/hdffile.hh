@@ -50,7 +50,7 @@ public:
      */
     void close()
     {
-        if (H5Iis_valid(_file))
+        if (check_validity(H5Iis_valid(_file), _path))
         {
             H5Fflush(_file, H5F_SCOPE_GLOBAL);
             H5Fclose(_file);
@@ -67,11 +67,11 @@ public:
      *                     'r' (readonly, file must exist), 'r+' (read/write,
      *                     file must exist), 'w' (create file, truncate if
      *                     exists), 'x' (create file, fail if exists), or 'a'
-     *                     (read/write if exists, create otherwise; default)
+     *                     (read/write if exists, create otherwise)
      */
     void open(std::string path, std::string access)
     {
-        if (H5Iis_valid(_file))
+        if (check_validity(H5Iis_valid(_file), _path))
         {
             throw std::runtime_error(
                 "File still bound to another HDF5 file when trying to call "
@@ -215,6 +215,7 @@ public:
                                                        std::vector<hsize_t> chunksizes = {},
                                                        std::size_t compresslevel = 0)
     {
+        // this kills the '/' at the beginning -> make this better
         return _base_group->open_dataset(path.substr(1, path.size() - 1),
                                          capacity, chunksizes, compresslevel);
     }
@@ -234,7 +235,7 @@ public:
      */
     void flush()
     {
-        if (H5Iis_valid(_file))
+        if (check_validity(H5Iis_valid(_file), _path))
         {
             H5Fflush(_file, H5F_SCOPE_GLOBAL);
         }

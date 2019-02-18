@@ -7,10 +7,13 @@
 #ifndef HDFTYPEFACTORY_HH
 #define HDFTYPEFACTORY_HH
 
-#include "hdfutilities.hh"
+#include <iostream>
+#include <variant>
+
 #include <hdf5.h>
 #include <hdf5_hl.h>
-#include <iostream>
+
+#include <dune/utopia/data_io/hdfutilities.hh>
 
 namespace Utopia
 {
@@ -31,14 +34,46 @@ private:
     }
 
 public:
+    // typedef for variant type to store attributes in
+    // all supported types are assembled into one variant here
+    using Variant = std::variant<float,
+                                 double,
+                                 long double,
+                                 int,
+                                 short int,
+                                 long int,
+                                 long long int,
+                                 unsigned int,
+                                 unsigned short int,
+                                 std::size_t,
+                                 unsigned long long,
+                                 bool,
+                                 char,
+                                 std::vector<float>,
+                                 std::vector<double>,
+                                 std::vector<long double>,
+                                 std::vector<int>,
+                                 std::vector<short int>,
+                                 std::vector<long int>,
+                                 std::vector<long long int>,
+                                 std::vector<unsigned int>,
+                                 std::vector<unsigned short int>,
+                                 std::vector<std::size_t>,
+                                 std::vector<unsigned long long>,
+                                 // std::vector<bool>,
+                                 std::vector<char>,
+                                 std::vector<std::string>,
+                                 std::string,
+                                 const char*>;
     /**
      * @brief returns a HDF5 type from a given C++ primitive type
      *
      * @param[in]  size  The size
      *
-     * @tparam     T     { description }
+     * @tparam     T     type to convert ot a hdf5 type, for instance 'int'
+     *                   or 'std::vector<std::list<double>>'
      *
-     * @return     hid_t
+     * @return     hid_t HDF5 library type corresponding to the given c++ type.
      */
     template <typename T>
     static inline hid_t type([[maybe_unused]] std::size_t size = 0)

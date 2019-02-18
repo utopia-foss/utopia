@@ -90,6 +90,7 @@ int main(int argc, char** argv)
     assert(adapteddataset->get_offset() == (hsizevec{3, 100}));
     assert(fireandforgetdataset->get_offset() == hsizevec{50});
     assert(fireandforgetdataset2d->get_offset() == (hsizevec{5, 100}));
+
     ///////////////////////////////////////////////////////////////////////////
     ////////////////////// MAKE EXPECTED DATA TO TEST AGAINST  ////////////////
     ///////////////////////////////////////////////////////////////////////////
@@ -129,7 +130,8 @@ int main(int argc, char** argv)
 
     // ... for 2d dataset unlimited
     std::vector<std::vector<int>> twoddata_unlimited(55, std::vector<int>());
-    for (std::size_t i = 0; i < 55; ++i){
+    for (std::size_t i = 0; i < 55; ++i)
+    {
         twoddata_unlimited[i] = std::vector<int>(100, i);
     }
     std::vector<std::vector<double>> partial_twoddata(2, std::vector<double>());
@@ -262,9 +264,9 @@ int main(int argc, char** argv)
         }
     }
 
-
     // read 2d unlimited dataset
-    auto [twodshape_unlimited, read_twoddata_unlimited] = twoDdataset_unlimited->read<std::vector<int>>();
+    auto [twodshape_unlimited, read_twoddata_unlimited] =
+        twoDdataset_unlimited->read<std::vector<int>>();
     assert(twodshape_unlimited.size() == 2);
     assert(twodshape_unlimited[0] == 55);
     assert(twodshape_unlimited[1] == 100);
@@ -276,7 +278,6 @@ int main(int argc, char** argv)
             assert(twoddata_unlimited[i][j] == read_twoddata_unlimited[i * 100 + j]);
         }
     }
-
 
     // read adaptedset
     auto [adaptedshape, read_adaptedata] = adapteddataset->read<std::vector<double>>();
@@ -416,5 +417,56 @@ int main(int argc, char** argv)
         assert(std::abs(dunefieldvectordata_expected[i][0] - dfv_partial[k][0]) < 1e-16);
         assert(std::abs(dunefieldvectordata_expected[i][1] - dfv_partial[k][1]) < 1e-16);
     }
+
+    // check that the attributes written into conset are there
+
+    HDFAttribute attr(*contset, "first attribute");
+    auto [firstshape, firstdata] = attr.read<std::vector<int>>();
+    attr.close();
+
+    attr.open(*contset, "second attribute");
+    auto [secondshape, seconddata] = attr.read<std::string>();
+    attr.close();
+
+    attr.open(*contset, "third attribute");
+    auto [thirdshape, thirddata] = attr.read<double>();
+    attr.close();
+
+    attr.open(*contset, "forth attribute");
+    auto [forthshape, forthdata] = attr.read<unsigned long>();
+    attr.close();
+
+    attr.open(*contset, "fifth attribute");
+    auto [fithshape, fithdata] = attr.read<std::vector<double>>();
+    attr.close();
+
+    assert(firstshape.size() == 1);
+    assert(firstshape[0] == 5);
+    assert(firstdata.size() == 5);
+    for (int i = 0; i < 5; ++i)
+    {
+        assert(firstdata[i] == i + 1);
+    }
+
+    assert(secondshape.size() == 1);
+    assert(secondshape[0] == 1);
+    assert(seconddata == " 'tiz no attrrriboate");
+
+    assert(thirdshape.size() == 1);
+    assert(thirdshape[0] == 1);
+    assert(std::abs(thirddata - 3.14) < 1e-16);
+
+    assert(forthshape.size() == 1);
+    assert(forthshape[0] == 1);
+    assert(forthdata == 478953ul);
+
+    assert(fithshape.size() == 1);
+    assert(fithshape[0] == 10);
+    assert(fithdata.size() == 10);
+    for (std::size_t i = 0; i < fithdata.size(); ++i)
+    {
+        assert(std::abs(fithdata[i] - 3.14) < 1e-16);
+    }
+
     return 0;
 }

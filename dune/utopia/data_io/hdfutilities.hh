@@ -1,19 +1,22 @@
 /**
  * @brief This file provides metafunctions for automatically determining the
  *        nature of a C/C++ types at compile time (container or not, string or
- *         not, fixed-size array ), and getting the base type of pointer and 
+ *         not, fixed-size array ), and getting the base type of pointer and
  *         cv-qualified types.
  * @file hdfutilities.hh
  */
 #ifndef HDFUTILITIES_HH
 #define HDFUTILITIES_HH
+
 #include <array>
 #include <cmath>
-#include <dune/common/fvector.hh>
 #include <iostream>
 #include <string>
 #include <type_traits>
 #include <vector>
+
+#include <dune/common/fvector.hh>
+
 // Functions for determining if a type is an STL-container are provided here.
 // This is used if we wish to make hdf5 types for storing such data in an
 // hdf5 dataset.
@@ -152,14 +155,14 @@ The following are metafunctions to determine type classifications.
 The logic is like this:
 the prototype of, say, is_container has two template args, the second of which is
 defaulted to std::void_t<>. It inherits from std::false_type. Then overloads for
-based on conditions to be fullfilled or for certain types are supplied , 
-are casted to std::void_t<Whatever> and inherit from std::true_type. 
-As always in such cases, this relies on SFINAE. When a type is given to one 
-of the metafunctions, if the tested condition is true or an overload for a  
-given type is found, the second template arg becomes std::void_t<Whatever> 
+based on conditions to be fullfilled or for certain types are supplied ,
+are casted to std::void_t<Whatever> and inherit from std::true_type.
+As always in such cases, this relies on SFINAE. When a type is given to one
+of the metafunctions, if the tested condition is true or an overload for a
+given type is found, the second template arg becomes std::void_t<Whatever>
 and the respective metafunction, inheriting from std::true_type is instantiated.
-The type test, is_container for instance, evaluates to true. 
-Otherwise, the second template parameter is std::void_t<>, and the 
+The type test, is_container for instance, evaluates to true.
+Otherwise, the second template parameter is std::void_t<>, and the
 prototype  is used, which inherits from std::false_type.
 */
 
@@ -195,10 +198,9 @@ struct is_container<T, std::void_t<typename remove_qualifier_t<T>::iterator, std
 {
 };
 
-
 /*
-README: get_size supplies the condition which is tested for a type to be 
-        considered array_like. It establishes that the type in question 
+README: get_size supplies the condition which is tested for a type to be
+        considered array_like. It establishes that the type in question
         has compile time constant size.
 */
 /**
@@ -230,24 +232,25 @@ struct get_size<Dune::FieldVector<T, N>> : std::integral_constant<std::size_t, N
 {
 };
 
-
 /**
  * @brief Overload for tuples
- * 
- * @tparam Ts 
+ *
+ * @tparam Ts
  */
-template<typename... Ts> 
-struct get_size<std::tuple<Ts...>> : std::integral_constant<std::size_t, sizeof...(Ts)>{};
-
+template <typename... Ts>
+struct get_size<std::tuple<Ts...>> : std::integral_constant<std::size_t, sizeof...(Ts)>
+{
+};
 
 /**
  * @brief Overload for pairs
- * 
- * @tparam Ts 
+ *
+ * @tparam Ts
  */
-template<typename A, typename B> 
-struct get_size<std::pair<A,B>> : std::integral_constant<std::size_t, 2>{};
-
+template <typename A, typename B>
+struct get_size<std::pair<A, B>> : std::integral_constant<std::size_t, 2>
+{
+};
 
 /**
  * @brief shorthand for get_size
@@ -258,13 +261,9 @@ struct get_size<std::pair<A,B>> : std::integral_constant<std::size_t, 2>{};
 template <typename T>
 inline constexpr std::size_t get_size_v = get_size<T>::value;
 
-
-
-
-
 /*
-README: is_array_like checks if a get_size version for the given type T exists. 
-        Hence, if a new type shall be considered array_like, get_size has to 
+README: is_array_like checks if a get_size version for the given type T exists.
+        Hence, if a new type shall be considered array_like, get_size has to
         be overloaded for it.
 */
 /**
@@ -363,12 +362,25 @@ inline std::ostream& operator<<(std::ostream& os, std::array<T, N>&& v)
 template <template <typename...> class Container, class T, std::enable_if_t<!is_string_v<Container<T>>, int> = 0>
 inline std::ostream& operator<<(std::ostream& os, const Container<T>& v)
 {
-    os << "[";
-    for (typename Container<T>::const_iterator ii = v.begin(); ii != v.end(); ++ii)
+    if constexpr (std::is_same_v<Container<T>, std::vector<bool>>)
     {
-        os << " " << *ii;
+        os << "[";
+        for (std::size_t i = 0; i < v.size() - 1; ++i)
+        {
+            os << v[i] << ",";
+        }
+        os << v.back() << " ]";
     }
-    os << " ]";
+    else
+    {
+        os << "[";
+        for (typename Container<T>::const_iterator ii = v.begin();
+             ii != v.begin() + v.size(); ++ii)
+        {
+            os << *ii << ",";
+        }
+        os << v.back() << " ]";
+    }
     return os;
 }
 
@@ -383,13 +395,73 @@ inline std::ostream& operator<<(std::ostream& os, const Container<T>& v)
 template <template <typename...> class Container, class T, std::enable_if_t<!is_string_v<Container<T>>, int> = 0>
 inline std::ostream& operator<<(std::ostream& os, Container<T>&& v)
 {
-    os << "[";
-    for (auto ii = v.begin(); ii != v.end(); ++ii)
+    if constexpr (std::is_same_v<Container<T>, std::vector<bool>>)
     {
-        os << " " << *ii;
+        os << "[";
+        for (std::size_t i = 0; i < v.size() - 1; ++i)
+        {
+            os << v[i] << ",";
+        }
+        os << v.back() << " ]";
     }
-    os << " ]";
+    else
+    {
+        os << "[";
+        for (typename Container<T>::const_iterator ii = v.begin();
+             ii != v.begin() + v.size(); ++ii)
+        {
+            os << *ii << ",";
+        }
+        os << v.back() << " ]";
+    }
     return os;
+}
+
+/**
+ * @brief Check for validity of a hdf5 htri_t type or similar
+ * @param [in] valid parameter to check
+ * @param [in] object name Name of object to be referenced in thrown exceptions
+              if valid <= 0
+ * @return  The valid argument for further use
+ * @details This function is necessary because for instance H5Iis_valid does not
+ *           return a boolean (non existant in C), but a value which is > 0 if
+ *           everything is fine, < 0 if some error occured during checking and
+ *           0 if the object to check is invalid. This has to be taken into account
+ *           in order to be able to track bugs or wrong usage properly.
+ *           See here: https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.6/hdf5-1.6.7/src/unpacked/src/H5public.h
+ *           which yields the following snippet:
+ *          // Boolean type.  Successful return values are zero (false) or positive
+ *          // (true). The typical true value is 1 but don't bet on it.  Boolean
+ *          // functions cannot fail.  Functions that return `htri_t' however return zero
+ *          // (false), positive (true), or negative (failure). The proper way to test
+ *          // for truth from a htri_t function is:
+ *
+ * 	         if ((retval = H5Tcommitted(type))>0) {
+ *	             printf("data type is committed\n");
+ *	         } else if (!retval) {
+ * 	                printf("data type is not committed\n");
+ *	         } else {
+ * 	             printf("error determining whether data type is committed\n");
+ *	         }
+ */
+template <typename T>
+bool check_validity(T valid, std::string object_name)
+{
+    if (valid > 0)
+    {
+        return true;
+    }
+
+    else if (valid < 0)
+    {
+        throw std::runtime_error("Object " + object_name + ": " +
+                                 "Error in validity check");
+        return false;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 } // namespace DataIO
