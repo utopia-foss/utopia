@@ -53,9 +53,12 @@ private:
         return atr;
     }
 
-    // Function for writing containers as attribute.
-    // Only buffers if necessary, i.e. if non-vector containers or
-    // nested containers or containers of strings have to be written.
+    /** 
+     * @brief Function for writing containers as attribute.
+     *
+     * @detail Only buffers if necessary, i.e. if non-vector containers or
+     *         nested containers or containers of strings have to be written.
+     */
     template <typename Type>
     herr_t __write_container__(Type attribute_data)
     {
@@ -328,6 +331,7 @@ protected:
      * @brief      size of the attributes dataspace
      */
     std::vector<hsize_t> _shape;
+
     /**
      * @brief      reference to id of parent object: dataset or group
      */
@@ -377,7 +381,7 @@ public:
      */
     void close()
     {
-        if (H5Iis_valid(_attribute))
+        if (check_validity(H5Iis_valid(_attribute), _name))
         {
             H5Aclose(_attribute);
             _attribute = -1;
@@ -391,7 +395,7 @@ public:
      */
     auto get_shape()
     {
-        if (!H5Iis_valid(_attribute))
+        if (!check_validity(H5Iis_valid(_attribute), _name))
         {
             throw std::runtime_error(
                 "Trying to get shape from invalid attribute " + _name);
@@ -418,26 +422,25 @@ public:
         _parent_object = &parent;
         _name = name;
 
-        // open
-        if (H5Iis_valid(_parent_object->get_id()) == false)
-        {
-            throw std::invalid_argument(
-                "Parent object ('" + _parent_object->get_path() + "') of "
-                "attribute '" + _name + "' is invalid! Has it been closed "
-                "already or not been opened yet?");
-        }
-        else
+        if (check_validity(H5Iis_valid(_parent_object->get_id()), _parent_object->get_path()))
         {
             if (H5LTfind_attribute(_parent_object->get_id(), _name.c_str()) == 1)
-            { // attribute exists
+            { // attribute exists, open
                 _attribute = H5Aopen(_parent_object->get_id(), _name.c_str(), H5P_DEFAULT);
 
                 get_shape();
             }
             else
-            { // attribute does not exist: make
+            { // attribute does not exist
                 _attribute = -1;
             }
+        }
+        else
+        {
+            throw std::invalid_argument("Parent object '"
+                + _parent_object->get_path() + "' of attribute '" + _name +
+                "' is invalid! Has it been closed already or not been opened "
+                "yet?");
         }
     }
 
@@ -471,10 +474,10 @@ public:
         // FIXME: Find a way to retain the data's shape in the returned data
         // FIXME: Find a way to get around the exceptions taken for the
         //        fucking string data
-        if (!H5Iis_valid(_attribute))
+        if (!check_validity(H5Iis_valid(_attribute), _name))
         {
             open(*_parent_object, _name);
-            if (!H5Iis_valid(_attribute))
+            if (!check_validity(H5Iis_valid(_attribute), _name))
             {
                 throw std::runtime_error(
                     "trying to read a nonexstiant attribute named '" + _name +
@@ -559,10 +562,10 @@ public:
     template <typename Type>
     void read(Type& buffer)
     {
-        if (!H5Iis_valid(_attribute))
+        if (!check_validity(H5Iis_valid(_attribute), _name))
         {
             open(*_parent_object, _name);
-            if (!H5Iis_valid(_attribute))
+            if (!check_validity(H5Iis_valid(_attribute), _name))
             {
                 throw std::runtime_error(
                     "trying to read a nonexstiant attribute named '" + _name +
@@ -653,7 +656,7 @@ public:
         // check if we have a container. Writing containers requires further
         // t tests, plain old data can be written right away
 
-        if (!H5Iis_valid(_attribute))
+        if (!check_validity(H5Iis_valid(_attribute), _name))
         {
             open(*_parent_object, _name);
         }

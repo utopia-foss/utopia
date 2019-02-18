@@ -24,13 +24,13 @@ int main(int argc, char** argv)
     HDFAttribute attribute(*group, "testattribute");
 
     attribute.write("this is a testattribute");
-    assert(H5Iis_valid(attribute.get_id()));
+    assert(check_validity(H5Iis_valid(attribute.get_id()), attribute.get_name()));
 
     attribute.close();
-    assert(!H5Iis_valid(attribute.get_id()));
+    assert(!check_validity(H5Iis_valid(attribute.get_id()), attribute.get_name()));
 
     attribute.open(*group, "testattribute");
-    assert(H5Iis_valid(attribute.get_id()));
+    assert(check_validity(H5Iis_valid(attribute.get_id()), attribute.get_name()));
 
     attribute.close();
 
@@ -38,16 +38,16 @@ int main(int argc, char** argv)
     assert(attribute.get_id() == -1);
     attribute.write(3.14);
 
-    assert(H5Iis_valid(attribute.get_id()));
+    assert(check_validity(H5Iis_valid(attribute.get_id()), attribute.get_name()));
 
     HDFAttribute attribute2(*group, "2pi");
     attribute2.write(2 * 3.14);
-    assert(H5Iis_valid(attribute2.get_id()));
+    assert(check_validity(H5Iis_valid(attribute2.get_id()), attribute2.get_name()));
     attribute2.close();
     HDFAttribute attribute3(*group, "2pi");
 
-    assert(!H5Iis_valid(attribute2.get_id()));
-    assert(H5Iis_valid(attribute3.get_id()));
+    assert(!check_validity(H5Iis_valid(attribute2.get_id()), attribute2.get_name()));
+    assert(check_validity(H5Iis_valid(attribute3.get_id()), attribute3.get_name()));
     auto val = attribute3.read<double>();
     assert(std::abs(std::get<1>(val) - 6.28) < 1e-16);
 

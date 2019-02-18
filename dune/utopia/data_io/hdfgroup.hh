@@ -8,8 +8,8 @@
 #ifndef HDFGROUP_HH
 #define HDFGROUP_HH
 
-#include "hdfattribute.hh"
-#include "hdfdataset.hh"
+#include <dune/utopia/data_io/hdfattribute.hh>
+#include <dune/utopia/data_io/hdfdataset.hh>
 #include <hdf5.h>
 #include <hdf5_hl.h>
 #include <sstream>
@@ -134,7 +134,7 @@ public:
      */
     void close()
     {
-        if (H5Iis_valid(_group))
+        if (check_validity(H5Iis_valid(_group), _path))
         {
             if ((*_referencecounter)[_address] == 1)
             {

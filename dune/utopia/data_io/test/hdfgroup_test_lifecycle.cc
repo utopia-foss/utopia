@@ -86,13 +86,15 @@ int main(int argc, char** argv)
 
     // check open method
     HDFGroup opened_group;
-    while (H5Iis_valid(moveconst_second.get_id()))
+    while (check_validity(H5Iis_valid(moveconst_second.get_id()),
+                          moveconst_second.get_path()))
     {
         moveconst_second.close();
     }
-    assert(!H5Iis_valid(moveconst_second.get_id()));
+    assert(!check_validity(H5Iis_valid(moveconst_second.get_id()),
+                           moveconst_second.get_path()));
     opened_group.open(*file.get_basegroup(), "first");
-    assert(H5Iis_valid(opened_group.get_id()));
+    assert(check_validity(H5Iis_valid(opened_group.get_id()), opened_group.get_path()));
 
     return 0;
 }
