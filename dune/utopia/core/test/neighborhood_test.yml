@@ -42,7 +42,35 @@ rect_2D_vonNeumann:
   neighborhood:
     mode: vonNeumann
 
+rect_2D_vonNeumann_d2:
+  space:
+    periodic: true
 
+  grid:
+    structure: square
+    resolution: 5
+
+  cell_initialize_from: default
+
+  neighborhood:
+    mode: vonNeumann
+    distance: 2
+
+rect_2D_vonNeumann_d3:
+  space:
+    periodic: true
+
+  grid:
+    structure: square
+    resolution: 7
+
+  cell_initialize_from: default
+
+  neighborhood:
+    mode: vonNeumann
+    distance: 3
+
+  
 rect_2D_Moore:
   space:
     periodic: true
@@ -55,6 +83,21 @@ rect_2D_Moore:
 
   neighborhood:
     mode: Moore
+
+
+rect_2D_Moore_d2:
+  space:
+    periodic: true
+
+  grid:
+    structure: square
+    resolution: 7
+
+  cell_initialize_from: default
+
+  neighborhood:
+    mode: Moore
+    distance: 2
 
 
 # not periodic ...............................................................
@@ -73,6 +116,36 @@ rect_2D_vonNeumann_np:
     mode: vonNeumann
 
 
+rect_2D_vonNeumann_np_d2:
+  space:
+    periodic: false
+
+  grid:
+    structure: square
+    resolution: 5
+
+  cell_initialize_from: default
+
+  neighborhood:
+    mode: vonNeumann
+    distance: 2
+
+
+rect_2D_vonNeumann_np_d3:
+  space:
+    periodic: false
+
+  grid:
+    structure: square
+    resolution: 7
+
+  cell_initialize_from: default
+
+  neighborhood:
+    mode: vonNeumann
+    distance: 3
+
+
 rect_2D_Moore_np:
   space:
     periodic: false
@@ -85,3 +158,18 @@ rect_2D_Moore_np:
 
   neighborhood:
     mode: Moore
+
+
+rect_2D_Moore_np_d2:
+  space:
+    periodic: false
+
+  grid:
+    structure: square
+    resolution: 7
+
+  cell_initialize_from: default
+
+  neighborhood:
+    mode: Moore
+    distance: 2

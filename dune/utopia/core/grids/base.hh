@@ -79,6 +79,14 @@ protected:
     /// Neighborhood function (working on cell IDs)
     NBFuncID<Self> _nb_func;
 
+    // .. Neighborhood parameters .............................................
+    // These are parameters that are required by some neighborhood functions
+
+    /// A distance parameter; interpretation depends on chosen neighborhood
+    std::size_t _nbh_distance;
+
+    // NOTE When adding new members here, make sure to update the reset method!
+
 
 public:
     // -- Constructors and Destructors -- //
@@ -107,6 +115,9 @@ public:
     {
         // Set the neighborhood function to not return anything
         _nb_func = _nb_empty;
+
+        // Set the neighborhood parameters to their "empty" values
+        reset_nbh_params();
     }
 
     /// Virtual destructor to allow polymorphic destruction
@@ -119,9 +130,11 @@ public:
         return _nb_func(id);
     }
 
-    void select_neighborhood(NBMode nb_mode) {
+    void select_neighborhood(NBMode nb_mode,
+                             const DataIO::Config& nb_params = {})
+    {
         try {
-            _nb_func = get_nb_func(nb_mode);
+            _nb_func = get_nb_func(nb_mode, nb_params);
         }
         catch (std::exception& e) {
             throw std::invalid_argument("Failed to select neighborhood: "
@@ -165,7 +178,70 @@ public:
 protected:
     // -- Neighborhood interface -- //
     /// Retrieve the neighborhood function depending on the mode
-    virtual NBFuncID<Self> get_nb_func(NBMode mode) const = 0;
+    /** \detail The configuration node that is passed along can be used to
+      *         specify the neighborhood parameter members.
+      */
+    virtual NBFuncID<Self> get_nb_func(NBMode, const DataIO::Config&) = 0;
+
+    /// Resets all neighborhood parameters to their default / "empty" value
+    void reset_nbh_params() {
+        _nbh_distance = 0;
+    }
+
+    /// Function to use to set neighborhood parameters
+    /** \detail Provides understandable error messages if a parameter is
+      *         missing or the conversion failed.
+      *
+      * \param  nbh_params  The configuration node to read the parameters from
+      * \param  keys        A pair that specifies the key and whether that key
+      *                     is required.
+      *
+      * \note   Resets all other neighborhood parameters! Thus, this method's
+      *         exceptions should only be caught if it is taken care that the
+      *         neighborhood parameters are in a well-defined state for the
+      *         continued use of the grid.
+      */
+    template<class opt_pair=std::pair<std::string, bool>>
+    void set_nbh_params(const DataIO::Config& nbh_params,
+                        const std::vector<opt_pair> keys)
+    {
+        // First, reset all parameters
+        reset_nbh_params();
+
+        // Now go over the desired keys and store them in the associated
+        // member. If the key is required, an error will be thrown.
+        for (const auto& [key, required] : keys) {
+            try {
+                if (key == "distance") {
+                    try {
+                        _nbh_distance = get_as_<std::size_t>(nbh_params,
+                                                             "distance");
+                    }
+                    catch (...) {
+                        if (required) throw;
+                    }
+
+                    // Needs to fit into the shape of the grid
+                    // TODO Use armadillo, once available
+                    if (  _nbh_distance * 2 + 1
+                        > *std::min_element(this->shape().begin(),
+                                            this->shape().end()))
+                    {
+                        throw std::invalid_argument("Grid shape is too small "
+                            "to accomodate a neighborhood with parameter "
+                            "'distance' set to"
+                            + as_str(nbh_params["distance"]) + "!");
+                    }
+                }
+                // ... can add other parameter assignments here
+            }
+            catch (std::exception& e) {
+                throw std::invalid_argument("Could not set the required "
+                    "neighborhood parameter '" + key + "': "
+                    + ((std::string) e.what()));
+            }
+        }
+    }
 
 
     /// A neighborhood function for empty neighborhood
