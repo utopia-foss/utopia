@@ -64,8 +64,8 @@ int main(int argc, char** argv)
     first.write(data.begin(), data.end(), [](int& value) { return value; });
     first_simple.write(data.begin(), data.end(), [](int& value) { return value; });
 
-    assert(H5Iis_valid(first.get_id()));
-    assert(H5Iis_valid(first_simple.get_id()));
+    assert(check_validity(H5Iis_valid(first.get_id()), first.get_path()));
+    assert(check_validity(H5Iis_valid(first_simple.get_id()), first_simple.get_path()));
 
     assert((*first_simple.get_referencecounter())[first_simple.get_address()] == 1);
 
@@ -100,7 +100,7 @@ int main(int argc, char** argv)
     // test open method
     HDFDataset<HDFGroup> opened_dataset;
     opened_dataset.open(lifecyclegroup, "first");
-    assert(H5Iis_valid(opened_dataset.get_id()) == true);
+    assert(check_validity(H5Iis_valid(opened_dataset.get_id()), opened_dataset.get_path()));
     assert(opened_dataset.get_current_extent() == hsizevec{100});
     assert(opened_dataset.get_chunksizes() == hsizevec{10});
     assert(opened_dataset.get_capacity() == hsizevec{100});
@@ -108,7 +108,8 @@ int main(int argc, char** argv)
     // test simple open method
     HDFDataset<HDFGroup> opened_dataset_simple;
     opened_dataset_simple.open(lifecyclegroup, "first_simple");
-    assert(H5Iis_valid(opened_dataset_simple.get_id()) == true);
+    assert(check_validity(H5Iis_valid(opened_dataset_simple.get_id()),
+                          opened_dataset_simple.get_path()));
     assert(opened_dataset_simple.get_current_extent() == hsizevec{100});
     assert(opened_dataset_simple.get_chunksizes() == hsizevec{10});
     assert(opened_dataset_simple.get_capacity() == hsizevec{H5S_UNLIMITED});

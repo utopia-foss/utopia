@@ -7,16 +7,18 @@
 #ifndef HDFDATASET_HH
 #define HDFDATASET_HH
 
-#include "hdfattribute.hh"
-#include "hdfbufferfactory.hh"
-#include "hdfchunking.hh"
-#include "hdftypefactory.hh"
-#include "hdfutilities.hh"
-#include <hdf5.h>
-#include <hdf5_hl.h>
 #include <numeric>
 #include <unordered_map>
 #include <utility>
+
+#include <hdf5.h>
+#include <hdf5_hl.h>
+
+#include <dune/utopia/data_io/hdfattribute.hh>
+#include <dune/utopia/data_io/hdfbufferfactory.hh>
+#include <dune/utopia/data_io/hdfchunking.hh>
+#include <dune/utopia/data_io/hdftypefactory.hh>
+#include <dune/utopia/data_io/hdfutilities.hh>
 
 namespace Utopia
 {
@@ -290,7 +292,7 @@ private:
                         filespace, H5P_DEFAULT, &data);
     }
 
-    // Container reader.
+    /// Read a cointainer
     // We could want to read into a predefined buffer for some reason (frequent
     // reads), and thus this and the following functions expect an argument
     // 'buffer' to store their data in. The function 'read(..)' is then
@@ -475,9 +477,10 @@ private:
         }
     }
 
-    // read attirbute data which contains a single string.
-    // this is always read into std::strings, and hence
-    // we can use 'resize'
+    /// read attirbute data which contains a single string.
+    /** \detail this is always read into std::strings, and hence we can use
+      *         'resize'
+      */
     template <typename Type>
     auto __read_stringtype__(Type& buffer, hid_t memspace, hid_t filespace)
     {
@@ -488,8 +491,10 @@ private:
         return H5Dread(_dataset, type, memspace, filespace, H5P_DEFAULT, buffer.data());
     }
 
-    // read pointertype. Either this is given by the user, or
-    // it is assumed to be 1d, thereby flattening Nd attributes
+    /// read pointertype.
+    /** \detail Either this is given by the user, or it is assumed to be 1d,
+      *         thereby flattening Nd attributes
+      */
     template <typename Type>
     auto __read_pointertype__(Type buffer, hid_t memspace, hid_t filespace)
     {
@@ -497,12 +502,39 @@ private:
                        H5P_DEFAULT, buffer);
     }
 
-    // read scalar type, trivial
+    /// read scalar type, trivial
     template <typename Type>
     auto __read_scalartype__(Type& buffer, hid_t memspace, hid_t filespace)
     {
         return H5Dread(_dataset, H5Dget_type(_dataset), memspace, filespace,
                        H5P_DEFAULT, &buffer);
+    }
+
+    /// write out the attribute buffer
+    void __write_attribute_buffer__()
+    {
+        // do nothing if the buffer is empty;
+        if (_attribute_buffer.size() == 0) {
+            return;
+        }
+
+        // write out the attributes from the attribute buffer.
+        for (auto& [path, variant] : _attribute_buffer)
+        {
+            HDFAttribute attr(*this, path);
+
+            // Use visiting syntax on the variant to write the attribute value
+            std::visit(
+                // this is a universal reference and hence perfect
+                // forwarding can be employed via std::forward
+                [&attr](auto&& arg) {
+                    attr.write(std::forward<std::remove_reference_t<decltype(arg)>>(arg));
+                },
+                variant);
+        }
+
+        // free up memory.
+        _attribute_buffer.clear();
     }
 
 protected:
@@ -573,7 +605,25 @@ protected:
      */
     std::shared_ptr<std::unordered_map<haddr_t, int>> _referencecounter;
 
+    /**
+     * @brief  A buffer for storing attributes before the dataset exists
+     *
+     * @detail A vector holding very large variant types to store attributes
+     *         in before the dataset exists physically.
+     *         The string in the held pairs is for path of the attribute, the
+     *         variant for the data.
+     */
+    std::vector<std::pair<std::string, typename HDFTypeFactory::Variant>> _attribute_buffer;
+
 public:
+    /**
+     * @brief Returns the attribute buffer of this dataset
+     */
+    auto get_attribute_buffer()
+    {
+        return _attribute_buffer;
+    }
+
     /**
      * @brief get a shared_ptr to the parent_object
      *
@@ -731,6 +781,12 @@ public:
     /**
      * @brief      add attribute to the dataset
      *
+     * @detail     If the dataset is not opened already, the attribute is
+     *             stored in the _attribute_buffer and written on close.
+     *
+     * @note       Attributes stored when the dataset was not yet opened will
+     *             only become available after the dataset was closed.
+     *
      * @param      attribute_path  The attribute path
      * @param      data  The attribute data
      *
@@ -739,30 +795,81 @@ public:
     template <typename Attrdata>
     void add_attribute(std::string attribute_path, Attrdata data)
     {
-        // make attribute and write
-        HDFAttribute attr(*this, attribute_path);
-        attr.write(data);
+        // Can only write directly, if the dataset is valid
+        if (check_validity(H5Iis_valid(_dataset), _path))
+        {
+            // make attribute and write
+            HDFAttribute attr(*this, attribute_path);
+            attr.write(data);
+        }
+        else
+        { 
+            // The dataset was not opened yet. Need to write to buffer
+
+            // For non-vector container data, need to convert to vector
+            if constexpr (is_container_v<Attrdata>)
+            {
+                if constexpr (not std::is_same_v<std::vector<typename Attrdata::value_type>, Attrdata>)
+                {
+                    // Make it a vector and write to buffer
+                    _attribute_buffer.push_back(
+                        std::make_pair(
+                            attribute_path,
+                            std::vector<typename Attrdata::value_type>(
+                                std::begin(data), std::end(data)))
+                        );
+                }
+                else
+                {
+                    // Can write directly
+                    _attribute_buffer.push_back(std::make_pair(attribute_path,
+                                                               data));
+                }
+            }
+            else
+            {
+                // Can write directly
+                _attribute_buffer.push_back(std::make_pair(attribute_path,
+                                                           data));
+            }
+        }
     }
 
     /**
      * @brief      Close the dataset
+     *
+     * @detail     This function is called by the destructor and also takes
+     *             care that the attribute buffer is written out, ensuring that
+     *             a correctly closed dataset contains all specified attributes
      */
     void close()
     {
-        if (H5Iis_valid(_dataset))
+        if (check_validity(H5Iis_valid(_dataset), _path))
         {
+            // While the dataset is valid, write all buffered attributes to it
+            __write_attribute_buffer__();
+
             if ((*_referencecounter)[_address] == 1)
             {
+                // this is the final close
                 H5Dclose(_dataset);
                 _referencecounter->erase(_referencecounter->find(_address));
                 _dataset = -1;
             }
             else
             {
+                // invalidate the dataset id after decrementing the counter
+                // because we do not want to be able to close the dataset
+                // multiple times through the same object
                 --(*_referencecounter)[_address];
                 _dataset = -1;
             }
         }
+        // do nothing if dataset is invalid, i.e. if (!valid) is true.
+        // reason: close() is called in destructor, but the object is
+        // allowed to float around even if currently not bound to an
+        // object in the file. Hence, this thing must not throw if
+        // called on an invalid object.
     }
 
     /**
@@ -791,6 +898,13 @@ public:
         // Try to find the dataset in the parent_object
         // If it is there, open it.
         // Else: postphone the dataset creation to the first write
+        // the attribute buffer has to be written in both cases,
+        // as its existence is independent from the existence of the
+        // dataset in the file. We could use a dataset object repeatedly
+        // to represent different datasets in the file via calling close
+        // and open over and over, writing attributes to it while
+        // it is closed. Therefore, the attribute buffer is written
+        // out at the end of this function
         if (H5LTfind_dataset(_parent_object->get_id(), _path.c_str()) == 1)
         { // dataset exists
             // open it
@@ -830,6 +944,10 @@ public:
         }
         else
         {
+            // it is not expected that the _attribute_buffer will become big
+            // and reallocate often, hence a reserve is foregone here,
+            // which one might otherwise consider.
+            // The size to reserve would be a rather wild guess however.
             if (capacity.size() == 0)
             {
                 _rank = 1;
@@ -875,6 +993,7 @@ public:
         swap(_info, other._info);
         swap(_address, other._address);
         swap(_referencecounter, other._referencecounter);
+        swap(_attribute_buffer, other._attribute_buffer);
     }
 
     /**
@@ -1151,6 +1270,7 @@ public:
             }
         }
 
+        // this adds information about the shape and properties of the dataset
         __add_topology_attributes__();
     }
 
@@ -1202,7 +1322,7 @@ public:
               [[maybe_unused]] std::vector<hsize_t> end = {},
               [[maybe_unused]] std::vector<hsize_t> stride = {})
     {
-        if (!H5Iis_valid(_dataset))
+        if (!check_validity(H5Iis_valid(_dataset), _path))
         {
             throw std::runtime_error("Dataset " + _path +
                                      ": Dataset id is invalid");
@@ -1341,7 +1461,8 @@ public:
           _compress_level(other._compress_level),
           _info(other._info),
           _address(other._address),
-          _referencecounter(other._referencecounter)
+          _referencecounter(other._referencecounter),
+          _attribute_buffer((other._attribute_buffer))
     {
         (*_referencecounter)[_address] += 1;
     }

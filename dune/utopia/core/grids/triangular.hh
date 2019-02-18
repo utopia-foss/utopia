@@ -163,7 +163,9 @@ public:
 protected:
     // -- Neighborhood interface ----------------------------------------------
     /// Retrieve the neighborhood function depending on the mode
-    NBFuncID<Base> get_nb_func(NBMode nb_mode) const override {
+    NBFuncID<Base> get_nb_func(NBMode nb_mode,
+                               const DataIO::Config&) override
+    {
         if (nb_mode == NBMode::empty) {
             return this->_nb_empty;
         }

@@ -49,13 +49,45 @@ int main(int argc, char** argv)
 
     // README: capacity of {fixed, H5S_UNLIMITED} is not possible, because hdf5
     // does not know when to start the next line. Use variable length vectors for this
-    auto twoDdataset_unlimited = file.open_dataset("/2ddataset_unlimited", {H5S_UNLIMITED, 100});
+    auto twoDdataset_unlimited =
+        file.open_dataset("/2ddataset_unlimited", {H5S_UNLIMITED, 100});
     auto adapteddataset = file.open_dataset("/adapteddataset", {3, 100}, {1, 10});
     auto fireandforgetdataset = file.open_dataset("/fireandforget");
     auto fireandforgetdataset2d = file.open_dataset("/fireandforget2d", {5, 100});
     auto latestarterdataset = file.open_dataset("/latestarter");
     auto latestarterdataset2 = file.open_dataset("/latestarter2");
     auto dunefieldvectordataset = file.open_dataset("/dunefieldvector");
+
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////// Test attribute writing prior to dataset write ///////////
+    ////////////////////////////////////////////////////////////////////////////
+
+    // reassure us that the dataset is in an invalid state from
+    // HDF5's point of view
+    assert(!check_validity(H5Iis_valid(contset->get_id()), contset->get_path()));
+
+    // use the 'contset' to test the attribute 'writing' capability.
+    contset->add_attribute("first attribute", std::vector<int>{1, 2, 3, 4, 5});
+    contset->add_attribute("second attribute",
+                           std::string(" 'tiz no attrrriboate"));
+    contset->add_attribute("third attribute", 3.14);
+
+    // now assert that the attribute buffer of 'contset' has respective entries
+    auto attrbuff = contset->get_attribute_buffer();
+    assert(attrbuff.size() == 3);
+
+    assert(attrbuff[0].first == "first attribute");
+    assert(attrbuff[1].first == "second attribute");
+    assert(attrbuff[2].first == "third attribute");
+
+    assert(std::get<std::vector<int>>(attrbuff[0].second).size() == 5);
+    for (int i = 0; i < 5; ++i)
+    {
+        assert(i + 1 == std::get<std::vector<int>>(attrbuff[0].second)[i]);
+    }
+    assert(std::get<std::string>(attrbuff[1].second) ==
+           " 'tiz no attrrriboate");
+    assert((std::get<double>(attrbuff[2].second) - 3.14) < 1e-16);
 
     ///////////////////////////////////////////////////////////////////////////
     ////////////////////// MAKE DATA NEEDED LATER /////////////////////////////
@@ -115,6 +147,8 @@ int main(int argc, char** argv)
         9.42
     */
 
+    // mind that this actually creates the dataset in the file
+
     contset->write(std::vector<double>(10, 3.14));
     assert(contset->get_current_extent() == hsizevec{10});
 
@@ -123,6 +157,7 @@ int main(int argc, char** argv)
 
     contset->write(std::vector<double>(10, 9.42));
     assert(contset->get_current_extent() == hsizevec{30});
+    assert(check_validity(H5Iis_valid(contset->get_id()), contset->get_path()));
 
     // write array dataset, then append, should look like this in file
     /*
@@ -191,14 +226,13 @@ int main(int argc, char** argv)
         assert(twoDdataset->get_offset() == (hsizevec{i, 0}));
     }
 
-
     // write 2d dataset with unlimited first dimension
-    for (std::size_t i = 0; i < 55; ++i){
+    for (std::size_t i = 0; i < 55; ++i)
+    {
         twoDdataset_unlimited->write(std::vector<int>(100, i));
         assert(twoDdataset_unlimited->get_current_extent() == (hsizevec{i + 1, 100}));
         assert(twoDdataset_unlimited->get_offset() == (hsizevec{i, 0}));
     }
-
 
     // README: we now tested  the current_extent/offset update in all occuring
     // cases, hence it is not repeted blow (ptr/adapted and scalar just repeats container and string logic)
@@ -326,5 +360,52 @@ int main(int argc, char** argv)
     // 2, -2
     // ...
     dunefieldvectordataset->write(dunefieldvectordata);
+
+    // now close everything. Then write attributes
+    // to 'contset' while it is closed => reopen file & contset -> check if
+    // writing works
+    contset->close();
+    nestedcontset->close();
+    stringset->close();
+    ptrset->close();
+    scalarset->close();
+    twoDdataset->close();
+    twoDdataset_unlimited->close();
+    adapteddataset->close();
+    fireandforgetdataset->close();
+    fireandforgetdataset2d->close();
+    latestarterdataset->close();
+    latestarterdataset2->close();
+    dunefieldvectordataset->close();
+
+    assert(!check_validity(H5Iis_valid(contset->get_id()), contset->get_path()));
+    attrbuff = contset->get_attribute_buffer();
+    assert(attrbuff.size() == 0);
+
+    file.close(); // force-write data to hard disk
+
+    file = HDFFile("datatset_testfile.h5", "r+");
+
+    // now write attributes while it is closed
+    contset->add_attribute("forth attribute", 478953ul);
+    contset->add_attribute("fifth attribute", std::vector<double>(10, 3.14));
+
+    attrbuff = contset->get_attribute_buffer();
+
+    assert(attrbuff.size() == 2);
+    assert(attrbuff[0].first == "forth attribute");
+    assert(attrbuff[1].first == "fifth attribute");
+    assert(std::get<unsigned long>(attrbuff[0].second) == 478953ul);
+    assert(std::get<std::vector<double>>(attrbuff[1].second).size() == 10);
+
+    contset->open(*file.get_basegroup(), "containerdataset");
+    assert(check_validity(H5Iis_valid(contset->get_id()), contset->get_path()));
+
+    contset->close();
+    assert(!check_validity(H5Iis_valid(contset->get_id()), contset->get_path()));
+
+    attrbuff = contset->get_attribute_buffer();
+    assert(attrbuff.size() == 0);
+
     return 0;
 }
