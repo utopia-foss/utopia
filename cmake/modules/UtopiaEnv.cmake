@@ -23,8 +23,9 @@ execute_process(
     RESULT_VARIABLE RETURN_VALUE
     ERROR_VARIABLE ERROR_MSG
 )
-if (NOT RETURN_VALUE EQUAL "0")
-    message(SEND_ERROR "Error creating the utopia-env: ${ERROR_MSG}")
+if (NOT "${RETURN_VALUE}" EQUAL "0")
+    message(SEND_ERROR "Error creating the utopia-env (Errno ${RETURN_VALUE})\
+: ${ERROR_MSG}")
 endif ()
 
 # set the path variables
@@ -44,8 +45,9 @@ else ()
         RESULT_VARIABLE RETURN_VALUE
         ERROR_VARIABLE ERROR_MSG
     )
-    if (NOT RETURN_VALUE EQUAL "0")
-        message(SEND_ERROR "Error creating a symlink to activate: ${ERROR_MSG}")
+    if (NOT "${RETURN_VALUE}" EQUAL "0")
+        message(SEND_ERROR "Error creating a symlink to activate \
+(Errno ${RETURN_VALUE})\: ${ERROR_MSG}")
     endif ()
 endif ()
 
@@ -59,9 +61,9 @@ if (BASH)
     # copy the script, changing file permissions
     file (COPY ${CMAKE_BINARY_DIR}/cmake/scripts/run-in-utopia-env
           DESTINATION ${CMAKE_BINARY_DIR}
-          FILE_PERMISSIONS OWNER_READ OWNER_EXECUTE
-                           GROUP_READ GROUP_EXECUTE
-                           WORLD_READ WORLD_EXECUTE)
+          FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+                           GROUP_READ GROUP_WRITE GROUP_EXECUTE
+                           WORLD_READ WORLD_WRITE WORLD_EXECUTE)
 else ()
     message (WARNING "Bash was not found. Your system likely does not support \
 the utopia-env. Skipping creation of run script.")
