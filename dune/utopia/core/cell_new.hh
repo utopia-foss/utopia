@@ -19,8 +19,14 @@ namespace Utopia {
 /**
  * \ref Utopia::EntityTraits
  */
-template<typename... Args>
-using CellTraits = EntityTraits<Args...>;
+template<typename StateType, 
+         bool is_sync=true, 
+         typename CellTags=EmptyTag,
+         template<class> class CustomLinkContainers=NoCustomLinks>
+using CellTraits = EntityTraits<StateType, 
+                                is_sync, 
+                                CellTags, 
+                                CustomLinkContainers>;
 
 
 /// A cell is a slightly specialized state container

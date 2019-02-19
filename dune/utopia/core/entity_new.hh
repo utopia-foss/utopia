@@ -24,7 +24,7 @@ template<typename EntityContainerType>
 struct NoCustomLinks {};
 
 
-/// The entity traits struct gathers types to be used for specializing an entity
+/// The entity traits struct gathers types to be used for specializing an Entity
 /** \tparam  StateType    Type of the entities' state container
   * \tparam  is_sync      Whether the entities should be synchronous
   * \tparam  Tags         Custom entity tags
@@ -97,7 +97,7 @@ private:
 
 public:
     // -- Constructors -- //
-    /// Construct a entity
+    /// Construct an entity
     __Entity(const IndexType id, const State initial_state)
     :
         // Store arguments and initialize Tags via default constructor
