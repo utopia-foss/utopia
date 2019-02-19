@@ -39,10 +39,10 @@ endif()
 message(STATUS "Installing utopya ...")
 
 # For easier development: install using symlinks to the local package
-set(DUNE_PYTHON_INSTALL_EDITABLE True)
+set(UTOPIA_PYTHON_INSTALL_EDITABLE True)
 
 # Install utopya and dependencies
-dune_python_install_package(PATH utopya)
+python_install_package(PATH utopya)
 
 # Add a custom target to symlink the utopia CLI
 # set(CLI_SYMLINK /usr/local/bin/utopia)
@@ -53,7 +53,7 @@ message(STATUS "Adding test_python targets ...")
 
 # Add test for utopya, accessible via `make target_utopya_tests`
 dune_python_add_test(NAME utopya_tests
-                     COMMAND ${CMAKE_BINARY_DIR}/run-in-dune-env
+                     COMMAND ${CMAKE_BINARY_DIR}/run-in-utopia-env
                              python -m pytest 
                              ${CMAKE_CURRENT_SOURCE_DIR}/utopya/test/ -v
                              --cov=${CMAKE_CURRENT_SOURCE_DIR}/utopya/utopya/
@@ -62,7 +62,7 @@ dune_python_add_test(NAME utopya_tests
 
 # Add tests for models, accessible via `make target_model_tests`
 dune_python_add_test(NAME model_tests
-                     COMMAND ${CMAKE_BINARY_DIR}/run-in-dune-env
+                     COMMAND ${CMAKE_BINARY_DIR}/run-in-utopia-env
                              python -m pytest -v
                              ${CMAKE_CURRENT_SOURCE_DIR}/model_tests/
                      )
