@@ -47,11 +47,14 @@ function(python_find_package)
     # Run pip to find out the versions of all packages
     # TODO use correct interpreter here
     execute_process(
-        COMMAND ${DUNE_PYTHON_VIRTUALENV_EXECUTABLE} -m pip freeze
+        COMMAND bash "-c"
+            "${DUNE_PYTHON_VIRTUALENV_EXECUTABLE} -m pip freeze | grep ${ARG_PACKAGE}=="
         RESULT_VARIABLE RETURN_VALUE
         OUTPUT_VARIABLE PIP_OUTPUT
         ERROR_VARIABLE PIP_ERROR
-        OUTPUT_QUIET ERROR_QUIET)
+        )
+    # NOTE Can NOT use QUIET_OUTPUT here, because then PIP_OUTPUT will also be
+    #      empty! Thus using grep above to reduce terminal output
 
     # Make sure this did not fail
     if (NOT RETURN_VALUE EQUAL "0")
@@ -60,9 +63,9 @@ function(python_find_package)
     endif ()
 
     # Find out the version number using a regex
-    if (PIP_OUTPUT MATCHES "${ARG_PACKAGE}==(.+)")  # FIXME
+    if (PIP_OUTPUT MATCHES "^${ARG_PACKAGE}==(.+)$")
         # Package was found with version CMAKE_MATCH_1
-        message(STATUS "Found ${ARG_PACKAGE} version ${CMAKE_MATCH_1}")
+        message(STATUS "Found ${ARG_PACKAGE} ${CMAKE_MATCH_1}")
 
         if (ARG_VERSION)
             # Check against given version
@@ -87,6 +90,7 @@ function(python_find_package)
             set(PYTHON_PACKAGE_${ARG_PACKAGE}_FOUND FALSE PARENT_SCOPE)
             return()
         endif()
+        message(STATUS "Package ${ARG_PACKAGE} not found.")
 
         # Did not find optional package; do not set variables
         set(PYTHON_PACKAGE_${ARG_PACKAGE}_FOUND FALSE PARENT_SCOPE)
