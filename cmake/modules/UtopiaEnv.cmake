@@ -57,7 +57,7 @@ execute_process(COMMAND ${UTOPIA_ENV_PIP} install --upgrade
                 RESULT_VARIABLE RETURN_VALUE
                 OUTPUT_QUIET)
 if (NOT RETURN_VALUE EQUAL "0")
-    message(FATAL_ERROR "Error updating pip inside utopia-env: ${RETURN_VALUE")
+    message(FATAL_ERROR "Error updating pip inside utopia-env: ${RETURN_VALUE}")
 endif ()
 
 # write the convenience bash script
