@@ -77,7 +77,7 @@ protected:
       *       on the choice of resolution value and the physical extent of the
       *       space in each dimension.
       */
-    const std::size_t _resolution;
+    const DistType _resolution;
 
     /// Neighborhood mode
     NBMode _nb_mode;
@@ -89,7 +89,7 @@ protected:
     // These are parameters that are required by some neighborhood functions
 
     /// A distance parameter; interpretation depends on chosen neighborhood
-    std::size_t _nbh_distance;
+    DistType _nbh_distance;
 
     // NOTE When adding new members here, make sure to update the reset method!
 
@@ -231,7 +231,7 @@ public:
     virtual IndexType num_cells() const = 0;
     
     /// Get scalar resolution value of this grid
-    std::size_t resolution() const {
+    auto resolution() const {
         return _resolution;
     }
 
@@ -297,8 +297,8 @@ protected:
             try {
                 if (key == "distance") {
                     try {
-                        _nbh_distance = get_as_<std::size_t>(nbh_params,
-                                                             "distance");
+                        _nbh_distance = get_as_<DistType>(nbh_params,
+                                                          "distance");
                     }
                     catch (...) {
                         if (required) throw;

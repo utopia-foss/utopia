@@ -312,7 +312,7 @@ public:
             // Bottom boundary (lowest IDs)
             if (select == "all" or select == "bottom") {
                 // 0, ..., _shape[0] - 1    
-                for (std::size_t id = 0; id < _shape[0]; id++) {
+                for (DistType id = 0; id < _shape[0]; id++) {
                     bc_ids.emplace_hint(hint, id);
                     hint = bc_ids.end();
                 }
@@ -321,7 +321,7 @@ public:
             // Left boundary
             if (select == "left") {
                 // First IDs in _shape[1] rows:  0, _shape[0], 2*_shape[0], ...
-                for (std::size_t row = 0; row < _shape[1]; row++) {
+                for (DistType row = 0; row < _shape[1]; row++) {
                     bc_ids.emplace_hint(hint, row * _shape[0]);
                     hint = bc_ids.end();
                 }
@@ -332,7 +332,7 @@ public:
                 // Last IDs in _shape[1] rows
                 const auto offset = _shape[0] - 1;
 
-                for (std::size_t row = 0; row < _shape[1]; row++) {
+                for (DistType row = 0; row < _shape[1]; row++) {
                     bc_ids.emplace_hint(hint, offset + row * _shape[0]);
                     hint = bc_ids.end();
                 }
@@ -343,7 +343,7 @@ public:
                 // First and last IDs in _shape[1] rows
                 const auto offset = _shape[0] - 1;
 
-                for (std::size_t row = 0; row < _shape[1]; row++) {
+                for (DistType row = 0; row < _shape[1]; row++) {
                     // Left boundary cell
                     bc_ids.emplace_hint(hint, row * _shape[0]);
 
@@ -358,7 +358,7 @@ public:
             // Top boundary (highest IDs)
             if (select == "all" or select == "top") {
                 // _shape[0] * (_shape[1]-1), ..., _shape[0] * _shape[1] - 1
-                for (std::size_t id = _shape[0] * (_shape[1]-1);
+                for (DistType id = _shape[0] * (_shape[1]-1);
                      id < _shape[0] * _shape[1]; id++)
                 {
                     bc_ids.emplace_hint(hint, id);
@@ -507,7 +507,7 @@ protected:
         // Depending on the number of dimensions, add the IDs of neighboring
         // cells in those dimensions
         // Add neighbors in dimension 1
-        for (std::size_t dist=1; dist <= this->_nbh_distance; ++dist) {
+        for (DistType dist=1; dist <= this->_nbh_distance; ++dist) {
             add_low_val_neighbor_in_dim_<0, true>(root_id, dist,
                                                   neighbor_ids);
             add_high_val_neighbor_in_dim_<0, true>(root_id, dist,
@@ -523,10 +523,10 @@ protected:
             //      The fixed ordering of the previous addition is required.
             const auto nb_size = neighbor_ids.size();
 
-            for (std::size_t i=0; i < nb_size; ++i) {
+            for (DistType i=0; i < nb_size; ++i) {
                 // Add all neighbor ids up to the maximal distance along the
                 // dimension 2.
-                for (std::size_t dist = 1; 
+                for (DistType dist = 1; 
                      dist <= this->_nbh_distance - 1 - i/2 + (i%2)/2; 
                      ++dist)
                 {
@@ -543,7 +543,7 @@ protected:
             }
 
             // Finally, add the root cell's neighbors in the second dimension
-            for (std::size_t dist=1; dist <= this->_nbh_distance; ++dist) {
+            for (DistType dist=1; dist <= this->_nbh_distance; ++dist) {
                 // front neighbor
                 add_low_val_neighbor_in_dim_<1, true>(root_id, 
                                                       dist, 
@@ -609,7 +609,7 @@ protected:
         // Depending on the number of dimensions, add the IDs of neighboring
         // cells in those dimensions
         // Add front neighbors in dimension 1
-        for (std::size_t dist=1; dist <= this->_nbh_distance; ++dist) {
+        for (DistType dist=1; dist <= this->_nbh_distance; ++dist) {
             add_low_val_neighbor_in_dim_<0, false>(root_id,
                                                    dist,
                                                    front_nb_ids);
@@ -625,12 +625,12 @@ protected:
             // NOTE that this algorithm requires the neighbors nearest
             //      to the root_id to have been pushed to the vector first.
             //      The fixed ordering of the previous addition is required.
-            const std::size_t front_nb_size = front_nb_ids.size();
+            const DistType front_nb_size = front_nb_ids.size();
 
-            for (std::size_t i=0; i < front_nb_size; ++i) {
+            for (DistType i=0; i < front_nb_size; ++i) {
                 // Add all front neighbor ids up to the maximal distance along
                 // dimension 2.
-                for (std::size_t dist = 1; 
+                for (DistType dist = 1; 
                      dist <= this->_nbh_distance - (i + 1); 
                      ++dist)
                 {
@@ -651,12 +651,12 @@ protected:
             // NOTE that this algorithm requires the neighbors nearest
             //      to the root_id to have been pushed to the vector first.
             //      The fixed ordering of the previous addition is required.
-            const std::size_t back_nb_size = back_nb_ids.size();
+            const DistType back_nb_size = back_nb_ids.size();
 
-            for (std::size_t i=0; i<back_nb_size; ++i) {
+            for (DistType i=0; i<back_nb_size; ++i) {
                 // Add all back neighbor ids up to the maximal distance along
                 // dimension 2.
-                for (std::size_t dist = 1; 
+                for (DistType dist = 1; 
                      dist <= this->_nbh_distance - (i + 1); 
                      ++dist)
                 {
@@ -673,7 +673,7 @@ protected:
             }
 
             // Finally, add the root cell's neighbors in the second dimension
-            for (std::size_t dist=1; dist <= this->_nbh_distance; ++dist) {
+            for (DistType dist=1; dist <= this->_nbh_distance; ++dist) {
                 // front neighbor ids
                 add_low_val_neighbor_in_dim_<1, false>(root_id,
                                                        dist,
@@ -731,7 +731,7 @@ protected:
         neighbor_ids.reserve(expected_num_neighbors(NBMode::Moore));
 
         // Get all neighbors in the first dimension
-        for (std::size_t dist=1; dist <= this->_nbh_distance; ++dist) {
+        for (DistType dist=1; dist <= this->_nbh_distance; ++dist) {
             add_low_val_neighbor_in_dim_<0, true>(root_id,
                                                   dist,
                                                   neighbor_ids);
@@ -742,7 +742,7 @@ protected:
 
         // For these neighbors, add _their_ neighbors in the second dimension
         for (const auto& nb : neighbor_ids) {
-            for (std::size_t dist=1; dist <= this->_nbh_distance; ++dist) {
+            for (DistType dist=1; dist <= this->_nbh_distance; ++dist) {
                 add_low_val_neighbor_in_dim_<1, true>(nb,
                                                       dist,
                                                       neighbor_ids);
@@ -753,7 +753,7 @@ protected:
         }
 
         // And finally, add the root cell's neighbors in the second dimension
-        for (std::size_t dist=1; dist <= this->_nbh_distance; ++dist) {
+        for (DistType dist=1; dist <= this->_nbh_distance; ++dist) {
             add_low_val_neighbor_in_dim_<1, true>(root_id,
                                                   dist,
                                                   neighbor_ids);
@@ -811,7 +811,7 @@ protected:
         neighbor_ids.reserve(expected_num_neighbors(NBMode::Moore));
 
         // Get all neighbors in the first dimension
-        for (std::size_t dist=1; dist <= this->_nbh_distance; ++dist) {
+        for (DistType dist=1; dist <= this->_nbh_distance; ++dist) {
             add_low_val_neighbor_in_dim_<0, false>(root_id,
                                                    dist,
                                                    neighbor_ids);
@@ -822,7 +822,7 @@ protected:
 
         // For these neighbors, add _their_ neighbors in the second dimension
         for (const auto& nb : neighbor_ids) {
-            for (std::size_t dist=1; dist <= this->_nbh_distance; ++dist) {
+            for (DistType dist=1; dist <= this->_nbh_distance; ++dist) {
                 add_low_val_neighbor_in_dim_<1, false>(nb,
                                                        dist,
                                                        neighbor_ids);
@@ -833,7 +833,7 @@ protected:
         }
 
         // And finally, add the root cell's neighbors in the second dimension
-        for (std::size_t dist=1; dist <= this->_nbh_distance; ++dist) {
+        for (DistType dist=1; dist <= this->_nbh_distance; ++dist) {
             add_low_val_neighbor_in_dim_<1, false>(root_id,
                                                    dist,
                                                    neighbor_ids);
@@ -950,7 +950,7 @@ protected:
      */
     template<DimType d, bool periodic>
     void add_low_val_neighbor_in_dim_(const IndexType& root_id,
-                                      const std::size_t distance,
+                                      const DistType distance,
                                       IndexContainer& neighbor_ids) const
     {
         // Assure the number of dimensions is supported
@@ -1002,7 +1002,7 @@ protected:
      */
     template<DimType d, bool periodic>
     void add_high_val_neighbor_in_dim_(const IndexType& root_id,
-                                       const std::size_t distance,
+                                       const DistType distance,
                                        IndexContainer& neighbor_ids) const
     {
         // Assure the number of dimensions is supported
@@ -1057,9 +1057,9 @@ protected:
       *          function should only be used to reserve memory for the 
       *          neighbor_ids vector.
       * 
-      * \return const std::size_t The expected number of neighbors
+      * \return const DistType The expected number of neighbors
       */
-    std::size_t expected_num_neighbors(const NBMode nb_mode) const {
+    DistType expected_num_neighbors(const NBMode nb_mode) const {
         if (nb_mode == NBMode::empty) {
             return 0;
         }
@@ -1075,7 +1075,7 @@ protected:
             // This one is more complicated ...
             // Define a lambda that can be called recursively
             auto num_nbs_impl = [](const unsigned short int d,  // dimension
-                                   std::size_t distance,
+                                   DistType distance,
                                    auto& num_nbs_ref)
             {
                 if (d == 1) {
@@ -1084,12 +1084,12 @@ protected:
                 }
                 else {
                     // Recursive branch
-                    std::size_t counter = 0;
+                    DistType cnt = 0;
                     while (distance > 0) {
-                        counter += 2 * num_nbs_ref(d-1, distance, num_nbs_ref);
+                        cnt += 2 * num_nbs_ref(d-1, distance, num_nbs_ref);
                         --distance;
                     }
-                    return counter;
+                    return cnt;
                 }                   
             };
 

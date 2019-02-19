@@ -69,7 +69,10 @@ using entity_t = typename Container::value_type::element_type;
 /// Type for dimensions, i.e. very small unsigned integers
 using DimType = unsigned short;
 
-/// Type for indices
+/// Type for distancens, i.e. intermediately long unsigned integers
+using DistType = unsigned int;
+
+/// Type for indices, i.e. values used for container indexing
 using IndexType = std::size_t;
 
 /// Type for container of indices
