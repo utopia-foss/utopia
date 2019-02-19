@@ -41,9 +41,9 @@ First thing is to make the CLI accessible. For that, go to the ``utopia`` direct
 .. code-block:: bash
 
    cd build-cmake         # ... to go to the utopia/build_cmake/ folder
-   source ./activate      # ... to enter the virtual environment
+   source activate      # ... to enter the virtual environment
 
-*Utopia* operates inside a so-called virtual environment. With the ``source ./activate`` command, you have entered it and should now see ``(dune-env)`` appearing on the left-hand side of your shell. When working with *Utopia*, make sure to always be in this virtual environment.
+*Utopia* operates inside a so-called virtual environment. With the ``source activate`` command, you have entered it and should now see ``(utopia-env)`` appearing on the left-hand side of your shell. When working with *Utopia*, make sure to always be in this virtual environment.
 
 .. note::
 
@@ -51,7 +51,7 @@ First thing is to make the CLI accessible. For that, go to the ``utopia`` direct
     That means, it is possible to install software in this virtual environment without installing it on your operating system. 
     Also, if something goes really wrong such that it would break your operating system, just the virtual environment is broken and your actual system is fine. :)
     Like this, it is much simpler to assure that everything works without problems on every maschine.
-    The marker ``(dune-env)`` tells you that you are within the dune virtual environment in your terminal session.
+    The marker ``(utopia-env)`` tells you that you are within the Utopia virtual environment in your terminal session.
 
 Let us now look at how to run a model using the CLI. Run on the command line:
 

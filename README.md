@@ -184,7 +184,7 @@ To conveniently work with the frontend, you should thus enter the virtual enviro
 
     source ./utopia/build-cmake/activate
 
-Now, your shell should be prefixed with `(dune-env)`. All the following should take place inside this virtual environment.
+Now, your shell should be prefixed with `(utopia-env)`. All the following should take place inside this virtual environment.
 
 The basic command to run the `SomeModel` model is 
 
