@@ -39,6 +39,10 @@ struct GridTypeAdaptor
     using Index = typename Mapper::Index;
 };
 
+/// Type of the variably sized container for entities
+template<typename EntityType>
+using EntityContainer = std::vector<std::shared_ptr<EntityType>>;
+
 /// Type of the variably sized container for cells
 template<typename CellType>
 using CellContainer = std::vector<std::shared_ptr<CellType>>;
