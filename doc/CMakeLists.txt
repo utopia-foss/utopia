@@ -8,8 +8,8 @@ function(utopia_install_doc_utils)
         RESULT_VARIABLE RETURN_VALUE
         OUTPUT_QUIET)
     if (NOT RETURN_VALUE EQUAL "0")
-        message(SEND_ERROR "Error installing doc utilities into virtualenv: \
-${RETURN_VALUE}")
+        message(SEND_ERROR "Error installing doc utilities into virtualenv: "
+                           "${RETURN_VALUE}")
     endif ()
 
     # Find Sphinx in Utopia venv directory
