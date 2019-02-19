@@ -21,7 +21,7 @@ endif()
 
 # include Utopia macros
 include(UtopiaEnv)
-include(PythonInstallPackageRemote)
 include(UtopiaAddModel)
 include(UtopiaAddModelTest)
 include(UtopiaGenerateModelInfo)
+include(UtopiaPython)

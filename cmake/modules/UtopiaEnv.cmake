@@ -4,7 +4,7 @@
 # This module set the following variables:
 #
 #   - UTOPIA_ENV_DIR            Path to the venv installation
-#   - UTOPIA_ENV_INTERPRETER    Python interpreter executable inside the venv
+#   - UTOPIA_ENV_EXECUTABLE     Python interpreter executable inside the venv
 #   - UTOPIA_ENV_PIP            Pip module executable inside the venv
 #
 
@@ -28,7 +28,7 @@ if (NOT RETURN_VALUE EQUAL "0")
 endif ()
 
 # set the path variables
-set (UTOPIA_ENV_INTERPRETER ${UTOPIA_ENV_DIR}/bin/python)
+set (UTOPIA_ENV_EXECUTABLE ${UTOPIA_ENV_DIR}/bin/python)
 set (UTOPIA_ENV_PIP ${UTOPIA_ENV_DIR}/bin/pip)
 
 # create a symlink to the activation script
