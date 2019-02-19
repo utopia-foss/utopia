@@ -48,14 +48,13 @@ function(python_find_package)
     # TODO use correct interpreter here
     execute_process(COMMAND ${UTOPIA_ENV_EXECUTABLE} -m pip freeze
         RESULT_VARIABLE RETURN_VALUE
-        OUTPUT_VARIABLE PIP_OUTPUT
-        ERROR_VARIABLE PIP_ERROR)
+        OUTPUT_QUIET)
     # NOTE Can NOT use QUIET_OUTPUT here, because then PIP_OUTPUT will also be
     #      empty! Thus using grep above to reduce terminal output
 
     # Make sure this did not fail
     if (NOT RETURN_VALUE EQUAL "0")
-        message(SEND_ERROR "Error running pip: ${PIP_ERROR}")
+        message(SEND_ERROR "Error running pip: ${RETURN_VALUE}")
         return()
     endif ()
 
@@ -149,10 +148,9 @@ function(python_install_package_remote)
         ${RINST_FULL_PATH})
     execute_process(COMMAND ${UTOPIA_ENV_EXECUTABLE} ${INSTALL_CMD}
         RESULT_VARIABLE RETURN_VALUE
-        ERROR_VARIABLE PIP_ERROR
         OUTPUT_QUIET)
     if (NOT RETURN_VALUE EQUAL "0")
-        message(SEND_ERROR "Error installing remote package: ${PIP_ERROR}")
+        message(SEND_ERROR "Error installing remote package: ${RETURN_VALUE}")
     endif ()
 endfunction()
 
@@ -204,10 +202,9 @@ python_install_package!")
 into the virtual environment")
     execute_process(COMMAND ${UTOPIA_ENV_EXECUTABLE} ${INSTALL_CMD}
                     RESULT_VARIABLE RETURN_VALUE
-                    ERROR_VARIABLE PIP_ERROR
                     OUTPUT_QUIET)
     if (NOT RETURN_VALUE EQUAL "0")
-        message(SEND_ERROR "Error installing package: ${PIP_ERROR}")
+        message(SEND_ERROR "Error installing package: ${RETURN_VALUE}")
     endif ()
 
 endfunction()

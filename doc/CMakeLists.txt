@@ -6,11 +6,10 @@ function(utopia_install_doc_utils)
     execute_process(
         COMMAND ${UTOPIA_ENV_EXECUTABLE} ${INSTALL_CMD}
         RESULT_VARIABLE RETURN_VALUE
-        ERROR_VARIABLE ERROR_MSG
         OUTPUT_QUIET)
-    if (NOT "${RETURN_VALUE}" EQUAL "0")
-        message(SEND_ERROR "Error installing doc utilities into virtualenv:\
-${ERROR_MSG}")
+    if (NOT RETURN_VALUE EQUAL "0")
+        message(SEND_ERROR "Error installing doc utilities into virtualenv: \
+${RETURN_VALUE}")
     endif ()
 
     # Find Sphinx in dune virtualenv directory

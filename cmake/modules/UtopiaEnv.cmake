@@ -13,6 +13,7 @@ if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.12)
     find_package(Python 3.6 REQUIRED)
 else ()
     find_package(PythonInterp 3.6 REQUIRED)
+    set (Python_EXECUTABLE ${PYTHON_EXECUTABLE})
 endif ()
 
 # create the venv
@@ -21,11 +22,10 @@ message(STATUS "Setting up the Utopia Python virtual envrionment")
 execute_process(
     COMMAND ${Python_EXECUTABLE} -m venv ${UTOPIA_ENV_DIR}
     RESULT_VARIABLE RETURN_VALUE
-    ERROR_VARIABLE ERROR_MSG
+    OUTPUT_QUIET
 )
-if (NOT "${RETURN_VALUE}" EQUAL "0")
-    message(SEND_ERROR "Error creating the utopia-env (Errno ${RETURN_VALUE})\
-: ${ERROR_MSG}")
+if (NOT RETURN_VALUE EQUAL "0")
+    message(FATAL_ERROR "Error creating the utopia-env: ${RETURN_VALUE}")
 endif ()
 
 # set the path variables
@@ -43,11 +43,11 @@ else ()
             ${UTOPIA_ENV_DIR}/bin/activate
             ${CMAKE_BINARY_DIR}/activate
         RESULT_VARIABLE RETURN_VALUE
-        ERROR_VARIABLE ERROR_MSG
+        OUTPUT_QUIET
     )
-    if (NOT "${RETURN_VALUE}" EQUAL "0")
-        message(SEND_ERROR "Error creating a symlink to activate \
-(Errno ${RETURN_VALUE})\: ${ERROR_MSG}")
+    if (NOT RETURN_VALUE EQUAL "0")
+        message(SEND_ERROR "Error creating a symlink to activate: \
+${RETURN_VALUE}")
     endif ()
 endif ()
 
