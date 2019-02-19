@@ -44,13 +44,10 @@ function(python_find_package)
         message(STATUS "Looking for python package ${ARG_PACKAGE} ...")
     endif()
 
-    # Run pip to find out the versions of all packages
-    # TODO use correct interpreter here
     execute_process(COMMAND ${UTOPIA_ENV_EXECUTABLE} -m pip freeze
         RESULT_VARIABLE RETURN_VALUE
-        OUTPUT_QUIET)
-    # NOTE Can NOT use QUIET_OUTPUT here, because then PIP_OUTPUT will also be
-    #      empty! Thus using grep above to reduce terminal output
+        OUTPUT_VARIABLE PIP_OUTPUT
+    )
 
     # Make sure this did not fail
     if (NOT RETURN_VALUE EQUAL "0")
@@ -148,7 +145,8 @@ function(python_install_package_remote)
         ${RINST_FULL_PATH})
     execute_process(COMMAND ${UTOPIA_ENV_EXECUTABLE} ${INSTALL_CMD}
         RESULT_VARIABLE RETURN_VALUE
-        OUTPUT_QUIET)
+        OUTPUT_QUIET
+    )
     if (NOT RETURN_VALUE EQUAL "0")
         message(SEND_ERROR "Error installing remote package: ${RETURN_VALUE}")
     endif ()
