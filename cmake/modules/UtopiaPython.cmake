@@ -30,7 +30,7 @@ function(python_find_package)
     set(OPTION REQUIRED)
     set(SINGLE PACKAGE VERSION RESULT)
     set(MULTI)
-
+    include(CMakeParseArguments)
     cmake_parse_arguments(ARG "${OPTION}" "${SINGLE}" "${MULTI}" "${ARGN}")
 
     if(ARG_UNPARSED_ARGUMENTS)
@@ -126,9 +126,10 @@ function(python_install_package_remote)
     set(OPTION)
     set(SINGLE URL TRUSTED_HOST)
     set(MULTI)
+    include(CMakeParseArguments)
     cmake_parse_arguments(RINST "${OPTION}" "${SINGLE}" "${MULTI}" "${ARGN}")
     if(RINST_UNPARSED_ARGUMENTS)
-        message(WARNING "Encountered unparsed arguments in 
+        message(WARNING "Encountered unparsed arguments in
             python_install_package_remote!")
     endif()
 
@@ -146,8 +147,67 @@ function(python_install_package_remote)
     # execute command
     set(INSTALL_CMD -m pip install ${TRUSTED_HOST_CMD} --upgrade
         ${RINST_FULL_PATH})
-    dune_execute_process(
-        COMMAND "${UTOPIA_ENV_EXECUTABLE}" "${INSTALL_CMD}"
-        ERROR_MESSAGE "Error installing remote package into the venv!"
-    )
+    execute_process(COMMAND ${UTOPIA_ENV_EXECUTABLE} ${INSTALL_CMD}
+        RESULT_VARIABLE RETURN_VALUE
+        ERROR_VARIABLE PIP_ERROR
+        OUTPUT_QUIET)
+    if (NOT RETURN_VALUE EQUAL "0")
+        message(SEND_ERROR "Error installing remote package: ${PIP_ERROR}")
+    endif ()
+endfunction()
+
+# Install a local Python package into the Utopia virtual environment
+#
+# This function takes the following arguments:
+#
+#   - PATH (single)     Path to the Python package. Relative paths will
+#                       be interpreted as relative from the call site
+#                       of this function.
+#
+#   - PIP_PARAMS (multi)    Additional parameters passed to pip.
+#
+# This function uses the following global variables (if defined):
+#
+#   - UTOPIA_PYTHON_INSTALL_EDITABLE    Install the package in editable mode.
+#
+function(python_install_package)
+    # parse function arguments
+    set(OPTION)
+    set(SINGLE PATH)
+    set(MULTI PIP_PARAMS)
+    include(CMakeParseArguments)
+    cmake_parse_arguments(PYINST "${OPTION}" "${SINGLE}" "${MULTI}" "${ARGN}")
+    if(PYINST_UNPARSED_ARGUMENTS)
+        message(WARNING "Encountered unparsed arguments in \
+python_install_package!")
+    endif()
+
+    # determine the full path to the Python package
+    set (PACKAGE_PATH ${PYINST_PATH})
+    if (NOT IS_ABSOLUTE ${PYINST_PATH})
+        set (PACKAGE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/${PYINST_PATH})
+    endif ()
+
+    # apply the global editable option
+    set (EDIT_OPTION "")
+    if (UTOPIA_PYTHON_INSTALL_EDITABLE)
+        set (EDIT_OPTION "-e")
+    endif ()
+
+    # define the installation command
+    set(INSTALL_CMD -m pip install
+                    --upgrade ${EDIT_OPTION} ${PYINST_PIP_PARAMS}
+                    ${PACKAGE_PATH})
+
+    # perform the actual installation
+    message (STATUS "Installing python package at ${PACKAGE_PATH} \
+into the virtual environment")
+    execute_process(COMMAND ${UTOPIA_ENV_EXECUTABLE} ${INSTALL_CMD}
+                    RESULT_VARIABLE RETURN_VALUE
+                    ERROR_VARIABLE PIP_ERROR
+                    OUTPUT_QUIET)
+    if (NOT RETURN_VALUE EQUAL "0")
+        message(SEND_ERROR "Error installing package: ${PIP_ERROR}")
+    endif ()
+
 endfunction()
