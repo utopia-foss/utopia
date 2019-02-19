@@ -17,7 +17,7 @@ ${RETURN_VALUE}")
 
     find_program(SPHINX_EXECUTABLE
         NAMES sphinx-build
-        PATHS ${UTOPIA_ENV_EXECUTABLE}/bin
+        PATHS ${UTOPIA_ENV_DIR}/bin
         NO_DEFAULT_PATH)
 
     include(FindPackageHandleStandardArgs)
