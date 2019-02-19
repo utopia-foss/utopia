@@ -500,7 +500,7 @@ private:
 
 
     /// Set up cells container via initial state from config or default constr
-    /** \detail This function creates an initial state object and then passes
+    /** \detail This function creates an initial state object and then passes it
       *         over to setup_cells(initial_state). It checks whether the
       *         CellStateType is constructible via a config node and if the
       *         config entries to construct it are available. It can fall back
