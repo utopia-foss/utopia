@@ -188,8 +188,12 @@ public:
     }
 
     /// Returns a container of vertices of the given cell
-    /** \note Consult the documentation of the selected grid discretization to
-      *       learn about the order of the returned values.
+    /** \detail The vertices are the absolute coordinates that define the cell.
+      *         For example, a 2D square cell is the surface of a polygon
+      *         defined by four points.
+      *
+      * \note   Consult the documentation of the selected grid discretization
+      *         to learn about the order of the returned values.
       */
     auto vertices_of(const Cell& cell) const {
         return _grid->vertices_of(cell.id());
