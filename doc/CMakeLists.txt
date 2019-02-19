@@ -1,7 +1,7 @@
 # --- Setup Sphinx ---
 # Define a function to install the utilities needed for sphinx ...
 function(utopia_install_doc_utils)
-    # Install requirements into dune virtualenv
+    # Install requirements into Utopia venv
     set(INSTALL_CMD install -r ${CMAKE_CURRENT_SOURCE_DIR}/requirements.txt)
     execute_process(
         COMMAND ${UTOPIA_ENV_PIP} ${INSTALL_CMD}
@@ -12,7 +12,7 @@ function(utopia_install_doc_utils)
 ${RETURN_VALUE}")
     endif ()
 
-    # Find Sphinx in dune virtualenv directory
+    # Find Sphinx in Utopia venv directory
     unset(SPHINX_EXECUTABLE CACHE)
 
     find_program(SPHINX_EXECUTABLE

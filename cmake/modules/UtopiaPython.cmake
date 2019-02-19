@@ -23,7 +23,7 @@
 #          the package is regarded as not having been found
 #
 #   Install a remote python package located in a git repository
-#   into the DUNE venv.
+#   into the Utopia venv.
 #
 function(python_find_package)
     # Parse function arguments
@@ -115,7 +115,7 @@ endfunction()
 #          URL of the respective trusted host.
 #
 #   Install a remote python package located in a git repository
-#   into the DUNE venv.
+#   into the Utopia venv.
 #
 function(python_install_package_remote)
     # parse function arguments
