@@ -37,13 +37,6 @@ function(python_find_package)
         message(WARNING "Unparsed arguments in python_find_package!")
     endif()
 
-    if(ARG_VERSION)
-        message(STATUS "Looking for python package ${ARG_PACKAGE} "
-                    ">= ${ARG_VERSION} ...")
-    else()
-        message(STATUS "Looking for python package ${ARG_PACKAGE} ...")
-    endif()
-
     execute_process(COMMAND ${UTOPIA_ENV_PIP} freeze
         RESULT_VARIABLE RETURN_VALUE
         OUTPUT_VARIABLE PIP_OUTPUT
@@ -55,43 +48,41 @@ function(python_find_package)
         return()
     endif ()
 
+    # decide if we let errors pass
+    set (ERROR_SWITCH "STATUS")
+    if (ARG_REQUIRED)
+        set (ERROR_SWITCH "SEND_ERROR")
+    endif ()
+
     # Find out the version number using a regex
     if (PIP_OUTPUT MATCHES "${ARG_PACKAGE}==([^\n]+)")
-        # Package was found with version CMAKE_MATCH_1
-        message(STATUS "Found ${ARG_PACKAGE} ${CMAKE_MATCH_1}")
-
+        # check version
         if (ARG_VERSION)
             # Check against given version
             if (CMAKE_MATCH_1 VERSION_LESS ARG_VERSION)
-                # Version is lower than specified
-                if (ARG_REQUIRED)
-                    message(SEND_ERROR "Required package ${ARG_PACKAGE} >= "
-                                "${ARG_VERSION} not found! Found only "
-                                "version ${CMAKE_MATCH_1}")
-                    set(PYTHON_PACKAGE_${ARG_PACKAGE}_FOUND FALSE PARENT_SCOPE)
-                    return()
-                endif()
-                # ...but that's no issue because it's optional
-            endif()
-            # else: sufficient version
+                message(${ERROR_SWITCH} "Could not find Python package "
+                                        "${ARG_PACKAGE} (Found version "
+                                        "${CMAKE_MATCH_1} does not satisfy "
+                                        "required version ${ARG_VERSION})")
+                return ()
+            else ()
+                message(STATUS "Found Python package ${ARG_PACKAGE} "
+                               "${CMAKE_MATCH_1} (Required version is "
+                               "${ARG_VERSION})")
+            endif ()
+        # any version is fine
+        else ()
+            message(STATUS "Found Python package ${ARG_PACKAGE} "
+                           "${CMAKE_MATCH_1}")
         endif()
-        # else: version not given, but package was found ... all good.
-    else()
-        # Could not find the package
-        if (ARG_REQUIRED)
-            message(SEND_ERROR "Required package ${ARG_PACKAGE} not found!")
-            set(PYTHON_PACKAGE_${ARG_PACKAGE}_FOUND FALSE PARENT_SCOPE)
-            return()
-        endif()
-        message(STATUS "Package ${ARG_PACKAGE} not found.")
 
-        # Did not find optional package; do not set variables
-        set(PYTHON_PACKAGE_${ARG_PACKAGE}_FOUND FALSE PARENT_SCOPE)
-        return()
-    endif()
+        # set the success variable
+        set(PYTHON_PACKAGE_${ARG_PACKAGE}_FOUND TRUE PARENT_SCOPE)
 
-    # If this point is reached, everything is ok and the variables can be set
-    set(PYTHON_PACKAGE_${ARG_PACKAGE}_FOUND TRUE PARENT_SCOPE)
+    # package not found
+    else ()
+        message(${ERROR_SWITCH} "Could not find Python package ${ARG_PACKAGE}")
+    endif ()
 endfunction()
 
 
@@ -174,8 +165,8 @@ function(python_install_package)
     include(CMakeParseArguments)
     cmake_parse_arguments(PYINST "${OPTION}" "${SINGLE}" "${MULTI}" "${ARGN}")
     if(PYINST_UNPARSED_ARGUMENTS)
-        message(WARNING "Encountered unparsed arguments in \
-python_install_package!")
+        message(WARNING "Encountered unparsed arguments in "
+                        "python_install_package!")
     endif()
 
     # determine the full path to the Python package
@@ -195,8 +186,8 @@ python_install_package!")
                     ${PACKAGE_PATH})
 
     # perform the actual installation
-    message (STATUS "Installing python package at ${PACKAGE_PATH} \
-into the virtual environment")
+    message (STATUS "Installing python package at ${PACKAGE_PATH} "
+                    "into the virtual environment")
     execute_process(COMMAND ${UTOPIA_ENV_PIP} ${INSTALL_CMD}
                     RESULT_VARIABLE RETURN_VALUE
                     OUTPUT_QUIET)

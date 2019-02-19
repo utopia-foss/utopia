@@ -46,8 +46,8 @@ else ()
         OUTPUT_QUIET
     )
     if (NOT RETURN_VALUE EQUAL "0")
-        message(SEND_ERROR "Error creating a symlink to activate: \
-${RETURN_VALUE}")
+        message(SEND_ERROR "Error creating a symlink to activate: "
+                           "${RETURN_VALUE}")
     endif ()
 endif ()
 
@@ -74,6 +74,6 @@ if (BASH)
                            GROUP_READ GROUP_WRITE GROUP_EXECUTE
                            WORLD_READ WORLD_WRITE WORLD_EXECUTE)
 else ()
-    message (WARNING "Bash was not found. Your system likely does not support \
-the utopia-env. Skipping creation of run script.")
+    message (WARNING "Bash was not found. Your system likely does not support "
+                     "the utopia-env. Skipping creation of run script.")
 endif ()
