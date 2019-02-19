@@ -58,11 +58,17 @@ public:
     using Self = Grid<Space>;
 
     /// The dimensionality of the space to be discretized (for easier access)
-    static constexpr std::size_t dim = Space::dim;
+    static constexpr DimType dim = Space::dim;
+
+    /// The type of vectors that have a relation to physical space
+    using SpaceVec = typename Space::SpaceVec;
+
+    /// The type of multi-index like arrays, e.g. the grid shape
+    using MultiIndex = MultiIndexType<dim>;
 
 
 protected:
-    // -- Members -- //
+    // -- Members -------------------------------------------------------------
     /// The space that is to be discretized
     const std::shared_ptr<Space> _space;
 
@@ -71,7 +77,7 @@ protected:
       *       on the choice of resolution value and the physical extent of the
       *       space in each dimension.
       */
-    const std::size_t _resolution;
+    const DistType _resolution;
 
     /// Neighborhood mode
     NBMode _nb_mode;
@@ -83,13 +89,13 @@ protected:
     // These are parameters that are required by some neighborhood functions
 
     /// A distance parameter; interpretation depends on chosen neighborhood
-    std::size_t _nbh_distance;
+    DistType _nbh_distance;
 
     // NOTE When adding new members here, make sure to update the reset method!
 
 
 public:
-    // -- Constructors and Destructors -- //
+    // -- Constructors and Destructors ----------------------------------------
     /// Construct a grid discretization
     /** \param  space   The space to construct the discretization for
       * \param  cfg     Further configuration parameters
@@ -97,18 +103,19 @@ public:
     Grid (std::shared_ptr<Space> space, const DataIO::Config& cfg)
     :
         _space(space),
-        _resolution([&](){
+        _resolution([&cfg](){
             if (not cfg["resolution"]) {
                 throw std::invalid_argument("Missing grid configuration "
                     "parameter 'resolution'! Please supply an integer >= 1.");
             }
-            auto res = as_<std::size_t>(cfg["resolution"]);
+
+            // Read in as signed int (allows throwing error for negative value)
+            const auto res = as_<long long>(cfg["resolution"]);
 
             if (res < 1) {
                 throw std::invalid_argument("Grid resolution needs to be a "
-                                            "positive integer!");
+                                            "positive integer, was < 1!");
             }
-
             return res;
         }()),
         _nb_mode(NBMode::empty)
@@ -120,12 +127,24 @@ public:
         reset_nbh_params();
     }
 
+    /// Construct a grid discretization
+    /** \param  space   The space to construct the discretization for; will be
+      *                 stored as shared pointer
+      * \param  cfg     Further configuration parameters
+      */
+    Grid (Space& space, const DataIO::Config& cfg)
+    :
+        Grid(std::make_shared<Space>(space), cfg)
+    {}
+
     /// Virtual destructor to allow polymorphic destruction
     virtual ~Grid() = default;
 
 
-    // -- Neighborhood interface -- //
+    // -- Public interface ----------------------------------------------------
+    // .. Neighborhood interface ..............................................
 
+    /// Returns the indices of the neighbors of the cell with the given ID
     IndexContainer neighbors_of(const IndexType& id) const {
         return _nb_func(id);
     }
@@ -140,20 +159,79 @@ public:
             throw std::invalid_argument("Failed to select neighborhood: "
                                         + ((std::string) e.what()));
         }
-        // Set the member to the new value
+        
         _nb_mode = nb_mode;
     }
 
+    /// Const reference to the currently selected neighborhood mode
+    const NBMode& nb_mode() {
+        return _nb_mode;
+    }
 
-    // -- Getters -- //
+
+    // .. Position-related methods ............................................
+    /// Returns the multi-index of the cell with the given ID
+    /** \note This method does not perform bounds checking of the given ID!
+      */
+    virtual const MultiIndex midx_of(const IndexType&) const = 0;
+
+    /// Returns the barycenter of the cell with the given ID
+    /** \note This method does not perform bounds checking of the given ID!
+      */
+    virtual const SpaceVec barycenter_of(const IndexType&) const = 0;
+
+    /// Returns the extent of the cell with the given ID
+    /** \note This method does not perform bounds checking of the given ID!
+      */
+    virtual const SpaceVec extent_of(const IndexType&) const = 0;
+
+    /// Returns the vertices of the cell with the given ID
+    /** \detail Consult the derived class implementation's documentation on
+      *         the order of the vertices in the returned container.
+      * \note   This method does not perform bounds checking of the given ID!
+      */
+    virtual const std::vector<SpaceVec>
+        vertices_of(const IndexType&) const = 0;
+
+    /// Return the ID of the cell covering the given point in physical space
+    /** \detail Cells are interpreted as covering half-open intervals in space,
+      *         i.e., including their low-value edges and excluding their high-
+      *         value edges.
+      *         The special case of points on high-value edges for non-periodic
+      *         space behaves such that these points are associated with the
+      *         cells at the boundary.
+      *
+      * \note   This function always returns IDs of cells that are inside
+      *         physical space. For non-periodic space, a check is performed
+      *         whether the given point is inside the physical space
+      *         associated with this grid. For periodic space, the given
+      *         position is mapped back into the physical space.
+      */
+    virtual IndexType cell_at(const SpaceVec&) const = 0;
+
+    /// Retrieve a set of cell indices that are at a specified boundary
+    /** \note   For a periodic space, an empty container is returned; no error
+      *         or warning is emitted.
+      *
+      * \param  select  Which boundary to return the cell IDs of. If 'all',
+      *         all boundary cells are returned. Other available values depend
+      *         on the dimensionality of the grid:
+      *                1D:  left, right
+      *                2D:  bottom, top
+      *                3D:  back, front
+      */
+    virtual const std::set<IndexType> boundary_cells(std::string={}) const = 0;
+
+
+    // .. Getters .............................................................
     /// Get number of cells
     /** \detail This information is used by the CellManager to populate the
       *         cell container with the returned number of cells
       */
     virtual IndexType num_cells() const = 0;
     
-    /// Get const reference to resolution of this grid
-    std::size_t resolution() const {
+    /// Get scalar resolution value of this grid
+    auto resolution() const {
         return _resolution;
     }
 
@@ -164,19 +242,24 @@ public:
       *         The effective resolution accounts for the scaling that was
       *         required to map an integer number of cells onto the space.
       */
-    virtual const std::array<double, dim> effective_resolution() const = 0;
+    virtual const SpaceVec effective_resolution() const = 0;
 
     /// Get the shape of the grid discretization
-    virtual const GridShapeType<Space::dim> shape() const = 0;
+    virtual const MultiIndex shape() const = 0;
 
-    /// Whether the grid is periodic
+    /// Const reference to the space this grid maps to
+    const std::shared_ptr<Space>& space() const {
+        return _space;
+    }
+
+    /// Whether the space this grid maps to is periodic
     bool is_periodic() const {
         return _space->periodic;
     }
 
 
 protected:
-    // -- Neighborhood interface -- //
+    // -- Neighborhood functions ----------------------------------------------
     /// Retrieve the neighborhood function depending on the mode
     /** \detail The configuration node that is passed along can be used to
       *         specify the neighborhood parameter members.
@@ -214,19 +297,15 @@ protected:
             try {
                 if (key == "distance") {
                     try {
-                        _nbh_distance = get_as_<std::size_t>(nbh_params,
-                                                             "distance");
+                        _nbh_distance = get_as_<DistType>(nbh_params,
+                                                          "distance");
                     }
                     catch (...) {
                         if (required) throw;
                     }
 
                     // Needs to fit into the shape of the grid
-                    // TODO Use armadillo, once available
-                    if (  _nbh_distance * 2 + 1
-                        > *std::min_element(this->shape().begin(),
-                                            this->shape().end()))
-                    {
+                    if (_nbh_distance * 2 + 1 > this->shape().min()) {
                         throw std::invalid_argument("Grid shape is too small "
                             "to accomodate a neighborhood with parameter "
                             "'distance' set to"

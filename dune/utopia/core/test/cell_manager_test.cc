@@ -166,10 +166,8 @@ public:
 
 // ----------------------------------------------------------------------------
 
-int main(int argc, char *argv[]) {
+int main(int, char *[]) {
     try {
-        Dune::MPIHelper::instance(argc,argv);
-
         std::cout << "Getting config file ..." << std::endl;
         auto cfg = YAML::LoadFile("cell_manager_test.yml");
         std::cout << "Success." << std::endl << std::endl;
@@ -271,7 +269,7 @@ int main(int argc, char *argv[]) {
                 MockModel<CellTraitsEC> mm_ec("missing_grid_cfg2",
                                               cfg["missing_grid_cfg2"],
                                               initial_state);
-            }, "Missing one or both of the grid configuration entries"));
+            }, "Missing grid configuration parameter 'resolution'!"));
 
         assert(check_error_message<std::invalid_argument>(
             "missing_grid_cfg3",
@@ -279,7 +277,7 @@ int main(int argc, char *argv[]) {
                 MockModel<CellTraitsEC> mm_ec("missing_grid_cfg3",
                                               cfg["missing_grid_cfg3"],
                                               initial_state);
-            }, "Missing one or both of the grid configuration entries"));
+            }, "Missing required grid configuration entry 'structure'!"));
 
         assert(check_error_message<std::invalid_argument>(
             "bad_grid_cfg",
@@ -325,6 +323,8 @@ int main(int argc, char *argv[]) {
         std::cout << "------ Testing custom links ... ------"
                   << std::endl;
 
+        { // Local test scope
+
         // Initialize a model with a custom link container
         MockModel<CellTraitsCL> mm_cl("mm_cl", cfg["default"]);
 
@@ -345,7 +345,7 @@ int main(int argc, char *argv[]) {
 
         std::cout << "Success." << std::endl << std::endl;
 
-
+        } // End of local test scope
 
 
         // -------------------------------------------------------------------
@@ -382,19 +382,57 @@ int main(int argc, char *argv[]) {
             [&](){
                 MockModel<CellTraitsDC> mm_nb_bad1("mm_nb_bad1",
                                                    cfg["nb_bad1"]);
-            }, "No 'bad' neighborhood available! Check the 'mode' argument"));
+            }, "Could not translate given value for neighborhood mode"));
 
         assert(check_error_message<std::invalid_argument>(
             "nb_bad2",
             [&](){
                 MockModel<CellTraitsDC> mm_nb_bad2("mm_nb_bad2",
                                                    cfg["nb_bad2"]);
-            }, "No 'vonNeumann' neighborhood available for 'triangular'"));
+            }, "No 'vonNeumann' neighborhood available for TriangularGrid"));
         std::cout << "Success." << std::endl << std::endl;
 
         // NOTE The actual neighborhood tests are performed separately
 
 
+
+        // -------------------------------------------------------------------
+        std::cout << "------ Testing position-interface ... ------"
+                  << std::endl;
+
+        { // Local test scope
+
+        // Use a previously construct mock model's cell manager
+        auto cm = mm_dc._cm;     // shared pointer
+        auto c0 = cm.cells()[0]; // shared pointer
+
+        // Only test callability; function is tested in the grid tests
+        cm.midx_of(c0);
+        cm.midx_of(*c0);
+
+        cm.barycenter_of(c0);
+        cm.barycenter_of(*c0);
+
+        cm.extent_of(c0);
+        cm.extent_of(*c0);
+
+        cm.vertices_of(c0);
+        cm.vertices_of(*c0);
+
+        assert(cm.grid()->is_periodic());
+        cm.cell_at({3.14, 42.0});
+        cm.cell_at({-1.23, 3.45});
+        
+        cm.boundary_cells();
+        cm.boundary_cells("all");
+        cm.boundary_cells("left");
+        cm.boundary_cells("right");
+        cm.boundary_cells("top");
+        cm.boundary_cells("bottom");
+
+        std::cout << "Success." << std::endl << std::endl;
+
+        } // End of local test scope
 
         // -------------------------------------------------------------------
         // Done.

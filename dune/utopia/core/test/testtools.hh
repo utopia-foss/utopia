@@ -27,11 +27,11 @@ bool check_error_message(std::string desc,
     try {
         func();
 
-        std::cerr << "Did not throw!" << std::endl;
+        std::cerr << prefix << "Did not throw!" << std::endl;
         return false;
     }
     catch (err_t& e) {
-        if (((std::string) e.what()).find(to_find) < 0) {
+        if (((std::string) e.what()).find(to_find) == std::string::npos) {
             std::cerr << "Did not throw expected error message!" << std::endl;
             std::cerr << "  Expected to find:  " << to_find << std::endl;
             std::cerr << "  But got         :  " << e.what() << std::endl;
@@ -46,7 +46,7 @@ bool check_error_message(std::string desc,
         }
     }
     catch (...) {
-        std::cerr << "Threw error of unexpected type!" << std::endl;
+        std::cerr << prefix << "Threw error of unexpected type!" << std::endl;
         throw;
     }
     std::cout << prefix << "Exception raised as expected."

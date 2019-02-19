@@ -31,7 +31,7 @@ public:
     using Space = typename Model::Space;
 
     /// Dimensionality of the space this cell manager is to discretize
-    static constexpr std::size_t dim = Model::Space::dim;
+    static constexpr DimType dim = Model::Space::dim;
 
     /// Grid type; this refers to the base type of the stored (derived) object
     using GridType = Grid<Space>;
@@ -39,9 +39,12 @@ public:
     /// Neighborhood function used in public interface (with cell as argument)
     using NBFuncCell = std::function<CellContainer<Cell>(const Cell&)>;
 
+    /// Type of vectors that represent a physical quantity
+    using SpaceVec = SpaceVecType<dim>;
+
 
 private:
-    // -- Members ------------------------------------------------------------
+    // -- Members -------------------------------------------------------------
     /// The logger (same as the model this manager resides in)
     const std::shared_ptr<spdlog::logger> _log;
 
@@ -60,15 +63,12 @@ private:
     /// Storage container for pre-calculated (!) cell neighbors
     std::vector<CellContainer<Cell>> _cell_neighbors;
 
-    /// The currently chosen neighborhood mode, i.e. "moore", "vonNeumann", ...
-    NBMode _nb_mode;
-
     /// The currently chosen neighborhood function (working directly on cells)
     NBFuncCell _nb_func;
 
 
 public:
-    // -- Constructors -------------------------------------------------------
+    // -- Constructors --------------------------------------------------------
     /// Construct a cell manager
     /** \detail With the model available, the CellManager can extract the
       *         required information from the model without the need to pass
@@ -90,8 +90,7 @@ public:
         _space(model.get_space()),
         _grid(setup_grid()),
         _cells(setup_cells()),
-        _cell_neighbors(),
-        _nb_mode(NBMode::empty)
+        _cell_neighbors()
     {
         // Set default value for _nb_func
         _nb_func = _nb_compute_each_time_empty;
@@ -120,8 +119,7 @@ public:
         _space(model.get_space()),
         _grid(setup_grid()),
         _cells(setup_cells(initial_state)),
-        _cell_neighbors(),
-        _nb_mode(NBMode::empty)
+        _cell_neighbors()
     {
         // Set default value for _nb_func
         _nb_func = _nb_compute_each_time_empty;
@@ -133,7 +131,7 @@ public:
     }
 
 
-    /// -- Getters -----------------------------------------------------------
+    /// -- Getters ------------------------------------------------------------
     /// Return pointer to the space, for convenience
     const std::shared_ptr<Space>& space () const {
         return _space;
@@ -149,13 +147,105 @@ public:
         return _cells;
     }
 
-    /// Return const reference to the neighborhood mode
-    NBMode nb_mode() {
-        return _nb_mode;
+
+    // -- Public interface ----------------------------------------------------
+    // .. Position-related ....................................................
+
+    /// Returns the multi-index of the given cell
+    /** \note Consult the documentation of the selected grid discretization to
+      *       learn about the interpretation of the returned values.
+      */
+    auto midx_of(const Cell& cell) const {
+        return _grid->midx_of(cell.id());
+    }
+    
+    /// Returns the multi-index of the given cell
+    /** \note Consult the documentation of the selected grid discretization to
+      *       learn about the interpretation of the returned values.
+      */
+    auto midx_of(const std::shared_ptr<Cell>& cell) const {
+        return _grid->midx_of(cell->id());
+    }
+
+    /// Returns the barycenter of the given cell
+    auto barycenter_of(const Cell& cell) const {
+        return _grid->barycenter_of(cell.id());
+    }
+    
+    /// Returns the barycenter of the given cell
+    auto barycenter_of(const std::shared_ptr<Cell>& cell) const {
+        return _grid->barycenter_of(cell->id());
+    }
+
+    /// Returns the physical extent of the given cell
+    auto extent_of(const Cell& cell) const {
+        return _grid->extent_of(cell.id());
+    }
+    
+    /// Returns the physical extent of the given cell
+    auto extent_of(const std::shared_ptr<Cell>& cell) const {
+        return _grid->extent_of(cell->id());
+    }
+
+    /// Returns a container of vertices of the given cell
+    /** \detail The vertices are the absolute coordinates that define the cell.
+      *         For example, a 2D square cell is the surface of a polygon
+      *         defined by four points.
+      *
+      * \note   Consult the documentation of the selected grid discretization
+      *         to learn about the order of the returned values.
+      */
+    auto vertices_of(const Cell& cell) const {
+        return _grid->vertices_of(cell.id());
+    }
+    
+    /// Returns a container of vertices of the given cell
+    /** \note Consult the documentation of the selected grid discretization to
+      *       learn about the order of the returned values.
+      */
+    auto vertices_of(const std::shared_ptr<Cell>& cell) const {
+        return _grid->vertices_of(cell->id());
+    }
+
+    /// Return the cell covering the given point in physical space
+    /** \detail Cells are interpreted as covering half-open intervals in space,
+      *         i.e., including their low-value edges and excluding their high-
+      *         value edges.
+      *         The special case of points on high-value edges for non-periodic
+      *         space behaves such that these points are associated with the
+      *         cells at the boundary.
+      *
+      * \note   For non-periodic space, a check is performed whether the given
+      *         point is inside the physical space associated with the grid. If
+      *         that is not the case, an error is raised.
+      *         For periodic space, the given position is mapped back into the
+      *         physical space, thus always returning a valid cell.
+      */
+    const std::shared_ptr<Cell>& cell_at(const SpaceVec& pos) const {
+        return _cells[_grid->cell_at(pos)];
+    }
+
+    /// Retrieve a container of cells that are at a specified boundary
+    /** \note   For a periodic space, an empty container is returned; no error
+      *         or warning is emitted!
+      *
+      * \detail Lets the grid compute the set of cell IDs at the boundary and
+      *         then converts them into pointers to cells. As the set is sorted
+      *         by cell IDs, the returned container is also sorted.
+      *
+      * \param  Select which boundary to return the cell IDs of. If 'all',
+      *         all boundary cells are returned. Other available values depend
+      *         on the dimensionality of the grid:
+      *                1D:  left, right
+      *                2D:  bottom, top
+      *                3D:  back, front
+      */
+    CellContainer<Cell> boundary_cells(std::string select="all") const {
+        return cells_from_ids(_grid->boundary_cells(select));
     }
 
 
-    // -- Public interface ---------------------------------------------------
+    // .. Neighborhood-related ................................................
     /// Retrieve the given cell's neighbors
     /** \detail The behaviour of this method is different depending on the
       *         choice of neighborhood.
@@ -172,7 +262,6 @@ public:
     CellContainer<Cell> neighbors_of(const std::shared_ptr<Cell>& cell) const {
         return _nb_func(*cell);
     }
-
 
     /// Select the neighborhood and all parameters fully from a config node
     void select_neighborhood(const DataIO::Config& nb_cfg) {
@@ -210,14 +299,19 @@ public:
                             compute_and_store, nb_params);
     }
 
-    /// Select the neighborhood mode
+    /// Set the neighborhood mode
+    /** \param nb_mode            The name of the neighborhood to select
+      * \param compute_and_store  Whether to directly compute all neighbors
+      *                           and henceforth use the buffer to get these
+      *                           neighbors.
+      */
     void select_neighborhood(const NBMode nb_mode,
                              const bool compute_and_store = false,
                              const DataIO::Config& nb_params = {})
     {
-        // Only change the neighborhood, if it is different to the existing
-        // one or if it is set to be empty
-        if ((nb_mode != _nb_mode) or (nb_mode == NBMode::empty)) {
+        // Only change the neighborhood if it is different to the one already
+        // set in the grid or if it is set to be empty
+        if ((nb_mode != _grid->nb_mode()) or (nb_mode == NBMode::empty)) {
             _log->info("Selecting '{}' neighborhood ...",
                        nb_mode_to_string(nb_mode));
 
@@ -240,14 +334,12 @@ public:
                 _log->debug("Cleared cell neighborhood cache.");
             }
 
-            // Everything ok, now set the member variable
-            _nb_mode = nb_mode;
             _log->debug("Successfully selected '{}' neighborhood.",
-                        nb_mode_to_string(_nb_mode));
+                        nb_mode_to_string(_grid->nb_mode()));
         }
         else {
             _log->debug("Neighborhood was already set to '{}'; not changing.",
-                        nb_mode_to_string(_nb_mode));
+                        nb_mode_to_string(_grid->nb_mode()));
         }
 
         // Still allow to compute the neighbors, regardless of all the above
@@ -263,7 +355,7 @@ public:
       */
     void compute_cell_neighbors() {
         _log->info("Computing and storing '{}' neighbors of all {} cells ...",
-                   nb_mode_to_string(_nb_mode), _cells.size());
+                   nb_mode_to_string(_grid->nb_mode()), _cells.size());
 
         // Clear cell neighbors container and pre-allocate space
         _cell_neighbors.clear();
@@ -279,17 +371,24 @@ public:
         _log->info("Computed and stored cell neighbors.");
     }
 
+    /// Return the currently selected neighborhood mode
+    /** \note This is a shortcut that accesses the value set in the grid.
+      */
+    const NBMode& nb_mode () const {
+        return _grid->nb_mode();
+    }
+
 
 private:
-    // -- Helper functions ---------------------------------------------------
+    // -- Helper functions ----------------------------------------------------
     // ...
 
 
-    // -- Helpers for Neighbors interface ------------------------------------
+    // -- Helpers for Neighbors interface -------------------------------------
 
     /// Given a container of cell IDs, convert it to container of cell pointers
     template<class IndexContainer>
-    CellContainer<Cell> cells_from_ids(IndexContainer&& ids) {
+    CellContainer<Cell> cells_from_ids(IndexContainer&& ids) const {
         // Initialize container to be returned and fix it in size
         CellContainer<Cell> ret;
         ret.reserve(ids.size());
@@ -302,7 +401,7 @@ private:
     }
 
     
-    // .. std::functions to call from neighbors_of ...........................
+    // .. std::functions to call from neighbors_of ............................
     
     /// Return the pre-computed neighbors of the given cell
     NBFuncCell _nb_from_cache = [this](const Cell& cell) {
@@ -323,7 +422,7 @@ private:
     };
 
 
-    // -- Setup functions ----------------------------------------------------
+    // -- Setup functions -----------------------------------------------------
 
     /// Set up the cell manager configuration member
     /** \detail This function determines whether to use a custom configuration

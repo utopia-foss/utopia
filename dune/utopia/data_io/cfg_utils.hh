@@ -4,6 +4,8 @@
 #include <boost/core/demangle.hpp>
 #include <yaml-cpp/yaml.h>
 
+#include "../core/types.hh"
+
 
 namespace Utopia {
 
@@ -134,6 +136,53 @@ template<typename T, std::size_t len>
 std::array<T, len> as_array(const Utopia::DataIO::Config& node) {
     return as_<std::array<T, len>>(node);
 }
+
+/// Retrieve a config entry as Armadillo column vector
+/** \note This method is necessary because arma::Col::fixed cannot be
+  *       constructed from std::vector. In such cases, the target vector is
+  *       constructed element-wise.
+  *
+  * \tparam CVecT The Armadillo vector type to return
+  * \tparam dim   The dimensionality of the vector (only needed for)
+  */
+template<typename CVecT, DimType dim=0>
+CVecT as_arma_vec(const Utopia::DataIO::Config& node) {
+    // Extract the field vector element type; assuming Armadillo interface here
+    using element_t = typename CVecT::elem_type;
+
+    // Check if it can be constructed from a vector
+    if constexpr (std::is_constructible<CVecT, std::vector<element_t>>()) {
+        return as_<std::vector<element_t>>(node);
+    }
+    else {
+        static_assert(dim > 0,
+                      "Need template argument dim given if target type is not "
+                      "constructible from std::vector.");
+
+        // Needs to be constructed element-wise
+        CVecT cvec;
+        const auto vec = as_array<element_t, dim>(node);
+
+        for (DimType i=0; i<dim; i++) {
+            cvec[i] = vec[i];
+        }
+
+        return cvec;
+    }
+}
+
+/// Shortcut to retrieve a config entry as SpaceVec of given dimensionality
+template<DimType dim>
+SpaceVecType<dim> as_SpaceVec(const Utopia::DataIO::Config& node) {
+    return as_arma_vec<SpaceVecType<dim>, dim>(node);
+}
+
+/// Shortcut to retrieve a config entry as MultiIndex of given dimensionality
+template<DimType dim>
+MultiIndexType<dim> as_MultiIndex(const Utopia::DataIO::Config& node) {
+    return as_arma_vec<MultiIndexType<dim>, dim>(node);
+}
+
 
 
 } // namespace Utopia

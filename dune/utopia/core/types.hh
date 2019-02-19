@@ -3,6 +3,8 @@
 
 #include <cstdint>
 
+#include <armadillo>
+
 #include "../base.hh"
 
 namespace Utopia
@@ -64,15 +66,36 @@ using entity_t = typename Container::value_type::element_type;
 
 // -- Types introduces with the new CellManager ------------------------------
 
-/// Type for indices
+/// Type for dimensions, i.e. very small unsigned integers
+using DimType = unsigned short;
+
+/// Type for distancens, i.e. intermediately long unsigned integers
+using DistType = unsigned int;
+
+/// Type for indices, i.e. values used for container indexing
 using IndexType = std::size_t;
 
 /// Type for container of indices
 using IndexContainer = std::vector<IndexType>;
 
-/// Type for grid shape
-template<std::size_t dim>
-using GridShapeType = std::array<IndexType, dim>;
+/// Type for index type vectors that are associated with a physical space
+/** \detail Uses a fixed-size Armadillo column vector of IndexType
+  *
+  * \note   This vector is not to be interpreted as a "container"
+  *
+  * \tparam dim  The dimensionality (or: rank) of the vector
+  */
+template<DimType dim>
+using MultiIndexType = arma::Col<IndexType>::fixed<dim>;
+
+/// Type for vector-like data that is associated with a physical space
+/** \detail Uses a fixed-size Armadillo column vector of doubles
+  *
+  * \tparam dim  The dimensionality (or: rank) of the vector
+  */
+template<DimType dim>
+using SpaceVecType = arma::Col<double>::fixed<dim>;
+
 
 } // namespace Utopia
 
