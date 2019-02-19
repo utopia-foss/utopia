@@ -51,6 +51,15 @@ ${RETURN_VALUE}")
     endif ()
 endif ()
 
+# update pip and installation packages
+execute_process(COMMAND ${UTOPIA_ENV_PIP} install --upgrade
+                        pip wheel setuptools
+                RESULT_VARIABLE RETURN_VALUE
+                OUTPUT_QUIET)
+if (NOT RETURN_VALUE EQUAL "0")
+    message(FATAL_ERROR "Error updating pip inside utopia-env: ${RETURN_VALUE")
+endif ()
+
 # write the convenience bash script
 find_package(UnixCommands)
 if (BASH)
