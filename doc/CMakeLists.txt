@@ -3,16 +3,22 @@
 function(utopia_install_doc_utils)
     # Install requirements into dune virtualenv
     set(INSTALL_CMD -m pip install -r ${CMAKE_CURRENT_SOURCE_DIR}/requirements.txt)
-    dune_execute_process(
-        COMMAND "${DUNE_PYTHON_VIRTUALENV_EXECUTABLE}" "${INSTALL_CMD}"
-        ERROR_MESSAGE "dune_python_install_package: error installing doc utilities into virtualenv!")
+    execute_process(
+        COMMAND ${UTOPIA_ENV_EXECUTABLE} ${INSTALL_CMD}
+        RESULT_VARIABLE RETURN_VALUE
+        ERROR_VARIABLE ERROR_MSG
+        OUTPUT_QUIET)
+    if (NOT "${RETURN_VALUE}" EQUAL "0")
+        message(SEND_ERROR "Error installing doc utilities into virtualenv:\
+${ERROR_MSG}")
+    endif ()
 
     # Find Sphinx in dune virtualenv directory
     unset(SPHINX_EXECUTABLE CACHE)
 
     find_program(SPHINX_EXECUTABLE
         NAMES sphinx-build
-        PATHS ${DUNE_PYTHON_VIRTUALENV_PATH}/bin
+        PATHS ${UTOPIA_ENV_EXECUTABLE}/bin
         NO_DEFAULT_PATH)
 
     include(FindPackageHandleStandardArgs)
