@@ -2,9 +2,9 @@
 # Define a function to install the utilities needed for sphinx ...
 function(utopia_install_doc_utils)
     # Install requirements into dune virtualenv
-    set(INSTALL_CMD -m pip install -r ${CMAKE_CURRENT_SOURCE_DIR}/requirements.txt)
+    set(INSTALL_CMD install -r ${CMAKE_CURRENT_SOURCE_DIR}/requirements.txt)
     execute_process(
-        COMMAND ${UTOPIA_ENV_EXECUTABLE} ${INSTALL_CMD}
+        COMMAND ${UTOPIA_ENV_PIP} ${INSTALL_CMD}
         RESULT_VARIABLE RETURN_VALUE
         OUTPUT_QUIET)
     if (NOT RETURN_VALUE EQUAL "0")

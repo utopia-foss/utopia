@@ -44,7 +44,7 @@ function(python_find_package)
         message(STATUS "Looking for python package ${ARG_PACKAGE} ...")
     endif()
 
-    execute_process(COMMAND ${UTOPIA_ENV_EXECUTABLE} -m pip freeze
+    execute_process(COMMAND ${UTOPIA_ENV_PIP} freeze
         RESULT_VARIABLE RETURN_VALUE
         OUTPUT_VARIABLE PIP_OUTPUT
     )
@@ -141,9 +141,9 @@ function(python_install_package_remote)
     endif()
 
     # execute command
-    set(INSTALL_CMD -m pip install ${TRUSTED_HOST_CMD} --upgrade
+    set(INSTALL_CMD install ${TRUSTED_HOST_CMD} --upgrade
         ${RINST_FULL_PATH})
-    execute_process(COMMAND ${UTOPIA_ENV_EXECUTABLE} ${INSTALL_CMD}
+    execute_process(COMMAND ${UTOPIA_ENV_PIP} ${INSTALL_CMD}
         RESULT_VARIABLE RETURN_VALUE
         OUTPUT_QUIET
     )
@@ -191,14 +191,13 @@ python_install_package!")
     endif ()
 
     # define the installation command
-    set(INSTALL_CMD -m pip install
-                    --upgrade ${EDIT_OPTION} ${PYINST_PIP_PARAMS}
+    set(INSTALL_CMD install --upgrade ${EDIT_OPTION} ${PYINST_PIP_PARAMS}
                     ${PACKAGE_PATH})
 
     # perform the actual installation
     message (STATUS "Installing python package at ${PACKAGE_PATH} \
 into the virtual environment")
-    execute_process(COMMAND ${UTOPIA_ENV_EXECUTABLE} ${INSTALL_CMD}
+    execute_process(COMMAND ${UTOPIA_ENV_PIP} ${INSTALL_CMD}
                     RESULT_VARIABLE RETURN_VALUE
                     OUTPUT_QUIET)
     if (NOT RETURN_VALUE EQUAL "0")
