@@ -22,6 +22,10 @@ public:
     /// The type of the agent state
     using AgentStateType = typename AgentTrait::State;
 
+    /// The random number generator type
+    using RNG = typename Model::RNG;
+
+
 private:
     // -- Members --------–––––-------------------------------------------------
     /// The logger (same as the model this manager resides in)
@@ -30,13 +34,16 @@ private:
     /// Agent manager configuration node
     const DataIO::Config _cfg;
 
+    /// The model's random number generator
+    const std::shared_ptr<RNG> _rng;
+
     /// The physical space the agents are to reside in
     const std::shared_ptr<Space> _space;
 
     /// Storage container for agents
     AgentContainer<Agent> _agents;
 
-    /// ID of the latest created agent
+    /// ID counter: ID of the globally latest created agent
     static IndexType _id_counter;
 
 public:
@@ -47,6 +54,7 @@ public:
     :
         _log(model.get_logger()),
         _cfg(setup_cfg(model, custom_cfg)),
+        _rng(model.get_rng()),
         _space(model.get_space()),
         _id_counter(0),
         _agents(setup_agents())
@@ -61,6 +69,7 @@ public:
     :
         _log(model.get_logger()),
         _cfg(setup_cfg(model, custom_cfg)),
+        _rng(model.get_rng()),
         _space(model.get_space()),
         _id_counter(0),
         _agents(setup_agents())
