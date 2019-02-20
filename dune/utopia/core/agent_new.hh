@@ -22,7 +22,7 @@ namespace Utopia {
 template<typename StateType, 
          UpdateMode update_mode,
          bool use_def_state_constr=false,
-         typename CellTags=EmptyTag,
+         typename AgentTags=EmptyTag,
          template<class> class CustomLinkContainers=NoCustomLinks>
 using AgentTraits = EntityTraits<StateType, 
                                 update_mode,

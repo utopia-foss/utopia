@@ -20,7 +20,13 @@ public:
     using Agent = __Agent<AgentTraits>; // NOTE Use Agent eventually
 
     /// The type of the agent state
-    using AgentStateType = typename AgentTrait::State;
+    using AgentStateType = typename AgentTraits::State;
+
+    /// The type of the space
+    using Space = typename Model::Space;
+
+    /// The dimensionality of the space
+    static constexpr DimType dim = Space::dim;
 
     /// The type of the vectors that represent physical quantities
     using SpaceVec = SpaceVecType<dim>;
@@ -30,6 +36,9 @@ public:
 
     /// The random number generator type
     using RNG = typename Model::RNG;
+
+    /// Whether the agents are updated synchronously
+    static constexpr bool sync = AgentTraits::sync;
 
 private:
     // -- Members --------–––––-------------------------------------------------
@@ -49,7 +58,7 @@ private:
     AgentContainer<Agent> _agents;
 
     /// ID counter: ID of the globally latest created agent
-    static IndexType _id_counter;
+    IndexType _id_counter;
 
     /// The move_to function that will be used for moving agents
     const MoveFunc _mv_func;
@@ -58,15 +67,15 @@ private:
 public:
     // -- Constructors ---------------------------------------------------------
 
-    AgentManager (Model& model,
-                  const DataIO::Config& custom_cfg) = {})
+    AgentManager(Model& model,
+                 const DataIO::Config& custom_cfg = {})
     :
         _log(model.get_logger()),
         _cfg(setup_cfg(model, custom_cfg)),
         _rng(model.get_rng()),
         _space(model.get_space()),
-        _id_counter(0),
         _agents(setup_agents()),
+        _id_counter(0),
         _mv_func(setup_mv_func())
     {
         _log->info("AgentManager is all set up.");
@@ -75,14 +84,14 @@ public:
 
     AgentManager(Model& model,
                  const AgentStateType initial_state,
-                 const DataIO::Config& custom_cfg) = {})
+                 const DataIO::Config& custom_cfg = {})
     :
         _log(model.get_logger()),
         _cfg(setup_cfg(model, custom_cfg)),
         _rng(model.get_rng()),
         _space(model.get_space()),
-        _id_counter(0),
         _agents(setup_agents()),
+        _id_counter(0),
         _mv_func(setup_mv_func())
     {
         _log->info("AgentManager is all set up.");
@@ -99,7 +108,7 @@ public:
         return _agents;
     }
 
-    const IndexType id_counter () const {
+    IndexType id_counter () const {
         return _id_counter;
     }
 
@@ -153,6 +162,8 @@ private:
             // Increase the id count
             ++_id_counter;
         }
+        
+        return agents;
     }
 
 
@@ -194,13 +205,13 @@ private:
                 if (not _cfg["agent_initial_number"]) {
                     throw std::invalid_argument("Was configured to create the "
                         "initial agents from a config node but a node "
-                        "with the key 'agent_initial_number' was not provided!
-                        The number of agents to create is not known!");
+                        "with the key 'agent_initial_number' was not provided! "
+                        "The number of agents to create is not known!");
                 }
 
                 // Everything ok. Create state object and pass it on ...
                 return setup_agents(AgentStateType(_cfg["agent_initial_state"]),
-                                    as_<Indextype>(_cfg["agent_initial_number"]));
+                                    as_<IndexType>(_cfg["agent_initial_number"]));
             }
             // else: do not return but continue with the rest of the function,
             // i.e. trying the other constructors
@@ -231,35 +242,35 @@ private:
     }
 
 
-    void setup_mv_func(){
+    MoveFunc setup_mv_func(){
         // periodic
-        if (_space.periodic == true) {
+        if (_space->periodic == true) {
             // synchronoeous update
-            if (AgentTraits::is_sync == UpdateMode::sync){
-                _mv_func = [](const Agent& agent, const SpaceVec& pos){
+            if constexpr (sync == UpdateMode::sync){
+                return [](const Agent& agent, const SpaceVec& pos){
                     // Implement
                 };
             }
             // asynchroneous update
             else{
-                _mv_func = [](const Agent& agent, const SpaceVec& pos){
+                return [](const Agent& agent, const SpaceVec& pos){
                     // Implement
-                }
+                };
             }
         }
 
         // nonperiodic
         else{
-            if (AgentTraits::is_sync == UpdateMode::sync){
-                _mv_func = [](const Agent& agent, const SpaceVec& pos){
+            if constexpr (sync == UpdateMode::sync){
+                return [](const Agent& agent, const SpaceVec& pos){
                     // Implement
                 };
             }
             // asynchroneous update
             else{
-                _mv_func = [](const Agent& agent, const SpaceVec& pos){
+                return [](const Agent& agent, const SpaceVec& pos){
                     // Implement
-                }
+                };
             }
         }
     }
