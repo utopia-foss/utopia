@@ -9,6 +9,7 @@
 #include "types.hh"
 #include "entity_new.hh"       // NOTE Replace with entity.hh in final version
 
+
 namespace Utopia {
 /**
  *  \addtogroup AgentManager
@@ -40,20 +41,43 @@ using AgentTraits = EntityTraits<StateType,
   *          allows assigning a position in space to the agent. The agent itself
   *          does not know anything about that ...
   */
-template<typename Traits>
+template<typename Traits, typename Space>
 class __Agent :   // NOTE Final name will be Agent
     public __Entity<Traits>
-{
+{   
+    /// Make the agent manager a friend
+    template<class T, class M>
+    friend class AgentManager;   
+
 public:
     /// The type of the state
     using State = typename Traits::State;
 
+    /// The type of the Position
+    using Position = typename Space::SpaceVec
+
+private:
+    /// Position
+    Position _pos;
+
+    /// Position buffer
+    Position _pos_new;
+
+    
     // -- Constructors -- //
     /// Construct an agent
     __Agent(const IndexType id, const State initial_state)
     :
         __Entity<Traits>(id, initial_state)
     {}
+protected:
+    // set the position
+    void set_pos(Position new_pos) {_pos = new_pos}
+
+public:
+    // get the position
+    Position& position() { return _pos}
+
 };
 
 
