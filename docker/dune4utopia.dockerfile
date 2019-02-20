@@ -39,6 +39,7 @@ RUN apt-get update \
         pkg-config \
         python3-dev \
         python3-pip \
+        python3-venv \
         ffmpeg \
         libfftw3-dev \
     && apt-get clean
@@ -61,5 +62,5 @@ RUN git clone https://gitlab.dune-project.org/staging/dune-uggrid.git \
 
 # build
 RUN MAKE_FLAGS="-j${PROCNUM}" \
-    CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=${CC} -DCMAKE_CXX_COMPILER=${CXX} -DDUNE_PYTHON_VIRTUALENV_SETUP=True -DDUNE_PYTHON_ALLOW_GET_PIP=True" \
+    CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=${CC} -DCMAKE_CXX_COMPILER=${CXX}" \
     ./dune-common/bin/dunecontrol all
