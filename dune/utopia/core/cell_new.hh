@@ -27,7 +27,11 @@ struct NoCustomLinks {};
 
 /// The cell traits struct gathers types to be used for specializing a Cell
 /** \tparam  StateType    Type of the cells' state container
-  * \tparam  is_sync      Whether the cells should be synchronous
+  * \tparam  update_mode  The update mode of the cells, sync or async
+  * \tparam  use_def_state_constr   Whether to use the default constructor to
+  *                       construct the cell's state. If false (default), a
+  *                       constructor with DataIO::Config& as argument has to
+  *                       be implemented for StateType.
   * \tparam  Tags         Custom cell tags
   * \tparam  CustomLinkContainers  Template template parameter to specify the
   *                       types of custom links. This construct is specialized
@@ -38,15 +42,19 @@ struct NoCustomLinks {};
   *                       containers of the objects you want to link to.
   */
 template<typename StateType,
-         bool is_sync=true,
+         UpdateMode update_mode,
+         bool use_def_state_constr=false,
          typename CellTags=EmptyTag,
          template<class> class CustomLinkContainers=NoCustomLinks>
 struct CellTraits {
     /// Type of the cells' state container
     using State = StateType;
 
-    /// Whether the cells should be synchronous
-    static constexpr bool sync = is_sync;
+    /// Whether the cells should be synchronously updated
+    static constexpr bool sync = static_cast<bool>(update_mode);
+
+    /// Whether to use the default constructor for constructing a cell state
+    static constexpr bool use_default_state_constructor = use_def_state_constr;
 
     /// Custom cell tags
     using Tags = CellTags;
@@ -89,7 +97,7 @@ public:
 
 
 private:
-    // -- Members -- //
+    // -- Members -------------------------------------------------------------
     /// ID of this cell
     const IndexType _id;
 
@@ -98,7 +106,7 @@ private:
 
 
 public:
-    // -- Constructors -- //
+    // -- Constructors --------------------------------------------------------
     /// Construct a cell
     __Cell(const IndexType id, const State initial_state)
     :
@@ -111,7 +119,7 @@ public:
     {}
 
 
-    // -- Public interface -- //
+    // -- Public interface ----------------------------------------------------
     /// Return const reference to cell ID
     const IndexType& id() const {
         return _id;
