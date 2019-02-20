@@ -20,12 +20,14 @@ namespace Utopia {
  * \ref Utopia::EntityTraits
  */
 template<typename StateType, 
-         bool is_sync=true, 
-         typename AgentTags=EmptyTag,
+         UpdateMode update_mode,
+         bool use_def_state_constr=false,
+         typename CellTags=EmptyTag,
          template<class> class CustomLinkContainers=NoCustomLinks>
 using AgentTraits = EntityTraits<StateType, 
-                                is_sync, 
-                                AgentTag, 
+                                update_mode,
+                                use_def_state_constr,
+                                AgentTags, 
                                 CustomLinkContainers>;
 
 

@@ -22,9 +22,14 @@ public:
     /// The type of the agent state
     using AgentStateType = typename AgentTrait::State;
 
+    /// The type of the vectors that represent physical quantities
+    using SpaceVec = SpaceVecType<dim>;
+
+    /// The type of the move function type
+    using MoveFunc = std::function<void(const Agent&, const SpaceVec&)>;
+
     /// The random number generator type
     using RNG = typename Model::RNG;
-
 
 private:
     // -- Members --------–––––-------------------------------------------------
@@ -46,6 +51,10 @@ private:
     /// ID counter: ID of the globally latest created agent
     static IndexType _id_counter;
 
+    /// The move_to function that will be used for moving agents
+    const MoveFunc _mv_func;
+
+
 public:
     // -- Constructors ---------------------------------------------------------
 
@@ -57,7 +66,8 @@ public:
         _rng(model.get_rng()),
         _space(model.get_space()),
         _id_counter(0),
-        _agents(setup_agents())
+        _agents(setup_agents()),
+        _mv_func(setup_mv_func())
     {
         _log->info("AgentManager is all set up.");
     }
@@ -72,7 +82,8 @@ public:
         _rng(model.get_rng()),
         _space(model.get_space()),
         _id_counter(0),
-        _agents(setup_agents())
+        _agents(setup_agents()),
+        _mv_func(setup_mv_func())
     {
         _log->info("AgentManager is all set up.");
     }
@@ -218,6 +229,41 @@ private:
             "or being default-constructible, respectively. Alternatively, "
             "pass the initial state directly to the AgentManager constructor.");
     }
+
+
+    void setup_mv_func(){
+        // periodic
+        if (_space.periodic == true) {
+            // synchronoeous update
+            if (AgentTraits::is_sync == UpdateMode::sync){
+                _mv_func = [](const Agent& agent, const SpaceVec& pos){
+                    // Implement
+                };
+            }
+            // asynchroneous update
+            else{
+                _mv_func = [](const Agent& agent, const SpaceVec& pos){
+                    // Implement
+                }
+            }
+        }
+
+        // nonperiodic
+        else{
+            if (AgentTraits::is_sync == UpdateMode::sync){
+                _mv_func = [](const Agent& agent, const SpaceVec& pos){
+                    // Implement
+                };
+            }
+            // asynchroneous update
+            else{
+                _mv_func = [](const Agent& agent, const SpaceVec& pos){
+                    // Implement
+                }
+            }
+        }
+    }
+
 };
 
 // end group AgentManager
