@@ -32,7 +32,6 @@ using AgentTraits = EntityTraits<StateType,
                                 CustomLinkContainers>;
 
 
-
 /// An agent is a slightly specialized state container
 /** \detail  It can be extended with the use of tags and can be associated with
   *          so-called "custom links". These specializations are carried into
@@ -41,21 +40,70 @@ using AgentTraits = EntityTraits<StateType,
   *          allows assigning a position in space to the agent. The agent itself
   *          does not know anything about that ...
   */
+template<typename Traits, typename Space, typename enabled=void>
+class __Agent;
+
+
+/// Agent specialisation for asynchronous update
 template<typename Traits, typename Space>
-class __Agent :   // NOTE Final name will be Agent
+class __Agent<Traits, Space, typename std::enable_if_t<Traits::sync == false>>
+:
     public __Entity<Traits>
 {   
+public:  
+    /// The type of the state
+    using State = typename Traits::State;
+
+    /// The type of the Position
+    using Position = typename Space::SpaceVec;
+
     /// Make the agent manager a friend
     template<class T, class M>
     friend class AgentManager;   
 
+private:
+    /// Position
+    Position _pos;
+
+
+public:
+    // -- Constructors -- //
+    /// Construct an agent
+    __Agent(const IndexType id, const State initial_state, 
+            const Position& initial_pos)
+    :
+        __Entity<Traits>(id, initial_state),
+        _pos(initial_pos)    
+        {}
+protected:
+    // set the position
+    void set_pos(Position pos) {_pos = pos;};
+
+public:
+    // get the position
+    Position position ( ) { return _pos;};
+
+};
+
+
+
+/// Agent Specialisation for synchronous update
+/*
+template<typename Traits, typename Space>
+class __Agent<Traits, Space, typename std::enable_if_t<Traits::sync == true>>
+:
+    public __Entity<Traits>
+{   
 public:
     /// The type of the state
     using State = typename Traits::State;
 
     /// The type of the Position
-    using Position = typename Space::SpaceVec
-
+    using Position = typename Space::SpaceVec;
+    
+    /// Make the agent manager a friend
+    template<class T, class M>
+    friend class AgentManager;   
 private:
     /// Position
     Position _pos;
@@ -63,23 +111,27 @@ private:
     /// Position buffer
     Position _pos_new;
 
-    
+public:
     // -- Constructors -- //
     /// Construct an agent
-    __Agent(const IndexType id, const State initial_state)
+    __Agent(const IndexType id, const State& initial_state, 
+            const Position& initial_pos)
     :
-        __Entity<Traits>(id, initial_state)
+        __Entity<Traits>(id, initial_state),
+        _pos
     {}
 protected:
     // set the position
-    void set_pos(Position new_pos) {_pos = new_pos}
+    void set_pos(Position pos) {_pos = pos;};
 
 public:
     // get the position
-    Position& position() { return _pos}
+    Position position() { return _pos;};
+
+    // update the position and the state 
+    void update ();  
 
 };
-
 
 // end group AgentManager
 /**

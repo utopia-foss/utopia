@@ -17,6 +17,7 @@ set(TESTS_CORE
     agent_naive_test
     agent_test_2d
     agent_test_3d
+    agent_test_new
     apply_test
     cell_manager_test
     cell_manager_integration_test
