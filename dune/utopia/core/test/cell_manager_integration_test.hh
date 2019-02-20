@@ -12,9 +12,20 @@ namespace Test {
 /// Define data types for the cell manager test model
 using CMTestModelTypes = ModelTypes<DefaultRNG, DefaultSpace>;
 
+/// Dummy cell state type
+struct CST {
+    /// Some property
+    int foo;
+
+    /// The (required) config constructor
+    CST(const DataIO::Config& cfg)
+    :
+        foo(as_int(cfg["foo"]))
+    {}
+};
 
 /// Specialize the cell traits struct with a dummy cell state type
-using CMTestCellTraits = Utopia::CellTraits<int>;
+using CMTestCellTraits = Utopia::CellTraits<CST, UpdateMode::sync>;
 
 
 /// Model to test function and integration of CellManager

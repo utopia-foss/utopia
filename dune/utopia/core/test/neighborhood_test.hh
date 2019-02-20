@@ -14,6 +14,7 @@ namespace Test {
 
 // Import some types
 using Utopia::DataIO::Config;
+using Utopia::UpdateMode;
 
 
 /// Define data types for the cell manager test model
@@ -24,8 +25,8 @@ struct CellStateDC {
     unsigned short foobar;
 };
 
-/// Cell traits for a default-constructible cell state
-using CellTraitsDC = Utopia::CellTraits<CellStateDC>;
+/// Cell traits for a cell state that should use the default constructor
+using CellTraitsDC = Utopia::CellTraits<CellStateDC, UpdateMode::async, true>;
 
 
 /// Model to test neighborhoods

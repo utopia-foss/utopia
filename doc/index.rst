@@ -13,24 +13,24 @@ If you are **new to Utopia**, you should start with the :doc:`tutorial <guides/t
 ----
 
 .. toctree::
-   :maxdepth: 2
    :caption: Basics
+   :maxdepth: 2
 
    The README <README>
    examples
 
 
 .. toctree::
-   :maxdepth: 1
    :caption: Guides
+   :maxdepth: 1
    :glob:
 
    guides/*
 
 
 .. toctree::
-   :maxdepth: 1
    :caption: Models
+   :maxdepth: 1
    :glob:
 
    models/*
@@ -42,8 +42,9 @@ If you are **new to Utopia**, you should start with the :doc:`tutorial <guides/t
    frontend/*
 
 .. toctree::
-   :maxdepth: 2
    :caption: Frequently Asked Questions
+   :maxdepth: 2
+   :glob:
       
-   Frontend <faq/frontend>
+   faq/*
    
