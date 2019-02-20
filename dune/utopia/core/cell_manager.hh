@@ -42,6 +42,9 @@ public:
     /// Type of vectors that represent a physical quantity
     using SpaceVec = SpaceVecType<dim>;
 
+    /// Random number generator type
+    using RNG = typename Model::RNG;
+
 
 private:
     // -- Members -------------------------------------------------------------
@@ -50,6 +53,9 @@ private:
 
     /// Cell manager configuration node
     const DataIO::Config _cfg;
+
+    /// The model's random number generator, used e.g. for cell construction
+    const std::shared_ptr<RNG> _rng;
 
     /// The physical space the cells are to reside in
     const std::shared_ptr<Space> _space;
@@ -87,6 +93,7 @@ public:
     :
         _log(model.get_logger()),
         _cfg(setup_cfg(model, custom_cfg)),
+        _rng(model.get_rng()),
         _space(model.get_space()),
         _grid(setup_grid()),
         _cells(setup_cells()),
@@ -116,6 +123,7 @@ public:
     :
         _log(model.get_logger()),
         _cfg(setup_cfg(model, custom_cfg)),
+        _rng(model.get_rng()),
         _space(model.get_space()),
         _grid(setup_grid()),
         _cells(setup_cells(initial_state)),
@@ -429,7 +437,7 @@ private:
       *         or the one provided by the model this CellManager belongs to
       */
     DataIO::Config setup_cfg(Model& model, const DataIO::Config& custom_cfg) {
-        auto cfg = model.get_cfg();
+        DataIO::Config cfg;
 
         if (custom_cfg.size() > 0) {
             _log->debug("Using custom config for cell manager setup ...");
@@ -438,6 +446,14 @@ private:
         else {
             _log->debug("Using '{}' model's configuration for cell manager "
                         "setup ... ", model.get_name());
+            
+            if (not model.get_cfg()["cell_manager"]) {
+                throw std::invalid_argument("Missing config entry "
+                    "'cell_manager' in model configuration! Either specify "
+                    "that key or pass a custom configuration node to the "
+                    "CellManager constructor.");
+            }
+            cfg = model.get_cfg()["cell_manager"];
         }
         return cfg;
     }
@@ -481,8 +497,7 @@ private:
         }
     }
 
-
-    /// Set up the cells container
+    /// Set up the cells container using an explicitly passed initial state
     CellContainer<Cell> setup_cells(const CellStateType initial_state) {
         CellContainer<Cell> cont;
 
@@ -498,72 +513,96 @@ private:
         return cont;
     }
 
-
-    /// Set up cells container via initial state from config or default constr
-    /** \detail This function creates an initial state object and then passes it
-      *         over to setup_cells(initial_state). It checks whether the
-      *         CellStateType is constructible via a config node and if the
-      *         config entries to construct it are available. It can fall back
-      *         to try the default constructor to construct the object. If both
-      *         are not possible or the configuration was invalid, a run time
-      *         error message is emitted.
+    /// Set up cells container via config or default constructor
+    /** \detail If no explicit initial state is given, this setup function is
+      *         called.
+      *         There are three modes: If the \ref CellTraits are set such that
+      *         the default constructor of the cell state is to be used, that
+      *         constructor is required and is called for each cell.
+      *         Otherwise, the CellStateType needs to be constructible via a
+      *         const DataIO::Config& argument, which gets passed the config
+      *         entry 'cell_params' from the CellManager's configuration. If a
+      *         constructor with the signature
+      *         (const DataIO::Config&, const std::shared_ptr<RNG>&) is
+      *         supported, that constructor is called instead.
+      *
+      * \note   If the constructor for the cell state has an RNG available
+      *         it is called anew for _each_ cell; otherwise, an initial state
+      *         is constructed _once_ and used for all cells.
       */
     CellContainer<Cell> setup_cells() {
-        // Find out the cell initialization mode
-        if (not _cfg["cell_initialize_from"]) {
-            throw std::invalid_argument("Missing required configuration key "
-                "'cell_initialize_from' for setting up cells via a "
-                "DataIO::Config& constructor or default constructor.");
+        // Distinguish depending on constructor.
+        // Is the default constructor to be used?
+        if constexpr (CellTraits::use_default_state_constructor) {
+            static_assert(std::is_default_constructible<CellStateType>(),
+                "CellTraits were configured to use the default constructor to "
+                "create cell states, but the CellStateType is not "
+                "default-constructible! Either implement such a constructor, "
+                "unset the flag in the CellTraits, or pass an explicit "
+                "initial cell state to the CellManager.");
+
+            _log->info("Setting up cells using default constructor ...");
+
+            // Create the initial state (same for all cells)
+            return setup_cells(CellStateType());
         }
-        const auto cell_init_from = as_str(_cfg["cell_initialize_from"]);
 
-        _log->info("Creating initial cell state using '{}' constructor ...",
-                   cell_init_from);
-
-        // Find out if the initial state is constructible via a config node and
-        // setup the cells with that information, if configured to do so.
-        if constexpr (std::is_constructible<CellStateType, DataIO::Config&>()){
-            // Find out if this constructor was set to be used
-            if (cell_init_from == "config") {
-                // Yes. Should now check if the required config parameters were
-                // also provided and add helpful error message
-                if (not _cfg["cell_initial_state"]) {
-                    throw std::invalid_argument("Was configured to create the "
-                        "initial cell state from a config node but a node "
-                        "with the key 'cell_initial_state' was not provided!");
-                }
-
-                // Everything ok. Create state object and pass it on ...
-                return setup_cells(CellStateType(_cfg["cell_initial_state"]));
+        // Is there a constructor available that allows passing the RNG?
+        else if constexpr (std::is_constructible<CellStateType,
+                                                const DataIO::Config&,
+                                                const std::shared_ptr<RNG>&>())
+        {
+            _log->info("Setting up cells using config constructor (with RNG) "
+                       "...");
+            
+            // Extract the configuration parameter
+            if (not _cfg["cell_params"]) {
+                throw std::invalid_argument("CellManager is missing the "
+                    "configuration entry 'cell_params' to set up the cells' "
+                    "initial states!");
             }
-            // else: do not return but continue with the rest of the function,
-            // i.e. trying the other constructors
-        }
-        
-        // Either not Config-constructible or not configured to do so.
+            const auto cell_params = _cfg["cell_params"];
+            
+            // The cell container to be populated
+            CellContainer<Cell> cont;
 
-        // TODO could add a case here where the cell state constructor takes
-        //      care of setting up each _individual_ cell such that cells can
-        //      have varying initial states.
-
-        // Last resort: Can and should the default constructor be used?
-        if constexpr (std::is_default_constructible<CellStateType>()) {
-            if (cell_init_from == "default") {
-                return setup_cells(CellStateType{});
+            // Populate the container, creating the cell state anew each time
+            for (IndexType i=0; i<_grid->num_cells(); i++) {
+                cont.emplace_back(
+                    std::make_shared<Cell>(i, CellStateType(cell_params, _rng))
+                );
             }
+            // Done. Shrink it.
+            cont.shrink_to_fit();
+            _log->info("Populated cell container with {:d} cells.",
+                       cont.size());
+            return cont;
         }
-        
-        // If we reached this point, construction does not work.
-        throw std::invalid_argument("No valid constructor for the cells' "
-            "initial state was available! Check that the config parameter "
-            "'cell_initialize_from' is valid (was: '" + cell_init_from + "', "
-            "may be 'config' or 'default') and make sure CellTraits::State is "
-            "constructible via the chosen way: "
-            "This requires either `const Utopia::DataIO::Config&` as argument "
-            "or being default-constructible, respectively. Alternatively, "
-            "pass the initial state directly to the CellManager constructor.");
+
+        // As default, require a Config constructor
+        else {
+            static_assert(std::is_constructible<CellStateType,
+                                                const DataIO::Config&>(),
+                "CellManager::CellStateType needs to be constructible using "
+                "const DataIO::Config& as only argument. Either implement "
+                "such a constructor, pass an explicit initial cell state to "
+                "the CellManager, or set the CellTraits such that a default "
+                "constructor is to be used.");
+
+            _log->info("Setting up cells using config constructor ...");
+            
+            // Extract the configuration parameter
+            if (not _cfg["cell_params"]) {
+                throw std::invalid_argument("CellManager is missing the "
+                    "configuration entry 'cell_params' to set up the cells' "
+                    "initial states!");
+            }
+
+            // Create the initial state (same for all cells)
+            return setup_cells(CellStateType(_cfg["cell_params"]));
+        }
+        // This point is never reached.
     }
-
 
     /// Setup the neighborhood functions using config entries
     void setup_nb_funcs() {
@@ -574,6 +613,7 @@ private:
             return;
         }
         // else: Use empty.
+
         _log->debug("No neighborhood configuration given; using empty.");
         select_neighborhood(NBMode::empty);
     }

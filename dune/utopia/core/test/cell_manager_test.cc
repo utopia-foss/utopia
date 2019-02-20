@@ -1,5 +1,6 @@
 #include <cassert>
 #include <iostream>
+#include <random>
 
 #include <dune/utopia/core/logging.hh>
 #include <dune/utopia/data_io/cfg_utils.hh>
@@ -12,6 +13,7 @@
 using Utopia::DataIO::Config;
 using Utopia::CellManager;
 using Utopia::NBMode;
+using Utopia::UpdateMode;
 
 
 /// A cell state definition that is default-constructible
@@ -33,6 +35,25 @@ struct CellStateCC {
         a_string(Utopia::as_str(cfg["a_string"])),
         a_bool(Utopia::as_bool(cfg["a_bool"]))
     {}
+};
+
+/// A cell state definition that is config-constructible and has an RNG
+struct CellStateRC {
+    double a_double;
+    std::string a_string;
+    bool a_bool;
+
+    template<class RNG>
+    CellStateRC(const Config& cfg, const std::shared_ptr<RNG>& rng)
+    :
+        a_double(Utopia::as_double(cfg["a_double"])),
+        a_string(Utopia::as_str(cfg["a_string"])),
+        a_bool(Utopia::as_bool(cfg["a_bool"]))
+    {
+        // Do something with the rng
+        std::uniform_real_distribution<double> dist(0., a_double);
+        a_bool = dist(*rng);
+    }
 };
 
 /// A cell state definition that is only explicitly constructible
@@ -62,17 +83,22 @@ struct TestLinks {
 // The second and third template parameters for sync and tags, respectively,
 // are optional.
 /// For a default-constructible cell state
-using CellTraitsDC = Utopia::CellTraits<CellStateDC>;
+using CellTraitsDC = Utopia::CellTraits<CellStateDC, UpdateMode::sync, true>;
 
 /// For a config-constructible cell state
-using CellTraitsCC = Utopia::CellTraits<CellStateCC>;
+using CellTraitsCC = Utopia::CellTraits<CellStateCC, UpdateMode::sync>;
+
+/// For a config-constructible cell state (with RNG) 
+using CellTraitsRC = Utopia::CellTraits<CellStateCC, UpdateMode::sync>;
 
 /// For an explicitly-constructible cell state
-using CellTraitsEC = Utopia::CellTraits<CellStateEC>;
-
+using CellTraitsEC = Utopia::CellTraits<CellStateEC, UpdateMode::sync>;
 
 /// Cell traits with custom links
-using CellTraitsCL = Utopia::CellTraits<CellStateDC, false, Utopia::EmptyTag,
+using CellTraitsCL = Utopia::CellTraits<CellStateDC,
+                                        UpdateMode::sync,
+                                        true,    // use default constructor
+                                        Utopia::EmptyTag,
                                         TestLinks>;
 
 
@@ -83,9 +109,11 @@ public:
     // -- Members -- //
     using Space = Utopia::DefaultSpace;
     using CellStateType = typename CellTraits::State;
+    using RNG = std::mt19937;
 
     const std::string _name;
     const Config _cfg;
+    const std::shared_ptr<RNG> _rng;
     std::shared_ptr<spdlog::logger> _log;
 
     Space _space;
@@ -99,6 +127,7 @@ public:
     :
         _name(model_name),
         _cfg(cfg),
+        _rng(std::make_shared<RNG>(42)),
         _log(setup_logger(model_name)),
         _space(setup_space()),
         _cm(*this)
@@ -110,6 +139,7 @@ public:
     :
         _name(model_name),
         _cfg(cfg),
+        _rng(std::make_shared<RNG>(42)),
         _log(setup_logger(model_name)),
         _space(setup_space()),
         _cm(*this, cell_initial_state)
@@ -157,6 +187,11 @@ public:
         return _cfg;
     }
 
+    /// Return the config node of this model
+    std::shared_ptr<RNG> get_rng() const {
+        return _rng;
+    }
+
     /// Return the name of this model instance
     std::string get_name() const {
         return _name;
@@ -185,6 +220,12 @@ int main(int, char *[]) {
         // Initialize the mock model with config-constructible cell type
         std::cout << "... DataIO::Config-constructible state" << std::endl;
         MockModel<CellTraitsCC> mm_cc("mm_cc", cfg["config"]);
+        std::cout << "Success." << std::endl << std::endl;
+        
+        // Initialize the mock model with config-constructible cell type
+        std::cout << "... DataIO::Config-constructible state (with RNG)"
+                  << std::endl;
+        MockModel<CellTraitsRC> mm_rc("mm_rc", cfg["config_with_RNG"]);
         std::cout << "Success." << std::endl << std::endl;
         
         // Initialize the mock model with config-constructible cell type
@@ -261,7 +302,7 @@ int main(int, char *[]) {
                 MockModel<CellTraitsEC> mm_ec("missing_grid_cfg",
                                               cfg["missing_grid_cfg"],
                                               initial_state);
-            }, "Missing entry 'grid' in the config"));
+            }, "Missing config entry 'cell_manager' in model configuration"));
 
         assert(check_error_message<std::invalid_argument>(
             "missing_grid_cfg2",
@@ -288,32 +329,11 @@ int main(int, char *[]) {
             }, "Invalid value for grid 'structure' argument: 'not_a_valid_"));
 
         assert(check_error_message<std::invalid_argument>(
-            "missing_cell_init1",
+            "missing_cell_params",
             [&](){
-                MockModel<CellTraitsCC> mm_cc("missing_cell_init1",
-                                              cfg["missing_cell_init1"]);
-            }, "Missing required configuration key 'cell_initialize_from'"));
-
-        assert(check_error_message<std::invalid_argument>(
-            "bad_cell_init1",
-            [&](){
-                MockModel<CellTraitsCC> mm_cc("bad_cell_init1",
-                                              cfg["bad_cell_init1"]);
-            }, "No valid constructor for the cells' initial state"));
-
-        assert(check_error_message<std::invalid_argument>(
-            "bad_cell_init2",
-            [&](){
-                MockModel<CellTraitsCC> mm_cc("bad_cell_init2",
-                                              cfg["bad_cell_init2"]);
-            }, "No valid constructor for the cells' initial state"));
-
-        assert(check_error_message<std::invalid_argument>(
-            "bad_cell_init3",
-            [&](){
-                MockModel<CellTraitsCC> mm_cc("bad_cell_init3",
-                                              cfg["bad_cell_init3"]);
-            }, "from a config node but a node with the key 'cell_initial_"));
+                MockModel<CellTraitsCC> mm_cc("missing_cell_params",
+                                              cfg["missing_cell_params"]);
+            }, "missing the configuration entry 'cell_params' to set up"));
         
         std::cout << "Success." << std::endl << std::endl;
 

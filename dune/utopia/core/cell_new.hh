@@ -20,11 +20,13 @@ namespace Utopia {
  * \ref Utopia::EntityTraits
  */
 template<typename StateType, 
-         bool is_sync=true, 
+         UpdateMode update_mode,
+         bool use_def_state_constr=false,
          typename CellTags=EmptyTag,
          template<class> class CustomLinkContainers=NoCustomLinks>
 using CellTraits = EntityTraits<StateType, 
-                                is_sync, 
+                                update_mode,
+                                use_def_state_constr,
                                 CellTags, 
                                 CustomLinkContainers>;
 
@@ -46,7 +48,6 @@ public:
     /// The type of the state
     using State = typename Traits::State;
 
-    // -- Constructors -- //
     /// Construct a cell
     __Cell(const IndexType id, const State initial_state)
     :

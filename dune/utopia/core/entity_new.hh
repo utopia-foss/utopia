@@ -24,9 +24,13 @@ template<typename EntityContainerType>
 struct NoCustomLinks {};
 
 
-/// The entity traits struct gathers types to be used for specializing an Entity
-/** \tparam  StateType    Type of the entities' state container
-  * \tparam  is_sync      Whether the entities should be synchronous
+/// The entity traits struct gathers types to be used for specializing an entity
+/** \tparam  StateType    Type of the entitys' state container
+  * \tparam  update_mode  The update mode of the entitys, sync or async
+  * \tparam  use_def_state_constr   Whether to use the default constructor to
+  *                       construct the entity's state. If false (default), a
+  *                       constructor with DataIO::Config& as argument has to
+  *                       be implemented for StateType.
   * \tparam  Tags         Custom entity tags
   * \tparam  CustomLinkContainers  Template template parameter to specify the
   *                       types of custom links. This construct is specialized
@@ -37,15 +41,19 @@ struct NoCustomLinks {};
   *                       containers of the objects you want to link to.
   */
 template<typename StateType,
-         bool is_sync=true,
+         UpdateMode update_mode,
+         bool use_def_state_constr=false,
          typename EntityTags=EmptyTag,
          template<class> class CustomLinkContainers=NoCustomLinks>
 struct EntityTraits {
-    /// Type of the entities' state container
+    /// Type of the entitys' state container
     using State = StateType;
 
-    /// Whether the entities should be synchronous
-    static constexpr bool sync = is_sync;
+    /// Whether the entitys should be synchronously updated
+    static constexpr bool sync = static_cast<bool>(update_mode);
+
+    /// Whether to use the default constructor for constructing a entity state
+    static constexpr bool use_default_state_constructor = use_def_state_constr;
 
     /// Custom entity tags
     using Tags = EntityTags;
