@@ -16,14 +16,14 @@ public:
     /// The type of this AgentManager
     using Self = AgentManager<AgentTraits, Model>;
 
+    /// The type of the space
+    using Space = typename Model::Space;
+
     /// The type of the managed agents
-    using Agent = __Agent<AgentTraits>; // NOTE Use Agent eventually
+    using Agent = __Agent<AgentTraits, Space>; // NOTE Use Agent eventually
 
     /// The type of the agent state
     using AgentStateType = typename AgentTraits::State;
-
-    /// The type of the space
-    using Space = typename Model::Space;
 
     /// The dimensionality of the space
     static constexpr DimType dim = Space::dim;
@@ -61,7 +61,7 @@ private:
     IndexType _id_counter;
 
     /// The move_to function that will be used for moving agents
-    const MoveFunc _mv_func;
+    MoveFunc _move_to_func;
 
 
 public:
@@ -76,7 +76,7 @@ public:
         _space(model.get_space()),
         _agents(setup_agents()),
         _id_counter(0),
-        _mv_func(setup_mv_func())
+        _move_to_func(setup_move_to_func())
     {
         _log->info("AgentManager is all set up.");
     }
@@ -92,7 +92,7 @@ public:
         _space(model.get_space()),
         _agents(setup_agents()),
         _id_counter(0),
-        _mv_func(setup_mv_func())
+        _move_to_func(setup_move_to_func())
     {
         _log->info("AgentManager is all set up.");
     }
@@ -108,12 +108,48 @@ public:
         return _agents;
     }
 
+    /// Return the ID counter
     IndexType id_counter () const {
         return _id_counter;
     }
 
     // -- Public interface -----------------------------------------------------
-    // ...
+    /// Move an agent to a new position in the space
+    void move_to(const std::shared_ptr<Agent>& agent, const SpaceVec& pos){
+        _move_to_func(*agent, pos);
+    }
+
+    /// Move an agent by a position vector
+    /** \detail The agent's new position is the vector sum of the old position
+     *          vector and the move_pos vector. Thus, the movement is relative
+     *          to the current position.
+     */
+    void move_by(const std::shared_ptr<Agent>& agent, const SpaceVec& pos_vec){
+        _move_to_func(*agent, agent->position() + pos_vec);
+    }
+
+    /// Update the agents
+    /** \detail This function is needed in the case of synchroneous update.
+     *          It updates the state and position from the agent's state
+     *          and position cache varibles.
+     * 
+     * \note In the case of asynchroneous agent update this function will not 
+     *       do anything because states and positions are not cached.
+     *       There is no need to update these agent traits.
+     */
+    void update_agents(){
+        if constexpr (sync == UpdateMode::sync){
+            // Do nothing because there is no cache variable
+            return;
+        }
+        else{
+            // Go through all agents and update them
+            for (const auto& agent : _agents){
+                agent->update();
+            }
+        }
+    }
+
 
 private:
     // -- Helper functions -----------------------------------------------------
@@ -162,7 +198,7 @@ private:
             // Increase the id count
             ++_id_counter;
         }
-        
+
         return agents;
     }
 
@@ -242,39 +278,39 @@ private:
     }
 
 
-    MoveFunc setup_mv_func(){
+    /// Setup the move_to function, which changes an agents position in space
+    /** \detail The function that is used to move an agent to a new position in
+     *          space depends on whether the space is periodic or not.
+     *          In the case of a periodic space the position is automatically
+     *          mapped into space again across the borders. For a nonperiodic
+     *          space a position outside of the borders will throw an error.
+     * 
+     * \note The new agent position is either set directly in the case of
+     *       synchroneous update or set in the cache variable pos_new for
+     *       asynchroneous update. In the latter case, you need to call
+     *       the update method in the AgentManager such that the new position
+     *       is actually set.
+     */
+    MoveFunc setup_move_to_func(){
         // periodic
         if (_space->periodic == true) {
-            // synchronoeous update
-            if constexpr (sync == UpdateMode::sync){
-                return [](const Agent& agent, const SpaceVec& pos){
-                    // Implement
-                };
-            }
-            // asynchroneous update
-            else{
-                return [](const Agent& agent, const SpaceVec& pos){
-                    // Implement
-                };
-            }
+            return [this](const Agent& agent, const SpaceVec& pos){
+                // Set the new agent position
+                agent.set_pos(this->_space->map_into_space(pos));
+            };
         }
 
         // nonperiodic
         else{
-            if constexpr (sync == UpdateMode::sync){
-                return [](const Agent& agent, const SpaceVec& pos){
-                    // Implement
-                };
-            }
-            // asynchroneous update
-            else{
-                return [](const Agent& agent, const SpaceVec& pos){
-                    // Implement
-                };
-            }
+            return [this](const Agent& agent, const SpaceVec& pos){
+                // Check that the position is contained in the space
+                this->_space->contains(pos);
+
+                // Set the new agent position
+                agent.set_pos(pos);
+            };
         }
     }
-
 };
 
 // end group AgentManager
