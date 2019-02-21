@@ -84,13 +84,14 @@ public:
 
     AgentManager(Model& model,
                  const AgentStateType initial_state,
+                 const IndexType num_agents,
                  const DataIO::Config& custom_cfg = {})
     :
         _log(model.get_logger()),
         _cfg(setup_cfg(model, custom_cfg)),
         _rng(model.get_rng()),
         _space(model.get_space()),
-        _agents(setup_agents()),
+        _agents(setup_agents(initial_state, num_agents)),
         _id_counter(0),
         _move_to_func(setup_move_to_func())
     {
