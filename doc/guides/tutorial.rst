@@ -11,7 +11,7 @@ You can also use this tutorial as a reference guide, in which you can look up ho
 
 This requires that you already installed *Utopia* as described in the :doc:`README <../readme>`. If you have not done so already, please do so now.
 
-Also note, that this guide does not go into how building your own model in *Utopia* works; for that please refer to the :doc:`Beginner's Guide <beginners-guide>`.
+Also note, that this guide does not go into how building your own model in *Utopia* works; for that please refer to :doc:`how-to-build-a-model`.
 Before you start building your model, however, you should have familiarized yourself with the core concepts of *Utopia*, as covered by this tutorial.
 
 So far for an introduction. Let's dive in! 🤓

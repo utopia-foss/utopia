@@ -1,14 +1,24 @@
 
-A Beginner's Guide for Setting Up a New Model
-=============================================
+How to Implement Your Own Model in Utopia
+=========================================
 
-This is the beginner's guide for creating a new model in *Utopia*.
+After having been through the :doc:`README <../README>` and the :doc:`tutorial <tutorial>`, this guide is for creating a new model in *Utopia*.
 
 If you go through all the steps, you will end up with a model that can profit from all *Utopia* features and can do ... basically nothing interesting yet.
 It is a starting point for your own expedition in the *Utopia* model world.
 You will be the one who afterwards defines the rules, the entities etc. of this world.
 
-But before this fun part can start, the framework needs to be set up... To avoid problems, go through the following sections from top to bottom.
+To that end, there are two models supplied that can be used as a basis for new models: the so-called ``CopyMe`` models. Use those for 
+
+    * ``CopyMe``: A basic Cellular Automaton model.
+        * Already includes the ``CellManager``.
+        * Recommended if you want to work with a Cellular Automaton
+    * ``CopyMeBare``: The bare basics. Really.
+        * Recommended if you do not need a Cellular Automaton
+
+You should now decide with which model you want to start. If you can't decide, just use the ``CopyMe`` model. If you go with a different model, replace all the mentions of ``CopyMe`` below with the name of the model of your choice.
+
+Let's get the infrastructure set up! To avoid problems, go through the following sections from top to bottom.
 
 .. note::
 
@@ -26,7 +36,11 @@ Note that there is also a ``CopyMeBare`` model; it includes *only the bare basic
 2. Copy the ``CopyMe`` directory and paste it in the same directory.
 3. Rename the copied directory to ``MyFancyModel`` (or rather your chosen name).
 
-  - A remark concerning the naming convention: Your model name should consist of words that start with Capital Letters and are ``DirectlyConcatenatedWithoutSeparatingSymbols``.
+.. note::
+
+  A remark concerning the naming convention: Your model name should consist of words that start with Capital Letters and are ``DirectlyConcatenatedWithoutSeparatingSymbols``.
+  Also, you need not include the ``Model`` string into your name, e.g.: you should name your model ``ForestFire`` rather than ``ForestFireModel``.
+  (So... ``MyFancyModel`` is actually not the best example ;))
 
 4. Rename all the files inside of the newly created directory such that all occurrences of ``CopyMe`` are replaced by ``MyFancyModel``.
 
@@ -51,7 +65,6 @@ Note that there is also a ``CopyMeBare`` model; it includes *only the bare basic
   - Throughout the file, replace all ``COPYME``\ 's by ``MYFANCYMODEL``\ 's.
 
 It's time for a little check if everything works as desired. For that, follow the following steps:
-
 
 8. Enter the ``build-cmake`` directory and run ``cmake ..``
 9. Check that the CMake log contains ``Registered model target: MyFancyModel``

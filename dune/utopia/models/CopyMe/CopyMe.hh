@@ -135,8 +135,8 @@ private:
     
     // .. Datasets ............................................................
     // NOTE They should be named '_dset_<name>', where <name> is the
-    //      dataset's actual name as set in its constructor. Ideally, do not
-    //      hide them inside a struct ...
+    //      dataset's actual name as set in its constructor. If you are using
+    //      data groups, prefix them with _dgrp_<groupname>
     /// A dataset for storing all cells' some_state
     std::shared_ptr<DataSet> _dset_some_state;
 
@@ -191,6 +191,10 @@ public:
 
             return state;
         }, _cm.cells());
+        // NOTE Compare this to the apply_rule calls in the perform_step method
+        //      where a _stored_ lambda function is passed to it. For the setup
+        //      done here, the function is only used once; thus, it makes more
+        //      sense to just use a temporary lambda.
         this->_log->debug("VIP cells set up.");
 
         // Initialization should be finished here.
