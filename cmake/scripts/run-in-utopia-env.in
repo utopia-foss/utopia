@@ -1,0 +1,4 @@
+#!@BASH@
+
+source @UTOPIA_ENV_DIR@/bin/activate
+"$@"

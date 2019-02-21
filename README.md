@@ -64,14 +64,14 @@ __Ubuntu:__
     apt update
     apt install cmake doxygen gcc g++ gfortran git libarmadillo-dev \
                 libboost-dev libhdf5-dev libyaml-cpp-dev libfftw3-dev \
-                pkg-config python3-dev python3-pip
+                pkg-config python3-dev python3-pip python3-venv
 
 _Note:_ You will _probably_ need administrator rights on Ubuntu. ([`sudo`, anyone?](https://xkcd.com/149/))
 
 ##### 6 — Configure and build
 Configure and build DUNE and Utopia by executing the `dunecontrol` script:
 
-    CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=Release -DDUNE_PYTHON_VIRTUALENV_SETUP=True -DDUNE_PYTHON_ALLOW_GET_PIP=True" ./dune-common/bin/dunecontrol --module=utopia all
+    CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=Release" ./dune-common/bin/dunecontrol --module=utopia all
 
 Afterwards, reconfiguring and rebuilding can also be done locally, instead of calling `dunecontrol`: Enter the `utopia/build-cmake` directory, and call `cmake ..` or `make` directly.
 
@@ -88,7 +88,7 @@ library, append the following variable (without the comments!) to the
 ##### 7 — Run a model :tada:
 Now, you should be able to run a utopia model:
 
-    ./build-cmake/run-in-dune-env utopia run dummy
+    ./build-cmake/run-in-utopia-env utopia run dummy
 
 For more information on how to use the command line interface (and a prettier command :speak_no_evil:), see the [information for users](#how-to-run-a-model).
 
@@ -102,7 +102,7 @@ For more information on how to use the command line interface (and a prettier co
     Alternatively, you can manually install the Python dependencies into the
     virtual environment that DUNE creates:
 
-        ./build-cmake/run-in-dune-env pip install git+https://...
+        ./build-cmake/run-in-utopia-env pip install git+https://...
 
     The clone URLs can be found by following the links in the
     [dependency table](#dependencies). Note that deleting the build
@@ -184,7 +184,7 @@ To conveniently work with the frontend, you should thus enter the virtual enviro
 
     source ./utopia/build-cmake/activate
 
-Now, your shell should be prefixed with `(dune-env)`. All the following should take place inside this virtual environment.
+Now, your shell should be prefixed with `(utopia-env)`. All the following should take place inside this virtual environment.
 
 The basic command to run the `SomeModel` model is 
 
