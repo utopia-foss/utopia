@@ -20,7 +20,8 @@ if (NOT TARGET armadillo)
 endif()
 
 # include Utopia macros
-include(PythonInstallPackageRemote)
+include(UtopiaEnv)
 include(UtopiaAddModel)
 include(UtopiaAddModelTest)
 include(UtopiaGenerateModelInfo)
+include(UtopiaPython)

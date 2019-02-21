@@ -11,9 +11,7 @@ variables:
   CPUS_BUILD: 4
 
   # Build flags
-  CONFIG_FLAGS:
-      -DDUNE_PYTHON_VIRTUALENV_SETUP=True
-      -DDUNE_PYTHON_ALLOW_GET_PIP=True
+  # CONFIG_FLAGS:
   MAKE_FLAGS_BUILD: -j$CPUS_BUILD
 
 
@@ -23,7 +21,7 @@ variables:
 
   # The different segments of the resulting test image tag
   BASE_IMAGE_NAME: ccees/dune4utopia
-  IMAGE_VERSION: "2.1"
+  IMAGE_VERSION: "3.0"
   TEST_IMAGE: "${BASE_IMAGE_NAME}:img-v${IMAGE_VERSION}"
   # NOTE Do not forget to increment the IMAGE_VERSION when changes to the
   #      docker file are introduced.
@@ -37,8 +35,8 @@ variables:
   # ... for certain commands
   DUNE_CONTROL_PATH: /opt/dune:$CI_PROJECT_DIR  # such that DUNE finds Utopia
   DUNECTRL: ./dune-common/bin/dunecontrol
-  RUN_IN_DUNE_ENV: $CI_PROJECT_DIR/build-cmake/run-in-dune-env
-  ENTER_DUNE_ENV: source $CI_PROJECT_DIR/build-cmake/activate
+  RUN_IN_UTOPIA_ENV: $CI_PROJECT_DIR/build-cmake/run-in-utopia-env
+  ENTER_UTOPIA_ENV: source $CI_PROJECT_DIR/build-cmake/activate
 
 
   # Load submodules and submodules of submodules by default
@@ -248,7 +246,7 @@ test:models:
     #
     # Also test each model via the CLI.
     # Need to enter the virtual env first
-    - $ENTER_DUNE_ENV
+    - $ENTER_UTOPIA_ENV
     #
     # First, the test and benchmark models:
     - utopia run dummy --debug
@@ -283,7 +281,7 @@ test:cli:
   script:
     - $DUNECTRL --only=utopia configure
     # Now, enter the virtual environment and test the CLI
-    - $ENTER_DUNE_ENV
+    - $ENTER_UTOPIA_ENV
     #
     # Test deployment of user configuration
     - utopia config --deploy

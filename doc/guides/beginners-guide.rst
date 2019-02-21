@@ -65,7 +65,7 @@ It's time for a little check if everything works as desired. For that, follow th
   .. code-block:: bash
 
      cd build-cmake
-     source ./activate
+     source activate
      utopia run MyFancyModel
 
 Hoping that everything went well so far, let's continue with setting up the testing and plotting framework...
