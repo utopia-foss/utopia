@@ -162,20 +162,27 @@ private:
     /** \detail This function determines whether to use a custom configuration
       *         or the one provided by the model this AgentManager belongs to
       */
-    DataIO::Config setup_cfg(Model& model, const DataIO::Config& custom_cfg)
-    {
-        auto cfg = model.get_cfg();
+    DataIO::Config setup_cfg(Model& model, const DataIO::Config& custom_cfg) {
+        DataIO::Config cfg;
 
         if (custom_cfg.size() > 0) {
-            _log->debug("Using custom config for cell manager setup ...");
+            _log->debug("Using custom config for agent manager setup ...");
             cfg = custom_cfg;
         }
         else {
-            _log->debug("Using '{}' model's configuration for cell manager "
+            _log->debug("Using '{}' model's configuration for agent manager "
                         "setup ... ", model.get_name());
+            
+            if (not model.get_cfg()["agent_manager"]) {
+                throw std::invalid_argument("Missing config entry "
+                    "'agent_manager' in model configuration! Either specify "
+                    "that key or pass a custom configuration node to the "
+                    "AgentManager constructor.");
+            }
+            cfg = model.get_cfg()["agent_manager"];
         }
-        return cfg;        
-    }
+        return cfg;
+    }    
 
 
     /// Set up the agents container with initial states
@@ -204,78 +211,96 @@ private:
     }
 
 
-    /// Set up agents container via initial state from config or default constr
-    /** \detail This function creates an initial state object and then passes it
-      *         over to setup_agents(initial_state, num_agents). It checks 
-      *         whether the AgentStateType is constructible via a config node 
-      *         and if the config entries to construct it are available. 
-      *         It can fall back to try the default constructor to construct 
-      *         the object. If both are not possible or the configuration 
-      *         was invalid, a run time error message is emitted.
-      */
     AgentContainer<Agent> setup_agents() {
-        // Find out the agent initialization mode
-        if (not _cfg["agent_initialize_from"]) {
-            throw std::invalid_argument("Missing required configuration key "
-                "'agent_initialize_from' for setting up agents via a "
-                "DataIO::Config& constructor or default constructor.");
+        // Distinguish depending on constructor.
+        // Is the default constructor to be used?
+        if constexpr (AgentTraits::use_default_state_constructor) {
+            static_assert(std::is_default_constructible<AgentStateType>(),
+                "AgentTraits were configured to use the default constructor to "
+                "create agent states, but the AgentStateType is not "
+                "default-constructible! Either implement such a constructor, "
+                "unset the flag in the AgentTraits, or pass an explicit "
+                "initial agent state to the AgentManager.");
+
+            _log->info("Setting up agents using default constructor ...");
+
+            // Create the initial state (same for all agents)
+            return setup_agent(AgentStateType());
         }
-        const auto agent_init_from = as_str(_cfg["agent_initialize_from"]);
 
-        _log->info("Creating initial agent state using '{}' constructor ...",
-                   agent_init_from);
-
-        // Find out if the initial state is constructible via a config node and
-        // setup the agents with that information, if configured to do so.
-        if constexpr (std::is_constructible<AgentStateType, DataIO::Config&>()){
-            // Find out if this constructor was set to be used
-            if (agent_init_from == "config") {
-                // Yes. Should now check if the required config parameters were
-                // also provided and add helpful error message
-                if (not _cfg["agent_initial_state"]) {
-                    throw std::invalid_argument("Was configured to create the "
-                        "initial agent state from a config node but a node "
-                        "with the key 'agent_initial_state' was not provided!");
-                }
-
-                // Extract the number of agents that need to be set up
-                if (not _cfg["agent_initial_number"]) {
-                    throw std::invalid_argument("Was configured to create the "
-                        "initial agents from a config node but a node "
-                        "with the key 'agent_initial_number' was not provided! "
-                        "The number of agents to create is not known!");
-                }
-
-                // Everything ok. Create state object and pass it on ...
-                return setup_agents(AgentStateType(_cfg["agent_initial_state"]),
-                                    as_<IndexType>(_cfg["agent_initial_number"]));
+        // Is there a constructor available that allows passing the RNG?
+        else if constexpr (std::is_constructible<AgentStateType,
+                                                const DataIO::Config&,
+                                                const std::shared_ptr<RNG>&>())
+        {
+            _log->info("Setting up agents using config constructor (with RNG) "
+                       "...");
+            
+            // Extract the configuration parameter
+            if (not _cfg["agent_params"]) {
+                throw std::invalid_argument("AgentManager is missing the "
+                    "configuration entry 'agent_params' to set up the agents' "
+                    "initial states!");
             }
-            // else: do not return but continue with the rest of the function,
-            // i.e. trying the other constructors
-        }
-        
-        // Either not Config-constructible or not configured to do so.
-
-        // TODO could add a case here where the agent state constructor takes
-        //      care of setting up each _individual_ agent such that agents can
-        //      have varying initial states.
-
-        // Last resort: Can and should the default constructor be used?
-        if constexpr (std::is_default_constructible<AgentStateType>()) {
-            if (agent_init_from == "default") {
-                return setup_agents(AgentStateType{}, 0);
+            const auto agent_params = _cfg["agent_params"];
+            
+            if (not _cfg["init_num_agents"]){
+                throw std::invalid_argument("AgentManager is missing the "
+                    "configuration entry 'init_num_agents' to set up the agents!" 
+                    );
             }
+            const auto init_num_agents = as_<std::size_t>(
+                                                _cfg["init_num_agents"]);
+
+            // The agent container to be populated
+            AgentContainer<Agent> cont;
+
+            // Populate the container, creating the agent state anew each time
+            for (IndexType i=0; i<init_num_agents; i++) {
+                cont.emplace_back(
+                    std::make_shared<Agent>(i, AgentStateType(agent_params, _rng))
+                );
+            }
+            // Done. Shrink it.
+            cont.shrink_to_fit();
+            _log->info("Populated agent container with {:d} agents.",
+                       cont.size());
+            return cont;
         }
-        
-        // If we reached this point, construction does not work.
-        throw std::invalid_argument("No valid constructor for the agents' "
-            "initial state was available! Check that the config parameter "
-            "'agent_initialize_from' is valid (was: '" + agent_init_from + "', "
-            "may be 'config' or 'default') and make sure AgentTraits::State is "
-            "constructible via the chosen way: "
-            "This requires either `const Utopia::DataIO::Config&` as argument "
-            "or being default-constructible, respectively. Alternatively, "
-            "pass the initial state directly to the AgentManager constructor.");
+
+        // As default, require a Config constructor
+        else {
+            static_assert(std::is_constructible<AgentStateType,
+                                                const DataIO::Config&>(),
+                "AgentManager::AgentStateType needs to be constructible using "
+                "const DataIO::Config& as only argument. Either implement "
+                "such a constructor, pass an explicit initial agent state to "
+                "the AgentManager, or set the AgentTraits such that a default "
+                "constructor is to be used.");
+
+            _log->info("Setting up agents using config constructor ...");
+            
+            // Extract the configuration parameter
+            if (not _cfg["agent_params"]) {
+                throw std::invalid_argument("AgentManager is missing the "
+                    "configuration entry 'agent_params' to set up the agents' "
+                    "initial states!");
+            }
+
+            if (not _cfg["init_num_agents"]){
+                throw std::invalid_argument("AgentManager is missing the "
+                    "configuration entry 'init_num_agents' to set up the agents!" 
+                    );
+            }
+            const auto init_num_agents = as_<std::size_t>(
+                                                _cfg["init_num_agents"]);
+
+
+            // Create the initial state (same for all agents)
+            return setup_agents(AgentStateType(_cfg["agent_params"]),
+                                init_num_agents);
+        }
+        // This point is never reached.
     }
 
 
