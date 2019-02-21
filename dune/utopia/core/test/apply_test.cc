@@ -123,13 +123,13 @@ int main(int, char* []) {
         );
 
         // Check that application of rule also works with temporary lambdas
-        Utopia::apply_rule([](const auto& a) {return 42;},
+        Utopia::apply_rule([](const auto&) {return 42;},
                            m_sync.cells());
-        Utopia::apply_rule([](const auto& a) { return 42; },
+        Utopia::apply_rule([](const auto&) { return 42; },
                            m_async.cells(), rng);
-        Utopia::apply_rule<true>([](const auto& a) { return 42; },
+        Utopia::apply_rule<true>([](const auto&) { return 42; },
                                  applicants, rng);
-        Utopia::apply_rule<false>([](const auto& a) {return 42;}, applicants);
+        Utopia::apply_rule<false>([](const auto&) {return 42;}, applicants);
 
         std::cout << "Total success." << std::endl << std::endl;
         return 0;
