@@ -67,6 +67,19 @@ private:
 public:
     // -- Constructors ---------------------------------------------------------
 
+    /// Construct an agent manager
+    /** \detail With the model available, the AgentManager can extract the
+      *         required information from the model without the need to pass
+      *         it explicitly. Furthermore, this constructor differs to the
+      *         one with the `initial_state` and `num_agents` parameters such 
+      *         that the way the initial state of the agents is determined can 
+      *         be controlled via the configuration.
+      * 
+      * \param  model       The model this AgentManager belongs to  
+      * \param  custom_cfg  A custom config node to use to use for grid and
+      *                     agent setup. If not given, the model's configuration
+      *                     is used to extract the required entries.
+     */
     AgentManager(Model& model,
                  const DataIO::Config& custom_cfg = {})
     :
@@ -81,7 +94,20 @@ public:
         _log->info("AgentManager is all set up.");
     }
 
-
+    /// 
+    /// Construct an agent manager
+    /** \detail The initial state of the agents and the number of agents are
+     *          explicitly passed to the constructor.
+      * 
+      * \param  model           The model this AgentManager belongs to  
+      * \param  initial_state   The initial state of the agents
+      * \param  num_agents      The number of agents that are created
+      *                         and initialized
+      * \param  custom_cfg      A custom config node to use to use for grid and
+      *                         agent setup. If not given, the model's 
+      *                         configuration is used to extract the required 
+      *                         entries.
+     */
     AgentManager(Model& model,
                  const AgentStateType initial_state,
                  const IndexType num_agents,
