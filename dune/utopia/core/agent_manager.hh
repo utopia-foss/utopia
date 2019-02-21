@@ -32,7 +32,7 @@ public:
     using SpaceVec = SpaceVecType<dim>;
 
     /// The type of the move function type
-    using MoveFunc = std::function<void(const Agent&, const SpaceVec&)>;
+    using MoveFunc = std::function<void(Agent&, const SpaceVec&)>;
 
     /// The random number generator type
     using RNG = typename Model::RNG;
@@ -294,7 +294,7 @@ private:
     MoveFunc setup_move_to_func(){
         // periodic
         if (_space->periodic == true) {
-            return [this](const Agent& agent, const SpaceVec& pos){
+            return [this](Agent& agent, const SpaceVec& pos){
                 // Set the new agent position
                 agent.set_pos(this->_space->map_into_space(pos));
             };
@@ -302,7 +302,7 @@ private:
 
         // nonperiodic
         else{
-            return [this](const Agent& agent, const SpaceVec& pos){
+            return [this](Agent& agent, const SpaceVec& pos){
                 // Check that the position is contained in the space
                 this->_space->contains(pos);
 

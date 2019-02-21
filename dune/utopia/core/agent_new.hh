@@ -74,10 +74,20 @@ public:
     :
         __Entity<Traits>(id, initial_state),
         _pos(initial_pos)    
-        {}
+    {}
+
+    __Agent(const IndexType id, const State initial_state)
+    :
+        __Entity<Traits>(id, initial_state),
+        _pos()    
+    {}
+
+
 protected:
     // set the position
-    void set_pos(Position pos) {_pos = pos;};
+    void set_pos(const Position& pos) {
+        _pos = pos;
+    };
 
 public:
     // get the position
@@ -88,7 +98,6 @@ public:
 
 
 /// Agent Specialisation for synchronous update
-/*
 template<typename Traits, typename Space>
 class __Agent<Traits, Space, typename std::enable_if_t<Traits::sync == true>>
 :
@@ -118,19 +127,35 @@ public:
             const Position& initial_pos)
     :
         __Entity<Traits>(id, initial_state),
-        _pos
+        _pos(initial_pos)
     {}
+
+    __Agent(const IndexType id, const State& initial_state)
+    :
+        __Entity<Traits>(id, initial_state),
+        _pos()
+    {}
+
 protected:
     // set the position
-    void set_pos(Position pos) {_pos = pos;};
+    void set_pos(const Position& pos) {
+        _pos_new = pos;
+    }
 
 public:
     // get the position
-    Position position() { return _pos;};
+    Position position() { 
+        return _pos;
+    }
 
     // update the position and the state 
-    void update ();  
+    void update () {
+        // Update the state as defined in the Entity class
+        __Entity<Traits>::update();
 
+        // update the position
+        _pos = _pos_new;
+    }
 };
 
 // end group AgentManager
