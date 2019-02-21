@@ -25,7 +25,7 @@ public:
     using Cell = __Cell<CellTraits>; // NOTE Use Cell eventually
 
     /// Type of the cell state
-    using CellStateType = typename CellTraits::State;
+    using CellState = typename CellTraits::State;
 
     /// The space type this cell manager maps to
     using Space = typename Model::Space;
@@ -44,6 +44,12 @@ public:
 
     /// Random number generator type
     using RNG = typename Model::RNG;
+
+    /// The type of a rule function acting on the cells of this cell manager
+    /** \detail This is a convenience type def that models can use to easily
+      *         have this type available.
+      */
+    using RuleFunc = typename std::function<CellState(const std::shared_ptr<Cell>&)>;
 
 
 private:
@@ -118,7 +124,7 @@ public:
       *                        entries.
       */
     CellManager (Model& model,
-                 const CellStateType initial_state,
+                 const CellState initial_state,
                  const DataIO::Config& custom_cfg = {})
     :
         _log(model.get_logger()),
@@ -498,7 +504,7 @@ private:
     }
 
     /// Set up the cells container using an explicitly passed initial state
-    CellContainer<Cell> setup_cells(const CellStateType initial_state) {
+    CellContainer<Cell> setup_cells(const CellState initial_state) {
         CellContainer<Cell> cont;
 
         // Construct all the cells
@@ -519,7 +525,7 @@ private:
       *         There are three modes: If the \ref CellTraits are set such that
       *         the default constructor of the cell state is to be used, that
       *         constructor is required and is called for each cell.
-      *         Otherwise, the CellStateType needs to be constructible via a
+      *         Otherwise, the CellState needs to be constructible via a
       *         const DataIO::Config& argument, which gets passed the config
       *         entry 'cell_params' from the CellManager's configuration. If a
       *         constructor with the signature
@@ -534,9 +540,9 @@ private:
         // Distinguish depending on constructor.
         // Is the default constructor to be used?
         if constexpr (CellTraits::use_default_state_constructor) {
-            static_assert(std::is_default_constructible<CellStateType>(),
+            static_assert(std::is_default_constructible<CellState>(),
                 "CellTraits were configured to use the default constructor to "
-                "create cell states, but the CellStateType is not "
+                "create cell states, but the CellState is not "
                 "default-constructible! Either implement such a constructor, "
                 "unset the flag in the CellTraits, or pass an explicit "
                 "initial cell state to the CellManager.");
@@ -544,13 +550,14 @@ private:
             _log->info("Setting up cells using default constructor ...");
 
             // Create the initial state (same for all cells)
-            return setup_cells(CellStateType());
+            return setup_cells(CellState());
         }
 
         // Is there a constructor available that allows passing the RNG?
-        else if constexpr (std::is_constructible<CellStateType,
-                                                const DataIO::Config&,
-                                                const std::shared_ptr<RNG>&>())
+        else if constexpr (std::is_constructible<CellState,
+                                                 const DataIO::Config&,
+                                                 const std::shared_ptr<RNG>&
+                                                 >())
         {
             _log->info("Setting up cells using config constructor (with RNG) "
                        "...");
@@ -569,7 +576,7 @@ private:
             // Populate the container, creating the cell state anew each time
             for (IndexType i=0; i<_grid->num_cells(); i++) {
                 cont.emplace_back(
-                    std::make_shared<Cell>(i, CellStateType(cell_params, _rng))
+                    std::make_shared<Cell>(i, CellState(cell_params, _rng))
                 );
             }
             // Done. Shrink it.
@@ -581,9 +588,10 @@ private:
 
         // As default, require a Config constructor
         else {
-            static_assert(std::is_constructible<CellStateType,
-                                                const DataIO::Config&>(),
-                "CellManager::CellStateType needs to be constructible using "
+            static_assert(std::is_constructible<CellState,
+                                                const DataIO::Config&
+                                                >(),
+                "CellManager::CellState needs to be constructible using "
                 "const DataIO::Config& as only argument. Either implement "
                 "such a constructor, pass an explicit initial cell state to "
                 "the CellManager, or set the CellTraits such that a default "
@@ -599,7 +607,7 @@ private:
             }
 
             // Create the initial state (same for all cells)
-            return setup_cells(CellStateType(_cfg["cell_params"]));
+            return setup_cells(CellState(_cfg["cell_params"]));
         }
         // This point is never reached.
     }

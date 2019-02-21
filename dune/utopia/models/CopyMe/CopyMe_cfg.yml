@@ -15,12 +15,33 @@
 # Furthermore, if including other models' parameters via the `!model` tag, make
 # sure that no circular includes occur.
 ---
-# Grid parameters
-grid_size: [21, 21]
-periodic: true          # false: cells at boundary have fewer neighbors
+# --- Space parameters
+# The physical space this model is embedded in
+space:
+  periodic: true
 
-# Initial state
-initial_state: init_0   # can be: init_0, init_1
+# --- CellManager and cell initialization
+cell_manager:
+  grid:
+    structure: square
+    resolution: 64      # in cells per unit length of physical space
 
-# some parameter
-some_parameter: 1.23456
+  neighborhood:
+    mode: Moore
+
+  # Cell initialization parameters
+  cell_params:
+    some_state: 3.14
+    some_trait: 42
+
+    # Use a random trait value between zero and `some_trait`
+    random_initial_trait: true
+
+# --- Other initialization parameters
+# Add pararmeters and their documentation here ...
+
+# -- Dynamics
+# Some parameter that controls some mechanism during some part of the dynamics
+some_parameter: 0.1
+
+# Add further pararmeters and their documentation here ...

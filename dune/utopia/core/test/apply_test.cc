@@ -1,7 +1,8 @@
+#include <cassert>
+
 #include <dune/utopia/base.hh>
 #include <dune/utopia/core/setup.hh>
 #include <dune/utopia/core/apply.hh>
-#include <cassert>
 
 template<class Manager>
 decltype(auto) get_rule_acc_neighbors_with_mngr (Manager& manager){
@@ -15,11 +16,9 @@ decltype(auto) get_rule_acc_neighbors_with_mngr (Manager& manager){
     return rule;
 }
 
-int main(int argc, char* argv[])
-{
-    try
-    {
-        Dune::MPIHelper::instance(argc, argv);
+int main(int, char* []) {
+    try {
+        std::cout << "Testing apply_rule..." << std::endl << std::endl;
 
         constexpr bool sync = true;
         constexpr bool async = false;
@@ -110,6 +109,7 @@ int main(int argc, char* argv[])
         decltype(agents) applicants;
         std::sample(agents.begin(), agents.end(),
             std::back_inserter(applicants), 10, rng);
+        
         auto rule_state_increment
             = []([[maybe_unused]] const auto agent){
             return 42;
@@ -122,12 +122,24 @@ int main(int argc, char* argv[])
             == 10
         );
 
+        // Check that application of rule also works with temporary lambdas
+        Utopia::apply_rule([](const auto&) {return 42;},
+                           m_sync.cells());
+        Utopia::apply_rule([](const auto&) { return 42; },
+                           m_async.cells(), rng);
+        Utopia::apply_rule<true>([](const auto&) { return 42; },
+                                 applicants, rng);
+        Utopia::apply_rule<false>([](const auto&) {return 42;}, applicants);
+
+        std::cout << "Total success." << std::endl << std::endl;
         return 0;
     }
-
-    catch (...)
-    {
-        std::cerr << "Exeception occured!" << std::endl;
+    catch (std::exception& e) {
+        std::cerr << "Exception occured: " << e.what() << std::endl;
+        return 1;
+    }
+    catch (...) {
+        std::cout << "Exception occurred!" << std::endl;
         return 1;
     }
 }
