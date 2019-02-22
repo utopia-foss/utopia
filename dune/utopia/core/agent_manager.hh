@@ -139,8 +139,14 @@ public:
 
     // -- Public interface -----------------------------------------------------
     /// Move an agent to a new position in the space
-    void move_to(const std::shared_ptr<Agent>& agent, const SpaceVec& pos){
+    void move_to(const std::shared_ptr<Agent>& agent, const SpaceVec& pos) const 
+    {
         _move_to_func(*agent, pos);
+    }
+
+    /// Move an agent to a new position in the space
+    void move_to(const Agent& agent, const SpaceVec& pos) const {
+        _move_to_func(agent, pos);
     }
 
     /// Move an agent by a position vector
@@ -150,6 +156,15 @@ public:
      */
     void move_by(const std::shared_ptr<Agent>& agent, const SpaceVec& pos_vec){
         _move_to_func(*agent, agent->position() + pos_vec);
+    }
+
+    /// Move an agent by a position vector
+    /** \detail The agent's new position is the vector sum of the old position
+     *          vector and the move_pos vector. Thus, the movement is relative
+     *          to the current position.
+     */
+    void move_by(const Agent& agent, const SpaceVec& pos_vec) const {
+        _move_to_func(agent, agent.position() + pos_vec);
     }
 
     /// Update the agents
