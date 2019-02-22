@@ -42,10 +42,10 @@ int main(int, char**) {
         // Check if the positions were set correctly
         std::cout << "Checking initial positions ..." << std::endl;
 
-        assert(agt_sync.position() == initial_pos);
-        assert(agt_sync.position_new() == initial_pos);
+        assert(all(agt_sync.position() == initial_pos));
+        assert(all(agt_sync.position_new() == initial_pos));
 
-        assert(agt_async.position() == initial_pos);
+        assert(all(agt_async.position() == initial_pos));
 
         std::cout << "Success." << std::endl;
 
