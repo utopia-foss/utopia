@@ -96,13 +96,11 @@ public:
 
     /// 
     /// Construct an agent manager
-    /** \detail The initial state of the agents and the number of agents are
-     *          explicitly passed to the constructor.
+    /** \detail The initial state of the agents is explicitly passed to the 
+      *         constructor.
       * 
       * \param  model           The model this AgentManager belongs to  
       * \param  initial_state   The initial state of the agents
-      * \param  num_agents      The number of agents that are created
-      *                         and initialized
       * \param  custom_cfg      A custom config node to use to use for grid and
       *                         agent setup. If not given, the model's 
       *                         configuration is used to extract the required 
@@ -110,14 +108,13 @@ public:
      */
     AgentManager(Model& model,
                  const AgentStateType initial_state,
-                 const IndexType num_agents,
                  const DataIO::Config& custom_cfg = {})
     :
         _log(model.get_logger()),
         _cfg(setup_cfg(model, custom_cfg)),
         _rng(model.get_rng()),
         _space(model.get_space()),
-        _agents(setup_agents(initial_state, num_agents)),
+        _agents(setup_agents(initial_state)),
         _id_counter(0),
         _move_to_func(setup_move_to_func())
     {
@@ -156,11 +153,11 @@ public:
     }
 
     /// Update the agents
-    /** \detail This function is needed in the case of synchroneous update.
+    /** \detail This function is needed in the case of synchronous update.
      *          It updates the state and position from the agent's state
-     *          and position cache varibles.
+     *          and position cache variables.
      * 
-     * \note In the case of asynchroneous agent update this function will not 
+     * \note In the case of asynchronous agent update this function will not 
      *       do anything because states and positions are not cached.
      *       There is no need to update these agent traits.
      */
@@ -213,21 +210,40 @@ private:
 
     /// Set up the agents container with initial states
     /** \detail This function creates a container with agents that get an
-     *          initial state.
+     *          initial state and are set up with a random position.
      * 
      * \param initial_state The initial state of the agents
      * \param num_agents The number of agents
      * \return AgentContainer<Agent> The agent container
      */
-    AgentContainer<Agent> setup_agents(const AgentStateType initial_state,
-                                       const IndexType num_agents)
+    AgentContainer<Agent> setup_agents(const AgentStateType initial_state)
     {
         AgentContainer<Agent> agents;
 
-        // Construct all the agents
+        // Create a distribution from which to sample the agent location
+        std::uniform_real_distribution<double> distr(0., 1.);
+
+        // Extract parameters from the configuration
+        if (not this->_cfg["init_num_agents"]){
+                throw std::invalid_argument("AgentManager is missing the "
+                    "configuration entry 'init_num_agents' to set up the agents!" 
+                    );
+            }
+            const auto num_agents = as_<std::size_t>(
+                                        this->_cfg["init_num_agents"]);
+
+        // Construct all the agents with incremented IDs, the initial state
+        // and a random position
         for (IndexType i=0; i<num_agents; ++i){
-            agents.emplace_back(std::make_shared<Agent>(_id_counter, 
-                                                        initial_state));
+            SpaceVec rel_pos = SpaceVec().imbue([this, &distr]()
+                                                {return distr(*this->_rng);});
+
+            const SpaceVec pos = this->_space->extent % rel_pos;
+            
+            agents.emplace_back(std::make_shared<Agent>(
+                                    _id_counter, 
+                                    initial_state,
+                                    pos));
 
             // Increase the id count
             ++_id_counter;
@@ -330,18 +346,8 @@ private:
                     "initial states!");
             }
 
-            if (not _cfg["init_num_agents"]){
-                throw std::invalid_argument("AgentManager is missing the "
-                    "configuration entry 'init_num_agents' to set up the agents!" 
-                    );
-            }
-            const auto init_num_agents = as_<std::size_t>(
-                                                _cfg["init_num_agents"]);
-
-
             // Create the initial state (same for all agents)
-            return setup_agents(AgentStateType(_cfg["agent_params"]),
-                                init_num_agents);
+            return setup_agents(AgentStateType(_cfg["agent_params"]));
         }
         // This point is never reached.
     }
@@ -355,8 +361,8 @@ private:
      *          space a position outside of the borders will throw an error.
      * 
      * \note The new agent position is either set directly in the case of
-     *       synchroneous update or set in the cache variable pos_new for
-     *       asynchroneous update. In the latter case, you need to call
+     *       synchronous update or set in the cache variable pos_new for
+     *       asynchronous update. In the latter case, you need to call
      *       the update method in the AgentManager such that the new position
      *       is actually set.
      */
