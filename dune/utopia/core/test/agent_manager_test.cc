@@ -73,18 +73,20 @@ int main(int, char *[]) {
         const auto mean_rel_pos = pos_acc / rel_positions.size();
         std::cout << "Mean relative agent position: " << std::endl
                   << mean_rel_pos;
-        assert(0.45 < mean_rel_pos[0] < 0.55);
+        assert((0.45 < mean_rel_pos[0])  and (mean_rel_pos[0] < 0.55));
 
         // ... as well as the standard deviation
         SpaceVec dev_acc({0., 0.});
         for (const auto& rp : rel_positions) {
             dev_acc += pow((rp - mean_rel_pos), 2);
         }
-        const auto std_rel_pos = sqrt(pos_acc / (rel_positions.size()-1));
+        const auto std_rel_pos = sqrt(dev_acc / (rel_positions.size()-1));
 
         std::cout << "Standard deviation of relative agent position: "
                   << std::endl << std_rel_pos;
-        assert(0.35 < std_rel_pos[0] < 0.5); // TODO Which value to use here?
+        assert((1./sqrt(12.) - 0.1 < std_rel_pos[0]) and 
+               (std_rel_pos[0] < 1./sqrt(12.) + 0.1));
+        // Note: The expected std of a uniform distribution is 1/sqrt(12)
 
         std::cout << "Correct." << std::endl << std::endl;
 
