@@ -23,7 +23,7 @@ public:
     using Agent = __Agent<AgentTraits, Space>; // NOTE Use Agent eventually
 
     /// The type of the agent state
-    using AgentStateType = typename AgentTraits::State;
+    using AgentState = typename AgentTraits::State;
 
     /// The dimensionality of the space
     static constexpr DimType dim = Space::dim;
@@ -107,7 +107,7 @@ public:
       *                         entries.
      */
     AgentManager(Model& model,
-                 const AgentStateType initial_state,
+                 const AgentState initial_state,
                  const DataIO::Config& custom_cfg = {})
     :
         _log(model.get_logger()),
@@ -216,7 +216,7 @@ private:
      * \param num_agents The number of agents
      * \return AgentContainer<Agent> The agent container
      */
-    AgentContainer<Agent> setup_agents(const AgentStateType initial_state)
+    AgentContainer<Agent> setup_agents(const AgentState initial_state)
     {
         AgentContainer<Agent> agents;
 
@@ -224,13 +224,13 @@ private:
         std::uniform_real_distribution<double> distr(0., 1.);
 
         // Extract parameters from the configuration
-        if (not this->_cfg["init_num_agents"]){
+        if (not this->_cfg["initial_num_agents"]){
                 throw std::invalid_argument("AgentManager is missing the "
-                    "configuration entry 'init_num_agents' to set up the agents!" 
+                    "configuration entry 'initial_num_agents' to set up the agents!" 
                     );
             }
             const auto num_agents = as_<std::size_t>(
-                                        this->_cfg["init_num_agents"]);
+                                        this->_cfg["initial_num_agents"]);
 
         // Construct all the agents with incremented IDs, the initial state
         // and a random position
@@ -259,7 +259,7 @@ private:
       *         There are three modes: If the \ref AgentTraits are set such that
       *         the default constructor of the agent state is to be used, that
       *         constructor is required and is called for each agent.
-      *         Otherwise, the AgentStateType needs to be constructible via a
+      *         Otherwise, the AgentState needs to be constructible via a
       *         const DataIO::Config& argument, which gets passed the config
       *         entry 'agent_params' from the AgentManager's configuration. If a
       *         constructor with the signature
@@ -274,9 +274,9 @@ private:
         // Distinguish depending on constructor.
         // Is the default constructor to be used?
         if constexpr (AgentTraits::use_default_state_constructor) {
-            static_assert(std::is_default_constructible<AgentStateType>(),
+            static_assert(std::is_default_constructible<AgentState>(),
                 "AgentTraits were configured to use the default constructor to "
-                "create agent states, but the AgentStateType is not "
+                "create agent states, but the AgentState is not "
                 "default-constructible! Either implement such a constructor, "
                 "unset the flag in the AgentTraits, or pass an explicit "
                 "initial agent state to the AgentManager.");
@@ -284,11 +284,11 @@ private:
             _log->info("Setting up agents using default constructor ...");
 
             // Create the initial state (same for all agents)
-            return setup_agent(AgentStateType());
+            return setup_agent(AgentState());
         }
 
         // Is there a constructor available that allows passing the RNG?
-        else if constexpr (std::is_constructible<AgentStateType,
+        else if constexpr (std::is_constructible<AgentState,
                                                 const DataIO::Config&,
                                                 const std::shared_ptr<RNG>&>())
         {
@@ -303,21 +303,21 @@ private:
             }
             const auto agent_params = _cfg["agent_params"];
             
-            if (not _cfg["init_num_agents"]){
+            if (not _cfg["initial_num_agents"]){
                 throw std::invalid_argument("AgentManager is missing the "
-                    "configuration entry 'init_num_agents' to set up the agents!" 
+                    "configuration entry 'initial_num_agents' to set up the agents!" 
                     );
             }
-            const auto init_num_agents = as_<std::size_t>(
-                                                _cfg["init_num_agents"]);
+            const auto initial_num_agents = as_<std::size_t>(
+                                                _cfg["initial_num_agents"]);
 
             // The agent container to be populated
             AgentContainer<Agent> cont;
 
             // Populate the container, creating the agent state anew each time
-            for (IndexType i=0; i<init_num_agents; i++) {
+            for (IndexType i=0; i<initial_num_agents; i++) {
                 cont.emplace_back(
-                    std::make_shared<Agent>(i, AgentStateType(agent_params, _rng))
+                    std::make_shared<Agent>(i, AgentState(agent_params, _rng))
                 );
             }
             // Done. Shrink it.
@@ -329,9 +329,9 @@ private:
 
         // As default, require a Config constructor
         else {
-            static_assert(std::is_constructible<AgentStateType,
+            static_assert(std::is_constructible<AgentState,
                                                 const DataIO::Config&>(),
-                "AgentManager::AgentStateType needs to be constructible using "
+                "AgentManager::AgentState needs to be constructible using "
                 "const DataIO::Config& as only argument. Either implement "
                 "such a constructor, pass an explicit initial agent state to "
                 "the AgentManager, or set the AgentTraits such that a default "
@@ -347,7 +347,7 @@ private:
             }
 
             // Create the initial state (same for all agents)
-            return setup_agents(AgentStateType(_cfg["agent_params"]));
+            return setup_agents(AgentState(_cfg["agent_params"]));
         }
         // This point is never reached.
     }
