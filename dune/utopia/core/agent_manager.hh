@@ -284,7 +284,7 @@ private:
             _log->info("Setting up agents using default constructor ...");
 
             // Create the initial state (same for all agents)
-            return setup_agent(AgentState());
+            return setup_agents(AgentState());
         }
 
         // Is there a constructor available that allows passing the RNG?

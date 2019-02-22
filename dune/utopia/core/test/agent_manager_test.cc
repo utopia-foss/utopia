@@ -50,7 +50,7 @@ int main(int, char *[]) {
         std::cout << "Checking number of agents ..." << std::endl;
         
         MockModel<AgentTraitsDC> mm_it1("mm_it1", cfg["init_test1"]);
-        assert(mm_it1.agents().size() == 234);
+        assert(mm_it1._am.agents().size() == 234);
         
         std::cout << "Correct." << std::endl << std::endl;
 
@@ -61,8 +61,8 @@ int main(int, char *[]) {
         using SpaceVec = MockModel<AgentTraitsDC>::SpaceVec;
         std::vector<SpaceVec> rel_positions;
 
-        for (const auto& a : mm_it1.agents()) {
-            rel_positions.push_back(a->position() / mm_it1.space()->extent);
+        for (const auto& a : mm_it1._am.agents()) {
+            rel_positions.push_back(a->position() / mm_it1._am.space()->extent);
         }
 
         // ... and the mean relative position

@@ -106,6 +106,8 @@ public:
     using Space = Utopia::DefaultSpace;
     using AgentStateType = typename AgentTraits::State;
     using RNG = std::mt19937;
+    static constexpr DimType dim = Space::dim;
+    using SpaceVec = SpaceVecType<dim>;
 
     const std::string _name;
     const Config _cfg;
