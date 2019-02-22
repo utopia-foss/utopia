@@ -41,7 +41,7 @@ public:
     static constexpr bool sync = AgentTraits::sync;
 
 private:
-    // -- Members --------–––––-------------------------------------------------
+    // -- Members --------–––––------------------------------------------------
     /// The logger (same as the model this manager resides in)
     const std::shared_ptr<spdlog::logger> _log;
 
@@ -65,7 +65,7 @@ private:
 
 
 public:
-    // -- Constructors ---------------------------------------------------------
+    // -- Constructors --------------------------------------------------------
 
     /// Construct an agent manager
     /** \detail With the model available, the AgentManager can extract the
@@ -124,7 +124,7 @@ public:
         _log->info("AgentManager is all set up.");
     }
 
-    /// -- Getters -------------------------------------------------------------
+    /// -- Getters ------------------------------------------------------------
     /// Return pointer to the space, for convenience
     const std::shared_ptr<Space>& space () const {
         return _space;
@@ -179,10 +179,10 @@ public:
 
 
 private:
-    // -- Helper functions -----------------------------------------------------
+    // -- Helper functions ----------------------------------------------------
     // ...
 
-    // -- Setup functions ------------------------------------------------------
+    // -- Setup functions -----------------------------------------------------
 
     /// Set up the agent manager configuration member
     /** \detail This function determines whether to use a custom configuration

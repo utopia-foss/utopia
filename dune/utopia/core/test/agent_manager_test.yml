@@ -1,0 +1,56 @@
+# Configuration parameter for the AgentManager test
+---
+# For default-constructible
+default:
+  space:
+    periodic: true
+
+  agent_manager:
+    initial_num_agents: 42
+
+# For config-constructible
+config:
+  space:
+    periodic: true
+
+  agent_manager:
+    initial_num_agents: 42
+
+    agent_params:
+      a_double: 2.34
+      a_string: foobar
+      a_bool: true
+
+# For config-constructible (with RNG)
+config_with_RNG:
+  space:
+    periodic: true
+
+  agent_manager:
+    initial_num_agents: 42
+
+    agent_params:
+      a_double: 2.34
+      a_string: foobar
+      a_bool: true
+
+
+# For explicitly-constructible
+explicit:
+  space:
+    periodic: true
+
+  agent_manager:
+    initial_num_agents: 42
+
+
+# -----------------------------------------------------------------------------
+# Initialization
+init_test1:
+  space:
+    periodic: true
+    extent: [2., 3.]
+
+  agent_manager:
+    initial_num_agents: 234
+    # initial_position: random   # implied!
