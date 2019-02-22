@@ -223,6 +223,41 @@ private:
     }    
 
 
+    const SpaceVec initial_agent_pos() const
+    {
+
+        std::string initial_position_mode;
+
+        // Extract the initial_position mode from the configuration.
+        // If no option is provided, agents are initialized with random positions
+        if (not this->_cfg["initial_position"]){
+            initial_position_mode = "random";
+        }
+        else{
+            initial_position_mode = as_str(this->_cfg["initial_position"]);
+        }
+
+        // Return the agent position depending on the mode
+        if (initial_position_mode == "random"){
+            // Create a distribution from which to sample the agent location
+            std::uniform_real_distribution<double> distr(0., 1.);
+
+            // Create a space vector with random entries from the interval [0, 1)
+            SpaceVec rel_pos = SpaceVec().imbue([this, &distr]()
+                                                {return distr(*this->_rng);});
+
+            // Return the random position
+            return this->_space->extent % rel_pos;
+        }
+        else{
+            throw std::invalid_argument("AgentManager got a wrong "
+                "configuration entry 'initial_position' to set up the agents! "
+                "Got " + initial_position_mode + " but valid options are: "
+                " 'random'!");
+        }
+    }
+
+
     /// Set up the agents container with initial states
     /** \detail This function creates a container with agents that get an
      *          initial state and are set up with a random position.
@@ -235,30 +270,23 @@ private:
     {
         AgentContainer<Agent> agents;
 
-        // Create a distribution from which to sample the agent location
-        std::uniform_real_distribution<double> distr(0., 1.);
-
         // Extract parameters from the configuration
         if (not this->_cfg["initial_num_agents"]){
-                throw std::invalid_argument("AgentManager is missing the "
-                    "configuration entry 'initial_num_agents' to set up the agents!" 
-                    );
-            }
-            const auto num_agents = as_<std::size_t>(
+            throw std::invalid_argument("AgentManager is missing the "
+                "configuration entry 'initial_num_agents' to set up the agents!" 
+                );
+        }
+        const auto num_agents = as_<std::size_t>(
                                         this->_cfg["initial_num_agents"]);
 
         // Construct all the agents with incremented IDs, the initial state
         // and a random position
         for (IndexType i=0; i<num_agents; ++i){
-            SpaceVec rel_pos = SpaceVec().imbue([this, &distr]()
-                                                {return distr(*this->_rng);});
-
-            const SpaceVec pos = this->_space->extent % rel_pos;
-            
+                      
             agents.emplace_back(std::make_shared<Agent>(
                                     _id_counter, 
                                     initial_state,
-                                    pos));
+                                    initial_agent_pos()));
 
             // Increase the id count
             ++_id_counter;
@@ -332,7 +360,8 @@ private:
             // Populate the container, creating the agent state anew each time
             for (IndexType i=0; i<initial_num_agents; i++) {
                 cont.emplace_back(
-                    std::make_shared<Agent>(i, AgentState(agent_params, _rng))
+                    std::make_shared<Agent>(i, AgentState(agent_params, _rng),
+                                            initial_agent_pos())
                 );
             }
             // Done. Shrink it.
