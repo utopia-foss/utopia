@@ -237,6 +237,23 @@ private:
     }
 
 
+    /// Set up agents container via config or default constructor
+    /** \detail If no explicit initial state is given, this setup function is
+      *         called.
+      *         There are three modes: If the \ref AgentTraits are set such that
+      *         the default constructor of the agent state is to be used, that
+      *         constructor is required and is called for each agent.
+      *         Otherwise, the AgentStateType needs to be constructible via a
+      *         const DataIO::Config& argument, which gets passed the config
+      *         entry 'agent_params' from the AgentManager's configuration. If a
+      *         constructor with the signature
+      *         (const DataIO::Config&, const std::shared_ptr<RNG>&) is
+      *         supported, that constructor is called instead.
+      *
+      * \note   If the constructor for the agent state has an RNG available
+      *         it is called anew for _each_ agent; otherwise, an initial state
+      *         is constructed _once_ and used for all agents.
+      */
     AgentContainer<Agent> setup_agents() {
         // Distinguish depending on constructor.
         // Is the default constructor to be used?

@@ -16,7 +16,7 @@ namespace Utopia {
  *  \{
  */
 
-///
+/// An agent trait is equivalent to an entity trait
 /**
  * \ref Utopia::EntityTraits
  */
