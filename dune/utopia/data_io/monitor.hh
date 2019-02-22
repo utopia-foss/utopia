@@ -72,7 +72,7 @@ public:
         // Set the starting time member
         _start_time(Clock::now()),
         // Initialize _last_emit empty, setting it to 1.1.1970, 0:00, meaning
-        // that no emit has occured yet.
+        // that no emit has occurred yet.
         _last_emit()
     {};
 

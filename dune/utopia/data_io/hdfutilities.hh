@@ -425,7 +425,7 @@ inline std::ostream& operator<<(std::ostream& os, Container<T>&& v)
  * @return  The valid argument for further use
  * @details This function is necessary because for instance H5Iis_valid does not
  *           return a boolean (non existant in C), but a value which is > 0 if
- *           everything is fine, < 0 if some error occured during checking and
+ *           everything is fine, < 0 if some error occurred during checking and
  *           0 if the object to check is invalid. This has to be taken into account
  *           in order to be able to track bugs or wrong usage properly.
  *           See here: https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.6/hdf5-1.6.7/src/unpacked/src/H5public.h

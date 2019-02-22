@@ -229,7 +229,7 @@ int main(int argc, char* argv[])
     }
     catch (...)
     {
-        std::cerr << "Unexpected exceptions occured in the graph test!" << std::endl;
+        std::cerr << "Unexpected exceptions occurred in the graph test!" << std::endl;
         return 1;
     }
 }

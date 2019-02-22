@@ -460,7 +460,7 @@ int main(int, char *[]) {
         return 0;
     }
     catch (std::exception& e) {
-        std::cerr << "Exception occured: " << e.what() << std::endl;
+        std::cerr << "Exception occurred: " << e.what() << std::endl;
         // NOTE cannot call cleanup here because the scope is not shared
         return 1;
     }

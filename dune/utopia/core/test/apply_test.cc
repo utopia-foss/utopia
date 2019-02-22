@@ -127,7 +127,7 @@ int main(int argc, char* argv[])
 
     catch (...)
     {
-        std::cerr << "Exeception occured!" << std::endl;
+        std::cerr << "Exeception occurred!" << std::endl;
         return 1;
     }
 }
