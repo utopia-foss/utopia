@@ -64,7 +64,7 @@ public:
     };
 
     /// The effective cell resolution into each physical space dimension
-    const SpaceVec effective_resolution() const override {
+    SpaceVec effective_resolution() const override {
         // TODO Implement properly!
         SpaceVec res_eff;
         res_eff.fill(0.);
@@ -72,7 +72,7 @@ public:
     }
 
     /// Get shape of the triangular grid
-    const MultiIndex shape() const override {
+    MultiIndex shape() const override {
         //TODO Implement properly!
         MultiIndexType<Space::dim> shape;
         shape.fill(0);
@@ -84,7 +84,7 @@ public:
     /// Returns the multi index of the cell with the given ID
     /** \note This method does not perform bounds checking of the given ID!
       */
-    const MultiIndex midx_of(const IndexType&) const override {
+    MultiIndex midx_of(const IndexType&) const override {
         throw std::runtime_error("The TriangularGrid::midx_of method is not "
                                  "yet implemented!");
         return {};
@@ -93,7 +93,7 @@ public:
     /// Returns the barycenter of the cell with the given ID
     /** \note This method does not perform bounds checking of the given ID!
       */
-    const SpaceVec barycenter_of(const IndexType&) const override {
+    SpaceVec barycenter_of(const IndexType&) const override {
         throw std::runtime_error("The TriangularGrid::barycenter_of method "
                                  "is not yet implemented!");
         return {};
@@ -102,7 +102,7 @@ public:
     /// Returns the extent of the cell with the given ID
     /** \note This method does not perform bounds checking of the given ID!
       */
-    const SpaceVec extent_of(const IndexType&) const override {
+    SpaceVec extent_of(const IndexType&) const override {
         throw std::runtime_error("The TriangularGrid::extent_of method is not "
                                  "yet implemented!");
         return {};
@@ -112,9 +112,7 @@ public:
     /** \detail The order of the vertices is not guaranteed.
       * \note   This method does not perform bounds checking of the given ID!
       */
-    const std::vector<SpaceVec>
-        vertices_of(const IndexType&) const override
-    {
+    std::vector<SpaceVec> vertices_of(const IndexType&) const override {
         throw std::runtime_error("The TriangularGrid::vertices_of method is "
                                  "not yet implemented!");
         return {};
@@ -151,9 +149,7 @@ public:
       *                2D:  bottom, top
       *                3D:  back, front
       */
-    const std::set<IndexType>
-        boundary_cells(std::string={}) const override
-    {
+    std::set<IndexType> boundary_cells(std::string={}) const override {
         throw std::runtime_error("The TriangularGrid::boundary_cells method "
                                  "is not yet implemented!");
         return {};

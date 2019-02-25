@@ -173,25 +173,24 @@ public:
     /// Returns the multi-index of the cell with the given ID
     /** \note This method does not perform bounds checking of the given ID!
       */
-    virtual const MultiIndex midx_of(const IndexType&) const = 0;
+    virtual MultiIndex midx_of(const IndexType&) const = 0;
 
     /// Returns the barycenter of the cell with the given ID
     /** \note This method does not perform bounds checking of the given ID!
       */
-    virtual const SpaceVec barycenter_of(const IndexType&) const = 0;
+    virtual SpaceVec barycenter_of(const IndexType&) const = 0;
 
     /// Returns the extent of the cell with the given ID
     /** \note This method does not perform bounds checking of the given ID!
       */
-    virtual const SpaceVec extent_of(const IndexType&) const = 0;
+    virtual SpaceVec extent_of(const IndexType&) const = 0;
 
     /// Returns the vertices of the cell with the given ID
     /** \detail Consult the derived class implementation's documentation on
       *         the order of the vertices in the returned container.
       * \note   This method does not perform bounds checking of the given ID!
       */
-    virtual const std::vector<SpaceVec>
-        vertices_of(const IndexType&) const = 0;
+    virtual std::vector<SpaceVec> vertices_of(const IndexType&) const = 0;
 
     /// Return the ID of the cell covering the given point in physical space
     /** \detail Cells are interpreted as covering half-open intervals in space,
@@ -220,7 +219,7 @@ public:
       *                2D:  bottom, top
       *                3D:  back, front
       */
-    virtual const std::set<IndexType> boundary_cells(std::string={}) const = 0;
+    virtual std::set<IndexType> boundary_cells(std::string={}) const = 0;
 
 
     // .. Getters .............................................................
@@ -242,10 +241,10 @@ public:
       *         The effective resolution accounts for the scaling that was
       *         required to map an integer number of cells onto the space.
       */
-    virtual const SpaceVec effective_resolution() const = 0;
+    virtual SpaceVec effective_resolution() const = 0;
 
     /// Get the shape of the grid discretization
-    virtual const MultiIndex shape() const = 0;
+    virtual MultiIndex shape() const = 0;
 
     /// Const reference to the space this grid maps to
     const std::shared_ptr<Space>& space() const {
