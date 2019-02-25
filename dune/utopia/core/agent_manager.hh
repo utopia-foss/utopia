@@ -37,9 +37,6 @@ public:
     /// The random number generator type
     using RNG = typename Model::RNG;
 
-    /// Whether the agents are updated synchronously
-    static constexpr bool sync = AgentTraits::sync;
-
 private:
     // -- Members --------–––––------------------------------------------------
     /// The logger (same as the model this manager resides in)
@@ -177,7 +174,7 @@ public:
      *       There is no need to update these agent traits.
      */
     void update_agents(){
-        if constexpr (sync == UpdateMode::sync){
+        if constexpr (AgentTraits::sync){
             // Do nothing because there is no cache variable
             return;
         }
@@ -423,7 +420,13 @@ private:
         else{
             return [this](Agent& agent, const SpaceVec& pos){
                 // Check that the position is contained in the space
-                this->_space->contains(pos);
+                if (not this->_space->contains(pos)) {
+                    std::stringstream emsg;
+                    emsg << "The given agent position " << std::endl << pos
+                        << "is not within the non-periodic space with extent"
+                        << std::endl << this->_space->extent;
+                    throw std::invalid_argument(emsg.str());
+                }
 
                 // Set the new agent position
                 agent.set_pos(pos);
