@@ -4,17 +4,17 @@
 #include <exception>
 #include <iostream>
 
+#include <yaml-cpp/yaml.h>
+
 
 namespace Utopia {
 
 /// The base exception class to derive Utopia-specific exceptions from
 class Exception : public std::runtime_error {
 public:
-    // -- Custom members (not part of std::exception interface) -- //
     /// The exit code to use when exiting due to this exception
     const int exit_code;
 
-    // -- Constructors -- //
     /// Construct an Utopia-specific exception
     /** @param  what_arg  The std::runtime_error `what` argument
       * @param  exit_code The code that can (and should) be used in case this
@@ -58,6 +58,43 @@ public:
         Exception("Received signal: " + std::to_string(signum),
                   128 + abs(signum))
     {}
+};
+
+
+/// For access to a dict-like structure with a bad key
+template<class DictType>
+class KeyError : public Exception {
+public:
+    /// Construct a KeyError exception, which has a standardized what message
+    KeyError(const std::string& key, const DictType& node)
+    :
+        Exception(generate_what_arg(key, node))
+    {}
+
+private:
+    /// Generates the what argument for the key error
+    std::string generate_what_arg(std::string key, DictType node) {
+        std::stringstream msg;
+        msg << "KeyError: " << key << std::endl;
+
+        if (not node) {
+            msg << "The given node is a Zombie! Make sure the node you are "
+                << "trying to read from is valid." << std::endl;
+        }
+        else if (node.size() == 0) {
+            msg << "The given node contains no entries! Make sure the desired "
+                << "key is available."
+                << std::endl;
+        }
+        else {
+            // Emit the node to give more clues at what might have gone wrong
+            msg << "Make sure the desired key is available. The content of "
+                << "the given node is as follows:" << std::endl
+                << YAML::Dump(node) << std::endl;
+        }
+
+        return msg.str();
+    }
 };
 
 
