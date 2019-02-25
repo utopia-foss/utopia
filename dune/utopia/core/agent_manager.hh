@@ -355,9 +355,13 @@ private:
             // Populate the container, creating the agent state anew each time
             for (IndexType i=0; i<initial_num_agents; i++) {
                 cont.emplace_back(
-                    std::make_shared<Agent>(i, AgentState(agent_params, _rng),
+                    std::make_shared<Agent>(_id_counter, 
+                                            AgentState(agent_params, _rng),
                                             initial_agent_pos())
                 );
+
+                // Increment id counter;
+                ++_id_counter;
             }
             // Done. Shrink it.
             cont.shrink_to_fit();

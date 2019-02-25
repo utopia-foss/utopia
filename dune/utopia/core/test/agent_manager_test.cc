@@ -148,6 +148,11 @@ int main(int, char *[]) {
         assert(agent->position()[0] == new_pos[0] * 2.);
         assert(agent->position()[1] == new_pos[1] * 2.);
 
+        std::cout << "Checking that the id counter works..."
+                  << std::endl;
+
+        assert(am.id_counter() == 2);
+
         std::cout << "Correct." << std::endl << std::endl;
         };
 
@@ -202,6 +207,11 @@ int main(int, char *[]) {
         am.move_by(agent, {-3, -3});
         assert(agent->position()[0] == 0.);
         assert(agent->position()[1] == 1.);
+
+        std::cout << "Checking that the id counter works..."
+                  << std::endl;
+
+        assert(am.id_counter() == 2);
 
         std::cout << "Correct." << std::endl << std::endl;
         };
@@ -275,6 +285,11 @@ int main(int, char *[]) {
                 << std::endl << mm_dyn_sync_nonperiodic._space.extent;
             assert(e.what() == emsg.str());
         }
+
+        std::cout << "Checking that the id counter works..."
+                  << std::endl;
+
+        assert(am.id_counter() == 2);
 
         std::cout << "Correct." << std::endl << std::endl;
         };
