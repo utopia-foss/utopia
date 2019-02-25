@@ -5,6 +5,7 @@
 #include <yaml-cpp/yaml.h>
 
 #include "../core/types.hh"
+#include "../core/exceptions.hh"
 
 
 namespace Utopia {
@@ -35,50 +36,44 @@ namespace DataIO {
  *  \throw   YAML::Exception On bad conversions or non-existent nodes
  */
 template<typename ReturnType>
-ReturnType as_(const Utopia::DataIO::Config& node) {
+ReturnType as_(const DataIO::Config& node) {
     // Try reading
     try {
         return node.template as<ReturnType>();
     }
     // Did not work -> try to give a understandable error message
-    catch (YAML::BadConversion& e) {
-        // Due to the node being a zombie, e.g. b/c key was missing, or an
-        // actual bad type conversion...
+    catch (YAML::Exception& e) {
+        // Due to the node being a zombie, e.g. b/c key was missing, or a bad
+        // type conversion...
         std::stringstream e_msg;
 
-        // Create an error message depending on whether there is a mark; if
-        // there is none, it is indicative of the node being a zombie...
-        if (!node.Mark().is_null()) {
+        // Create a custom error message depending on whether the node is a
+        // zombie or not ...
+        if (not node) {
+            e_msg << "Could not read from config because the given node was a "
+                     "zombie. Check that the key you are trying to create a "
+                     "node with actually exists.";
+        }
+        else {
             e_msg << "Could not read from config; got "
                   << boost::core::demangle(typeid(e).name()) << "! "
                   << "Check that the corresponding line of the config file "
                      "matches the desired type conversion. "
                      "The value of the node is:  "
-                  << YAML::Dump(node)
-                  << std::endl;
-        }
-        else {
-            e_msg << "Could not read from config; got "
-                  << boost::core::demangle(typeid(e).name()) << "! "
-                  << "Perhaps the node was a zombie? Check that the key you "
-                     "are trying to create a node with actually exists."
-                  << std::endl;
+                  << YAML::Dump(node);
         }
 
         // Re-throw with the custom error message
         throw YAML::Exception(node.Mark(), e_msg.str());
-        // NOTE Mark() provides the line and column in the config file; the
-        //      error message is created depending on whether the mark was null
+        // NOTE Mark() provides the line and column in the config file, if
+        //      available, i.e.: if not a zombie node
     }
-    // TODO Catch other YAML exceptions
-    // TODO Check for zombie somehow?!
     catch (std::exception& e) {
-        // This should catch all other exceptions thrown by yaml-cpp
-        // Provide info on the type of error
+        // Some other exception; provide at least some info and context
         std::cerr << boost::core::demangle(typeid(e).name())
                   << " occurred during reading from config!" << std::endl;
 
-        // Now re-throw the original exception
+        // Re-throw the original exception
         throw;
     }
     catch (...) {
@@ -87,52 +82,92 @@ ReturnType as_(const Utopia::DataIO::Config& node) {
     }
 }
 
+
 /// Return the entry with the specified key from the specified node
-/** \detail Unlike as_, this method checks whether the key is present, and,
-  *         if not, throws an error.
+/** \detail Unlike as_, this method allows to throw KeyErrors, which contain
+  *         the name of the key that could not be accessed
   */
 template<typename ReturnType>
-ReturnType get_as_(const Utopia::DataIO::Config& node, const std::string key) {
-    if (not node[key]) {
-        throw std::invalid_argument("KeyError: " + key);
+ReturnType get_(const std::string& key, const DataIO::Config& node) {
+    try {
+        return as_<ReturnType>(node[key]);
     }
-
-    return as_<ReturnType>(node[key]);
+    catch (YAML::Exception& e) {
+        if (not node[key]) {
+            throw KeyError(key, node);
+        }
+        throw;
+    }
 }
 
-// -- Shortcuts -- //
+// -- Shortcuts ---------------------------------------------------------------
 
 /// Shortcut to retrieve a config entry as int
-int as_int(const Utopia::DataIO::Config& node) {
+int as_int(const DataIO::Config& node) {
     return as_<int>(node);
 }
 
+/// Shortcut to retrieve a config entry as int using the get_ method
+int get_int(const std::string& key, const DataIO::Config& node) {
+    return get_<int>(key, node);
+}
+
 /// Shortcut to retrieve a config entry as double
-double as_double(const Utopia::DataIO::Config& node) {
+double as_double(const DataIO::Config& node) {
     return as_<double>(node);
 }
 
+/// Shortcut to retrieve a config entry as double using the get_ method
+double get_double(const std::string& key, const DataIO::Config& node) {
+    return get_<double>(key, node);
+}
+
 /// Shortcut to retrieve a config entry as bool
-bool as_bool(const Utopia::DataIO::Config& node) {
+bool as_bool(const DataIO::Config& node) {
     return as_<bool>(node);
 }
 
+/// Shortcut to retrieve a config entry as bool using the get_ method
+bool get_bool(const std::string& key, const DataIO::Config& node) {
+    return get_<bool>(key, node);
+}
+
 /// Shortcut to retrieve a config entry as std::string
-std::string as_str(const Utopia::DataIO::Config& node) {
+std::string as_str(const DataIO::Config& node) {
     return as_<std::string>(node);
+}
+
+/// Shortcut to retrieve a config entry as std::string using the get_ method
+std::string get_str(const std::string& key, const DataIO::Config& node) {
+    return get_<std::string>(key, node);
 }
 
 /// Shortcut to retrieve a config entry as std::vector
 template<typename T>
-std::vector<T> as_vector(const Utopia::DataIO::Config& node) {
+std::vector<T> as_vector(const DataIO::Config& node) {
     return as_<std::vector<T>>(node);
+}
+
+/// Shortcut to retrieve a config entry as std::vector using the get_ method
+template<typename T>
+std::vector<T> get_vector(const std::string& key, const DataIO::Config& node) {
+    return get_<std::vector<T>>(key, node);
 }
 
 /// Shortcut to retrieve a config entry as std::array
 template<typename T, std::size_t len>
-std::array<T, len> as_array(const Utopia::DataIO::Config& node) {
+std::array<T, len> as_array(const DataIO::Config& node) {
     return as_<std::array<T, len>>(node);
 }
+
+/// Shortcut to retrieve a config entry as std::array using the get_ method
+template<typename T, std::size_t len>
+std::array<T, len> get_array(const std::string& key, const DataIO::Config& node) {
+    return get_<std::array<T, len>>(key, node);
+}
+
+
+// -- Armadillo-related specializations ---------------------------------------
 
 /// Retrieve a config entry as Armadillo column vector
 /** \note This method is necessary because arma::Col::fixed cannot be
@@ -143,7 +178,7 @@ std::array<T, len> as_array(const Utopia::DataIO::Config& node) {
   * \tparam dim   The dimensionality of the vector (only needed for)
   */
 template<typename CVecT, DimType dim=0>
-CVecT as_arma_vec(const Utopia::DataIO::Config& node) {
+CVecT as_arma_vec(const DataIO::Config& node) {
     // Extract the field vector element type; assuming Armadillo interface here
     using element_t = typename CVecT::elem_type;
 
@@ -167,16 +202,17 @@ CVecT as_arma_vec(const Utopia::DataIO::Config& node) {
         return cvec;
     }
 }
+// TODO Implement as special case of `as_` method, distinguishing by type
 
 /// Shortcut to retrieve a config entry as SpaceVec of given dimensionality
 template<DimType dim>
-SpaceVecType<dim> as_SpaceVec(const Utopia::DataIO::Config& node) {
+SpaceVecType<dim> as_SpaceVec(const DataIO::Config& node) {
     return as_arma_vec<SpaceVecType<dim>, dim>(node);
 }
 
 /// Shortcut to retrieve a config entry as MultiIndex of given dimensionality
 template<DimType dim>
-MultiIndexType<dim> as_MultiIndex(const Utopia::DataIO::Config& node) {
+MultiIndexType<dim> as_MultiIndex(const DataIO::Config& node) {
     return as_arma_vec<MultiIndexType<dim>, dim>(node);
 }
 
