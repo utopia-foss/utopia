@@ -100,7 +100,9 @@ protected:
 public:
     // -- Getters -- //
     /// Return the current position of the agent
-    Position position ( ) { return _pos;};
+    Position position() const { 
+        return _pos;
+    };
 
 };
 
@@ -159,12 +161,12 @@ protected:
 public:
     // -- Getters -- //
     /// Return the current position of the agent
-    Position position() { 
+    Position position() const { 
         return _pos;
     }
     
     /// Return the position buffer of the agent
-    Position position_new() {
+    Position position_new() const {
         return _pos_new;
     }
 
