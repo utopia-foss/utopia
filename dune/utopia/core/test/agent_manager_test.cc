@@ -92,6 +92,219 @@ int main(int, char *[]) {
 
 
 
+        // -------------------------------------------------------------------
+        
+        std::cout << "------ Testing agent dynamics (synchronous, periodic)... ------"
+                  << std::endl;
+        
+        // Create a scope to prevent hanging variables afterwards
+        { 
+        std::cout << "Create a test model " << std::endl;
+        MockModel<AgentTraitsCC_sync> mm_dyn_sync_periodic("mm_dyn_sync_periodic", 
+                                                   cfg["mm_dyn_sync_periodic_test"]);
+        
+        std::cout << "Checking that agent's positions are different ..."
+                  << std::endl;
+
+        const auto agents = mm_dyn_sync_periodic._am.agents();
+        assert(agents[0]->position()[0] != agents[1]->position()[0]);
+        assert(agents[0]->position()[1] != agents[1]->position()[1]);
+
+        std::cout << "Checking that move_to does not work immediately in "
+                     "synchronous update..."
+                  << std::endl;
+
+        auto agent = agents[0];
+        auto& am = mm_dyn_sync_periodic._am;
+
+        SpaceVec new_pos({0.2, 0.3});
+
+        am.move_to(agent, new_pos);
+        assert(agent->position()[0] != new_pos[0]);
+        assert(agent->position()[1] != new_pos[1]);
+
+        std::cout << "...but after the agent's update, the positions should be "
+                     "updated! :)"
+                  << std::endl;
+
+        am.update_agents();
+        assert(agent->position()[0] == new_pos[0]);
+        assert(agent->position()[1] == new_pos[1]);
+
+        std::cout << "Checking that move_by does not work immediately in "
+                     "synchronous update..."
+                  << std::endl;
+
+        am.move_by(agent, new_pos);
+        assert(agent->position()[0] == new_pos[0]);
+        assert(agent->position()[1] == new_pos[1]);
+
+        std::cout << "...but after the agent's update, the positions should be "
+                     "updated! :)"
+                  << std::endl;
+
+        am.update_agents();
+        assert(agent->position()[0] == new_pos[0] * 2.);
+        assert(agent->position()[1] == new_pos[1] * 2.);
+
+        std::cout << "Correct." << std::endl << std::endl;
+        };
+
+
+        std::cout << "------ Testing agent dynamics (asynchronous, periodic)... ------"
+                  << std::endl;
+        
+        // Create a scope to prevent hanging variables afterwards
+        { 
+        std::cout << "Create a test model " << std::endl;
+        MockModel<AgentTraitsCC_async> mm_dyn_async_periodic("mm_dyn_async_periodic", 
+                                                   cfg["mm_dyn_async_periodic_test"]);
+        
+        std::cout << "Checking that agent's positions are different ..."
+                  << std::endl;
+
+        const auto agents = mm_dyn_async_periodic._am.agents();
+        assert(agents[0]->position()[0] != agents[1]->position()[0]);
+        assert(agents[0]->position()[1] != agents[1]->position()[1]);
+
+        std::cout << "Checking that move_to works nicely for the asynchronous "
+                     "update..."
+                  << std::endl;
+
+        auto agent = agents[0];
+        auto& am = mm_dyn_async_periodic._am;
+
+        SpaceVec new_pos({0.2, 0.3});
+
+        am.move_to(agent, new_pos);
+        assert(agent->position()[0] == new_pos[0]);
+        assert(agent->position()[1] == new_pos[1]);
+
+        std::cout << "Checking that move_by works nicely for the asynchronous "
+                     "update..."
+                  << std::endl;
+
+        am.move_by(agent, new_pos);
+        assert(agent->position()[0] == new_pos[0] * 2.);
+        assert(agent->position()[1] == new_pos[1] * 2.);
+    
+        std::cout << "Checking that a movement across the border is correctly "
+                     "mapped into the space..."
+                  << std::endl;
+
+        // Note that the space has the extent (2,3)
+        am.move_to(agent, {3., 4.});
+        assert(agent->position()[0] == 1.);
+        assert(agent->position()[1] == 1.);
+
+        am.move_by(agent, {-3, -3});
+        assert(agent->position()[0] == 0.);
+        assert(agent->position()[1] == 1.);
+
+        std::cout << "Correct." << std::endl << std::endl;
+        };
+
+
+        std::cout << "------ Testing agent dynamics (synchronous, nonperiodic)... ------"
+                  << std::endl;
+        
+        // Create a scope to prevent hanging variables afterwards
+        { 
+        std::cout << "Create a test model " << std::endl;
+        MockModel<AgentTraitsCC_sync> mm_dyn_sync_nonperiodic("mm_dyn_sync_nonperiodic", 
+                                                   cfg["mm_dyn_sync_nonperiodic_test"]);
+        
+        std::cout << "Checking that agent's positions are different ..."
+                  << std::endl;
+
+        const auto agents = mm_dyn_sync_nonperiodic._am.agents();
+        assert(agents[0]->position()[0] != agents[1]->position()[0]);
+        assert(agents[0]->position()[1] != agents[1]->position()[1]);
+
+        std::cout << "Checking that move_to does not work immediately in "
+                     "synchronous update..."
+                  << std::endl;
+
+        auto agent = agents[0];
+        auto& am = mm_dyn_sync_nonperiodic._am;
+
+        SpaceVec new_pos({0.2, 0.3});
+
+        am.move_to(agent, new_pos);
+        assert(agent->position()[0] != new_pos[0]);
+        assert(agent->position()[1] != new_pos[1]);
+
+        std::cout << "...but after the agent's update, the positions should be "
+                     "updated! :)"
+                  << std::endl;
+
+        am.update_agents();
+        assert(agent->position()[0] == new_pos[0]);
+        assert(agent->position()[1] == new_pos[1]);
+
+        std::cout << "Checking that move_by does not work immediately in "
+                     "synchronous update..."
+                  << std::endl;
+
+        am.move_by(agent, new_pos);
+        assert(agent->position()[0] == new_pos[0]);
+        assert(agent->position()[1] == new_pos[1]);
+
+        std::cout << "...but after the agent's update, the positions should be "
+                     "updated! :)"
+                  << std::endl;
+
+        am.update_agents();
+        assert(agent->position()[0] == new_pos[0] * 2.);
+        assert(agent->position()[1] == new_pos[1] * 2.);
+
+        std::cout << "Correct." << std::endl << std::endl;
+        };
+
+
+        std::cout << "------ Testing agent dynamics (asynchronous, nonperiodic)... ------"
+                  << std::endl;
+        
+        // Create a scope to prevent hanging variables afterwards
+        { 
+        std::cout << "Create a test model " << std::endl;
+        MockModel<AgentTraitsCC_async> mm_dyn_async_nonperiodic("mm_dyn_async_nonperiodic", 
+                                                   cfg["mm_dyn_async_nonperiodic_test"]);
+        
+        std::cout << "Checking that agent's positions are different ..."
+                  << std::endl;
+
+        const auto agents = mm_dyn_async_nonperiodic._am.agents();
+        assert(agents[0]->position()[0] != agents[1]->position()[0]);
+        assert(agents[0]->position()[1] != agents[1]->position()[1]);
+
+        std::cout << "Checking that move_to works nicely for the asynchronous "
+                     "update..."
+                  << std::endl;
+
+        auto agent = agents[0];
+        auto& am = mm_dyn_async_nonperiodic._am;
+
+        SpaceVec new_pos({0.2, 0.3});
+
+        am.move_to(agent, new_pos);
+        assert(agent->position()[0] == new_pos[0]);
+        assert(agent->position()[1] == new_pos[1]);
+
+        std::cout << "Checking that move_by works nicely for the asynchronous "
+                     "update..."
+                  << std::endl;
+
+        am.move_by(agent, new_pos);
+        assert(agent->position()[0] == new_pos[0] * 2.);
+        assert(agent->position()[1] == new_pos[1] * 2.);
+
+        std::cout << "Checking that a movement across the border is correctly "
+                     "mapped into the space..."
+                  << std::endl;
+
+        std::cout << "Correct." << std::endl << std::endl;
+        };
 
         // -------------------------------------------------------------------
         // Done.

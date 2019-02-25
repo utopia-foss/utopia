@@ -177,7 +177,7 @@ public:
         static_assert(AgentTraits::sync, "Agent's states and positions are set "
             "directly for synchronous update. They cannot be updated "
             "from cached variables!");
-
+        
         // Go through all agents and update them
         for (const auto& agent : _agents){
             agent->update();

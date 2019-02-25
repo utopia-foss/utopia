@@ -54,3 +54,62 @@ init_test1:
   agent_manager:
     initial_num_agents: 234
     # initial_position: random   # implied!
+
+
+# -----------------------------------------------------------------------------
+# Dynamics
+mm_dyn_sync_periodic_test:
+  space:
+    periodic: true
+    extent: [2., 3.]
+
+  agent_manager:
+    initial_num_agents: 2
+    initial_position: random   # explicitely set!
+
+    agent_params:
+      a_double: 2.34
+      a_string: foobar
+      a_bool: true
+
+mm_dyn_async_periodic_test:
+  space:
+    periodic: true
+    extent: [2., 3.]
+
+  agent_manager:
+    initial_num_agents: 2
+    initial_position: random   # explicitely set!
+
+    agent_params:
+      a_double: 2.34
+      a_string: foobar
+      a_bool: true
+
+mm_dyn_sync_nonperiodic_test:
+  space:
+    periodic: false
+    extent: [2., 3.]
+
+  agent_manager:
+    initial_num_agents: 2
+    initial_position: random   # explicitely set!
+
+    agent_params:
+      a_double: 2.34
+      a_string: foobar
+      a_bool: true
+
+mm_dyn_async_nonperiodic_test:
+  space:
+    periodic: false
+    extent: [2., 3.]
+
+  agent_manager:
+    initial_num_agents: 2
+    initial_position: random   # explicitely set!
+
+    agent_params:
+      a_double: 2.34
+      a_string: foobar
+      a_bool: true

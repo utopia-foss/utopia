@@ -98,6 +98,12 @@ using AgentTraitsCL = Utopia::AgentTraits<AgentStateDC,
                                           Utopia::EmptyTag,
                                           TestLinks>;
 
+/// For a config-constructible agent state with synchronous update dynamics
+using AgentTraitsCC_sync = Utopia::AgentTraits<AgentStateCC, UpdateMode::sync>;
+
+/// For a config-constructible agent state with asynchronous update dynamics
+using AgentTraitsCC_async = Utopia::AgentTraits<AgentStateCC, UpdateMode::async>;
+
 
 /// A mock model class to hold the agent manager
 template<class AgentTraits>
