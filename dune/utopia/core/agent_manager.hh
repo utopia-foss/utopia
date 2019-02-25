@@ -168,20 +168,19 @@ public:
      *          It updates the state and position from the agent's state
      *          and position cache variables.
      * 
-     * \note In the case of asynchronous agent update this function will not 
-     *       do anything because states and positions are not cached.
-     *       There is no need to update these agent traits.
+     * \note In the case of synchronous agent update this function will throw
+     *       an error. There is no need to update these agent traits because 
+     *       there is no cached trait.
      */
     void update_agents(){
-        if constexpr (AgentTraits::sync){
-            // Do nothing because there is no cache variable
-            return;
-        }
-        else{
-            // Go through all agents and update them
-            for (const auto& agent : _agents){
-                agent->update();
-            }
+        // Assert that the agents update synchronously
+        static_assert(AgentTraits::sync, "Agent's states and positions are set "
+            "directly for synchronous update. They cannot be updated "
+            "from cached variables!");
+
+        // Go through all agents and update them
+        for (const auto& agent : _agents){
+            agent->update();
         }
     }
 
