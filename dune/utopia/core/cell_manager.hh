@@ -14,7 +14,20 @@ namespace Utopia {
  *  \{
  */
 
-
+/// Manages a physical space, its grid discretization, and cells on that grid
+/** This class implements a common interface for working with cells as a
+ *  representation of volumes of physical space. A typical use case is the
+ *  cellular automaton.
+ *
+ *  To that end, a discretization of space is needed: the grid. This spatial
+ *  discretization is handled by concrete classes derived from Utopia::Grid.
+ *  The CellManager communicates with these objects solely via cell indices
+ *  (which are the indices within the container of cells), making the grid
+ *  implementation independent of the type of cells used.
+ *
+ *  \tparam CellTraits  Type traits of the cells used
+ *  \tparam Model       Type of the model using this manager
+ */
 template<class CellTraits, class Model>
 class CellManager {
 public:
@@ -51,6 +64,8 @@ public:
       */
     using RuleFunc = typename std::function<CellState(const std::shared_ptr<Cell>&)>;
 
+    /// Type of multi-index like arrays
+    using MultiIndex = typename GridType::MultiIndex;
 
 private:
     // -- Members -------------------------------------------------------------
@@ -146,6 +161,7 @@ public:
 
 
     /// -- Getters ------------------------------------------------------------
+
     /// Return pointer to the space, for convenience
     const std::shared_ptr<Space>& space () const {
         return _space;
@@ -169,7 +185,7 @@ public:
     /** \note Consult the documentation of the selected grid discretization to
       *       learn about the interpretation of the returned values.
       */
-    auto midx_of(const Cell& cell) const {
+    MultiIndex midx_of(const Cell& cell) const {
         return _grid->midx_of(cell.id());
     }
     
@@ -177,27 +193,27 @@ public:
     /** \note Consult the documentation of the selected grid discretization to
       *       learn about the interpretation of the returned values.
       */
-    auto midx_of(const std::shared_ptr<Cell>& cell) const {
+    MultiIndex midx_of(const std::shared_ptr<Cell>& cell) const {
         return _grid->midx_of(cell->id());
     }
 
     /// Returns the barycenter of the given cell
-    auto barycenter_of(const Cell& cell) const {
+    SpaceVec barycenter_of(const Cell& cell) const {
         return _grid->barycenter_of(cell.id());
     }
     
     /// Returns the barycenter of the given cell
-    auto barycenter_of(const std::shared_ptr<Cell>& cell) const {
+    SpaceVec barycenter_of(const std::shared_ptr<Cell>& cell) const {
         return _grid->barycenter_of(cell->id());
     }
 
     /// Returns the physical extent of the given cell
-    auto extent_of(const Cell& cell) const {
+    SpaceVec extent_of(const Cell& cell) const {
         return _grid->extent_of(cell.id());
     }
     
     /// Returns the physical extent of the given cell
-    auto extent_of(const std::shared_ptr<Cell>& cell) const {
+    SpaceVec extent_of(const std::shared_ptr<Cell>& cell) const {
         return _grid->extent_of(cell->id());
     }
 
@@ -209,7 +225,7 @@ public:
       * \note   Consult the documentation of the selected grid discretization
       *         to learn about the order of the returned values.
       */
-    auto vertices_of(const Cell& cell) const {
+    std::vector<SpaceVec> vertices_of(const Cell& cell) const {
         return _grid->vertices_of(cell.id());
     }
     
@@ -217,7 +233,9 @@ public:
     /** \note Consult the documentation of the selected grid discretization to
       *       learn about the order of the returned values.
       */
-    auto vertices_of(const std::shared_ptr<Cell>& cell) const {
+    std::vector<SpaceVec>
+        vertices_of(const std::shared_ptr<Cell>& cell) const
+    {
         return _grid->vertices_of(cell->id());
     }
 
