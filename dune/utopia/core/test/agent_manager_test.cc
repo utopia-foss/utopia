@@ -100,8 +100,9 @@ int main(int, char *[]) {
         // Create a scope to prevent hanging variables afterwards
         { 
         std::cout << "Create a test model " << std::endl;
-        MockModel<AgentTraitsCC_sync> mm_dyn_sync_periodic("mm_dyn_sync_periodic", 
-                                                   cfg["mm_dyn_sync_periodic_test"]);
+        MockModel<AgentTraitsCC_sync> mm_dyn_sync_periodic(
+                                        "mm_dyn_sync_periodic", 
+                                        cfg["mm_dyn_sync_periodic_test"]);
         
         std::cout << "Checking that agent's positions are different ..."
                   << std::endl;
@@ -157,8 +158,9 @@ int main(int, char *[]) {
         // Create a scope to prevent hanging variables afterwards
         { 
         std::cout << "Create a test model " << std::endl;
-        MockModel<AgentTraitsCC_async> mm_dyn_async_periodic("mm_dyn_async_periodic", 
-                                                   cfg["mm_dyn_async_periodic_test"]);
+        MockModel<AgentTraitsCC_async> mm_dyn_async_periodic(
+                                        "mm_dyn_async_periodic", 
+                                        cfg["mm_dyn_async_periodic_test"]);
         
         std::cout << "Checking that agent's positions are different ..."
                   << std::endl;
@@ -211,8 +213,9 @@ int main(int, char *[]) {
         // Create a scope to prevent hanging variables afterwards
         { 
         std::cout << "Create a test model " << std::endl;
-        MockModel<AgentTraitsCC_sync> mm_dyn_sync_nonperiodic("mm_dyn_sync_nonperiodic", 
-                                                   cfg["mm_dyn_sync_nonperiodic_test"]);
+        MockModel<AgentTraitsCC_sync> mm_dyn_sync_nonperiodic(
+                                        "mm_dyn_sync_nonperiodic", 
+                                        cfg["mm_dyn_sync_nonperiodic_test"]);
         
         std::cout << "Checking that agent's positions are different ..."
                   << std::endl;
@@ -258,6 +261,21 @@ int main(int, char *[]) {
         assert(agent->position()[0] == new_pos[0] * 2.);
         assert(agent->position()[1] == new_pos[1] * 2.);
 
+        std::cout << "Asserting that an error is thrown if the space is "
+                     "exceeded..."
+                  << std::endl;
+
+        try{
+            am.move_to(agent, {5.,5.});
+        }
+        catch(std::exception& e){
+            std::stringstream emsg;
+            emsg << "The given agent position " << std::endl << SpaceVec({5., 5.})
+                << "is not within the non-periodic space with extent"
+                << std::endl << mm_dyn_sync_nonperiodic._space.extent;
+            assert(e.what() == emsg.str());
+        }
+
         std::cout << "Correct." << std::endl << std::endl;
         };
 
@@ -268,8 +286,9 @@ int main(int, char *[]) {
         // Create a scope to prevent hanging variables afterwards
         { 
         std::cout << "Create a test model " << std::endl;
-        MockModel<AgentTraitsCC_async> mm_dyn_async_nonperiodic("mm_dyn_async_nonperiodic", 
-                                                   cfg["mm_dyn_async_nonperiodic_test"]);
+        MockModel<AgentTraitsCC_async> mm_dyn_async_nonperiodic(
+                                        "mm_dyn_async_nonperiodic", 
+                                        cfg["mm_dyn_async_nonperiodic_test"]);
         
         std::cout << "Checking that agent's positions are different ..."
                   << std::endl;
@@ -299,9 +318,20 @@ int main(int, char *[]) {
         assert(agent->position()[0] == new_pos[0] * 2.);
         assert(agent->position()[1] == new_pos[1] * 2.);
 
-        std::cout << "Checking that a movement across the border is correctly "
-                     "mapped into the space..."
+        std::cout << "Asserting that an error is thrown if the space is "
+                     "exceeded..."
                   << std::endl;
+
+        try{
+            am.move_to(agent, {5.,5.});
+        }
+        catch(std::exception& e){
+            std::stringstream emsg;
+            emsg << "The given agent position " << std::endl << SpaceVec({5., 5.})
+                << "is not within the non-periodic space with extent"
+                << std::endl << mm_dyn_async_nonperiodic._space.extent;
+            assert(e.what() == emsg.str());
+        }
 
         std::cout << "Correct." << std::endl << std::endl;
         };
