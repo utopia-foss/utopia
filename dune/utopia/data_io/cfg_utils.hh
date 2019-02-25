@@ -8,11 +8,8 @@
 
 
 namespace Utopia {
-
-namespace DataIO
-{
-    
-    /// Type of the configuration
+namespace DataIO {
+    /// Type of a dict-like configuration structure used throughout Utopia
     using Config = YAML::Node;
     // NOTE This type is made available mainly that we can potentially change
     //      the type used for the config. If changing something here, it might
@@ -21,18 +18,21 @@ namespace DataIO
 
 } // namespace DataIO
 
-// NOTE This is not inside the Utopia::DataIO namespace to make includes more
-//      convenient.
 
-// -- Config access convenience functions -- //
+// -- Configuration access ----------------------------------------------------
+// NOTE The below is not inside the Utopia::DataIO namespace to make includes
+//      into models more convenient.
 
-/// General config access via template parameter
+/// Read an entry from a config node and convert it to a certain return type
 /** This function is a wrapper for the yaml-cpp `YAML::Node::as` fuction with
  *  helpful error messages.
- *  \tparam ReturnType The type to evaluate from the YAML::Node
- *  \param node The configuration node to evaluate
- *  \return The value of the node cast to ReturnType
- *  \throw YAML::Exception On bad conversions or non-existent nodes
+ *
+ *  \tparam  ReturnType  The type to evaluate from the YAML::Node
+ *
+ *  \param   node        The configuration node to evaluate
+ *
+ *  \return  The value of the node, cast to ReturnType
+ *  \throw   YAML::Exception On bad conversions or non-existent nodes
  */
 template<typename ReturnType>
 ReturnType as_(const Utopia::DataIO::Config& node) {
@@ -86,9 +86,6 @@ ReturnType as_(const Utopia::DataIO::Config& node) {
                                  "reading from config!");
     }
 }
-
-// TODO could add an optional argument to as_ for a fallback value
-
 
 /// Return the entry with the specified key from the specified node
 /** \detail Unlike as_, this method checks whether the key is present, and,
