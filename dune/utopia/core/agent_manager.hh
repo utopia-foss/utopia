@@ -91,7 +91,6 @@ public:
         _log->info("AgentManager is all set up.");
     }
 
-    /// 
     /// Construct an agent manager
     /** \detail The initial state of the agents is explicitly passed to the 
       *         constructor.

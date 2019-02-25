@@ -37,8 +37,11 @@ using AgentTraits = EntityTraits<StateType,
   *          so-called "custom links". These specializations are carried into
   *          the agent by means of the AgentTraits struct.
   *          An agent is embedded into the AgentManager, where the discretization
-  *          allows assigning a position in space to the agent. The agent itself
-  *          does not know anything about that ...
+  *          allows assigning a position in space to the agent. The agent holds 
+  *          this position as a private member and the Manager to set it.
+  * \tparam Traits as in AgentTraits
+  * \tparam Space the Space in which the agent lives
+  * \tparam enabled template parameter to enable sync or async specialisation
   */
 template<typename Traits, typename Space, typename enabled=void>
 class __Agent;
@@ -57,18 +60,24 @@ public:
     /// The type of the Position
     using Position = typename Space::SpaceVec;
 
-    /// Make the agent manager a friend
+    /// Make the agent manager a friend of this class
     template<class T, class M>
     friend class AgentManager;   
 
 private:
-    /// Position
+    // -- Members -- //
+    /// The position of the agent 
     Position _pos;
 
 
 public:
-    // -- Constructors -- //
+    // -- Constructor -- //
     /// Construct an agent
+    /** \detail id, initial state and initial position have to be passed
+     * \param id The id of this agent
+     * \param initial_state The initial state 
+     * \param initial_pos The initial position
+     */
     __Agent(const IndexType id, const State initial_state, 
             const Position& initial_pos)
     :
@@ -76,21 +85,21 @@ public:
         _pos(initial_pos)    
     {}
 
-    __Agent(const IndexType id, const State initial_state)
-    :
-        __Entity<Traits>(id, initial_state),
-        _pos()    
-    {}
-
 
 protected:
-    // set the position
+    /// Set the position in an asynchronous update
+    /**
+     * \detail This function allows the agent manager to set the position of 
+     *         the agent.
+     * \param pos The new position of the agent
+    */
     void set_pos(const Position& pos) {
         _pos = pos;
     };
 
 public:
-    // get the position
+    // -- Getters -- //
+    /// Return the current position of the agent
     Position position ( ) { return _pos;};
 
 };
@@ -114,46 +123,61 @@ public:
     template<class T, class M>
     friend class AgentManager;   
 private:
-    /// Position
+    /// The current position of the agent 
     Position _pos;
 
-    /// Position buffer
+    /// The position buffer for the synchronous position update
     Position _pos_new;
 
 public:
-    // -- Constructors -- //
+    // -- Constructor -- //
     /// Construct an agent
+    /** \detail id, initial state and initial position have to be passed
+     * \param id The id of this agent
+     * \param initial_state The initial state 
+     * \param initial_pos The initial position
+     */
     __Agent(const IndexType id, const State& initial_state, 
             const Position& initial_pos)
     :
         __Entity<Traits>(id, initial_state),
-        _pos(initial_pos)
-    {}
-
-    __Agent(const IndexType id, const State& initial_state)
-    :
-        __Entity<Traits>(id, initial_state),
-        _pos()
+        _pos(initial_pos),
+        _pos_new(initial_pos)
     {}
 
 protected:
-    // set the position
+    /// Set the position in a synchronous update
+    /**
+     * \detail This function allows the agent manager to set the position of 
+     *         the agent.
+     * \param pos The position to be written to the position buffer
+    */
     void set_pos(const Position& pos) {
         _pos_new = pos;
     }
 
 public:
-    // get the position
+    // -- Getters -- //
+    /// Return the current position of the agent
     Position position() { 
         return _pos;
     }
+    
+    /// Return the position buffer of the agent
+    Position position_new() {
+        return _pos_new;
+    }
 
-    // update the position and the state 
+    /// Update the position and the state 
+    /** \detail Writes the buffer of state and position to the current state
+     *          and position. This is necessary for the synchronous update mode
+     *          only. 
+     */
     void update () {
         // Update the state as defined in the Entity class
         __Entity<Traits>::update();
 
-        // update the position
+        // Update the position
         _pos = _pos_new;
     }
 };
