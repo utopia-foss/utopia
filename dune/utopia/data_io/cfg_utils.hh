@@ -10,12 +10,22 @@
 
 namespace Utopia {
 namespace DataIO {
+    /**
+     *  \addtogroup ConfigUtilities
+     *  \{
+     */
+
     /// Type of a dict-like configuration structure used throughout Utopia
     using Config = YAML::Node;
     // NOTE This type is made available mainly that we can potentially change
     //      the type used for the config. If changing something here, it might
     //      still be required to explicitly change other parts of core and/or
     //      data i/o where yaml-cpp is referenced directly
+
+    // end group ConfigUtilities
+    /**
+     *  \}
+     */
 
     // Config reading helper functions ........................................
 
@@ -54,13 +64,24 @@ namespace DataIO {
 } // namespace DataIO
 
 
-// -- Configuration access ----------------------------------------------------
+// ----------------------------------------------------------------------------
 // NOTE The below is not inside the Utopia::DataIO namespace to make includes
 //      into models more convenient.
 
+
+// -- as_ interface -----------------------------------------------------------
+/**
+ *  \addtogroup ConfigUtilities
+ *  \{
+ */
+
 /// Read an entry from a config node and convert it to a certain return type
-/** This function is a wrapper for the yaml-cpp `YAML::Node::as` fuction with
- *  helpful error messages.
+/** This function is a wrapper around the yaml-cpp YAML::Node::as fuction and
+ *  enhances the error messages that can occurr in a read operation.
+ *
+ *  \deprecated  This function is deprecated as the error messages are hard to
+ *               interpret in cases of zombie nodes; as an alternative, use
+ *               the Utopia::get_ function and associated shortcuts.
  *
  *  \tparam  ReturnType  The type to evaluate from the YAML::Node
  *
@@ -96,109 +117,45 @@ ReturnType as_(const DataIO::Config& node) {
     }
 }
 
-
-/// Return the entry with the specified key from the specified node
-/** \detail Unlike as_, this method allows to throw KeyErrors, which contain
-  *         the name of the key that could not be accessed
-  */
-template<typename ReturnType>
-ReturnType get_(const std::string& key, const DataIO::Config& node) {
-    try {
-        return node[key].template as<ReturnType>();
-    }
-    catch (YAML::Exception& e) {
-        if (not node[key]) {
-            throw KeyError(key, node);
-        }
-        // else: throw an improved error message
-        throw DataIO::improve_yaml_exception(e, node,
-            "Could not read key '" + key + "' from given config node!");
-    }
-    catch (std::exception& e) {
-        // Some other exception; provide at least some info and context
-        std::cerr << boost::core::demangle(typeid(e).name())
-                  << " occurred during reading key '" << key
-                  << "' from config!" << std::endl;
-
-        // Re-throw the original exception
-        throw;
-    }
-    catch (...) {
-        throw std::runtime_error("Unexpected exception occurred during "
-            "reading key '" + key + "'' from config!");
-    }
-}
-
-
-// -- Shortcuts ---------------------------------------------------------------
-
-/// Shortcut to retrieve a config entry as int
+/// Shortcut for Utopia::as_ to retrieve an entry as int
 int as_int(const DataIO::Config& node) {
     return as_<int>(node);
 }
 
-/// Shortcut to retrieve a config entry as int using the get_ method
-int get_int(const std::string& key, const DataIO::Config& node) {
-    return get_<int>(key, node);
-}
-
-/// Shortcut to retrieve a config entry as double
+/// Shortcut for Utopia::as_ to retrieve an entry as double
 double as_double(const DataIO::Config& node) {
     return as_<double>(node);
 }
 
-/// Shortcut to retrieve a config entry as double using the get_ method
-double get_double(const std::string& key, const DataIO::Config& node) {
-    return get_<double>(key, node);
-}
-
-/// Shortcut to retrieve a config entry as bool
+/// Shortcut for Utopia::as_ to retrieve an entry as bool
 bool as_bool(const DataIO::Config& node) {
     return as_<bool>(node);
 }
 
-/// Shortcut to retrieve a config entry as bool using the get_ method
-bool get_bool(const std::string& key, const DataIO::Config& node) {
-    return get_<bool>(key, node);
-}
-
-/// Shortcut to retrieve a config entry as std::string
+/// Shortcut for Utopia::as_ to retrieve an entry as std::string
 std::string as_str(const DataIO::Config& node) {
     return as_<std::string>(node);
 }
 
-/// Shortcut to retrieve a config entry as std::string using the get_ method
-std::string get_str(const std::string& key, const DataIO::Config& node) {
-    return get_<std::string>(key, node);
-}
-
-/// Shortcut to retrieve a config entry as std::vector
+/// Shortcut for Utopia::as_ to retrieve an entry as std::vector
 template<typename T>
 std::vector<T> as_vector(const DataIO::Config& node) {
     return as_<std::vector<T>>(node);
 }
 
-/// Shortcut to retrieve a config entry as std::vector using the get_ method
-template<typename T>
-std::vector<T> get_vector(const std::string& key, const DataIO::Config& node) {
-    return get_<std::vector<T>>(key, node);
-}
-
-/// Shortcut to retrieve a config entry as std::array
+/// Shortcut for Utopia::as_ to retrieve an entry as std::array
 template<typename T, std::size_t len>
 std::array<T, len> as_array(const DataIO::Config& node) {
     return as_<std::array<T, len>>(node);
 }
 
-/// Shortcut to retrieve a config entry as std::array using the get_ method
-template<typename T, std::size_t len>
-std::array<T, len> get_array(const std::string& key, const DataIO::Config& node) {
-    return get_<std::array<T, len>>(key, node);
-}
+// end group ConfigUtilities
+/**
+ *  \}
+ */
 
 
-// -- Armadillo-related specializations ---------------------------------------
-
+// Armadillo-related specialization
 namespace DataIO {
     /// Retrieve a config entry as Armadillo column vector
     /** \note This method is necessary because arma::Col::fixed cannot be
@@ -233,7 +190,130 @@ namespace DataIO {
             return cvec;
         }
     }
+} // namespace DataIO
 
+
+/**
+ *  \addtogroup ConfigUtilities
+ *  \{
+ */
+
+/// Shortcut for Utopia::as_ to retrieve an entry as SpaceVec
+/** \tparam dim The dimensionality of the returned Utopia::SpaceVecType
+ */
+template<DimType dim>
+SpaceVecType<dim> as_SpaceVec(const DataIO::Config& node) {
+    return DataIO::as_arma_vec<SpaceVecType<dim>, dim>(node);
+}
+
+/// Shortcut for Utopia::as_ to retrieve an entry as MultiIndex
+/** \tparam dim The dimensionality of the returned Utopia::MultiIndexType
+ */
+template<DimType dim>
+MultiIndexType<dim> as_MultiIndex(const DataIO::Config& node) {
+    return DataIO::as_arma_vec<MultiIndexType<dim>, dim>(node);
+}
+
+// end group ConfigUtilities
+/**
+ *  \}
+ */
+
+
+
+// -- get_ interface ----------------------------------------------------------
+
+
+/**
+ *  \addtogroup ConfigUtilities
+ *  \{
+ */
+
+/// Return the entry with the specified key from the specified node
+/** This function is a wrapper around the yaml-cpp YAML::Node::as fuction and
+ *  enhances the error messages that can occurr in a read operation.
+ *
+ *  \note  Unlike Utopia::as_, this method allows to throw Utopoia::KeyErrors,
+ *         which contain the name of the key that could not be accessed
+ *
+ *  \tparam ReturnType  The type to evaluate from the YAML::Node
+ *
+ *  \param  key         The key that is to be read
+ *  \param  node        The node to read the entry with the given key from
+ *
+ *  \return The value of node[key], cast to ReturnType
+ *
+ *  \throw  YAML::Exception On bad conversions or non-existent nodes
+ *  \throw  Utopia::KeyError On missing key
+ */
+template<typename ReturnType>
+ReturnType get_(const std::string& key, const DataIO::Config& node) {
+    try {
+        return node[key].template as<ReturnType>();
+    }
+    catch (YAML::Exception& e) {
+        if (not node[key]) {
+            throw KeyError(key, node);
+        }
+        // else: throw an improved error message
+        throw DataIO::improve_yaml_exception(e, node,
+            "Could not read key '" + key + "' from given config node!");
+    }
+    catch (std::exception& e) {
+        // Some other exception; provide at least some info and context
+        std::cerr << boost::core::demangle(typeid(e).name())
+                  << " occurred during reading key '" << key
+                  << "' from config!" << std::endl;
+
+        // Re-throw the original exception
+        throw;
+    }
+    catch (...) {
+        throw std::runtime_error("Unexpected exception occurred during "
+            "reading key '" + key + "'' from config!");
+    }
+}
+
+/// Shortcut for Utopia::get_ to retrieve an entry as int
+int get_int(const std::string& key, const DataIO::Config& node) {
+    return get_<int>(key, node);
+}
+
+/// Shortcut for Utopia::get_ to retrieve an entry as double
+double get_double(const std::string& key, const DataIO::Config& node) {
+    return get_<double>(key, node);
+}
+
+/// Shortcut for Utopia::get_ to retrieve an entry as bool
+bool get_bool(const std::string& key, const DataIO::Config& node) {
+    return get_<bool>(key, node);
+}
+
+/// Shortcut for Utopia::get_ to retrieve an entry as std::string
+std::string get_str(const std::string& key, const DataIO::Config& node) {
+    return get_<std::string>(key, node);
+}
+
+/// Shortcut for Utopia::get_ to retrieve an entry as std::vector
+template<typename T>
+std::vector<T> get_vector(const std::string& key, const DataIO::Config& node) {
+    return get_<std::vector<T>>(key, node);
+}
+
+/// Shortcut for Utopia::get_ to retrieve an entry as std::array
+template<typename T, std::size_t len>
+std::array<T, len> get_array(const std::string& key, const DataIO::Config& node) {
+    return get_<std::array<T, len>>(key, node);
+}
+
+// end group ConfigUtilities
+/**
+ *  \}
+ */
+
+
+// Armadillo-related specialization
+namespace DataIO {
     /// Retrieve a config entry as Armadillo column vector using get_
     /** \note This method is necessary because arma::Col::fixed cannot be
       *       constructed from std::vector. In such cases, the target vector is
@@ -270,13 +350,14 @@ namespace DataIO {
 } // namespace DataIO
 
 
-/// Shortcut to retrieve a config entry as SpaceVec of given dimensionality
-template<DimType dim>
-SpaceVecType<dim> as_SpaceVec(const DataIO::Config& node) {
-    return DataIO::as_arma_vec<SpaceVecType<dim>, dim>(node);
-}
+/**
+ *  \addtogroup ConfigUtilities
+ *  \{
+ */
 
-/// Shortcut to retrieve a config entry as SpaceVec using the get_ method
+/// Shortcut for Utopia::get_ to retrieve an entry as SpaceVec
+/** \tparam dim The dimensionality of the returned Utopia::SpaceVecType
+ */
 template<DimType dim>
 SpaceVecType<dim> get_SpaceVec(const std::string& key,
                                const DataIO::Config& node)
@@ -284,13 +365,9 @@ SpaceVecType<dim> get_SpaceVec(const std::string& key,
     return DataIO::get_arma_vec<SpaceVecType<dim>, dim>(key, node);
 }
 
-/// Shortcut to retrieve a config entry as MultiIndex of given dimensionality
-template<DimType dim>
-MultiIndexType<dim> as_MultiIndex(const DataIO::Config& node) {
-    return DataIO::as_arma_vec<MultiIndexType<dim>, dim>(node);
-}
-
-/// Shortcut to retrieve a config entry as MultiIndex using the get_ method
+/// Shortcut for Utopia::get_ to retrieve an entry as MultiIndex
+/** \tparam dim The dimensionality of the returned Utopia::MultiIndexType
+ */
 template<DimType dim>
 MultiIndexType<dim> get_MultiIndex(const std::string& key,
                                    const DataIO::Config& node)
@@ -298,7 +375,10 @@ MultiIndexType<dim> get_MultiIndex(const std::string& key,
     return DataIO::get_arma_vec<MultiIndexType<dim>, dim>(key, node);
 }
 
-
+// end group ConfigUtilities
+/**
+ *  \}
+ */
 
 } // namespace Utopia
 #endif // DATAIO_CFG_UTILS_HH

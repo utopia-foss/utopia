@@ -34,8 +34,8 @@ struct CellState {
     /// Construct the cell state from a configuration
     CellState(const DataIO::Config& cfg)
     :
-        some_state(as_double(cfg["some_state"])),
-        some_trait(as_int(cfg["some_trait"])),
+        some_state(get_double("some_state", cfg)),
+        some_trait(get_int("some_trait", cfg)),
         is_a_vip_cell(false)
     {}
 
@@ -49,7 +49,7 @@ struct CellState {
         // Do some more things using the random number generator
         // There is the possibility to set a random initial trait
         if (cfg["random_initial_trait"]) {
-            if (not as_bool(cfg["random_initial_trait"])) {
+            if (not get_bool("random_initial_trait", cfg)) {
                 // Is set, but is false. Just return:
                 return;
             }
@@ -160,7 +160,7 @@ public:
         _cm(*this),
 
         // Initialize model parameters
-        _some_parameter(as_double(this->_cfg["some_parameter"])),
+        _some_parameter(get_double("some_parameter", this->_cfg)),
         // ...
 
         // Initialize the uniform real distribution to range [0., 1.]
