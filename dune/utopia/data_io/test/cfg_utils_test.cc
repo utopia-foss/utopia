@@ -69,8 +69,9 @@ int main(int, char**) {
 
             // check message includes line information
             assert(str_found(e_msg, "yaml-cpp: error at line"));
-            assert(str_found(e_msg, "matches the desired type conversion"));
-            assert(str_found(e_msg, "The value of the node is:  bar"));
+            assert(str_found(e_msg, "matches the desired read operation or "
+                                    "type conversion"));
+            assert(str_found(e_msg, "The content of the node is:  bar"));
             
             std::cout << "  ... as expected" << std::endl << std::endl;
         }
@@ -89,7 +90,7 @@ int main(int, char**) {
             std::cout << "  Got error message: " << e_msg << std::endl;
 
             // check the error message specifies node being a zombie
-            assert(str_found(e_msg, "given node was a zombie"));
+            assert(str_found(e_msg, "given node was a Zombie!"));
             
             // this message cannot include line information due to being zombie
             assert(not str_found(e_msg, "yaml-cpp: error at line"));

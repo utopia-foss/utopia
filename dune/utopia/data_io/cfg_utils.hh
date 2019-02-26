@@ -17,6 +17,40 @@ namespace DataIO {
     //      still be required to explicitly change other parts of core and/or
     //      data i/o where yaml-cpp is referenced directly
 
+    // Config reading helper functions ........................................
+
+    /// Improves yaml-cpp exceptions occurring for a given node
+    template<class Exc>
+    YAML::Exception improve_yaml_exception(const Exc& e,
+                                           const Config& node,
+                                           std::string prefix = {})
+    {
+        // The string stream for the new, improved error message
+        std::stringstream e_msg;
+        e_msg << prefix << " ";
+        e_msg << "Got " << boost::core::demangle(typeid(e).name()) << ". ";
+
+        // Create a custom error message depending on whether the node is a
+        // zombie or a mark is available
+        if (not node) {
+            // Was a zombie
+            e_msg << "The given node was a Zombie! Check that the key you are "
+                     "trying to read from actually exists. ";
+        }
+        else if (not node.Mark().is_null()) {
+            // A mark is available to use as a hint 
+            // NOTE Mark() provides the line and column in the config file, if
+            //      available, i.e.: if not a zombie node
+            e_msg << "Check that the corresponding line of the config file "
+                     "matches the desired read operation or type conversion. ";
+        }
+
+        // Give some information on the node's content:
+        e_msg << "The content of the node is:  " << YAML::Dump(node);
+
+        // Return the custom exception object; can be thrown on other side
+        return YAML::Exception(node.Mark(), e_msg.str());
+    }
 } // namespace DataIO
 
 
@@ -43,30 +77,10 @@ ReturnType as_(const DataIO::Config& node) {
     }
     // Did not work -> try to give a understandable error message
     catch (YAML::Exception& e) {
-        // Due to the node being a zombie, e.g. b/c key was missing, or a bad
-        // type conversion...
-        std::stringstream e_msg;
-
-        // Create a custom error message depending on whether the node is a
-        // zombie or not ...
-        if (not node) {
-            e_msg << "Could not read from config because the given node was a "
-                     "zombie. Check that the key you are trying to create a "
-                     "node with actually exists.";
-        }
-        else {
-            e_msg << "Could not read from config; got "
-                  << boost::core::demangle(typeid(e).name()) << "! "
-                  << "Check that the corresponding line of the config file "
-                     "matches the desired type conversion. "
-                     "The value of the node is:  "
-                  << YAML::Dump(node);
-        }
-
-        // Re-throw with the custom error message
-        throw YAML::Exception(node.Mark(), e_msg.str());
-        // NOTE Mark() provides the line and column in the config file, if
-        //      available, i.e.: if not a zombie node
+        // Presumably due to the node being a zombie or a bad type
+        // conversion... Re-throw with improved custom error message:
+        throw DataIO::improve_yaml_exception(e, node,
+                                             "Could not read from config!");
     }
     catch (std::exception& e) {
         // Some other exception; provide at least some info and context
@@ -90,15 +104,31 @@ ReturnType as_(const DataIO::Config& node) {
 template<typename ReturnType>
 ReturnType get_(const std::string& key, const DataIO::Config& node) {
     try {
-        return as_<ReturnType>(node[key]);
+        return node[key].template as<ReturnType>();
     }
     catch (YAML::Exception& e) {
         if (not node[key]) {
             throw KeyError(key, node);
         }
+        // else: throw an improved error message
+        throw DataIO::improve_yaml_exception(e, node,
+            "Could not read key '" + key + "' from given config node!");
+    }
+    catch (std::exception& e) {
+        // Some other exception; provide at least some info and context
+        std::cerr << boost::core::demangle(typeid(e).name())
+                  << " occurred during reading key '" << key
+                  << "' from config!" << std::endl;
+
+        // Re-throw the original exception
         throw;
     }
+    catch (...) {
+        throw std::runtime_error("Unexpected exception occurred during "
+            "reading key '" + key + "'' from config!");
+    }
 }
+
 
 // -- Shortcuts ---------------------------------------------------------------
 
@@ -169,51 +199,54 @@ std::array<T, len> get_array(const std::string& key, const DataIO::Config& node)
 
 // -- Armadillo-related specializations ---------------------------------------
 
-/// Retrieve a config entry as Armadillo column vector
-/** \note This method is necessary because arma::Col::fixed cannot be
-  *       constructed from std::vector. In such cases, the target vector is
-  *       constructed element-wise.
-  *
-  * \tparam CVecT The Armadillo vector type to return
-  * \tparam dim   The dimensionality of the vector (only needed for)
-  */
-template<typename CVecT, DimType dim=0>
-CVecT as_arma_vec(const DataIO::Config& node) {
-    // Extract the field vector element type; assuming Armadillo interface here
-    using element_t = typename CVecT::elem_type;
+namespace DataIO {
+    /// Retrieve a config entry as Armadillo column vector
+    /** \note This method is necessary because arma::Col::fixed cannot be
+      *       constructed from std::vector. In such cases, the target vector is
+      *       constructed element-wise.
+      *
+      * \tparam CVecT The Armadillo vector type to return
+      * \tparam dim   The dimensionality of the vector (only needed for)
+      */
+    template<typename CVecT, DimType dim=0>
+    CVecT as_arma_vec(const DataIO::Config& node) {
+        // Extract the field vector element type; assuming Armadillo interface
+        using element_t = typename CVecT::elem_type;
 
-    // Check if it can be constructed from a vector
-    if constexpr (std::is_constructible<CVecT, std::vector<element_t>>()) {
-        return as_<std::vector<element_t>>(node);
-    }
-    else {
-        static_assert(dim > 0,
-                      "Need template argument dim given if target type is not "
-                      "constructible from std::vector.");
-
-        // Needs to be constructed element-wise
-        CVecT cvec;
-        const auto vec = as_array<element_t, dim>(node);
-
-        for (DimType i=0; i<dim; i++) {
-            cvec[i] = vec[i];
+        // Check if it can be constructed from a vector
+        if constexpr (std::is_constructible<CVecT, std::vector<element_t>>()) {
+            return Utopia::as_<std::vector<element_t>>(node);
         }
+        else {
+            static_assert(dim > 0,
+                "Need template argument dim given if target type is not "
+                "constructible from std::vector.");
 
-        return cvec;
+            // Needs to be constructed element-wise
+            CVecT cvec;
+            const auto vec = as_array<element_t, dim>(node);
+
+            for (DimType i=0; i<dim; i++) {
+                cvec[i] = vec[i];
+            }
+
+            return cvec;
+        }
     }
-}
+} // namespace DataIO
+
 // TODO Implement as special case of `as_` method, distinguishing by type
 
 /// Shortcut to retrieve a config entry as SpaceVec of given dimensionality
 template<DimType dim>
 SpaceVecType<dim> as_SpaceVec(const DataIO::Config& node) {
-    return as_arma_vec<SpaceVecType<dim>, dim>(node);
+    return DataIO::as_arma_vec<SpaceVecType<dim>, dim>(node);
 }
 
 /// Shortcut to retrieve a config entry as MultiIndex of given dimensionality
 template<DimType dim>
 MultiIndexType<dim> as_MultiIndex(const DataIO::Config& node) {
-    return as_arma_vec<MultiIndexType<dim>, dim>(node);
+    return DataIO::as_arma_vec<MultiIndexType<dim>, dim>(node);
 }
 
 
