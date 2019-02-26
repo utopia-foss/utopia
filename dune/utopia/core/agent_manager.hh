@@ -10,17 +10,6 @@ namespace Utopia {
  * \{
  */
 
-/// The agent manager base class 
-/** \detail The agent manager base class is needed to manage one shared static
- *          id counter for agents among all templated agent manager classes. 
- */
-class AgentManagerBase{
-protected:
-    /// ID counter: ID of the globally latest created agent
-    static inline IDType _id_counter = 0;
-};
-
-
 /// The agent manager manages the agents living in a model
 /** \detail The agent manager holds a container with all agents that live in
  *          a model space. It provides dynamic functions such as to move models
@@ -33,7 +22,7 @@ protected:
  * \tparam Model 
  */
 template<class AgentTraits, class Model>
-class AgentManager : AgentManagerBase{
+class AgentManager{
 public:
     /// The type of this AgentManager
     using Self = AgentManager<AgentTraits, Model>;
@@ -77,6 +66,9 @@ private:
     /// Storage container for agents
     AgentContainer<Agent> _agents;
 
+    /// ID counter
+    IDType _id_counter;
+
     /// The move_to function that will be used for moving agents
     MoveFunc _move_to_func;
 
@@ -105,6 +97,7 @@ public:
         _rng(model.get_rng()),
         _space(model.get_space()),
         _agents(setup_agents()),
+        _id_counter(0),
         _move_to_func(setup_move_to_func())
     {
         _log->info("AgentManager is all set up.");
@@ -130,6 +123,7 @@ public:
         _rng(model.get_rng()),
         _space(model.get_space()),
         _agents(setup_agents(initial_state)),
+        _id_counter(0),
         _move_to_func(setup_move_to_func())
     {
         _log->info("AgentManager is all set up.");

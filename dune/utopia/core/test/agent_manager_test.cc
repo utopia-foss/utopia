@@ -31,7 +31,7 @@ int main(int, char *[]) {
         std::cout << "Success." << std::endl << std::endl;
         
         std::cout << mm_cc._am.id_counter() << std::endl;
-        assert(mm_cc._am.id_counter() == 84);
+        assert(mm_cc._am.id_counter() == 42);
 
         // Initialize the mock model with config-constructible agent state
         std::cout << "... DataIO::Config-constructible state (with RNG)"
@@ -40,7 +40,7 @@ int main(int, char *[]) {
         std::cout << "Success." << std::endl << std::endl;
 
         std::cout << mm_rc._am.id_counter() << std::endl;
-        assert(mm_rc._am.id_counter() == 126);
+        assert(mm_rc._am.id_counter() == 42);
         
         // Initialize the mock model with config-constructible agent state
         std::cout << "... only explicitly constructible state" << std::endl;
@@ -49,7 +49,7 @@ int main(int, char *[]) {
                                        initial_state);
 
         std::cout << mm_ec._am.id_counter() << std::endl;
-        assert(mm_ec._am.id_counter() == 168);
+        assert(mm_ec._am.id_counter() == 42);
         
         std::cout << "Success." << std::endl << std::endl;
         
