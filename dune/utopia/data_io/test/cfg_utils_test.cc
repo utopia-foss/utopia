@@ -49,6 +49,17 @@ int main(int, char**) {
 
         auto a3 = as_array<std::array<int, 2>, 2>(cfg["an_array"]);
         assert(a1 == a3);
+
+        // armadillo vector
+        auto sv1 = as_SpaceVec<3>(cfg["a_vector"]);
+        assert(sv1[0] == 1.);
+        assert(sv1[1] == 2.);
+        assert(sv1[2] == 3.);
+
+        auto mi1 = as_MultiIndex<3>(cfg["a_vector"]);
+        assert(mi1[0] == 1);
+        assert(mi1[1] == 2);
+        assert(mi1[2] == 3);
         
         } // End of local test scope
 
@@ -133,6 +144,17 @@ int main(int, char**) {
 
         auto a3 = get_array<std::array<int, 2>, 2>("an_array", cfg);
         assert(a1 == a3);
+
+        // armadillo vector
+        auto sv1 = get_SpaceVec<3>("a_vector", cfg);
+        assert(sv1[0] == 1.);
+        assert(sv1[1] == 2.);
+        assert(sv1[2] == 3.);
+
+        auto mi1 = get_MultiIndex<3>("a_vector", cfg);
+        assert(mi1[0] == 1);
+        assert(mi1[1] == 2);
+        assert(mi1[2] == 3);
         
         } // End of local test scope
 

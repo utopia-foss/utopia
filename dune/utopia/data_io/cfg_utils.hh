@@ -215,7 +215,7 @@ namespace DataIO {
 
         // Check if it can be constructed from a vector
         if constexpr (std::is_constructible<CVecT, std::vector<element_t>>()) {
-            return Utopia::as_<std::vector<element_t>>(node);
+            return as_<std::vector<element_t>>(node);
         }
         else {
             static_assert(dim > 0,
@@ -233,9 +233,42 @@ namespace DataIO {
             return cvec;
         }
     }
+
+    /// Retrieve a config entry as Armadillo column vector using get_
+    /** \note This method is necessary because arma::Col::fixed cannot be
+      *       constructed from std::vector. In such cases, the target vector is
+      *       constructed element-wise.
+      *
+      * \tparam CVecT The Armadillo vector type to return
+      * \tparam dim   The dimensionality of the vector (only needed for)
+      */
+    template<typename CVecT, DimType dim=0>
+    CVecT get_arma_vec(const std::string& key, const DataIO::Config& node) {
+        // Extract the field vector element type; assuming Armadillo interface
+        using element_t = typename CVecT::elem_type;
+
+        // Check if it can be constructed from a vector
+        if constexpr (std::is_constructible<CVecT, std::vector<element_t>>()) {
+            return get_<std::vector<element_t>>(key, node);
+        }
+        else {
+            static_assert(dim > 0,
+                "Need template argument dim given if target type is not "
+                "constructible from std::vector.");
+
+            // Needs to be constructed element-wise
+            CVecT cvec;
+            const auto vec = get_array<element_t, dim>(key, node);
+
+            for (DimType i=0; i<dim; i++) {
+                cvec[i] = vec[i];
+            }
+
+            return cvec;
+        }
+    }
 } // namespace DataIO
 
-// TODO Implement as special case of `as_` method, distinguishing by type
 
 /// Shortcut to retrieve a config entry as SpaceVec of given dimensionality
 template<DimType dim>
@@ -243,10 +276,26 @@ SpaceVecType<dim> as_SpaceVec(const DataIO::Config& node) {
     return DataIO::as_arma_vec<SpaceVecType<dim>, dim>(node);
 }
 
+/// Shortcut to retrieve a config entry as SpaceVec using the get_ method
+template<DimType dim>
+SpaceVecType<dim> get_SpaceVec(const std::string& key,
+                               const DataIO::Config& node)
+{
+    return DataIO::get_arma_vec<SpaceVecType<dim>, dim>(key, node);
+}
+
 /// Shortcut to retrieve a config entry as MultiIndex of given dimensionality
 template<DimType dim>
 MultiIndexType<dim> as_MultiIndex(const DataIO::Config& node) {
     return DataIO::as_arma_vec<MultiIndexType<dim>, dim>(node);
+}
+
+/// Shortcut to retrieve a config entry as MultiIndex using the get_ method
+template<DimType dim>
+MultiIndexType<dim> get_MultiIndex(const std::string& key,
+                                   const DataIO::Config& node)
+{
+    return DataIO::get_arma_vec<MultiIndexType<dim>, dim>(key, node);
 }
 
 
