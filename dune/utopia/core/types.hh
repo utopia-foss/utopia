@@ -111,6 +111,11 @@ enum UpdateMode : bool {
 // TODO Integrate closer with (new) entity type
 
 
+// -- Types introduces with the new AgentManager -------------------------------
+
+/// Type for the agent ID
+using IDType = std::size_t;
+
 } // namespace Utopia
 
 #endif // UTOPIA_CORE_TYPES_HH

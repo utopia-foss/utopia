@@ -36,6 +36,7 @@ public:
 
     /// The random number generator type
     using RNG = typename Model::RNG;
+    
 
 private:
     // -- Members --------–––––------------------------------------------------
@@ -55,7 +56,7 @@ private:
     AgentContainer<Agent> _agents;
 
     /// ID counter: ID of the globally latest created agent
-    IndexType _id_counter;
+    static IDType _id_counter;
 
     /// The move_to function that will be used for moving agents
     MoveFunc _move_to_func;
@@ -85,7 +86,6 @@ public:
         _rng(model.get_rng()),
         _space(model.get_space()),
         _agents(setup_agents()),
-        _id_counter(0),
         _move_to_func(setup_move_to_func())
     {
         _log->info("AgentManager is all set up.");
@@ -111,7 +111,6 @@ public:
         _rng(model.get_rng()),
         _space(model.get_space()),
         _agents(setup_agents(initial_state)),
-        _id_counter(0),
         _move_to_func(setup_move_to_func())
     {
         _log->info("AgentManager is all set up.");
@@ -436,6 +435,13 @@ private:
         }
     }
 };
+
+
+// -- Declare static member values --------------------------------------------
+
+template<class T, class M>
+inline IDType AgentManager<T, M>::_id_counter = 0;
+
 
 // end group AgentManager
 /**
