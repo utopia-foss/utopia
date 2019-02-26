@@ -51,6 +51,8 @@ public:
 
 private:
     // -- Members --------–––––------------------------------------------------
+    /// The ID counter counting the agent's ids
+    IDType _id_counter;
     /// The logger (same as the model this manager resides in)
     const std::shared_ptr<spdlog::logger> _log;
 
@@ -65,9 +67,6 @@ private:
 
     /// Storage container for agents
     AgentContainer<Agent> _agents;
-
-    /// ID counter
-    IDType _id_counter;
 
     /// The move_to function that will be used for moving agents
     MoveFunc _move_to_func;
@@ -92,12 +91,12 @@ public:
     AgentManager(Model& model,
                  const DataIO::Config& custom_cfg = {})
     :
+        _id_counter(0),
         _log(model.get_logger()),
         _cfg(setup_cfg(model, custom_cfg)),
         _rng(model.get_rng()),
         _space(model.get_space()),
         _agents(setup_agents()),
-        _id_counter(0),
         _move_to_func(setup_move_to_func())
     {
         _log->info("AgentManager is all set up.");
@@ -118,12 +117,12 @@ public:
                  const AgentState initial_state,
                  const DataIO::Config& custom_cfg = {})
     :
+        _id_counter(0),
         _log(model.get_logger()),
         _cfg(setup_cfg(model, custom_cfg)),
         _rng(model.get_rng()),
         _space(model.get_space()),
         _agents(setup_agents(initial_state)),
-        _id_counter(0),
         _move_to_func(setup_move_to_func())
     {
         _log->info("AgentManager is all set up.");
@@ -287,8 +286,9 @@ private:
 
         // Construct all the agents with incremented IDs, the initial state
         // and a random position
+        this->_log->info("id_counter: {:d}", _id_counter);
         for (IDType i=0; i<num_agents; ++i){
-                      
+            this->_log->info("id_counter: {:d}", _id_counter);
             agents.emplace_back(std::make_shared<Agent>(
                                     _id_counter, 
                                     initial_state,

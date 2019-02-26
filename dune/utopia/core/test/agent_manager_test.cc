@@ -22,7 +22,6 @@ int main(int, char *[]) {
         MockModel<AgentTraitsDC> mm_dc("mm_dc", cfg["default"]);
         std::cout << "Success." << std::endl << std::endl;
 
-        std::cout << mm_dc._am.id_counter() << std::endl;
         assert(mm_dc._am.id_counter() == 42);
         
         // Initialize the mock model with config-constructible agent state
@@ -30,7 +29,6 @@ int main(int, char *[]) {
         MockModel<AgentTraitsCC> mm_cc("mm_cc", cfg["config"]);
         std::cout << "Success." << std::endl << std::endl;
         
-        std::cout << mm_cc._am.id_counter() << std::endl;
         assert(mm_cc._am.id_counter() == 42);
 
         // Initialize the mock model with config-constructible agent state
@@ -39,7 +37,6 @@ int main(int, char *[]) {
         MockModel<AgentTraitsRC> mm_rc("mm_rc", cfg["config_with_RNG"]);
         std::cout << "Success." << std::endl << std::endl;
 
-        std::cout << mm_rc._am.id_counter() << std::endl;
         assert(mm_rc._am.id_counter() == 42);
         
         // Initialize the mock model with config-constructible agent state
@@ -48,7 +45,6 @@ int main(int, char *[]) {
         MockModel<AgentTraitsEC> mm_ec("mm_ec", cfg["explicit"],
                                        initial_state);
 
-        std::cout << mm_ec._am.id_counter() << std::endl;
         assert(mm_ec._am.id_counter() == 42);
         
         std::cout << "Success." << std::endl << std::endl;
