@@ -10,8 +10,30 @@ namespace Utopia {
  * \{
  */
 
+/// The agent manager base class 
+/** \detail The agent manager base class is needed to manage one shared static
+ *          id counter for agents among all templated agent manager classes. 
+ */
+class AgentManagerBase{
+protected:
+    /// ID counter: ID of the globally latest created agent
+    static inline IDType _id_counter = 0;
+};
+
+
+/// The agent manager manages the agents living in a model
+/** \detail The agent manager holds a container with all agents that live in
+ *          a model space. It provides dynamic functions such as to move models
+ *          within a space and ensures that the agents move correctly and 
+ *          are never allowed to leave the allowed space.
+ *          Further, all agents get an id that is unique among all existing 
+ *          agents (also with respect to multiple agent managers).
+ * 
+ * \tparam AgentTraits 
+ * \tparam Model 
+ */
 template<class AgentTraits, class Model>
-class AgentManager {
+class AgentManager : AgentManagerBase{
 public:
     /// The type of this AgentManager
     using Self = AgentManager<AgentTraits, Model>;
@@ -36,7 +58,7 @@ public:
 
     /// The random number generator type
     using RNG = typename Model::RNG;
-    
+
 
 private:
     // -- Members --------–––––------------------------------------------------
@@ -54,9 +76,6 @@ private:
 
     /// Storage container for agents
     AgentContainer<Agent> _agents;
-
-    /// ID counter: ID of the globally latest created agent
-    static IDType _id_counter;
 
     /// The move_to function that will be used for moving agents
     MoveFunc _move_to_func;
@@ -270,12 +289,11 @@ private:
                 "configuration entry 'initial_num_agents' to set up the agents!" 
                 );
         }
-        const auto num_agents = as_<std::size_t>(
-                                        this->_cfg["initial_num_agents"]);
+        const auto num_agents = as_<IDType>(this->_cfg["initial_num_agents"]);
 
         // Construct all the agents with incremented IDs, the initial state
         // and a random position
-        for (IndexType i=0; i<num_agents; ++i){
+        for (IDType i=0; i<num_agents; ++i){
                       
             agents.emplace_back(std::make_shared<Agent>(
                                     _id_counter, 
@@ -345,14 +363,14 @@ private:
                     "configuration entry 'initial_num_agents' to set up the agents!" 
                     );
             }
-            const auto initial_num_agents = as_<std::size_t>(
+            const auto initial_num_agents = as_<IDType>(
                                                 _cfg["initial_num_agents"]);
 
             // The agent container to be populated
             AgentContainer<Agent> cont;
 
             // Populate the container, creating the agent state anew each time
-            for (IndexType i=0; i<initial_num_agents; i++) {
+            for (IDType i=0; i<initial_num_agents; i++) {
                 cont.emplace_back(
                     std::make_shared<Agent>(_id_counter, 
                                             AgentState(agent_params, _rng),
@@ -435,12 +453,6 @@ private:
         }
     }
 };
-
-
-// -- Declare static member values --------------------------------------------
-
-template<class T, class M>
-inline IDType AgentManager<T, M>::_id_counter = 0;
 
 
 // end group AgentManager

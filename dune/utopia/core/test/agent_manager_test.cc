@@ -21,23 +21,36 @@ int main(int, char *[]) {
         std::cout << "... default-constructible state" << std::endl;
         MockModel<AgentTraitsDC> mm_dc("mm_dc", cfg["default"]);
         std::cout << "Success." << std::endl << std::endl;
+
+        std::cout << mm_dc._am.id_counter() << std::endl;
+        assert(mm_dc._am.id_counter() == 42);
         
         // Initialize the mock model with config-constructible agent state
         std::cout << "... DataIO::Config-constructible state" << std::endl;
         MockModel<AgentTraitsCC> mm_cc("mm_cc", cfg["config"]);
         std::cout << "Success." << std::endl << std::endl;
         
+        std::cout << mm_cc._am.id_counter() << std::endl;
+        assert(mm_cc._am.id_counter() == 84);
+
         // Initialize the mock model with config-constructible agent state
         std::cout << "... DataIO::Config-constructible state (with RNG)"
                   << std::endl;
         MockModel<AgentTraitsRC> mm_rc("mm_rc", cfg["config_with_RNG"]);
         std::cout << "Success." << std::endl << std::endl;
+
+        std::cout << mm_rc._am.id_counter() << std::endl;
+        assert(mm_rc._am.id_counter() == 126);
         
         // Initialize the mock model with config-constructible agent state
         std::cout << "... only explicitly constructible state" << std::endl;
         const auto initial_state = AgentStateEC(2.34, "foobar", true);
         MockModel<AgentTraitsEC> mm_ec("mm_ec", cfg["explicit"],
                                        initial_state);
+
+        std::cout << mm_ec._am.id_counter() << std::endl;
+        assert(mm_ec._am.id_counter() == 168);
+        
         std::cout << "Success." << std::endl << std::endl;
         
 
@@ -151,8 +164,6 @@ int main(int, char *[]) {
         std::cout << "Checking that the id counter works..."
                   << std::endl;
 
-        assert(am.id_counter() == 2);
-
         std::cout << "Correct." << std::endl << std::endl;
         };
 
@@ -210,8 +221,6 @@ int main(int, char *[]) {
 
         std::cout << "Checking that the id counter works..."
                   << std::endl;
-
-        assert(am.id_counter() == 2);
 
         std::cout << "Correct." << std::endl << std::endl;
         };
@@ -285,11 +294,6 @@ int main(int, char *[]) {
                 << std::endl << mm_dyn_sync_nonperiodic._space.extent;
             assert(e.what() == emsg.str());
         }
-
-        std::cout << "Checking that the id counter works..."
-                  << std::endl;
-
-        assert(am.id_counter() == 2);
 
         std::cout << "Correct." << std::endl << std::endl;
         };
