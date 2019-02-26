@@ -54,4 +54,15 @@ bool check_error_message(std::string desc,
     return true;
 }
 
+
+/// Helper function to check for a match in a string
+/** \param s     The string to search for the match in
+  * \param match The (sub-)string to find within string s
+  *
+  * \return bool Whether argument match was found within string s
+  */
+bool str_match(std::string s, std::string match) {
+    return (s.find(match) != std::string::npos);
+}
+
 #endif // UTOPIA_CORE_TEST_TESTTOOLS_HH
