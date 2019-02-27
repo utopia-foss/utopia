@@ -18,8 +18,9 @@ namespace Utopia {
  *          Further, all agents get an id that is unique among all existing 
  *          agents (also with respect to multiple agent managers).
  * 
- * \tparam AgentTraits 
- * \tparam Model 
+ *  \tparam AgentTraits  Specialized Utopia::AgentTraits describing the kind of
+ *                       agents this manager should manage
+ *  \tparam Model        The model this AgentManager resides in
  */
 template<class AgentTraits, class Model>
 class AgentManager{
@@ -51,8 +52,9 @@ public:
 
 private:
     // -- Members --------–––––------------------------------------------------
-    /// The ID counter counting the agent's ids
+    /// Counts the number of agents created with this manager, used for new IDs
     IDType _id_counter;
+
     /// The logger (same as the model this manager resides in)
     const std::shared_ptr<spdlog::logger> _log;
 
@@ -68,7 +70,7 @@ private:
     /// Storage container for agents
     AgentContainer<Agent> _agents;
 
-    /// The move_to function that will be used for moving agents
+    /// Function that will be used for moving agents, called by move_* methods
     MoveFunc _move_to_func;
 
 
@@ -83,10 +85,11 @@ public:
       *         that the way the initial state of the agents is determined can 
       *         be controlled via the configuration.
       * 
-      * \param  model       The model this AgentManager belongs to  
-      * \param  custom_cfg  A custom config node to use to use for grid and
-      *                     agent setup. If not given, the model's configuration
-      *                     is used to extract the required entries.
+      * \param  model           The model this AgentManager belongs to  
+      * \param  custom_cfg      A custom config node to use to use for grid and
+      *                         agent setup. If not given, the model's 
+      *                         configuration is used to extract the required 
+      *                         entries.
      */
     AgentManager(Model& model,
                  const DataIO::Config& custom_cfg = {})
@@ -102,7 +105,7 @@ public:
         _log->info("AgentManager is all set up.");
     }
 
-    /// Construct an agent manager
+    /// Construct an agent manager, using the same initial state for all agents
     /** \detail The initial state of the agents is explicitly passed to the 
       *         constructor.
       * 
@@ -144,34 +147,33 @@ public:
         return _id_counter;
     }
 
-    // -- Public interface -----------------------------------------------------
+    // -- Public interface ----------------------------------------------------
     /// Move an agent to a new position in the space
-    void move_to(const std::shared_ptr<Agent>& agent, const SpaceVec& pos) const 
+    void move_to(const std::shared_ptr<Agent>& agent,
+                 const SpaceVec& pos) const 
     {
         _move_to_func(*agent, pos);
     }
 
     /// Move an agent to a new position in the space
-    void move_to(const Agent& agent, const SpaceVec& pos) const {
+    void move_to(const Agent& agent,
+                 const SpaceVec& pos) const
+    {
         _move_to_func(agent, pos);
     }
 
-    /// Move an agent by a position vector
-    /** \detail The agent's new position is the vector sum of the old position
-     *          vector and the move_pos vector. Thus, the movement is relative
-     *          to the current position.
-     */
-    void move_by(const std::shared_ptr<Agent>& agent, const SpaceVec& pos_vec){
-        _move_to_func(*agent, agent->position() + pos_vec);
+    /// Move an agent relative to its current position
+    void move_by(const std::shared_ptr<Agent>& agent,
+                 const SpaceVec& move_vec)
+    {
+        _move_to_func(*agent, agent->position() + move_vec);
     }
 
-    /// Move an agent by a position vector
-    /** \detail The agent's new position is the vector sum of the old position
-     *          vector and the move_pos vector. Thus, the movement is relative
-     *          to the current position.
-     */
-    void move_by(const Agent& agent, const SpaceVec& pos_vec) const {
-        _move_to_func(agent, agent.position() + pos_vec);
+    /// Move an agent relative to its current position
+    void move_by(const Agent& agent,
+                 const SpaceVec& move_vec) const
+    {
+        _move_to_func(agent, agent.position() + move_vec);
     }
 
     /// Update the agents
@@ -179,15 +181,17 @@ public:
      *          It updates the state and position from the agent's state
      *          and position cache variables.
      * 
-     * \note In the case of synchronous agent update this function will throw
+     * \note In the case of asynchronous agent update this function will throw
      *       an error. There is no need to update these agent traits because 
      *       there is no cached trait.
      */
-    void update_agents(){
+    void update_agents() {
         // Assert that the agents update synchronously
-        static_assert(AgentTraits::sync, "Agent's states and positions are set "
-            "directly for synchronous update. They cannot be updated "
-            "from cached variables!");
+        static_assert(AgentTraits::sync,
+            "The update_agents method only makes sense to call when agents "
+            "are set to be updated synchronously, which is not the case! "
+            "Either adapt the AgentTraits to that update mode or remove the "
+            "call to the update_agents method.");
         
         // Go through all agents and update them
         for (const auto& agent : _agents){
@@ -198,7 +202,15 @@ public:
 
 private:
     // -- Helper functions ----------------------------------------------------
-    // ...
+    /// Returns a valid (uniformly) random position in space
+    SpaceVec random_pos() {
+        // Create a space vector with random relative positions [0, 1), and
+        // calculate the absolute position by multiplying element-wise with the
+        // extent of the space
+        std::uniform_real_distribution<double> dist(0., 1.);
+        return (  this->_space->extent
+                % SpaceVec().imbue([this,&dist](){return dist(*this->_rng);}));
+    }
 
     // -- Setup functions -----------------------------------------------------
 
@@ -229,37 +241,24 @@ private:
     }    
 
 
-    const SpaceVec initial_agent_pos() const
-    {
+    /// Setup helper used to determine a single agent's initial position
+    SpaceVec initial_agent_pos() {
+        // By default, use a random initial position
+        std::string initial_position_mode = "random";
 
-        std::string initial_position_mode;
-
-        // Extract the initial_position mode from the configuration.
-        // If no option is provided, agents are initialized with random positions
-        if (not this->_cfg["initial_position"]){
-            initial_position_mode = "random";
-        }
-        else{
+        // If given, extract the initial_position mode from the configuration
+        if (this->_cfg["initial_position"]) {
             initial_position_mode = as_str(this->_cfg["initial_position"]);
         }
 
         // Return the agent position depending on the mode
-        if (initial_position_mode == "random"){
-            // Create a distribution from which to sample the agent location
-            std::uniform_real_distribution<double> distr(0., 1.);
-
-            // Create a space vector with random entries from the interval [0, 1)
-            SpaceVec rel_pos = SpaceVec().imbue([this, &distr]()
-                                                {return distr(*this->_rng);});
-
-            // Return the random position
-            return this->_space->extent % rel_pos;
+        if (initial_position_mode == "random") {
+            return random_pos();
         }
-        else{
-            throw std::invalid_argument("AgentManager got a wrong "
-                "configuration entry 'initial_position' to set up the agents! "
-                "Got " + initial_position_mode + " but valid options are: "
-                " 'random'!");
+        else {
+            throw std::invalid_argument("AgentManager got an invalid "
+                "configuration entry for 'initial_position': '"
+                + initial_position_mode + "'. Valid options are: 'random'");
         }
     }
 
@@ -268,35 +267,40 @@ private:
     /** \detail This function creates a container with agents that get an
      *          initial state and are set up with a random position.
      * 
-     * \param initial_state The initial state of the agents
-     * \param num_agents The number of agents
-     * \return AgentContainer<Agent> The agent container
+     * \param initial_state  The initial state of the agents
+     * \param num_agents     The number of agents
+     *
+     * \return AgentContainer<Agent> The populated agent container
      */
-    AgentContainer<Agent> setup_agents(const AgentState initial_state)
-    {
+    AgentContainer<Agent> setup_agents(const AgentState initial_state) {
         AgentContainer<Agent> agents;
 
         // Extract parameters from the configuration
-        if (not this->_cfg["initial_num_agents"]){
+        if (not this->_cfg["initial_num_agents"]) {
             throw std::invalid_argument("AgentManager is missing the "
-                "configuration entry 'initial_num_agents' to set up the agents!" 
-                );
+                "configuration entry 'initial_num_agents' that specifies the "
+                "number of agents to set up!");
         }
         const auto num_agents = as_<IDType>(this->_cfg["initial_num_agents"]);
 
         // Construct all the agents with incremented IDs, the initial state
         // and a random position
-        this->_log->info("id_counter: {:d}", _id_counter);
         for (IDType i=0; i<num_agents; ++i){
-            this->_log->info("id_counter: {:d}", _id_counter);
-            agents.emplace_back(std::make_shared<Agent>(
-                                    _id_counter, 
-                                    initial_state,
-                                    initial_agent_pos()));
+            this->_log->trace("Creating agent with ID {:d} ...", _id_counter);
 
-            // Increase the id count
+            agents.emplace_back(
+                std::make_shared<Agent>(_id_counter,
+                                        initial_state,
+                                        initial_agent_pos())
+            );
+
+            // Increase the id counter
             ++_id_counter;
         }
+
+        // Done. Shrink it.
+        agents.shrink_to_fit();
+        _log->info("Populated agent container with {:d} agents.", agents.size());
 
         return agents;
     }
@@ -365,6 +369,9 @@ private:
 
             // Populate the container, creating the agent state anew each time
             for (IDType i=0; i<initial_num_agents; i++) {
+                this->_log->trace("Creating agent with ID {:d} ...",
+                                  _id_counter);
+
                 cont.emplace_back(
                     std::make_shared<Agent>(_id_counter, 
                                             AgentState(agent_params, _rng),
@@ -407,37 +414,29 @@ private:
     }
 
 
-    /// Setup the move_to function, which changes an agents position in space
+    /// Depending on periodicity, return the function to move agents in space
     /** \detail The function that is used to move an agent to a new position in
      *          space depends on whether the space is periodic or not.
      *          In the case of a periodic space the position is automatically
      *          mapped into space again across the borders. For a nonperiodic
      *          space a position outside of the borders will throw an error.
-     * 
-     * \note The new agent position is either set directly in the case of
-     *       synchronous update or set in the cache variable pos_new for
-     *       asynchronous update. In the latter case, you need to call
-     *       the update method in the AgentManager such that the new position
-     *       is actually set.
      */
-    MoveFunc setup_move_to_func(){
-        // periodic
-        if (_space->periodic == true) {
+    MoveFunc setup_move_to_func() const {
+        // Need to distinguish by periodicity of the space the agents live in
+        if (_space->periodic) {
+            // Can simply use the space's mapping function
             return [this](Agent& agent, const SpaceVec& pos){
-                // Set the new agent position
                 agent.set_pos(this->_space->map_into_space(pos));
             };
         }
-
-        // nonperiodic
-        else{
+        else {
+            // For nonperiodic space, need to make sure the position is valid
             return [this](Agent& agent, const SpaceVec& pos){
-                // Check that the position is contained in the space
                 if (not this->_space->contains(pos)) {
                     std::stringstream emsg;
                     emsg << "The given agent position " << std::endl << pos
-                        << "is not within the non-periodic space with extent"
-                        << std::endl << this->_space->extent;
+                         << "is not within the non-periodic space with extent"
+                         << std::endl << this->_space->extent;
                     throw std::invalid_argument(emsg.str());
                 }
 
@@ -446,6 +445,7 @@ private:
             };
         }
     }
+
 };
 
 

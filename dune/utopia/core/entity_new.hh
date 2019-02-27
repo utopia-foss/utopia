@@ -8,14 +8,15 @@
 #include "space.hh"
 #include "types.hh"
 
+
 namespace Utopia {
 /**
- *  \addtogroup CellManager
+ *  \addtogroup Entity
  *  \{
  */
 
 /// Default struct for EntityTraits; use this one if there are no custom links
-/** \tparam  EntityContainerType The type of the entity container. Note that the
+/** \tparam EntityContainerType The type of the entity container. Note that the
   *                             entity container type need not be known to pass
   *                             this struct to the EntityTraits. The entity 
   *                             takes care of setting the EntityContainerType.
@@ -90,12 +91,15 @@ public:
     /// The tags associated with this entity
     using Tags = typename Traits::Tags;
 
-    /// A construct that has as members entity containers for custom-linked entitys
+    /// A construct that has as members containers for custom-linked entities
+    /** By templating this struct, it need not declare the type of the entities
+     *  if they have the same traits as this entity. This makes creation of
+     *  links to other entities of the same type easier.
+     */
     using CustomLinkContainers = typename Traits::template CustomLinks<EntityContainer<Self>>;
 
 
 private:
-    // -- Members -- //
     /// ID of this entity
     const IndexType _id;
 
@@ -104,7 +108,6 @@ private:
 
 
 public:
-    // -- Constructors -- //
     /// Construct an entity
     __Entity(const IndexType id, const State initial_state)
     :
@@ -135,7 +138,7 @@ public:
 };
 
 
-// end group CellManager
+// end group Entity
 /**
  *  \}
  */

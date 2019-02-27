@@ -9,16 +9,14 @@
 #include "types.hh"
 #include "entity_new.hh"       // NOTE Replace with entity.hh in final version
 
+
 namespace Utopia {
 /**
  *  \addtogroup CellManager
  *  \{
  */
 
-///
-/**
- * \ref Utopia::EntityTraits
- */
+/// CellTraits are just another name for Utopia::EntityTraits
 template<typename StateType, 
          UpdateMode update_mode,
          bool use_def_state_constr=false,
@@ -30,8 +28,6 @@ using CellTraits = EntityTraits<StateType,
                                 CellTags, 
                                 CustomLinkContainers>;
 
-
-
 /// A cell is a slightly specialized state container
 /** \detail  It can be extended with the use of tags and can be associated with
   *          so-called "custom links". These specializations are carried into
@@ -39,6 +35,8 @@ using CellTraits = EntityTraits<StateType,
   *          A cell is embedded into the CellManager, where the discretization
   *          allows assigning a position in space to the cell. The cell itself
   *          does not know anything about that ...
+  *
+  * \tparam Traits  Valid Utopia::EntityTraits, describing the type of cell
   */
 template<typename Traits>
 class __Cell :   // NOTE Final name will be Cell
