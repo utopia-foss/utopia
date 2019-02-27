@@ -60,34 +60,27 @@ def cluster_distribution(dm: DataManager, *,
     # Get the group that all datasets are in
     grp = uni['data/ForestFire']
 
-    # Get the shape of the data
-    uni_cfg = uni['cfg']
-    num_steps = uni_cfg['num_steps']
-    grid_size = uni_cfg['ForestFire']['grid_size']
-
-    # Extract the y data which is 'state' avaraged over all grid cells for every time step
+    # get the cluster_id data
     try:
-        data = grp['cluster_id'][time,:]
+        data = grp['cluster_id'][time,:].flatten()
     except:
         raise TypeError("Argument time needs to be a int within " 
                         "the number of timesteps or -1. "
                         "Was: {} with value: '{}'"
                         "".format(type(time), time))
 
-    # cluster sizes
-    id_max = np.amax(data)
-    cluster_sizes = np.zeros(id_max+1, int)
-    for id in data.flatten():
-        if (id >= 0):           # id -1 is grass state
-            cluster_sizes[id] += 1
-
-    # histogram
+    # get the cluster sizes from ids
+    cluster_sizes = np.zeros(np.amax(data), int)
+    for id in data[data > 0]:
+        cluster_sizes[id-1] += 1
+    
+    # make histogram of cluster_sizes
     size_max = np.amax(cluster_sizes)
-    histogram = np.zeros(size_max, int)        # (cluster_size, #clusters)
-    for size in cluster_sizes: # iterate existing histogram
+    histogram = np.zeros(size_max, int)
+    for size in cluster_sizes:
         histogram[size-1] += 1
 
-    # cumulative histogram
+    # make cumulative histogram
     for i in reversed(range(1,len(histogram))):
         histogram[i-1] += histogram[i]
 
