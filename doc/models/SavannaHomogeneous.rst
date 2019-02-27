@@ -37,22 +37,18 @@ Implementation Details
 
 The equations are solved using the classical euler intergration scheme on a single state set.
 
-Parameter space
-^^^^^^^^^^^^^^^
 
-The default parameters are chosen following Table 1 of Touboul et al. (2018).
 
-The heterogeneous approach in mind, the following parameters should be considered:
 
-================  =====  ================================
-parameter         value  reasoning
-================  =====  ================================
-:math:`\gamma_S`  1.0    is flammable
-:math:`\gamma_F`  1.0    is flammable
-:math:`s_2`       0.01   symmetry in percolation
-:math:`\alpha`    0.6    better suitable for oscillations
-:math:`\beta`     0.6    better suitable for oscillations
-================  =====  ================================
+Default Model Configuration
+---------------------------
+
+Below are the default configuration parameters for the ``SavannaHomogeneous`` model.
+They are chosen following Touboul [2018].
+
+.. literalinclude:: ../../dune/utopia/models/SavannaHomogeneous/SavannaHomogeneous_cfg.yml
+   :language: yaml
+   :start-after: ---
 
 Simulation Results – A Selection Process
 ----------------------------------------

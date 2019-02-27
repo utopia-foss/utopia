@@ -50,7 +50,7 @@ You can use some short code blocks to convey some information. Adjust the langua
 Default Model Configuration
 ---------------------------
 
-Below are the default configuration parameters for the ``ForestFire`` model.
+Below are the default configuration parameters for the ``CopyMe`` model.
 
 .. literalinclude:: ../../dune/utopia/models/CopyMe/CopyMe_cfg.yml
    :language: yaml
