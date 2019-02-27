@@ -273,6 +273,7 @@ private:
      * \return AgentContainer<Agent> The populated agent container
      */
     AgentContainer<Agent> setup_agents(const AgentState initial_state) {
+        // The agent container that is to be populated
         AgentContainer<Agent> agents;
 
         // Extract parameters from the configuration
@@ -300,7 +301,8 @@ private:
 
         // Done. Shrink it.
         agents.shrink_to_fit();
-        _log->info("Populated agent container with {:d} agents.", agents.size());
+        _log->info("Populated agent container with {:d} agents.",
+                   agents.size());
 
         return agents;
     }
@@ -309,14 +311,14 @@ private:
     /// Set up agents container via config or default constructor
     /** \detail If no explicit initial state is given, this setup function is
       *         called.
-      *         There are three modes: If the \ref AgentTraits are set such that
-      *         the default constructor of the agent state is to be used, that
-      *         constructor is required and is called for each agent.
+      *         There are three modes: If the Utopia::AgentTraits are set such
+      *         that the default constructor of the agent state is to be used,
+      *         that constructor is required and is called for each agent.
       *         Otherwise, the AgentState needs to be constructible via a
-      *         const DataIO::Config& argument, which gets passed the config
-      *         entry 'agent_params' from the AgentManager's configuration. If a
-      *         constructor with the signature
-      *         (const DataIO::Config&, const std::shared_ptr<RNG>&) is
+      *         `const DataIO::Config&` argument, which gets passed the config
+      *         entry `agent_params` from the AgentManager's configuration.
+      *         If a constructor with the signature
+      *         `(const DataIO::Config&, const std::shared_ptr<RNG>&)` is
       *         supported, that constructor is called instead.
       *
       * \note   If the constructor for the agent state has an RNG available
@@ -342,8 +344,9 @@ private:
 
         // Is there a constructor available that allows passing the RNG?
         else if constexpr (std::is_constructible<AgentState,
-                                                const DataIO::Config&,
-                                                const std::shared_ptr<RNG>&>())
+                                                 const DataIO::Config&,
+                                                 const std::shared_ptr<RNG>&
+                                                 >())
         {
             _log->info("Setting up agents using config constructor (with RNG) "
                        "...");
