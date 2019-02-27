@@ -2,7 +2,7 @@
 #define UTOPIA_CORE_MANAGER_HH
 
 #include <type_traits>
-
+#include "logging.hh"
 #include "types.hh"
 #include "cell_new.hh"          // NOTE Final name will be cell.hh
 #include "grids.hh"
