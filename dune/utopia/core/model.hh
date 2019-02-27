@@ -263,14 +263,18 @@ public:
      *                        (capacity = (num_time_steps, add_write_shape)).
      * @param compression_level The compression level
      * @param chunksize The chunk size
+
      * @return std::shared_ptr<DataSet> The hdf dataset
      */
-    std::shared_ptr<DataSet> create_dset(const std::string name,
-                                         const std::shared_ptr<DataGroup>& hdfgrp,
-                                         std::vector<hsize_t> add_write_shape,
-                                         const std::size_t compression_level=1,
-                                         const std::vector<hsize_t> chunksize={}){    
-        _log->debug("Creating the {} dataset...", name);
+    std::shared_ptr<DataSet>
+        create_dset(const std::string name,
+                    const std::shared_ptr<DataGroup>& hdfgrp,
+                    std::vector<hsize_t> add_write_shape,
+                    const std::size_t compression_level=1,
+                    const std::vector<hsize_t> chunksize={})
+    {
+        _log->debug("Creating dataset '{}' in group '{}' ...",
+                    name, hdfgrp->get_path());
 
         // Calculate the number of time steps to be written
         hsize_t num_steps = this->get_time_max() / this->get_write_every() + 1;
@@ -280,7 +284,11 @@ public:
         auto capacity = add_write_shape;
 
         // Create the dataset and return it.
-        return hdfgrp->open_dataset(name, capacity, chunksize, compression_level);
+        const auto dset = hdfgrp->open_dataset(name, capacity,
+                                               chunksize, compression_level);
+
+        _log->debug("Successfully created dataset '{}'.", name);
+        return dset;
     }
 
     /// Create and setup a new HDFDataset object
@@ -295,18 +303,54 @@ public:
      *                        (capacity = (num_time_steps, add_write_shape)).
      * @param compression_level The compression level
      * @param chunksize The chunk size
+
      * @return std::shared_ptr<DataSet> The hdf dataset
      */
-    std::shared_ptr<DataSet> create_dset(const std::string name,
-                                         const std::vector<hsize_t> add_write_shape,
-                                         const std::size_t compression_level=1,
-                                         const std::vector<hsize_t> chunksize={}){
-        // Forward to the create_dset function that requires a parent hdf group
-        return create_dset(name, 
-                           _hdfgrp, 
-                           add_write_shape,
-                           compression_level,
-                           chunksize);
+    std::shared_ptr<DataSet>
+        create_dset(const std::string name,
+                    const std::vector<hsize_t> add_write_shape,
+                    const std::size_t compression_level=1,
+                    const std::vector<hsize_t> chunksize={})
+    {
+        // Forward to the main create_dset function
+        return create_dset(name,
+                           _hdfgrp, // The base group for this model
+                           add_write_shape, compression_level, chunksize);
+    }
+
+    /// Create a new HDFDataset object storing data from a CellManager
+    /** @brief Create a HDFDataset object within the model HDFGroup object.
+     *         The required capacity - the shape of the dataset - is
+     *         calculated using both data from the model and the CellManager.
+     * 
+     * @param name The name of the dataset
+     * @param cm   The CellManager whose cells' states are to be stored in the
+     *             dataset
+     * @param compression_level  The compression level
+     * @param chunksize          The chunk size
+
+     * @return std::shared_ptr<DataSet> The newly created HDFDataset
+     */
+    template<class CellManager>
+    std::shared_ptr<DataSet>
+        create_cm_dset(const std::string name,
+                       const CellManager& cm,
+                       const std::size_t compression_level=1,
+                       const std::vector<hsize_t> chunksize={})
+    {
+        // Forward to the main create_dset function
+        const auto dset = create_dset(name, _hdfgrp,
+                                      {cm.cells().size()}, // -> 2D dataset
+                                      compression_level, chunksize);
+
+        // Set attributes to mark this dataset as containing grid data
+        dset->add_attribute("content", "grid");
+        dset->add_attribute("grid_shape", cm.grid()->shape());
+
+        _log->debug("Added attributes to dataset '{}' to mark it as storing "
+                    "grid data.", name);
+
+        return dset;
     }
 
 

@@ -1,4 +1,4 @@
-# The model configuration for the CopyME model
+# The model configuration for the CopyMeBare model
 #
 # This file should ONLY contain model-specific configuration and needs to be
 # written such that it can be used by _every_ model instance, regardless
@@ -15,5 +15,13 @@
 # Furthermore, if including other models' parameters via the `!model` tag, make
 # sure that no circular includes occur.
 ---
-periodic: true
-grid_size: [10,10]
+# --- Space
+# The physical space this model is embedded in
+space:
+  periodic: false
+
+# --- Initialization parameters
+# Add parameters and their documentation here ...
+
+# --- Dynamics
+# Add parameters and their documentation here ...

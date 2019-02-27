@@ -75,15 +75,8 @@ Configure and build DUNE and Utopia by executing the `dunecontrol` script:
 
 Afterwards, reconfiguring and rebuilding can also be done locally, instead of calling `dunecontrol`: Enter the `utopia/build-cmake` directory, and call `cmake ..` or `make` directly.
 
-__Notice:__ Anaconda ships its own version of the HDF5 library which is _not_
-compatible with Utopia. To tell CMake where to find the correct version of the
-library, append the following variable (without the comments!) to the
-`CMAKE_FLAGS` in the command above:
+__Note:__ If you are using Anaconda Python, have a look at the [troubleshooting](#troubleshooting) section below.
 
-```bash
--DHDF5_ROOT=/usr/           # on Ubuntu
--DHDF5_ROOT=/usr/local/     # on macOS (Homebrew)
-```
 
 ##### 7 — Run a model :tada:
 Now, you should be able to run a utopia model:
@@ -111,6 +104,15 @@ For more information on how to use the command line interface (and a prettier co
 * If you have a previous installation and the build failed, try removing *all* the `build-cmake` directories, either manually or using
 
         rm -r ./*/build-cmake/
+
+
+* Anaconda ships its own version of the HDF5 library which is _not_
+    compatible with Utopia. To tell CMake where to find the correct version of
+    the library, append the following variable (without the comments!) to the
+    `CMAKE_FLAGS` in the command above:
+
+        -DHDF5_ROOT=/usr/           # on Ubuntu
+        -DHDF5_ROOT=/usr/local/     # on macOS (Homebrew)
 
 * If at some point the `spdlog` and `yaml-cpp` dependencies are updated, you might need to update the git submodules. To get the current version, call:
 
@@ -176,7 +178,7 @@ For first-time users, it is recommended to check out the tutorial there.
 
 
 ## Quickstart
-This section gives a glimpse into working with Utopia. It's not more than a glimpse; after playing around with this, [build the documentation](#utopia-documentation) to have access to more information material.
+This section gives a glimpse into working with Utopia. It's not more than a glimpse; after playing around with this, [build the documentation](#utopia-documentation) to have access to more information material, and especially: the **Utopia Tutorial**.
 
 ### How to run a model?
 The Utopia command line interface (CLI) is, by default, only available in a Python virtual environment, in which `utopya` (the Utopia frontend) and its dependencies are installed.
@@ -202,10 +204,13 @@ For further information, e.g. on how you can pass a custom configuration, check 
     utopia --help
     utopia run --help
 
+Best place to continue from here: The tutorial in the Utopia documentation.
+
 
 ## Information for Developers
-### New to Utopia? How do I build a model?
-Aside exploring the already existing models, you should check out the Beginner's Guide in the documentation (see above on [how to build it](#building-the-documentation)) which will guide you through the first steps of building your own, fancy, new Utopia model. :tada:
+### New to Utopia? How do I implement a model?
+Aside from exploring the already existing models, you should check out the guides in the documentation (see above on [how to build it](#building-the-documentation)) which will get you started for implementing your own, fancy, new Utopia model. :tada:
+
 
 ### Build Types
 If you followed the instructions above, you have a `Release` build which is

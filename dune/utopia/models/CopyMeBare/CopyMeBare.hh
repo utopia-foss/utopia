@@ -1,50 +1,39 @@
 #ifndef UTOPIA_MODELS_COPYMEBARE_HH
 #define UTOPIA_MODELS_COPYMEBARE_HH
+// TODO Adjust above include guard (and at bottom of file)
 
+// standard library includes
+#include <random>
+
+// third-party library includes
+
+// Utopia-related includes
 #include <dune/utopia/base.hh>
-#include <dune/utopia/core/setup.hh>
 #include <dune/utopia/core/model.hh>
-#include <dune/utopia/core/apply.hh>
 #include <dune/utopia/core/types.hh>
-
-#include <functional>
 
 
 namespace Utopia {
 namespace Models {
 namespace CopyMeBare {
 
+// ++ Type definitions ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-/// State struct for CopyMeBare model. 
-struct State {
-    // TODO Define the state a cell of this model can have
-};
-
-
-/// Typehelper to define types of CopyMeBare model 
-using CopyMeBareModelTypes = ModelTypes<>;
+/// Type helper to define types used by the model
+using ModelTypes = Utopia::ModelTypes<>;
 
 
-/// The CopyMeBare Model
-/** Add your class description here.
+// ++ Model definition ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+/// The CopyMeBare Model; the bare-basics a model needs
+/** TODO Add your class description here.
  *  ...
  */
-template<class ManagerType>
-class CopyMeBareModel:
-    public Model<CopyMeBareModel<ManagerType>, CopyMeBareModelTypes>
+class CopyMeBare:
+    public Model<CopyMeBare, ModelTypes>
 {
 public:
-    /// The base model type
-    using Base = Model<CopyMeBareModel<ManagerType>, CopyMeBareModelTypes>;
-    
-    /// Cell type
-    using CellType = typename ManagerType::Cell;
-
-    /// Supply a type for rule functions that are applied to cells
-    using RuleFunc = typename std::function<State(std::shared_ptr<CellType>)>;
-
-    /// Data type that holds the configuration
-    using Config = typename Base::Config;
+    /// The type of the Model base class of this derived class
+    using Base = Model<CopyMeBare, ModelTypes>;
     
     /// Data type of the group to write model data to, holding datasets
     using DataGroup = typename Base::DataGroup;
@@ -52,61 +41,47 @@ public:
     /// Data type for a dataset
     using DataSet = typename Base::DataSet;
 
-    /// Data type of the shared RNG
-    using RNG = typename Base::RNG;
-
-    // Alias the neighborhood classes to make access more convenient
-    using NextNeighbor = Utopia::Neighborhoods::NextNeighbor;
-    using MooreNeighbor = Utopia::Neighborhoods::MooreNeighbor;
-
+    
 private:
-    // Base members: _time, _name, _cfg, _hdfgrp, _rng, _monitor
+    // Base members: _time, _name, _cfg, _hdfgrp, _rng, _monitor, _space
+    // ... but you should definitely check out the documentation ;)
 
-    // -- Members of this model -- //
-    /// The grid manager
-    ManagerType _manager;
+    // -- Members -------------------------------------------------------------
 
 
-    // -- Temporary objects -- //
+    // .. Temporary objects ...................................................
 
     
-    // -- Datasets -- //
+    // .. Datasets ............................................................
     // NOTE They should be named '_dset_<name>', where <name> is the
-    //      dataset's actual name as set in the constructor.
+    //      dataset's actual name as set in its constructor. Ideally, do not
+    //      hide them inside a struct ...
     // std::shared_ptr<DataSet> _dset_my_var;
 
 
-    // -- Rule functions -- //
-    // Define functions that can be applied to the cells of the grid
-
 public:
+    // -- Public interface ----------------------------------------------------
     /// Construct the CopyMeBare model
     /** \param name     Name of this model instance
      *  \param parent   The parent model this model instance resides in
-     *  \param manager  The externally setup manager to use for this model
      */
     template<class ParentModel>
-    CopyMeBareModel (const std::string name,
-                     ParentModel &parent,
-                     ManagerType&& manager)
+    CopyMeBare (const std::string name, ParentModel& parent)
     :
         // Initialize first via base model
-        Base(name, parent),
+        Base(name, parent)
         // Now initialize members specific to this class
-        _manager(manager)
+        // ...
+
         // Open the datasets
         // e.g. via _dset_state(this->create_dset("state", {})) <- 1d
         //      or  _dset_state(this->create_dset("state", {num_states})) <- 2d
     {
-        // Initialize grid cells
-
-        // Set dataset capacities
+        // Can do remaining initialization steps here ...
+        // ...
 
         // Write out the initial state
-
-        // Set dataset attributes
-        // NOTE Currently, attributes can be set only after the first write
-        //      operation because else the datasets are not yet created.
+        this->write_data();
     }
 
     // Setup functions ........................................................
@@ -114,24 +89,22 @@ public:
 
     // Runtime functions ......................................................
 
-    /** @brief Iterate a single step
-     *  @detail Here you can add a detailed description what exactly happens 
-     *          in a single iteration step
-     */
-    void perform_step ()
-    {
-        // Apply the rules or an iteration step
+    /// Iterate a single step
+    /** \detail Here you can add a detailed description what exactly happens 
+      *         in a single iteration step
+      */
+    void perform_step () {
+        
     }
 
 
     /// Monitor model information
-    /** @detail Here, functions and values can be supplied to the monitor that
+    /** \detail Here, functions and values can be supplied to the monitor that
      *          are then available to the frontend. The monitor() function is
      *          _only_ called if a certain emit interval has passed; thus, the
      *          performance hit is small. 
      */
-    void monitor ()
-    {
+    void monitor () {
         // Can supply information to the monitor here in two ways:
         // this->_monitor.set_entry("key", value);
         // this->_monitor.set_entry("key", [this](){return 42.;});
@@ -139,9 +112,18 @@ public:
 
 
     /// Write data
-    void write_data ()
-    {   
-        // State which data should be written
+    /** \detail This function is called to write out data. It should be called
+      *         at the end of the model constructor to write out the initial
+      *         state. After that, the configuration determines at which times
+      *         data is written.
+      *         See \ref Utopia::DataIO::Dataset::write
+      */
+    void write_data () {
+        // Example:
+        // _dset_foo->write(it.begin(), it.end(),
+        //     [](const auto& element) {
+        //         return element.get_value();
+        // });
     }
 
     

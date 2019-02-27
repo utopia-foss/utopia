@@ -14,7 +14,20 @@ namespace Utopia {
  *  \{
  */
 
-
+/// Manages a physical space, its grid discretization, and cells on that grid
+/** This class implements a common interface for working with cells as a
+ *  representation of volumes of physical space. A typical use case is the
+ *  cellular automaton.
+ *
+ *  To that end, a discretization of space is needed: the grid. This spatial
+ *  discretization is handled by concrete classes derived from Utopia::Grid.
+ *  The CellManager communicates with these objects solely via cell indices
+ *  (which are the indices within the container of cells), making the grid
+ *  implementation independent of the type of cells used.
+ *
+ *  \tparam CellTraits  Type traits of the cells used
+ *  \tparam Model       Type of the model using this manager
+ */
 template<class CellTraits, class Model>
 class CellManager {
 public:
@@ -25,7 +38,7 @@ public:
     using Cell = __Cell<CellTraits>; // NOTE Use Cell eventually
 
     /// Type of the cell state
-    using CellStateType = typename CellTraits::State;
+    using CellState = typename CellTraits::State;
 
     /// The space type this cell manager maps to
     using Space = typename Model::Space;
@@ -45,6 +58,14 @@ public:
     /// Random number generator type
     using RNG = typename Model::RNG;
 
+    /// The type of a rule function acting on the cells of this cell manager
+    /** \detail This is a convenience type def that models can use to easily
+      *         have this type available.
+      */
+    using RuleFunc = typename std::function<CellState(const std::shared_ptr<Cell>&)>;
+
+    /// Type of multi-index like arrays
+    using MultiIndex = typename GridType::MultiIndex;
 
 private:
     // -- Members -------------------------------------------------------------
@@ -118,7 +139,7 @@ public:
       *                        entries.
       */
     CellManager (Model& model,
-                 const CellStateType initial_state,
+                 const CellState initial_state,
                  const DataIO::Config& custom_cfg = {})
     :
         _log(model.get_logger()),
@@ -140,6 +161,7 @@ public:
 
 
     /// -- Getters ------------------------------------------------------------
+
     /// Return pointer to the space, for convenience
     const std::shared_ptr<Space>& space () const {
         return _space;
@@ -163,7 +185,7 @@ public:
     /** \note Consult the documentation of the selected grid discretization to
       *       learn about the interpretation of the returned values.
       */
-    auto midx_of(const Cell& cell) const {
+    MultiIndex midx_of(const Cell& cell) const {
         return _grid->midx_of(cell.id());
     }
     
@@ -171,27 +193,27 @@ public:
     /** \note Consult the documentation of the selected grid discretization to
       *       learn about the interpretation of the returned values.
       */
-    auto midx_of(const std::shared_ptr<Cell>& cell) const {
+    MultiIndex midx_of(const std::shared_ptr<Cell>& cell) const {
         return _grid->midx_of(cell->id());
     }
 
     /// Returns the barycenter of the given cell
-    auto barycenter_of(const Cell& cell) const {
+    SpaceVec barycenter_of(const Cell& cell) const {
         return _grid->barycenter_of(cell.id());
     }
     
     /// Returns the barycenter of the given cell
-    auto barycenter_of(const std::shared_ptr<Cell>& cell) const {
+    SpaceVec barycenter_of(const std::shared_ptr<Cell>& cell) const {
         return _grid->barycenter_of(cell->id());
     }
 
     /// Returns the physical extent of the given cell
-    auto extent_of(const Cell& cell) const {
+    SpaceVec extent_of(const Cell& cell) const {
         return _grid->extent_of(cell.id());
     }
     
     /// Returns the physical extent of the given cell
-    auto extent_of(const std::shared_ptr<Cell>& cell) const {
+    SpaceVec extent_of(const std::shared_ptr<Cell>& cell) const {
         return _grid->extent_of(cell->id());
     }
 
@@ -203,7 +225,7 @@ public:
       * \note   Consult the documentation of the selected grid discretization
       *         to learn about the order of the returned values.
       */
-    auto vertices_of(const Cell& cell) const {
+    std::vector<SpaceVec> vertices_of(const Cell& cell) const {
         return _grid->vertices_of(cell.id());
     }
     
@@ -211,7 +233,9 @@ public:
     /** \note Consult the documentation of the selected grid discretization to
       *       learn about the order of the returned values.
       */
-    auto vertices_of(const std::shared_ptr<Cell>& cell) const {
+    std::vector<SpaceVec>
+        vertices_of(const std::shared_ptr<Cell>& cell) const
+    {
         return _grid->vertices_of(cell->id());
     }
 
@@ -498,7 +522,7 @@ private:
     }
 
     /// Set up the cells container using an explicitly passed initial state
-    CellContainer<Cell> setup_cells(const CellStateType initial_state) {
+    CellContainer<Cell> setup_cells(const CellState initial_state) {
         CellContainer<Cell> cont;
 
         // Construct all the cells
@@ -519,7 +543,7 @@ private:
       *         There are three modes: If the \ref CellTraits are set such that
       *         the default constructor of the cell state is to be used, that
       *         constructor is required and is called for each cell.
-      *         Otherwise, the CellStateType needs to be constructible via a
+      *         Otherwise, the CellState needs to be constructible via a
       *         const DataIO::Config& argument, which gets passed the config
       *         entry 'cell_params' from the CellManager's configuration. If a
       *         constructor with the signature
@@ -534,9 +558,9 @@ private:
         // Distinguish depending on constructor.
         // Is the default constructor to be used?
         if constexpr (CellTraits::use_default_state_constructor) {
-            static_assert(std::is_default_constructible<CellStateType>(),
+            static_assert(std::is_default_constructible<CellState>(),
                 "CellTraits were configured to use the default constructor to "
-                "create cell states, but the CellStateType is not "
+                "create cell states, but the CellState is not "
                 "default-constructible! Either implement such a constructor, "
                 "unset the flag in the CellTraits, or pass an explicit "
                 "initial cell state to the CellManager.");
@@ -544,13 +568,14 @@ private:
             _log->info("Setting up cells using default constructor ...");
 
             // Create the initial state (same for all cells)
-            return setup_cells(CellStateType());
+            return setup_cells(CellState());
         }
 
         // Is there a constructor available that allows passing the RNG?
-        else if constexpr (std::is_constructible<CellStateType,
-                                                const DataIO::Config&,
-                                                const std::shared_ptr<RNG>&>())
+        else if constexpr (std::is_constructible<CellState,
+                                                 const DataIO::Config&,
+                                                 const std::shared_ptr<RNG>&
+                                                 >())
         {
             _log->info("Setting up cells using config constructor (with RNG) "
                        "...");
@@ -569,7 +594,7 @@ private:
             // Populate the container, creating the cell state anew each time
             for (IndexType i=0; i<_grid->num_cells(); i++) {
                 cont.emplace_back(
-                    std::make_shared<Cell>(i, CellStateType(cell_params, _rng))
+                    std::make_shared<Cell>(i, CellState(cell_params, _rng))
                 );
             }
             // Done. Shrink it.
@@ -581,9 +606,10 @@ private:
 
         // As default, require a Config constructor
         else {
-            static_assert(std::is_constructible<CellStateType,
-                                                const DataIO::Config&>(),
-                "CellManager::CellStateType needs to be constructible using "
+            static_assert(std::is_constructible<CellState,
+                                                const DataIO::Config&
+                                                >(),
+                "CellManager::CellState needs to be constructible using "
                 "const DataIO::Config& as only argument. Either implement "
                 "such a constructor, pass an explicit initial cell state to "
                 "the CellManager, or set the CellTraits such that a default "
@@ -599,7 +625,7 @@ private:
             }
 
             // Create the initial state (same for all cells)
-            return setup_cells(CellStateType(_cfg["cell_params"]));
+            return setup_cells(CellState(_cfg["cell_params"]));
         }
         // This point is never reached.
     }

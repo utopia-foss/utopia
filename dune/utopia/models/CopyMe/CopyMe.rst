@@ -1,23 +1,26 @@
 
-``CopyMe`` - The basis for your new model
-=========================================
+``CopyMe`` - A good place to start with your CA-based model
+===========================================================
 
-**Important:** This is an example for the documentation of your model implementation. Before your model can be merged into the master, the following steps are required:
+This is an *example* for the documentation of your model implementation. 
+Use your own creativity and structure to convey the important information about your model in a nice and catchy way.
 
-* Fill in this documentation file
-* ``git mv`` this file to the ``doc/models`` directory. Make sure it is named exactly as your model is named.
+**Important:** Before your model can be merged into the master, the following steps are required:
+
+1. Fill in this documentation file
+2. ``git mv`` this file to the ``doc/models`` directory. Make sure it is named exactly as your model is named.
+3. After the move, make sure the link in the :ref:`Default Model Configuration` section points to your model configuration.
 
 For the reStructuredText syntax, see `here <http://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html>`_, but there are also some examples below.
 
-This template ``CopyMe.rst`` is just a proposition, but you can use your own creativity and structure to convey the important information about your model in a nice and catchy way. Feel free to add or delete new sections.
 
-Fundamentals
-------------
+Model Fundamentals
+------------------
 
 Here, you can add some description of the fundamental ideas of your model and the questions it potentially can address.
 
-Subchapter of the Fundamentals
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+A subsection
+^^^^^^^^^^^^
 
 Here, important subaspects of the model can be addressed. Feel free to use math blocks:
 
@@ -30,7 +33,9 @@ Here, important subaspects of the model can be addressed. Feel free to use math 
 Implementation Details
 ----------------------
 
-This section provides a few important implementation details.
+This section provides a few important implementation details...
+
+You can use some short code blocks to convey some information. Adjust the language to your need (``c++``, ``python``, ...)
 
 .. code-block:: yaml
 
@@ -42,28 +47,25 @@ This section provides a few important implementation details.
    spam: 42
 
 
-More Conceptual and Theoretical Background
-------------------------------------------
+Default Model Configuration
+---------------------------
 
-Models normally are based on a lot of theory. Here, you can mention or explain some of it. Further, you can refer to important papers and/or books.
+Below are the default configuration parameters for the ``ForestFire`` model.
 
-Theory of Template Models
-^^^^^^^^^^^^^^^^^^^^^^^^^
+.. literalinclude:: ../../dune/utopia/models/CopyMe/CopyMe_cfg.yml
+   :language: yaml
+   :start-after: ---
 
-I am actually not so sure, if there is a lot of theory behind this...
+.. todo::  Make sure the path is correct here.
 
-Theory of Everything
-^^^^^^^^^^^^^^^^^^^^
-
-42 [Adams 1979]
 
 Possible Future Extensions
 --------------------------
 
 You have a nice idea, but
 
-#. that would open a completely new storyline and thus would need the creation of a new model that is based on this one.
-#. you just did not have the time to explore everything, however, it would probably be a good idea to look into this in future work.
+* that would open a completely new storyline and thus would need the creation of a new model that is based on this one.
+* you just did not have the time to explore everything, however, it would probably be a good idea to look into this in future work.
 
 Well... write it down here, maybe someone picks it up.
 

@@ -103,13 +103,13 @@ public:
     /** \detail For a square lattice, this is just the quotient of grid shape
       *         and extent of physical space, separately in each dimension
       */
-    const SpaceVec effective_resolution() const override {
+    SpaceVec effective_resolution() const override {
         // Use element-wise division by the physical extent (double)
         return _shape / this->_space->extent;
     }
 
     /// Get shape of the square grid
-    const MultiIndex shape() const override {
+    MultiIndex shape() const override {
         // Can just return the calculated member here
         return _shape;
     }
@@ -119,7 +119,7 @@ public:
     /// Returns the multi-index of the cell with the given ID
     /** \note This method does not perform bounds checking of the given ID!
       */
-    const MultiIndex midx_of(const IndexType& id) const override {
+    MultiIndex midx_of(const IndexType& id) const override {
         static_assert(dim <= 2, "MultiIndex only implemented for 1D and 2D!");
 
         if constexpr (dim == 1) {
@@ -134,7 +134,7 @@ public:
     /// Returns the barycenter of the cell with the given ID
     /** \note This method does not perform bounds checking of the given ID!
       */
-    const SpaceVec barycenter_of(const IndexType& id) const override {
+    SpaceVec barycenter_of(const IndexType& id) const override {
         // Offset on grid + offset within cell
         return (midx_of(id) % _cell_extent) + (_cell_extent/2.);
         // NOTE The %-operator performs element-wise multiplication
@@ -143,7 +143,7 @@ public:
     /// Returns the extent of the cell with the given ID
     /** \note This method does not perform bounds checking of the given ID!
       */
-    const SpaceVec extent_of(const IndexType&) const override {
+    SpaceVec extent_of(const IndexType&) const override {
         return _cell_extent;
     }
 
@@ -153,9 +153,7 @@ public:
       *         bottom left-hand vertex of the cell.
       * \note   This method does not perform bounds checking of the given ID!
       */
-    const std::vector<SpaceVec>
-        vertices_of(const IndexType& id) const override
-    {
+    std::vector<SpaceVec> vertices_of(const IndexType& id) const override {
         static_assert(dim == 2,
                       "SquareGrid::vertices_of is only implemented for 2D!");
 
@@ -253,7 +251,7 @@ public:
       *                2D:  bottom, top
       *                3D:  back, front
       */
-    const std::set<IndexType>
+    std::set<IndexType>
         boundary_cells(std::string select="all") const override
     {
         static_assert(dim <= 2,
