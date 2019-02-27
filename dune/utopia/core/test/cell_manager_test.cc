@@ -80,8 +80,9 @@ struct TestLinks {
 
 
 // Create some cell traits definitions, i.e. bundling the cell traits together
-// The second and third template parameters for sync and tags, respectively,
-// are optional.
+// The second template parameters defines the update mode, the third whether
+// the default constructor is to be used.
+
 /// For a default-constructible cell state
 using CellTraitsDC = Utopia::CellTraits<CellStateDC, UpdateMode::sync, true>;
 
@@ -146,7 +147,7 @@ public:
     {}
 
 
-    // -- Other functions -- //
+    // -- Setup functions (needed because pseudo parent is not used) -- //
 
     std::shared_ptr<spdlog::logger> setup_logger(const std::string name) {
         auto logger = spdlog::get(name);
@@ -172,6 +173,7 @@ public:
         }
     }
 
+    // -- Other functions, mirroring model interface -- //
     /// Return a mock logger
     std::shared_ptr<spdlog::logger> get_logger() {
         return _log;
@@ -460,7 +462,7 @@ int main(int, char *[]) {
         return 0;
     }
     catch (std::exception& e) {
-        std::cerr << "Exception occured: " << e.what() << std::endl;
+        std::cerr << "Exception occurred: " << e.what() << std::endl;
         // NOTE cannot call cleanup here because the scope is not shared
         return 1;
     }

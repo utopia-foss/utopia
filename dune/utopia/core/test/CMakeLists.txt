@@ -1,5 +1,7 @@
 # place mesh and config files in build directory
 file(COPY "square.msh" "cube.msh"
+          "agent_manager_test.yml"
+          "agent_manager_integration_test.yml"
           "cell_manager_test.yml"
           "cell_manager_integration_test.yml"
           "grid_square_test.yml"
@@ -12,10 +14,13 @@ file(COPY "square.msh" "cube.msh"
 
 # collect CORE tests
 set(TESTS_CORE
-    apply_test
+    agent_manager_test
+    agent_manager_integration_test
     agent_naive_test
     agent_test_2d
     agent_test_3d
+    agent_test_new
+    apply_test
     cell_manager_test
     cell_manager_integration_test
     cell_test

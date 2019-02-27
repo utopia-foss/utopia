@@ -678,7 +678,7 @@ public:
             if (err < 0)
             {
                 throw std::runtime_error(
-                    "An error occured while writing a containertype to "
+                    "An error occurred while writing a containertype to "
                     "attribute " +
                     _name + "!");
             }
@@ -693,7 +693,7 @@ public:
             if (err < 0)
             {
                 throw std::runtime_error(
-                    "An error occured while writing a stringtype to "
+                    "An error occurred while writing a stringtype to "
                     "attribute " +
                     _name + "!");
             }
@@ -721,7 +721,7 @@ public:
             if (err < 0)
             {
                 throw std::runtime_error(
-                    "An error occured while writing a pointertype/plain array "
+                    "An error occurred while writing a pointertype/plain array "
                     "to "
                     "attribute " +
                     _name + "!");
@@ -735,7 +735,7 @@ public:
             if (err < 0)
             {
                 throw std::runtime_error(
-                    "An error occured while writing a scalar "
+                    "An error occurred while writing a scalar "
                     "to "
                     "attribute " +
                     _name + "!");

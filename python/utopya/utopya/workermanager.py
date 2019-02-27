@@ -524,7 +524,7 @@ class WorkerManager:
             self._handle_pending_exceptions()
 
         except WorkerManagerError as err:
-            # Some error not related to the non-zero exit code occured.
+            # Some error not related to the non-zero exit code occurred.
             # Gracefully terminate remaining tasks before re-raising the
             # exception
 
@@ -548,7 +548,7 @@ class WorkerManager:
                 log.critical("Exiting now ...")
                 sys.exit(err.task.worker_status)
             
-            # Some other error occured; just raise
+            # Some other error occurred; just raise
             log.critical("Re-raising error ...")
             raise
 
@@ -764,7 +764,7 @@ class WorkerManager:
         starting from the one added most recently.
 
         As the WorkerManager occupies the main thread, it is difficult for
-        other threads to signal to the WorkerManager that an exception occured.
+        other threads to signal to the WorkerManager that an exception occurred.
         The pending_exceptions attribute allows such a handling; child threads
         can just add an exception object to it and they get handled during
         working of the WorkerManager.
@@ -861,7 +861,7 @@ class WorkerManagerError(BaseException):
     """The base exception class for WorkerManager errors"""
 
 class WorkerManagerTotalTimeout(WorkerManagerError):
-    """Raised when a total timeout occured"""
+    """Raised when a total timeout occurred"""
 
 class WorkerTaskError(WorkerManagerError):
     """Raised when there was an error in a WorkerTask"""

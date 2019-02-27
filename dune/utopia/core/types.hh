@@ -39,6 +39,10 @@ struct GridTypeAdaptor
     using Index = typename Mapper::Index;
 };
 
+/// Type of the variably sized container for entities
+template<typename EntityType>
+using EntityContainer = std::vector<std::shared_ptr<EntityType>>;
+
 /// Type of the variably sized container for cells
 template<typename CellType>
 using CellContainer = std::vector<std::shared_ptr<CellType>>;
@@ -106,6 +110,11 @@ enum UpdateMode : bool {
 };
 // TODO Integrate closer with (new) entity type
 
+
+// -- Types introduces with the new AgentManager -------------------------------
+
+/// Type for the agent ID
+using IDType = std::size_t;
 
 } // namespace Utopia
 
