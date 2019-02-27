@@ -98,6 +98,29 @@ private:
 };
 
 
+/// An exception class for invalid positions in Utopia::Space
+class OutOfSpace : public Exception {
+public:
+    /// Construct the exception with the invalid position and the space given
+    template<class VecT, class Space>
+    OutOfSpace(const VecT& invalid_pos,
+               const std::shared_ptr<Space>& space,
+               const std::string prefix = {})
+    :
+        Exception([&](){
+            std::stringstream emsg;
+            if (prefix.length() > 0) {
+                emsg << prefix << " ";
+            }
+            emsg << "The given position " << std::endl << invalid_pos
+                 << "is not within the non-periodic space with extent"
+                 << std::endl << space->extent; 
+            return emsg.str();
+        }())
+    {}
+};
+
+
 /// A helper function to handle a Utopia-specific exception
 /** @param    exc  The exception to handle
   * @returns  int  The exit code from the exception

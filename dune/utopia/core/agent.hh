@@ -119,7 +119,7 @@ bool add (const std::shared_ptr<Agent> agent, Manager& manager)
    
 }
 
-/// Append an Agentcontainer to a managed container
+/// Append an AgentContainer to a managed container
 /** The new container will be inserted at the end of the container.
  *  \tparam debug Check if agents already exist in manager
  *  \param additional_agents AgentContainer to be added

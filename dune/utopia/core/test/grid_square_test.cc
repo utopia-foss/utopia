@@ -40,7 +40,7 @@ bool check_pos(Grid& grid, SpaceVec pos, IndexType expected_id) {
     }
     catch (std::exception& e) {
         std::cerr << "ERROR: While retrieving the cell ID for position "
-                  << std::endl << pos << ", the following exception occured: "
+                  << std::endl << pos << ", the following exception occurred: "
                   << e.what() << std::endl;
         return false;
     }

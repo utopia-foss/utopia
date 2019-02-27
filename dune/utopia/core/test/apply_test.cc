@@ -135,7 +135,7 @@ int main(int, char* []) {
         return 0;
     }
     catch (std::exception& e) {
-        std::cerr << "Exception occured: " << e.what() << std::endl;
+        std::cerr << "Exception occurred: " << e.what() << std::endl;
         return 1;
     }
     catch (...) {

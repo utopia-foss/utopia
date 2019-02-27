@@ -38,7 +38,7 @@ int main (int argc, char** argv)
         return 1;
     }
     catch (...) {
-        std::cerr << "An unexpected exception occured!" << std::endl;
+        std::cerr << "An unexpected exception occurred!" << std::endl;
         return 1;
     }
 }

@@ -24,7 +24,7 @@ int main (int, char** argv) {
         return 1;
     }
     catch (...) {
-        std::cerr << "Exception occured!" << std::endl;
+        std::cerr << "Exception occurred!" << std::endl;
         return 1;
     }
 }
