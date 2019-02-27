@@ -2,6 +2,7 @@
 #define UTOPIA_CORE_AGENTMANAGER_HH
 
 #include "types.hh"
+#include "exceptions.hh"
 #include "agent_new.hh"         // NOTE Use agent.hh eventually
 
 namespace Utopia {
@@ -436,11 +437,8 @@ private:
             // For nonperiodic space, need to make sure the position is valid
             return [this](Agent& agent, const SpaceVec& pos){
                 if (not this->_space->contains(pos)) {
-                    std::stringstream emsg;
-                    emsg << "The given agent position " << std::endl << pos
-                         << "is not within the non-periodic space with extent"
-                         << std::endl << this->_space->extent;
-                    throw std::invalid_argument(emsg.str());
+                    throw OutOfSpace(pos, this->_space,
+                                     "Could not move agent!");
                 }
 
                 // Set the new agent position
