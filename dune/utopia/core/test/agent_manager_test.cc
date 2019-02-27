@@ -4,8 +4,10 @@
 
 #include "agent_manager_test.hh"
 #include "testtools.hh"
+#include "../exceptions.hh"
 
 using namespace Utopia::Test;
+
 
 int main(int, char *[]) {
     try {
@@ -103,8 +105,8 @@ int main(int, char *[]) {
 
         // -------------------------------------------------------------------
         
-        std::cout << "------ Testing agent dynamics (synchronous, periodic)... ------"
-                  << std::endl;
+        std::cout << "------ Testing agent dynamics (synchronous, periodic)"
+                     "... ------" << std::endl;
         
         // Create a scope to prevent hanging variables afterwards
         { 
@@ -276,20 +278,14 @@ int main(int, char *[]) {
         assert(agent->position()[0] == new_pos[0] * 2.);
         assert(agent->position()[1] == new_pos[1] * 2.);
 
-        std::cout << "Asserting that an error is thrown if the space is "
-                     "exceeded..."
-                  << std::endl;
-
-        try{
-            am.move_to(agent, {5.,5.});
-        }
-        catch(std::exception& e){
-            std::stringstream emsg;
-            emsg << "The given agent position " << std::endl << SpaceVec({5., 5.})
-                << "is not within the non-periodic space with extent"
-                << std::endl << mm_dyn_sync_nonperiodic._space.extent;
-            assert(e.what() == emsg.str());
-        }
+        // Check error messages are as expected
+        assert(check_error_message<Utopia::OutOfSpace>(
+            "OutOfSpace exception for invalid position",
+            [&](){
+                am.move_to(agent, {5.,5.});
+            },
+            "Could not move agent!", "", true)
+        );
 
         std::cout << "Correct." << std::endl << std::endl;
         };
@@ -333,21 +329,15 @@ int main(int, char *[]) {
         assert(agent->position()[0] == new_pos[0] * 2.);
         assert(agent->position()[1] == new_pos[1] * 2.);
 
-        std::cout << "Asserting that an error is thrown if the space is "
-                     "exceeded..."
-                  << std::endl;
-
-        try{
-            am.move_to(agent, {5.,5.});
-        }
-        catch(std::exception& e){
-            std::stringstream emsg;
-            emsg << "The given agent position " << std::endl << SpaceVec({5., 5.})
-                << "is not within the non-periodic space with extent"
-                << std::endl << mm_dyn_async_nonperiodic._space.extent;
-            assert(e.what() == emsg.str());
-        }
-
+        // Check error messages are as expected
+        assert(check_error_message<Utopia::OutOfSpace>(
+            "OutOfSpace exception for invalid position",
+            [&](){
+                am.move_to(agent, {5.,5.});
+            },
+            "Could not move agent!", "", true)
+        );
+        
         std::cout << "Correct." << std::endl << std::endl;
         };
 
