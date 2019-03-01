@@ -196,27 +196,17 @@ MultiIndexType<dim> as_MultiIndex(const DataIO::Config& node) {
     return DataIO::as_arma_vec<MultiIndexType<dim>, dim>(node);
 }
 
-// end group ConfigUtilities
-/**
- *  \}
- */
-
-
 
 // -- get_ interface ----------------------------------------------------------
-
-
-/**
- *  \addtogroup ConfigUtilities
- *  \{
- */
 
 /// Return the entry with the specified key from the specified node
 /** This function is a wrapper around the yaml-cpp YAML::Node::as fuction and
  *  enhances the error messages that can occurr in a read operation.
  *
  *  \note  Unlike Utopia::as_, this method allows to throw Utopoia::KeyErrors,
- *         which contain the name of the key that could not be accessed
+ *         which contain the name of the key that could not be accessed.
+ *         Also, the conversion needs to be supported by the underlying YAML
+ *         library.
  *
  *  \tparam ReturnType  The type to evaluate from the YAML::Node
  *
@@ -225,8 +215,8 @@ MultiIndexType<dim> as_MultiIndex(const DataIO::Config& node) {
  *
  *  \return The value of node[key], cast to ReturnType
  *
- *  \throw  YAML::Exception On bad conversions or non-existent nodes
  *  \throw  Utopia::KeyError On missing key
+ *  \throw  YAML::Exception On bad conversions or other YAML-related errors
  */
 template<typename ReturnType>
 ReturnType get_as(const std::string& key, const DataIO::Config& node) {
@@ -263,6 +253,7 @@ ReturnType get_as(const std::string& key, const DataIO::Config& node) {
 
 
 // Armadillo-related specialization
+// TODO These should be implemented specializations of the get_as function!
 namespace DataIO {
 /// Retrieve a config entry as Armadillo column vector using get_
 /** \note This method is necessary because arma::Col::fixed cannot be

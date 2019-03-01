@@ -150,10 +150,11 @@ int main(int, char**) {
         assert(mi1[0] == 1);
         assert(mi1[1] == 2);
         assert(mi1[2] == 3);
-        
-        } // End of local test scope
 
         std::cout << "Success." << std::endl << std::endl;
+
+        } // End of local test scope
+
 
 
         std::cout << "----- Checking KeyError ... -----" << std::endl;
