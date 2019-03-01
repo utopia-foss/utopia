@@ -51,7 +51,7 @@ class __Agent;
 
 /// Agent specialization for asynchronous update
 template<typename Traits, typename Space>
-class __Agent<Traits, Space, typename std::enable_if_t<Traits::sync == false>>
+class __Agent<Traits, Space, std::enable_if_t<Traits::sync == false>>
 :
     public __Entity<Traits>
 {   
@@ -110,7 +110,7 @@ protected:
 
 /// Agent Specialisation for synchronous update
 template<typename Traits, typename Space>
-class __Agent<Traits, Space, typename std::enable_if_t<Traits::sync == true>>
+class __Agent<Traits, Space, std::enable_if_t<Traits::sync == true>>
 :
     public __Entity<Traits>
 {   
