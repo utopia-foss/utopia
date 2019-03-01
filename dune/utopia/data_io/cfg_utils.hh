@@ -45,10 +45,8 @@ YAML::Exception improve_yaml_exception(const Exc& e,
 }
 } // namespace DataIO
 
-
-// ----------------------------------------------------------------------------
-// NOTE The below is not inside the Utopia::DataIO namespace to make includes
-//      into models more convenient.
+// NOTE All code below is not inside the Utopia::DataIO namespace to make
+//      includes into models more convenient.
 
 
 // -- as_ interface -----------------------------------------------------------
@@ -63,7 +61,7 @@ YAML::Exception improve_yaml_exception(const Exc& e,
  *
  *  \deprecated  This function is deprecated as the error messages are hard to
  *               interpret in cases of zombie nodes; as an alternative, use
- *               the Utopia::get_ function and associated shortcuts.
+ *               the Utopia::get_as function and associated shortcuts.
  *
  *  \tparam  ReturnType  The type to evaluate from the YAML::Node
  *
@@ -73,6 +71,8 @@ YAML::Exception improve_yaml_exception(const Exc& e,
  *  \throw   YAML::Exception On bad conversions or non-existent nodes
  */
 template<typename ReturnType>
+[[deprecated("The as_ function is deprecated and will soon be removed! Please "
+             "use the new get_as(key, node) method instead.")]]
 ReturnType as_(const DataIO::Config& node) {
     // Try reading
     try {

@@ -11,7 +11,7 @@ variables:
   CPUS_BUILD: 4
 
   # Build flags
-  # CONFIG_FLAGS:
+  CONFIG_FLAGS: ""
   MAKE_FLAGS_BUILD: -j$CPUS_BUILD
 
 
@@ -186,10 +186,11 @@ build:debug: &build_debug
   <<: *ssh_access
   allow_failure: true
   script:
+    # FIXME After Utopia::as_ is removed, allow the deprecation warning again
     - CMAKE_FLAGS="
       -DCMAKE_BUILD_TYPE=Debug
       $CONFIG_FLAGS
-      -DCMAKE_CXX_FLAGS_DEBUG='$CMAKE_CXX_FLAGS_DEBUG -Werror'"
+      -DCMAKE_CXX_FLAGS_DEBUG='$CMAKE_CXX_FLAGS_DEBUG -Werror -Wno-deprecated-declarations'"
       $DUNECTRL --only=utopia configure
     - $DUNECTRL --only=utopia make $MAKE_FLAGS_BUILD build_tests
     - $DUNECTRL --only=utopia make $MAKE_FLAGS_BUILD all
@@ -198,12 +199,13 @@ build:debug-clang:
   <<: *build_debug
   image: ${TEST_IMAGE}-clang
   script:
+    # FIXME After Utopia::as_ is removed, allow the deprecation warning again
     - CMAKE_FLAGS="
       -DCMAKE_BUILD_TYPE=Debug
       $CONFIG_FLAGS
       -DCMAKE_C_COMPILER=clang
       -DCMAKE_CXX_COMPILER=clang++
-      -DCMAKE_CXX_FLAGS_DEBUG='$CMAKE_CXX_FLAGS_DEBUG -Werror'"
+      -DCMAKE_CXX_FLAGS_DEBUG='$CMAKE_CXX_FLAGS_DEBUG -Werror -Wno-deprecated-declarations'"
       $DUNECTRL --only=utopia configure
     - $DUNECTRL --only=utopia make $MAKE_FLAGS_BUILD build_tests
     - $DUNECTRL --only=utopia make $MAKE_FLAGS_BUILD all
