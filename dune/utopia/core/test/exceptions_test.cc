@@ -3,8 +3,6 @@
 #include <csignal>
 #include <iostream>
 
-#include <yaml-cpp/yaml.h>
-
 #include <dune/utopia/base.hh>
 #include <dune/utopia/core/exceptions.hh>
 
@@ -31,7 +29,8 @@ int main(int, char *[]) {
         assert(gs1.exit_code == 128 + abs(-2));
 
         // KeyError ...........................................................
-        using KeyError = Utopia::KeyError<YAML::Node>;
+        using KeyError = Utopia::KeyError;
+        using Config = Utopia::DataIO::Config;
 
         // Empty node
         KeyError ke0("foo", {});
@@ -40,7 +39,7 @@ int main(int, char *[]) {
                          "The given node contains no entries!"));
 
         // Zombie node
-        auto node = YAML::Node{};
+        auto node = Config{};
         KeyError ke1("foo", node["invalid_key"]);
         assert(str_match(ke1.what(), "KeyError: foo"));
         assert(str_match(ke1.what(),

@@ -2,31 +2,13 @@
 #define DATAIO_CFG_UTILS_HH
 
 #include <boost/core/demangle.hpp>
-#include <yaml-cpp/yaml.h>
 
-#include "../core/types.hh"
+#include "../core/types.hh"  // NOTE: DataIO::Config type declared there
 #include "../core/exceptions.hh"
 
 
 namespace Utopia {
 namespace DataIO {
-/**
- *  \addtogroup ConfigUtilities
- *  \{
- */
-
-/// Type of a dict-like configuration structure used throughout Utopia
-using Config = YAML::Node;
-// NOTE This type is made available mainly that we can potentially change
-//      the type used for the config. If changing something here, it might
-//      still be required to explicitly change other parts of core and/or
-//      data i/o where yaml-cpp is referenced directly
-
-// end group ConfigUtilities
-/**
- *  \}
- */
-
 // Config reading helper functions ........................................
 
 /// Improves yaml-cpp exceptions occurring for a given node

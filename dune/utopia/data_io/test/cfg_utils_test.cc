@@ -162,7 +162,7 @@ int main(int, char**) {
         try {
             get_as<bool>("i_do_not_exist", cfg);
         }
-        catch (Utopia::KeyError<DataIO::Config>& e) {
+        catch (Utopia::KeyError& e) {
             // is the expected exception
             std::string e_msg = e.what();
             std::cout << "  Got error message: " << e_msg << std::endl;
@@ -180,7 +180,7 @@ int main(int, char**) {
         try {
             get_as<bool>("invalid_key2", cfg["invalid_key1"]);
         }
-        catch (Utopia::KeyError<DataIO::Config>& e) {
+        catch (Utopia::KeyError& e) {
             // is the expected exception
             std::string e_msg = e.what();
             std::cout << "  Got error message: " << e_msg << std::endl;
@@ -198,7 +198,7 @@ int main(int, char**) {
         try {
             get_as<bool>("some_key", cfg["empty_map"]);
         }
-        catch (Utopia::KeyError<DataIO::Config>& e) {
+        catch (Utopia::KeyError& e) {
             // is the expected exception
             std::string e_msg = e.what();
             std::cout << "  Got error message: " << e_msg << std::endl;

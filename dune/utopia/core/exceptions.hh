@@ -6,6 +6,8 @@
 
 #include <yaml-cpp/yaml.h>
 
+#include "types.hh"
+
 
 namespace Utopia {
 
@@ -62,18 +64,17 @@ public:
 
 
 /// For access to a dict-like structure with a bad key
-template<class DictType>
 class KeyError : public Exception {
 public:
     /// Construct a KeyError exception, which has a standardized what message
-    KeyError(const std::string& key, const DictType& node)
+    KeyError(const std::string& key, const DataIO::Config& node)
     :
         Exception(generate_what_arg(key, node))
     {}
 
 private:
     /// Generates the what argument for the key error
-    std::string generate_what_arg(std::string key, DictType node) {
+    std::string generate_what_arg(std::string key, DataIO::Config node) {
         std::stringstream msg;
         msg << "KeyError: " << key << std::endl;
 
