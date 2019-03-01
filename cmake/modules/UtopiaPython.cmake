@@ -37,7 +37,7 @@ function(python_find_package)
         message(WARNING "Unparsed arguments in python_find_package!")
     endif()
 
-    execute_process(COMMAND ${UTOPIA_ENV_PIP} freeze
+    execute_process(COMMAND ${UTOPIA_ENV_PIP} show ${ARG_PACKAGE}
         RESULT_VARIABLE RETURN_VALUE
         OUTPUT_VARIABLE PIP_OUTPUT
     )
@@ -55,7 +55,7 @@ function(python_find_package)
     endif ()
 
     # Find out the version number using a regex
-    if (PIP_OUTPUT MATCHES "${ARG_PACKAGE}==([^\n]+)")
+    if (PIP_OUTPUT MATCHES "Version: ([^\n]+)")
         # check version
         if (ARG_VERSION)
             # Check against given version
