@@ -15,3 +15,5 @@ a_vector:
 an_array:
   - [1, 2]
   - [3, 4]
+
+empty_map: {}

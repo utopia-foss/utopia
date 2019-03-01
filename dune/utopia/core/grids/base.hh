@@ -296,8 +296,8 @@ protected:
             try {
                 if (key == "distance") {
                     try {
-                        _nbh_distance = get_as_<DistType>(nbh_params,
-                                                          "distance");
+                        _nbh_distance = get_as<DistType>("distance",
+                                                         nbh_params);
                     }
                     catch (...) {
                         if (required) throw;

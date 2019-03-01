@@ -4,11 +4,12 @@
 #include <cstdint>
 
 #include <armadillo>
+#include <yaml-cpp/yaml.h>
 
 #include "../base.hh"
 
-namespace Utopia
-{
+
+namespace Utopia {
     
 /// Type of default grid: Rectangular, lower left cell center has coordinates (0,0)
 template<int dim>
@@ -68,7 +69,25 @@ using entity_t = typename Container::value_type::element_type;
 } // namespace impl
 
 
-// -- Types introduces with the new CellManager ------------------------------
+// -- DataIO types that are needed throughout Core ----------------------------
+
+namespace DataIO {
+/**
+ *  \addtogroup ConfigUtilities
+ *  \{
+ */
+
+/// Type of a variadic dictionary-like data structure used throughout Utopia
+using Config = YAML::Node;
+
+// end group ConfigUtilities
+/**
+ *  \}
+ */
+}
+
+
+// -- Types introduces with the new CellManager -------------------------------
 
 /// Type for dimensions, i.e. very small unsigned integers
 using DimType = unsigned short;
@@ -111,7 +130,7 @@ enum UpdateMode : bool {
 // TODO Integrate closer with (new) entity type
 
 
-// -- Types introduces with the new AgentManager -------------------------------
+// -- Types introduces with the new AgentManager ------------------------------
 
 /// Type for the agent ID
 using IDType = std::size_t;
