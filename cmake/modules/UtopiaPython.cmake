@@ -7,7 +7,8 @@
 #          :option:
 #          :optional:
 #
-#          Whether this is a required package
+#          Whether this is a required package. Errors are only thrown if this
+#          flag is set.
 #
 #       .. cmake_param:: PACKAGE
 #          :required:
@@ -37,26 +38,28 @@ function(python_find_package)
         message(WARNING "Unparsed arguments in python_find_package!")
     endif()
 
-    execute_process(COMMAND ${UTOPIA_ENV_PIP} freeze
-        RESULT_VARIABLE RETURN_VALUE
-        OUTPUT_VARIABLE PIP_OUTPUT
-    )
-
-    # Make sure this did not fail
-    if (NOT RETURN_VALUE EQUAL "0")
-        message(SEND_ERROR "Error running pip: ${RETURN_VALUE}")
-        return()
-    endif ()
-
     # decide if we let errors pass
     set (ERROR_SWITCH "STATUS")
     if (ARG_REQUIRED)
         set (ERROR_SWITCH "SEND_ERROR")
     endif ()
 
+    # Now, let pip try to find the package
+    execute_process(COMMAND ${UTOPIA_ENV_PIP} show ${ARG_PACKAGE}
+        RESULT_VARIABLE RETURN_VALUE
+        OUTPUT_VARIABLE PIP_OUTPUT
+    )
+
+    # If this failed, a package with that name is not available
+    if (NOT RETURN_VALUE EQUAL "0")
+        message(${ERROR_SWITCH} "Could not find Python package ${ARG_PACKAGE}")
+        return()
+    endif ()
+    
+    # else: Package is installed.
     # Find out the version number using a regex
-    if (PIP_OUTPUT MATCHES "${ARG_PACKAGE}==([^\n]+)")
-        # check version
+    if (PIP_OUTPUT MATCHES "Version: ([^\n]+)")
+        # Found a version. Check it.
         if (ARG_VERSION)
             # Check against given version
             if (CMAKE_MATCH_1 VERSION_LESS ARG_VERSION)
@@ -64,6 +67,7 @@ function(python_find_package)
                                         "${ARG_PACKAGE} (Found version "
                                         "${CMAKE_MATCH_1} does not satisfy "
                                         "required version ${ARG_VERSION})")
+                # Regard as not found
                 return ()
             else ()
                 message(STATUS "Found Python package ${ARG_PACKAGE} "
@@ -75,14 +79,21 @@ function(python_find_package)
             message(STATUS "Found Python package ${ARG_PACKAGE} "
                            "${CMAKE_MATCH_1}")
         endif()
-
-        # set the success variable
-        set(PYTHON_PACKAGE_${ARG_PACKAGE}_FOUND TRUE PARENT_SCOPE)
-
-    # package not found
     else ()
-        message(${ERROR_SWITCH} "Could not find Python package ${ARG_PACKAGE}")
+        if (ARG_VERSION)
+            message(${ERROR_SWITCH} "Found Python package ${ARG_PACKAGE}, "
+                                    "but it does not specify a version. "
+                                    "(Required version is ${ARG_VERSION})")
+            # Regard as not found
+            return()
+        else ()
+            message(STATUS "Found Python package ${ARG_PACKAGE} "
+                           "(version unknown)")
+        endif()
     endif ()
+
+    # If this point is reached, we may set the success variable
+    set(PYTHON_PACKAGE_${ARG_PACKAGE}_FOUND TRUE PARENT_SCOPE)
 endfunction()
 
 
