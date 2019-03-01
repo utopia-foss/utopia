@@ -10,57 +10,57 @@
 
 namespace Utopia {
 namespace DataIO {
-    /**
-     *  \addtogroup ConfigUtilities
-     *  \{
-     */
+/**
+ *  \addtogroup ConfigUtilities
+ *  \{
+ */
 
-    /// Type of a dict-like configuration structure used throughout Utopia
-    using Config = YAML::Node;
-    // NOTE This type is made available mainly that we can potentially change
-    //      the type used for the config. If changing something here, it might
-    //      still be required to explicitly change other parts of core and/or
-    //      data i/o where yaml-cpp is referenced directly
+/// Type of a dict-like configuration structure used throughout Utopia
+using Config = YAML::Node;
+// NOTE This type is made available mainly that we can potentially change
+//      the type used for the config. If changing something here, it might
+//      still be required to explicitly change other parts of core and/or
+//      data i/o where yaml-cpp is referenced directly
 
-    // end group ConfigUtilities
-    /**
-     *  \}
-     */
+// end group ConfigUtilities
+/**
+ *  \}
+ */
 
-    // Config reading helper functions ........................................
+// Config reading helper functions ........................................
 
-    /// Improves yaml-cpp exceptions occurring for a given node
-    template<class Exc>
-    YAML::Exception improve_yaml_exception(const Exc& e,
-                                           const Config& node,
-                                           std::string prefix = {})
-    {
-        // The string stream for the new, improved error message
-        std::stringstream e_msg;
-        e_msg << prefix << " ";
-        e_msg << "Got " << boost::core::demangle(typeid(e).name()) << ". ";
+/// Improves yaml-cpp exceptions occurring for a given node
+template<class Exc>
+YAML::Exception improve_yaml_exception(const Exc& e,
+                                       const Config& node,
+                                       std::string prefix = {})
+{
+    // The string stream for the new, improved error message
+    std::stringstream e_msg;
+    e_msg << prefix << " ";
+    e_msg << "Got " << boost::core::demangle(typeid(e).name()) << ". ";
 
-        // Create a custom error message depending on whether the node is a
-        // zombie or a mark is available
-        if (not node) {
-            // Was a zombie
-            e_msg << "The given node was a Zombie! Check that the key you are "
-                     "trying to read from actually exists. ";
-        }
-        else if (not node.Mark().is_null()) {
-            // A mark is available to use as a hint 
-            // NOTE Mark() provides the line and column in the config file, if
-            //      available, i.e.: if not a zombie node
-            e_msg << "Check that the corresponding line of the config file "
-                     "matches the desired read operation or type conversion. ";
-        }
-
-        // Give some information on the node's content:
-        e_msg << "The content of the node is:  " << YAML::Dump(node);
-
-        // Return the custom exception object; can be thrown on other side
-        return YAML::Exception(node.Mark(), e_msg.str());
+    // Create a custom error message depending on whether the node is a
+    // zombie or a mark is available
+    if (not node) {
+        // Was a zombie
+        e_msg << "The given node was a Zombie! Check that the key you are "
+                 "trying to read from actually exists. ";
     }
+    else if (not node.Mark().is_null()) {
+        // A mark is available to use as a hint 
+        // NOTE Mark() provides the line and column in the config file, if
+        //      available, i.e.: if not a zombie node
+        e_msg << "Check that the corresponding line of the config file "
+                 "matches the desired read operation or type conversion. ";
+    }
+
+    // Give some information on the node's content:
+    e_msg << "The content of the node is:  " << YAML::Dump(node);
+
+    // Return the custom exception object; can be thrown on other side
+    return YAML::Exception(node.Mark(), e_msg.str());
+}
 } // namespace DataIO
 
 
@@ -157,39 +157,39 @@ std::array<T, len> as_array(const DataIO::Config& node) {
 
 // Armadillo-related specialization
 namespace DataIO {
-    /// Retrieve a config entry as Armadillo column vector
-    /** \note This method is necessary because arma::Col::fixed cannot be
-      *       constructed from std::vector. In such cases, the target vector is
-      *       constructed element-wise.
-      *
-      * \tparam CVecT The Armadillo vector type to return
-      * \tparam dim   The dimensionality of the vector (only needed for)
-      */
-    template<typename CVecT, DimType dim=0>
-    CVecT as_arma_vec(const DataIO::Config& node) {
-        // Extract the field vector element type; assuming Armadillo interface
-        using element_t = typename CVecT::elem_type;
+/// Retrieve a config entry as Armadillo column vector
+/** \note This method is necessary because arma::Col::fixed cannot be
+  *       constructed from std::vector. In such cases, the target vector is
+  *       constructed element-wise.
+  *
+  * \tparam CVecT The Armadillo vector type to return
+  * \tparam dim   The dimensionality of the vector (only needed for)
+  */
+template<typename CVecT, DimType dim=0>
+CVecT as_arma_vec(const DataIO::Config& node) {
+    // Extract the field vector element type; assuming Armadillo interface
+    using element_t = typename CVecT::elem_type;
 
-        // Check if it can be constructed from a vector
-        if constexpr (std::is_constructible<CVecT, std::vector<element_t>>()) {
-            return as_<std::vector<element_t>>(node);
-        }
-        else {
-            static_assert(dim > 0,
-                "Need template argument dim given if target type is not "
-                "constructible from std::vector.");
-
-            // Needs to be constructed element-wise
-            CVecT cvec;
-            const auto vec = as_array<element_t, dim>(node);
-
-            for (DimType i=0; i<dim; i++) {
-                cvec[i] = vec[i];
-            }
-
-            return cvec;
-        }
+    // Check if it can be constructed from a vector
+    if constexpr (std::is_constructible<CVecT, std::vector<element_t>>()) {
+        return as_<std::vector<element_t>>(node);
     }
+    else {
+        static_assert(dim > 0,
+            "Need template argument dim given if target type is not "
+            "constructible from std::vector.");
+
+        // Needs to be constructed element-wise
+        CVecT cvec;
+        const auto vec = as_array<element_t, dim>(node);
+
+        for (DimType i=0; i<dim; i++) {
+            cvec[i] = vec[i];
+        }
+
+        return cvec;
+    }
+}
 } // namespace DataIO
 
 
@@ -247,7 +247,7 @@ MultiIndexType<dim> as_MultiIndex(const DataIO::Config& node) {
  *  \throw  Utopia::KeyError On missing key
  */
 template<typename ReturnType>
-ReturnType get_(const std::string& key, const DataIO::Config& node) {
+ReturnType get_as(const std::string& key, const DataIO::Config& node) {
     try {
         return node[key].template as<ReturnType>();
     }
@@ -274,38 +274,6 @@ ReturnType get_(const std::string& key, const DataIO::Config& node) {
     }
 }
 
-/// Shortcut for Utopia::get_ to retrieve an entry as int
-int get_int(const std::string& key, const DataIO::Config& node) {
-    return get_<int>(key, node);
-}
-
-/// Shortcut for Utopia::get_ to retrieve an entry as double
-double get_double(const std::string& key, const DataIO::Config& node) {
-    return get_<double>(key, node);
-}
-
-/// Shortcut for Utopia::get_ to retrieve an entry as bool
-bool get_bool(const std::string& key, const DataIO::Config& node) {
-    return get_<bool>(key, node);
-}
-
-/// Shortcut for Utopia::get_ to retrieve an entry as std::string
-std::string get_str(const std::string& key, const DataIO::Config& node) {
-    return get_<std::string>(key, node);
-}
-
-/// Shortcut for Utopia::get_ to retrieve an entry as std::vector
-template<typename T>
-std::vector<T> get_vector(const std::string& key, const DataIO::Config& node) {
-    return get_<std::vector<T>>(key, node);
-}
-
-/// Shortcut for Utopia::get_ to retrieve an entry as std::array
-template<typename T, std::size_t len>
-std::array<T, len> get_array(const std::string& key, const DataIO::Config& node) {
-    return get_<std::array<T, len>>(key, node);
-}
-
 // end group ConfigUtilities
 /**
  *  \}
@@ -314,39 +282,39 @@ std::array<T, len> get_array(const std::string& key, const DataIO::Config& node)
 
 // Armadillo-related specialization
 namespace DataIO {
-    /// Retrieve a config entry as Armadillo column vector using get_
-    /** \note This method is necessary because arma::Col::fixed cannot be
-      *       constructed from std::vector. In such cases, the target vector is
-      *       constructed element-wise.
-      *
-      * \tparam CVecT The Armadillo vector type to return
-      * \tparam dim   The dimensionality of the vector (only needed for)
-      */
-    template<typename CVecT, DimType dim=0>
-    CVecT get_arma_vec(const std::string& key, const DataIO::Config& node) {
-        // Extract the field vector element type; assuming Armadillo interface
-        using element_t = typename CVecT::elem_type;
+/// Retrieve a config entry as Armadillo column vector using get_
+/** \note This method is necessary because arma::Col::fixed cannot be
+  *       constructed from std::vector. In such cases, the target vector is
+  *       constructed element-wise.
+  *
+  * \tparam CVecT The Armadillo vector type to return
+  * \tparam dim   The dimensionality of the vector (only needed for)
+  */
+template<typename CVecT, DimType dim=0>
+CVecT get_as_arma_vec(const std::string& key, const DataIO::Config& node) {
+    // Extract the field vector element type; assuming Armadillo interface
+    using element_t = typename CVecT::elem_type;
 
-        // Check if it can be constructed from a vector
-        if constexpr (std::is_constructible<CVecT, std::vector<element_t>>()) {
-            return get_<std::vector<element_t>>(key, node);
-        }
-        else {
-            static_assert(dim > 0,
-                "Need template argument dim given if target type is not "
-                "constructible from std::vector.");
-
-            // Needs to be constructed element-wise
-            CVecT cvec;
-            const auto vec = get_array<element_t, dim>(key, node);
-
-            for (DimType i=0; i<dim; i++) {
-                cvec[i] = vec[i];
-            }
-
-            return cvec;
-        }
+    // Check if it can be constructed from a vector
+    if constexpr (std::is_constructible<CVecT, std::vector<element_t>>()) {
+        return get_as<std::vector<element_t>>(key, node);
     }
+    else {
+        static_assert(dim > 0,
+            "Need template argument dim given if target type is not "
+            "constructible from std::vector.");
+
+        // Needs to be constructed element-wise
+        CVecT cvec;
+        const auto vec = get_as<std::array<element_t, dim>>(key, node);
+
+        for (DimType i=0; i<dim; i++) {
+            cvec[i] = vec[i];
+        }
+
+        return cvec;
+    }
+}
 } // namespace DataIO
 
 
@@ -355,24 +323,24 @@ namespace DataIO {
  *  \{
  */
 
-/// Shortcut for Utopia::get_ to retrieve an entry as SpaceVec
+/// Special case of Utopia::get_as to retrieve an entry as SpaceVec
 /** \tparam dim The dimensionality of the returned Utopia::SpaceVecType
  */
 template<DimType dim>
-SpaceVecType<dim> get_SpaceVec(const std::string& key,
-                               const DataIO::Config& node)
+SpaceVecType<dim> get_as_SpaceVec(const std::string& key,
+                                  const DataIO::Config& node)
 {
-    return DataIO::get_arma_vec<SpaceVecType<dim>, dim>(key, node);
+    return DataIO::get_as_arma_vec<SpaceVecType<dim>, dim>(key, node);
 }
 
-/// Shortcut for Utopia::get_ to retrieve an entry as MultiIndex
+/// Special case of Utopia::get_as to retrieve an entry as MultiIndex
 /** \tparam dim The dimensionality of the returned Utopia::MultiIndexType
  */
 template<DimType dim>
-MultiIndexType<dim> get_MultiIndex(const std::string& key,
-                                   const DataIO::Config& node)
+MultiIndexType<dim> get_as_MultiIndex(const std::string& key,
+                                      const DataIO::Config& node)
 {
-    return DataIO::get_arma_vec<MultiIndexType<dim>, dim>(key, node);
+    return DataIO::get_as_arma_vec<MultiIndexType<dim>, dim>(key, node);
 }
 
 // end group ConfigUtilities

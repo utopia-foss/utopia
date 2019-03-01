@@ -122,36 +122,31 @@ int main(int, char**) {
         { // Local test scope
 
         // String access
-        assert(get_<std::string>("foo", cfg) == "bar");
-        assert(get_str("spam", cfg) == "eggs");
+        assert(get_as<std::string>("foo", cfg) == "bar");
+        assert(get_as<std::string>("spam", cfg) == "eggs");
 
         // Double, bool, int
-        assert(get_double("a_double", cfg) == 3.14159);
-        assert(get_bool("a_bool", cfg));
-        assert(get_int("an_int", cfg) == 42);
-        assert(get_<int>("an_int", cfg) == 42);
+        assert(get_as<double>("a_double", cfg) == 3.14159);
+        assert(get_as<bool>("a_bool", cfg));
+        assert(get_as<int>("an_int", cfg) == 42);
 
         // vector
         std::vector vec({1, 2, 3});
-        assert(get_<std::vector<int>>("a_vector", cfg) == vec);
-        assert(get_vector<int>("a_vector", cfg) == vec);
+        assert(get_as<std::vector<int>>("a_vector", cfg) == vec);
 
         // array
         std::array<std::array<int, 2>, 2> a1({{{{1, 2}}, {{3, 4}}}});
 
-        auto a2 = get_<std::array<std::array<int, 2>, 2>>("an_array", cfg);
+        auto a2 = get_as<std::array<std::array<int, 2>, 2>>("an_array", cfg);
         assert(a1 == a2);
 
-        auto a3 = get_array<std::array<int, 2>, 2>("an_array", cfg);
-        assert(a1 == a3);
-
         // armadillo vector
-        auto sv1 = get_SpaceVec<3>("a_vector", cfg);
+        auto sv1 = get_as_SpaceVec<3>("a_vector", cfg);
         assert(sv1[0] == 1.);
         assert(sv1[1] == 2.);
         assert(sv1[2] == 3.);
 
-        auto mi1 = get_MultiIndex<3>("a_vector", cfg);
+        auto mi1 = get_as_MultiIndex<3>("a_vector", cfg);
         assert(mi1[0] == 1);
         assert(mi1[1] == 2);
         assert(mi1[2] == 3);
@@ -165,7 +160,7 @@ int main(int, char**) {
         
         // Key missing
         try {
-            get_bool("i_do_not_exist", cfg);
+            get_as<bool>("i_do_not_exist", cfg);
         }
         catch (Utopia::KeyError<DataIO::Config>& e) {
             // is the expected exception
@@ -183,7 +178,7 @@ int main(int, char**) {
 
         // Zombie node
         try {
-            get_bool("invalid_key2", cfg["invalid_key1"]);
+            get_as<bool>("invalid_key2", cfg["invalid_key1"]);
         }
         catch (Utopia::KeyError<DataIO::Config>& e) {
             // is the expected exception
@@ -201,7 +196,7 @@ int main(int, char**) {
 
         // Empty node
         try {
-            get_bool("some_key", cfg["empty_map"]);
+            get_as<bool>("some_key", cfg["empty_map"]);
         }
         catch (Utopia::KeyError<DataIO::Config>& e) {
             // is the expected exception
