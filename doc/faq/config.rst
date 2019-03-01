@@ -1,8 +1,9 @@
 Utopia Configuration FAQs
 =========================
 
-This part of the FAQs are concerned with all questions around the configuration of Utopia, its models, plots, and frontend.
-It does not cover the general aspects of YAML as a configuration language.
+This part of the FAQs are concerned with all questions around the configuration
+of Utopia, its models, plots, and frontend. It does not cover the general
+aspects of YAML as a configuration language.
 
 .. contents::
    :local:
@@ -13,7 +14,8 @@ It does not cover the general aspects of YAML as a configuration language.
 In my model, how can I read entries from the configuration?
 -----------------------------------------------------------
 
-To extract parameters for your model from the configuration, you can use the ``Utopia::get_as`` function and the corresponding shortcuts:
+To extract parameters for your model from the configuration, you can use the
+``Utopia::get_as`` function and the corresponding shortcuts:
 
 .. code-block:: c++
 
@@ -22,7 +24,8 @@ To extract parameters for your model from the configuration, you can use the ``U
     auto my_int = get_as<int>("my_int", cfg);
     auto my_uint = get_<unsigned int>("my_int", cfg);
 
-One way of remembering the order of arguments is: "``get_as`` an object of type ``double``: the entry ``my_double`` from this ``cfg`` node".
+One way of remembering the order of arguments is: "``get_as`` an object of type
+``double``: the entry ``my_double`` from this ``cfg`` node".
 
 See below for the function signature and more information.
 
@@ -37,10 +40,12 @@ See below for the function signature and more information.
 How can I read linear algebra objects (vectors, matrices, ...) from the config?
 -------------------------------------------------------------------------------
 
-For linear algebra operations, the `Armadillo <http://arma.sourceforge.net/>`_ library is a dependency of Utopia.
-For example, the ``SpaceVec`` used in ``Utopia::Space`` and related classes is such a type.
+For linear algebra operations, the `Armadillo <http://arma.sourceforge.net/>`_
+library is a dependency of Utopia. For example, the ``SpaceVec`` used in
+``Utopia::Space`` and related classes is such a type.
 
-The config utilities provide two convenience functions to extract data in this fashion:
+The config utilities provide two convenience functions to extract data in this
+fashion:
 
 .. code-block:: c++
 
@@ -49,9 +54,15 @@ The config utilities provide two convenience functions to extract data in this f
 
 For information on these functions and the return types, see below.
 
-To load data into custom ``arma`` objects, you will have to use an intermediate object that can be used to construct them. Please refer to the `Armadillo Documentation <http://arma.sourceforge.net/docs.html#Col>`_, where the supported constructors are specified.
-For example, an ``arma::vec`` (double-valued column vector of arbitrary size) can be constructed from an ``std::vector``, so you would use ``get_as<std::vector>`` and then invoke the ``arma::vec`` constructor.
-Note that for the ``::fixed`` vectors, not all these constructors are available; items need to be assigned element-wise for such cases.
+To load data into custom ``arma`` objects, you will have to use an intermediate
+object that can be used to construct them. Please refer to the
+`Armadillo Documentation <http://arma.sourceforge.net/docs.html#Col>`_,
+where the supported constructors are specified. For example, an ``arma::vec``
+(double-valued column vector of arbitrary size) can be constructed from an
+``std::vector``, so you would use ``get_as<std::vector>`` and then invoke the
+``arma::vec`` constructor. Note that for the ``::fixed`` vectors, not all these
+constructors are available; items need to be assigned element-wise for such
+cases.
 
 .. note::
 

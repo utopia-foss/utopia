@@ -203,8 +203,8 @@ MultiIndexType<dim> as_MultiIndex(const DataIO::Config& node) {
 /** This function is a wrapper around the yaml-cpp YAML::Node::as fuction and
  *  enhances the error messages that can occurr in a read operation.
  *
- *  \note  Unlike Utopia::as_, this method allows to throw Utopoia::KeyErrors,
- *         which contain the name of the key that could not be accessed.
+ *  \note  Unlike Utopia::as_, this method may throw Utopia::KeyError,
+ *         which contains the name of the key that could not be accessed.
  *         Also, the conversion needs to be supported by the underlying YAML
  *         library.
  *
