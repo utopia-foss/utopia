@@ -59,8 +59,11 @@ def test_ca_plotting(tmpdir):
     # Load
     mv.dm.load_from_cfg(print_tree=True)
 
-    # Plot the default configuration
+    # Plot the default configuration, which already includes some CA plotting
     mv.pm.plot_from_cfg()
+
+    # To explicitly plot with the frames writer, select the disabled config
+    mv.pm.plot_from_cfg(plot_only=["strategy_and_payoff_frames"])
 
 def test_bifurcation_codim_one_plotting(tmpdir):
     """Tests the plot_funcs submodule using the SavannaHomogeneous model"""

@@ -113,7 +113,7 @@ public:
 
     
 private:
-    // Base members: _time, _name, _cfg, _hdfgrp, _rng, _monitor, _space
+    // Base members: _time, _name, _cfg, _hdfgrp, _rng, _monitor, _log, _space
     // ... but you should definitely check out the documentation ;)
 
     // -- Members -------------------------------------------------------------
@@ -251,7 +251,7 @@ private:
         // Get the current state of the cell
         auto state = cell->state();
 
-        // With a probablity of 0.3 set the cell's state.some_state to 0
+        // With a probability of 0.3 set the cell's state.some_state to 0
         if (this->_prob_distr(*this->_rng) < 0.3) {
             state.some_state = 0;
         }

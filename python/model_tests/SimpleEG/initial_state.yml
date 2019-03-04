@@ -3,6 +3,8 @@
 # NOTE that this sets only the common values; the changes are set via passing
 #      additional keys to the the ModelTest.create_run_load method
 ---
+perform_sweep: true
+
 parameter_space:
   # Disable steps; not needed
   num_steps: 0
@@ -16,5 +18,8 @@ parameter_space:
   SimpleEG: !model
     model_name: SimpleEG
 
-    # Work on a smaller grid size
-    grid_size: [21, 21]
+    # Choose a lower resolution than default
+    cell_manager:
+      grid:
+        resolution: 11
+          

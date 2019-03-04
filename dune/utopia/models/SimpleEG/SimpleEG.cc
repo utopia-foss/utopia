@@ -3,35 +3,18 @@
 #include "SimpleEG.hh"
 
 using namespace Utopia::Models::SimpleEG;
-using Utopia::Setup::create_grid_manager_cells;
 
-int main (int argc, char** argv)
+
+int main (int, char** argv)
 {
     try {
-        Dune::MPIHelper::instance(argc, argv);
-
-
         // Initialize the PseudoParent from config file path
         Utopia::PseudoParent pp(argv[1]);
 
-        // Initialize the main model instance with different template arguments
-        // and then iterate it ... Need separate cases for this.
-        if (Utopia::as_bool(pp.get_cfg()["SimpleEG"]["periodic"])) {
-            // Periodic grid
-            SimpleEGModel model("SimpleEG", pp,
-                create_grid_manager_cells<State, true>("SimpleEG", pp)
-            );
-            model.run();
+        // Initialize the main model instance and directly run it
+        SimpleEG("SimpleEG", pp).run();
 
-        }
-        else {
-            // Non-periodic grid
-            SimpleEGModel model("SimpleEG", pp,
-                create_grid_manager_cells<State, false>("SimpleEG", pp)
-            );
-            model.run();
-        }
-
+        // Done.
         return 0;
     }
     catch (Utopia::Exception& e) {
