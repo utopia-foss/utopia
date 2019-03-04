@@ -15,25 +15,40 @@
 # Furthermore, if including other models' parameters via the `!model` tag, make
 # sure that no circular includes occur.
 ---
-# --- Grid parameters ---
-# Extensions in x and y direction
-grid_size: [64, 64]
+# --- Space parameters
+# The physical space this model is embedded in
+space:
+  periodic: false
 
-# Periodic boundary conditions? false: cells at boundary have fewer neighbors
-periodic: false
+# --- CellManager and cell initialization
+cell_manager:
+  grid:
+    structure: square
+    resolution: 64      # in cells per unit length of physical space
 
+  neighborhood:
+    mode: Moore
 
-# --- Initialization parameters ---
-# Initial state of the whole grid. 
-# Possible values: empty, init_density
-initial_state: init_density
-initial_density: 0.5    # uniform initial_density, only with 'init_density'
+  # Cell initialization parameters
+  cell_params:
+    # Initial tree density, value in [0, 1]
+    # With this probablity, a cell is initialized as tree (instead of empty)
+    initial_density: 0
 
-# Infection source - set true to activate.
+# --- Model Dynamics
+# Probability per site and time step to transition from state empty to tree
+growth_rate: 7.5e-3
+
+# Probablity per site and time step for a tree cell to become infected if an
+# infected cell is in the neighborhood
+p_infect: 1.
+
+# Probaility per site and time step for a random point infection of a tree cell
+p_rd_infect: 0.
+
+# Infection source - set true to activate a constant row of infected cells at
+# the bottom boundary. Requires non-periodic space.
 infection_source: true
-
-# Define infection source location. Can be: south
-infection_source_loc: south
 
 # Stones - set true to activate.
 stones: true
@@ -44,14 +59,3 @@ stone_init: random
 # Additional parameters for stone initialization
 stone_density: 0.1   # stone density in entire grid
 stone_cluster: 0.2   # how much stones prefer to form clusters
-
-
-# --- Parameters controlling the dynamics ---
-# Probablity for tree growth in each time step, per cell
-p_growth: 0.0075
-
-# Probablity for an infected cell to infect a cell in the neighborhood
-p_infect: 1.
-
-# Probaility for random point infection of a tree
-p_rd_infect: 0.

@@ -8,9 +8,11 @@ parameter_space:
 # Load the model config
   ContDisease: !model
     model_name: ContDisease  # imports the model config for the ContDisease model
-    initial_state: empty
+    cell_manager:
+      grid:
+        resolution: 32
+    cell_params:
+      initial_density: 0
+
     stones: false
     infection_source: true
-    infection_source_loc: south
-
-    grid_size: [32,32]

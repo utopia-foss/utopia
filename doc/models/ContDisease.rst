@@ -1,8 +1,8 @@
 
-``ContagiousDisease``
-=====================
+``ContDisease`` - A Model of a Contagious Disease
+=================================================
 
-This is a simple model of a contagious disease on a 2D-grid. It is based
+This is a simple model of a contagious disease on a 2D grid. It is based
 on the description in the script of the CCEES lecture of Prof. Roth.
 
 Fundamentals
@@ -17,49 +17,46 @@ Update Rules
 Each time step the cells update their respective states according to the
 following rules:
 
-.. code-block:: shell
+1. An ``infected`` cell turns into an ``empty`` cell
+2. An ``empty`` cell can become a ``tree`` cell with probability ``p_growth``.
+3. A ``tree`` cell can become infected in the following ways:
 
-    1: Infected --> Empty
-    2: Empty    --> Tree
-                    -with a probability p_growth
-    3: Tree     --> Infected
-                    -with the probability p_infect for each infected
-                    or herd cell in the neighbourhood
-                    -with probability p_rd_infect for random-point infections
+   - From a neighbouring infected cell with probability ``p_infect``
+     *per neighbor*
+   - Via a random point infection with probability ``p_rd_infect``
+   - Via a constantly infected cell, an infection ``source``
 
-The model uses the Van Neumann neighborhood (NextNeighbor), but it can be
-switched out with the Moore neighborhood (MooreNeighbor) fairly easy.
+For the neighborhood, both the von Neumann neighborhood (5-neighborhood) and the Moore neighborhood (9-neighborhood) are supported (see model configuration).
 
-Infection herds
----------------
+Infection sources
+^^^^^^^^^^^^^^^^^
 
-Infection herds can be activated at the lower boundary of the grid. They spread
-infection like normal infected trees, but don't revert back to the empty state.
-(like Rule 1).
+Constant infection sources can be activated at the lower boundary of the grid.
+They spread infection like normal infected trees, but don't revert back to the
+empty state.
 
 Stones
-------
+^^^^^^
 
 Stone are cells that can't be infected nor turn into trees. They are used to
 represent barriers in the forest. At the moment they can initialized at random,
 with an additional weight to encourage clustering of stones.
 
-Initialization
---------------
 
-The default initialization is empty, so all cells are empty. In future randomly
-distributed trees could be added as an initialization method, though it doesn't
-impact the model outcomes.
+Default configuration parameters
+--------------------------------
 
-Implementation Details
-----------------------
+Below are the default configuration parameters for the ``ContDisease`` model.
 
-The implementation is based on the CopyMe and the SimpleEG model.  
+.. literalinclude:: ../../dune/utopia/models/ContDisease/ContDisease_cfg.yml
+   :language: yaml
+   :start-after: ---
 
-Simulation Results – A Selection Process
-----------------------------------------
 
-The model outputs a plot for each time step of the states on a 2D-grid.
+Simulation Results
+------------------
+
+*TODO*
 
 Theoretical Background
 ----------------------
@@ -69,8 +66,7 @@ Theoretical Background
 Possible Future Extensions
 --------------------------
 * More ways to initialize stones.
-* Wwitch between neighborhoods with a config parameter
-* A plotting config parameter to only save every n-th plot (perfomance)
+
 
 References
 ----------

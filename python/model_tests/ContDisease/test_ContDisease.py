@@ -22,12 +22,8 @@ def test_initial_state_empty():
     grp = dm['multiverse'][0]['data/ContDisease']
     data_ = grp["state"]
 
-    # Get the grid size
-    uni_cfg = dm['multiverse'][0]['cfg']
-    grid_size = uni_cfg['ContDisease']['grid_size']
-
     # Check that only one step was performed and written
-    assert data_.shape == (1, grid_size[1], grid_size[0])
+    assert grp["state"].shape[0] == 1
 
     # Check if all cells are empty
     assert (data_ == 0).all()
@@ -42,12 +38,8 @@ def test_initial_stones():
     grp = dm['multiverse'][0]['data/ContDisease']
     data_ = grp["state"]
 
-    # Get the grid size
-    uni_cfg = dm['multiverse'][0]['cfg']
-    grid_size = uni_cfg['ContDisease']['grid_size']
-
     # Check that only one step was performed and written
-    assert data_.shape == (1, grid_size[1], grid_size[0])
+    assert grp["state"].shape[0] == 1
 
     # Check if any cell is in stone state
     assert (data_ == 4).any()
@@ -64,12 +56,8 @@ def test_initial_state_source_south():
     grp = dm['multiverse'][0]['data/ContDisease']
     data = grp["state"]
 
-    # Get the grid size
-    uni_cfg = dm['multiverse'][0]['cfg']
-    grid_size = uni_cfg['ContDisease']['grid_size']
-
     # Check that only one step was written
-    assert grp["state"].shape == (1, grid_size[1], grid_size[0])
+    assert grp["state"].shape[0] == 1
 
     # Check if all Cells are empty, apart from the lowest horizontal row
     assert (data[0][1:] == 0).all()
@@ -89,12 +77,8 @@ def test_growing_dynamic():
     grp = dm['multiverse'][0]['data/ContDisease']
     data_ = grp["state"]
 
-    # Get the grid size
-    uni_cfg = dm['multiverse'][0]['cfg']
-    grid_size = uni_cfg['ContDisease']['grid_size']
-
     # Check that only two steps were written
-    assert data_.shape == (2, grid_size[1], grid_size[0])
+    assert grp["state"].shape[0] == 2
 
     # Check that all cells are trees after one timestep
     assert (data_[1] == 1).all()
@@ -112,12 +96,8 @@ def test_infection_dynamic():
     grp = dm['multiverse'][0]['data/ContDisease']
     data = grp["state"]
 
-    # Get the grid size
-    uni_cfg = dm['multiverse'][0]['cfg']
-    grid_size = uni_cfg['ContDisease']['grid_size']
-
     # Check that only three steps were written
-    assert data.shape == (4, grid_size[1], grid_size[0])
+    assert grp["state"].shape[0] == 4
 
     #Check that the last row is an infection source
     assert (data[0][0] == 3).all()
@@ -156,6 +136,6 @@ def test_densities_calculation():
     assert([0 <= d <= 0 for d in d_infected])
     assert(0 <= d_stones <= 1)
     assert(0 <= d_source <= 1)
-    
+
     # Initially, no tree should be infected
     assert(d_infected[0] == 0)
