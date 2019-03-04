@@ -1,0 +1,36 @@
+# Test the percolation mode
+---
+perform_sweep: true
+
+parameter_space:
+  # Make a few steps
+  num_steps: 100
+
+  seed: !sweep
+    default: 42
+    range: [4]
+
+  # Load the model config
+  ForestFire: !model
+    model_name: ForestFire
+
+    # Need non-periodic space
+    space:
+      periodic: false
+
+    cell_manager:
+      # Work with lower resolution
+      grid:
+        resolution: 10
+
+      cell_params:
+        # High initial density
+        initial_density: 0.5
+    
+    # Set percolation mode    
+    light_bottom_row: true
+
+    # Increase growth rate and deactivate lightning
+    growth_rate: 0.05
+    lightning_frequency: 0.
+

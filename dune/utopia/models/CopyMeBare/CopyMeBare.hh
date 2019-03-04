@@ -60,7 +60,7 @@ private:
 
 
 public:
-    // -- Public interface ----------------------------------------------------
+    // -- Model Setup ---------------------------------------------------------
     /// Construct the CopyMeBare model
     /** \param name     Name of this model instance
      *  \param parent   The parent model this model instance resides in
@@ -84,10 +84,15 @@ public:
         this->write_data();
     }
 
-    // Setup functions ........................................................
-   
 
-    // Runtime functions ......................................................
+private:
+    // .. Setup functions .....................................................
+   
+    // .. Helper functions ....................................................
+
+public:
+    // -- Public Interface ----------------------------------------------------
+    // .. Simulation Control ..................................................
 
     /// Iterate a single step
     /** \detail Here you can add a detailed description what exactly happens 

@@ -58,15 +58,9 @@ def test_output():
         # Get the config of this universe
         uni_cfg = uni['cfg']
 
-        # Calculate the number of cells
-        grid_size = uni_cfg['ForestFire']['grid_size']
-
         # Check that all datasets are available
         assert 'state' in data
-
-        # Assert they have the correct shape
-        assert data['state'].shape == (uni_cfg['num_steps'] + 1,
-                                       grid_size[1], grid_size[0])
+        assert 'cluster_id' in data
 
 def test_initial_state_random(): 
     """Test that the initial states are random.
@@ -82,12 +76,6 @@ def test_initial_state_random():
     for uni in dm['multiverse'].values():
         data = uni['data']['ForestFire']['state']
 
-        # Get the grid size
-        grid_size = uni['cfg']['ForestFire']['grid_size']
-
-        # Check that only a single step was written and the extent is correct
-        assert data.shape == (1, grid_size[1], grid_size[0])
-
         # check, that no cell is burning
         assert 0 <= np.amax(data) <= 1
 
@@ -100,7 +88,13 @@ def test_initial_state_random():
     initial_density = 0.2
     mv, dm = mtc.create_run_load(from_cfg="initial_state.yml",
                                  perform_sweep=True,
-                                 **model_cfg(initial_density=initial_density))
+                                 **model_cfg(
+                                    cell_manager=dict(
+                                        cell_params=dict(
+                                            initial_density=initial_density)
+                                        )
+                                    )
+                                 )
 
     for uni in dm['multiverse'].values():
         data = uni['data']['ForestFire']['state']
@@ -116,7 +110,13 @@ def test_initial_state_random():
     initial_density = 0.0
     mv, dm = mtc.create_run_load(from_cfg="initial_state.yml",
                                  perform_sweep=True,
-                                 **model_cfg(initial_density=initial_density))
+                                 **model_cfg(
+                                    cell_manager=dict(
+                                        cell_params=dict(
+                                            initial_density=initial_density)
+                                        )
+                                    )
+                                 )
 
     for uni in dm['multiverse'].values():
         data = uni['data']['ForestFire']
@@ -131,7 +131,13 @@ def test_initial_state_random():
     initial_density = 1.0
     mv, dm = mtc.create_run_load(from_cfg="initial_state.yml",
                                  perform_sweep=True,
-                                 **model_cfg(initial_density=initial_density))
+                                 **model_cfg(
+                                    cell_manager=dict(
+                                        cell_params=dict(
+                                            initial_density=initial_density)
+                                        )
+                                    )
+                                 )
 
     for uni in dm['multiverse'].values():
         data = uni['data']['ForestFire']['state']
