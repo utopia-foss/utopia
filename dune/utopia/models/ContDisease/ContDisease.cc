@@ -3,33 +3,19 @@
 #include "ContDisease.hh"
 
 using namespace Utopia::Models::ContDisease;
-using Utopia::Setup::create_grid_manager_cells;
 
-int main (int argc, char** argv)
+
+int main (int, char** argv)
 {
     try {
-        Dune::MPIHelper::instance(argc, argv);
 
         // Initialize the PseudoParent from config file path
         Utopia::PseudoParent pp(argv[1]);
 
-        // Initialize the main model instance with different template arguments
-        // and then iterate it ... Need separate cases for this.
-        if (Utopia::as_bool(pp.get_cfg()["ContDisease"]["periodic"])) {
-            // Periodic grid
-            ContDiseaseModel model("ContDisease", pp,
-                create_grid_manager_cells<CellState, true>("ContDisease", pp)
-                );
-            model.run();
-        }
-        else {
-            // Non-periodic grid
-            ContDiseaseModel model("ContDisease", pp,
-                create_grid_manager_cells<CellState, false>("ContDisease", pp)
-                );
-            model.run();
-        }
+        // Initialize the main model instance and directly run it
+        ContDisease("ContDisease", pp).run();
 
+        // Done.
         return 0;
     }
     catch (Utopia::Exception& e) {
