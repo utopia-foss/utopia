@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
 
         // create the manager with a certain grid size using a setup function
         std::cout << "Creating GridManager ..." << std::endl;
-        auto grid_size = as_<int>(cfg["grid_size"]);
+        auto grid_size = get_as<int>("grid_size", cfg);
         std::cout << "  grid_size: " << grid_size << std::endl;
         
         auto manager = setup_manager(grid_size);

@@ -10,13 +10,13 @@
 #include <dune/utopia/core/exceptions.hh>
 #include <dune/utopia/core/space.hh>
 
+
 namespace Utopia {
 
 /**
  *  \addtogroup Model
  *  \{
  */
-
 
 
 /// Wrapper struct for defining model class data types
@@ -41,8 +41,7 @@ template<typename RNGType=DefaultRNG,
          typename MonitorType=Utopia::DataIO::Monitor,
          typename MonitorManagerType=Utopia::DataIO::MonitorManager
          >
-struct ModelTypes
-{
+struct ModelTypes {
     using RNG = RNGType;
     using Space = SpaceType;
     using Config = ConfigType;
@@ -166,7 +165,7 @@ public:
         // Set this model instance's log level
         if (_cfg["log_level"]) {
             // Via value given in configuration
-            const auto lvl = as_str(_cfg["log_level"]);
+            const auto lvl = get_as<std::string>("log_level", _cfg);
             _log->debug("Setting log level to '{}' ...", lvl);
             _log->set_level(spdlog::level::from_str(lvl));
         }
@@ -489,7 +488,7 @@ private:
     Time determine_write_every(ParentModel &parent_model) const {
         if (_cfg["write_every"]) {
             // Use the value given in the configuration
-            return as_<Time>(_cfg["write_every"]);
+            return get_as<Time>("write_every", _cfg);
         }
         // Use the value from the parent
         return parent_model.get_write_every();
@@ -572,13 +571,14 @@ public:
     // Initialize the config node from the path to the config file
     _cfg(YAML::LoadFile(cfg_path)),
     // Create a file at the specified output path and store the shared pointer
-    _hdffile(std::make_shared<HDFFile>(as_str(_cfg["output_path"]), "w")),
+    _hdffile(std::make_shared<HDFFile>(get_as<std::string>("output_path",
+                                                           _cfg), "w")),
     // Initialize the RNG from a seed
-    _rng(std::make_shared<RNG>(as_<int>(_cfg["seed"]))),
+    _rng(std::make_shared<RNG>(get_as<int>("seed", _cfg))),
     // And initialize the root logger at warning level
     _log(Utopia::init_logger("root", spdlog::level::warn, false)),
     // Create a monitor manager
-    _monitor_mgr(as_double(_cfg["monitor_emit_interval"]))
+    _monitor_mgr(get_as<double>("monitor_emit_interval", _cfg))
     {
         setup_loggers(); // global loggers
         set_log_level(); // this log level
@@ -651,7 +651,7 @@ public:
     
     /// Return the parameter that controls how often write_data is called
     Time get_write_every() const {
-        return as_<Time>(_cfg["write_every"]);
+        return get_as<Time>("write_every", _cfg);
     }
     
     /// Return a pointer to the RNG
@@ -669,7 +669,7 @@ public:
      *          changed in the future to allow continuous time steps.
      */
     Time get_time_max() const {
-        return as_<Time>(_cfg["num_steps"]);
+        return get_as<Time>("num_steps", _cfg);
     }
 
     /// Return the monitor manager of this model
@@ -683,15 +683,18 @@ private:
     /// Set up the global loggers with levels specified in the config file
     void setup_loggers () const {
         Utopia::setup_loggers(
-            spdlog::level::from_str(as_str(_cfg["log_levels"]["core"])),
-            spdlog::level::from_str(as_str(_cfg["log_levels"]["data_io"]))
+            spdlog::level::from_str(get_as<std::string>("core",
+                                                        _cfg["log_levels"])),
+            spdlog::level::from_str(get_as<std::string>("data_io",
+                                                        _cfg["log_levels"]))
         );
     }
 
     /// Set the log level for the pseudo parent from the base_cfg
     void set_log_level () const {
         _log->set_level(
-            spdlog::level::from_str(as_str(_cfg["log_levels"]["model"]))
+            spdlog::level::from_str(get_as<std::string>("model",
+                                                        _cfg["log_levels"]))
         );
     }
 };

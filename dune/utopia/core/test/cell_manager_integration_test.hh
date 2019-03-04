@@ -20,7 +20,7 @@ struct CST {
     /// The (required) config constructor
     CST(const DataIO::Config& cfg)
     :
-        foo(as_int(cfg["foo"]))
+        foo(get_as<int>("foo", cfg))
     {}
 };
 

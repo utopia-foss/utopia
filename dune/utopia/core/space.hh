@@ -161,7 +161,7 @@ private:
             throw std::invalid_argument("Missing config entry `periodic` to "
                                         "set up a Space object!");
         }
-        return as_bool(cfg["periodic"]);
+        return get_as<bool>("periodic", cfg);
     }
 
     /// Setup the extent type if no config parameter was available
@@ -177,7 +177,7 @@ private:
       */
     SpaceVec setup_extent(const DataIO::Config& cfg) {
         if (cfg["extent"]) {
-            return as_SpaceVec<dim>(cfg["extent"]);
+            return get_as_SpaceVec<dim>("extent", cfg);
         }
 
         // Return the default extent

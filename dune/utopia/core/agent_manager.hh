@@ -245,21 +245,21 @@ private:
     /// Setup helper used to determine a single agent's initial position
     SpaceVec initial_agent_pos() {
         // By default, use a random initial position
-        std::string initial_position_mode = "random";
+        std::string initial_pos_mode = "random";
 
         // If given, extract the initial_position mode from the configuration
-        if (this->_cfg["initial_position"]) {
-            initial_position_mode = as_str(this->_cfg["initial_position"]);
+        if (_cfg["initial_position"]) {
+            initial_pos_mode = get_as<std::string>("initial_position", _cfg);
         }
 
         // Return the agent position depending on the mode
-        if (initial_position_mode == "random") {
+        if (initial_pos_mode == "random") {
             return random_pos();
         }
         else {
             throw std::invalid_argument("AgentManager got an invalid "
                 "configuration entry for 'initial_position': '"
-                + initial_position_mode + "'. Valid options are: 'random'");
+                + initial_pos_mode + "'. Valid options are: 'random'");
         }
     }
 
@@ -278,17 +278,17 @@ private:
         AgentContainer<Agent> agents;
 
         // Extract parameters from the configuration
-        if (not this->_cfg["initial_num_agents"]) {
+        if (not _cfg["initial_num_agents"]) {
             throw std::invalid_argument("AgentManager is missing the "
                 "configuration entry 'initial_num_agents' that specifies the "
                 "number of agents to set up!");
         }
-        const auto num_agents = as_<IDType>(this->_cfg["initial_num_agents"]);
+        const auto num_agents = get_as<IDType>("initial_num_agents", _cfg);
 
         // Construct all the agents with incremented IDs, the initial state
         // and a random position
         for (IDType i=0; i<num_agents; ++i){
-            this->_log->trace("Creating agent with ID {:d} ...", _id_counter);
+            _log->trace("Creating agent with ID {:d} ...", _id_counter);
 
             agents.emplace_back(
                 std::make_shared<Agent>(_id_counter,
@@ -362,19 +362,18 @@ private:
             
             if (not _cfg["initial_num_agents"]){
                 throw std::invalid_argument("AgentManager is missing the "
-                    "configuration entry 'initial_num_agents' to set up the agents!" 
+                    "configuration entry 'initial_num_agents' to set up the "
+                    "agents!" 
                     );
             }
-            const auto initial_num_agents = as_<IDType>(
-                                                _cfg["initial_num_agents"]);
+            const auto initial_num_agents = get_as<IDType>("initial_num_agents", _cfg);
 
             // The agent container to be populated
             AgentContainer<Agent> cont;
 
             // Populate the container, creating the agent state anew each time
             for (IDType i=0; i<initial_num_agents; i++) {
-                this->_log->trace("Creating agent with ID {:d} ...",
-                                  _id_counter);
+                _log->trace("Creating agent with ID {:d} ...", _id_counter);
 
                 cont.emplace_back(
                     std::make_shared<Agent>(_id_counter, 

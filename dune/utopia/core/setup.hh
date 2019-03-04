@@ -280,7 +280,8 @@ namespace Setup
         // Extract grid size from config
         static_assert(dim == 2 || dim == 3,
                       "Template argument dim must be 2 or 3!");
-        const auto gsize = as_array<unsigned int, dim>(cfg["grid_size"]);
+        const auto gsize = get_as<std::array<unsigned int, dim>>("grid_size",
+                                                                 cfg);
         
         // Inform about the size
         if constexpr (dim == 2) {
