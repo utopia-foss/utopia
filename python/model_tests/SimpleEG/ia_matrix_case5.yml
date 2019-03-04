@@ -8,8 +8,10 @@ parameter_space:
   SimpleEG: !model
     model_name: SimpleEG
 
-    # Work on a smaller grid size
-    grid_size: [5, 5]
+    # Use a lower resolution
+    cell_manager:
+      grid:
+        resolution: 5
 
     # Set multiple options for the ia_matrix
     ia_matrix: [[1, 2], [3, 4]]

@@ -36,7 +36,7 @@ def test_nonstatic():
             # Calculate a diff along the time dimension
             diff = np.diff(dset, axis=0)
 
-            # Sum up absolute differences along grid index dimension
+            # Sum up absolute differences along grid index axes
             abs_diff_sum = np.sum(np.abs(diff), axis=(1,2))
             # Is now a 1D-array of length (num_steps-1)
 
@@ -103,27 +103,31 @@ def test_macroscopic_values():
     """Test macroscopic values taken and adapted from Nowak & May 1992"""
     # Create a multiverse, run a single universe and load the data into the
     # DataManager dm
-    mv, dm = mtc.create_run_load(from_cfg="macroscopic_value.yml",
-                                 perform_sweep=False)
+    mv, dm = mtc.create_run_load(from_cfg="macroscopic_value.yml")
 
     for uni_no, uni in dm['multiverse'].items():
+        cfg = uni['cfg']['SimpleEG']
+
         # Get the strategy
         strategy = uni['data']['SimpleEG']['strategy']
         
-        # Get the grid size
-        cfg = uni['cfg']['SimpleEG']
-        grid_size = cfg['grid_size']
+        # Get the number of grid cells
+        num_cells = strategy.shape[1] * strategy.shape[2]
 
         # Calculate the frequency of S0 and S1 for the last five time steps
-        counts = [np.bincount(strategy[i].flatten()) for i in [-1, -2, -3, -4, -5]]
-        frequency = [c / (grid_size[0] * grid_size[1]) for c in counts]
+        counts = [np.bincount(strategy[i].flatten())
+                  for i in [-1, -2, -3, -4, -5]]
+        frequencies = [c / num_cells for c in counts]
 
-        # Assert that the frequency of S0 (here: cooperators) is ~ 0.41+-0.2
-        for f in frequency:
+        print("Frequencies of S0 in last five time steps:  {}"
+              "".format(frequencies))
+
+        # Assert that the frequencies of S0 (here: cooperators) is ~ 0.41+-0.2
+        for f in frequencies:
             assert_eq(f[0], 0.41, epsilon=0.1)
         
         # NOTE In the paper of Nowak & May 1992 the final frequency is at
         #      about 0.31. However, they have self-interactions included we do
-        #      not want to have.  Nevertherless, this test should check
+        #      not want to have.  Nevertheless, this test should check
         #      whether a rather stable final frequency is reached and does not
         #      change a lot within the last five time steps

@@ -15,24 +15,55 @@
 # Furthermore, if including other models' parameters via the `!model` tag, make
 # sure that no circular includes occur.
 ---
-# Grid parameters
-grid_size: [101, 101]
-periodic: true          # false: cells at boundary have fewer neighbors
+# -- Space parameters ---------------------------------------------------------
+space:
+  periodic: true          # false: cells at boundary have fewer neighbors
 
-# Initial state
-initial_state: random   # can be: random, fraction, single_s0, single_s1
-s1_prob: 0.5            # only used for 'random' initial state
-s1_fraction: 0.5        # only used for 'fraction' initial state
-# Explanation:
+# -- CellManager --------------------------------------------------------------
+cell_manager:
+  grid:
+    structure: square
+    resolution: 63
+  
+  neighborhood:
+    mode: Moore
+
+# -- Cell initialization parameters -------------------------------------------
+# Initial cell state mode
+initial_state: random
+# Possible values:
 #   - random:             strategy 1 occurs with probability s1_prob
 #   - fraction:           s1_fraction of all cells have strategy 1
 #   - single_s0:          single cell at the center has strategy 0
 #   - single_s1:          single cell at the center has strategy 1
-# NOTE for the single-cell modes, both grid extensions need to be odd-valued
+# NOTE for the single_* modes, both grid extensions need to be odd-valued
 
-# Defining the interaction matrix through the benefit b:
-b: 1.58                 # ignored if either ia_matrix or bc_pair is given
+# Probability for a single cell to have strategy S1 (used in 'random' mode)
+s1_prob: 0.5
 
-# The following parameters can also be given
-# bc_pair: [1, 0]       # ignored if ia_matrix is given
+# Fraction of cells having strategy S1 (used in 'fraction' mode)
+s1_fraction: 0.5
+
+# -- Interaction --------------------------------------------------------------
+# The parameters below all define the interaction matrix
+# There are three ways to define it:
+#   1) Explicitly setting the interaction matrix `ia_matrix`
+#        S0      S1
+#   S0 [ia_00  ia_01]
+#   S1 [ia_10  ia_11]
+#   
+#   2) Setting a benefit and cost pair `bc_pair`
+#        S0   S1
+#   S0 [b-c   -c]
+#   S1 [b      0]
+#   
+#   3) Setting the benefit parameter `b` following the paper of Nowak&May1992
+#        S0    S1
+#   S0 [1      0]
+#   S1 [b(>1)  0]
+#
+# The most explicit parameter is chosen over the others.
+
 # ia_matrix: [[1, 2], [3, 4]]
+# bc_pair: [1, 0]
+b: 1.58

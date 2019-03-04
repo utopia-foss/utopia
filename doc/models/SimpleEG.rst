@@ -4,6 +4,12 @@
 
 This is a model of simple evolutionary games (on regular grids). It is based on an extended and slightly modified version of Nowak & May (1992).
 
+.. contents::
+   :local:
+   :depth: 2
+
+----
+
 Fundamentals
 ------------
 
@@ -108,8 +114,20 @@ The interaction matrices of the individual options are collected here:
 
 The algorithm is designed such that if an interaction matrix is provided in the configuration file the interaction matrix will define the game, even if ``b`` or ``bc-pair`` are also provided. If there is no interaction matrix, but a ``bc-pair`` provided, the interaction matrix will be derived from it, even if ``b`` is set. ``b`` is used only if none of the other options is provided.
 
-Simulation Results – A Selection Process
-----------------------------------------
+
+Default Model Configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Below is the default model configuration for the ``SimpleEG`` model:
+
+.. literalinclude:: ../../dune/utopia/models/SimpleEG/SimpleEG_cfg.yml
+   :language: yaml
+   :start-after: ---
+
+
+
+Simulation Results
+------------------
 
 *TODO*
 

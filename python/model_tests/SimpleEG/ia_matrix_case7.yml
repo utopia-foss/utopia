@@ -8,7 +8,9 @@ parameter_space:
   SimpleEG: !model
     model_name: SimpleEG
 
-    # Work on a smaller grid size
-    grid_size: [5, 5]
+    # Use a lower resolution
+    cell_manager:
+      grid:
+        resolution: 5
 
     # NOT setting a value here because the default is to be tested

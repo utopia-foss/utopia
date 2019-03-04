@@ -12,16 +12,15 @@ parameter_space:
   # Do a number of steps
   num_steps: 10 # FIXME should test for higher number of time steps
 
-  # Set a fixed seed
-  seed: 42
-
   # Load the default model config
   SimpleEG: !model
     model_name: SimpleEG
 
-    # Choose a smaller grid size to speed up tests
-    grid_size: [23, 23]
-    # -> for single_s1, need ext//2 time steps to reach borders
+    # Choose a lower resolution
+    cell_manager:
+      grid:
+        resolution: 21
+        # -> for single_s1, need ext//2 time steps to reach borders
 
     # Sweep over initial states
     initial_state: !sweep
@@ -31,8 +30,6 @@ parameter_space:
         - random
         - fraction
         # TODO add more here?!
-
-    b: 1.58
 
     # Choose a low number of s1 strategy cells (here, defectors)
     s1_prob: 0.1
