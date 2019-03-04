@@ -1,5 +1,6 @@
 # Default plots for the ForestFire model
 ---
+# Plot the mean state
 state_mean:
   creator: universe
   universes: all
@@ -9,6 +10,7 @@ state_mean:
   plot_func: state_mean
 
 
+# Plot the cluster size distribution
 cluster_distribution:
   creator: universe
   universes: all
@@ -17,7 +19,7 @@ cluster_distribution:
   module: model_plots.ForestFire
   plot_func: cluster_distribution
 
-  # at which time to plot
+  # Which time index to plot
   time: -1
 
   plot_kwargs: 
@@ -25,74 +27,46 @@ cluster_distribution:
     marker: '.'
 
 
-# plot the spatial development in the CA of the state
-state_map:
+# Create frames/movies of the cell states
+state_map: &state_map
   creator: universe
   universes: all
 
   file_ext: mp4
+  dpi: 96
 
   module: .ca
   plot_func: state_anim
 
-  # Select the universe
+  # Select the model to read the data from
   model_name: ForestFire
 
   # Select the properties to plot
   to_plot:
-    # The name of the property to plot with its options
     state:
       title: State
-      limits: [0, 2]
-
-      # Specify the colormap
-      # This can be done in two ways:
-      #   1. use a matplotlib colormap such as 'viridis'
-      #   2. provide a dictionary from which a discrete colormap
-      #      is derived. The keys correspond to the labels,
-      #      and the values define the color
-      # cmap: viridis
+      limits: [0, 1]
       cmap: 
-        empty: goldenrod
-        tree: green
-        burning: red
+        Empty: goldenrod
+        Tree: green
 
   # Video options
   writer: ffmpeg  # can be: frames, ffmpeg (if installed), ...
-  fps: 2
-  dpi: 96
+  fps: 15
 
 
+# Create frames/movies of the clusters
 cluster_map:
-  creator: universe
-  universes: all
+  # Base the configuration here on that of the state map
+  <<: *state_map
   
-  file_ext: mp4
-
+  # Use a custom pre-processor function
   module: model_plots.ForestFire
   plot_func: state_anim
 
-  # Select the universe
-  model_name: ForestFire
-
   # Select the properties to plot
   to_plot:
-    # The name of the property to plot with its options
     cluster_id:
       title: Cluster
       limits: [0, 20]
-
-      # Specify the colormap
-      # This can be done in two ways:
-      #   1. use a matplotlib colormap such as 'viridis'
-      #   2. provide a dictionary from which a discrete colormap
-      #      is derived. The keys correspond to the labels,
-      #      and the values define the color
-      # cmap: viridis
       cmap: tab20
-
-  # Video options
-  writer: ffmpeg  # can be: frames, ffmpeg (if installed), ...
-  fps: 2
-  dpi: 96
-

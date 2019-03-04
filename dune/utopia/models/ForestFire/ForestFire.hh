@@ -2,361 +2,422 @@
 #define UTOPIA_MODELS_FORESTFIRE_HH
 
 #include <functional>
+#include <random>
 
 #include <dune/utopia/base.hh>
 #include <dune/utopia/core/setup.hh>
 #include <dune/utopia/core/model.hh>
 #include <dune/utopia/core/apply.hh>
-#include <dune/utopia/core/types.hh>
+#include <dune/utopia/core/cell_manager.hh>
 
 
 namespace Utopia {
 namespace Models {
 namespace ForestFire {
 
-enum StateEnum { empty=0, tree=1 };
+/// The values a cell's state can take: empty and tree
+enum FFMCellState { empty=0, tree=1 };
 
-struct State {
-    StateEnum state;
+
+/// The full cell struct for the ForestFire model
+struct FFMCell {
+    /// The actual cell state
+    FFMCellState state;
+
+    /// An ID denoting to which cluster this cell belongs
     unsigned int cluster_tag;
 
-    State() :
-        state(empty),  cluster_tag(0)
-    { }
-    State(StateEnum s) :
-        state(s),  cluster_tag(0)
-    { }
-};
+    /// Whether the cell is permanently ignited
+    bool permanently_ignited;
 
-struct Param {
-    const double growth_rate;
-    const double lightning_frequency;
-    const bool light_bottom_row;
-    const double resistance;
-
-    Param(double growth_rate, double lightning_frequency, bool light_bottom_row, double resistance)
+    /// Construct a cell from a configuration node and an RNG
+    template<class RNG>
+    FFMCell (const DataIO::Config& cfg, const std::shared_ptr<RNG>& rng)
     :
-        growth_rate(growth_rate), lightning_frequency(lightning_frequency),
-        light_bottom_row(light_bottom_row), resistance(resistance)
+        state(empty),
+        cluster_tag(0),
+        permanently_ignited(false)
     {
-        if (growth_rate > 1 || growth_rate < 0)
-        {
-            throw std::invalid_argument("growth rate is a probability per cell. "\
-                                        "Should have value in [0,1]! "\
-                                        "1 corresponds to empty turns to tree in 1 step. "\
-                                        "0.1 every 10th step. 0 never. ");
-        }
-        if (lightning_frequency > 1 || lightning_frequency < 0)
-        {
-            throw std::invalid_argument("lightning frequency is a probability per cell. "\
-                                        "Should have value in [0,1]! "\
-                                        "1 corresponds to tree hit by lightning in one step. "\
-                                        "0.1 every 10th step. 0 never. ");
-        }
-        if (resistance > 1 || resistance < 0)
-        {
-            throw std::invalid_argument("Resistance is a probability per burning neighbor. " \
-                                        "Should have value in [0,1]! " \
-                                        "0 corresponds to no resistance to fire. "\
-                                        "1 to total resistance.");
+        // Check if initial_density is available to set up cell state
+        if (cfg["initial_density"]) {
+            const auto rho = get_as<double>("initial_density", cfg);
+
+            if (rho < 0. or rho > 1.) {
+                throw std::invalid_argument("initial_density needs to be in "
+                    "interval [0., 1.], but was not!");
+            }
+
+            // With this probability, the cell state is a tree
+            if (std::uniform_real_distribution<double>(0., 1.)(*rng) < rho) {
+                state = tree;
+            }
+            // NOTE Although the distribution object is created each time, this
+            //      is not a significant slow-down compared to re-using an
+            //      existing distribution object (<4%). When compiled with
+            //      optimization flags, that slowdown is even smaller...
         }
     }
 };
 
 
-template <typename DataSet>
-struct DataSets {
-    const std::shared_ptr<DataSet> state;
-    const std::shared_ptr<DataSet> cluster_id;
+/// Cell traits specialization using the state type
+/** \detail The first template parameter specifies the type of the cell state,
+  *         the second sets them to not be synchronously updated.
+  *         See \ref Utopia::CellTraits
+  * 
+  * \note   This model relies on asynchronous update for calculation of the
+  *         clusters and the percolation.
+  */
+using FFMCellTraits = Utopia::CellTraits<FFMCell, UpdateMode::async>;
+
+
+/// ForestFire model parameter struct
+struct Param {
+    /// Rate of growth per cell
+    const double growth_rate;
+
+    /// Frequency of lightning occurring per cell
+    const double lightning_frequency;
+
+    /// Whether the bottom row should be constantly on fire
+    const bool light_bottom_row;
+
+    /// The resistance parameter
+    const double resistance;
+
+    /// Construct the parameters from the given configuration node
+    Param(const DataIO::Config& cfg)
+    :
+        growth_rate(get_as<double>("growth_rate", cfg)),
+        lightning_frequency(get_as<double>("lightning_frequency", cfg)),
+        light_bottom_row(get_as<bool>("light_bottom_row", cfg)),
+        resistance(get_as<double>("resistance", cfg))
+    {
+        if ((growth_rate > 1) or (growth_rate < 0)) {
+            throw std::invalid_argument("Invalid growth_rate; need be a value "
+                "in range [0, 1] and specify the probability per time step "
+                "and cell with which an empty cell turns into a tree.");
+        }
+        if ((lightning_frequency > 1) or (lightning_frequency < 0)) {
+            throw std::invalid_argument("Invalid lightning_frequency; need be "
+                "in range [0, 1] and specify the probability per cell and "
+                "time step for lightning to strike.");
+        }
+        if ((resistance > 1) or (resistance < 0)) {
+            throw std::invalid_argument("Invalid resistance argument! "
+                "Need be a value in range [0, 1] and specify the probability "
+                "per neighbor with which that neighbor can resist fire");
+        }
+    }
 };
 
 
+
 /// Typehelper to define data types of ForestFire model
-using ForestFireTypes = ModelTypes<>;
+using FFMTypes = ModelTypes<>;
 
 
 /// The ForestFire model
-/** The ForestFire model simulates the development of a forest under influence of forest fires. 
- *  Trees grow on a random basis and fires cause their death
- *  for a whole cluster instantaneously (two state model).
+/** The ForestFire model simulates the development of a forest under influence
+ *  of forest fires. 
+ *  Trees grow randomly and fires lead to a whole cluster instantaneously
+ *  burning down; thus being a so-called two state model.
  */
-template<class ManagerType>
 class ForestFire:
-    public Model<ForestFire<ManagerType>, ForestFireTypes>
+    public Model<ForestFire, FFMTypes>
 {
 public:
     /// The base model type
-    using Base = Model<ForestFire<ManagerType>, ForestFireTypes>;
-    
-    /// Cell type
-    using CellType = typename ManagerType::Cell;
+    using Base = Model<ForestFire, FFMTypes>;
     
     /// Data type for a dataset
     using DataSet = typename Base::DataSet;
 
-    /// Rule function type
-    using RuleFunc = typename std::function<State(std::shared_ptr<CellType>)>;
+    /// The type of the cell manager
+    using FFMCellManager = CellManager<FFMCellTraits, ForestFire>;
 
-    // Alias the neighborhood classes to make access more convenient
-    using Neighbor = Neighborhoods::MooreNeighbor;
+    /// Rule function type, extracted from CellManager
+    using RuleFunc = typename FFMCellManager::RuleFunc;
 
 
 private:
     // Base members: _time, _name, _cfg, _hdfgrp, _rng, _monitor
 
-    // -- Members of this model -- //
-    /// The grid manager
-    ManagerType _manager;
+    // -- Members -------------------------------------------------------------
+    /// The cell manager for the forest fire model
+    FFMCellManager _cm;
 
     /// Model parameters
     const Param _param;
-    double _initial_density;      // density of trees
 
-    // -- Temporary objects -- //
+    /// A [0,1]-range uniform distribution used for evaluating probabilities
+    std::uniform_real_distribution<double> _prob_distr;
+
+    /// The incremental cluster tag
     unsigned int _cluster_tag_cnt;
 
-    // -- Datasets -- //
-    DataSets<DataSet> _dsets;
+    /// A temporary container for use in cluster identification
+    std::vector<std::shared_ptr<FFMCellManager::Cell>> _cluster_members;
 
-    // -- Helper functions // 
-    std::function<double()> _calculate_density = [this]() {
-        double density = 0.;
-        for (const auto& cell : this->_manager.cells()) {
-            if (cell->state().state == tree) {
-                density += 1.;
-            }
-        }
-        density /= double( std::distance(this->_manager.cells().begin(), 
-                                        this->_manager.cells().end()) );
-        return density;
-    };
+    // .. Datasets ............................................................
+    /// The dataset for storing state values for each cell
+    std::shared_ptr<DataSet> _dset_state;
 
-
-    // -- Rule functions -- //
-    // initialise trees random with density
-    // update following the FFM set of rules
-
-    /// Sets the given cell to state "tree" with probability p, else to "empty"
-    RuleFunc _set_initial_state = [this](const auto& cell){
-        // Get the state of the Cell
-        auto state = cell->state();
-
-        std::uniform_real_distribution<> dist(0., 1.);
-
-        // Set the internal variables
-        if (dist(*this->_rng) < _initial_density)
-        {
-            state.state = tree;
-        }
-        else
-        {
-            state.state = empty;
-        }
-
-        return state;
-    };
-
-    RuleFunc _burn_cluster = [this](auto cell) {
-        std::uniform_real_distribution<> dist(0., 1.);
-
-        // burn cluster of trees
-        // asynchronous update needed!
-        std::vector<decltype(cell)> cluster = { cell };
-        cell->state().state = empty;
-
-        for (unsigned int i = 0; i < cluster.size(); ++i)
-        {
-            auto cluster_member = cluster[i];
-            for (auto&& cluster_potential_member : 
-                    Neighbor::neighbors(cluster_member,this->_manager))
-            {
-                if (cluster_potential_member->state().state == tree &&
-                    dist(*this->_rng) > _param.resistance)
-                {
-                    cluster.push_back(cluster_potential_member);									
-                    cluster_potential_member->state().state = empty;
-                }
-            }
-        }
-
-        return cell->state();
-    };
-
-    /// update following set of rules
-    /** states: 0: empty, 1: tree
-     * Percolation spread (PM)
-     *    empty -> tree with probability growth_rate
-     *    tree -> burning with probability lightning_frequency
-     *    or tree -> burning if connected to cluster -> empty instantaneously (two state FFM, percolation)
-     */
-    RuleFunc _update = [this](auto cell){
-        auto state = cell->state();
-        state.cluster_tag = 0; // reset
-
-        std::uniform_real_distribution<> dist(0., 1.);
-        
-        // if state is empty, empty -> tree by growth
-        if (state.state == empty && dist(*this->_rng) < _param.growth_rate) {
-            state.state = tree;
-        }
-
-        // state is tree, tree -> burning by lightning or by burning neighbors
-        else if (state.state == tree)
-        {
-            // tree -> burning by lightning
-            // in Percolation connected cluster catches fire -> percolation
-            if (dist(*this->_rng) < _param.lightning_frequency) {
-                state = _burn_cluster(cell);
-            }
-
-            // ignite bottom row
-            else if (_param.light_bottom_row && cell->position()[1]==0.5) 
-            {
-                state = _burn_cluster(cell);
-            }
-        }
-
-        return state;
-    };
-
-    /// identify cluster
-    /* get the identity of each cluster of trees, -1 for grass
-     * run a percolation on a cell, that has no id
-     * give all cells of that percolation the same id
-     * _cluster_tag_cnt keeps track of given ids
-     */
-    RuleFunc _identify_cluster = [this](auto cell){
-        if (cell->state().cluster_tag == 0 && cell->state().state == tree) // else already labeled
-        {
-            _cluster_tag_cnt++;
-
-            std::vector<decltype(cell)> cluster = { cell };
-            cell->state().cluster_tag = _cluster_tag_cnt;
-            for (unsigned int i = 0; i < cluster.size(); ++i)
-            {
-                auto cluster_member = cluster[i];
-                for (auto&& cluster_potential_member : Neighbor::neighbors(cluster_member,this->_manager))
-                {
-                    if (cluster_potential_member->state().cluster_tag == 0 &&
-                        cluster_potential_member->state().state == tree)
-                    {
-                        cluster_potential_member->state().cluster_tag = _cluster_tag_cnt;
-                        cluster.push_back(cluster_potential_member);
-                    }
-                }
-            }
-        }
-
-        return cell->state();
-    };
-
+    /// The dataset for storing the cluster ID associated with each cell
+    std::shared_ptr<DataSet> _dset_cluster_id;
 
 
 public:
+    // -- Model Setup ---------------------------------------------------------
     /// Construct the ForestFire model
     /** \param name     Name of this model instance
      *  \param parent   The parent model this model instance resides in
-     *  \param manager  The externally setup manager to use for this model
      */
     template<class ParentModel>
-    ForestFire (const std::string name,
-                     ParentModel &parent,
-                     ManagerType&& manager)
+    ForestFire (const std::string name, ParentModel &parent)
     :
         // Initialize first via base model
         Base(name, parent),
 
-        // Now initialize members specific to this class
-        _manager(manager),
-        _param(as_double(this->_cfg["growth_rate"]),
-               as_double(this->_cfg["lightning_frequency"]),
-               as_bool(this->_cfg["light_bottom_row"]),
-               as_double(this->_cfg["resistance"])
-        ),
-        _initial_density(as_double(this->_cfg["initial_density"])),
+        // Initialize the cell manager, binding it to this model
+        _cm(*this),
 
-        // temporary members
+        // Carry over parameters
+        _param(this->_cfg),
+
+        // Initialize remaining members
+        _prob_distr(0., 1.),
         _cluster_tag_cnt(0),
+        _cluster_members(),
 
-        // create datasets
-        _dsets({this->create_dset("state", {_manager.cells().size()}),
-                this->create_dset("cluster_id", {_manager.cells().size()})})
+        // Create datasets using the helper functions for CellManager-data
+        _dset_state(this->create_cm_dset("state", _cm)),
+        _dset_cluster_id(this->create_cm_dset("cluster_id", _cm))
     {
-        // Call the method that initializes the cells
-        this->initialize_cells();
+        // Cells are already set up in the CellManager
+        // Still need to take care of the ignited bottom row
+        if (_param.light_bottom_row) {
+            this->_log->debug("Setting bottom boundary cells to be "
+                              "permanently ignited ...");
+
+            if (this->_space.periodic) {
+                this->_log->warn("The parameter 'light_bottom_row' has no "
+                    "effect with the space configured to be periodic!");
+            }
+
+            apply_rule(
+                // The rule to apply
+                [](const auto& cell){
+                    // Get the state, change it, return
+                    auto state = cell->state();
+                    state.permanently_ignited = true;
+                    return state;
+                },
+                // The containers over which to iterate
+                _cm.boundary_cells("bottom"),
+                // The RNG needed for apply_rule calls with async update
+                *this->_rng
+            );
+        }
+        this->_log->debug("Cells fully set up.");
 
         // Write initial state
         this->write_data();
 
-        // Add attributes to the datasets
-        // NOTE Currently, attributes can be set only after the first write
-        //      operation because else the datasets are not yet created.
-        const auto grid_size = as_<std::array<std::size_t,2>>(this->_cfg["grid_size"]);
-        _dsets.state->add_attribute("content", "grid");
-        _dsets.state->add_attribute("grid_shape", grid_size);
-        _dsets.cluster_id->add_attribute("content", "grid");
-        _dsets.cluster_id->add_attribute("grid_shape", grid_size);
+        this->_log->debug("{} model all set up and initial state written.",
+                          this->_name);
     }
 
 
-    // Setup functions ........................................................
-    /// Initialize the cells according to `initial_state` config parameter
-    void initialize_cells()
-    {
-        // check user config
-        if (_initial_density < 0. || _initial_density > 1.)
-        {
-            throw std::invalid_argument("The initial state is not valid! Must be value between 0 and 1");
+private:
+    // .. Setup functions .....................................................
+
+
+    // .. Helper functions ....................................................
+
+
+    // .. Rule functions ......................................................
+
+    /// Update rule, called every step
+    /** \detail The possible transitions are the following:
+      *           - empty -> tree (p = growth_rate)
+      *           - tree -> burning (p = lightning_frequency)
+      *         A burning tree directly invokes the burning of the whole
+      *         cluster of connected trees ("two-state FFM"). After that, all
+      *         burned cells are in the empty state again.
+      *
+      * \note   This rule relies on an asynchronous cell update.
+      */
+    RuleFunc _update = [this](const auto& cell){
+        // Get the current state of the cell and reset the cluster tag
+        auto state = cell->state();
+        state.cluster_tag = 0;
+        
+        // Permanently ignited cells always burn the cluster
+        if (state.permanently_ignited) {
+            state = _burn_cluster(cell);
         }
 
-        // Apply a rule to all cells depending on the config value
-        else 
+        // Empty cells can grow a tree
+        else if (    state.state == empty
+                 and this->_prob_distr(*this->_rng) < _param.growth_rate)
         {
-            apply_rule(_set_initial_state, _manager.cells(), *this->_rng);
-            apply_rule(_identify_cluster, _manager.cells(), *this->_rng);
+            state.state = tree;
         }
         
-        // Write information that cells are initialized to the logger
-        this->_log->info("Cells initialized.");
-    }
+        // Trees can be hit by lightning
+        else if (this->_prob_distr(*this->_rng) < _param.lightning_frequency)
+        {
+            state = _burn_cluster(cell);
+        }
+
+        return state;
+    };
+
+    /// Rule to burn a cluster of trees around the given cell
+    /** \note This function is never actually called via apply_rule, but only
+      *       from the update method. It relies on an asynchronous cell update.
+      */
+    RuleFunc _burn_cluster = [this](const auto& cell) {
+        // The current cell surely is empty now.
+        cell->state().state = empty;
+        
+        // Use existing cluster member container, clear it, add current cell
+        auto& cluster = _cluster_members;
+        cluster.clear();
+        cluster.push_back(cell);
+
+        // Recursively go over all cluster members
+        for (unsigned int i = 0; i < cluster.size(); ++i) {
+            const auto& cluster_member = cluster[i];
+
+            // Iterate over all potential cluster members
+            for (const auto& c : this->_cm.neighbors_of(cluster_member)) {
+                // If it is a tree, it will burn ...
+                if (c->state().state == tree) {
+                    // ... unless there is resistance > 0 ...
+                    if (this->_param.resistance > 0.) {
+                        // ... where there is a chance not to burn:
+                        if (this->_prob_distr(*this->_rng) > _param.resistance)
+                            continue;
+                    }
+
+                    // Bad luck. Burn.
+                    c->state().state = empty;
+                    cluster.push_back(c);
+                    // This extends the outer for-loop
+                }
+            }
+        }
+
+        // Return the current cell's adjusted state.
+        return cell->state();
+    };
+
+    /// Get the identity of each cluster of trees
+    /* \detail Runs a percolation on a cell, that has ID 0. Then, give all
+     *         cells of that percolation the same ID.
+     *         The _cluster_tag_cnt member keeps track of already given IDs.
+     */
+    RuleFunc _identify_cluster = [this](const auto& cell){
+        if (cell->state().cluster_tag != 0 or cell->state().state == empty) {
+            // already labelled, nothing to do. Return current state
+            return cell->state();
+        }
+        // else: need to label this cell
+
+        // Increment the cluster ID counter and label the given cell
+        _cluster_tag_cnt++;
+        cell->state().cluster_tag = _cluster_tag_cnt;
+
+        // Use existing cluster member container, clear it, add current cell
+        auto& cluster = _cluster_members;
+        cluster.clear();
+        cluster.push_back(cell);
+
+        // Perform the percolation
+        for (unsigned int i = 0; i < cluster.size(); ++i) {
+            // Iterate over all potential cluster members c, i.e. all
+            // neighbors of cell cluster[i] that is already in the cluster
+            for (const auto& c : this->_cm.neighbors_of(cluster[i])) {
+                // If it is a tree that is not yet in the cluster, add it.
+                if (    c->state().cluster_tag == 0
+                    and c->state().state == tree)
+                {
+                    c->state().cluster_tag = _cluster_tag_cnt;
+                    cluster.push_back(c);
+                    // This extends the outer for-loop...
+                }
+            }
+        }
+
+        return cell->state();
+    };
 
 
-    // Runtime functions ......................................................
+public:
+    // -- Public Interface ----------------------------------------------------
+    // .. Simulation Control ..................................................
 
     /// Perform step
-    void perform_step ()
-    {   
-        // reset tmp counter for cluster_id
-        _cluster_tag_cnt = 0;
-
-        /// apply rules: update and identify cluster
-        apply_rule(_update, _manager.cells(), *this->_rng);
-        apply_rule(_identify_cluster, _manager.cells(), *this->_rng);
+    void perform_step () {
+        /// apply update rule on all cells, asynchronously and shuffled
+        apply_rule(_update, _cm.cells(), *this->_rng);
     }
 
-    /// Monitor model information
-    void monitor ()
-    {
-        this->_monitor.set_entry("tree_density", _calculate_density);        
+    /// Provide monitoring data: tree density and number of clusters
+    void monitor () {
+        this->_monitor.set_entry("tree_density", calc_tree_density());
+        this->_monitor.set_entry("num_clusters", identify_clusters());
     }
 
     /// Write data
-    void write_data ()
-    {   
-        // state
-        _dsets.state->write(_manager.cells().begin(),
-                           _manager.cells().end(),
-                           [](auto& cell) {
-                               return static_cast<unsigned short int>(cell->state().state);
-                           });
+    void write_data () {
+        // Store all cells' state
+        _dset_state->write(_cm.cells().begin(), _cm.cells().end(),
+            [](const auto& cell) {
+                return static_cast<unsigned short int>(cell->state().state);
+        });
 
-        // cluster id
-        _dsets.cluster_id->write(_manager.cells().begin(),
-                                _manager.cells().end(),
-                                [](auto& cell) {
-                                    return cell->state().cluster_tag;
-                                });
+        // Identify the clusters (only needed when actually writing)
+        identify_clusters();
+
+        _dset_cluster_id->write(_cm.cells().begin(), _cm.cells().end(),
+            [](const auto& cell) {
+                return cell->state().cluster_tag;
+        });
     }
+
+
+    // Getters and setters ....................................................
+    // Add getters and setters here to interface with other model
+
+    /// Calculate the density of tree cells
+    double calc_tree_density() const {
+        double sum = 0.;
+
+        for (const auto& cell : _cm.cells()) {
+            if (cell->state().state == tree) {
+                sum += 1.;
+            }
+        }
+        return sum / _cm.cells().size();
+    }
+
+    /// Identifies clusters in the cells and labels them with corresponding IDs
+    /** \return Number of clusters identified
+     */
+    unsigned int identify_clusters() {
+        this->_log->debug("Identifying clusters...");
+
+        _cluster_tag_cnt = 0; // reset tmp counter for cluster IDs
+        apply_rule(_identify_cluster, _cm.cells(), *this->_rng);
+
+        this->_log->debug("Identified {} clusters.", _cluster_tag_cnt);
+
+        return _cluster_tag_cnt;
+    }
+
 };
 
 } // namespace ForestFire

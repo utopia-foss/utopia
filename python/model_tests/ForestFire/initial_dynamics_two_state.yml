@@ -8,10 +8,14 @@ parameter_space:
   ForestFire: !model
     model_name: ForestFire
 
-    # Work on a smaller grid size
-    grid_size: [31, 31]
+    cell_manager:
+      # Work with lower resolution
+      grid:
+        resolution: 32
 
-    initial_density: 1.0
+      cell_params:
+        initial_density: 1.0
+        
     growth_rate: 0.01
     lightning_frequency: 0.01
 

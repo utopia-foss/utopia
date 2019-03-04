@@ -9,29 +9,34 @@ from ..tools import save_and_close
 
 # -----------------------------------------------------------------------------
 
-def state_mean(dm: DataManager, *, out_path: str, uni: UniverseGroup, fmt: str=None, save_kwargs: dict=None, **plot_kwargs):
+def state_mean(dm: DataManager, *, out_path: str, uni: UniverseGroup,
+               save_kwargs: dict=None, **plot_kwargs):
     """Calculates the state mean and performs a lineplot
     
     Args:
         dm (DataManager): The data manager from which to retrieve the data
         out_path (str): Where to store the plot to
         uni (UniverseGroup): The selected universe data
-        fmt (str, optional): the plt.plot format argument
         save_kwargs (dict, optional): kwargs to the plt.savefig function
         **plot_kwargs: Passed on to plt.plot
     """
-    # Extract the y data which is 'state' avaraged over all grid cells for
-    # every time step
+    # Get the raw data of the state, either 0 (empty) or 1 (tree)
     data = uni['data']['ForestFire/state']
-    y_data = [np.mean(d) for d in data] # iterates rows eq. time steps
 
-    # Assemble the arguments
-    args = [y_data]
-    if fmt:
-        args.append(fmt)
+    # Calculate the mean along the time axis (iteration axis)
+    mean_state = [np.mean(d) for d in data]
+
+    # Get the times array
+    times = uni.get_times_array()
 
     # Call the plot function
-    plt.plot(*args, **plot_kwargs)
+    plt.plot(times, mean_state, **plot_kwargs)
+
+    plt.xlabel('Time [steps]')
+    plt.ylabel('Tree density')
+
+    plt.xlim(left=0, right=np.max(times))
+    plt.ylim(bottom=0)
 
     # Save and close figure
     save_and_close(out_path, save_kwargs=save_kwargs)
@@ -53,9 +58,12 @@ def cluster_distribution(dm: DataManager, *,
         out_path (str): Where to store the plot to
         uni (UniverseGroup): The selected universe data
         fmt (str, optional): the plt.plot format argument
-        time (int, optional, default is -1): timestep in output data for plot. default: last step
+        time (int, optional): timestep in output data for plot. default: last step
         save_kwargs (dict, optional): kwargs to the plt.savefig function
-        plot_kwargs: Passed on to plt.plot
+        plot_kwargs (dict, optional): Passed on to plt.plot
+    
+    Raises:
+        TypeError: Description
     """
     # Get the group that all datasets are in
     grp = uni['data/ForestFire']

@@ -144,7 +144,7 @@ private:
 
 
 public:
-    // -- Public interface ----------------------------------------------------
+    // -- Model Setup ---------------------------------------------------------
     /// Construct the CopyMe model
     /** \param name     Name of this model instance
      *  \param parent   The parent model this model instance resides in
@@ -204,8 +204,13 @@ public:
         this->_log->debug("Initial state written.");
     }
 
+
+private:
     // .. Setup functions .....................................................
     // Can add additional setup functions here ...
+
+
+    // .. Helper functions ....................................................
 
 
     // .. Rule functions ......................................................
@@ -251,24 +256,14 @@ public:
             state.some_state = 0;
         }
 
-        // Return the new state cell
+        // Return the new cell state
         return state;
     };
 
 
-    // .. Helper functions ....................................................
-
-    /// Calculate the mean of all cells' some_state
-    double calc_some_state_mean() const {
-        double sum = 0.;
-        for (const auto &cell : _cm.cells()) {
-            sum += cell->state().some_state;
-        }
-        return sum / _cm.cells().size();
-    }
-
-
-    // .. Runtime functions ...................................................
+public:
+    // -- Public Interface ----------------------------------------------------
+    // .. Simulation Control ..................................................
 
     /// Iterate a single step
     /** \detail Here you can add a detailed description what exactly happens 
@@ -321,6 +316,16 @@ public:
 
     // .. Getters and setters .................................................
     // Add getters and setters here to interface with other models
+
+    /// Calculate the mean of all cells' some_state
+    double calc_some_state_mean() const {
+        double sum = 0.;
+        for (const auto &cell : _cm.cells()) {
+            sum += cell->state().some_state;
+        }
+        return sum / _cm.cells().size();
+    }
+
     
 };
 
