@@ -9,7 +9,7 @@ namespace Utopia {
 namespace Test {
 
 using DataIO::Config;
-
+using Utopia::get_as;
 
 /// An agent state definition that is default-constructible
 struct AgentStateDC {
@@ -26,9 +26,9 @@ struct AgentStateCC {
 
     AgentStateCC(const Config& cfg)
     :
-        a_double(Utopia::as_double(cfg["a_double"])),
-        a_string(Utopia::as_str(cfg["a_string"])),
-        a_bool(Utopia::as_bool(cfg["a_bool"]))
+        a_double(get_as<double>("a_double", cfg)),
+        a_string(get_as<std::string>("a_string", cfg)),
+        a_bool(get_as<bool>("a_bool", cfg))
     {}
 };
 
@@ -41,9 +41,9 @@ struct AgentStateRC {
     template<class RNG>
     AgentStateRC(const Config& cfg, const std::shared_ptr<RNG>& rng)
     :
-        a_double(Utopia::as_double(cfg["a_double"])),
-        a_string(Utopia::as_str(cfg["a_string"])),
-        a_bool(Utopia::as_bool(cfg["a_bool"]))
+        a_double(get_as<double>("a_double", cfg)),
+        a_string(get_as<std::string>("a_string", cfg)),
+        a_bool(get_as<bool>("a_bool", cfg))
     {
         // Do something with the rng
         std::uniform_real_distribution<double> dist(0., a_double);

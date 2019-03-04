@@ -17,7 +17,7 @@ struct AgentState {
     /// The (required) config constructor
     AgentState(const DataIO::Config& cfg)
     :
-        foo(as_int(cfg["foo"]))
+        foo(get_as<int>("foo", cfg))
     {}
 };
 

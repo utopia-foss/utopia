@@ -33,7 +33,7 @@ public:
         // Pass arguments to the base class constructor
         Base(name, parent_model),
         // Store level
-        _level(as_<unsigned int>(this->_cfg["level"]))
+        _level(get_as<unsigned int>("level", this->_cfg))
     {
         this->_log->info("DoNothingModel initialized. Level: {}", _level);
     }
@@ -76,7 +76,7 @@ public:
         // Pass arguments to the base class constructor
         Base(name, parent_model),
         // Store level
-        _level(as_<unsigned int>(this->_cfg["level"])),
+        _level(get_as<unsigned int>("level", this->_cfg)),
         // Submodel initialization
         lazy("lazy", *this)
     {
@@ -127,7 +127,7 @@ public:
         // Pass arguments to the base class constructor
         Base(name, parent_model),
         // Store level
-        _level(as_<unsigned int>(this->_cfg["level"])),
+        _level(get_as<unsigned int>("level", this->_cfg)),
         // Submodel initialization
         sub_one("one", *this),
         sub_lazy("lazy", *this)
@@ -177,7 +177,7 @@ public:
         // Initialize completely via parent class constructor
         Base(name, parent_model),
         // Store level
-        _level(as_<unsigned int>(this->_cfg["level"])),
+        _level(get_as<unsigned int>("level", this->_cfg)),
         // Submodel initialization
         sub_one("one", *this),
         sub_another("another", *this)

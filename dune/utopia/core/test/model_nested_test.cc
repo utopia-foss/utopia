@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
         assert((*root.sub_one.lazy.get_rng())() != (*root.sub_another.sub_one.lazy.get_rng())());
 
         // check RNG with same seed gives same value
-        Utopia::DefaultRNG rng(Utopia::as_<int>(pp.get_cfg()["seed"]));
+        Utopia::DefaultRNG rng(Utopia::get_as<int>("seed", pp.get_cfg()));
         rng.discard(8);
         assert(rng() == (*root.get_rng())());
 

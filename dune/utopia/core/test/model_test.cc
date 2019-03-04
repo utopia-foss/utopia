@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
         assert(cap_state.size() == 2);
         assert(cap_mean.size() == 1);
         // ... and that the size of the time dimension is correct, too.
-        std::size_t num_steps = Utopia::as_<unsigned int>(cfg["num_steps"]);
+        auto num_steps = Utopia::get_as<unsigned int>("num_steps", cfg);
         assert(cap_state[0] == num_steps + 1);
         assert(cap_mean[0] == num_steps + 1);
 

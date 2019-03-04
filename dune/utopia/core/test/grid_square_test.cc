@@ -96,11 +96,11 @@ bool check_num_cells_and_shape(std::string grid_name,
         int fail_code = 0;
 
         try {
-            exp_shape = as_MultiIndex<2>(expected_shapes[space_name]);
+            exp_shape = get_as_MultiIndex<2>(space_name, expected_shapes);
         }
         catch (std::runtime_error&) {
             // No valid shape given; interpret as failure code
-            fail_code = as_int(expected_shapes[space_name]);
+            fail_code = get_as<int>(space_name, expected_shapes);
         }
 
         if (fail_code == 0) {

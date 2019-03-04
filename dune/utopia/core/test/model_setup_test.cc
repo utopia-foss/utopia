@@ -48,9 +48,9 @@ int main(int argc, char *argv[])
         std::cout << "Performing tests ..." << std::endl;
 
         // Is the config read in correctly?
-        assert(as_str(model1.get_cfg()["foo"]) == "bar");
-        assert(as_str(model2.get_cfg()["bar"]) == "foo");
-        assert(as_str(model3.get_cfg()["spam"]) == "eggs");
+        assert(get_as<std::string>("foo", model1.get_cfg()) == "bar");
+        assert(get_as<std::string>("bar", model2.get_cfg()) == "foo");
+        assert(get_as<std::string>("spam", model3.get_cfg()) == "eggs");
 
         // Is the write_every parameter passed along correctly?
         assert(pp1.get_write_every() == 3);

@@ -110,7 +110,7 @@ public:
             }
 
             // Read in as signed int (allows throwing error for negative value)
-            const auto res = as_<long long>(cfg["resolution"]);
+            const auto res = get_as<long long>("resolution", cfg);
 
             if (res < 1) {
                 throw std::invalid_argument("Grid resolution needs to be a "
@@ -307,8 +307,9 @@ protected:
                     if (_nbh_distance * 2 + 1 > this->shape().min()) {
                         throw std::invalid_argument("Grid shape is too small "
                             "to accomodate a neighborhood with parameter "
-                            "'distance' set to"
-                            + as_str(nbh_params["distance"]) + "!");
+                            "'distance' set to "
+                            + get_as<std::string>("distance", nbh_params)+"!");
+                        // NOTE Reading as string only to build error message
                     }
                 }
                 // ... can add other parameter assignments here

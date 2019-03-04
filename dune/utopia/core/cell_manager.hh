@@ -302,11 +302,11 @@ public:
             throw std::invalid_argument("Missing key 'mode' in neighborhood "
                 "configuration! Perhaps a typo in 'neighborhood'?");
         }
-        const auto nb_mode = as_str(nb_cfg["mode"]);
+        const auto nb_mode = get_as<std::string>("mode", nb_cfg);
 
         bool compute_nb = false;
         if (nb_cfg["compute_and_store"]) {
-            compute_nb = as_bool(nb_cfg["compute_and_store"]);
+            compute_nb = get_as<bool>("compute_and_store", nb_cfg);
         }
 
         // Call the string-based selection function, passing through the whole
@@ -496,7 +496,7 @@ private:
         }
         
         // Get the structure parameter
-        auto structure = as_str(_cfg["grid"]["structure"]);
+        auto structure = get_as<std::string>("structure", _cfg["grid"]);
 
         _log->info("Setting up grid discretization with '{}' cells ...",
                    structure);
