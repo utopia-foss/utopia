@@ -279,7 +279,7 @@ public:
         if (_param.infection_source) {
             this->_log->debug("Setting bottom boundary cells to be "
                               "permanently infected ...");
-            apply_rule([this](const auto& cell) {
+            apply_rule([](const auto& cell) {
                     auto state = cell->state();
                     state.state = source;
                     return state;
@@ -293,10 +293,10 @@ public:
 
                 // Get a copy of the cells container and shuffle it
                 auto cells_shuffled = _cm.cells();
-                std::shuffle(cells_shuffled.begin(),cells_shuffled.end(),
+                std::shuffle(cells_shuffled.begin(), cells_shuffled.end(),
                              *this->_rng);
 
-                // Make some parameters available
+                // Make some parameters available for lambda captures
                 const double stone_cluster = _param.stone_cluster;
                 const double stone_density = _param.stone_density;
 
@@ -304,7 +304,7 @@ public:
                 apply_rule([this, &stone_density](const auto& cell) {
                     // Cell will be a stone with probability stone_density
                     auto state = cell->state();
-                    if (this->_prob_distr(*this->_rng) < _param.stone_density){
+                    if (this->_prob_distr(*this->_rng) < stone_density){
                         state.state = stone;
                         return state;
                     }
@@ -322,9 +322,9 @@ public:
                     for (auto& nb: this->_cm.neighbors_of(cell)) {
                         auto nb_state = nb->state();
 
-                        if (    (state.state == empty)
-                            and (nb_state.state == stone)
-                            and (_prob_distr(*this->_rng) < stone_cluster))
+                        if (    state.state == empty
+                            and nb_state.state == stone
+                            and this->_prob_distr(*this->_rng) < stone_cluster)
                         {
                             // Become a stone
                             state.state = stone;
