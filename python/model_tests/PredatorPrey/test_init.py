@@ -53,36 +53,29 @@ def test_initial_state_random():
 
     # Use the config file for common settings, change via additional kwargs
     mv, dm = mtc.create_run_load(from_cfg="initial_state.yml",
-                                 perform_sweep=True,
-                                 **model_cfg(initial_state='random', 
-                                 prey_prob=prey_prob, pred_prob=pred_prob,
-                                 predprey_prob=predprey_prob))
+                                 perform_sweep=True)
 
     # For all universes, perform checks on the data
     for uni in dm['multiverse'].values():
-        
-
         data = uni['data']['PredatorPrey']
 
-        # Get the grid size
-        grid_size = uni['cfg']['PredatorPrey']['grid_size']
-        num_cells = grid_size[0] * grid_size[1]
-
         # Get the number of predators and prey for the population of the cell
-        num_predprey = np.sum(data['population'] == 3)
+        num_empty = np.sum(data['population'] == 0)
         num_prey = np.sum(data['population'] == 1)
         num_predator = np.sum(data['population'] == 2)
-        num_empty = np.sum(data['population'] == 0)
+        num_predprey = np.sum(data['population'] == 3)
 
-
-        # Check that only a single step was written and the extent is correct
-        assert data['population'].shape == (1, grid_size[1], grid_size[0])
-        assert data['resource_prey'].shape == (1, grid_size[1], grid_size[0])
-        assert data['resource_predator'].shape == (1, grid_size[1], grid_size[0])
+        # Total number of cells can be extracted from shape
+        num_cells = data['population'].shape[1] * data['population'].shape[2]
 
         # Number of cells should be prey + predators + empty, every cell should
         # either be empty or populated by either predator or prey
         assert num_cells == num_empty + num_prey + num_predator + num_predprey
+
+        # Check that only a single step was written
+        assert data['population'].shape[0] == 1
+        assert data['resource_prey'].shape[0] == 1
+        assert data['resource_predator'].shape[0] == 1
 
         # Every individual gets 2 resource units
         assert num_prey + num_predprey == np.sum(data['resource_prey']) / 2
@@ -105,24 +98,18 @@ def test_initial_state_random():
                                              prey_prob=prey_prob, 
                                              pred_prob=pred_prob,
                                              predprey_prob=predprey_prob))
-
+                                    
     for uni in dm['multiverse'].values():
         data = uni['data']['PredatorPrey']
 
-        # Get the grid size
-        grid_size = uni['cfg']['PredatorPrey']['grid_size']
-        num_cells = grid_size[0] * grid_size[1]
-
         # Get the number of predators and prey for the population of the cell
+        num_empty = np.sum(data['population'] == 0)
         num_prey = np.sum(data['population'] == 1)
         num_predator = np.sum(data['population'] == 2)
-        num_empty = np.sum(data['population'] == 0)
+        num_predprey = np.sum(data['population'] == 3)
 
-
-        # Check that only a single step was written and the extent is correct
-        assert data['population'].shape == (1, grid_size[1], grid_size[0])
-        assert data['resource_prey'].shape == (1, grid_size[1], grid_size[0])
-        assert data['resource_predator'].shape == (1, grid_size[1], grid_size[0])
+        # Total number of cells can be extracted from shape
+        num_cells = data['population'].shape[1] * data['population'].shape[2]
 
         # Number of cells should be prey + predators + empty, every cell should
         # either be empty or populated by either predator or prey
@@ -135,7 +122,6 @@ def test_initial_state_random():
         # Strategies should be random; calculate the ratio and check limits
         assert 0.05 <= num_prey / num_cells <= 0.15  # prey
         assert 0.05 <= num_predator / num_cells <= 0.15
-        
 
 
 def test_initial_state_fraction():
@@ -164,10 +150,12 @@ def test_initial_state_fraction():
         num_prey = np.sum(data['population'] == 1)
         num_pred = np.sum(data['population'] == 2)
         num_predprey = np.sum(data['population'] == 3)
-        # Check that the correct number of cells was initiliazied in the
-        # prescribed way, floor
+
+        # Get the grid shape        
         shape = (data['population'].shape[1], data['population'].shape[2])
 
+        # Check that the correct number of cells was initiliazied in the
+        # prescribed way, floor
         assert num_prey == int(prey_frac * shape[0] * shape[1])
         assert num_pred == int(pred_frac * shape[0] * shape[1])
         assert num_predprey == int(predprey_frac * shape[0] * shape[1])
