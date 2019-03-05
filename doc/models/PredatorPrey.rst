@@ -24,10 +24,10 @@ Implementation
 
 This is modeled using a CA. Each cell of the CA has 4 possible states:
 
-* ``empty``
-* ``prey``
-* ``predator``
-* ``predator and prey``
+* Empty
+* Inhabited by a prey
+* Inhabited by a predator
+* Inhabited by both a prey and a predator
 
 There cannot be two individuals of the same species on the same cell at the 
 same time. Consequently, each cell contains a variable for each species in 
@@ -51,16 +51,29 @@ consecutively applied rules:
    species is set on the empty cell. 2 resource units are transferred to the 
    descendant.
 
-All cells are updated asynchronously. The order for the cell update is random for rules 2 and 4. 
+All cells are updated asynchronously. The order for the cell update is random for rules 2 and 4 in order to not introduce any ordering artefacts.
 
 Initialization
 --------------
 
-Cells are initialized in either random or fraction mode. For mode random a 
+Cells are initialized in either random or fraction mode. For mode random, a 
 random field is used and the cells are initialized as prey, predator, 
 predator and prey or empty according to probabilites set by the user. For 
 the mode fraction, fractions of cells to be initialized in the respective 
 states are specified.
+
+For parameters to control this, refer to the model configuration included below.
+
+
+Default Model Configuration
+---------------------------
+
+Below are the default configuration parameters for the ``PredatorPrey`` model.
+
+.. literalinclude:: ../../dune/utopia/models/PredatorPrey/PredatorPrey_cfg.yml
+   :language: yaml
+   :start-after: ---
+
 
 Plotting
 --------
