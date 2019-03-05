@@ -15,9 +15,22 @@
 # Furthermore, if including other models' parameters via the `!model` tag, make
 # sure that no circular includes occur.
 ---
-# The grid size
-grid_size: [10, 10]
+# --- Space parameters --------------------------------------------------------
+# The physical space this model is embedded in
+space:
+  periodic: false
 
+# --- CellManager -------------------------------------------------------------
+cell_manager:
+  grid:
+    structure: square
+    resolution: 16      # in cells per unit length of physical space
+    # NOTE A large number of cells can make the initialization take a while...
+
+  neighborhood:
+    mode: vonNeumann
+
+# --- Dynamics ----------------------------------------------------------------
 # The initial slope range.
 initial_slope: [5, 6]
 # Cells are randomly initialized using a uniform distribution in the given

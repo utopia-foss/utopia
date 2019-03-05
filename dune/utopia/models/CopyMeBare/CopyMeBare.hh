@@ -8,7 +8,6 @@
 // third-party library includes
 
 // Utopia-related includes
-#include <dune/utopia/base.hh>
 #include <dune/utopia/core/model.hh>
 #include <dune/utopia/core/types.hh>
 
