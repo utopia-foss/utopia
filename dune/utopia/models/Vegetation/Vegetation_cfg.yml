@@ -10,8 +10,18 @@
 # As this file is (usually) handled by the frontend, it is possible to use
 # yaml features like anchors, inheritance, ...
 ---
-# Size of the grid
-grid_size: [10, 10]
+# Space parameters
+space:
+  periodic: true
+
+# grid settings
+cell_manager:
+  grid:
+    structure: square
+    resolution: 20
+
+  neighborhood:
+    mode: empty # model does not use neighborhood
 
 # Rain parameters
 # The actual rain value is drawn from the following normal distribution

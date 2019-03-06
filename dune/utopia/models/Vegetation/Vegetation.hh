@@ -1,12 +1,19 @@
 #ifndef VEGETATION_HH
 #define VEGETATION_HH
 
-#include <dune/utopia/base.hh>
+#include <random>
+#include <memory>
+#include <algorithm>
+#include <string>
+
 #include <dune/utopia/core/model.hh>
 #include <dune/utopia/core/apply.hh>
+#include <dune/utopia/core/types.hh>
+#include <dune/utopia/core/cell_manager.hh>
 
 #include <dune/utopia/data_io/hdfgroup.hh>
 #include <dune/utopia/data_io/hdfdataset.hh>
+#include <dune/utopia/data_io/cfg_utils.hh>
 
 
 namespace Utopia {
@@ -14,30 +21,40 @@ namespace Models {
 namespace Vegetation {
 
 /// State of a cell in the Vegetation model, consisting only of plant mass
-struct State {
+struct CellState {
     double plant_mass;
 };
 
 /// Typehelper to define data types of Vegetation model
-using VegetationTypes = ModelTypes<>;
+using VegetationTypes = Utopia::ModelTypes<>;
+
+/// Define the model cell traits: State type, sync update, use default ctor.
+using CellTraits = Utopia::CellTraits<CellState, UpdateMode::sync, true>;
 
 
 /// A very simple vegetation model
-template<class ManagerType>
 class Vegetation:
-    public Model<Vegetation<ManagerType>, VegetationTypes>
+    public Model<Vegetation, VegetationTypes>
 {
 public:
-    /// Type helpers
-    using Base = Model<Vegetation<ManagerType>, VegetationTypes>;
-    using CellType = typename ManagerType::Cell;
-    using CellIndexType = typename CellType::Index;
-    using DataSet = DataIO::HDFDataset<DataIO::HDFGroup>;
-    using RuleFunc = typename std::function<State(const std::shared_ptr<CellType>)>;
+    /// Type of the base class
+    using Base = Model<Vegetation, VegetationTypes>;
+
+    /// Type of the config tree
+    using Config = typename Base::Config;
+
+    /// Type of a data set
+    using DataSet = typename Base::DataSet;
+
+    /// Type of the cell manager used
+    using CellManager = Utopia::CellManager<CellTraits, Vegetation>;
+
+    /// Type of the update rule
+    using RuleFunc = typename CellManager::RuleFunc;
 
 private:
     /// The grid manager
-    ManagerType _manager;
+    CellManager _cm;
 
     // -- The parameters of the model -- //
     // TODO Consider making these public or implementing setters & getters
@@ -102,76 +119,60 @@ private:
     };
 
     /// Calculate the mean plant mass
-    double calc_mean_mass () {
-        return std::accumulate(_manager.cells().begin(),
-                               _manager.cells().end(),
+    double calc_mean_mass () const {
+        return std::accumulate(_cm.cells().begin(),
+                               _cm.cells().end(),
                                0.,
-                               [&](double sum, const auto& cell) {
+                               [](double sum, const auto& cell) {
                                    return sum + cell->state().plant_mass;
-                               }) / _manager.cells().size();
+                               }) / _cm.cells().size();
     }
 
 public:
 
     /// Construct the Vegetation model
-    /** \param name     Name of this model instance
-     *  \param parent   The parent model this model instance resides in
-     *  \param manager  The externally setup manager to use for this model
+    /** \param name          Name of this model instance
+     *  \param parent_model  The parent model this model instance resides in
      */
     template<class ParentModel>
     Vegetation (const std::string name,
-                const ParentModel & parent_model,
-                ManagerType manager) 
+                const ParentModel& parent_model)
     :
         // Construct the base class
         Base(name, parent_model),
 
-        // Initialize the reference to the Manager object
-        _manager(manager),
+        // Initialize the manager, setting the initial state
+        _cm(*this, CellState({0.0})),
 
         // Initialize the rain distribution
-        _rain_dist{as_double(this->_cfg["rain_mean"]),
-                   as_double(this->_cfg["rain_std"])},
+        _rain_dist{get_as<double>("rain_mean", this->_cfg),
+                   get_as<double>("rain_std", this->_cfg)},
 
         // Initialize model parameters from config file
-        _growth_rate(as_double(this->_cfg["growth_rate"])),
-        _seeding_rate(as_double(this->_cfg["seeding_rate"])),
+        _growth_rate(get_as<double>("growth_rate", this->_cfg)),
+        _seeding_rate(get_as<double>("seeding_rate", this->_cfg)),
 
         // Open dataset for output of cell states
-        _dset_plant_mass(this->create_dset("plant_mass",
-                                           {_manager.cells().size()}))
+        _dset_plant_mass(this->create_cm_dset("plant_mass", _cm))
     {
-        // Write out the cell coordinates
-        auto coords = this->_hdfgrp->open_dataset("cell_positions",
-                                                  {_manager.cells().size()});
-
-        coords->write(_manager.cells().begin(), _manager.cells().end(),
-                      [](const auto& cell) { return cell->position();}
-                      );
+        this->_log->info("Model '{}' initialized", name);
 
         // Write initial state
         write_data();
-        this->_log->debug("Adding dataset attributes ...");
-        // Add attributes to the datasets
-        // NOTE Currently, attributes can be set only after the first write
-        //      operation because else the datasets are not yet created.
-        const auto grid_size = as_<std::array<std::size_t,2>>(
-                                            this->_cfg["grid_size"]);
-        _dset_plant_mass->add_attribute("content", "grid");
-        _dset_plant_mass->add_attribute("grid_shape", grid_size);
+        this->_log->info("Initial state written");
     }
 
     /// Iterate a single step
     void perform_step ()
     {
-        apply_rule(_growth_seeding, _manager.cells());
+        apply_rule(_growth_seeding, _cm.cells());
     }
 
     /// Write the cell states (aka plant bio-mass)
     void write_data () 
     {
-        _dset_plant_mass->write(_manager.cells().begin(),
-                                _manager.cells().end(),
+        _dset_plant_mass->write(_cm.cells().begin(),
+                                _cm.cells().end(),
                                 [](auto& cell) {
                                     return cell->state().plant_mass; }
                                 );
