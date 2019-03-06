@@ -187,6 +187,4 @@ What is the rationale behind the tree structure of the output data?
 Can I work interactively with the Utopia frontend?
 --------------------------------------------------
 
-Yes.
-
-*TODO*
+:doc:`Yes. </frontend/interactive>`
