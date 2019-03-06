@@ -39,19 +39,11 @@ def test_output():
         # Get the data
         data = uni['data']['Vegetation']
 
-        # Get the config of this universe
-        uni_cfg = uni['cfg']
-
-        # Calculate the number of cells
-        grid_size = uni_cfg['Vegetation']['grid_size']
-        num_cells = grid_size[0] * grid_size[1]
-
         # Check that all datasets are available
         assert 'plant_mass' in data
 
-        # Assert they have the correct shape
-        assert data['plant_mass'].shape == (uni_cfg['num_steps'] + 1,
-                                            grid_size[0], grid_size[1])
+        # Check initial condition
+        assert (data['plant_mass'][0] == 0.0).all()
 
         # Assert plant mass data is always positive
         assert not (data['plant_mass'] < 0).any()

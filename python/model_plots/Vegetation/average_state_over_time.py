@@ -18,10 +18,7 @@ def average_state_over_time(dm: DataManager, *,
     Args:
         dm (DataManager): The data manager from which to retrieve the data
         out_path (str): Where to store the plot to
-        uni (int): The universe to use
-        model_name (str): The name of the model instance
-        state (str): The name of state (i.e. data set) to plot
-        fmt (str, optional): the plt.plot format argument
+        uni (UniverseGroup): The universe to use
         save_kwargs (dict, optional): kwargs to the plt.savefig function
         **plot_kwargs: Passed on to plt.plot
     """
@@ -29,14 +26,10 @@ def average_state_over_time(dm: DataManager, *,
     dset = uni['data']['Vegetation/plant_mass']
 
     # Extract the y data which is 'state' avaraged over all grid cells for every time step
-    y_data = np.mean(dset, axis=1)
-    x_data = np.linspace(0, len(y_data), len(y_data))
-
-    # Assemble the arguments
-    args = [x_data, y_data]
+    y_data = np.mean(dset, axis=(1, 2))
 
     # Call the plot function
-    plt.plot(*args, **plot_kwargs)
+    plt.plot(y_data, **plot_kwargs)
 
     # Add some labels
     plt.xlabel("Time")
