@@ -35,7 +35,7 @@ public:
     using Self = CellManager<CellTraits, Model>;
 
     /// Type of the managed cells
-    using Cell = Cell<CellTraits>;
+    using Cell = Utopia::Cell<CellTraits>;
 
     /// Type of the cell state
     using CellState = typename CellTraits::State;

@@ -33,7 +33,7 @@ public:
     using Space = typename Model::Space;
 
     /// The type of the managed agents
-    using Agent = Agent<AgentTraits, Space>;
+    using Agent = Utopia::Agent<AgentTraits, Space>;
 
     /// The type of the agent state
     using AgentState = typename AgentTraits::State;
