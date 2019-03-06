@@ -210,7 +210,7 @@ void test_create_k_regular_graph(){
     }
 }
 
-int main(int, char*[])
+int main()
 {
     try
     {

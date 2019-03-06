@@ -35,7 +35,7 @@ void assert_equal(const std::vector<T> a, const std::vector<T> b)
     assert(equal);
 }
 
-int main
+int main ()
 {
     try
     {
