@@ -8,7 +8,6 @@
 #include "../hdfbufferfactory.hh"
 #include "../hdfgroup.hh"
 #include <cassert>
-#include <dune/common/parallel/mpihelper.hh>
 #include <hdf5.h>
 #include <list>
 #include <string>
@@ -22,10 +21,8 @@ struct Test
     std::string c;
 };
 
-int main(int argc, char** argv)
+int main()
 {
-    Dune::MPIHelper::instance(argc, argv);
-
     std::vector<Test> data(100);
     int i = 0;
     double j = 0;

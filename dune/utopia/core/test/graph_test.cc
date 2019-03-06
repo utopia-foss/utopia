@@ -210,12 +210,10 @@ void test_create_k_regular_graph(){
     }
 }
 
-int main(int argc, char* argv[])
+int main(int, char*[])
 {
     try
     {
-        Dune::MPIHelper::instance(argc, argv);
-
         test_create_k_regular_graph();
         test_create_random_graph();
         test_create_small_world_graph();

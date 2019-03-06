@@ -4,11 +4,9 @@
 
 using namespace Utopia;
 
-int main(int argc, char *argv[])
+int main(int , char *[])
 {
     try {
-        Dune::MPIHelper::instance(argc,argv);
-
         // create pseudo models that will be used as "parent" for the model
         // initializations. Do so with the two different possible constructors
         std::cout << "Initializing pseudo parents..." << std::endl;

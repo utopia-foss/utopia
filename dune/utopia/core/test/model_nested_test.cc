@@ -7,11 +7,9 @@
 #include "model_nested_test.hh"
 
 
-int main(int argc, char *argv[])
+int main(int, char *[])
 {
     try {
-        Dune::MPIHelper::instance(argc,argv);
-
         // -- Setup model -- //
         // create a pseudo parent
         std::cout << "Initializing pseudo parent ..." << std::endl;

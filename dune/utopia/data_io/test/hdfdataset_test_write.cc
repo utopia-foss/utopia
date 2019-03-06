@@ -12,7 +12,6 @@
 #include "../hdfgroup.hh"
 #include <cassert>
 #include <chrono>
-#include <dune/common/parallel/mpihelper.hh>
 #include <iostream>
 #include <thread>
 
@@ -28,10 +27,8 @@ struct Point
     double z;
 };
 
-int main(int argc, char** argv)
+int main()
 {
-    Dune::MPIHelper::instance(argc, argv);
-
     Utopia::setup_loggers();
     spdlog::get("data_io")->set_level(spdlog::level::debug);
 
@@ -56,7 +53,6 @@ int main(int argc, char** argv)
     auto fireandforgetdataset2d = file.open_dataset("/fireandforget2d", {5, 100});
     auto latestarterdataset = file.open_dataset("/latestarter");
     auto latestarterdataset2 = file.open_dataset("/latestarter2");
-    auto dunefieldvectordataset = file.open_dataset("/dunefieldvector");
 
     ////////////////////////////////////////////////////////////////////////////
     ////////////////// Test attribute writing prior to dataset write ///////////
@@ -108,14 +104,6 @@ int main(int argc, char** argv)
         points[i].x = 3.14;
         points[i].y = 3.14 + 1;
         points[i].z = 3.14 + 2;
-    }
-
-    std::vector<Dune::FieldVector<double, 2>> dunefieldvectordata(100);
-
-    for (int i = 0; i < int(dunefieldvectordata.size()); ++i)
-    {
-        dunefieldvectordata[i] = Dune::FieldVector<double, 2>{
-            {static_cast<double>(i), static_cast<double>(-i)}};
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -354,13 +342,6 @@ int main(int argc, char** argv)
         assert(e.what() == message);
     }
 
-    // try to write dune fieldvector data
-    // 0, 0
-    // 1, -1
-    // 2, -2
-    // ...
-    dunefieldvectordataset->write(dunefieldvectordata);
-
     // now close everything. Then write attributes
     // to 'contset' while it is closed => reopen file & contset -> check if
     // writing works
@@ -376,7 +357,6 @@ int main(int argc, char** argv)
     fireandforgetdataset2d->close();
     latestarterdataset->close();
     latestarterdataset2->close();
-    dunefieldvectordataset->close();
 
     assert(!check_validity(H5Iis_valid(contset->get_id()), contset->get_path()));
     attrbuff = contset->get_attribute_buffer();

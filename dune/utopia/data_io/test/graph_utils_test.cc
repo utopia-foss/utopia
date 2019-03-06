@@ -8,7 +8,6 @@
 #include <boost/graph/properties.hpp>
 #include <cstdio>
 
-#include <dune/common/parallel/mpihelper.hh>
 #include <dune/utopia/data_io/graph_utils.hh>
 #include <dune/utopia/data_io/hdfgroup.hh>
 #include <dune/utopia/data_io/hdffile.hh>
@@ -176,10 +175,9 @@ void test_save_graph()
 }
 
 
-int main(int argc, char** argv) {
+int main() {
     try {
         // Setup
-        Dune::MPIHelper::instance(argc, argv);
         Utopia::setup_loggers();
 
         // Run the test

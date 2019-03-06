@@ -10,7 +10,6 @@
 #include <cassert>
 #include <cmath>
 #include <cstdio>
-#include <dune/common/parallel/mpihelper.hh>
 #include <iostream>
 #include <string>
 #include <thread>
@@ -50,8 +49,6 @@ void assert_hdfdatasets(LHS& lhs, RHS& rhs)
 
 int main(int argc, char** argv)
 {
-    Dune::MPIHelper::instance(argc, argv);
-
     HDFFile file("dataset_test_lifetime.h5", "w");
 
     HDFGroup lifecyclegroup(file, "/lifecycletest");

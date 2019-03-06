@@ -1,8 +1,6 @@
 #ifndef UTOPIA_CORE_ENTITY_HH
 #define UTOPIA_CORE_ENTITY_HH
 
-// NOTE This file's final name will be entity.hh
-
 #include "state.hh"
 #include "tags.hh"
 #include "space.hh"

@@ -1,13 +1,11 @@
 #ifndef UTOPIA_CORE_AGENT_HH
 #define UTOPIA_CORE_AGENT_HH
 
-// NOTE This file's final name will be cell.hh
-
 #include "state.hh"
 #include "tags.hh"
 #include "space.hh"
 #include "types.hh"
-#include "entity_new.hh"       // NOTE Replace with entity.hh in final version
+#include "entity.hh"
 
 
 namespace Utopia {

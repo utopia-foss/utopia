@@ -14,7 +14,6 @@
 #include <boost/iterator/counting_iterator.hpp>
 
 #include <dune/utopia/base.hh>
-#include <dune/utopia/core/setup.hh>
 #include <dune/utopia/core/model.hh>
 #include <dune/utopia/core/types.hh>
 

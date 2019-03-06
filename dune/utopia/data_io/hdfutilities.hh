@@ -15,8 +15,6 @@
 #include <type_traits>
 #include <vector>
 
-#include <dune/common/fvector.hh>
-
 // Functions for determining if a type is an STL-container are provided here.
 // This is used if we wish to make hdf5 types for storing such data in an
 // hdf5 dataset.
@@ -222,17 +220,6 @@ struct get_size<std::array<T, N>> : std::integral_constant<std::size_t, N>
 };
 
 /**
- * @brief get_size overload for Dune::FieldVector
- *
- * @tparam T
- * @tparam N
- */
-template <typename T, int N>
-struct get_size<Dune::FieldVector<T, N>> : std::integral_constant<std::size_t, N>
-{
-};
-
-/**
  * @brief Overload for tuples
  *
  * @tparam Ts
@@ -285,18 +272,6 @@ struct is_array_like : std::false_type
  */
 template <typename T, std::size_t N>
 struct is_array_like<std::array<T, N>, std::void_t<decltype(get_size<std::array<T, N>>::value)>>
-    : std::true_type
-{
-};
-
-/**
- * @brief Specialization for Dune::FieldVector
- *
- * @tparam T element type
- * @tparam N number of elements to store
- */
-template <typename T, int N>
-struct is_array_like<Dune::FieldVector<T, N>, std::void_t<decltype(get_size<std::array<T, N>>::value)>>
     : std::true_type
 {
 };

@@ -1,6 +1,5 @@
 # place mesh and config files in build directory
-file(COPY "square.msh" "cube.msh"
-          "agent_manager_test.yml"
+file(COPY "agent_manager_test.yml"
           "agent_manager_integration_test.yml"
           "cell_manager_test.yml"
           "cell_manager_integration_test.yml"
@@ -8,7 +7,6 @@ file(COPY "square.msh" "cube.msh"
           "model_test.yml"
           "model_nested_test.yml"
           "model_setup_test.yml"
-          "model_with_manager_test.yml"
           "neighborhood_test.yml"
      DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
@@ -16,25 +14,17 @@ file(COPY "square.msh" "cube.msh"
 set(TESTS_CORE
     agent_manager_test
     agent_manager_integration_test
-    agent_naive_test
-    agent_test_2d
-    agent_test_3d
     agent_test_new
     apply_test
     cell_manager_test
     cell_manager_integration_test
-    cell_test
     dependency_test
     exceptions_test
     graph_test
-    grid_cells_test_2d
-    grid_cells_test_3d
-    grid_test
     grid_square_test
     model_test
     model_nested_test
     model_setup_test
-    model_with_manager_test
     neighborhood_test
     signal_test
     state_test

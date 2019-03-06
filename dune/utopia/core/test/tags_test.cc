@@ -1,12 +1,10 @@
 #include <cassert>
-#include <dune/utopia/base.hh>
-#include <dune/utopia/core/setup.hh>
+#include <iostream>
+#include <dune/utopia/core/tags.hh>
 
-int main(int argc, char *argv[])
+int main(int, char *[])
 {
     try {
-        Dune::MPIHelper::instance(argc,argv);
-
         Utopia::DefaultTag t_true;
         assert(!t_true.is_tagged);
         t_true.is_tagged = true;

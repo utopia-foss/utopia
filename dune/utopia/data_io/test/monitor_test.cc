@@ -5,7 +5,6 @@
 #include <string>
 
 #include <yaml-cpp/yaml.h>
-#include <dune/common/parallel/mpihelper.hh>
 
 #include <dune/utopia/base.hh>
 #include <dune/utopia/core/logging.hh>
@@ -108,10 +107,9 @@ void test_MonitorManager_and_Monitor(){
 
 // ............................................................................
 
-int main(int argc, char** argv) {
+int main() {
     try {
         // Setup
-        Dune::MPIHelper::instance(argc, argv);
         Utopia::setup_loggers();
 
         // Run the tests

@@ -15,7 +15,7 @@ bool str_found(std::string s, std::string match)
     return s.find(match) != std::string::npos;
 }
 
-int main(int, char**) {
+int main {
     try {
         std::cout << "Loading test config file..." << std::endl;
         auto cfg = YAML::LoadFile("cfg_utils_test.yml");

@@ -1,7 +1,6 @@
 #include <cassert>
 #include <iostream>
 
-#include <dune/utopia/base.hh>
 #include <dune/utopia/core/signal.hh>
 
 using namespace Utopia;
@@ -12,10 +11,8 @@ void custom_signal_handler(int) {
 }
 
 
-int main(int argc, char *argv[]) {
+int main(int, char *[]) {
     try {
-        Dune::MPIHelper::instance(argc, argv);
-        
         // Test the default signal handler handles the global flags correctly
         stop_now.store(false);
         default_signal_handler(123);  // not an actual signal, irrelevant here

@@ -7,7 +7,6 @@
  */
 #include "../hdftypefactory.hh"
 #include <cassert>
-#include <dune/common/parallel/mpihelper.hh>
 #include <hdf5.h>
 #include <list>
 #include <string>
@@ -16,10 +15,8 @@
 using namespace Utopia;
 using namespace Utopia::DataIO;
 
-int main(int argc, char** argv)
+int main()
 {
-    Dune::MPIHelper::instance(argc, argv);
-
     // sample test for primitive types
 
     // int

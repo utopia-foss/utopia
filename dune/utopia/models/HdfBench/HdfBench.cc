@@ -4,11 +4,9 @@
 
 using namespace Utopia::Models::HdfBench;
 
-int main (int argc, char** argv)
+int main (int, char** argv)
 {
     try {
-        Dune::MPIHelper::instance(argc, argv);
-
         // Initialize the PseudoParent from config file path
         Utopia::PseudoParent pp(argv[1]);
 

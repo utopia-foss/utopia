@@ -35,10 +35,8 @@ void assert_equal(const std::vector<T> a, const std::vector<T> b)
     assert(equal);
 }
 
-int main(int argc, char** argv)
+int main
 {
-    Dune::MPIHelper::instance(argc, argv);
-
     try
     {
         std::cout << std::endl << "Setting up loggers ..." << std::endl;

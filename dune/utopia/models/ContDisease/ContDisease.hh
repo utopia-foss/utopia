@@ -6,7 +6,6 @@
 
 // Utopia-related includes
 #include <dune/utopia/base.hh>
-#include <dune/utopia/core/setup.hh>
 #include <dune/utopia/core/model.hh>
 #include <dune/utopia/core/apply.hh>
 #include <dune/utopia/core/cell_manager.hh>
