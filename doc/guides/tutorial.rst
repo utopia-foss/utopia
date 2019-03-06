@@ -30,6 +30,7 @@ So far for an introduction. Let's dive in! 🤓
 
 ----
 
+.. _activate_venv:
 
 Getting started
 ---------------
