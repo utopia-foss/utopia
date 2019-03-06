@@ -3,7 +3,7 @@
 
 #include "types.hh"
 #include "exceptions.hh"
-#include "agent_new.hh"         // NOTE Use agent.hh eventually
+#include "agent.hh"
 
 namespace Utopia {
 /**
