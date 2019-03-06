@@ -37,17 +37,17 @@ using CellTraits = EntityTraits<StateType,
   * \tparam Traits  Valid Utopia::EntityTraits, describing the type of cell
   */
 template<typename Traits>
-class __Cell :   // NOTE Final name will be Cell
-    public __Entity<Traits>
+class Cell :
+    public Entity<Traits>
 {
 public:
     /// The type of the state
     using State = typename Traits::State;
 
     /// Construct a cell
-    __Cell(const IndexType id, const State initial_state)
+    Cell(const IndexType id, const State initial_state)
     :
-        __Entity<Traits>(id, initial_state)
+        Entity<Traits>(id, initial_state)
     {}
 };
 

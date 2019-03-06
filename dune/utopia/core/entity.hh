@@ -72,13 +72,13 @@ struct EntityTraits {
   *          The entity itself does not know anything about that ...
   */
 template<typename Traits>
-class __Entity :   // NOTE Final name will be Entity
+class Entity :
     public StateContainer<typename Traits::State, Traits::sync>,
     public Traits::Tags
 {
 public:
     /// The type of this entity
-    using Self = __Entity<Traits>;
+    using Self = Entity<Traits>;
 
     /// The type of the state of this entity
     using State = typename Traits::State;
@@ -107,7 +107,7 @@ private:
 
 public:
     /// Construct an entity
-    __Entity(const IndexType id, const State initial_state)
+    Entity(const IndexType id, const State initial_state)
     :
         // Store arguments and initialize Tags via default constructor
         StateContainer<State, sync>(initial_state),

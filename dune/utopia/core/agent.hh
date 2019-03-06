@@ -44,14 +44,14 @@ using AgentTraits = EntityTraits<StateType,
   * \tparam enabled Template parameter to enable sync or async specialization
   */
 template<typename Traits, typename Space, typename enabled=void>
-class __Agent;
+class Agent;
 
 
 /// Agent specialization for asynchronous update
 template<typename Traits, typename Space>
-class __Agent<Traits, Space, std::enable_if_t<Traits::sync == false>>
+class Agent<Traits, Space, std::enable_if_t<Traits::sync == false>>
 :
-    public __Entity<Traits>
+    public Entity<Traits>
 {   
 public:  
     /// The type of the state
@@ -74,11 +74,11 @@ public:
      *  \param initial_state The initial state
      *  \param initial_pos   The initial position
      */
-    __Agent(const IndexType id,
+    Agent(const IndexType id,
             const State initial_state, 
             const Position& initial_pos)
     :
-        __Entity<Traits>(id, initial_state),
+        Entity<Traits>(id, initial_state),
         _pos(initial_pos)    
     {}
 
@@ -108,9 +108,9 @@ protected:
 
 /// Agent Specialisation for synchronous update
 template<typename Traits, typename Space>
-class __Agent<Traits, Space, std::enable_if_t<Traits::sync == true>>
+class Agent<Traits, Space, std::enable_if_t<Traits::sync == true>>
 :
-    public __Entity<Traits>
+    public Entity<Traits>
 {   
 public:
     /// The type of the state
@@ -136,11 +136,11 @@ public:
      *  \param initial_state The initial state
      *  \param initial_pos   The initial position
      */
-    __Agent(const IndexType id,
+    Agent(const IndexType id,
             const State& initial_state, 
             const Position& initial_pos)
     :
-        __Entity<Traits>(id, initial_state),
+        Entity<Traits>(id, initial_state),
         _pos(initial_pos),
         _pos_new(initial_pos)
     {}
@@ -162,7 +162,7 @@ public:
      */
     void update () {
         // Update the state as defined in the Entity class
-        __Entity<Traits>::update();
+        Entity<Traits>::update();
 
         // Update the position
         _pos = _pos_new;

@@ -33,7 +33,7 @@ public:
     using Space = typename Model::Space;
 
     /// The type of the managed agents
-    using Agent = __Agent<AgentTraits, Space>; // NOTE Use Agent eventually
+    using Agent = Agent<AgentTraits, Space>;
 
     /// The type of the agent state
     using AgentState = typename AgentTraits::State;

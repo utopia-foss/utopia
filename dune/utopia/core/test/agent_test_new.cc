@@ -14,7 +14,7 @@ using SpaceVec = typename DefaultSpace::SpaceVec;
 using AgentTraitsSync = AgentTraits<AgentState, UpdateMode::sync>;
 using AgentTraitsAsync = AgentTraits<AgentState, UpdateMode::async>;
 
-int main {
+int main () {
 
     try {
         // Initial position for agent setup
@@ -33,8 +33,8 @@ int main {
         std::cout << "Initialize sync and async agent ..." << std::endl;
 
         // Create synchronous and asynchronous agent
-        __Agent<AgentTraitsSync, DefaultSpace> agt_sync(0, State, initial_pos);
-        __Agent<AgentTraitsAsync, DefaultSpace> agt_async(0, State, initial_pos);
+        Agent<AgentTraitsSync, DefaultSpace> agt_sync(0, State, initial_pos);
+        Agent<AgentTraitsAsync, DefaultSpace> agt_async(0, State, initial_pos);
 
         std::cout << "Success." << std::endl;
 

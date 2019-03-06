@@ -35,7 +35,7 @@ public:
     using Self = CellManager<CellTraits, Model>;
 
     /// Type of the managed cells
-    using Cell = __Cell<CellTraits>; // NOTE Use Cell eventually
+    using Cell = Cell<CellTraits>;
 
     /// Type of the cell state
     using CellState = typename CellTraits::State;
