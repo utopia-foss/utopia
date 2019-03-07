@@ -38,6 +38,7 @@ target_link_libraries(utopia INTERFACE
     Boost::boost
     hdf5
     spdlog
+    Threads::Threads # NOTE: required by spdlog on Ubuntu 18.04
     yaml-cpp
 )
 

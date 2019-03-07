@@ -27,6 +27,10 @@ if (NOT TARGET armadillo)
     find_package(Armadillo MODULE REQUIRED)
 endif()
 
+# Threads (NOTE: required by spdlog on Ubuntu 18.04)
+set(THREADS_PREFER_PTHREAD_FLAG)
+find_package(Threads REQUIRED)
+
 # include Utopia macros
 include(UtopiaEnv)
 include(UtopiaAddModel)
