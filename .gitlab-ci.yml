@@ -130,17 +130,17 @@ build:docs:
     - cmake ..
     - make doc
 
-# Build the tests; artifacts used in test stage
-build:tests:
+# Build the unit tests; artifacts used in test stage
+build:unit_tests:
   stage: build
   <<: [*ssh_access, *artifacts]
 
   script:
     - mkdir build && cd build
     - cmake ..
-    - make $MAKE_FLAGS_BUILD build_tests
+    - make $MAKE_FLAGS_BUILD build_unit_tests
 
-# Build the models; artifacts used in test stage
+# Build the models and their tests; artifacts used in test stage
 build:models:
   stage: build
   <<: [*ssh_access, *artifacts]
@@ -148,6 +148,7 @@ build:models:
   script:
     - mkdir build && cd build
     - cmake ..
+    - make $MAKE_FLAGS_BUILD build_model_tests
     - make $MAKE_FLAGS_BUILD all
 
 
@@ -165,6 +166,7 @@ build:debug: &build_debug
       cmake ..
     # FIXME After Utopia::as_ is removed, allow the deprecation warning again
     - make $MAKE_FLAGS_BUILD build_unit_tests
+    - make $MAKE_FLAGS_BUILD build_model_tests
     - make $MAKE_FLAGS_BUILD all
 
 build:debug-clang:
@@ -180,6 +182,7 @@ build:debug-clang:
       cmake ..
     # FIXME After Utopia::as_ is removed, allow the deprecation warning again
     - make $MAKE_FLAGS_BUILD build_unit_tests
+    - make $MAKE_FLAGS_BUILD build_model_tests
     - make $MAKE_FLAGS_BUILD all
 
 # -- Test stage ---------------------------------------------------------------
@@ -189,7 +192,7 @@ test:core: &test_core
   stage: test
   <<: *ssh_access
   dependencies:
-    - build:tests
+    - build:unit_tests
   script:
     - cd build
     - make $MAKE_FLAGS_TEST test_core
