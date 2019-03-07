@@ -1,7 +1,6 @@
 #ifndef UTOPIA_MODELS_DUMMY_HH
 #define UTOPIA_MODELS_DUMMY_HH
 
-#include <dune/utopia/base.hh>
 #include <dune/utopia/core/model.hh>
 
 

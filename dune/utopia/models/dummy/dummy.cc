@@ -4,12 +4,9 @@
 // Declare the model
 using DummyModel = Utopia::Models::Dummy::Dummy;
 
-int main (int argc, char** argv)
+int main (int, char** argv)
 {
     try {
-        Dune::MPIHelper::instance(argc, argv);
-
-
         // -- Model definition and iteration -- //
 
         // Create PseudoParent from config file, setting up the HDFFile and RNG

@@ -5,8 +5,6 @@
  * @file hdfutilities_test.cc
  */
 #include <dune/utopia/data_io/hdfutilities.hh>
-#include <dune/common/fvector.hh>
-#include <dune/common/parallel/mpihelper.hh>
 #include <iostream>
 #include <list>
 #include <map>
@@ -16,10 +14,8 @@
 
 using namespace Utopia::DataIO;
 
-int main(int argc, char** argv)
+int main()
 {
-    Dune::MPIHelper::instance(argc, argv);
-
     // test remove_pointer metafunction
     constexpr bool a = std::is_same_v<remove_pointer_t<double*>, double>;
     static_assert(a == true, "remove_pointer failed");
@@ -103,16 +99,8 @@ int main(int argc, char** argv)
                   "is_container failed for const std::string*&");
     static_assert(is_container_v<std::string*&&> == false, "is_container failed for  std::string*&&");
 
-    constexpr bool x = is_array_like_v<Dune::FieldVector<double, 5>>;
-    constexpr bool v = is_array_like_v<Dune::FieldVector<int, 5>>;
-    static_assert(x == true, "is_array_like failed");
-    static_assert(v == true, "is_array_like failed");
-
     constexpr std::size_t sarr = get_size_v<std::array<int, 4>>;
     static_assert(sarr == 4, "get_size failed for arary of size 4");
-
-    constexpr std::size_t sdfv = get_size_v<Dune::FieldVector<int, 4>>;
-    static_assert(sdfv == 4, "get_size failed for Dune::FieldVecto of size 4");
 
     constexpr bool y = is_array_like_v<std::tuple<int, double, char>>;
     constexpr bool z = is_array_like_v<std::list<float>>;

@@ -1,6 +1,8 @@
 #ifndef APPLY_HH
 #define APPLY_HH
 
+#include "types.hh"
+
 namespace Utopia {
 
 /** \page rule The Rule Concept

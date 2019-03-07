@@ -9,7 +9,6 @@
 #include "../hdffile.hh"
 #include "../hdfgroup.hh"
 #include <cassert>
-#include <dune/common/parallel/mpihelper.hh>
 #include <iostream>
 #include <vector>
 
@@ -103,10 +102,8 @@ void read(std::vector<Teststruct>& data)
     assert(read_attribute == "this is an attribute to a double dataset");
 }
 
-int main(int argc, char** argv)
+int main()
 {
-    Dune::MPIHelper::instance(argc, argv);
-
     // H5Eset_auto(error_stack, NULL, NULL); // turn off automatic error
     // printings
     std::vector<Teststruct> data(50);

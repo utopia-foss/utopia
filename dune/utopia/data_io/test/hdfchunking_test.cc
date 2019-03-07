@@ -6,7 +6,6 @@
 #include <vector>
 
 #include "../hdfchunking.hh"
-#include <dune/utopia/base.hh>
 
 using namespace Utopia::DataIO;
 
@@ -35,12 +34,8 @@ void assert_equal(const std::vector<T> a, const std::vector<T> b)
     assert(equal);
 }
 
-int main(int argc, char** argv)
-{
-    Dune::MPIHelper::instance(argc, argv);
-
-    try
-    {
+int main () {
+    try {
         std::cout << std::endl << "Setting up loggers ..." << std::endl;
         Utopia::setup_loggers();
         spdlog::get("data_io")->set_level(spdlog::level::debug);

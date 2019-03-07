@@ -3,7 +3,7 @@
 
 #include "types.hh"
 #include "exceptions.hh"
-#include "agent_new.hh"         // NOTE Use agent.hh eventually
+#include "agent.hh"
 
 namespace Utopia {
 /**
@@ -33,7 +33,7 @@ public:
     using Space = typename Model::Space;
 
     /// The type of the managed agents
-    using Agent = __Agent<AgentTraits, Space>; // NOTE Use Agent eventually
+    using Agent = Utopia::Agent<AgentTraits, Space>;
 
     /// The type of the agent state
     using AgentState = typename AgentTraits::State;

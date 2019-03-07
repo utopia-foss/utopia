@@ -186,7 +186,7 @@ bool check_num_cells_and_shape(std::string grid_name,
 
 // ----------------------------------------------------------------------------
 
-int main(int, char *[]) {
+int main() {
     try {
         std::cout << "Loading config file ..." << std::endl;
         auto cfg = YAML::LoadFile("grid_square_test.yml");

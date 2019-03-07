@@ -1,46 +1,62 @@
-#ifndef CELL_HH
-#define CELL_HH
+#ifndef UTOPIA_CORE_CELL_HH
+#define UTOPIA_CORE_CELL_HH
 
-#include <dune/utopia/core/neighborhoods.hh>
-#include <dune/utopia/core/entity.hh>
+#include "state.hh"
+#include "tags.hh"
+#include "space.hh"
+#include "types.hh"
+#include "entity.hh"
 
-namespace Utopia
-{
-///this class implements an entity on a grid
+
+namespace Utopia {
 /**
- *Cell contains the position and the boolian _boundary.
- *Also Cell inherits the state, tag and index from Entity.
+ *  \addtogroup CellManager
+ *  \{
  */
-template<
-    typename T, bool sync, class Tags, typename PositionType,
-    typename IndexType, std::size_t custom_neighborhood_count = 0>
-class Cell:
-    public Entity<
-        Cell<T, sync, Tags, PositionType, IndexType, custom_neighborhood_count>,
-        T, sync, Tags, IndexType, custom_neighborhood_count>
+
+/// CellTraits are just another name for Utopia::EntityTraits
+template<typename StateType, 
+         UpdateMode update_mode,
+         bool use_def_state_constr=false,
+         typename CellTags=EmptyTag,
+         template<class> class CustomLinkContainers=NoCustomLinks>
+using CellTraits = EntityTraits<StateType, 
+                                update_mode,
+                                use_def_state_constr,
+                                CellTags, 
+                                CustomLinkContainers>;
+
+/// A cell is a slightly specialized state container
+/** \detail  It can be extended with the use of tags and can be associated with
+  *          so-called "custom links". These specializations are carried into
+  *          the cell by means of the CellTraits struct.
+  *          A cell is embedded into the CellManager, where the discretization
+  *          allows assigning a position in space to the cell. The cell itself
+  *          does not know anything about that ...
+  *
+  * \tparam Traits  Valid Utopia::EntityTraits, describing the type of cell
+  */
+template<typename Traits>
+class Cell :
+    public Entity<Traits>
 {
 public:
-    //\return position of cell center
-    const PositionType& position() const {return _position;}
-    //\return true if located at boundary
-    inline bool is_boundary() const {return _boundary;}
-    
-    /// constructor of Cell
-    Cell(T t, PositionType pos, const bool boundary, IndexType index) :
-        Entity<Cell, T, sync, Tags, IndexType, custom_neighborhood_count>
-            (t, index),
-        _position(pos), _boundary(boundary)
-    { }
+    /// The type of the state
+    using State = typename Traits::State;
 
-private:
-    //! Position of the cell center
-    const PositionType _position;
-
-    //! Does this cell lie on the grid boundary?
-    const bool _boundary;    
+    /// Construct a cell
+    Cell(const IndexType id, const State initial_state)
+    :
+        Entity<Traits>(id, initial_state)
+    {}
 };
-    
+
+
+// end group CellManager
+/**
+ *  \}
+ */
 
 } // namespace Utopia
 
-#endif // CELL_HH
+#endif // UTOPIA_CORE_CELL_HH

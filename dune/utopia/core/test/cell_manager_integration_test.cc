@@ -6,10 +6,8 @@
 
 using namespace Utopia::Test;
 
-int main(int argc, char *argv[]) {
+int main() {
     try {
-        Dune::MPIHelper::instance(argc,argv);
-
         std::cout << "Initializing pseudo parent ..." << std::endl;
         Utopia::PseudoParent pp("cell_manager_integration_test.yml");
         std::cout << "Success." << std::endl << std::endl;

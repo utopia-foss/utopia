@@ -1,14 +1,13 @@
 #include <cassert>
+#include <vector>
+#include <iostream>
 
-#include <dune/utopia/base.hh>
 #include <dune/utopia/core/state.hh>
 
 /// Instantiate containers, check access and contents
-int main(int argc, char **argv)
+int main()
 {
     try{
-        Dune::MPIHelper::instance(argc,argv);
-
         StateContainer<double, false> sc1(0.1);
         assert(!sc1.is_sync());
         auto& state = sc1.state();
@@ -25,10 +24,6 @@ int main(int argc, char **argv)
         assert(sc2.state()[1] == 0.3);
 
         return 0;
-    }
-    catch(Dune::Exception c){
-        std::cerr << c << std::endl;
-        return 1;
     }
     catch(...){
         std::cerr << "Unknown exception thrown!" << std::endl;

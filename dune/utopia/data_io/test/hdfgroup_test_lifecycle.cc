@@ -15,7 +15,6 @@
 #include <cassert>
 #include <cmath>
 #include <cstdio>
-#include <dune/common/parallel/mpihelper.hh>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -31,10 +30,8 @@ void assert_hdfgroups(HDFGroup& lhs, HDFGroup& rhs)
     assert(lhs.get_referencecounter().get() == rhs.get_referencecounter().get());
 }
 
-int main(int argc, char** argv)
+int main()
 {
-    Dune::MPIHelper::instance(argc, argv);
-
     // make file and group to use for copying moving etc.
     HDFFile file("group_test_lifetime.h5", "w");
 

@@ -1,7 +1,9 @@
 #ifndef UTOPIA_MODELS_PREDATORPREY_HH
 #define UTOPIA_MODELS_PREDATORPREY_HH
 
-#include <dune/utopia/base.hh>
+#include <algorithm>
+#include <random>
+
 #include <dune/utopia/core/apply.hh>
 #include <dune/utopia/core/model.hh>
 #include <dune/utopia/core/cell_manager.hh>

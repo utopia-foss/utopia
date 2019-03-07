@@ -4,7 +4,7 @@
 #include <type_traits>
 #include "logging.hh"
 #include "types.hh"
-#include "cell_new.hh"          // NOTE Final name will be cell.hh
+#include "cell.hh"
 #include "grids.hh"
 
 
@@ -35,7 +35,7 @@ public:
     using Self = CellManager<CellTraits, Model>;
 
     /// Type of the managed cells
-    using Cell = __Cell<CellTraits>; // NOTE Use Cell eventually
+    using Cell = Utopia::Cell<CellTraits>;
 
     /// Type of the cell state
     using CellState = typename CellTraits::State;

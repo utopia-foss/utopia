@@ -4,18 +4,14 @@
 
 #include <dune/utopia/core/logging.hh>
 #include <dune/utopia/data_io/cfg_utils.hh>
-#include <dune/utopia/core/cell_manager.hh>
-
 
 #include "testtools.hh"
+#include "cell_manager_test.hh"
 
 // Import some types
-using Utopia::DataIO::Config;
-using Utopia::CellManager;
 using Utopia::NBMode;
 using Utopia::UpdateMode;
 using Utopia::get_as;
-
 
 /// A cell state definition that is default-constructible
 struct CellStateDC {
@@ -103,108 +99,9 @@ using CellTraitsCL = Utopia::CellTraits<CellStateDC,
                                         Utopia::EmptyTag,
                                         TestLinks>;
 
-
-/// A mock model class to hold the cell manager
-template<class CellTraits>
-class MockModel {
-public:
-    // -- Members -- //
-    using Space = Utopia::DefaultSpace;
-    using CellStateType = typename CellTraits::State;
-    using RNG = std::mt19937;
-
-    const std::string _name;
-    const Config _cfg;
-    const std::shared_ptr<RNG> _rng;
-    std::shared_ptr<spdlog::logger> _log;
-
-    Space _space;
-
-    CellManager<CellTraits, MockModel> _cm;
-
-
-    // -- Constructors -- //
-    /// Basic constructor
-    MockModel(const std::string model_name, const Config& cfg)
-    :
-        _name(model_name),
-        _cfg(cfg),
-        _rng(std::make_shared<RNG>(42)),
-        _log(setup_logger(model_name)),
-        _space(setup_space()),
-        _cm(*this)
-    {}
-
-    /// Constructor with initial cell state
-    MockModel(const std::string model_name, const Config& cfg,
-              const CellStateType cell_initial_state)
-    :
-        _name(model_name),
-        _cfg(cfg),
-        _rng(std::make_shared<RNG>(42)),
-        _log(setup_logger(model_name)),
-        _space(setup_space()),
-        _cm(*this, cell_initial_state)
-    {}
-
-
-    // -- Setup functions (needed because pseudo parent is not used) -- //
-
-    std::shared_ptr<spdlog::logger> setup_logger(const std::string name) {
-        auto logger = spdlog::get(name);
-    
-        if (not logger) {
-            // Create it; spdlog throws an exception if it already exists
-            logger = spdlog::stdout_color_mt(name);
-        }
-        logger->set_level(spdlog::level::debug);
-        logger->set_pattern("%n  %^%l%$  %v");
-        return logger;
-    }
-
-
-    Space setup_space() const {
-        if (_cfg["space"]) {
-            // Build a space with the given parameters
-            return Space(_cfg["space"]);
-        }
-        else {
-            // Use the default space
-            return Space();
-        }
-    }
-
-    // -- Other functions, mirroring model interface -- //
-    /// Return a mock logger
-    std::shared_ptr<spdlog::logger> get_logger() {
-        return _log;
-    }
-
-    /// Return the space this model resides in
-    std::shared_ptr<Space> get_space() {
-        return std::make_shared<Space>(_space);
-    }
-
-    /// Return the config node of this model
-    Config get_cfg() const {
-        return _cfg;
-    }
-
-    /// Return the config node of this model
-    std::shared_ptr<RNG> get_rng() const {
-        return _rng;
-    }
-
-    /// Return the name of this model instance
-    std::string get_name() const {
-        return _name;
-    }
-};
-
-
 // ----------------------------------------------------------------------------
 
-int main(int, char *[]) {
+int main() {
     try {
         std::cout << "Getting config file ..." << std::endl;
         auto cfg = YAML::LoadFile("cell_manager_test.yml");

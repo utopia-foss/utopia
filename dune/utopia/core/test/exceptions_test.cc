@@ -3,13 +3,12 @@
 #include <csignal>
 #include <iostream>
 
-#include <dune/utopia/base.hh>
 #include <dune/utopia/core/exceptions.hh>
 
 #include "testtools.hh"
 
 
-int main(int, char *[]) {
+int main() {
     try {
         std::cout << "Commencing test ..." << std::endl;
 
