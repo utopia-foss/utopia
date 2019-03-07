@@ -7,13 +7,14 @@
  *
  * @date 2018-07-18
  */
-#include "../hdfdataset.hh"
-#include "../hdffile.hh"
-#include "../hdfgroup.hh"
 #include <cassert>
 #include <chrono>
 #include <iostream>
 #include <thread>
+
+#include <utopia/data_io/hdfdataset.hh>
+#include <utopia/data_io/hdffile.hh>
+#include <utopia/data_io/hdfgroup.hh>
 
 // shorthands
 using namespace Utopia::DataIO;

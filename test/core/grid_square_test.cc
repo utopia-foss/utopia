@@ -3,10 +3,10 @@
 
 #include <armadillo>
 
-#include <dune/utopia/core/logging.hh>
-#include <dune/utopia/data_io/cfg_utils.hh>
-#include <dune/utopia/core/space.hh>
-#include <dune/utopia/core/grids.hh>
+#include <utopia/core/logging.hh>
+#include <utopia/core/space.hh>
+#include <utopia/core/grids.hh>
+#include <utopia/data_io/cfg_utils.hh>
 
 #include "testtools.hh"
 

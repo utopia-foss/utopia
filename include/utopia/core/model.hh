@@ -1,14 +1,15 @@
-#ifndef UTOPIA_MODEL_HH
-#define UTOPIA_MODEL_HH
+#ifndef UTOPIA_CORE_MODEL_HH
+#define UTOPIA_CORE_MODEL_HH
 
-#include <dune/utopia/data_io/hdffile.hh>
-#include <dune/utopia/data_io/hdfgroup.hh>
-#include <dune/utopia/data_io/cfg_utils.hh>
-#include <dune/utopia/data_io/monitor.hh>
-#include <dune/utopia/core/logging.hh>
-#include <dune/utopia/core/signal.hh>
-#include <dune/utopia/core/exceptions.hh>
-#include <dune/utopia/core/space.hh>
+#include "exceptions.hh"
+#include "signal.hh"
+#include "logging.hh"
+#include "space.hh"
+
+#include "../data_io/hdffile.hh"
+#include "../data_io/hdfgroup.hh"
+#include "../data_io/cfg_utils.hh"
+#include "../data_io/monitor.hh"
 
 
 namespace Utopia {
@@ -707,4 +708,4 @@ private:
 
 } // namespace Utopia
 
-#endif // UTOPIA_MODEL_HH
+#endif // UTOPIA_CORE_MODEL_HH

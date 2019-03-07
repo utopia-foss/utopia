@@ -5,13 +5,15 @@
 
  */
 
-#include "../hdfbufferfactory.hh"
-#include "../hdfgroup.hh"
 #include <cassert>
-#include <hdf5.h>
 #include <list>
 #include <string>
 #include <vector>
+
+#include <hdf5.h>
+
+#include <utopia/data_io/hdfbufferfactory.hh>
+#include <utopia/data_io/hdfgroup.hh>
 
 using namespace Utopia::DataIO;
 struct Test

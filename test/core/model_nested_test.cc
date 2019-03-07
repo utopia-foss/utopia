@@ -1,14 +1,13 @@
 #include <cassert>
 
-#include <dune/utopia/data_io/hdffile.hh>
-#include <dune/utopia/data_io/cfg_utils.hh>
-#include <dune/utopia/core/logging.hh>
+#include <utopia/data_io/hdffile.hh>
+#include <utopia/data_io/cfg_utils.hh>
+#include <utopia/core/logging.hh>
 
 #include "model_nested_test.hh"
 
 
-int main()
-{
+int main() {
     try {
         // -- Setup model -- //
         // create a pseudo parent

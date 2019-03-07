@@ -5,7 +5,8 @@
 #include <string>
 #include <vector>
 
-#include "../hdfchunking.hh"
+#include <utopia/data_io/hdfchunking.hh>
+
 
 using namespace Utopia::DataIO;
 

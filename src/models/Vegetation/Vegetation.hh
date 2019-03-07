@@ -6,14 +6,14 @@
 #include <algorithm>
 #include <string>
 
-#include <dune/utopia/core/model.hh>
-#include <dune/utopia/core/apply.hh>
-#include <dune/utopia/core/types.hh>
-#include <dune/utopia/core/cell_manager.hh>
+#include <utopia/core/model.hh>
+#include <utopia/core/apply.hh>
+#include <utopia/core/types.hh>
+#include <utopia/core/cell_manager.hh>
 
-#include <dune/utopia/data_io/hdfgroup.hh>
-#include <dune/utopia/data_io/hdfdataset.hh>
-#include <dune/utopia/data_io/cfg_utils.hh>
+#include <utopia/data_io/hdfgroup.hh>
+#include <utopia/data_io/hdfdataset.hh>
+#include <utopia/data_io/cfg_utils.hh>
 
 
 namespace Utopia {

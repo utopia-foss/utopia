@@ -5,10 +5,11 @@
  * @file hdfgroup_test.cc
  */
 
-#include "../hdffile.hh"
-#include "../hdfgroup.hh"
 #include <cassert>
 #include <iostream>
+
+#include <utopia/data_io/hdffile.hh>
+#include <utopia/data_io/hdfgroup.hh>
 
 using namespace Utopia::DataIO;
 

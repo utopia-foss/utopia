@@ -1,7 +1,7 @@
 #include <cassert>
 #include <iostream>
 
-#include <dune/utopia/core/signal.hh>
+#include <utopia/core/signal.hh>
 
 using namespace Utopia;
 

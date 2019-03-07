@@ -1,5 +1,5 @@
-#ifndef DATAIO_GRAPH_UTILS_HH
-#define DATAIO_GRAPH_UTILS_HH
+#ifndef UTOPIA_DATAIO_GRAPH_UTILS_HH
+#define UTOPIA_DATAIO_GRAPH_UTILS_HH
 
 #include <boost/graph/properties.hpp>
 #include <boost/graph/adjacency_list.hpp>
@@ -8,9 +8,9 @@
 
 #include <hdf5.h>
 
-#include <dune/utopia/core/logging.hh>
-#include <dune/utopia/data_io/hdfgroup.hh>
-#include <dune/utopia/data_io/hdfdataset.hh>
+#include "../core/logging.hh"
+#include "hdfgroup.hh"
+#include "hdfdataset.hh"
 
 namespace Utopia {
 namespace DataIO {
@@ -165,4 +165,4 @@ std::shared_ptr<HDFGroup> save_graph(GraphType &g,
 } // namespace DataIO
 } // namespace Utopia
 
-#endif // DATAIO_GRAPH_UTILS_HH
+#endif // UTOPIA_DATAIO_GRAPH_UTILS_HH

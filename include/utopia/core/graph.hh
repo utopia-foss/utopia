@@ -1,5 +1,5 @@
-#ifndef UTOPIA_CORE_GRAPH_UTILS_HH
-#define UTOPIA_CORE_GRAPH_UTILS_HH
+#ifndef UTOPIA_CORE_GRAPH_HH
+#define UTOPIA_CORE_GRAPH_HH
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/adjacency_matrix.hpp>
@@ -282,4 +282,4 @@ Graph create_k_regular_graph(   const long int num_vertices,
 } // namespace Graph
 } // namespace Utopia
 
-#endif // UTOPIA_CORE_GRAPH_UTILS_HH
+#endif // UTOPIA_CORE_GRAPH_HH

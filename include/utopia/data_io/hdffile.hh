@@ -3,23 +3,23 @@
  *
  * @file hdffile.hh
  */
-#ifndef HDFFILE_HH
-#define HDFFILE_HH
+#ifndef UTOPIA_DATAIO_HDFFILE_HH
+#define UTOPIA_DATAIO_HDFFILE_HH
 
-#include "hdfdataset.hh"
-#include "hdfgroup.hh"
-#include <hdf5.h>
-#include <hdf5_hl.h>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
 
-namespace Utopia
-{
-namespace DataIO
-{
-// forward declaration of HDFGroup -> exchange later for the real thing.
+#include <hdf5.h>
+#include <hdf5_hl.h>
+
+#include "hdfdataset.hh"
+#include "hdfgroup.hh"
+
+
+namespace Utopia {
+namespace DataIO {
 
 class HDFFile
 {

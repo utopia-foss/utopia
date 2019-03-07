@@ -10,10 +10,12 @@
 #include <armadillo>
 #include <yaml-cpp/yaml.h>
 
+
 namespace Utopia {
 
 /// Type of default random number generator
 using DefaultRNG = std::mt19937;
+
 
 /// Type of the variably sized container for entities
 template<typename EntityType>
@@ -27,42 +29,6 @@ using CellContainer = std::vector<std::shared_ptr<CellType>>;
 template<typename AgentType>
 using AgentContainer = std::vector<std::shared_ptr<AgentType>>;
 
-/// Container dummy if no cells or individuals are used
-using EmptyContainer = std::array<std::shared_ptr<int>,0>;
-
-
-namespace impl {
-
-/// Return the pointer type of any container holding pointers to entities
-template<class Container>
-using pointer_t = typename Container::value_type;
-
-/// Return the element type of any container holding pointers to entities
-template<class Container>
-using entity_t = typename Container::value_type::element_type;
-
-} // namespace impl
-
-
-// -- DataIO types that are needed throughout Core ----------------------------
-
-namespace DataIO {
-/**
- *  \addtogroup ConfigUtilities
- *  \{
- */
-
-/// Type of a variadic dictionary-like data structure used throughout Utopia
-using Config = YAML::Node;
-
-// end group ConfigUtilities
-/**
- *  \}
- */
-}
-
-
-// -- Types introduces with the new CellManager -------------------------------
 
 /// Type for dimensions, i.e. very small unsigned integers
 using DimType = unsigned short;
@@ -70,7 +36,7 @@ using DimType = unsigned short;
 /// Type for distancens, i.e. intermediately long unsigned integers
 using DistType = unsigned int;
 
-/// Type for indices, i.e. values used for container indexing
+/// Type for indices, i.e. values used for container indexing, agent IDs, ...
 using IndexType = std::size_t;
 
 /// Type for container of indices
@@ -94,6 +60,7 @@ using MultiIndexType = arma::Col<IndexType>::fixed<dim>;
 template<DimType dim>
 using SpaceVecType = arma::Col<double>::fixed<dim>;
 
+
 /// Mode of entity update
 enum UpdateMode : bool {
     /// Entity update can happen asynchronously
@@ -105,11 +72,22 @@ enum UpdateMode : bool {
 // TODO Integrate closer with (new) entity type
 
 
-// -- Types introduces with the new AgentManager ------------------------------
 
-/// Type for the agent ID
-using IDType = std::size_t;
+// .. DataIO types that are needed throughout Core ............................
+namespace DataIO {
+/**
+ *  \addtogroup ConfigUtilities
+ *  \{
+ */
 
+/// Type of a variadic dictionary-like data structure used throughout Utopia
+using Config = YAML::Node;
+
+// end group ConfigUtilities
+/**
+ *  \}
+ */
+} // namespace DataIO
 } // namespace Utopia
 
 #endif // UTOPIA_CORE_TYPES_HH

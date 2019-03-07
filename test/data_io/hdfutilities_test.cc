@@ -4,7 +4,6 @@
  *
  * @file hdfutilities_test.cc
  */
-#include <dune/utopia/data_io/hdfutilities.hh>
 #include <iostream>
 #include <list>
 #include <map>
@@ -12,10 +11,11 @@
 #include <type_traits>
 #include <vector>
 
+#include <utopia/data_io/hdfutilities.hh>
+
 using namespace Utopia::DataIO;
 
-int main()
-{
+int main() {
     // test remove_pointer metafunction
     constexpr bool a = std::is_same_v<remove_pointer_t<double*>, double>;
     static_assert(a == true, "remove_pointer failed");

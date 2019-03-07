@@ -5,9 +5,9 @@
 #include <random>
 
 // Utopia-related includes
-#include <dune/utopia/core/model.hh>
-#include <dune/utopia/core/apply.hh>
-#include <dune/utopia/core/cell_manager.hh>
+#include <utopia/core/model.hh>
+#include <utopia/core/apply.hh>
+#include <utopia/core/cell_manager.hh>
 
 
 namespace Utopia {

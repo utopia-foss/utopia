@@ -5,18 +5,19 @@
  *
  * @file hdftypefactory_test.cc
  */
-#include "../hdftypefactory.hh"
 #include <cassert>
-#include <hdf5.h>
 #include <list>
 #include <string>
 #include <vector>
 
+#include <hdf5.h>
+
+#include <utopia/data_io/hdftypefactory.hh>
+
 using namespace Utopia;
 using namespace Utopia::DataIO;
 
-int main()
-{
+int main() {
     // sample test for primitive types
 
     // int

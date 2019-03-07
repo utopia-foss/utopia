@@ -3,10 +3,6 @@
  *
  * @file hdfdataset_test_lifecycle.cc
  */
-#include "../hdfdataset.hh"
-#include "../hdffile.hh"
-#include "../hdfgroup.hh"
-#include "../hdfutilities.hh"
 #include <cassert>
 #include <cmath>
 #include <cstdio>
@@ -14,6 +10,11 @@
 #include <string>
 #include <thread>
 #include <vector>
+
+#include <utopia/data_io/hdfdataset.hh>
+#include <utopia/data_io/hdffile.hh>
+#include <utopia/data_io/hdfgroup.hh>
+#include <utopia/data_io/hdfutilities.hh>
 
 using namespace Utopia::DataIO;
 using namespace std::literals::chrono_literals;

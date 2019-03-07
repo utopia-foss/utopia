@@ -1,5 +1,5 @@
-#ifndef SIGNAL_HH
-#define SIGNAL_HH
+#ifndef UTOPIA_CORE_SIGNAL_HH
+#define UTOPIA_CORE_SIGNAL_HH
 
 #include <csignal>
 #include <atomic>
@@ -57,4 +57,4 @@ void attach_signal_handler(int signum) {
 
 } // namespace Utopia
 
-#endif // SIGNAL_HH
+#endif // UTOPIA_CORE_SIGNAL_HH

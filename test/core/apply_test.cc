@@ -1,6 +1,6 @@
 #include <cassert>
 
-#include <dune/utopia/core/apply.hh>
+#include <utopia/core/apply.hh>
 
 #include "cell_manager_test.hh"
 

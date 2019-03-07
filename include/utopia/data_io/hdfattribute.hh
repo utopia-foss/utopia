@@ -1,4 +1,3 @@
-
 /**
  * @brief This file implements a C++ class which wraps a C HDF5 attribute to
  * a HDF5-object (group or dataset), and provides the necessary functionality
@@ -6,22 +5,24 @@
  *
  * @file hdfattribute.hh
  */
-#ifndef HDFATTRIBUTE_HH
-#define HDFATTRIBUTE_HH
+#ifndef UTOPIA_DATAIO_HDFATTRIBUTE_HH
+#define UTOPIA_DATAIO_HDFATTRIBUTE_HH
+
+#include <cstring>
+#include <memory>
+#include <string>
+#include <functional>
+
+#include <hdf5.h>
+#include <hdf5_hl.h>
+
 #include "hdfbufferfactory.hh"
 #include "hdftypefactory.hh"
 
-#include <cstring>
-#include <functional>
-#include <hdf5.h>
-#include <hdf5_hl.h>
-#include <memory>
-#include <string>
 
-namespace Utopia
-{
-namespace DataIO
-{
+namespace Utopia {
+namespace DataIO {
+    
 /**
  * @brief      Class for hdf5 attribute, which can be attached to groups and
  *             datasets.

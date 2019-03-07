@@ -4,8 +4,8 @@
  * data to a dataset in a HDF5 file.
  * @file hdfdataset.hh
  */
-#ifndef HDFDATASET_HH
-#define HDFDATASET_HH
+#ifndef UTOPIA_DATAIO_HDFDATASET_HH
+#define UTOPIA_DATAIO_HDFDATASET_HH
 
 #include <numeric>
 #include <unordered_map>
@@ -14,16 +14,15 @@
 #include <hdf5.h>
 #include <hdf5_hl.h>
 
-#include <dune/utopia/data_io/hdfattribute.hh>
-#include <dune/utopia/data_io/hdfbufferfactory.hh>
-#include <dune/utopia/data_io/hdfchunking.hh>
-#include <dune/utopia/data_io/hdftypefactory.hh>
-#include <dune/utopia/data_io/hdfutilities.hh>
+#include "hdfattribute.hh"
+#include "hdfbufferfactory.hh"
+#include "hdfchunking.hh"
+#include "hdftypefactory.hh"
+#include "hdfutilities.hh"
 
-namespace Utopia
-{
-namespace DataIO
-{
+
+namespace Utopia {
+namespace DataIO {
 /**
  * @brief      Class representing a HDFDataset, wich reads and writes
  * data and attributes
@@ -1539,4 +1538,4 @@ void swap(HDFDataset<HDFObject>& lhs, HDFDataset<HDFObject>& rhs)
 
 } // namespace DataIO
 } // namespace Utopia
-#endif // HDFDATASET_HH
+#endif // UTOPIA_DATAIO_HDFDATASET_HH

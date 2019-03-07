@@ -4,15 +4,14 @@
 #include <numeric>
 #include <yaml-cpp/yaml.h>
 
-#include <dune/utopia/data_io/hdffile.hh>
-#include <dune/utopia/data_io/test/monitor_test.hh>
-#include <dune/utopia/data_io/cfg_utils.hh>
+#include <utopia/data_io/hdffile.hh>
+#include <utopia/data_io/test/monitor_test.hh>
+#include <utopia/data_io/cfg_utils.hh>
 
 #include "model_test.hh"
 
 
-int main()
-{
+int main() {
     try {
         // -- Setup model -- //
         // create a pseudo parent

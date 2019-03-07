@@ -1,8 +1,8 @@
 #ifndef UTOPIA_TEST_CELL_MANAGER_INTEGRATION_TEST_HH
 #define UTOPIA_TEST_CELL_MANAGER_INTEGRATION_TEST_HH
 
-#include <dune/utopia/core/model.hh>
-#include <dune/utopia/core/cell_manager.hh>
+#include <utopia/core/model.hh>
+#include <utopia/core/cell_manager.hh>
 
 
 namespace Utopia {

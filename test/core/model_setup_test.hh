@@ -1,7 +1,7 @@
 #ifndef UTOPIA_TEST_MODEL_SETUP_TEST_HH
 #define UTOPIA_TEST_MODEL_SETUP_TEST_HH
 
-#include <dune/utopia/core/model.hh>
+#include <utopia/core/model.hh>
 
 namespace Utopia {
 

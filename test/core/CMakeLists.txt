@@ -14,7 +14,7 @@ file(COPY "agent_manager_test.yml"
 set(TESTS_CORE
     agent_manager_test
     agent_manager_integration_test
-    agent_test_new
+    agent_test
     apply_test
     cell_manager_test
     cell_manager_integration_test

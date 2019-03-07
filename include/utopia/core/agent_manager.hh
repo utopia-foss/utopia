@@ -54,7 +54,7 @@ public:
 private:
     // -- Members --------–––––------------------------------------------------
     /// Counts the number of agents created with this manager, used for new IDs
-    IDType _id_counter;
+    IndexType _id_counter;
 
     /// The logger (same as the model this manager resides in)
     const std::shared_ptr<spdlog::logger> _log;
@@ -283,11 +283,11 @@ private:
                 "configuration entry 'initial_num_agents' that specifies the "
                 "number of agents to set up!");
         }
-        const auto num_agents = get_as<IDType>("initial_num_agents", _cfg);
+        const auto num_agents = get_as<IndexType>("initial_num_agents", _cfg);
 
         // Construct all the agents with incremented IDs, the initial state
         // and a random position
-        for (IDType i=0; i<num_agents; ++i){
+        for (IndexType i=0; i<num_agents; ++i){
             _log->trace("Creating agent with ID {:d} ...", _id_counter);
 
             agents.emplace_back(
@@ -366,13 +366,13 @@ private:
                     "agents!" 
                     );
             }
-            const auto initial_num_agents = get_as<IDType>("initial_num_agents", _cfg);
+            const auto initial_num_agents = get_as<IndexType>("initial_num_agents", _cfg);
 
             // The agent container to be populated
             AgentContainer<Agent> cont;
 
             // Populate the container, creating the agent state anew each time
-            for (IDType i=0; i<initial_num_agents; i++) {
+            for (IndexType i=0; i<initial_num_agents; i++) {
                 _log->trace("Creating agent with ID {:d} ...", _id_counter);
 
                 cont.emplace_back(

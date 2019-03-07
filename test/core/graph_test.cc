@@ -4,8 +4,8 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/adjacency_matrix.hpp>
 
-#include <dune/utopia/core/types.hh>
-#include <dune/utopia/core/graph.hh>
+#include <utopia/core/types.hh>
+#include <utopia/core/graph.hh>
 
 using namespace Utopia::Graph;
 

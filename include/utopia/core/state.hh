@@ -1,5 +1,5 @@
-#ifndef UTOPIA_STATE_HH
-#define UTOPIA_STATE_HH
+#ifndef UTOPIA_CORE_STATE_HH
+#define UTOPIA_CORE_STATE_HH
 
 #include <type_traits>
 
@@ -64,4 +64,4 @@ private:
     State _state_new;
 };
 
-#endif // UTOPIA_STATE_HH
+#endif // UTOPIA_CORE_STATE_HH

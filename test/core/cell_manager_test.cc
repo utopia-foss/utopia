@@ -2,8 +2,8 @@
 #include <iostream>
 #include <random>
 
-#include <dune/utopia/core/logging.hh>
-#include <dune/utopia/data_io/cfg_utils.hh>
+#include <utopia/core/logging.hh>
+#include <utopia/data_io/cfg_utils.hh>
 
 #include "testtools.hh"
 #include "cell_manager_test.hh"

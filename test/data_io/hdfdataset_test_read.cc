@@ -4,13 +4,14 @@
  *        to work
  * @file hdfdataset_test_read.cc
  */
-#include "../hdfdataset.hh"
-#include "../hdffile.hh"
-#include "../hdfgroup.hh"
 #include <cassert>
 #include <chrono>
 #include <iostream>
 #include <thread>
+
+#include <utopia/data_io/hdfdataset.hh>
+#include <utopia/data_io/hdffile.hh>
+#include <utopia/data_io/hdfgroup.hh>
 
 using namespace Utopia::DataIO;
 using hsizevec = std::vector<hsize_t>;

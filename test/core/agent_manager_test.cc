@@ -2,9 +2,10 @@
 #include <cassert>
 #include <iostream>
 
+#include <utopia/core/exceptions.hh>
+
 #include "agent_manager_test.hh"
 #include "testtools.hh"
-#include "../exceptions.hh"
 
 using namespace Utopia::Test;
 

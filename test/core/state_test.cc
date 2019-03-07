@@ -2,12 +2,11 @@
 #include <vector>
 #include <iostream>
 
-#include <dune/utopia/core/state.hh>
+#include <utopia/core/state.hh>
 
 /// Instantiate containers, check access and contents
-int main()
-{
-    try{
+int main() {
+    try {
         StateContainer<double, false> sc1(0.1);
         assert(!sc1.is_sync());
         auto& state = sc1.state();
@@ -25,7 +24,7 @@ int main()
 
         return 0;
     }
-    catch(...){
+    catch (...) {
         std::cerr << "Unknown exception thrown!" << std::endl;
         return 1;
     }

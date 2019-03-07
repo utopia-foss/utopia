@@ -4,8 +4,8 @@
  *
  * @file hdftypefactory.hh
  */
-#ifndef HDFTYPEFACTORY_HH
-#define HDFTYPEFACTORY_HH
+#ifndef UTOPIA_DATAIO_HDFTYPEFACTORY_HH
+#define UTOPIA_DATAIO_HDFTYPEFACTORY_HH
 
 #include <iostream>
 #include <variant>
@@ -13,12 +13,11 @@
 #include <hdf5.h>
 #include <hdf5_hl.h>
 
-#include <dune/utopia/data_io/hdfutilities.hh>
+#include "hdfutilities.hh"
 
-namespace Utopia
-{
-namespace DataIO
-{
+namespace Utopia {
+namespace DataIO {
+    
 /**
  * @brief Class which handles the conversion of C-types into hdf5types.
  *

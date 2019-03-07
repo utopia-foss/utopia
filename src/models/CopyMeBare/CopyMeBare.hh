@@ -8,8 +8,8 @@
 // third-party library includes
 
 // Utopia-related includes
-#include <dune/utopia/core/model.hh>
-#include <dune/utopia/core/types.hh>
+#include <utopia/core/model.hh>
+#include <utopia/core/types.hh>
 
 
 namespace Utopia {

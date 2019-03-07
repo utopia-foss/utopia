@@ -5,8 +5,8 @@
  *         cv-qualified types.
  * @file hdfutilities.hh
  */
-#ifndef HDFUTILITIES_HH
-#define HDFUTILITIES_HH
+#ifndef UTOPIA_DATAIO_HDFUTILITIES_HH
+#define UTOPIA_DATAIO_HDFUTILITIES_HH
 
 #include <array>
 #include <cmath>
@@ -18,10 +18,9 @@
 // Functions for determining if a type is an STL-container are provided here.
 // This is used if we wish to make hdf5 types for storing such data in an
 // hdf5 dataset.
-namespace Utopia
-{
-namespace DataIO
-{
+namespace Utopia {
+namespace DataIO {
+
 /**
  * @brief Helper function for removing pointer qualifiers from a type recursivly
  *        - recursion base case which provides a type equal to T

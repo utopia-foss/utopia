@@ -1,7 +1,7 @@
 #ifndef UTOPIA_CORE_TEST_CELL_MANAGER_TEST_HH
 #define UTOPIA_CORE_TEST_CELL_MANAGER_TEST_HH
 
-#include <dune/utopia/core/cell_manager.hh>
+#include <utopia/core/cell_manager.hh>
 
 using Utopia::CellManager;
 using Utopia::DataIO::Config;

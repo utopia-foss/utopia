@@ -1,8 +1,8 @@
 #ifndef UTOPIA_TEST_AGENT_MANAGER_INTEGRATION_TEST_HH
 #define UTOPIA_TEST_AGENT_MANAGER_INTEGRATION_TEST_HH
 
-#include <dune/utopia/core/model.hh>
-#include <dune/utopia/core/agent_manager.hh>
+#include <utopia/core/model.hh>
+#include <utopia/core/agent_manager.hh>
 
 namespace Utopia {
 namespace Test {

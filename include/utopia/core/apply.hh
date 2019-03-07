@@ -1,9 +1,16 @@
-#ifndef APPLY_HH
-#define APPLY_HH
+#ifndef UTOPIA_CORE_APPLY_HH
+#define UTOPIA_CORE_APPLY_HH
 
 #include "types.hh"
 
 namespace Utopia {
+
+namespace impl {
+/// Return the element type of any container holding pointers to entities
+template<class Container>
+using entity_t = typename Container::value_type::element_type;
+}
+
 
 /** \page rule The Rule Concept
  *
@@ -87,4 +94,4 @@ std::enable_if_t<not sync && shuffle, void>
 
 } // namespace Utopia
 
-#endif // APPLY_HH    
+#endif // UTOPIA_CORE_APPLY_HH    

@@ -5,21 +5,23 @@
  *
  * @file hdfgroup.hh
  */
-#ifndef HDFGROUP_HH
-#define HDFGROUP_HH
+#ifndef UTOPIA_DATAIO_HDFGROUP_HH
+#define UTOPIA_DATAIO_HDFGROUP_HH
 
-#include <dune/utopia/data_io/hdfattribute.hh>
-#include <dune/utopia/data_io/hdfdataset.hh>
-#include <hdf5.h>
-#include <hdf5_hl.h>
 #include <sstream>
 #include <string>
 #include <vector>
 
-namespace Utopia
-{
-namespace DataIO
-{
+#include <hdf5.h>
+#include <hdf5_hl.h>
+
+#include "hdfattribute.hh"
+#include "hdfdataset.hh"
+
+
+namespace Utopia {
+namespace DataIO {
+
 class HDFGroup
 {
 protected:

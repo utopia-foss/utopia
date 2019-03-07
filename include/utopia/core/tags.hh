@@ -1,5 +1,5 @@
-#ifndef TAGS_HH
-#define TAGS_HH
+#ifndef UTOPIA_CORE_TAGS_HH
+#define UTOPIA_CORE_TAGS_HH
 
 namespace Utopia {
 
@@ -19,4 +19,4 @@ public:
 
 } // namespace Utopia
 
-#endif // TAGS_HH
+#endif // UTOPIA_CORE_TAGS_HH

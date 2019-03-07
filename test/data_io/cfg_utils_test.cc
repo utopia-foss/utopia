@@ -3,8 +3,8 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include <dune/utopia/data_io/cfg_utils.hh>
-#include <dune/utopia/core/exceptions.hh>
+#include <utopia/data_io/cfg_utils.hh>
+#include <utopia/core/exceptions.hh>
 
 
 using namespace Utopia;

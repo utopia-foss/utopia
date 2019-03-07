@@ -1,17 +1,18 @@
-#ifndef HDFCHUNKING_HH
-#define HDFCHUNKING_HH
+#ifndef UTOPIA_DATAIO_HDFCHUNKING_HH
+#define UTOPIA_DATAIO_HDFCHUNKING_HH
 
-#include <hdf5.h>
-
-#include "hdfutilities.hh"
-#include <dune/utopia/core/logging.hh>
 #include <numeric>
 #include <sstream>
 
-namespace Utopia
-{
-namespace DataIO
-{
+#include <hdf5.h>
+
+#include "../core/logging.hh"
+#include "hdfutilities.hh"
+
+
+namespace Utopia {
+namespace DataIO {
+
 // -- Helper functions -- //
 
 /**
@@ -840,4 +841,4 @@ const Cont calc_chunksize(const hsize_t typesize,
 
 } // namespace DataIO
 } // namespace Utopia
-#endif // HDFCHUNKING_HH
+#endif // UTOPIA_DATAIO_HDFCHUNKING_HH

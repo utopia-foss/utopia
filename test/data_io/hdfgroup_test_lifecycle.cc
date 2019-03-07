@@ -10,14 +10,16 @@
  * @file hdfgroup_test_lifecycle.cc
  */
 
-#include "../hdffile.hh"
-#include "../hdfgroup.hh"
 #include <cassert>
 #include <cmath>
 #include <cstdio>
 #include <iostream>
 #include <string>
 #include <vector>
+
+#include <utopia/data_io/hdffile.hh>
+#include <utopia/data_io/hdfgroup.hh>
+
 
 using namespace Utopia::DataIO;
 

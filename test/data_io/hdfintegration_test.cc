@@ -4,13 +4,15 @@
  *
  * @file hdfintegration_test.cc
  */
-#include "../hdfattribute.hh"
-#include "../hdfdataset.hh"
-#include "../hdffile.hh"
-#include "../hdfgroup.hh"
 #include <cassert>
 #include <iostream>
 #include <vector>
+
+#include <utopia/data_io/hdfattribute.hh>
+#include <utopia/data_io/hdfdataset.hh>
+#include <utopia/data_io/hdffile.hh>
+#include <utopia/data_io/hdfgroup.hh>
+
 
 using namespace Utopia::DataIO;
 // for getting info

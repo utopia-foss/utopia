@@ -5,15 +5,17 @@
  * @file hdfattribute_test_write.cc
 
  */
-#include "../hdfattribute.hh"
-#include "../hdffile.hh"
-#include "../hdfgroup.hh"
 #include <cassert>
 #include <fstream>
-#include <hdf5.h>
 #include <iostream>
 #include <random>
 #include <string>
+
+#include <hdf5.h>
+
+#include <utopia/data_io/hdfattribute.hh>
+#include <utopia/data_io/hdffile.hh>
+#include <utopia/data_io/hdfgroup.hh>
 
 using namespace Utopia::DataIO;
 

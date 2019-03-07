@@ -1,7 +1,7 @@
 #include <cassert>
 #include <iostream>
 
-#include "../agent.hh"
+#include <utopia/core/agent.hh>
 
 // Test state struct
 struct AgentState {
@@ -15,7 +15,6 @@ using AgentTraitsSync = AgentTraits<AgentState, UpdateMode::sync>;
 using AgentTraitsAsync = AgentTraits<AgentState, UpdateMode::async>;
 
 int main () {
-
     try {
         // Initial position for agent setup
         SpaceVec initial_pos{4.2, 0.0};

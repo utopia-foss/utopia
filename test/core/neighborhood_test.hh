@@ -3,10 +3,10 @@
 
 #include <algorithm>
 
-#include <dune/utopia/core/logging.hh>
-#include <dune/utopia/core/model.hh>
-#include <dune/utopia/data_io/cfg_utils.hh>
-#include <dune/utopia/core/cell_manager.hh>
+#include <utopia/core/logging.hh>
+#include <utopia/core/model.hh>
+#include <utopia/core/cell_manager.hh>
+#include <utopia/data_io/cfg_utils.hh>
 
 
 namespace Utopia {

@@ -5,18 +5,20 @@
  *
  * @file hdfbufferfactory.hh
  */
-#ifndef HDFBUFFERFACTORY_HH
-#define HDFBUFFERFACTORY_HH
+#ifndef UTOPIA_DATAIO_HDFBUFFERFACTORY_HH
+#define UTOPIA_DATAIO_HDFBUFFERFACTORY_HH
+
+#include <vector>
+
+#include <hdf5.h>
 
 #include "hdftypefactory.hh"
 #include "hdfutilities.hh"
-#include <hdf5.h>
-#include <vector>
 
-namespace Utopia
-{
-namespace DataIO
-{
+
+namespace Utopia {
+namespace DataIO {
+
 /**
  * @brief      Class which turns non-vector or plain-array containers into
  *             vectors. If the value_types are containers themselves, these are
@@ -129,6 +131,8 @@ public:
     }
 };
 
+
 } // namespace DataIO
 } // namespace Utopia
+
 #endif

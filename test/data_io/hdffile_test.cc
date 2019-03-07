@@ -3,9 +3,10 @@
  *
  * @file hdffile_test.cc
  */
-#include "../hdffile.hh"
 #include <cassert>
 #include <iostream>
+
+#include <utopia/data_io/hdffile.hh>
 
 using namespace Utopia::DataIO;
 
