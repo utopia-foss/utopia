@@ -33,25 +33,10 @@ set(TESTS_CORE
 
 # add CORE tests
 foreach(test ${TESTS_CORE})
-    dune_add_test(NAME CORE_${test} SOURCES ${test}.cc)
-
-    # link library targets
-    target_link_libraries(CORE_${test}
-        spdlog
-        yaml-cpp
-        armadillo
-    )
-
-    # yaml-cpp does not export interface include dirs
-    # NOTE This should be reported as bug or patched via MR in the yaml-cpp
-    #      repository. See https://pabloariasal.github.io/2018/02/19/its-time-to-do-cmake-right/
-    #      as a reference on how to do that.
-    target_include_directories(CORE_${test}
-        # register as system headers (compilers might ignore warnings)
-        SYSTEM
-        PRIVATE
-            ${PROJECT_SOURCE_DIR}/vendor/plugins/yaml-cpp/include/
-    )
+    add_executable(CORE_${test} ${test}.cc)
+    target_link_libraries(CORE_${test} PUBLIC utopia)
+    add_test(NAME CORE_${test} COMMAND CORE_${test})
+    add_dependencies(build_unit_tests CORE_${test})
 endforeach(test)
 
 # custom dependencies of dependency test

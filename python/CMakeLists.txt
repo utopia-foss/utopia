@@ -51,26 +51,28 @@ python_install_package(PATH utopya)
 # Tests .......................................................................
 message(STATUS "Adding test_python targets ...")
 
-# Add test for utopya, accessible via `make target_utopya_tests`
-dune_python_add_test(NAME utopya_tests
-                     COMMAND ${CMAKE_BINARY_DIR}/run-in-utopia-env
-                             python -m pytest 
-                             ${CMAKE_CURRENT_SOURCE_DIR}/utopya/test/ -v
-                             --cov=${CMAKE_CURRENT_SOURCE_DIR}/utopya/utopya/
-                             --cov-report=term-missing
-                     )
+# Add test for utopya, accessible via `make python_utopya_tests`
+add_custom_target(python_utopya_tests
+                  COMMAND ${CMAKE_BINARY_DIR}/run-in-utopia-env
+                          python -m pytest
+                          ${CMAKE_CURRENT_SOURCE_DIR}/utopya/test/ -v
+                          --cov=${CMAKE_CURRENT_SOURCE_DIR}/utopya/utopya/
+                          --cov-report=term-missing
+)
 
-# Add tests for models, accessible via `make target_model_tests`
-dune_python_add_test(NAME model_tests
-                     COMMAND ${CMAKE_BINARY_DIR}/run-in-utopia-env
-                             python -m pytest -v
-                             ${CMAKE_CURRENT_SOURCE_DIR}/model_tests/
-                     )
-
-# NOTE _both_ these tests are carried out via `make test_python`
+# Add tests for models, accessible via `make python_model_tests`
+add_custom_target(python_model_tests
+                  COMMAND ${CMAKE_BINARY_DIR}/run-in-utopia-env
+                          python -m pytest -v
+                          ${CMAKE_CURRENT_SOURCE_DIR}/model_tests/
+)
 
 # Add custom targets with more convenient names
-add_custom_target(test_utopya COMMAND make target_utopya_tests)
-add_custom_target(test_models COMMAND make target_model_tests)
+add_custom_target(test_utopya COMMAND make python_utopya_tests)
+add_custom_target(test_models COMMAND make python_model_tests)
+
+# Create custom target for running all tests
+add_custom_target(test_python)
+add_dependencies(test_python test_utopya test_models)
 
 message(STATUS "Python setup complete.\n")

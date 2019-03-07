@@ -164,7 +164,7 @@ build:debug: &build_debug
         -DCMAKE_CXX_FLAGS_DEBUG='$CMAKE_CXX_FLAGS_DEBUG -Werror -Wno-deprecated-declarations'"
       cmake ..
     # FIXME After Utopia::as_ is removed, allow the deprecation warning again
-    - make $MAKE_FLAGS_BUILD build_tests
+    - make $MAKE_FLAGS_BUILD build_unit_tests
     - make $MAKE_FLAGS_BUILD all
 
 build:debug-clang:
@@ -179,7 +179,7 @@ build:debug-clang:
         -DCMAKE_CXX_FLAGS_DEBUG='$CMAKE_CXX_FLAGS_DEBUG -Werror -Wno-deprecated-declarations'"
       cmake ..
     # FIXME After Utopia::as_ is removed, allow the deprecation warning again
-    - make $MAKE_FLAGS_BUILD build_tests
+    - make $MAKE_FLAGS_BUILD build_unit_tests
     - make $MAKE_FLAGS_BUILD all
 
 # -- Test stage ---------------------------------------------------------------

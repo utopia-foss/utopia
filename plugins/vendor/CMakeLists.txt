@@ -1,6 +1,3 @@
-# enable usage of 'add_test' in submodules (DUNE throws error otherwise)
-set(DUNE_REENABLE_ADD_TEST True)
-
 # disable spdlog tests and examples
 set(SPDLOG_BUILD_TESTING OFF)
 set(SPDLOG_BUILD_EXAMPLES OFF)

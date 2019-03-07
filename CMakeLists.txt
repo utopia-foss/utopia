@@ -1,37 +1,60 @@
-# We require version CMake version 3.1 to prevent issues
-# with dune_enable_all_packages and older CMake versions.
-cmake_minimum_required(VERSION 3.1)
-project(utopia CXX)
+# Set minimum CMake version to the one supplied with Ubuntu 18.04
+cmake_minimum_required(VERSION 3.10)
 
-if(NOT (dune-common_DIR OR dune-common_ROOT OR
-      "${CMAKE_PREFIX_PATH}" MATCHES ".*dune-common.*"))
-    string(REPLACE  ${CMAKE_PROJECT_NAME} dune-common dune-common_DIR
-      ${PROJECT_BINARY_DIR})
-endif()
+# Start the project
+project(utopia
+    DESCRIPTION "Library for exploring complex & evolving model systems."
+    LANGUAGES C CXX
+)
 
-#find dune-common and set the module path
-find_package(dune-common REQUIRED)
-list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules"
-  ${dune-common_MODULE_PATH})
+# --- CMake Modules ---
 
-#include the dune macros
-include(DuneMacros)
+# Insert Utopia macros on top of the module path list
+list(INSERT CMAKE_MODULE_PATH 0 ${PROJECT_SOURCE_DIR}/cmake/modules)
 
-# start a dune project with information from dune.module
-dune_project()
-dune_enable_all_packages()
-
-# require most recent C++ standard
-dune_require_cxx_standard(MODULE "utopia" VERSION 17)
+# Load the Utopia macros and execute them here
+# (This checks dependencies, enables CMake functions, etc.)
+include(UtopiaMacros)
 
 # add extra flags to debug compiler flags
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra")
 
-add_subdirectory(vendor/plugins)
-add_subdirectory(dune)
+# --- Utopia Target ---
+
+# Register utopia as interface library (does not actually build objects)
+add_library(utopia INTERFACE)
+# Require C++17 support
+target_compile_features(utopia INTERFACE cxx_std_17)
+# Add include directories
+target_include_directories(utopia INTERFACE
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/>
+    $<INSTALL_INTERFACE:include> # NOTE: not used for now
+)
+
+# Link with required libraries
+# link library targets
+target_link_libraries(utopia INTERFACE
+    armadillo
+    Boost::boost
+    hdf5
+    spdlog
+    yaml-cpp
+)
+
+# yaml-cpp does not export interface include dirs
+# NOTE This should be reported as bug or patched via MR in the yaml-cpp
+#      repository. See https://pabloariasal.github.io/2018/02/19/its-time-to-do-cmake-right/
+#      as a reference on how to do that.
+target_include_directories(utopia
+    # register as system headers (compilers might ignore warnings)
+    SYSTEM
+    INTERFACE
+        ${PROJECT_SOURCE_DIR}/plugins/vendor/yaml-cpp/include/
+)
+
+# --- Add all other stuff
+
+add_subdirectory(plugins/vendor)
 add_subdirectory(python)
 add_subdirectory(doc)
-add_subdirectory(cmake/modules)
-
-# finalize the dune project, e.g. generating config.h etc.
-finalize_dune_project(GENERATE_CONFIG_H_CMAKE)
+add_subdirectory(src/models)
