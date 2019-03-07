@@ -7,7 +7,7 @@
 #include "model_nested_test.hh"
 
 
-int main(int, char *[])
+int main()
 {
     try {
         // -- Setup model -- //

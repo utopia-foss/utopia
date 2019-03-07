@@ -4,7 +4,7 @@
 
 using namespace Utopia;
 
-int main(int , char *[])
+int main()
 {
     try {
         // create pseudo models that will be used as "parent" for the model

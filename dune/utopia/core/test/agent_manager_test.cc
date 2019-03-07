@@ -9,7 +9,7 @@
 using namespace Utopia::Test;
 
 
-int main(int, char *[]) {
+int main() {
     try {
         std::cout << "Getting config file ..." << std::endl;
         auto cfg = YAML::LoadFile("agent_manager_test.yml");

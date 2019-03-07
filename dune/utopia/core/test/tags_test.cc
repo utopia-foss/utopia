@@ -2,7 +2,7 @@
 #include <iostream>
 #include <dune/utopia/core/tags.hh>
 
-int main(int, char *[])
+int main()
 {
     try {
         Utopia::DefaultTag t_true;

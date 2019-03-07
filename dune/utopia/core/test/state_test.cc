@@ -5,7 +5,7 @@
 #include <dune/utopia/core/state.hh>
 
 /// Instantiate containers, check access and contents
-int main(int, char **)
+int main()
 {
     try{
         StateContainer<double, false> sc1(0.1);

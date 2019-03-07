@@ -23,7 +23,7 @@ using CellTraitsAsync = Utopia::CellTraits<int,
                                            Utopia::UpdateMode::async,
                                            true>;
 
-int main(int, char* []) {
+int main() {
     try {
         std::cout << "Getting config file ..." << std::endl;
         auto cfg = YAML::LoadFile("cell_manager_test.yml");

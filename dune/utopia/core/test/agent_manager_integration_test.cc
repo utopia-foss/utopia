@@ -6,7 +6,7 @@
 
 using namespace Utopia::Test;
 
-int main(int, char *[]) {
+int main() {
     try {
 
         std::cout << "Initializing pseudo parent ..." << std::endl;

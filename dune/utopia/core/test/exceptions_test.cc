@@ -8,7 +8,7 @@
 #include "testtools.hh"
 
 
-int main(int, char *[]) {
+int main() {
     try {
         std::cout << "Commencing test ..." << std::endl;
 

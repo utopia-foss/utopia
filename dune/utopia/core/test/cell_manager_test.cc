@@ -101,7 +101,7 @@ using CellTraitsCL = Utopia::CellTraits<CellStateDC,
 
 // ----------------------------------------------------------------------------
 
-int main(int, char *[]) {
+int main() {
     try {
         std::cout << "Getting config file ..." << std::endl;
         auto cfg = YAML::LoadFile("cell_manager_test.yml");

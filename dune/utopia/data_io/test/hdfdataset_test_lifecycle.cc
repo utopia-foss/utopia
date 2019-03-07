@@ -47,7 +47,7 @@ void assert_hdfdatasets(LHS& lhs, RHS& rhs)
     assert(lhs.get_compresslevel() == rhs.get_compresslevel());
 }
 
-int main(int argc, char** argv)
+int main()
 {
     HDFFile file("dataset_test_lifetime.h5", "w");
 

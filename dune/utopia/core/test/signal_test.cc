@@ -11,7 +11,7 @@ void custom_signal_handler(int) {
 }
 
 
-int main(int, char *[]) {
+int main() {
     try {
         // Test the default signal handler handles the global flags correctly
         stop_now.store(false);
