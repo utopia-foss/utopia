@@ -5,9 +5,9 @@
 #include <yaml-cpp/yaml.h>
 
 #include <utopia/data_io/hdffile.hh>
-#include <utopia/data_io/test/monitor_test.hh>
 #include <utopia/data_io/cfg_utils.hh>
 
+#include "../data_io/monitor_test.hh"
 #include "model_test.hh"
 
 
