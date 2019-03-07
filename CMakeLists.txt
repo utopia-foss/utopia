@@ -59,7 +59,7 @@ enable_testing()
 
 # Include subdirectories
 add_subdirectory(plugins/vendor)
-add_subdirectory(python)
 add_subdirectory(doc)
 add_subdirectory(src/models)
+add_subdirectory(python)
 add_subdirectory(test EXCLUDE_FROM_ALL)
