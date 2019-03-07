@@ -5,7 +5,14 @@
 Complex dynamics of savanna landscapes using an explicit percolation model
 --------------------------------------------------------------------------
 
-The heterogeneous savanna model simulates a savanna landscape - composed of Grass, savanna tree Saplings, savanna Trees, and Forest trees - in a heterogeneous approach with explicit representation of the percolation model on a cellular automaton.
+The heterogeneous savanna model simulates a savanna landscape - composed of Grass, Savanna-tree Saplings, savanna Trees, optionally Forest Saplings and Forest trees - in a heterogeneous approach with explicit representation of the percolation model on a cellular automaton.
+The model has three developmental states:
+
+   #. An implementation closest to the set of differential equations
+
+   #. Using a more realistic catch-fire algorithm
+
+   #. Adding the Forest_Sapling state and forest-fires
 
 Fundamentals
 ------------
@@ -45,13 +52,15 @@ Furthermore, the growth process is localized, such that offspring plants (new fo
 Implementation Details
 ----------------------
 
-The translation to a CA
-^^^^^^^^^^^^^^^^^^^^^^^
+1. The translation to a CA
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This is the first stage of the model staying very close to the differential equations.
+
 
 The dynamics of the dynamical system can be restored easily since all terms represent transitions from one species to another and are multiplicatives of a rate with one or two species densities.
 
 Rates depending on the own density (e.g. :math:`\dot{T} = - \nu T` with corresponding :math:`\dot{G} = \nu T`) can be directly translated to a probability evaluation of the form:
-
 
 * if cell has state T: pull random number :math:`p \in [0,1]`
 * if further :math:`p < \nu`: change state T -> G
@@ -69,17 +78,51 @@ using the effective density
    T_\sigma (z) = \frac{\sum_{z'\mathrm{\ is\ tree}} \exp ( -(z-z')^2 / 2 \sigma^2)}
                        {\sum_{z'} \exp ( -(z-z')^2 / 2 \sigma^2}
 
-at the cell's position z, which is the global density of F for a homogeneous representation, and depending on the number of forest trees within a certen distance for a heterogeneous representation. 
+at the cell's position z, which is the global density of F for a homogeneous representation, and depending on the number of forest trees within a certain distance for a heterogeneous representation. 
 
 All terms of the four differential equations are represented of one of the two previous examples.
 
+Instead of using the numeric representation of survival probabilities during fires ($`\omega(G, S, T)`$) we use an explicit percolation model.
+An ignited cell spreads the fire instantaneously to its neighbors who again, if their state is propagating fire, spread the fire to their neighbors in a recursive process. Note, that in this spread_fire algorithm all cells in and neighboring the percolation-cluster have the tag is_burning.
+
+.. note:: To ensure unique transitions the sum of all probabilistic processes on a single state must be smaller or equal 1. E.g. a Grass cell can transit to Sapling with probability :math:`p = \beta T_\sigma(z)` with :math:`T_\sigma(z) \leq 1` and to Forest with probability :math:`p = \alpha F_\sigma(z)` with :math:`F_\sigma(z) \leq 1`. Hence :math:`\alpha + \beta \overset{!}{\leq} 1` must hold.
+
+
+
+2. A more realistic percolation model
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This is the second stage of the model replacing the spread-fire percolation algorithm with the more realistic catch-fire algorithm.
+
+The spread fire algorithm has the issue, that cells have the tag is_burning even so the cell is not probagating fire, alias not-flammable.
+It would be more realistic to end fires at the cluster's boundary.
+A cell would only spread fire if is flammable, alias it catches fire from a neighbor.
+This percolation algorithm is accessible through the ``catch_fire_equiv_spread_fire=true`` template argument.
+
+
+3. Adding Forest saplings
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This is the third stage of the model adding a Forest_Sapling species.
+
+Using the catch_fire percolation model raises the issue, that Forest trees are considered not ignitable by savanna fires, the usual fire in the set of differential equations.
+The introduction of forest fires in analogy to savanna fires, but in a forest cluster, ensures that the mainly forest steady state is unstable to the invasion by grass through the occurance of a large forest fire.
+However, this badly represents the invasion of Forest in a Savanna landscape, since a Forest patch growth at some point and turns instantaneously non-flammabe. Ecologically it is required that the invasion of Forest to Grass landscapes is hampered by the occurence of savanna fires which the Forest Saplings don't survive.
+To ensure this process, the Forest_Sapling state is introduced, which is susceptible to savanna and forest fires. The forest_Sapling transits to Forest at a constante rate :math:`\upsilon` and die dependent on the occurance of fires at the cells site with rate :math:`\psi_0` (no fire) and probability :math:`\psi_1` (fire occured).
+
+.. note:: From this stage on the mortality rate of Forest and Forest_Sapling species on a burned cell is renamed to mortality probability. 
+
+
+
 The time step
 ^^^^^^^^^^^^^
+A timestep corresponds to the succession of two seasons, a wet seasons when plants grow and a dry season when fires occur.
 
-The time step splits in three distinct functions. 
+It splits in three distinct functions. 
 The calculation of effective density, the update as a function of a cell's own state and its tags and the ignition of clusters in a percolation process.
 
 The ignition returns a burned tag to the concernced cells, which is used in the consecutive step.
+
 
 1. Calculation of effective density.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -88,47 +131,41 @@ Trees are assumed to have finite reach to spread their seeds, hence new forest t
 
 From this every cell becomes two effective density tags, one from savanna trees and one from forest trees.
 
-1. Update
+2. Update
 ~~~~~~~~~
 
 The cell's state is updated depending on its state and the given tags (effective densities and burned from previous step) in the way explained above.
 
-1. Ignition
+3. Ignition
 ~~~~~~~~~~~
 
 Cells with state Grass ignite with the probability f.
 In a percolation like process the fire is spread instantaneously to all neighbors.
-Further, we consider a spread fire algorithm, i.e. that a burning cell spreads fire to all neighbors (ignoring their state) dependent on its own state.
-Usually this probability is 1 for Grass, smaller 1 for Saplings and Forest and 0 for Trees (tbd by user). 
+Further, we consider either a spread fire algorithm, i.e. that a burning cell spreads fire to all neighbors (ignoring their state) dependent on its own state.
+Usually this probability is 1 for Grass, smaller 1 for Saplings and Forest and 0 for Trees (tbd by user).
+Alternatively, we consider a catch fire algorithm, where the extend of burned cells coincides with the extend of a spreading cluster. Hence, a cell only has the is_burned tag if it is flammable and hence spreads fire.
+
 This process is repeated until each possible spread has been evaluated with the according probability.
-
-An alternative to this is a catch fire algorithm explained in the `Extensions`_ section.
-
-Details
-^^^^^^^
-
-The equations above have been transformed to dimensionless equations, indeed this can be easily done, since all terms depend on a single rate and a dimensionless density.
-As characteristic time is considered the characteristic lifetime of a savanna tree state (:math:`t_c = 1/\nu`). However, we stick to the parameter values given by Touboul (2018) and instead scale all equations with a time step resolution dt. All rates transform to a multiple of dt.
-
-
-Extensions
-^^^^^^^^^^
-
-The model includes a second algorithm for the ignition (percolation) process.
-It's implementation is farther from the original differential equations, but is considered to be more realistic.
-Instead of using a spread fire algorithm a catch fire algorithm is proposed (`catch_fire_equiv_spread_fire = true`).
-A burning cell spreads the fire only to those neighboring cells, that - speaking in the original terms - spread fire, too.
-Hence, only those cells burn, that do spread fire.
-This is closer to the ecological behavior of a species changing its transition rates after a fire.
-Simultaneously, the forest fire is differed from the savanna fire. It is an ecological different fire.
 
 
 Default Model Configuration
 ---------------------------
 
-Below are the default configuration parameters for the ``SavannaHeterogeneous`` model.
+Below are the default configuration parameters for the ``SavannaHeterogeneous`` model:
 
 .. literalinclude:: ../../dune/utopia/models/SavannaHeterogeneous/SavannaHeterogeneous_cfg.yml
+   :language: yaml
+   :start-after: ---
+
+Default configuration for a catch-fire model:
+
+.. literalinclude:: ../../python/model_tests/SavannaHeterogeneous/test_no_saplings.yml
+   :language: yaml
+   :start-after: ---
+
+Default configuration for a model closest to Touboul et al . (2018):
+
+.. literalinclude:: ../../python/model_tests/SavannaHeterogeneous/test_touboul_config.yml
    :language: yaml
    :start-after: ---
 
