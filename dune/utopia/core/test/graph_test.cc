@@ -1,24 +1,26 @@
-#include <dune/utopia/base.hh>
-#include <dune/utopia/core/graph.hh>
 #include <cassert>
 #include <iostream>
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/adjacency_matrix.hpp>
 
+#include <dune/utopia/core/types.hh>
+#include <dune/utopia/core/graph.hh>
+
 using namespace Utopia::Graph;
 
-// Create a test vertex struct
+
+/// The test vertex struct
 struct Vertex{
     int i;
 };
 
-// Define test graph type
+/// The test graph type
 using G = boost::adjacency_list<
                     boost::vecS,        // edge container
                     boost::vecS,        // vertex container
                     boost::undirectedS,
-                    Vertex>;             // vertex struct
+                    Vertex>;            // vertex struct
 
 
 /// Test the function that creates a random graph
@@ -32,7 +34,7 @@ void test_create_random_graph(){
     const int num_edges = 20;
 
     // Create test graph
-    auto g = create_random_graph<G>(   num_vertices,
+    auto g = create_random_graph<G>(num_vertices,
                                     num_edges,
                                     false,
                                     false,

@@ -13,7 +13,6 @@
 #include <hdf5.h>
 #include <boost/iterator/counting_iterator.hpp>
 
-#include <dune/utopia/base.hh>
 #include <dune/utopia/core/model.hh>
 #include <dune/utopia/core/types.hh>
 

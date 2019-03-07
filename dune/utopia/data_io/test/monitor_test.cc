@@ -6,7 +6,6 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include <dune/utopia/base.hh>
 #include <dune/utopia/core/logging.hh>
 #include <dune/utopia/data_io/monitor.hh>
 

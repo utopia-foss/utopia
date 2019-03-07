@@ -3,7 +3,6 @@
 #include <csignal>
 #include <iostream>
 
-#include <dune/utopia/base.hh>
 #include <dune/utopia/core/exceptions.hh>
 
 #include "testtools.hh"

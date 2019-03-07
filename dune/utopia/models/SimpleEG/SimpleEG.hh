@@ -3,11 +3,10 @@
 
 #include <functional>
 
-#include <dune/utopia/base.hh>
+#include <dune/utopia/core/types.hh>
 #include <dune/utopia/core/model.hh>
 #include <dune/utopia/core/cell_manager.hh>
 #include <dune/utopia/core/apply.hh>
-#include <dune/utopia/core/types.hh>
 
 
 namespace Utopia {
