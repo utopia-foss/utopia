@@ -1,3 +1,6 @@
+# Define a global target for model tests
+add_custom_target(build_model_tests)
+
 # Utopia-specific wrapper for adding a model test
 #
 # .. cmake_function:: add_model_test
@@ -28,6 +31,7 @@ function(add_model_test)
     # Add the test
     add_executable(${target_name} ${KWARGS_SOURCES})
     add_test(NAME ${target_name} COMMAND ${target_name})
+    add_dependencies(build_model_tests ${target_name})
 
     # link to Utopia target
     target_link_libraries(${target_name} PUBLIC utopia)
