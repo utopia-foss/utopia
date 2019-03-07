@@ -52,9 +52,14 @@ target_include_directories(utopia
         ${PROJECT_SOURCE_DIR}/plugins/vendor/yaml-cpp/include/
 )
 
-# --- Add all other stuff
+# --- Include Config Tree ---
 
+# Enable testing via CTest engine
+enable_testing()
+
+# Include subdirectories
 add_subdirectory(plugins/vendor)
 add_subdirectory(python)
 add_subdirectory(doc)
 add_subdirectory(src/models)
+add_subdirectory(test EXCLUDE_FROM_ALL)
