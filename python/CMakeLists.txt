@@ -49,10 +49,10 @@ python_install_package(PATH utopya)
 # TODO add linker target here
 
 # Tests .......................................................................
-message(STATUS "Adding test_python targets ...")
+message(STATUS "Adding python test targets ...")
 
-# Add test for utopya, accessible via `make python_utopya_tests`
-add_custom_target(python_utopya_tests
+# Add test for utopya, accessible via `make test_utopya`
+add_custom_target(test_utopya
                   COMMAND ${CMAKE_BINARY_DIR}/run-in-utopia-env
                           python -m pytest
                           ${CMAKE_CURRENT_SOURCE_DIR}/utopya/test/ -v
@@ -60,19 +60,14 @@ add_custom_target(python_utopya_tests
                           --cov-report=term-missing
 )
 
-# Add tests for models, accessible via `make python_model_tests`
-add_custom_target(python_model_tests
+# Add tests for models, accessible via `make test_models_python`
+add_custom_target(test_models_python
                   COMMAND ${CMAKE_BINARY_DIR}/run-in-utopia-env
                           python -m pytest -v
                           ${CMAKE_CURRENT_SOURCE_DIR}/model_tests/
 )
 
-# Add custom targets with more convenient names
-add_custom_target(test_utopya COMMAND make python_utopya_tests)
-add_custom_target(test_models COMMAND make python_model_tests)
-
-# Create custom target for running all tests
-add_custom_target(test_python)
-add_dependencies(test_python test_utopya test_models)
+# Add the latter as a dependency for the test_models target
+add_dependencies(test_models test_models_python)
 
 message(STATUS "Python setup complete.\n")

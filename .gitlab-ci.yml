@@ -95,7 +95,7 @@ stages:
 # -- Setup stage --------------------------------------------------------------
 # This stage takes care to build the utopia base testing image
 
-setup:utopia-base: &setup
+setup:utopia-base:
   stage: setup
   only:
     - master

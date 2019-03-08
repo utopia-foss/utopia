@@ -7,6 +7,10 @@
 #      it is important that the names of folders and targets match.
 #   5. Re-configure using `cmake ..`
 
+# Add an empty model test target for tests to add dependencies to
+add_custom_target(test_models)
+
+
 message(STATUS "Starting Utopia model registration ...")
 
 # Register the model directories
@@ -24,7 +28,6 @@ add_subdirectory(SavannaHomogeneous)
 add_subdirectory(SimpleEG)
 add_subdirectory(SandPile)
 add_subdirectory(Vegetation)
-
 # ...
 # NOTE Add your subdirectory above (alphabetically sorted)
 

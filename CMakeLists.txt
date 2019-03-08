@@ -23,8 +23,10 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra")
 
 # Register utopia as interface library (does not actually build objects)
 add_library(utopia INTERFACE)
+
 # Require C++17 support
 target_compile_features(utopia INTERFACE cxx_std_17)
+
 # Add include directories
 target_include_directories(utopia INTERFACE
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/>
@@ -32,7 +34,6 @@ target_include_directories(utopia INTERFACE
 )
 
 # Link with required libraries
-# link library targets
 target_link_libraries(utopia INTERFACE
     armadillo
     Boost::boost

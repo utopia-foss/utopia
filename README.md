@@ -1,10 +1,9 @@
 # Utopia
 
-__Utopia__ (_gr.,_ no-place), a non-existent society described in considerable detail. [Wikipedia, 2016]
+__Utopia__ (_gr.,_ no-place), a non-existent society described in considerable
+detail. [Wikipedia, 2016]
 
-| Testing System | Python Test Coverage |
-| :------------: | :------------------: |
-| [![pipeline status](https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/badges/master/pipeline.svg)](https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/commits/master) | [![coverage report](https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/badges/master/coverage.svg)](https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/commits/master) |
+Utopia is a modelling framework
 
 #### Contents of this Readme
 * [Installation](#installation)
@@ -15,11 +14,9 @@ __Utopia__ (_gr.,_ no-place), a non-existent society described in considerable d
 ---
 
 ## Installation
-
 ### Step-by-step Instructions
 These instructions are intended for 'clean' __Ubuntu__ (18.04) or __macOS__
 setups.
-
 
 ##### 1 — Setup
 First, create a `Utopia` directory at a place of your choice. This is where
@@ -41,10 +38,10 @@ directory, which is the repository.
 ##### 3 — Install dependencies
 Install the third-party dependencies using a package manager.
 
-__Notice:__ If you have [Anaconda](https://www.anaconda.com/) installed, you
+_Note:_ If you have [Anaconda](https://www.anaconda.com/) installed, you
 already have a working Python installation on your system, and you can omit
-installing the `python` packages in this step. However, notice the hint in
-the next step for properly [configuring Utopia](#4-configure-and-build).
+installing the `python` packages in this step. However, notice the hint during
+[the configuration step](#4-configure-and-build) regarding Anaconda.
 
 ###### On Ubuntu 18.04
 
@@ -140,19 +137,26 @@ For more information on how to use the command line interface, see the
     [dependency table](#dependencies) above. Note that deleting the build
     directories will also require to install the dependencies again.
 
-* If you have a previous installation and the build fails, try removing the
-    the `build` directory and restarting from [configuration]() 
-
-
 * Anaconda ships its own version of the HDF5 library which is _not_
     compatible with Utopia. To tell CMake where to find the correct version of
-    the library, append the following variable (without the comments!) to the
-    `CMAKE_FLAGS` in the command above:
+    the library, add the following argument (without the comments!) to the
+    `cmake ..` command during [configuration](#4-configure-and-build):
 
     ```bash
     -DHDF5_ROOT=/usr/           # on Ubuntu
     -DHDF5_ROOT=/usr/local/     # on macOS (Homebrew)
     ```
+
+    For Ubuntu, the full command would then be:
+
+    ```bash
+    cd build
+    cmake -DHDF5_ROOT=/usr/ ..
+    ```
+
+* If you have a previous installation and the build fails inexplicably,
+    removing the `build` directory completely and starting anew from
+    [configuration](#4-configure-and-build) often helps.
 
 * If at some point the `spdlog` and `yaml-cpp` dependencies are updated, you
     might need to update the git submodules. To get the current version, call:
@@ -174,9 +178,9 @@ For more information on how to use the command line interface, see the
 
 | Software | Version | Comments |
 | ---------| ------- | -------- |
-| GCC | >= 7 | Full C++17 compiler support required |
-| _or:_ clang | >= 6 | Full C++17 compiler support required |
-| _or:_ Apple LLVM | >= 9 | Full C++17 compiler support required |
+| GCC | >= 7 | Full C++17 support required |
+| _or:_ clang | >= 6 | Full C++17 support required |
+| _or:_ Apple LLVM | >= 9 | Full C++17 support required |
 | [CMake](https://cmake.org/) | >= 3.10 | |
 | pkg-config | | |
 | [HDF5](https://www.hdfgroup.org/solutions/hdf5/) | >= 1.10. | |
@@ -188,10 +192,12 @@ For more information on how to use the command line interface, see the
 | [Python3](https://www.python.org/downloads/) | >= 3.6 | < v3.6 _might_ work, but are not tested |
 
 #### Python
-Utopia's frontend, `utopya`, uses some custom packages.
+Utopia's frontend, `utopya`, uses some custom packages that are not part of the
+Python Package Index.
 
 These packages and their dependencies are _automatically_ installed into a
-virtual environment when the `cmake ..` command is carried out (as done in the [configuration step of the installation](#4-configure-and-build)).
+virtual environment when the `cmake ..` command is carried out during the
+[configuration step of the installation](#4-configure-and-build)).
 Check out the troubleshooting section there if this fails.
 
 | Software | Version | Purpose |
@@ -264,7 +270,8 @@ data, and performs automated plots.
 _Note:_
 * The script will always run through, even if there were errors in the
     individual parts. Thus, you should check the terminal output for errors
-    and warnings. You can also set the `--debug` flag.
+    and warnings (red or yellow, respectively). If you want the CLI to fail on
+    errors, you can also set the `--debug` flag.
 * By default, you can find the simulation output in
     `~/utopia_output/SomeModel/<timestamp>`. It contains the written data, all
     the used configuration files, and the automated plots.
@@ -325,7 +332,7 @@ Utopia *before* committing changes. To build them, set build flags to `Debug`
 as described [above](#build-types) and then execute
 
 ```bash
-make build_tests -j4
+make build_unit_tests -j4
 ```
 
 where the `-j4` argument builds four test targets in parallel. To perform all
@@ -354,7 +361,8 @@ Available testing groups:
 | Group    | Info                                                           |
 | -------- | -------------------------------------------------------------- |
 | `core`   | Backend functions for models                                   |
-| `dataio` | Backend functions for reading config files and writing data    |
+| `dataio` | Backend functions for writing data and working with YAML       |
 | `utopya` | Frontend package managing simulations and their evaluation     |
-| `models` | Models tests (from `python/model_tests`, not the C++ ones!)    |
-| `python` | All python tests                                               |
+| `models` | The C++ and Python tests for _all_ models                      |
+| `model_python` | All python models tests (from `python/model_tests`)      |
+| `model_<name>` | The C++ model tests of model with name `<name>`          |
