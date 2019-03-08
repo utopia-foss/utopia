@@ -18,15 +18,17 @@ Utopia is a modelling framework
 These instructions are intended for 'clean' __Ubuntu__ (18.04) or __macOS__
 setups.
 
-##### 1 — Setup
+#### 1 — Setup
 First, create a `Utopia` directory at a place of your choice. This is where
 the Utopia repository will be stored. When working with Utopia, auxilary data
 will have a place here as well.
 
-##### 2 — Cloning Utopia
-For cloning the Utopia repository, you will need to use the `--recurse-submodules` option.
-(Utopia uses [Git Submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules); this command automatically
-clones the submodule repositories.)
+
+#### 2 — Cloning Utopia
+In your terminal, enter the `Utopia` directory you just created.
+
+With access to the Utopia GitLab project, you can clone the repository to that
+directory using the following command:
 
 ```bash
 git clone --recurse-submodules https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia.git
@@ -35,15 +37,21 @@ git clone --recurse-submodules https://ts-gitlab.iup.uni-heidelberg.de/utopia/ut
 Inside your top level `Utopia` directory, there will now be a `utopia`
 directory, which is the repository.
 
-##### 3 — Install dependencies
+_Note:_ Utopia uses [Git Submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules);
+with the `--recurse-submodules` option, the submodule repositories are
+automatically cloned alongside the `utopia` repository.
+
+
+#### 3 — Install dependencies
 Install the third-party dependencies using a package manager.
 
 _Note:_ If you have [Anaconda](https://www.anaconda.com/) installed, you
 already have a working Python installation on your system, and you can omit
-installing the `python` packages in this step. However, notice the hint during
-[the configuration step](#4-configure-and-build) regarding Anaconda.
+installing the `python` packages below. However, notice that there might
+be issues during [the configuration step](#4-configure-and-build). Have a look
+at the [troubleshooting](#troubleshooting) section to see how to address them.
 
-###### On Ubuntu 18.04
+##### On Ubuntu 18.04
 
 ```bash
 apt update
@@ -54,23 +62,24 @@ apt install cmake doxygen gcc g++ gfortran git libarmadillo-dev \
 
 You will _probably_ need administrator rights. ([`sudo`, anyone?](https://xkcd.com/149/))
 
-###### On macOS
+##### On macOS
 First, install the Apple Command Line Tools:
 
 ```bash
 xcode-select --install
 ```
 
-As package manager, we recommend [Homebrew](https://brew.sh/). (If you prefer
-to use [MacPorts](https://www.macports.org/), notice that some packages might
-need to be installed differently.)
+As package manager on macOS, we recommend [Homebrew](https://brew.sh/).
+(If you prefer to use [MacPorts](https://www.macports.org/), notice that some
+packages might need to be installed differently.)
 
 ```bash
 brew update
 brew install armadillo boost cmake doxygen fftw hdf5 gcc pkg-config python3 yaml-cpp
 ```
 
-##### 4 — Configure and build
+
+#### 4 — Configure and build
 Enter the repository and create your desired build directory:
 
 ```bash
@@ -89,9 +98,6 @@ The terminal output will show the configuration steps, which includes the
 installation of further python dependencies and the creation of a virtual
 environment.
 
-_Note:_ If you are using Anaconda Python, have a look at the
-[troubleshooting](#troubleshooting) section below.
-
 After this, you can build a specific or all Utopia models using:
 
 ```bash
@@ -99,8 +105,8 @@ make dummy     # builds only the dummy model
 make -j4 all   # builds all models, using 4 CPUs
 ```
 
-##### 5 — Run a model :tada:
-Now, you should be able to run a Utopia model.
+#### 5 — Run a model :tada:
+You should now be able to run a Utopia model.
 Being in the `build` directory, call:
 
 ```bash
@@ -108,21 +114,23 @@ source activate
 ```
 
 to enter the virtual environment, where the Utopia Command Line Interface (CLI)
-is available. The `utopia` command lets you run and evaluate models.
+is available. The `utopia` command gives you control over running and
+evaluating model simulations:
 
 ```bash
 utopia run dummy
 ```
 
 For more information on how to use the command line interface, see the
-[information for users](#how-to-run-a-model).
+[information for users](#how-to-run-a-model) below and the [documentation](#utopia-documentation).
 
 
 ### Troubleshooting
 * If the `cmake ..` command failed during resolution of the Python
-    dependencies it is due to the configuration routine attempting to load the
-    packages via SSH. To fix this, the most comfortable solution is to register
-    your SSH key with the GitLab; follow [this](https://docs.gitlab.com/ce/ssh)
+    dependencies it is probably due to the configuration routine attempting to
+    load the packages via SSH and you not having access to the GitLab.
+    To fix this, the most comfortable solution is to register your SSH key
+    with the GitLab; you can follow [this](https://docs.gitlab.com/ce/ssh)
     instruction to do so.  
     Alternatively, you can manually install the Python dependencies into the
     virtual environment:
@@ -133,7 +141,7 @@ For more information on how to use the command line interface, see the
     pip install git+https://...
     ```
 
-    The clone URLs can be found by following the links in the
+    The URLs to use for cloning can be found by following the links in the
     [dependency table](#dependencies) above. Note that deleting the build
     directories will also require to install the dependencies again.
 
