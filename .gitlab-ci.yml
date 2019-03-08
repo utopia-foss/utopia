@@ -87,6 +87,7 @@ stages:
     name: "$CI_JOB_NAME"
     paths:
       - $CI_PROJECT_DIR/build
+      - $CI_PROJECT_DIR/python # to include configured Python scripts
     expire_in: 3 hours
 
 
