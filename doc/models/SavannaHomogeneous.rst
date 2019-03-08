@@ -46,7 +46,7 @@ Default Model Configuration
 Below are the default configuration parameters for the ``SavannaHomogeneous`` model.
 They are chosen following Touboul [2018].
 
-.. literalinclude:: ../../dune/utopia/models/SavannaHomogeneous/SavannaHomogeneous_cfg.yml
+.. literalinclude:: ../../src/models/SavannaHomogeneous/SavannaHomogeneous_cfg.yml
    :language: yaml
    :start-after: ---
 

@@ -1,5 +1,5 @@
 
-``SandPile`` model
+``SandPile`` Model
 ==================
 
 The ``SandPile`` model simulates the development of a sand pile when you add a grain of sand at each time step.
@@ -13,7 +13,7 @@ Default Model Configuration
 
 Below are the default configuration parameters for the ``SandPile`` model.
 
-.. literalinclude:: ../../dune/utopia/models/SandPile/SandPile_cfg.yml
+.. literalinclude:: ../../src/models/SandPile/SandPile_cfg.yml
    :language: yaml
    :start-after: ---
 

@@ -46,4 +46,6 @@ add_custom_target(sphinx_html
 )
 
 add_dependencies(sphinx_html doxygen_utopia)
+
+add_custom_target(doc)
 add_dependencies(doc sphinx_html)

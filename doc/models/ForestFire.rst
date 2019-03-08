@@ -30,7 +30,7 @@ Default configuration parameters
 
 Below are the default configuration parameters for the ``ForestFire`` model.
 
-.. literalinclude:: ../../dune/utopia/models/ForestFire/ForestFire_cfg.yml
+.. literalinclude:: ../../src/models/ForestFire/ForestFire_cfg.yml
    :language: yaml
    :start-after: ---
 

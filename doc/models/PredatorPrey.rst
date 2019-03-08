@@ -70,7 +70,7 @@ Default Model Configuration
 
 Below are the default configuration parameters for the ``PredatorPrey`` model.
 
-.. literalinclude:: ../../dune/utopia/models/PredatorPrey/PredatorPrey_cfg.yml
+.. literalinclude:: ../../src/models/PredatorPrey/PredatorPrey_cfg.yml
    :language: yaml
    :start-after: ---
 

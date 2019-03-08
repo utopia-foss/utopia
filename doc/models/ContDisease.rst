@@ -48,7 +48,7 @@ Default configuration parameters
 
 Below are the default configuration parameters for the ``ContDisease`` model.
 
-.. literalinclude:: ../../dune/utopia/models/ContDisease/ContDisease_cfg.yml
+.. literalinclude:: ../../src/models/ContDisease/ContDisease_cfg.yml
    :language: yaml
    :start-after: ---
 

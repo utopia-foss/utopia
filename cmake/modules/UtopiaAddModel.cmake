@@ -16,23 +16,8 @@ function(add_model target_name)
     # register regularly
     add_executable(${target_name} ${ARGN})
 
-    # link library targets
-    target_link_libraries(${target_name}
-        spdlog
-        yaml-cpp
-        armadillo
-    )
-
-    # yaml-cpp does not export interface include dirs
-    # NOTE This should be reported as bug or patched via MR in the yaml-cpp
-    #      repository. See https://pabloariasal.github.io/2018/02/19/its-time-to-do-cmake-right/
-    #      as a reference on how to do that.
-    target_include_directories(${target_name}
-        # register as system headers (compilers might ignore warnings)
-        SYSTEM
-        PRIVATE
-            ${PROJECT_SOURCE_DIR}/vendor/plugins/yaml-cpp/include/
-    )
+    # link to Utopia target
+    target_link_libraries(${target_name} PUBLIC utopia)
 
     # the rest of this function is to relay information to the utopya package
     # add name to target list

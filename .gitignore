@@ -42,12 +42,10 @@
 !*.dockerfile
 !.gitignore
 !.gitmodules
-!dune.module
-!*.msh
 
 
 # Again blacklist certain directories completely
-build-cmake/
+build/
 *.egg-info
 *.pytest_cache
 __pycache__
