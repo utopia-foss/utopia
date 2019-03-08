@@ -56,9 +56,10 @@ stages:
 # .. YAML Templates ...........................................................
 # This makes includes below easier using the `<<: *anchor_name` syntax
 
-# To install the python environment, dunecontrol needs access to external but
-# private repositories; by adding a deploy key to selected jobs, the pull
-# from these repositories becomes possible
+# To install the python environment, the configuration needs access to
+# external but private repositories; by adding a deploy key to selected jobs,
+# the pull from these repositories becomes possible. The key is available under
+# the SSH_PRIVATE_KEY variable.
 .ssh-access: &ssh_access
   before_script:
     # For outside dependencies, use the "Utopia CI" deploy key

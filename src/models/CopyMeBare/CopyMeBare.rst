@@ -52,7 +52,7 @@ Default Model Configuration
 
 Below are the default configuration parameters for the ``CopyMeBare`` model.
 
-.. literalinclude:: ../../dune/utopia/models/CopyMeBare/CopyMeBare_cfg.yml
+.. literalinclude:: ../../src/models/CopyMeBare/CopyMeBare_cfg.yml
    :language: yaml
    :start-after: ---
 

@@ -42,8 +42,6 @@
 !*.dockerfile
 !.gitignore
 !.gitmodules
-!dune.module
-!*.msh
 
 
 # Again blacklist certain directories completely

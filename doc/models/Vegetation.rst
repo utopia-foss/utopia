@@ -50,7 +50,7 @@ Default configuration parameters
 
 These are the default configuration parameters of the model:
 
-.. literalinclude:: ../../dune/utopia/models/Vegetation/Vegetation_cfg.yml
+.. literalinclude:: ../../src/models/Vegetation/Vegetation_cfg.yml
    :language: yaml
    :start-after: ---
 

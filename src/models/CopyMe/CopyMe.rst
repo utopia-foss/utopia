@@ -52,7 +52,7 @@ Default Model Configuration
 
 Below are the default configuration parameters for the ``CopyMe`` model.
 
-.. literalinclude:: ../../dune/utopia/models/CopyMe/CopyMe_cfg.yml
+.. literalinclude:: ../../src/models/CopyMe/CopyMe_cfg.yml
    :language: yaml
    :start-after: ---
 

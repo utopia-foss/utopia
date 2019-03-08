@@ -153,7 +153,7 @@ Default Model Configuration
 
 Below are the default configuration parameters for the ``SavannaHeterogeneous`` model:
 
-.. literalinclude:: ../../dune/utopia/models/SavannaHeterogeneous/SavannaHeterogeneous_cfg.yml
+.. literalinclude:: ../../src/models/SavannaHeterogeneous/SavannaHeterogeneous_cfg.yml
    :language: yaml
    :start-after: ---
 

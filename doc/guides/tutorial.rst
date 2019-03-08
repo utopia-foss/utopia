@@ -41,7 +41,7 @@ First thing is to make the CLI accessible. For that, go to the ``utopia`` direct
 
 .. code-block:: bash
 
-   cd build-cmake         # ... to go to the utopia/build_cmake/ folder
+   cd build             # ... to go to the utopia build directory
    source activate      # ... to enter the virtual environment
 
 *Utopia* operates inside a so-called virtual environment. With the ``source activate`` command, you have entered it and should now see ``(utopia-env)`` appearing on the left-hand side of your shell. When working with *Utopia*, make sure to always be in this virtual environment.
@@ -85,7 +85,7 @@ If not, you probably got the following error message:
 
   FileNotFoundError: Could not find command to execute! Did you build your binary? 
 
-Alright, so let's build the ``dummy`` binary: Make sure you are in the ``build-cmake`` directory and then call ``make dummy``. After that command succeeds, you will be able to run the dummy model.
+Alright, so let's build the ``dummy`` binary: Make sure you are in the ``build`` directory and then call ``make dummy``. After that command succeeds, you will be able to run the dummy model.
 
 
 .. note::
@@ -185,18 +185,18 @@ Assuming that you installed *Utopia* inside your home directory, the directory s
 ::
 
   ~                          # Your home directory (or another base directory)
-  ├─┬ Utopia                 # All the Utopia and DUNE code
-    ├── dune-common          # DUNE dependencies
-    ├── ...
+  ├─┬ Utopia                 # All the Utopia code
+    ├── ...                  # Can have other Utopia-related code here
     └─┬ utopia               # Utopia repository
-      ├── build-cmake        # Build results
-      ├─┬ dune               # All the C++ source code
+      ├── build              # Build results
+      ├─┬ include            # The Utopia backend C++ library
         └─┬ utopia
           ├── core           # Utopia core structures
-          ├── data_io        # Data input and output library
-          ├─┬ models         # Model implementations
-            ├── ...
-            └── SandPile
+          └── data_io        # Data input and output library
+      ├─┬ src
+        └─┬ models           # The model implementations
+          ├── ...
+          └── SandPile
       ├─┬ python             # All python code
         ├─┬ model_plots      # Model-specific plots
           ├── ...
@@ -209,14 +209,14 @@ Assuming that you installed *Utopia* inside your home directory, the directory s
 
 This might be a bit overwhelming, but you will soon know your way around this.
 
-You are already familiar with the ``build-cmake`` directory, needed for the build commands and to enter the virtual environment. Other important ones will be the model implementations and the model plots; you can ignore the others for now.
+You are already familiar with the ``build`` directory, needed for the build commands and to enter the virtual environment. Other important ones will be the model implementations and the model plots; you can ignore the others for now.
 
 The *Utopia* frontend also took care of creating an ``utopia_output`` directory, which by default is inside your home directory. The output is ordered by the name of the model you ran and the timestamp of the simulation:
 
 ::
 
   ~                          # Your home directory (or another base directory)
-  ├── Utopia                 # All the Utopia and DUNE code
+  ├── Utopia                 # All the Utopia code
   ├─┬ utopia_output          # The Utopia output folder
     ├── ...                  # Other model names
     └─┬ SandPile             
@@ -236,7 +236,7 @@ It makes sense to build up another folder hierarchy for each model, which helps 
 ::
 
   ~                          # Your home directory (or another base directory)
-  ├── Utopia                 # All the Utopia and DUNE code
+  ├── Utopia                 # All the Utopia code
   ├── utopia_output          # The Utopia output folder
   └─┬ utopia_cfgs            # Custom config files (needs to be created manually)
     ├── ...                  
@@ -254,6 +254,10 @@ In this example, the ``test`` directory holds the configuration files for the te
     - Utopia need not be installed in the home directory; it can be where it suits you.
     - The configuration file directory can also be anywhere, but it makes sense that it's somewhere easily accessible from the command line.
     - For changing the output directory, have a look at the corresponding question in the :doc:`FAQ <../faq/frontend>` to see, how this is done.
+
+  In fact, the more natural place, for the ``utopia_cfgs`` would be within the
+  top-level ``Utopia`` directory, right *beside* the ``utopia`` repository.
+  But you are free to choose all that. :)
 
 
 Change parameters
@@ -354,27 +358,63 @@ Notice, that there now is a whole ``SandPile:`` key. This is the part of the con
 You will also notice the ``!model`` behind the key; that is a so-called YAML tag. It is used to denote that the defaults for the ``model_name: SandPile`` are to be loaded into this level of the configuration. This way, you only have to specify the keys you would like to *update*.
 Do not forget to provide the ``!model`` tag and the ``model_name`` key, otherwise the default model parameters will not be loaded and you might be missing crucial parameters.
 
-So far, so good. But what are the model's default parameters? To find out, locate and open the default configuration of the ``SandPile`` model at ``dune/utopia/models/SandPile/SandPile_cfg.yml``. It looks something like this:
+So far, so good. But what are the model's default parameters? Each models
+default configuration is included in its documentation. Make sure you have
+built the documentation as described in the README and then open it. In the
+documentation for the ``SandPile`` model you will find a section with the
+default parameters: It looks something like this:
 
 .. code-block:: yaml
 
-  # The grid size
-  grid_size: [10, 10]
-
+  # --- Space parameters
+  # The physical space this model is embedded in
+  space:
+    periodic: false
+  
+  # --- CellManager
+  cell_manager:
+    grid:
+      structure: square
+      resolution: 16      # in cells per unit length of physical space
+      # NOTE A large number of cells can make the initialization take a while...
+  
+    neighborhood:
+      mode: vonNeumann
+  
+  # --- Dynamics
   # The initial slope range.
   initial_slope: [5, 6]
   # Cells are randomly initialized using a uniform distribution in the given
   # closed range. The first value is the lower limit and the second one the
   # upper limit of the slope.
-
+  
   # The critical slope; beyond this value, sand topples
   critical_slope: 4
 
-This file really is only for *looking*; to change parameters, we have the ``run.yml`` file. So, let's change the grid size to a more interesting value. Within the indentation level of the ``SandPile`` model, add an entry ``grid_size: [32, 32]`` to your ``run.yml``.
+.. note::
+
+  You can also locate the default model configuration of the ``SandPile``
+  model at ``src/models/SandPile/SandPile_cfg.yml``. This file really is only
+  for *looking*; to change parameters, there is the ``run.yml`` file.
+
+So, let's change the grid resolution to a more interesting value. In your
+``run.yml``, add the following entry:
+
+.. code-block:: yaml
+
+  cell_manager:
+    grid:
+      resolution: 32
+
+Make sure, it is at the correct indentation level (inside the ``SandPile``
+model). As is clear from the configuration keys, this changes the grid
+resolution in the so-called cell manager to :math:`32` cells per unit length
+of the physical space.
+
 Run the model again and look at the resulting plots. What happened?
 
 By the way: What you learned here, applies also to all other models.
-You just need to know the model specific parameters, which you can always find in the model configuration located at ``utopia/dune/models/<model_name>/<model_name>_cfg.yml``.
+You just need to know the model specific parameters, which you can always find in the model configuration located at ``utopia/src/models/<model_name>/<model_name>_cfg.yml``.
 So, just check out another model and change parameters if you like. 😎
 
 .. note:: 
@@ -466,7 +506,7 @@ Plots go by a name. To find out the names of the configured plots, let's first h
   INFO     plot_mngr      Successfully performed plots for 2 configuration(s).                                                                          
   INFO     utopia         Plotting finished.
 
-As you see there, two plots are configured under the names ``slope`` and ``compl_cum_prob_dist``. To find out more, locate the corresponding plot configuration in the model directory: ``utopia/dune/utopia/models/SandPile/SandPile_plots.yml``.
+As you see there, two plots are configured under the names ``slope`` and ``compl_cum_prob_dist``. To find out more, locate the corresponding plot configuration in the model directory: ``utopia/src/models/SandPile/SandPile_plots.yml``.
 
 There, you will find the same names as extracted from the log as keys on the root level of the configuration file. It looks something like this:
 
@@ -707,35 +747,45 @@ Just as for the ``SandPile`` model, it will create and run a simulation with 4 t
 Parameters
 """"""""""
 
-For getting to know the parameters available to the ``ForestFire`` model, let's have a *look* (again, don't touch) at that model's default configuration. It looks something like this:
+For getting to know the parameters available to the ``ForestFire`` model, let's have a look at that model's default configuration by opening its description in the Utopia documentation.
+It looks something like this:
 
 .. code-block:: yaml
 
-  # --- Grid parameters
-  # The extent of the grid
-  grid_size: [64, 64]
-
-  # Periodicity of the grid. false: cells at boundary have fewer neighbors
-  periodic: true          
-
-
-  # --- Initial state
-  # Initial tree density, value in [0, 1]
-  initial_density: 0.2
-
-
-  # --- Dynamics 
-  # Probability per site to grow tree
+  # --- Space
+  space:
+    periodic: true
+  
+  # --- CellManager and cell initialization
+  cell_manager:
+    grid:
+      structure: square
+      resolution: 64      # cells per unit length of space's extent
+  
+    neighborhood:
+      mode: Moore         # can be: empty, vonNeumann, Moore
+  
+    # Initialization parameters for each cell
+    cell_params:
+      # Initial tree density, value in [0, 1]
+      # With this probability, a cell is initialized as tree (instead of empty)
+      initial_density: 0.2
+  
+  # --- Model Dynamics
+  # Probability per site and time step to transition from state empty to tree
   growth_rate: 7.5e-3
-
-  # Probability per site to transit tree -> burning
+  
+  # Probability per site and time step to transition to burning state, burning
+  # down the whole cluster
   lightning_frequency: 1.0e-5 
-
-  # If true, bottom row is permanently on fire, leading to percolation model
+  
+  # If set to true, the bottom boundary is constantly ignited. This _requires_
+  # the space to be set to non-periodic.
   light_bottom_row: false
+  
+  # Probability (per neighbor) to _not_ catch fire from a neighbor
+  resistance: 0.
 
-  # Probability to _not_ catch fire from neighbor (_per_ neighbor)
-  resistance: 0
 
 To *change* these parameters, you again need to create a run configuration file, e.g. ``~/utopia_cfgs/ForestFire/test/run.yml``. In it, let's change the initial density of trees to zero:
 
@@ -757,9 +807,10 @@ To *change* these parameters, you again need to create a run configuration file,
       # Below, you can make updates to these values. Only add the values you
       # want to _change_ from the defaults.
 
-      # --- Initial state
-      # Initial tree density, value in [0, 1]
-      initial_density: 0.0
+      # Set the initial tree density, value in [0, 1]
+      cell_manager:
+        cell_params:
+          initial_density: 0.0
 
 You will surely see similarities to the run configuration used in the ``SandPile`` model. Again, the model-independent parameters are on the top level inside the ``parameter_space``: ``num_steps`` and ``seed`` (and others that we are not overwriting here).
 As above, the model-specific default parameters are imported using the ``!model`` tag, where ``model_name`` specifies the parameters to import.

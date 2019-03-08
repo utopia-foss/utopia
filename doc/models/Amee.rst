@@ -17,4 +17,4 @@ However, consider to set up a new model when doing the latter. All the mentioned
 
 Furthermore, it provides a number of modifications to Utopia itself, namely a custom cell class and respective manager factories, and some infrastructure in the form of random number generators and a statistics library which provides one pass algorithms for the most common statistical tasks.
 
-For a more thorough introduction, refer to the Amee beginner's guide inside the Amee code folder ``dune/utopia/models/Amee/doc``.
+For a more thorough introduction, refer to the Amee beginner's guide inside the Amee code folder ``src/models/Amee/doc``.

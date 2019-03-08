@@ -109,10 +109,11 @@ With tests we can for example check that a function returns exactly what it shou
 
 Where do the tests come from? You write them. You can write tests in C++ and/or Python. For examples, look at existing model tests:
 
-* C++: Look at the files in the ``test`` directory inside of each model within ``utopia/dune/models/``.
 * Python: Look at the files in ``utopia/python/model_tests/``
+* C++: Look at the files in the ``test`` directory inside of each model within
+  the ``src/models`` directory.
 
-For setting up the testing system for your model, look at the description in the :doc:`beginners-guide`. For running your tests, see the :doc:`README <../readme>`.
+For setting up the testing system for your model, look at the description in :doc:`how-to-build-a-model`. For running your tests, see the :doc:`README <../readme>`.
 
 Note that if you have set up the testing infrastructure for your model, your tests will automatically be build and executed if you push something to the GitLab. If your test fails, you will receive a mail notification and you will see in your merge request that the test failed. But don't worry if this happens! :)
 Just fix the error, commit it, and push it again. Only when you want your merge request to get integrated in the Utopia master branch, all tests need to work without problems.
