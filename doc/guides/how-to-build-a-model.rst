@@ -110,7 +110,7 @@ these steps
   .. code-block:: bash
 
      cd build
-     source activate
+     source ./activate
      utopia run MyFancyModel
 
 Hoping that everything went well so far, let's continue with setting up the

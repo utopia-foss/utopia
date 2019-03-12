@@ -42,9 +42,10 @@ First thing is to make the CLI accessible. For that, go to the ``utopia`` direct
 .. code-block:: bash
 
    cd build             # ... to go to the utopia build directory
-   source activate      # ... to enter the virtual environment
+   source ./activate    # ... to enter the virtual environment
 
-*Utopia* operates inside a so-called virtual environment. With the ``source activate`` command, you have entered it and should now see ``(utopia-env)`` appearing on the left-hand side of your shell. When working with *Utopia*, make sure to always be in this virtual environment.
+*Utopia* operates inside a so-called virtual environment. With the ``source ./activate`` command, you have entered it and should now see ``(utopia-env)`` appearing on the left-hand side of your shell.
+When working with *Utopia*, make sure to always be in this virtual environment.
 
 .. note::
 
