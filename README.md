@@ -110,7 +110,7 @@ You should now be able to run a Utopia model.
 Being in the `build` directory, call:
 
 ```bash
-source activate
+source ./activate
 ```
 
 to enter the virtual environment, where the Utopia Command Line Interface (CLI)
@@ -137,7 +137,7 @@ For more information on how to use the command line interface, see the
 
     ```bash
     cd build
-    source activate
+    source ./activate
     pip install git+https://...
     ```
 
