@@ -18,6 +18,8 @@ include(UtopiaMacros)
 
 # add extra flags to debug compiler flags
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra")
+# NOTE The ${CMAKE_CXX_FLAGS_DEBUG} variable can be set in the cache. This is,
+#      for example, used in the CI/CD pipeline to add additional flags to DEBUG
 
 # --- Utopia Target ---
 
