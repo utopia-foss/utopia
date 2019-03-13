@@ -142,7 +142,7 @@ For more information on how to use the command line interface, see the
     ```
 
     The URLs to use for cloning can be found by following the links in the
-    [dependency table](#dependencies) above. Note that deleting the build
+    [dependency table](#dependencies). Note that deleting the build
     directories will also require to install the dependencies again.
 
 * Anaconda ships its own version of the HDF5 library which is _not_
