@@ -7,7 +7,7 @@ bifurcation_alpha_sweep_init:
         path: data/SavannaHomogeneous/density_G
         dims: [time]
       density_S: 
-        path: data/SavannaHomogeneous/density_S
+        path: data/SavannaHomogeneous/density_SS
         dims: [time]
 
   module: .attractor
@@ -25,7 +25,7 @@ bifurcation_alpha_sweep_init:
         color: green
         s: 10
 
-    density_S:
+    density_SS:
       label: saplings
 
       plot_kwargs:

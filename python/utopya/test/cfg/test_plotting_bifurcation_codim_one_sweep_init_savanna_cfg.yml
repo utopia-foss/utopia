@@ -6,8 +6,8 @@ parameter_space:
   SavannaHomogeneous: !model
     model_name: SavannaHomogeneous
     initial_state: !sweep
-      default: init_grassland
-      values: [init_grassland, init_woodland]
+      default: grassland
+      values: [grassland, woodland]
     alpha: !sweep
       default: 0.2
       linspace: [0.33,1.,2]

@@ -24,6 +24,9 @@ The model is based on the following coupled equations
 
    \dot{F} = \left(\alpha \cdot (1-F) - \phi \left( G + \gamma_s S + \gamma_t T + \gamma_f F \right) \right) F
 
+.. math::
+    G + S + T + F = 1
+
 with growth rates :math:`\alpha` and :math:`\beta` for forest- and savanna-trees respecitvely, 
 mortality rates :math:`\mu` and :math:`\nu` for sapling and savanna trees respectively, 
 and two sigmoidal functions :math:`\omega \left(G + \gamma_s S + \gamma_t T + \gamma_f F \right)` and :math:`\phi \left(G + \gamma_s S + \gamma_t T + \gamma_f F \right)` describing the transition from sapling to savanna tree and the mortality rate of forest trees respectively.
@@ -31,6 +34,33 @@ and two sigmoidal functions :math:`\omega \left(G + \gamma_s S + \gamma_t T + \g
 The sigmoidal functions are a numerical description of a classical percolation model for fire or disease spread, which states, that above a certain threshold density connectivity of cells increase drastically and hence connected clusters have infinit extend, whereas below the cluster extend is limited to strongly localized connected domains.
 In the case of savanna fire spread this translates to a sharp decrease in the probability to survive a fire. 
 From ecology we know that :math:`\omega` and :math:`\phi` depend on whether the associated species burned during a fire event [Touboul, 2018], hence transiting from :math:`\omega_0` to :math:`\omega_1` (resp. :math:`\phi_0` to :math:`\phi_1`) at the threshold density of flammable species :math:`G,\ \gamma_s S,\ \gamma_t T,\ \gamma_f F` with :math:`\gamma_x` a fire propagation factor for a species relative to grass.
+
+
+Extension
+^^^^^^^^^
+
+The dynamics were extended to model a forest-sapling species. They then read the following
+
+.. math::
+   \dot{G} = \mu S + \nu T + \phi_0 F  + \psi \left(G + \gamma_s S + \gamma_t T \right) S_F - \beta G T - \alpha G F
+
+.. math::
+   \dot{T} = \omega \left(G + \gamma_s S + \gamma_t T + \gamma_f F \right) S - \nu T - \alpha T F
+
+.. math::
+   \dot{S_F} = \alpha \cdot (1-S_F-F) F - \upsilon S_F - \psi \left(G + \gamma_s S + \gamma_t T \right) S_F
+
+.. math::
+   \dot{F} = \upsilon S_F - \phi_0 F
+
+.. math::
+    G + S_T + T + S_F + F = 1
+
+.. note::
+    The two models are switched by the parameter :math:`\upsilon`: 
+    For :math:`\upsilon` > 0 the forest-saplings exist.
+
+
 
 Implementation Details
 ----------------------
