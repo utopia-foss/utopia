@@ -319,7 +319,7 @@ void save_graph_properties(GraphType &g,
 
         // Save data given by an adaptor to a new dataset, fire-and-forget
         // Format: parent_grp/adaptor_name/label
-        auto writer_f = [&](auto&& adaptor_name, auto&& adaptor, auto&& size){
+        auto writer_f = [&](auto&& adaptor_name, auto&& adaptor, auto&&){
             parent_grp->open_group(adaptor_name)
                 ->open_dataset(label, {num_vertices})
                 ->write(v, v_end,
@@ -349,7 +349,7 @@ void save_graph_properties(GraphType &g,
 
         // Save data given by an adaptor to a new dataset, fire-and-forget
         // Format: parent_grp/adaptor_name/label
-        auto writer_f = [&](auto&& adaptor_name, auto&& adaptor, auto&& size){
+        auto writer_f = [&](auto&& adaptor_name, auto&& adaptor, auto&&){
             parent_grp->open_group(adaptor_name)
                 ->open_dataset(label, {num_edges})
                 ->write(v, v_end,
@@ -379,7 +379,7 @@ void save_graph_properties(GraphType &g,
 
         // Save data given by an adaptor to a new dataset, fire-and-forget
         // Format: parent_grp/adaptor_name/label
-        auto writer_f = [&](auto&& adaptor_name, auto&& adaptor, auto&& size){
+        auto writer_f = [&](auto&& adaptor_name, auto&& adaptor, auto&&){
             parent_grp->open_group(adaptor_name)
                     ->open_dataset(label, {num_vertices})
                     ->write(v, v_end,
@@ -411,7 +411,7 @@ void save_graph_properties(GraphType &g,
 
         // Save data given by an adaptor to a new dataset, fire-and-forget
         // Format: parent_grp/adaptor_name/label
-        auto writer_f = [&](auto&& adaptor_name, auto&& adaptor, auto&& size){
+        auto writer_f = [&](auto&& adaptor_name, auto&& adaptor, auto&&){
             parent_grp->open_group(adaptor_name)
                     ->open_dataset(label, {num_edges})
                     ->write(v, v_end,
