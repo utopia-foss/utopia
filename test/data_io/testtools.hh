@@ -1,5 +1,5 @@
-#ifndef UTOPIA_TEST_MONITOR_TEST_HH
-#define UTOPIA_TEST_MONITOR_TEST_HH
+#ifndef UTOPIA_TEST_DATAIO_TESTTOOLS_HH
+#define UTOPIA_TEST_DATAIO_TESTTOOLS_HH
 
 #include <string>
 
@@ -49,4 +49,4 @@ public:
 } // namespace DataIO
 } // namespace Utopia
 
-#endif // UTOPIA_TEST_MONITOR_TEST_HH
+#endif // UTOPIA_TEST_DATAIO_TESTTOOLS_HH

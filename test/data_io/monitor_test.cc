@@ -9,7 +9,7 @@
 #include <utopia/core/logging.hh>
 #include <utopia/data_io/monitor.hh>
 
-#include "monitor_test.hh"
+#include "testtools.hh"
 
 using namespace Utopia::DataIO;
 

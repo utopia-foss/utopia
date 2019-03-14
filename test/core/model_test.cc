@@ -7,7 +7,7 @@
 #include <utopia/data_io/hdffile.hh>
 #include <utopia/data_io/cfg_utils.hh>
 
-#include "../data_io/monitor_test.hh"
+#include "../data_io/testtools.hh"
 #include "model_test.hh"
 
 
