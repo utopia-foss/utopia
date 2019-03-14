@@ -25,6 +25,7 @@ def bifurcation_codimension_one(dm: DataManager, *,
                                 out_path: str,
                                 mv_data,
                                 dim: str,
+                                codim: str=None,
                                 time_fraction: float=0,
                                 spin_up_fraction: float=0,
                                 find_peaks_kwargs: dict=None,
@@ -46,6 +47,7 @@ def bifurcation_codimension_one(dm: DataManager, *,
         out_path (str): Where to store the plot to
         mv_data (xr.Dataset): The extracted multidimensional dataset
         dim (str): The parameter dimension of the bifurcation diagram
+        codim (str, optional): A second dimension projected onto dim
         time_fraction(float, optional): fraction of the simulation
             scattered.
             Default: 0 --> equivalent of 1 step, the asymptotically 
@@ -99,21 +101,29 @@ def bifurcation_codimension_one(dm: DataManager, *,
     """
     if not dim in mv_data.dims:
         raise ValueError("Dimension `dim` not available in multiverse data."
-                         " Was: {} with value: '{}'."
-                         " Available: {}"
-                         "".format(type(dim), 
-                                   dim,
-                                   mv_data.coords))
-    if len(mv_data.coords) > 2:
-        raise TypeError("mv_data has more than two parameter dimensions."
-                        " Are: {}. Chosen dim: {}"
-                        "".format(mv_data.coords, dim))
-    elif len(mv_data.coords) > 1:
-        log.warning("mv_data has codimensional parameter space."
-                    " It may be difficult to read."
-                    " Dimension of bifurcation: {}."
-                    " Available dimensions: {}."
-                    "".format(dim, mv_data.coords))
+            " Was: {} with value: '{}'. Available: {}"
+            "".format(type(dim), dim, mv_data.coords))
+    if not codim is None and \
+        not codim in mv_data.dims:
+        raise ValueError("Dimension `codim` not available in multiverse data."
+            " Was: {} with value: '{}'. Available: {}"
+            "".format(type(codim), codim, mv_data.coords))
+    for coord in mv_data.coords:
+        if coord == dim or coord == codim:
+            continue
+        # dimension with extend
+        if (len(mv_data[coord]) > 1):
+            raise ValueError("mv_data has higher than 2 dimensional "
+                "parameter space. Dimension of bifurcation: {}. "
+                "Available dimensions: {}.".format(dim, mv_data.coords))
+        # dimension without extend
+        else:
+            mv_data = mv_data[{coord: 0}]
+    
+    if len(mv_data.coords) > 1:
+        log.warning("mv_data has codimensional parameter space. "
+            "It may be difficult to read. Dimension of bifurcation: {}. "
+            "Available dimensions: {}.".format(dim, mv_data.coords))
     
     def scatter(*, raw_data, ax, diagram_kwargs: dict):
         """ The function that scatters the data at a single dimension

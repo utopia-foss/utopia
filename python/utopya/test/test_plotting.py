@@ -66,7 +66,10 @@ def test_ca_plotting(tmpdir):
     mv.pm.plot_from_cfg(plot_only=["strategy_and_payoff_frames"])
 
 def test_bifurcation_codim_one_plotting(tmpdir):
-    """Tests the plot_funcs submodule using the SavannaHomogeneous model"""
+    """Tests the plot_funcs submodule using the SavannaHomogeneous model
+    
+    Sweep the growth parameter alpha and use it as a bifurcation axis
+    """
     mv = Multiverse(model_name='SavannaHomogeneous',
                     run_cfg_path=BIFURCATION_CFG_PATH,
                     paths=dict(out_dir=str(tmpdir)))
@@ -76,10 +79,30 @@ def test_bifurcation_codim_one_plotting(tmpdir):
     mv.dm.load_from_cfg(print_tree=False)
 
     # Plot the default configuration
-    mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_PLOTS_PATH)
+    mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_PLOTS_PATH,
+                        plot_only=["bifurcation_alpha"])
+    mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_PLOTS_PATH,
+                        plot_only=["bifurcation_alpha_scatter"])
+    mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_PLOTS_PATH,
+                        plot_only=["bifurcation_alpha_find_peaks"])
+
+    # with pytest.raises(ValueError):
+    #     mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_PLOTS_PATH,
+    #                     plot_only=["bifurcation_invalid_dim"])
+    # with pytest.raises(ValueError):
+    #     mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_PLOTS_PATH,
+    #                     plot_only=["bifurcation_invalid_codim"])
+    # with pytest.raises(ValueError):
+    #     mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_PLOTS_PATH,
+    #                     plot_only=["bifurcation_invalid_prop_name"])
+
 
 def test_bifurcation_codim_one_sweep_init_plotting(tmpdir):
-    """Tests the plot_funcs submodule using the SavannaHomogeneous model"""
+    """Tests the plot_funcs submodule using the SavannaHomogeneous model
+    
+    Sweep the growth parameter alpha and use it as a bifurcation axis.
+    Sweep the initial_state for a codimension.
+    """
     mv = Multiverse(model_name='SavannaHomogeneous',
                     run_cfg_path=BIFURCATION_SWEEP_CFG_PATH,
                     paths=dict(out_dir=str(tmpdir)))
