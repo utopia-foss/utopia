@@ -160,6 +160,275 @@ std::shared_ptr<HDFGroup> save_graph(GraphType &g,
     return grp;
 }
 
+
+namespace _graph_utils_helper {
+
+/** Helper to apply all sub-adaptors of a name-adaptor-tuple to the writer
+ * Determines the tuple size and adapts the dataset size
+*
+* @tparam Function
+* @tparam Is
+* @tparam Tuple
+*
+* @param writer_f lambda to save data
+* @param std::index_sequence The index_sequence to unpack
+*                            the `name_adaptor_tuple`
+* @param name_adaptor_tuple A name-lambda-tuple
+*
+* @return void
+*/
+template<typename Function, std::size_t... Is, typename Tuple>
+constexpr void apply_to_write(Function&& writer_f,
+                              std::index_sequence<0, Is...>,
+                              Tuple&& name_adaptor_tuple)
+{
+
+    // Get size of sub-tuple
+    constexpr std::size_t N = std::tuple_size<Tuple>::value;
+
+    static_assert(N == 2, "Irregular name-adaptor-tuple size"
+                          "Should be 2");
+
+    (std::apply(
+        writer_f,
+        std::forward_as_tuple(
+            // Get the dataset name
+            std::get<0>(name_adaptor_tuple),
+            // apply all sub-adaptors
+            std::get<Is>(name_adaptor_tuple),
+            // size equal number adaptors
+            N - 1)
+            ),
+        ...);
+
+}
+
+/** Helper to call `apply_to_writer` for every lambda of the input tuple
+*
+* @tparam Function
+* @tparam Adaptors
+*
+* @param writer_f lambda to save data
+* @param name_adaptor_tuple Tuple of a datagroup-name and an arbitrary
+*                           amount of lambdas
+*                           which state how to get data from a given graph
+*
+* @return void
+*/
+template<typename Function, typename... Adaptors>
+constexpr void apply_one(Function&& writer_f,
+                         std::tuple<Adaptors...>& name_adaptor_tuple)
+{
+    apply_to_write(
+        writer_f,
+        std::index_sequence_for<Adaptors...>(),
+        std::forward<std::tuple<Adaptors...> >(name_adaptor_tuple)
+        );
+
+}
+
+
+/** Helper to call `apply_one` for every element of the input tuple
+*
+* @tparam Function
+* @tparam Is
+* @tparam Tuple
+*
+* @param writer_f lambda to save data
+* @param std::index_sequence The index_sequence to unpack the `adaptor_tuple`
+* @param adaptor_tuple Tuple of name-lambda-tuples
+*
+* @return void
+*/
+template<typename Function, std::size_t... Is, typename Tuple>
+constexpr void apply_all(Function&& writer_f,
+                         std::index_sequence<Is...>,
+                         Tuple&& adaptor_tuple)
+{
+    (apply_one(
+        std::forward<Function>(writer_f),
+        std::get<Is>(adaptor_tuple)),
+                ...);
+}
+
+} // namespace _graph_utils_helper
+
+
+/** This function writes the results of all functions in a named tuple,
+*   applied to all vertices/edges of a boost::graph into a HDFGroup.
+*
+*   For each adaptor, the data written by this function is available at the
+*   path: ``parent_grp/adaptor_name/label``, where label is a dataset of size
+*   ``{num_adaptors, num_edges/vertices}``.
+*
+* @tparam ObjectType   The type of object that information is written from.
+*                      Specify the vertex or edge type here. This has to match
+*                      the vertex or edge types of the corresponding graph!
+*                      Alternatively an vertex or edge descriptor can be given.
+*                      However, the descriptor has to be applied to the graph
+*                      in the named adaptor tuple. Thus it also has to match
+*                      the given graph!
+* @tparam GraphType
+* @tparam Adaptors
+*
+* @param g             The graph from which to save vertex or edge properties.
+* @param parent_grp    The HDFGroup the data should be written to. For each
+*                      tuple entry, a new group will be created, which has the
+*                      name specified in that tuple.
+* @param label         Under which label the results of the adaptors should be
+*                      stored. This will be the name of the dataset to which
+*                      the adaptors write data. If time-varying data is to be
+*                      written, this can be used to specify the time step.
+* @param adaptor_tuple Which vertex- or edge-associated properties to write.
+*                      This should be a tuple of tuples, where the latter are
+*                      of form (std::string adaptor_name, lambda adaptor).
+*
+* @return void
+*/
+template<typename ObjectType,
+         typename GraphType,
+         typename... Adaptors>
+void save_graph_properties(GraphType &g,
+                           const std::shared_ptr<HDFGroup>& parent_grp,
+                           const std::string& label,
+                           std::tuple<Adaptors...>& adaptor_tuple)
+{
+    static_assert(
+        std::is_same_v<ObjectType, typename GraphType::vertex_property_type>
+        or
+        std::is_same_v<ObjectType, typename GraphType::edge_property_type>
+        or
+        std::is_same_v<ObjectType, typename GraphType::vertex_descriptor>
+        or
+        std::is_same_v<ObjectType, typename GraphType::edge_descriptor>,
+        "The vertex or edge type does not match the given graph!");
+
+    // Get a logger
+    auto log = spdlog::get("data_io");
+
+    // Distinguish between vertex ...
+    if constexpr (std::is_same_v<ObjectType,
+                                 typename GraphType::vertex_property_type>)
+    {
+        // Collect some information on the graph
+        const auto num_vertices = boost::num_vertices(g);
+
+        // Make vertex iterators
+        typename GraphType::vertex_iterator v, v_end;
+        boost::tie(v, v_end) = boost::vertices(g);
+
+        // Save data given by an adaptor to a new dataset, fire-and-forget
+        // Format: parent_grp/adaptor_name/label
+        auto writer_f = [&](auto&& adaptor_name, auto&& adaptor, auto&& size){
+            parent_grp->open_group(adaptor_name)
+                ->open_dataset(label, {num_vertices})
+                ->write(v, v_end,
+                        [&](auto&& vd){ return adaptor(g[vd]); });
+        };
+
+        // Apply all tuple elements to the writer function
+        _graph_utils_helper::apply_all(
+            writer_f,
+            std::index_sequence_for<Adaptors...>(),
+            std::forward<std::tuple<Adaptors...> >(adaptor_tuple)
+        );
+
+        log->debug("Graph vertex properties saved with label '{}'.", label);
+    }
+
+    // ... edge ...
+    else if constexpr (std::is_same_v<ObjectType,
+                                      typename GraphType::edge_property_type>)
+    {
+        // Collect some information on the graph
+        const auto num_edges = boost::num_edges(g);
+
+        // Make edge iterators
+        typename GraphType::edge_iterator v, v_end;
+        boost::tie(v, v_end) = boost::edges(g);
+
+        // Save data given by an adaptor to a new dataset, fire-and-forget
+        // Format: parent_grp/adaptor_name/label
+        auto writer_f = [&](auto&& adaptor_name, auto&& adaptor, auto&& size){
+            parent_grp->open_group(adaptor_name)
+                ->open_dataset(label, {num_edges})
+                ->write(v, v_end,
+                        [&](auto&& vd){ return adaptor(g[vd]); });
+        };
+
+        // Apply all tuple elements to the writer function
+        _graph_utils_helper::apply_all(
+            writer_f,
+            std::index_sequence_for<Adaptors...>(),
+            std::forward<std::tuple<Adaptors...> >(adaptor_tuple)
+        );
+
+        log->debug("Graph edge properties saved with label '{}'.", label);
+    }
+
+    // ... vertex_descriptor ...
+    else if constexpr (std::is_same_v<ObjectType,
+                                      typename GraphType::vertex_descriptor>)
+    {
+        // Collect some information on the graph
+        const auto num_vertices = boost::num_vertices(g);
+
+        // Make edge iterators
+        typename GraphType::vertex_iterator v, v_end;
+        boost::tie(v, v_end) = boost::vertices(g);
+
+        // Save data given by an adaptor to a new dataset, fire-and-forget
+        // Format: parent_grp/adaptor_name/label
+        auto writer_f = [&](auto&& adaptor_name, auto&& adaptor, auto&& size){
+            parent_grp->open_group(adaptor_name)
+                    ->open_dataset(label, {num_vertices})
+                    ->write(v, v_end,
+                            [&](auto&& vd){ return adaptor(g, vd); });
+        };
+
+        // Apply all tuple elements to the writer function
+        _graph_utils_helper::apply_all(
+                writer_f,
+                std::index_sequence_for<Adaptors...>(),
+                std::forward<std::tuple<Adaptors...> >(adaptor_tuple)
+        );
+
+        log->debug("Graph vertex properties saved with label '{}'.", label);
+
+    }
+
+    // ... and edge_descriptor
+    else if constexpr (std::is_same_v<ObjectType,
+                                      typename GraphType::edge_descriptor>)
+    {
+
+        // Collect some information on the graph
+        const auto num_edges = boost::num_edges(g);
+
+        // Make edge iterators
+        typename GraphType::edge_iterator v, v_end;
+        boost::tie(v, v_end) = boost::edges(g);
+
+        // Save data given by an adaptor to a new dataset, fire-and-forget
+        // Format: parent_grp/adaptor_name/label
+        auto writer_f = [&](auto&& adaptor_name, auto&& adaptor, auto&& size){
+            parent_grp->open_group(adaptor_name)
+                    ->open_dataset(label, {num_edges})
+                    ->write(v, v_end,
+                            [&](auto&& vd){ return adaptor(g, vd); });
+        };
+
+        // Apply all tuple elements to the writer function
+        _graph_utils_helper::apply_all(
+                writer_f,
+                std::index_sequence_for<Adaptors...>(),
+                std::forward<std::tuple<Adaptors...> >(adaptor_tuple)
+        );
+
+        log->debug("Graph edge properties saved with label '{}'.", label);
+    }
+}
+
 // TODO add functions here to open datasets for edge or node attributes.
 
 } // namespace DataIO
