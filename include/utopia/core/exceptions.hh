@@ -67,15 +67,25 @@ public:
 class KeyError : public Exception {
 public:
     /// Construct a KeyError exception, which has a standardized what message
-    KeyError(const std::string& key, const DataIO::Config& node)
+    KeyError(const std::string& key,
+             const DataIO::Config& node,
+             const std::string& prefix = "")
     :
-        Exception(generate_what_arg(key, node))
+        Exception(generate_what_arg(key, node, prefix))
     {}
 
 private:
     /// Generates the what argument for the key error
-    std::string generate_what_arg(std::string key, DataIO::Config node) {
+    std::string generate_what_arg(std::string key,
+                                  DataIO::Config node,
+                                  std::string prefix)
+    {
         std::stringstream msg;
+        
+        if (prefix.length()) {
+            msg << prefix << std::endl;
+        }
+
         msg << "KeyError: " << key << std::endl;
 
         if (not node) {

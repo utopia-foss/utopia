@@ -9,8 +9,9 @@
 
 namespace Utopia {
 namespace DataIO {
-// Config reading helper functions ........................................
+// .. Config reading helper functions .........................................
 
+// TODO Make this an actual Utopia exception
 /// Improves yaml-cpp exceptions occurring for a given node
 template<class Exc>
 YAML::Exception improve_yaml_exception(const Exc& e,
@@ -43,6 +44,7 @@ YAML::Exception improve_yaml_exception(const Exc& e,
     // Return the custom exception object; can be thrown on other side
     return YAML::Exception(node.Mark(), e_msg.str());
 }
+
 } // namespace DataIO
 
 // NOTE All code below is not inside the Utopia::DataIO namespace to make
@@ -244,6 +246,21 @@ ReturnType get_as(const std::string& key, const DataIO::Config& node) {
         throw std::runtime_error("Unexpected exception occurred during "
             "reading key '" + key + "'' from config!");
     }
+}
+
+/// Like Utopia::get_as, but instead of KeyError, returns a fallback value
+template<typename ReturnType>
+ReturnType get_as(const std::string& key,
+                  const DataIO::Config& node,
+                  ReturnType fallback)
+{
+    try {
+        return get_as<ReturnType>(key, node);
+    }
+    catch (KeyError&) {
+        return fallback;
+    }
+    // All other errors will (rightly) be thrown
 }
 
 // end group ConfigUtilities
