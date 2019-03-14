@@ -22,6 +22,7 @@
 namespace Utopia {
 namespace DataIO {
 
+
 class HDFGroup
 {
 protected:
@@ -167,15 +168,16 @@ public:
 
         _referencecounter = parent.get_referencecounter();
 
-        if (H5Lexists(parent.get_id(), _path.c_str(), H5P_DEFAULT) > 0)
+        if (check_validity(path_exists(parent.get_id(), _path.c_str()),
+                           _path))
         {
             // open the already existing group
             _group = H5Gopen(parent.get_id(), _path.c_str(), H5P_DEFAULT);
 
             if (_group < 0)
             {
-                throw std::runtime_error("Group opening for path" + path +
-                                         " failed");
+                throw std::runtime_error("Group opening for path '" + path +
+                                         "' failed!");
             }
 
             H5Oget_info(_group, &_info);
@@ -191,8 +193,8 @@ public:
                                H5P_DEFAULT, H5P_DEFAULT);
             if (_group < 0)
             {
-                throw std::runtime_error("Group creation for path" + path +
-                                         " failed");
+                throw std::runtime_error("Group creation for path '" + path +
+                                         "' failed!");
             }
             // get info and update reference counter
             H5Oget_info(_group, &_info);
@@ -237,12 +239,11 @@ public:
      */
     void delete_group(std::string path)
     {
-        // check if group exists in file, if does delete link
+        // check if group exists in file. If it does, delete the link
         herr_t status = 1;
-        if (H5Lexists(_group, path.c_str(), H5P_DEFAULT))
+        if (check_validity(path_exists(_group, path), path))
         {
             // group exists, can be deleted
-
             status = H5Ldelete(_group, path.c_str(), H5P_DEFAULT);
             if (status < 0)
             {

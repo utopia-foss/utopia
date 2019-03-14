@@ -15,6 +15,8 @@
 #include <type_traits>
 #include <vector>
 
+#include <hdf5.h>
+
 // Functions for determining if a type is an STL-container are provided here.
 // This is used if we wish to make hdf5 types for storing such data in an
 // hdf5 dataset.
@@ -437,6 +439,56 @@ bool check_validity(T valid, std::string object_name)
         return false;
     }
 }
+
+/// Checks iteratively if each segment of a path exists
+/** \param loc_id  Identifier of the file or group to query.
+  * \param path    The path of the link to check. This can be a relative or
+  *                an absolute path, but (as with H5Lexists) it can NOT use
+  *                the ``../`` syntax to go to the parent object. For such
+  *                cases, an absolute path needs to be given.
+  * \param link_property_list  Link access property list identifier.
+  *
+  * \note This happens according to the recommended way to use H5Lexists, which
+  *       only checks for the existence of the final path segment.
+  *
+  * \detail For example, a path /foo/bar/baz is checked in the following way:
+  *             /
+  *             /foo
+  *             /foo/bar
+  *             /foo/bar/baz
+  *         If any of the segements does not yet exist, the function returns
+  */
+htri_t path_exists(hid_t loc_id,
+                   std::string path,
+                   hid_t link_property_list = H5P_DEFAULT) {
+    // Position of the segment cursor; all characters before are checked
+    // For absolute paths, search always needs to start behind index 1
+    std::size_t seg_pos = (path.find("/") == 0) ? 1 : 0;
+
+    // A buffer for the return value of H5Lexists
+    htri_t rv;
+
+    // Go over all segments until the whole string is
+    while (seg_pos != std::string::npos) {
+        // Find the position of the next "/", strictly after the current
+        // cursor position
+        seg_pos = path.find("/", seg_pos+1);
+
+        // Check for existence of the subpath. If seg_pos is string::npos,
+        // the substring is the full path and this is the last loop iteration.
+        rv = H5Lexists(loc_id, path.substr(0, seg_pos).c_str(),
+                       link_property_list);
+
+        // If this segment does not exists, need to return already
+        if (rv <= 0) {
+            return rv;
+        }
+    }
+
+    // Checked the full path. Can return the last return value now:
+    return rv;
+}
+
 
 } // namespace DataIO
 } // namespace Utopia
