@@ -23,15 +23,21 @@ class ModelTest:
     which test should be carried out.
     """
 
-    def __init__(self, model_name: str, *, test_file: str=None, sim_errors: str='raise'):
+    def __init__(self, model_name: str, *, test_file: str=None,
+                 sim_errors: str='raise', use_tmpdir: bool=True):
         """Initialize the ModelTest for the given model name
         
         Args:
             model_name (str): Name of the model to test
-            test_file (str): The file this ModelTest is used in. If given,
-                will look for config files relative to the folder this file is
-                located in.
+            test_file (str, optional): The file this ModelTest is used in. If
+                given, will look for config files relative to the folder this
+                file is located in.
             sim_errors (str, optional): Whether to raise errors from Multiverse
+            use_tmpdir (bool, optional): Whether to use a temporary directory
+                to write data to. The default value can be set here; but the
+                flag can be overwritten in the create_mv and create_run_load
+                methods. For ``false``, the regular model output
+                directory is used.
         
         Raises:
             ValueError: If the directory extracted from test_file is invalid
@@ -56,8 +62,9 @@ class ModelTest:
         # such that they do not go out of scope
         self._mvs = []
 
-        # Store exit handling value
+        # Store exit handling value and use_tmpdir flag
         self._sim_errors = sim_errors
+        self._use_tmpdir = use_tmpdir
 
 
     # Properties ..............................................................
@@ -69,7 +76,9 @@ class ModelTest:
 
     @model_name.setter
     def model_name(self, model_name: str):
-        """Checks if the model name is valid, then sets it and makes it read-only."""
+        """Checks if the model name is valid, then sets it and makes it
+        read-only.
+        """
         if self.model_name:
             raise RuntimeError("A ModelTest's associated model cannot be "
                                "changed!")
@@ -123,7 +132,8 @@ class ModelTest:
 
         return str(abs_path)
 
-    def create_mv(self, *, from_cfg: str=None, run_cfg_path: str=None, **update_meta_cfg) -> Multiverse:
+    def create_mv(self, *, from_cfg: str=None, run_cfg_path: str=None,
+                  use_tmpdir: bool=None, **update_meta_cfg) -> Multiverse:
         """Creates a Multiverse for this model.
         
         Args:
@@ -131,11 +141,19 @@ class ModelTest:
                 the test directory) to be used.
             run_cfg_path (str, optional): The path of the run_cfg to use. Can
                 not be passed if from_cfg argument evaluates to True.
+            use_tmpdir (bool, optional): Whether to use a temporary directory
+                to write the data to. If not given, uses default value set
+                at initialization.
             **update_meta_cfg: Can be used to update the meta configuration
         
         Returns:
             Multiverse: The created Multiverse object
+        
+        Raises:
+            ValueError: Description
         """
+        # A dict that can be filled with objects to store in self._mvs
+        objs_to_store = dict()
 
         # Check arguments
         if from_cfg and run_cfg_path:
@@ -146,15 +164,22 @@ class ModelTest:
             # Use the config file in the test directory as run_cfg_path
             run_cfg_path = self.get_file_path(from_cfg)
 
-
-        # Use update_meta_cfg to pass a unique temporary directory as out_dir
-        tmpdir = TemporaryDirectory(prefix=self.model_name,
-                                    suffix="_mv{}".format(len(self._mvs)))
+        # Check whether a temporary directory is desired
+        use_tmpdir = use_tmpdir if use_tmpdir is not None else self._use_tmpdir
         
-        if 'paths' not in update_meta_cfg:
-            update_meta_cfg['paths'] = dict(out_dir=tmpdir.name)
-        else:
-            update_meta_cfg['paths']['out_dir'] = tmpdir.name
+        if use_tmpdir:
+            # Use the update_meta_cfg dict to set unique temporary directory
+            # as output directory
+            tmpdir = TemporaryDirectory(prefix=self.model_name,
+                                        suffix="_mv{}".format(len(self._mvs)))
+            
+            if 'paths' not in update_meta_cfg:
+                update_meta_cfg['paths'] = dict(out_dir=tmpdir.name)
+            else:
+                update_meta_cfg['paths']['out_dir'] = tmpdir.name
+
+            # Add it to the dict of objects to store
+            objs_to_store['out_dir'] = tmpdir
 
         # Also set the exit handling value, if not already set
         _se = self._sim_errors
@@ -172,11 +197,15 @@ class ModelTest:
                         run_cfg_path=run_cfg_path,
                         **update_meta_cfg)
 
-        # Store it, then return
-        self._store_mv(mv, out_dir=tmpdir)
+        # Store it such that they do not go out of scope
+        self._store_mv(mv, **objs_to_store)
+
+        # Can now return
         return mv
 
-    def create_run_load(self, *, from_cfg: str=None, run_cfg_path: str=None, print_tree: bool=True, **update_meta_cfg) -> Tuple[Multiverse, DataManager]:
+    def create_run_load(self, *, from_cfg: str=None, run_cfg_path: str=None,
+                        use_tmpdir: bool=None, print_tree: bool=True,
+                        **update_meta_cfg) -> Tuple[Multiverse, DataManager]:
         """Chains the create_mv, mv.run, and mv.dm.load_from_cfg
         methods together and returns a (Multiverse, DataManager) tuple.
         
@@ -185,16 +214,20 @@ class ModelTest:
                 the test directory) to be used.
             run_cfg_path (str, optional): The path of the run_cfg to use. Can
                 not be passed if from_cfg argument evaluates to True.
+            use_tmpdir (bool, optional): Whether to use a temporary directory
+                to write the data to. If not given, uses default value set
+                at initialization.
             print_tree (bool, optional): Whether to print the loaded data tree
             **update_meta_cfg: Arguments passed to the create_mv function
         
-        Raises:
-            ValueError: If both from_cfg and run_cfg_path were given
+        Returns:
+            Tuple[Multiverse, DataManager]:
         """
 
         # Create Multiverse
         mv = self.create_mv(from_cfg=from_cfg,
                             run_cfg_path=run_cfg_path,
+                            use_tmpdir=use_tmpdir,
                             **update_meta_cfg)
 
         # Run the simulation

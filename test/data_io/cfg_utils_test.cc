@@ -22,7 +22,7 @@ int main () {
         std::cout << "Done." << std::endl << std::endl;
 
         // -- Tests as_ functions ---------------------------------------------
-        std::cout << "----- Basic functionality tests ... -----" << std::endl;
+        std::cout << "----- Checking as_ method ... -----" << std::endl;
 
         { // Local test scope
 
@@ -116,6 +116,7 @@ int main () {
         std::cout << "Success." << std::endl << std::endl;
 
 
+
         // -- Test get_ method ------------------------------------------------
         std::cout << "----- Checking get_method ... -----" << std::endl;
 
@@ -139,6 +140,10 @@ int main () {
 
         auto a2 = get_as<std::array<std::array<int, 2>, 2>>("an_array", cfg);
         assert(a1 == a2);
+
+        // Optional value returned if KeyError was raised
+        assert(get_as<std::string>("foo", cfg, "foo") == "bar"); // foo exists
+        assert(get_as<std::string>("not_a_key", cfg, "foo") == "foo");
 
         // armadillo vector
         auto sv1 = get_as_SpaceVec<3>("a_vector", cfg);
@@ -205,6 +210,42 @@ int main () {
             std::cout << "  Got error message: " << e_msg << std::endl;
         
             assert(str_found(e_msg, "The given node contains no entries!"));
+
+            std::cout << "  ... as expected" << std::endl << std::endl;
+        }
+        catch (...) {
+            std::cerr << "Wrong exception type thrown!" << std::endl;
+            return 1;
+        }
+
+        // Conversion error still thrown
+        try {
+            get_as<double>("foo", cfg);
+        }
+        catch (YAML::Exception& e) {
+            // is the expected exception
+            std::string e_msg = e.what();
+            std::cout << "  Got error message: " << e_msg << std::endl;
+        
+            assert(str_found(e_msg, "Got YAML::TypedBadConversion<double>"));
+
+            std::cout << "  ... as expected" << std::endl << std::endl;
+        }
+        catch (...) {
+            std::cerr << "Wrong exception type thrown!" << std::endl;
+            return 1;
+        }
+
+        // Conversion error still thrown, even with default given
+        try {
+            get_as<double>("foo", cfg, 3.14);
+        }
+        catch (YAML::Exception& e) {
+            // is the expected exception
+            std::string e_msg = e.what();
+            std::cout << "  Got error message: " << e_msg << std::endl;
+        
+            assert(str_found(e_msg, "Got YAML::TypedBadConversion<double>"));
 
             std::cout << "  ... as expected" << std::endl << std::endl;
         }

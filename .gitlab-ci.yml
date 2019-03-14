@@ -241,6 +241,7 @@ test:models:
     - utopia run ContDisease --debug
     - utopia run ForestFire --debug
     - utopia run Hierarnet --debug
+    - utopia run mesonet --debug --no-plot
     - utopia run PredatorPrey --debug
     - utopia run SandPile --debug
     - utopia run SavannaHeterogeneous --debug
@@ -295,6 +296,7 @@ test:cli:
     - utopia run dummy --note plt3 --plots-cfg $MODEL_SRC/dummy/dummy_plots.yml
     #
     # Test the setting of parameters and config parameters from CLI
+    - utopia run dummy --set-model-params foo=3 bar=2.0
     - utopia run dummy --set-params num_steps=3 write_every=2
     - utopia run dummy --set-cfg parameter_space.seed=23
 

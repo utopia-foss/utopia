@@ -51,6 +51,11 @@ int main() {
         assert(str_match(ke2.what(),
                          "Make sure the desired key is available."));
 
+        // With prefix
+        KeyError ke3("foo", {}, "My KeyError prefix string.");
+        assert(str_match(ke3.what(), "KeyError: foo"));
+        assert(str_match(ke3.what(), "My KeyError prefix string."));
+
 
         std::cout << "Test successful." << std::endl;
         return 0;

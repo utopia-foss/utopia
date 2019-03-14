@@ -585,7 +585,12 @@ public:
         set_log_level(); // this log level
 
         _log->info("Initialized PseudoParent from config file");
-        _log->debug("cfg_path:  {}", cfg_path);
+        _log->debug("cfg_path:       {}", cfg_path);
+        _log->debug("output_path:    {}", get_as<std::string>("output_path",
+                                                              _cfg));
+        _log->debug("RNG seed:       {}", get_as<int>("seed", _cfg));
+        _log->debug("emit_interval:  {}s",
+                    get_as<double>("monitor_emit_interval", _cfg));
     }
     
 
@@ -595,6 +600,7 @@ public:
      *  \param output_path Where the HDF5 file is to be located
      *  \param seed The seed the RNG is initialized with (default: 42)
      *  \param output_file_mode The access mode of the HDF5 file (default: w)
+     *  \param emit_interval The monitor emit interval (in seconds)
      */
     PseudoParent (const std::string cfg_path,
                   const std::string output_path,
@@ -622,7 +628,7 @@ public:
         _log->debug("cfg_path:      {}", cfg_path);
         _log->debug("output_path:   {}  (mode: {})",
                     output_path, output_file_mode);
-        _log->debug("seed:          {}", seed);
+        _log->debug("RNG seed:      {}", seed);
         _log->debug("emit_interval: {}", emit_interval);
     }
 

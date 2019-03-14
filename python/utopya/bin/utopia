@@ -88,6 +88,13 @@ p_run.add_argument('--set-cfg',
                         "the meta configuration. This function is carried out "
                         "after --set-params, such that it can overwrite any "
                         "of the previously defined arguments.")
+p_run.add_argument('--set-model-params',
+                   default=None, nargs='+', type=str,
+                   help="Like --set-params but attaching to the level of the "
+                        "currently selected model within the parameter space. "
+                        "This function is carried out before --set-params, "
+                        "meaning that --set-params can overwrite values set "
+                        "using this argument.")
 
 # arguments referring to loading of data
 p_run.add_argument('--suppress-data-tree',
@@ -235,7 +242,7 @@ if __name__ == '__main__':
                       key_path=['worker_manager', 'nonzero_exit_handling'])
 
         # Number of simulation steps
-        if args.num_steps:
+        if args.num_steps is not None:
             add_entry(args.num_steps, add_to=update_dict,
                       key_path=['parameter_space', 'num_steps'],
                       is_valid= lambda v: v >= 0,
@@ -244,7 +251,7 @@ if __name__ == '__main__':
                                                      "was {}.".format(v)))
 
         # The root-level write_every parameter
-        if args.write_every:
+        if args.write_every is not None:
             add_entry(args.write_every, add_to=update_dict,
                       key_path=['parameter_space', 'write_every'],
                       is_valid= lambda v: v >= 1,
@@ -282,6 +289,19 @@ if __name__ == '__main__':
 
 
         # Set general configuration entries
+        if args.set_model_params:
+            # Make sure the parameter space entry is available
+            if not update_dict.get('parameter_space'):
+                update_dict['parameter_space'] = dict()
+
+            # Make sure the model-related entry is available
+            if not update_dict['parameter_space'].get(args.model_name):
+                update_dict['parameter_space'][args.model_name] = dict()
+
+            # Add an entry for each pair
+            add_from_kv_pairs(*args.set_model_params,
+                              add_to=update_dict['parameter_space'][args.model_name])
+
         if args.set_params:
             # Make sure the parameter space entry is available
             if not update_dict.get('parameter_space'):
