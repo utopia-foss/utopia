@@ -47,14 +47,14 @@ int main()
     assert(std::get<2>(result) == std::get<2>(expected_result));
 
     // for_each
-    for_each([](auto&& str) { str += "_utopia"; }, result);
+    for_each(result, [](auto&& str) { str += "_utopia"; });
 
     assert("42_hello_4.50_utopia" == std::get<0>(result));
     assert("3.14_hello_5.50_utopia" == std::get<1>(result));
     assert("a_hello_6.50_utopia" == std::get<2>(result));
 
     // transform
-    transform([](auto&& str) { return str + "_is_cool!"; }, result, result);
+    result = transform(result, [](auto&& str) { return str + "_is_cool!"; });
 
     assert("42_hello_4.50_utopia_is_cool!" == std::get<0>(result));
     assert("3.14_hello_5.50_utopia_is_cool!" == std::get<1>(result));

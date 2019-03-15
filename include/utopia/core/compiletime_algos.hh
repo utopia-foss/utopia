@@ -22,7 +22,7 @@ namespace _Compiletime_algos_helpers
 template <std::size_t idx, typename Function, typename... Tuplelike>
 constexpr auto apply_to_index(Function&& f, Tuplelike&&... tuplelike)
 {
-    using std::get; //enable Argument dependent lookup
+    using std::get; // enable Argument dependent lookup
     return std::apply(f, std::forward_as_tuple(get<idx>(tuplelike)...));
 }
 
@@ -41,7 +41,8 @@ constexpr auto apply_to_index(Function&& f, Tuplelike&&... tuplelike)
 template <typename Function, std::size_t... idxs, typename... Tuplelike>
 constexpr auto apply_to_indices(Function&& f, std::index_sequence<idxs...>, Tuplelike&&... tuplelike)
 {
-    using Returntype = std::invoke_result_t<Function, std::tuple_element_t<0, std::remove_reference_t<Tuplelike>>...>;
+    using Returntype =
+        std::invoke_result_t<Function, std::tuple_element_t<0, std::remove_reference_t<Tuplelike>>...>;
 
     if constexpr (std::is_same_v<Returntype, void>)
     {
@@ -155,7 +156,6 @@ constexpr auto reduce(NaryFunction&& f, Tuplelike&&... tuplelike)
 template <typename NaryFunction, typename... Tuplelike>
 constexpr NaryFunction visit(NaryFunction&& f, Tuplelike&&... tuplelike)
 {
-
     constexpr std::size_t N =
         Utils::get_size_v<std::tuple_element_t<0, std::tuple<std::remove_reference_t<Tuplelike>...>>>;
     if constexpr (N == 0)
@@ -179,8 +179,8 @@ constexpr NaryFunction visit(NaryFunction&& f, Tuplelike&&... tuplelike)
  * @param  tuplelike Object, the elements of which can be accessed via std::get.
  * @return           the UnaryFunction f
  */
-template <typename UnaryFunction, typename Tuplelike>
-constexpr UnaryFunction for_each(UnaryFunction&& f, Tuplelike&& tuplelike)
+template <typename Tuplelike, typename UnaryFunction>
+constexpr UnaryFunction for_each(Tuplelike&& tuplelike, UnaryFunction&& f)
 {
     return visit(std::forward<UnaryFunction>(f), std::forward<Tuplelike>(tuplelike));
 }
@@ -190,16 +190,13 @@ constexpr UnaryFunction for_each(UnaryFunction&& f, Tuplelike&& tuplelike)
  * In order to use this with a Tuplelike type, the function 'Utils::get_size'
  * has to be defined for it.
  * @param  f         function to apply to each element
- * @pararm t         target object wheret the results of applying f to each
- * element in tuplelike shall be stored.
  * @param  tuplelike Object, the elements of which can be accessed via std::get.
- * @return           the UnaryFunction f
+ * @return           the result of applying f to each element of 'tuplelike'
  */
-template <typename UnaryFunction, typename Target, typename Tuplelike>
-constexpr Target transform(UnaryFunction&& f, Target&& target, Tuplelike&& tuplelike)
+template <typename Tuplelike, typename UnaryFunction>
+constexpr auto transform(Tuplelike&& tuplelike, UnaryFunction&& f)
 {
-    target = reduce(std::forward<UnaryFunction>(f), std::forward<Tuplelike>(tuplelike));
-    return target;
+    return reduce(std::forward<UnaryFunction>(f), std::forward<Tuplelike>(tuplelike));
 }
 
 } // namespace Utils
