@@ -30,6 +30,7 @@ set(TESTS_CORE
     state_test
     tags_test
     utils_test
+    compiletime_algos_test
     )
 
 # add CORE tests
