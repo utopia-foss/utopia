@@ -13,11 +13,12 @@
 #include <hdf5.h>
 #include <hdf5_hl.h>
 
-#include "hdfutilities.hh"
+#include <utopia/core/utils.hh>
 
-namespace Utopia {
-namespace DataIO {
-    
+namespace Utopia
+{
+namespace DataIO
+{
 /**
  * @brief Class which handles the conversion of C-types into hdf5types.
  *
@@ -78,7 +79,7 @@ public:
     static inline hid_t type([[maybe_unused]] std::size_t size = 0)
     {
         // include const char* which is a  c-string
-        if constexpr (is_container_v<T>)
+        if constexpr (Utils::is_container_v<T>)
         {
             if (size == 0)
             {
@@ -93,7 +94,7 @@ public:
                 return type;
             }
         }
-        else if constexpr (is_string_v<T>)
+        else if constexpr (Utils::is_string_v<T>)
         {
             if (size == 0)
             {

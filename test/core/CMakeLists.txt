@@ -29,6 +29,7 @@ set(TESTS_CORE
     signal_test
     state_test
     tags_test
+    utils_test
     )
 
 # add CORE tests

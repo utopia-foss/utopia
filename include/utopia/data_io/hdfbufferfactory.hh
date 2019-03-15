@@ -15,10 +15,10 @@
 #include "hdftypefactory.hh"
 #include "hdfutilities.hh"
 
-
-namespace Utopia {
-namespace DataIO {
-
+namespace Utopia
+{
+namespace DataIO
+{
 /**
  * @brief      Class which turns non-vector or plain-array containers into
  *             vectors. If the value_types are containers themselves, these are
@@ -73,11 +73,11 @@ public:
     template <typename Iter, typename Adaptor>
     static auto buffer(Iter begin, Iter end, Adaptor&& adaptor)
     {
-        using T = remove_qualifier_t<decltype(adaptor(*begin))>;
-        if constexpr (is_container_v<T>)
+        using T = Utils::remove_qualifier_t<decltype(adaptor(*begin))>;
+        if constexpr (Utils::is_container_v<T>)
         {
             // set up buffer
-            if constexpr (is_array_like_v<T>)
+            if constexpr (Utils::is_array_like_v<T>)
             {
                 std::vector<T> data_buffer(std::distance(begin, end));
                 auto buffer_begin = data_buffer.begin();
@@ -130,7 +130,6 @@ public:
         }
     }
 };
-
 
 } // namespace DataIO
 } // namespace Utopia

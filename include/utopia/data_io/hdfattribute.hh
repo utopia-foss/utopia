@@ -9,9 +9,9 @@
 #define UTOPIA_DATAIO_HDFATTRIBUTE_HH
 
 #include <cstring>
+#include <functional>
 #include <memory>
 #include <string>
-#include <functional>
 
 #include <hdf5.h>
 #include <hdf5_hl.h>
@@ -19,10 +19,10 @@
 #include "hdfbufferfactory.hh"
 #include "hdftypefactory.hh"
 
-
-namespace Utopia {
-namespace DataIO {
-    
+namespace Utopia
+{
+namespace DataIO
+{
 /**
  * @brief      Class for hdf5 attribute, which can be attached to groups and
  *             datasets.
@@ -54,7 +54,7 @@ private:
         return atr;
     }
 
-    /** 
+    /**
      * @brief Function for writing containers as attribute.
      *
      * @detail Only buffers if necessary, i.e. if non-vector containers or
@@ -64,11 +64,12 @@ private:
     herr_t __write_container__(Type attribute_data)
     {
         using value_type_1 = typename Type::value_type;
-        using base_type = remove_qualifier_t<value_type_1>;
+        using base_type = Utils::remove_qualifier_t<value_type_1>;
 
         // we can write directly if we have a plain vector, no nested or stringtype.
         if constexpr (std::is_same_v<Type, std::vector<value_type_1>> &&
-                      !is_container_v<value_type_1> && !is_string_v<value_type_1>)
+                      !Utils::is_container_v<value_type_1> &&
+                      !Utils::is_string_v<value_type_1>)
         {
             // check if attribute has been created, else do
             if (_attribute == -1)
@@ -85,9 +86,9 @@ private:
         {
             // if we want to write std::arrays then we can use
             // fixed size array types. Else we use variable length arrays.
-            if constexpr (is_array_like_v<value_type_1>)
+            if constexpr (Utils::is_array_like_v<value_type_1>)
             {
-                constexpr std::size_t s = get_size<value_type_1>::value;
+                constexpr std::size_t s = Utils::get_size<value_type_1>::value;
                 if (_attribute == -1)
                 {
                     _attribute = __create_attribute__<base_type>(s);
@@ -154,7 +155,7 @@ private:
     herr_t __write_pointertype__(Type attribute_data)
     {
         // result types removes pointers, references, and qualifiers
-        using basetype = remove_qualifier_t<Type>;
+        using basetype = Utils::remove_qualifier_t<Type>;
         // std::cout << _name << ", type for pointer is  " << typeid(basetype).name()
         //   << ", int type is " << typeid(int).name() << std::endl;
 
@@ -172,7 +173,7 @@ private:
     {
         // because we just write a scalar, the shape tells basically that
         // the attribute is pointlike: 1D and 1 entry.
-        using basetype = remove_qualifier_t<Type>;
+        using basetype = Utils::remove_qualifier_t<Type>;
         if (_attribute == -1)
         {
             _attribute = __create_attribute__<Type>();
@@ -189,21 +190,22 @@ private:
     template <typename Type>
     herr_t __read_container__(Type& buffer)
     {
-        using value_type_1 = remove_qualifier_t<typename Type::value_type>;
+        using value_type_1 = Utils::remove_qualifier_t<typename Type::value_type>;
 
         // when the value_type of Type is a container again, we want nested
         // arrays basically. Therefore we have to check if the desired type
         // Type is suitable to hold them, read the nested data into a hvl_t
         // container, assuming that they are varlen because this is the more
         // general case, and then turn them into the desired type again...
-        if constexpr (is_container_v<value_type_1>)
+        if constexpr (Utils::is_container_v<value_type_1>)
         {
-            using value_type_2 = remove_qualifier_t<typename value_type_1::value_type>;
+            using value_type_2 =
+                Utils::remove_qualifier_t<typename value_type_1::value_type>;
 
             // if we have nested containers of depth larger than 2, throw a
             // runtime error because we cannot handle this
             // TODO extend this to work more generally
-            if constexpr (is_container_v<value_type_2>)
+            if constexpr (Utils::is_container_v<value_type_2>)
             {
                 throw std::runtime_error(
                     "Cannot read data into nested containers with depth > 3 "
@@ -221,7 +223,7 @@ private:
             // has always the same length, otherwise she does not
             // know and thus it is assumed that the data is variable
             // length.
-            if constexpr (is_array_like_v<value_type_1>)
+            if constexpr (Utils::is_array_like_v<value_type_1>)
             {
                 return H5Aread(_attribute, type, buffer.data());
             }
@@ -259,7 +261,7 @@ private:
                 // when strings are desired to be stored as value_types of the
                 // container, we need to treat them a bit differently,
                 // because hdf5 cannot read directly to them.
-                if constexpr (is_string_v<value_type_1>)
+                if constexpr (Utils::is_string_v<value_type_1>)
                 {
                     // get type the attribute has internally
                     hid_t type = H5Aget_type(_attribute);
@@ -438,8 +440,9 @@ public:
         }
         else
         {
-            throw std::invalid_argument("Parent object '"
-                + _parent_object->get_path() + "' of attribute '" + _name +
+            throw std::invalid_argument(
+                "Parent object '" + _parent_object->get_path() +
+                "' of attribute '" + _name +
                 "' is invalid! Has it been closed already or not been opened "
                 "yet?");
         }
@@ -502,7 +505,7 @@ public:
 
         // type to read in is a container type, which can hold containers
         // themselvels or just plain types.
-        if constexpr (is_container_v<Type>)
+        if constexpr (Utils::is_container_v<Type>)
         {
             Type buffer(size);
             herr_t err = __read_container__(buffer);
@@ -514,9 +517,9 @@ public:
 
             return std::make_tuple(_shape, buffer);
         }
-        else if constexpr (is_string_v<Type>) // we can have string types too,
-                                              // i.e. char*, const char*,
-                                              // std::string
+        else if constexpr (Utils::is_string_v<Type>) // we can have string types
+                                                     // too, i.e. char*, const
+                                                     // char*, std::string
         {
             std::string buffer; // resized in __read_stringtype__ because this as a scalar
             herr_t err = __read_stringtype__(buffer);
@@ -528,7 +531,7 @@ public:
 
             return std::make_tuple(_shape, buffer);
         }
-        else if constexpr (std::is_pointer_v<Type> && !is_string_v<Type>)
+        else if constexpr (std::is_pointer_v<Type> && !Utils::is_string_v<Type>)
         {
             auto buffer = std::make_shared<Type>(size);
             herr_t err = __read_pointertype__(buffer.get());
@@ -581,7 +584,7 @@ public:
 
         // type to read in is a container type, which can hold containers
         // themselvels or just plain types.
-        if constexpr (is_container_v<Type>)
+        if constexpr (Utils::is_container_v<Type>)
         {
             // needed to make sure that the buffer has the correct size
 
@@ -603,9 +606,9 @@ public:
                                          " into container types");
             }
         }
-        else if constexpr (is_string_v<Type>) // we can have string types too,
-                                              // i.e. char*, const char*,
-                                              // std::string
+        else if constexpr (Utils::is_string_v<Type>) // we can have string types
+                                                     // too, i.e. char*, const
+                                                     // char*, std::string
         {
             // resized in __read_stringtype__ because this as a scalar
             herr_t err = __read_stringtype__(buffer);
@@ -615,7 +618,7 @@ public:
                                          " into stringtype");
             }
         }
-        else if constexpr (std::is_pointer_v<Type> && !is_string_v<Type>)
+        else if constexpr (std::is_pointer_v<Type> && !Utils::is_string_v<Type>)
         {
             herr_t err = __read_pointertype__(buffer);
 
@@ -662,7 +665,7 @@ public:
             open(*_parent_object, _name);
         }
 
-        if constexpr (is_container_v<Type>) // container type
+        if constexpr (Utils::is_container_v<Type>) // container type
         {
             // get the shape from the data. This function is written such
             // that it writes always 1d, unless a pointer type with different
@@ -687,7 +690,7 @@ public:
         // write string types, i.e. const char*, char*, std::string
         // These are not containers but not normal scalars either,
         // so they have to be treated separatly
-        else if constexpr (is_string_v<Type>)
+        else if constexpr (Utils::is_string_v<Type>)
         {
             _shape = {1};
             herr_t err = __write_stringtype__(attribute_data);
@@ -702,7 +705,7 @@ public:
         // We can also write pointer types, but then the shape of the array
         // has to be given explicitly. This does not handle stringtypes,
         // even though const char* /char* are pointer types
-        else if constexpr (std::is_pointer_v<Type> && !is_string_v<Type>)
+        else if constexpr (std::is_pointer_v<Type> && !Utils::is_string_v<Type>)
         {
             if (shape.size() == 0)
             {
@@ -762,7 +765,7 @@ public:
                Adaptor adaptor = [](auto& value) { return value; },
                [[maybe_unused]] std::vector<hsize_t> shape = {})
     {
-        using Type = remove_qualifier_t<decltype(adaptor(*begin))>;
+        using Type = Utils::remove_qualifier_t<decltype(adaptor(*begin))>;
         // if we copy only the content of [begin, end), then simple vector
         // copy suffices
         if constexpr (std::is_same<Type, typename Iter::value_type>::value)

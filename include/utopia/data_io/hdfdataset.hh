@@ -20,9 +20,10 @@
 #include "hdftypefactory.hh"
 #include "hdfutilities.hh"
 
-
-namespace Utopia {
-namespace DataIO {
+namespace Utopia
+{
+namespace DataIO
+{
 /**
  * @brief      Class representing a HDFDataset, wich reads and writes
  * data and attributes
@@ -160,12 +161,13 @@ private:
     template <typename T>
     herr_t __write_container__(T data, hid_t memspace, hid_t filespace)
     {
-        using value_type_1 = typename remove_qualifier_t<T>::value_type;
-        using base_type = remove_qualifier_t<value_type_1>;
+        using value_type_1 = typename Utils::remove_qualifier_t<T>::value_type;
+        using base_type = Utils::remove_qualifier_t<value_type_1>;
 
         // we can write directly if we have a plain vector, no nested or stringtype.
         if constexpr (std::is_same_v<T, std::vector<value_type_1>> &&
-                      !is_container_v<value_type_1> && !is_string_v<value_type_1>)
+                      !Utils::is_container_v<value_type_1> &&
+                      !Utils::is_string_v<value_type_1>)
         {
             // check if attribute has been created, else do
             if (_dataset == -1)
@@ -182,10 +184,10 @@ private:
             std::size_t typesize = 0;
             // check if array, if yes, get typesize, else typesize is 0 and
             // typefactory creates vlen data or string data
-            if constexpr (is_container_v<base_type> and is_array_like_v<base_type>)
+            if constexpr (Utils::is_container_v<base_type> and Utils::is_array_like_v<base_type>)
             {
                 // get_size is a metafunction defined in hdfutilities.hh
-                typesize = get_size<base_type>::value;
+                typesize = Utils::get_size<base_type>::value;
             }
 
             if (_dataset == -1)
@@ -256,7 +258,7 @@ private:
     herr_t __write_pointertype__(T data, hid_t memspace, hid_t filespace)
     {
         // result types removes pointers, references, and qualifiers
-        using basetype = remove_qualifier_t<T>;
+        using basetype = Utils::remove_qualifier_t<T>;
 
         if (_dataset == -1)
         {
@@ -281,7 +283,7 @@ private:
     {
         // because we just write a scalar, the shape tells basically that
         // the attribute is pointlike: 1D and 1 entry.
-        using basetype = remove_qualifier_t<T>;
+        using basetype = Utils::remove_qualifier_t<T>;
         if (_dataset == -1)
         {
             _dataset = __create_dataset__<T>(0);
@@ -299,21 +301,22 @@ private:
     template <typename Type>
     herr_t __read_container__(Type& buffer, hid_t memspace, hid_t filespace)
     {
-        using value_type_1 = remove_qualifier_t<typename Type::value_type>;
+        using value_type_1 = Utils::remove_qualifier_t<typename Type::value_type>;
 
         // when the value_type of Type is a container again, we want nested
         // arrays basically. Therefore we have to check if the desired type
         // Type is suitable to hold them, read the nested data into a hvl_t
         // container, assuming that they are varlen because this is the more
         // general case, and then turn them into the desired type again...
-        if constexpr (is_container_v<value_type_1> || is_string_v<value_type_1>)
+        if constexpr (Utils::is_container_v<value_type_1> || Utils::is_string_v<value_type_1>)
         {
-            using value_type_2 = remove_qualifier_t<typename value_type_1::value_type>;
+            using value_type_2 =
+                Utils::remove_qualifier_t<typename value_type_1::value_type>;
 
             // if we have nested containers of depth larger than 2, throw a
             // runtime error because we cannot handle this
             // TODO extend this to work more generally
-            if constexpr (is_container_v<value_type_2>)
+            if constexpr (Utils::is_container_v<value_type_2>)
             {
                 throw std::runtime_error(
                     "Dataset" + _path +
@@ -342,7 +345,7 @@ private:
             {
                 // check if std::array is given as value_type,
                 // if not adjust sizes
-                if constexpr (!is_array_like_v<value_type_1>)
+                if constexpr (!Utils::is_array_like_v<value_type_1>)
                 {
                     // if yes, throw exception is size is insufficient because
                     // the size cannot be adjusted
@@ -358,7 +361,7 @@ private:
             }
             else if (H5Tget_class(type) == H5T_STRING)
             {
-                if constexpr (!is_string_v<value_type_1>)
+                if constexpr (!Utils::is_string_v<value_type_1>)
                 {
                     throw std::invalid_argument(
                         "Dataset " + _path +
@@ -449,7 +452,7 @@ private:
 
                 for (std::size_t i = 0; i < buffer.size(); ++i)
                 {
-                    if constexpr (!is_array_like_v<value_type_1>)
+                    if constexpr (!Utils::is_array_like_v<value_type_1>)
                     {
                         buffer[i].resize(temp_buffer[i].len);
                     }
@@ -478,8 +481,8 @@ private:
 
     /// read attirbute data which contains a single string.
     /** \detail this is always read into std::strings, and hence we can use
-      *         'resize'
-      */
+     *         'resize'
+     */
     template <typename Type>
     auto __read_stringtype__(Type& buffer, hid_t memspace, hid_t filespace)
     {
@@ -492,8 +495,8 @@ private:
 
     /// read pointertype.
     /** \detail Either this is given by the user, or it is assumed to be 1d,
-      *         thereby flattening Nd attributes
-      */
+     *         thereby flattening Nd attributes
+     */
     template <typename Type>
     auto __read_pointertype__(Type buffer, hid_t memspace, hid_t filespace)
     {
@@ -513,7 +516,8 @@ private:
     void __write_attribute_buffer__()
     {
         // do nothing if the buffer is empty;
-        if (_attribute_buffer.size() == 0) {
+        if (_attribute_buffer.size() == 0)
+        {
             return;
         }
 
@@ -802,34 +806,29 @@ public:
             attr.write(data);
         }
         else
-        { 
+        {
             // The dataset was not opened yet. Need to write to buffer
 
             // For non-vector container data, need to convert to vector
-            if constexpr (is_container_v<Attrdata>)
+            if constexpr (Utils::is_container_v<Attrdata>)
             {
                 if constexpr (not std::is_same_v<std::vector<typename Attrdata::value_type>, Attrdata>)
                 {
                     // Make it a vector and write to buffer
-                    _attribute_buffer.push_back(
-                        std::make_pair(
-                            attribute_path,
-                            std::vector<typename Attrdata::value_type>(
-                                std::begin(data), std::end(data)))
-                        );
+                    _attribute_buffer.push_back(std::make_pair(
+                        attribute_path, std::vector<typename Attrdata::value_type>(
+                                            std::begin(data), std::end(data))));
                 }
                 else
                 {
                     // Can write directly
-                    _attribute_buffer.push_back(std::make_pair(attribute_path,
-                                                               data));
+                    _attribute_buffer.push_back(std::make_pair(attribute_path, data));
                 }
             }
             else
             {
                 // Can write directly
-                _attribute_buffer.push_back(std::make_pair(attribute_path,
-                                                           data));
+                _attribute_buffer.push_back(std::make_pair(attribute_path, data));
             }
         }
     }
@@ -1037,7 +1036,7 @@ public:
             */
             _current_extent.resize(_rank);
 
-            if constexpr (is_container_v<T>)
+            if constexpr (Utils::is_container_v<T>)
             {
                 if (_rank == 1)
                 {
@@ -1050,7 +1049,7 @@ public:
                 }
             }
 
-            else if constexpr (std::is_pointer_v<T> and !is_string_v<T>)
+            else if constexpr (std::is_pointer_v<T> and !Utils::is_string_v<T>)
             {
                 if (shape.size() == 0)
                 {
@@ -1123,7 +1122,7 @@ public:
                 // shape, else we have to add 1 because we either write
                 // a single scalar or string
 
-                if constexpr (is_container_v<T>)
+                if constexpr (Utils::is_container_v<T>)
                 {
                     if (_rank == 1)
                     {
@@ -1134,7 +1133,7 @@ public:
                         _new_extent[0] += 1;
                     }
                 }
-                else if constexpr (std::is_pointer_v<T> and !is_string_v<T>)
+                else if constexpr (std::is_pointer_v<T> and !Utils::is_string_v<T>)
                 {
                     if (shape.size() == 0)
                     {
@@ -1174,7 +1173,7 @@ public:
             // select counts for dataset
             // this has to be generalized and refactored
             std::vector<hsize_t> counts(_rank, 0);
-            if constexpr (is_container_v<T>)
+            if constexpr (Utils::is_container_v<T>)
             {
                 if (_rank == 1)
                 {
@@ -1186,7 +1185,7 @@ public:
                 }
             }
             // when is pointer, the counts are given by shape
-            else if constexpr (std::is_pointer_v<T> and !is_string_v<T>)
+            else if constexpr (std::is_pointer_v<T> and !Utils::is_string_v<T>)
             {
                 counts = shape;
             }
@@ -1232,7 +1231,7 @@ public:
         }
 
         // everything is prepared, we can write the data
-        if constexpr (is_container_v<T>)
+        if constexpr (Utils::is_container_v<T>)
         {
             herr_t err = __write_container__(std::forward<T>(data), memspace, filespace);
             if (err < 0)
@@ -1241,7 +1240,7 @@ public:
                                          ": Error in appending container");
             }
         }
-        else if constexpr (is_string_v<T>)
+        else if constexpr (Utils::is_string_v<T>)
         {
             herr_t err = __write_stringtype__(std::forward<T>(data), memspace, filespace);
             if (err < 0)
@@ -1250,7 +1249,7 @@ public:
                                          ": Error in appending string");
             }
         }
-        else if constexpr (std::is_pointer_v<T> and !is_string_v<T>)
+        else if constexpr (std::is_pointer_v<T> and !Utils::is_string_v<T>)
         {
             herr_t err = __write_pointertype__(std::forward<T>(data), memspace, filespace);
             if (err < 0)
@@ -1287,7 +1286,7 @@ public:
     template <typename Iter, typename Adaptor>
     void write(Iter begin, Iter end, Adaptor&& adaptor)
     {
-        using Type = remove_qualifier_t<decltype(adaptor(*begin))>;
+        using Type = Utils::remove_qualifier_t<decltype(adaptor(*begin))>;
         // if we copy only the content of [begin, end), then simple vector
         // copy suffices
         if constexpr (std::is_same_v<Type, typename Iter::value_type>)
@@ -1384,7 +1383,7 @@ public:
 
         // type to read in is a container type, which can hold containers
         // themselvels or just plain types.
-        if constexpr (is_container_v<Type>)
+        if constexpr (Utils::is_container_v<Type>)
         {
             Type buffer(size);
             herr_t err = __read_container__(buffer, memspace, filespace);
@@ -1395,9 +1394,9 @@ public:
             }
             return std::make_tuple(readshape, buffer);
         }
-        else if constexpr (is_string_v<Type>) // we can have string types too,
-                                              // i.e. char*, const char*,
-                                              // std::string
+        else if constexpr (Utils::is_string_v<Type>) // we can have string types
+                                                     // too, i.e. char*, const
+                                                     // char*, std::string
         {
             std::string buffer; // resized in __read_stringtype__ because this as a scalar
             buffer.resize(size);
@@ -1410,10 +1409,10 @@ public:
 
             return std::make_tuple(readshape, buffer);
         }
-        else if constexpr (std::is_pointer_v<Type> && !is_string_v<Type>)
+        else if constexpr (std::is_pointer_v<Type> && !Utils::is_string_v<Type>)
         {
-            std::shared_ptr<remove_qualifier_t<Type>> buffer(
-                new remove_qualifier_t<Type>[size]);
+            std::shared_ptr<Utils::remove_qualifier_t<Type>> buffer(
+                new Utils::remove_qualifier_t<Type>[size]);
 
             herr_t err = __read_pointertype__(buffer.get(), memspace, filespace);
 
