@@ -19,7 +19,6 @@ set(TESTS_DATAIO
     hdfdataset_test_read
     hdfintegration_test
     hdfgroup_test
-    hdfutilities_test
     monitor_test
     )
 

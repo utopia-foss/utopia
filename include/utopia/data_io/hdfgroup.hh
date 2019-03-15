@@ -8,7 +8,6 @@
 #ifndef UTOPIA_DATAIO_HDFGROUP_HH
 #define UTOPIA_DATAIO_HDFGROUP_HH
 
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -18,11 +17,10 @@
 #include "hdfattribute.hh"
 #include "hdfdataset.hh"
 
-
-namespace Utopia {
-namespace DataIO {
-
-
+namespace Utopia
+{
+namespace DataIO
+{
 class HDFGroup
 {
 protected:
@@ -168,8 +166,7 @@ public:
 
         _referencecounter = parent.get_referencecounter();
 
-        if (check_validity(path_exists(parent.get_id(), _path.c_str()),
-                           _path))
+        if (check_validity(path_exists(parent.get_id(), _path.c_str()), _path))
         {
             // open the already existing group
             _group = H5Gopen(parent.get_id(), _path.c_str(), H5P_DEFAULT);
