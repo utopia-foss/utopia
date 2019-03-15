@@ -184,11 +184,18 @@ struct is_container<T, std::void_t<typename remove_qualifier_t<T>::iterator, std
 /**
  * @brief Prototype for get_size functor for constexpr size containers.
  *        Returns the size of the container at compile time.
+ *        If no object for which an overload exists is passed,
+ *        the get_size::value defaults to 1, indicating a scalar.
+ *        If you want to have another type be usable with get_size,
+ *        provide an overload for it as shown by the various overloads
+ *        existing for get_size already.
  *
  * @tparam T
  */
 template <typename T>
-struct get_size;
+struct get_size : std::integral_constant<std::size_t, 1>
+{
+};
 
 /**
  * @brief get_size overload for std::array
@@ -305,7 +312,7 @@ std::ostream& operator<<(std::ostream& out, const std::vector<bool>& container)
 {
     if (container.size() == 0)
     {
-        std::cout << "[]" << std::endl;
+        out << "[]" << std::endl;
     }
     else
     {

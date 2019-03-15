@@ -1,9 +1,3 @@
-/**
- * @brief This file implements tests for the type-check metafunctions
- *        implemented in hdfutilities.cc
- *
- * @file hdfutilities_test.cc
- */
 #include <iostream>
 #include <list>
 #include <map>
