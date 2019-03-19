@@ -207,7 +207,7 @@ Graph create_scale_free_directed_graph( const std::size_t num_vertices,
             // discrete in-degree probablility distribution of already existing
             // vertices.
             auto prob_sum = 0.;
-            auto r = rand(rng);
+            const auto r = rand(rng);
 
             for (auto [p, p_end] = boost::vertices(g); p!=p_end; ++p) {
                 
