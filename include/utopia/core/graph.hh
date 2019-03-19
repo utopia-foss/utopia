@@ -156,7 +156,7 @@ Graph create_scale_free_graph(  const std::size_t num_vertices,
  * @return Graph The directed scale-free graph
  */
 template <typename Graph, typename RNG>
-Graph create_scale_free_directed_graph( const size_t num_vertices,
+Graph create_scale_free_directed_graph( const std::size_t num_vertices,
                                         const double alpha,
                                         const double beta,
                                         const double gamma,
