@@ -164,7 +164,7 @@ Graph create_scale_free_directed_graph( const size_t num_vertices,
                                         const double del_out,
                                         RNG& rng)
 {
-    // Create three cycle as spawning network.
+    // Create three-cycle as spawning network.
     Graph g(3);
     boost::add_edge(0, 1, g);
     boost::add_edge(1, 2, g);
