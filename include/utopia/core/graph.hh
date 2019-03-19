@@ -244,7 +244,7 @@ Graph create_scale_free_directed_graph( const std::size_t num_vertices,
                 
                 prob_sum_in += (boost::in_degree(*p, g) + del_in)/norm_in;
                 if (r_in < prob_sum_in) {
-                    if (v!=*p && not boost::edge(v,*p, g).second) {
+                    if (v!=*p and (not boost::edge(v,*p, g).second)) {
                         w = *p;
                         break;
                     }
