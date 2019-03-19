@@ -179,7 +179,7 @@ void test_create_scale_free_directed_graph(){
     const double alpha = 0.2;
     const double beta = 0.8;
     const double gamma = 0.;
-    const double del_in = 0.1;
+    const double del_in = 0.;
     const double del_out = 0.5;
 
     // Create test graph
@@ -291,6 +291,7 @@ int main()
         test_create_random_graph();
         test_create_small_world_graph();
         test_create_scale_free_graph();
+        test_create_scale_free_directed_graph();
         
         return 0;
     }
