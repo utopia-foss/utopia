@@ -183,7 +183,7 @@ Graph create_scale_free_directed_graph( const size_t num_vertices,
     std::uniform_real_distribution<> rand(0, 1);
 
     // Define helper variables
-    auto num_edges = boost::num_edges(g);
+    const auto num_edges = boost::num_edges(g);
     auto norm_in = 0.;
     auto norm_out = 0.;
     bool skip;
