@@ -164,26 +164,31 @@ Graph create_scale_free_directed_graph( const std::size_t num_vertices,
                                         const double del_out,
                                         RNG& rng)
 {
+    // Create emtpy graph.
+    Graph g;
+
+    // Check for cases in which the algorithm does not work.
+    if (alpha + beta + gamma != 1.) {
+        throw std::invalid_argument("The probabilities alpha, beta and gamma"
+                                    " have to add up to 1!");
+    }
+    if (not boost::is_directed(g)) {
+        throw std::runtime_error("This algorithm only works for directed"
+                " graphs but the graph type specifies an undirected graph!");
+    }
+
     // Create three-cycle as spawning network.
-    Graph g(3);
+    boost::add_vertex(g);
+    boost::add_vertex(g);
+    boost::add_vertex(g);
     boost::add_edge(0, 1, g);
     boost::add_edge(1, 2, g);
     boost::add_edge(2, 0, g);
-    
-    // Check for cases in which the algorithm does not work.
-    if (alpha + beta + gamma != 1.){
-        throw std::runtime_error("The probabilities alpha, beta and gamma"
-                                " have to add up to 1!");
-    }
-    else if (not boost::is_directed(g)){
-        throw std::runtime_error("This algorithm only works for directed"
-                                " graphs!");
-    }
 
     std::uniform_real_distribution<> rand(0, 1);
 
     // Define helper variables
-    const auto num_edges = boost::num_edges(g);
+    auto num_edges = boost::num_edges(g);
     auto norm_in = 0.;
     auto norm_out = 0.;
     bool skip;
@@ -227,8 +232,8 @@ Graph create_scale_free_directed_graph( const std::size_t num_vertices,
             // vertices.
             auto prob_sum_in = 0.;
             auto prob_sum_out = 0.;
-            auto r_in = rand(rng);
-            auto r_out = rand(rng);
+            const auto r_in = rand(rng);
+            const auto r_out = rand(rng);
 
             // Find the source of the new edge.
             for (auto [p, p_end] = boost::vertices(g); p!=p_end; ++p) {
