@@ -175,7 +175,7 @@ void test_create_scale_free_directed_graph(){
     Utopia::DefaultRNG rng_copy = rng;
 
     // Set graph properties
-    const size_t num_vertices = 200;
+    const std::size_t num_vertices = 200;
     const double alpha = 0.2;
     const double beta = 0.8;
     const double gamma = 0.;
