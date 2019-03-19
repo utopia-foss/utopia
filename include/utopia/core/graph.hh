@@ -199,7 +199,7 @@ Graph create_scale_free_directed_graph( const std::size_t num_vertices,
         // Update the normalization for in- and out-degree probabilities
         norm_in = num_edges + del_in * boost::num_vertices(g);
         norm_out = num_edges + del_out * boost::num_vertices(g);
-        auto rand_num = rand(rng);
+        const auto rand_num = rand(rng);
         
         if (rand_num < alpha) {
             // option 'A'
