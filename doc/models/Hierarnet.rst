@@ -1,6 +1,6 @@
 
-``Hierarnet``
-=============
+``Hierarnet`` - Emergence of cooperation in social interaction networks
+=======================================================================
 
 *Note:* The Hierarnet model is described in more detail in :ref:`Herdeanu (2018) <literature-ref>`.
 
@@ -86,6 +86,16 @@ The Darwinian evolutionary process introduces a fitness-dependent selection towa
 #. From the point of view of an agent’s social neighborhood, every member of it gets fitter if an agent within the social subgroup increases its cost. Thus, on the level of social neighborhoods, a group of connected cooperative agents has an evolutionary advantage over a group of connected defective agents. Therefore, evolution could also be expected to select for more cooperative agents. A necessary prerequisite for this is to have some kind of group forming. This could be provided by separate, interacting groups, spatiality or an internal population structure.
 
 The intensity of the two different competing selection pressures is expected to be mainly dependent on the synergy factor, thus by the amount of created wealth, and the population structure, provided by network topology.
+
+Default configuration parameters
+--------------------------------
+
+Below are the default configuration parameters for the ``Hierarnet`` model.
+
+.. literalinclude:: ../../src/models/Hierarnet/Hierarnet_cfg.yml
+   :language: yaml
+   :start-after: ---
+
 
 .. _literature-ref:
 Literature
