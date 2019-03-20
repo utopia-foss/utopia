@@ -49,9 +49,9 @@ For this (recommended) way, the constructor of the state type accepts a ``Utopia
       /// Config-constructor for the cell state
       CellStateCC(const Config& cfg)
       :
-          a_double(Utopia::as_double(cfg["a_double"])),
-          a_string(Utopia::as_str(cfg["a_string"])),
-          a_bool(Utopia::as_bool(cfg["a_bool"]))
+          a_double(Utopia::get_as<double>("a_double", cfg)),
+          a_string(Utopia::get_as<std::string>("a_string", cfg)),
+          a_bool(Utopia::get_as<bool>("a_bool", bool))
       {}
   };
 
@@ -200,8 +200,8 @@ If cells or agents provide a constructor that allows passing not only a ``const 
       template<class RNGType>
       CellStateRC(const Config& cfg, const std::shared_ptr<RNGType>& rng)
       :
-          a_double(Utopia::as_double(cfg["a_double"])),
-          a_string(Utopia::as_str(cfg["a_string"]))
+          a_double(Utopia::get_as<double>("a_double", cfg)),
+          a_string(Utopia::get_as<std::string>("a_string", cfg))
       {
           // Do something with the RNG to set the boolean
           std::uniform_real_distribution<double> dist(0., 1.);

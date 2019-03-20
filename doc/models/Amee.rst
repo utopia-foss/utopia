@@ -1,5 +1,5 @@
 
-``Amee`` - A Model for Envo-Evoltutionary dynamics
+``Amee`` - A Model for Envo-Evolutionary dynamics
 ==================================================
 
 Very short introduction

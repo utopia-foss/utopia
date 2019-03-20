@@ -105,6 +105,7 @@ def state_anim(dm: DataManager, *,
                model_name: str,
                to_plot: dict,
                writer: str,
+               limits: tuple=None,
                frames_kwargs: dict=None, 
                base_figsize: tuple=None,
                fps: int=2, 
@@ -169,8 +170,12 @@ def state_anim(dm: DataManager, *,
                             "".format(type(cmap), cmap))
 
         # Create imshow
-        im = ax.imshow(data, cmap=colormap, animated=True,
-                       origin='lower', vmin=limits[0], vmax=limits[1])
+        if limits:
+            im = ax.imshow(data, cmap=colormap, animated=True,
+                        origin='lower', vmin=limits[0], vmax=limits[1])
+        else:
+            im = ax.imshow(data, cmap=colormap, animated=True,
+                        origin='lower')
 
         # Set title
         if title is not None:
@@ -277,6 +282,10 @@ def state_anim(dm: DataManager, *,
                 # For t>0, it is better to update imshow data without creating
                 # a new object
                 ims[prop_name].set_data(data)
+
+                # If no limits are provided, autoscale the new limits
+                if not limits:
+                    ims[prop_name].autoscale()
             
             # Updated all subfigures now and can now tell the writer that the
             # frame is finished and can be grabbed.

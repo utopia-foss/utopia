@@ -111,7 +111,7 @@ private:
                               bname);
 
             try {
-                cfg[bname] = as_<Config>(this->_cfg[bname]);
+                cfg[bname] = get_as<Config>(bname, this->_cfg);
             }
             catch (std::exception &e) {
                 std::cerr << "Could not find a benchmark configuration with "
@@ -147,7 +147,7 @@ public:
         _write_funcs(),
 
         // Get the set of enabled benchmarks from the config
-        _benchmarks(as_vector<std::string>(this->_cfg["benchmarks"])),
+        _benchmarks(get_as<std::vector<std::string>>("benchmarks", this->_cfg)),
         _bench_cfgs(load_benchmarks()),
 
         // Create the temporary map for measured times and the times dataset
@@ -156,9 +156,9 @@ public:
         _dsets(),
 
         // Extract config parameters applicable to all benchmarks
-        _delete_afterwards(as_bool(this->_cfg["delete_afterwards"])),
-        _sleep_step(as_double(this->_cfg["sleep_step"])),
-        _sleep_bench(as_double(this->_cfg["sleep_bench"]))
+        _delete_afterwards(get_as<bool>("delete_afterwards", this->_cfg)),
+        _sleep_step(get_as<double>("sleep_step", this->_cfg)),
+        _sleep_bench(get_as<double>("sleep_bench", this->_cfg))
     {   
         // Check arguments
         if (_delete_afterwards) {
@@ -184,7 +184,7 @@ public:
 
 
         // Carry out the setup benchmark  . . . . . . . . . . . . . . . . . . .
-        const bool initial_write = as_bool(this->_cfg["initial_write"]);
+        const bool initial_write = get_as<bool>("initial_write", this->_cfg);
         this->_log->debug("initial_write: {},  sleep_step: {}s,  "
                           "sleep_bench: {}s", initial_write ? "yes" : "no",
                           _sleep_step.count(), _sleep_bench.count());
@@ -278,10 +278,10 @@ protected:
         // Get the name of the setup/benchmark function, then resolve it
         BenchFunc bfunc;
         if constexpr (setup) {
-            bfunc = _setup_funcs.at(as_str(bcfg["setup_func"]));
+            bfunc = _setup_funcs.at(get_as<std::string>("setup_func", bcfg));
         }
         else {
-            bfunc = _write_funcs.at(as_str(bcfg["write_func"]));
+            bfunc = _write_funcs.at(get_as<std::string>("write_func", bcfg));
         }
 
         // Call the function; its return value is the time it took to execute
@@ -313,7 +313,7 @@ protected:
      */
     BenchFunc setup_nd = [this](const auto& bname, auto cfg){
         // Determine the shape of the final dataset
-        auto shape = as_vector<hsize_t>(cfg["write_shape"]);
+        auto shape = get_as<std::vector<hsize_t>>("write_shape", cfg);
         shape.insert(shape.begin(), this->get_time_max() + 1);
 
         const auto start = Clock::now();
@@ -333,7 +333,7 @@ protected:
         const auto time_setup = this->setup_nd(bname, cfg);
 
         // Extract the chunks argument
-        const auto chunks = as_vector<hsize_t>(cfg["chunks"]);
+        const auto chunks = get_as<std::vector<hsize_t>>("chunks", cfg);
 
         const auto start = Clock::now();
         // -- benchmark start -- //
@@ -351,10 +351,10 @@ protected:
     /// Writes a constant value into the dataset
     BenchFunc write_const = [this](const auto& bname, auto cfg){
         // Determine the value to write
-        const auto val = as_double(cfg["const_val"]);
+        const auto val = get_as<double>("const_val", cfg);
 
         // Determine iterator length by factorizing the shape
-        const auto shape = as_vector<std::size_t>(cfg["write_shape"]);
+        const auto shape = get_as<std::vector<std::size_t>>("write_shape", cfg);
         const auto it_len = std::accumulate(shape.begin(), shape.end(),
                                             1, std::multiplies<std::size_t>());
 
