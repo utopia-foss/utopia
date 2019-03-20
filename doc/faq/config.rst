@@ -22,18 +22,14 @@ To extract parameters for your model from the configuration, you can use the
     auto my_double = get_as<double>("my_double", cfg);
     auto my_str = get_as<std::string>("my_str", cfg);
     auto my_int = get_as<int>("my_int", cfg);
-    auto my_uint = get_<unsigned int>("my_int", cfg);
+    auto my_uint = get_as<unsigned int>("my_int", cfg);
 
 One way of remembering the order of arguments is: "``get_as`` an object of type
 ``double``: the entry ``my_double`` from this ``cfg`` node".
 
 See below for the function signature and more information.
 
-.. note::
-
-  The ``Utopia::as_`` function is deprecated in favour of ``Utopia::get_as``.
-
-.. doxygenfunction:: Utopia::get_as
+.. doxygenfunction:: Utopia::get_as(const std::string&, const DataIO::Config&)
 
 
 
