@@ -154,6 +154,18 @@ Graph create_scale_free_graph(  const std::size_t num_vertices,
  * @param del_out The unnormalized connectivity of new vertices
  * @param rng The random number generator
  * @return Graph The directed scale-free graph
+ *
+ * @detail The graph is built by continuously adding new edges via preferential
+ *         attachment. In each step, an edge is added in one of the following
+ *         three ways (depending on the respective probability fractions alpha,
+ *         beta, gamma):
+ *         - A: add edge from a newly added vertex to an existing one
+ *         - B: add edge between two already existing vertices
+ *         - C: add edge from an existing vertex to a newly added vertex
+ *         As the graph is directed we (can) have different attachment
+ *         probabilities for in-edges and out-edges (del_in, del_out).
+ *         The probability for choosing a vertex as source (target) of the new
+ *         edge is proportional to the its current out-degree (in-degree).
  */
 template <typename Graph, typename RNG>
 Graph create_scale_free_directed_graph( const std::size_t num_vertices,
@@ -194,7 +206,7 @@ Graph create_scale_free_directed_graph( const std::size_t num_vertices,
     bool skip;
 
     // In each step, add one edge to the graph. A new vertex may or may not be
-    // added to the graph. In each step, do option 'A', 'B' or 'C' with the
+    // added to the graph. In each step, choose option 'A', 'B' or 'C' with the
     // respective probability fractions 'alpha', 'beta' and 'gamma'.
     while (boost::num_vertices(g) < num_vertices) {
         skip = false;
