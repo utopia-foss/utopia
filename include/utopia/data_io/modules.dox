@@ -37,23 +37,6 @@ Of course, YAML has no types associated with each entry; the ::Utopia::get_as fu
 
 While ``cfg["key"]`` can be used to traverse the YAML tree, cases where the given key is not available lead to so-called Zombie nodes. The ::Utopia::get_as function is capable of raising the appropriate error message, a ::Utopia::KeyError, for such cases, because the key and the node from which to read the key are passed separately.
 
-
-### Legacy function: ::Utopia::as_ (Deprecated!)
-
-Unlike ::Utopia::get_as, the ::Utopia::as_ method directly expects to receive a ::Utopia::Config node which is then to be converted:
-
-\code{.cc}
-    using namespace Utopia;
-    auto cfg = YAML::Load("{my_double: 3.14, my_int: 42, my_str: foo}");
-
-    auto my_double = as_double(cfg["my_double"]);
-    auto my_int = as_int(cfg["my_int"]);
-    auto my_uint = as_<unsigned int>(cfg["my_int"]);
-    auto my_str = as_str(cfg["my_str"]);
-\endcode
-
-This function is deprecated, as it does not allow to throw ::Utopia::KeyError, because the information on the name of the key is not available in the scope of the ::Utopia::as_.
-
 \}
 
 */
