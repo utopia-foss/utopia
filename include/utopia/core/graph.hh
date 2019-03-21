@@ -42,7 +42,8 @@ Graph create_random_graph(  const std::size_t num_vertices,
 
 /// Create a scale-free graph
 /** This function generates a scale-free graph using the Barabási-Albert model.
- * 
+ *  Multi-edges and self-loops are not allowed.
+ *
  * @tparam Graph The graph type
  * @tparam RNG The random number generator type
  * @param num_vertices The total number of vertices
@@ -107,32 +108,197 @@ Graph create_scale_free_graph(  const std::size_t num_vertices,
                 {
                     // Until now, no edge has been added. Reset edge_added.
                     edge_added = false;
+                    // accumulate the probability fractions
+                    prob += boost::out_degree(*v, g) 
+                            / ((2. * num_edges) - deg_ignore);
 
-                    // Check whether the nodes are already connected
-                    if (!boost::edge(new_vertex, *v, g).second){
-                        prob += boost::out_degree(*v, g) 
-                                / ((2. * num_edges) - deg_ignore);
-                    }
                     if (rand_num <= prob){
-                        // create an edge between the two vertices
-                        deg_ignore = boost::out_degree(*v, g);
-                        boost::add_edge(new_vertex, *v, g);
+                        // Check whether the nodes are already connected
+                        if (not boost::edge(new_vertex, *v, g).second){
+                            // create an edge between the two vertices
+                            deg_ignore = boost::out_degree(*v, g);
+                            boost::add_edge(new_vertex, *v, g);
 
-                        // Increase the number of added edges and keep track 
-                        // that an edge has been added
-                        ++edges_added;
-                        edge_added = true;
-                        break;
+                            // Increase the number of added edges and keep
+                            // track that an edge has been added
+                            ++edges_added;
+                            edge_added = true;
+                            break;
+                        }
                     }
                 }
 
                 // If no edge has been attached in one loop through the vertices
                 // try again to attach an edge with another random number
-                if (!edge_added){
+                if (not edge_added){
                     --edge;
                 }
             }
             num_edges+=edges_added;
+        }
+    }
+    return g;
+}
+
+
+/// Create a scale-free directed graph
+/** @detail This function generates a scale-free graph using the model from
+ *          Bollobás et al. Multi-edges and self-loops are not allowed.
+ *          The graph is built by continuously adding new edges via preferential
+ *          attachment. In each step, an edge is added in one of the following
+ *          three ways:
+ *          - A: add edge from a newly added vertex to an existing one
+ *          - B: add edge between two already existing vertices
+ *          - C: add edge from an existing vertex to a newly added vertex
+ *          As the graph is directed there can be different attachment
+ *          probability distributions for in-edges and out-edges. 
+ *          The probability for choosing a vertex as source (target) of the new
+ *          edge is proportional to its current out-degree (in-degree).
+ *          Each newly added vertex has a fixed initial probability to be chosen
+ *          as source (target) which is proportional to del_out (del_in).
+ *
+ * @tparam Graph The graph type
+ * @tparam RNG The random number generator type
+
+ * @param n The total number of vertices
+ * @param alpha The probability for option 'A'
+ * @param beta The probability for option 'B'
+ * @param gamma The probability for option 'C'
+ * @param del_in The unnormalized attraction of newly added vertices
+ * @param del_out The unnormalized connectivity of newly added vertices
+ * @param rng The random number generator
+
+ * @return Graph The scale-free directed graph
+ */
+template <typename Graph, typename RNG>
+Graph create_scale_free_directed_graph( const std::size_t num_vertices,
+                                        const double alpha,
+                                        const double beta,
+                                        const double gamma,
+                                        const double del_in,
+                                        const double del_out,
+                                        RNG& rng)
+{
+    // Create emtpy graph.
+    Graph g;
+
+    // Check for cases in which the algorithm does not work.
+    if (alpha + beta + gamma != 1.) {
+        throw std::invalid_argument("The probabilities alpha, beta and gamma "
+                                    "have to add up to 1!");
+    }
+    if (not boost::is_directed(g)) {
+        throw std::runtime_error("This algorithm only works for directed "
+                                 "graphs but the graph type specifies an "
+                                 "undirected graph!");
+    }
+
+    // Create three-cycle as spawning network.
+    boost::add_vertex(g);
+    boost::add_vertex(g);
+    boost::add_vertex(g);
+    boost::add_edge(0, 1, g);
+    boost::add_edge(1, 2, g);
+    boost::add_edge(2, 0, g);
+
+    std::uniform_real_distribution<> rand(0, 1);
+
+    // Define helper variables.
+    auto num_edges = boost::num_edges(g);
+    auto norm_in = 0.;
+    auto norm_out = 0.;
+    bool skip;
+
+    // In each step, add one edge to the graph. A new vertex may or may not be
+    // added to the graph. In each step, choose option 'A', 'B' or 'C' with the
+    // respective probability fractions 'alpha', 'beta' and 'gamma'.
+    while (boost::num_vertices(g) < num_vertices) {
+        skip = false;
+        auto v = boost::vertex(0, g);
+        auto w = boost::vertex(0, g);
+
+        // Update the normalization for in-degree and out-degree probabilities.
+        norm_in = num_edges + del_in * boost::num_vertices(g);
+        norm_out = num_edges + del_out * boost::num_vertices(g);
+        const auto rand_num = rand(rng);
+        
+        if (rand_num < alpha) {
+            // option 'A'
+            // Add new vertex v and add edge (v,w) with w drawn from the
+            // discrete in-degree probablility distribution of already existing
+            // vertices.
+            auto prob_sum = 0.;
+            const auto r = rand(rng);
+
+            for (auto [p, p_end] = boost::vertices(g); p!=p_end; ++p) {
+                
+                prob_sum += (boost::in_degree(*p, g) + del_in) / norm_in;
+                if (r < prob_sum) {
+                    w = *p;
+                    break;
+                }
+            }
+            v = boost::add_vertex(g);
+        }
+
+        else if (rand_num < alpha + beta) {
+            // option 'B'
+            // Add edge (v,w) with v(w) drawn from the discrete out-degree
+            // (in-degree) probablility distribution of already existing
+            // vertices.
+            auto prob_sum_in = 0.;
+            auto prob_sum_out = 0.;
+            const auto r_in = rand(rng);
+            const auto r_out = rand(rng);
+
+            // Find the source of the new edge.
+            for (auto [p, p_end] = boost::vertices(g); p!=p_end; ++p) {
+                
+                prob_sum_out += (boost::out_degree(*p, g) + del_out)/norm_out;
+                if (r_out < prob_sum_out) {
+                    v = *p;
+                    break;
+                }
+            }
+            // Find the target of the new edge.
+            for (auto [p, p_end] = boost::vertices(g); p!=p_end; ++p) {
+                
+                prob_sum_in += (boost::in_degree(*p, g) + del_in)/norm_in;
+                if (r_in < prob_sum_in) {
+                    if (v!=*p and (not boost::edge(v,*p, g).second)) {
+                        w = *p;
+                        break;
+                    }
+                    else {
+                        // Do not allow multi-edges or self-loops.
+                        skip = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        else {
+            // option 'C'
+            // Add new vertex w and add edge (v,w) with v drawn from the
+            // discrete out-degree probablility distribution of already
+            // existing vertices.
+            double prob_sum = 0.;
+            const auto r = rand(rng);
+
+            for (auto [p, p_end] = boost::vertices(g); p!=p_end; ++p) {
+                
+                prob_sum += (boost::out_degree(*p, g) + del_out)/norm_out;
+                if (r < prob_sum) {
+                    v = *p;
+                    break;
+                }
+            }
+            w = boost::add_vertex(g);
+        }
+        if (not skip) {
+            ++num_edges;
+            boost::add_edge(v, w, g);
         }
     }
     return g;

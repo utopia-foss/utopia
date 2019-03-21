@@ -15,12 +15,18 @@ struct Vertex{
     int i;
 };
 
-/// The test graph type
+/// The test graph types
 using G = boost::adjacency_list<
                     boost::vecS,        // edge container
                     boost::vecS,        // vertex container
                     boost::undirectedS,
                     Vertex>;            // vertex struct
+
+using G_directed = boost::adjacency_list<
+                    boost::vecS,        // edge container
+                    boost::vecS,        // vertex container
+                    boost::bidirectionalS,
+                    Vertex>;             // vertex struct
 
 
 /// Test the function that creates a random graph
@@ -119,13 +125,6 @@ void test_create_scale_free_graph(){
 
     /// Test catching exceptions
     // Case: directed Graph
-
-    using G_directed = boost::adjacency_list<
-        boost::vecS,        // edge container
-        boost::vecS,        // vertex container
-        boost::directedS,
-        Vertex>;             // vertex struct
-
     try
     {
         auto g_dir = create_scale_free_graph<G_directed> (num_vertices, mean_degree, rng);
@@ -165,6 +164,78 @@ void test_create_scale_free_graph(){
     catch (...){
         throw std::runtime_error("Caught unexpected exception in "
                                  "create_scale_free_graph function test.");
+    }
+}
+
+
+/// Test the function that creates a directed scale-free graph
+void test_create_scale_free_directed_graph(){
+    // Create a random number generator
+    Utopia::DefaultRNG rng;
+    Utopia::DefaultRNG rng_copy = rng;
+
+    // Set graph properties
+    const std::size_t num_vertices = 200;
+    const double alpha = 0.2;
+    const double beta = 0.8;
+    const double gamma = 0.;
+    const double del_in = 0.;
+    const double del_out = 0.5;
+
+    // Create test graph
+    auto g = create_scale_free_directed_graph<G_directed>(  num_vertices,
+                                                            alpha,
+                                                            beta,
+                                                            gamma,
+                                                            del_in,
+                                                            del_out,
+                                                            rng);
+
+    // Assert that the number of vertices is correct
+    assert(num_vertices == boost::num_vertices(g));
+
+    // Assert that only tree vertices (the initial network)
+    // have an in-degree unequal Zero.
+    auto count = 0;
+    for (auto [v, v_end] = boost::vertices(g); v!=v_end; ++v){
+        if (boost::in_degree(*v, g) > 0) {
+            ++count;
+        }
+    }
+    assert(count == 3);
+
+    // Check that at least one vertex has more than 10 in-edges
+    bool at_least_one_more_than_ten_edges = false;
+    for (auto [v, v_end] = boost::vertices(g); v!=v_end; ++v){
+        if (boost::in_degree(*v, g) > 10){
+            at_least_one_more_than_ten_edges = true;
+            break;
+        }
+    }
+    assert(at_least_one_more_than_ten_edges == true);
+
+    // Assert that the state of the rng has changed.
+    assert(rng!=rng_copy);
+
+    /// Test catching exceptions
+    // Case: undirected Graph
+    try
+    {
+        auto g_dir = create_scale_free_directed_graph<G>(   num_vertices,
+                                                            alpha,
+                                                            beta,
+                                                            gamma,
+                                                            del_in,
+                                                            del_out,
+                                                            rng);
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "Caught expected exception" << std::endl;
+    }
+    catch (...){
+        throw std::runtime_error("Caught unexpected exception in "
+                        "create_directed_scale_free_graph function test.");
     }
 }
 
@@ -220,6 +291,7 @@ int main()
         test_create_random_graph();
         test_create_small_world_graph();
         test_create_scale_free_graph();
+        test_create_scale_free_directed_graph();
         
         return 0;
     }
