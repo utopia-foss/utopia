@@ -140,12 +140,26 @@ Graph create_scale_free_graph(  const std::size_t num_vertices,
     return g;
 }
 
+
 /// Create a scale-free directed graph
-/** This function generates a scale-free graph using the model from
- *  Bollobás et al. Multi-edges and self-loops are not allowed.
+/** @detail This function generates a scale-free graph using the model from
+ *          Bollobás et al. Multi-edges and self-loops are not allowed.
+ *          The graph is built by continuously adding new edges via preferential
+ *          attachment. In each step, an edge is added in one of the following
+ *          three ways:
+ *          - A: add edge from a newly added vertex to an existing one
+ *          - B: add edge between two already existing vertices
+ *          - C: add edge from an existing vertex to a newly added vertex
+ *          As the graph is directed there can be different attachment
+ *          probability distributions for in-edges and out-edges. 
+ *          The probability for choosing a vertex as source (target) of the new
+ *          edge is proportional to its current out-degree (in-degree).
+ *          Each newly added vertex has a fixed initial probability to be chosen
+ *          as source (target) which is proportional to del_out (del_in).
  *
  * @tparam Graph The graph type
  * @tparam RNG The random number generator type
+
  * @param n The total number of vertices
  * @param alpha The probability for option 'A'
  * @param beta The probability for option 'B'
@@ -153,20 +167,8 @@ Graph create_scale_free_graph(  const std::size_t num_vertices,
  * @param del_in The unnormalized attraction of newly added vertices
  * @param del_out The unnormalized connectivity of newly added vertices
  * @param rng The random number generator
+
  * @return Graph The scale-free directed graph
- *
- * @detail The graph is built by continuously adding new edges via preferential
- *         attachment. In each step, an edge is added in one of the following
- *         three ways:
- *         - A: add edge from a newly added vertex to an existing one
- *         - B: add edge between two already existing vertices
- *         - C: add edge from an existing vertex to a newly added vertex
- *         As the graph is directed we (can) have different attachment
- *         probability distributions for in-edges and out-edges. 
- *         The probability for choosing a vertex as source (target) of the new
- *         edge is proportional to its current out-degree (in-degree).
- *         Each newly added vertex has a fixed initial probability to be chosen
- *         as source (target) which is proportional to del_out (del_in).
  */
 template <typename Graph, typename RNG>
 Graph create_scale_free_directed_graph( const std::size_t num_vertices,
@@ -182,12 +184,13 @@ Graph create_scale_free_directed_graph( const std::size_t num_vertices,
 
     // Check for cases in which the algorithm does not work.
     if (alpha + beta + gamma != 1.) {
-        throw std::invalid_argument("The probabilities alpha, beta and gamma"
-                                    " have to add up to 1!");
+        throw std::invalid_argument("The probabilities alpha, beta and gamma "
+                                    "have to add up to 1!");
     }
     if (not boost::is_directed(g)) {
-        throw std::runtime_error("This algorithm only works for directed"
-                " graphs but the graph type specifies an undirected graph!");
+        throw std::runtime_error("This algorithm only works for directed "
+                                 "graphs but the graph type specifies an "
+                                 "undirected graph!");
     }
 
     // Create three-cycle as spawning network.
