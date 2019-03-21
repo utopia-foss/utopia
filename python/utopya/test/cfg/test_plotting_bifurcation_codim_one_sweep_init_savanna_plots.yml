@@ -6,7 +6,7 @@ bifurcation_alpha_sweep_init:
       density_G: 
         path: data/SavannaHomogeneous/density_G
         dims: [time]
-      density_S: 
+      density_SS: 
         path: data/SavannaHomogeneous/density_SS
         dims: [time]
 
