@@ -1,6 +1,3 @@
-# Define a global target for model tests
-add_custom_target(build_model_tests)
-
 # Utopia-specific wrapper for adding a model test
 #
 # .. cmake_function:: add_model_test
@@ -24,34 +21,50 @@ function(add_model_test)
                         "${KW_UNPARSED_ARGUMENTS}")
     endif ()
 
-    # Create the target name for the bundled model tests
-    set(bundled_model_tests test_model_${KW_MODEL_NAME})
+    # Create the target names for the single test executable, and those for
+    # the bundled build and test targets for this model
+    set(target MODEL_${KW_MODEL_NAME}_${KW_NAME})
+    set(model_test_build_target build_tests_model_${KW_MODEL_NAME})
+    set(model_test_target test_model_${KW_MODEL_NAME})
 
-    # Add custom target for this model prefix, if it does not already exist
-    if (NOT TARGET ${bundled_model_tests})
-        add_custom_target(${bundled_model_tests}
+    # Add custom BUILD target for this model, if it does not already exist
+    if (NOT TARGET ${model_test_build_target})
+        add_custom_target(${model_test_build_target})
+
+        # ... which is a dependency of the build target for _all_ models
+        add_dependencies(build_tests_models ${model_test_build_target})
+        # NOTE This global target needs to be set elsewhere, before the first
+        #      invocation of this function.
+    endif()
+
+    # Add custom TEST target for this model, if it does not already exist
+    if (NOT TARGET ${model_test_target})
+        add_custom_target(${model_test_target}
             COMMAND ctest --output-on-failure
                           --tests-regex ^MODEL_${KW_MODEL_NAME}_.+$
         )
-        message(STATUS "Model tests target:          ${bundled_model_tests}")
+        message(STATUS "Model tests target:          ${model_test_target}")
 
-        # register it with the model tests
-        add_dependencies(test_models ${bundled_model_tests})
+        # To make sure tests are built, add the build target as a dependency
+        add_dependencies(${model_test_target} ${model_test_build_target})
+
+        # register it with the target to carry out _all_ model tests
+        add_dependencies(test_models ${model_test_target})
     endif ()
 
-    # Create the target name
-    set(target_name MODEL_${KW_MODEL_NAME}_${KW_NAME})
+    # Now, create the single test target and add it as a build dependency
+    add_executable(${target} ${KW_SOURCES})
+    add_dependencies(${model_test_build_target} ${target})
 
-    # Add the test
-    add_executable(${target_name} ${KW_SOURCES})
-    add_test(NAME ${target_name} COMMAND ${target_name})
-    add_dependencies(build_model_tests ${target_name})
+    # Add the executable as a test and as dependency of the bundled test target
+    add_test(NAME ${target} COMMAND ${target})
+    add_dependencies(${model_test_target} ${target})
 
     # link to Utopia target
-    target_link_libraries(${target_name} PUBLIC utopia)
+    target_link_libraries(${target} PUBLIC utopia)
 
     # Done. Inform about it
-    message(STATUS "Added model test target:     ${target_name}")
+    message(STATUS "Added model test target:     ${target}")
 
 endfunction()
 

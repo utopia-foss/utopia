@@ -67,3 +67,11 @@ add_subdirectory(doc)
 add_subdirectory(src/models)
 add_subdirectory(python)
 add_subdirectory(test EXCLUDE_FROM_ALL)
+
+# Add a test target to rule them all
+add_custom_target(test_all)
+add_dependencies(test_all
+                    test_core
+                    test_dataio
+                    test_utopya
+                    test_models)
