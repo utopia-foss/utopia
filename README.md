@@ -328,49 +328,84 @@ changed by the user. To build optimized executables again, reconfigure with
 cmake -DCMAKE_BUILD_TYPE=Release ..
 ```
 
-### Unit Tests
+### Testing
 Utopia contains unit tests to ensure consistency by checking if class members
 and functions are working correctly. This is done both for the C++ and the
 Python code.
-The tests are integrated into the GitLab Continuous Integration build process,
-meaning that failing tests can be easily detected.
+The tests are integrated into the GitLab Continuous Integration pipeline,
+meaning that tests are run upon every push to the project and failing tests
+can be easily detected.
 
 Tests can also be executed locally, to test a (possibly altered) version of
-Utopia *before* committing changes. To build them, set build flags to `Debug`
-as described [above](#build-types) and then execute
+Utopia *before* committing and pushing changes to the GitLab.
+To build them, set build flags to `Debug` as described [above](#build-types)
+and then execute
 
 ```bash
-make build_unit_tests -j4
+make -j4 build_tests_all
 ```
 
-where the `-j4` argument builds four test targets in parallel. To perform all
-tests, call
+where the `-j4` argument builds four test targets in parallel. It makes sense
+to adjust this to the number of processors you want to engage in this task.
+To then carry out the tests, call the corresponding `test_`-prefixed target:
 
 ```bash
-ARGS="--output-on-failure" make test
+make -j4 test_all
 ```
 
-If the test executables are not built before executing `make test`, the
-corresponding tests will inevitably fail.
-
-#### Grouped Unit Tests
-We grouped the tests to receive more granular information from the CI system.
-You can choose to perform only tests from a specific group by calling
+#### Test Groups
+Usually, changes which are to be tested are concentrated in a few files, which
+makes running all tests with `test_all` time-consuming and thus inefficient.
+We therefore provide grouped tests, which relate only to a subset of tests.
+A group of tests can be built and invoked individually by calling:
 
 ```bash
-make test_<group>
+make build_tests_<identifier>
+make test_<identifier>
 ```
 
-Replace `<group>` by the appropriate testing group identifier. Note that the
-`ARGS` environment variable is not needed here.
+Replace `<identifier>` by the appropriate testing group identifier from the
+table below.
 
-Available testing groups:
+| Identifier       | Test description   |
+| ---------------- | ------------------ |
+| `core`           | Model infrastructure, managers, convenience functions … |
+| `dataio`         | Data input and output, e.g. HDF5, YAML, … |
+| `backend`        | Combination of `core` and `dataio` |
+| `model_<name>`   | The C++ model tests of model with name `<name>` |
+| `models`         | The C++ and Python tests for _all_ models |
+| `models_python`† | All python model tests (from `python/model_tests`) |
+| `utopya`†        | Tests for `utopya` frontend package |
+| `all`            | All of the above. (Go make yourself a hot beverage, when invoking this.) |
 
-| Group    | Info                                                           |
-| -------- | -------------------------------------------------------------- |
-| `core`   | Backend functions for models                                   |
-| `dataio` | Backend functions for writing data and working with YAML       |
-| `utopya` | Frontend package managing simulations and their evaluation     |
-| `models` | The C++ and Python tests for _all_ models                      |
-| `model_python` | All python models tests (from `python/model_tests`)      |
-| `model_<name>` | The C++ model tests of model with name `<name>`          |
+_Note:_ 
+* The `test_` targets usually have the required build targets as
+  dependencies (except `models_python`; you need to `make all` before invoking
+  that!).
+* Targets marked with `†` do _not_ have a corresponding `build_tests_*`
+  target.
+* The `build_tests_` targets give you more control in scenarios where you want
+  to test _only_ building.
+
+#### Running Individual Test Executables
+Each _individual_ test also has an individual build target, the names of which
+you see in the output of the `make build_tests_*` command.
+For invoking the individual test executable, you need to go to the
+corresponding build directory, e.g. `build/tests/core/`, and run the executable
+from that directory, as some of the tests rely on auxilary files which are
+located relative to the executable.
+
+For invoking individual Python tests, there are no targets specified.
+However, [pytest](https://docs.pytest.org/en/latest/usage.html) gives you
+control over which tests are invoked:
+
+```bash
+cd python
+python -m pytest -v model_tests/<model_name>             # all tests
+python -m pytest -v model_tests/<model_name>/my_test.py  # specific test file
+python -m pytest -v utopya/test/<some_glob>              # selected via glob
+```
+
+_Note:_ Make sure you entered the virtual environment and the required
+executables are built. See `pytest --help` for more information regarding the
+CLI.

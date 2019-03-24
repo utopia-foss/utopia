@@ -1,11 +1,11 @@
 ### What does this MR do?
 <!-- Explain _how_ you achieved the proposal of the task. -->
-This MR ...
+This MR ... _fill this in_
 
 
 ### Is there something that needs to be double checked?
 <!-- Is there something a reviewer should look out for _especially_? -->
-
+_fill this in_
 
 ### Can this MR be accepted?
 - [ ] Implemented ...
@@ -14,8 +14,8 @@ This MR ...
    - [ ] ...
 - [ ] Added or updated documentation
 - [ ] Pipeline passing without warnings
-- [ ] Approved by @ ...
-<!-- Add reviewer(s) here once no longer in WIP -->
+- [ ] Squash option set <!-- unless there's a good reason not to squash -->
+- [ ] Approved by @ ... <!-- Add reviewer(s) here once no longer WIP -->
 
 
 ### Related issues

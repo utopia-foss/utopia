@@ -7,7 +7,8 @@
 #      it is important that the names of folders and targets match.
 #   5. Re-configure using `cmake ..`
 
-# Add an empty model test target for tests to add dependencies to
+# Add targets to build and execute model tests
+add_custom_target(build_tests_models)
 add_custom_target(test_models)
 
 

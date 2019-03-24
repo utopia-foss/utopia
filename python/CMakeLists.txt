@@ -67,7 +67,11 @@ add_custom_target(test_models_python
                           ${CMAKE_CURRENT_SOURCE_DIR}/model_tests/
 )
 
-# Add the latter as a dependency for the test_models target
+# For running all python model tests, it is required that all models are built
+# add_dependencies(test_models_python all)  # FIXME somehow, all is not defined
+# NOTE There are no targets for inidivdual model tests; has to be done manually
+
+# Add the python model tests as a dependency for the test_models target
 add_dependencies(test_models test_models_python)
 
 message(STATUS "Python setup complete.\n")

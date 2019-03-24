@@ -21,8 +21,8 @@ _fill this in_
 - [ ] Model requirements (see documentation) are all fulfilled
 - [ ] Reasonably up-to-date with current master
 - [ ] Pipeline passing without warnings
-- [ ] Approved by @ ...
-<!-- Add reviewer(s) here once no longer WIP -->
+- [ ] Squash option set <!-- unless there's a good reason not to squash -->
+- [ ] Approved by @ ... <!-- Add reviewer(s) here once no longer WIP -->
 
 
 ### Related issues

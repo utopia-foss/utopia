@@ -140,7 +140,8 @@ build:unit_tests:
   script:
     - mkdir build && cd build
     - cmake ..
-    - make $MAKE_FLAGS_BUILD build_unit_tests
+    - make $MAKE_FLAGS_BUILD build_tests_core
+    - make $MAKE_FLAGS_BUILD build_tests_dataio
 
 # Build the models and their tests; artifacts used in test stage
 build:models:
@@ -150,8 +151,8 @@ build:models:
   script:
     - mkdir build && cd build
     - cmake ..
-    - make $MAKE_FLAGS_BUILD build_model_tests
     - make $MAKE_FLAGS_BUILD all
+    - make $MAKE_FLAGS_BUILD build_tests_models
 
 
 # Build in debug mode, once with gcc and once with clang
@@ -167,8 +168,9 @@ build:debug: &build_debug
         -DCMAKE_CXX_FLAGS_DEBUG='-Werror'
       ..
     # FIXME After Utopia::as_ is removed, allow the deprecation warning again
-    - make $MAKE_FLAGS_BUILD build_unit_tests
-    - make $MAKE_FLAGS_BUILD build_model_tests
+    - make $MAKE_FLAGS_BUILD build_tests_core
+    - make $MAKE_FLAGS_BUILD build_tests_dataio
+    - make $MAKE_FLAGS_BUILD build_tests_models
     - make $MAKE_FLAGS_BUILD all
 
 build:debug-clang:
@@ -183,8 +185,9 @@ build:debug-clang:
         -DCMAKE_CXX_FLAGS_DEBUG='-Werror'
       ..
     # FIXME After Utopia::as_ is removed, allow the deprecation warning again
-    - make $MAKE_FLAGS_BUILD build_unit_tests
-    - make $MAKE_FLAGS_BUILD build_model_tests
+    - make $MAKE_FLAGS_BUILD build_tests_core
+    - make $MAKE_FLAGS_BUILD build_tests_dataio
+    - make $MAKE_FLAGS_BUILD build_tests_models
     - make $MAKE_FLAGS_BUILD all
 
 # -- Test stage ---------------------------------------------------------------
