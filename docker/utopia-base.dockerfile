@@ -23,6 +23,7 @@ RUN apt-get update \
         git \
         libarmadillo-dev \
         libboost-dev \
+        libboost-test-dev \
         libhdf5-dev \
         locales \
         pkg-config \

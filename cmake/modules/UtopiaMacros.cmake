@@ -1,5 +1,6 @@
 # BOOST
-find_package(Boost 1.62 REQUIRED)
+find_package(Boost 1.62 REQUIRED
+             COMPONENTS unit_test_framework)
 
 # HDF5
 find_package(HDF5 1.10 REQUIRED COMPONENTS C HL)
@@ -33,6 +34,7 @@ find_package(Threads REQUIRED)
 
 # include Utopia macros
 include(UtopiaEnv)
+include(UtopiaAddUnitTest)
 include(UtopiaAddModel)
 include(UtopiaAddModelTest)
 include(UtopiaGenerateModelInfo)
