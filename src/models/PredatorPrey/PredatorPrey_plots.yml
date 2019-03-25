@@ -40,9 +40,9 @@ population_and_resources:
       #      and the values define the color
       # cmap: viridis
       cmap: 
-        empty: blue
-        prey: green
-        predator: yellow
+        empty: white
+        prey: yellow
+        predator: blue
         predprey: red
 
     # The name of the property to plot with its options

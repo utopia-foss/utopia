@@ -6,6 +6,11 @@ This model is a version of the Predator-prey model from the CCEES lecture
 script (v3, chapter 9.3.1). It is implemented as a cellular automaton (CA)
 with the cells arranged on a two-dimensional grid and represents a simple
 case of population dynamics on a grid.
+!!!Currently the execution order of rules is different from the original code
+used in the script, where cells were called randomly and the sequence of 
+rules was applied to an individual cell. Instead in this code a rule is applied
+to all cells, befor the next rule is executed. Due to that, results from the 
+script can not be replicated exactly with this code!!!
 
 Scenario
 --------
