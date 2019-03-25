@@ -1,31 +1,53 @@
-#include <cassert>
+#define BOOST_TEST_MODULE state test
+#include <boost/test/unit_test.hpp>
+#include <boost/mpl/list.hpp>
+
 #include <vector>
-#include <iostream>
 
 #include <utopia/core/state.hh>
 
-/// Instantiate containers, check access and contents
-int main() {
-    try {
-        StateContainer<double, false> sc1(0.1);
-        assert(!sc1.is_sync());
-        auto& state = sc1.state();
-        state = 0.2;
-        assert(sc1.state() = 0.2);
+struct StateVector {
+    using StateType = std::vector<double>;
+    StateType state_1 = {0.1, 0.2};
+    StateType state_2 = {-0.1, 0.3};
+};
 
-        std::vector<double> vec({0.1, 0.2});
-        StateContainer<std::vector<double>, true> sc2(vec);
-        assert(sc2.is_sync());
-        auto& new_state = sc2.state_new();
-        new_state = std::vector<double>({0.1, 0.3});
-        assert(sc2.state() == vec);
-        sc2.update();
-        assert(sc2.state()[1] == 0.3);
+struct StateScalar {
+    using StateType = double;
+    StateType state_1 = 0.1;
+    StateType state_2 = -0.2;
+};
 
-        return 0;
-    }
-    catch (...) {
-        std::cerr << "Unknown exception thrown!" << std::endl;
-        return 1;
-    }
+using StateList = boost::mpl::list<StateScalar, StateVector>;
+
+/// Test a asynchronous state
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(asynchronous, Fix, StateList, Fix)
+{
+    // Check initialization
+    StateContainer<typename Fix::StateType, false> sc(Fix::state_1);
+    BOOST_TEST(not sc.is_sync());
+    BOOST_TEST(sc.state() == Fix::state_1);
+
+    // Check direct update
+    auto& state = sc.state();
+    state = Fix::state_2;
+    BOOST_TEST(sc.state() == Fix::state_2);
+}
+
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(synchronous, Fix, StateList, Fix)
+{
+    // Check initialization
+    StateContainer<typename Fix::StateType, true> sc(Fix::state_1);
+    BOOST_TEST(sc.is_sync());
+    BOOST_TEST(sc.state() == Fix::state_1);
+
+    // Check independent update of the cache
+    auto& state_new = sc.state_new();
+    state_new = Fix::state_2;
+    BOOST_TEST(sc.state() == Fix::state_1);
+    BOOST_TEST(sc.state_new() == Fix::state_2);
+
+    // Check update of the state
+    sc.update();
+    BOOST_TEST(sc.state() == Fix::state_2);
 }
