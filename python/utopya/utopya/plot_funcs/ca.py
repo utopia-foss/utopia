@@ -105,7 +105,6 @@ def state_anim(dm: DataManager, *,
                model_name: str,
                to_plot: dict,
                writer: str,
-               limits: tuple=None,
                frames_kwargs: dict=None, 
                base_figsize: tuple=None,
                fps: int=2, 
@@ -113,7 +112,7 @@ def state_anim(dm: DataManager, *,
                preprocess_funcs: Dict[str, Callable]=None) -> None:
     """Create an animation of the states of a two dimensional cellular automaton.
     The function can use different writers, e.g. write out only the frames or create
-    an animation with an external programm (e.g. ffmpeg). 
+    an animation with an external program (e.g. ffmpeg). 
     Multiple properties can be plotted next to each other, specified by the to_plot dict.
     
     Arguments:
@@ -145,7 +144,7 @@ def state_anim(dm: DataManager, *,
         TypeError: For unknown dataset shape
     """
 
-    def plot_property(*, data, ax, cmap, limits: list, title: str=None):
+    def plot_property(*, data, ax, cmap, limits: list=None, title: str=None):
         """Helper function to plot a property on a given axis and return
         an imshow object
         """
@@ -195,8 +194,6 @@ def state_anim(dm: DataManager, *,
             cbar.ax.set_yticklabels(cmap.keys())
 
         ax.axis('off')
-
-        # Register the colorbar artist
 
         return im
 
@@ -250,7 +247,7 @@ def state_anim(dm: DataManager, *,
     fig, axs = plt.subplots(1, len(to_plot), squeeze=False,
                             figsize=base_figsize)
 
-    # Adjust figure size in width to accomodate all properties
+    # Adjust figure size in width to accommodate all properties
     figsize = fig.get_size_inches()
     fig.set_size_inches(figsize[0] * len(to_plot), figsize[1])
 
@@ -284,8 +281,12 @@ def state_anim(dm: DataManager, *,
                 ims[prop_name].set_data(data)
 
                 # If no limits are provided, autoscale the new limits
-                if not limits:
-                    ims[prop_name].autoscale()
+                # in the case of continuous colormaps.
+                # A discrete colormap, that is provided as a dict, should never
+                # autoscale. 
+                if not isinstance(to_plot[prop_name]['cmap'], dict):
+                    if not ('limits' in to_plot[prop_name]):
+                        ims[prop_name].autoscale()
             
             # Updated all subfigures now and can now tell the writer that the
             # frame is finished and can be grabbed.
