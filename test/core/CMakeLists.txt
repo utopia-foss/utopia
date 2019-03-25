@@ -34,29 +34,12 @@ set(TESTS_CORE
     compiletime_algos_test
     )
 
-# Add a target to build all these tests
-add_custom_target(build_tests_core)
-add_dependencies(build_tests_backend build_tests_core)
-
 # Add CORE-prefixed test targets
 foreach(test ${TESTS_CORE})
-    add_executable(CORE_${test} ${test}.cc)
-    target_link_libraries(CORE_${test} PUBLIC utopia)
-    add_test(NAME CORE_${test} COMMAND CORE_${test})
-
-    # Add this target to the build target as a dependency
-    add_dependencies(build_tests_core CORE_${test})
+    add_unit_test(NAME ${test}
+                  GROUP core
+                  SOURCES ${test}.cc)
 endforeach(test)
 
 # custom dependencies of dependency test
 target_link_libraries(CORE_dependency_test PUBLIC FFTW3::fftw3)
-
-# Add custom target for 'CORE' prefix and make it dependency of test_backend
-add_custom_target(test_core
-    COMMAND ctest --output-on-failure --tests-regex ^CORE_.+$)
-
-# Make the build target a dependency
-add_dependencies(test_core build_tests_core)
-
-# And make the bundled backend tests have it as a dependency
-add_dependencies(test_backend test_core)

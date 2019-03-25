@@ -1,3 +1,8 @@
+# Add targets to build and execute model tests
+add_custom_target(build_tests_models)
+add_custom_target(test_models)
+add_dependencies(test_models build_tests_models)
+
 # Utopia-specific wrapper for adding a model test
 #
 # .. cmake_function:: add_model_test
@@ -57,11 +62,14 @@ function(add_model_test)
     add_dependencies(${model_test_build_target} ${target})
 
     # Add the executable as a test and as dependency of the bundled test target
-    add_test(NAME ${target} COMMAND ${target})
+    add_test(NAME ${target}
+             COMMAND ${target} -r detailed)
     add_dependencies(${model_test_target} ${target})
 
     # link to Utopia target
-    target_link_libraries(${target} PUBLIC utopia)
+    target_link_libraries(${target} PUBLIC utopia Boost::unit_test_framework)
+    # NOTE: Might lead to issues if linked to the static unit test library
+    target_compile_definitions(${target} PRIVATE BOOST_TEST_DYN_LINK)
 
     # Done. Inform about it
     message(STATUS "Added model test target:     ${target}")

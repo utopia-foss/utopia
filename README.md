@@ -56,8 +56,8 @@ at the [troubleshooting](#troubleshooting) section to see how to address them.
 ```bash
 apt update
 apt install cmake doxygen gcc g++ gfortran git libarmadillo-dev \
-            libboost-dev libhdf5-dev libyaml-cpp-dev libfftw3-dev \
-            pkg-config python3-dev python3-pip python3-venv
+            libboost-dev libboost-test-dev libhdf5-dev libyaml-cpp-dev \
+            libfftw3-dev pkg-config python3-dev python3-pip python3-venv
 ```
 
 You will _probably_ need administrator rights. ([`sudo`, anyone?](https://xkcd.com/149/))
@@ -367,22 +367,21 @@ make test_<identifier>
 Replace `<identifier>` by the appropriate testing group identifier from the
 table below.
 
-| Identifier       | Test description   |
-| ---------------- | ------------------ |
-| `core`           | Model infrastructure, managers, convenience functions … |
-| `dataio`         | Data input and output, e.g. HDF5, YAML, … |
-| `backend`        | Combination of `core` and `dataio` |
-| `model_<name>`   | The C++ model tests of model with name `<name>` |
-| `models`         | The C++ and Python tests for _all_ models |
-| `models_python`† | All python model tests (from `python/model_tests`) |
-| `utopya`†        | Tests for `utopya` frontend package |
-| `all`            | All of the above. (Go make yourself a hot beverage, when invoking this.) |
+| Identifier        | Test description   |
+| ----------------- | ------------------ |
+| `core`            | Model infrastructure, managers, convenience functions … |
+| `dataio`          | Data input and output, e.g. HDF5, YAML, … |
+| `backend`         | Combination of `core` and `dataio` |
+| `model_<name>`    | The C++ model tests of model with name `<name>` |
+| `models`†         | The C++ and Python tests for _all_ models |
+| `models_python`†‡ | All python model tests (from `python/model_tests`) |
+| `utopya`†‡        | Tests for `utopya` frontend package |
+| `all`             | All of the above. (Go make yourself a hot beverage, when invoking this.) |
 
-_Note:_ 
-* The `test_` targets usually have the required build targets as
-  dependencies (except `models_python`; you need to `make all` before invoking
-  that!).
-* Targets marked with `†` do _not_ have a corresponding `build_tests_*`
+_Note:_
+* Identifiers marked with `†` require all models to be built (by running
+  `make all`).
+* Identifiers marked with `‡` do _not_ have a corresponding `build_tests_*`
   target.
 * The `build_tests_` targets give you more control in scenarios where you want
   to test _only_ building.
