@@ -6,49 +6,52 @@
 #
 # and set the following variables
 #
-#   - ARMADILLO_FOUND           True if Armadillo was found
-#   - ARMADILLO_INCLUDE_DIRS    Location of main Armadillo header
-#   - ARMADILLO_LIBRARIES       Location of Armadillo library
+#   - Armadillo_FOUND           True if Armadillo was found
+#   - Armadillo_INCLUDE_DIRS    Location of main Armadillo header
+#   - Armadillo_LIBRARIES       Location of Armadillo library
 #
 # It uses hints provided by the CMake or environment variables
 #
-#   - ARMADILLO_ROOT            Path to the Armadillo install directory
+#   - Armadillo_ROOT            Path to the Armadillo install directory
 #
 
 # find the library itself
-find_library(ARMADILLO_LIBRARY
+find_library(Armadillo_LIBRARY
     NAMES armadillo
 
     # NOTE: Use the hinting variable explicitly.
     # This is not required for more recent versions of CMake,
     # where policy CMP0074 was introduced,
     # see https://cmake.org/cmake/help/latest/command/find_library.html
-    HINTS ${ARMADILLO_ROOT} ENV ARMADILLO_ROOT
+    HINTS ${Armadillo_ROOT} ENV Armadillo_ROOT
+    PATH_SUFFIXES lib
 )
 
 # find the header
-find_path(ARMADILLO_INCLUDE_DIR
+find_path(Armadillo_INCLUDE_DIR
     armadillo
-    HINTS ${ARMADILLO_ROOT} ENV ARMADILLO_ROOT
+    HINTS ${Armadillo_ROOT} ENV Armadillo_ROOT
+    PATH_SUFFIXES include
 )
-
-mark_as_advanced(ARMADILLO_LIBRARY ARMADILLO_INCLUDE_DIR)
 
 # report if package was found
-find_package_handle_standard_args(ARMADILLO
-  DEFAULT_MSG
-  ARMADILLO_LIBRARY ARMADILLO_INCLUDE_DIR
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(Armadillo
+    DEFAULT_MSG
+    Armadillo_LIBRARY Armadillo_INCLUDE_DIR
 )
 
+mark_as_advanced(Armadillo_LIBRARY Armadillo_INCLUDE_DIR)
+
 # set output variables
-if (ARMADILLO_FOUND)
-    set(ARMADILLO_LIBRARIES ${ARMADILLO_LIBRARY})
-    set(ARMADILLO_INCLUDE_DIRS ${ARMADILLO_INCLUDE_DIR})
+if (Armadillo_FOUND)
+    set(Armadillo_LIBRARIES ${Armadillo_LIBRARY})
+    set(Armadillo_INCLUDE_DIRS ${Armadillo_INCLUDE_DIR})
 
     # add the library target
     add_library(armadillo SHARED IMPORTED)
     set_target_properties(armadillo
-      PROPERTIES IMPORTED_LOCATION ${ARMADILLO_LIBRARIES}
-                 INTERACE_INCLUDE_DIRECTORIES ${ARMADILLO_INCLUDE_DIRS}
+        PROPERTIES IMPORTED_LOCATION ${Armadillo_LIBRARIES}
+                   INTERFACE_INCLUDE_DIRECTORIES ${Armadillo_INCLUDE_DIRS}
     )
 endif()
