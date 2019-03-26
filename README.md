@@ -14,6 +14,12 @@ Utopia is a modelling framework
 ---
 
 ## Installation
+The following instructions will install Utopia into a development environment
+on your machine. If you simply want to run Utopia, you can alternatively
+download a pre-compiled image from
+[Docker Hub](https://cloud.docker.com/repository/docker/ccees/utopia/general)
+__(feature pending!)__.
+
 ### Step-by-step Instructions
 These instructions are intended for 'clean' __Ubuntu__ (18.04) or __macOS__
 setups.
@@ -220,6 +226,43 @@ Check out the troubleshooting section there if this fails.
 | ---------| ------- | ------- |
 | [doxygen](http://www.stack.nl/~dimitri/doxygen/) | >= 1.8.14 | Builds the C++ code documentation |
 | [ffmpeg](https://www.ffmpeg.org) | >= 4.0 | Used for creating videos |
+
+### Using the Utopia Docker Image
+
+__Feature pending!__ The image is still marked private and only available
+using the Docker Hub login credentials!
+
+[Docker](https://www.docker.com/) is a free OS-level virtualization software.
+It allows you to run any application in a closed environment container.
+Application images can be downloaded from
+[Docker Hub](https://hub.docker.com).
+
+The Utopia Docker image is located in the repository
+[`ccees/utopia`](https://cloud.docker.com/repository/docker/ccees/utopia/general).
+Download its latest version by executing
+
+    docker pull ccees/utopia:latest
+
+You can execute this image in a container and mount local directories into it.
+To do so, navigate to a suitable location on your machine. To start and enter
+the container while mounting your current directory, execute
+
+    docker run -it -v $PWD:/home/utopia ccees/utopia:latest
+
+You will enter the container in the directory `/home/utopia`, where the
+`utopia_output` directory will be placed upon executing Utopia for the first
+time. The mount command will make this directory and all contents of
+`/home/utopia` persistent on your mounted host system directory. Any files
+placed into this directory will conversely be available inside the container.
+After exiting the container, it can safely be deleted. Alternatively, execute
+`docker run` with the `--rm` option to remove the container when exiting it.
+
+Upon entering the container, the virtual environment is activated. You can
+directly execute Utopia by calling
+
+    utopia <cmd>
+
+See below for further information.
 
 
 ## Utopia Documentation
