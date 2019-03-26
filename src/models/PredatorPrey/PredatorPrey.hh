@@ -107,39 +107,39 @@ private:
     // .. Model parameters ....................................................
     /// The cost of living of a predator
     double _cost_of_living_pred;
-	
+    
     /// The cost of living of a prey
-    double _cost_of_living_prey;		
+    double _cost_of_living_prey;        
 
     /// The resource uptake of a predator
     double _delta_e_pred;
-	
-    /// The resource uptake of a prey	
+    
+    /// The resource uptake of a prey   
     double _delta_e_prey;
 
     /// The maximum of resources a predator can carry
     double _e_max_pred;
-	
+    
     /// The maximum of resources a prey can carry
-    double _e_max_prey;	
+    double _e_max_prey; 
 
     /// The minimum resource level necessary for reproduction of a predator
     double _e_min_pred;
-	
+    
     /// The minimum resource level necessary for reproduction of a prey
-    double _e_min_prey;	
+    double _e_min_prey; 
 
     /// Predator's cost of reproduction, i.e. the resources transferred to the offspring
     double _cost_of_repro_pred;
-	
+    
     /// Prey's cost of reproduction, i.e. the resources transferred to the offspring
     double _cost_of_repro_prey;
-	
+    
     /// The probability to reproduce for the predator
     double _p_repro_pred;
-	
-    /// The probability to reproduce for prey 	
-    double _p_repro_prey; 	
+    
+    /// The probability to reproduce for prey   
+    double _p_repro_prey;   
 
     /// The probability for prey to flee
     double _p_flee;
@@ -181,7 +181,7 @@ private:
                                          - _cost_of_living_prey, 0., _e_max_prey);
 
         // Remove predators and preys that have no resources 
-	// ( prey always finds food and can only run out of energy if reproduction is very costly)
+        // ( prey always finds food and can only run out of energy if reproduction is very costly)
         if (state.population == predator && state.resource_predator == 0.) {
             // Remove the predator
             state.population = empty;
@@ -247,7 +247,7 @@ private:
                 state.population = empty;
                 state.resource_predator = 0.;
             }
-	     // if there is no prey the predator makes a random move	
+         // if there is no prey the predator makes a random move    
             else if (_empty_cell.size() > 0) {
                 // distribution to choose a random cell for the movement if 
                 // there is more than one
@@ -263,8 +263,8 @@ private:
                 state.resource_predator = 0.;
             }
         }
-		
-	 // continue if there are both predator and prey on a cell
+        
+     // continue if there are both predator and prey on a cell
         else if (state.population == pred_prey) {
             // checking neighbouring cells if empty for the prey to flee
 
@@ -280,7 +280,7 @@ private:
             // choose a random cell for the movement if there is more than one
             std::uniform_int_distribution<> dist(0, _empty_cell.size() - 1);
 
-	     // the prey has a certain chance to flee
+         // the prey has a certain chance to flee
             if (    _empty_cell.size() > 0
                 and this->_prob_distr(*this->_rng) < _p_flee)
             {
@@ -308,13 +308,13 @@ private:
         // preys get eaten by predators 
         if (state.population == pred_prey) {
             state.population = predator;
-			
+            
             // increase the resources and clamp to the allowed range [0, e_max]
             state.resource_predator = std::clamp(state.resource_predator 
                                                  + _delta_e_pred, 0., _e_max_pred);
-            state.resource_prey = 0.;	
+            state.resource_prey = 0.;   
         }
-	// preys eat
+    // preys eat
         else if (state.population == prey) {
             // increase the resources and clamp to the allowed range [0, e_max]
             state.resource_prey = std::clamp(state.resource_prey + _delta_e_prey, 
@@ -329,7 +329,7 @@ private:
     Rule _repro = [this](const auto& cell) {
         // Get the state of the cell
         auto state = cell->state();
-		
+        
         if (   ( state.population == predator || state.population==pred_prey)
             and this->_prob_distr(*this->_rng) < _p_repro_pred
             and state.resource_predator >= _e_min_pred)
@@ -405,7 +405,7 @@ private:
                 state.resource_prey -= _cost_of_repro_prey;
             }
         }
-   	
+    
 
         return state;
     };
@@ -425,17 +425,17 @@ public:
         _cm(*this),
         // Extract model parameters
         _cost_of_living_pred(get_as<double>("cost_of_living_pred", _cfg)),
-	 _cost_of_living_prey(get_as<double>("cost_of_living_prey", _cfg)),	
+     _cost_of_living_prey(get_as<double>("cost_of_living_prey", _cfg)), 
         _delta_e_pred(get_as<double>("delta_e_pred", _cfg)),
-	 _delta_e_prey(get_as<double>("delta_e_prey",_cfg)),	
+     _delta_e_prey(get_as<double>("delta_e_prey",_cfg)),    
         _e_max_pred(get_as<double>("e_max_pred", _cfg)),
-	 _e_max_prey(get_as<double>("e_max_prey",_cfg)),	
+     _e_max_prey(get_as<double>("e_max_prey",_cfg)),    
         _e_min_pred(get_as<double>("e_min_pred", _cfg)),
-	 _e_min_prey(get_as<double>("e_min_prey",_cfg)),	
+     _e_min_prey(get_as<double>("e_min_prey",_cfg)),    
         _cost_of_repro_pred(get_as<double>("cost_of_repro_pred", _cfg)),
-	 _cost_of_repro_prey(get_as<double>("cost_of_repro_prey", _cfg)),	
+     _cost_of_repro_prey(get_as<double>("cost_of_repro_prey", _cfg)),   
         _p_repro_pred(get_as<double>("p_repro_pred", _cfg)),
-	 _p_repro_prey(get_as<double>("p_repro_prey", _cfg)),	
+     _p_repro_prey(get_as<double>("p_repro_prey", _cfg)),   
         _p_flee(get_as<double>("p_flee", _cfg)),
         // Temporary cell containers
         _prey_cell(),

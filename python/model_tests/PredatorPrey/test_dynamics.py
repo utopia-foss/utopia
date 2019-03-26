@@ -36,13 +36,15 @@ def test_basic_interactions():
     mv, dm = mtc.create_run_load(from_cfg="specific_scenario.yml", 
                                  perform_sweep=False,
                                  **model_cfg(prey_frac=1.0, 
-                                             pred_frac=0.0, delta_e=0))
+                                             pred_frac=0.0, delta_e_pred=0,delta_e_prey=0))
 
     
     data = dm['multiverse'][0]['data']
 
     pop = data['PredatorPrey']['population']#.reshape(3, 1, 1)
     res_prey = data['PredatorPrey']['resource_prey']
+    
+    print(res_prey)
 
     assert res_prey[0, 0, 0] == 2
     assert res_prey[1, 0, 0] == 1
@@ -75,7 +77,7 @@ def test_basic_interactions():
     # DataManager dm
     mv, dm = mtc.create_run_load(from_cfg="specific_scenario.yml", 
                                  perform_sweep=False, 
-                                 **model_cfg(delta_e=2.0, prey_frac=1.0, 
+                                 **model_cfg(delta_e_pred=2.0,delta_e_prey=2.0, prey_frac=1.0, 
                                     pred_frac=0.0, predprey_frac=0.0))
 
     data = dm['multiverse'][0]['data']
@@ -92,7 +94,8 @@ def test_basic_interactions():
 
     # Create the model_config dict to enable updating the parameter_space dict
     model_conf = model_cfg(prey_frac=0.5, pred_frac=0.5, 
-                            delta_e=39, p_repro=0.0, p_flee=0.0, 
+                            delta_e_pred=39,delta_e_prey=39, p_repro_pred=0.0,p_repro_prey=0.0, p_flee=0.0,
+                            e_max_pred=200,e_max_prey=200, 
                             cell_manager=dict(resolution=1))
 
     # Add a specific number of steps for this test
@@ -139,8 +142,9 @@ def test_basic_interactions():
     # been updated, before a predator invades it.
 
     # Create the model_config dict to enable updating the parameter_space dict
-    model_config = model_cfg(prey_frac=0.95, pred_frac=0.05, delta_e=2,
-                             p_repro=0.0, p_flee=1.0, 
+    model_config = model_cfg(prey_frac=0.95, pred_frac=0.05, delta_e_pred=2,
+                            delta_e_prey=2,
+                             p_repro_pred=0.0,p_repro_prey=0, p_flee=1.0, 
                              space=dict(extent=[30,1]), 
                              cell_manager=dict(resolution=1))
 
@@ -169,8 +173,10 @@ def test_basic_interactions():
     mv, dm = mtc.create_run_load(from_cfg="specific_scenario.yml", 
                                  perform_sweep=False, 
                                  **model_cfg(prey_frac=0.5, 
-                                             pred_frac=0, delta_e=2, e_min=3, 
-                                             p_repro=1.0))
+                                             pred_frac=0, delta_e_pred=2,
+                                             delta_e_prey=2, e_min_pred=3,
+                                             e_min_prey=3, 
+                                             p_repro_pred=1.0,p_repro_prey=1.0))
 
     data = dm['multiverse'][0]['data']
 

@@ -24,8 +24,8 @@ parameter_space:
       #cell_params:
     inital_state: random
 
-    init_res_prey: 2.0
-    init_res_pred: 2.0
+    e_init_prey: 2.0
+    e_init_pred: 2.0
 
     prey_prob: 0.2
     pred_prob: 0.285

@@ -1,5 +1,7 @@
 # This defines the default plots for the PredatorPrey model
 ---
+    
+# plot the frequency of predators and preys against each other    
 phase_space:
   creator: universe
   universes: all
@@ -8,12 +10,12 @@ phase_space:
   plot_func: phase_space
   
   plot_par:
-    color_code: True
+    color_code: True # color code the time step?
     cmap: viridis
-    specify_range: True
+    specify_range: True # restrict the plot range to some region?
     xrange: [0.0, 0.6]
-    yrange: [0.0, 0.1]	
-    show_grid: True
+    yrange: [0.0, 0.6]  
+    show_grid: True    # add a grid in the background?
   Population: [prey,predator]   
 
 # plot the frequency of predators and preys in one plot

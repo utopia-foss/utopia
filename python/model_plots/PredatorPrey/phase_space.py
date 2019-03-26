@@ -1,4 +1,4 @@
-"""PredatorPrey-model plot function for time-series"""
+"""PredatorPrey-model plot function for phase space"""
     
 import logging
 from typing import Union
@@ -77,16 +77,16 @@ def phase_space(dm: DataManager, *, out_path: str, uni: UniverseGroup, plot_par:
 
     # plot the phase space, either color coding the time or not
     if(plot_par['color_code']):
-        plt.scatter(prey,pred, c=index, s=0.2, cmap=colormap)
+        plt.scatter(pred,prey, c=index, s=0.2, cmap=colormap)
     else:
-        plt.scatter(prey,pred,s=0.2)
+        plt.scatter(pred,prey,s=0.2)
 
     # add a grid in the background if desired
     plt.grid(b=plot_par['show_grid'],which='both')
 
     # add labels to the axis
-    plt.xlabel('Prey density')
-    plt.ylabel('Predator density')
+    plt.xlabel('Predator density')
+    plt.ylabel('Prey density')
 
     # Save and close figure
     save_and_close(out_path, save_kwargs=save_kwargs)

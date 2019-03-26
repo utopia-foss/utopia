@@ -84,8 +84,9 @@ Plotting
 --------
 
 The output of a simulation is set in the plot config file and as of now 
-consists of a plot that contains the frequency of each species over time 
-and a 2d animation of all cells with the cell state colour coded.
+consists of a plot that contains the frequency of each species over time,
+a phase space plot showing one frequency depending on the other 
+and a 2d animation of all cells with the cell state color coded.
 
 References
 ----------

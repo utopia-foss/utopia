@@ -68,7 +68,7 @@ e_max_prey: 8.            # maximum resource level of the prey
 e_min_pred: 4               # threshold for reproduction of the predator
 e_min_prey: 4               # threshold for reproduction of prey
 cost_of_repro_pred: 2      # resources transferred to offspring by predator (need be <=e_min)
-cost_of_repro_prey: 2	  # resources transferred to offspring by prey (need be <=e_min)
+cost_of_repro_prey: 2     # resources transferred to offspring by prey (need be <=e_min)
 p_repro_pred: 0.2           # predator's probability to reproduce
-p_repro_prey: 0.2		 # prey's probability to reproduce
+p_repro_prey: 0.2        # prey's probability to reproduce
 p_flee: 0.5            # probability for prey to flee from pred if on same cell
