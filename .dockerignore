@@ -1,2 +1,2 @@
 # Prevent build directory to be sent to the Deamon as 'build context'
-build-cmake/
+build/
