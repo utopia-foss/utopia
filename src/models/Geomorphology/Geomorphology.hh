@@ -19,7 +19,7 @@ struct GeomorphologyCellState {
     double watercontent;
 };
 
-/// The full cell struct for the ForestFire model
+/// The full cell struct for the Geomorphology model
 template <typename IndexContainer>
 struct GeomorphologyCell {
     // The actual cell state
@@ -30,30 +30,21 @@ struct GeomorphologyCell {
 
     /// Whether the cell is an outflow boundary cell
     bool is_outflow;
-
+    
     /// Construct a cell from a configuration node and an RNG
-    GeomorphologyCell ()
+    template<class RNG>
+    GeomorphologyCell (const DataIO::Config& cfg, const std::shared_ptr<RNG>& rng)
     :
-        height(0.), watercontent(0.), is_outflow(false)
-    { }
+        height(0.),
+        watercontent(0.), is_outflow(false)
+    { 
+        std::normal_distribution<> init_height{
+            get_as<double>("initial_height_mean", cfg), 
+            get_as<double>("initial_height_var", cfg)
+        };
+        height = init_height(*rng);
+    }
 };
-
-/// Define boundary condition type of geomorphology model
-using Rain = std::normal_distribution<>;
-struct GeomorphologyParameters {
-
-    // Constructor
-    GeomorphologyParameters(double _rain_mean, double _rain_var, 
-            double _height, double _uplift, double _erodibility) : 
-        rain{_rain_mean, _rain_var}, height(_height), 
-        uplift(_uplift), erodibility(_erodibility) {}
-
-    Rain rain;
-    double height;
-    double uplift;
-    double erodibility;
-};
-
 
 /// Cell traits specialization using the state type
 /** \detail The first template parameter specifies the type of the cell state,
@@ -66,7 +57,7 @@ struct GeomorphologyParameters {
 using GeomorphologyCellTraits = Utopia::CellTraits<GeomorphologyCell<
                                                         Utopia::IndexContainer>, 
                                                    UpdateMode::async,
-                                                   true>;
+                                                   false>;
 
 /// Typehelper to define data types of ForestFire model
 using GeomorphologyTypes = ModelTypes<>;
@@ -105,8 +96,11 @@ private:
     /// The cell manager for the forest fire model
     GeomorphologyCellManager _cm;
   
-    /// The boundary conditions (aka parameters) of the model
-    GeomorphologyParameters _params;
+    // The boundary conditions (aka parameters) of the model
+    /// 
+    std::normal_distribution<> _rain;
+    std::normal_distribution<> _uplift;
+    double _erodibility;
 
     // A map of lowest neighbors
     std::map<GeomorphologyCellIndexType, 
@@ -115,14 +109,6 @@ private:
     /// Datasets
     std::shared_ptr<DataSet> _dset_height;
     std::shared_ptr<DataSet> _dset_water_content;
-
-    // Rule functions
-    RuleFunc _rain = [this](const auto cell){
-        auto rain = _params.rain(*(this->_rng));
-        auto state = cell->state();
-        state.watercontent += rain; 
-        return state;
-    };
 
 
 public:
@@ -139,13 +125,11 @@ public:
 
         // Initialize the cell manager, binding it to this model
         _cm(*this),
-
-        // Initialize model parameters from config file
-        _params(this->_cfg["rain_mean"].template as<double>(), 
-            this->_cfg["rain_var"].template as<double>(),
-            this->_cfg["height"].template as<double>(),
-            this->_cfg["uplift"].template as<double>(),
-            this->_cfg["erodibility"].template as<double>()),
+        _rain{get_as<double>("rain_mean", this->_cfg), 
+              get_as<double>("rain_var", this->_cfg)},
+        _uplift{get_as<double>("uplift_mean", this->_cfg), 
+                get_as<double>("uplift_var", this->_cfg)},
+        _erodibility(get_as<double>("erodibility", this->_cfg)),
 
         // Create datasets using the helper functions for CellManager-data
         _dset_height(this->create_cm_dset("height", _cm)),
@@ -156,9 +140,9 @@ public:
         RuleFunc set_inclined_plane = [this](const auto& cell) {   
             auto state = cell->state();
             auto pos = _cm.barycenter_of(cell);
-            double slope = get_as<double>("slope", this->_cfg);
-            double init_height = get_as<double>("height", this->_cfg);
-            state.height = slope*pos[1] + init_height; 
+            double slope = get_as<double>("initial_slope", 
+                                this->_cfg["cell_manager"]["cell_params"]);
+            state.height += slope*pos[1]; 
             return state;
         };
         apply_rule<false>(set_inclined_plane, _cm.cells());
@@ -176,6 +160,21 @@ public:
             // The RNG needed for apply_rule calls with async update
             *this->_rng
         );
+
+        // let it rain for the first time
+        apply_rule<false>(
+            // The rule to apply
+            [this](const auto& cell){
+                auto state = cell->state();
+                state.watercontent += this->_rain(*(this->_rng)); 
+                return state;
+            },
+            // The containers over which to iterate
+            _cm.cells()
+        );
+        
+        // update network
+        _update_lowest_neighbors();
         this->_log->debug("Cells fully set up.");
 
         // Write initial state
@@ -187,17 +186,23 @@ public:
 
     /// Perform step
     void perform_step () {
-        // update network
-        _update_lowest_neighbors();
-
-        // Let it rain
-        apply_rule<false>(_rain, _cm.cells());
-
         // apply update rule on all cells, asynchronously and shuffled
         apply_rule(_erode, _cm.cells(), *this->_rng);
 
+        // Uplift  
+        apply_rule<false>(
+            // The rule to apply
+            [this](const auto& cell){
+                auto state = cell->state();
+                state.height += this->_uplift(*(this->_rng));
+                return state;
+            },
+            // The containers over which to iterate
+            _cm.cells()
+        );
+
         // reset network
-        apply_rule(
+        apply_rule<false>(
             // The rule to apply
             [](const auto& cell){
                 auto state = cell->state();
@@ -205,24 +210,23 @@ public:
                 return state;
             },
             // The containers over which to iterate
-            _cm.cells(),
-            // The RNG needed for apply_rule calls with async update
-            *this->_rng
+            _cm.cells()
         );
 
-        // Uplift  
-        apply_rule(
+        // let it rain
+        apply_rule<false>(
             // The rule to apply
             [this](const auto& cell){
                 auto state = cell->state();
-                state.height += this->_params.uplift;
+                state.watercontent += this->_rain(*(this->_rng)); 
                 return state;
             },
             // The containers over which to iterate
-            _cm.cells(),
-            // The RNG needed for apply_rule calls with async update
-            *this->_rng
+            _cm.cells()
         );
+
+        // update network
+        _update_lowest_neighbors();
     }
 
     /// Provide monitoring data: tree density and number of clusters
@@ -284,7 +288,7 @@ private:
     RuleFunc _erode = [this](const auto& cell) {
         auto state = cell->state();
 
-        double sediment_flow = _params.erodibility*std::sqrt(state.watercontent);
+        double sediment_flow = _erodibility*std::sqrt(state.watercontent);
 
         // Constant outflow for cells on the lower boundary
         if (state.is_outflow) {

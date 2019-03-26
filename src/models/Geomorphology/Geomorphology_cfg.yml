@@ -10,14 +10,19 @@ cell_manager:
     resolution: 64      # cells per unit length of space's extent
 
   neighborhood:
-    mode: Moore         # can be: empty, vonNeumann, Moore
+    mode: Moore         # can be: empty, vonNeumann, Moore  
+
+  # Initialization parameters for each cell
+  cell_params:
+    initial_height_mean: 1000.
+    initial_height_var: 50.
+    initial_slope: 0.4
 
 # Quantities related to water
 rain_mean: .1
 rain_var: .02
 
 # Quantities related to soil
-height: 1000.
-slope: .4
-uplift: .1 
+uplift_mean: .1 
+uplift_var: .005
 erodibility: .01
