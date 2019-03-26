@@ -67,7 +67,7 @@ constexpr auto apply_to_indices(Function&& f, std::index_sequence<idxs...>, Tupl
  * @param  v Some value
  * @return  std::array<T, N>, filled with v
  */
-template <std::size_t N, typename T, std::enable_if_t<Utils::get_size_v<std::remove_reference_t<T>> == 1, int> = 0>
+template <std::size_t N, typename T, std::enable_if_t<Utils::get_size_v<std::remove_reference_t<T>> == std::numeric_limits<std::size_t>::max(), int> = 0>
 constexpr auto pad_to_size(T&& v)
 {
     std::array<std::remove_reference_t<T>, N> arr;
@@ -83,11 +83,37 @@ constexpr auto pad_to_size(T&& v)
  * @param  v value to forward
  * @return   reference to v via std::forward
  */
-template <std::size_t N, typename T, std::enable_if_t<Utils::get_size_v<std::remove_reference_t<T>> != 1, int> = 0>
+template <std::size_t N,
+          typename T,
+          std::enable_if_t<Utils::get_size_v<std::remove_reference_t<T>> != std::numeric_limits<std::size_t>::max(), int> = 0>
 constexpr auto&& pad_to_size(T&& v)
 {
     return std::forward<T>(v);
 }
+
+/**
+ * @brief Prototype for apply_impl
+ * 
+ * @tparam Metafunc 
+ * @tparam Tuplelike 
+ * @tparam X 
+ */
+template <template <typename...> class Metafunc, typename Tuplelike, typename X>
+struct apply_impl;
+
+/**
+ * @brief Metafunction which applies an arbitrary metafunction to a tuplelike object - backend implementation
+ * 
+ * @tparam Metafunc Metafunc to apply to Tuplelike type. Has to provide a member alias 'type'.
+ * @tparam Tuplelike Tuplelike type treatable with std::tuple_element
+ * @tparam idxs indices used to get the elements of tuplelike 
+ */
+template <template <typename...> class Metafunc, typename Tuplelike, std::size_t... idxs>
+struct apply_impl<Metafunc, Tuplelike, std::index_sequence<idxs...>>
+{
+    // application of metafunction
+    using type = typename Metafunc<typename std::tuple_element<idxs, Tuplelike>::type...>::type;
+};
 
 } // namespace _Compiletime_algos_helpers
 namespace Utils
@@ -182,7 +208,7 @@ constexpr NaryFunction visit(NaryFunction&& f, Tuplelike&&... tuplelike)
 template <typename Tuplelike, typename UnaryFunction>
 constexpr UnaryFunction for_each(Tuplelike&& tuplelike, UnaryFunction&& f)
 {
-    return visit(std::forward<UnaryFunction>(f), std::forward<Tuplelike>(tuplelike));
+    return Utopia::Utils::visit(std::forward<UnaryFunction>(f), std::forward<Tuplelike>(tuplelike));
 }
 
 /**
@@ -198,6 +224,30 @@ constexpr auto transform(Tuplelike&& tuplelike, UnaryFunction&& f)
 {
     return reduce(std::forward<UnaryFunction>(f), std::forward<Tuplelike>(tuplelike));
 }
+
+/**
+ * @brief Apply the metafunction 'Metafunc' to a tuplelike type 'Tuplelike'.
+ *
+ * @tparam Metafunc A metafunction accepting as many template args as 'Tuplelike' is big.
+ * @tparam Tuplelike A tuplelike object which can be exploded into a parameter pack with std::tuple_element
+ */
+template <template <typename...> class Metafunc, typename Tuplelike>
+struct apply
+{
+
+    using type =
+        typename _Compiletime_algos_helpers::apply_impl<Metafunc, Tuplelike, std::make_index_sequence<std::tuple_size_v<Tuplelike>>>::type;
+};
+
+
+/**
+ * @brief Alias for apply for applying a metafunction to a tuple
+ * 
+ * @tparam Metafunc A metafunction accepting as many template args as 'Tuplelike' is big.
+ * @tparam Tuplelike A tuplelike object which can be exploded into a parameter pack with std::tuple_element
+ */
+template <template <typename...> class Metafunc, typename Tuplelike>
+using apply_t = typename apply<Metafunc, Tuplelike>::type;
 
 } // namespace Utils
 } // namespace Utopia

@@ -102,5 +102,13 @@ int main()
     static_assert(y == false, "is_arraylike failed for tuple");
     static_assert(z == false, "is_arraylike failed for list");
 
+    constexpr bool y1 = Utopia::Utils::is_tuple_like_v<std::tuple<int, double, char>>;
+    constexpr bool y2 = Utopia::Utils::is_tuple_like_v<std::array<int, 3>>;
+    constexpr bool z1 = Utopia::Utils::is_tuple_like_v<std::list<float>>;
+
+    static_assert(y1 == true, "is_tuple_like failed for tuple");
+    static_assert(y2 == true, "is_tuple_like failed for array");
+    static_assert(z1 == false, "is_tuple_like failed for list");
+
     return 0;
 }
