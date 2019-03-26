@@ -18,7 +18,7 @@ endif ()
 
 # create the venv
 set (UTOPIA_ENV_DIR ${CMAKE_BINARY_DIR}/utopia-env)
-message(STATUS "Setting up the Utopia Python virtual envrionment")
+message(STATUS "Setting up the Utopia Python virtual environment")
 execute_process(
     COMMAND ${Python_EXECUTABLE} -m venv ${UTOPIA_ENV_DIR}
     RESULT_VARIABLE RETURN_VALUE
