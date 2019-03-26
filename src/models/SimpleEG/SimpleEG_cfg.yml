@@ -1,0 +1,69 @@
+# The model configuration for the SimpleEG model
+#
+# This file should ONLY contain model-specific configuration and needs to be
+# written such that it can be used by _every_ model instance, regardless
+# of the level within a model hierarchy.
+# 
+# To that end, it needs to specify the parameters at the level of the instance
+# of a Model class.
+# 
+# This file is usually handled by the frontend: usage of advanced yaml features
+# like anchors and tags is supported.
+# 
+# Note, however, that this file should hold the _default_ values for a single
+# instance. Therefore, parameter sweeps should not be specified here!
+# Furthermore, if including other models' parameters via the `!model` tag, make
+# sure that no circular includes occur.
+---
+# -- Space parameters ---------------------------------------------------------
+space:
+  periodic: true          # false: cells at boundary have fewer neighbors
+
+# -- CellManager --------------------------------------------------------------
+cell_manager:
+  grid:
+    structure: square
+    resolution: 63
+  
+  neighborhood:
+    mode: Moore
+
+# -- Cell initialization parameters -------------------------------------------
+# Initial cell state mode
+initial_state: random
+# Possible values:
+#   - random:             strategy 1 occurs with probability s1_prob
+#   - fraction:           s1_fraction of all cells have strategy 1
+#   - single_s0:          single cell at the center has strategy 0
+#   - single_s1:          single cell at the center has strategy 1
+# NOTE for the single_* modes, both grid extensions need to be odd-valued
+
+# Probability for a single cell to have strategy S1 (used in 'random' mode)
+s1_prob: 0.5
+
+# Fraction of cells having strategy S1 (used in 'fraction' mode)
+s1_fraction: 0.5
+
+# -- Interaction --------------------------------------------------------------
+# The parameters below all define the interaction matrix
+# There are three ways to define it:
+#   1) Explicitly setting the interaction matrix `ia_matrix`
+#        S0      S1
+#   S0 [ia_00  ia_01]
+#   S1 [ia_10  ia_11]
+#   
+#   2) Setting a benefit and cost pair `bc_pair`
+#        S0   S1
+#   S0 [b-c   -c]
+#   S1 [b      0]
+#   
+#   3) Setting the benefit parameter `b` following the paper of Nowak&May1992
+#        S0    S1
+#   S0 [1      0]
+#   S1 [b(>1)  0]
+#
+# The most explicit parameter is chosen over the others.
+
+# ia_matrix: [[1, 2], [3, 4]]
+# bc_pair: [1, 0]
+b: 1.58

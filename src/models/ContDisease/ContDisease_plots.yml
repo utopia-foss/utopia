@@ -1,0 +1,106 @@
+# Default plots for the ContDisease model
+---
+# Plots the tree density over time
+tree_density:
+  creator: universe
+  universes: all
+
+  module: model_plots.ContDisease
+  plot_func: tree_density
+
+  color: green
+
+  save_kwargs:
+    bbox_inches: tight
+
+
+# Plots all densities over time
+densities:
+  creator: universe
+  universes: all
+
+  module: model_plots.ContDisease
+  plot_func: densities
+
+  save_kwargs:
+    bbox_inches: tight
+
+
+# Plot the phase space of two variables
+phase_diagram:
+  creator: universe
+  universes: all
+  
+  module: model_plots.ContDisease
+  plot_func: phase_diagram
+
+  # Select what to create the phase diagram of
+  x: densities/tree
+  y: densities/infected
+
+  # Set the limits (optional)
+  # xlims: [0, 1]
+  # ylims: [0, 1]
+
+  # Specify the corresponding labels
+  xlabel: $\rho_{tree}$
+  ylabel: $\rho_{infected}$
+
+  # Specify the colormap. Default: copper_r
+  # Another good choice is 'Blues', which is better suited if the focus is on
+  # the late and intermediate state development, with a less visible initial one.
+  cmap: copper_r
+
+  save_kwargs:
+    bbox_inches: tight
+
+  # NOTE Additional arguments will be passed to matplotlib LineCollection
+
+
+# Plot the CA for all available time steps and store as video
+state_map: &state_map
+  creator: universe
+  universes: all
+
+  # Select the state animation function from the generalized plotting functions
+  module: .ca
+  plot_func: state_anim
+
+  file_ext: mp4
+
+  # Select which model to retrieve data from
+  model_name: ContDisease
+
+  # Select which data to plot
+  to_plot:
+    state:
+      title: State
+      limits: [0, 4]
+      
+      cmap:
+        empty: white
+        tree: green
+        infected: red
+        source: orange
+        stone: gray
+
+  # Video options
+  writer: ffmpeg  # can be: frames, ffmpeg (if installed), ...
+  fps: 10
+  dpi: 96
+
+
+# Plot the CA for all available time steps and store as individual frames
+state_map_frames:
+  # Base this plot configuration on the one creating the video
+  <<: *state_map
+
+  # Disabled by default
+  enabled: false
+
+  # Use the frames writer, instead of the inherited ffmpeg write
+  writer: frames
+  
+  # For the 'frames' writer, the following additional kwargs can be passed
+  frames_kwargs:
+    file_format: png

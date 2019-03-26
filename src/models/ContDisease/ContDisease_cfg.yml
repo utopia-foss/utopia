@@ -1,0 +1,61 @@
+# The model configuration for the ContDisease model
+#
+# This file should ONLY contain model-specific configuration and needs to be
+# written such that it can be used by _every_ model instance, regardless
+# of the level within a model hierarchy.
+#
+# To that end, it needs to specify the parameters at the level of the instance
+# of a Model class.
+#
+# This file is usually handled by the frontend: usage of advanced yaml features
+# like anchors and tags is supported.
+#
+# Note, however, that this file should hold the _default_ values for a single
+# instance. Therefore, parameter sweeps should not be specified here!
+# Furthermore, if including other models' parameters via the `!model` tag, make
+# sure that no circular includes occur.
+---
+# --- Space parameters
+# The physical space this model is embedded in
+space:
+  periodic: false
+
+# --- CellManager and cell initialization
+cell_manager:
+  grid:
+    structure: square
+    resolution: 64      # in cells per unit length of physical space
+
+  neighborhood:
+    mode: Moore
+
+  # Cell initialization parameters
+  cell_params:
+    # Initial tree density, value in [0, 1]
+    # With this probablity, a cell is initialized as tree (instead of empty)
+    initial_density: 0
+
+# --- Model Dynamics
+# Probability per site and time step to transition from state empty to tree
+growth_rate: 7.5e-3
+
+# Probablity per site and time step for a tree cell to become infected if an
+# infected cell is in the neighborhood
+p_infect: 1.
+
+# Probaility per site and time step for a random point infection of a tree cell
+p_rd_infect: 0.
+
+# Infection source - set true to activate a constant row of infected cells at
+# the bottom boundary. Requires non-periodic space.
+infection_source: true
+
+# Stones - set true to activate.
+stones: true
+
+# Initialization mode for stones (can be: random)
+stone_init: random
+
+# Additional parameters for stone initialization
+stone_density: 0.1   # stone density in entire grid
+stone_cluster: 0.2   # how much stones prefer to form clusters

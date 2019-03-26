@@ -1,0 +1,85 @@
+# This defines the default plots for the SimpleEG model
+---
+# plot the frequency of the strategy S0
+frequency_S0:
+  enabled: false
+
+  creator: universe
+  universes: all
+
+  module: model_plots.SimpleEG
+  plot_func: frequency
+
+  strategy: S0
+
+
+# plot the frequency of strategy S0 and S1 in one plot
+frequencies:
+  creator: universe
+  universes: all
+
+  module: model_plots.SimpleEG
+  plot_func: frequency
+
+  strategy: [S0, S1]
+
+
+# plot the spatial development in the CA of the strategy
+strategy_and_payoff: &strategy_and_payoff
+  creator: universe
+  universes: all
+
+  file_ext: mp4
+
+  module: .ca
+  plot_func: state_anim
+
+  model_name: SimpleEG
+
+  # Select the properties to plot
+  to_plot:
+    # The name of the property to plot with its options
+    strategy:
+      title: Strategy
+      limits: [0, 1]
+      cmap: 
+        S0: red
+        S1: blue
+
+    payoff:
+      title: Payoff
+      limits: [0, 12]
+      cmap: viridis
+
+  # Video options
+  writer: ffmpeg  # can be: frames, ffmpeg (if installed), ...
+  fps: 10
+  dpi: 96
+
+
+# another plot that stores things as frames
+strategy_and_payoff_frames:
+  <<: *strategy_and_payoff
+  enabled: false
+
+  # Writer options
+  writer: frames  # can be: frames, ffmpeg (if installed), ...
+  
+  # For the 'frames' writer, the following additional kwargs can be passed
+  frames_kwargs:
+    file_format: png
+
+
+# plot the spatial development in the CA of only the strategy
+strategy:
+  <<: *strategy_and_payoff
+  enabled: false
+
+  # Select only the strategy state property to plot
+  to_plot:
+    strategy:
+      title: Strategy
+      limits: [0, 1]
+      cmap: 
+        S0: red
+        S1: blue

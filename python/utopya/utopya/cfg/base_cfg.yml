@@ -49,17 +49,18 @@ perform_sweep: false
 reporter:
   # Define report formats, which are accessible, e.g. from the WorkerManager
   report_formats:
-    while_working:  # This is the name of the report format specification
+    while_working: &while_working     # Name of the report format specification
       parser: progress_bar            # The parser to use
       write_to: stdout_noreturn       # The writer to use
       min_report_intv: 0.5            # Required time (in s) between writes
       # All further kwargs on this level are passed to the parser
       show_times: true
 
+    monitor_updated:
+      <<: *while_working
+
     after_work:
-      parser: progress_bar
-      show_times: true
-      write_to: stdout_noreturn
+      <<: *while_working
 
     # Creates a report file containing runtime statistics
     report_file:
@@ -92,6 +93,18 @@ worker_manager:
   # warn_all will also warn if the simulation was terminated by the frontend
   # raise will lead to a SystemExit with the error code of the simulation
 
+  # How to handle keyboard interrupts
+  interrupt_params:
+    # Which signal to send to the workers
+    send_signal: SIGINT  # can be any valid signal name
+    # NOTE that only SIGINT and SIGTERM lead to a graceful shutdown on C++ side
+
+    # How long to wait for workers to shut down before calling SIGKILL on them
+    grace_period: 5.
+
+    # Whether to exit after working; exit code will be 128 + abs(signum)
+    exit: false
+
   # Report format specifications at different points of the WM's operation
   # These report formats were defined in the reporter and can be referred to
   # by name here. They can also be lists, if multiple report formats should
@@ -99,6 +112,7 @@ worker_manager:
   rf_spec:
     while_working: while_working
     task_spawned: while_working
+    monitor_updated: monitor_updated
     task_finished: [while_working, report_file]
     after_work: [after_work, report_file]
     after_abort: [after_work, report_file]
@@ -151,6 +165,60 @@ worker_kwargs:
   popen_kwargs: {}
 
 
+# Cluster mode configuration
+# Whether cluster mode is enabled
+cluster_mode: false
+
+# Parameters to configure the cluster mode
+cluster_params:
+  # Specify the workload manager to use.
+  # The names of environment variables are chosen accordingly.
+  manager: slurm   # available:  slurm
+
+  # The environment to look for parameters in. If not given, uses os.environ
+  env: ~
+
+  # Specify the name of environment variables for each supported manager
+  # The resolved values are available at the top level of the dict that is
+  # returned by Multiverse.resolved_cluster_params
+  env_var_names:
+    slurm:
+      # --- Required variables ---
+      # ID of the job
+      job_id: SLURM_JOB_ID
+
+      # Number of available nodes
+      num_nodes: SLURM_JOB_NUM_NODES
+
+      # List of node names
+      node_list: SLURM_JOB_NODELIST
+
+      # Name of the current node
+      node_name: SLURMD_NODENAME  # sic!
+
+      # This is used for the name of the run
+      timestamp: RUN_TIMESTAMP
+
+      # --- Optional values ---
+      # Name of the job
+      job_name: SLURM_JOB_NAME
+
+      # Account from which the job is run
+      job_account: SLURM_JOB_ACCOUNT
+
+      # Number of processes on current node
+      num_procs: SLURM_CPUS_ON_NODE
+
+      # Cluster name
+      cluster_name: SLURM_CLUSTER_NAME
+
+    # Could have more managers here, e.g.: docker
+
+  # Which parser to use to extract node names from node list
+  node_list_parser_params:
+    slurm: condensed  # e.g.: node[002,004-011,016]
+
+
 # Data Manager ................................................................
 # The DataManager takes care of loading the data into a tree-like structure
 # after the simulations are finished.
@@ -159,8 +227,8 @@ worker_kwargs:
 data_manager:
   # Where to create the output directory for this DataManager, relative to
   # the run directory of the Multiverse.
-  out_dir: eval/{date:}
-  # The {date:} placeholder is replaced by the current timestamp such that
+  out_dir: eval/{timestamp:}
+  # The {timestamp:} placeholder is replaced by the current timestamp such that
   # future DataManager instances that operate on the same data directory do
   # not create collisions.
   # Directories are created recursively, if they do not exist.
@@ -213,6 +281,7 @@ data_manager:
       required: true
       path_regex: data/uni(\d+)/data.h5
       target_path: multiverse/{match:}/data
+      enable_mapping: true   # see DataManager for content -> type mapping
 
     # The resulting data tree is then:
     #  └┬ cfg
@@ -221,7 +290,7 @@ data_manager:
     #      ├ model
     #      ├ run
     #      └ update
-    #   └ data
+    #   └ multiverse
     #     └┬ 0
     #        └┬ cfg
     #         └ data
@@ -239,6 +308,10 @@ plot_manager:
 
   # Whether to raise exceptions for plotting errors. false: only log them
   raise_exc: false
+
+  # How to handle already existing plot configuration files
+  cfg_exists_action: raise
+  # NOTE If in cluster mode, this value is set to 'skip' by the Multiverse
 
   # Save all plot configurations alongside the plots
   save_plot_cfg: true

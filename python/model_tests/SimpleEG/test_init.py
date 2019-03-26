@@ -67,28 +67,25 @@ def test_initial_state_random():
     for uni in dm['multiverse'].values():
         data = uni['data']['SimpleEG']
 
-        # Get the grid size
-        grid_size = uni['cfg']['SimpleEG']['grid_size']
-        num_cells = grid_size[0] * grid_size[1]
-
-        # Check that only a single step was written and the extent is correct
-        assert data['payoff'].shape == (1, num_cells)
-        assert data['strategy'].shape == (1, num_cells)
+        # Check that only a single step was written
+        assert data['payoff'].shape[0] == 1
+        assert data['strategy'].shape[0] == 1
 
         # All payoffs should be zero
         assert not np.any(data['payoff'])
 
         # Strategies should be random; calculate the ratio and check limits
-        s1_fraction = np.sum(data['strategy'])/data['strategy'].shape[1]
-        assert 0.45 <= s1_fraction <= 0.55  # TODO values ok?
+        shape = (data['strategy'].shape[1], data['strategy'].shape[2])
+        s1_fraction = np.sum(data['strategy'])/(shape[0] * shape[1])
+        assert 0.45 <= s1_fraction <= 0.55
 
 
     # Test again for another probability value
     s1_prob = 0.2
     mv, dm = mtc.create_run_load(from_cfg="initial_state.yml",
                                  perform_sweep=True,
-                                 **model_cfg(initial_state='random',
-                                             s1_prob=s1_prob))
+                                 **model_cfg(s1_prob=s1_prob,
+                                             initial_state='random'))
 
     for uni in dm['multiverse'].values():
         data = uni['data']['SimpleEG']
@@ -97,7 +94,8 @@ def test_initial_state_random():
         assert not np.any(data['payoff'])
 
         # Calculate fraction and compare to desired probability
-        s1_fraction = np.sum(data['strategy'])/data['strategy'].shape[1]
+        shape = data['strategy'].shape[1:]
+        s1_fraction = np.sum(data['strategy']) / (shape[0] * shape[1])
         assert s1_prob - 0.05 <= s1_fraction <= s1_prob + 0.05
 
 
@@ -109,7 +107,7 @@ def test_initial_state_fraction():
     # Use the config file for common settings, change via additional kwargs
     mv, dm = mtc.create_run_load(from_cfg="initial_state.yml",
                                  perform_sweep=True,
-                                 **model_cfg(initial_state='fraction',
+                                 **model_cfg(initial_state='fraction', 
                                              s1_fraction=s1_fraction))
 
     # For all universes, check that the fraction is met
@@ -124,11 +122,12 @@ def test_initial_state_fraction():
 
         # Count the cells with strategy 1
         num_s1 = np.sum(data['strategy'])
-        assert num_s1 == int(s1_fraction * data['strategy'].shape[1])  # floor
+        shape = (data['strategy'].shape[1], data['strategy'].shape[2])
+        assert num_s1-5 <= int(s1_fraction * shape[0] * shape[1]) <= num_s1+5 # floor
 
 
 def test_initial_state_single(): 
-    """Test that the initial state are """
+    """Test initial state for cases single_s0 and single_s1"""
     # Create a few Multiverses with different initial states and store the
     # resulting DataManagers
     dms = []
@@ -144,54 +143,37 @@ def test_initial_state_single():
         # Get the data
         data = uni['data']['SimpleEG']
 
-        # Get the grid size
-        grid_size = uni['cfg']['SimpleEG']['grid_size']
+        print("Strategy data:")
+        print(data['strategy'].data, end="\n\n")
 
-        # For even grid sizes, this should fail
-        if (grid_size[0] % 2 == 0) or (grid_size[1] % 2 == 0):
-            # Check that no data was written
-            assert not len(data)
+        # Get the shape
+        shape = data['strategy'].shape
 
-            # Cannot continue
-            continue
-
-        # For others, calculate the central cell (integer division!)
-        c_idx = (grid_size[0]//2) * grid_size[1] + grid_size[1]//2
-
-        # Check the center cell strategy
-        print(data['strategy'].data)
-
-        # Check the data, depending on what the strategy ought to be
+        # Check the center cell strategy, depending on what the strategy ought
+        # to be
         if uni['cfg']['SimpleEG']['initial_state'] == "single_s0":
             # Central 0, all others 1
-            assert data['strategy'][0, c_idx] == 0
-            assert np.sum(data['strategy']) == grid_size[0] * grid_size[1] - 1
+            assert data['strategy'][0, shape[1]//2, shape[2]//2] == 0
+            assert np.sum(data['strategy']) == shape[1] * shape[2] - 1
         
         else:
             # Central 1, all others 0
-            assert data['strategy'][0, c_idx] == 1
+            assert data['strategy'][0, shape[1]//2, shape[2]//2] == 1
             assert np.sum(data['strategy']) == 1
         
         # Finally, all payoffs should be zero
         assert not np.any(data['payoff'])
 
+    # Make sure that even-valued cell extensions throw an error
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        mv, dm = mtc.create_run_load(from_cfg="initial_state.yml",
+                                     **model_cfg(
+                                        initial_state="single_s0",
+                                        cell_manager=dict(
+                                            grid=dict(resolution=10))))
 
-    # Create a few more Multiverses; these should fail due to at least one
-    # grid_size extension being an even value, where no central cell can be
-    # calculated ...
-    with pytest.raises(SystemExit, match="1"):
-        mtc.create_run_load(from_cfg="initial_state.yml",
-                            perform_sweep=False,
-                            **model_cfg(initial_state='single_s0',
-                                        grid_size=[10, 10])
-                            )
+    assert pytest_wrapped_e.type is SystemExit
 
-    with pytest.raises(SystemExit, match="1"):
-        mtc.create_run_load(from_cfg="initial_state.yml",
-                            perform_sweep=False,
-                            **model_cfg(initial_state='single_s0',
-                                        grid_size=[10, 11])
-                            )
 
 def test_ia_matrix_extraction():
     """Test that the ia_matrix is extracted correctly from the config"""

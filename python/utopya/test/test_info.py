@@ -25,8 +25,8 @@ def test_model_info():
         info.parse_model_info()
 
     # Missing required model config file
-    info._UTOPIA_MODEL_BINPATHS = "dune/utopia/models/dummy/dummy"
-    info._UTOPIA_MODEL_SRC_DIRS = "dune/utopia/models/dummy_foooo"
+    info._UTOPIA_MODEL_BINPATHS = "src/models/dummy/dummy"
+    info._UTOPIA_MODEL_SRC_DIRS = "src/models/dummy_foooo"
 
     with pytest.raises(FileNotFoundError, match="For target 'dummy', could n"):
         info.parse_model_info()

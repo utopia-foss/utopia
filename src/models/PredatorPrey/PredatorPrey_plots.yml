@@ -1,0 +1,68 @@
+# This defines the default plots for the PredatorPrey model
+---
+
+# plot the frequency of predators and preys in one plot
+frequencies:
+  creator: universe
+  universes: all
+
+  module: model_plots.PredatorPrey
+  plot_func: frequency
+
+  Population: [prey, predator]
+
+
+# plot the spatial development in the CA of the strategy
+population_and_resources:
+  creator: universe
+  universes: all
+
+  file_ext: mp4
+
+  module: .ca
+  plot_func: state_anim
+
+  model_name: PredatorPrey
+  
+
+  # Select the properties to plot
+  to_plot:
+    # The name of the property to plot with its options
+    population:
+      title: Population
+      limits: [0, 3]
+
+      # Specify the colormap
+      # This can be done in two ways:
+      #   1. use a matplotlib colormap such as 'viridis'
+      #   2. provide a dictionary from which a discrete colormap
+      #      is derived. The keys correspond to the labels,
+      #      and the values define the color
+      # cmap: viridis
+      cmap: 
+        empty: blue
+        prey: green
+        predator: yellow
+        predprey: red
+
+    # The name of the property to plot with its options
+    resource_prey:
+      title: resource_prey
+      limits: [0, 12]
+
+      cmap: viridis
+
+    resource_predator:
+      title: resource_predator
+      limits: [0, 12]
+      cmap: viridis
+
+  # Video options
+  writer: ffmpeg  # can be: frames, ffmpeg (if installed), ...
+  fps: 2
+  dpi: 96
+
+  # For the 'frames' writer, the following additional kwargs can be passed
+  frames_kwargs: 
+    name_padding: 5
+    file_format: png

@@ -38,10 +38,10 @@ Configure and enter the virtual environment:
 ```
 cd build-cmake
 cmake ..
-source ./activate
+source activate
 ```
 
-Then, with `(dune-env)` prefix in the shell:
+Then, with `(utopia-env)` prefix in the shell:
 ```
 cd ../python
 python -m pytest -v model_tests/

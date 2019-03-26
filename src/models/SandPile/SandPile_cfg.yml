@@ -1,0 +1,41 @@
+# The model configuration for the SandPile model
+#
+# This file should ONLY contain model-specific configuration and needs to be
+# written such that it can be used by _every_ model instance, regardless
+# of the level within a model hierarchy.
+# 
+# To that end, it needs to specify the parameters at the level of the instance
+# of a Model class.
+# 
+# This file is usually handled by the frontend: usage of advanced yaml features
+# like anchors and tags is supported.
+# 
+# Note, however, that this file should hold the _default_ values for a single
+# instance. Therefore, parameter sweeps should not be specified here!
+# Furthermore, if including other models' parameters via the `!model` tag, make
+# sure that no circular includes occur.
+---
+# --- Space parameters --------------------------------------------------------
+# The physical space this model is embedded in
+space:
+  periodic: false
+
+# --- CellManager -------------------------------------------------------------
+cell_manager:
+  grid:
+    structure: square
+    resolution: 16      # in cells per unit length of physical space
+    # NOTE A large number of cells can make the initialization take a while...
+
+  neighborhood:
+    mode: vonNeumann
+
+# --- Dynamics ----------------------------------------------------------------
+# The initial slope range.
+initial_slope: [5, 6]
+# Cells are randomly initialized using a uniform distribution in the given
+# closed range. The first value is the lower limit and the second one the
+# upper limit of the slope.
+
+# The critical slope; beyond this value, sand topples
+critical_slope: 4

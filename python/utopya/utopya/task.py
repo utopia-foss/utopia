@@ -7,6 +7,7 @@ import time
 import queue
 import threading
 import subprocess
+import signal
 import warnings
 import logging
 from functools import partial
@@ -17,8 +18,9 @@ import numpy as np
 
 from .tools import yaml
 
-# Initialise logger
+# Local variables
 log = logging.getLogger(__name__)
+sigmap = {a: int(getattr(signal, a)) for a in dir(signal) if a[:3] == "SIG"}
 
 # -----------------------------------------------------------------------------
 # Helper methods
@@ -110,9 +112,13 @@ class Task:
     associate tasks with the corresponding workers and vice versa.
     """
 
-    __slots__ = ('_name', '_priority', '_uid', 'callbacks')
+    __slots__ = ('_name', '_priority', '_uid', '_progress_func', 'callbacks')
 
-    def __init__(self, *, name: str=None, priority: float=None, callbacks: Dict[str, Callable]=None):
+    def __init__(self, *,
+                 name: str=None,
+                 priority: float=None,
+                 callbacks: Dict[str, Callable]=None,
+                 progress_func: Callable=None):
         """Initialize a Task object.
         
         Args:
@@ -125,6 +131,9 @@ class Task:
             callbacks (Dict[str, Callable], optional): A dict of callback funcs
                 that are called at different points of the life of this task.
                 The function gets passed as only argument this task object.
+            progress_func (Callable, optional): Invoked by the `progress`
+                property and used to calculate the progress given the current
+                task object as argument
         """
         # Carry over arguments attributes
         self._name = str(name) if name else None
@@ -133,8 +142,9 @@ class Task:
         # Create a unique ID
         self._uid = uuid.uuid1()
 
-        # Save the callbacks
+        # Save the callbacks and the progress function
         self.callbacks = callbacks
+        self._progress_func = progress_func
 
         log.debug("Initialized Task '%s'.\n  Priority: %s,  UID: %s.",
                   self.name, self.priority, self.uid)
@@ -163,6 +173,25 @@ class Task:
         """Returns the ordering tuple (priority, uid.time)"""
         return (self.priority, self.uid.time)
 
+    @property
+    def progress(self) -> float:
+        """If a progress function is given, invokes it; otherwise returns 0
+
+        This also performs checks that the progress is in [0, 1]
+        """
+        if self._progress_func is None:
+            return 0.
+
+        # Invoke it to get the progress and check interval
+        progress = self._progress_func(self)
+
+        if progress >= 0 and progress <= 1:
+            return progress
+
+        raise ValueError("The progres function {} of task '{}' returned a "
+                         "value outside of the allowed range [0, 1]!"
+                         "".format(self._progress_func.__name__, self.name))
+
     # Magic methods ...........................................................
 
     def __hash__(self) -> int:
@@ -189,7 +218,12 @@ class Task:
     # Private methods .........................................................
 
     def _invoke_callback(self, name: str):
-        """If given, invokes the callback function with the name `name`."""
+        """If given, invokes the callback function with the name `name`.
+
+        NOTE In order to have higher flexibility, this will _not_ raise errors
+             or warnings if there was no callback function specified with the
+             give name.
+        """
         if self.callbacks and name in self.callbacks:
             self.callbacks[name](self)
 
@@ -222,7 +256,11 @@ class WorkerTask(Task):
     STREAM_PARSE_FUNCS = dict(default=None,
                               yaml_dict=parse_yaml_dict)
 
-    def __init__(self, *, setup_func: Callable=None, setup_kwargs: dict=None, worker_kwargs: dict=None, callbacks: Dict[str, Callable]=None, **task_kwargs):
+    def __init__(self, *,
+                 setup_func: Callable=None,
+                 setup_kwargs: dict=None,
+                 worker_kwargs: dict=None,
+                  **task_kwargs):
         """Initialize a WorkerTask object, a specialization of a task for use in the WorkerManager.
         
         Args:
@@ -233,17 +271,14 @@ class WorkerTask(Task):
                 worker. Note that these are also passed to setup_func and, if a
                 setup_func is given, the return value of that function will be
                 used for the worker_kwargs.
-            write_stream_to (sstr, optional): Description
-            callbacks (Dict[str, Callable], optional): Callbacks available in
-                the WorkerTask follow the life of a process; available keys
-                are: 'spawn', 'finished', 'after_signal'.
-            **task_kwargs: Arguments to be passed to Task.__init__
+            **task_kwargs: Arguments to be passed to Task.__init__, including
+                the callbacks dictionary.
         
         Raises:
             ValueError: If neither `setup_func` nor `worker_kwargs` were given
         """
 
-        super().__init__(callbacks=callbacks, **task_kwargs)
+        super().__init__(**task_kwargs)
 
         # Check the argument values
         if setup_func:
@@ -497,9 +532,15 @@ class WorkerTask(Task):
         Returns:
             None: Description
         """
-        def read_single_stream(stream: dict, stream_name: str, max_num_reads=max_num_reads):
-            """A function to read a single stream"""            
+        def read_single_stream(stream: dict, stream_name: str, max_num_reads=max_num_reads) -> bool:
+            """A function to read a single stream
+
+            Returns true, if a parsed object was among the read stream entries
+            """
             q = stream['queue']
+
+            # The flag that is set if there was a parsed object in the queue
+            contained_parsed_obj = False
 
             # In certain cases, read as many as queue reports to have
             if max_num_reads == -1:
@@ -520,14 +561,19 @@ class WorkerTask(Task):
                     # Got entries, write it to the stream's raw log
                     stream['log_raw'].append(line)
 
-                    # If there was an object, additionally write it to the
-                    # parsed log. If not, also write the line to the regular
-                    # log. This way, the regular log only contains this entry
-                    # if no object could be parsed.
+                    # Check if there was a parsed object
                     if obj is not None:
+                        # Add object to the parsed log and set the flag
                         stream['log_parsed'].append(obj)
+                        contained_parsed_obj = True
+
                     else:
+                        # Write line to the regular log. This way, the regular
+                        # log only contains this entry if no object could be
+                        # parsed.
                         stream['log'].append(line)
+
+            return contained_parsed_obj
 
         if not self.streams:
             # There are no streams to read
@@ -539,14 +585,26 @@ class WorkerTask(Task):
             # Gather list of stream names
             stream_names = list(self.streams.keys())
 
+        # Now have the stream names set properly
+        # Set the flag that determines whether there will be a callback
+        got_parsed_obj = False
+
         # Loop over stream names and call the function to read a single stream
         for stream_name in stream_names:
             # Get the corresponding stream dict
             stream = self.streams[stream_name]
-            # NOTE: This way a non-existent stream_name will not pass silently
-            #       put raise a KeyError
+            # NOTE This way, a non-existent stream_name will not pass silently
+            #      put raise a KeyError
 
-            read_single_stream(stream, stream_name)
+            # Read the stream, saving its return value (needed for flag)
+            rv = read_single_stream(stream, stream_name)
+
+            if rv:
+                got_parsed_obj = True
+
+        # Invoke a callback, if there was a parsed object
+        if got_parsed_obj:
+            self._invoke_callback('parsed_object_in_stream')
 
         return
 
@@ -717,16 +775,29 @@ class WorkerTask(Task):
         # Done.
         return rv
 
-    def signal_worker(self, signal: Union[str, int]):
+    def signal_worker(self, signal: str) -> tuple:
         """Sends a signal to this WorkerTask's worker.
         
         Args:
-            signal (Union[str, int]): The signal to send. Can be SIGTERM or
-                SIGKILL or a valid signal number.
+            signal (str): The signal to send. Needs to be a valid signal name,
+                i.e.: available in python signal module.
         
         Raises:
             ValueError: When an invalid `signal` argument was given
+        
+        Returns:
+            tuple: (signal: str, signum: int) sent to the worker
         """
+        # Determine the signal number
+        try:
+            signum = sigmap[signal]
+        
+        except KeyError as err:
+            raise ValueError("No signal named '{}' available! Valid signals "
+                             "are: {}".format(signal, ", ".join(sigmap.keys()))
+                             ) from err
+
+        # Handle some specific cases, then all the other signals ...
         if signal == 'SIGTERM':
             log.debug("Terminating worker of task %s ...", self.name)
             self.worker.terminate()
@@ -735,17 +806,17 @@ class WorkerTask(Task):
             log.debug("Killing worker of task %s ...", self.name)
             self.worker.kill()
 
-        elif isinstance(signal, int):
-            log.debug("Sending signal %d to worker of task %s ...",
-                      signal, self.name)
-            self.worker.send_signal(signal)
+        elif signal == 'SIGINT':
+            log.debug("Interrupting worker of task %s ...", self.name)
+            self.worker.send_signal(sigmap['SIGINT'])
 
         else:
-            raise ValueError("Invalid argument `signal`: Got '{}', but need "
-                             "either SIGTERM, SIGKILL, or an integer signal "
-                             "number.".format(signal))
+            log.debug("Sending %s (%d) to worker of task %s ...",
+                      signal, signum, self.name)
+            self.worker.send_signal(signal)
 
         self._invoke_callback('after_signal')
+        return signal, signum
 
     # Private API .............................................................
 

@@ -1,0 +1,23 @@
+---
+# --- Space
+space:
+  periodic: false
+
+# --- CellManager and cell initialization
+cell_manager:
+  grid:
+    structure: square
+    resolution: 64      # cells per unit length of space's extent
+
+  neighborhood:
+    mode: Moore         # can be: empty, vonNeumann, Moore
+
+# Quantities related to water
+rain_mean: .1
+rain_var: .02
+
+# Quantities related to soil
+height: 1000.
+slope: .4
+uplift: .1 
+erodibility: .01

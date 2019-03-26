@@ -11,6 +11,7 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.animation
+from matplotlib.colors import ListedColormap
 
 from utopya import DataManager
 
@@ -105,13 +106,13 @@ def state_anim(dm: DataManager, *,
                to_plot: dict,
                writer: str,
                frames_kwargs: dict=None, 
+               base_figsize: tuple=None,
                fps: int=2, 
-               step_size: int=1, 
                dpi: int=96,
                preprocess_funcs: Dict[str, Callable]=None) -> None:
     """Create an animation of the states of a two dimensional cellular automaton.
     The function can use different writers, e.g. write out only the frames or create
-    an animation with an external programm (e.g. ffmpeg). 
+    an animation with an external program (e.g. ffmpeg). 
     Multiple properties can be plotted next to each other, specified by the to_plot dict.
     
     Arguments:
@@ -128,8 +129,9 @@ def state_anim(dm: DataManager, *,
             save the individual frames with 'frames'
         frames_kwargs (dict, optional): The frames configuration that is used
             if the 'frames' writer is used.
+        base_figsize (tuple, optional): The size of the figure to use for a
+            single property
         fps (int, optional): The frames per second
-        step_size (int, optional): The step size
         dpi (int, optional): The dpi setting
         preprocess_funcs (Dict[str, Callable], optional): For keys matching
             the keys in `to_plot`, the given function is called before the
@@ -137,18 +139,12 @@ def state_anim(dm: DataManager, *,
     
     Raises:
         ValueError: For an invalid `writer` argument
+    
+    No Longer Raises:
+        TypeError: For unknown dataset shape
     """
 
-    def get_discrete_colormap(cmap):        
-        # use _any_ colormap
-        colormap = plt.cm.jet  # yay, jet! :japanese_ogre:
-        
-        # replace it by the new colormap with the list of colours
-        colormap = colormap.from_list('custom_discrete', cmap, len(cmap))
-
-        return colormap
-
-    def plot_property(*, data, ax, cmap, limits: list, title: str=None):
+    def plot_property(*, data, ax, cmap, limits: list=None, title: str=None):
         """Helper function to plot a property on a given axis and return
         an imshow object
         """
@@ -162,7 +158,7 @@ def state_anim(dm: DataManager, *,
 
         # Case discrete colormap
         elif isinstance(cmap, dict):
-            colormap = get_discrete_colormap(list(cmap.values()))
+            colormap = ListedColormap(cmap.values())
             bounds = limits
             norm = mpl.colors.BoundaryNorm(bounds, colormap.N)
 
@@ -173,23 +169,30 @@ def state_anim(dm: DataManager, *,
                             "".format(type(cmap), cmap))
 
         # Create imshow
-        im = ax.imshow(data, cmap=colormap, animated=True,
-                       origin='lower', vmin=limits[0], vmax=limits[1])
+        if limits:
+            im = ax.imshow(data, cmap=colormap, animated=True,
+                        origin='lower', vmin=limits[0], vmax=limits[1])
+        else:
+            im = ax.imshow(data, cmap=colormap, animated=True,
+                        origin='lower')
 
         # Set title
         if title is not None:
-            ax.set_title(title)
+            ax.set_title(title, fontsize=20)
 
         # Create colorbars
         fig = plt.gcf()
-        cbar = fig.colorbar(im ,ax=ax, norm=norm, ticks=bounds,
-                            fraction=0.046, pad=0.04)
+        cbar = fig.colorbar(im, ax=ax, norm=norm, ticks=bounds,
+                            fraction=0.05, pad=0.02)
 
         if bounds is not None:
-            # vertical color bar ticks
-            yticklabels = cmap.keys()
-            cbar.set_ticks(np.arange(bounds[0], bounds[1]+1))
-            cbar.ax.set_yticklabels(yticklabels) 
+            # Adjust the ticks for the discrete colormap
+            num_colors = len(cmap)
+            tick_locs = (  (np.arange(num_colors) + 0.5)
+                         * (num_colors-1)/num_colors)
+            cbar.set_ticks(tick_locs)
+            cbar.ax.set_yticklabels(cmap.keys())
+
         ax.axis('off')
 
         return im
@@ -210,22 +213,16 @@ def state_anim(dm: DataManager, *,
     # Get the group that all datasets are in
     grp = uni['data'][model_name]
 
-    # Get the shape of the 2D grid
-    cfg = uni['cfg']
-    grid_size = cfg[model_name]['grid_size']
-    steps = int(cfg['num_steps']/cfg.get('write_every', 1))
-    # NOTE The steps variable does not correspond to the actual _time_ of the
-    #      simulation at those frames!
+    data_2d = {p: grp[p] for p in to_plot.keys()}
+    shapes = [d.shape for p, d in data_2d.items()]
 
-    # ...and reshape the data
-    new_shape = (steps+1, grid_size[1], grid_size[0])
+    if any([shape != shapes[0] for shape in shapes]):
+        raise ValueError("Shape mismatch; cannot plot.")
 
-    # Extract the data of the strategies in the CA and bring them into the
-    # correct shape
-    data_1d = {p: grp[p] for p in to_plot.keys()}
-    data_2d = {k: np.reshape(v, new_shape) for k,v in data_1d.items()}
-
-
+    # Can now be sure they all have the same shape, 
+    # so its fine to take the first shape to extract the number of steps
+    steps = shapes[0][0]
+    
     # Prepare the writer ......................................................
     if mpl.animation.writers.is_available(writer):
         # Create animation writer if the writer is available
@@ -237,7 +234,7 @@ def state_anim(dm: DataManager, *,
 
     elif writer == 'frames':
         # Use the file writer to create individual frames
-        w = FileWriter(name_padding=len(str(steps+1)),
+        w = FileWriter(name_padding=len(str(steps)),
                        **(frames_kwargs if frames_kwargs else {}))
 
     else:
@@ -246,23 +243,25 @@ def state_anim(dm: DataManager, *,
 
 
     # Set up plotting .........................................................
-    # Adjust some rc parameters
-    mpl.rcParams.update({'font.size': 20})
-    mpl.rcParams['figure.figsize'] = (6.0 * len(to_plot), 5.0)
-    
     # Create figure, not squeezing to always have axs be something iterable
-    fig, axs = plt.subplots(1, len(to_plot), squeeze=False)
+    fig, axs = plt.subplots(1, len(to_plot), squeeze=False,
+                            figsize=base_figsize)
+
+    # Adjust figure size in width to accommodate all properties
+    figsize = fig.get_size_inches()
+    fig.set_size_inches(figsize[0] * len(to_plot), figsize[1])
 
     # Store the imshow objects such that only the data has to be updated in a
     # following iteration step. Keys will be the property names
     ims = dict()
     
-    log.info("Plotting %d frames of %d properties each ...",
-             steps+1, len(to_plot))
+    log.info("Plotting %d frames of %d %s each ...",
+             steps, len(to_plot),
+             "property" if len(to_plot) == 1 else "properties")
 
     with w.saving(fig, out_path, dpi=dpi):
         # Loop through time steps, corresponding to rows in the 2d arrays
-        for t in range(steps+1):
+        for t in range(steps):
             log.debug("Plotting frame %d ...", t)
 
             # Loop through the subfigures
@@ -280,9 +279,17 @@ def state_anim(dm: DataManager, *,
                 # For t>0, it is better to update imshow data without creating
                 # a new object
                 ims[prop_name].set_data(data)
+
+                # If no limits are provided, autoscale the new limits
+                # in the case of continuous colormaps.
+                # A discrete colormap, that is provided as a dict, should never
+                # autoscale. 
+                if not isinstance(to_plot[prop_name]['cmap'], dict):
+                    if not ('limits' in to_plot[prop_name]):
+                        ims[prop_name].autoscale()
             
             # Updated all subfigures now and can now tell the writer that the
             # frame is finished and can be grabbed.
             w.grab_frame()
 
-    log.info("Finished plotting of %d frames.", steps+1)
+    log.info("Finished plotting of %d frames.", steps)

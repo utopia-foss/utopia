@@ -4,6 +4,8 @@ from setuptools import setup, find_packages
 
 # Dependency lists
 INSTALL_DEPS = ['numpy>=1.13',
+                'scipy>=1.1.0',
+                'matplotlib>=2.2.3',
                 'coloredlogs>=10.0',
                 'ruamel.yaml',
                 # only required for testing
@@ -12,7 +14,7 @@ INSTALL_DEPS = ['numpy>=1.13',
                 # From private repositories:
                 # NOTE Versions need also be set in python/CMakeLists.txt
                 'paramspace>=2.1.0',
-                'dantro>=0.4.1'
+                'dantro>=0.6.0'
                 ]
 
 setup(name='utopya',

@@ -7,14 +7,17 @@ parameter_space:
 
 # Load the model config
   ContDisease: !model
-    model_name: ContDisease  # imports the model config for the CopyMe model
-    initial_state: empty
-    stones: false
-    infection_herd: true
-    infection_herd_src: south
+    model_name: ContDisease  # imports the model config for the ContDisease model
+    cell_manager:
+      grid:
+        resolution: 3
+    cell_params:
+      initial_density: 0
 
-    p_growth: 1
+
+    stones: false
+    infection_source: true
+
+    growth_rate: 1
     p_infect: 1
     p_rd_infect: 0
-
-    grid_size: [3,3]

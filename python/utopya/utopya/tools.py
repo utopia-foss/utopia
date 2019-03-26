@@ -2,6 +2,7 @@
 
 import os
 import sys
+import io
 import re
 import logging
 import collections
@@ -369,3 +370,22 @@ def center_in_line(s: str, *, num_cols: int=TTY_COLS, fill_char: str="·", spaci
     spacing = " " * spacing
     return fill_line(spacing + s + spacing, num_cols=num_cols,
                      fill_char=fill_char, align='centre')
+
+def pprint(obj, **kwargs):
+    """Prints a "pretty" string representation of the given object.
+    
+    Args:
+        obj (TYPE): The object to print
+        **kwargs: Passed to print
+    """
+    print(pformat(obj), **kwargs)
+
+def pformat(obj) -> str:
+    """Creates a "pretty" string representation of the given object.
+
+    This is achieved by creating a yaml representation.
+    """
+    sstream = io.StringIO("")
+    yaml.dump(obj, stream=sstream)
+    sstream.seek(0)
+    return sstream.read()

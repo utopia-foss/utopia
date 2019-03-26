@@ -1,0 +1,164 @@
+# Test configurations for the CellManager for tests of neighborhood
+---
+seed: 42
+output_path: neighborhood_test_tmpfile.h5
+num_steps: 3
+write_every: 1000
+monitor_emit_interval: 1.0
+
+log_levels:
+  core: debug
+  model: debug
+  data_io: debug
+
+# ----------------------------------------------------------------------------
+# Model configurations starting below, one for each scenario
+
+# periodic ...................................................................
+
+rect_2D_empty:
+  space:
+    periodic: true
+    # implied extent: [1, 1]
+
+  cell_manager:
+    grid:
+      structure: square
+      resolution: 5
+
+    # no neighborhood given -> use default, i.e.: empty neighborhood
+
+rect_2D_vonNeumann:
+  space:
+    periodic: true
+
+  cell_manager:
+    grid:
+      structure: square
+      resolution: 5
+
+    neighborhood:
+      mode: vonNeumann
+
+rect_2D_vonNeumann_d2:
+  space:
+    periodic: true
+
+  cell_manager:
+    grid:
+      structure: square
+      resolution: 5
+
+    neighborhood:
+      mode: vonNeumann
+      distance: 2
+
+rect_2D_vonNeumann_d3:
+  space:
+    periodic: true
+
+  cell_manager:
+    grid:
+      structure: square
+      resolution: 7
+
+    neighborhood:
+      mode: vonNeumann
+      distance: 3
+
+  
+rect_2D_Moore:
+  space:
+    periodic: true
+
+  cell_manager:
+    grid:
+      structure: square
+      resolution: 5
+
+    neighborhood:
+      mode: Moore
+
+
+rect_2D_Moore_d2:
+  space:
+    periodic: true
+
+  cell_manager:
+    grid:
+      structure: square
+      resolution: 7
+
+    neighborhood:
+      mode: Moore
+      distance: 2
+
+
+# not periodic ...............................................................
+
+rect_2D_vonNeumann_np:
+  space:
+    periodic: false
+
+  cell_manager:
+    grid:
+      structure: square
+      resolution: 5
+
+    neighborhood:
+      mode: vonNeumann
+
+
+rect_2D_vonNeumann_np_d2:
+  space:
+    periodic: false
+
+  cell_manager:
+    grid:
+      structure: square
+      resolution: 5
+
+    neighborhood:
+      mode: vonNeumann
+      distance: 2
+
+
+rect_2D_vonNeumann_np_d3:
+  space:
+    periodic: false
+
+  cell_manager:
+    grid:
+      structure: square
+      resolution: 7
+
+    neighborhood:
+      mode: vonNeumann
+      distance: 3
+
+
+rect_2D_Moore_np:
+  space:
+    periodic: false
+
+  cell_manager:
+    grid:
+      structure: square
+      resolution: 5
+
+    neighborhood:
+      mode: Moore
+
+
+rect_2D_Moore_np_d2:
+  space:
+    periodic: false
+
+  cell_manager:
+    grid:
+      structure: square
+      resolution: 7
+
+    neighborhood:
+      mode: Moore
+      distance: 2

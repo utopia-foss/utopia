@@ -1,20 +1,57 @@
 # Ignore files and directories that are created by the content of this repo,
 # e.g. when a test is carried out or an installation occurs.
 #
-# NOTE: Use a _global_ .gitignore for everything that is created by the setup
-#       on _your_ machine, e.g. directories created by your code editor.
-#       Do NOT add them here!
+# NOTE While this whitelisting .gitignore attempts to only let git consider
+#      files explicitly, you should still take care to not commit stray files.
+#      Please use a _global_ .gitignore for everything that is created by the
+#      setup on _your_ machine, e.g. directories created by your code editor.
+#      Do NOT add them here!
+#
 # See the following link on how to create a global .gitignore file:
-# https://help.github.com/articles/ignoring-files/#create-a-global-gitignore
+#   https://help.github.com/articles/ignoring-files/#create-a-global-gitignore
 
-build-cmake/
-.coverage
-.h5
+# By default, ignore all files, but whitelist directories
+*
+!*/
+
+# Now only allow file formats used by Utopia
+# C++
+!*.cc
+!*.hh
+
+# Cmake
+!*CMakeLists.txt
+!*.cmake
+!*.in
+
+# Documentation
+!*.md
+!*.rst
+!*.dox
+!*Doxylocal
+!*.bib
+!*.tex
+
+# Python and configuration
+!*.py
+!*.yml
+
+# Miscellaneous
+!python/utopya/utopya/bin/utopia
+!.dockerignore
+!*.dockerfile
+!.gitignore
+!.gitmodules
+
+
+# Again blacklist certain directories completely
+build/
 *.egg-info
 *.pytest_cache
-__pychache__
-*.pyc
+__pycache__
 
-# Ignore cmake-configured files
+# Ignore result of cmake-configured files
 python/utopya/utopya/info.py
 
+# Ignore _copied_ version of root-level readme file
+doc/README.md

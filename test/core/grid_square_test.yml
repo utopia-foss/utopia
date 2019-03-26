@@ -1,0 +1,100 @@
+# Configuration nodes for the test of the square grid
+---
+spaces:
+  # default: not configured from here
+
+  nice:
+    periodic: true
+    extent: [4., 4.]
+
+  uneven:
+    periodic: true
+    extent: [2., 3.]
+
+  uneven_np:
+    periodic: false
+    extent: [2., 3.]
+
+  nasty:
+    periodic: true
+    extent: [1.25, 3.2]
+  
+  devil:
+    periodic: true
+    extent: [1.23, 3.14]
+
+
+# Grids for testing all spaces
+grids:
+  tiny_res:
+    structure: square
+    resolution: 1
+
+    # For testing the shape and the number of cells
+    expected_shapes:
+      default:    [1, 1] # 1 cell
+      nice:       [4, 4] # 16
+      uneven:     [2, 3] # 6
+      uneven_np:  [2, 3] # 6
+      nasty:      -1     # does not work
+      devil:      -1     # does not work
+
+  small_res:
+    structure: square
+    resolution: 8
+
+    expected_shapes:
+      default:    [8, 8]    # 64 cells
+      nice:       [32, 32]  # 4*8 * 4*8 = 1024 cells
+      uneven:     [16, 24]  # 2*8 * 3*8 = 384 cells
+      uneven_np:  [16, 24]  # 2*8 * 3*8 = 384 cells
+      nasty:      -1        # does not work
+      devil:      -1        # does not work
+  
+  decimal_res:
+    structure: square
+    resolution: 10
+
+    expected_shapes:
+      default:    [10, 10]  # 100 cells
+      nice:       [40, 40]  # 4*10 * 4*10 = 1600 cells
+      uneven:     [20, 30]  # 2*10 * 3*10 = 600 cells
+      uneven_np:  [20, 30]  # 2*10 * 3*10 = 600 cells
+      nasty:      -1        # does not work
+      devil:      -1        # does not work
+  
+  medium_res:
+    structure: square
+    resolution: 20   # ... to match 'nasty' space
+
+    expected_shapes:
+      default:    [20, 20] # 1*20 * 1*20 = 400 cells
+      nice:       [80, 80] # 4*20 * 4*20 = 6400
+      uneven:     [40, 60] # 2*20 * 3*20 = 2400
+      uneven_np:  [40, 60] # 2*20 * 3*20 = 2400
+      nasty:      [25, 64] # 25   * 64   = 1600
+      devil:      -1       # still does not work
+
+  invalid_res:
+    structure: square
+    resolution: 0    # bad value!
+
+    expected_shapes:
+      default:    -2    # will check for bad value error message
+      nice:       -2
+      uneven:     -2
+      uneven_np:  -2
+      nasty:      -2
+      devil:      -2
+
+  missing_res:
+    structure: square
+    # resolution: 0    # missing value
+
+    expected_shapes:
+      default:    -3    # will check for missing value error message
+      nice:       -3
+      uneven:     -3
+      uneven_np:  -3
+      nasty:      -3
+      devil:      -3

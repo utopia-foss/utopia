@@ -1,0 +1,72 @@
+# Default plots for the ForestFire model
+---
+# Plot the mean state
+state_mean:
+  creator: universe
+  universes: all
+  
+  # Use the ForestFire-model-specific plot functions
+  module: model_plots.ForestFire
+  plot_func: state_mean
+
+
+# Plot the cluster size distribution
+cluster_distribution:
+  creator: universe
+  universes: all
+  
+  # Use the ForestFire-specific plot functions
+  module: model_plots.ForestFire
+  plot_func: cluster_distribution
+
+  # Which time index to plot
+  time: -1
+
+  plot_kwargs: 
+    linestyle: 'None'
+    marker: '.'
+
+
+# Create frames/movies of the cell states
+state_map: &state_map
+  creator: universe
+  universes: all
+
+  file_ext: mp4
+  dpi: 96
+
+  module: .ca
+  plot_func: state_anim
+
+  # Select the model to read the data from
+  model_name: ForestFire
+
+  # Select the properties to plot
+  to_plot:
+    state:
+      title: State
+      limits: [0, 1]
+      cmap: 
+        Empty: goldenrod
+        Tree: green
+
+  # Video options
+  writer: ffmpeg  # can be: frames, ffmpeg (if installed), ...
+  fps: 15
+
+
+# Create frames/movies of the clusters
+cluster_map:
+  # Base the configuration here on that of the state map
+  <<: *state_map
+  
+  # Use a custom pre-processor function
+  module: model_plots.ForestFire
+  plot_func: state_anim
+
+  # Select the properties to plot
+  to_plot:
+    cluster_id:
+      title: Cluster
+      limits: [0, 20]
+      cmap: tab20

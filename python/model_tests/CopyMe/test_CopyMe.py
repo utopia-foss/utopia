@@ -45,9 +45,6 @@ def test_output():
     mcfg = dm['cfg']['meta']
     print("meta config: ", mcfg)
 
-    # Assert that the number of runs matches the specified ones
-    assert len(dm['multiverse']) == mcfg['parameter_space'].volume
-
     # For each universe, iterate over the output data and assert the shape
     # and the content of the output data
     for uni_no, uni in dm['multiverse'].items():
@@ -57,18 +54,8 @@ def test_output():
         # Get the config of this universe
         uni_cfg = uni['cfg']
 
-        # Calculate the number of cells
-        grid_size = uni_cfg['CopyMe']['grid_size']
-        num_cells = grid_size[0] * grid_size[1]
-
         # Check that all datasets are available
         assert 'some_state' in data
         assert 'some_trait' in data
-
-        # Assert they have the correct shape
-        assert data['some_state'].shape == (uni_cfg['num_steps'] + 1,
-                                            num_cells)
-        assert data['some_trait'].shape == (uni_cfg['num_steps'] + 1,
-                                            num_cells)
 
         # Can do further tests here ...

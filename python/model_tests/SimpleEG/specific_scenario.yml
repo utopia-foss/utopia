@@ -18,10 +18,11 @@ parameter_space:
   SimpleEG: !model
     model_name: SimpleEG
 
-    # Choose a smaller grid size to speed up tests
-    grid_size: [11, 11]
+    # Use a lower resolution
+    cell_manager:
+      grid:
+        resolution: 11
 
-    # Chose a single s1-cell in the middle of a s0-world
     initial_state: single_s1
 
     # Test for a specific ia_matrix in which all parameters have different values

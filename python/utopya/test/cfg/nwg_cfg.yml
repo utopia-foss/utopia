@@ -1,0 +1,10 @@
+# Test file for the NetworkGroup test, done in test_datagroup.py
+---
+parameter_space:
+  num_steps: 3
+
+  Hierarnet: !model
+    model_name: Hierarnet
+
+    num_vertices: 13
+    nw_mean_degree: 2
