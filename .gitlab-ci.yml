@@ -41,6 +41,9 @@ variables:
   RUN_IN_UTOPIA_ENV: $CI_PROJECT_DIR/build/run-in-utopia-env
   ENTER_UTOPIA_ENV: source $CI_PROJECT_DIR/build/activate
 
+  # Docker Hub login command
+  DOCKER_HUB_LOGIN: docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_PW
+
 
 # Define the image to use as base for all stages
 image: ${BASE_IMAGE}
@@ -50,7 +53,7 @@ stages:
   - setup     # only runs on master
   - build
   - test
-  # - deploy  # (soon) only runs on master
+  - deploy
 
 
 # .. YAML Templates ...........................................................
@@ -83,6 +86,19 @@ stages:
     - chmod 644 ~/.ssh/known_hosts
     # - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config' # FIXME turn this on again
 
+# Use the Docker-in-Docker executor and services, log into Docker Hub
+.dind: &dind
+  tags:
+    - dind
+  image: docker:stable
+  services:
+    - docker:dind
+  variables:
+    DOCKER_DRIVER: overlay2
+  before_script:
+    # NOTE Both variables here are secret and protected variables
+    - $DOCKER_HUB_LOGIN
+
 .artifacts: &artifacts
   artifacts:
     name: "$CI_JOB_NAME"
@@ -97,22 +113,11 @@ stages:
 # This stage takes care to build the utopia base testing image
 
 setup:utopia-base:
+  <<: *dind
   stage: setup
   only:
     - master
     - web
-  tags:
-    - dind
-  
-  image: docker:stable
-  services:
-    - docker:dind
-  variables:
-    DOCKER_DRIVER: overlay2
-
-  before_script:
-    - docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_PW
-    # NOTE Both variables here are secret and protected variables
   script:
     - docker build -f docker/utopia-base.dockerfile -t $BASE_IMAGE .
     - docker push $BASE_IMAGE
@@ -304,4 +309,18 @@ test:cli:
 
 
 # -- Deploy Stage -------------------------------------------------------------
-# TODO
+deploy:dockerhub-latest:
+  <<: *dind
+  stage: deploy
+  only:
+    # master branch in core repo (no forks)
+    - master@utopia/utopia
+  dependencies: []
+  script:
+    - docker build -f docker/utopia.dockerfile
+                   --build-arg BASE_IMAGE=$BASE_IMAGE
+                   --build-arg DEPLOY_KEY="$SSH_PRIVATE_KEY"
+                   --build-arg PROCNUM=$CPUS_DIND
+                   -t ccees/utopia:latest
+                   ./
+    - docker push ccees/utopia:latest
