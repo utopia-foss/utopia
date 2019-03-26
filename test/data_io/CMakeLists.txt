@@ -21,6 +21,7 @@ set(TESTS_DATAIO
     hdfintegration_test
     hdfgroup_test
     monitor_test
+    datamanager_test
     )
 
 # Add DATAIO_-prefixed test targets
