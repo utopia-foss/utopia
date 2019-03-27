@@ -45,13 +45,61 @@ struct State {
     /// The resources a prey on this cell has
     double resource_prey;
 
-    /// Default constructor (empty population, zero resources)
-    State()
-    :
-        population(Population::empty),
-        resource_predator(0.),
-        resource_prey(0.)
-    {}
+    /// Construct a cell state with the use of a RNG
+    template<class RNGType>
+    State(const DataIO::Config& cfg, const std::shared_ptr<RNGType>& rng)
+    {
+        std::uniform_real_distribution<double> dist(0., 1.);
+
+        // Get the threshold probability value
+        const auto p_prey = get_as<double>("p_prey", cfg);
+        const auto p_predator = get_as<double>("p_predator", cfg);
+        const auto p_predprey = get_as<double>("p_predprey", cfg);
+
+        // Check wether the conditions for the probabilities are met
+        if (p_prey < 0. 
+            or p_predator < 0.
+            or p_predprey < 0.
+            or (p_prey + p_predator + p_predprey) > 1.)
+        {
+            throw std::invalid_argument(
+                "Need `p_prey`, `p_predator` and `p_predprey` in "
+                "[0, 1] and the sum not exceeding 1, but got values: " 
+                + std::to_string(p_prey) + ", "
+                + std::to_string(p_predator) + " and "
+                + std::to_string(p_predprey));
+        }
+
+        // Draw a random real number in [0., 1.)
+        const double rnum = dist(*rng);
+
+        // ... and compare it to the thresholds. Then set the cell
+        // state accordingly and distribute initial resources
+        if (rnum < p_prey) {
+            // put prey on the cell
+            population = Population::prey;
+            resource_prey = get_as<double>("prey", cfg["init_res"]);
+            resource_predator = 0;
+        }
+        else if (rnum < (p_prey + p_predator)) {
+            // put a predator on the cell
+            population = Population::predator;
+            resource_predator = get_as<double>("predator", cfg["init_res"]);
+            resource_prey = 0;
+        }
+        else if (rnum < (p_prey + p_predator + p_predprey)) {
+            // put a predator and a prey on the cell
+            population = Population::pred_prey;
+            resource_predator = get_as<double>("predator", cfg["init_res"]);
+            resource_prey = get_as<double>("prey", cfg["init_res"]);
+        }
+        else {
+            // initialize as empty and without resources
+            population = Population::empty;
+            resource_predator = 0;
+            resource_prey = 0;
+        }
+    }
 };
 
 
@@ -60,7 +108,7 @@ struct State {
   *         the second sets them to not be synchronously updated.
   *         The default constructor for the cell state is preferred here
   */
-using CellTraits = Utopia::CellTraits<State, UpdateMode::async, true>;
+using CellTraits = Utopia::CellTraits<State, UpdateMode::async, false>;
 
 /// Typehelper to define data types of PredatorPrey model
 using ModelTypes = ModelTypes<>;
@@ -422,179 +470,10 @@ public:
                                         "than or equal to e_min!");
         }
         
-        // Initialize cells
-        this->initialize_cells();
-        this->_log->debug("{} model fully set up.", this->_name);
-
         // Write initial state
         this->write_data();
         this->_log->debug("Initial state written.");
     }
-
-
-private:
-    /// Initialize the cells
-    void initialize_cells() {
-        // Extract the mode that determines the initialization strategy
-        const auto initial_state = get_as<std::string>("initial_state", _cfg);
-
-        this->_log->info("Initializing cells in '{}' mode ...", initial_state);
-
-        // Get the initial resources for predator and prey
-        const auto e_init_prey = get_as<double>("e_init_prey", _cfg);
-        const auto e_init_pred = get_as<double>("e_init_pred", _cfg);
-
-        // Distinguish by mode
-        if (initial_state == "random") {
-            // Get the threshold probability value
-            const auto prey_prob = get_as<double>("prey_prob", _cfg);
-            const auto pred_prob = get_as<double>("pred_prob", _cfg);
-            const auto predprey_prob = get_as<double>("predprey_prob", _cfg);
-
-            // check wether the conditions for the probabilities are met
-            if (prey_prob < 0. 
-                or pred_prob < 0.
-                or predprey_prob < 0.
-                or (prey_prob + pred_prob + predprey_prob) > 1.)
-            {
-                throw std::invalid_argument(
-                    "Need `prey_prob`, `pred_prob` and `predprey_prob` in "
-                    "[0, 1] and the sum not exceeding 1, but got values: " 
-                    + std::to_string(prey_prob) + ", "
-                    + std::to_string(pred_prob) + " and "
-                    + std::to_string(predprey_prob));
-            }
-
-            // Define the update rule
-            auto set_random_population = [&, this](const auto& cell) {
-                // Get the state
-                auto& state = cell->state();
-
-                // Draw a random real number in [0., 1.)
-                const double rnum = this->_prob_distr(*this->_rng);
-
-                // ... and compare it to the thresholds. Then set the cell
-                // state accordingly and distribute initial resources
-                if (rnum < prey_prob) {
-                    // put prey on the cell
-                    state.population = Population::prey;
-                    state.resource_prey = e_init_prey;
-                    state.resource_predator = 0;
-                }
-                else if (rnum < (prey_prob + pred_prob)) {
-                    // put a predator on the cell
-                    state.population = Population::predator;
-                    state.resource_predator = e_init_pred;
-                    state.resource_prey = 0;
-                }
-                else if (rnum < (prey_prob + pred_prob + predprey_prob)) {
-                    // put a predator and a prey on the cell
-                    state.population = Population::pred_prey;
-                    state.resource_predator = e_init_pred;
-                    state.resource_prey = e_init_prey;
-                }
-                else {
-                    // initialize as empty and without resources
-                    state.population = Population::empty;
-                    state.resource_predator = 0;
-                    state.resource_prey = 0;
-                }
-                return state;
-            };
-
-            // Apply the rule to all cells
-            apply_rule<false>(set_random_population, _cm.cells());
-        }
-
-        else if (initial_state == "fraction") {
-            // Get the fraction of cells to be populated by prey
-            const auto prey_frac = get_as<double>("prey_frac", _cfg);
-
-            // Get the fraction of cells to be populated by predators
-            const auto pred_frac = get_as<double>("pred_frac", _cfg);
-
-            // Get the fraction of cells to be populated by predators and prey
-            // together
-            const auto predprey_frac = get_as<double>("predprey_frac", _cfg);
-
-            if (prey_frac < 0 
-                or pred_frac < 0 
-                or predprey_frac < 0
-                or (prey_frac + pred_frac + predprey_frac) > 1)
-            {
-                throw std::invalid_argument(
-                    "Need `prey_frac`, `pred_frac` and `predprey_frac` in "
-                    "[0, 1] and the sum not exceeding 1, but got values: " 
-                    + std::to_string(prey_frac) + ", "
-                    + std::to_string(pred_frac) + " and " 
-                    + std::to_string(predprey_frac));
-            }
-
-            // Get the cells container
-            auto& cells = _cm.cells();
-
-            // Calculate the number of cells that should have that strategy
-            const auto num_cells = cells.size();
-            const std::size_t num_prey = prey_frac * num_cells;
-            const std::size_t num_pred = pred_frac * num_cells;
-            const std::size_t num_predprey = predprey_frac * num_cells;
-            // NOTE this is a flooring calculation!
-
-            this->_log->debug("Cells with popupation prey, pred and predprey: "
-                              "{}, {} and {}",
-                              num_prey, num_pred, num_predprey);
-
-            // Need a counter of cells that were set to prey and pred
-            std::size_t num_set_prey = 0;
-            std::size_t num_set_pred = 0;
-            std::size_t num_set_predprey = 0;
-
-            // Get the cells... and shuffle them.
-            auto random_cells = _cm.cells();
-            std::shuffle(random_cells.begin(), random_cells.end(), *this->_rng);
-
-            // Set the cells accordingly
-            for (const auto& cell : random_cells) {
-                // If the desired number of cells populated by prey is
-                // not yet reached change another cell's strategy
-                if (num_set_prey < num_prey)
-                {
-                    cell->state().population = Population::prey;
-                    cell->state().resource_prey = e_init_prey;
-                    cell->state().resource_predator = 0;
-
-                    num_set_prey++;
-                }
-                else if (num_set_pred < num_pred)
-                {
-                    cell->state().population = Population::predator;
-                    cell->state().resource_predator = e_init_pred;
-                    cell->state().resource_prey = 0;
-
-                    num_set_pred++;
-                }
-                else if (num_set_predprey < num_predprey)
-                {
-                    cell->state().population = Population::pred_prey;
-                    cell->state().resource_predator = e_init_pred;
-                    cell->state().resource_prey = e_init_prey;
-
-                    num_set_predprey++;
-                }
-                // Break, if desired fractions have been reached
-                else
-                    break;
-            }
-        }
-
-        else {
-            throw std::invalid_argument("`initial_state` parameter with value "
-                "'" + initial_state + "' is not supported!");
-        }
-
-        this->_log->info("Cells successfully initialized.");
-    }
-
 
 public:
     // -- Public Interface ----------------------------------------------------

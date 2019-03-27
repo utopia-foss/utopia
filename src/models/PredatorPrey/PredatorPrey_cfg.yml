@@ -29,70 +29,38 @@ cell_manager:
   neighborhood:
     mode: Moore
 
+  # Initializing a cell takes the following parameters
+  # that are passed to the cell state Config&-constructor 
+  cell_params:
+    # The initial resources
+    init_res:
+      prey: 50.
+      predator: 2.
 
-# --- Model initialization ----------------------------------------------------
-# Initial state mode
-initial_state: fraction
-# Available modes:
-# 'random':   Each cell has a probability to be populated by a certain
-#             species. The *_prob parameters control this.
-# 'fraction': The number of cells of each species is calculated and these
-#             cells are then randomly distributed on the grid. The *_frac
-#             parameters are used to control the fraction of each species.
-#
-# Probabilities and fractions have to sum up to <= 1.0 and be greater than zero
-
-# Initial resource levels for prey and predators
-e_init_prey: 2.0
-e_init_pred: 2.0
-
-# Parameters for 'random' initialization
-prey_prob: 0.2         # probability to initialize as prey   
-pred_prob: 0.285       # probability to initialize as predator
-predprey_prob: 0.3     # probability to initialize cell with predator and prey
-
-# Parameters for 'fraction' initialization
-prey_frac: 0.2         # fraction of cells to be initialized as prey
-pred_frac: 0.285       # fraction of cells to be initialized as predator
-predprey_frac: 0.0     # fraction of cells to be initialized as predprey
+    # The probabilities to have a cell initialized with a prey, a predator, 
+    # or both.
+    # NOTE The probabilities have to sum up to <= 1.0 and be greater than zero
+    p_prey: 0.1
+    p_predator: 0.1
+    p_predprey: 0.
 
 
 # --- Model dynamics ----------------------------------------------------------
 # Species specific parameter from which the model dynamics arrises
 prey:
-  # .. Living ..
-  # Cost of living that is taken each time step
-  cost_of_living: 1.
-  # Resource intake from eating
-  resource_intake: 3.
-  # Minimal resource level
-  resource_min: 4.
-  # Maximal resource level
-  resource_max: 8.
-
-  # .. Reproduction ..
-  # Cost of reproduction
-  cost_of_repr: 2.
-  # Reproduction probability
-  p_repro: 0.2
-
-  # .. Interaction ..
-  # Probability to flee from a predator if on the same cell
-  p_flee: 0.5
+  cost_of_living: 1.        # Cost of living that is taken each time step
+  resource_intake: 3.       # Resource intake from eating
+  resource_min: 4.          # Minimal resource level
+  resource_max: 8.          # Maximal resource level
+  cost_of_repr: 2.          # Cost of reproduction
+  p_repro: 0.2              # Reproduction probability
+  p_flee: 0.5               # Probability to flee from a predator if 
+                            # on the same cell
 
 predator:
-  # .. Living ..
-  # Cost of living that is taken each time step
-  cost_of_living: 1.
-  # Resource intake from eating
-  resource_intake: 3.
-  # Minimal resource level
-  resource_min: 4.
-  # Maximal resource level
-  resource_max: 8.
-
-  # .. Reproduction ..
-  # Cost of reproduction
-  cost_of_repr: 2.
-  # Reproduction probability
-  p_repro: 0.2
+  cost_of_living: 1.        # Cost of living that is taken each time step
+  resource_intake: 3.       # Resource intake from eating
+  resource_min: 4.          # Minimal resource level
+  resource_max: 8.          # Maximal resource level
+  cost_of_repr: 2.          # Cost of reproduction
+  p_repro: 0.2              # Reproduction probability
