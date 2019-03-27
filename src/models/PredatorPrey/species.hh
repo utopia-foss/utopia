@@ -62,7 +62,9 @@ struct Prey : public Species {
 
     // .. Constructors ........................................................
     /// Construct a prey object from a configuration node
-    Prey(const Utopia::DataIO::Config& cfg) : Species(cfg){};
+    Prey(const Utopia::DataIO::Config& cfg) : Species(cfg){
+        p_flee = get_as<double>("p_flee", cfg);
+    };
 
     Prey() = delete;
 };
