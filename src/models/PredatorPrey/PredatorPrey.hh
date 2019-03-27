@@ -18,7 +18,7 @@ namespace PredatorPrey {
 // ++ Type definitions ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 /// Population enum, i.e.: possible cell states
-enum Population : unsigned short {
+enum class Population : unsigned short {
     /// Nobody on cell
     empty = 0,
 
@@ -48,7 +48,7 @@ struct State {
     /// Default constructor (empty population, zero resources)
     State()
     :
-        population(empty),
+        population(Population::empty),
         resource_predator(0.),
         resource_prey(0.)
     {}
@@ -155,22 +155,22 @@ private:
         // Remove predators and preys that have no resources.
         // Prey always finds food and can only run out of energy if 
         // reproduction is very costly.
-        if (state.population == predator and state.resource_predator == 0.) {
+        if (state.population == Population::predator and state.resource_predator == 0.) {
             // Remove the predator
-            state.population = empty;
+            state.population = Population::empty;
         }
-        else if (state.population == prey and state.resource_prey == 0) {
+        else if (state.population == Population::prey and state.resource_prey == 0) {
             // Remove the prey
-            state.population = empty;
+            state.population = Population::empty;
         }
-        else if (state.population == pred_prey) {
+        else if (state.population == Population::pred_prey) {
             // Remove either one of them or both, depending on resources
             if (state.resource_predator == 0. and state.resource_prey == 0.)
-                state.population = empty;
+                state.population = Population::empty;
             else if (state.resource_predator == 0.)
-                state.population = prey;
+                state.population = Population::prey;
             else if (state.resource_prey == 0.)
-                state.population = predator;
+                state.population = Population::predator;
         }
 
         return state;
@@ -187,7 +187,7 @@ private:
         auto state = cell->state();
 
         //Continue if there is only a predator on the cell
-        if (state.population == predator) {
+        if (state.population == Population::predator) {
             // checking neighbouring cells for prey and moving to that cell
 
             // clear the containers for cells that contain prey or empty cells
@@ -198,10 +198,10 @@ private:
             for (const auto& nb : this->_cm.neighbors_of(cell)) {
                 auto nb_state = nb->state();
 
-                if (nb_state.population == prey) {
+                if (nb_state.population == Population::prey) {
                     _prey_cell.push_back(nb);
                 }
-                else if (nb_state.population == empty) {
+                else if (nb_state.population == Population::empty) {
                     _empty_cell.push_back(nb);
                 }
             }
@@ -215,10 +215,10 @@ private:
                     dist_prey(0, _prey_cell.size() - 1);
 
                 auto nb_cell = _prey_cell[dist_prey(*this->_rng)];
-                nb_cell->state().population = pred_prey;
+                nb_cell->state().population = Population::pred_prey;
                 nb_cell->state().resource_predator = state.resource_predator;
                     
-                state.population = empty;
+                state.population = Population::empty;
                 state.resource_predator = 0.;
             }
          // if there is no prey the predator makes a random move    
@@ -230,23 +230,23 @@ private:
 
 
                 auto nb_cell = _empty_cell[dist_empty(*this->_rng)];
-                nb_cell->state().population = predator;
+                nb_cell->state().population = Population::predator;
                 nb_cell->state().resource_predator = state.resource_predator;
 
-                state.population = empty;
+                state.population = Population::empty;
                 state.resource_predator = 0.;
             }
         }
         
      // continue if there are both predator and prey on a cell
-        else if (state.population == pred_prey) {
+        else if (state.population == Population::pred_prey) {
             // checking neighbouring cells if empty for the prey to flee
 
             // clear container for empty cells
             _empty_cell.clear();
 
             for (const auto& nb : this->_cm.neighbors_of(cell)) {
-                if (nb->state().population == empty) {
+                if (nb->state().population == Population::empty) {
                     _empty_cell.push_back(nb);
                 }
             }
@@ -259,10 +259,10 @@ private:
                 and this->_prob_distr(*this->_rng) < _prey.p_flee)
             {
                 auto nb_cell = _empty_cell[dist(*this->_rng)];
-                nb_cell->state().population = prey;
+                nb_cell->state().population = Population::prey;
                 nb_cell->state().resource_prey = state.resource_prey;
 
-                state.population = predator;
+                state.population = Population::predator;
                 state.resource_prey = 0.;
             }
         }
@@ -280,8 +280,8 @@ private:
         auto state = cell->state();
 
         // preys get eaten by predators 
-        if (state.population == pred_prey) {
-            state.population = predator;
+        if (state.population == Population::pred_prey) {
+            state.population = Population::predator;
             
             // increase the resources and clamp to the allowed range [0, e_max]
             state.resource_predator = std::clamp(state.resource_predator 
@@ -291,7 +291,7 @@ private:
             state.resource_prey = 0.;   
         }
     // preys eat
-        else if (state.population == prey) {
+        else if (state.population == Population::prey) {
             // increase the resources and clamp to the allowed range [0, e_max]
             state.resource_prey = std::clamp(state.resource_prey 
                                                     + _prey.resource_intake, 
@@ -309,7 +309,7 @@ private:
         // Get the state of the cell
         auto state = cell->state();
         
-        if (   ( state.population == predator or state.population==pred_prey)
+        if (   ( state.population == Population::predator or state.population == Population::pred_prey)
             and this->_prob_distr(*this->_rng) < _predator.p_repro
             and state.resource_predator >= _predator.resource_min)
         {
@@ -319,8 +319,8 @@ private:
             {
                 auto nb_state = nb->state();
 
-                if (nb_state.population == prey 
-                    or nb_state.population == empty)
+                if (nb_state.population == Population::prey 
+                    or nb_state.population == Population::empty)
                 {
                     _repro_cell.push_back(nb);
                 }
@@ -332,13 +332,13 @@ private:
                 auto nb_cell = _repro_cell[dist(*this->_rng)];
 
                 // new state will be predator or pred_prey
-                if (nb_cell->state().population == empty)
+                if (nb_cell->state().population == Population::empty)
                 {
-                    nb_cell->state().population = predator;
+                    nb_cell->state().population = Population::predator;
                 }
                 else
                 {
-                    nb_cell->state().population = pred_prey;
+                    nb_cell->state().population = Population::pred_prey;
                 }
 
                 // transfer energy from parent to offspring
@@ -347,7 +347,7 @@ private:
             }
         }
 
-        if ((state.population == prey or state.population == pred_prey)
+        if ((state.population == Population::prey or state.population == Population::pred_prey)
                 and this->_prob_distr(*this->_rng) < _prey.p_repro
                 and state.resource_prey >= _prey.resource_min)
         {
@@ -357,8 +357,8 @@ private:
             {
                 auto nb_state = nb->state();
 
-                if (nb_state.population == predator 
-                    or nb_state.population == empty)
+                if (nb_state.population == Population::predator 
+                    or nb_state.population == Population::empty)
                 {
                     _repro_cell.push_back(nb);
                 }
@@ -372,13 +372,13 @@ private:
                 auto nb_cell = _repro_cell[dist(*this->_rng)];
 
                 // new state will be prey or pred_prey
-                if (nb_cell->state().population == empty)
+                if (nb_cell->state().population == Population::empty)
                 {
-                    nb_cell->state().population = prey;
+                    nb_cell->state().population = Population::prey;
                 }
                 else
                 {
-                    nb_cell->state().population = pred_prey;
+                    nb_cell->state().population = Population::pred_prey;
                 }                            
                 //  transfer energy from parent to offspring
                 nb_cell->state().resource_prey = _prey.cost_of_repr;
@@ -627,13 +627,13 @@ public:
 
             for (const auto& cell : this->_cm.cells()) {
                 auto state = cell->state();
-                if (state.population == prey) {
+                if (state.population == Population::prey) {
                     prey_sum++;
                 }
-                else if (state.population == predator) {
+                else if (state.population == Population::predator) {
                     pred_sum++;
                 }
-                else if (state.population == pred_prey) {
+                else if (state.population == Population::pred_prey) {
                     prey_sum++;
                     pred_sum++;
                 }
