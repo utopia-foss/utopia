@@ -1,6 +1,7 @@
 #define BOOST_TEST_MODULE datamanager_test
 #include <boost/mpl/list.hpp>       // type lists for testing
 #include <boost/test/unit_test.hpp> // for unit tests
+
 #include <sstream> // needed for testing throw messages from exceptions
 #include <utopia/core/utils.hh> // for output operators, get size...
 #include <utopia/data_io/data_manager.hh>
@@ -27,7 +28,7 @@ struct Model
     }
 
     Model(std::string n)
-        : name(n), file(n + "h5", "w"), logger(spdlog::stdout_color_mt("logger." + n))
+        : name(n), file(n + ".h5", "w"), logger(spdlog::stdout_color_mt("logger." + n))
     {
     }
     Model() = default;
