@@ -106,7 +106,7 @@ struct State {
 /// Cell traits specialization using the state type
 /** \detail The first template parameter specifies the type of the cell state,
   *         the second sets them to not be synchronously updated.
-  *         The default constructor for the cell state is preferred here
+  *         The config constructor for the cell state is preferred here
   */
 using CellTraits = Utopia::CellTraits<State, UpdateMode::async, false>;
 
@@ -122,9 +122,11 @@ using ModelTypes = ModelTypes<>;
  * Cells are updated based on the following interactions:
  * 1) resource levels are reduced by a cost_of_living for both species
  * removed if resource = 0 
- * 2) predators move to neighbouring cells if there is a no prey on their own cell.
- * prey flees with a certain probability, if there is a predator on the same cell
- * 3) predators eat prey if on the same cell, else if there is only a prey it takes up resources
+ * 2) predators move to neighbouring cells if there is a no prey on their 
+ * own cell. Prey flees with a certain probability, if there is a predator on 
+ * the same cell
+ * 3) predators eat prey if on the same cell, else if there is only a prey it 
+ * takes up resources
  * 4) both predators and prey reproduce if resources are sufficient and if
  * there is a cell in their neighbourhood not already occupied by the same
  * species
@@ -203,11 +205,15 @@ private:
         // Remove predators and preys that have no resources.
         // Prey always finds food and can only run out of energy if 
         // reproduction is very costly.
-        if (state.population == Population::predator and state.resource_predator == 0.) {
+        if (state.population == Population::predator 
+            and state.resource_predator == 0.) 
+        {
             // Remove the predator
             state.population = Population::empty;
         }
-        else if (state.population == Population::prey and state.resource_prey == 0) {
+        else if (state.population == Population::prey 
+            and state.resource_prey == 0) 
+        {
             // Remove the prey
             state.population = Population::empty;
         }
@@ -357,7 +363,8 @@ private:
         // Get the state of the cell
         auto state = cell->state();
         
-        if (   ( state.population == Population::predator or state.population == Population::pred_prey)
+        if (   ( state.population == Population::predator 
+                    or state.population == Population::pred_prey)
             and this->_prob_distr(*this->_rng) < _predator.p_repro
             and state.resource_predator >= _predator.min_repro_requ)
         {
@@ -395,7 +402,8 @@ private:
             }
         }
 
-        if ((state.population == Population::prey or state.population == Population::pred_prey)
+        if ((state.population == Population::prey 
+                    or state.population == Population::pred_prey)
                 and this->_prob_distr(*this->_rng) < _prey.p_repro
                 and state.resource_prey >= _prey.min_repro_requ)
         {
@@ -465,7 +473,8 @@ public:
         _dset_resource_predator(this->create_cm_dset("resource_predator", _cm))
     {
         // Check if _cost_of_repro is in the allowed range
-        if (_predator.cost_of_repro > _predator.min_repro_requ or _prey.cost_of_repro >_prey.min_repro_requ) {
+        if (_predator.cost_of_repro > _predator.min_repro_requ 
+            or _prey.cost_of_repro > _prey.min_repro_requ) {
             throw std::invalid_argument("cost_of_repro needs to be smaller "
                                         "than or equal to the minimal "
                                         "reproduction requirements of "
