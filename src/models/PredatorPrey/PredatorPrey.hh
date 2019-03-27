@@ -359,7 +359,7 @@ private:
         
         if (   ( state.population == Population::predator or state.population == Population::pred_prey)
             and this->_prob_distr(*this->_rng) < _predator.p_repro
-            and state.resource_predator >= _predator.resource_min)
+            and state.resource_predator >= _predator.min_repro_requ)
         {
             _repro_cell.clear();
 
@@ -390,14 +390,14 @@ private:
                 }
 
                 // transfer energy from parent to offspring
-                nb_cell->state().resource_predator = _predator.cost_of_repr;
-                state.resource_predator -= _predator.cost_of_repr;
+                nb_cell->state().resource_predator = _predator.cost_of_repro;
+                state.resource_predator -= _predator.cost_of_repro;
             }
         }
 
         if ((state.population == Population::prey or state.population == Population::pred_prey)
                 and this->_prob_distr(*this->_rng) < _prey.p_repro
-                and state.resource_prey >= _prey.resource_min)
+                and state.resource_prey >= _prey.min_repro_requ)
         {
             _repro_cell.clear();
 
@@ -429,8 +429,8 @@ private:
                     nb_cell->state().population = Population::pred_prey;
                 }                            
                 //  transfer energy from parent to offspring
-                nb_cell->state().resource_prey = _prey.cost_of_repr;
-                state.resource_prey -= _prey.cost_of_repr;
+                nb_cell->state().resource_prey = _prey.cost_of_repro;
+                state.resource_prey -= _prey.cost_of_repro;
             }
         }
 
@@ -465,9 +465,11 @@ public:
         _dset_resource_predator(this->create_cm_dset("resource_predator", _cm))
     {
         // Check if _cost_of_repro is in the allowed range
-        if (_predator.cost_of_repr > _predator.resource_min or _prey.cost_of_repr >_prey.resource_min) {
+        if (_predator.cost_of_repro > _predator.min_repro_requ or _prey.cost_of_repro >_prey.min_repro_requ) {
             throw std::invalid_argument("cost_of_repro needs to be smaller "
-                                        "than or equal to e_min!");
+                                        "than or equal to the minimal "
+                                        "reproduction requirements of "
+                                        "resources!");
         }
         
         // Write initial state

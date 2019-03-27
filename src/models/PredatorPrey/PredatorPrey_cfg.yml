@@ -34,7 +34,7 @@ cell_manager:
   cell_params:
     # The initial resources
     init_res:
-      prey: 50.
+      prey: 8.
       predator: 2.
 
     # The probabilities to have a cell initialized with a prey, a predator, 
@@ -50,17 +50,17 @@ cell_manager:
 prey:
   cost_of_living: 1.        # Cost of living that is taken each time step
   resource_intake: 3.       # Resource intake from eating
-  resource_min: 4.          # Minimal resource level
-  resource_max: 8.          # Maximal resource level
-  cost_of_repr: 2.          # Cost of reproduction
+  resource_max: 8.          # Maximum resource reserve
+  cost_of_repro: 2.          # Cost of reproduction
   p_repro: 0.2              # Reproduction probability
+  min_repro_requ: 4.        # Minimal reproduction requirements of resources
   p_flee: 0.5               # Probability to flee from a predator if 
                             # on the same cell
 
 predator:
   cost_of_living: 1.        # Cost of living that is taken each time step
   resource_intake: 3.       # Resource intake from eating
-  resource_min: 4.          # Minimal resource level
-  resource_max: 8.          # Maximal resource level
-  cost_of_repr: 2.          # Cost of reproduction
+  resource_max: 8.          # Maximum resource reserve
+  cost_of_repro: 2.          # Cost of reproduction
   p_repro: 0.2              # Reproduction probability
+  min_repro_requ: 4.        # Minimal reproduction requirements of resources
