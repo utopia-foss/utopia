@@ -18,28 +18,28 @@ struct Species {
     /// Resource intake from eating
     double resource_intake;
     
-    /// Minimal reproduction requirements of resources
-    double min_repro_requ;
+    /// Minimal reproduction resources requirements
+    double repro_resource_requ;
 
     /// Maximal resource level
     double resource_max;
 
     // .. Reproduction ........................................................
     /// Cost of reproduction
-    double cost_of_repro;
+    double repro_cost;
     
     /// Reproduction probability
-    double p_repro;
+    double repro_prob;
 
     // .. Constructors ........................................................
     /// Construct a species from a configuration node
     Species(const Utopia::DataIO::Config& cfg){
         cost_of_living = get_as<double>("cost_of_living", cfg);
         resource_intake = get_as<double>("resource_intake", cfg);
-        min_repro_requ = get_as<double>("min_repro_requ", cfg);
+        repro_resource_requ = get_as<double>("repro_resource_requ", cfg);
         resource_max = get_as<double>("resource_max", cfg);
-        cost_of_repro = get_as<double>("cost_of_repro", cfg);
-        p_repro = get_as<double>("p_repro", cfg);
+        repro_cost = get_as<double>("repro_cost", cfg);
+        repro_prob = get_as<double>("repro_prob", cfg);
     }
 
     Species() = delete;
