@@ -8,6 +8,8 @@
 #include <utopia/core/model.hh>
 #include <utopia/core/cell_manager.hh>
 
+#include "species.hh"
+
 
 namespace Utopia {
 namespace Models {
@@ -144,6 +146,11 @@ private:
     /// The probability for prey to flee
     double _p_flee;
 
+    /// Predator-specific model parameters
+    Predator _predator;
+
+    /// Prey-specific model parameters
+    Prey _prey; 
 
     // .. Temporary objects ...................................................
     /// A container to temporarily accumulate the prey neighbour cells
@@ -448,6 +455,8 @@ public:
         _p_repro_pred(get_as<double>("p_repro_pred", _cfg)),
      _p_repro_prey(get_as<double>("p_repro_prey", _cfg)),   
         _p_flee(get_as<double>("p_flee", _cfg)),
+        _predator(this->_cfg["predator"]),
+        _prey(this->_cfg["prey"]),
         // Temporary cell containers
         _prey_cell(),
         _empty_cell(),

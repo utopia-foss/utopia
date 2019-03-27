@@ -58,7 +58,46 @@ predprey_frac: 0.0     # fraction of cells to be initialized as predprey
 
 
 # --- Model dynamics ----------------------------------------------------------
-# Model specific parameters
+# Species specific parameter from which the model dynamics arrises
+prey:
+  # .. Living ..
+  # Cost of living that is taken each time step
+  cost_of_living: 1.
+  # Resource intake from eating
+  resource_intake: 3.
+  # Resource limits [min, max] for the resource level
+  resource_limits: [4., 8.]
+
+  # .. Reproduction ..
+  # Cost of reproduction
+  cost_of_repr: 2.
+  # Reproduction probability
+  p_repro: 0.2
+
+  # .. Interaction ..
+  # Probability to flee from a predator if on the same cell
+  p_flee: 0.5
+
+predator:
+  # .. Living ..
+  # Cost of living that is taken each time step
+  cost_of_living: 1.
+  # Resource intake from eating
+  resource_intake: 3.
+  # Resource limits [min, max] for the resource level
+  resource_limits: [4., 8.]
+
+  # .. Reproduction ..
+  # Cost of reproduction
+  cost_of_repr: 2.
+  # Reproduction probability
+  p_repro: 0.2
+
+
+
+
+# --- Outdated params - DELETE IF MIGRATION SUCCEEDED -------------------------
+
 cost_of_living_pred: 1      # cost for a predator to uphold its structure
 cost_of_living_prey: 1.    # cost for a prey to uphold its structure
 delta_e_pred: 3             # resource increase by food uptake for the predator    
