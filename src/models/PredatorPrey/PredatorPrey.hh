@@ -107,45 +107,6 @@ private:
     CellManager _cm;
 
     // .. Model parameters ....................................................
-    /// The cost of living of a predator
-    double _cost_of_living_pred;
-    
-    /// The cost of living of a prey
-    double _cost_of_living_prey;        
-
-    /// The resource uptake of a predator
-    double _delta_e_pred;
-    
-    /// The resource uptake of a prey   
-    double _delta_e_prey;
-
-    /// The maximum of resources a predator can carry
-    double _e_max_pred;
-    
-    /// The maximum of resources a prey can carry
-    double _e_max_prey; 
-
-    /// The minimum resource level necessary for reproduction of a predator
-    double _e_min_pred;
-    
-    /// The minimum resource level necessary for reproduction of a prey
-    double _e_min_prey; 
-
-    /// Predator's cost of reproduction, i.e. the resources transferred to the offspring
-    double _cost_of_repro_pred;
-    
-    /// Prey's cost of reproduction, i.e. the resources transferred to the offspring
-    double _cost_of_repro_prey;
-    
-    /// The probability to reproduce for the predator
-    double _p_repro_pred;
-    
-    /// The probability to reproduce for prey   
-    double _p_repro_prey;   
-
-    /// The probability for prey to flee
-    double _p_flee;
-
     /// Predator-specific model parameters
     Predator _predator;
 
@@ -183,13 +144,13 @@ private:
         auto state = cell->state();
 
         state.resource_predator = std::clamp(state.resource_predator 
-                                                - _cost_of_living_pred, 
+                                                - _predator.cost_of_living, 
                                              0., 
-                                             _e_max_pred);
+                                             _predator.resource_max);
         state.resource_prey = std::clamp(state.resource_prey 
-                                            - _cost_of_living_prey, 
+                                            - _prey.cost_of_living, 
                                          0., 
-                                         _e_max_prey);
+                                         _prey.resource_max);
 
         // Remove predators and preys that have no resources.
         // Prey always finds food and can only run out of energy if 
@@ -295,7 +256,7 @@ private:
 
          // the prey has a certain chance to flee
             if (    _empty_cell.size() > 0
-                and this->_prob_distr(*this->_rng) < _p_flee)
+                and this->_prob_distr(*this->_rng) < _prey.p_flee)
             {
                 auto nb_cell = _empty_cell[dist(*this->_rng)];
                 nb_cell->state().population = prey;
@@ -324,33 +285,33 @@ private:
             
             // increase the resources and clamp to the allowed range [0, e_max]
             state.resource_predator = std::clamp(state.resource_predator 
-                                                    + _delta_e_pred, 
+                                                    + _predator.resource_intake, 
                                                  0., 
-                                                 _e_max_pred);
+                                                 _predator.resource_max);
             state.resource_prey = 0.;   
         }
     // preys eat
         else if (state.population == prey) {
             // increase the resources and clamp to the allowed range [0, e_max]
             state.resource_prey = std::clamp(state.resource_prey 
-                                                    + _delta_e_prey, 
+                                                    + _prey.resource_intake, 
                                              0., 
-                                             _e_max_prey);
+                                             _prey.resource_max);
         }
         return state;
     };
 
     /// Define the reproduction rule
-    /** \detail If space is available reproduction with probabilities 
-     *          p_repro_pred or p_repro_prey respectively
+    /** \detail If space is available reproduce with reproduction probabilities
+     *          of predator and prey respectively.
      */
     Rule _repro = [this](const auto& cell) {
         // Get the state of the cell
         auto state = cell->state();
         
         if (   ( state.population == predator or state.population==pred_prey)
-            and this->_prob_distr(*this->_rng) < _p_repro_pred
-            and state.resource_predator >= _e_min_pred)
+            and this->_prob_distr(*this->_rng) < _predator.p_repro
+            and state.resource_predator >= _predator.resource_min)
         {
             _repro_cell.clear();
 
@@ -381,14 +342,14 @@ private:
                 }
 
                 // transfer energy from parent to offspring
-                nb_cell->state().resource_predator = _cost_of_repro_pred;
-                state.resource_predator -= _cost_of_repro_pred;
+                nb_cell->state().resource_predator = _predator.cost_of_repr;
+                state.resource_predator -= _predator.cost_of_repr;
             }
         }
 
         if ((state.population == prey or state.population == pred_prey)
-                and this->_prob_distr(*this->_rng) < _p_repro_prey
-                and state.resource_prey >= _e_min_prey)
+                and this->_prob_distr(*this->_rng) < _prey.p_repro
+                and state.resource_prey >= _prey.resource_min)
         {
             _repro_cell.clear();
 
@@ -420,8 +381,8 @@ private:
                     nb_cell->state().population = pred_prey;
                 }                            
                 //  transfer energy from parent to offspring
-                nb_cell->state().resource_prey = _cost_of_repro_prey;
-                state.resource_prey -= _cost_of_repro_prey;
+                nb_cell->state().resource_prey = _prey.cost_of_repr;
+                state.resource_prey -= _prey.cost_of_repr;
             }
         }
 
@@ -442,19 +403,6 @@ public:
         // Initialize the cell manager, binding it to this model
         _cm(*this),
         // Extract model parameters
-        _cost_of_living_pred(get_as<double>("cost_of_living_pred", _cfg)),
-     _cost_of_living_prey(get_as<double>("cost_of_living_prey", _cfg)), 
-        _delta_e_pred(get_as<double>("delta_e_pred", _cfg)),
-     _delta_e_prey(get_as<double>("delta_e_prey",_cfg)),    
-        _e_max_pred(get_as<double>("e_max_pred", _cfg)),
-     _e_max_prey(get_as<double>("e_max_prey",_cfg)),    
-        _e_min_pred(get_as<double>("e_min_pred", _cfg)),
-     _e_min_prey(get_as<double>("e_min_prey",_cfg)),    
-        _cost_of_repro_pred(get_as<double>("cost_of_repro_pred", _cfg)),
-     _cost_of_repro_prey(get_as<double>("cost_of_repro_prey", _cfg)),   
-        _p_repro_pred(get_as<double>("p_repro_pred", _cfg)),
-     _p_repro_prey(get_as<double>("p_repro_prey", _cfg)),   
-        _p_flee(get_as<double>("p_flee", _cfg)),
         _predator(this->_cfg["predator"]),
         _prey(this->_cfg["prey"]),
         // Temporary cell containers
@@ -469,7 +417,7 @@ public:
         _dset_resource_predator(this->create_cm_dset("resource_predator", _cm))
     {
         // Check if _cost_of_repro is in the allowed range
-        if (_cost_of_repro_pred > _e_min_pred or _cost_of_repro_prey >_e_min_prey) {
+        if (_predator.cost_of_repr > _predator.resource_min or _prey.cost_of_repr >_prey.resource_min) {
             throw std::invalid_argument("cost_of_repro needs to be smaller "
                                         "than or equal to e_min!");
         }

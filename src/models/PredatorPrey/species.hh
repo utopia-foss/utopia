@@ -18,8 +18,11 @@ struct Species {
     /// Resource intake from eating
     double resource_intake;
     
-    /// Resource limits [min, max] for the resource level
-    std::pair<double, double> resource_limits;
+    /// Minimal resource level
+    double resource_min;
+
+    /// Maximal resource level
+    double resource_max;
 
     // .. Reproduction ........................................................
     /// Cost of reproduction
@@ -33,8 +36,8 @@ struct Species {
     Species(const Utopia::DataIO::Config& cfg){
         cost_of_living = get_as<double>("cost_of_living", cfg);
         resource_intake = get_as<double>("resource_intake", cfg);
-        resource_limits = get_as<std::pair<double, double>>("resource_limits",
-                                                            cfg);
+        resource_min = get_as<double>("resource_min", cfg);
+        resource_max = get_as<double>("resource_max", cfg);
         cost_of_repr = get_as<double>("cost_of_repr", cfg);
         p_repro = get_as<double>("p_repro", cfg);
     }

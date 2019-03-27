@@ -65,8 +65,10 @@ prey:
   cost_of_living: 1.
   # Resource intake from eating
   resource_intake: 3.
-  # Resource limits [min, max] for the resource level
-  resource_limits: [4., 8.]
+  # Minimal resource level
+  resource_min: 4.
+  # Maximal resource level
+  resource_max: 8.
 
   # .. Reproduction ..
   # Cost of reproduction
@@ -84,30 +86,13 @@ predator:
   cost_of_living: 1.
   # Resource intake from eating
   resource_intake: 3.
-  # Resource limits [min, max] for the resource level
-  resource_limits: [4., 8.]
+  # Minimal resource level
+  resource_min: 4.
+  # Maximal resource level
+  resource_max: 8.
 
   # .. Reproduction ..
   # Cost of reproduction
   cost_of_repr: 2.
   # Reproduction probability
   p_repro: 0.2
-
-
-
-
-# --- Outdated params - DELETE IF MIGRATION SUCCEEDED -------------------------
-
-cost_of_living_pred: 1      # cost for a predator to uphold its structure
-cost_of_living_prey: 1.    # cost for a prey to uphold its structure
-delta_e_pred: 3             # resource increase by food uptake for the predator    
-delta_e_prey: 3.            # resource increase by food uptake for the prey        
-e_max_pred: 8             # maximum resource level of the predator
-e_max_prey: 8.            # maximum resource level of the prey
-e_min_pred: 4               # threshold for reproduction of the predator
-e_min_prey: 4               # threshold for reproduction of prey
-cost_of_repro_pred: 2      # resources transferred to offspring by predator (need be <=e_min)
-cost_of_repro_prey: 2     # resources transferred to offspring by prey (need be <=e_min)
-p_repro_pred: 0.2           # predator's probability to reproduce
-p_repro_prey: 0.2        # prey's probability to reproduce
-p_flee: 0.5            # probability for prey to flee from pred if on same cell
