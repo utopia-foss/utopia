@@ -57,18 +57,10 @@ def phase_space(dm: DataManager, *, out_path: str, uni: UniverseGroup, plot_par:
 
     # rearrange data for plotting - one array each with population densities
     # and index to store the time step
-    prey=[]
-    pred=[]
-    index=[]
-    i=0
-    for a in frequencies:
-        prey.append(a[0])
-        pred.append(a[1])
-        index.append(i)
-        i+=1
-            
-    # Create the plot
+    prey = [f[0] for f in frequencies]
+    pred = [f[1] for f in frequencies]
 
+    # Create the plot
     # limit the plot range if demanded
     if(plot_par['specify_range']):
       Axes=plt.gca()
@@ -77,7 +69,7 @@ def phase_space(dm: DataManager, *, out_path: str, uni: UniverseGroup, plot_par:
 
     # plot the phase space, either color coding the time or not
     if(plot_par['color_code']):
-        plt.scatter(pred,prey, c=index, s=0.2, cmap=colormap)
+        plt.scatter(pred,prey, c=range(len(frequencies)), s=0.2, cmap=colormap)
     else:
         plt.scatter(pred,prey,s=0.2)
 
