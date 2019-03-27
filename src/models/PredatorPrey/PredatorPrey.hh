@@ -176,23 +176,28 @@ private:
         auto state = cell->state();
 
         state.resource_predator = std::clamp(state.resource_predator 
-                                             - _cost_of_living_pred, 0., _e_max_pred);
+                                                - _cost_of_living_pred, 
+                                             0., 
+                                             _e_max_pred);
         state.resource_prey = std::clamp(state.resource_prey 
-                                         - _cost_of_living_prey, 0., _e_max_prey);
+                                            - _cost_of_living_prey, 
+                                         0., 
+                                         _e_max_prey);
 
-        // Remove predators and preys that have no resources 
-        // ( prey always finds food and can only run out of energy if reproduction is very costly)
-        if (state.population == predator && state.resource_predator == 0.) {
+        // Remove predators and preys that have no resources.
+        // Prey always finds food and can only run out of energy if 
+        // reproduction is very costly.
+        if (state.population == predator and state.resource_predator == 0.) {
             // Remove the predator
             state.population = empty;
         }
-        else if (state.population == prey && state.resource_prey == 0) {
+        else if (state.population == prey and state.resource_prey == 0) {
             // Remove the prey
             state.population = empty;
         }
         else if (state.population == pred_prey) {
             // Remove either one of them or both, depending on resources
-            if (state.resource_predator == 0. && state.resource_prey == 0.)
+            if (state.resource_predator == 0. and state.resource_prey == 0.)
                 state.population = empty;
             else if (state.resource_predator == 0.)
                 state.population = prey;
@@ -233,7 +238,8 @@ private:
                 }
             }
 
-            // if there is prey in the vicinity move the predator to a random prey cell
+            // if there is prey in the vicinity move the predator to a random 
+            // prey cell
             if (_prey_cell.size() > 0) {
                 // distribution to choose a random cell for the movement if 
                 // there is more than one
@@ -311,26 +317,31 @@ private:
             
             // increase the resources and clamp to the allowed range [0, e_max]
             state.resource_predator = std::clamp(state.resource_predator 
-                                                 + _delta_e_pred, 0., _e_max_pred);
+                                                    + _delta_e_pred, 
+                                                 0., 
+                                                 _e_max_pred);
             state.resource_prey = 0.;   
         }
     // preys eat
         else if (state.population == prey) {
             // increase the resources and clamp to the allowed range [0, e_max]
-            state.resource_prey = std::clamp(state.resource_prey + _delta_e_prey, 
-                                             0., _e_max_prey);
+            state.resource_prey = std::clamp(state.resource_prey 
+                                                    + _delta_e_prey, 
+                                             0., 
+                                             _e_max_prey);
         }
         return state;
     };
 
     /// Define the reproduction rule
-    /** If space is available reproduction with probabilities p_repro_pred or p_repro_prey respecitively
+    /** \detail If space is available reproduction with probabilities 
+     *          p_repro_pred or p_repro_prey respectively
      */
     Rule _repro = [this](const auto& cell) {
         // Get the state of the cell
         auto state = cell->state();
         
-        if (   ( state.population == predator || state.population==pred_prey)
+        if (   ( state.population == predator or state.population==pred_prey)
             and this->_prob_distr(*this->_rng) < _p_repro_pred
             and state.resource_predator >= _e_min_pred)
         {
@@ -341,7 +352,7 @@ private:
                 auto nb_state = nb->state();
 
                 if (nb_state.population == prey 
-                    || nb_state.population == empty)
+                    or nb_state.population == empty)
                 {
                     _repro_cell.push_back(nb);
                 }
@@ -360,16 +371,17 @@ private:
                 else
                 {
                     nb_cell->state().population = pred_prey;
-                }                            
+                }
+
                 // transfer energy from parent to offspring
                 nb_cell->state().resource_predator = _cost_of_repro_pred;
                 state.resource_predator -= _cost_of_repro_pred;
             }
         }
 
-        if (    (state.population == prey    ||   state.population ==pred_prey)
-                 and this->_prob_distr(*this->_rng) < _p_repro_prey
-                 and state.resource_prey >= _e_min_prey)
+        if ((state.population == prey or state.population == pred_prey)
+                and this->_prob_distr(*this->_rng) < _p_repro_prey
+                and state.resource_prey >= _e_min_prey)
         {
             _repro_cell.clear();
 
@@ -378,7 +390,7 @@ private:
                 auto nb_state = nb->state();
 
                 if (nb_state.population == predator 
-                    || nb_state.population == empty)
+                    or nb_state.population == empty)
                 {
                     _repro_cell.push_back(nb);
                 }
@@ -405,7 +417,6 @@ private:
                 state.resource_prey -= _cost_of_repro_prey;
             }
         }
-    
 
         return state;
     };
@@ -449,7 +460,7 @@ public:
         _dset_resource_predator(this->create_cm_dset("resource_predator", _cm))
     {
         // Check if _cost_of_repro is in the allowed range
-        if (_cost_of_repro_pred > _e_min_pred || _cost_of_repro_prey >_e_min_prey) {
+        if (_cost_of_repro_pred > _e_min_pred or _cost_of_repro_prey >_e_min_prey) {
             throw std::invalid_argument("cost_of_repro needs to be smaller "
                                         "than or equal to e_min!");
         }
@@ -485,9 +496,9 @@ private:
 
             // check wether the conditions for the probabilities are met
             if (prey_prob < 0. 
-                || pred_prob < 0.
-                || predprey_prob < 0.
-                || (prey_prob + pred_prob + predprey_prob) > 1.)
+                or pred_prob < 0.
+                or predprey_prob < 0.
+                or (prey_prob + pred_prob + predprey_prob) > 1.)
             {
                 throw std::invalid_argument(
                     "Need `prey_prob`, `pred_prob` and `predprey_prob` in "
@@ -550,9 +561,9 @@ private:
             const auto predprey_frac = get_as<double>("predprey_frac", _cfg);
 
             if (prey_frac < 0 
-                || pred_frac < 0 
-                || predprey_frac < 0
-                || (prey_frac + pred_frac + predprey_frac) > 1)
+                or pred_frac < 0 
+                or predprey_frac < 0
+                or (prey_frac + pred_frac + predprey_frac) > 1)
             {
                 throw std::invalid_argument(
                     "Need `prey_frac`, `pred_frac` and `predprey_frac` in "
@@ -693,7 +704,7 @@ public:
             }
         );
 
-        // resource of pred
+        // resource of predator
         _dset_resource_predator->write(_cm.cells().begin(), _cm.cells().end(), 
             [](auto& cell) {
                 return cell->state().resource_predator;
