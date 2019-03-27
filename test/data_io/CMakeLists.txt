@@ -21,6 +21,7 @@ set(TESTS_DATAIO
     hdfintegration_test
     hdfgroup_test
     monitor_test
+    writetask_test
     datamanager_test
     )
 
