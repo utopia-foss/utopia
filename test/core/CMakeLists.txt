@@ -4,6 +4,7 @@ file(COPY
         "agent_manager_integration_test.yml"
         "cell_manager_test.yml"
         "cell_manager_integration_test.yml"
+        "graph_creation_test.yml"
         "grid_square_test.yml"
         "model_test.yml"
         "model_nested_test.yml"
@@ -22,6 +23,7 @@ set(TESTS_CORE
     dependency_test
     exceptions_test
     graph_test
+    graph_creation_test
     grid_square_test
     model_test
     model_nested_test
