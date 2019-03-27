@@ -30,21 +30,30 @@ internal properties. For further information, see the `bundled property document
 
 .. code-block:: c++
 
+    /// The vertex struct
     struct Vertex {
         std::size_t id;
         int state;
     };
 
+    /// The edge struct
     struct Edge {
         double weight;
     };
 
-    boost::adjacency_list<boost::vecS,        // edge container
-                          boost::vecS,        // vertex container
-                          boost::undirectedS,
-                          Vertex,             // vertex struct
-                          Edge>               // edge struct
-                          graph;
+    /// The containter types
+    using EdgeCont = boost::vecS;
+    using VertexCont = boost::vecS;
+
+    /// The graph type 
+    using Graph = boost::adjacency_list<EdgeCont,
+                                        VertexCont,
+                                        boost::undirectedS,
+                                        Vertex,
+                                        Edge>;
+
+    // Construct a graph
+    Graph g;
 
 .. note::
 
@@ -54,6 +63,77 @@ internal properties. For further information, see the `bundled property document
     edge container type and then the vertex container type whereas for the structs
     you first need to specify the vertex struct and then the edge struct.
     You wonder why this is? Actually, we too... :thinking:
+
+Create graphs
+-------------
+Utopia contains a selection of graph creation algorithms. Even more, the 
+``Utopia::Graph::create_graph()`` function lets you switch easily between 
+different graph creation models.
+
+Let's assume that we have defined a graph type as done in the previous section.
+Let's further assume that we are inside of a Utopia model class, such that we
+have access to a model configuration (``this->_cfg``) and a random number 
+generator (``*this->_rng``). (Of course, you would need to adapt these two
+options if you use the function in another situation.)
+Then, we can just write:
+
+.. code-block:: c++
+
+    Graph g = create_graph<Graph>(
+                this->_cfg["create_graph"], // You model configuration file
+                                            // requires a "create_graph"
+                                            // entry. 
+                *this->_rng
+                );
+
+This function is configured through a configuration node. The corresponding
+YAML file looks like this:
+
+.. code-block:: YAML
+
+    create_graph:
+      # The model to use for generating the graph. Valid options are:
+      # "regular"           Create a k-regular graph. Vertices are located on a
+      #                     circle and connected symmetrically to their nearest
+      #                     neighbors until the desired degree is reached.
+      #                     If the degree is uneven, then they are additionally 
+      #                     connected to the vertex at the opposite location.
+      # "ErdosRenyi"        Create a random graph using the Erdös-Rényi model
+      # "WattsStrogatz"     Create a small-world graph using the Watts-Strogatz
+      #                     model
+      # "BarabasiAlbert"    Create a scale-free graph using the Barabási-Albert 
+      #                     model (for undirected graphs)
+      # "BollobasRiordan"   Create a scale-free graph using the Bollobas-Riordan
+      #                     model (for directed graphs)
+      model: "ErdosRenyi"
+
+      # The number of vertices
+      num_vertices: 1000
+
+      # The mean degree (equals degree in regular model;
+      #                  not relevant in BollobasRiordan model)
+      mean_degree: 4
+
+      ### model-specific parameters
+      ## ErdosRenyi
+      # Allow parallel edges
+      parallel: false
+      # Allow self edges
+      self-edges: false
+
+      ## BollobasRiordan
+      # Graph generating parameters
+      alpha: 0.2
+      beta: 0.8
+      gamma: 0.
+      del_in: 0.
+      del_out: 0.5
+
+
+This of course is a highly documented configuration. You only need to specify
+configuration options if the creation algorithm you set requires them, otherwise
+they will be just ignored.
+
 
 How can values stored in vertex or edge objects be saved?
 -------------------------------------
