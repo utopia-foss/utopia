@@ -3,7 +3,6 @@
 
 # plot the frequency of predators and preys against each other    
 phase_space:
-  creator: universe
   universes: all
   
   module: model_plots.PredatorPrey
