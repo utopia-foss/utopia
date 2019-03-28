@@ -158,10 +158,10 @@ private:
 
     // .. Model parameters ....................................................
     /// Predator-specific model parameters
-    Predator _predator;
+    PredatorParams _predator_params;
 
     /// Prey-specific model parameters
-    Prey _prey; 
+    PreyParams _prey_params; 
 
     // .. Temporary objects ...................................................
     /// A container to temporarily accumulate the prey neighbour cells
@@ -194,13 +194,13 @@ private:
         auto state = cell->state();
 
         state.resource_predator = std::clamp(state.resource_predator 
-                                                - _predator.cost_of_living, 
+                                              - _predator_params.cost_of_living, 
                                              0., 
-                                             _predator.resource_max);
+                                             _predator_params.resource_max);
         state.resource_prey = std::clamp(state.resource_prey 
-                                            - _prey.cost_of_living, 
+                                            - _prey_params.cost_of_living, 
                                          0., 
-                                         _prey.resource_max);
+                                         _prey_params.resource_max);
 
         // Remove predators and preys that have no resources.
         // Prey always finds food and can only run out of energy if 
@@ -310,7 +310,7 @@ private:
 
          // the prey has a certain chance to flee
             if (    _empty_cell.size() > 0
-                and this->_prob_distr(*this->_rng) < _prey.p_flee)
+                and this->_prob_distr(*this->_rng) < _prey_params.p_flee)
             {
                 auto nb_cell = _empty_cell[dist(*this->_rng)];
                 nb_cell->state().population = Population::prey;
@@ -338,19 +338,21 @@ private:
             state.population = Population::predator;
             
             // increase the resources and clamp to the allowed range [0, e_max]
-            state.resource_predator = std::clamp(state.resource_predator 
-                                                    + _predator.resource_intake, 
-                                                 0., 
-                                                 _predator.resource_max);
+            state.resource_predator = std::clamp(
+                                        state.resource_predator 
+                                            + _predator_params.resource_intake, 
+                                        0., 
+                                        _predator_params.resource_max);
             state.resource_prey = 0.;   
         }
     // preys eat
         else if (state.population == Population::prey) {
             // increase the resources and clamp to the allowed range [0, e_max]
-            state.resource_prey = std::clamp(state.resource_prey 
-                                                    + _prey.resource_intake, 
-                                             0., 
-                                             _prey.resource_max);
+            state.resource_prey = std::clamp(
+                                    state.resource_prey 
+                                        + _prey_params.resource_intake, 
+                                    0., 
+                                    _prey_params.resource_max);
         }
         return state;
     };
@@ -365,8 +367,8 @@ private:
         
         if (   ( state.population == Population::predator 
                     or state.population == Population::pred_prey)
-            and this->_prob_distr(*this->_rng) < _predator.repro_prob
-            and state.resource_predator >= _predator.repro_resource_requ)
+            and this->_prob_distr(*this->_rng) < _predator_params.repro_prob
+            and state.resource_predator >= _predator_params.repro_resource_requ)
         {
             _repro_cell.clear();
 
@@ -397,15 +399,15 @@ private:
                 }
 
                 // transfer energy from parent to offspring
-                nb_cell->state().resource_predator = _predator.repro_cost;
-                state.resource_predator -= _predator.repro_cost;
+                nb_cell->state().resource_predator = _predator_params.repro_cost;
+                state.resource_predator -= _predator_params.repro_cost;
             }
         }
 
         if ((state.population == Population::prey 
                     or state.population == Population::pred_prey)
-                and this->_prob_distr(*this->_rng) < _prey.repro_prob
-                and state.resource_prey >= _prey.repro_resource_requ)
+                and this->_prob_distr(*this->_rng) < _prey_params.repro_prob
+                and state.resource_prey >= _prey_params.repro_resource_requ)
         {
             _repro_cell.clear();
 
@@ -437,8 +439,8 @@ private:
                     nb_cell->state().population = Population::pred_prey;
                 }                            
                 //  transfer energy from parent to offspring
-                nb_cell->state().resource_prey = _prey.repro_cost;
-                state.resource_prey -= _prey.repro_cost;
+                nb_cell->state().resource_prey = _prey_params.repro_cost;
+                state.resource_prey -= _prey_params.repro_cost;
             }
         }
 
@@ -459,8 +461,8 @@ public:
         // Initialize the cell manager, binding it to this model
         _cm(*this),
         // Extract model parameters
-        _predator(this->_cfg["predator"]),
-        _prey(this->_cfg["prey"]),
+        _predator_params(this->_cfg["predator_params"]),
+        _prey_params(this->_cfg["prey_params"]),
         // Temporary cell containers
         _prey_cell(),
         _empty_cell(),
@@ -473,8 +475,8 @@ public:
         _dset_resource_predator(this->create_cm_dset("resource_predator", _cm))
     {
         // Check if _repro_cost is in the allowed range
-        if (_predator.repro_cost > _predator.repro_resource_requ 
-            or _prey.repro_cost > _prey.repro_resource_requ) {
+        if (_predator_params.repro_cost > _predator_params.repro_resource_requ 
+            or _prey_params.repro_cost > _prey_params.repro_resource_requ) {
             throw std::invalid_argument("repro_cost needs to be smaller "
                                         "than or equal to the minimal "
                                         "reproduction requirements of "

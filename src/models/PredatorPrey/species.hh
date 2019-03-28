@@ -10,7 +10,7 @@ namespace Models {
 namespace PredatorPrey {
 
 /// Struct that holds all species-specific parameters
-struct Species {
+struct SpeciesParams {
     // .. Living ..............................................................
     /// Cost of living that is taken each time step
     double cost_of_living;
@@ -33,7 +33,7 @@ struct Species {
 
     // .. Constructors ........................................................
     /// Construct a species from a configuration node
-    Species(const Utopia::DataIO::Config& cfg){
+    SpeciesParams(const Utopia::DataIO::Config& cfg){
         cost_of_living = get_as<double>("cost_of_living", cfg);
         resource_intake = get_as<double>("resource_intake", cfg);
         repro_resource_requ = get_as<double>("repro_resource_requ", cfg);
@@ -42,31 +42,31 @@ struct Species {
         repro_prob = get_as<double>("repro_prob", cfg);
     }
 
-    Species() = delete;
+    SpeciesParams() = delete;
 };
 
 /// Struct that holds all predator-specific parameters
-struct Predator : public Species{
+struct PredatorParams : public SpeciesParams{
     // .. Constructors ........................................................
     /// Construct a predator object from a configuration node
-    Predator(const Utopia::DataIO::Config& cfg) : Species(cfg){};
+    PredatorParams(const Utopia::DataIO::Config& cfg) : SpeciesParams(cfg){};
 
-    Predator() = delete;
+    PredatorParams() = delete;
 };
 
 /// Struct that holds all prey-species specific parameters
-struct Prey : public Species {
+struct PreyParams : public SpeciesParams {
     // .. Interaction .........................................................
     // Probability to flee from a predator if on the same cell
     double p_flee;
 
     // .. Constructors ........................................................
     /// Construct a prey object from a configuration node
-    Prey(const Utopia::DataIO::Config& cfg) : Species(cfg){
+    PreyParams(const Utopia::DataIO::Config& cfg) : SpeciesParams(cfg){
         p_flee = get_as<double>("p_flee", cfg);
     };
 
-    Prey() = delete;
+    PreyParams() = delete;
 };
 
 }

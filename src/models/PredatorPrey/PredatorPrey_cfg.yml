@@ -47,7 +47,7 @@ cell_manager:
 
 # --- Model dynamics ----------------------------------------------------------
 # Species specific parameter from which the model dynamics arrises
-prey:
+prey_params:
   resource_intake: 3.       # Resource intake from eating
   resource_max: 8.          # Maximum resource reserve
 
@@ -60,7 +60,7 @@ prey:
   repro_cost: 2.            # Cost of reproduction
 
 
-predator:
+predator_params:
   resource_intake: 3.       # Resource intake from eating
   resource_max: 8.          # Maximum resource reserve
 
