@@ -14,15 +14,13 @@ cell_manager:
 
   # Initialization parameters for each cell
   cell_params:
-    initial_height_mean: 1000.
-    initial_height_var: 50.
-    initial_slope: 0.4
-
-# Quantities related to water
-rain_mean: .1
-rain_var: .02
+    initial_height_mean: 10.
+    initial_height_var: 5.
+    initial_slope: 5.
 
 # Quantities related to soil
 uplift_mean: .1 
-uplift_var: .005
+uplift_var: .01
 erodibility: .01
+
+stream_power_coef: 0.01

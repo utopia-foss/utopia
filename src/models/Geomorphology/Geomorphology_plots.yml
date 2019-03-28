@@ -20,10 +20,15 @@ Geomorphology:
       # limits: [1000, 1200]
       title: Height
       
-    water_content: 
+    drainage_area: 
       cmap: Blues
       # limits: [0, 100]
-      title: Water Content
+      title: Drainage Area
+      
+    watercolumn: 
+      cmap: Blues
+      # limits: [0, 100]
+      title: Water column
 
   # Video options
   writer: ffmpeg  # can be: frames, ffmpeg (if installed), ...

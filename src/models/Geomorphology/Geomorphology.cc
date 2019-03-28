@@ -4,7 +4,7 @@
 
 using namespace Utopia::Models::Geomorphology;
 
-int main(int argc, char *argv[])
+int main(int, char *argv[])
 {
     try {
         // Create PseudoParent and get a config file reference
