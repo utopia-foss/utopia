@@ -4,22 +4,29 @@ import numpy as np
 import matplotlib.pyplot as plt
 import xarray as xr
 from utopya import DataManager, UniverseGroup
+from utopya.plotting import is_plot_func, PlotHelper, UniversePlotCreator
 from ..tools import save_and_close
 
 # -----------------------------------------------------------------------------
 
+@is_plot_func(creator_type=UniversePlotCreator,
+              helper_default=dict(
+                  set_labels=dict(x="Iteration step",
+                                  y=r'slope $\langle n \rangle - n_c$'),
+              )
+            )
 def slope(  dm: DataManager, *, 
             uni: UniverseGroup, 
-            out_path: str, 
-            save_kwargs: dict=None, 
+            hlpr: PlotHelper,
             **plot_kwargs):
-    """Calculates the mean slope minus the critical slope and performs a scatterplot.
+    """Calculates the mean slope minus the critical slope and performs a 
+    scatterplot.
     
     Args:
         dm (DataManager): The data manager from which to retrieve the data
         uni (UniverseGroup): The selected universe data
-        out_path (str): Where to store the plot to
-        save_kwargs (dict, optional): kwargs to the plt.savefig function
+        hlpr (PlotHelper): The PlotHelper that instantiates the figure and
+            takes care of plot aesthetics (labels, title, ...) and saving
         **plot_kwargs: Passed on to plt.plot
     """
     # Get the group that all datasets are in
@@ -33,21 +40,18 @@ def slope(  dm: DataManager, *,
     y_data = [np.mean(s) - critical_slope for s in grp['slope']]
 
     # Call the plot function
-    plt.plot(y_data, **plot_kwargs)
-
-    # Add labels to the figure
-    plt.xlabel('iteration step')
-    plt.ylabel(r'slope $\langle n \rangle - n_c$')
-
-    # Save and close figure
-    save_and_close(out_path, save_kwargs=save_kwargs)
+    hlpr.ax.plot(y_data, **plot_kwargs)
 
 
-
+@is_plot_func(creator_type=UniversePlotCreator,
+              helper_default=dict(
+                  set_labels=dict(x=r'$\log_{10}(A)$',
+                                  y=r'$\log_{10}(P_A(A))$'),
+              )
+            )
 def compl_cum_prob_dist(dm: DataManager, *, 
                         uni: UniverseGroup, 
-                        out_path: str, 
-                        save_kwargs: dict=None, 
+                        hlpr: PlotHelper,
                         **plot_kwargs):
     """Calculates the complementary cumulative probability distribution and 
     performs a logarithmic scatter plot
@@ -55,8 +59,8 @@ def compl_cum_prob_dist(dm: DataManager, *,
     Args:
         dm (DataManager): The data manager from which to retrieve the data
         uni (UniverseGroup): The selected universe data
-        out_path (str): Where to store the plot to
-        save_kwargs (dict, optional): kwargs to the plt.savefig function
+        hlpr (PlotHelper): The PlotHelper that instantiates the figure and
+            takes care of plot aesthetics (labels, title, ...) and saving
         **plot_kwargs: Passed on to plt.plot
     """
     # Get the group that all datasets are in
@@ -83,14 +87,9 @@ def compl_cum_prob_dist(dm: DataManager, *,
     y_data = np.log10(np.arange(len(y)) + np.min(y_data))[index], np.log10(y)[index]
 
     # Call the plot function
-    plt.plot(*y_data, **plot_kwargs)
+    hlpr.ax.plot(*y_data, **plot_kwargs)
 
-    # Set labels
-    plt.xlabel(r'$\log_{10}(A)$')
-    plt.ylabel(r'$\log_{10}(P_A(A))$')
 
-    # Save and close figure
-    save_and_close(out_path, save_kwargs=save_kwargs)
 
 def mult_cum_prob(dm: DataManager, *,
                out_path: str,
