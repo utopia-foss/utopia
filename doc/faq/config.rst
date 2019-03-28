@@ -1,5 +1,5 @@
-Utopia Configuration FAQs
-=========================
+Configuration
+=============
 
 This part of the FAQs are concerned with all questions around the configuration
 of Utopia, its models, plots, and frontend. It does not cover the general
@@ -7,12 +7,14 @@ aspects of YAML as a configuration language.
 
 .. contents::
    :local:
-   :depth: 1
+   :depth: 2
 
 ----
 
+Read configuration
+------------------
 In my model, how can I read entries from the configuration?
------------------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To extract parameters for your model from the configuration, you can use the
 ``Utopia::get_as`` function and the corresponding shortcuts:
@@ -32,9 +34,10 @@ See below for the function signature and more information.
 .. doxygenfunction:: Utopia::get_as(const std::string&, const DataIO::Config&)
 
 
-
+Read linear algebra objects
+---------------------------
 How can I read linear algebra objects (vectors, matrices, ...) from the config?
--------------------------------------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 For linear algebra operations, the `Armadillo <http://arma.sourceforge.net/>`_
 library is a dependency of Utopia. For example, the ``SpaceVec`` used in
@@ -62,7 +65,7 @@ cases.
 
 .. note::
 
-  We are aware that the current implementation is somewhat inconsitent.
+  We are aware that the current implementation is somewhat inconsistent.
   The aim is to implement overloads for ``get_as`` that automatically extract
   the desired type and (if it is a fixed-size object) take care of assigning
   elements.

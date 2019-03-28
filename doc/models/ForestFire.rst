@@ -1,6 +1,6 @@
 
-``ForestFire`` Model
-====================
+``ForestFire`` — Model of Forest Fires
+======================================
 
 The ``ForestFire`` model simulates the development of a forest under influence of forest fires. Trees grow on a random basis and fires cause their death, for a whole cluster instantaneously; this is the so-called "two state model".
 

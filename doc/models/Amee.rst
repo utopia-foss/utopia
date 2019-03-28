@@ -1,6 +1,6 @@
 
-``Amee`` - A Model for Envo-Evolutionary dynamics
-==================================================
+``Amee`` — Model of Envo-Evolutionary Dynamics
+==============================================
 
 Very short introduction
 -----------------------
