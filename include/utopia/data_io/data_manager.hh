@@ -8,13 +8,6 @@
 #include <unordered_map>
 #include <vector>
 
-// boost hana headers used for constructing
-// Tasks from argument tuples
-#include <boost/hana/for_each.hpp>
-#include <boost/hana/range.hpp>
-#include <boost/hana/slice.hpp>
-#include <boost/hana/tuple.hpp>
-
 // utopia includes
 #include "cfg_utils.hh"
 #include "../core/compiletime_algos.hh"
@@ -372,8 +365,10 @@ public:
      * @param model     The model this DataManager is to be associated with
      * @param cfg       The data manager configuration
      * @param tasks     Container of (name, Task) pairs
-     * @param deciders  Container of (name, decider function) pairs
-     * @param triggers  Container of (name, trigger function) pairs
+     * @param add_deciders  Container of (name, decider function) pairs that
+     *                  are made available _additionally_
+     * @param add_triggers  Container of (name, trigger function) pairs that
+     *                  are made available _additionally_
      */
     DataManager(Model& model,
                 const Config& cfg,
@@ -412,61 +407,46 @@ public:
                 std::vector<std::pair<std::string, Trigger>> triggers,
                 std::vector<std::pair<std::string, std::string>> task_decider_assocs = {},
                 std::vector<std::pair<std::string, std::string>> task_trigger_assocs = {})
-        : _log(model.get_logger()),
-          _tasks([&]() {
-              TaskContainer tc;
-              for (auto& [name, t] : tasks)
-              {
-                  tc[name] = std::make_shared<Task>(t);
-              }
-              return tc;
-          }()),
-          _deciders([&]() {
-              DeciderContainer dc;
-              for (auto& [name, d] : deciders)
-              {
-                  dc[name] = std::make_shared<Decider>(d);
-              }
-              return dc;
-          }()),
-          _triggers([&]() {
-              TriggerContainer tc;
-              for (auto& [name, t] : triggers)
-              {
-                  tc[name] = std::make_shared<Trigger>(t);
-              }
-              return tc;
-          }()),
-          _decider_task_map([&]() {
-              // Check if there would be issues in 1-to-1 association
-              if (task_decider_assocs.size() == 0 and deciders.size() != tasks.size())
-              {
-                  throw std::invalid_argument(
-                      "deciders size != tasks size! You have to disambiguate "
-                      "the association of deciders and write tasks by "
-                      "supplying an explicit task_decider_assocs argument if "
-                      "you want to have an unequal number of tasks and "
-                      "deciders.");
-              }
+        :
+        // Get whatever is needed from the model
+        _log(model.get_logger()),
 
-              return task_association_map_from(tasks, deciders,
-                                               task_decider_assocs);
-          }()),
-          _trigger_task_map([&]() {
-              // Check if there would be issues in 1-to-1 association
-              if (task_trigger_assocs.size() == 0 and triggers.size() != tasks.size())
-              {
-                  throw std::invalid_argument(
-                      "triggers size != tasks size! You have to disambiguate "
-                      "the association of triggers and write tasks by "
-                      "supplying an explicit task_trigger_assocs argument if "
-                      "you want to have an unequal number of tasks and "
-                      "triggers.");
-              }
+        // Unpack tasks, deciders, and triggers into the respective containers
+        _tasks(unpack_shared<TaskContainer, Task>(tasks)),
+        _deciders(unpack_shared<DeciderContainer, Decider>(deciders)),
+        _triggers(unpack_shared<TriggerContainer, Trigger>(triggers)),
 
-              return task_association_map_from(tasks, triggers,
-                                               task_trigger_assocs);
-          }())
+        // Create maps: decider/trigger -> vector of task names
+        _decider_task_map([&]() {
+            // Check if there would be issues in 1-to-1 association
+            if (    task_decider_assocs.size() == 0
+                and deciders.size() != tasks.size())
+            {
+                throw std::invalid_argument(
+                    "deciders size != tasks size! You have to disambiguate "
+                    "the association of deciders and write tasks by "
+                    "supplying an explicit task_decider_assocs argument if "
+                    "you want to have an unequal number of tasks and "
+                    "deciders.");
+            }
+            return task_association_map_from(tasks, deciders,
+                                             task_decider_assocs);
+        }()),
+        _trigger_task_map([&]() {
+            // Check if there would be issues in 1-to-1 association
+            if (    task_trigger_assocs.size() == 0
+                and triggers.size() != tasks.size())
+            {
+                throw std::invalid_argument(
+                    "triggers size != tasks size! You have to disambiguate "
+                    "the association of triggers and write tasks by "
+                    "supplying an explicit task_trigger_assocs argument if "
+                    "you want to have an unequal number of tasks and "
+                    "triggers.");
+            }
+            return task_association_map_from(tasks, triggers,
+                                             task_trigger_assocs);
+        }())
     {
     }
 
@@ -505,108 +485,50 @@ public:
                 Triggers&& triggers,
                 std::vector<std::pair<std::string, std::string>> task_decider_assocs = {},
                 std::vector<std::pair<std::string, std::string>> task_trigger_assocs = {})
-        : _log(model.get_logger()),
-          // quite some copy pasta from above, but no other way seen...
-          _tasks([&]() {
-              using std::get; // enable ADL
-              TaskContainer tc;
-              // build map from given type containing pairs
+        :
+        // Get whatever is needed from the model
+        _log(model.get_logger()),
 
-              Utopia::Utils::for_each(tasks, [&](auto&& taskpair) {
-                  // check if the deduced Task type is a base class of the given type
-                  if constexpr (std::is_base_of_v<Task, std::tuple_element_t<1, Utils::remove_qualifier_t<decltype(taskpair)>>>)
-                  {
-                      tc[get<0>(taskpair)] =
-                          std::make_shared<std::tuple_element_t<1, Utils::remove_qualifier_t<decltype(taskpair)>>>(
-                              get<1>(taskpair));
-                  }
-                  else
-                  {
-                      tc[get<0>(taskpair)] = std::make_shared<Task>(get<1>(taskpair));
-                  }
-              });
-              return tc;
-          }()),
-          _deciders([&]() {
-              using std::get; // enable adl
-              // build map from given type containing pairs
+        // Unpack tasks, deciders, and triggers into the respective containers
+        _tasks(unpack_shared<TaskContainer, Task>(tasks)),
+        _deciders(unpack_shared<DeciderContainer, Decider>(deciders)),
+        _triggers(unpack_shared<TriggerContainer, Trigger>(triggers)),
 
-              DeciderContainer dc;
-              Utopia::Utils::for_each(deciders, [&](auto&& deciderpair) {
-                  // check if the deduced Decider type is a base class of the given type
-                  if constexpr (std::is_base_of_v<Decider, std::tuple_element_t<1, Utils::remove_qualifier_t<decltype(deciderpair)>>>)
-                  {
-                      dc[get<0>(deciderpair)] =
-                          std::make_shared<std::tuple_element_t<1, Utils::remove_qualifier_t<decltype(deciderpair)>>>(
-                              get<1>(deciderpair));
-                  }
-                  else
-                  {
-                      dc[get<0>(deciderpair)] =
-                          std::make_shared<Decider>(get<1>(deciderpair));
-                  }
-              });
-
-              return dc;
-          }()),
-          _triggers([&]() {
-              using std::get; // enable ADL
-
-              // build map from given type containing pairs
-              TriggerContainer tc;
-              Utopia::Utils::for_each(triggers, [&](auto&& triggerpair) {
-                  // check if the deduced Trigger type is a base class of the given type
-                  if constexpr (std::is_base_of_v<Trigger, std::tuple_element_t<1, Utils::remove_qualifier_t<decltype(triggerpair)>>>)
-                  {
-                      tc[get<0>(triggerpair)] =
-                          std::make_shared<std::tuple_element_t<1, Utils::remove_qualifier_t<decltype(triggerpair)>>>(
-                              get<1>(triggerpair));
-                  }
-                  else
-                  {
-                      tc[get<0>(triggerpair)] =
-                          std::make_shared<Trigger>(get<1>(triggerpair));
-                  }
-              });
-
-              return tc;
-          }()),
-          _decider_task_map([&]() {
-              // Check if there would be issues in 1-to-1 association
-              if (task_decider_assocs.size() == 0 and
-                  Utils::get_size_v<Deciders> != Utils::get_size_v<Tasks>)
-              {
-                  throw std::invalid_argument(
-                      "deciders size != tasks size! You have to disambiguate "
-                      "the association of deciders and write tasks by "
-                      "supplying an explicit task_decider_assocs argument if "
-                      "you want to have an unequal number of tasks and "
-                      "deciders.");
-              }
-
-              return task_association_map_from(_tasks, _deciders,
-                                               task_decider_assocs);
-              // FIXME _tasks and _deciders are not necessarily ordered in the
-              //       same way!
-          }()),
-          _trigger_task_map([&]() {
-              // Check if there would be issues in 1-to-1 association
-              if (task_trigger_assocs.size() == 0 and
-                  Utils::get_size_v<Triggers> != Utils::get_size_v<Tasks>)
-              {
-                  throw std::invalid_argument(
-                      "triggers size != tasks size! You have to disambiguate "
-                      "the association of triggers and write tasks by "
-                      "supplying an explicit task_trigger_assocs argument if "
-                      "you want to have an unequal number of tasks and "
-                      "triggers.");
-              }
-
-              return task_association_map_from(_tasks, _triggers,
-                                               task_trigger_assocs);
-              // FIXME _tasks and _triggers are not necessarily ordered in the
-              //       same way!
-          }())
+        // Create maps: decider/trigger -> vector of task names
+        _decider_task_map([&]() {
+            // Check if there would be issues in 1-to-1 association
+            if (    task_decider_assocs.size() == 0
+                and Utils::get_size_v<Deciders> != Utils::get_size_v<Tasks>)
+            {
+                throw std::invalid_argument(
+                    "deciders size != tasks size! You have to disambiguate "
+                    "the association of deciders and write tasks by "
+                    "supplying an explicit task_decider_assocs argument if "
+                    "you want to have an unequal number of tasks and "
+                    "deciders.");
+            }
+            return task_association_map_from(_tasks, _deciders,
+                                             task_decider_assocs);
+            // FIXME _tasks and _deciders are not necessarily ordered in the
+            //       same way!
+        }()),
+        _trigger_task_map([&]() {
+            // Check if there would be issues in 1-to-1 association
+            if (    task_trigger_assocs.size() == 0
+                and Utils::get_size_v<Triggers> != Utils::get_size_v<Tasks>)
+            {
+                throw std::invalid_argument(
+                    "triggers size != tasks size! You have to disambiguate "
+                    "the association of triggers and write tasks by "
+                    "supplying an explicit task_trigger_assocs argument if "
+                    "you want to have an unequal number of tasks and "
+                    "triggers.");
+            }
+            return task_association_map_from(_tasks, _triggers,
+                                             task_trigger_assocs);
+            // FIXME _tasks and _triggers are not necessarily ordered in the
+            //       same way!
+        }())
     {
     }
 
@@ -638,6 +560,55 @@ public:
 
 private:
     // .. Construction Helpers ................................................
+
+    /**
+     * @brief Helper function to unpack (key, value) container into a map of
+     *        shared pointers of a type.
+     *
+     * @tparam MapType The map to create
+     * @tparam ValType Used in make_shared<ValType> call
+     * @tparam KVPairs Container of (key, value) pairs. Can also be a tuple.
+     *
+     * @param kv_pairs The container of (key, value) pairs to unpack into a
+     *                 new map of type MapType
+     *
+     * @return MapType The map with values unpacked into it
+     */
+    template<class MapType, class ValType, class KVPairs>
+    MapType unpack_shared(KVPairs& kv_pairs) {
+        MapType map;
+
+        // Distinguish between tuple-like key value pairs and others
+        if constexpr (Utils::is_tuple_like_v<KVPairs>) {
+            using std::get; // enable ADL
+
+            // Build map from given key value pairs
+            // NOTE Requires kv_pairs to NOT be const! Otherwise, compilation
+            //      will eat all your RAM and will literally never end.
+            Utils::for_each(kv_pairs, [&](auto&& kv) {
+                // Check if the deduced kv type is a base class of the
+                // given target ValType
+                if constexpr (std::is_base_of_v<ValType, std::tuple_element_t<1, Utils::remove_qualifier_t<decltype(kv)>>>)
+                {
+                    map[get<0>(kv)] =
+                        std::make_shared<
+                            std::tuple_element_t<1,
+                                Utils::remove_qualifier_t<decltype(kv)>>
+                        >(get<1>(kv));
+                }
+                else {
+                    map[get<0>(kv)] = std::make_shared<ValType>(get<1>(kv));
+                }
+            });
+            return map;
+        }
+        else {
+            for (const auto& [k, v] : kv_pairs) {
+                map[k] = std::make_shared<ValType>(v);
+            }
+        }
+        return map;
+    }
 
     /**
      * @brief Helper function to generate a decider/trigger -> task name map
