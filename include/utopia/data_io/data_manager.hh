@@ -401,17 +401,17 @@ public:
      * @param deciders  Container of (name, decider function) pairs
      * @param triggers  Container of (name, trigger function) pairs
      * @param tasks     Container of (name, Task) pairs
-     * @param decider_task_map  Mapping from decider names to task names that
-     *                  are using these deciders
-     * @param trigger_task_map  Mapping from trigger names to task names that
-     *                  are using these triggers
+     * @param task_decider_assocs  Container of task -> decider association
+     *                  pairs, i.e. (task name, decider name) pairs
+     * @param task_trigger_assocs  Container of task -> trigger association
+     *                  pairs, i.e. (task name, trigger name) pairs
      */
     DataManager(Model& model,
                 std::vector<std::pair<std::string, Task>> tasks,
                 std::vector<std::pair<std::string, Decider>> deciders,
                 std::vector<std::pair<std::string, Trigger>> triggers,
-                std::vector<std::pair<std::string, std::string>> decider_task_map = {},
-                std::vector<std::pair<std::string, std::string>> trigger_task_map = {})
+                std::vector<std::pair<std::string, std::string>> task_decider_assocs = {},
+                std::vector<std::pair<std::string, std::string>> task_trigger_assocs = {})
         : _log(model.get_logger()),
           _tasks([&]() {
               TaskContainer tc;
@@ -439,31 +439,33 @@ public:
           }()),
           _decider_task_map([&]() {
               // Check if there would be issues in 1-to-1 association
-              if (decider_task_map.size() == 0 and deciders.size() != tasks.size())
+              if (task_decider_assocs.size() == 0 and deciders.size() != tasks.size())
               {
                   throw std::invalid_argument(
                       "deciders size != tasks size! You have to disambiguate "
                       "the association of deciders and write tasks by "
-                      "supplying an explicit decider_task_map if you want to "
-                      "have an unequal number of tasks and deciders.");
+                      "supplying an explicit task_decider_assocs argument if "
+                      "you want to have an unequal number of tasks and "
+                      "deciders.");
               }
 
               return task_association_map_from(tasks, deciders,
-                                               decider_task_map);
+                                               task_decider_assocs);
           }()),
           _trigger_task_map([&]() {
               // Check if there would be issues in 1-to-1 association
-              if (trigger_task_map.size() == 0 and triggers.size() != tasks.size())
+              if (task_trigger_assocs.size() == 0 and triggers.size() != tasks.size())
               {
                   throw std::invalid_argument(
                       "triggers size != tasks size! You have to disambiguate "
                       "the association of triggers and write tasks by "
-                      "supplying an explicit trigger_task_map if you want to "
-                      "have an unequal number of tasks and triggers.");
+                      "supplying an explicit task_trigger_assocs argument if "
+                      "you want to have an unequal number of tasks and "
+                      "triggers.");
               }
 
               return task_association_map_from(tasks, triggers,
-                                               trigger_task_map);
+                                               task_trigger_assocs);
           }())
     {
     }
@@ -487,10 +489,10 @@ public:
      * @param tasks     Container of (name, Task) pairs
      * @param deciders  Container of (name, decider function) pairs
      * @param triggers  Container of (name, trigger function) pairs
-     * @param decider_task_map  Mapping from decider names to task names that
-     *                  are using these deciders
-     * @param trigger_task_map  Mapping from trigger names to task names that
-     *                  are using these triggers
+     * @param task_decider_assocs  Container of task -> decider association
+     *                  pairs, i.e. (task name, decider name) pairs
+     * @param task_trigger_assocs  Container of task -> trigger association
+     *                  pairs, i.e. (task name, trigger name) pairs
      */
     template <class M,
               class Tasks,
@@ -501,8 +503,8 @@ public:
                 Tasks&& tasks,
                 Deciders&& deciders,
                 Triggers&& triggers,
-                std::vector<std::pair<std::string, std::string>> decider_task_map = {},
-                std::vector<std::pair<std::string, std::string>> trigger_task_map = {})
+                std::vector<std::pair<std::string, std::string>> task_decider_assocs = {},
+                std::vector<std::pair<std::string, std::string>> task_trigger_assocs = {})
         : _log(model.get_logger()),
           // quite some copy pasta from above, but no other way seen...
           _tasks([&]() {
@@ -571,35 +573,37 @@ public:
           }()),
           _decider_task_map([&]() {
               // Check if there would be issues in 1-to-1 association
-              if (decider_task_map.size() == 0 and
+              if (task_decider_assocs.size() == 0 and
                   Utils::get_size_v<Deciders> != Utils::get_size_v<Tasks>)
               {
                   throw std::invalid_argument(
                       "deciders size != tasks size! You have to disambiguate "
                       "the association of deciders and write tasks by "
-                      "supplying an explicit decider_task_map if you want to "
-                      "have an unequal number of tasks and deciders.");
+                      "supplying an explicit task_decider_assocs argument if "
+                      "you want to have an unequal number of tasks and "
+                      "deciders.");
               }
 
               return task_association_map_from(_tasks, _deciders,
-                                               decider_task_map);
+                                               task_decider_assocs);
               // FIXME _tasks and _deciders are not necessarily ordered in the
               //       same way!
           }()),
           _trigger_task_map([&]() {
               // Check if there would be issues in 1-to-1 association
-              if (trigger_task_map.size() == 0 and
+              if (task_trigger_assocs.size() == 0 and
                   Utils::get_size_v<Triggers> != Utils::get_size_v<Tasks>)
               {
                   throw std::invalid_argument(
                       "triggers size != tasks size! You have to disambiguate "
                       "the association of triggers and write tasks by "
-                      "supplying an explicit trigger_task_map if you want to "
-                      "have an unequal number of tasks and triggers.");
+                      "supplying an explicit task_trigger_assocs argument if "
+                      "you want to have an unequal number of tasks and "
+                      "triggers.");
               }
 
               return task_association_map_from(_tasks, _triggers,
-                                               trigger_task_map);
+                                               task_trigger_assocs);
               // FIXME _tasks and _triggers are not necessarily ordered in the
               //       same way!
           }())
@@ -664,9 +668,10 @@ private:
             }
         }
         else {
-            // Build from given association
-            for (const auto& [src_name, task_name] : assocs) {
-                map[src_name].push_back(task_name);
+            // Build from association, inverting order such that the map
+            // has as keys the callable names.
+            for (const auto& [task_name, callable_name] : assocs) {
+                map[callable_name].push_back(task_name);
             }
         }
 

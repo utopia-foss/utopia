@@ -213,7 +213,7 @@ BOOST_AUTO_TEST_CASE(datamanager_tuplelike_constructor)
     BOOST_TEST(s.str() ==
         "triggers size != tasks size! You have to disambiguate "
         "the association of triggers and write tasks by "
-        "supplying an explicit trigger_task_map if you want to "
+        "supplying an explicit task_trigger_assocs argument if you want to "
         "have an unequal number of tasks and triggers.");
 
     // build a datamanager with explicit associations.
@@ -264,10 +264,10 @@ BOOST_AUTO_TEST_CASE(datamanager_tuplelike_constructor)
             std::make_pair("b2_3"s, [](Model&) -> bool { return false; })},
         // decider maps
         std::vector<std::pair<std::string, std::string>>{
-            {"d1_3", "t1_3"}, {"d1_3", "t2_3"}, {"d1_3", "t3_3"}},
+            {"t1_3", "d1_3"}, {"t2_3", "d1_3"}, {"t3_3", "d1_3"}},
         // trigger maps
         std::vector<std::pair<std::string, std::string>>{
-            {"b1_3", "t1_3"}, {"b1_3", "t2_3"}, {"b2_3", "t3_3"}});
+            {"t1_3", "b1_3"}, {"t2_3", "b1_3"}, {"t3_3", "b2_3"}});
 
     // again check that the associations are correct
     BOOST_TEST(dm3.get_decider_task_map() ==
@@ -382,7 +382,7 @@ BOOST_AUTO_TEST_CASE(datamanager_vector_constructor)
     BOOST_TEST(s.str() ==
         "triggers size != tasks size! You have to disambiguate "
         "the association of triggers and write tasks by "
-        "supplying an explicit trigger_task_map if you want to "
+        "supplying an explicit task_trigger_assocs argument if you want to "
         "have an unequal number of tasks and triggers.");
 
     // explicit association given
@@ -435,10 +435,10 @@ BOOST_AUTO_TEST_CASE(datamanager_vector_constructor)
             std::make_pair("b2_3"s, [](Model&) -> bool { return false; })},
         // associate deciders with tasks
         std::vector<std::pair<std::string, std::string>>{
-            {"d1_3", "t1_3"}, {"d1_3", "t2_3"}, {"d1_3", "t3_3"}},
+            {"t1_3", "d1_3"}, {"t2_3", "d1_3"}, {"t3_3", "d1_3"}},
         // associate triggers with tasks
         std::vector<std::pair<std::string, std::string>>{
-            {"b1_3", "t1_3"}, {"b1_3", "t2_3"}, {"b2_3", "t3_3"}});
+            {"t1_3", "b1_3"}, {"t2_3", "b1_3"}, {"t3_3", "b2_3"}});
 
     // again check that the associations are correct
 
