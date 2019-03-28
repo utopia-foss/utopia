@@ -1,6 +1,6 @@
 
-``Hierarnet`` - Emergence of cooperation in social interaction networks
-=======================================================================
+``Hierarnet`` — Model of Social Emergence of Cooperation
+========================================================
 
 *Note:* The Hierarnet model is described in more detail in :ref:`Herdeanu (2018) <literature-ref>`.
 

@@ -1,16 +1,18 @@
-Utopia Frontend FAQs
-====================
+Utopia Frontend
+===============
 
 Below, some frequently asked questions regarding the Utopia frontend are addressed.
 
 .. contents::
    :local:
-   :depth: 1
+   :depth: 2
 
 ----
 
+Custom output folder
+--------------------
 Can I customize my Utopia data output folder?
----------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Yes. By default, the output gets written to ``~/utopia_output``, which might not be desirable for you. To change it, you can adjust the user configuration file, i.e. a configuration that is local to your user and is applied to all invocations of Utopia you make from that user.
 
@@ -43,16 +45,21 @@ Save and close the file. From now on, all your simulation output will be stored 
   Also, only uncomment and change those parts of the user configuration that you *really* want to change. With updates to Utopia, the default values of parts of the frontend configuration may change; if you fixed those values in the user configuration, you might not only miss out on the updates, but the frontend might not work as desired.
 
 
+Config file madness
+-------------------
 What is this config file madness?
----------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 
 The many different configuration files might be overwhelming at first. But be sure: They are all there for a reason and you can greatly benefit from them.
 
 *WIP*
 
 
+Work without frontend
+---------------------
 Can I work on Utopia output data *without* using the frontend?
---------------------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Yes. Utopia stores all data in easily readable file formats that are supported on many platforms.
 
@@ -85,8 +92,10 @@ For Python, the `h5py <http://www.h5py.org>`_ library provides a very convenient
   While working with Utopia's output data directly is possible, be aware that the frontend takes care of a great deal of things, which are not available in such a case: It loads many HDF5 files into a uniform data tree, makes the configuration accessible, allows to collect data from different parts of the tree for plotting, reshapes data to be in the expected shape ...
 
 
+Create custom plots
+-------------------
 Can I use a custom python script to generate a plot?
-----------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Yes. This can be done completely from within the plot configuration by adding the ``module_file`` key:
 
@@ -110,11 +119,12 @@ To use this plot configuration, just pass it to the command line interface using
   The function's signature needs to be such that it matches the call from the chosen ``PlotCreator``, selected by the ``creator`` key.
 
 
-
+Plot function signature
+-----------------------
 Which signature do plot functions have to have?
------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The following code framents show the required signature that plotting functions need to adhere to in order to be callable from the `universe` and `multiverse` plot creators.
+The following code fragments show the required signature that plotting functions need to adhere to in order to be callable from the `universe` and `multiverse` plot creators.
 
 .. code-block:: python
 
@@ -178,13 +188,16 @@ The following code framents show the required signature that plotting functions 
   in a directory relative to the simulation data.
   
 
+Data tree structure
+-------------------
 What is the rationale behind the tree structure of the output data?
--------------------------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 *TODO*
 
-
+Work interactively 
+------------------
 Can I work interactively with the Utopia frontend?
---------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 :doc:`Yes. </frontend/interactive>`
