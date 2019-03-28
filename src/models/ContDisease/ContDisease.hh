@@ -133,7 +133,7 @@ struct Param {
   *
   * See \ref Utopia::CellTraits for more information.
   */
-using CDCellTraits = Utopia::CellTraits<CDCell, UpdateMode::sync>;
+using CDCellTraits = Utopia::CellTraits<CDCell, Update::sync>;
 
 
 /// Typehelper to define data types of ContDisease model

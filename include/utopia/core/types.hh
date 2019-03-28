@@ -60,19 +60,6 @@ using MultiIndexType = arma::Col<IndexType>::fixed<dim>;
 template<DimType dim>
 using SpaceVecType = arma::Col<double>::fixed<dim>;
 
-
-/// Mode of entity update
-enum UpdateMode : bool {
-    /// Entity update can happen asynchronously
-    async = false,
-
-    /// Entity update can happen synchronously
-    sync = true
-};
-// TODO Integrate closer with (new) entity type
-
-
-
 // .. DataIO types that are needed throughout Core ............................
 namespace DataIO {
 /**

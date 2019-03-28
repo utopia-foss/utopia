@@ -29,7 +29,7 @@ struct CellState {
 using VegetationTypes = Utopia::ModelTypes<>;
 
 /// Define the model cell traits: State type, sync update, use default ctor.
-using CellTraits = Utopia::CellTraits<CellState, UpdateMode::sync, true>;
+using CellTraits = Utopia::CellTraits<CellState, Update::sync, true>;
 
 
 /// A very simple vegetation model

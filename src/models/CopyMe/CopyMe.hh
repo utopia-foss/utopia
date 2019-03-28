@@ -67,7 +67,7 @@ struct CellState {
   *
   * See \ref Utopia::CellTraits for more information.
   */
-using CellTraits = Utopia::CellTraits<CellState, UpdateMode::sync>;
+using CellTraits = Utopia::CellTraits<CellState, Update::sync>;
 
 
 /// Type helper to define types used by the model

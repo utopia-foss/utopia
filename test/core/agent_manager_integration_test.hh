@@ -21,7 +21,7 @@ struct AgentState {
 };
 
 /// Specialize the agent traits struct with a dummy agent state type
-using AgentTraits = Utopia::AgentTraits<AgentState, UpdateMode::sync>;
+using AgentTraits = Utopia::AgentTraits<AgentState, Update::sync>;
 
 /// Define data types for the agent manager test model
 using AMTestModelTypes = ModelTypes<DefaultRNG, DefaultSpace>;

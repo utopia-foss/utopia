@@ -16,7 +16,7 @@ namespace Utopia {
 
 /// AgentTraits are just another name for Utopia::EntityTraits
 template<typename StateType, 
-         UpdateMode update_mode,
+         Update update_mode,
          bool use_def_state_constr=false,
          typename AgentTags=EmptyTag,
          template<class> class CustomLinkContainers=NoCustomLinks>
@@ -49,7 +49,9 @@ class Agent;
 
 /// Agent specialization for asynchronous update
 template<typename Traits, typename Space>
-class Agent<Traits, Space, std::enable_if_t<Traits::sync == false>>
+class Agent<Traits,
+            Space,
+            std::enable_if_t<Traits::mode == Update::async>>
 :
     public Entity<Traits>
 {   
@@ -108,7 +110,9 @@ protected:
 
 /// Agent Specialisation for synchronous update
 template<typename Traits, typename Space>
-class Agent<Traits, Space, std::enable_if_t<Traits::sync == true>>
+class Agent<Traits,
+            Space,
+            std::enable_if_t<Traits::mode == Update::sync>>
 :
     public Entity<Traits>
 {   

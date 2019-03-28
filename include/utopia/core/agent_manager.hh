@@ -188,7 +188,7 @@ public:
      */
     void update_agents() {
         // Assert that the agents update synchronously
-        static_assert(AgentTraits::sync,
+        static_assert(AgentTraits::mode == Update::sync,
             "The update_agents method only makes sense to call when agents "
             "are set to be updated synchronously, which is not the case! "
             "Either adapt the AgentTraits to that update mode or remove the "
