@@ -23,19 +23,18 @@ parameter_space:
         structure: square
         resolution: 1
 
-      #cell_params:
-    initial_state: fraction
+      cell_params:
+        init_res:
+          prey: 2.
+          predator: 2.
 
-    e_init_prey: 2.0
-    e_init_pred: 2.0    
-
-    predprey_prob: 0.0
-    predprey_frac: 0.0
-
-    cost_of_living_pred: 1
-    cost_of_living_prey: 1
-    cost_of_repro_pred: 2
-    cost_of_repro_prey: 2
-
-    delta_e_pred: 0
-    delta_e_prey: 0      
+        p_prey: 0.5
+        p_predator: 0.
+        p_predprey: 0.
+          
+    prey_params:
+      cost_of_living: 1.
+      repro_cost: 2.
+      resource_intake: 2.
+      resource_min: 3.
+      repro_prob: 1.
