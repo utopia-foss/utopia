@@ -25,7 +25,7 @@ def state_mean(dm: DataManager, *, hlpr: PlotHelper, uni: UniverseGroup,
             takes care of plot aesthetics (labels, title, ...) and saving
         uni (UniverseGroup): The selected universe data
         mean_of (str): The name of the CopyMe dataset that the mean is to be
-            calcuated of
+            calculated of
         **plot_kwargs: Passed on to matplotlib.pyplot.plot
     """
     # Get the x-data, i.e. the times. Can query the UniverseGroup for that
