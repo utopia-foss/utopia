@@ -10,7 +10,7 @@
 
 // Import some types
 using Utopia::NBMode;
-using Utopia::UpdateMode;
+using Utopia::Update;
 using Utopia::get_as;
 
 /// A cell state definition that is default-constructible
@@ -81,20 +81,20 @@ struct TestLinks {
 // the default constructor is to be used.
 
 /// For a default-constructible cell state
-using CellTraitsDC = Utopia::CellTraits<CellStateDC, UpdateMode::sync, true>;
+using CellTraitsDC = Utopia::CellTraits<CellStateDC, Update::sync, true>;
 
 /// For a config-constructible cell state
-using CellTraitsCC = Utopia::CellTraits<CellStateCC, UpdateMode::sync>;
+using CellTraitsCC = Utopia::CellTraits<CellStateCC, Update::sync>;
 
 /// For a config-constructible cell state (with RNG) 
-using CellTraitsRC = Utopia::CellTraits<CellStateCC, UpdateMode::sync>;
+using CellTraitsRC = Utopia::CellTraits<CellStateCC, Update::sync>;
 
 /// For an explicitly-constructible cell state
-using CellTraitsEC = Utopia::CellTraits<CellStateEC, UpdateMode::sync>;
+using CellTraitsEC = Utopia::CellTraits<CellStateEC, Update::sync>;
 
 /// Cell traits with custom links
 using CellTraitsCL = Utopia::CellTraits<CellStateDC,
-                                        UpdateMode::sync,
+                                        Update::sync,
                                         true,    // use default constructor
                                         Utopia::EmptyTag,
                                         TestLinks>;

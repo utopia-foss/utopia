@@ -25,7 +25,9 @@ struct NoCustomLinks {};
 
 /// The entity traits struct gathers types to be used for specializing an entity
 /** \tparam  StateType    Type of the entitys' state container
-  * \tparam  update_mode  The update mode of the entitys, sync or async
+  * \tparam  update_mode  The update mode of the entities. Use Update::manual
+  *                       for choosing the update mode flexibly when calling
+  *                       apply_rule.
   * \tparam  use_def_state_constr   Whether to use the default constructor to
   *                       construct the entity's state. If false (default), a
   *                       constructor with DataIO::Config& as argument has to
@@ -40,7 +42,7 @@ struct NoCustomLinks {};
   *                       containers of the objects you want to link to.
   */
 template<typename StateType,
-         UpdateMode update_mode,
+         Update update_mode,
          bool use_def_state_constr=false,
          typename EntityTags=EmptyTag,
          template<class> class CustomLinkContainers=NoCustomLinks>
@@ -49,7 +51,7 @@ struct EntityTraits {
     using State = StateType;
 
     /// Whether the entitys should be synchronously updated
-    static constexpr bool sync = static_cast<bool>(update_mode);
+    static constexpr Update mode = update_mode;
 
     /// Whether to use the default constructor for constructing a entity state
     static constexpr bool use_default_state_constructor = use_def_state_constr;
@@ -73,7 +75,7 @@ struct EntityTraits {
   */
 template<typename Traits>
 class Entity :
-    public StateContainer<typename Traits::State, Traits::sync>,
+    public StateContainer<typename Traits::State, Traits::mode>,
     public Traits::Tags
 {
 public:
@@ -84,7 +86,7 @@ public:
     using State = typename Traits::State;
 
     /// Whether this entity is updated synchronously
-    static constexpr bool sync = Traits::sync;
+    static constexpr Update mode = Traits::mode;
 
     /// The tags associated with this entity
     using Tags = typename Traits::Tags;
@@ -110,7 +112,7 @@ public:
     Entity(const IndexType id, const State initial_state)
     :
         // Store arguments and initialize Tags via default constructor
-        StateContainer<State, sync>(initial_state),
+        StateContainer<State, mode>(initial_state),
         Tags(),
         _id(id),
         // Initialize custom links empty, i.e. with its default constructor

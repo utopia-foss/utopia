@@ -112,6 +112,15 @@ p_run.add_argument('--plots-cfg',
                    default=None, nargs='?',
                    help="If given, uses the plots configuration file found "
                         "at this path instead of the defaults of the model.")
+p_run.add_argument('--update-plots-cfg',
+                   default=None, nargs='+',
+                   help="Sets key-value pairs in the `plots_cfg` entry of the "
+                        "plots meta configuration. Example: plot_foo.bar=42 "
+                        "sets the 'bar' entry in the 'plot_foo' dict to 42. "
+                        "Note that multiple parameter can be set at once by "
+                        "separating them with a space; if a space needs to be "
+                        "in the argument value, put the strings into '...' or "
+                        "\"...\".")
 p_run.add_argument('--plot-only',
                    default=None, nargs='*',
                    help="If given, will plot only those entries of the plot "
@@ -151,11 +160,20 @@ p_eval.add_argument('--plots-cfg',
                     default=None, nargs='?',
                     help="If given, uses the plots configuration file found "
                          "at this path instead of the defaults of the model.")
+p_eval.add_argument('--update-plots-cfg',
+                   default=None, nargs='+',
+                   help="Sets key-value pairs in the `plots_cfg` entry of the "
+                        "plots meta configuration. Example: plot_foo.bar=42 "
+                        "sets the 'bar' entry in the 'plot_foo' dict to 42. "
+                        "Note that multiple parameter can be set at once by "
+                        "separating them with a space; if a space needs to be "
+                        "in the argument value, put the strings into '...' or "
+                        "\"...\".")
 p_eval.add_argument('--plot-only',
                     default=None, nargs='*',
                     help="If given, will plot only those entries of the plot "
                          "configuration that match the names given here.")
-p_eval.add_argument('--run_cfg_path',
+p_eval.add_argument('--run-cfg-path',
                     default=None, nargs='?',
                     help="Path to the run configuration. Can be used to "
                          "change the configuration of DataManager and "
@@ -192,7 +210,7 @@ log = logging.getLogger(__name__)
 from paramspace import ParamDim
 
 import utopya
-from utopya.tools import pformat
+from utopya.tools import pformat, read_yml
 from utopya.cltools import deploy_user_cfg, add_entry, add_from_kv_pairs
 
 
@@ -212,6 +230,7 @@ if __name__ == '__main__':
 
     # Set an empty update dict. It will hold adjustments to the given configs
     update_dict = {}
+    update_plots_cfg = {}
     # NOTE The following updates to the update_dict rely on it being mutable
 
     # In debug mode, set a number of configuration keys
@@ -314,6 +333,13 @@ if __name__ == '__main__':
         if args.set_cfg:
             # Add an entry for each pair
             add_from_kv_pairs(*args.set_cfg, add_to=update_dict)
+        
+        if args.update_plots_cfg:
+            try:
+                add_from_kv_pairs(*args.update_plots_cfg,
+                                  add_to=update_plots_cfg)
+            except ValueError:
+                update_plots_cfg = read_yml(*args.update_plots_cfg)
 
 
     # Adjustments in eval mode
@@ -321,6 +347,10 @@ if __name__ == '__main__':
         if args.set_cfg:
             # Add an entry for each pair
             add_from_kv_pairs(*args.set_cfg, add_to=update_dict)
+    
+        if args.update_plots_cfg:
+            # Add an entry for each pair
+            add_from_kv_pairs(*args.update_plots_cfg, add_to=update_plots_cfg)
 
 
     # Finished with generating the update dict; give some info on it
@@ -375,7 +405,8 @@ if __name__ == '__main__':
     log.info("Plotting...")
 
     # Tell the PlotManager to plot
-    mv.pm.plot_from_cfg(plots_cfg=args.plots_cfg, plot_only=args.plot_only)
+    mv.pm.plot_from_cfg(plots_cfg=args.plots_cfg, plot_only=args.plot_only, 
+                        **update_plots_cfg)
     # NOTE If plots_cfg was not given, this uses the plot configuration that
     #      belongs to the model. If it is given, the configuration is loaded
     #      from the given file path.

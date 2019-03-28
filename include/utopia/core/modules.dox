@@ -11,6 +11,61 @@ implement in order to be used within Utopia.
 
 \}
 
+\defgroup Rules Rules on Entities
+\{
+
+\ingroup Core
+\brief Algorithms for conveniently applying function objects on entities
+
+## The General Idea
+A rule is a function that computes the new state of the entity it is applied
+to.
+
+### Synchronous vs Asynchronous Updates
+
+Applying a rule **synchronously** means that its result is applied to all
+entities *simultaneously*. In practice, one uses a cache for storing the
+intermediate states of the cells and then copies/moves the cache entries into
+the respective cell states.
+
+Applying a rule **asynchronously** means that its result for a single entity
+is immediately imposed onto this entity. To avoid preferences in execution
+order, users may choose to use shuffling before iterating over the cells.
+
+## Implementation
+
+A rule must be implemented by the programmer as a function (object).
+The function it represents must take a pointer to the entity as single
+argument and may capture arbitrary objects.
+The function's return value is the new state of the entity it is applied to.
+
+Currently, rules may also alter other members (i.e., tags) of the entity
+they are applied to, and may even change states of other entities. *Notice
+that this does not make sense if you intend to apply such a rule
+synchronously!*
+
+### Choosing Update Type When Calling `apply_rule`
+
+Previously, the state cache for synchronous updates was implemented in the
+entity itself. Therefore, users had to opt for *either* sync *or* async
+updates when choosing the state data type. We now encourage the usage of
+the Utopia::StateContainer with the specialization for the
+Utopia::Update::manual tag (see
+Utopia::StateContainer<StateType, Update::manual>).
+This allows for choosing the update type via the Utopia::Update switch
+directly when calling Utopia::apply_rule.
+
+\code{.cc}
+    using EntityTraits = Utopia::CellTraits<int, Utopia::Update::manual>;
+    using CellManager = Utopia::CellManager<EntityTraits, MyModel>;
+
+    CellManager cm = get_cm_from_somewhere();
+    Utopia::apply_rule<Utopia::Update::async,
+                       Utopia::Shuffle::off>(my_rule, cm.cells());
+\endcode
+
+\}
+
 
 \defgroup Neighborhoods Neighborhoods of Entities
 \{

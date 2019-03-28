@@ -4,6 +4,9 @@ the paths to their source and binary directories are.
 
 Note that this is not a usual python module, but is merely used to receive and
 parse information and make it easily accessible to other utopya modules.
+
+IMPORTANT Meaning, if you want to change something in there you need to change 
+the info.py.in file
 """
 
 import os
@@ -67,6 +70,7 @@ def parse_model_info() -> dict:
 
         # Add keys for certain additional files
         for key, suffix, required in [("model_cfg", "_cfg.yml", True),
+                                      ("model_base_plots", "_base_plots.yml", False),
                                       ("plots_cfg", "_plots.yml", False),
                                       ]:
             # Generate the path to search for the file at
