@@ -1,31 +1,30 @@
 """PredatorPrey-model plot function for time-series"""
 
-import logging
 from typing import Union
 
 import numpy as np
-import matplotlib.pyplot as plt
 
 from utopya import DataManager, UniverseGroup
-
-from ..tools import save_and_close
-
-# Get a logger
-log = logging.getLogger(__name__)
+from utopya.plotting import is_plot_func, PlotHelper, UniversePlotCreator
 
 # -----------------------------------------------------------------------------
 
-def frequency(dm: DataManager, *, out_path: str, uni: UniverseGroup, 
+@is_plot_func(creator_type=UniversePlotCreator,
+             helper_defaults=dict(
+                 set_labels=dict(x="Iteration step",
+                                 y="Frequency"),
+                 set_limits=dict(y=(-0.05, 1.05)),
+                 set_legend=dict(use_legend=True, loc='best'))
+             )
+def frequency(dm: DataManager, *, hlpr: PlotHelper, uni: UniverseGroup, 
               Population: Union[str, list] = ['prey', 'predator'], 
-              save_kwargs: dict=None, **plot_kwargs):
+              **plot_kwargs):
     """Calculates the frequency of a given Population and performs a lineplot
     
     Args:
         dm (DataManager): The data manager from which to retrieve the data
-        out_path (str): Where to store the plot to
         uni (UniverseGroup): The universe from which to plot the data
         Population (Union[str, list], optional): The population to plot
-        save_kwargs (dict, optional): kwargs to the plt.savefig function
         **plot_kwargs: Passed on to plt.plot
     
     Raises:
@@ -51,7 +50,7 @@ def frequency(dm: DataManager, *, out_path: str, uni: UniverseGroup,
                   for f in frequencies]
 
         # Create the plot
-        plt.plot(y_data, label=Population, **plot_kwargs)
+        hlpr.ax.plot(y_data, label=Population, **plot_kwargs)
         
     
     # Multiple populations
@@ -61,17 +60,8 @@ def frequency(dm: DataManager, *, out_path: str, uni: UniverseGroup,
                       for f in frequencies]
 
             # Create the plot
-            plt.plot(y_data, label=p, **plot_kwargs)
+            hlpr.ax.plot(y_data, label=p, **plot_kwargs)
 
     else:
         raise TypeError("Invalid argument 'population' of type {} and value "
                         "'{}'!".format(type(Population), Population))
-
-    # Set general plot options
-    plt.ylim(-0.05, 1.05)
-    plt.xlabel('Iteration step')
-    plt.ylabel('Frequency')
-    plt.legend(loc='best')
-
-    # Save and close figure
-    save_and_close(out_path, save_kwargs=save_kwargs)
