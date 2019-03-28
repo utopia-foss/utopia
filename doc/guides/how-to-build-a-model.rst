@@ -94,18 +94,28 @@ latter; if you are already more proficient, use the former.
   - Throughout the file, replace all ``CopyMe``\ 's by ``MyFancyModel``\ 's.
   - Throughout the file, replace all ``COPYME``\ 's by ``MYFANCYMODEL``\ 's.
 
+8. Open the file ``MyFancyModel_plots.yml`` in the ``src/models/MyFancyModel/``
+   directory and do the following:
+
+  - Throughout the file, replace all ``CopyMe``\ 's by ``MyFancyModel``\ 's.
+
+9. Open the file ``MyFancyModel_cfg.yml`` in the ``src/models/MyFancyModel/``
+   directory and do the following:
+
+  - Throughout the file, replace all ``CopyMe``\ 's by ``MyFancyModel``\ 's.
+
 It's time for a little check if everything works as desired. For that, follow
 these steps
 
-8. Enter the ``build`` directory and run ``cmake ..``
-9. Check that the CMake log contains ``Registered model target: MyFancyModel``
-10. Now execute ``make MyFancyModel`` ...
+10. Enter the ``build`` directory and run ``cmake ..``
+11. Check that the CMake log contains ``Registered model target: MyFancyModel``
+12. Now execute ``make MyFancyModel`` ...
 
   * Are there errors? Hmmm... check above that you adjusted everything as
     described.
   * Building succeeds? Congratulations! 🎉
 
-11. Use the command line interface to run the model:
+13. Use the command line interface to run the model:
 
   .. code-block:: bash
 

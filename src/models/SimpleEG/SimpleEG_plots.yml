@@ -26,13 +26,8 @@ frequencies:
 
 # plot the spatial development in the CA of the strategy
 strategy_and_payoff: &strategy_and_payoff
-  creator: universe
-  universes: all
-
-  file_ext: mp4
-
-  module: .ca
-  plot_func: state_anim
+  # Base this plot on a utopya base plot configuration
+  based_on: .ca.state_anim
 
   model_name: SimpleEG
 
@@ -54,7 +49,6 @@ strategy_and_payoff: &strategy_and_payoff
   # Video options
   writer: ffmpeg  # can be: frames, ffmpeg (if installed), ...
   fps: 10
-  dpi: 96
 
 
 # another plot that stores things as frames

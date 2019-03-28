@@ -16,6 +16,8 @@ from utopya import Multiverse, FrozenMultiverse
 RUN_CFG_PATH = resource_filename('test', 'cfg/run_cfg.yml')
 USER_CFG_PATH = resource_filename('test', 'cfg/user_cfg.yml')
 BAD_USER_CFG_PATH = resource_filename('test', 'cfg/bad_user_cfg.yml')
+BASE_PLOTS_PATH = resource_filename('test', 'cfg/base_plots.yml')
+UPDATE_BASE_PLOTS_PATH = resource_filename('test', 'cfg/update_base_plots.yml')
 SWEEP_CFG_PATH = resource_filename('test', 'cfg/sweep_cfg.yml')
 CLUSTER_MODE_CFG_PATH = resource_filename('test', 'cfg/cluster_mode_cfg.yml')
 

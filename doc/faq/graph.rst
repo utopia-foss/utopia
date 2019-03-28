@@ -1,5 +1,5 @@
-Utopia Graph FAQs
-=================
+Graphs
+======
 
 This part of the FAQ relates to the usage of
 `Boost Graph Library
@@ -8,12 +8,14 @@ Utopia.
 
 .. contents::
    :local:
-   :depth: 1
+   :depth: 2
 
 ----
 
+Create graphs
+-------------
 How do I attach custom objects to the vertices and edges of my graph?
----------------------------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Often times, it is desired to attach custom objects to vertices and edges of
 your graph (or, more precisely: the ``boost::adjacency_list``), e.g.
@@ -64,8 +66,10 @@ internal properties. For further information, see the `bundled property document
     you first need to specify the vertex struct and then the edge struct.
     You wonder why this is? Actually, we too... :thinking:
 
-Create graphs
--------------
+Are there graph generating functions implemented in Utopia?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Yes. 
+
 Utopia contains a selection of graph creation algorithms. Even more, the 
 ``Utopia::Graph::create_graph()`` function lets you switch easily between 
 different graph creation models.
@@ -135,8 +139,10 @@ configuration options if the creation algorithm you set requires them, otherwise
 they will be just ignored.
 
 
+Save node & edge properties
+---------------------------
 How can values stored in vertex or edge objects be saved?
--------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If you use a ``boost::adjacency_list`` with custom properties you might want to
 save these properties to HDF5 in order to process the data later (e.g. plot
@@ -176,7 +182,7 @@ time the graph was written.
 The example code will result in the following structure (the graph
 has 100 vertices):
 
-.. code-block::
+.. code-block:: bash
 
     └┬grp
        └┬ id
