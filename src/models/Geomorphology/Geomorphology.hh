@@ -72,7 +72,7 @@ struct GeomorphologyCell {
  */
 using GeomorphologyCellTraits = Utopia::CellTraits<GeomorphologyCell<
                                                         Utopia::IndexContainer>, 
-                                                   UpdateMode::async>;
+                                                   Update::async>;
 
 /// Typehelper to define data types of ForestFire model
 using GeomorphologyTypes = ModelTypes<>;
