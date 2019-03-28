@@ -160,3 +160,30 @@ def test_prey_reproduction():
 
     # Check that at the end every prey has reproduced
     assert(final_num_prey == num_prey[-1])
+
+
+def test_predator_reproduction(): 
+    """Test the basic interaction functions of the PredatorPrey model"""
+    # Create a multiverse, run a single universe and save the data in the 
+    # DataManager dm
+    mv, dm = mtc.create_run_load(from_cfg="test_predator_reproduction.yml")
+
+    # Get the data
+    uni = dm['multiverse'][0]
+    data = uni['data']
+    pop = data['PredatorPrey']['population']
+
+    # Count the number of predator for each time step
+    num_predator = [np.count_nonzero(p == 2) for p in pop]
+
+    # Calculate total number of predator which can be created from the
+    # amount of available resources
+    # NOTE  The parameters are selected such that each predator can have one 
+    #       offspring
+    final_num_predator = num_predator[0] * 2
+
+    # Check that not all predators reproduce after the first iteration step
+    assert final_num_predator != num_predator[1]
+
+    # Check that at the end every predator has reproduced
+    assert(final_num_predator == num_predator[-1])

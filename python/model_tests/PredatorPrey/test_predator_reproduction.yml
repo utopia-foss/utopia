@@ -1,0 +1,39 @@
+# Config for testing that the model does the expected for a specific minimal scenario
+#
+# The testing scenario is a single 
+#
+# NOTE that this sets only the common values; the changes are set via passing
+#      additional keys to the the ModelTest.create_run_load method
+---
+perform_sweep: false
+
+parameter_space:
+  # Do a number of steps
+  num_steps: 50
+
+  # Load the default model config
+  PredatorPrey: !model
+    model_name: PredatorPrey
+
+    space:
+      extent: [10, 10]
+
+    cell_manager:
+      grid:
+        structure: square
+        resolution: 1
+
+      cell_params:
+        init_res:
+          predator: 5.
+
+        p_prey: 0.
+        p_predator: 0.1
+        p_predprey: 0.
+          
+    predator_params:
+      cost_of_living: 0.
+      repro_cost: 2.
+      resource_intake: 0.
+      repro_resource_requ: 4.
+      repro_prob: 0.2
