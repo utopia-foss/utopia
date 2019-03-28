@@ -5,10 +5,12 @@ the NumpyDataContainer.
 """
 
 import logging
+from typing import Union, List, Dict
 from operator import mul
 from functools import reduce
 
 import numpy as np
+import xarray as xr
 
 from dantro.containers import NumpyDataContainer, XrDataContainer
 from dantro.mixins import Hdf5ProxyMixin
@@ -72,7 +74,7 @@ class XarrayDC(XrDataContainer):
     _XRC_STRICT_ATTR_CHECKING = True
 
 
-class GridDC(NumpyDC):
+class GridDC(XarrayDC):
     """This is the base class for all grid data used in Utopia.
 
     It is based on the NumpyDC and reshapes the data to the grid shape.
@@ -82,8 +84,9 @@ class GridDC(NumpyDC):
     
     # Define as class variable the attribute that determines the shape of the data.
     _GDC_attrs_grid_shape = 'grid_shape'
+    _GDC_attrs_dim_names = 'dims'
 
-    def __init__(self, *, name: str, data: np.ndarray, **dc_kwargs):
+    def __init__(self, *, name: str, data: Union[np.ndarray, xr.DataArray], **dc_kwargs):
         """Initialize a GridDC.
         
         Args:
@@ -94,6 +97,12 @@ class GridDC(NumpyDC):
         # Call the __init__ function of the base class
         super().__init__(name=name, data=data, **dc_kwargs)
 
+        name = self.name
+        values = self.values
+        dims = self.dims
+        coords = self.coords
+        attrs = self.attrs
+
         # Get the shape of the internal data and the desired shape of the grid
         data_shape = self.shape
         grid_shape = tuple(self.attrs[self._GDC_attrs_grid_shape])
@@ -103,14 +112,31 @@ class GridDC(NumpyDC):
         # NOTE It is assumed that the _last_ data dimension goes along grid ID's!
         new_shape = data_shape[:-1] + grid_shape
 
+        if (len(new_shape) == 2):
+            dims = ('x', 'y')
+        elif (len(new_shape) == 3):
+            dims = ('time', 'x', 'y')
+        else:
+            raise NotImplementedError("No method implemented to initialize "
+                                      "GridDC with more than 2 spatial "
+                                      "dimensions.")
+
+        if not coords:
+            coords = dict()
+        for k, v in coords:
+            if k is not 'time':
+                coords.pop(k)
+        coords['x'] = range(grid_shape[0])
+        coords['y'] = range(grid_shape[1])
+
         # Check that the number of total elements before reshaping equals the
         # number of elements after reshaping in the data
         log.debug("Reshaping data of shape %s to %s "
                   "to match given grid shape %s ...", 
                   data_shape, new_shape, grid_shape)
         try:
-            # Reshape the data 
-            self._data = np.reshape(self.data, new_shape)
+            # Reshape the data
+            data = np.reshape(self.values, new_shape)
 
         except ValueError as err:
             raise ValueError("Reshaping failed! This is probably due to a "
@@ -120,4 +146,7 @@ class GridDC(NumpyDC):
                              "actual shape {} of the written data."
                              "".format( self._GDC_attrs_grid_shape, 
                                         grid_shape, data_shape)) from err
+
+        self._data = xr.DataArray(name=self.name, data=data, dims=dims, 
+                                  coords=coords, attrs=self.attrs)
 
