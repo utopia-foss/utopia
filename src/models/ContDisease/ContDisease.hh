@@ -36,11 +36,15 @@ struct CDCell {
     /// The cell state
     CDCellState state;
 
+    /// An ID denoting to which cluster this cell belongs
+    unsigned int cluster_tag;
+
     /// Construct the cell state from a configuration and an RNG
     template<class RNG>
     CDCell (const DataIO::Config& cfg, const std::shared_ptr<RNG>& rng)
     :
-        state(empty)
+        state(empty),
+        cluster_tag(0)
     {
         // Check if initial_density is available to set up cell state
         if (cfg["initial_density"]) {
@@ -192,7 +196,10 @@ private:
     /// The range [0, 1] distribution to use for probability checks
     std::uniform_real_distribution<double> _prob_distr;
 
-    // .. Temporary objects ...................................................
+    /// The incremental cluster tag
+    unsigned int _cluster_tag_cnt;
+
+      // .. Temporary objects ...................................................
     /// Densities for all states
     /** \note   This array is used for temporary storage; it is not
       *         automatically updated!
@@ -204,6 +211,9 @@ private:
       *         4: stone
       */
     std::array<double, 5> _densities;
+
+    /// A temporary container for use in cluster identification
+    std::vector<std::shared_ptr<CDCellManager::Cell>> _cluster_members;
 
     // .. Data groups .........................................................
     /// The data group where all density datasets are stored in
@@ -228,6 +238,10 @@ private:
     /// 1D dataset of density of infected stone cells over time
     std::shared_ptr<DataSet> _dset_density_stone;
 
+    /// The dataset for storing the cluster ID associated with each cell
+    std::shared_ptr<DataSet> _dset_cluster_id;
+
+
 
 public:
     /// Construct the ContDisease model
@@ -249,9 +263,14 @@ public:
         // Initialize remaining members
         _prob_distr(0., 1.),
         _densities{},  // undefined here, will be set in constructor body
+        _cluster_members(),
+        _cluster_tag_cnt(),
 
         // Create a data group for the densities
         _dgrp_densities(this->_hdfgrp->open_group("densities")),
+
+        // Create dataset for cluster id
+        _dset_cluster_id(this->create_cm_dset("cluster_id", _cm)),
 
         // Create dataset for cell states
         _dset_state(this->create_cm_dset("state", _cm)),
@@ -272,7 +291,7 @@ public:
         _densities.fill(std::numeric_limits<double>::quiet_NaN());
 
         // Remaining initialization steps regard macroscopic quantities
-        
+
         // Infection source
         if (_param.infection_source) {
             this->_log->debug("Setting bottom boundary cells to be "
@@ -348,7 +367,7 @@ public:
         // those that do not change throughout the simulation (indices 3 and 4)
         _dset_density_stone->write(_densities[3]);   // stone
         _dset_density_source->write(_densities[4]);  // infection source
-        
+
         this->_log->debug("Initial state written.");
     }
 
@@ -396,6 +415,7 @@ protected:
     RuleFunc _update = [this](const auto& cell){
         // Get the current state of the cell
         auto state = cell->state();
+        state.cluster_tag = 0;
 
         // Distinguish by current state
         if (state.state == empty) {
@@ -445,6 +465,41 @@ protected:
         return state;
     };
 
+    /// Identify each cluster of trees
+    void  identify_clusters(){
+        _cluster_tag_cnt = 0; // reset cluster counter
+        for (auto& cell: this->_cm.cells()) {
+            if (cell->state().cluster_tag == 0 and cell->state().state == tree) {
+
+                // Increment cluster counter and label the given cell
+                _cluster_tag_cnt++;
+                cell->state().cluster_tag = _cluster_tag_cnt;
+
+                auto& cluster = _cluster_members;
+                cluster.clear();
+                cluster.push_back(cell);
+
+                for (unsigned int i = 0; i < cluster.size(); ++i){
+                    // Iterate over neighbors of cluster members to see if they
+                    // need to addded to the cluster
+                    for (auto& nb: this->_cm.neighbors_of(cluster[i])) {
+                        if (nb->state().cluster_tag == 0 and nb->state().state == tree){
+                            nb->state().cluster_tag = _cluster_tag_cnt;
+                            cluster.push_back(nb);
+                            // Now the outer loop will also check the neighbors of the new cluster member
+                        }
+                    }
+
+                }
+
+            }
+            //else: nothing to do
+
+
+        }
+
+    };
+
 
 public:
     // -- Public Interface ----------------------------------------------------
@@ -485,6 +540,15 @@ public:
 
         // And those densities that are changing (empty, tree, infected)
         update_densities();
+
+        // Identify clusters
+        //this->identify_clusters();
+
+        //_dset_cluster_id->write(_cm.cells().begin(), _cm.cells().end(),
+        //    [](const auto& cell) {
+        //        return cell->state().cluster_tag;
+        //});
+
         _dset_density_empty->write(_densities[0]);
         _dset_density_tree->write(_densities[1]);
         _dset_density_infected->write(_densities[2]);
