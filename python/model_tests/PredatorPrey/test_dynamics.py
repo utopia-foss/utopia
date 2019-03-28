@@ -27,8 +27,7 @@ def assert_eq(a, b, *, epsilon=1e-6):
 def test_cost_of_living_prey():
     """Test the cost of living of the prey"""
     # Create, run, and load a universe
-    mv, dm = mtc.create_run_load(from_cfg="cost_of_living_prey.yml", 
-                                 perform_sweep=False)
+    mv, dm = mtc.create_run_load(from_cfg="cost_of_living_prey.yml")
 
     # Get the data
     data = dm['multiverse'][0]['data']
@@ -44,8 +43,7 @@ def test_cost_of_living_Predator():
     """Test the cost of living of the the predator"""
     # Create a multiverse, run a single universe and save the data in the 
     # DataManager dm
-    mv, dm = mtc.create_run_load(from_cfg="cost_of_living_predator.yml", 
-                                 perform_sweep=False)
+    mv, dm = mtc.create_run_load(from_cfg="cost_of_living_predator.yml")
 
     # Get the data
     data = dm['multiverse'][0]['data']
@@ -66,8 +64,7 @@ def test_eating_prey():
 
     # Create a multiverse, run a single universe and save the data in the 
     # DataManager dm
-    mv, dm = mtc.create_run_load(from_cfg="test_eating_prey.yml", 
-                                 perform_sweep=False)
+    mv, dm = mtc.create_run_load(from_cfg="test_eating_prey.yml")
 
     # Get the data
     data = dm['multiverse'][0]['data']
@@ -86,11 +83,9 @@ def test_predator_movement():
         The predator should move to prey in his neighborhood and afterwards move 
         around randomly to find prey.
     """
-    
     # Create a multiverse, run a single universe and save the data in the 
     # DataManager dm
-    mv, dm = mtc.create_run_load(from_cfg="test_predator_movement.yml", 
-                                 perform_sweep=False)
+    mv, dm = mtc.create_run_load(from_cfg="test_predator_movement.yml")
 
     # Get the data
     data = dm['multiverse'][0]['data']
@@ -124,15 +119,13 @@ def test_predator_movement():
     
 
 def test_prey_flee():
-    # TODO FIX: assert that there is one predator and one prey
-    # Test whether the prey flees from the predator. Unfortunately, as the 
-    # update order is random, the prey can only flee, if its own cell has not 
-    # been updated, before a predator invades it.
-
+    """ Test whether the prey flees from the predator. Unfortunately, as the 
+        update order is random, the prey can only flee, if its own cell has not 
+        been updated, before a predator invades it.
+    """
     # Create a multiverse, run a single universe and save the data in the 
     # DataManager dm
-    mv, dm = mtc.create_run_load(from_cfg="test_prey_flee.yml", 
-                                 perform_sweep=False)
+    mv, dm = mtc.create_run_load(from_cfg="test_prey_flee.yml")
     
     data = dm['multiverse'][0]['data']
     pop = data['PredatorPrey']['population'].astype(int)
@@ -144,18 +137,26 @@ def test_prey_flee():
 
 def test_prey_reproduction(): 
     """Test the basic interaction functions of the PredatorPrey model"""
-
     # Create a multiverse, run a single universe and save the data in the 
     # DataManager dm
-    mv, dm = mtc.create_run_load(from_cfg="test_prey_reproduction.yml", 
-                                 perform_sweep=False)
+    mv, dm = mtc.create_run_load(from_cfg="test_prey_reproduction.yml")
 
     # Get the data
-    data = dm['multiverse'][0]['data']
+    uni = dm['multiverse'][0]
+    data = uni['data']
     pop = data['PredatorPrey']['population']
-    res_prey = data['PredatorPrey']['resource_prey']
-                         
-    assert np.all(res_prey[: , : , :] == [[[2], [0]], [[1],[2]], [[2], [1]]]) \
-        or np.all(res_prey[: , : , :] == [[[0], [2]], [[2],[1]], [[1], [2]]])
-    assert np.all(pop[ : , :, :] == [[[1], [0]], [[1],[1]], [[1], [1]]]) \
-        or np.all(pop[ : , :, :] == [[[0], [1]], [[1],[1]], [[1], [1]]]) 
+
+    # Count the number of prey for each time step
+    num_prey = [np.count_nonzero(p == 1) for p in pop]
+
+    # Calculate total number of prey which can be created from the
+    # amount of available resources
+    # NOTE  The parameters are selected such that each prey can have one 
+    #       offspring
+    final_num_prey = num_prey[0] * 2
+
+    # Check that not all preys reproduce after the first iteration step
+    assert final_num_prey != num_prey[1]
+
+    # Check that at the end every prey has reproduced
+    assert(final_num_prey == num_prey[-1])

@@ -9,14 +9,14 @@ perform_sweep: false
 
 parameter_space:
   # Do a number of steps
-  num_steps: 2
+  num_steps: 50
 
   # Load the default model config
   PredatorPrey: !model
     model_name: PredatorPrey
 
     space:
-      extent: [2, 1]
+      extent: [10, 10]
 
     cell_manager:
       grid:
@@ -25,16 +25,16 @@ parameter_space:
 
       cell_params:
         init_res:
-          prey: 2.
+          prey: 5.
           predator: 2.
 
-        p_prey: 0.5
+        p_prey: 0.1
         p_predator: 0.
         p_predprey: 0.
           
     prey_params:
-      cost_of_living: 1.
+      cost_of_living: 0.
       repro_cost: 2.
-      resource_intake: 2.
-      resource_min: 3.
-      repro_prob: 1.
+      resource_intake: 0.
+      repro_resource_requ: 4.
+      repro_prob: 0.2
