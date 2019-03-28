@@ -43,7 +43,7 @@ struct State {
   *         the second sets them to be asynchronously updated.
   *         The third argument sets the use of the default constructor.
   */
-using CellTraits = Utopia::CellTraits<State, UpdateMode::async, true>;
+using CellTraits = Utopia::CellTraits<State, Update::async, true>;
 
 
 /// The Model type traits

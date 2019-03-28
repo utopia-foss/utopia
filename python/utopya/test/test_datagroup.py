@@ -31,7 +31,7 @@ def test_networkgroup():
         g = nwg.create_graph()
 
         # Check that the number of vertices matches
-        assert g.number_of_nodes() == cfg['Hierarnet']['num_vertices']
+        assert g.number_of_nodes() == cfg['Hierarnet']['create_network']['num_vertices']
 
 def test_universegroup_get_times_array():
     """Test the universe group"""

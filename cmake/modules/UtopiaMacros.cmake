@@ -1,3 +1,11 @@
+# New CMake policy stack
+cmake_policy(PUSH)
+
+# Use <Package>_ROOT variables in respective find_package functions/modules
+if (POLICY CMP0074)
+    cmake_policy(SET CMP0074 NEW)
+endif ()
+
 # BOOST
 find_package(Boost 1.62 REQUIRED
              COMPONENTS unit_test_framework)
@@ -22,9 +30,11 @@ find_package(FFTW3 3.3 REQUIRED)
 
 # Armadillo
 # use the config if possible
-find_package(Armadillo CONFIG)
+find_package(Armadillo CONFIG QUIET)
 # fall back to our module if no target is defined
-if (NOT TARGET armadillo)
+if (TARGET armadillo)
+    message (STATUS "Found Armadillo from CMake config at: ${Armadillo_DIR}")
+else ()
     find_package(Armadillo MODULE REQUIRED)
 endif()
 
@@ -39,3 +49,6 @@ include(UtopiaAddModel)
 include(UtopiaAddModelTest)
 include(UtopiaGenerateModelInfo)
 include(UtopiaPython)
+
+# Remove latest policy stack
+cmake_policy(POP)

@@ -74,7 +74,7 @@ struct DataSets {
   * \note   This model relies on asynchronous update for calculation of the
   *         clusters and the percolation.
   */
-using FFMCellTraits = Utopia::CellTraits<FFMCell, UpdateMode::async>;
+using FFMCellTraits = Utopia::CellTraits<FFMCell, Update::async>;
 
 
 /// ForestFire model parameter struct

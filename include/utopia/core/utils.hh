@@ -193,7 +193,8 @@ struct is_container<T, std::void_t<typename remove_qualifier_t<T>::iterator, std
  * @tparam T
  */
 template <typename T>
-struct get_size : std::integral_constant<std::size_t, 1>
+struct get_size
+    : std::integral_constant<std::size_t, std::numeric_limits<std::size_t>::max()> // scalar have an unrealistic size -> distinguish from size 1 array/tuple...
 {
 };
 
@@ -272,6 +273,50 @@ template <typename T>
 inline constexpr bool is_array_like_v = is_array_like<T>::value;
 
 /**
+ * @brief Prototype for determining if type T is 'tuplelike'.
+ *        This is not intended to be used explicitly, refer to 
+ *        'is_tuple_like', which serves this purpose.
+ *
+ * @tparam T Type to test
+ * @tparam s size of the type, determined via 'get_size'
+ */
+template <typename T, std::size_t s>
+struct is_tuple_like_base : std::true_type
+{
+};
+
+/**
+ * @brief Prototype for determining if type T is 'tuplelike' - specialization for scalars.
+ *        This is not intended to be used explicitly, refer to 
+ *        'is_tuple_like', which serves this purpose.
+ *
+ * @tparam T Type to test
+ */
+template <typename T>
+struct is_tuple_like_base<T, std::numeric_limits<std::size_t>::max()> : std::false_type
+{
+};
+
+/**
+ * @brief Determine if type T is tuple_like, i.e. usable with std::get.
+ * 
+ * @tparam T 
+ */
+template <typename T>
+struct is_tuple_like : is_tuple_like_base<T, get_size_v<T>>
+{
+};
+
+
+/**
+ * @brief Shorthand for is_tuple_like::value
+ *
+ * @tparam T  Type to test
+ */
+template <typename... Ts>
+inline constexpr bool is_tuple_like_v = is_tuple_like<Ts...>::value;
+
+/**
  * Output the content of a container to the stream 'out' in the format
  * '[x1, x2, x3, ...]' where the x_{i} are the elements the container holds.
  * This does not(!) take care of outputting the elements, in the sense that
@@ -283,16 +328,18 @@ template <class T>
 std::enable_if_t<is_container_v<T>, std::ostream&> operator<<(std::ostream& out,
                                                               const T& container)
 {
-    out << std::setprecision(16) << "[";
     if (container.size() == 0)
     {
         out << "[]";
     }
     else
     {
-        for (const auto& v : container)
+        out << std::setprecision(16) << "[";
+
+        for (auto it = container.begin();
+             it != std::next(std::begin(container), container.size() - 1); ++it)
         {
-            out << v << ", "; // becomes a recursive call in case of nested containers
+            out << *it << ", "; // becomes a recursive call in case of nested containers
         }
         out << *std::next(std::begin(container), container.size() - 1) << "]";
     }
@@ -325,6 +372,55 @@ std::ostream& operator<<(std::ostream& out, const std::vector<bool>& container)
     }
     return out;
 }
+
+/**
+ * @brief Output pair to an std::ostream instance 
+ * 
+ * @tparam T1 pair first type
+ * @tparam T2 pair second type
+ * @param out outstream to use
+ * @param pair pair to put out
+ * @return std::ostream& used outstream
+ */
+template<typename T1, typename T2>
+std::ostream& operator<<(std::ostream& out, const std::pair<T1, T2>& pair){
+    out << "(" << pair.first <<", " << pair.second << ")";
+    return out;
+}
+
+
+/**
+ * @brief Output associative containers to an std::ostream
+ *
+ * @tparam MapType Some type representing an associative container, automatically determined.
+ * @tparam Key Key type of the container, automatically determined.
+ * @tparam Value Mapped type of the container, automatically determined.
+ * @tparam Args Additional template args, automatically determined.
+ * @param out outstream to use for output
+ * @param map Map like type, has to define key_type, map_type and have pair<const Key, Value> as value_type
+ * @return std::ostream Used outstream
+ */
+template <template <typename, typename, typename...> class MapType, typename Key, typename Value, typename... Args>
+std::enable_if_t<std::is_same_v<typename MapType<Key, Value, Args...>::key_type, Key> and
+                     std::is_same_v<typename MapType<Key, Value, Args...>::mapped_type, Value> and
+                     std::is_same_v<typename MapType<Key, Value, Args...>::value_type, std::pair<const Key, Value>>,
+                 std::ostream&>
+operator<<(std::ostream& out, const MapType<Key, Value, Args...>& map)
+{
+    if(map.size() == 0){
+        out << "[]";
+    }
+    else{
+        out << "[";
+        for(auto it = map.begin(); it != std::next(map.begin(), map.size() -1); ++it){
+            out << *it << ", ";
+        }
+        out << *std::next(map.begin(), map.size() - 1) << "]";
+    }
+    return out;
+}
+
+
 } // namespace Utils
 } // namespace Utopia
 #endif

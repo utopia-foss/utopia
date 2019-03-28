@@ -20,10 +20,10 @@ Only two properties need always be defined: The state type of the entity and whe
 .. code-block:: c++
 
   /// Traits for cells with synchronous update
-  using MySyncCell = Utopia::CellTraits<MyCellState, UpdateMode::sync>;
+  using MySyncCell = Utopia::CellTraits<MyCellState, Update::sync>;
   
   /// Traits for cells with asynchronous update
-  using MyAsyncCell = Utopia::CellTraits<MyCellState, UpdateMode::async>;
+  using MyAsyncCell = Utopia::CellTraits<MyCellState, Update::async>;
 
 
 
@@ -56,7 +56,7 @@ For this (recommended) way, the constructor of the state type accepts a ``Utopia
   };
 
   /// Traits for a config-constructible cell state with synchronous update
-  using CellTraitsCC = Utopia::CellTraits<CellStateCC, UpdateMode::sync>;
+  using CellTraitsCC = Utopia::CellTraits<CellStateCC, Update::sync>;
 
 The manager itself can then be set up in the model without any further information:
 
@@ -133,7 +133,7 @@ As default constructors can sometimes lead to undefined behaviour, they need to 
   };
 
   /// Traits for a default-constructible cell state with synchronous update
-  using CellTraitsDC = Utopia::CellTraits<CellStateDC, UpdateMode::sync, true>;
+  using CellTraitsDC = Utopia::CellTraits<CellStateDC, Update::sync, true>;
 
 In such a case, the manager (as with config-constructible) does not require an initial state.
 
@@ -156,7 +156,7 @@ In this mode, all cells have an identical initial state, which is passed down fr
   }
 
   /// Traits for cells with synchronous update
-  using MyCellTraits = Utopia::CellTraits<MyCellState, UpdateMode::sync>;
+  using MyCellTraits = Utopia::CellTraits<MyCellState, Update::sync>;
 
   // Define an appropriate initial cell state
   const auto initial_cell_state = MyCellState(42, 3.14);
