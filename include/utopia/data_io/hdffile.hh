@@ -294,7 +294,7 @@ public:
      *                     'r' (readonly, file must exist), 'r+' (read/write,
      *                     file must exist), 'w' (create file, truncate if
      *                     exists), 'x' (create file, fail if exists), or 'a'
-     *                     (read/write if exists, create otherwise; default)
+     *                     (read/write if exists, create otherwise)
      */
     HDFFile(std::string path, std::string access)
     {

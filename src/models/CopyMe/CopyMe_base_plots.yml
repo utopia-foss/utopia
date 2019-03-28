@@ -1,0 +1,8 @@
+# This file holds the base configuration for CopyMe model plots
+---
+mean_cell_state_over_time:
+  universes: all
+  
+  # Use the CopyMe-specific plot functions
+  module: model_plots.CopyMe
+  plot_func: state_mean

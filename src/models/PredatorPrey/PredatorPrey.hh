@@ -108,7 +108,7 @@ struct State {
   *         the second sets them to not be synchronously updated.
   *         The config constructor for the cell state is preferred here
   */
-using CellTraits = Utopia::CellTraits<State, UpdateMode::async, false>;
+using CellTraits = Utopia::CellTraits<State, Update::async, false>;
 
 /// Typehelper to define data types of PredatorPrey model
 using ModelTypes = ModelTypes<>;

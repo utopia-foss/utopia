@@ -30,25 +30,25 @@ using G_directed = boost::adjacency_list<
 
 
 /// Test the function that creates a random graph
-void test_create_random_graph(){
+void test_create_ErdosRenyi_graph(){
     // Create a random number generator
     Utopia::DefaultRNG rng;
     Utopia::DefaultRNG rng_copy = rng;
 
     // Set graph properties
     const int num_vertices = 10;
-    const int num_edges = 20;
+    const int mean_degree = 2;
 
     // Create test graph
-    auto g = create_random_graph<G>(num_vertices,
-                                    num_edges,
-                                    false,
-                                    false,
-                                    rng); 
+    auto g = create_ErdosRenyi_graph<G>(num_vertices,
+                                        mean_degree,
+                                        false,
+                                        false,
+                                        rng); 
 
     // Assert that the number of vertices and edges is correct
     assert(num_vertices == boost::num_vertices(g));
-    assert(num_edges == boost::num_edges(g));
+    assert(num_vertices * mean_degree / 2 == boost::num_edges(g));
 
     // Assert that the state of the rng has changed.
     assert(rng!=rng_copy);
@@ -56,7 +56,7 @@ void test_create_random_graph(){
 
 
 /// Test the function that creates a small-world graph
-void test_create_small_world_graph(){
+void test_create_WattsStrogatz_graph(){
     // Create a random number generator
     Utopia::DefaultRNG rng;
     Utopia::DefaultRNG rng_copy = rng;
@@ -67,10 +67,10 @@ void test_create_small_world_graph(){
     const double p_rewire = 0.6;
 
     // Create test graph
-    auto g = create_small_world_graph<G>(   num_vertices,
-                                    mean_degree,
-                                    p_rewire,
-                                    rng); 
+    auto g = create_WattsStrogatz_graph<G>(num_vertices,
+                                           mean_degree,
+                                           p_rewire,
+                                           rng); 
 
     // Assert that the number of vertices and edges is correct
     assert(num_vertices == boost::num_vertices(g));
@@ -92,7 +92,7 @@ void test_create_small_world_graph(){
 
 
 /// Test the function that creates a scale-free graph
-void test_create_scale_free_graph(){
+void test_create_BarabasiAlbert_graph(){
     // Create a random number generator
     Utopia::DefaultRNG rng;
     Utopia::DefaultRNG rng_copy = rng;
@@ -102,7 +102,7 @@ void test_create_scale_free_graph(){
     const int mean_degree = 8;
 
     // Create test graph
-    auto g = create_scale_free_graph<G>(    num_vertices,
+    auto g = create_BarabasiAlbert_graph<G>(num_vertices,
                                             mean_degree,
                                             rng); 
 
@@ -127,7 +127,7 @@ void test_create_scale_free_graph(){
     // Case: directed Graph
     try
     {
-        auto g_dir = create_scale_free_graph<G_directed> (num_vertices, mean_degree, rng);
+        auto g_dir = create_BarabasiAlbert_graph<G_directed> (num_vertices, mean_degree, rng);
     }
     catch (const std::exception& e)
     {
@@ -135,13 +135,13 @@ void test_create_scale_free_graph(){
     }
     catch (...){
         throw std::runtime_error("Caught unexpected exception in "
-                                 "create_scale_free_graph function test.");
+                                 "create_BarabasiAlbert_graph function test.");
     }
 
     // Case: mean degree greater than number of vertices
     try
     {
-        auto g_fail = create_scale_free_graph<G> (5, 6, rng);
+        auto g_fail = create_BarabasiAlbert_graph<G> (5, 6, rng);
     }
     catch (const std::exception& e)
     {
@@ -149,13 +149,13 @@ void test_create_scale_free_graph(){
     }
     catch (...){
         throw std::runtime_error("Caught unexpected exception in "
-                                 "create_scale_free_graph function test.");
+                                 "create_BarabasiAlbert_graph function test.");
     }
 
     // Case: mean degree is odd
     try
     {
-        auto g_fail = create_scale_free_graph<G> (10, 5, rng);
+        auto g_fail = create_BarabasiAlbert_graph<G> (10, 5, rng);
     }
     catch (const std::exception& e)
     {
@@ -163,13 +163,13 @@ void test_create_scale_free_graph(){
     }
     catch (...){
         throw std::runtime_error("Caught unexpected exception in "
-                                 "create_scale_free_graph function test.");
+                                 "create_BarabasiAlbert_graph function test.");
     }
 }
 
 
 /// Test the function that creates a directed scale-free graph
-void test_create_scale_free_directed_graph(){
+void test_create_BollobasRiordan_graph(){
     // Create a random number generator
     Utopia::DefaultRNG rng;
     Utopia::DefaultRNG rng_copy = rng;
@@ -183,13 +183,13 @@ void test_create_scale_free_directed_graph(){
     const double del_out = 0.5;
 
     // Create test graph
-    auto g = create_scale_free_directed_graph<G_directed>(  num_vertices,
-                                                            alpha,
-                                                            beta,
-                                                            gamma,
-                                                            del_in,
-                                                            del_out,
-                                                            rng);
+    auto g = create_BollobasRiordan_graph<G_directed>(num_vertices,
+                                                      alpha,
+                                                      beta,
+                                                      gamma,
+                                                      del_in,
+                                                      del_out,
+                                                      rng);
 
     // Assert that the number of vertices is correct
     assert(num_vertices == boost::num_vertices(g));
@@ -221,7 +221,7 @@ void test_create_scale_free_directed_graph(){
     // Case: undirected Graph
     try
     {
-        auto g_dir = create_scale_free_directed_graph<G>(   num_vertices,
+        auto g_dir = create_BollobasRiordan_graph<G>(   num_vertices,
                                                             alpha,
                                                             beta,
                                                             gamma,
@@ -288,10 +288,10 @@ int main()
     try
     {
         test_create_k_regular_graph();
-        test_create_random_graph();
-        test_create_small_world_graph();
-        test_create_scale_free_graph();
-        test_create_scale_free_directed_graph();
+        test_create_ErdosRenyi_graph();
+        test_create_WattsStrogatz_graph();
+        test_create_BarabasiAlbert_graph();
+        test_create_BollobasRiordan_graph();
         
         return 0;
     }

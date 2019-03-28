@@ -25,12 +25,12 @@ if(NOT PYTHON_PACKAGE_paramspace_FOUND)
 endif()
 
 # -- dantro --
-python_find_package(PACKAGE dantro VERSION 0.6.0)
+python_find_package(PACKAGE dantro VERSION 0.7.0rc11)
 
 if(NOT PYTHON_PACKAGE_dantro_FOUND)
     # install from current _master_ branch
     python_install_package_remote(
-        URL ssh://git@ts-gitlab.iup.uni-heidelberg.de:10022/utopia/dantro.git@release/v0.6
+        URL ssh://git@ts-gitlab.iup.uni-heidelberg.de:10022/utopia/dantro.git@release/v0.7
         TRUSTED_HOST ts-gitlab.iup.uni-heidelberg.de)
 endif()
 

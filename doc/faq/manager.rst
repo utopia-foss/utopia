@@ -1,44 +1,47 @@
-``CellManager`` and ``AgentManager`` FAQs
-=========================================
+Cell and Agent manager
+======================
 
 Below, some frequently asked questions regarding the ``CellManager`` and ``AgentManager`` are addressed.
 
 .. contents::
    :local:
-   :depth: 1
+   :depth: 2
 
 ----
 
+Trait objects
+-------------
 What are these trait objects needed for manager setup?
-------------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The ``Utopia::CellTraits`` and ``Utopia::AgentTraits`` are structs that define the properties and behaviour of the cells or agents, respectively.
 They are passed to the managers to allow them to set up these entities in the desired way.
 
 Only two properties need always be defined: The state type of the entity and whether it is to be updated synchronously (all agents of a manager at once), or asynchronously (states change directly, regardless of other agents):
 
-.. code-block:: c++
+.. code-block :: c++
 
   /// Traits for cells with synchronous update
-  using MySyncCell = Utopia::CellTraits<MyCellState, UpdateMode::sync>;
+  using MySyncCell = Utopia::CellTraits<MyCellState, Update::sync>;
   
   /// Traits for cells with asynchronous update
-  using MyAsyncCell = Utopia::CellTraits<MyCellState, UpdateMode::async>;
+  using MyAsyncCell = Utopia::CellTraits<MyCellState, Update::async>;
 
 
-
+Initialize cells and agents
+---------------------------
 Which ways are there to initialize cells and agents?
-----------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 There are three different ways to initialize cells and agents in your ``CellManager`` or ``AgentManager``. The examples below are for the ``CellManager`` but apply analogously to the ``AgentManager``.
 
 
 Constructing an initial state from configuration (recommended)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 For this (recommended) way, the constructor of the state type accepts a ``Utopia::Config&`` node, where all the information needed for that state can be extracted:
 
-.. code-block:: c++
+.. code-block :: c++
 
   /// The cell state type
   struct CellState {
@@ -56,11 +59,11 @@ For this (recommended) way, the constructor of the state type accepts a ``Utopia
   };
 
   /// Traits for a config-constructible cell state with synchronous update
-  using CellTraitsCC = Utopia::CellTraits<CellStateCC, UpdateMode::sync>;
+  using CellTraitsCC = Utopia::CellTraits<CellStateCC, Update::sync>;
 
 The manager itself can then be set up in the model without any further information:
 
-.. code-block:: c++
+.. code-block :: c++
 
   class MyFancyModel {
   public:
@@ -81,7 +84,7 @@ The manager itself can then be set up in the model without any further informati
 Here, the cell manager extracts the required information from the model configuration.
 It expects a configuration entry ``cell_manager``, which includes all the information needed for setup, including those parameters passed to the ``Config&`` constructor:
 
-.. code-block:: yaml
+.. code-block :: yaml
 
   # model configuration
   ---
@@ -101,7 +104,7 @@ It expects a configuration entry ``cell_manager``, which includes all the inform
   # Other model configuration parameters ...
 
 
-.. note::
+.. note ::
 
   As the ``CellManager`` is not finished with construction at this point, it is
   not possible to use any ``CellManager`` features for construction of the
@@ -114,7 +117,7 @@ It expects a configuration entry ``cell_manager``, which includes all the inform
 
 
 Constructing initial state from default constructor
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""""""""""""""""""""""""""""""
 
 As default constructors can sometimes lead to undefined behaviour, they need to be explicitly allowed. This happens via the ``Utopia::CellTraits`` struct.
 
@@ -133,7 +136,7 @@ As default constructors can sometimes lead to undefined behaviour, they need to 
   };
 
   /// Traits for a default-constructible cell state with synchronous update
-  using CellTraitsDC = Utopia::CellTraits<CellStateDC, UpdateMode::sync, true>;
+  using CellTraitsDC = Utopia::CellTraits<CellStateDC, Update::sync, true>;
 
 In such a case, the manager (as with config-constructible) does not require an initial state.
 
@@ -143,7 +146,7 @@ In such a case, the manager (as with config-constructible) does not require an i
 
 
 Explicit initial state
-^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""
 
 In this mode, all cells have an identical initial state, which is passed down from the ``CellManager``. Presuming you are setting up the manager as member of ``MyFancyModel``, this would look something like this:
 
@@ -156,7 +159,7 @@ In this mode, all cells have an identical initial state, which is passed down fr
   }
 
   /// Traits for cells with synchronous update
-  using MyCellTraits = Utopia::CellTraits<MyCellState, UpdateMode::sync>;
+  using MyCellTraits = Utopia::CellTraits<MyCellState, Update::sync>;
 
   // Define an appropriate initial cell state
   const auto initial_cell_state = MyCellState(42, 3.14);
@@ -180,8 +183,10 @@ In this mode, all cells have an identical initial state, which is passed down fr
   };
 
 
+Initialization with random number generator
+-------------------------------------------
 Can I have a random number generator when constructing cells or agents?
------------------------------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Yes.
 
@@ -210,6 +215,14 @@ If cells or agents provide a constructor that allows passing not only a ``const 
   };
 
 With this constructor available, a constructor with the signature ``CellStateRC(const Config& cfg)`` is not necessary and would *not* be called!
+
+Keep in mind to also change the ``CellTraitsRC`` such that the ``CellStateRC`` creation is done with the config constructor and not the default constructor. For this, set the boolean correctly at the end of the template list to `true` as explained above:
+
+.. code-block:: c++
+
+  /// Traits for a default-constructible cell state with synchronous update
+  using CellTraitsRC = Utopia::CellTraits<CellStateRC, Update::sync, true>;
+
 
 .. note::
 

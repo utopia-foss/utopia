@@ -16,7 +16,7 @@ namespace Utopia {
 
 /// CellTraits are just another name for Utopia::EntityTraits
 template<typename StateType, 
-         UpdateMode update_mode,
+         Update update_mode,
          bool use_def_state_constr=false,
          typename CellTags=EmptyTag,
          template<class> class CustomLinkContainers=NoCustomLinks>

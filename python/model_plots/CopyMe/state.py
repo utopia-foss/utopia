@@ -1,45 +1,48 @@
 """CopyMe-model specific plot function for the state"""
 
 import numpy as np
-import matplotlib.pyplot as plt
 
 from utopya import DataManager, UniverseGroup
-
-from ..tools import save_and_close
+from utopya.plotting import is_plot_func, PlotHelper, UniversePlotCreator
 
 # -----------------------------------------------------------------------------
 
-def state_mean( dm: DataManager, *, 
-                uni: UniverseGroup, 
-                out_path: str, 
-                fmt: str=None, 
-                save_kwargs: dict=None, 
-                **plot_kwargs):
-    """Calculates the state mean and performs a lineplot
+@is_plot_func(creator_type=UniversePlotCreator,
+              # Provide some (static) default values for helpers
+              helper_defaults=dict(
+                set_labels=dict(x="Time"),
+                set_limits=dict(x=[0, None]),
+                )
+              )
+def state_mean(dm: DataManager, *, hlpr: PlotHelper, uni: UniverseGroup, 
+               mean_of: str, **plot_kwargs):
+    """Calculates the mean of the `mean_of` dataset and performs a lineplot
+    over time.
     
     Args:
         dm (DataManager): The data manager from which to retrieve the data
+        hlpr (PlotHelper): The PlotHelper that instantiates the figure and
+            takes care of plot aesthetics (labels, title, ...) and saving
         uni (UniverseGroup): The selected universe data
-        out_path (str): Where to store the plot to
-        fmt (str, optional): the plt.plot format argument
-        save_kwargs (dict, optional): kwargs to the plt.savefig function
-        **plot_kwargs: Passed on to plt.plot
+        mean_of (str): The name of the CopyMe dataset that the mean is to be
+            calcuated of
+        **plot_kwargs: Passed on to matplotlib.pyplot.plot
     """
-    # Get the group that all datasets are in
-    grp = uni['data/CopyMe']
+    # Get the x-data, i.e. the times. Can query the UniverseGroup for that
+    times = uni.get_times_array()
 
-    # Extract the y_data which is 'some_state' averaged over all grid cells 
-    # for every time step
-    data = grp['some_state']
-    y_data = [np.mean(d) for d in data]
+    # Extract the data that is to be plotted on the y-axis, i.e.: 'some_state'
+    # averaged over all grid cells for every time step
+    mean = [np.mean(d) for d in uni['data/CopyMe'][mean_of]]
 
-    # Assemble the arguments
-    args = [y_data]
-    if fmt:
-        args.append(fmt)
+    # Call the plot function on the currently selected axis in the plot helper
+    hlpr.ax.plot(times, mean, **plot_kwargs)
+    # NOTE `hlpr.ax` is just the current matplotlib.axes object. It has the
+    #      same interface as `plt`, aka `matplotlib.pyplot`
 
-    # Call the plot function
-    plt.plot(*args, **plot_kwargs)
-
-    # Save and close figure
-    save_and_close(out_path, save_kwargs=save_kwargs)
+    # Provide the plot helper with some information that is then used when
+    # the helpers are invoked
+    hlpr.provide_defaults('set_title', title="Mean '{}'".format(mean_of))
+    hlpr.provide_defaults('set_labels', y="<{}>".format(mean_of))
+    # NOTE Providing defaults recursively updates an existing configuration
+    #      and marks the helper as 'enabled'
