@@ -1,0 +1,19 @@
+# Default plots for the dummy model
+---
+state_mean:
+  creator: universe
+  universes: all
+  
+  # Use the dummy-specific plot functions
+  module: model_plots.dummy
+  plot_func: state_mean
+
+
+states:
+  creator: universe
+  universes: all
+
+  module: model_plots.dummy
+  plot_func: single_state
+
+  step: 0

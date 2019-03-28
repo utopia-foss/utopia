@@ -67,11 +67,9 @@ def times(dm: DataManager, *, uni: UniverseGroup, **kwargs):
     # Get the times dataset for the selected universe
     times = uni['data/HdfBench/times']
 
-    # Get the names of the coordinates and decode them to utf-8 strings
-    bench_names = [n.decode('utf-8') for n in times.attrs['coords_benchmark']]
-
     # Use helper function for actual plot
-    _plot_times(times=times, bench_names=bench_names, **kwargs)
+    _plot_times(times=times, bench_names=times.attrs['coords_benchmark'],
+                **kwargs)
 
 
 # -----------------------------------------------------------------------------
@@ -106,7 +104,7 @@ def mean_times(dm: DataManager, *, mv_data, allow_failure: bool=True, **kwargs):
     times_std = times.std('seed')
 
     # Get the benchmark names from the config
-    bench_names = [n.decode('utf-8') for n in times.attrs["coords_benchmark"]]
+    bench_names = [n for n in times.attrs["coords_benchmark"]]
 
     _plot_times(times=times_mean, std=times_std,
                 bench_names=bench_names, num_seeds=times['seed'].shape[0],

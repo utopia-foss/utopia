@@ -278,7 +278,8 @@ def test_signal_workers(wm, longer_sleep_task):
     wm.start_working(post_poll_func=ppf)
 
     for task in wm.tasks[-3:]:
-        assert task.worker_status == -sigmap['SIGTERM']
+        assert task.worker_status in [-sigmap['SIGTERM'], -sigmap['SIGKILL']]
+        # NOTE sleep task _might_ not allow SIGTERM, will then be killed
     
     for _ in range(3):
         wm.add_task(**sleep_task)

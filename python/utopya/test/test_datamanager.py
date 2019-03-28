@@ -118,8 +118,9 @@ def test_load_single(dm_after_single):
 
     # Get the state dataset and check its content
     dset = uni['data/dummy/state']
+    print(dset.data)
 
-    assert isinstance(dset, udc.NumpyDC)
+    assert isinstance(dset, (udc.NumpyDC, udc.XarrayDC))
     assert dset.shape[1] == 1000
     assert np.issubdtype(dset.dtype, float)
 
@@ -164,6 +165,6 @@ def test_load_sweep(dm_after_sweep):
         # Get the state dataset and check its content
         dset = uni['data/dummy/state']
 
-        assert isinstance(dset, udc.NumpyDC)
+        assert isinstance(dset, (udc.NumpyDC, udc.XarrayDC))
         assert dset.shape == (uni['cfg']['num_steps'] + 1, 1000)
         assert np.issubdtype(dset.dtype, float)

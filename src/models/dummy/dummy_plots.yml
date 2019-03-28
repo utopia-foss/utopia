@@ -1,20 +1,11 @@
 # Default plots for the dummy model
 ---
 state_mean:
-  creator: universe
-  universes: all
-  
-  # Use the dummy-specific plot functions
-  module: model_plots.dummy
-  plot_func: state_mean
+  based_on: state_mean
 
 
 states: !pspace
-  creator: universe
-  universes: all
-
-  module: model_plots.dummy
-  plot_func: single_state
+  based_on: states
 
   # Go over multiple time steps
   step: !sweep

@@ -14,12 +14,12 @@ from pkg_resources import resource_filename
 
 import paramspace as psp
 
-from utopya.datamanager import DataManager
-from utopya.workermanager import WorkerManager
-from utopya.plotting import PlotManager
-from utopya.reporter import WorkerManagerReporter
-from utopya.tools import recursive_update, read_yml, write_yml, load_model_cfg, pformat
-from utopya.info import MODELS
+from .datamanager import DataManager
+from .workermanager import WorkerManager
+from .plotting import PlotManager
+from .reporter import WorkerManagerReporter
+from .tools import recursive_update, read_yml, write_yml, load_model_cfg, pformat
+from .info import MODELS
 
 # Configure and get logger
 log = logging.getLogger(__name__)
@@ -35,17 +35,21 @@ class Multiverse:
     Attributes:
         BASE_CFG_PATH (str): The path to the base configuration, supplied with
             the utopya package
-        meta_cfg (dict): The parsed Multiverse meta-configuration. All
-            further arguments are extracted from this dict.
-        model_name (str): The model name associated with this Multiverse
+        RUN_DIR_TIME_FSTR (str): The time format string to generate the run
+            directory with
         USER_CFG_SEARCH_PATH (str): The path at which a user config is expected
+        UTOPYA_BASE_PLOTS_PATH (str): The path to the base plots configuration
     """
 
     BASE_CFG_PATH = resource_filename('utopya', 'cfg/base_cfg.yml')
     USER_CFG_SEARCH_PATH = os.path.expanduser("~/.config/utopia/user_cfg.yml")
     RUN_DIR_TIME_FSTR = "%y%m%d-%H%M%S"
+    UTOPYA_BASE_PLOTS_PATH = resource_filename('utopya',
+                                               'plot_funcs/base_plots.yml')
 
-    def __init__(self, *, model_name: str, run_cfg_path: str=None, user_cfg_path: str=None, custom_env: dict=None, **update_meta_cfg):
+    def __init__(self, *, model_name: str, run_cfg_path: str=None,
+                 user_cfg_path: str=None, custom_env: dict=None,
+                 **update_meta_cfg):
         """Initialize the Multiverse.
         
         Args:
@@ -133,6 +137,8 @@ class Multiverse:
 
         # And instantiate the PlotManager with the model-specific plot config
         self._pm = PlotManager(dm=self.dm,
+                               base_cfg=self.UTOPYA_BASE_PLOTS_PATH,
+                               update_base_cfg=MODELS[self.model_name]['model_base_plots'],
                                plots_cfg=MODELS[self.model_name]['plots_cfg'],
                                **self.meta_cfg['plot_manager'])
 
@@ -324,7 +330,8 @@ class Multiverse:
 
     # "Private" methods .......................................................
 
-    def _create_meta_cfg(self, *, run_cfg_path: str, user_cfg_path: str, update_meta_cfg: dict) -> dict:
+    def _create_meta_cfg(self, *, run_cfg_path: str, user_cfg_path: str,
+                         update_meta_cfg: dict) -> dict:
         """Create the meta configuration from several parts and store it.
         
         The final configuration dict is built from up to four components,
@@ -363,7 +370,8 @@ class Multiverse:
         base_cfg = read_yml(self.BASE_CFG_PATH,
                             error_msg="Base configuration not found!")
 
-        # Decide whether to read in the user configuration from the default search location or use a user-passed one
+        # Decide whether to read in the user configuration from the default
+        # search location or use a user-passed one
         if user_cfg_path is None:
             log.debug("Looking for user configuration file in default "
                       "location, %s", self.USER_CFG_SEARCH_PATH)
@@ -443,7 +451,8 @@ class Multiverse:
             log.debug("Updating with given `update_meta_cfg` dictionary ...")
             meta_tmp = recursive_update(meta_tmp,
                                         copy.deepcopy(update_meta_cfg))
-            # NOTE using copy to make sure that usage of the dict will not interfere with the Multiverse's meta config
+            # NOTE using copy to make sure that usage of the dict will not
+            #      interfere with the Multiverse's meta config
         
         # Make `parameter_space` a ParamSpace object
         pspace = meta_tmp['parameter_space']
@@ -465,7 +474,9 @@ class Multiverse:
         # Done.
         return cfg_parts
 
-    def _create_run_dir(self, *, out_dir: str, model_note: str=None, backup_involved_cfg_files: bool=True, cfg_parts: dict=None) -> None:
+    def _create_run_dir(self, *, out_dir: str, model_note: str=None,
+                        backup_involved_cfg_files: bool=True,
+                        cfg_parts: dict=None) -> None:
         """Create the folder structure for the run output.
         
         This will also write the meta config to the corresponding config
@@ -769,7 +780,8 @@ class Multiverse:
         log.debug("Resolved cluster parameters:\n%s", pformat(resolved))
         return resolved
 
-    def _add_sim_task(self, *, uni_id_str: str, uni_cfg: dict, is_sweep: bool) -> None:
+    def _add_sim_task(self, *, uni_id_str: str, uni_cfg: dict,
+                      is_sweep: bool) -> None:
         """Helper function that handles task assignment to the WorkerManager.
         
         This function creates a WorkerTask that will perform the following
@@ -792,10 +804,13 @@ class Multiverse:
         Raises:
             RuntimeError: If adding the simulation task failed
         """
-        def setup_universe(*, worker_kwargs: dict, model_name: str, model_binpath: str, uni_cfg: dict, uni_basename: str) -> dict:
+        def setup_universe(*, worker_kwargs: dict, model_name: str,
+                           model_binpath: str, uni_cfg: dict,
+                           uni_basename: str) -> dict:
             """The callable that will setup everything needed for a universe.
             
-            This is called before the worker process starts working on the universe.
+            This is called before the worker process starts working on the
+            universe.
             
             Args:
                 worker_kwargs (dict): the current status of the worker_kwargs
@@ -908,7 +923,8 @@ class FrozenMultiverse(Multiverse):
                 as relative to that directory.
             run_dir (str, optional): The run directory to load. Can be a path
                 relative to the current working directory, an absolute path,
-                or the timestamp of the run directory. If not given, will use the most recent timestamp.
+                or the timestamp of the run directory. If not given, will use
+                the most recent timestamp.
             run_cfg_path (str, optional): The path to the run configuration.
             user_cfg_path (str, optional): If given, this is used to update the
                 base configuration. If None, will look for it in the default
@@ -997,6 +1013,8 @@ class FrozenMultiverse(Multiverse):
 
         # Instantiate the PlotManager with the model-specific plot config
         self._pm = PlotManager(dm=self.dm,
+                               base_cfg=self.UTOPYA_BASE_PLOTS_PATH,
+                               update_base_cfg=MODELS[self.model_name]['model_base_plots'],
                                plots_cfg=MODELS[self.model_name]['plots_cfg'],
                                **self.meta_cfg['plot_manager'])
 
