@@ -1,6 +1,9 @@
 ---
 perform_sweep: true
 
+run_kwargs:
+  timeout: 20
+
 parameter_space:
   num_steps: 0
 

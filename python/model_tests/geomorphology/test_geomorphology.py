@@ -44,8 +44,9 @@ def test_output():
         uni_cfg = uni['cfg']
 
         # Check that all datasets are available
-        assert 'water_content' in data
+        assert 'watercolumn' in data
         assert 'height' in data
+        assert 'drainage_area' in data
 
 
 def test_drainage_network():
