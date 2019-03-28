@@ -79,4 +79,22 @@ area_frac_t:
   linestyle: 'None'
   marker: '.'
 
+#Plot the compl_cum_prob_dist function for all universes in one plot
+mult_cum_prob:
+  enabled: false
+  creator: multiverse
+  select:
+    field:
+      # Choose the path in the data tree (see terminal output)
+      path: data/SandPile/avalanche
+    
+    # when we concatenate the resulting data, dimensions do not match. Therefore, we use
+    # the largest dimension and fill up with NaN
+    idx_as_label: True
 
+  # Use the SandPile-specific plot functions
+  module: model_plots.SandPile
+  plot_func: mult_cum_prob
+
+  linestyle: 'None'
+  marker: '.'
