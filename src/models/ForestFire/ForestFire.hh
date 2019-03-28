@@ -57,6 +57,14 @@ struct FFMCell {
     }
 };
 
+/// Struct for all Dataset
+template <typename DataSet>
+struct DataSets {
+    const std::shared_ptr<DataSet> state;
+    const std::shared_ptr<DataSet> cluster_id;
+    const std::shared_ptr<DataSet> mean_density;      
+};
+
 
 /// Cell traits specialization using the state type
 /** \detail The first template parameter specifies the type of the cell state,
@@ -157,13 +165,8 @@ private:
     /// A temporary container for use in cluster identification
     std::vector<std::shared_ptr<FFMCellManager::Cell>> _cluster_members;
 
-    // .. Datasets ............................................................
-    /// The dataset for storing state values for each cell
-    std::shared_ptr<DataSet> _dset_state;
-
-    /// The dataset for storing the cluster ID associated with each cell
-    std::shared_ptr<DataSet> _dset_cluster_id;
-
+    // -- Datasets -- //
+    DataSets<DataSet> _dsets;
 
 public:
     // -- Model Setup ---------------------------------------------------------
@@ -189,8 +192,10 @@ public:
         _cluster_members(),
 
         // Create datasets using the helper functions for CellManager-data
-        _dset_state(this->create_cm_dset("state", _cm)),
-        _dset_cluster_id(this->create_cm_dset("cluster_id", _cm))
+        _dsets({this->create_cm_dset("state", _cm),
+                this->create_cm_dset("cluster_id", _cm),
+                this->create_dset("mean_density", {})})
+
     {
         // Cells are already set up in the CellManager
         // Still need to take care of the ignited bottom row
@@ -372,7 +377,7 @@ public:
     /// Write data
     void write_data () {
         // Store all cells' state
-        _dset_state->write(_cm.cells().begin(), _cm.cells().end(),
+        _dsets.state->write(_cm.cells().begin(), _cm.cells().end(),
             [](const auto& cell) {
                 return static_cast<unsigned short int>(cell->state().state);
         });
@@ -380,10 +385,12 @@ public:
         // Identify the clusters (only needed when actually writing)
         identify_clusters();
 
-        _dset_cluster_id->write(_cm.cells().begin(), _cm.cells().end(),
+        _dsets.cluster_id->write(_cm.cells().begin(), _cm.cells().end(),
             [](const auto& cell) {
                 return cell->state().cluster_tag;
         });
+
+        _dsets.mean_density->write(calc_tree_density()); 
     }
 
 

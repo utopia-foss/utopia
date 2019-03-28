@@ -21,16 +21,13 @@ def state_mean(dm: DataManager, *, out_path: str, uni: UniverseGroup,
         **plot_kwargs: Passed on to plt.plot
     """
     # Get the raw data of the state, either 0 (empty) or 1 (tree)
-    data = uni['data']['ForestFire/state']
-
-    # Calculate the mean along the time axis (iteration axis)
-    mean_state = [np.mean(d) for d in data]
+    data = uni['data']['ForestFire/mean_density']
 
     # Get the times array
     times = uni.get_times_array()
 
     # Call the plot function
-    plt.plot(times, mean_state, **plot_kwargs)
+    plt.plot(times, data, **plot_kwargs)
 
     plt.xlabel('Time [steps]')
     plt.ylabel('Tree density')
