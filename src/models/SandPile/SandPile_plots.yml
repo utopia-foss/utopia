@@ -2,7 +2,6 @@
 ---
 # Plot the slope (mean - critical_slope)
 slope:
-  creator: universe
   universes: all
   
   # Use the SandPile-specific plot functions
@@ -27,17 +26,11 @@ compl_cum_prob_dist:
   marker: '.'
 
 # Plot an animation of the CA `slope` state and save as individual frames
-slope_anim: &slope_anim
+slope_anim:
   enabled: false
 
-  creator: universe
-  universes: all
-
-  module: .ca
-  plot_func: state_anim
-
-  # Select the model name; determines where to read the data from
-  model_name: SandPile
+  # Base this configuration on that of the animation
+  based_on: animation
 
   # Select the properties to plot
   to_plot:
@@ -47,17 +40,11 @@ slope_anim: &slope_anim
       limits: [1, 4]
       cmap: copper
 
-  writer: frames  # can be: frames, ffmpeg (if installed), ...
-  dpi: 96
-
-  # Video parameters (used only by ffmpeg writer)
-  file_ext: mp4
-  fps: 2
-
 # Plot an animation of the CA `avalanche` state and save as individual frames
 avalanche_anim:
-  # Base this configuration on that of the slope animation
-  <<: *slope_anim
+
+  # Base this configuration on that of the animation
+  based_on: animation
 
   # Change the properties to be plotted to use the avalanche data
   to_plot:

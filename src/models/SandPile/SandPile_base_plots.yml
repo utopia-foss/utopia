@@ -1,0 +1,18 @@
+# Default base plots for SandPile model
+---
+animation:
+  creator: universe
+  universes: all
+
+  module: .ca
+  plot_func: state_anim
+
+  # Select the model name; determines where to read the data from
+  model_name: SandPile
+
+  writer: frames  # can be: frames, ffmpeg (if installed), ...
+  dpi: 96
+
+  # Video parameters (used only by ffmpeg writer)
+  file_ext: mp4
+  fps: 2
