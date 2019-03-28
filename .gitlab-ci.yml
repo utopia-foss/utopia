@@ -301,6 +301,8 @@ test:cli:
     - utopia run dummy --note plt1
     - utopia run dummy --note plt2 --plot-only states
     - utopia run dummy --note plt3 --plots-cfg $MODEL_SRC/dummy/dummy_plots.yml
+    - utopia run dummy --note plt4 --update-plots-cfg state_step_1.based_on=states state_step_1.step=1
+    - utopia run dummy --note plt5 --update-plots-cfg $MODEL_SRC/dummy/dummy_plots.yml 
     #
     # Test the setting of parameters and config parameters from CLI
     - utopia run dummy --set-model-params foo=3 bar=2.0

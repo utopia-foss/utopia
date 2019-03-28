@@ -11,6 +11,8 @@ import numpy as np
 import dantro as dtr
 import dantro.groups
 
+from .datacontainer import NumpyDC, XarrayDC
+
 # Configure and get logger
 log = logging.getLogger(__name__)
 
@@ -71,6 +73,11 @@ class MultiverseGroup(dtr.groups.ParamSpaceGroup):
 class NetworkGroup(dtr.groups.NetworkGroup):
     """This group is meant to manage network data and create a NetworkX graph
     from it."""
+    # Allow only Numpy Data Containers for now # FIXME
+    _NEW_CONTAINER_CLS = NumpyDC
+
+    # Define allowed member container types
+    _ALLOWED_CONT_TYPES = (NumpyDC,)
 
     # Expected names for the containers that hold vertex/edge information
     _NWG_node_container = "_vertices"

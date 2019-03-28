@@ -32,7 +32,7 @@ class DataManager(Hdf5LoaderMixin, YamlLoaderMixin, dtr.data_mngr.DataManager):
                                NetworkGroup=udg.NetworkGroup)
 
     # Tell the HDF5 loader which container class to use
-    _HDF5_DSET_DEFAULT_CLS = udc.NumpyDC
+    _HDF5_DSET_DEFAULT_CLS = udc.XarrayDC
 
     # The name of the attribute to read for the mapping
     _HDF5_MAP_FROM_ATTR = "content"
@@ -41,4 +41,6 @@ class DataManager(Hdf5LoaderMixin, YamlLoaderMixin, dtr.data_mngr.DataManager):
     _HDF5_GROUP_MAP = dict(network=udg.NetworkGroup)
 
     # The mapping of different content values to a data container types
-    _HDF5_DSET_MAP = dict(grid=udc.GridDC)
+    _HDF5_DSET_MAP = dict(grid=udc.GridDC,
+                          unlabelled_data=udc.NumpyDC,
+                          labelled_data=udc.XarrayDC)

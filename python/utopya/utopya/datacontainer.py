@@ -10,7 +10,7 @@ from functools import reduce
 
 import numpy as np
 
-from dantro.containers import NumpyDataContainer
+from dantro.containers import NumpyDataContainer, XrDataContainer
 from dantro.mixins import Hdf5ProxyMixin
 
 # Configure and get logger
@@ -21,12 +21,55 @@ log = logging.getLogger(__name__)
 # -----------------------------------------------------------------------------
 
 class NumpyDC(Hdf5ProxyMixin, NumpyDataContainer):
-    """This is the base class for all numerical data used in Utopia.
+    """This is the base class for numpy data containers used in Utopia.
 
     It is based on the NumpyDataContainer provided by dantro and extends it
     with the Hdf5ProxyMixin, allowing to load the data from the Hdf5 file only
     once it becomes necessary.
     """
+
+
+class XarrayDC(XrDataContainer):
+    """This is the base class for xarray data containers used in Utopia.
+
+    It is based on the XrDataContainer provided by dantro. As of now, it has
+    no proxy support, but will gain it once available on dantro side.
+    """
+    # Specialize XrDataContainer for Utopia ...................................
+    # Define as class variable the name of the attribute that determines the
+    # dimensions of the xarray.DataArray
+    _XRC_DIMS_ATTR = 'dim_names'
+    
+    # Attributes prefixed with this string can be used to set names for
+    # specific dimensions. The prefix should be followed by an integer-parsable
+    # string, e.g. `dim_name__0` would be the dimension name for the 0th dim.
+    _XRC_DIM_NAME_PREFIX = 'dim_name__'
+
+    # Attributes prefixed with this string determine the coordinate values for
+    # a specific dimension. The prefix should be followed by the _name_ of the
+    # dimension, e.g. `coords__time`. The values are interpreted according to
+    # the default coordinate mode or, if given, the coords_mode__* attribute
+    _XRC_COORDS_ATTR_PREFIX = 'coords__'
+
+    # The default mode by which coordinates are interpreted. Available modes:
+    #   - `list`            List of coordinate values
+    #   - `range`           Range expression (start, stop, step)
+    #   - `start_and_step`  Range (start, <deduced>, step) with auto-deduced
+    #                       stop value from length of dataset
+    _XRC_COORDS_MODE_DEFAULT = 'list'
+
+    # Prefix for the coordinate mode if a custom mode is to be used. To, e.g.,
+    # use mode 'start_and_step' for time dimension, set the coords_mode__time
+    # attribute to value 'start_and_step'
+    _XRC_COORDS_MODE_ATTR_PREFIX = 'coords_mode__'
+
+    # Whether to inherit the other container attributes
+    _XRC_INHERIT_CONTAINER_ATTRIBUTES = True
+
+    # Whether to use strict attribute checking; throws errors if there are
+    # container attributes available that match the prefix but don't match a
+    # valid dimension name. Can be disabled for speed improvements
+    _XRC_STRICT_ATTR_CHECKING = True
 
 
 class GridDC(NumpyDC):

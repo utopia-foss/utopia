@@ -1,0 +1,17 @@
+# This file provides the base plot configurations for utopya plot functions
+#
+# The names of the configuration entries should follow a module path naming
+# scheme, i.e. what is specified for the `module` and `plot_func` keys.
+---
+.ca.state_anim:
+  creator: universe
+  universes: all
+
+  file_ext: mp4
+
+  module: .ca
+  plot_func: state_anim
+
+  # Video options
+  writer: frames  # can be: frames, ffmpeg (if installed), ...
+  dpi: 96
