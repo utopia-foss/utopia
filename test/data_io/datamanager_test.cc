@@ -128,14 +128,6 @@ BOOST_AUTO_TEST_CASE(datamanager_tuplelike_constructor)
 
     Utopia::DataIO::DataManager dm(
         model,
-        // deciders
-        std::array<std::pair<std::string, Decider>, 2>{
-            std::make_pair("d1"s, [](Model&) -> bool { return true; }),
-            std::make_pair("d2"s, [](Model&) -> bool { return false; })},
-        // triggers
-        std::array<std::pair<std::string, Trigger>, 2>{
-            std::make_pair("b1"s, [](Model&) -> bool { return true; }),
-            std::make_pair("b2"s, [](Model&) -> bool { return false; })},
         // tasks
         std::array<std::pair<std::string, Simpletask>, 2>{
             std::make_pair(
@@ -159,7 +151,16 @@ BOOST_AUTO_TEST_CASE(datamanager_tuplelike_constructor)
                     [](Model&, Utopia::DataIO::HDFDataset<Utopia::DataIO::HDFGroup>& d) -> void {
                         d.write(std::vector<int>{4, 5, 6});
                     },
-                    *model.file.open_group("/t2")))});
+                    *model.file.open_group("/t2")))},
+        // deciders
+        std::array<std::pair<std::string, Decider>, 2>{
+            std::make_pair("d1"s, [](Model&) -> bool { return true; }),
+            std::make_pair("d2"s, [](Model&) -> bool { return false; })},
+        // triggers
+        std::array<std::pair<std::string, Trigger>, 2>{
+            std::make_pair("b1"s, [](Model&) -> bool { return true; }),
+            std::make_pair("b2"s, [](Model&) -> bool { return false; })}
+        );
 
     // test correct associations
     BOOST_TEST(dm.get_decider_task_map() ==
@@ -182,13 +183,6 @@ BOOST_AUTO_TEST_CASE(datamanager_tuplelike_constructor)
     {
         Utopia::DataIO::DataManager dm2(
             model,
-            // deciders
-            std::array<std::pair<std::string, Decider>, 1>{
-                std::make_pair("d1_2"s, [](Model&) -> bool { return true; })},
-            // triggers -> this will cause an error
-            std::array<std::pair<std::string, Trigger>, 2>{
-                std::make_pair("b1_2"s, [](Model&) -> bool { return true; }),
-                std::make_pair("b2_2"s, [](Model&) -> bool { return false; })},
             // tasks
             std::array<std::pair<std::string, Simpletask>, 1>{std::make_pair(
                 "t1_2"s,
@@ -200,7 +194,15 @@ BOOST_AUTO_TEST_CASE(datamanager_tuplelike_constructor)
                     [](Model&, Utopia::DataIO::HDFDataset<Utopia::DataIO::HDFGroup>& d) -> void {
                         d.write(std::vector<int>{1, 2, 3});
                     },
-                    *model.file.open_group("/t1_2")))});
+                    *model.file.open_group("/t1_2")))},
+            // deciders
+            std::array<std::pair<std::string, Decider>, 1>{
+                std::make_pair("d1_2"s, [](Model&) -> bool { return true; })},
+            // triggers -> this will cause an error
+            std::array<std::pair<std::string, Trigger>, 2>{
+                std::make_pair("b1_2"s, [](Model&) -> bool { return true; }),
+                std::make_pair("b2_2"s, [](Model&) -> bool { return false; })}
+            );
     }
     catch (std::exception& e)
     {
@@ -218,13 +220,6 @@ BOOST_AUTO_TEST_CASE(datamanager_tuplelike_constructor)
     // Additionally mix arrays and tuples
     Utopia::DataIO::DataManager dm3(
         model,
-        // deciders
-        std::array<std::pair<std::string, Decider>, 1>{
-            std::make_pair("d1_3"s, [](Model&) -> bool { return true; })},
-        // triggers
-        std::array<std::pair<std::string, Trigger>, 2>{
-            std::make_pair("b1_3"s, [](Model&) -> bool { return true; }),
-            std::make_pair("b2_3"s, [](Model&) -> bool { return false; })},
         // tasks
         std::make_tuple(
             std::make_pair(
@@ -260,8 +255,17 @@ BOOST_AUTO_TEST_CASE(datamanager_tuplelike_constructor)
                         d.write(std::vector<int>{4, 5, 6});
                     },
                     *model.file.open_group("/t3")))),
+        // deciders
+        std::array<std::pair<std::string, Decider>, 1>{
+            std::make_pair("d1_3"s, [](Model&) -> bool { return true; })},
+        // triggers
+        std::array<std::pair<std::string, Trigger>, 2>{
+            std::make_pair("b1_3"s, [](Model&) -> bool { return true; }),
+            std::make_pair("b2_3"s, [](Model&) -> bool { return false; })},
+        // decider maps
         std::vector<std::pair<std::string, std::string>>{
             {"d1_3", "t1_3"}, {"d1_3", "t2_3"}, {"d1_3", "t3_3"}},
+        // trigger maps
         std::vector<std::pair<std::string, std::string>>{
             {"b1_3", "t1_3"}, {"b1_3", "t2_3"}, {"b2_3", "t3_3"}});
 
@@ -285,14 +289,6 @@ BOOST_AUTO_TEST_CASE(datamanager_vector_constructor)
 
     Utopia::DataIO::DataManager dm(
         model,
-        // deciders
-        std::vector<std::pair<std::string, Decider>>{
-            std::make_pair("d1"s, [](Model&) -> bool { return true; }),
-            std::make_pair("d2"s, [](Model&) -> bool { return false; })},
-        // triggers
-        std::vector<std::pair<std::string, Trigger>>{
-            std::make_pair("b1"s, [](Model&) -> bool { return true; }),
-            std::make_pair("b2"s, [](Model&) -> bool { return false; })},
         // tasks
         std::vector<std::pair<std::string, Simpletask>>{
             std::make_pair(
@@ -316,7 +312,16 @@ BOOST_AUTO_TEST_CASE(datamanager_vector_constructor)
                     [](Model&, Utopia::DataIO::HDFDataset<Utopia::DataIO::HDFGroup>& d) -> void {
                         d.write(std::vector<int>{4, 5, 6});
                     },
-                    *model.file.open_group("/t2")))});
+                    *model.file.open_group("/t2")))},
+        // deciders
+        std::vector<std::pair<std::string, Decider>>{
+            std::make_pair("d1"s, [](Model&) -> bool { return true; }),
+            std::make_pair("d2"s, [](Model&) -> bool { return false; })},
+        // triggers
+        std::vector<std::pair<std::string, Trigger>>{
+            std::make_pair("b1"s, [](Model&) -> bool { return true; }),
+            std::make_pair("b2"s, [](Model&) -> bool { return false; })}
+        );
 
     // test correct associations
     BOOST_TEST(dm.get_decider_task_map() ==
@@ -335,13 +340,6 @@ BOOST_AUTO_TEST_CASE(datamanager_vector_constructor)
     {
         Utopia::DataIO::DataManager dm2(
             model,
-            // deciders
-            std::vector<std::pair<std::string, Decider>>{
-                std::make_pair("d1_2"s, [](Model&) -> bool { return true; }),
-                std::make_pair("d2_2"s, [](Model&) -> bool { return false; })},
-            // triggers
-            std::vector<std::pair<std::string, Trigger>>{
-                std::make_pair("b1_2"s, [](Model&) -> bool { return true; })},
             // tasks
             std::vector<std::pair<std::string, Simpletask>>{
                 std::make_pair(
@@ -365,7 +363,15 @@ BOOST_AUTO_TEST_CASE(datamanager_vector_constructor)
                         [](Model&, Utopia::DataIO::HDFDataset<Utopia::DataIO::HDFGroup>& d) -> void {
                             d.write(std::vector<int>{4, 5, 6});
                         },
-                        *model.file.open_group("/t2_2")))});
+                        *model.file.open_group("/t2_2")))},
+            // deciders
+            std::vector<std::pair<std::string, Decider>>{
+                std::make_pair("d1_2"s, [](Model&) -> bool { return true; }),
+                std::make_pair("d2_2"s, [](Model&) -> bool { return false; })},
+            // triggers
+            std::vector<std::pair<std::string, Trigger>>{
+                std::make_pair("b1_2"s, [](Model&) -> bool { return true; })}
+            );
     }
     catch (std::exception& e)
     {
@@ -385,13 +391,6 @@ BOOST_AUTO_TEST_CASE(datamanager_vector_constructor)
     // Additionally mix arrays and tuples
     Utopia::DataIO::DataManager dm3(
         model,
-        // deciders
-        std::vector<std::pair<std::string, Decider>>{
-            std::make_pair("d1_3"s, [](Model&) -> bool { return true; })},
-        // triggers
-        std::vector<std::pair<std::string, Trigger>>{
-            std::make_pair("b1_3"s, [](Model&) -> bool { return true; }),
-            std::make_pair("b2_3"s, [](Model&) -> bool { return false; })},
         // tasks
         std::vector<std::pair<std::string, Simpletask>>{
             std::make_pair(
@@ -427,6 +426,13 @@ BOOST_AUTO_TEST_CASE(datamanager_vector_constructor)
                         d.write(std::vector<int>{4, 5, 6});
                     },
                     *model.file.open_group("/t3")))},
+        // deciders
+        std::vector<std::pair<std::string, Decider>>{
+            std::make_pair("d1_3"s, [](Model&) -> bool { return true; })},
+        // triggers
+        std::vector<std::pair<std::string, Trigger>>{
+            std::make_pair("b1_3"s, [](Model&) -> bool { return true; }),
+            std::make_pair("b2_3"s, [](Model&) -> bool { return false; })},
         // associate deciders with tasks
         std::vector<std::pair<std::string, std::string>>{
             {"d1_3", "t1_3"}, {"d1_3", "t2_3"}, {"d1_3", "t3_3"}},
@@ -453,14 +459,6 @@ BOOST_AUTO_TEST_CASE(datamanager_lifecycle)
     // datamanager to use for testing copy, move etc
     Utopia::DataIO::DataManager dm(
         model,
-        // deciders
-        std::vector<std::pair<std::string, Decider>>{
-            std::make_pair("w1"s, [](Model&) -> bool { return true; }),
-            std::make_pair("w2"s, [](Model&) -> bool { return false; })},
-        // triggers
-        std::vector<std::pair<std::string, Trigger>>{
-            std::make_pair("k1"s, [](Model&) -> bool { return true; }),
-            std::make_pair("k2"s, [](Model&) -> bool { return false; })},
         // tasks
         std::vector<std::pair<std::string, Simpletask>>{
             std::make_pair(
@@ -484,7 +482,16 @@ BOOST_AUTO_TEST_CASE(datamanager_lifecycle)
                     [](Model&, Utopia::DataIO::HDFDataset<Utopia::DataIO::HDFGroup>& d) -> void {
                         d.write(std::vector<int>{4, 5, 6});
                     },
-                    *model.file.open_group("/t2")))});
+                    *model.file.open_group("/t2")))},
+        // deciders
+        std::vector<std::pair<std::string, Decider>>{
+            std::make_pair("w1"s, [](Model&) -> bool { return true; }),
+            std::make_pair("w2"s, [](Model&) -> bool { return false; })},
+        // triggers
+        std::vector<std::pair<std::string, Trigger>>{
+            std::make_pair("k1"s, [](Model&) -> bool { return true; }),
+            std::make_pair("k2"s, [](Model&) -> bool { return false; })}
+        );
 
     // have copy to check against later
     auto dm_cpy(dm);
@@ -493,12 +500,6 @@ BOOST_AUTO_TEST_CASE(datamanager_lifecycle)
     // datamanager to use for testing copy, move etc
     Utopia::DataIO::DataManager dm2(
         model,
-        // deciders
-        std::vector<std::pair<std::string, Decider>>{
-            std::make_pair("d1"s, [](Model&) -> bool { return true; })},
-        // triggers
-        std::vector<std::pair<std::string, Trigger>>{
-            std::make_pair("b1"s, [](Model&) -> bool { return true; })},
         // tasks
         std::vector<std::pair<std::string, Simpletask>>{std::make_pair(
             "t1"s,
@@ -509,7 +510,14 @@ BOOST_AUTO_TEST_CASE(datamanager_lifecycle)
                 [](Model&, Utopia::DataIO::HDFDataset<Utopia::DataIO::HDFGroup>& d) -> void {
                     d.write(std::vector<int>{1, 2, 3});
                 },
-                *model.file.open_group("/t1")))});
+                *model.file.open_group("/t1")))},
+        // deciders
+        std::vector<std::pair<std::string, Decider>>{
+            std::make_pair("d1"s, [](Model&) -> bool { return true; })},
+        // triggers
+        std::vector<std::pair<std::string, Trigger>>{
+            std::make_pair("b1"s, [](Model&) -> bool { return true; })}
+        );
 
     // have copy to check against
     auto dm2_cpy(dm2);
@@ -543,6 +551,9 @@ BOOST_AUTO_TEST_CASE(datamanager_polymorphism)
     // datamanager to use for testing copy, move etc
     Utopia::DataIO::DataManager dm(
         model,
+        // tasks
+        std::make_tuple(std::make_pair("basic"s, BasicTask()),
+                        std::make_pair("derived"s, DerivedTask())),
         // deciders
         std::make_tuple(
             std::make_pair("w1"s, [](Model&) -> bool { return true; }),
@@ -550,10 +561,8 @@ BOOST_AUTO_TEST_CASE(datamanager_polymorphism)
         // triggers
         std::make_tuple(
             std::make_pair("k1"s, [](Model&) -> bool { return true; }),
-            std::make_pair("k2"s, [](Model&) -> bool { return false; })),
-        // tasks
-        std::make_tuple(std::make_pair("basic"s, BasicTask()),
-                        std::make_pair("derived"s, DerivedTask())));
+            std::make_pair("k2"s, [](Model&) -> bool { return false; }))
+        );
 
     // execute tasks
     auto tsks = dm.get_tasks();
@@ -575,14 +584,6 @@ BOOST_AUTO_TEST_CASE(datamanager_customize_association)
     // datamanager to use for testing copy, move etc
     Utopia::DataIO::DataManager dm(
         model,
-        // deciders
-        std::vector<std::pair<std::string, Decider>>{
-            std::make_pair("w1"s, [](Model&) -> bool { return true; }),
-            std::make_pair("w2"s, [](Model&) -> bool { return false; })},
-        // triggers
-        std::vector<std::pair<std::string, Trigger>>{
-            std::make_pair("k1"s, [](Model&) -> bool { return true; }),
-            std::make_pair("k2"s, [](Model&) -> bool { return false; })},
         // tasks
         std::vector<std::pair<std::string, Simpletask>>{
             std::make_pair(
@@ -606,7 +607,16 @@ BOOST_AUTO_TEST_CASE(datamanager_customize_association)
                     [](Model&, Utopia::DataIO::HDFDataset<Utopia::DataIO::HDFGroup>& d) -> void {
                         d.write(std::vector<int>{4, 5, 6});
                     },
-                    *model.file.open_group("/t2")))});
+                    *model.file.open_group("/t2")))},
+        // deciders
+        std::vector<std::pair<std::string, Decider>>{
+            std::make_pair("w1"s, [](Model&) -> bool { return true; }),
+            std::make_pair("w2"s, [](Model&) -> bool { return false; })},
+        // triggers
+        std::vector<std::pair<std::string, Trigger>>{
+            std::make_pair("k1"s, [](Model&) -> bool { return true; }),
+            std::make_pair("k2"s, [](Model&) -> bool { return false; })}
+        );
 
     // try to register the new task
     dm.register_task(
@@ -659,8 +669,6 @@ BOOST_AUTO_TEST_CASE(datamanager_customize_association)
 
     // register a new procedure
     dm.register_procedure(
-        "new_decider", Decider([](Model& ){ return true;}), 
-        "new_trigger", Trigger([](Model& ){ return true;}),
         "new_task", Simpletask(
                   [](Model& m, Utopia::DataIO::HDFGroup& g)
                       -> Utopia::DataIO::HDFDataset<Utopia::DataIO::HDFGroup> {
@@ -669,7 +677,10 @@ BOOST_AUTO_TEST_CASE(datamanager_customize_association)
                   [](Model&, Utopia::DataIO::HDFDataset<Utopia::DataIO::HDFGroup>& d) -> void {
                       d.write(std::vector<int>{4, 5, 6, 8, 0, 10});
                   },
-                  *model.file.open_group("/t_new")));
+                  *model.file.open_group("/t_new")),
+        "new_decider", Decider([](Model& ){ return true;}), 
+        "new_trigger", Trigger([](Model& ){ return true;})
+    );
 
     BOOST_TEST(dm.get_deciders().size()== 4);
     BOOST_TEST(dm.get_tasks().size() == 4);
