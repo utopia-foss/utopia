@@ -26,6 +26,6 @@ parameter_space:
           prey: 2.
           predator: 2.
 
-        p_prey: 0.2
-        p_predator: 0.285
-        p_predprey: 0.1
+        p_prey: 0.1
+        p_predator: 0.1
+        p_predprey: 0.0

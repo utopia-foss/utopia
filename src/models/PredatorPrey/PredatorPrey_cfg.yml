@@ -34,7 +34,7 @@ cell_manager:
   cell_params:
     # The initial resources
     init_res:
-      prey: 8.
+      prey: 2.
       predator: 2.
 
     # The probabilities to have a cell initialized with a prey, a predator, 
