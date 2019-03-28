@@ -61,6 +61,7 @@ struct GeomorphologyCell {
     }
 };
 
+
 /// Cell traits specialization using the state type
 /** \detail The first template parameter specifies the type of the cell state,
  *          the second sets them to not be synchronously updated.
@@ -113,7 +114,11 @@ private:
     // The boundary conditions (aka parameters) of the model
     /// The random uplift as normal distribution
     std::normal_distribution<> _uplift;
+    std::uniform_real_distribution<> _prob_dist;
     double _stream_power_coef; /// The stream power coefficient
+    /// The frequency of possible toppling events per cell
+    double _toppling_frequency;
+    double _toppling_critical_height; /// The critical height for toppling
 
     // A map of lowest neighbors
     std::map<GeomorphologyCellIndexType, 
@@ -142,7 +147,10 @@ public:
 
         _uplift{get_as<double>("uplift_mean", this->_cfg), 
                 get_as<double>("uplift_var", this->_cfg)},
+        _prob_dist(0., 1.),
         _stream_power_coef(get_as<double>("stream_power_coef", this->_cfg)),
+        _toppling_frequency(get_as<double>("toppling_frequency", this->_cfg)),
+        _toppling_critical_height(get_as<double>("toppling_critical_height", this->_cfg)),
 
         // Create datasets using the helper functions for CellManager-data
         _dset_height(this->create_cm_dset("height", _cm)),
@@ -189,6 +197,9 @@ public:
 
         // Erode
         apply_rule<false>(_erode, _cm.cells());
+
+        // Topple
+        apply_rule(_toppling, _cm.cells(), *this->_rng);
     }
 
     /// Provide monitoring data: tree density and number of clusters
@@ -202,6 +213,9 @@ public:
         _dset_height->write(_cm.cells().begin(), _cm.cells().end(),
             [](const auto& cell) { return cell->state().rock; }
         );
+
+        // build_network();
+        // NOTE if not build, drainage_area does not display current network.
 
         _dset_drainage_area->write(_cm.cells().begin(), _cm.cells().end(),
             [](const auto& cell) { return cell->state().drainage_area; }
@@ -328,6 +342,40 @@ private:
 
         double stream_power = _stream_power_coef * slope * std::sqrt(state.drainage_area);
         state.rock -= std::min(stream_power, state.rock);
+
+        return state;
+    };
+
+    /// The rule how to topple / landslide
+    /** \note Only evaluated with _toppling_frequency per cell
+     * 
+     *  Failure of slope occurs with p = (h_i - h_j) / h_c
+     * 
+     *  On failure slope is reduced to 1/3. of its initial value. 
+     */
+    RuleFunc _toppling = [this](const auto& cell) {
+        auto state = cell->state();
+        if (_toppling_frequency == 0. or 
+            _toppling_frequency < this->_prob_dist(*(this->_rng))
+           ) {
+            // Done here.
+            return state;
+        }
+
+        auto nbrs = this->_cm.neighbors_of(cell);
+        auto heighest_neighbor = cell;
+        for (auto& nb : nbrs) {
+            if (nb->state().waterline() > heighest_neighbor->state().waterline())
+            {
+                heighest_neighbor = nb;
+            }
+        }
+        double relief = heighest_neighbor->state().waterline() - state.waterline();
+        double failure_prob = relief / _toppling_critical_height;
+        if (this->_prob_dist(*(this->_rng)) < failure_prob) {
+            heighest_neighbor->state().rock -= relief / 3.0;
+            state.rock += relief / 3.0;
+        }
 
         return state;
     };

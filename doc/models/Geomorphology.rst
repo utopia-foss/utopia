@@ -1,17 +1,8 @@
 ``Geomorphology`` Model
 =======================
 
-This is a very simple implementation of a geomorphology model, combining erosion due to rainfall and tectonic uplift. It is implemented as a stochastic cellular automaton on a grid, where the state of each cell :math:`i` consists of the height :math:`h_{t,i}` (double) and the watercontent :math:`w_{t,i}` (double). In the beginning, the heights of the cells represent a (disretized) inclined plane. Rainfall, implemented as a gauss-distributed random number drawn for each cell, erodes sediments over time. Due to the stochastic nature of the rainfall, a network of rivers emerges. 
+This is a basic implementation of a geomorphology model, combining erosion due to rainfall and toppling with tectonic uplift. It is implemented as a stochastic cellular automaton ton a grid, where the stae of each cell :math:`i` consists of the topological height :math:`h_{t,i}` (double), the drainage area to a cell, and the watercolumn :math:`w_{t,i}` (double). In the beginning, the heights of the cells represent a (disretized) inclined plane. Rainfall is encapsulated in the drainage network representing a river system. Drainage is always passed from one cell to its lowest grid-neighbor; sinks are filled with water (watercolumn) and the overflow receives the drainage upstream from the lake. The higher the drainage area to a cell, the more water flows over this cell. Stream power erodes sediments over time. Additionally, a stochastic process of toppling is considered.
 
-Model parameters
-----------------
-
-* mean rainfall :math:`\langle r \rangle`
-* rainfall standard deviation :math:`\sigma_r`
-* initial height offset :math:`\Delta h`
-* initial slope :math:`s`
-* erodibility :math:`e`
-* uplift :math:`u`
 
 Initial Configuration
 ^^^^^^^^^^^^^^^^^^^^^
@@ -21,34 +12,42 @@ In order to observe the formation of a river network, the cell heights are initi
 .. math::
     h_{0,i} = \Delta h + s \cdot y_i.
 
-The model parameter :math:`\Delta h` is introduced in order to avoid dealing with negative heights and best chosen large (with respect to the other parameters).
+Negative topological heights are forbidden here and set to 0, i.e. the normal distribution is cut at 0.
 
-The water contents :math:`w_{0,i}` are :math:`0` everywhere in the beginning.
+The drainage network is a fictional construct, integrating continuous rainfall over time. It translates to the size and stream power of a river at the cell.
 
-Erosion
-^^^^^^^
+Algorithm
+^^^^^^^^^
 
-The erosion process is implemented by synchronously updating all the cells (in one time step :math:`t`) according to the following steps:
+The erosion process is implemented by asynchronously updating all the cells (in one time step :math:`t`) according to the following steps:
 
-1. Rainfall: For each cell  :math:`i`, a random number :math:`r_{t,i} \sim \mathcal{N}(\langle r \rangle, \sigma_r)` (where :math:`\mathcal{N}` is the normal (Gaussian) distribution) is drawn and added to the watercontent :math:`w_{t,i}` of that cell.
+1. Uplift
 
-2. Sediment Flow: For each cell :math:`i` that has a positive watercontent :math:`w_{t,i}` and has at least one neighbouring cell :math:`j` with a lower height :math:`h_{t,j} < h_{t,i}`, the sediment flow from cell :math:`i` to its lowest neighbor is determined as
+    Finally, the height of each cell is incremented by the normally distributed :math:`u` that represents uplift.
+
+2. Set drainage network
+    
+    1. Map all cells to their lowest neighbor, if none is lower than the cell itself, to itself.
+
+    2. Fill sinks (no lower neighbor) with water, such that a lake forms and one of the lake cells has a lower neighbor or is an outflow boundary. All lake cells point to this cell.
+
+    3. Set drainage area. For every cell, pass the cells assigned drainage area (default 1., cummulated with that receved from other already called cells) downstream through the already initialized network (adding the drainage area to every cell on the way) and dump it on any cell passed by, that was not yet called or is an outflow boundary.
+
+3. Stream power erosion
+    
+    .. math::
+        \frac{dz}{dt} = c * \Delta z * \sqrt{A}
+
+    with the rock heigth z, the stream power constant c, and the drainage area A.
+
+4. Toppling
+
+    With a frequency f per cell evaluate the failure probability for slope:
 
     .. math::
-        \Delta s_{i,j} = e \cdot (h_{t,i} - h_{t,j}) \cdot \sqrt{w_{t,i}}.
+        p = s / h_c
 
-    The sediment flow is taken into account for the state of cell :math:`i` at time :math:`t+1` by updating
-
-    :math:`h_{t+1, i} -= \Delta s_{i,j}.`
-    
-    In case the new height of cell :math:`i` (after considering all inflows from/outflows to all neighbours) is negative, it is cut off at :math:`0`.
-    
-    Special case: The height of the cells on the lower boundary (the boundary, where the cell heights are lowest in the initial configuration) is always decreased by :math:`e \cdot \sqrt{w_{t,i}}`.
-    This constant outflow (constant meaning independent of the height difference to the lowest neighbour) prevents lakes from forming. We want to avoid this here, for now, since consistently modelling lake formation is a non-trivial problem (see e.g. the bachelor thesis of Julian Weninger and the master thesis of Hendrik Leusmann)
-    
-3. Water Flow: After the new heights for all cells have been determined (but not yet set), the water of all cells is moved to their lowest neighbour (if the cell is not on the boundary and has a lowest neighbour).
-
-4. Uplift: Finally, the height of each cell is incremented by the constant :math:`u` that represents uplift.
+    with the critial height :math:`h_c`. If toppling occurs the slope is reduced to 1/3. of its initial value.
 
 Default parameters
 ^^^^^^^^^^^^^^^^^^
@@ -58,3 +57,13 @@ Below are the default configuration parameters for the ``Geomorphology`` model.
 .. literalinclude:: ../../src/models/Geomorphology/Geomorphology_cfg.yml
    :language: yaml
    :start-after: ---
+
+
+Further reading
+---------------
+
+The model is analyzed in depth in the bachelor thesis of Julian Weninger (2016).
+
+* 
+  Weninger, J., 2016. Development of Mountain Ranges and their Rivers - A Cellular Automaton Simulation. Bachelor’s Thesis, IUP (TS&CCEES) at Universität Heidelberg.
+

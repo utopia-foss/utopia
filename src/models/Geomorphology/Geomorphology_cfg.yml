@@ -23,4 +23,7 @@ uplift_mean: .1
 uplift_var: .01
 erodibility: .01
 
-stream_power_coef: 0.01
+stream_power_coef: 0.05
+
+toppling_frequency: 1.e-5
+toppling_critical_height: 15.
