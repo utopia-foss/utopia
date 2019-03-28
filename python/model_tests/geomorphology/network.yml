@@ -1,0 +1,20 @@
+---
+perform_sweep: true
+
+parameter_space:
+  num_steps: 0
+
+  seed: !sweep
+    default: 42
+    range: [10]
+
+  Geomorphology: !model  
+    model_name: Geomorphology
+
+    cell_manager:
+      grid:
+        resolution: 32
+      cell_params: # the most difficult situation to create a network
+        initial_height_mean: 100.
+        initial_height_var: 5.
+        initial_slope: 0.

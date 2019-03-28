@@ -1,11 +1,11 @@
-"""Tests of the output of the geomorphology model"""
+"""Tests of the output of the Geomorphology model"""
 
 import numpy as np
 import pytest
 
 from utopya.testtools import ModelTest
 
-mtc = ModelTest("geomorphology", test_file=__file__)
+mtc = ModelTest("Geomorphology", test_file=__file__)
 
 def test_basics():
     """Test the most basic features of the model"""
@@ -38,22 +38,26 @@ def test_output():
     # and the content of the output data
     for uni_no, uni in dm['multiverse'].items():
         # Get the data
-        data = uni['data']['geomorphology']
+        data = uni['data']['Geomorphology']
 
         # Get the config of this universe
         uni_cfg = uni['cfg']
-
-        # Calculate the number of cells
-        grid_size = uni_cfg['geomorphology']['grid_size']
-        num_cells = grid_size[0] * grid_size[1]
 
         # Check that all datasets are available
         assert 'water_content' in data
         assert 'height' in data
 
-        # Assert they have the correct shape
-        assert data['height'].shape == (uni_cfg['num_steps'] + 1, num_cells)
-        assert data['water_content'].shape == (uni_cfg['num_steps'] + 1, num_cells)
 
-        # Assert water content data is always positive
-        assert not (data['water_content'] < 0).any()
+def test_drainage_network():
+    mv, dm = mtc.create_run_load(from_cfg="network.yml", perform_sweep=True)
+
+    for uni_no, uni in dm['multiverse'].items():
+        data = uni['data']['Geomorphology']
+        uni_cfg = uni['cfg']
+
+        network_data = data['drainage_area']
+        grid_shape = network_data.shape[1:]
+        num_cells = grid_shape[0] * grid_shape[1]
+
+        assert np.sum(network_data, axis=2)[0][0] == num_cells
+
