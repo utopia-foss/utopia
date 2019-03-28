@@ -13,6 +13,9 @@ import dantro as dtr
 import dantro.plot_creators
 import dantro.plot_mngr
 
+# Import some frequently used objects directly
+from dantro.plot_creators import is_plot_func, PlotHelper
+
 from utopya.info import _CMAKE_SOURCE_DIR as SRC_DIR
 
 # Configure and get logger
@@ -42,7 +45,6 @@ class ExternalPlotCreator(dtr.plot_creators.ExternalPlotCreator):
 
     # Define path to Utopia's python directory to add to sys.path
     UTOPIA_PYTHON_DIR = os.path.join(SRC_DIR, "python")
-
 
     def _resolve_plot_func(self, **kwargs) -> Callable:
         """Extends the parent method by ensuring that the UTOPIA_PYTHON_DIR
