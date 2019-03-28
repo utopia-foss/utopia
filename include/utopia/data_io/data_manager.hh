@@ -366,6 +366,33 @@ public:
 
     // .. Constructors ........................................................
 
+    /**
+     * @brief Construct a new DataManager object
+     *
+     * @param model     The model this DataManager is to be associated with
+     * @param cfg       The data manager configuration
+     * @param tasks     Container of (name, Task) pairs
+     * @param deciders  Container of (name, decider function) pairs
+     * @param triggers  Container of (name, trigger function) pairs
+     */
+    DataManager(Model& model,
+                const Config& cfg,
+                std::vector<std::pair<std::string, Task>> tasks,
+                std::vector<std::pair<std::string, Decider>> add_deciders = {},
+                std::vector<std::pair<std::string, Trigger>> add_triggers = {}
+                )
+        :
+        // Pass on to already existing constructor
+        DataManager(model,
+                    tasks,
+                    add_deciders,
+                    add_triggers,
+                    {}, //extract_task_map(cfg, "decider"),
+                    {}) //extract_task_map(cfg, "trigger"))
+        {}
+
+
+    // TODO Implement tuple-argument constructor accepting config node
 
     /**
      * @brief Construct a new DataManager object
@@ -411,8 +438,7 @@ public:
               return tc;
           }()),
           _decider_task_map([&]() {
-              // if no association is given, a 1 to 1 association is assumed
-              // if this does not work out, throw exception
+              // Check if there would be issues in 1-to-1 association
               if (decider_task_map.size() == 0 and deciders.size() != tasks.size())
               {
                   throw std::invalid_argument(
@@ -421,39 +447,12 @@ public:
                       "supplying an explicit decider_task_map if you want to "
                       "have an unequal number of tasks and deciders.");
               }
-              else if (decider_task_map.size() == 0)
-              {
-                  // when no explicit name association is given but the
-                  // tasks and deciders are equal in number, associate them
-                  // one to one
-                  NamingMap dm;
 
-                  auto d_it = _deciders.begin();
-                  auto t_it = _tasks.begin();
-
-                  // associate the names of deciders to the names of tasks
-                  // in a  1 to 1 fashion
-                  for (; d_it != _deciders.end() && t_it != _tasks.end(); ++d_it, ++t_it)
-                  {
-                      dm[d_it->first].push_back(t_it->first);
-                  }
-
-                  return dm;
-              }
-              else
-              {
-                  // else built the association from the given naming
-                  NamingMap dm;
-                  for (auto& [dname, tname] : decider_task_map)
-                  {
-                      dm[dname].push_back(tname);
-                  }
-                  return dm;
-              }
+              return task_association_map_from(tasks, deciders,
+                                               decider_task_map);
           }()),
           _trigger_task_map([&]() {
-              // if no association is given, a 1 to 1 association is assumed
-              // if this does not work out, throw exception
+              // Check if there would be issues in 1-to-1 association
               if (trigger_task_map.size() == 0 and triggers.size() != tasks.size())
               {
                   throw std::invalid_argument(
@@ -462,33 +461,9 @@ public:
                       "supplying an explicit trigger_task_map if you want to "
                       "have an unequal number of tasks and triggers.");
               }
-              else if (trigger_task_map.size() == 0)
-              {
-                  // when no explicit name association is given but the
-                  // tasks and triggers are equal in number, associate them
-                  // one to one
-                  NamingMap tm;
-                  auto d_it = _triggers.begin();
-                  auto t_it = _tasks.begin();
 
-                  // associate the names of deciders to the names of
-                  // tasks in a  1 to 1 fashion
-                  for (; d_it != _triggers.end() && t_it != _tasks.end(); ++d_it, ++t_it)
-                  {
-                      tm[d_it->first].push_back(t_it->first);
-                  }
-                  return tm;
-              }
-              else
-              {
-                  // built from given association
-                  NamingMap tm;
-                  for (auto& [trname, tname] : trigger_task_map)
-                  {
-                      tm[trname].push_back(tname);
-                  }
-                  return tm;
-              }
+              return task_association_map_from(tasks, triggers,
+                                               trigger_task_map);
           }())
     {
     }
@@ -595,8 +570,7 @@ public:
               return tc;
           }()),
           _decider_task_map([&]() {
-              // if no association is given, a 1 to 1 association is assumed
-              // if this does not work out, throw exception
+              // Check if there would be issues in 1-to-1 association
               if (decider_task_map.size() == 0 and
                   Utils::get_size_v<Deciders> != Utils::get_size_v<Tasks>)
               {
@@ -606,39 +580,14 @@ public:
                       "supplying an explicit decider_task_map if you want to "
                       "have an unequal number of tasks and deciders.");
               }
-              else if (decider_task_map.size() == 0)
-              {
-                  // when no explicit name association is given but the
-                  // tasks and deciders are equal in number, associate them
-                  // one to one
-                  NamingMap dm;
 
-                  auto d_it = _deciders.begin();
-                  auto t_it = _tasks.begin();
-
-                  // associate the names of deciders to the names of tasks
-                  // in a  1 to 1 fashion
-                  for (; d_it != _deciders.end() && t_it != _tasks.end(); ++d_it, ++t_it)
-                  {
-                      dm[d_it->first].push_back(t_it->first);
-                  }
-
-                  return dm;
-              }
-              else
-              {
-                  // else built the association from the given naming
-                  NamingMap dm;
-                  for (auto& [dname, tname] : decider_task_map)
-                  {
-                      dm[dname].push_back(tname);
-                  }
-                  return dm;
-              }
+              return task_association_map_from(_tasks, _deciders,
+                                               decider_task_map);
+              // FIXME _tasks and _deciders are not necessarily ordered in the
+              //       same way!
           }()),
           _trigger_task_map([&]() {
-              // if no association is given, a 1 to 1 association is assumed
-              // if this does not work out, throw exception
+              // Check if there would be issues in 1-to-1 association
               if (trigger_task_map.size() == 0 and
                   Utils::get_size_v<Triggers> != Utils::get_size_v<Tasks>)
               {
@@ -648,33 +597,11 @@ public:
                       "supplying an explicit trigger_task_map if you want to "
                       "have an unequal number of tasks and triggers.");
               }
-              else if (trigger_task_map.size() == 0)
-              {
-                  // when no explicit name association is given but the
-                  // tasks and triggers are equal in number, associate them
-                  // one to one
-                  NamingMap tm;
-                  auto d_it = _triggers.begin();
-                  auto t_it = _tasks.begin();
 
-                  // associate the names of deciders to the names of
-                  // tasks in a  1 to 1 fashion
-                  for (; d_it != _triggers.end() && t_it != _tasks.end(); ++d_it, ++t_it)
-                  {
-                      tm[d_it->first].push_back(t_it->first);
-                  }
-                  return tm;
-              }
-              else
-              {
-                  // built from given association
-                  NamingMap tm;
-                  for (auto& [trname, tname] : trigger_task_map)
-                  {
-                      tm[trname].push_back(tname);
-                  }
-                  return tm;
-              }
+              return task_association_map_from(_tasks, _triggers,
+                                               trigger_task_map);
+              // FIXME _tasks and _triggers are not necessarily ordered in the
+              //       same way!
           }())
     {
     }
@@ -707,6 +634,44 @@ public:
 
 private:
     // .. Construction Helpers ................................................
+
+    /**
+     * @brief Helper function to generate a decider/trigger -> task name map
+     *
+     * @param tasks  An iterable of (name, task) pairs of which the name is
+     * @param nc_pairs An iterable of (name, callable) pairs of which the name
+     *               is associated with 
+     * @param assocs An iterable (decider/trigger name, task name)
+     */
+    template<class NameTaskPairs, class NameCTPairs, class Assocs>
+    auto task_association_map_from(const NameTaskPairs& tasks,
+                                   const NameCTPairs& nc_pairs,
+                                   const Assocs& assocs)
+    {
+        NamingMap map;
+
+        if (assocs.size() == 0) {
+            // When no explicit name association is given but the tasks and
+            // deciders/triggers are equal in number, associate them in a
+            // 1-to-1 fashion.
+            auto nc_it = nc_pairs.begin();
+            auto t_it = tasks.begin();
+            
+            for (; nc_it != nc_pairs.end() && t_it != tasks.end();
+                 ++nc_it, ++t_it)
+            {
+                map[nc_it->first].push_back(t_it->first);
+            }
+        }
+        else {
+            // Build from given association
+            for (const auto& [src_name, task_name] : assocs) {
+                map[src_name].push_back(task_name);
+            }
+        }
+
+        return map;
+    }
 
 };
 
