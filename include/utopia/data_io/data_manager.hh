@@ -377,14 +377,20 @@ public:
                 std::vector<std::pair<std::string, Trigger>> add_triggers = {}
                 )
         :
-        // Pass on to already existing constructor
-        DataManager(model,
-                    tasks,
-                    add_deciders,
-                    add_triggers,
-                    {}, //extract_task_map(cfg, "decider"),
-                    {}) //extract_task_map(cfg, "trigger"))
-        {}
+        // Get whatever is needed from the model
+        _log(model.get_logger()),
+
+        // Unpack tasks, deciders, and triggers into the respective containers
+        _tasks(unpack_shared<TaskContainer, Task>(tasks)),
+        _deciders(setup_deciders(cfg, add_deciders)),
+        _triggers(setup_triggers(cfg, add_triggers)),
+
+        // Set up task association mappings empty; set in body
+        _decider_task_map{},
+        _trigger_task_map{}
+        {
+            update_decider_and_trigger_maps(cfg);
+        }
 
 
     // TODO Implement tuple-argument constructor accepting config node
@@ -560,24 +566,19 @@ public:
 
 private:
     // .. Construction Helpers ................................................
-
     /**
      * @brief Helper function to unpack (key, value) container into a map of
      *        shared pointers of a type.
      *
-     * @tparam MapType The map to create
      * @tparam ValType Used in make_shared<ValType> call
      * @tparam KVPairs Container of (key, value) pairs. Can also be a tuple.
+     * @tparam MapType The map to create
      *
      * @param kv_pairs The container of (key, value) pairs to unpack into a
      *                 new map of type MapType
-     *
-     * @return MapType The map with values unpacked into it
      */
-    template<class MapType, class ValType, class KVPairs>
-    MapType unpack_shared(KVPairs& kv_pairs) {
-        MapType map;
-
+    template<class ValType, class KVPairs, class MapType>
+    void unpack_shared(KVPairs& kv_pairs, MapType& map) {
         // Distinguish between tuple-like key value pairs and others
         if constexpr (Utils::is_tuple_like_v<KVPairs>) {
             using std::get; // enable ADL
@@ -600,13 +601,31 @@ private:
                     map[get<0>(kv)] = std::make_shared<ValType>(get<1>(kv));
                 }
             });
-            return map;
         }
         else {
             for (const auto& [k, v] : kv_pairs) {
                 map[k] = std::make_shared<ValType>(v);
             }
         }
+    }
+
+    /**
+     * @brief Helper function to unpack (key, value) container into an empty
+     *        map of shared pointers of a type.
+     *
+     * @tparam MapType The map to create
+     * @tparam ValType Used in make_shared<ValType> call
+     * @tparam KVPairs Container of (key, value) pairs. Can also be a tuple.
+     *
+     * @param kv_pairs The container of (key, value) pairs to unpack into a
+     *                 new map of type MapType
+     *
+     * @return MapType The newly created and populated map
+     */
+    template<class MapType, class ValType, class KVPairs>
+    MapType unpack_shared(KVPairs& kv_pairs) {
+        MapType map;
+        unpack_shared<ValType>(kv_pairs, map);
         return map;
     }
 
@@ -649,6 +668,43 @@ private:
         return map;
     }
 
+
+    /**
+     * @brief Set up default deciders and user-specified additional deciders
+     */
+    template<class KVPairs>
+    DeciderContainer setup_deciders(const Config&, KVPairs& add_deciders) {
+        // Generate a map of default deciders
+        DeciderContainer deciders;
+
+        // TODO Add deciders here
+
+        // Add the additional deciders to it, overwriting existing ones
+        unpack_shared<Decider>(add_deciders, deciders);
+
+        return deciders;
+    }
+
+    /**
+     * @brief Set up default triggers and user-specified additional triggers
+     */
+    template<class KVPairs>
+    TriggerContainer setup_triggers(const Config&, KVPairs& add_triggers) {
+        // Generate a map of default triggers
+        DeciderContainer triggers;
+
+        // Add the additional triggers to it, overwriting existing ones
+        unpack_shared<Decider>(add_triggers, triggers);
+
+        return triggers;
+    }
+
+    /**
+     * @brief TODO
+     */
+    void update_decider_and_trigger_maps(const Config&) {
+        // WIP
+    }
 };
 
 /**
