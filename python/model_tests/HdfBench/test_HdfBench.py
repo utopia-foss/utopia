@@ -37,10 +37,13 @@ def test_write():
         benchmarks = bench_cfg['benchmarks']
         
         assert times.shape == (11, len(benchmarks))
+        print("times attributes: ", times.attrs)
 
         for i, bname in enumerate(benchmarks):
             # Assert that all configured benchmarks were performed
-            assert (times.attrs['coords_benchmark'][i]).decode('utf8') == bname
+            print("coords_benchmark attribute value: ",
+                  times.attrs['coords_benchmark'])
+            assert (times.attrs['coords_benchmark'][i]) == bname
 
         # Checks for specific benchmarks
         # write_const

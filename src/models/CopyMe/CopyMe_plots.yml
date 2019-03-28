@@ -1,9 +1,13 @@
-# Default plots for the CopyMe model
+# The default plots of the CopyMe model. Can use the `based_on` feature...
 ---
-state_mean:
-  creator: universe
-  universes: all
-  
-  # Use the CopyMe-specific plot functions
-  module: model_plots.CopyMe
-  plot_func: state_mean
+some_state_mean:
+  # Base it on some existing configuration
+  based_on: mean_cell_state_over_time
+
+  # Specify the dataset within the CopyMe output that is to be plotted
+  mean_of: some_state
+
+some_trait_mean:
+  based_on: mean_cell_state_over_time
+
+  mean_of: some_trait

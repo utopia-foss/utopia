@@ -14,13 +14,13 @@ INSTALL_DEPS = ['numpy>=1.13',
                 # From private repositories:
                 # NOTE Versions need also be set in python/CMakeLists.txt
                 'paramspace>=2.1.0',
-                'dantro>=0.6.0'
+                'dantro>=0.7.0rc11'
                 ]
 
 setup(name='utopya',
       #
       # Package information
-      version='0.2.0',
+      version='0.3.0',
       # NOTE This needs to correspond to utopya.__init__.__version__
       description='The Utopia frontend package.',
       url='https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia',
