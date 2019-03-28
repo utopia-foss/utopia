@@ -1,9 +1,9 @@
 
-``SandPile`` Model
-==================
+``SandPile`` — Model of Sand Piles as Generic Complex System
+============================================================
 
 The ``SandPile`` model simulates the development of a sand pile when you add a grain of sand at each time step.
-There is a critical level for the slope of the sandpile that causes it to relax and distibute grains on the surrounding cells.
+There is a critical level for the slope of the sandpile that causes it to relax and distribute grains on the surrounding cells.
 
 The model is based on the description in the CCEES Lecture Notes by Kurt Roth in chapter 7.3 (Discrete Complex Systems - Contact Processes). See there for an in-depth theory and simulation results.
 

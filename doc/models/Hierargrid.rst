@@ -1,6 +1,6 @@
 
-``Hierargrid`` – Emergence of cooperation in spatial interactions
-=================================================================
+``Hierargrid`` — Model of Spatial Emergence of Cooperation 
+==========================================================
 
 The ``Hierargrid`` has the same fundamental structure as the `Hierarnet <Hierarnet.html>`_ model 
 with the main difference that the population is not prescribed by a network

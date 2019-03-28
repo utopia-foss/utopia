@@ -1,6 +1,6 @@
 
-``SavannaHomogeneous``
-======================
+``SavannaHomogeneous`` — Model of Homogeneous Complex Savanna Landscapes
+========================================================================
 
 Complex dynamics of savanna landscapes
 --------------------------------------
@@ -27,7 +27,7 @@ The model is based on the following coupled equations
 .. math::
     G + S + T + F = 1
 
-with growth rates :math:`\alpha` and :math:`\beta` for forest- and savanna-trees respecitvely, 
+with growth rates :math:`\alpha` and :math:`\beta` for forest- and savanna-trees respectively, 
 mortality rates :math:`\mu` and :math:`\nu` for sapling and savanna trees respectively, 
 and two sigmoidal functions :math:`\omega \left(G + \gamma_s S + \gamma_t T + \gamma_f F \right)` and :math:`\phi \left(G + \gamma_s S + \gamma_t T + \gamma_f F \right)` describing the transition from sapling to savanna tree and the mortality rate of forest trees respectively.
 
