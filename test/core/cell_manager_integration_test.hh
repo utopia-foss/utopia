@@ -24,7 +24,7 @@ struct CST {
 };
 
 /// Specialize the cell traits struct with a dummy cell state type
-using CMTestCellTraits = Utopia::CellTraits<CST, UpdateMode::sync>;
+using CMTestCellTraits = Utopia::CellTraits<CST, Update::sync>;
 
 
 /// Model to test function and integration of CellManager

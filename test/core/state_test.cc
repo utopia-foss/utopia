@@ -24,7 +24,8 @@ using StateList = boost::mpl::list<StateScalar, StateVector>;
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(asynchronous, Fix, StateList, Fix)
 {
     // Check initialization
-    StateContainer<typename Fix::StateType, false> sc(Fix::state_1);
+    Utopia::StateContainer<typename Fix::StateType,
+                           Utopia::Update::async> sc(Fix::state_1);
     BOOST_TEST(not sc.is_sync());
     BOOST_TEST(sc.state() == Fix::state_1);
 
@@ -37,7 +38,8 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(asynchronous, Fix, StateList, Fix)
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(synchronous, Fix, StateList, Fix)
 {
     // Check initialization
-    StateContainer<typename Fix::StateType, true> sc(Fix::state_1);
+    Utopia::StateContainer<typename Fix::StateType,
+                           Utopia::Update::sync> sc(Fix::state_1);
     BOOST_TEST(sc.is_sync());
     BOOST_TEST(sc.state() == Fix::state_1);
 
@@ -50,4 +52,27 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(synchronous, Fix, StateList, Fix)
     // Check update of the state
     sc.update();
     BOOST_TEST(sc.state() == Fix::state_2);
+}
+
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(manual, Fix, StateList, Fix)
+{
+    // Check initialization
+    using StateContainer = Utopia::StateContainer<typename Fix::StateType,
+                                                  Utopia::Update::manual>;
+
+    // value init
+    StateContainer sc1({Fix::state_1});
+    BOOST_TEST(sc1.state == Fix::state_1);
+
+    // copy init
+    StateContainer sc2(sc1);
+    BOOST_TEST(sc1.state == sc2.state);
+
+    // move init
+    StateContainer sc3(std::move(sc1));
+    BOOST_TEST(sc2.state == sc3.state);
+
+    // State manipulation
+    sc3.state = Fix::state_2;
+    BOOST_TEST(sc3.state != sc2.state);
 }

@@ -78,30 +78,30 @@ struct TestLinks {
 // The third for whether a default constructor is to be used.
 
 /// For a default-constructible agent state
-using AgentTraitsDC = Utopia::AgentTraits<AgentStateDC, UpdateMode::sync,
+using AgentTraitsDC = Utopia::AgentTraits<AgentStateDC, Update::sync,
                                           true>;  // use default constructor
 
 /// For a config-constructible agent state
-using AgentTraitsCC = Utopia::AgentTraits<AgentStateCC, UpdateMode::sync>;
+using AgentTraitsCC = Utopia::AgentTraits<AgentStateCC, Update::sync>;
 
 /// For a config-constructible agent state (with RNG) 
-using AgentTraitsRC = Utopia::AgentTraits<AgentStateCC, UpdateMode::sync>;
+using AgentTraitsRC = Utopia::AgentTraits<AgentStateCC, Update::sync>;
 
 /// For an explicitly-constructible agent state
-using AgentTraitsEC = Utopia::AgentTraits<AgentStateEC, UpdateMode::sync>;
+using AgentTraitsEC = Utopia::AgentTraits<AgentStateEC, Update::sync>;
 
 /// Agent traits with custom links
 using AgentTraitsCL = Utopia::AgentTraits<AgentStateDC,
-                                          UpdateMode::sync,
+                                          Update::sync,
                                           true,    // use default constructor
                                           Utopia::EmptyTag,
                                           TestLinks>;
 
 /// For a config-constructible agent state with synchronous update dynamics
-using AgentTraitsCC_sync = Utopia::AgentTraits<AgentStateCC, UpdateMode::sync>;
+using AgentTraitsCC_sync = Utopia::AgentTraits<AgentStateCC, Update::sync>;
 
 /// For a config-constructible agent state with asynchronous update dynamics
-using AgentTraitsCC_async = Utopia::AgentTraits<AgentStateCC, UpdateMode::async>;
+using AgentTraitsCC_async = Utopia::AgentTraits<AgentStateCC, Update::async>;
 
 
 /// A mock model class to hold the agent manager

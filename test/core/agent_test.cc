@@ -48,8 +48,8 @@ struct InitialCondition
  */
 BOOST_FIXTURE_TEST_SUITE(initialization, InitialCondition)
 
-using AgentTraitsSync = AgentTraits<AgentState, UpdateMode::sync>;
-using AgentTraitsAsync = AgentTraits<AgentState, UpdateMode::async>;
+using AgentTraitsSync = AgentTraits<AgentState, Update::sync>;
+using AgentTraitsAsync = AgentTraits<AgentState, Update::async>;
 
 /// Define the types of agents used in a template test function
 using AgentTypes = boost::mpl::list<Agent<AgentTraitsSync, DefaultSpace>,

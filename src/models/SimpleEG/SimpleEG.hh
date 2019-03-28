@@ -44,7 +44,7 @@ struct CellState {
   *
   * See \ref Utopia::CellTraits for more information.
   */
-using CellTraits = Utopia::CellTraits<CellState, UpdateMode::sync, true>;
+using CellTraits = Utopia::CellTraits<CellState, Update::sync, true>;
 
 
 
