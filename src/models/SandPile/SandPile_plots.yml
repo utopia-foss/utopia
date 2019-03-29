@@ -27,6 +27,21 @@ compl_cum_prob_dist:
   linestyle: 'None'
   marker: '.'
 
+# Plot the complementary cumulative probability distribution
+cluster_size_distr:
+  universes: all
+  
+  # Use the SandPile-specific plot functions
+  module: model_plots.SandPile
+  plot_func: cluster_size_distr
+
+  model_name: SandPile
+  path_to_data: avalanche
+
+  # Arguments passed to plt.plot
+  linestyle: 'None'
+  marker: '.'
+
 # Plot an animation of the CA `slope` state and save as individual frames
 slope_anim:
   enabled: false
