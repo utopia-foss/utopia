@@ -241,12 +241,12 @@ test:models:
     - utopia run CopyMe --debug
     - utopia run CopyMeBare --debug --no-plot
     - utopia run HdfBench --sweep --num-seeds 3 --debug
-    - utopia run geomorphology --debug
     #
     # Now the actual models:
     - utopia run Amee --sweep --no-plot --debug
     - utopia run ContDisease --debug
     - utopia run ForestFire --debug
+    - utopia run Geomorphology --debug
     - utopia run Hierarnet --debug
     - utopia run mesonet --debug --no-plot
     - utopia run PredatorPrey --debug
