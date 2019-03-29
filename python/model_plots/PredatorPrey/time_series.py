@@ -40,7 +40,7 @@ def frequency(dm: DataManager, *, out_path: str, uni: UniverseGroup,
     # Extract the data of the frequency
     population_data = grp['population'] 
     num_cells = grid_size * grid_size
-    frequencies = [np.bincount(p.flatten(), minlength=4)[[1, 2]] / num_cells 
+    frequencies = [np.bincount(p.stack(grid=['x', 'y']), minlength=4)[[1, 2]] / num_cells 
                    for p in population_data] 
     
 
