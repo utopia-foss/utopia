@@ -39,13 +39,19 @@ using namespace Utopia::Utils;
  * @tparam Decider Callable returning a boolean which tells when a task should write data
  * @tparam Trigger Callable returning a boolean which tells when a task should open a new dataset
  */
-template <class Model, class Task, class Decider, class Trigger>
+template <class Model, class Task>
 class DataManager
 {
 public:
-    using TaskContainer = std::unordered_map<std::string, std::shared_ptr<Task>>;
-    using DeciderContainer = std::unordered_map<std::string, std::shared_ptr<Decider>>;
-    using TriggerContainer = std::unordered_map<std::string, std::shared_ptr<Trigger>>;
+
+    using Decider = std::function<bool(Model&)>;
+    using Trigger = std::function<bool(Model&)>;
+
+    using TaskMap = std::unordered_map<std::string, std::shared_ptr<Task>>;
+
+    using DeciderMap = std::unordered_map<std::string, std::shared_ptr<Decider>>;
+    using TriggerMap = std::unordered_map<std::string, std::shared_ptr<Trigger>>;
+
     using NamingMap = std::unordered_map<std::string, std::vector<std::string>>;
 
 protected:
@@ -59,19 +65,19 @@ protected:
      * @brief Stores (name, task) pairs in an unordered map.
      *
      */
-    TaskContainer _tasks;
+    TaskMap _tasks;
 
     /**
      * @brief Stores (name, deciderfunction) pairs in an unordered map.
      *
      */
-    DeciderContainer _deciders;
+    DeciderMap _deciders;
 
     /**
      * @brief Stores (name, triggerfunction) pairs in an unordered map.
      *
      */
-    TriggerContainer _triggers;
+    TriggerMap _triggers;
 
     /**
      * @brief Mapping from deciders names to containers of names of tasks that
@@ -103,7 +109,8 @@ public:
     template<typename Tasktype>
     void register_task(std::string name, Tasktype&& new_task)
     {
-        _tasks[name] = std::make_shared<Tasktype>(std::forward<Tasktype>(new_task));
+        _tasks[name] =
+            std::make_shared<Task>(std::forward<Tasktype>(new_task));
     }
 
     /**
@@ -116,7 +123,8 @@ public:
     template <typename Triggertype>
     void register_trigger(std::string name, Triggertype&& new_trigger)
     {
-        _triggers[name] = std::make_shared<Triggertype>(std::forward<Triggertype>(new_trigger));
+        _triggers[name] =
+            std::make_shared<Trigger>(std::forward<Triggertype>(new_trigger));
     }
 
     /**
@@ -130,7 +138,7 @@ public:
     void register_decider(std::string name, Decidertype&& new_decider)
     {
         _deciders[name] =
-            std::make_shared<Decidertype>(std::forward<Decidertype>(new_decider));
+            std::make_shared<Decider>(std::forward<Decidertype>(new_decider));
     }
 
     /**
@@ -254,9 +262,9 @@ public:
     /**
      * @brief Get the container of decider objects
      *
-     * @return const DeciderContainer&
+     * @return const DeciderMap&
      */
-    const DeciderContainer& get_deciders() const
+    const DeciderMap& get_deciders() const
     {
         return _deciders;
     }
@@ -264,9 +272,9 @@ public:
     /**
      * @brief Get the container of task objects
      *
-     * @return const TaskContainer&
+     * @return const TaskMap&
      */
-    const TaskContainer& get_tasks() const
+    const TaskMap& get_tasks() const
     {
         return _tasks;
     }
@@ -274,9 +282,9 @@ public:
     /**
      * @brief Get the container of trigger objects
      *
-     * @return const TriggerContainer&
+     * @return const TriggerMap&
      */
-    const TriggerContainer& get_triggers() const
+    const TriggerMap& get_triggers() const
     {
         return _triggers;
     }
@@ -360,7 +368,7 @@ public:
     // .. Constructors ........................................................
 
     /**
-     * @brief Construct a new DataManager object
+     * @brief Construct a new DataManager object from vector of tasks
      *
      * @param model     The model this DataManager is to be associated with
      * @param cfg       The data manager configuration
@@ -381,7 +389,7 @@ public:
         _log(model.get_logger()),
 
         // Unpack tasks, deciders, and triggers into the respective containers
-        _tasks(unpack_shared<TaskContainer, Task>(tasks)),
+        _tasks(unpack_shared<TaskMap, Task>(tasks)),
         _deciders(setup_deciders(cfg, add_deciders)),
         _triggers(setup_triggers(cfg, add_triggers)),
 
@@ -392,69 +400,40 @@ public:
             update_decider_and_trigger_maps(cfg);
         }
 
-
-    // TODO Implement tuple-argument constructor accepting config node
-
     /**
-     * @brief Construct a new DataManager object
+     * @brief Construct a new DataManager object from tuple of task definitions
      *
      * @param model     The model this DataManager is to be associated with
-     * @param deciders  Container of (name, decider function) pairs
-     * @param triggers  Container of (name, trigger function) pairs
-     * @param tasks     Container of (name, Task) pairs
-     * @param task_decider_assocs  Container of task -> decider association
-     *                  pairs, i.e. (task name, decider name) pairs
-     * @param task_trigger_assocs  Container of task -> trigger association
-     *                  pairs, i.e. (task name, trigger name) pairs
+     * @param cfg       The data manager configuration
+     * @param tasks     Tuple of (name, Task) tuples
+     * @param add_deciders  Container of (name, decider function) pairs that
+     *                  are made available _additionally_
+     * @param add_triggers  Container of (name, trigger function) pairs that
+     *                  are made available _additionally_
      */
+    template<class M, class Tasks,
+             std::enable_if_t<Utils::is_tuple_like_v<Tasks>, int> = 0>
     DataManager(Model& model,
-                std::vector<std::pair<std::string, Task>> tasks,
-                std::vector<std::pair<std::string, Decider>> deciders,
-                std::vector<std::pair<std::string, Trigger>> triggers,
-                std::vector<std::pair<std::string, std::string>> task_decider_assocs = {},
-                std::vector<std::pair<std::string, std::string>> task_trigger_assocs = {})
+                const Config& cfg,
+                Tasks&& tasks,
+                std::vector<std::pair<std::string, Decider>> add_deciders = {},
+                std::vector<std::pair<std::string, Trigger>> add_triggers = {}
+                )
         :
         // Get whatever is needed from the model
         _log(model.get_logger()),
 
         // Unpack tasks, deciders, and triggers into the respective containers
-        _tasks(unpack_shared<TaskContainer, Task>(tasks)),
-        _deciders(unpack_shared<DeciderContainer, Decider>(deciders)),
-        _triggers(unpack_shared<TriggerContainer, Trigger>(triggers)),
+        _tasks(unpack_shared<TaskMap, Task>(tasks)),
+        _deciders(setup_deciders(cfg, add_deciders)),
+        _triggers(setup_triggers(cfg, add_triggers)),
 
-        // Create maps: decider/trigger -> vector of task names
-        _decider_task_map([&]() {
-            // Check if there would be issues in 1-to-1 association
-            if (    task_decider_assocs.size() == 0
-                and deciders.size() != tasks.size())
-            {
-                throw std::invalid_argument(
-                    "deciders size != tasks size! You have to disambiguate "
-                    "the association of deciders and write tasks by "
-                    "supplying an explicit task_decider_assocs argument if "
-                    "you want to have an unequal number of tasks and "
-                    "deciders.");
-            }
-            return task_association_map_from(tasks, deciders,
-                                             task_decider_assocs);
-        }()),
-        _trigger_task_map([&]() {
-            // Check if there would be issues in 1-to-1 association
-            if (    task_trigger_assocs.size() == 0
-                and triggers.size() != tasks.size())
-            {
-                throw std::invalid_argument(
-                    "triggers size != tasks size! You have to disambiguate "
-                    "the association of triggers and write tasks by "
-                    "supplying an explicit task_trigger_assocs argument if "
-                    "you want to have an unequal number of tasks and "
-                    "triggers.");
-            }
-            return task_association_map_from(tasks, triggers,
-                                             task_trigger_assocs);
-        }())
-    {
-    }
+        // Set up task association mappings empty; set in body
+        _decider_task_map{},
+        _trigger_task_map{}
+        {
+            update_decider_and_trigger_maps(cfg);
+        }
 
     /**
      * @brief Construct a new DataManager object
@@ -484,7 +463,10 @@ public:
               class Tasks,
               class Deciders,
               class Triggers,
-              std::enable_if_t<Utopia::Utils::is_tuple_like_v<Deciders> && Utopia::Utils::is_tuple_like_v<Triggers> && Utopia::Utils::is_tuple_like_v<Tasks>, int> = 0>
+              std::enable_if_t<    Utils::is_tuple_like_v<Tasks>
+                               and Utils::is_tuple_like_v<Deciders>
+                               and Utils::is_tuple_like_v<Triggers>,
+                               int> = 0>
     DataManager(M& model,
                 Tasks&& tasks,
                 Deciders&& deciders,
@@ -496,9 +478,9 @@ public:
         _log(model.get_logger()),
 
         // Unpack tasks, deciders, and triggers into the respective containers
-        _tasks(unpack_shared<TaskContainer, Task>(tasks)),
-        _deciders(unpack_shared<DeciderContainer, Decider>(deciders)),
-        _triggers(unpack_shared<TriggerContainer, Trigger>(triggers)),
+        _tasks(unpack_shared<TaskMap, Task>(tasks)),
+        _deciders(unpack_shared<DeciderMap, Decider>(deciders)),
+        _triggers(unpack_shared<TriggerMap, Trigger>(triggers)),
 
         // Create maps: decider/trigger -> vector of task names
         _decider_task_map([&]() {
@@ -578,9 +560,9 @@ private:
      *                 new map of type MapType
      */
     template<class ValType, class KVPairs, class MapType>
-    void unpack_shared(KVPairs& kv_pairs, MapType& map) {
+    void unpack_shared(KVPairs&& kv_pairs, MapType&& map) {
         // Distinguish between tuple-like key value pairs and others
-        if constexpr (Utils::is_tuple_like_v<KVPairs>) {
+        if constexpr (Utils::is_tuple_like_v<Utils::remove_qualifier_t<KVPairs>>) {
             using std::get; // enable ADL
 
             // Build map from given key value pairs
@@ -623,7 +605,7 @@ private:
      * @return MapType The newly created and populated map
      */
     template<class MapType, class ValType, class KVPairs>
-    MapType unpack_shared(KVPairs& kv_pairs) {
+    MapType unpack_shared(KVPairs&& kv_pairs) {
         MapType map;
         unpack_shared<ValType>(kv_pairs, map);
         return map;
@@ -673,9 +655,9 @@ private:
      * @brief Set up default deciders and user-specified additional deciders
      */
     template<class KVPairs>
-    DeciderContainer setup_deciders(const Config&, KVPairs& add_deciders) {
+    DeciderMap setup_deciders(const Config&, KVPairs&& add_deciders) {
         // Generate a map of default deciders
-        DeciderContainer deciders;
+        DeciderMap deciders;
 
         // TODO Add deciders here
 
@@ -689,9 +671,9 @@ private:
      * @brief Set up default triggers and user-specified additional triggers
      */
     template<class KVPairs>
-    TriggerContainer setup_triggers(const Config&, KVPairs& add_triggers) {
+    TriggerMap setup_triggers(const Config&, KVPairs&& add_triggers) {
         // Generate a map of default triggers
-        DeciderContainer triggers;
+        DeciderMap triggers;
 
         // Add the additional triggers to it, overwriting existing ones
         unpack_shared<Decider>(add_triggers, triggers);
@@ -707,6 +689,7 @@ private:
     }
 };
 
+
 /**
  * @brief Exchange the state of 'lhs' and 'rhs'.
  *
@@ -717,9 +700,9 @@ private:
  * @tparam Trigger Callable returning a boolean which tells when a task should built a new dataset
  * @tparam Task Callable which has a reference to a hdfgroup builds datasets and writes data on demand.
  */
-template <class Model, class Task, class Decider, class Trigger>
-void swap(DataManager<Model, Task, Decider, Trigger>& lhs,
-          DataManager<Model, Task, Decider, Trigger>& rhs)
+template <class Model, class Task>
+void swap(DataManager<Model, Task>& lhs,
+          DataManager<Model, Task>& rhs)
 {
     lhs.swap(rhs);
 }
@@ -736,36 +719,46 @@ struct RemoveFirst
     using type = std::tuple<std::tuple_element_t<1, Ts>...>;
 };
 
-/// Deduction guides for DataManager constructor
-template <class Model, class Task, class Decider, class Trigger>
-DataManager(Model& model,
-            std::vector<std::pair<std::string, Task>> tasks,
-            std::vector<std::pair<std::string, Decider>> deciders,
-            std::vector<std::pair<std::string, Trigger>> triggers,
-            std::vector<std::pair<std::string, std::string>> decider_task_map = {},
-            std::vector<std::pair<std::string, std::string>> trigger_task_map = {})
-    ->DataManager<Utopia::Utils::remove_qualifier_t<decltype(model)>,
-                  typename std::vector<std::pair<std::string, Task>>::value_type::second_type,
-                  typename std::vector<std::pair<std::string, Decider>>::value_type::second_type,
-                  typename std::vector<std::pair<std::string, Trigger>>::value_type::second_type>;
 
-/// Deduction guides for DataManager constructor
+/// Deduction guides for DataManager tuple (+cfg) constructor
+template <class M,
+          class Tasks,
+          class Dcdr,
+          class Trgr,
+          std::enable_if_t<Utils::is_tuple_like_v<Tasks>, int> = 0>
+DataManager(M& model,
+            const Config& cfg,
+            Tasks&& tasks,
+            std::vector<std::pair<std::string, Dcdr>> add_deciders = {},
+            std::vector<std::pair<std::string, Trgr>> add_triggers = {})
+    ->DataManager<Utils::remove_qualifier_t<decltype(model)>,
+                  Utils::apply_t<std::common_type,
+                                 Utils::apply_t<RemoveFirst, Tasks>>>;
+
+/// Deduction guides for DataManager tuple constructor
 template <class M,
           class Tasks,
           class Deciders,
           class Triggers,
-          std::enable_if_t<Utopia::Utils::is_tuple_like_v<Deciders> && Utopia::Utils::is_tuple_like_v<Triggers> && Utopia::Utils::is_tuple_like_v<Tasks>, int> = 0>
+          std::enable_if_t<    Utils::is_tuple_like_v<Tasks>
+                           and Utils::is_tuple_like_v<Deciders>
+                           and Utils::is_tuple_like_v<Triggers>, int> = 0>
 DataManager(M& model,
             Tasks&& tasks,
             Deciders&& deciders,
             Triggers&& triggers,
             std::vector<std::pair<std::string, std::string>> decider_task_map = {},
             std::vector<std::pair<std::string, std::string>> trigger_task_map = {})
-    ->DataManager<Utopia::Utils::remove_qualifier_t<decltype(model)>,
-                  Utopia::Utils::apply_t<std::common_type, Utopia::Utils::apply_t<RemoveFirst, Tasks>>,
-                  Utopia::Utils::apply_t<std::common_type, Utopia::Utils::apply_t<RemoveFirst, Deciders>>,
-                  Utopia::Utils::apply_t<std::common_type, Utopia::Utils::apply_t<RemoveFirst, Triggers>>>;
+    ->DataManager<Utils::remove_qualifier_t<decltype(model)>,
+                  Utils::apply_t<std::common_type,
+                                 Utils::apply_t<RemoveFirst, Tasks>>>;
+                  //                ,
+                  // Utils::apply_t<std::common_type,
+                  //                Utils::apply_t<RemoveFirst, Deciders>>,
+                  // Utils::apply_t<std::common_type,
+                  //                Utils::apply_t<RemoveFirst, Triggers>>>;
 
 } // namespace DataIO
 } // namespace Utopia
-#endif
+
+#endif // UTOPIA_DATAIO_DATAMANAGER_HH
