@@ -9,7 +9,7 @@ perform_sweep: false
 
 parameter_space:
   # Do a number of steps
-  num_steps: 2
+  num_steps: 3
 
   # Load the default model config
   PredatorPrey: !model

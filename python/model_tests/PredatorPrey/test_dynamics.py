@@ -31,15 +31,20 @@ def test_cost_of_living_prey():
 
     # Get the data
     data = dm['multiverse'][0]['data']
+    pop = data['PredatorPrey']['population']
+    pop.stack(dim=['x', 'y'])
     res_prey = data['PredatorPrey']['resource_prey']
-
     res_prey.stack(dim=['x', 'y'])
 
     # Assert that life is costly...
     # NOTE Requires initial resources of 2 and cost of living of 1
     for i, r in enumerate(res_prey):
         unique = np.unique(r)
-        assert unique == 2-i
+        if 2-i >= 0:
+            assert unique == 2-i
+
+    # Assert that in the end all prey is dead due to starvation
+    assert np.unique(pop.isel(time=-1)) == 0
 
 
 def test_cost_of_living_Predator():
