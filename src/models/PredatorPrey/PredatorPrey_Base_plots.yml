@@ -1,6 +1,7 @@
 # Base configs for PredatorPrey model plots
 ---
 grid_animation:
+  creator: universe
   universes: all
 
   file_ext: mp4
