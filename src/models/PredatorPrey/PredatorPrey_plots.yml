@@ -10,14 +10,13 @@ phase_space:
   
   cmap: viridis_r
   s: 3.5
-  
+
   show_grid: True
 
   helpers:
     set_limits:
       x: [0.0, 0.3]
       y: [0.0, 0.7]
-
 
 
 # plot the frequency of predators and preys in one plot
@@ -28,21 +27,13 @@ frequencies:
   module: model_plots.PredatorPrey
   plot_func: frequency
 
-  Population: [prey, predator]
+  Population: [predator, prey]
 
 
 # plot the spatial development in the CA of the strategy
 population_and_resources:
-  creator: universe
-  universes: all
-
-  file_ext: mp4
-
-  module: .ca
-  plot_func: state_anim
-
-  model_name: PredatorPrey
-  
+  # Use a base plot configuration
+  based_on: grid_animation
 
   # Select the properties to plot
   to_plot:
@@ -51,13 +42,6 @@ population_and_resources:
       title: Population
       limits: [0, 3]
 
-      # Specify the colormap
-      # This can be done in two ways:
-      #   1. use a matplotlib colormap such as 'viridis'
-      #   2. provide a dictionary from which a discrete colormap
-      #      is derived. The keys correspond to the labels,
-      #      and the values define the color
-      # cmap: viridis
       cmap: 
         empty: white
         prey: yellow
@@ -66,22 +50,12 @@ population_and_resources:
 
     # The name of the property to plot with its options
     resource_prey:
-      title: resource_prey
-      limits: [0, 12]
-
+      title: Resources Prey
       cmap: viridis
+      limits: [0, 8]  # Should be adapted to the resource_max model parameter
 
+    # The name of the property to plot with its options
     resource_predator:
-      title: resource_predator
-      limits: [0, 12]
+      title: Resource Predator
       cmap: viridis
-
-  # Video options
-  writer: ffmpeg  # can be: frames, ffmpeg (if installed), ...
-  fps: 2
-  dpi: 96
-
-  # For the 'frames' writer, the following additional kwargs can be passed
-  frames_kwargs: 
-    name_padding: 5
-    file_format: png
+      limits: [0, 8]   # Should be adapted to the resource_max model parameter

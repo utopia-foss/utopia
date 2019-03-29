@@ -1,0 +1,21 @@
+# Base configs for PredatorPrey model plots
+---
+grid_animation:
+  universes: all
+
+  file_ext: mp4
+
+  module: .ca
+  plot_func: state_anim
+
+  model_name: PredatorPrey
+
+  # Video options
+  writer: ffmpeg  # can be: frames, ffmpeg (if installed), ...
+  fps: 2
+  dpi: 96
+
+  # For the 'frames' writer, the following additional kwargs can be passed
+  frames_kwargs: 
+    name_padding: 5
+    file_format: png

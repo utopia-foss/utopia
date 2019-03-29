@@ -33,15 +33,13 @@ def frequency(dm: DataManager, *, hlpr: PlotHelper, uni: UniverseGroup,
     # Get the group that all datasets are in
     grp = uni['data']['PredatorPrey']
 
-    # Get the gridsize 
-    grid_size = uni['cfg']['PredatorPrey']['cell_manager']['grid']['resolution']
-
-    # Extract the data of the frequency
+    # Extract the population data ...
     population_data = grp['population'] 
-    num_cells = grid_size * grid_size
-    frequencies = [np.bincount(p.stack(grid=['x', 'y']), minlength=4)[[1, 2]] / num_cells 
-                   for p in population_data] 
-    
+
+    # ... and calculate the frequencies of predator and prey
+    frequencies = [np.bincount(p.stack(grid=['x', 'y']), minlength=4)
+                    / p.grid_shape.prod()
+                   for p in population_data]
 
     # Get the frequencies of the desired Population and plot it
     # Single population
