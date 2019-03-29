@@ -3,16 +3,23 @@ import matplotlib.pyplot as plt
 import xarray as xr
 
 from utopya import DataManager, UniverseGroup, MultiverseGroup
+from utopya.plotting import is_plot_func, PlotHelper, UniversePlotCreator
+
+@is_plot_func(creator_type=UniversePlotCreator,
+              # Provide some (static) default values for helpers
+              helper_defaults=dict(
+                set_labels=dict(x="Time averaged density", y="lightning probability"),
+                #set_scale=dict(x='linear', y='log'),
+                set_title=dict(title='Mean tree densitiy')
+                )
+              )
 
 def temporal_mean_multiverse(dm: DataManager, *,
-                            out_path: str,                                    
                             mv_data: xr.Dataset,
+                            hlpr: PlotHelper,
                             save_kwargs: dict=None,
                             plot_kwargs: dict=None):
-    '''Plots the cluster distribution for multiple universes'''
-
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
+    '''Plots the asymptotic mean for multiple universes'''
 
     state_data = mv_data['mean_density']
 
@@ -24,24 +31,18 @@ def temporal_mean_multiverse(dm: DataManager, *,
     for lightning in range(len(state_data['lightning_frequency'])):
 
         #Take mean of the states for each time step and convert it
-        mean = mv_data[{'lightning_frequency': lightning}].mean(dim=['time'])
+        mean = mv_data[{'lightning_frequency': lightning}].mean(dim=['dim_0'])
         mean = mean.to_array().values.flatten()
 
+        light_freq = float(state_data['lightning_frequency'][lightning])
+
         #Set the labels
-        label=('%.2E' % float(state_data['lightning_frequency'][lightning]))
+        label=('%.2E' % light_freq)
         plot_kwargs['label'] = 'lightning frequency = {}'.format(label)
         
         # Call the plot function
-        ax.plot(mean, float(state_data['lightning_frequency'][lightning]), **plot_kwargs)
+        hlpr.ax.set_yscale('log')
+        hlpr.ax.plot(mean, light_freq, **plot_kwargs)
 
-    # Set plot properties
-    ax.set_title('Mean tree densitiy')
-    ax.set_xlabel('Time averaged density')
-    ax.set_ylabel('lightning probability')
-    ax.set_yscale('log')
-    plt.legend(loc='upper right', prop={'size': 9})
-    plt.tight_layout()
-
-    # Save and close the figure
-    plt.savefig(out_path)
-    plt.close()
+    #plt.legend(loc='upper right', prop={'size': 9})
+    #plt.tight_layout()

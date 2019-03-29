@@ -4,19 +4,31 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from utopya import DataManager, UniverseGroup
+from utopya.plotting import is_plot_func, PlotHelper, UniversePlotCreator
 
 from ..tools import save_and_close
 
 # -----------------------------------------------------------------------------
 
-def state_mean(dm: DataManager, *, out_path: str, uni: UniverseGroup,
-               save_kwargs: dict=None, **plot_kwargs):
+@is_plot_func(creator_type=UniversePlotCreator,
+              # Provide some (static) default values for helpers
+              helper_defaults=dict(
+                set_labels=dict(x="Time [steps]", y="Tree density"),
+                set_limits=dict(y=[0, None]),
+                set_title=dict(title='Mean Density of Trees')
+                )
+              )
+
+
+def state_mean(dm: DataManager, *, uni: UniverseGroup,
+               hlpr: PlotHelper, save_kwargs: dict=None, **plot_kwargs):
     """Calculates the state mean and performs a lineplot
     
     Args:
         dm (DataManager): The data manager from which to retrieve the data
-        out_path (str): Where to store the plot to
         uni (UniverseGroup): The selected universe data
+        hlpr (PlotHelper): The PlotHelper that instantiates the figure and
+            takes care of plot aesthetics (labels, title, ...) and saving
         save_kwargs (dict, optional): kwargs to the plt.savefig function
         **plot_kwargs: Passed on to plt.plot
     """
@@ -29,33 +41,37 @@ def state_mean(dm: DataManager, *, out_path: str, uni: UniverseGroup,
     # Call the plot function
     plt.plot(times, data, **plot_kwargs)
 
-    plt.xlabel('Time [steps]')
-    plt.ylabel('Tree density')
-
     plt.xlim(left=0, right=np.max(times))
-    plt.ylim(bottom=0)
-
-    # Save and close figure
-    save_and_close(out_path, save_kwargs=save_kwargs)
-
+    #plt.ylim(bottom=0)
 
 # -----------------------------------------------------------------------------
 
+@is_plot_func(creator_type=UniversePlotCreator,
+              # Provide some (static) default values for helpers
+              helper_defaults=dict(
+                set_labels=dict(x="cluster size A", y="$N_A$"),
+                set_scale=dict(x='log', y='log'),
+                set_title=dict(title='Size distribution of clusters')
+                )
+              )
+
 def cluster_distribution(dm: DataManager, *, 
-                         out_path: str, 
                          uni: UniverseGroup, 
+                         hlpr: PlotHelper,
                          fmt: str=None, 
                          time: int=-1, 
                          save_kwargs: dict=None, 
                          plot_kwargs: dict=None):
-    """Calculates the size distribution of all tree clusters and plots a cumulative histogram
+    """Calculates the size distribution of all tree clusters and plots 
+        a cumulative histogram
     
     Args:
         dm (DataManager): The data manager from which to retrieve the data
-        out_path (str): Where to store the plot to
         uni (UniverseGroup): The selected universe data
+        hlpr (PlotHelper): The PlotHelper that instantiates the figure and
+            takes care of plot aesthetics (labels, title, ...) and saving        
         fmt (str, optional): the plt.plot format argument
-        time (int, optional): timestep in output data for plot. default: last step
+        time (int, optional): timestep of output data. default: last step
         save_kwargs (dict, optional): kwargs to the plt.savefig function
         plot_kwargs (dict, optional): Passed on to plt.plot
     
@@ -97,11 +113,3 @@ def cluster_distribution(dm: DataManager, *,
     # Call the plot function
     plt.plot(*args, **plot_kwargs)
 
-    # Set plot properties
-    plt.xscale('log')
-    plt.yscale('log')
-    plt.xlabel('cluster size A')
-    plt.ylabel('$N_A$')
-
-    # Save and close figure
-    save_and_close(out_path, save_kwargs=save_kwargs)

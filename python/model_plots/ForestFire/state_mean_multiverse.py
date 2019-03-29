@@ -3,16 +3,23 @@ import matplotlib.pyplot as plt
 import xarray as xr
 
 from utopya import DataManager, UniverseGroup, MultiverseGroup
+from utopya.plotting import is_plot_func, PlotHelper, UniversePlotCreator
+
+@is_plot_func(creator_type=UniversePlotCreator,
+              # Provide some (static) default values for helpers
+              helper_defaults=dict(
+                set_labels=dict(x="Time", y="Density"),
+                set_scale=dict(x='linear', y='log'),
+                set_title=dict(title='Mean tree density')
+                )
+              )
 
 def state_mean_multiverse(  dm: DataManager, *,
-                            out_path: str,                                    
                             mv_data: xr.Dataset,
+                            hlpr: PlotHelper,
                             save_kwargs: dict=None,
                             plot_kwargs: dict=None):
     '''Plots the cluster distribution for multiple universes'''
-    
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
 
     state_data = mv_data['mean_density']
 
@@ -32,17 +39,9 @@ def state_mean_multiverse(  dm: DataManager, *,
         plot_kwargs['label'] = 'lightning frequency = {}'.format(label)
 
         # Call the plot function
-        ax.set_xlim(left=0, right=np.max(times))
-        ax.set_ylim(bottom=0)
-        ax.plot(times, mean, **plot_kwargs)
+        hlpr.ax.set_xlim(left=0, right=np.max(times))
+        hlpr.ax.set_ylim(bottom=0)
+        hlpr.ax.plot(times, mean, **plot_kwargs)
 
-    # Set plot properties
-    ax.set_title('Mean tree densitiy')
-    ax.set_xlabel('Time')
-    ax.set_ylabel('Density')
     plt.legend(loc='upper right', prop={'size': 9})
-    plt.tight_layout()
-
-    # Save and close the figure
-    plt.savefig(out_path)
-    plt.close()
+    #plt.tight_layout()

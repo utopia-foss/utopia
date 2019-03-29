@@ -3,18 +3,25 @@ import matplotlib.pyplot as plt
 import xarray as xr
 
 from utopya import DataManager, UniverseGroup
+from utopya.plotting import is_plot_func, PlotHelper, UniversePlotCreator
+
+@is_plot_func(creator_type=UniversePlotCreator,
+              # Provide some (static) default values for helpers
+              helper_defaults=dict(
+                set_labels=dict(x='cluster size A', y='$N_A$'),
+                set_scale=dict(x='log', y='log'),
+                set_title=dict(title='Distribution of Cluster sizes')
+                )
+              )
 
 def cluster_distribution_multiverse(dm: DataManager, *,
-                                    out_path: str,                                    
                                     mv_data: xr.Dataset,
+                                    hlpr: PlotHelper,
                                     time: int=-1,
                                     save_kwargs: dict=None,
                                     plot_kwargs: dict=None):
     '''Plots the cluster distribution for multiple universes'''
     
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-
     cluster_data = mv_data['cluster_id'][{'time': time}]
 
     for lightning in range(len(cluster_data['lightning_frequency'])):
@@ -42,20 +49,12 @@ def cluster_distribution_multiverse(dm: DataManager, *,
         label=('%.2E' % float(cluster_data['lightning_frequency'][lightning]))
         plot_kwargs['label'] = 'lightning frequency = {}'.format(label)   
 
-        #Possibly calculate average Cluster size --- IS THIS NECESSARY?
+        #Possibly calculate average Cluster size --- NECESSARY?
         #ACS = ...
 
-        ax.plot(*args, **plot_kwargs)
+        hlpr.ax.plot(*args, **plot_kwargs)
 
-    # Set plot properties
-    ax.set_title('Distribution of Cluster sizes')
-    ax.set_xscale('log')
-    ax.set_yscale('log')
-    ax.set_xlabel('cluster size A')
-    ax.set_ylabel('$N_A$')
     plt.legend(loc = 'upper right', prop={'size': 9})
 
-    # Save and close the figure
-    plt.savefig(out_path)
-    plt.close()
+
 
