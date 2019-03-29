@@ -56,13 +56,16 @@ avalanche_anim:
       cmap: copper
 
 #Plot the avalanche area fraction as a function of time steps:
-area_frac_t:
+area_fraction:
   creator: universe
   universes: all
 
   # Use the SandPile-specific plot functions
   module: model_plots.SandPile
   plot_func: plot_area_frac_t
+
+  path_to_data: avalanche
+  s: 20
 
   # Arguments passed to plt.plot    
   linestyle: 'None'

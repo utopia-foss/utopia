@@ -55,7 +55,7 @@ def compl_cum_prob_dist(dm: DataManager, *,
                         uni: UniverseGroup, 
                         hlpr: PlotHelper,
                         model_name: str,
-                        data_path: str,
+                        path_to_data: str,
                         **plot_kwargs):
     """Calculates the complementary cumulative probability distribution and 
     performs a logarithmic scatter plot
@@ -70,7 +70,7 @@ def compl_cum_prob_dist(dm: DataManager, *,
         **plot_kwargs: Passed on to plt.plot
     """
     # Get the data, remove the initial time step 
-    data = uni['data'][model_name][data_path][1:]
+    data = uni['data'][model_name][path_to_data][1:]
 
     # Sum over all values from all dimensions except for the time
     areas = data.sum(dim=[d for d in data.dims if d != 'time'])
@@ -150,15 +150,16 @@ def mult_cum_prob(dm: DataManager, *,
               helper_defaults=dict(
                   set_labels=dict(x=r"Time",
                                   y=r"Area fraction $A/l^2$"),
-                  save_figure=dict(bbox_inches="tight")
+                  save_figure=dict(bbox_inches="tight"),
+                  set_scale=dict(y="log"),
               )
             )
-def plot_area_frac_t(dm: DataManager, *, 
-                        uni: UniverseGroup, 
-                        hlpr: PlotHelper,
-                        **plot_kwargs):
-    """Calculates the complementary cumulative probability distribution and 
-    performs a logarithmic scatter plot
+def area_fraction(dm: DataManager, *, 
+                  uni: UniverseGroup, 
+                  hlpr: PlotHelper,
+                  path_to_data: str,
+                  **plot_kwargs):
+    """Plot the area fraction of the avalanches over time
     
     Args:
         dm (DataManager): The data manager from which to retrieve the data
@@ -167,22 +168,22 @@ def plot_area_frac_t(dm: DataManager, *,
         uni (UniverseGroup): The selected universe data
         **plot_kwargs: Passed on to plt.plot
     """
-    # Get the group that all datasets are in
-    grp = uni['data/SandPile']
-    grid_size = uni['cfg']['SandPile']['cell_manager']['grid']['resolution']
-    
-    ### Extract the y data 
-    # Get the avalanche data averaged over all grid cells for each time step
-    y_data = [np.sum(d) for d in grp['avalanche']]
+    # Get the data
+    data = uni['data/SandPile'][path_to_data]
+
+    # Calculate the areas for each time step by summing over all values 
+    # from all dimensions except for the time 
+    areas = data.sum(dim=[d for d in data.dims if d != 'time'])
 
     # Remove the first element, ...
-    y_data.pop(0)
+    areas[1:]
 
-    #convert to numpy.array to do arithmetics
-    y=np.array(y_data)
-
-    #normalise by total area
-    y=y/(grid_size*grid_size)
+    # ... and calculate the area fraction by normalizing the data by the number
+    # of cells
+    # NOTE This calculation requires the time to be the first dimension
+    area_frac = areas / np.prod(areas.shape[1:])
 
     # Call the plot function, adjust marker size 's' to size of avalanche
-    hlpr.ax.scatter(range(len(y_data)),y, s=25*y, **plot_kwargs)
+    hlpr.ax.scatter(area_frac['time'], area_frac, **plot_kwargs)
+
+    hlpr.provide_defaults('set_limits', y=[0.95, np.prod(data.shape[1:])])
