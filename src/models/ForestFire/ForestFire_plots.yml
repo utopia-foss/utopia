@@ -17,7 +17,7 @@ cluster_distribution:
 
   helpers:
     set_title:
-      title: title2
+      title: Size distribution of clusters
   
   # Use the ForestFire-specific plot functions
   module: model_plots.ForestFire
