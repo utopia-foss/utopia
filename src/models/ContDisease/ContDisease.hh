@@ -377,8 +377,8 @@ public:
 
         // Now that all densities have been calculated (in write_data), write
         // those that do not change throughout the simulation (indices 3 and 4)
-        _dset_density_stone->write(_densities[3]);   // stone
-        _dset_density_source->write(_densities[4]);  // infection source
+        _dset_density_stone->write(_densities[4]);   // stone
+        _dset_density_source->write(_densities[3]);  // infection source
 
         this->_log->debug("Initial state written.");
     }
@@ -554,14 +554,17 @@ public:
         // And those densities that are changing (empty, tree, infected)
         update_densities();
 
-        // Identify clusters
-        identify_clusters();
+        // Clusters are only identified for the last time step
+        if (this->get_time_max() == this->get_time()) {
+            // Identify clusters
+            identify_clusters();
 
 
-        _dset_cluster_id->write(_cm.cells().begin(), _cm.cells().end(),
-           [](const auto& cell) {
-               return cell->state.cluster_tag;
-        });
+            _dset_cluster_id->write(_cm.cells().begin(), _cm.cells().end(),
+               [](const auto& cell) {
+                   return cell->state.cluster_tag;
+            });
+        }
 
         _dset_density_empty->write(_densities[0]);
         _dset_density_tree->write(_densities[1]);
