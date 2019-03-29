@@ -12,7 +12,7 @@ from ..tools import save_and_close
 @is_plot_func(creator_type=UniversePlotCreator,
               helper_defaults=dict(
                   set_labels=dict(x="Iteration step",
-                                  y=r"slope $\langle n \rangle - n_c$"),
+                                  y=r"Slope $\langle n \rangle - n_c$"),
                   save_figure=dict(bbox_inches="tight")
               )
             )
@@ -54,6 +54,8 @@ def slope(  dm: DataManager, *,
 def compl_cum_prob_dist(dm: DataManager, *, 
                         uni: UniverseGroup, 
                         hlpr: PlotHelper,
+                        model_name: str,
+                        data_path: str,
                         **plot_kwargs):
     """Calculates the complementary cumulative probability distribution and 
     performs a logarithmic scatter plot
@@ -63,33 +65,35 @@ def compl_cum_prob_dist(dm: DataManager, *,
         uni (UniverseGroup): The selected universe data
         hlpr (PlotHelper): The PlotHelper that instantiates the figure and
             takes care of plot aesthetics (labels, title, ...) and saving
+        model_name (str): The model name
+        path_to_data (str): The path to the data
         **plot_kwargs: Passed on to plt.plot
     """
-    # Get the group that all datasets are in
-    grp = uni['data/SandPile']
+    # Get the data, remove the initial time step 
+    data = uni['data'][model_name][data_path][1:]
 
-    ### Extract the y data 
-    # Get the avalanche data averaged over all grid cells for each time step
-    y_data = [np.sum(d) for d in grp['avalanche']]
+    # Sum over all values from all dimensions except for the time
+    areas = data.sum(dim=[d for d in data.dims if d != 'time'])
 
-    # Remove the first element, ...
-    y_data.pop(0)
-    # ... count the size of the avalanches, ...
-    y = np.bincount(y_data)
-    # ... and cummulatively sum them up
-    y = (np.cumsum(y[::-1])[::-1])[1:]
-    
-    # Get the index 
-    index = (y - np.roll(y, 1)) != 0
+    # Count the avalanche sizes
+    unique, counts = np.unique(areas, return_counts=True)
 
-    # Normalize the cummulated counts
-    y = y / y[0]
+    # Cumulatively sum up the sizes and reverse the ordering and remove the 
+    # first entry because there are no avalanches with size zero
+    cumsum = (np.cumsum(counts[::-1])[::-1])
 
-    # Calculate the logarithmic values
-    y_data = np.log10(np.arange(len(y)) + np.min(y_data))[index], np.log10(y)[index]
+    # Normalize the accumulated counts to get the normalized complementary
+    # cumulative area distribution
+    cumsum_norm = cumsum / cumsum[0]
+ 
+    # Calculate a mask that will be applied to the data to erase multiple
+    # occurrences of the same data-point pair
+    mask = (cumsum_norm - np.roll(cumsum_norm, 1)) != 0
 
-    # Call the plot function
-    hlpr.ax.plot(*y_data, **plot_kwargs)
+    # Plot the data
+    hlpr.ax.plot(np.log10(unique[mask]), 
+                 np.log10(cumsum_norm[mask]), 
+                 **plot_kwargs)
 
 
 @is_plot_func(creator_type=MultiversePlotCreator,
@@ -144,7 +148,7 @@ def mult_cum_prob(dm: DataManager, *,
 
 @is_plot_func(creator_type=MultiversePlotCreator,
               helper_defaults=dict(
-                  set_labels=dict(x=r"time",
+                  set_labels=dict(x=r"Time",
                                   y=r"Area fraction $A/l^2$"),
                   save_figure=dict(bbox_inches="tight")
               )

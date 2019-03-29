@@ -14,12 +14,14 @@ slope:
 
 # Plot the complementary cumulative probability distribution
 compl_cum_prob_dist:
-  creator: universe
   universes: all
   
   # Use the SandPile-specific plot functions
   module: model_plots.SandPile
   plot_func: compl_cum_prob_dist
+
+  model_name: SandPile
+  path_to_data: avalanche
 
   # Arguments passed to plt.plot
   linestyle: 'None'
