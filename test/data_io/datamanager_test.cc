@@ -1,6 +1,6 @@
 #define BOOST_TEST_MODULE datamanager_test
-#include <boost/mpl/list.hpp>       // type lists for testing
 #include <boost/test/unit_test.hpp> // for unit tests
+#include <boost/mpl/list.hpp>       // type lists for testing
 
 #include <sstream> // needed for testing throw messages from exceptions
 #include <utopia/core/utils.hh> // for output operators, get size...
