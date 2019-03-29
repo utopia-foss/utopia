@@ -38,6 +38,12 @@ Below are the default configuration parameters for the ``ForestFire`` model.
 Simulation Results
 ------------------
 
+Add some pictures
+
+.. image:: /Users/Narek/Downloads/cluster_distribution_multiverse.png
+.. image:: /Users/Narek/Downloads/state_mean_multiverse.png
+.. image:: /Users/Narek/Downloads/temporal_mean_multiverse.png
+
 *Work in progress.* For now, see CCEES lecture notes.
 
 
