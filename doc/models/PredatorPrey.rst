@@ -1,6 +1,6 @@
 
-``PredatorPrey`` Model
-======================
+``PredatorPrey`` — Model of Predator-Prey Dynamics
+==================================================
 
 This model is a version of the Predator-prey model from the CCEES lecture
 script (v3, chapter 9.3.1). It is implemented as a cellular automaton (CA)

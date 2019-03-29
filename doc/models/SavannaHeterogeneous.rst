@@ -1,6 +1,6 @@
 
-``SavannaHeterogeneous``
-========================
+``SavannaHeterogeneous`` — Model of Heterogeneous Complex Savanna Landscapes
+============================================================================
 
 Complex dynamics of savanna landscapes using an explicit percolation model
 --------------------------------------------------------------------------
@@ -184,8 +184,6 @@ References
 ----------
 
 
-* 
-  Touboul, J.D., Staver, A.C., Levin, S.A., 2018. On the complex dynamics of savanna landscapes. Proceedings of the National Academy of Sciences 115, E1336–E1345. https://doi.org/10.1073/pnas.1712356115
+* Touboul, J.D., Staver, A.C., Levin, S.A., 2018. On the complex dynamics of savanna landscapes. Proceedings of the National Academy of Sciences 115, E1336–E1345. https://doi.org/10.1073/pnas.1712356115
 
-* 
-  Schertzer, E., Staver, A.C., Levin, S.A., 2015. Implications of the spatial dynamics of fire spread for the bistability of savanna and forest. Journal of Mathematical Biology 70, 329–341. https://doi.org/10.1007/s00285-014-0757-z
+* Schertzer, E., Staver, A.C., Levin, S.A., 2015. Implications of the spatial dynamics of fire spread for the bistability of savanna and forest. Journal of Mathematical Biology 70, 329–341. https://doi.org/10.1007/s00285-014-0757-z

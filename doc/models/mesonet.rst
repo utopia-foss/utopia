@@ -1,6 +1,6 @@
 
-The ``mesonet`` Consumer-Resource Model
-=======================================
+``mesonet`` — Model of Consumer-Resource Systems
+================================================
 
 ``mesonet`` models the interaction of consumer species with the resources in their environment.
 
@@ -15,6 +15,6 @@ Default Model Configuration
 
 Below are the default configuration parameters for the ``mesonet`` model.
 
-.. literalinclude:: ../../dune/utopia/models/mesonet/mesonet_cfg.yml
+.. literalinclude:: ../../src/models/mesonet/mesonet_cfg.yml
    :language: yaml
    :start-after: ---

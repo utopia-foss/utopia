@@ -83,7 +83,7 @@ def cluster_distribution(dm: DataManager, *,
 
     # get the cluster_id data
     try:
-        data = grp['cluster_id'][time,:].flatten()
+        data = grp['cluster_id'].isel(time=time).stack(grid=['x', 'y']).values
     except:
         raise TypeError("Argument time needs to be a int within " 
                         "the number of timesteps or -1. "

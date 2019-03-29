@@ -1,6 +1,6 @@
 
-``ContDisease`` - A Model of a Contagious Disease
-=================================================
+``ContDisease`` — Model of Contagious Diseases
+==============================================
 
 This is a simple model of a contagious disease on a 2D grid. It is based
 on the description in the script of the CCEES lecture of Prof. Roth.

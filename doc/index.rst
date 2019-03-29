@@ -10,15 +10,15 @@ And welcome to Utopia! We are happy that you found your way to the documentation
 
 If you are **new to Utopia**, you should start with the :doc:`tutorial <guides/tutorial>`. You can then work your way through the other guides. :)
 
-----
 
 .. toctree::
-   :caption: Basics
-   :maxdepth: 2
+   :maxdepth: 1
+   :glob:
 
    The README <README>
-   examples
+   C++ Documentation <cpp_doc>
 
+----
 
 .. toctree::
    :caption: Guides
@@ -35,16 +35,26 @@ If you are **new to Utopia**, you should start with the :doc:`tutorial <guides/t
 
    models/*
 
+
 .. toctree::
    :caption: Frontend
    :glob:
 
    frontend/*
 
+
 .. toctree::
-   :caption: Frequently Asked Questions
+   :caption: Frequently Asked Questions (FAQ)
    :maxdepth: 2
    :glob:
       
    faq/*
    
+----
+
+.. toctree::
+   :caption: Miscelleanous
+   :maxdepth: 1
+   :glob:
+
+   examples
