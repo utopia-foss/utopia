@@ -137,7 +137,7 @@ struct Param {
   *
   * See \ref Utopia::CellTraits for more information.
   */
-using CDCellTraits = Utopia::CellTraits<CDCell, Update::sync>;
+using CDCellTraits = Utopia::CellTraits<CDCell, Update::manual>;
 
 
 /// Typehelper to define data types of ContDisease model
@@ -296,11 +296,15 @@ public:
         if (_param.infection_source) {
             this->_log->debug("Setting bottom boundary cells to be "
                               "permanently infected ...");
-            apply_rule([](const auto& cell) {
-                    auto state = cell->state();
-                    state.state = source;
-                    return state;
-                }, _cm.boundary_cells("bottom"));
+
+            RuleFunc _source_init = [this](const auto& cell) {
+                auto state = cell->state;
+                state.state = source;
+                return state;
+            };
+
+            apply_rule<Update::sync>(_source_init,  _cm.boundary_cells("bottom"));
+
         }
 
         // Stones
@@ -318,26 +322,30 @@ public:
                 const double stone_density = _param.stone_density;
 
                 /// Initialize stones randomly with probability stone_density
-                apply_rule([this, &stone_density](const auto& cell) {
+                RuleFunc _stone_init = [this, &stone_density](const auto& cell) {
                     // Cell will be a stone with probability stone_density
-                    auto state = cell->state();
+                    auto state = cell->state;
                     if (this->_prob_distr(*this->_rng) < stone_density){
                         state.state = stone;
                         return state;
                     }
                     // else: stay in the same state
                     return state;
-                }, cells_shuffled);
+                };
+
+                apply_rule<Update::sync>(_stone_init, cells_shuffled);
+
 
                 // Add a stone with probability stone_cluster to any empty
                 // cell with a neighboring stone.
-                apply_rule([this, &stone_cluster](const auto& cell) {
-                    auto state = cell->state();
+
+                RuleFunc _stone_cluster = [this, &stone_cluster](const auto& cell) {
+                    auto state = cell->state;
 
                     // Add the clustered stones
                     // Iterate over all neighbors of the current cell
                     for (auto& nb: this->_cm.neighbors_of(cell)) {
-                        auto nb_state = nb->state();
+                        auto nb_state = nb->state;
 
                         if (    state.state == empty
                             and nb_state.state == stone
@@ -351,7 +359,11 @@ public:
                         }
                     }
                     return state;
-                }, cells_shuffled);
+                };
+
+
+                apply_rule<Update::sync>(_stone_cluster, cells_shuffled);
+
             }
         } // end of stones setup
 
@@ -389,7 +401,7 @@ protected:
         // member for that in order to not create a new array.
         for (const auto& cell : this->_cm.cells()) {
             // Cast enum to integer to arrive at the corresponding index
-            ++_densities[static_cast<unsigned short int>(cell->state().state)];
+            ++_densities[static_cast<unsigned short int>(cell->state.state)];
         }
         // The _densities array now contains the counts.
 
@@ -414,7 +426,7 @@ protected:
       */
     RuleFunc _update = [this](const auto& cell){
         // Get the current state of the cell
-        auto state = cell->state();
+        auto state = cell->state;
         state.cluster_tag = 0;
 
         // Distinguish by current state
@@ -440,7 +452,7 @@ protected:
                 // If yes, infect cell with the probability p_infect.
                 for (auto& nb: this->_cm.neighbors_of(cell)) {
                     // Get the neighbor cell's state
-                    auto nb_state = nb->state();
+                    auto nb_state = nb->state;
 
                     if (   nb_state.state == infected
                         or nb_state.state == source)
@@ -466,38 +478,39 @@ protected:
     };
 
     /// Identify each cluster of trees
-    void  identify_clusters(){
-        _cluster_tag_cnt = 0; // reset cluster counter
-        for (auto& cell: this->_cm.cells()) {
-            if (cell->state().cluster_tag == 0 and cell->state().state == tree) {
+    RuleFunc _identify_cluster = [this](const auto& cell){
+        if (cell->state.cluster_tag != 0 or cell->state.state == empty) {
+            // already labelled, nothing to do. Return current state
+            return cell->state;
+        }
+        // else: need to label this cell
 
-                // Increment cluster counter and label the given cell
-                _cluster_tag_cnt++;
-                cell->state().cluster_tag = _cluster_tag_cnt;
+        // Increment the cluster ID counter and label the given cell
+        _cluster_tag_cnt++;
+        cell->state.cluster_tag = _cluster_tag_cnt;
 
-                auto& cluster = _cluster_members;
-                cluster.clear();
-                cluster.push_back(cell);
+        // Use existing cluster member container, clear it, add current cell
+        auto& cluster = _cluster_members;
+        cluster.clear();
+        cluster.push_back(cell);
 
-                for (unsigned int i = 0; i < cluster.size(); ++i){
-                    // Iterate over neighbors of cluster members to see if they
-                    // need to addded to the cluster
-                    for (auto& nb: this->_cm.neighbors_of(cluster[i])) {
-                        if (nb->state().cluster_tag == 0 and nb->state().state == tree){
-                            nb->state().cluster_tag = _cluster_tag_cnt;
-                            cluster.push_back(nb);
-                            // Now the outer loop will also check the neighbors of the new cluster member
-                        }
-                    }
-
+        // Perform the percolation
+        for (unsigned int i = 0; i < cluster.size(); ++i) {
+            // Iterate over all potential cluster members c, i.e. all
+            // neighbors of cell cluster[i] that is already in the cluster
+            for (const auto& c : this->_cm.neighbors_of(cluster[i])) {
+                // If it is a tree that is not yet in the cluster, add it.
+                if (    c->state.cluster_tag == 0
+                    and c->state.state == tree)
+                {
+                    c->state.cluster_tag = _cluster_tag_cnt;
+                    cluster.push_back(c);
+                    // This extends the outer for-loop...
                 }
-
             }
-            //else: nothing to do
-
-
         }
 
+        return cell->state;
     };
 
 
@@ -511,7 +524,7 @@ public:
       */
     void perform_step () {
         // Apply the update rule to all cells.
-        apply_rule(_update, _cm.cells());
+        apply_rule<Update::sync>(_update, _cm.cells());
         // NOTE The cell state is updated synchronously, i.e.: only after all
         //      cells have been visited and know their state for the next step
     }
@@ -534,7 +547,7 @@ public:
         // Write the cell state
         _dset_state->write(_cm.cells().begin(), _cm.cells().end(),
             [](const auto& cell) {
-                return static_cast<unsigned short int>(cell->state().state);
+                return static_cast<unsigned short int>(cell->state.state);
             }
         );
 
@@ -542,16 +555,23 @@ public:
         update_densities();
 
         // Identify clusters
-        //this->identify_clusters();
+        identify_clusters();
 
-        //_dset_cluster_id->write(_cm.cells().begin(), _cm.cells().end(),
-        //    [](const auto& cell) {
-        //        return cell->state().cluster_tag;
-        //});
+
+        _dset_cluster_id->write(_cm.cells().begin(), _cm.cells().end(),
+           [](const auto& cell) {
+               return cell->state.cluster_tag;
+        });
 
         _dset_density_empty->write(_densities[0]);
         _dset_density_tree->write(_densities[1]);
         _dset_density_infected->write(_densities[2]);
+    }
+
+    void identify_clusters(){
+        // reset cluster counter
+        _cluster_tag_cnt = 0;
+        apply_rule<Update::async, Shuffle::off>(_identify_cluster, _cm.cells(), *this->_rng);
     }
 
 };
