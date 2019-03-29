@@ -14,12 +14,12 @@ slope:
 
 # Plot the complementary cumulative probability distribution
 compl_cum_prob_dist:
+  creator: universe
   universes: all
-  
-  # Use the SandPile-specific plot functions
-  module: model_plots.SandPile
-  plot_func: compl_cum_prob_dist
 
+  module: .distribution
+  plot_func: compl_cum_prob_dist
+  
   model_name: SandPile
   path_to_data: avalanche
 
@@ -28,13 +28,12 @@ compl_cum_prob_dist:
   marker: '.'
 
 # Plot the complementary cumulative probability distribution
-cluster_size_distr:
+cluster_size_dist:
   universes: all
-  
-  # Use the SandPile-specific plot functions
-  module: model_plots.SandPile
-  plot_func: cluster_size_distr
 
+  module: .distribution
+  plot_func: cluster_size_dist
+  
   model_name: SandPile
   path_to_data: avalanche
 
