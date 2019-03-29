@@ -206,24 +206,24 @@ private:
         // Prey always finds food and can only run out of energy if 
         // reproduction is very costly.
         if (state.population == Population::predator 
-            and state.resource_predator == 0.) 
+            and state.resource_predator <= 0.) 
         {
             // Remove the predator
             state.population = Population::empty;
         }
         else if (state.population == Population::prey 
-            and state.resource_prey == 0) 
+            and state.resource_prey <= 0) 
         {
             // Remove the prey
             state.population = Population::empty;
         }
         else if (state.population == Population::pred_prey) {
             // Remove either one of them or both, depending on resources
-            if (state.resource_predator == 0. and state.resource_prey == 0.)
+            if (state.resource_predator <= 0. and state.resource_prey <= 0.)
                 state.population = Population::empty;
-            else if (state.resource_predator == 0.)
+            else if (state.resource_predator <= 0.)
                 state.population = Population::prey;
-            else if (state.resource_prey == 0.)
+            else if (state.resource_prey <= 0.)
                 state.population = Population::predator;
         }
 
