@@ -33,10 +33,13 @@ def test_cost_of_living_prey():
     data = dm['multiverse'][0]['data']
     res_prey = data['PredatorPrey']['resource_prey']
 
+    res_prey.stack(dim=['x', 'y'])
+
     # Assert that life is costly...
-    assert res_prey[0, 0, 0] == 2
-    assert res_prey[1, 0, 0] == 1
-    assert res_prey[2, 0, 0] == 0
+    # NOTE Requires initial resources of 2 and cost of living of 1
+    for i, r in enumerate(res_prey):
+        unique = np.unique(r)
+        assert unique == 2-i
 
 
 def test_cost_of_living_Predator():
@@ -47,12 +50,12 @@ def test_cost_of_living_Predator():
 
     # Get the data
     data = dm['multiverse'][0]['data']
-    res_pred = data['PredatorPrey']['resource_predator']
+    res_predator = data['PredatorPrey']['resource_predator']
 
     # Assert that life is costly
-    assert res_pred[0, 0, 0] == [2]
-    assert res_pred[1, 0, 0] == [1]
-    assert res_pred[2, 0, 0] == [0]
+    for i, r in enumerate(res_predator):
+        unique = np.unique(r)
+        assert unique == 2-i
 
 
 def test_eating_prey():
@@ -71,9 +74,11 @@ def test_eating_prey():
 
     # Assert that prey takes up resources every step and spends 1 resource
     # for its cost of living
-    assert res_prey[0, 0, 0] == [2]
-    assert res_prey[1, 0, 0] == [3]
-    assert res_prey[2, 0, 0] == [4]
+    # NOTE Requires initial resources of 2 and cost of living of 1 and 
+    #      resource intake of 2
+    for i, r in enumerate(res_prey):
+        unique = np.unique(r)
+        assert unique == 2+i
 
 
 def test_predator_movement():
