@@ -83,7 +83,7 @@ struct Param {
     const double growth_rate;
 
     /// Frequency of lightning occurring per cell
-    const double lightning_frequency;
+    const double lightning_probability;
 
     /// Whether the bottom row should be constantly on fire
     const bool light_bottom_row;
@@ -95,7 +95,7 @@ struct Param {
     Param(const DataIO::Config& cfg)
     :
         growth_rate(get_as<double>("growth_rate", cfg)),
-        lightning_frequency(get_as<double>("lightning_frequency", cfg)),
+        lightning_probability(get_as<double>("lightning_probability", cfg)),
         light_bottom_row(get_as<bool>("light_bottom_row", cfg)),
         resistance(get_as<double>("resistance", cfg))
     {
@@ -104,8 +104,8 @@ struct Param {
                 "in range [0, 1] and specify the probability per time step "
                 "and cell with which an empty cell turns into a tree.");
         }
-        if ((lightning_frequency > 1) or (lightning_frequency < 0)) {
-            throw std::invalid_argument("Invalid lightning_frequency; need be "
+        if ((lightning_probability > 1) or (lightning_probability < 0)) {
+            throw std::invalid_argument("Invalid lightning_probability; need be "
                 "in range [0, 1] and specify the probability per cell and "
                 "time step for lightning to strike.");
         }
@@ -244,7 +244,7 @@ private:
     /// Update rule, called every step
     /** \detail The possible transitions are the following:
       *           - empty -> tree (p = growth_rate)
-      *           - tree -> burning (p = lightning_frequency)
+      *           - tree -> burning (p = lightning_probability)
       *         A burning tree directly invokes the burning of the whole
       *         cluster of connected trees ("two-state FFM"). After that, all
       *         burned cells are in the empty state again.
@@ -269,7 +269,7 @@ private:
         }
         
         // Trees can be hit by lightning
-        else if (this->_prob_distr(*this->_rng) < _param.lightning_frequency)
+        else if (this->_prob_distr(*this->_rng) < _param.lightning_probability)
         {
             state = _burn_cluster(cell);
         }
