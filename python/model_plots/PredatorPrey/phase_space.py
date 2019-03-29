@@ -18,7 +18,6 @@ from utopya.plotting import is_plot_func, PlotHelper, UniversePlotCreator
              )
 def phase_space(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper, 
                 cmap: str=None, show_grid: bool=False, 
-                Population: Union[str, list] = ['prey', 'predator'],
                 **plot_kwargs):
     """plots the frequency of one species against the frequency of the other
 
@@ -27,7 +26,6 @@ def phase_space(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
     uni (UniverseGroup): The universe from which to plot the data
     cmap (str): The cmap which is used to color-code the time development
     show_grid (bool): Show a grid 
-    Population (Union[str, list], optional): The population to plot
     save_kwargs (dict, optional): kwargs to the plt.savefig function
     **plot_kwargs: Passed on to plt.plot
     
@@ -36,28 +34,27 @@ def phase_space(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
     """
     # Get the group that all datasets are in
     grp = uni['data']['PredatorPrey']
-    
-    # Get the grid size
-    grid_size = uni['cfg']['PredatorPrey']['cell_manager']['grid']['resolution']
 
-    # Extract the data of the frequency
+    # Extract the population data ...
     population_data = grp['population']
-    num_cells = grid_size * grid_size
-    frequencies = [np.bincount(p.flatten(), minlength=4)[[1, 2]] / num_cells
-                   for p in population_data]
-    
-    # rearrange data for plotting - one array each with population densities
-    # and index to store the time step
-    prey = [f[0] for f in frequencies]
-    pred = [f[1] for f in frequencies]
 
-    # plot the phase space, either color coding the time or not
+    # ... and calculate the frequencies of predator and prey
+    frequencies = [np.bincount(p.stack(grid=['x', 'y']), minlength=4)
+                    / p.grid_shape.prod()
+                   for p in population_data]
+
+    # Rearrange the data for plotting - one array each with population densities
+    # and index to store the time step
+    prey = [f[1] for f in frequencies]
+    pred = [f[2] for f in frequencies]
+
+    # Plot the phase space, either color coding the time or not
     if cmap:
-        hlpr.ax.scatter(pred, prey, c=range(len(frequencies)), s=0.2, 
+        hlpr.ax.scatter(pred, prey, c=range(len(frequencies)), 
                         cmap=cmap, **plot_kwargs)
     else:
-        hlpr.ax.scatter(pred, prey, s=0.2, **plot_kwargs)
+        hlpr.ax.scatter(pred, prey, **plot_kwargs)
 
-    # add a grid in the background if desired
+    # Add a grid in the background if desired
     hlpr.ax.grid(b=show_grid, which='both')
 

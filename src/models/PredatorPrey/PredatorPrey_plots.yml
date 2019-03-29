@@ -8,14 +8,15 @@ phase_space:
   module: model_plots.PredatorPrey
   plot_func: phase_space
   
-  cmap: viridis
+  cmap: viridis_r
+  s: 3.5
+  
   show_grid: True
-  Population: [prey, predator]
 
   helpers:
     set_limits:
-      x: [0.0, 0.6]
-      y: [0.0, 0.6]
+      x: [0.0, 0.3]
+      y: [0.0, 0.7]
 
 
 
