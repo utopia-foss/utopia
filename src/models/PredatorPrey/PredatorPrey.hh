@@ -121,7 +121,7 @@ using ModelTypes = ModelTypes<>;
  * empty, prey, predator or both.
  * Cells are updated based on the following interactions:
  * 1) resource levels are reduced by a cost_of_living for both species
- * removed if resource = 0 
+ * and individuals are removed if resource <= 0 
  * 2) predators move to neighbouring cells if there is a no prey on their 
  * own cell. Prey flees with a certain probability, if there is a predator on 
  * the same cell
