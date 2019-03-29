@@ -2,6 +2,7 @@
 ---
 #Plot the mean state
 state_mean:
+  creator: universe
   universes: all
   
   # Use the ForestFire-model-specific plot functions
@@ -11,6 +12,7 @@ state_mean:
 
 # Plot the cluster size distribution
 cluster_distribution:
+  creator: universe
   universes: all
 
   helpers:
@@ -34,7 +36,7 @@ cluster_distribution_multiverse:
   creator: multiverse
 
   #Use True in case of multiverse run (parameter sweep), else false  
-  enabled: True
+  enabled: false
   
   # Use the ForestFire-specific plot functions
   module: model_plots.ForestFire
@@ -60,7 +62,7 @@ state_mean_multiverse:
   creator: multiverse
 
   #Use True in case of multiverse run (parameter sweep), else false  
-  enabled: True
+  enabled: false
 
   # Use the ForestFire-specific plot functions
   module: model_plots.ForestFire
@@ -83,7 +85,7 @@ temporal_mean_multiverse:
   creator: multiverse
 
   #Use True in case of multiverse run (parameter sweep), else false
-  enabled: True
+  enabled: false
 
   module: model_plots.ForestFire
   plot_func: temporal_mean_multiverse
@@ -103,6 +105,7 @@ temporal_mean_multiverse:
 
 # Create frames/movies of the cell states
 state_map: &state_map
+  creator: universe
   universes: all
 
   file_ext: mp4
