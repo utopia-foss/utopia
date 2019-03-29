@@ -21,6 +21,12 @@ def test_griddc() -> None:
     attrs_1d = dict(content="grid", grid_shape=(2,3))
     gdc_1d = GridDC(name="data_1d", data=data_1d, attrs=attrs_1d)
     assert(gdc_1d.shape == (2,3))
+    assert 'x' in gdc_1d.dims
+    assert 'y' in gdc_1d.dims
+    for i in range(attrs_1d['grid_shape'][0]):
+        assert i == gdc_1d.data.coords['x'][i]
+    for i in range(attrs_1d['grid_shape'][1]):
+        assert i == gdc_1d.data.coords['y'][i]
     
     # Assert that the data is correct and have the form
     # [[ 0  1  2 ]
@@ -47,6 +53,13 @@ def test_griddc() -> None:
     attrs_2d = dict(content="grid", grid_shape=(2,3))
     gdc_2d = GridDC(name="data_2d", data=data_2d, attrs=attrs_2d)
     assert(gdc_2d.shape == (2,2,3))
+    assert 'time' in gdc_2d.dims
+    assert 'x' in gdc_2d.dims
+    assert 'y' in gdc_2d.dims
+    for i in range(attrs_2d['grid_shape'][0]):
+        assert i == gdc_2d.data.coords['x'][i]
+    for i in range(attrs_2d['grid_shape'][1]):
+        assert i == gdc_2d.data.coords['y'][i]
 
     # Assert that the data is correct and of the form
     # [[[ 0  1  2 ]
@@ -61,21 +74,6 @@ def test_griddc() -> None:
         else:
             tmp = i - 6
             assert(gdc_2d[1][tmp//3][tmp%3] == i)
-
-
-    ### 3d data ---------------------------------------------------------------    
-    # Create some test data of the form
-    # [[[ 0  1  2  3  4  5 ]
-    #  [ 6  7  8  9 10 11 ]]
-    # [[ 0  1  2  3  4  5 ]
-    #  [ 6  7  8  9 10 11 ]]]
-    # Data in columns represents the time and data in rows the grid data
-    data_3d = np.arange(24).reshape((2,2,6))
-
-    # Create a GridDC and assert that the shape is correct
-    attrs_3d = dict(content="grid", grid_shape=(2,3))
-    gdc_3d = GridDC(name="data_3d", data=data_3d, attrs=attrs_3d)
-    assert(gdc_3d.shape == (2,2,2,3))
 
 def test_griddc_integration():
     """Integration test for the GridDC."""

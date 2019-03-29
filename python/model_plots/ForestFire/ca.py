@@ -14,8 +14,8 @@ def state_anim(*args, **kwargs) -> None:
     """
     def cluster_id_mod20(arr):
         arr = arr.astype(float)
-        arr[arr == 0] = np.nan
-        return arr % 20;
+        arr.where(arr != 0)
+        return arr % 20
         
     # Bundle the functions into a dict, then call the actual state_anim
     pp_funcs = dict(cluster_id=cluster_id_mod20)

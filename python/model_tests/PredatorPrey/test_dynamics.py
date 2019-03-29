@@ -47,7 +47,6 @@ def test_cost_of_living_Predator():
 
     # Get the data
     data = dm['multiverse'][0]['data']
-    pop = data['PredatorPrey']['population']
     res_pred = data['PredatorPrey']['resource_predator']
 
     # Assert that life is costly
