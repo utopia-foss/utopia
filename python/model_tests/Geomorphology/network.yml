@@ -6,7 +6,7 @@ run_kwargs:
     - !stop-condition
           name: single simulation timeout
           func: timeout_wall
-          seconds: 10
+          seconds: 60
 
 parameter_space:
   num_steps: 3
@@ -20,8 +20,10 @@ parameter_space:
 
     cell_manager:
       grid:
-        resolution: 32
+        resolution: 64
       cell_params: # the most difficult situation to create a network
         initial_height_mean: 100.
         initial_height_var: 5.
-        initial_slope: 0.
+        initial_slope: !sweep
+          default: 5.
+          values: [0.001, 5.]

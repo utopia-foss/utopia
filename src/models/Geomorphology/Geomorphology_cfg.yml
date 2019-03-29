@@ -14,7 +14,7 @@ cell_manager:
 
   # Initialization parameters for each cell
   cell_params:
-    initial_height_mean: 10.
+    initial_height_mean: 100. # choose large enough to don't get negative values
     initial_height_var: 5.
     initial_slope: 5.
 

@@ -56,8 +56,7 @@ struct GeomorphologyCell {
             get_as<double>("initial_height_mean", cfg), 
             get_as<double>("initial_height_var", cfg)
         };
-        // don't allow values below 0
-        rock = std::max(0., init_height(*rng));
+        rock = init_height(*rng);
     }
 };
 
@@ -245,6 +244,13 @@ private:
             double slope = get_as<double>("initial_slope", 
                                 this->_cfg["cell_manager"]["cell_params"]);
             state.rock += slope*pos[1];
+            if (state.rock < 1e-10) {
+                std::uniform_real_distribution<> dist(0.,1e-5);
+                state.rock = dist(*this->_rng);
+                this->_log->warn("Received negative initial height. Was set "
+                    "in [0.,1e-5]. Better chose the initial_height "
+                    "distribution such that no negative values occur.");
+            }
             return state;
         };
         apply_rule<false>(set_inclined_plane, _cm.cells());
@@ -260,7 +266,7 @@ private:
             // The containers over which to iterate
             _cm.boundary_cells("bottom"),
             // The RNG needed for apply_rule calls with async update
-           * this->_rng
+           *this->_rng
         );
 
         // Build drainage network
@@ -272,7 +278,38 @@ private:
 
 
     // -- Helper functions ----------------------------------------------------
-    /// Updatee the CellContainer of lake and shore clls
+    
+    /// Return the lowest cell of the grid-Neighborhood, including cell itself
+    template <typename Cell>
+    Cell _lowest_grid_neighbor(const Cell& cell) {
+        GmorphCellContainer lowest_neighbors = {cell};
+        auto lowest_neighbor = cell;
+        for (const auto& n : this->_cm.neighbors_of(cell)) {
+            double height_diff = n->state().waterline() - 
+                                 lowest_neighbor->state().waterline();
+
+            // Check if cells have approximately the same height
+            if ((height_diff < 1e-10) && (-height_diff < 1e-10)) {
+                lowest_neighbors.push_back(n);
+            }
+            
+            // If neighbor is lower, update lowest_neighbor and list
+            else if (height_diff < 0) {
+                lowest_neighbor = n;
+                lowest_neighbors.clear();
+                lowest_neighbors.push_back(lowest_neighbor);
+            }
+        }
+
+        // If there is more than one lowest neighbor, select one randomly.
+        if (lowest_neighbors.size() > 1) {
+            std::uniform_int_distribution<> dist(0, lowest_neighbors.size() - 1);
+            lowest_neighbor = lowest_neighbors[dist(*(this->_rng))];
+        }
+        return lowest_neighbor;
+    }
+
+    /// Update the CellContainer of lake and shore clls
     /** \param lake Reference to a Container of lake cells. Lake: cells of 
      *              equal waterline.
      *  \param shore Reference to the Cells neighboring the lake
@@ -283,11 +320,12 @@ private:
      *  \Note updates the shore Container to match the new lake
      */
     GmorphCellContainer update_lakesites(GmorphCellContainer& lake,
-                                         GmorphCellContainer& shore) {
+                                         GmorphCellContainer& shore) 
+    {
         double waterline = lake[0]->state().waterline();
         auto it = std::begin(shore);
         while(it != std::end(shore)) { 
-            if (std::abs((*it)->state().waterline() - waterline) < 1e-6) {
+            if (std::abs((*it)->state().waterline() - waterline) < 1e-10) {
                 lake.push_back(*it);
                 auto nb = _cm.neighbors_of(*it);
                 for (auto it_lake : lake)
@@ -399,35 +437,8 @@ private:
             return cell->state();
         }
 
-        GmorphCellContainer lowest_neighbors;
-        // lowest_neighbor of a cell is itself, if it is a sink
-        auto lowest_neighbor = cell;
-        lowest_neighbors.push_back(lowest_neighbor);
-        for (auto neighbor : this->_cm.neighbors_of(cell)) {
-            double height_diff = neighbor->state().waterline() - 
-                                 lowest_neighbor->state().waterline();
-
-            // Check if cells have approximately the same height
-            if ((height_diff < 1e-6) && (-height_diff < 1e-6)) {
-                lowest_neighbors.push_back(neighbor);
-            }
-            
-            // If neighbor is lower, update lowest_neighbor and list
-            else if (height_diff < 0) {
-                lowest_neighbor = neighbor;
-                lowest_neighbors.clear();
-                lowest_neighbors.push_back(lowest_neighbor);
-            }
-        }
-
-        // If there is more than one lowest neighbor, select one randomly.
-        if (lowest_neighbors.size() > 1) {
-            std::uniform_int_distribution<> dist(0, lowest_neighbors.size() - 1);
-            lowest_neighbor = lowest_neighbors[dist(*(this->_rng))];
-        }
-
-        // Set lowest neighbor for cell
-        _lowest_neighbors[cell->id()] = lowest_neighbor;
+        // Set lowest neighbor for cell, is itself is sink
+        _lowest_neighbors[cell->id()] = this->_lowest_grid_neighbor(cell);
 
         return cell->state();
     };
@@ -447,21 +458,17 @@ private:
             return cell->state();
         }
 
-        GmorphCellContainer lake; // Container of cells of same height as cell
-        lake.push_back(cell);
-
-        // Container of cells neighboring lake sites
+        GmorphCellContainer lake = {cell};
         GmorphCellContainer shore = this->_cm.neighbors_of(cell);
-
         lake = update_lakesites(lake, shore);
 
         double waterline = lake[0]->state().waterline();
+        bool no_sink = true;
 
-        auto outflow_cell = cell;
         // check for sink in new lake sites
         for (const auto& lc : lake) {
             if (lc->state().is_outflow) {
-                outflow_cell = lc;
+                no_sink=false;
                 break;
             }
         }
@@ -470,15 +477,15 @@ private:
         auto lowest_shore_cell = shore[0];
         for (const auto& sc : shore) {
             if (sc->state().waterline() < 
-                lowest_shore_cell->state().waterline() - 1e-6) 
+                lowest_shore_cell->state().waterline() - 1e-10) 
             {
                 lowest_shore_cell = sc;
             }
         }
 
         // raise waterline while no outflow to lake
-        while (lowest_shore_cell->state().waterline() > waterline && 
-               outflow_cell == cell)
+        while (lowest_shore_cell->state().waterline() > waterline + 1e-10 and 
+               no_sink) 
         {
             // raise watercolumn to new waterline
             waterline = lowest_shore_cell->state().waterline();
@@ -491,44 +498,63 @@ private:
 
             for (const auto& lc : lake) {
                 if (lc->state().is_outflow) {
-                    outflow_cell = lc;
+                    no_sink=false;
                     break;
                 }
             }
 
             // update lowest shore cell
             lowest_shore_cell = shore[0];
-
             for (const auto& sc : shore) {
                 if (sc->state().waterline() <
-                    lowest_shore_cell->state().waterline() - 1e-6) 
+                    lowest_shore_cell->state().waterline() - 1e-10) 
                 {
                     lowest_shore_cell = sc;
                 }
             }
         }
 
-        // find outflow cell
-        if (outflow_cell == cell) {
-            GmorphCellContainer outflow_candidates;
-            for (const auto& sc : shore) {
-                if (std::abs(sc->state().waterline() - lowest_shore_cell->state().waterline()) < 1e-6) {
-                    outflow_candidates.push_back(sc);
+        auto outflow_cell = lowest_shore_cell;
+        if (not no_sink) {
+            for (const auto& lc : lake) {
+                if (lc->state().is_outflow) {
+                    outflow_cell = lc;
+                    break;
                 }
             }
-            if (outflow_candidates.size() > 1) {
-                std::uniform_int_distribution<> dist(0, outflow_candidates.size() - 1);
-                outflow_cell = outflow_candidates[dist(*(this->_rng))];
-            }
-            else {
-                outflow_cell = outflow_candidates[0];
+        }
+        else {
+            auto nbs = this->_cm.neighbors_of(lowest_shore_cell);
+            auto it_nb = nbs.begin();
+            while(it_nb != nbs.end()) {
+                if (std::abs((*it_nb)->state().waterline() - waterline) >= 1e-10) {
+                    it_nb = nbs.erase(it_nb);
+                }
+                else if (lake.end() == std::find(lake.begin(), lake.end(), (*it_nb))) {
+                    it_nb = nbs.erase(it_nb);
+                }
+                else { ++it_nb; }                
             }
 
+            if (nbs.size() > 1) {
+                std::uniform_int_distribution<> dist(0, nbs.size() - 1);
+                outflow_cell = nbs[dist(*(this->_rng))];
+            }
+            else { outflow_cell = nbs[0]; }
         }
 
         for (const auto& lc : lake) {
-            _lowest_neighbors[lc->id()] = outflow_cell;
+            if (lc->state().is_outflow) {
+                _lowest_neighbors[lc->id()] = lc;
+            }
+            else {
+                _lowest_neighbors[lc->id()] = outflow_cell;
+            }
         }
+        if (not outflow_cell->state().is_outflow) {
+            _lowest_neighbors[outflow_cell->id()] = lowest_shore_cell;
+        }
+
         return cell->state();
     };
 
@@ -543,8 +569,8 @@ private:
         state.was_drained = true;
 
         if (not state.is_outflow and _lowest_neighbors[cell->id()] == cell) {
-            this->_log->warn("ERROR: no recipiant assigned!");
-            return state;
+            throw std::runtime_error("RUNTIME ERROR: no recipiant assigned to "
+                                     "a cell!");
         }
         // nothing to do here
         if (state.is_outflow) {
@@ -553,25 +579,19 @@ private:
 
         // get downstream neighbor
         auto downstream_cell = _lowest_neighbors[cell->id()];
+        downstream_cell->state().drainage_area += state.drainage_area;
 
         // pass drainage to all already drained cells
-        while(downstream_cell->state().was_drained) 
+        while(not downstream_cell->state().is_outflow and 
+              downstream_cell->state().was_drained) 
         {
+            downstream_cell = _lowest_neighbors[downstream_cell->id()];
             downstream_cell->state().drainage_area += state.drainage_area;
-            if (not downstream_cell->state().is_outflow) {
-                if (downstream_cell == _lowest_neighbors[downstream_cell->id()]) {
-                    this->_log->warn("ERROR: no recipiant assigned!");
-                    return state;
-                }
-                downstream_cell = _lowest_neighbors[downstream_cell->id()];
+            if (downstream_cell->state().drainage_area > size(this->_cm.cells())) {
+                throw std::runtime_error("RUNTIME ERROR: Drainage network has "
+                                         "loop!");
             }
-            // outflow boundary reached
-            else {
-                return state;
-            }
-        }        
-        // dump here, drainage will continue at call of this cell
-        downstream_cell->state().drainage_area += state.drainage_area;
+        }
 
         return state;
     };
