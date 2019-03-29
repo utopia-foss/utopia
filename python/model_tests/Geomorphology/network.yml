@@ -2,10 +2,14 @@
 perform_sweep: true
 
 run_kwargs:
-  timeout: 20
+  stop_conditions:
+    - !stop-condition
+          name: single simulation timeout
+          func: timeout_wall
+          seconds: 10
 
 parameter_space:
-  num_steps: 0
+  num_steps: 3
 
   seed: !sweep
     default: 42

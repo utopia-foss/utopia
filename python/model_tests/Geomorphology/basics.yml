@@ -1,7 +1,5 @@
 # Configuration file used to test that the output of the model is correct
 ---
-perform_sweep: true
-
 run_kwargs:
   stop_conditions:
     - !stop-condition
@@ -10,13 +8,7 @@ run_kwargs:
           seconds: 30
 
 parameter_space:
-  num_steps: 3
-
-  seed: !sweep
-    default: 42
-    values: [23, 42, 665, 667]
-
   Geomorphology: !model  
     model_name: Geomorphology
 
-    # NOTE Below, entries from the model config can be changed or added
+    # NOTE run default conigs

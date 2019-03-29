@@ -10,7 +10,7 @@ mtc = ModelTest("Geomorphology", test_file=__file__)
 def test_basics():
     """Test the most basic features of the model"""
     # Create a Multiverse using the default model configuration
-    mv = mtc.create_mv()
+    mv = mtc.create_mv(from_cfg="basics.yml")
 
     # Run a single simulation
     mv.run_single()
@@ -29,7 +29,6 @@ def test_output():
 
     # Get the meta-config from the DataManager
     mcfg = dm['cfg']['meta']
-    print("meta config: ", mcfg)
 
     # Assert that the number of runs matches the specified ones
     assert len(dm['multiverse']) == mcfg['parameter_space'].volume
