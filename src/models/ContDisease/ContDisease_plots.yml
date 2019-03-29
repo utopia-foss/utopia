@@ -30,7 +30,7 @@ densities:
 phase_diagram:
   creator: universe
   universes: all
-  
+
   module: model_plots.ContDisease
   plot_func: phase_diagram
 
@@ -76,7 +76,7 @@ state_map: &state_map
     state:
       title: State
       limits: [0, 4]
-      
+
       cmap:
         empty: white
         tree: green
@@ -100,7 +100,23 @@ state_map_frames:
 
   # Use the frames writer, instead of the inherited ffmpeg write
   writer: frames
-  
+
   # For the 'frames' writer, the following additional kwargs can be passed
   frames_kwargs:
     file_format: png
+
+# Create frames/movies of the clusters
+cluster_map:
+  # Base the configuration here on that of the state map
+  <<: *state_map
+  writer: frames
+  # Use a custom pre-processor function
+  module: model_plots.ForestFire
+  plot_func: state_anim
+
+  # Select the properties to plot
+  to_plot:
+    cluster_id:
+      title: Cluster
+      limits: [0, 20]
+      cmap: tab20

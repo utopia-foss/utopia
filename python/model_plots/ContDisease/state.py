@@ -2,21 +2,41 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-
+import utopya.plot_funcs.ca
 from utopya import DataManager, UniverseGroup
+from utopya.plotting import is_plot_func, PlotHelper, UniversePlotCreator
+
 
 from ..tools import save_and_close, colorline
 
 # -----------------------------------------------------------------------------
 
-def tree_density(dm: DataManager, *, 
-                 out_path: str, 
-                 uni: UniverseGroup, 
-                 fmt: str=None, 
-                 save_kwargs: dict=None, 
+def state_anim(*args, **kwargs) -> None:
+    """See utopya.plot_funcs.ca.state_anim for docstring
+
+    This function merely wraps that function and provides the preprocess_funcs
+    that are needed for the FFM
+    """
+    def cluster_id_mod20(arr):
+        arr = arr.astype(float)
+        arr[arr == 0] = np.nan
+        return arr % 20;
+
+    # Bundle the functions into a dict, then call the actual state_anim
+    pp_funcs = dict(cluster_id=cluster_id_mod20)
+
+    return utopya.plot_funcs.ca.state_anim(*args,
+                                           preprocess_funcs=pp_funcs,
+                                           **kwargs)
+
+def tree_density(dm: DataManager, *,
+                 out_path: str,
+                 uni: UniverseGroup,
+                 fmt: str=None,
+                 save_kwargs: dict=None,
                  **plot_kwargs):
     """Plots the density of trees and perfoms a lineplot
-    
+
     Args:
         dm (DataManager): The data manager
         out_path (str): Where to store the plot to
@@ -47,13 +67,13 @@ def tree_density(dm: DataManager, *,
     save_and_close(out_path, save_kwargs=save_kwargs)
 
 
-def densities(dm: DataManager, *, 
-              out_path: str, 
-              uni: UniverseGroup, 
-              save_kwargs: dict=None, 
+def densities(dm: DataManager, *,
+              out_path: str,
+              uni: UniverseGroup,
+              save_kwargs: dict=None,
               **plot_kwargs):
     """Plots the densities of all cell states
-    
+
     Args:
         dm (DataManager): The data manager
         out_path (str): Where to store the plot to
@@ -70,12 +90,12 @@ def densities(dm: DataManager, *,
     d_infected = grp["densities/infected"]
     d_source = grp["densities/source"]
     d_stone = grp["densities/stone"]
-    
+
     # Get the time steps array for the given universe
     times = uni.get_times_array()
-    
+
     # Expand the stone and source arrays (both constant) to be of valid length
-    d_stone = np.full(len(times), d_stone) 
+    d_stone = np.full(len(times), d_stone)
     d_source = np.full(len(times), d_source)
 
     # Call the plot function
@@ -97,20 +117,20 @@ def densities(dm: DataManager, *,
     save_and_close(out_path, save_kwargs=save_kwargs)
 
 
-def phase_diagram(dm: DataManager, *, 
-                  out_path: str, 
-                  uni: UniverseGroup, 
+def phase_diagram(dm: DataManager, *,
+                  out_path: str,
+                  uni: UniverseGroup,
                   x: str='tree',
                   y: str='infected',
                   xlims: tuple=None,
                   ylims: tuple=None,
                   xlabel: str=None,
                   ylabel: str=None,
-                  fmt: str=None, 
-                  save_kwargs: dict=None, 
+                  fmt: str=None,
+                  save_kwargs: dict=None,
                   **lc_kwargs):
     """Plots the the phase diagram of tree and infected tree densities
-    
+
     Args:
         dm (DataManager): The data manager
         out_path (str): Where to save the plot to
@@ -143,7 +163,7 @@ def phase_diagram(dm: DataManager, *,
     # Set limits, if given
     if xlims:
         plt.xlim(*xlims)
-    
+
     if ylims:
         plt.ylim(*ylims)
 

@@ -479,7 +479,7 @@ protected:
 
     /// Identify each cluster of trees
     RuleFunc _identify_cluster = [this](const auto& cell){
-        if (cell->state.cluster_tag != 0 or cell->state.state == empty) {
+        if (cell->state.cluster_tag != 0 or cell->state.state != tree) {
             // already labelled, nothing to do. Return current state
             return cell->state;
         }
