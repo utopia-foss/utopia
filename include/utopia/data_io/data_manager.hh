@@ -43,15 +43,21 @@ template <class Model, class Task>
 class DataManager
 {
 public:
-
+    /// The function to decide whether a write task will be invoked
     using Decider = std::function<bool(Model&)>;
+
+    /// The function to decide whether a writer's builder will be triggered
     using Trigger = std::function<bool(Model&)>;
 
+    /// Map of task names to shared pointers of Tasks; supporting polymorphism
     using TaskMap = std::unordered_map<std::string, std::shared_ptr<Task>>;
 
+    /// Map of decider names to decider functions
     using DeciderMap = std::unordered_map<std::string, std::shared_ptr<Decider>>;
+    /// Map of trigger names to trigger functions
     using TriggerMap = std::unordered_map<std::string, std::shared_ptr<Trigger>>;
 
+    /// Map of decider/task names to vectors of task names
     using NamingMap = std::unordered_map<std::string, std::vector<std::string>>;
 
 protected:

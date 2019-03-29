@@ -365,22 +365,22 @@ BOOST_AUTO_TEST_CASE(datamanager_lifecycle)
     // have copy to check against
     auto dm2_cpy(dm2);
 
-    // swap(dm2, dm);
+    swap(dm2, dm);
 
     // check that the states are swapped
-    // BOOST_TEST(dm.get_triggers() == dm2_cpy.get_triggers());
-    // BOOST_TEST(dm.get_tasks() == dm2_cpy.get_tasks());
-    // BOOST_TEST(dm.get_deciders() == dm2_cpy.get_deciders());
-    // BOOST_TEST(dm.get_logger() == dm2_cpy.get_logger());
-    // BOOST_TEST(dm.get_trigger_task_map() == dm2_cpy.get_trigger_task_map());
-    // BOOST_TEST(dm.get_decider_task_map() == dm2_cpy.get_decider_task_map());
+    BOOST_TEST(dm.get_triggers() == dm2_cpy.get_triggers());
+    BOOST_TEST(dm.get_tasks() == dm2_cpy.get_tasks());
+    BOOST_TEST(dm.get_deciders() == dm2_cpy.get_deciders());
+    BOOST_TEST(dm.get_logger() == dm2_cpy.get_logger());
+    BOOST_TEST(dm.get_trigger_task_map() == dm2_cpy.get_trigger_task_map());
+    BOOST_TEST(dm.get_decider_task_map() == dm2_cpy.get_decider_task_map());
 
-    // BOOST_TEST(dm2.get_triggers() == dm_cpy.get_triggers());
-    // BOOST_TEST(dm2.get_tasks() == dm_cpy.get_tasks());
-    // BOOST_TEST(dm2.get_deciders() == dm_cpy.get_deciders());
-    // BOOST_TEST(dm2.get_logger() == dm_cpy.get_logger());
-    // BOOST_TEST(dm2.get_trigger_task_map() == dm_cpy.get_trigger_task_map());
-    // BOOST_TEST(dm2.get_decider_task_map() == dm_cpy.get_decider_task_map());
+    BOOST_TEST(dm2.get_triggers() == dm_cpy.get_triggers());
+    BOOST_TEST(dm2.get_tasks() == dm_cpy.get_tasks());
+    BOOST_TEST(dm2.get_deciders() == dm_cpy.get_deciders());
+    BOOST_TEST(dm2.get_logger() == dm_cpy.get_logger());
+    BOOST_TEST(dm2.get_trigger_task_map() == dm_cpy.get_trigger_task_map());
+    BOOST_TEST(dm2.get_decider_task_map() == dm_cpy.get_decider_task_map());
 }
 
 // test polymorphism for tasks in datamanager
