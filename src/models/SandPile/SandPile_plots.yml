@@ -21,7 +21,7 @@ compl_cum_prob_dist:
   plot_func: compl_cum_prob_dist
   
   model_name: SandPile
-  path_to_data: avalanche
+  path_to_data: avalanche_size
 
   # Arguments passed to plt.plot
   linestyle: 'None'
@@ -35,7 +35,7 @@ cluster_size_dist:
   plot_func: cluster_size_dist
   
   model_name: SandPile
-  path_to_data: avalanche
+  path_to_data: avalanche_size
 
   # Arguments passed to plt.plot
   linestyle: 'None'
@@ -54,7 +54,9 @@ slope_anim:
     slope:
       title: Slope
       limits: [1, 4]
-      cmap: copper
+      cmap: 
+        0: black
+        1: orange
 
 # Plot an animation of the CA `avalanche` state and save as individual frames
 avalanche_anim:

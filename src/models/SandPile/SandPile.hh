@@ -163,7 +163,11 @@ public:
         _dset_slope(this->create_cm_dset("slope", _cm)),
         _dset_avalanche(this->create_cm_dset("avalanche", _cm)),
         _dset_avalanche_size(this->create_dset("avalanche_size", {}))
-    {}
+    {
+        // Set the dimension name "time" to the python Xarray dataset that will
+        // be read in
+        _dset_avalanche_size->add_attribute("dim_names", "time");
+    }
 
 
 private:
