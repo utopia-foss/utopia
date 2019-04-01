@@ -90,6 +90,9 @@ public:
     /// Cell type
     using Cell = typename CellManager::Cell;
 
+    /// Cell container type
+    using CellContainer = std::vector<std::shared_ptr<Cell>>;
+
     /// Supply a type for rule functions that are applied to cells
     using RuleFunc = typename CellManager::RuleFunc;
     
@@ -155,16 +158,12 @@ public:
 
         // Initialize the distribution such that a random cell can be selected
         _cell_distr(0, _cm.cells().size() - 1),
-
+        
         // create datasets
         _dset_slope(this->create_cm_dset("slope", _cm)),
         _dset_avalanche(this->create_cm_dset("avalanche", _cm)),
         _dset_avalanche_size(this->create_dset("avalanche_size", {}))
-    {
-        // Write initial state
-        this->_log->debug("Writing initial state ...");
-        this->write_data();
-    }
+    {}
 
 
 private:
@@ -198,34 +197,44 @@ private:
         }
     }
 
+    // .. Dynamic functions ...................................................
+    /// Topple cells if the critical slope is exceeded
+    /** \detail Starting from the first_cell, every time a cell topples the
+     *          neighbors are also checked whether they need to topple.
+     * 
+     * \param first_cell The first cell from which the topple avalanche starts
+     */
+    void _topple(const std::shared_ptr<Cell>& first_cell){
+        this->log->info("Toppling sand grains ...");
+
+        // Create a queue that stores all the cells that need to topple
+        std::queue<std::shared_ptr<Cell>> queue;
+        queue.push(first_cell);
+
+        while(not queue.empty()){
+            // Get the first element from the queue, extract its state and 
+            // remove it from the queue.
+            const auto& cell = queue.front();
+            auto& state = cell->state;
+            queue.pop();
+            
+            // A cell will topple only its slope is greater than the critical
+            // slope.
+            if (state.slope > _critical_slope){
+                state.in_avalanche = true;
+                state.slope -= 4;
+
+                // Add grains (=slopes) to the neighbors
+                for (const auto& nb : _cm.neighbors_of(cell)){
+                    nb->state.slope += 1;
+                    queue.push(nb);
+                }
+            }
+        }
+    }
+
     // .. Rule functions ......................................................
     // Define functions that can be applied to the cells of the grid
-
-    /// Check if a cell is active and, if so, topple it
-    RuleFunc _topple = [this](const auto& cell){
-        // Get the cell state reference
-        auto& state = cell->state;
-
-        // A cell will topple only if beyond the critical slope
-        if (state.slope > _critical_slope){
-
-            state.in_avalanche = true;
-            state.slope -= 4;
-
-            // Add grains to the neighbors
-            for (const auto& nb : _cm.neighbors_of(cell)){
-                nb->state.slope += 1;
-            }
-
-            // Update all neighbors by increasing the slope of the next
-            // iteration step by 1. Application happens in random order.
-            apply_rule<Update::async, Shuffle::on>(_topple,
-                                                   _cm.neighbors_of(cell), 
-                                                   *this->_rng);
-        }
-
-        return state;
-    };
 
     /// Resets cells for the next iteration
     /** \detail Marks cell as untouched by the avalanche and updates the slope
@@ -250,10 +259,7 @@ public:
         const auto& cell = add_sand_grain();
 
         // Let all cells topple until a relaxed state is reached
-        apply_rule<Update::async, Shuffle::on>(
-            _topple, 
-            std::vector<std::shared_ptr<Cell>>{cell}, 
-            *this->_rng);
+        _topple(cell);
 
         calculate_avalanche_size();
     }
