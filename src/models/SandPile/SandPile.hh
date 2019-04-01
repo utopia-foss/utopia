@@ -205,7 +205,7 @@ private:
      * \param first_cell The first cell from which the topple avalanche starts
      */
     void _topple(const std::shared_ptr<Cell>& first_cell){
-        this->log->info("Toppling sand grains ...");
+        this->_log->debug("Toppling sand grains ...");
 
         // Create a queue that stores all the cells that need to topple
         std::queue<std::shared_ptr<Cell>> queue;
