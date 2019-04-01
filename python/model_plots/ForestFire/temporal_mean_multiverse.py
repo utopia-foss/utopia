@@ -28,13 +28,13 @@ def temporal_mean_multiverse(dm: DataManager, *,
         # TODO Find a cleaner way to do this (on a general level)
         break
 
-    for lightning in range(len(state_data['lightning_frequency'])):
+    for lightning in range(len(state_data['lightning_probability'])):
 
         #Take mean of the states for each time step and convert it
-        mean = mv_data[{'lightning_frequency': lightning}].mean(dim=['dim_0'])
+        mean = mv_data[{'lightning_probability': lightning}].mean(dim=['dim_0'])
         mean = mean.to_array().values.flatten()
 
-        light_freq = float(state_data['lightning_frequency'][lightning])
+        light_freq = float(state_data['lightning_probability'][lightning])
 
         #Set the labels
         label=('%.2E' % light_freq)
