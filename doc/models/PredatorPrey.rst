@@ -6,7 +6,7 @@ script (v3, chapter 9.3.1). It is implemented as a cellular automaton (CA)
 with the cells arranged on a two-dimensional grid and represents a simple
 case of population dynamics on a grid.
 
-.. note:
+.. note::
 
 Currently the execution order of rules is different from the original code
 used in the script, where cells were called randomly and the sequence of 
