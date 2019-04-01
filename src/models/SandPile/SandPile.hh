@@ -30,12 +30,35 @@ struct State {
     bool touched_by_avalanche;
 
     /// Default constructor
-    State()
+    State() = delete;
+
+    /// Configuration based constructor
+    template<typename RNG>
+    State(const DataIO::Config& cfg, const std::shared_ptr<RNG>& rng)
     :
-        slope(0),
-        future_slope(0),
-        touched_by_avalanche(false)
-    {}
+    touched_by_avalanche{0}
+    {
+        // Read in the initial slope range
+        auto init_slope_range = get_as<std::pair<unsigned, unsigned>>
+                            ("initial_slope_range", cfg);
+
+        // Make sure the parameters are valid
+        if (init_slope_range.second <= init_slope_range.first) {
+            throw std::invalid_argument("The `init_slope_range` parameter needs "
+                "to specify a valid range, i.e. with first entry strictly "
+                "smaller than the second one!");
+        }
+
+        // Depending on initial slope, set the initial slope of all cells to
+        // a random value in that interval
+        std::uniform_int_distribution<unsigned>
+            dist(init_slope_range.first, init_slope_range.second);
+
+        // Set the initial slopes that are not relaxed, yet.
+        auto init_slope = dist(*rng);
+        slope = init_slope;
+        future_slope = init_slope;
+    }
 };
 
 /// Cell traits specialization using the state type
@@ -43,7 +66,7 @@ struct State {
   *         the second sets them to be asynchronously updated.
   *         The third argument sets the use of the default constructor.
   */
-using CellTraits = Utopia::CellTraits<State, Update::async, true>;
+using CellTraits = Utopia::CellTraits<State, Update::async, false>;
 
 
 /// The Model type traits
@@ -94,9 +117,6 @@ private:
     /// The critical slope of the cells
     const Slope _critical_slope;
 
-    /// The range of initial slopes of the cells
-    const std::pair<Slope, Slope> _initial_slope;
-
     /// The size of the last avalanche
     std::size_t _last_avalanche_size;   
 
@@ -144,7 +164,6 @@ public:
 
         // Initialize other class members
         _critical_slope(get_as<Slope>("critical_slope", _cfg)),
-        _initial_slope(get_as<std::pair<Slope, Slope>>("initial_slope", _cfg)),
         _last_avalanche_size{0},
 
         // Initialize containers empty; are populated in initialize_cells()
@@ -172,35 +191,7 @@ public:
 private:
     // .. Setup functions .....................................................
     /// Initialize the cells according to `initial_state` config parameter
-    void initialize_cells() {
-        // Make sure the parameters are valid
-        if (_initial_slope.second <= _initial_slope.first) {
-            throw std::invalid_argument("The `_initial_slope` parameter needs "
-                "to specify a valid range, i.e. with first entry strictly "
-                "smaller than the second one!");
-        }
-
-        // Depending on the size of the grid, adjust the log message.
-        if (_cm.cells().size() <= 64*64) {
-            this->_log->info("Initializing cells...");
-        }
-        else {
-            this->_log->info("Initializing cells... This may take a while.");
-        }
-
-        // Depending on initial slope, set the initial slope of all cells to
-        // a random value in that interval
-        UniformIntDist dist(_initial_slope.first, _initial_slope.second);
-
-        // NOTE This uses shuffle=false because when using a set it is
-        //      required to change the ordering, which is not possible.
-        apply_rule<false>([this, &dist](const auto& cell){
-            cell->state().slope = dist(*this->_rng);
-            cell->state().future_slope = cell->state().slope;
-
-            return cell->state();
-        }, _cm.cells());
-        
+    void initialize_cells() {        
         // Mark all cells as activated by copying them into _activated_cells
         std::copy(_cm.cells().begin(), _cm.cells().end(),
                   std::inserter(_activated_cells, _activated_cells.end()));
