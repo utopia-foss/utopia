@@ -97,6 +97,9 @@ private:
     /// The range of initial slopes of the cells
     const std::pair<Slope, Slope> _initial_slope;
 
+    /// The size of the last avalanche
+    std::size_t _last_avalanche_size;   
+
 
     // .. Temporary objects ...................................................
     /// Temporary and re-used object to store activated cells
@@ -109,7 +112,7 @@ private:
 
     /// A distribution to select a random cell
     UniformIntDist _cell_distr;
-    
+
 
     // .. Datasets ............................................................
     /// Dataset to store the slopes of all cells for all time steps
@@ -117,6 +120,9 @@ private:
 
     /// Dataset to store the avalanche state of all cells for all time steps
     const std::shared_ptr<DataSet> _dset_avalanche;
+
+    /// Dataset to store the avalanche size for each time step
+    const std::shared_ptr<DataSet> _dset_avalanche_size;
 
 
 public:
@@ -135,10 +141,13 @@ public:
 
         // Initialize the cell manager, binding it to this model
         _cm(*this),
+
+        // Initialize other class members
         _critical_slope(get_as<Slope>("critical_slope", _cfg)),
         _initial_slope(get_as<std::pair<Slope, Slope>>("initial_slope", _cfg)),
+        _last_avalanche_size{0},
 
-        // Initialize containers empty; are populated ininitialize_cells()
+        // Initialize containers empty; are populated in initialize_cells()
         _activated_cells(),
         _future_activated_cells(),
 
@@ -147,7 +156,8 @@ public:
 
         // create datasets
         _dset_slope(this->create_cm_dset("slope", _cm)),
-        _dset_avalanche(this->create_cm_dset("avalanche", _cm))
+        _dset_avalanche(this->create_cm_dset("avalanche", _cm)),
+        _dset_avalanche_size(this->create_dset("avalanche_size", {}))
     {
         // Call the method that initializes the cells
         initialize_cells();
@@ -252,6 +262,24 @@ private:
                 ) / _cm.cells().size());
     }
 
+    
+    /// Calculate the avalanche size
+    /** \detail Loop through all cells and increase the _last_avalanche_size
+     *          counter for each cell that has been marked 
+     *          touched_by_avalanche=true.
+     */
+    void calculate_avalanche_size() {
+        // Reset counter
+        _last_avalanche_size = 0;
+
+        // Loop and collect toppled cells
+        for (const auto& cell : _cm.cells()){
+            if (cell->state().touched_by_avalanche == true){
+                ++_last_avalanche_size;
+            }
+        }
+    }
+
 
     // .. Rule functions ......................................................
     // Define functions that can be applied to the cells of the grid
@@ -273,7 +301,7 @@ private:
     };
 
     /// Updates the neighborhood of a toppled cell
-    /** \detail This is called from _toplle_cell
+    /** \detail This is called from _topple_cell
       */
     RuleFunc _update_neighborhood = [this](const auto& cell){
         // Get the cell state
@@ -337,6 +365,8 @@ public:
             // iteration step. 
             apply_rule<false>(_update_cell_slope, _cm.cells());   
         }
+
+        calculate_avalanche_size();
     }
 
 
@@ -349,6 +379,9 @@ public:
 
         // ...and whether the model is active, i.e. if any cell will topple.
         this->_monitor.set_entry("model_is_active", model_is_active());
+
+        // Supply the last avalanche size to the monitor
+        this->_monitor.set_entry("avalanche size", _last_avalanche_size);
     }
 
 
@@ -368,6 +401,9 @@ public:
                             cell->state().touched_by_avalanche);
             }
         );
+
+        // Write the avalanche size
+        _dset_avalanche_size->write(_last_avalanche_size);
     }   
 };
 
