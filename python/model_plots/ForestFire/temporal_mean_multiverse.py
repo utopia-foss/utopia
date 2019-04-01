@@ -38,7 +38,7 @@ def temporal_mean_multiverse(dm: DataManager, *,
 
         #Set the labels
         label=('%.2E' % light_freq)
-        plot_kwargs['label'] = 'lightning frequency = {}'.format(label)
+        plot_kwargs['label'] = 'lightning probability = {}'.format(label)
         
         # Call the plot function
         hlpr.ax.set_yscale('log')

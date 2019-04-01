@@ -38,13 +38,25 @@ Below are the default configuration parameters for the ``ForestFire`` model.
 Simulation Results
 ------------------
 
-Add some pictures
+Below, three different plots of the ForestFire Model are shown. 
+They show properties of the system for different lightning probabilites.
+The tree growth rate was held constant at 0.0075 in all cases while
+the simulation grid's extent was 1024*1024 cells.
 
-.. image:: /Users/Narek/Downloads/cluster_distribution_multiverse.png
-.. image:: /Users/Narek/Downloads/state_mean_multiverse.png
-.. image:: /Users/Narek/Downloads/temporal_mean_multiverse.png
+The corresponding plots of the lecture can be found on pages 279-283 in the CCEES script.
 
-*Work in progress.* For now, see CCEES lecture notes.
+.. image:: https://i.imgur.com/LeFDGBT.png
+The cluster size distribution is plotted against their number, on a log-log scale.
+The scale-free nature of the system can be deduced by the straight parts of the plot.
+
+
+.. image:: https://i.imgur.com/8CBcKRQ.png
+The temporal development of the mean tree density for six different lightning probabilites.
+
+
+.. image:: https://i.imgur.com/OqC3jqL.png
+Asymptotic mean tree density. In this case, asymptotic refers to both, time and space, 
+as a small grid will show undesirable results.
 
 
 References

@@ -72,7 +72,7 @@ state_mean_multiverse:
     linestyle: 'None'
     linewidth: 0.5
     marker: '.'
-    markersize: 1
+    markersize: 2
 
   select:
     field:

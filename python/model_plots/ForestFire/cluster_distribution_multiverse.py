@@ -47,7 +47,7 @@ def cluster_distribution_multiverse(dm: DataManager, *,
     
         # Call the plot function
         label=('%.2E' % float(cluster_data['lightning_frequency'][lightning]))
-        plot_kwargs['label'] = 'lightning frequency = {}'.format(label)   
+        plot_kwargs['label'] = 'lightning probability = {}'.format(label)   
 
         #Possibly calculate average Cluster size --- NECESSARY?
         #ACS = ...
