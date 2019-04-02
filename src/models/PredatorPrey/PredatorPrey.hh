@@ -210,11 +210,11 @@ private:
         auto& state = cell->state;
         auto& nb_state = nb_cell->state;
 
-        state.predator.on_cell = false;
-        state.predator.resources = 0.;
-
         nb_state.predator.on_cell = true;
         nb_state.predator.resources = state.predator.resources;
+        
+        state.predator.on_cell = false;
+        state.predator.resources = 0.;
     }
 
     /// Move a prey to a neighboring cell
@@ -357,10 +357,10 @@ private:
                                             + _predator_params.resource_intake, 
                                         0., 
                                         _predator_params.resource_max);
-            
+
             // Remove the prey from the cell
             state.prey.on_cell = false;
-            state.prey.resources = 0.;   
+            state.prey.resources = 0.;
         }
 
         // Prey eats grass
@@ -384,7 +384,7 @@ private:
         // Get the state of the cell
         auto& state = cell->state;
         
-        // Reproduce predators
+        // Reproduce predators    
         if (    (state.predator.on_cell)
             and (this->_prob_distr(*this->_rng) < _predator_params.repro_prob)
             and (state.predator.resources >= _predator_params.repro_resource_requ))
@@ -403,7 +403,7 @@ private:
             if (_repro_cell.size() > 0) {
                 // choose a random cell for the offspring to be placed on
                 std::uniform_int_distribution<> dist(0, _repro_cell.size()-1);
-                auto nb_cell = _repro_cell[dist(*this->_rng)];
+                const auto& nb_cell = _repro_cell[dist(*this->_rng)];
                 auto& nb_state = nb_cell->state;
 
                 // neighboring cell has now a predator. 
