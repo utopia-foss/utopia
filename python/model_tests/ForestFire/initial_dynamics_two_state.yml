@@ -17,5 +17,5 @@ parameter_space:
         initial_density: 1.0
         
     growth_rate: 0.01
-    lightning_frequency: 0.01
+    lightning_probability: 0.01
 

@@ -32,5 +32,5 @@ parameter_space:
 
     # Increase growth rate and deactivate lightning
     growth_rate: 0.05
-    lightning_frequency: 0.
+    lightning_probability: 0.
 
