@@ -8,11 +8,11 @@ case of population dynamics on a grid.
 
 .. note::
 
-Currently the execution order of rules is different from the original code
-used in the script, where cells were called randomly and the sequence of 
-rules was applied to an individual cell. Instead in this code a rule is applied
-to all cells befor the next rule is executed. Due to that, results from the 
-script can not be replicated exactly with this code.
+    Currently the execution order of rules is different from the original code
+    used in the script, where cells were called randomly and the sequence of 
+    rules was applied to an individual cell. Instead in this code a rule is 
+    applied to all cells befor the next rule is executed. Due to that, results 
+    from the script can not be replicated exactly with this code.
 
 Scenario
 --------
