@@ -172,7 +172,7 @@ private:
      */
     Rule _cost_of_living = [this](const auto& cell) {
         // Get the state of the cell
-        auto state = cell->state;
+        auto& state = cell->state;
 
         // Subtract the cost of living and clamp the resources to the limits:
         // If the resources exceed the maximal resources they are equal to
@@ -207,8 +207,8 @@ private:
      */
     void _move_predator_to_nb_cell(const std::shared_ptr<Cell>& cell, 
                                    const std::shared_ptr<Cell>& nb_cell){
-        auto state = cell->state;
-        auto nb_state = nb_cell->state;
+        auto& state = cell->state;
+        auto& nb_state = nb_cell->state;
 
         state.predator.on_cell = false;
         state.predator.resources = 0.;
@@ -223,8 +223,8 @@ private:
      */
     void _move_prey_to_nb_cell(const std::shared_ptr<Cell>& cell, 
                                const std::shared_ptr<Cell>& nb_cell){
-        auto state = cell->state;
-        auto nb_state = nb_cell->state;
+        auto& state = cell->state;
+        auto& nb_state = nb_cell->state;
 
         state.prey.on_cell = false;
         state.prey.resources = 0.;
@@ -235,7 +235,7 @@ private:
 
     void _move_predator(const std::shared_ptr<Cell>& cell) {
         // Get the state of the Cell
-        auto state = cell->state;
+        auto& state = cell->state;
 
         // Case: only a predator is on the cell
         if (state.predator.on_cell) {
@@ -247,7 +247,7 @@ private:
             _empty_cell.clear();
 
             for (const auto& nb : this->_cm.neighbors_of(cell)) {
-                auto nb_state = nb->state;
+                auto& nb_state = nb->state;
 
                 if (nb_state.prey.on_cell) {
                     _prey_cell.push_back(nb);
@@ -346,7 +346,7 @@ private:
      */
     Rule _eat = [this](const auto& cell) {
         // Get the state of the cell
-        auto state = cell->state;
+        auto& state = cell->state;
 
         // Predator eats prey
         if (state.predator.on_cell and state.prey.on_cell) {
@@ -382,7 +382,7 @@ private:
      */
     Rule _repro = [this](const auto& cell) {
         // Get the state of the cell
-        auto state = cell->state;
+        auto& state = cell->state;
         
         // Reproduce predators
         if (    (state.predator.on_cell)
@@ -404,7 +404,7 @@ private:
                 // choose a random cell for the offspring to be placed on
                 std::uniform_int_distribution<> dist(0, _repro_cell.size()-1);
                 auto nb_cell = _repro_cell[dist(*this->_rng)];
-                auto nb_state = nb_cell->state;
+                auto& nb_state = nb_cell->state;
 
                 // neighboring cell has now a predator. 
                 // Congratulations to your new baby! :)
