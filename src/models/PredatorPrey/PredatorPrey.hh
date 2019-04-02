@@ -23,7 +23,7 @@ struct State {
     SpeciesState predator;
 
     /// The state a prey on this cell has
-    SpeciesState prey
+    SpeciesState prey;
 
     /// Construct a cell state with the use of a RNG
     template<class RNGType>
@@ -47,7 +47,7 @@ struct State {
                 "Need `p_prey` and `p_predator` in [0, 1] and the sum not "
                 "exceeding 1, but got values: " 
                 + std::to_string(p_prey) + " and "
-                + std::to_string(p_predator) + "!";
+                + std::to_string(p_predator) + "!");
         }
 
         // Check that the prey and predator key are given in the configuration
@@ -66,15 +66,15 @@ struct State {
         // random number in [0, 1) and compare it to wanted probability.
         if (dist(*rng) < p_prey){
             prey.on_cell = true;
-            prey.resources = get_as<double>("prey", 
-                                            cfg["init_resources"]);
+            prey.resources = get_as<double>("init_resources", 
+                                            cfg["prey"]);
         }
 
         // Set a predator on a cell with the given probability.
         if (dist(*rng) < p_predator){
             predator.on_cell = true;
-            predator.resources = get_as<double>("predator", 
-                                                cfg["init_resources"]);
+            predator.resources = get_as<double>("init_resources", 
+                                                cfg["predator"]);
         }
     }
 };
@@ -158,7 +158,8 @@ private:
 
 
     // .. Datasets ............................................................
-    const std::shared_ptr<DataSet> _dset_population;
+    const std::shared_ptr<DataSet> _dset_prey;
+    const std::shared_ptr<DataSet> _dset_predator;
     const std::shared_ptr<DataSet> _dset_resource_prey;
     const std::shared_ptr<DataSet> _dset_resource_predator;
 
@@ -204,9 +205,10 @@ private:
     /** \detail This function resets the states predator state and updates the
      *          neighboring predator state.
      */
-    void _move_predator_to_nb_cell(const Cell& cell, const Cell& nb_cell){
-        auto& state = cell.state;
-        auto& nb_state = nb_cell.state;
+    void _move_predator_to_nb_cell(const std::shared_ptr<Cell>& cell, 
+                                   const std::shared_ptr<Cell>& nb_cell){
+        auto state = cell->state;
+        auto nb_state = nb_cell->state;
 
         state.predator.on_cell = false;
         state.predator.resources = 0.;
@@ -219,9 +221,10 @@ private:
     /** \detail This function resets the states prey state and updates the
      *          neighboring prey state.
      */
-    void _move_prey_to_nb_cell(const Cell& cell, const Cell& nb_cell){
-        auto& state = cell.state;
-        auto& nb_state = nb_cell.state;
+    void _move_prey_to_nb_cell(const std::shared_ptr<Cell>& cell, 
+                               const std::shared_ptr<Cell>& nb_cell){
+        auto state = cell->state;
+        auto nb_state = nb_cell->state;
 
         state.prey.on_cell = false;
         state.prey.resources = 0.;
@@ -230,7 +233,7 @@ private:
         nb_state.prey.resources = state.prey.resources;
     }
 
-    void _move_predator(const auto& cell) {
+    void _move_predator(const std::shared_ptr<Cell>& cell) {
         // Get the state of the Cell
         auto state = cell->state;
 
@@ -284,10 +287,10 @@ private:
         }
     }
 
-    void _flee_prey(const Cell& cell) {
-        auto& state = cell.state;
+    void _flee_prey(const std::shared_ptr<Cell>& cell) {
+        auto& state = cell->state;
 
-        if (state.prey.on_cell and state.cell.predator.on_cell){
+        if (state.prey.on_cell and state.predator.on_cell){
 
             // Flee, if possible, with a given flee probability
             if (this->_prob_distr(*this->_rng) < _prey_params.p_flee){
@@ -296,7 +299,7 @@ private:
                 for (const auto& nb : this->_cm.neighbors_of(cell)) 
                 {
                     if ((not nb->state.prey.on_cell) and 
-                        (nb.state.predator.on_cell)) 
+                        (nb->state.predator.on_cell)) 
                     {
                         _empty_cell.push_back(nb);
                     }
@@ -332,7 +335,7 @@ private:
 
         _flee_prey(cell);
 
-        return cell.state;
+        return cell->state;
     };
 
     /// Define the eating rule
@@ -364,8 +367,8 @@ private:
         else if (state.prey.on_cell == true) {
             // Increase the resources and clamp to the allowed range 
             // [0, resource_max]
-            state.resource_prey = std::clamp(
-                                    state.resource_prey 
+            state.prey.resources = std::clamp(
+                                    state.prey.resources 
                                         + _prey_params.resource_intake, 
                                     0., 
                                     _prey_params.resource_max);
@@ -384,7 +387,7 @@ private:
         // Reproduce predators
         if (    (state.predator.on_cell)
             and (this->_prob_distr(*this->_rng) < _predator_params.repro_prob)
-            and (state.resource_predator >= _predator_params.repro_resource_requ))
+            and (state.predator.resources >= _predator_params.repro_resource_requ))
         {
             // Collect available neighboring spots without predators
             _repro_cell.clear();
@@ -401,13 +404,14 @@ private:
                 // choose a random cell for the offspring to be placed on
                 std::uniform_int_distribution<> dist(0, _repro_cell.size()-1);
                 auto nb_cell = _repro_cell[dist(*this->_rng)];
+                auto nb_state = nb_cell->state;
 
                 // neighboring cell has now a predator. 
                 // Congratulations to your new baby! :)
-                nb_cell->state.predator = true;
+                nb_state.predator.on_cell = true;
 
                 // transfer resources from parent to offspring
-                nb_cell->state.predator.resources = _predator_params.repro_cost;
+                nb_state.predator.resources = _predator_params.repro_cost;
                 state.predator.resources -= _predator_params.repro_cost;
             }
         }
@@ -436,7 +440,7 @@ private:
 
                 // neighboring cell has now a prey. 
                 // Congratulations to your new baby! :)
-                nb_cell.prey.on_cell = true;
+                nb_cell->state.prey.on_cell = true;
 
                 // transfer energy from parent to offspring
                 nb_cell->state.prey.resources = _prey_params.repro_cost;
@@ -473,7 +477,8 @@ public:
         // uniform real distribution
         _prob_distr(0., 1.),
         // create datasets
-        _dset_population(this->create_cm_dset("population", _cm)),
+        _dset_prey(this->create_cm_dset("prey", _cm)),
+        _dset_predator(this->create_cm_dset("predator", _cm)),
         _dset_resource_prey(this->create_cm_dset("resource_prey", _cm)),
         _dset_resource_predator(this->create_cm_dset("resource_predator", _cm))
     {
@@ -488,7 +493,7 @@ public:
         
         // Reserve space for the three helper vectors
         const auto nbh_mode = get_as<std::string>
-                            ("mode", this->_cfg["cell_manager"]["neighboring"]);
+                            ("mode", this->_cfg["cell_manager"]["neighborhood"]);
         if (nbh_mode == "VonNeumann")
         {
             _prey_cell.reserve(4);
@@ -519,16 +524,16 @@ public:
      * 4. Reproduction: Create offspring
      */
     void perform_step() {
-        apply_rule<UpdateMode::async, Shuffle::off>
-            (_cost_of_living, _cm.cells());
+        apply_rule<Update::async, Shuffle::off>
+            (_cost_of_living, _cm.cells(), *this->_rng);
 
-        apply_rule<UpdateMode::async, Shuffle::on>
+        apply_rule<Update::async, Shuffle::on>
             (_move, _cm.cells(), *this->_rng);
 
-        apply_rule<UpdateMode::async, Shuffle::off>
-            (_eat, _cm.cells());
+        apply_rule<Update::async, Shuffle::off>
+            (_eat, _cm.cells(), *this->_rng);
 
-        apply_rule<UpdateMode::async, Shuffle::on>
+        apply_rule<Update::async, Shuffle::on>
             (_repro, _cm.cells(), *this->_rng);
     }
 
@@ -536,7 +541,7 @@ public:
     void monitor () {
         /// Calculate the densities for both species
         auto [pred_density, prey_density] = [this](){
-            double pred_sum = 0.;
+            double predator_sum = 0.;
             double prey_sum = 0.;
             double num_cells = this->_cm.cells().size();
 
@@ -546,11 +551,11 @@ public:
                 if (state.prey.on_cell) {
                     prey_sum++;
                 }
-                else if (state.predator_on_cell) {
+                else if (state.predator.on_cell) {
                     predator_sum++;
                 }
             }
-            return std::pair{pred_sum / num_cells, prey_sum / num_cells};
+            return std::pair{predator_sum / num_cells, prey_sum / num_cells};
         }();
 
         this->_monitor.set_entry("predator_density", pred_density);
@@ -559,10 +564,27 @@ public:
 
     /// Write data
     void write_data() {
-        // Population
-        _dset_population->write(_cm.cells().begin(), _cm.cells().end(), 
-            [](auto& cell) {
-                return static_cast<unsigned short>(cell->state.population);
+        // Predator
+        _dset_predator->write(_cm.cells().begin(), _cm.cells().end(), 
+            [](auto& cell) {                
+                if (cell->state.predator.on_cell){
+                    return 1;
+                }
+                else{
+                    return 0;
+                }
+            }
+        );
+
+        // Prey
+        _dset_prey->write(_cm.cells().begin(), _cm.cells().end(), 
+            [](auto& cell) {                
+                if (cell->state.predator.on_cell){
+                    return 1;
+                }
+                else{
+                    return 0;
+                }
             }
         );
 

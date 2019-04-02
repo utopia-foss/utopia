@@ -23,7 +23,7 @@ struct SpeciesState {
     on_cell{false},
     resources{0}
     {}
-}
+};
 
 /// Struct that holds all species-specific parameters
 struct SpeciesParams {
