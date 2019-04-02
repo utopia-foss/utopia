@@ -32,17 +32,17 @@ cell_manager:
   # Initializing a cell takes the following parameters
   # that are passed to the cell state Config&-constructor 
   cell_params:
-    # The initial resources
-    init_res:
-      prey: 2.
-      predator: 2.
+    # Initial species state parameters
+    prey:
+      init_resources: 2.    # The initial resource reservoir
+    predator:
+      init_resources: 2.    # The initial resource reservoir
 
-    # The probabilities to have a cell initialized with a prey, a predator, 
-    # or both.
+    # The probabilities to have a cell initialized with prey and/or predator 
+    # on it.
     # NOTE The probabilities have to sum up to <= 1.0 and be greater than zero
     p_prey: 0.1
     p_predator: 0.1
-    p_predprey: 0.
 
 
 # --- Model dynamics ----------------------------------------------------------

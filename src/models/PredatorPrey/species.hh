@@ -9,6 +9,22 @@ namespace Utopia {
 namespace Models {
 namespace PredatorPrey {
 
+/// Struct that holds all species states
+struct SpeciesState {
+    /// The internal resources reservoir
+    double resources;
+
+    /// Whether the species is on a cell
+    bool on_cell;
+
+    // .. Constructors ........................................................
+    /// The default constructor
+    SpeciesState() : 
+    on_cell{false},
+    resources{0}
+    {}
+}
+
 /// Struct that holds all species-specific parameters
 struct SpeciesParams {
     // .. Living ..............................................................
@@ -51,6 +67,7 @@ struct PredatorParams : public SpeciesParams{
     /// Construct a predator object from a configuration node
     PredatorParams(const Utopia::DataIO::Config& cfg) : SpeciesParams(cfg){};
 
+    /// The default constructor
     PredatorParams() = delete;
 };
 
@@ -66,6 +83,7 @@ struct PreyParams : public SpeciesParams {
         p_flee = get_as<double>("p_flee", cfg);
     };
 
+    /// The default constructor
     PreyParams() = delete;
 };
 
