@@ -46,56 +46,6 @@ def slope(  dm: DataManager, *,
 
 @is_plot_func(creator_type=MultiversePlotCreator,
               helper_defaults=dict(
-                  set_labels=dict(x=r"$\log_{10}(A)$",
-                                  y=r"$\log_{10}(P_A(A))$"),
-                  save_figure=dict(bbox_inches="tight")
-              )
-            )
-def mult_cum_prob(dm: DataManager, *,
-               hlpr: PlotHelper,
-               mv_data: xr.Dataset,
-               **plot_kwargs):
-    """This is the same as above, but for a multiverse run
-    
-    Args:
-        dm (DataManager): The data manager from which to retrieve the data
-        uni (UniverseGroup): The selected universe data
-        hlpr (PlotHelper): The PlotHelper that instantiates the figure and
-            takes care of plot aesthetics (labels, title, ...) and saving
-        **plot_kwargs: Passed on to plt.plot
-    """
-    # Get the group that all datasets are in
-    number_of_universes = mv_data['avalanche'].shape[0]
-    x=0
-    for x in range(number_of_universes):
-        ### Extract the y data 
-        # Get the avalanche data averaged over all grid cells for each time step
-        y_data = [np.sum(d) for d in mv_data['avalanche'][x,:,:,:]]
-
-        # Remove the first element, ...
-        y_data.pop(0)
-        # ... count the size of the avalanches, ...
-        y = np.bincount(y_data)
-        # ... and cumulatively sum them up
-        y = (np.cumsum(y[::-1])[::-1])[1:]
-        
-        # Get the index 
-        index = (y - np.roll(y, 1)) != 0
-
-        # Normalize the cumulated counts
-        y = y / y[0]
-
-        # Calculate the logarithmic values
-        y_data = np.log10(np.arange(len(y)) + np.min(y_data))[index], np.log10(y)[index]
-
-        # Call the plot function
-        hlpr.ax.plot(*y_data, **plot_kwargs)
-        
-        x += 1
-
-
-@is_plot_func(creator_type=MultiversePlotCreator,
-              helper_defaults=dict(
                   set_labels=dict(x=r"Time",
                                   y=r"Area fraction $A/l^2$"),
                   save_figure=dict(bbox_inches="tight"),
