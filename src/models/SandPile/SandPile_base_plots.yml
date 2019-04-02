@@ -15,4 +15,3 @@ animation:
 
   # Video parameters (used only by ffmpeg writer)
   file_ext: mp4
-  fps: 2
