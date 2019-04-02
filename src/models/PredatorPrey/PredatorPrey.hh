@@ -579,7 +579,7 @@ public:
         // Prey
         _dset_prey->write(_cm.cells().begin(), _cm.cells().end(), 
             [](auto& cell) {                
-                if (cell->state.predator.on_cell){
+                if (cell->state.prey.on_cell){
                     return 1;
                 }
                 else{

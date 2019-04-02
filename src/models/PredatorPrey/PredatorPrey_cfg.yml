@@ -41,7 +41,7 @@ cell_manager:
     # The probabilities to have a cell initialized with prey and/or predator 
     # on it.
     # NOTE The probabilities have to sum up to <= 1.0 and be greater than zero
-    p_prey: 0.1
+    p_prey: 0.2
     p_predator: 0.1
 
 

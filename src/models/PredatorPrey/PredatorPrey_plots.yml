@@ -27,7 +27,8 @@ frequencies:
   module: model_plots.PredatorPrey
   plot_func: frequency
 
-  Population: [predator, prey]
+  predator: True
+  prey: True
 
 
 # plot the spatial development in the CA of the strategy
@@ -38,15 +39,19 @@ population_and_resources:
   # Select the properties to plot
   to_plot:
     # The name of the property to plot with its options
-    population:
-      title: Population
-      limits: [0, 3]
-
+    prey:
+      title: Prey
+      limits: [0, 1]
       cmap: 
         empty: white
-        prey: yellow
+        prey: orange
+
+    predator:
+      title: Predator
+      limits: [0, 1]
+      cmap: 
+        empty: white
         predator: blue
-        predprey: red
 
     # The name of the property to plot with its options
     resource_prey:

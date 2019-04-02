@@ -36,24 +36,23 @@ def phase_space(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
     grp = uni['data']['PredatorPrey']
 
     # Extract the population data ...
-    population_data = grp['population']
+    prey = grp['prey']
+    predator = grp['predator']
 
-    # ... and calculate the frequencies of predator and prey
-    frequencies = [np.bincount(p.stack(grid=['x', 'y']), minlength=4)
-                    / p.grid_shape.prod()
-                   for p in population_data]
-
-    # Rearrange the data for plotting - one array each with population densities
-    # and index to store the time step
-    prey = [f[1] for f in frequencies]
-    pred = [f[2] for f in frequencies]
+    # Get the prey and predator frequencies per time step by summing them up
+    # and dividing them by the total number of cells per time step
+    # NOTE This only works if time is the first dimension
+    f_prey = prey.sum(dim=[d for d in prey.dims if d!='time']) \
+                / np.prod(prey.shape[1:])
+    f_predator = predator.sum(dim=[d for d in prey.dims if d!='time']) \
+                / np.prod(predator.shape[1:])
 
     # Plot the phase space, either color coding the time or not
     if cmap:
-        hlpr.ax.scatter(pred, prey, c=range(len(frequencies)), 
+        hlpr.ax.scatter(f_predator, f_prey, c=range(f_prey.size), 
                         cmap=cmap, **plot_kwargs)
     else:
-        hlpr.ax.scatter(pred, prey, **plot_kwargs)
+        hlpr.ax.scatter(f_predator, f_prey, **plot_kwargs)
 
     # Add a grid in the background if desired
     hlpr.ax.grid(b=show_grid, which='both')

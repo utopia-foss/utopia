@@ -17,14 +17,15 @@ from utopya.plotting import is_plot_func, PlotHelper, UniversePlotCreator
                  set_legend=dict(use_legend=True, loc='best'))
              )
 def frequency(dm: DataManager, *, hlpr: PlotHelper, uni: UniverseGroup, 
-              Population: Union[str, list] = ['prey', 'predator'], 
+              prey: bool=True, predator: bool=True, 
               **plot_kwargs):
     """Calculates the frequency of a given Population and performs a lineplot
     
     Args:
         dm (DataManager): The data manager from which to retrieve the data
         uni (UniverseGroup): The universe from which to plot the data
-        Population (Union[str, list], optional): The population to plot
+        prey (bool): If True the prey frequency is plotted
+        predator (bool): If True the predator frequency is plotted
         **plot_kwargs: Passed on to plt.plot
     
     Raises:
@@ -33,33 +34,22 @@ def frequency(dm: DataManager, *, hlpr: PlotHelper, uni: UniverseGroup,
     # Get the group that all datasets are in
     grp = uni['data']['PredatorPrey']
 
-    # Extract the population data ...
-    population_data = grp['population'] 
+    def calculate_frequency(species: str):
+        # Extract the species data ...
+        species = grp[species]
 
-    # ... and calculate the frequencies of predator and prey
-    frequencies = [np.bincount(p.stack(grid=['x', 'y']), minlength=4)
-                    / p.grid_shape.prod()
-                   for p in population_data]
-
-    # Get the frequencies of the desired Population and plot it
-    # Single population
-    if isinstance(Population, str):
-        y_data = [f[np.where(np.asarray(['prey', 'predator']) == Population)] 
-                  for f in frequencies]
-
-        # Create the plot
-        hlpr.ax.plot(y_data, label=Population, **plot_kwargs)
+        # Get the species frequency per time step by summing them up
+        # and dividing them by the total number of cells per time step
+        # NOTE This only works if time is the first dimension
+        return species.sum(dim=[d for d in species.dims if d!='time']) \
+                    / np.prod(species.shape[1:])            
         
-    
-    # Multiple populations
-    elif isinstance(Population, list):
-        for p in Population:
-            y_data = [f[np.where(np.asarray(['prey', 'predator']) == p)] 
-                      for f in frequencies]
+    if prey:
+        freq = calculate_frequency("prey")
+        # Create the plot
+        hlpr.ax.plot(freq, label="Prey", **plot_kwargs)
 
-            # Create the plot
-            hlpr.ax.plot(y_data, label=p, **plot_kwargs)
-
-    else:
-        raise TypeError("Invalid argument 'population' of type {} and value "
-                        "'{}'!".format(type(Population), Population))
+    if predator:
+        freq = calculate_frequency("predator")
+        # Create the plot
+        hlpr.ax.plot(freq, label="Predator", **plot_kwargs)
