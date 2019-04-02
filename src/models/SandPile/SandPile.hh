@@ -2,7 +2,6 @@
 #define UTOPIA_MODELS_SANDPILE_HH
 
 #include <functional>
-#include <set>
 
 #include <utopia/core/model.hh>
 #include <utopia/core/apply.hh>
@@ -33,14 +32,17 @@ struct State {
     template<typename RNG>
     State(const DataIO::Config& cfg, const std::shared_ptr<RNG>& rng)
     :
-    in_avalanche{0}
+    in_avalanche{false}
     {
         // Read in the initial slope range
-        auto init_slope_range = get_as<std::pair<unsigned, unsigned>>
-                            ("initial_slope_range", cfg);
+        auto initial_slope_lower_limit = get_as<unsigned>
+                            ("initial_slope_lower_limit", cfg);
+
+        auto initial_slope_upper_limit = get_as<unsigned>
+                            ("initial_slope_upper_limit", cfg);
 
         // Make sure the parameters are valid
-        if (init_slope_range.second <= init_slope_range.first) {
+        if (initial_slope_upper_limit <= initial_slope_lower_limit) {
             throw std::invalid_argument("The `init_slope_range` parameter needs "
                 "to specify a valid range, i.e. with first entry strictly "
                 "smaller than the second one!");
@@ -49,7 +51,7 @@ struct State {
         // Depending on initial slope, set the initial slope of all cells to
         // a random value in that interval
         std::uniform_int_distribution<unsigned>
-            dist(init_slope_range.first, init_slope_range.second);
+            dist(initial_slope_lower_limit, initial_slope_upper_limit);
 
         // Set the initial slopes that are not relaxed, yet.
         slope = dist(*rng);
@@ -61,7 +63,7 @@ struct State {
   *         the second sets them to be manually updated.
   *         The third argument sets the use of the default constructor.
   */
-using CellTraits = Utopia::CellTraits<State, Update::manual, false>;
+using CellTraits = Utopia::CellTraits<State, Update::manual>;
 
 
 /// The Model type traits
@@ -118,6 +120,9 @@ private:
     /// The size of the last avalanche
     std::size_t _last_avalanche_size;   
 
+    /// The number of grains that topple
+    const unsigned _topple_num_grains;
+
 
     // .. Temporary objects ...................................................
     /// A distribution to select a random cell
@@ -155,6 +160,7 @@ public:
         // Initialize other class members
         _critical_slope(get_as<Slope>("critical_slope", _cfg)),
         _last_avalanche_size{0},
+        _topple_num_grains{4}, // TODO generalize
 
         // Initialize the distribution such that a random cell can be selected
         _cell_distr(0, _cm.cells().size() - 1),
@@ -164,8 +170,7 @@ public:
         _dset_avalanche(this->create_cm_dset("avalanche", _cm)),
         _dset_avalanche_size(this->create_dset("avalanche_size", {}))
     {
-        // Set the dimension name "time" to the python Xarray dataset that will
-        // be read in
+        // Set the dimension name "time"
         _dset_avalanche_size->add_attribute("dim_names", "time");
     }
 
@@ -226,7 +231,7 @@ private:
             // slope.
             if (state.slope > _critical_slope){
                 state.in_avalanche = true;
-                state.slope -= 4;
+                state.slope -= _topple_num_grains;
 
                 // Add grains (=slopes) to the neighbors
                 for (const auto& nb : _cm.neighbors_of(cell)){
@@ -264,13 +269,11 @@ public:
 
         // Let all cells topple until a relaxed state is reached
         _topple(cell);
-
-        calculate_avalanche_size();
     }
 
 
     /// Supply monitor information to the frontend
-    /** \detail Provides the mean_slope and model_is_active entries.
+    /** \detail Provides the last calculated avalanche size. This may not be that of the current time step.
       */
     void monitor () {
         // Supply the last avalanche size to the monitor
@@ -295,7 +298,8 @@ public:
             }
         );
 
-        // Write the avalanche size
+        // Calculate and write the avalanche size
+        calculate_avalanche_size();
         _dset_avalanche_size->write(_last_avalanche_size);
     }   
 };

@@ -37,7 +37,8 @@ def compl_cum_prob_dist(dm: DataManager, *,
         hlpr (PlotHelper): The PlotHelper that instantiates the figure and
             takes care of plot aesthetics (labels, title, ...) and saving
         model_name (str): The model name
-        path_to_data (str): The path to the data
+        path_to_data (str): The path to the data relative to the model data
+            output
         **plot_kwargs: Passed on to plt.plot
     """
     # Get the data, remove the initial time step 
@@ -89,7 +90,8 @@ def cluster_size_dist(dm: DataManager, *,
         hlpr (PlotHelper): The PlotHelper that instantiates the figure and
             takes care of plot aesthetics (labels, title, ...) and saving
         model_name (str): The model name
-        path_to_data (str): The path to the data
+        path_to_data (str): The path to the data relative to the model data
+            output
         **plot_kwargs: Passed on to plt.plot
     """
     # Get the data, remove the initial time step 

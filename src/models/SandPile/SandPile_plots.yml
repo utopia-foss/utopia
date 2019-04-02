@@ -55,8 +55,8 @@ slope_anim:
       title: Slope
       limits: [1, 4]
       cmap: 
-        0: black
-        1: orange
+        static: black
+        mobile: orange
 
 # Plot an animation of the CA `avalanche` state and save as individual frames
 avalanche_anim:
@@ -69,7 +69,9 @@ avalanche_anim:
     avalanche:
       title: Avalanche
       limits: [0, 1]
-      cmap: copper
+      cmap: 
+        static: black
+        mobile: orange
 
 #Plot the avalanche area fraction as a function of time steps:
 area_fraction:

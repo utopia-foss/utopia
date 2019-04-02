@@ -25,16 +25,15 @@ cell_manager:
   grid:
     structure: square
     resolution: 16      # in cells per unit length of physical space
-    # NOTE A large number of cells can make the initialization take a while...
 
   neighborhood:
     mode: vonNeumann
 
   cell_params:
     # Cells are randomly initialized using a uniform distribution in the given
-    # closed range. The first value is the lower limit and the second one the
-    # upper limit of the slope.
-    initial_slope_range: [5, 6]
+    # closed range.
+    initial_slope_lower_limit: 5
+    initial_slope_upper_limit: 6
 
 # --- Dynamics ----------------------------------------------------------------
 # The critical slope; beyond this value, sand topples
