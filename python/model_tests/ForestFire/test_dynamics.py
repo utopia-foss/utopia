@@ -31,11 +31,11 @@ def test_dynamics_two_state_model():
 
         # all cells burned + 1% growth
         density = data.mean(dim=['x', 'y'])
-        assert 0 <= density[{'time': 1}].values <= 0.01
+        assert 0 <= density[{'time': 1}].values <= 0.02
 
         # 1% growth
         density = data.mean(dim=['x', 'y'])
-        assert 0.01 <= density[{'time': 2}].values <= 0.01 + 0.05
+        assert 0.01 <= density[{'time': 2}].values <= 0.02 + 0.05
 
 
 def test_percolation_mode():
