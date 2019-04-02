@@ -17,18 +17,6 @@ namespace PredatorPrey {
 
 // ++ Type definitions ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-/// Population enum, i.e.: possible cell states
-enum class Population : unsigned short {
-    /// Nobody on cell
-    empty = 0,
-
-    /// Prey on cell
-    prey = 1,
-
-    /// Predator on cell
-    predator = 2
-};
-
 /// Cell State struct
 struct State {
     /// The state a predator on this cell has
