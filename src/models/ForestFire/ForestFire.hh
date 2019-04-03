@@ -14,13 +14,13 @@ namespace Models {
 namespace ForestFire {
 
 /// The values a cell's state can take: empty and tree
-enum FFMCellState { empty=0, tree=1 };
+enum class State { empty=0, tree=1 };
 
 
 /// The full cell struct for the ForestFire model
 struct FFMCell {
     /// The actual cell state
-    FFMCellState state;
+    State state;
 
     /// An ID denoting to which cluster this cell belongs
     unsigned int cluster_tag;
@@ -32,7 +32,7 @@ struct FFMCell {
     template<class RNG>
     FFMCell (const DataIO::Config& cfg, const std::shared_ptr<RNG>& rng)
     :
-        state(empty),
+        state(State::empty),
         cluster_tag(0),
         permanently_ignited(false)
     {
@@ -47,7 +47,7 @@ struct FFMCell {
 
             // With this probability, the cell state is a tree
             if (std::uniform_real_distribution<double>(0., 1.)(*rng) < rho) {
-                state = tree;
+                state = State::tree;
             }
             // NOTE Although the distribution object is created each time, this
             //      is not a significant slow-down compared to re-using an
@@ -262,10 +262,10 @@ private:
         }
 
         // Empty cells can grow a tree
-        else if (    state.state == empty
+        else if (    state.state == State::empty
                  and this->_prob_distr(*this->_rng) < _param.growth_rate)
         {
-            state.state = tree;
+            state.state = State::tree;
         }
         
         // Trees can be hit by lightning
@@ -283,7 +283,7 @@ private:
       */
     RuleFunc _burn_cluster = [this](const auto& cell) {
         // The current cell surely is empty now.
-        cell->state().state = empty;
+        cell->state().state = State::empty;
         
         // Use existing cluster member container, clear it, add current cell
         auto& cluster = _cluster_members;
@@ -297,7 +297,7 @@ private:
             // Iterate over all potential cluster members
             for (const auto& c : this->_cm.neighbors_of(cluster_member)) {
                 // If it is a tree, it will burn ...
-                if (c->state().state == tree) {
+                if (c->state().state == State::tree) {
                     // ... unless there is resistance > 0 ...
                     if (this->_param.resistance > 0.) {
                         // ... where there is a chance not to burn:
@@ -306,7 +306,7 @@ private:
                     }
 
                     // Bad luck. Burn.
-                    c->state().state = empty;
+                    c->state().state = State::empty;
                     cluster.push_back(c);
                     // This extends the outer for-loop
                 }
@@ -323,7 +323,7 @@ private:
      *         The _cluster_tag_cnt member keeps track of already given IDs.
      */
     RuleFunc _identify_cluster = [this](const auto& cell){
-        if (cell->state().cluster_tag != 0 or cell->state().state == empty) {
+        if (cell->state().cluster_tag != 0 or cell->state().state == State::empty) {
             // already labelled, nothing to do. Return current state
             return cell->state();
         }
@@ -345,7 +345,7 @@ private:
             for (const auto& c : this->_cm.neighbors_of(cluster[i])) {
                 // If it is a tree that is not yet in the cluster, add it.
                 if (    c->state().cluster_tag == 0
-                    and c->state().state == tree)
+                    and c->state().state == State::tree)
                 {
                     c->state().cluster_tag = _cluster_tag_cnt;
                     cluster.push_back(c);
@@ -402,7 +402,7 @@ public:
         double sum = 0.;
 
         for (const auto& cell : _cm.cells()) {
-            if (cell->state().state == tree) {
+            if (cell->state().state == State::tree) {
                 sum += 1.;
             }
         }
