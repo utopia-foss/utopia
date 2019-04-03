@@ -24,25 +24,27 @@ parameter_space:
         resolution: 1
 
       cell_params:
-        init_res:
-          prey: 2.
-          predator: 2.
+        prey:
+          init_resources: 2
+
+        predator:
+          init_resources: 2
 
         p_prey: 0.5
         p_predator: 0.5
-        p_predprey: 0.
           
-    prey_params:
-      cost_of_living: 1.
-      repro_cost: 2.
-      repro_prob: 0.
-      resource_intake: 39
-      resource_max: 200
-      p_flee: 0.0
+    params:
+      prey:
+        cost_of_living: 1.
+        repro_cost: 2.
+        repro_prob: 0.
+        resource_intake: 39
+        resource_max: 200
+        p_flee: 0.0
 
-    predator_params:
-      cost_of_living: 1.
-      repro_cost: 2.
-      repro_prob: 0.
-      resource_intake: 39.
-      resource_max: 200
+      predator:
+        cost_of_living: 1.
+        repro_cost: 2.
+        repro_prob: 0.
+        resource_intake: 39.
+        resource_max: 200

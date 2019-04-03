@@ -479,8 +479,8 @@ public:
         _dset_resource_predator(this->create_cm_dset("resource_predator", _cm))
     {
         // Check if _repro_cost is in the allowed range
-        if (_params.predator.repro_cost > _params.predator.repro_resource_requ 
-            or _params.prey.repro_cost > _params.prey.repro_resource_requ) {
+        if (_params.predator.repro_cost >= _params.predator.repro_resource_requ 
+            or _params.prey.repro_cost >= _params.prey.repro_resource_requ) {
             throw std::invalid_argument("repro_cost needs to be smaller "
                                         "than or equal to the minimal "
                                         "reproduction requirements of "

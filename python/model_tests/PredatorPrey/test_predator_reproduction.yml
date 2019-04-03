@@ -24,16 +24,19 @@ parameter_space:
         resolution: 1
 
       cell_params:
-        init_res:
-          predator: 5.
+        prey:
+          init_resources: 2
+
+        predator:
+          init_resources: 6
 
         p_prey: 0.
         p_predator: 0.1
-        p_predprey: 0.
           
-    predator_params:
-      cost_of_living: 0.
-      repro_cost: 2.
-      resource_intake: 0.
-      repro_resource_requ: 4.
-      repro_prob: 0.2
+    params:
+      predator:
+        cost_of_living: 0.
+        repro_cost: 2.
+        resource_intake: 0.
+        repro_resource_requ: 6.
+        repro_prob: 0.2

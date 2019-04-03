@@ -22,10 +22,11 @@ parameter_space:
         resolution: 21
 
       cell_params:
-        init_res:
-          prey: 2.
-          predator: 2.
+        prey:
+          init_resources: 2
+
+        predator:
+          init_resources: 2
 
         p_prey: 0.2
         p_predator: 0.285
-        p_predprey: 0.1

@@ -31,8 +31,8 @@ frequencies:
   prey: True
 
 
-# plot the spatial development in the CA of the strategy
-population_and_resources:
+# plot the spatial development on the grid
+population:
   # Use a base plot configuration
   based_on: grid_animation
 
@@ -53,13 +53,19 @@ population_and_resources:
         empty: white
         predator: blue
 
-    # The name of the property to plot with its options
+
+# plot the spatial development on the grid
+resources:
+  # Use a base plot configuration
+  based_on: grid_animation
+
+  # Select the properties to plot
+  to_plot:
     resource_prey:
       title: Resources Prey
       cmap: viridis
       limits: [0, 8]  # Should be adapted to the resource_max model parameter
 
-    # The name of the property to plot with its options
     resource_predator:
       title: Resource Predator
       cmap: viridis

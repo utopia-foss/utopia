@@ -30,10 +30,12 @@ def test_cost_of_living_prey():
     mv, dm = mtc.create_run_load(from_cfg="cost_of_living_prey.yml")
 
     # Get the data
-    data = dm['multiverse'][0]['data']
-    pop = data['PredatorPrey']['population']
-    pop.stack(dim=['x', 'y'])
-    res_prey = data['PredatorPrey']['resource_prey']
+    data = dm['multiverse'][0]['data']['PredatorPrey']
+    prey = data["prey"]
+
+    prey.stack(dim=['x', 'y'])
+    
+    res_prey = data['resource_prey']
     res_prey.stack(dim=['x', 'y'])
 
     # Assert that life is costly...
@@ -44,7 +46,7 @@ def test_cost_of_living_prey():
             assert unique == 2-i
 
     # Assert that in the end all prey is dead due to starvation
-    assert np.unique(pop.isel(time=-1)) == 0
+    assert np.unique(prey.isel(time=-1)) == 0
 
 
 def test_cost_of_living_Predator():
@@ -54,8 +56,8 @@ def test_cost_of_living_Predator():
     mv, dm = mtc.create_run_load(from_cfg="cost_of_living_predator.yml")
 
     # Get the data
-    data = dm['multiverse'][0]['data']
-    res_predator = data['PredatorPrey']['resource_predator']
+    data = dm['multiverse'][0]['data']['PredatorPrey']
+    res_predator = data['resource_predator']
 
     # Assert that life is costly
     for i, r in enumerate(res_predator):
@@ -74,8 +76,8 @@ def test_eating_prey():
     mv, dm = mtc.create_run_load(from_cfg="test_eating_prey.yml")
 
     # Get the data
-    data = dm['multiverse'][0]['data']
-    res_prey = data['PredatorPrey']['resource_prey']
+    data = dm['multiverse'][0]['data']['PredatorPrey']
+    res_prey = data['resource_prey']
 
     # Assert that prey takes up resources every step and spends 1 resource
     # for its cost of living
@@ -97,34 +99,20 @@ def test_predator_movement():
     mv, dm = mtc.create_run_load(from_cfg="test_predator_movement.yml")
 
     # Get the data
-    data = dm['multiverse'][0]['data']
+    data = dm['multiverse'][0]['data']['PredatorPrey']
     
-    pop = data['PredatorPrey']['population'].astype(int)
-    res_prey = data['PredatorPrey']['resource_prey']
-    res_pred = data['PredatorPrey']['resource_predator']
+    prey = data['prey']
+    predator = data['predator']
 
-    if pop[0, 0, 0] == 2:
-        # in the last time step, depending on the update order, 
-        # the predator may move twice
-        assert np.all(pop[ :2, :, :] == [[[2], [1]], [[0],[2]]])
-        assert np.all(res_pred[ :2, : , :] == [[[2], [0]], [[0],[40]]])
-        assert np.all(res_prey[ :2, : , :] == [[[0], [2]], [[0],[0]]])
-    
-    else:
-        # in the last time step, depending on the update order, 
-        # the predator may move twice
-        assert np.all(pop[ :2, :, :] == [[[1], [2]], [[2],[0]]])
-        assert np.all(res_pred[ :2, : , :] == [[[0], [2]], [[40],[0]]]) 
-        assert np.all(res_prey[ :2, : , :] == [[[2], [0]], [[0],[0]]])
+    res_prey = data['resource_prey']
+    res_pred = data['resource_predator']
 
-    # Calculate the difference between successive steps after the prey has been 
-    # eaten
-    diff = np.diff(pop[2:], axis=0)
+    # Check that predators moves
+    # Calculate the difference between successive steps
+    diff = np.diff(predator, axis=0)
 
     # Check whether at some point the predator moved to another cell
-    assert np.any(diff == 2)
-    # Check that the predator starves in the last step
-    assert np.sum(diff, axis=1)[-1] == -2
+    assert np.any(diff != 0)
     
 
 def test_prey_flee():
@@ -136,12 +124,15 @@ def test_prey_flee():
     # DataManager dm
     mv, dm = mtc.create_run_load(from_cfg="test_prey_flee.yml")
     
-    data = dm['multiverse'][0]['data']
-    pop = data['PredatorPrey']['population'].astype(int)
+    data = dm['multiverse'][0]['data']['PredatorPrey']
+    predator = data['predator']
+    prey = data['prey']
 
-    diff = np.diff(pop, axis=0)
+    diff_prey = np.diff(prey, axis=0)
+    diff_predator = np.diff(predator, axis=0)
 
-    assert np.any(diff == -1)
+    assert np.any(diff_prey == -1)
+    assert np.any(diff_predator == -1)
     
 
 def test_prey_reproduction(): 
@@ -152,23 +143,28 @@ def test_prey_reproduction():
 
     # Get the data
     uni = dm['multiverse'][0]
-    data = uni['data']
-    pop = data['PredatorPrey']['population']
+    data = uni['data']['PredatorPrey']
+    prey = data['prey']
+    predator = data['predator']
+
+    # There are no predators
+    assert np.all(predator) == 0
 
     # Count the number of prey for each time step
-    num_prey = [np.count_nonzero(p == 1) for p in pop]
+    num_prey = [np.count_nonzero(p) for p in prey]
+    print(num_prey)
 
     # Calculate total number of prey which can be created from the
     # amount of available resources
     # NOTE  The parameters are selected such that each prey can have one 
     #       offspring
-    final_num_prey = num_prey[0] * 2
+    expected_final_num_prey = num_prey[0] * 2
 
     # Check that not all preys reproduce after the first iteration step
-    assert final_num_prey != num_prey[1]
+    assert expected_final_num_prey != num_prey[1]
 
     # Check that at the end every prey has reproduced
-    assert(final_num_prey == num_prey[-1])
+    assert expected_final_num_prey == num_prey[-1]
 
 
 def test_predator_reproduction(): 
@@ -179,20 +175,20 @@ def test_predator_reproduction():
 
     # Get the data
     uni = dm['multiverse'][0]
-    data = uni['data']
-    pop = data['PredatorPrey']['population']
+    data = uni['data']['PredatorPrey']
+    predator = data['predator']
 
-    # Count the number of predator for each time step
-    num_predator = [np.count_nonzero(p == 2) for p in pop]
+    # Count the number of predators for each time step
+    num_predator = [np.count_nonzero(p == 1) for p in predator]
 
     # Calculate total number of predator which can be created from the
     # amount of available resources
     # NOTE  The parameters are selected such that each predator can have one 
     #       offspring
-    final_num_predator = num_predator[0] * 2
+    expected_final_num_predator = num_predator[0] * 2
 
     # Check that not all predators reproduce after the first iteration step
-    assert final_num_predator != num_predator[1]
+    assert expected_final_num_predator != num_predator[1]
 
     # Check that at the end every predator has reproduced
-    assert(final_num_predator == num_predator[-1])
+    assert(expected_final_num_predator == num_predator[-1])
