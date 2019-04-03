@@ -38,15 +38,17 @@ struct State {
     {
         // Check if initial_density is available to set up cell state
         if (cfg["initial_density"]) {
-            const auto rho = get_as<double>("initial_density", cfg);
+            const auto initial_density = get_as<double>("initial_density", cfg);
 
-            if (rho < 0. or rho > 1.) {
+            if (initial_density < 0. or initial_density > 1.) {
                 throw std::invalid_argument("initial_density needs to be in "
                     "interval [0., 1.], but was not!");
             }
 
             // With this probability, the cell state is a tree
-            if (std::uniform_real_distribution<double>(0., 1.)(*rng) < rho) {
+            if (std::uniform_real_distribution<double>(0., 1.)(*rng) 
+                < initial_density) 
+            {
                 kind = Kind::tree;
             }
             // NOTE Although the distribution object is created each time, this
@@ -55,14 +57,6 @@ struct State {
             //      optimization flags, that slowdown is even smaller...
         }
     }
-};
-
-/// Struct for all Dataset
-template <typename DataSet>
-struct DataSets {
-    const std::shared_ptr<DataSet> kind;
-    const std::shared_ptr<DataSet> cluster_id;
-    const std::shared_ptr<DataSet> mean_density;      
 };
 
 
@@ -165,8 +159,16 @@ private:
     /// A temporary container for use in cluster identification
     std::vector<std::shared_ptr<CellManager::Cell>> _cluster_members;
 
-    // -- Datasets -- //
-    DataSets<DataSet> _dsets;
+    // .. Datasets ...........................................................
+    /// The dataset that stores the kind for each cell, e.g. Kind::tree
+    const std::shared_ptr<DataSet> _dset_kind;
+
+    /// The dataset that stores the cluster id
+    const std::shared_ptr<DataSet> _dset_cluster_id;
+
+    /// The dataset that stores the mean density
+    const std::shared_ptr<DataSet> _dset_mean_density;
+
 
 public:
     // -- Model Setup ---------------------------------------------------------
@@ -192,10 +194,9 @@ public:
         _cluster_members(),
 
         // Create datasets using the helper functions for CellManager-data
-        _dsets({this->create_cm_dset("state", _cm),
-                this->create_cm_dset("cluster_id", _cm),
-                this->create_dset("mean_density", {})})
-
+        _dset_kind{this->create_cm_dset("kind", _cm)},
+        _dset_cluster_id{this->create_cm_dset("cluster_id", _cm)},
+        _dset_mean_density{this->create_dset("mean_density", {})}
     {
         // Cells are already set up in the CellManager
         // Still need to take care of the ignited bottom row
@@ -378,7 +379,7 @@ public:
     /// Write data
     void write_data () {
         // Store all cells' state
-        _dsets.kind->write(_cm.cells().begin(), _cm.cells().end(),
+        _dset_kind->write(_cm.cells().begin(), _cm.cells().end(),
             [](const auto& cell) {
                 return static_cast<unsigned short int>(cell->state().kind);
         });
@@ -386,12 +387,12 @@ public:
         // Identify the clusters (only needed when actually writing)
         identify_clusters();
 
-        _dsets.cluster_id->write(_cm.cells().begin(), _cm.cells().end(),
+        _dset_cluster_id->write(_cm.cells().begin(), _cm.cells().end(),
             [](const auto& cell) {
                 return cell->state().cluster_tag;
         });
 
-        _dsets.mean_density->write(calc_tree_density()); 
+        _dset_mean_density->write(calc_tree_density()); 
     }
 
 

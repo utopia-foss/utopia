@@ -119,7 +119,7 @@ state_map: &state_map
 
   # Select the properties to plot
   to_plot:
-    state:
+    kind:
       title: State
       limits: [0, 1]
       cmap: 
