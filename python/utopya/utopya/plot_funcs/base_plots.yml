@@ -3,6 +3,39 @@
 # The names of the configuration entries should follow a module path naming
 # scheme, i.e. what is specified for the `module` and `plot_func` keys.
 ---
+# .. A spatial CA plot of a state .............................................
+# Supports PlotHelper and animation
+# TODO Only supports single to_plot value, currently.
+.ca.state:
+  creator: universe
+  universes: all
+
+  file_ext: pdf
+
+  module: .ca
+  plot_func: state
+
+  # All animation configuration for this plot
+  animation:
+    enabled: false  # has to be manually enabled
+
+    writer: frames
+
+    # Configuration for each writer
+    writer_kwargs:
+      frames:
+        saving:
+          dpi: 92
+      
+      ffmpeg:
+        init:
+          fps: 10
+        saving:
+          dpi: 92
+
+        
+# .. A spatial CA plot animation ..............................................
+# NOTE Deprecated.
 .ca.state_anim:
   creator: universe
   universes: all

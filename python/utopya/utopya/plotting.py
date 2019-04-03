@@ -24,6 +24,25 @@ log = logging.getLogger(__name__)
 # Local constants
 
 # -----------------------------------------------------------------------------
+# PlotHelper specialisations
+
+class PlotHelper(dtr.plot_creators.PlotHelper):
+    """A specialization of the dantro PlotHelper for ExternalPlotCreator-
+    derived plot creators.
+
+    This can be used to add additional helpers for use in utopya without
+    requiring changes on dantro-side.
+
+    NOTE The helpers implemented here should try to adhere to the interface
+         exemplified by the dantro PlotHelper class, with the aim that they can
+         then be migrated into dantro in the long run.
+    """
+
+    # .. Helper methods .......................................................
+    # Can add helper methods here, prefixed with _hlpr_
+
+
+# -----------------------------------------------------------------------------
 # Plot creators
 
 class ExternalPlotCreator(dtr.plot_creators.ExternalPlotCreator):
@@ -42,6 +61,9 @@ class ExternalPlotCreator(dtr.plot_creators.ExternalPlotCreator):
 
     # Use utopya.plot_funcs as base package for relative module imports
     BASE_PKG = 'utopya.plot_funcs'
+
+    # The PlotHelper class to use
+    PLOT_HELPER_CLS = PlotHelper
 
     # Define path to Utopia's python directory to add to sys.path
     UTOPIA_PYTHON_DIR = os.path.join(SRC_DIR, "python")

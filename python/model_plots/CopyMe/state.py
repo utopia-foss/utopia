@@ -31,7 +31,7 @@ def state_mean(dm: DataManager, *, hlpr: PlotHelper, uni: UniverseGroup,
     # Get the x-data, i.e. the times. Can query the UniverseGroup for that
     times = uni.get_times_array()
 
-    # Extract the data that is to be plotted on the y-axis, i.e.: 'some_state'
+    # Extract the data that is to be plotted on the y-axis, i.e.: `mean_of`
     # averaged over all grid cells for every time step
     mean = [np.mean(d) for d in uni['data/CopyMe'][mean_of]]
 
