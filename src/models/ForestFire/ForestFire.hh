@@ -163,6 +163,10 @@ private:
     /// The tree density which is calculated before writing out data
     double _tree_density;
 
+    /// The number of cluster ids
+    unsigned _num_clusters;
+
+
     // .. Datasets ...........................................................
     /// The dataset that stores the kind for each cell, e.g. Kind::tree
     const std::shared_ptr<DataSet> _dset_kind;
@@ -197,6 +201,7 @@ public:
         _cluster_tag_cnt(0),
         _cluster_members(),
         _tree_density(0),
+        _num_clusters(0),
 
         // Create datasets using the helper functions for CellManager-data
         _dset_kind{this->create_cm_dset("kind", _cm)},
@@ -241,9 +246,8 @@ public:
 private:
     // .. Setup functions .....................................................
 
-
     // .. Helper functions ....................................................
-    /// Calculate the density of tree cells
+    /// Calculate and return the density of tree cells
     double _calculate_tree_density() const {
         double sum = 0.;
 
@@ -255,8 +259,26 @@ private:
         return sum / _cm.cells().size();
     }
 
-    // .. Rule functions ......................................................
+    /// Identifies clusters in the cells and labels them with corresponding IDs
+    /** \details This function updates the cluster id of each cell
+     * 
+     * \return Number of clusters identified
+     */
+    unsigned int identify_clusters() {
+        this->_log->debug("Identifying clusters...");
 
+        // reset tmp counter for cluster IDs
+        _cluster_tag_cnt = 0; 
+        
+        // Identify clusters
+        apply_rule(_identify_cluster, _cm.cells(), *this->_rng);
+
+        this->_log->debug("Identified {} clusters.", _cluster_tag_cnt);
+
+        return _cluster_tag_cnt;
+    }
+
+    // .. Rule functions ......................................................
     /// Update rule, called every step
     /** \detail The possible transitions are the following:
       *           - empty -> tree (p = p_growth)
@@ -388,7 +410,7 @@ public:
     /// Provide monitoring data: tree density and number of clusters
     void monitor () {
         this->_monitor.set_entry("tree_density", _tree_density);
-        this->_monitor.set_entry("num_clusters", identify_clusters());
+        this->_monitor.set_entry("num_clusters", _num_clusters);
     }
 
     /// Write data
@@ -401,7 +423,6 @@ public:
 
         // Identify the clusters (only needed when actually writing)
         identify_clusters();
-
         _dset_cluster_id->write(_cm.cells().begin(), _cm.cells().end(),
             [](const auto& cell) {
                 return cell->state().cluster_tag;
@@ -411,25 +432,6 @@ public:
         _tree_density = _calculate_tree_density();
         _dset_mean_density->write(_tree_density); 
     }
-
-
-    // .. Getters and setters .................................................
-    // Add getters and setters here to interface with other model
-
-    /// Identifies clusters in the cells and labels them with corresponding IDs
-    /** \return Number of clusters identified
-     */
-    unsigned int identify_clusters() {
-        this->_log->debug("Identifying clusters...");
-
-        _cluster_tag_cnt = 0; // reset tmp counter for cluster IDs
-        apply_rule(_identify_cluster, _cm.cells(), *this->_rng);
-
-        this->_log->debug("Identified {} clusters.", _cluster_tag_cnt);
-
-        return _cluster_tag_cnt;
-    }
-
 };
 
 } // namespace ForestFire
