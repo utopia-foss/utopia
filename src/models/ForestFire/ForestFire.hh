@@ -159,6 +159,10 @@ private:
     /// A temporary container for use in cluster identification
     std::vector<std::shared_ptr<CellManager::Cell>> _cluster_members;
 
+    // .. Tracking variables .................................................
+    /// The tree density which is calculated before writing out data
+    double _tree_density;
+
     // .. Datasets ...........................................................
     /// The dataset that stores the kind for each cell, e.g. Kind::tree
     const std::shared_ptr<DataSet> _dset_kind;
@@ -192,6 +196,7 @@ public:
         _prob_distr(0., 1.),
         _cluster_tag_cnt(0),
         _cluster_members(),
+        _tree_density(0),
 
         // Create datasets using the helper functions for CellManager-data
         _dset_kind{this->create_cm_dset("kind", _cm)},
@@ -238,7 +243,17 @@ private:
 
 
     // .. Helper functions ....................................................
+    /// Calculate the density of tree cells
+    double _calculate_tree_density() const {
+        double sum = 0.;
 
+        for (const auto& cell : _cm.cells()) {
+            if (cell->state().kind == Kind::tree) {
+                sum += 1.;
+            }
+        }
+        return sum / _cm.cells().size();
+    }
 
     // .. Rule functions ......................................................
 
@@ -372,7 +387,7 @@ public:
 
     /// Provide monitoring data: tree density and number of clusters
     void monitor () {
-        this->_monitor.set_entry("tree_density", calc_tree_density());
+        this->_monitor.set_entry("tree_density", _tree_density);
         this->_monitor.set_entry("num_clusters", identify_clusters());
     }
 
@@ -392,24 +407,14 @@ public:
                 return cell->state().cluster_tag;
         });
 
-        _dset_mean_density->write(calc_tree_density()); 
+        // Calculate and write the tree density
+        _tree_density = _calculate_tree_density();
+        _dset_mean_density->write(_tree_density); 
     }
 
 
-    // Getters and setters ....................................................
+    // .. Getters and setters .................................................
     // Add getters and setters here to interface with other model
-
-    /// Calculate the density of tree cells
-    double calc_tree_density() const {
-        double sum = 0.;
-
-        for (const auto& cell : _cm.cells()) {
-            if (cell->state().kind == Kind::tree) {
-                sum += 1.;
-            }
-        }
-        return sum / _cm.cells().size();
-    }
 
     /// Identifies clusters in the cells and labels them with corresponding IDs
     /** \return Number of clusters identified
