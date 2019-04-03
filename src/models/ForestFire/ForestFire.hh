@@ -261,8 +261,8 @@ private:
             std::reduce(_cm.cells().begin(),
                         _cm.cells().end(),
                         0.0, 
-                        [&](double s, const std::shared_ptr<Cell>& c2){
-                                return s + (c2->state().kind == Kind::tree);
+                        [&](double s, const std::shared_ptr<Cell>& cell){
+                                return s + (cell->state().kind == Kind::tree);
                             });
 
         return sum / static_cast<double>(_cm.cells().size());
