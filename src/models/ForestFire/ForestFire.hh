@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <random>
+#include <numeric>
 
 #include <utopia/core/model.hh>
 #include <utopia/core/apply.hh>
@@ -136,6 +137,9 @@ public:
     /// The type of the cell manager
     using CellManager = CellManager<CellTraits, ForestFire>;
 
+    /// The type of a cell
+    using Cell = typename CellManager::Cell;
+
     /// Rule function type, extracted from CellManager
     using RuleFunc = typename CellManager::RuleFunc;
 
@@ -249,14 +253,19 @@ private:
     // .. Helper functions ....................................................
     /// Calculate and return the density of tree cells
     double _calculate_tree_density() const {
-        double sum = 0.;
+        // Sum up all kinds of trees
+        // NOTE If execution policies are implemented, this could be easily
+        //      made parallel by adding std::execution::par as first argument
+        //      and including the <execution> header.
+        const double sum = 
+            std::reduce(_cm.cells().begin(),
+                        _cm.cells().end(),
+                        0.0, 
+                        [&](double s, const std::shared_ptr<Cell>& c2){
+                                return s + (c2->state().kind == Kind::tree);
+                            });
 
-        for (const auto& cell : _cm.cells()) {
-            if (cell->state().kind == Kind::tree) {
-                sum += 1.;
-            }
-        }
-        return sum / _cm.cells().size();
+        return sum / static_cast<double>(_cm.cells().size());
     }
 
     /// Identifies clusters in the cells and labels them with corresponding IDs
