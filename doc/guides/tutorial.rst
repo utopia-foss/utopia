@@ -774,7 +774,7 @@ It looks something like this:
   
   # --- Model Dynamics
   # Probability per site and time step to transition from state empty to tree
-  growth_rate: 7.5e-3
+  p_growth: 7.5e-3
   
   # Probability per site and time step to transition to burning state, burning
   # down the whole cluster
@@ -785,7 +785,7 @@ It looks something like this:
   light_bottom_row: false
   
   # Probability (per neighbor) to _not_ catch fire from a neighbor
-  resistance: 0.
+  p_resistance: 0.
 
 
 To *change* these parameters, you again need to create a run configuration file, e.g. ``~/utopia_cfgs/ForestFire/test/run.yml``. In it, let's change the initial density of trees to zero:

@@ -80,37 +80,37 @@ using CellTraits = Utopia::CellTraits<State, Update::async>;
 /// ForestFire model parameter struct
 struct Param {
     /// Rate of growth per cell
-    const double growth_rate;
+    const double p_growth;
 
-    /// Frequency of lightning occurring per cell
-    const double lightning_probability;
+    /// Probability of lightning occurring on a cell
+    const double p_lightning;
 
     /// Whether the bottom row should be constantly on fire
     const bool light_bottom_row;
 
-    /// The resistance parameter
-    const double resistance;
+    /// The p_resistance parameter
+    const double p_resistance;
 
     /// Construct the parameters from the given configuration node
     Param(const DataIO::Config& cfg)
     :
-        growth_rate(get_as<double>("growth_rate", cfg)),
-        lightning_probability(get_as<double>("lightning_probability", cfg)),
+        p_growth(get_as<double>("p_growth", cfg)),
+        p_lightning(get_as<double>("p_lightning", cfg)),
         light_bottom_row(get_as<bool>("light_bottom_row", cfg)),
-        resistance(get_as<double>("resistance", cfg))
+        p_resistance(get_as<double>("p_resistance", cfg))
     {
-        if ((growth_rate > 1) or (growth_rate < 0)) {
-            throw std::invalid_argument("Invalid growth_rate; need be a value "
+        if ((p_growth > 1) or (p_growth < 0)) {
+            throw std::invalid_argument("Invalid p_growth; need be a value "
                 "in range [0, 1] and specify the probability per time step "
                 "and cell with which an empty cell turns into a tree.");
         }
-        if ((lightning_probability > 1) or (lightning_probability < 0)) {
-            throw std::invalid_argument("Invalid lightning_probability; need be "
+        if ((p_lightning > 1) or (p_lightning < 0)) {
+            throw std::invalid_argument("Invalid p_lightning; need be "
                 "in range [0, 1] and specify the probability per cell and "
                 "time step for lightning to strike.");
         }
-        if ((resistance > 1) or (resistance < 0)) {
-            throw std::invalid_argument("Invalid resistance argument! "
+        if ((p_resistance > 1) or (p_resistance < 0)) {
+            throw std::invalid_argument("Invalid p_resistance argument! "
                 "Need be a value in range [0, 1] and specify the probability "
                 "per neighbor with which that neighbor can resist fire");
         }
@@ -140,10 +140,10 @@ public:
     using DataSet = typename Base::DataSet;
 
     /// The type of the cell manager
-    using FFMCellManager = CellManager<CellTraits, ForestFire>;
+    using CellManager = CellManager<CellTraits, ForestFire>;
 
     /// Rule function type, extracted from CellManager
-    using RuleFunc = typename FFMCellManager::RuleFunc;
+    using RuleFunc = typename CellManager::RuleFunc;
 
 
 private:
@@ -151,7 +151,7 @@ private:
 
     // -- Members -------------------------------------------------------------
     /// The cell manager for the forest fire model
-    FFMCellManager _cm;
+    CellManager _cm;
 
     /// Model parameters
     const Param _param;
@@ -163,7 +163,7 @@ private:
     unsigned int _cluster_tag_cnt;
 
     /// A temporary container for use in cluster identification
-    std::vector<std::shared_ptr<FFMCellManager::Cell>> _cluster_members;
+    std::vector<std::shared_ptr<CellManager::Cell>> _cluster_members;
 
     // -- Datasets -- //
     DataSets<DataSet> _dsets;
@@ -243,8 +243,8 @@ private:
 
     /// Update rule, called every step
     /** \detail The possible transitions are the following:
-      *           - empty -> tree (p = growth_rate)
-      *           - tree -> burning (p = lightning_probability)
+      *           - empty -> tree (p = p_growth)
+      *           - tree -> burning (p = p_lightning)
       *         A burning tree directly invokes the burning of the whole
       *         cluster of connected trees ("two-state FFM"). After that, all
       *         burned cells are in the empty state again.
@@ -263,13 +263,13 @@ private:
 
         // Empty cells can grow a tree
         else if (    state.kind == Kind::empty
-                 and this->_prob_distr(*this->_rng) < _param.growth_rate)
+                 and this->_prob_distr(*this->_rng) < _param.p_growth)
         {
             state.kind = Kind::tree;
         }
         
         // Trees can be hit by lightning
-        else if (this->_prob_distr(*this->_rng) < _param.lightning_probability)
+        else if (this->_prob_distr(*this->_rng) < _param.p_lightning)
         {
             state = _burn_cluster(cell);
         }
@@ -298,10 +298,10 @@ private:
             for (const auto& c : this->_cm.neighbors_of(cluster_member)) {
                 // If it is a tree, it will burn ...
                 if (c->state().kind == Kind::tree) {
-                    // ... unless there is resistance > 0 ...
-                    if (this->_param.resistance > 0.) {
+                    // ... unless there is p_resistance > 0 ...
+                    if (this->_param.p_resistance > 0.) {
                         // ... where there is a chance not to burn:
-                        if (this->_prob_distr(*this->_rng) > _param.resistance)
+                        if (this->_prob_distr(*this->_rng) > _param.p_resistance)
                             continue;
                     }
 

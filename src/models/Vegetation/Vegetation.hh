@@ -63,7 +63,7 @@ private:
     std::normal_distribution<double> _rain_dist;
 
     /// The growth rate (logistic growth model)
-    double _growth_rate;
+    double _p_growth;
 
     /// The seeding rate
     double _seeding_rate;
@@ -108,7 +108,7 @@ private:
              *   n_{t+1} =((r+1.)*n_t)/(1 +(n_t*r)/K)
              * when r is given as a growth rate proper.
              */
-            state.plant_mass = ((_growth_rate + 1.) * mass)/(1. + (mass * (_growth_rate))/rain);
+            state.plant_mass = ((_p_growth + 1.) * mass)/(1. + (mass * (_p_growth))/rain);
         }
         else {
             // Seeding
@@ -149,7 +149,7 @@ public:
                    get_as<double>("rain_std", this->_cfg)},
 
         // Initialize model parameters from config file
-        _growth_rate(get_as<double>("growth_rate", this->_cfg)),
+        _p_growth(get_as<double>("p_growth", this->_cfg)),
         _seeding_rate(get_as<double>("seeding_rate", this->_cfg)),
 
         // Open dataset for output of cell states

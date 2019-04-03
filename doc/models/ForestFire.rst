@@ -11,14 +11,14 @@ The model is based on the description in the CCEES Lecture Notes by Kurt Roth in
 
 It is modelled as a cellular automaton, where each cell can have one of the two states ``empty`` or ``tree``.
 
-Trees grow on an empty cell with probability ``growth_rate``. With the probability ``lightning_probability`` a cell is ignited and this cell, as well as all cells indirectly connected to it (the cluster) burn instantaneously and turn to empty; a percolation occurs.
+Trees grow on an empty cell with probability ``p_growth``. With the probability ``p_lightning`` a cell is ignited and this cell, as well as all cells indirectly connected to it (the cluster) burn instantaneously and turn to empty; a percolation occurs.
 The cluster is determined by recursively percolating through the Moore neighbours (by default) of each cell.
 
 Percolation mode
 ^^^^^^^^^^^^^^^^
 
 There is the possibility to use the model feature ``ignite_bottom_row`` instead of a lightning frequency. In that mode, cells at the bottom (southern) boundary of the grid are constantly ignited.
-It makes sense to set the ``lightning_probability`` to zero in this mode.
+It makes sense to set the ``p_lightning`` to zero in this mode.
 
 .. note::
 

@@ -28,14 +28,14 @@ def state_mean_multiverse(  dm: DataManager, *,
         # TODO Find a cleaner way to do this (on a general level)
         break
 
-    for lightning in range(len(state_data['lightning_probability'])):
+    for lightning in range(len(state_data['p_lightning'])):
 
         #Take mean of the states for each time step and convert it
-        mean = mv_data[{'lightning_probability': lightning}]
+        mean = mv_data[{'p_lightning': lightning}]
         mean = mean.to_array().values.flatten()
 
         #Set the labels
-        label=('%.2E' % float(state_data['lightning_probability'][lightning]))
+        label=('%.2E' % float(state_data['p_lightning'][lightning]))
         plot_kwargs['label'] = 'lightning probability = {}'.format(label)
 
         # Call the plot function

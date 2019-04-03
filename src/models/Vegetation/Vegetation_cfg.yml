@@ -29,7 +29,7 @@ rain_mean: 10
 rain_std: 2
 
 # Growth rate (used in logistic growth)
-growth_rate: 0.1
+p_growth: 0.1
 
 # Seeding rate (used when plant mass is zero)
 seeding_rate: 0.2
