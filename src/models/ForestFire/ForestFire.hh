@@ -23,7 +23,7 @@ struct State {
     Kind kind;
 
     /// An ID denoting to which cluster this cell belongs
-    unsigned int cluster_tag;
+    unsigned int cluster_id;
 
     /// Whether the cell is permanently ignited
     bool permanently_ignited;
@@ -33,7 +33,7 @@ struct State {
     State (const DataIO::Config& cfg, const std::shared_ptr<RNG>& rng)
     :
         kind(Kind::empty),
-        cluster_tag(0),
+        cluster_id(0),
         permanently_ignited(false)
     {
         // Check if initial_density is available to set up cell state
@@ -154,7 +154,7 @@ private:
     std::uniform_real_distribution<double> _prob_distr;
 
     /// The incremental cluster tag
-    unsigned int _cluster_tag_cnt;
+    unsigned int _cluster_id_cnt;
 
     /// A temporary container for use in cluster identification
     std::vector<std::shared_ptr<CellManager::Cell>> _cluster_members;
@@ -198,7 +198,7 @@ public:
 
         // Initialize remaining members
         _prob_distr(0., 1.),
-        _cluster_tag_cnt(0),
+        _cluster_id_cnt(0),
         _cluster_members(),
         _tree_density(0),
         _num_clusters(0),
@@ -268,14 +268,14 @@ private:
         this->_log->debug("Identifying clusters...");
 
         // reset tmp counter for cluster IDs
-        _cluster_tag_cnt = 0; 
+        _cluster_id_cnt = 0; 
         
         // Identify clusters
         apply_rule(_identify_cluster, _cm.cells(), *this->_rng);
 
-        this->_log->debug("Identified {} clusters.", _cluster_tag_cnt);
+        this->_log->debug("Identified {} clusters.", _cluster_id_cnt);
 
-        return _cluster_tag_cnt;
+        return _cluster_id_cnt;
     }
 
     // .. Rule functions ......................................................
@@ -292,7 +292,7 @@ private:
     RuleFunc _update = [this](const auto& cell){
         // Get the current state of the cell and reset the cluster tag
         auto state = cell->state();
-        state.cluster_tag = 0;
+        state.cluster_id = 0;
         
         // Permanently ignited cells always burn the cluster
         if (state.permanently_ignited) {
@@ -358,10 +358,10 @@ private:
     /// Get the identity of each cluster of trees
     /* \detail Runs a percolation on a cell, that has ID 0. Then, give all
      *         cells of that percolation the same ID.
-     *         The _cluster_tag_cnt member keeps track of already given IDs.
+     *         The _cluster_id_cnt member keeps track of already given IDs.
      */
     RuleFunc _identify_cluster = [this](const auto& cell){
-        if (cell->state().cluster_tag != 0 or 
+        if (cell->state().cluster_id != 0 or 
             cell->state().kind == Kind::empty) {
             // already labelled, nothing to do. Return current state
             return cell->state();
@@ -369,8 +369,8 @@ private:
         // else: need to label this cell
 
         // Increment the cluster ID counter and label the given cell
-        _cluster_tag_cnt++;
-        cell->state().cluster_tag = _cluster_tag_cnt;
+        _cluster_id_cnt++;
+        cell->state().cluster_id = _cluster_id_cnt;
 
         // Use existing cluster member container, clear it, add current cell
         auto& cluster = _cluster_members;
@@ -383,10 +383,10 @@ private:
             // neighbors of cell cluster[i] that is already in the cluster
             for (const auto& c : this->_cm.neighbors_of(cluster[i])) {
                 // If it is a tree that is not yet in the cluster, add it.
-                if (    c->state().cluster_tag == 0
+                if (    c->state().cluster_id == 0
                     and c->state().kind == Kind::tree)
                 {
-                    c->state().cluster_tag = _cluster_tag_cnt;
+                    c->state().cluster_id = _cluster_id_cnt;
                     cluster.push_back(c);
                     // This extends the outer for-loop...
                 }
@@ -408,6 +408,10 @@ public:
     }
 
     /// Provide monitoring data: tree density and number of clusters
+    /** \details The monitored data relies on tracking data variables
+     *           that need not correspond exactly to the actual value at this 
+     *           time. They are calculated before the writing them out.
+     */ 
     void monitor () {
         this->_monitor.set_entry("tree_density", _tree_density);
         this->_monitor.set_entry("num_clusters", _num_clusters);
@@ -425,7 +429,7 @@ public:
         identify_clusters();
         _dset_cluster_id->write(_cm.cells().begin(), _cm.cells().end(),
             [](const auto& cell) {
-                return cell->state().cluster_tag;
+                return cell->state().cluster_id;
         });
 
         // Calculate and write the tree density
