@@ -14,13 +14,13 @@ namespace Models {
 namespace ForestFire {
 
 /// The values a cell's state can take: empty and tree
-enum class State { empty=0, tree=1 };
+enum class Kind { empty=0, tree=1 };
 
 
 /// The full cell struct for the ForestFire model
-struct FFMCell {
+struct State {
     /// The actual cell state
-    State state;
+    Kind kind;
 
     /// An ID denoting to which cluster this cell belongs
     unsigned int cluster_tag;
@@ -30,9 +30,9 @@ struct FFMCell {
 
     /// Construct a cell from a configuration node and an RNG
     template<class RNG>
-    FFMCell (const DataIO::Config& cfg, const std::shared_ptr<RNG>& rng)
+    State (const DataIO::Config& cfg, const std::shared_ptr<RNG>& rng)
     :
-        state(State::empty),
+        kind(Kind::empty),
         cluster_tag(0),
         permanently_ignited(false)
     {
@@ -47,7 +47,7 @@ struct FFMCell {
 
             // With this probability, the cell state is a tree
             if (std::uniform_real_distribution<double>(0., 1.)(*rng) < rho) {
-                state = State::tree;
+                kind = Kind::tree;
             }
             // NOTE Although the distribution object is created each time, this
             //      is not a significant slow-down compared to re-using an
@@ -60,7 +60,7 @@ struct FFMCell {
 /// Struct for all Dataset
 template <typename DataSet>
 struct DataSets {
-    const std::shared_ptr<DataSet> state;
+    const std::shared_ptr<DataSet> kind;
     const std::shared_ptr<DataSet> cluster_id;
     const std::shared_ptr<DataSet> mean_density;      
 };
@@ -74,7 +74,7 @@ struct DataSets {
   * \note   This model relies on asynchronous update for calculation of the
   *         clusters and the percolation.
   */
-using FFMCellTraits = Utopia::CellTraits<FFMCell, Update::async>;
+using CellTraits = Utopia::CellTraits<State, Update::async>;
 
 
 /// ForestFire model parameter struct
@@ -140,7 +140,7 @@ public:
     using DataSet = typename Base::DataSet;
 
     /// The type of the cell manager
-    using FFMCellManager = CellManager<FFMCellTraits, ForestFire>;
+    using FFMCellManager = CellManager<CellTraits, ForestFire>;
 
     /// Rule function type, extracted from CellManager
     using RuleFunc = typename FFMCellManager::RuleFunc;
@@ -262,10 +262,10 @@ private:
         }
 
         // Empty cells can grow a tree
-        else if (    state.state == State::empty
+        else if (    state.kind == Kind::empty
                  and this->_prob_distr(*this->_rng) < _param.growth_rate)
         {
-            state.state = State::tree;
+            state.kind = Kind::tree;
         }
         
         // Trees can be hit by lightning
@@ -283,7 +283,7 @@ private:
       */
     RuleFunc _burn_cluster = [this](const auto& cell) {
         // The current cell surely is empty now.
-        cell->state().state = State::empty;
+        cell->state().kind = Kind::empty;
         
         // Use existing cluster member container, clear it, add current cell
         auto& cluster = _cluster_members;
@@ -297,7 +297,7 @@ private:
             // Iterate over all potential cluster members
             for (const auto& c : this->_cm.neighbors_of(cluster_member)) {
                 // If it is a tree, it will burn ...
-                if (c->state().state == State::tree) {
+                if (c->state().kind == Kind::tree) {
                     // ... unless there is resistance > 0 ...
                     if (this->_param.resistance > 0.) {
                         // ... where there is a chance not to burn:
@@ -306,7 +306,7 @@ private:
                     }
 
                     // Bad luck. Burn.
-                    c->state().state = State::empty;
+                    c->state().kind = Kind::empty;
                     cluster.push_back(c);
                     // This extends the outer for-loop
                 }
@@ -323,7 +323,8 @@ private:
      *         The _cluster_tag_cnt member keeps track of already given IDs.
      */
     RuleFunc _identify_cluster = [this](const auto& cell){
-        if (cell->state().cluster_tag != 0 or cell->state().state == State::empty) {
+        if (cell->state().cluster_tag != 0 or 
+            cell->state().kind == Kind::empty) {
             // already labelled, nothing to do. Return current state
             return cell->state();
         }
@@ -345,7 +346,7 @@ private:
             for (const auto& c : this->_cm.neighbors_of(cluster[i])) {
                 // If it is a tree that is not yet in the cluster, add it.
                 if (    c->state().cluster_tag == 0
-                    and c->state().state == State::tree)
+                    and c->state().kind == Kind::tree)
                 {
                     c->state().cluster_tag = _cluster_tag_cnt;
                     cluster.push_back(c);
@@ -377,9 +378,9 @@ public:
     /// Write data
     void write_data () {
         // Store all cells' state
-        _dsets.state->write(_cm.cells().begin(), _cm.cells().end(),
+        _dsets.kind->write(_cm.cells().begin(), _cm.cells().end(),
             [](const auto& cell) {
-                return static_cast<unsigned short int>(cell->state().state);
+                return static_cast<unsigned short int>(cell->state().kind);
         });
 
         // Identify the clusters (only needed when actually writing)
@@ -402,7 +403,7 @@ public:
         double sum = 0.;
 
         for (const auto& cell : _cm.cells()) {
-            if (cell->state().state == State::tree) {
+            if (cell->state().kind == Kind::tree) {
                 sum += 1.;
             }
         }
