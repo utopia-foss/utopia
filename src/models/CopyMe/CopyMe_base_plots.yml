@@ -1,8 +1,28 @@
 # This file holds the base configuration for CopyMe model plots
 ---
+# A model-specific plot of the mean state over time
 mean_cell_state_over_time:
   universes: all
   
   # Use the CopyMe-specific plot functions
   module: model_plots.CopyMe
   plot_func: state_mean
+
+
+# Based on the CA state plot, a configuration for a 
+state_single_time_step:
+  based_on: .ca.state
+
+  model_name: CopyMe
+
+state_anim:
+  based_on: .ca.state
+  
+  model_name: CopyMe
+
+  # Specify the time index (will be ignored, but needs to be specified)
+  time_idx: 0
+
+  # Enable animation (disabled by default)
+  animation:
+    enabled: true

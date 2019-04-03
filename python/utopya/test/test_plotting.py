@@ -50,8 +50,35 @@ def test_dummy_plotting(tmpdir):
                y="dummy/state"
                )
 
+def test_CopyMe_plotting(tmpdir):
+    """Test plotting of the dummy model"""
+    # Create and run simulation
+    mv = Multiverse(model_name='CopyMe',
+                    paths=dict(out_dir=str(tmpdir)))
+    mv.run_single()
+
+    # Load
+    mv.dm.load_from_cfg(print_tree=True)
+
+    # Plot the default configuration
+    mv.pm.plot_from_cfg()
+
 def test_ca_plotting(tmpdir):
-    """Tests the plot_funcs submodule using the SimpleEG model"""
+    """Tests the plot_funcs submodule using the SimpleEG and CopyMe models"""
+
+    mv = Multiverse(model_name='CopyMe',
+                    paths=dict(out_dir=str(tmpdir)))
+    mv.run_single()
+
+    # Load
+    mv.dm.load_from_cfg(print_tree=True)
+
+    # Run the CA plots (initial frame + animation)
+    mv.pm.plot_from_cfg(plot_only=["initial_state_and_trait"])
+    mv.pm.plot_from_cfg(plot_only=["state_and_trait_anim"])
+
+
+    # Same again with SimpleEG . . . . . . . . . . . . . . . . . . . . . . . . 
     mv = Multiverse(model_name='SimpleEG',
                     paths=dict(out_dir=str(tmpdir)))
     mv.run_single()
