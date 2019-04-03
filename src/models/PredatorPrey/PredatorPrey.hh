@@ -513,7 +513,7 @@ public:
     // .. Simulation Control ..................................................
 
     /// Perform an iteration step
-    /** \detail An iteration step consists of:
+    /** \details An iteration step consists of:
      * 1. Subtracting costs of living
      * 2. Let predator and prey move to neighboring cells
      * 3. Lunch time: Prey eats grass and predator eats prey if on the same cell
