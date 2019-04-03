@@ -13,8 +13,8 @@ from utopya.plotting import is_plot_func, PlotHelper, UniversePlotCreator
              helper_defaults=dict(
                  set_labels=dict(x="Predator density",
                                 y="Prey density"),
-                 set_limits=dict(x=(0.0, 0.1),
-                                 y=(0.0, 0.1)))
+                 set_limits=dict(x=(0.0, 1.0),
+                                 y=(0.0, 1.0)))
              )
 def phase_space(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper, 
                 cmap: str=None, show_grid: bool=False, 
