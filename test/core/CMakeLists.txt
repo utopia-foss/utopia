@@ -20,6 +20,7 @@ set(TESTS_CORE
     apply_test
     cell_manager_test
     cell_manager_integration_test
+    compiletime_algos_test
     dependency_test
     exceptions_test
     graph_test
@@ -33,7 +34,7 @@ set(TESTS_CORE
     state_test
     tags_test
     utils_test
-    compiletime_algos_test
+    zip_test
     )
 
 # Add CORE-prefixed test targets
