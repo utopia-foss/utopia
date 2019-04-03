@@ -20,8 +20,8 @@ struct SpeciesState {
     // .. Constructors ........................................................
     /// The default constructor
     SpeciesState() : 
-    on_cell{false},
-    resources{0}
+    resources{0},
+    on_cell{false}
     {}
 };
 

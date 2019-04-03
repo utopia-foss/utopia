@@ -24,7 +24,7 @@ space:
 cell_manager:
   grid:
     structure: square
-    resolution: 400      # in cells per unit length of physical space
+    resolution: 400           # in cells per unit length of physical space
 
   neighborhood:
     mode: Moore
@@ -34,9 +34,9 @@ cell_manager:
   cell_params:
     # Initial species state parameters
     prey:
-      init_resources: 2.    # The initial resource reservoir
+      init_resources: 2.      # The initial resource reservoir
     predator:
-      init_resources: 2.    # The initial resource reservoir
+      init_resources: 2.      # The initial resource reservoir
 
     # The probabilities to have a cell initialized with prey and/or predator 
     # on it.
