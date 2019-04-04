@@ -15,7 +15,7 @@ using NBFuncID = std::function<IndexContainer(const IndexType&)>;
 
 
 /// Possible neighborhood types; availability depends on choice of grid
-enum NBMode {
+enum class NBMode {
     /// Every entity is utterly alone in the world
     empty = 0,
     /// The vonNeumann neighborhood, i.e. only nearest neighbors
@@ -164,8 +164,13 @@ public:
     }
 
     /// Const reference to the currently selected neighborhood mode
-    const NBMode& nb_mode() {
+    const NBMode& nb_mode() const {
         return _nb_mode;
+    }
+
+    /// Maximum size of the currently selected neighborhood
+    auto nb_size() const {
+        return expected_num_neighbors(_nb_mode);
     }
 
 
@@ -264,6 +269,9 @@ protected:
       *         specify the neighborhood parameter members.
       */
     virtual NBFuncID<Self> get_nb_func(NBMode, const DataIO::Config&) = 0;
+
+    /// Computes the expected number of neighbors for a neighborhood mode
+    virtual DistType expected_num_neighbors(const NBMode&) const = 0;
 
     /// Resets all neighborhood parameters to their default / "empty" value
     void reset_nbh_params() {
