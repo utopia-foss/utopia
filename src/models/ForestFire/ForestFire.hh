@@ -75,10 +75,10 @@ using CellTraits = Utopia::CellTraits<State, Update::async>;
 /// ForestFire model parameter struct
 struct Param {
     /// Rate of growth per cell
-    const double growth_rate;
+    const double p_growth;
 
     /// Frequency of lightning occurring per cell
-    const double lightning_probability;
+    const double p_lightning;
 
     /// Whether the bottom row should be constantly on fire
     const bool light_bottom_row;
@@ -89,18 +89,18 @@ struct Param {
     /// Construct the parameters from the given configuration node
     Param(const DataIO::Config& cfg)
     :
-        growth_rate(get_as<double>("growth_rate", cfg)),
-        lightning_probability(get_as<double>("lightning_probability", cfg)),
+        p_growth(get_as<double>("p_growth", cfg)),
+        p_lightning(get_as<double>("p_lightning", cfg)),
         light_bottom_row(get_as<bool>("light_bottom_row", cfg)),
         resistance(get_as<double>("resistance", cfg))
     {
-        if ((growth_rate > 1) or (growth_rate < 0)) {
-            throw std::invalid_argument("Invalid growth_rate; need be a value "
+        if ((p_growth > 1) or (p_growth < 0)) {
+            throw std::invalid_argument("Invalid p_growth; need be a value "
                 "in range [0, 1] and specify the probability per time step "
                 "and cell with which an empty cell turns into a tree.");
         }
-        if ((lightning_probability > 1) or (lightning_probability < 0)) {
-            throw std::invalid_argument("Invalid lightning_probability; need be "
+        if ((p_lightning > 1) or (p_lightning < 0)) {
+            throw std::invalid_argument("Invalid p_lightning; need be "
                 "in range [0, 1] and specify the probability per cell and "
                 "time step for lightning to strike.");
         }
@@ -293,8 +293,8 @@ private:
     // .. Rule functions ......................................................
     /// Update rule, called every step
     /** \detail The possible transitions are the following:
-      *           - empty -> tree (p = growth_rate)
-      *           - tree -> burning (p = lightning_probability)
+      *           - empty -> tree (p = p_growth)
+      *           - tree -> burning (p = p_lightning)
       *         A burning tree directly invokes the burning of the whole
       *         cluster of connected trees ("two-state FFM"). After that, all
       *         burned cells are in the empty state again.
@@ -313,13 +313,13 @@ private:
 
         // Empty cells can grow a tree
         else if (    state.kind == Kind::empty
-                 and this->_prob_distr(*this->_rng) < _param.growth_rate)
+                 and this->_prob_distr(*this->_rng) < _param.p_growth)
         {
             state.kind = Kind::tree;
         }
         
         // Trees can be hit by lightning
-        else if (this->_prob_distr(*this->_rng) < _param.lightning_probability)
+        else if (this->_prob_distr(*this->_rng) < _param.p_lightning)
         {
             state = _burn_cluster(cell);
         }

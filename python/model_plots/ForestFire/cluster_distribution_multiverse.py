@@ -24,8 +24,8 @@ def cluster_distribution_multiverse(dm: DataManager, *,
     
     cluster_data = mv_data['cluster_id'][{'time': time}]
 
-    for lightning in range(len(cluster_data['lightning_probability'])):
-        data = cluster_data[{'lightning_probability': lightning}].values.flatten()
+    for lightning in range(len(cluster_data['p_lightning'])):
+        data = cluster_data[{'p_lightning': lightning}].values.flatten()
 
         #get the cluster sizes from ids
         cluster_sizes = np.zeros(np.amax(data), int)
@@ -46,7 +46,7 @@ def cluster_distribution_multiverse(dm: DataManager, *,
         args = [ np.linspace(1,size_max, len(histogram)), histogram ]
     
         # Call the plot function
-        label=('%.2E' % float(cluster_data['lightning_probability'][lightning]))
+        label=('%.2E' % float(cluster_data['p_lightning'][lightning]))
         plot_kwargs['label'] = 'lightning probability = {}'.format(label)   
 
         #Possibly calculate average Cluster size --- NECESSARY?
