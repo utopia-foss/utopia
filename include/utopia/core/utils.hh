@@ -5,6 +5,12 @@
 #include <iomanip>
 #include <iostream>
 #include <vector>
+#include <tuple>
+#include <utility>
+#include <string>
+
+#include <boost/hana/ext/std/tuple.hpp>
+#include <boost/hana/for_each.hpp>
 
 namespace Utopia
 {
@@ -420,7 +426,36 @@ operator<<(std::ostream& out, const MapType<Key, Value, Args...>& map)
     return out;
 }
 
-
 } // namespace Utils
 } // namespace Utopia
+
+namespace std {
+
+/// Report a tuple to an outstream
+/** This works by piping the single elements inside the tuple to the stream,
+ *  and therefor requires `operator<<` for the underlying types to be defined.
+ *
+ *  For tuple values `a`, `b`, ..., the output will look like
+ *  \verbatim (a, b, ...) \endverbatim
+ */
+template<typename... Types>
+std::ostream& operator<< (std::ostream& ostr, std::tuple<Types...> tuple)
+{
+    std::string val_str("(");
+
+    auto report_val = [&val_str](auto&& val){
+        val_str += to_string(val) + ", ";
+    };
+    boost::hana::for_each(tuple, report_val);
+
+    // remove final comma
+    val_str.erase(val_str.end() - 2);
+    val_str += ")";
+
+    ostr << val_str;
+    return ostr;
+}
+
+} // namespace std
+
 #endif

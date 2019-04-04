@@ -119,8 +119,8 @@ To use this plot configuration, just pass it to the command line interface using
   The function's signature needs to be such that it matches the call from the chosen ``PlotCreator``, selected by the ``creator`` key.
 
 
-Plot function signature
------------------------
+Plot functions
+--------------
 Which signature do plot functions have to have?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

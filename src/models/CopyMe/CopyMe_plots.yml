@@ -1,5 +1,6 @@
 # The default plots of the CopyMe model. Can use the `based_on` feature...
 ---
+# Mean value plots ............................................................
 some_state_mean:
   # Base it on some existing configuration
   based_on: mean_cell_state_over_time
@@ -11,3 +12,27 @@ some_trait_mean:
   based_on: mean_cell_state_over_time
 
   mean_of: some_trait
+
+
+# Spatial CA state plots (single frames) ......................................
+initial_state_and_trait:
+  based_on: state_single_time_step
+  
+  time_idx: 0
+
+  to_plot:
+    some_state:
+      title: State
+    some_trait:
+      title: Trait
+
+
+# Spatial CA animations .......................................................
+state_and_trait_anim:
+  based_on: state_anim
+
+  to_plot:
+    some_state:
+      title: State
+    some_trait:
+      title: Trait
