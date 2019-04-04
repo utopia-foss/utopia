@@ -1,6 +1,7 @@
 #ifndef UTOPIA_MODELS_PREDATORPREY_HH
 #define UTOPIA_MODELS_PREDATORPREY_HH
 
+#include <cstdint>
 #include <algorithm>
 #include <random>
 
@@ -555,41 +556,39 @@ public:
     }
 
     /// Write data
+    /** \detail When invoked, stores cell positions and resources of both prey
+      *         and predators.
+      *
+      * \note   Positions are cast to char and therefore stored as such. This
+      *         is because C has no native boolean type, and the HDF5 library
+      *         thus cannot store it directly. With 8 bit width, char is the
+      *         smallest data type available; short int is already 16 bit.
+      */
     void write_data() {
         // Predator
         _dset_predator->write(_cm.cells().begin(), _cm.cells().end(), 
-            [](auto& cell) {                
-                if (cell->state.predator.on_cell){
-                    return 1;
-                }
-                else{
-                    return 0;
-                }
+            [](const auto& cell) {                
+                return static_cast<char>(cell->state.predator.on_cell);
             }
         );
 
         // Prey
         _dset_prey->write(_cm.cells().begin(), _cm.cells().end(), 
-            [](auto& cell) {                
-                if (cell->state.prey.on_cell){
-                    return 1;
-                }
-                else{
-                    return 0;
-                }
+            [](const auto& cell) {                
+                return static_cast<char>(cell->state.prey.on_cell);
             }
         );
 
         // resource of predator
         _dset_resource_predator->write(_cm.cells().begin(), _cm.cells().end(), 
-            [](auto& cell) {
+            [](const auto& cell) {
                 return cell->state.predator.resources;
             }
         );
 
         // resource of prey
         _dset_resource_prey->write(_cm.cells().begin(), _cm.cells().end(), 
-            [](auto& cell) {
+            [](const auto& cell) {
                 return cell->state.prey.resources;
             }
         );
