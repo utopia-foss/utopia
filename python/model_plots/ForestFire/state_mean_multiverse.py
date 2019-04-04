@@ -11,7 +11,8 @@ from utopya.plotting import is_plot_func, PlotHelper, UniversePlotCreator
                 set_labels=dict(x="Time", y="Density"),
                 set_scale=dict(x='linear', y='log'),
                 set_title=dict(title='Mean tree density'),
-                set_legend=dict(use_legend=True)
+                set_legend=dict(use_legend=True),
+                save_figure=dict(bbox_inches="tight")
                 )
               )
 def state_mean_multiverse(  dm: DataManager, *,
