@@ -10,27 +10,23 @@ from utopya.plotting import is_plot_func, PlotHelper, UniversePlotCreator
 # -----------------------------------------------------------------------------
 
 @is_plot_func(creator_type=UniversePlotCreator,
-             helper_defaults=dict(
-                 set_labels=dict(x="Predator density",
+              helper_defaults=dict(
+                set_labels=dict(x="Predator density",
                                 y="Prey density"),
-                 set_limits=dict(x=(0.0, 1.0),
-                                 y=(0.0, 1.0)))
-             )
-def phase_space(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper, 
-                cmap: str=None, show_grid: bool=False, 
-                **plot_kwargs):
+                set_limits=dict(x=(0., None),
+                                y=(0., None))
+              ))
+def phase_space(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
+                cmap: str=None, **plot_kwargs):
     """plots the frequency of one species against the frequency of the other
-
-    Args:
-    dm (DataManager): The data manager from which to retrieve the data
-    uni (UniverseGroup): The universe from which to plot the data
-    cmap (str): The cmap which is used to color-code the time development
-    show_grid (bool): Show a grid 
-    save_kwargs (dict, optional): kwargs to the plt.savefig function
-    **plot_kwargs: Passed on to plt.plot
     
-    Raises:
-        TypeError: For invalid population argument
+    Args:
+        dm (DataManager): The data manager from which to retrieve the data
+        uni (UniverseGroup): The universe from which to plot the data
+        hlpr (PlotHelper): The PlotHelper instance
+        cmap (str, optional): The cmap which is used to color-code the time
+            development. If not given, will not color-code it.
+        **plot_kwargs: Passed on to plt.scatter
     """
     # Get the group that all datasets are in
     grp = uni['data']['PredatorPrey']
@@ -39,21 +35,13 @@ def phase_space(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
     prey = grp['prey']
     predator = grp['predator']
 
-    # Get the prey and predator frequencies per time step by summing them up
-    # and dividing them by the total number of cells per time step
-    # NOTE This only works if time is the first dimension
-    f_prey = prey.sum(dim=[d for d in prey.dims if d!='time']) \
-                / np.prod(prey.shape[1:])
-    f_predator = predator.sum(dim=[d for d in prey.dims if d!='time']) \
-                / np.prod(predator.shape[1:])
+    # Get the prey and predator frequencies per time step by calculating a mean
+    # over all dimensions but time
+    f_prey = prey.mean(dim=[d for d in prey.dims if d != 'time'])
+    f_predator = predator.mean(dim=[d for d in predator.dims if d != 'time'])
 
-    # Plot the phase space, either color coding the time or not
-    if cmap:
-        hlpr.ax.scatter(f_predator, f_prey, c=range(f_prey.size), 
-                        cmap=cmap, **plot_kwargs)
-    else:
-        hlpr.ax.scatter(f_predator, f_prey, **plot_kwargs)
-
-    # Add a grid in the background if desired
-    hlpr.ax.grid(b=show_grid, which='both')
-
+    # If a colormap was given, use it to color-code the time
+    cc_kwargs = dict(c=range(f_prey.size), cmap=cmap) if cmap else {}
+    
+    # Plot the phase space
+    hlpr.ax.scatter(f_predator, f_prey, **cc_kwargs, **plot_kwargs)

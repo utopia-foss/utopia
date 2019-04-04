@@ -1,44 +1,43 @@
 # This defines the default plots for the PredatorPrey model
 ---
-
-# plot the frequency of predators and preys against each other    
+# -- Plot of the predator density against the prey density
 phase_space:
-  universes: all
-  
-  module: model_plots.PredatorPrey
-  plot_func: phase_space
-  
-  cmap: viridis_r
-  s: 3.5
-
-  show_grid: True
-
-  helpers:
-    set_limits:
-      x: [0.0, 0.3]
-      y: [0.0, 0.7]
+  based_on: phase_space
 
 
-# plot the frequency of predators and preys in one plot
-frequencies:
-  creator: universe
-  universes: all
+# -- Time series of the predator and prey densities
+densities:
+  based_on: densities
 
-  module: model_plots.PredatorPrey
-  plot_func: frequency
-
-  predator: True
-  prey: True
+  predator: true
+  prey: true
 
 
-# plot the spatial development on the grid
-population:
-  # Use a base plot configuration
-  based_on: combined_grid_animation
+# -- Animation of the spatial resource development of prey and predators
+resources:
+  based_on: grid_animation
 
   # Select the properties to plot
   to_plot:
-    # The name of the property to plot with its options
+    resource_prey:
+      title: Prey
+      limits: [0, 8]   # Should be adapted to the resource_max model parameter
+
+    resource_predator:
+      title: Predator
+      limits: [0, 8]   # Should be adapted to the resource_max model parameter
+
+  helpers:
+    set_suptitle:
+      title: Resources
+      fontsize: x-large
+
+
+# -- Animation of the spatial development of the prey and predator populations
+population:
+  based_on: combined_grid_animation
+
+  to_plot:
     prey:
       title: Prey
       limits: [0, 1]
@@ -61,21 +60,3 @@ population:
       cmap: 
         empty: white
         predator: blue
-
-
-# plot the spatial development on the grid
-resources:
-  # Use a base plot configuration
-  based_on: grid_animation
-
-  # Select the properties to plot
-  to_plot:
-    resource_prey:
-      title: Resources Prey
-      cmap: viridis
-      limits: [0, 8]  # Should be adapted to the resource_max model parameter
-
-    resource_predator:
-      title: Resource Predator
-      cmap: viridis
-      limits: [0, 8]   # Should be adapted to the resource_max model parameter

@@ -1,35 +1,38 @@
 ``PredatorPrey`` — Model of Predator-Prey Dynamics
 ==================================================
 
-This model is a version of the Predator-prey model from the CCEES lecture
+This model is a version of the Predator-Prey model from the CCEES lecture
 script (v3, chapter 9.3.1). It is implemented as a cellular automaton (CA)
 with the cells arranged on a two-dimensional grid and represents a simple
-case of population dynamics on a grid.
+case of spatially resolved population dynamics.
 
 .. note::
 
-    Currently the execution order of rules is different from the original code
-    used in the script, where cells were called randomly and the sequence of 
-    rules was applied to an individual cell. Instead in this code a rule is 
-    applied to all cells befor the next rule is executed. Due to that, results 
-    from the script can not be replicated exactly with this code.
+    Currently, the execution order of rules is different from the code referred
+    to in the script. There, cells are called randomly and the sequence of 
+    rules is applied to an individual cell before proceeding to the next one.
+    In the Utopia ``PredatorPrey`` model, a rule is applied to all cells before
+    the proceeding to the next rule. Due to that, results from the script can not be replicated exactly with this code.
 
 Scenario
 --------
 
-Two species are present in this model: the prey species which has a steady
-inflow of resources (e.g. by eating plants whose population dynamics are 
-not represented in this model) and the predator species that feeds on the 
-prey. Both species reproduce in a non-sexual manner. The interactions 
-consist of the predator moving on the grid and looking for prey in its 
-neighborhood and eventually eating it upon making contact. The prey flees 
-with a certain probability. A general cost to 
-uphold their internal structure is applied to both species.
+As the name suggests, there are two different species present in this model:
+prey and predator.
+The prey species has a steady inflow of resources (e.g. by eating plants whose
+population dynamics are not represented in this model).
+The predator species feeds on the prey.
+Both species expend resources to uphold their structure ("living costs") and
+in order to reproduce, which happens in a non-sexual manner.
+
+The interaction consists of the predator moving on the grid and looking for
+prey in its neighborhood. Upon making contact, it consumes the prey.
+The prey may flee with a certain probability.
 
 Implementation
 --------------
 
-This is modeled using a CA. Each cell of the CA has 4 possible states:
+This is modeled using a CA. Each cell of the CA has four possible states:
 
 * Empty
 * Inhabited by a prey
@@ -55,19 +58,18 @@ consecutively applied rules:
 #. **Reproduction:** If an individual's resources exceed a certain value and
    if there is a cell in its neighborhood that is not already populated by an 
    individual of the same species, it reproduces and an individual of the same 
-   species is set on the empty cell. 2 resource units are transferred to the 
-   descendant.
+   species is created on the empty cell. 2 resource units are transferred to
+   the descendant.
 
-All cells are updated asynchronously. The order for the cell update is random for rules 2 and 4 in order to not introduce any ordering artefacts.
+All cells are updated asynchronously. The order for the cell update is random
+for rules 2 and 4 in order to not introduce any ordering artefacts. For rules
+1 and 3, this is not required.
 
 Initialization
 --------------
 
-Cells are initialized in either random or fraction mode. For mode random, a 
-random field is used and the cells are initialized as prey, predator, 
-predator and prey or empty according to probabilites set by the user. For 
-the mode fraction, fractions of cells to be initialized in the respective 
-states are specified.
+Cells are initialized in a random fashion. Depending on the probabilities
+configured by the user, each cell is initialized in one of the four states.
 
 For parameters to control this, refer to the model configuration included below.
 
@@ -85,10 +87,14 @@ Below are the default configuration parameters for the ``PredatorPrey`` model.
 Plotting
 --------
 
-The output of a simulation is set in the plot config file and as of now 
-consists of a plot that contains the frequency of each species over time,
-a phase space plot showing one frequency depending on the other 
-and a 2d animation of all cells with the cell state color coded.
+The following plots are pre-configured and available for the ``PredatorPrey``
+model:
+
+.. literalinclude:: ../../src/models/PredatorPrey/PredatorPrey_plots.yml
+   :language: yaml
+   :start-after: ---
+
+Refer to the ``PredatorPrey_base_plots.yml`` for more information.
 
 References
 ----------
