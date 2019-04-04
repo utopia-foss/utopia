@@ -168,14 +168,17 @@ public:
         // Add a dimension label for the avalanche size dataset
         _dset_avalanche_size->add_attribute("dim_names", "time");
 
-        this->_log->info("{} set up.", this->_name);
         this->_log->debug("Toppling size: {}", _topple_num_grains);
 
         // Perform initial step
-        // TODO
+        this->_log->info("Adding first grain of sand and letting topple ...");
+        topple(add_sand_grain());
 
         // Write data
-        // this->_log->info("Wrote initial state.");
+        this->_log->info("Writing initial state ...");
+        write_data();
+
+        this->_log->info("{} all set up.", this->_name);
     }
 
 
@@ -186,15 +189,16 @@ private:
     /** \detail Count all cells that are marked as in_avalanche
      */
     unsigned int avalanche_size() const {
-        return std::reduce(_cm.cells().begin(), _cm.cells().end(),
-            0,
-            [](unsigned int sum, const auto& cell){
-                if (cell->state.in_avalanche) {
-                    return sum + 1;
+        return
+            std::accumulate(_cm.cells().begin(), _cm.cells().end(),
+                0,
+                [](unsigned int sum, const auto& cell){
+                    if (cell->state.in_avalanche) {
+                        return sum + 1;
+                    }
+                    return sum;
                 }
-                return sum;
-            }
-        );
+            );
     }
 
     // .. Dynamic functions ...................................................
@@ -203,21 +207,30 @@ private:
         // Select a random cell to be modified
         auto& cell = _cm.cells()[_cell_distr(*this->_rng)];
 
-        // Adjust that cell's state
+        // Adjust that cell's state: add a grain of sand
+        this->_log->trace("Adding grain of sand to cell {} ...", cell->id());
         cell->state.slope += 1;
+
+        // As the slope of this grain changed, it is regarded as "in avalanche"
+        // NOTE This does NOT mean that it is supercritical and that it will
+        //      lead to toppling in the topple method.
         cell->state.in_avalanche = true;
 
+        // Return the cell reference such that the topple method can use that
+        // information to do its thing
         return cell;
     };
     
     /// Topple cells if the critical slope is exceeded
     /** \detail Starting from the first_cell, every time a cell topples the
-     *          neighbors are also checked whether they need to topple.
+     *          neighbors are also checked whether they need to topple. This is
+     *          implemented by adding them into a queue and toppling until the
+     *          queue is empty.
      * 
      * \param first_cell The first cell from which the topple avalanche starts
      */
     void topple(const std::shared_ptr<Cell>& first_cell) {
-        this->_log->debug("Toppling sand grains ...");
+        this->_log->trace("Now toppling all supercritical cells ...");
 
         // Create a queue that stores all the cells that need to topple
         std::queue<std::shared_ptr<Cell>> queue;
@@ -232,9 +245,9 @@ private:
             
             // A cell will topple only if its slope is greater than the
             // critical slope.
-            if (state.slope > _critical_slope){
-                state.in_avalanche = true;
+            if (state.slope > _critical_slope) {
                 state.slope -= _topple_num_grains;
+                state.in_avalanche = true;
 
                 // Add grains (=slopes) to the neighbors
                 for (const auto& nb : _cm.neighbors_of(cell)){
@@ -268,11 +281,8 @@ public:
         apply_rule<Update::async, Shuffle::off>(_reset, _cm.cells(),
                                                 *this->_rng);
 
-        // Add a grain of sand
-        const auto& cell = add_sand_grain();
-
-        // Let all cells topple until a relaxed state is reached
-        topple(cell);
+        // Add a grain of sand and, starting from the cell the grain fell on, // let all supercritical cells topple until a relaxed state is reached
+        topple(add_sand_grain());
     }
 
 
