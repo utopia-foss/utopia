@@ -35,7 +35,7 @@ p_growth: 7.5e-3
 p_lightning: 1.0e-5 
 
 # Probability (per neighbor) to _not_ catch fire from a neighbor
-resistance: 0.
+p_resistance: 0.
 
 # If set to true, the bottom boundary is constantly ignited. This _requires_
 # the space to be set to non-periodic.

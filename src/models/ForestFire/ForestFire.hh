@@ -83,8 +83,8 @@ struct Param {
     /// Whether the bottom row should be constantly on fire
     const bool light_bottom_row;
 
-    /// The resistance parameter
-    const double resistance;
+    /// The resistance probability
+    const double p_resistance;
 
     /// Construct the parameters from the given configuration node
     Param(const DataIO::Config& cfg)
@@ -92,7 +92,7 @@ struct Param {
         p_growth(get_as<double>("p_growth", cfg)),
         p_lightning(get_as<double>("p_lightning", cfg)),
         light_bottom_row(get_as<bool>("light_bottom_row", cfg)),
-        resistance(get_as<double>("resistance", cfg))
+        p_resistance(get_as<double>("p_resistance", cfg))
     {
         if ((p_growth > 1) or (p_growth < 0)) {
             throw std::invalid_argument("Invalid p_growth; need be a value "
@@ -104,7 +104,7 @@ struct Param {
                 "in range [0, 1] and specify the probability per cell and "
                 "time step for lightning to strike.");
         }
-        if ((resistance > 1) or (resistance < 0)) {
+        if ((p_resistance > 1) or (p_resistance < 0)) {
             throw std::invalid_argument("Invalid resistance argument! "
                 "Need be a value in range [0, 1] and specify the probability "
                 "per neighbor with which that neighbor can resist fire");
@@ -338,10 +338,10 @@ private:
             for (const auto& c : this->_cm.neighbors_of(cluster_member)) {
                 // If it is a tree, it will burn ...
                 if (c->state().kind == Kind::tree) {
-                    // ... unless there is resistance > 0 ...
-                    if (this->_param.resistance > 0.) {
+                    // ... unless there is p_resistance > 0 ...
+                    if (this->_param.p_resistance > 0.) {
                         // ... where there is a chance not to burn:
-                        if (this->_prob_distr(*this->_rng) > _param.resistance)
+                        if (this->_prob_distr(*this->_rng) > _param.p_resistance)
                             continue;
                     }
 
