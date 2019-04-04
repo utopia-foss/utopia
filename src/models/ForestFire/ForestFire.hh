@@ -239,6 +239,9 @@ public:
         }
         this->_log->debug("Cells fully set up.");
 
+        // Add dimension name `time` to mean density dataset
+        _dset_mean_density->add_attribute("dim_names", "time");
+
         // Write initial state
         this->write_data();
 
@@ -290,8 +293,8 @@ private:
     // .. Rule functions ......................................................
     /// Update rule, called every step
     /** \detail The possible transitions are the following:
-      *           - empty -> tree (p = p_growth)
-      *           - tree -> burning (p = p_lightning)
+      *           - empty -> tree (p_growth)
+      *           - tree -> burning (p_lightning)
       *         A burning tree directly invokes the burning of the whole
       *         cluster of connected trees ("two-state FFM"). After that, all
       *         burned cells are in the empty state again.

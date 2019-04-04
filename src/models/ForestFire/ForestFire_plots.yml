@@ -62,7 +62,7 @@ state_mean_multiverse:
   creator: multiverse
 
   #Use True in case of multiverse run (parameter sweep), else false  
-  enabled: false
+  enabled: true
 
   # Use the ForestFire-specific plot functions
   module: model_plots.ForestFire

@@ -10,10 +10,10 @@ from utopya.plotting import is_plot_func, PlotHelper, UniversePlotCreator
               helper_defaults=dict(
                 set_labels=dict(x="Time", y="Density"),
                 set_scale=dict(x='linear', y='log'),
-                set_title=dict(title='Mean tree density')
+                set_title=dict(title='Mean tree density'),
+                set_legend=dict(use_legend=True)
                 )
               )
-
 def state_mean_multiverse(  dm: DataManager, *,
                             mv_data: xr.Dataset,
                             hlpr: PlotHelper,
@@ -21,27 +21,16 @@ def state_mean_multiverse(  dm: DataManager, *,
                             plot_kwargs: dict=None):
     '''Plots the cluster distribution for multiple universes'''
 
-    state_data = mv_data['mean_density']
+    data = mv_data['mean_density']
 
-    for uni in dm['multiverse'].values():
-        times = uni.get_times_array()
-        # TODO Find a cleaner way to do this (on a general level)
-        break
+    # Calculate the mean over all dimensions except for the time
+    data.mean(dim=[d for d in data.dims if (d != 'time' or d!= 'p_lightning')])
 
-    for lightning in range(len(state_data['p_lightning'])):
+    for p_light in data['p_lightning']:
+        data_sel = data.sel(p_lightning=p_light)
 
-        #Take mean of the states for each time step and convert it
-        mean = mv_data[{'p_lightning': lightning}]
-        mean = mean.to_array().values.flatten()
+        hlpr.ax.plot(data_sel['time'], data_sel, 
+                    label=r'${}$'.format(p_light.values), 
+                    **plot_kwargs)
 
-        #Set the labels
-        label=('%.2E' % float(state_data['p_lightning'][lightning]))
-        plot_kwargs['label'] = 'lightning probability = {}'.format(label)
-
-        # Call the plot function
-        hlpr.ax.set_xlim(left=0, right=np.max(times))
-        #hlpr.ax.set_ylim(bottom=0, top = 1)
-        hlpr.ax.plot(times, mean, **plot_kwargs)
-
-    plt.legend(loc='upper right', prop={'size': 9})
-    #plt.tight_layout()
+        hlpr.provide_defaults('set_legend', title='{}'.format(p_light.name))
