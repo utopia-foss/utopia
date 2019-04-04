@@ -1,6 +1,7 @@
 #ifndef UTOPIA_MODELS_SANDPILE_HH
 #define UTOPIA_MODELS_SANDPILE_HH
 
+#include <numeric>
 #include <functional>
 
 #include <utopia/core/model.hh>
@@ -35,22 +36,22 @@ struct State {
     in_avalanche{false}
     {
         // Read in the initial slope range
-        auto initial_slope_lower_limit = get_as<unsigned>
-                            ("initial_slope_lower_limit", cfg);
+        const auto initial_slope_lower_limit =
+            get_as<Slope>("initial_slope_lower_limit", cfg);
 
-        auto initial_slope_upper_limit = get_as<unsigned>
-                            ("initial_slope_upper_limit", cfg);
+        const auto initial_slope_upper_limit =
+            get_as<Slope>("initial_slope_upper_limit", cfg);
 
         // Make sure the parameters are valid
         if (initial_slope_upper_limit <= initial_slope_lower_limit) {
-            throw std::invalid_argument("The `init_slope_range` parameter needs "
-                "to specify a valid range, i.e. with first entry strictly "
-                "smaller than the second one!");
+            throw std::invalid_argument("The `inital_slope_*_limit` "
+                "parameters need to specify a valid range, i.e. with `lower` "
+                "being strictly smaller than the `upper`!");
         }
 
         // Depending on initial slope, set the initial slope of all cells to
         // a random value in that interval
-        std::uniform_int_distribution<unsigned>
+        std::uniform_int_distribution<Slope>
             dist(initial_slope_lower_limit, initial_slope_upper_limit);
 
         // Set the initial slopes that are not relaxed, yet.
@@ -73,7 +74,7 @@ using SandPileTypes = ModelTypes<>;
 // ++ Model definition ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 /// The SandPile Model
-/** The SandPile model simulates a sandpile under the influence of new grains
+/** The SandPile model simulates a sand pile under the influence of new grains
  *  of sand that get added every iteration. The sand reaches a critical
  *  state _critical_slope, after which it collapses, passing sand on to 
  *  the neighboring cells
@@ -117,11 +118,8 @@ private:
     /// The critical slope of the cells
     const Slope _critical_slope;
 
-    /// The size of the last avalanche
-    std::size_t _last_avalanche_size;   
-
-    /// The number of grains that topple
-    const unsigned _topple_num_grains;
+    /// The number of grains that topple; depends on the neighborhood size
+    const unsigned int _topple_num_grains;
 
 
     // .. Temporary objects ...................................................
@@ -145,11 +143,9 @@ public:
     /// Construct the SandPile model
     /** \param name     Name of this model instance
      *  \param parent   The parent model this model instance resides in
-     *  \param manager  The externally setup manager to use for this model
      */
     template<class ParentModel>
-    SandPile (const std::string name,
-                   ParentModel &parent)
+    SandPile (const std::string name, ParentModel& parent)
     :
         // Initialize first via base model
         Base(name, parent),
@@ -159,8 +155,7 @@ public:
 
         // Initialize other class members
         _critical_slope(get_as<Slope>("critical_slope", _cfg)),
-        _last_avalanche_size{0},
-        _topple_num_grains{4}, // TODO generalize
+        _topple_num_grains(_cm.nb_size()),
 
         // Initialize the distribution such that a random cell can be selected
         _cell_distr(0, _cm.cells().size() - 1),
@@ -170,17 +165,43 @@ public:
         _dset_avalanche(this->create_cm_dset("avalanche", _cm)),
         _dset_avalanche_size(this->create_dset("avalanche_size", {}))
     {
-        // Set the dimension name "time"
+        // Add a dimension label for the avalanche size dataset
         _dset_avalanche_size->add_attribute("dim_names", "time");
+
+        this->_log->info("{} set up.", this->_name);
+        this->_log->debug("Toppling size: {}", _topple_num_grains);
+
+        // Perform initial step
+        // TODO
+
+        // Write data
+        // this->_log->info("Wrote initial state.");
     }
 
 
 private:
     // .. Helper functions ....................................................
-    /// Select a random cell and increase its slope
-    decltype(auto) add_sand_grain() {
+
+    /// Calculate the avalanche size
+    /** \detail Count all cells that are marked as in_avalanche
+     */
+    unsigned int avalanche_size() const {
+        return std::reduce(_cm.cells().begin(), _cm.cells().end(),
+            0,
+            [](unsigned int sum, const auto& cell){
+                if (cell->state.in_avalanche) {
+                    return sum + 1;
+                }
+                return sum;
+            }
+        );
+    }
+
+    // .. Dynamic functions ...................................................
+    /// Select a random cell, add a grain of sand to it, and return it
+    const std::shared_ptr<Cell>& add_sand_grain() {
         // Select a random cell to be modified
-        auto cell = _cm.cells()[_cell_distr(*this->_rng)];
+        auto& cell = _cm.cells()[_cell_distr(*this->_rng)];
 
         // Adjust that cell's state
         cell->state.slope += 1;
@@ -189,46 +210,28 @@ private:
         return cell;
     };
     
-    /// Calculate the avalanche size
-    /** \detail Loop through all cells and increase the _last_avalanche_size
-     *          counter for each cell that has been marked 
-     *          in_avalanche=true.
-     */
-    void calculate_avalanche_size() {
-        // Reset counter
-        _last_avalanche_size = 0;
-
-        // Loop and collect toppled cells
-        for (const auto& cell : _cm.cells()){
-            if (cell->state.in_avalanche == true){
-                ++_last_avalanche_size;
-            }
-        }
-    }
-
-    // .. Dynamic functions ...................................................
     /// Topple cells if the critical slope is exceeded
     /** \detail Starting from the first_cell, every time a cell topples the
      *          neighbors are also checked whether they need to topple.
      * 
      * \param first_cell The first cell from which the topple avalanche starts
      */
-    void _topple(const std::shared_ptr<Cell>& first_cell){
+    void topple(const std::shared_ptr<Cell>& first_cell) {
         this->_log->debug("Toppling sand grains ...");
 
         // Create a queue that stores all the cells that need to topple
         std::queue<std::shared_ptr<Cell>> queue;
         queue.push(first_cell);
 
-        while(not queue.empty()){
+        while (not queue.empty()) {
             // Get the first element from the queue, extract its state and 
             // remove it from the queue.
             const auto& cell = queue.front();
             auto& state = cell->state;
             queue.pop();
             
-            // A cell will topple only its slope is greater than the critical
-            // slope.
+            // A cell will topple only if its slope is greater than the
+            // critical slope.
             if (state.slope > _critical_slope){
                 state.in_avalanche = true;
                 state.slope -= _topple_num_grains;
@@ -262,22 +265,27 @@ public:
     /// Perform an iteration step
     void perform_step () {
         // Reset cells: All cells are not touched by an avalanche
-        apply_rule<Update::async, Shuffle::off>(_reset, _cm.cells(), *this->_rng);
+        apply_rule<Update::async, Shuffle::off>(_reset, _cm.cells(),
+                                                *this->_rng);
 
         // Add a grain of sand
         const auto& cell = add_sand_grain();
 
         // Let all cells topple until a relaxed state is reached
-        _topple(cell);
+        topple(cell);
     }
 
 
     /// Supply monitor information to the frontend
-    /** \detail Provides the last calculated avalanche size. This may not be that of the current time step.
+    /** \detail Provides 'avalanche_size' at the current time step
       */
     void monitor () {
         // Supply the last avalanche size to the monitor
-        this->_monitor.set_entry("avalanche_size", _last_avalanche_size);
+        this->_monitor.set_entry("avalanche_size", avalanche_size());
+        // NOTE As the monitor is called very infrequently, it is not a large
+        //      overhead to re-calculate the avalanche size here; cheaper and
+        //      simpler than storing it and implementing logic of whether to
+        //      re-calculate it or not.
     }
 
 
@@ -290,17 +298,17 @@ public:
             }
         );
 
-        // Write a mask of whether a cell was touched by an avalanche
+        // Write a mask of whether a cell was touched by an avalanche. Most
+        // feasible data type for that is char, which is the only C-native
+        // 8-bit data type and thus the only type supported by HDF5
         _dset_avalanche->write(_cm.cells().begin(), _cm.cells().end(),
             [](const auto& cell) {
-                return static_cast<unsigned short int>(
-                            cell->state.in_avalanche);
+                return static_cast<char>(cell->state.in_avalanche);
             }
         );
 
         // Calculate and write the avalanche size
-        calculate_avalanche_size();
-        _dset_avalanche_size->write(_last_avalanche_size);
+        _dset_avalanche_size->write(avalanche_size());
     }   
 };
 
