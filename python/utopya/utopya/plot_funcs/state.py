@@ -20,7 +20,7 @@ def mean_and_std(dm: DataManager, *,
                  hlpr: PlotHelper,
                  mean_of: str=None,
                  lines_from: str=None,
-                 plot_kwargs: dict=None):
+                 **plot_kwargs: dict=None):
     """Plot the mean and standard deviation of multidimensional data
     
     Args:
@@ -31,10 +31,6 @@ def mean_and_std(dm: DataManager, *,
         lines_from (str, optional): Plot multiple lines from this dimension
         plot_kwargs (dict, optional): Kwargs that are passed to plt.errorbar
     """
-    # Need to create a dictionary for the plot kwargs if none is given
-    if plot_kwargs is None:
-        plot_kwargs = {} 
-
     # Calculate the mean over all dimensions except for the time
     mv_data.mean(dim=[d for d in mv_data.dims if d in mean_of])
 
