@@ -11,38 +11,34 @@ from utopya.plotting import is_plot_func, PlotHelper, UniversePlotCreator
 
 @is_plot_func(creator_type=UniversePlotCreator,
               helper_defaults=dict(
-                set_labels=dict(x="Iteration step", y="Density"),
+                set_labels=dict(x="Time [Iteration Steps]",
+                                y="Density"),
                 set_limits=dict(y=(0., 1.)),
                 set_legend=dict(use_legend=True, loc='best'))
               )
 def densities(dm: DataManager, *, hlpr: PlotHelper, uni: UniverseGroup, 
-              prey: bool=True, predator: bool=True, **plot_kwargs):
+              lines_from: list, **plot_kwargs):
     """Calculates the density of a given Population and performs a lineplot
+    from that.
     
     Args:
         dm (DataManager): The data manager from which to retrieve the data
         hlpr (PlotHelper): The PlotHelper
         uni (UniverseGroup): The universe from which to plot the data
-        prey (bool, optional): If True the prey density is plotted
-        predator (bool, optional): If True the predator density is plotted
+        lines_from (list): Which datasets to create lines from. Should be paths
+            within the 'data/PredatorPrey' group. Their capitalized names are
+            used for the line label.
         **plot_kwargs: Passed on to plt.plot
     """
-    # Get the group that all datasets are in
-    grp = uni['data']['PredatorPrey']
+    # Get the times array
+    times = uni.get_times_array()
 
-    def calculate_density(species: str):
-        # Extract the species data ...
-        species = grp[species]
+    # Go over all names that lines are to be created from
+    for dset_name in lines_from:
+        # Get the raw data
+        data = uni['data']['PredatorPrey'][dset_name]
 
-        # Get the species density per time step by summing them up
-        # and dividing them by the total number of cells per time step
-        # NOTE This only works if time is the first dimension
-        return species.mean(dim=[d for d in species.dims if d != 'time'])
-        
-    if prey:
-        hlpr.ax.plot(calculate_density("prey"),
-                     label="Prey", **plot_kwargs)
-
-    if predator:
-        hlpr.ax.plot(calculate_density("predator"),
-                     label="Predator", **plot_kwargs)
+        # Plot the data, taking the mean over all but the time dimension
+        hlpr.ax.plot(times,
+                     data.mean(dim=[d for d in data.dims if d != 'time']),
+                     label=dset_name.capitalize(), **plot_kwargs)

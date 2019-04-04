@@ -17,7 +17,7 @@ from utopya.plotting import is_plot_func, PlotHelper, UniversePlotCreator
                                 y=(0., None))
               ))
 def phase_space(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
-                cmap: str=None, **plot_kwargs):
+                cmap: str=None, **scatter_kwargs):
     """plots the frequency of one species against the frequency of the other
     
     Args:
@@ -26,14 +26,11 @@ def phase_space(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
         hlpr (PlotHelper): The PlotHelper instance
         cmap (str, optional): The cmap which is used to color-code the time
             development. If not given, will not color-code it.
-        **plot_kwargs: Passed on to plt.scatter
+        **scatter_kwargs: Passed on to plt.scatter
     """
-    # Get the group that all datasets are in
-    grp = uni['data']['PredatorPrey']
-
     # Extract the population data ...
-    prey = grp['prey']
-    predator = grp['predator']
+    prey = uni['data']['PredatorPrey']['prey']
+    predator = uni['data']['PredatorPrey']['predator']
 
     # Get the prey and predator frequencies per time step by calculating a mean
     # over all dimensions but time
@@ -41,7 +38,13 @@ def phase_space(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
     f_predator = predator.mean(dim=[d for d in predator.dims if d != 'time'])
 
     # If a colormap was given, use it to color-code the time
-    cc_kwargs = dict(c=range(f_prey.size), cmap=cmap) if cmap else {}
+    cc_kwargs = ({} if cmap is None
+                 else dict(c=uni.get_times_array(), cmap=cmap))
     
     # Plot the phase space
-    hlpr.ax.scatter(f_predator, f_prey, **cc_kwargs, **plot_kwargs)
+    sc = hlpr.ax.scatter(f_predator, f_prey, **cc_kwargs, **scatter_kwargs)
+
+    # Add a colorbar
+    if cc_kwargs:
+        hlpr.fig.colorbar(sc, ax=hlpr.ax, fraction=0.05, pad=0.02,
+                          label="Time [Iteration Steps]")

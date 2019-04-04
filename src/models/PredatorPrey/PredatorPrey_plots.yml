@@ -5,12 +5,12 @@ phase_space:
   based_on: phase_space
 
 
-# -- Time series of the predator and prey densities
+# -- Time series of the predator and prey spatial densities
 densities:
   based_on: densities
 
-  predator: true
-  prey: true
+  # Which data to calculate the mean of and draw lines from
+  lines_from: [prey, predator]
 
 
 # -- Animation of the spatial resource development of prey and predators
@@ -27,6 +27,7 @@ resources:
       title: Predator
       limits: [0, 8]   # Should be adapted to the resource_max model parameter
 
+  # Adjust plot aesthetics
   helpers:
     set_suptitle:
       title: Resources
@@ -45,7 +46,7 @@ population:
         empty: white
         prey: orange
 
-    combined:
+    combined:  # Created by model_plots.PredatorPrey.ca.combine_pred_and_prey
       title: Predator and Prey
       limits: [0, 3]
       cmap: 

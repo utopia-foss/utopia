@@ -8,10 +8,14 @@ phase_space:
   module: model_plots.PredatorPrey
   plot_func: phase_space
 
-  style: &style
+  style: &default_style
     axes.grid: true
     grid.linewidth: 0.5
     grid.color: cccccc
+
+  helpers: &default_helpers
+    save_figure:
+      bbox_inches: tight
 
   # How to color-code the time axis  
   cmap: viridis_r
@@ -29,7 +33,12 @@ densities:
   plot_func: densities
 
   style:
-    <<: *style
+    <<: *default_style
+
+  helpers:
+    <<: *default_helpers
+    set_limits:
+      x: [0, ~]
 
 
 # -- Any kind of grid animation
