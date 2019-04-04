@@ -2,10 +2,12 @@
 ---
 #Plot the mean state
 mean_and_std:
+  enabled: false
+
   creator: multiverse
   
   # Use the ForestFire-model-specific plot functions
-  module: .mv
+  module: .state
   plot_func: mean_and_std
 
   # Collect the data
@@ -15,6 +17,13 @@ mean_and_std:
 
   mean_of: [x, y]
   lines_from: p_lightning
+
+  helpers:
+    set_labels:
+      x: Time
+      y: Tree density
+    set_scale:
+      y: log
 
 
 
