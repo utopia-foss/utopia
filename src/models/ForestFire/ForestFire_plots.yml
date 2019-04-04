@@ -1,13 +1,21 @@
 # Default plots for the ForestFire model
 ---
 #Plot the mean state
-state_mean:
-  creator: universe
-  universes: all
+mean_and_std:
+  creator: multiverse
   
   # Use the ForestFire-model-specific plot functions
   module: model_plots.ForestFire
-  plot_func: state_mean
+  plot_func: mean_and_std
+
+  # Collect the data
+  select:
+    fields:
+      mean: data/ForestFire/mean_density
+
+  mean_of: [x, y]
+  lines_from: p_lightning
+
 
 
 # Plot the cluster size distribution
