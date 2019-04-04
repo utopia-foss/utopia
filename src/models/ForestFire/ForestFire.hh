@@ -248,10 +248,11 @@ private:
     double _calculate_tree_density() const {
         // Sum up all kinds of trees
         // NOTE If execution policies are implemented, this could be easily
-        //      made parallel by adding std::execution::par as first argument
-        //      and including the <execution> header.
+        //      made parallel by replacing std::accumulate with std::reduce 
+        //      and adding std::execution::par from the header
+        //      <execution> as first argument.
         const double sum = 
-            std::reduce(_cm.cells().begin(),
+            std::accumulate(_cm.cells().begin(),
                         _cm.cells().end(),
                         0.0, 
                         [&](double s, const std::shared_ptr<Cell>& cell){
