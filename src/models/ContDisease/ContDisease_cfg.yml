@@ -37,7 +37,7 @@ cell_manager:
 
 # --- Model Dynamics
 # Probability per site and time step to transition from state empty to tree
-p_growth: 7.5e-3
+growth_rate: 7.5e-3
 
 # Probablity per site and time step for a tree cell to become infected if an
 # infected cell is in the neighborhood

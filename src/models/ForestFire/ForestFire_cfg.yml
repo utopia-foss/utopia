@@ -28,15 +28,14 @@ cell_manager:
 
 # --- Model Dynamics ----------------------------------------------------------
 # Probability per site and time step to transition from state empty to tree
-# Asymptotically, this can be seen as growth rate
-p_growth: 7.5e-3
+growth_rate: 7.5e-3
 
 # Probability per site and time step to transition to burning state, burning
 # down the whole cluster
-p_lightning: 1.0e-5 
+lightning_probability: 1.0e-5 
 
 # Probability (per neighbor) to _not_ catch fire from a neighbor
-p_resistance: 0.
+resistance: 0.
 
 # If set to true, the bottom boundary is constantly ignited. This _requires_
 # the space to be set to non-periodic.

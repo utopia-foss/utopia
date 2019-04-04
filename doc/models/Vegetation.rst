@@ -19,7 +19,7 @@ Model parameters
 
 * ``rain_mean``\ : mean rainfall :math:`\langle r \rangle`
 * ``rain_std``\ : rainfall standard deviation :math:`\sigma_r`
-* ``p_growth``\ : growth rate :math:`g`
+* ``growth_rate``\ : growth rate :math:`g`
 * ``seeding_rate``\ : seeding rate :math:`s`
 
 Growth process

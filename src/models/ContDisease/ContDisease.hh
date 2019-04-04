@@ -63,7 +63,7 @@ struct CDCell {
 struct Param {
 
     /// Probability per site and time step to transition from state empty to tree
-    const double p_growth;
+    const double growth_rate;
 
     /// Probablity per site and time step for a tree cell to become infected
     /// if an infected cell is in the neighborhood.
@@ -92,7 +92,7 @@ struct Param {
     /// Construct the parameters from the given configuration node
     Param(const DataIO::Config& cfg)
     :
-        p_growth(get_as<double>("p_growth", cfg)),
+        growth_rate(get_as<double>("growth_rate", cfg)),
         p_infect(get_as<double>("p_infect", cfg)),
         p_rd_infect(get_as<double>("p_rd_infect", cfg)),
         infection_source(get_as<bool>("infection_source", cfg)),
@@ -101,11 +101,11 @@ struct Param {
         stone_density(get_as<double>("stone_density", cfg)),
         stone_cluster(get_as<double>("stone_cluster", cfg))
     {
-        if ((p_growth > 1) or (p_growth < 0)) {
-            throw std::invalid_argument("Invalid p_growth; need be a value "
+        if ((growth_rate > 1) or (growth_rate < 0)) {
+            throw std::invalid_argument("Invalid growth_rate; need be a value "
                 "in range [0, 1] and specify the probability per time step "
                 "and cell with which an empty cell turns into a tree. Was: "
-                + std::to_string(p_growth));
+                + std::to_string(growth_rate));
         }
         if ((p_infect > 1) or (p_infect < 0)) {
             throw std::invalid_argument("Invalid p_infect! Need be in range "
@@ -388,7 +388,7 @@ protected:
 
     /// Define the update rule
     /** \detail Update the given cell according to the following rules:
-      *         - Empty cells grow trees with probability p_growth.
+      *         - Empty cells grow trees with probability growth_rate.
       *         - Tree cells in neighborhood of an infected cell get infected
       *           with the probability p_infect.
       *         - Infected cells die and become an empty cell.
@@ -399,8 +399,8 @@ protected:
 
         // Distinguish by current state
         if (state.state == empty) {
-            // With a probability of p_growth, set the cell's state to tree
-            if (_prob_distr(*this->_rng) < _param.p_growth){
+            // With a probability of growth_rate, set the cell's state to tree
+            if (_prob_distr(*this->_rng) < _param.growth_rate){
                 state.state = tree;
                 return state;
             }

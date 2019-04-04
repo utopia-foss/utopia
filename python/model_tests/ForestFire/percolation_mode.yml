@@ -31,6 +31,6 @@ parameter_space:
     light_bottom_row: true
 
     # Increase growth rate and deactivate lightning
-    p_growth: 0.05
-    p_lightning: 0.
+    growth_rate: 0.05
+    lightning_probability: 0.
 

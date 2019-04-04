@@ -18,6 +18,6 @@ parameter_space:
     stones: false
     infection_source: true
 
-    p_growth: 1
+    growth_rate: 1
     p_infect: 1
     p_rd_infect: 0
