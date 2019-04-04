@@ -5,7 +5,7 @@ mean_and_std:
   creator: multiverse
   
   # Use the ForestFire-model-specific plot functions
-  module: model_plots.ForestFire
+  module: .mv
   plot_func: mean_and_std
 
   # Collect the data

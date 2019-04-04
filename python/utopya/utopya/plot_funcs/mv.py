@@ -1,8 +1,10 @@
-import numpy as np
-import matplotlib.pyplot as plt
+"""This module provides plotting functions to visualize multiverse data"""
+
+from ._setup import *
+
 import xarray as xr
 
-from utopya import DataManager, UniverseGroup, MultiverseGroup
+from utopya import DataManager
 from utopya.plotting import is_plot_func, PlotHelper, MultiversePlotCreator
 
 @is_plot_func(creator_type=MultiversePlotCreator,
@@ -21,8 +23,16 @@ def mean_and_std(dm: DataManager, *,
                  mean_of: str=None,
                  lines_from: str=None,
                  plot_kwargs: dict=None):
-    '''Plots the mean and standard deviation of multiverses'''
-
+    """Plot the mean and standard deviation of multidimensional data
+    
+    Args:
+        dm (DataManager): The data manager
+        mv_data (xr.Dataset): The extracted multidimensional data
+        hlpr (PlotHelper): The plot helper
+        mean_of (str, optional): Take the mean of this dimension
+        lines_from (str, optional): Plot multiple lines from this dimension
+        plot_kwargs (dict, optional): Kwargs that are passed to plt.errorbar
+    """
     if 'mean_density' in mv_data:
         mv_data = mv_data['mean_density']
 
