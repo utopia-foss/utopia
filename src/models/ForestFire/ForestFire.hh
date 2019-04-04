@@ -135,13 +135,13 @@ public:
     using DataSet = typename Base::DataSet;
 
     /// The type of the cell manager
-    using FFMCellManager = CellManager<CellTraits, ForestFire>;
+    using CellManager = CellManager<CellTraits, ForestFire>;
 
     /// The type of a cell
     using Cell = typename CellManager::Cell;
 
     /// Rule function type, extracted from CellManager
-    using RuleFunc = typename FFMCellManager::RuleFunc;
+    using RuleFunc = typename CellManager::RuleFunc;
 
 
 private:
@@ -149,7 +149,7 @@ private:
 
     // -- Members -------------------------------------------------------------
     /// The cell manager for the forest fire model
-    FFMCellManager _cm;
+    CellManager _cm;
 
     /// Model parameters
     const Param _param;
@@ -161,15 +161,7 @@ private:
     unsigned int _cluster_id_cnt;
 
     /// A temporary container for use in cluster identification
-    std::vector<std::shared_ptr<FFMCellManager::Cell>> _cluster_members;
-
-    // .. Tracking variables .................................................
-    /// The tree density which is calculated before writing out data
-    double _tree_density;
-
-    /// The number of cluster ids
-    unsigned _num_clusters;
-
+    std::vector<std::shared_ptr<CellManager::Cell>> _cluster_members;
 
     // .. Datasets ...........................................................
     /// The dataset that stores the kind for each cell, e.g. Kind::tree
@@ -204,8 +196,6 @@ public:
         _prob_distr(0., 1.),
         _cluster_id_cnt(0),
         _cluster_members(),
-        _tree_density(0),
-        _num_clusters(0),
 
         // Create datasets using the helper functions for CellManager-data
         _dset_kind{this->create_cm_dset("kind", _cm)},
@@ -293,8 +283,8 @@ private:
     // .. Rule functions ......................................................
     /// Update rule, called every step
     /** \detail The possible transitions are the following:
-      *           - empty -> tree (p = p_growth)
-      *           - tree -> burning (p = p_lightning)
+      *           - empty -> tree (with p_growth)
+      *           - tree -> burning (with p_lightning)
       *         A burning tree directly invokes the burning of the whole
       *         cluster of connected trees ("two-state FFM"). After that, all
       *         burned cells are in the empty state again.
@@ -425,8 +415,7 @@ public:
      *           time. They are calculated before the writing them out.
      */ 
     void monitor () {
-        this->_monitor.set_entry("tree_density", _tree_density);
-        this->_monitor.set_entry("num_clusters", _num_clusters);
+        this->_monitor.set_entry("tree_density", _calculate_tree_density());
     }
 
     /// Write data
@@ -445,8 +434,7 @@ public:
         });
 
         // Calculate and write the tree density
-        _tree_density = _calculate_tree_density();
-        _dset_mean_density->write(_tree_density); 
+        _dset_mean_density->write(_calculate_tree_density()); 
     }
 };
 
