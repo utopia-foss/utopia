@@ -34,7 +34,7 @@ frequencies:
 # plot the spatial development on the grid
 population:
   # Use a base plot configuration
-  based_on: grid_animation
+  based_on: combined_grid_animation
 
   # Select the properties to plot
   to_plot:
@@ -45,6 +45,15 @@ population:
       cmap: 
         empty: white
         prey: orange
+
+    combined:
+      title: Predator and Prey
+      limits: [0, 3]
+      cmap: 
+        empty: white
+        prey: orange
+        predator: blue
+        both: black
 
     predator:
       title: Predator

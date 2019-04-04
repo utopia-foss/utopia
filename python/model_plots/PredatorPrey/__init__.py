@@ -1,5 +1,6 @@
 """Plots that are specific to the PredatorPrey model"""
 
 # Make them all available here to allow easier import
-from .time_series import *
-from .phase_space import *
+from .ca import combine_pred_and_prey
+from .time_series import frequency
+from .phase_space import phase_space

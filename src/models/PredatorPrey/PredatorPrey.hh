@@ -169,7 +169,7 @@ private:
     const std::shared_ptr<DataSet> _dset_resource_predator;
 
 
-    // .. Rule functions ......................................................
+    // .. Rule functions and helper methods ...................................
     /// Cost of Living
     /** subtract the cost of living from the resources of an individual and 
      * map the values below zero back to zero, then remove all individuals that
@@ -209,7 +209,7 @@ private:
      *          neighboring predator state.
      */
     void move_predator_to_nb_cell(const std::shared_ptr<Cell>& cell, 
-                                   const std::shared_ptr<Cell>& nb_cell){
+                                  const std::shared_ptr<Cell>& nb_cell) {
         auto& state = cell->state;
         auto& nb_state = nb_cell->state;
 
@@ -295,24 +295,20 @@ private:
     void flee_prey(const std::shared_ptr<Cell>& cell) {
         auto& state = cell->state;
 
-        if (state.prey.on_cell and state.predator.on_cell){
-
+        if (state.prey.on_cell and state.predator.on_cell) {
             // Flee, if possible, with a given flee probability
             if (this->_prob_distr(*this->_rng) < _params.prey.p_flee){
-                // Collect the empty neighboring cells to which the prey could flee
+                // Collect empty neighboring cells to which the prey could flee
                 _empty_cell.clear();
-                for (const auto& nb : this->_cm.neighbors_of(cell)) 
-                {
-                    if ((not nb->state.prey.on_cell) and 
-                        (nb->state.predator.on_cell)) 
-                    {
+                for (const auto& nb : this->_cm.neighbors_of(cell)) {
+                    if (    not nb->state.prey.on_cell
+                        and nb->state.predator.on_cell) {
                         _empty_cell.push_back(nb);
                     }
                 }
 
                 // If there is an empty cell, move there
-                if (_empty_cell.size() > 0)
-                {
+                if (_empty_cell.size() > 0) {
                     // Choose a random cell to move to
                     std::uniform_int_distribution<> 
                         dist(0, _empty_cell.size() - 1);
@@ -390,16 +386,14 @@ private:
         auto& state = cell->state;
         
         // Reproduce predators    
-        if (    (state.predator.on_cell)
+        if (    state.predator.on_cell
             and (this->_prob_distr(*this->_rng) < _params.predator.repro_prob)
             and (state.predator.resources >= _params.predator.repro_resource_requ))
         {
             // Collect available neighboring spots without predators
             _repro_cell.clear();
-            for (const auto& nb : this->_cm.neighbors_of(cell))
-            {
-                if (not nb->state.predator.on_cell)
-                {
+            for (const auto& nb : this->_cm.neighbors_of(cell)) {
+                if (not nb->state.predator.on_cell) {
                     _repro_cell.push_back(nb);
                 }
             }
@@ -422,22 +416,19 @@ private:
         }
 
         // Reproduce prey
-        if ((state.prey.on_cell)
-                and this->_prob_distr(*this->_rng) < _params.prey.repro_prob
-                and state.prey.resources >= _params.prey.repro_resource_requ)
+        if (    state.prey.on_cell
+            and this->_prob_distr(*this->_rng) < _params.prey.repro_prob
+            and state.prey.resources >= _params.prey.repro_resource_requ)
         {
             _repro_cell.clear();
 
-            for (const auto& nb : this->_cm.neighbors_of(cell))
-            {
-                if (not nb->state.prey.on_cell)
-                {
+            for (const auto& nb : this->_cm.neighbors_of(cell)) {
+                if (not nb->state.prey.on_cell) {
                     _repro_cell.push_back(nb);
                 }
             }
 
-            if (_repro_cell.size() > 0)
-            {
+            if (_repro_cell.size() > 0) {
                 // choose a random cell for the offspring to be placed on
                 std::uniform_int_distribution<> dist(0, _repro_cell.size() - 1);
 

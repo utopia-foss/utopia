@@ -145,6 +145,7 @@ def state(dm: DataManager, *,
     # Get the group that all datasets are in
     grp = uni['data'][model_name]
 
+    # Collect all data
     all_data = {p: grp[p] for p in to_plot.keys()}
     shapes = [d.shape for p, d in all_data.items()]
 

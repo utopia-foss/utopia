@@ -1,22 +1,23 @@
 # Base configs for PredatorPrey model plots
 ---
-grid_animation:
-  creator: universe
-  universes: all
-
-  file_ext: mp4
-
-  module: .ca
-  plot_func: state_anim
+grid_animation: &grid_animation
+  based_on: .ca.state
 
   model_name: PredatorPrey
 
-  # Video options
-  writer: ffmpeg  # can be: frames, ffmpeg (if installed), ...
-  fps: 2
-  dpi: 96
+  # Use the first time index; is ignored in animation
+  time_idx: 0
 
-  # For the 'frames' writer, the following additional kwargs can be passed
-  frames_kwargs: 
-    name_padding: 5
-    file_format: png
+  # Enable the animation, using ffmpeg and .mp4 output by default
+  file_ext: mp4
+  animation:
+    enabled: true
+
+    writer: ffmpeg    # can be: frames, ffmpeg (if installed), ...
+
+combined_grid_animation:
+  <<: *grid_animation
+
+  # Use the custom plotting function
+  module: model_plots.PredatorPrey
+  plot_func: combine_pred_and_prey
