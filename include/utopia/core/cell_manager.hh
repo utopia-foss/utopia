@@ -409,6 +409,13 @@ public:
     const NBMode& nb_mode () const {
         return _grid->nb_mode();
     }
+    
+    /// Return the (maximum) size of the currently selected neighborhood
+    /** \note This is a shortcut that accesses the value computed in the grid.
+      */
+    auto nb_size () const {
+        return _grid->nb_size();
+    }
 
 
 private:

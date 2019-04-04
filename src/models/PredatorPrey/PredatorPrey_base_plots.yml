@@ -1,0 +1,67 @@
+# Base configs for PredatorPrey model plots
+---
+# -- Plot of the predator density against the prey density
+phase_space:
+  creator: universe
+  universes: all
+  
+  module: model_plots.PredatorPrey
+  plot_func: phase_space
+
+  style: &default_style
+    axes.grid: true
+    grid.linewidth: 0.5
+    grid.color: cccccc
+
+  helpers: &default_helpers
+    save_figure:
+      bbox_inches: tight
+
+  # How to color-code the time axis  
+  cmap: viridis_r
+
+  # All below: passed on to plt.scatter
+  s: 3.5
+
+
+# -- Time series of the predator and prey densities
+densities:
+  creator: universe
+  universes: all
+  
+  module: model_plots.PredatorPrey
+  plot_func: densities
+
+  style:
+    <<: *default_style
+
+  helpers:
+    <<: *default_helpers
+    set_limits:
+      x: [0, ~]
+
+
+# -- Any kind of grid animation
+grid_animation: &grid_animation
+  based_on: .ca.state
+
+  model_name: PredatorPrey
+
+  # Use the first time index; is ignored in animation
+  time_idx: 0
+
+  # Enable the animation, using ffmpeg and .mp4 output by default
+  file_ext: mp4
+  animation:
+    enabled: true
+
+    writer: ffmpeg    # can be: frames, ffmpeg (if installed), ...
+
+
+# -- A grid animation that computes the combined predator and prey locations
+combined_grid_animation:
+  <<: *grid_animation
+
+  # Use the custom plotting function
+  module: model_plots.PredatorPrey
+  plot_func: combine_pred_and_prey

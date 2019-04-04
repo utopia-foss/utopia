@@ -1016,7 +1016,7 @@ protected:
       * 
       * \return const DistType The expected number of neighbors
       */
-    DistType expected_num_neighbors(const NBMode nb_mode) const {
+    DistType expected_num_neighbors(const NBMode& nb_mode) const override {
         if (nb_mode == NBMode::empty) {
             return 0;
         }
