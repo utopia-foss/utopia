@@ -24,7 +24,7 @@ space:
 cell_manager:
   grid:
     structure: square
-    resolution: 400           # in cells per unit length of physical space
+    resolution: 64            # in cells per unit length of physical space
 
   neighborhood:
     mode: Moore

@@ -155,9 +155,16 @@ private:
 
 
     // .. Datasets ............................................................
+    /// Dataset of Prey locations on the grid
     const std::shared_ptr<DataSet> _dset_prey;
+    
+    /// Dataset of Predator locations on the grid
     const std::shared_ptr<DataSet> _dset_predator;
+    
+    /// Dataset of Prey resources on the grid
     const std::shared_ptr<DataSet> _dset_resource_prey;
+    
+    /// Dataset of Predator resources on the grid
     const std::shared_ptr<DataSet> _dset_resource_predator;
 
 
@@ -174,24 +181,22 @@ private:
         // Subtract the cost of living and clamp the resources to the limits:
         // If the resources exceed the maximal resources they are equal to
         // the maximal resources and if they go below 0 they are mapped to 0.
-        state.predator.resources = std::clamp(state.predator.resources 
-                                              - _params.predator.cost_of_living, 
-                                             0., 
-                                             _params.predator.resource_max);
-        state.prey.resources = std::clamp(state.prey.resources 
-                                            - _params.prey.cost_of_living, 
-                                          0., 
-                                          _params.prey.resource_max);
+        state.predator.resources =
+            std::clamp(  state.predator.resources
+                       - _params.predator.cost_of_living,
+                       0., _params.predator.resource_max);
+        state.prey.resources =
+            std::clamp(  state.prey.resources 
+                       - _params.prey.cost_of_living, 
+                       0., _params.prey.resource_max);
 
         // Remove predators that have no resources.
-        if (state.predator.on_cell and state.predator.resources <= 0.) 
-        {
+        if (state.predator.on_cell and state.predator.resources <= 0.) {
             state.predator.on_cell = false;
         }
 
         // Remove prey that have no resources.
-        if (state.prey.on_cell and state.prey.resources <= 0.) 
-        {
+        if (state.prey.on_cell and state.prey.resources <= 0.) {
             state.prey.on_cell = false;
         }
 
@@ -202,7 +207,7 @@ private:
     /** \detail This function resets the states predator state and updates the
      *          neighboring predator state.
      */
-    void _move_predator_to_nb_cell(const std::shared_ptr<Cell>& cell, 
+    void move_predator_to_nb_cell(const std::shared_ptr<Cell>& cell, 
                                    const std::shared_ptr<Cell>& nb_cell){
         auto& state = cell->state;
         auto& nb_state = nb_cell->state;
@@ -218,8 +223,8 @@ private:
     /** \detail This function resets the states prey state and updates the
      *          neighboring prey state.
      */
-    void _move_prey_to_nb_cell(const std::shared_ptr<Cell>& cell, 
-                               const std::shared_ptr<Cell>& nb_cell){
+    void move_prey_to_nb_cell(const std::shared_ptr<Cell>& cell, 
+                              const std::shared_ptr<Cell>& nb_cell) {
         auto& state = cell->state;
         auto& nb_state = nb_cell->state;
 
@@ -230,7 +235,8 @@ private:
         nb_state.prey.resources = state.prey.resources;
     }
 
-    void _move_predator(const std::shared_ptr<Cell>& cell) {
+    /// Move a predator on the given cell
+    void move_predator(const std::shared_ptr<Cell>& cell) {
         // Get the state of the Cell
         auto& state = cell->state;
 
@@ -266,7 +272,7 @@ private:
 
                 // Select a random neighbor cell and move the predator to it
                 auto nb_cell = _prey_cell[dist_prey(*this->_rng)];
-                _move_predator_to_nb_cell(cell, nb_cell);
+                move_predator_to_nb_cell(cell, nb_cell);
             }
             
             // if there is no prey the predator makes a random move    
@@ -279,12 +285,13 @@ private:
                 // Select a random empty neighbor cell and move the predator 
                 // to it
                 auto nb_cell = _empty_cell[dist_empty(*this->_rng)];
-                _move_predator_to_nb_cell(cell, nb_cell);
+                move_predator_to_nb_cell(cell, nb_cell);
             }
         }
     }
 
-    void _flee_prey(const std::shared_ptr<Cell>& cell) {
+    /// If a prey is on the cell, determine whether it may flee and where to
+    void flee_prey(const std::shared_ptr<Cell>& cell) {
         auto& state = cell->state;
 
         if (state.prey.on_cell and state.predator.on_cell){
@@ -310,7 +317,7 @@ private:
                         dist(0, _empty_cell.size() - 1);
 
                     auto nb_cell = _empty_cell[dist(*this->_rng)];
-                    _move_prey_to_nb_cell(cell, nb_cell);
+                    move_prey_to_nb_cell(cell, nb_cell);
                 }
             }
         }
@@ -328,9 +335,9 @@ private:
      */
     Rule _move = [this](const auto& cell) {
         
-        _move_predator(cell);
+        move_predator(cell);
 
-        _flee_prey(cell);
+        flee_prey(cell);
 
         return cell->state;
     };
@@ -479,29 +486,18 @@ public:
         _dset_resource_predator(this->create_cm_dset("resource_predator", _cm))
     {
         // Check if _repro_cost is in the allowed range
-        if (_params.predator.repro_cost >= _params.predator.repro_resource_requ 
+        if (_params.predator.repro_cost >= _params.predator.repro_resource_requ
             or _params.prey.repro_cost >= _params.prey.repro_resource_requ) {
-            throw std::invalid_argument("repro_cost needs to be smaller "
-                                        "than or equal to the minimal "
-                                        "reproduction requirements of "
-                                        "resources!");
+            throw std::invalid_argument("repro_cost needs to be smaller than "
+                "or equal to the minimal reproduction requirements of "
+                "resources!");
         }
         
-        // Reserve space for the three helper vectors
-        const auto nbh_mode = get_as<std::string>
-                            ("mode", this->_cfg["cell_manager"]["neighborhood"]);
-        if (nbh_mode == "VonNeumann")
-        {
-            _prey_cell.reserve(4);
-            _empty_cell.reserve(4);
-            _repro_cell.reserve(4);
-        }
-        else if (nbh_mode == "Moore")
-        {
-            _prey_cell.reserve(8);
-            _empty_cell.reserve(8);
-            _repro_cell.reserve(8);
-        }
+        // Reserve memory in the size of the neighborhood for the temp. vectors
+        const auto nb_size = _cm.nb_size();
+        _prey_cell.reserve(nb_size);
+        _empty_cell.reserve(nb_size);
+        _repro_cell.reserve(nb_size);
 
         // Write initial state
         this->write_data();
@@ -584,17 +580,17 @@ public:
             }
         );
 
-        // resource of prey
-        _dset_resource_prey->write(_cm.cells().begin(), _cm.cells().end(), 
-            [](auto& cell) {
-                return cell->state.prey.resources;
-            }
-        );
-
         // resource of predator
         _dset_resource_predator->write(_cm.cells().begin(), _cm.cells().end(), 
             [](auto& cell) {
                 return cell->state.predator.resources;
+            }
+        );
+
+        // resource of prey
+        _dset_resource_prey->write(_cm.cells().begin(), _cm.cells().end(), 
+            [](auto& cell) {
+                return cell->state.prey.resources;
             }
         );
     }
