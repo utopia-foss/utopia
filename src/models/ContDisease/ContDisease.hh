@@ -52,7 +52,8 @@ struct State {
 
             if (init_density < 0. or init_density > 1.) {
                 throw std::invalid_argument("initial_density needs to be in "
-                    "interval [0., 1.], but was not!");
+                    "interval [0., 1.], but was " 
+                    + std::to_string(init_density) + "!");
             }
 
             // With this probability, the cell state is a tree
@@ -67,7 +68,6 @@ struct State {
 
 /// Parameters of the ContDisease
 struct Params {
-
     /// Probability per site and time step to transition from state empty to tree
     const double p_growth;
 
@@ -179,10 +179,10 @@ public:
     using DataSet = typename Base::DataSet;
 
     /// Type of the CellManager to use
-    using CDCellManager = Utopia::CellManager<CDCellTraits, ContDisease>;
+    using CellManager = Utopia::CellManager<CDCellTraits, ContDisease>;
 
     /// Rule function type
-    using RuleFunc = typename CDCellManager::RuleFunc;
+    using RuleFunc = typename CellManager::RuleFunc;
 
 private:
     // Base members: _time, _name, _cfg, _hdfgrp, _rng, _monitor, _space
@@ -190,7 +190,7 @@ private:
 
     // -- Members -------------------------------------------------------------
     /// The cell manager
-    CDCellManager _cm;
+    CellManager _cm;
 
     /// Model parameters
     const Params _params;
@@ -215,7 +215,7 @@ private:
     std::array<double, 5> _densities;
 
     /// A temporary container for use in cluster identification
-    std::vector<std::shared_ptr<CDCellManager::Cell>> _cluster_members;
+    std::vector<std::shared_ptr<CellManager::Cell>> _cluster_members;
 
     // .. Data groups .........................................................
     /// The data group where all density datasets are stored in
@@ -452,7 +452,7 @@ protected:
                 // Go through neighbor cells (according to Neighborhood type),
                 // and check if they are infected (or an infection source).
                 // If yes, infect cell with the probability p_infect.
-                for (auto& nb: this->_cm.neighbors_of(cell)) {
+                for (const auto& nb: this->_cm.neighbors_of(cell)) {
                     // Get the neighbor cell's state
                     auto nb_state = nb->state;
 
@@ -500,13 +500,13 @@ protected:
         for (unsigned int i = 0; i < cluster.size(); ++i) {
             // Iterate over all potential cluster members c, i.e. all
             // neighbors of cell cluster[i] that is already in the cluster
-            for (const auto& c : this->_cm.neighbors_of(cluster[i])) {
+            for (const auto& nb : this->_cm.neighbors_of(cluster[i])) {
                 // If it is a tree that is not yet in the cluster, add it.
-                if (    c->state.cluster_id == 0
-                    and c->state.kind == Kind::tree)
+                if (    nb->state.cluster_id == 0
+                    and nb->state.kind == Kind::tree)
                 {
-                    c->state.cluster_id = _cluster_id_cnt;
-                    cluster.push_back(c);
+                    nb->state.cluster_id = _cluster_id_cnt;
+                    cluster.push_back(nb);
                     // This extends the outer for-loop...
                 }
             }
@@ -561,7 +561,6 @@ public:
             // Identify clusters
             identify_clusters();
 
-
             _dset_cluster_id->write(_cm.cells().begin(), _cm.cells().end(),
                [](const auto& cell) {
                    return cell->state.cluster_id;
@@ -580,7 +579,9 @@ public:
     void identify_clusters(){
         // reset cluster counter
         _cluster_id_cnt = 0;
-        apply_rule<Update::async, Shuffle::off>(_identify_cluster, _cm.cells(), *this->_rng);
+        apply_rule<Update::async, Shuffle::off>(_identify_cluster, 
+                                                _cm.cells(), 
+                                                *this->_rng);
     }
 
 };
