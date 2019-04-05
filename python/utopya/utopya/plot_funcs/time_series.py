@@ -92,8 +92,7 @@ def density(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
         raise ValueError("Data at '{}' was of dtype {}, which needs to be "
                          "converted to a binary mask for use in the "
                          "density plot function. To do so, provide the "
-                         "`comp_operator` and `comp_value` arguments to "
-                         "the method; one or both of them were missing!"
+                         "`apply_comparison` argument to the method."
                          "".format(data.path, data.dtype))
 
     # Calculate the mean over the specified dimensions, if specified to do so
