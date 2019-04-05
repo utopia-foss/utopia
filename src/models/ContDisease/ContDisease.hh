@@ -379,8 +379,10 @@ public:
 
         // Now that all densities have been calculated (in write_data), write
         // those that do not change throughout the simulation (indices 3 and 4)
-        _dset_density_stone->write(_densities[4]);   // stone
-        _dset_density_source->write(_densities[3]);  // infection source
+        _dset_density_stone->write(
+            _densities[static_cast<unsigned short>(Kind::stone)]);
+        _dset_density_source->write(
+            _densities[static_cast<unsigned short>(Kind::source)]);
 
         this->_log->debug("Initial state written.");
     }
@@ -568,9 +570,13 @@ public:
             });
         }
 
-        _dset_density_empty->write(_densities[0]);
-        _dset_density_tree->write(_densities[1]);
-        _dset_density_infected->write(_densities[2]);
+        // Write the densities
+        _dset_density_empty->write(
+            _densities[static_cast<unsigned short>(Kind::empty)]);
+        _dset_density_tree->write(
+            _densities[static_cast<unsigned short>(Kind::tree)]);
+        _dset_density_infected->write(
+            _densities[static_cast<unsigned short>(Kind::infected)]);
     }
 
     void identify_clusters(){
