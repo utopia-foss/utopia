@@ -7,3 +7,19 @@ mean_and_std_mv_lightning:
   based_on: mean_and_std_base
   
   lines_from: p_lightning
+
+
+mean_and_std_time_snapshot:
+  based_on: mean_and_std_snapshot_base
+
+  sweep_over: p_lightning
+
+  snapshot_at:
+    dim: time
+    idx: -1
+
+  helpers:
+    set_labels:
+      x: p_lightning
+    set_scale:
+      x: log

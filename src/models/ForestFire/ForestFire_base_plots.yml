@@ -22,6 +22,20 @@ mean_and_std_base:
     set_scale:
       y: log
 
+mean_and_std_snapshot_base:
+  creator: multiverse
+  
+  # Use the ForestFire-model-specific plot functions
+  module: .state
+  plot_func: mean_and_std_snapshot
+
+  # Collect the data
+  select:
+    fields:
+      mean: data/ForestFire/mean_density
+
+  mean_of: [x, y]
+
 
 # .. State animation ..........................................................
 state_anim_base:
