@@ -1,6 +1,6 @@
 # Default base plots for the ForestFire model
 ---
-#Plot the mean state
+# .. Mean state ...............................................................
 mean_and_std_base:
   creator: multiverse
   
@@ -21,3 +21,30 @@ mean_and_std_base:
       y: Tree density
     set_scale:
       y: log
+
+
+# .. State animation ..........................................................
+state_anim_base:
+  based_on: .ca.state
+  
+  model_name: ForestFire
+
+  # Specify the time index (will be ignored, but needs to be specified)
+  time_idx: 0
+
+  file_ext: mp4
+
+  # Enable animation (disabled by default)
+  animation:
+    enabled: true
+    writer: ffmpeg
+  
+
+# .. State animation frames ...................................................
+state_anim_frames_base:
+  based_on: state_anim_base
+
+  file_ext: pdf
+
+  animation:
+    writer: frames

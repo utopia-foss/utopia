@@ -1,56 +1,57 @@
 # Default plots for the ForestFire model
 ---
+# .. Mean state ...............................................................
 # Plot the mean state depending on the lightning probability
 mean_and_std_lightning:
   based_on: mean_and_std_base
 
 
-# Plot the cluster size distribution
-cluster_distribution:
-  creator: universe
-  universes: all
+# # Plot the cluster size distribution
+# cluster_distribution:
+#   creator: universe
+#   universes: all
 
-  helpers:
-    set_title:
-      title: Size distribution of clusters
+#   helpers:
+#     set_title:
+#       title: Size distribution of clusters
   
-  # Use the ForestFire-specific plot functions
-  module: model_plots.ForestFire
-  plot_func: cluster_distribution
+#   # Use the ForestFire-specific plot functions
+#   module: model_plots.ForestFire
+#   plot_func: cluster_distribution
 
-  # Which time index to plot
-  time: -1
+#   # Which time index to plot
+#   time: -1
 
-  plot_kwargs: 
-    linestyle: 'None'
-    marker: '.'
+#   plot_kwargs: 
+#     linestyle: 'None'
+#     marker: '.'
 
 
-# Plot the cluster size distribution
-cluster_distribution_multiverse:
-  creator: multiverse
+# # Plot the cluster size distribution
+# cluster_distribution_multiverse:
+#   creator: multiverse
 
-  #Use True in case of multiverse run (parameter sweep), else false  
-  enabled: false
+#   #Use True in case of multiverse run (parameter sweep), else false  
+#   enabled: false
   
-  # Use the ForestFire-specific plot functions
-  module: model_plots.ForestFire
-  plot_func: cluster_distribution_multiverse
+#   # Use the ForestFire-specific plot functions
+#   module: model_plots.ForestFire
+#   plot_func: cluster_distribution_multiverse
 
-  # Which time index to plot
-  time: -1
+#   # Which time index to plot
+#   time: -1
 
-  plot_kwargs: 
-    linestyle: 'None'
-    linewidth: 0.5
-    marker: '.'
-    markersize: 3
+#   plot_kwargs: 
+#     linestyle: 'None'
+#     linewidth: 0.5
+#     marker: '.'
+#     markersize: 3
 
-  select:
-    field:
-      # Choose the path in the data tree (see terminal output)
-      path: data/ForestFire/cluster_id
-      dims: [time, x, y]   
+#   select:
+#     field:
+#       # Choose the path in the data tree (see terminal output)
+#       path: data/ForestFire/cluster_id
+#       dims: [time, x, y]   
 
 
 temporal_mean_multiverse:
@@ -75,19 +76,10 @@ temporal_mean_multiverse:
       dims: [time]    
 
 
-# Create frames/movies of the cell states
-state_map: &state_map
-  creator: universe
-  universes: all
-
-  file_ext: mp4
-  dpi: 96
-
-  module: .ca
-  plot_func: state_anim
-
-  # Select the model to read the data from
-  model_name: ForestFire
+# .. State animation ..........................................................
+# animation
+state_anim:
+  based_on: state_anim_base
 
   # Select the properties to plot
   to_plot:
@@ -98,19 +90,33 @@ state_map: &state_map
         Empty: goldenrod
         Tree: green
 
-  # Video options
-  writer: ffmpeg  # can be: frames, ffmpeg (if installed), ...
-  fps: 15
+# frames
+state_anim_frames:
+  based_on: state_anim_frames_base
+
+  # Select the properties to plot
+  to_plot:
+    kind:
+      title: State
+      limits: [0, 1]
+      cmap: 
+        Empty: goldenrod
+        Tree: green
 
 
-# Create frames/movies of the clusters
-cluster_map:
-  # Base the configuration here on that of the state map
-  <<: *state_map
-  
-  # Use a custom pre-processor function
-  module: model_plots.ForestFire
-  plot_func: state_anim
+# .. Cluster animation ........................................................
+cluster_anim:
+  based_on: state_anim_base
+
+  # Select the properties to plot
+  to_plot:
+    cluster_id:
+      title: Cluster
+      limits: [0, 20]
+      cmap: tab20
+
+cluster_anim_frames:
+  based_on: state_anim_frames_base
 
   # Select the properties to plot
   to_plot:
