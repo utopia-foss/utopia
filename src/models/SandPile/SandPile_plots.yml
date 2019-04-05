@@ -15,14 +15,15 @@ area_fraction:
   # size of the scatter points
   size_factor: 1.
 
+
+# --- A plot of the cluster size distribution
+cluster_size_distribution:
+  based_on: cluster_size_distribution
+
+
 # --- A plot the complementary cumulative probability distribution
 compl_cum_prob_dist:
   based_on: compl_cum_prob_dist
-
-
-# --- A plot of the cluster size distribution
-cluster_size_dist:
-  based_on: cluster_size_dist
 
 
 # --- An animation of the CA `slope` state

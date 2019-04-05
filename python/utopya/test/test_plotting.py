@@ -1,11 +1,13 @@
 """Test the plotting module"""
+
 import os
 import uuid
+from pkg_resources import resource_filename
 
 import pytest
 
 from utopya import Multiverse
-from pkg_resources import resource_filename
+from utopya.testtools import ModelTest
 
 # Get the test resources
 BIFURCATION_CFG_PATH = resource_filename('test', 
@@ -27,20 +29,25 @@ BIFURCATION_SWEEP_PLOTS_PATH = resource_filename('test',
 
 # Tests -----------------------------------------------------------------------
 
-def test_dummy_plotting(tmpdir):
-    """Test plotting of the dummy model"""
-    # Create and run simulation
-    mv = Multiverse(model_name='dummy',
-                    paths=dict(out_dir=str(tmpdir)))
-    mv.run_single()
+def test_dummy_plotting():
+    """Test plotting of the dummy model works"""
+    mv, _ = ModelTest('CopyMe').create_run_load()
+    
+    # Plot the default configuration
+    mv.pm.plot_from_cfg()
 
-    # Load
-    mv.dm.load_from_cfg(print_tree=True)
+
+def test_CopyMe_plotting():
+    """Test plotting of the CopyMe model works"""
+    mv, _ = ModelTest('CopyMe').create_run_load()
 
     # Plot the default configuration
     mv.pm.plot_from_cfg()
 
-    # Perform a custom plot that tests the utopya plotting functions
+
+def test_basic_plots(tmpdir):
+    """Tests the plot_funcs.basic module"""
+    mv, _ = ModelTest('CopyMe').create_run_load()
     mv.pm.plot("all_states",
                creator='universe',
                universes='all',
@@ -50,28 +57,10 @@ def test_dummy_plotting(tmpdir):
                y="dummy/state"
                )
 
-def test_CopyMe_plotting(tmpdir):
-    """Test plotting of the dummy model"""
-    # Create and run simulation
-    mv = Multiverse(model_name='CopyMe',
-                    paths=dict(out_dir=str(tmpdir)))
-    mv.run_single()
 
-    # Load
-    mv.dm.load_from_cfg(print_tree=True)
-
-    # Plot the default configuration
-    mv.pm.plot_from_cfg()
-
-def test_ca_plotting(tmpdir):
-    """Tests the plot_funcs submodule using the SimpleEG and CopyMe models"""
-
-    mv = Multiverse(model_name='CopyMe',
-                    paths=dict(out_dir=str(tmpdir)))
-    mv.run_single()
-
-    # Load
-    mv.dm.load_from_cfg(print_tree=True)
+def test_ca_plotting():
+    """Tests the plot_funcs.ca module"""
+    mv, _ = ModelTest('CopyMe').create_run_load()
 
     # Run the CA plots (initial frame + animation)
     mv.pm.plot_from_cfg(plot_only=["initial_state_and_trait"])
@@ -79,18 +68,42 @@ def test_ca_plotting(tmpdir):
 
 
     # Same again with SimpleEG . . . . . . . . . . . . . . . . . . . . . . . . 
-    mv = Multiverse(model_name='SimpleEG',
-                    paths=dict(out_dir=str(tmpdir)))
-    mv.run_single()
-
-    # Load
-    mv.dm.load_from_cfg(print_tree=True)
-
+    mv, _ = ModelTest('SimpleEG').create_run_load()
+    
     # Plot the default configuration, which already includes some CA plotting
     mv.pm.plot_from_cfg()
 
     # To explicitly plot with the frames writer, select the disabled config
     mv.pm.plot_from_cfg(plot_only=["strategy_and_payoff_frames"])
+
+
+def test_time_series_plots():
+    """Tests the plot_funcs.time_series module"""
+    mv, _ = ModelTest('SandPile').create_run_load()
+
+    # Plot specific plots from the default plot configuration, which are using
+    # the time_series plots
+    mv.pm.plot_from_cfg(plot_only=['area_fraction', 'mean_slope'])
+
+
+def test_distribution_plots():
+    """Tests the plot_funcs.distribution module"""
+    mv, _ = ModelTest('SandPile').create_run_load()
+
+    # Plot specific plots from the default plot configuration, which are using
+    # the distribution plots
+    mv.pm.plot_from_cfg(plot_only=['compl_cum_prob_dist', 'cluster_size_dist'])
+
+
+@pytest.mark.skipped(reason="to be implemented!")  # TODO
+def test_attractor_plots():
+    """Tests the plot_funcs.attractor module"""
+    mv, _ = ModelTest('SELECT_MODEL').create_run_load()
+
+    # Plot specific plots from the default plot configuration, which are using
+    # the attractor plots
+    mv.pm.plot_from_cfg(plot_only=['ATTRACTOR_PLOT1', 'ATTRACTOR_PLOT2'])
+
 
 def test_bifurcation_codim_one_plotting(tmpdir):
     """Tests the plot_funcs submodule using the SavannaHomogeneous model

@@ -2,22 +2,14 @@
 ---
 # --- A plot of the slope (mean - critical_slope)
 mean_slope:
+  based_on: .default_style_and_helpers
+
   creator: universe
   universes: all
   
   # Use the SandPile-specific plot functions
   module: model_plots.SandPile
   plot_func: mean_slope
-
-  # Adjust helpers and style
-  helpers: &default_helpers
-    save_figure:
-      bbox_inches: tight
-
-  style: &default_style
-    axes.grid: true
-    grid.linewidth: .5
-    grid.color: cccccc
 
   # Arguments passed to plt.plot
   linestyle: 'None'
@@ -28,9 +20,8 @@ mean_slope:
 area_fraction:
   based_on: .time_series.density
 
-  # Adjust helpers and style
+  # Adjust helpers
   helpers:
-    <<: *default_helpers
     set_labels:
       y: Avalanche Area $[1/A]$
     set_scales:
@@ -39,9 +30,6 @@ area_fraction:
       y: [min, 1.]
     set_title:
       title: Avalanche Size Area Fraction
-
-  style:
-    <<: *default_style
 
   # Specify which data to use
   model_name: SandPile
@@ -55,52 +43,40 @@ area_fraction:
   # Arguments passed on to plt.scatter
 
 
-# --- A plot of the complementary cumulative probability distribution
-# TODO Add to utopya base plot config
-compl_cum_prob_dist:
-  creator: universe
-  universes: all
+# --- A plot of the cluster size distribution
+cluster_size_distribution:
+  based_on: .distribution.histogram
 
-  module: .distribution
-  plot_func: compl_cum_prob_dist
-  
-  # Adjust helpers and style
+  # Specify which data to calculate the histogram of
+  model_name: SandPile
+  path_to_data: avalanche_size
+  only_unique: true
+
+  # Set scales, limits, and title
   helpers:
-    <<: *default_helpers
-  style:
-    <<: *default_style
+    set_scales:
+      x: log
+      y: log
+    set_labels:
+      x: Cluster Size $[A]$
+      y: Counts
+    set_limits:
+      y: [1, ~]
+    set_title:
+      title: Cluster Size Distribution
+
+  # Arguments passed to plt.plot
+
+
+# --- A plot of the complementary cumulative probability distribution
+compl_cum_prob_dist:
+  based_on: .distribution.compl_cum_prob_dist
 
   # Specify basic configuration for this model
   model_name: SandPile
   path_to_data: avalanche_size
 
   # Arguments passed to plt.plot
-  linestyle: 'None'
-  marker: '.'
-
-
-# --- A plot of the cluster size distribution
-# TODO Add to utopya base plot config
-cluster_size_dist:
-  creator: universe
-  universes: all
-
-  module: .distribution
-  plot_func: cluster_size_dist
-
-  # Adjust helpers and style
-  helpers:
-    <<: *default_helpers
-  style:
-    <<: *default_style
-
-  # Specify basic configuration for this model  
-  model_name: SandPile
-  path_to_data: avalanche_size
-
-  # Arguments passed to plt.plot
-  linestyle: 'None'
-  marker: '.'
 
 
 # -- Any kind of grid animation
