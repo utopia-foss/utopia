@@ -13,42 +13,6 @@ from ..tools import save_and_close
 @is_plot_func(creator_type=UniversePlotCreator,
               # Provide some (static) default values for helpers
               helper_defaults=dict(
-                set_labels=dict(x="Time [steps]", y="Tree density"),
-                set_limits=dict(y=[0, None]),
-                set_title=dict(title='Mean Density of Trees')
-                )
-              )
-
-
-def state_mean(dm: DataManager, *, uni: UniverseGroup,
-               hlpr: PlotHelper, save_kwargs: dict=None, **plot_kwargs):
-    """Calculates the state mean and performs a lineplot
-    
-    Args:
-        dm (DataManager): The data manager from which to retrieve the data
-        uni (UniverseGroup): The selected universe data
-        hlpr (PlotHelper): The PlotHelper that instantiates the figure and
-            takes care of plot aesthetics (labels, title, ...) and saving
-        save_kwargs (dict, optional): kwargs to the plt.savefig function
-        **plot_kwargs: Passed on to plt.plot
-    """
-    # Get the raw data of the state, either 0 (empty) or 1 (tree)
-    data = uni['data']['ForestFire/mean_density']
-
-    # Get the times array
-    times = uni.get_times_array()
-
-    # Call the plot function
-    plt.plot(times, data, **plot_kwargs)
-
-    plt.xlim(left=0, right=np.max(times))
-    #plt.ylim(bottom=0)
-
-# -----------------------------------------------------------------------------
-
-@is_plot_func(creator_type=UniversePlotCreator,
-              # Provide some (static) default values for helpers
-              helper_defaults=dict(
                 set_labels=dict(x="cluster size A", y="$N_A$"),
                 set_scale=dict(x='log', y='log'),
                 set_title=dict(title='Size distribution of clusters')
