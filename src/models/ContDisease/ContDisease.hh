@@ -37,14 +37,14 @@ struct State {
     Kind kind;
 
     /// An ID denoting to which cluster this cell belongs
-    unsigned int cluster_tag;
+    unsigned int cluster_id;
 
     /// Construct the cell state from a configuration and an RNG
     template<class RNG>
     State (const DataIO::Config& cfg, const std::shared_ptr<RNG>& rng)
     :
         kind(Kind::empty),
-        cluster_tag(0)
+        cluster_id(0)
     {
         // Check if initial_density is available to set up cell state
         if (cfg["initial_density"]) {
@@ -199,7 +199,7 @@ private:
     std::uniform_real_distribution<double> _prob_distr;
 
     /// The incremental cluster tag
-    unsigned int _cluster_tag_cnt;
+    unsigned int _cluster_id_cnt;
 
       // .. Temporary objects ...................................................
     /// Densities for all states
@@ -266,7 +266,7 @@ public:
         _prob_distr(0., 1.),
         _densities{},  // undefined here, will be set in constructor body
         _cluster_members(),
-        _cluster_tag_cnt(),
+        _cluster_id_cnt(),
 
         // Create a data group for the densities
         _dgrp_densities(this->_hdfgrp->open_group("densities")),
@@ -409,12 +409,10 @@ protected:
         }
         // The _densities array now contains the counts.
 
-        const double num_cells = this->_cm.cells().size();
-
         // Calculate the actual densities by dividing the counts by the total
         // number of cells.
         for (auto&& d : _densities){
-            d /= num_cells;
+            d /= static_cast<double>(this->_cm.cells().size());
         }
     };
 
@@ -431,7 +429,7 @@ protected:
     RuleFunc _update = [this](const auto& cell){
         // Get the current state of the cell
         auto state = cell->state;
-        state.cluster_tag = 0;
+        state.cluster_id = 0;
 
         // Distinguish by current state
         if (state.kind == Kind::empty) {
@@ -483,15 +481,15 @@ protected:
 
     /// Identify each cluster of trees
     RuleFunc _identify_cluster = [this](const auto& cell){
-        if (cell->state.cluster_tag != 0 or cell->state.kind != Kind::tree) {
+        if (cell->state.cluster_id != 0 or cell->state.kind != Kind::tree) {
             // already labelled, nothing to do. Return current state
             return cell->state;
         }
         // else: need to label this cell
 
         // Increment the cluster ID counter and label the given cell
-        _cluster_tag_cnt++;
-        cell->state.cluster_tag = _cluster_tag_cnt;
+        _cluster_id_cnt++;
+        cell->state.cluster_id = _cluster_id_cnt;
 
         // Use existing cluster member container, clear it, add current cell
         auto& cluster = _cluster_members;
@@ -504,10 +502,10 @@ protected:
             // neighbors of cell cluster[i] that is already in the cluster
             for (const auto& c : this->_cm.neighbors_of(cluster[i])) {
                 // If it is a tree that is not yet in the cluster, add it.
-                if (    c->state.cluster_tag == 0
+                if (    c->state.cluster_id == 0
                     and c->state.kind == Kind::tree)
                 {
-                    c->state.cluster_tag = _cluster_tag_cnt;
+                    c->state.cluster_id = _cluster_id_cnt;
                     cluster.push_back(c);
                     // This extends the outer for-loop...
                 }
@@ -566,7 +564,7 @@ public:
 
             _dset_cluster_id->write(_cm.cells().begin(), _cm.cells().end(),
                [](const auto& cell) {
-                   return cell->state.cluster_tag;
+                   return cell->state.cluster_id;
             });
         }
 
@@ -581,7 +579,7 @@ public:
 
     void identify_clusters(){
         // reset cluster counter
-        _cluster_tag_cnt = 0;
+        _cluster_id_cnt = 0;
         apply_rule<Update::async, Shuffle::off>(_identify_cluster, _cm.cells(), *this->_rng);
     }
 
