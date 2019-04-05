@@ -36,6 +36,10 @@ mean_and_std_snapshot_base:
 
   mean_of: [x, y]
 
+  linestyle: 'None'
+  linewidth: 0.5
+  marker: 'o'
+  markersize: 5
 
 # .. State animation ..........................................................
 state_anim_base:

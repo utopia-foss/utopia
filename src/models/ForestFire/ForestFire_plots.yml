@@ -53,29 +53,6 @@ mean_and_std_lightning:
 #       path: data/ForestFire/cluster_id
 #       dims: [time, x, y]   
 
-
-temporal_mean_multiverse:
-  creator: multiverse
-
-  #Use True in case of multiverse run (parameter sweep), else false
-  enabled: false
-
-  module: model_plots.ForestFire
-  plot_func: temporal_mean_multiverse
-
-  plot_kwargs: 
-    linestyle: 'None'
-    linewidth: 0.5
-    marker: 'o'
-    markersize: 5
-  
-  select:
-    field:
-      # Choose the path in the data tree (see terminal output)
-      path: data/ForestFire/mean_density
-      dims: [time]    
-
-
 # .. State animation ..........................................................
 # animation
 state_anim:
