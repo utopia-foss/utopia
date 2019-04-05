@@ -165,6 +165,12 @@ public:
         _dset_avalanche(this->create_cm_dset("avalanche", _cm)),
         _dset_avalanche_size(this->create_dset("avalanche_size", {}))
     {
+        // Check neighborhood mode; currently does not work with Moore
+        if (_cm.nb_mode() != NBMode::vonNeumann) {
+            throw std::invalid_argument("Other neighborhoods than vonNeumann "
+                                        "are currently not supported!");
+        }
+
         // Add a dimension label for the avalanche size dataset
         _dset_avalanche_size->add_attribute("dim_names", "time");
 

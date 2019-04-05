@@ -32,6 +32,7 @@ cell_manager:
   cell_params:
     # Cells are randomly initialized using a uniform distribution in the given
     # closed range.
+    # Choose values such that this is supercritical
     initial_slope_lower_limit: 5
     initial_slope_upper_limit: 6
 
