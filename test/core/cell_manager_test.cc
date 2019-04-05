@@ -190,6 +190,8 @@ int main() {
         assert(cells[0]->state().a_string == "foobar");
         assert(cells[0]->state().a_bool == true);
 
+        assert(cm.nb_size() == 0);  // no neighborhood set yet
+
         std::cout << "Success." << std::endl << std::endl;
         
 
@@ -271,6 +273,7 @@ int main() {
         // -------------------------------------------------------------------
         std::cout << "------ Testing neighborhood choice ... ------"
                   << std::endl;
+        // NOTE The actual neighborhood tests are performed separately
 
         // without any neighborhood configuration
         std::cout << "... empty" << std::endl;
@@ -284,7 +287,7 @@ int main() {
         MockModel<CellTraitsDC> mm_nb_vonNeumann("mm_nb_vonNeumann",
                                               cfg["nb_vonNeumann"]);
         assert(mm_nb_vonNeumann._cm.nb_mode() == NBMode::vonNeumann);
-        // TODO
+        assert(mm_nb_vonNeumann._cm.nb_size() == 4);
         std::cout << "Success." << std::endl << std::endl;
 
         // pre-computing and storing the values
@@ -292,7 +295,7 @@ int main() {
         MockModel<CellTraitsDC> mm_nb_computed("mm_nb_computed",
                                                cfg["nb_computed"]);
         assert(mm_nb_computed._cm.nb_mode() == NBMode::vonNeumann);
-        // TODO
+        assert(mm_nb_computed._cm.nb_size() == 4);
         std::cout << "Success." << std::endl << std::endl;
 
         // bad neighborhood specification
@@ -311,9 +314,6 @@ int main() {
                                                    cfg["nb_bad2"]);
             }, "No 'vonNeumann' neighborhood available for TriangularGrid"));
         std::cout << "Success." << std::endl << std::endl;
-
-        // NOTE The actual neighborhood tests are performed separately
-
 
 
         // -------------------------------------------------------------------

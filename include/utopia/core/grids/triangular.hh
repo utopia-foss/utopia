@@ -173,8 +173,13 @@ protected:
 
     /// Computes the expected number of neighbors for a neighborhood mode
     DistType expected_num_neighbors(const NBMode& nb_mode) const override {
-        throw std::invalid_argument("No '" + nb_mode_to_string(nb_mode)
-            + "' neighborhood available for TriangularGrid!");
+        if (nb_mode == NBMode::empty) {
+            return 0;
+        }
+        else {
+            throw std::invalid_argument("No '" + nb_mode_to_string(nb_mode)
+                + "' neighborhood available for TriangularGrid!");
+        }
     }
 
 
