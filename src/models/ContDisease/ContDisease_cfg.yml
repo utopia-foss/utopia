@@ -32,7 +32,7 @@ cell_manager:
   # Cell initialization parameters
   cell_params:
     # Initial tree density, value in [0, 1]
-    # With this probablity, a cell is initialized as tree (instead of empty)
+    # With this probability, a cell is initialized as tree (instead of empty)
     initial_density: 0
 
 # --- Model Dynamics

@@ -17,7 +17,7 @@ namespace ContDisease {
 
 // ++ Type definitions ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-/// The values a cell's state can take: empty, tree, infected, source, stone
+/// The kind of the cell: empty, tree, infected, source, stone
 enum class Kind : unsigned short {
     /// Unoccupied
     empty = 0,
@@ -32,7 +32,7 @@ enum class Kind : unsigned short {
 };
 
 /// The full cell struct for the ContDisease model
-struct CDCell {
+struct State {
     /// The cell state
     Kind kind;
 
@@ -41,7 +41,7 @@ struct CDCell {
 
     /// Construct the cell state from a configuration and an RNG
     template<class RNG>
-    CDCell (const DataIO::Config& cfg, const std::shared_ptr<RNG>& rng)
+    State (const DataIO::Config& cfg, const std::shared_ptr<RNG>& rng)
     :
         kind(Kind::empty),
         cluster_tag(0)
@@ -137,11 +137,11 @@ struct Param {
   *
   * See \ref Utopia::CellTraits for more information.
   */
-using CDCellTraits = Utopia::CellTraits<CDCell, Update::manual>;
+using CDCellTraits = Utopia::CellTraits<State, Update::manual>;
 
 
 /// Typehelper to define data types of ContDisease model
-using CDModelTypes = ModelTypes<>;
+using CDTypes = ModelTypes<>;
 
 
 // ++ Model definition ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -164,11 +164,11 @@ using CDModelTypes = ModelTypes<>;
  *          configured.
  */
 class ContDisease:
-    public Model<ContDisease, CDModelTypes>
+    public Model<ContDisease, CDTypes>
 {
 public:
     /// The base model type
-    using Base = Model<ContDisease, CDModelTypes>;
+    using Base = Model<ContDisease, CDTypes>;
 
     /// Data type for a data group
     using DataGroup = typename Base::DataGroup;
