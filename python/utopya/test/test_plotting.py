@@ -83,7 +83,15 @@ def test_time_series_plots():
 
     # Plot specific plots from the default plot configuration, which are using
     # the time_series plots
-    mv.pm.plot_from_cfg(plot_only=['area_fraction', 'mean_slope'])
+    mv.pm.plot_from_cfg(plot_only=['area_fraction'])
+    
+
+    # Again, with PredatorPrey
+    mv, _ = ModelTest('PredatorPrey').create_run_load()
+
+    # Plot specific plots from the default plot configuration, which are using
+    # the time_series plots
+    mv.pm.plot_from_cfg(plot_only=['densities'])
 
 
 def test_distribution_plots():
@@ -92,10 +100,11 @@ def test_distribution_plots():
 
     # Plot specific plots from the default plot configuration, which are using
     # the distribution plots
-    mv.pm.plot_from_cfg(plot_only=['compl_cum_prob_dist', 'cluster_size_dist'])
+    mv.pm.plot_from_cfg(plot_only=['compl_cum_prob_dist',
+                                   'cluster_size_distribution'])
 
 
-@pytest.mark.skipped(reason="to be implemented!")  # TODO
+@pytest.mark.skip(reason="to be implemented!")  # TODO
 def test_attractor_plots():
     """Tests the plot_funcs.attractor module"""
     mv, _ = ModelTest('SELECT_MODEL').create_run_load()
