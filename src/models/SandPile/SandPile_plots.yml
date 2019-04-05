@@ -4,8 +4,6 @@
 mean_slope:
   based_on: mean_slope
 
-  show_critical_slope_value: true
-
 
 # --- Plot the avalanche area fraction time series
 area_fraction:

@@ -11,6 +11,9 @@ mean_slope:
   module: model_plots.SandPile
   plot_func: mean_slope
 
+  # Select that the critical slope value should be added to the plot
+  show_critical_slope_value: true
+
   # Arguments passed to plt.plot
   linestyle: 'None'
   marker: '.'
@@ -48,6 +51,7 @@ area_fraction:
   marker: 'o'
   alpha: .9
 
+
 # --- A plot of the cluster size distribution
 cluster_size_distribution:
   based_on: .distribution.histogram
@@ -63,8 +67,11 @@ cluster_size_distribution:
     set_labels:
       x: Cluster Size $[A]$
       y: Counts
+    set_scales:
+      y: log
     set_limits:
-      y: [0, ~]
+      x: [0, max]
+      y: [0.9, ~]
 
   # Configure the histogram
   histogram_kwargs:
@@ -92,6 +99,8 @@ compl_cum_prob_dist:
     set_labels:
       x: Cluster Size $[A]$
       y: $P_A(A)$
+    set_limits:
+      x: [1.8, ~]  # Not interested in the value at size 1
 
   # Arguments passed to plt.plot
 

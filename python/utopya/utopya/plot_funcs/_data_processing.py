@@ -8,8 +8,8 @@ import xarray as xr
 
 # -----------------------------------------------------------------------------
 
-def preprocess_data(data: xr.DataArray, *, sum_over: Tuple[str]=None):
-    """Pre-processes the given xarray data"""
+def process_data(data: xr.DataArray, *, sum_over: Tuple[str]=None):
+    """processes the given xarray data"""
     if sum_over:
         data = data.sum(dim=sum_over)
 

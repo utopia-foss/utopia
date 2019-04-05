@@ -58,21 +58,3 @@ def mean_slope(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
                      fontdict=dict(fontsize="small"),
                      bbox=dict(facecolor="white", linewidth=1.))
     
-    
-@is_plot_func(creator_type=UniversePlotCreator)
-def area_fraction(dm: DataManager, *, uni: UniverseGroup, **kwargs):
-    """This plot function wraps the .time_series.density function and
-    calculates and stores the area fraction values in the universe group such
-    that they can be used for 
-    
-    Args:
-        dm (DataManager): The data manager from which to retrieve the data
-        uni (UniverseGroup): The selected universe data
-        **kwargs: Passed on to utopya.plot_funcs.time_series.density
-    """
-    # Get the base group and the avalanche dataset
-    grp = uni['data/SandPile']
-    avalanche = grp['avalanche']
-
-    # Compute and store the relative avalanche sizes
-

@@ -9,7 +9,7 @@ import numpy as np
 from .. import DataManager, UniverseGroup
 from ..plotting import is_plot_func, PlotHelper, UniversePlotCreator
 
-from ._data_processing import preprocess_data
+from ._data_processing import process_data
 
 # Get a logger
 log = logging.getLogger(__name__)
@@ -22,13 +22,15 @@ log = logging.getLogger(__name__)
               )
             )
 def histogram(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
-              model_name: str, path_to_data: str, preprocess: dict=None,
+              model_name: str, path_to_data: str,
+              preprocess: dict=None,
               histogram_kwargs: dict=None,
               normalize: bool=False,
               cumulative: Union[bool, str]=False,
               use_unique: bool=False,
               mask_repeated: bool=False,
               bin_width_scale: float=1.,
+              show_histogram_info: bool=True,
               pyplot_func_name: str='bar',
               **pyplot_func_kwargs):
     """Calculates a histogram from the data and plots it.
@@ -36,7 +38,7 @@ def histogram(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
     This function is very versatile. Its capabilities range from a plain old
     histogram (only required arguments set) to the plot of a complementary
     cumulative probability distribution function.
-
+    
     Don't despair. The documentation of arguments below should give a good
     idea of what each parameter does.
     
@@ -48,9 +50,8 @@ def histogram(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
         model_name (str): The model name that the data resides in
         path_to_data (str): The path to the data relative to the model data
             output
-        preprocess (dict, optional): Pre-processing arguments
-        sum_over (Tuple[str], optional): Which dimensions to calculate sums
-            over. If not given, no sums are calculated.
+        preprocess (dict, optional): Pre-processing arguments. These are
+            applied to the data _before_ the histogram is calculated.
         histogram_kwargs (dict, optional): Passed to np.histogram. This can be
             used to adjust the number of `bins` or set the `range` the bins
             should be spread over; the latter also allows to pass a 2-tuple
@@ -67,6 +68,8 @@ def histogram(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
             counts such that repeated values are not shown.
         bin_width_scale (float, optional): Factor by which to scale bin widths
             in the bar plot.
+        show_histogram_info (bool, optional): Whether to show an info box in
+            the top right-hand corner
         pyplot_func_name (str, optional): The name of the matplotlib.pyplot
             function to use for plotting. By default, a bar plot is performed.
             For unique data, it might make more sense to do a line or scatter
@@ -83,7 +86,7 @@ def histogram(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
     data = uni['data'][model_name][path_to_data]
 
     # Preprocess it. Empty dict will pass data through.
-    data = preprocess_data(data, **(preprocess if preprocess else {}))
+    data = process_data(data, **(preprocess if preprocess else {}))
 
     # Calculate the histogram, either via np.histogram or np.unique
     if not use_unique:
@@ -136,8 +139,7 @@ def histogram(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
         log.debug("Using complementary cumulative sum for counts ...")
         counts = np.cumsum(counts[::-1])[::-1]
 
-    # Calculate a mask that will be applied to the data to erase multiple
-    # occurrences of the same data-point pair
+    # Might want to only plot a subset. For that, allow a slice operation
 
     # Plot the data using the given plot function name
     if pyplot_func_name == 'bar':
@@ -155,3 +157,19 @@ def histogram(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
         plt_func = getattr(hlpr.ax, pyplot_func_name)
         plt_func(bin_pos, counts,
                  **pyplot_func_kwargs)
+
+    # Add histogram information
+    if show_histogram_info:
+        # Generate an info string, containing total count and bin count
+        # NOTE .format operations can be escaped with '{' and '}' characters.
+        info_str = ("$N_{{data}} = {ntot:}$\n"
+                    "$N_{{{mode:}}} = {nbin:d}$"
+                    "".format(ntot=data.size,
+                              mode="bins" if not use_unique else "unique",
+                              nbin=len(bin_pos)))
+        hlpr.ax.text(1, 1, info_str,
+                     transform=hlpr.ax.transAxes,
+                     verticalalignment='top', horizontalalignment='right',
+                     fontdict=dict(fontsize="small"),
+                     bbox=dict(facecolor="white", linewidth=1.))
+    
