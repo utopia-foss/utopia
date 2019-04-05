@@ -21,15 +21,23 @@ phase_space:
 densities:
   based_on: .time_series.densities
 
-  style:
-    <<: *default_style
-
   helpers:
-    <<: *default_helpers
     set_limits:
       x: [0, ~]
 
   model_name: PredatorPrey
+
+  # Which data to calculate the densities from
+  to_plot:
+    prey:
+      mean_of: [x, y]
+      apply_comparison: [==, 1]
+      label: Prey
+    
+    predator:
+      mean_of: [x, y]
+      apply_comparison: [==, 1]
+      label: Predator
 
 # -- Any kind of grid animation
 grid_animation: &grid_animation

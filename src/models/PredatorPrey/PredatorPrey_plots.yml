@@ -8,18 +8,6 @@ phase_space:
 # -- Time series of the predator and prey spatial densities
 densities:
   based_on: densities
-  
-  # Which data to calculate the densities from
-  to_plot:
-    prey:
-      mean_of: [x, y]
-      threshold: .5
-      label: Prey
-    
-    predator:
-      mean_of: [x, y]
-      threshold: .5
-      label: Predator
 
 
 # -- Animation of the spatial resource development of prey and predators
