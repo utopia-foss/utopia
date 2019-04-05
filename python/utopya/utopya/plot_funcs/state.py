@@ -20,7 +20,7 @@ def mean_and_std(dm: DataManager, *,
                  hlpr: PlotHelper,
                  mean_of: str=None,
                  lines_from: str=None,
-                 **plot_kwargs: dict=None):
+                 **plot_kwargs):
     """Plot the mean and standard deviation of multidimensional data
     
     Args:

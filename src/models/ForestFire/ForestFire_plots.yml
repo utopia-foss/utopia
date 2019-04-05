@@ -1,30 +1,8 @@
 # Default plots for the ForestFire model
 ---
-#Plot the mean state
-mean_and_std:
-  enabled: false
-
-  creator: multiverse
-  
-  # Use the ForestFire-model-specific plot functions
-  module: .state
-  plot_func: mean_and_std
-
-  # Collect the data
-  select:
-    fields:
-      mean: data/ForestFire/mean_density
-
-  mean_of: [x, y]
-  lines_from: p_lightning
-
-  helpers:
-    set_labels:
-      x: Time
-      y: Tree density
-    set_scale:
-      y: log
-
+#Plot the mean state depending on the lightning probability
+mean_and_std_lightning:
+  based_on: mean_and_std_base
 
 
 # Plot the cluster size distribution

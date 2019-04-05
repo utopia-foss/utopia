@@ -1,0 +1,8 @@
+# Default multiverse plots for the ForestFire model
+---
+# Plot the mean state and standard deviation depending on the lightning 
+# probability
+mean_and_std_mv_lightning:
+  based_on: mean_and_std_base
+  
+  lines_from: p_lightning
