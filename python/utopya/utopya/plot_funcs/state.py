@@ -14,14 +14,13 @@ from utopya.plotting import is_plot_func, PlotHelper, MultiversePlotCreator
               # Provide some (static) default values for helpers
               helper_defaults=dict(
                 set_labels=dict(x="Time", y="Density"),
-                set_legend=dict(use_legend=True),
-                save_figure=dict(bbox_inches="tight")
+                set_legend=dict(use_legend=True)
                 )
               )
 def mean_and_std(dm: DataManager, *,
                  mv_data: xr.Dataset,
                  hlpr: PlotHelper,
-                 mean_of: Union[str, list]=None,
+                 mean_of: Union[str, list]=(),
                  lines_from: str=None,
                  **plot_kwargs):
     """Plot the mean and standard deviation of a selected dimension over the 
@@ -41,13 +40,13 @@ def mean_and_std(dm: DataManager, *,
         plot_kwargs (dict, optional): Kwargs that are passed to plt.errorbar
     """
     # Calculate the mean over all dimensions that are mentioned within mean_of
-    mv_data.mean(dim=[d for d in mv_data.dims if d in mean_of])
+    mv_data.mean(dim=mean_of)
 
     # Case: Create multiple lines from a given dimension
     if lines_from:
-        for line in mv_data[lines_from]:
+        for coord in mv_data.coords[lines_from]:
             # Select the correct data that results in one line
-            data_sel = mv_data.sel(**{line.name:line})
+            data_sel = mv_data.sel(**{coord.name:coord})
 
             # Get the mean and std data
             mean = data_sel['mean']
@@ -57,13 +56,13 @@ def mean_and_std(dm: DataManager, *,
                 std = None
 
             # Get the values of the dimension from which to create the lines
-            plot_kwargs['label'] = '${}$'.format(line.values)
+            plot_kwargs['label'] = '${}$'.format(coord.values)
 
             # Plot the data
             hlpr.ax.errorbar(mean['time'], mean, yerr=std, **plot_kwargs)
 
             # As default use the dimension name from which the lines originate
-            hlpr.provide_defaults('set_legend', title='{}'.format(line.name))
+            hlpr.provide_defaults('set_legend', title=coord.name)
 
     # Case: Create a single line
     else:
