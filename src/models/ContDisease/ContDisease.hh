@@ -18,7 +18,7 @@ namespace ContDisease {
 // ++ Type definitions ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 /// The values a cell's state can take: empty, tree, infected, source, stone
-enum CDCellState : unsigned short {
+enum class Kind : unsigned short {
     /// Unoccupied
     empty = 0,
     /// Cell represents a tree
@@ -34,7 +34,7 @@ enum CDCellState : unsigned short {
 /// The full cell struct for the ContDisease model
 struct CDCell {
     /// The cell state
-    CDCellState state;
+    Kind kind;
 
     /// An ID denoting to which cluster this cell belongs
     unsigned int cluster_tag;
@@ -43,7 +43,7 @@ struct CDCell {
     template<class RNG>
     CDCell (const DataIO::Config& cfg, const std::shared_ptr<RNG>& rng)
     :
-        state(empty),
+        kind(Kind::empty),
         cluster_tag(0)
     {
         // Check if initial_density is available to set up cell state
@@ -57,7 +57,7 @@ struct CDCell {
 
             // With this probability, the cell state is a tree
             if (std::uniform_real_distribution<double>(0., 1.)(*rng) < rho) {
-                state = tree;
+                kind = Kind::tree;
             }
         }
     }
@@ -69,11 +69,11 @@ struct Param {
     /// Probability per site and time step to transition from state empty to tree
     const double growth_rate;
 
-    /// Probablity per site and time step for a tree cell to become infected
+    /// Probability per site and time step for a tree cell to become infected
     /// if an infected cell is in the neighborhood.
     const double p_infect;
 
-    /// Probaility per site and time step for a random point infection of a
+    /// Probability per site and time step for a random point infection of a
     // tree cell
     const double p_rd_infect;
 
@@ -299,7 +299,7 @@ public:
 
             RuleFunc _source_init = [this](const auto& cell) {
                 auto state = cell->state;
-                state.state = source;
+                state.kind = Kind::source;
                 return state;
             };
 
@@ -326,7 +326,7 @@ public:
                     // Cell will be a stone with probability stone_density
                     auto state = cell->state;
                     if (this->_prob_distr(*this->_rng) < stone_density){
-                        state.state = stone;
+                        state.kind = Kind::stone;
                         return state;
                     }
                     // else: stay in the same state
@@ -347,12 +347,12 @@ public:
                     for (auto& nb: this->_cm.neighbors_of(cell)) {
                         auto nb_state = nb->state;
 
-                        if (    state.state == empty
-                            and nb_state.state == stone
+                        if (    state.kind == Kind::empty
+                            and nb_state.kind == Kind::stone
                             and this->_prob_distr(*this->_rng) < stone_cluster)
                         {
                             // Become a stone
-                            state.state = stone;
+                            state.kind = Kind::stone;
                         }
                         else {
                             break;
@@ -401,7 +401,7 @@ protected:
         // member for that in order to not create a new array.
         for (const auto& cell : this->_cm.cells()) {
             // Cast enum to integer to arrive at the corresponding index
-            ++_densities[static_cast<unsigned short int>(cell->state.state)];
+            ++_densities[static_cast<unsigned short int>(cell->state.kind)];
         }
         // The _densities array now contains the counts.
 
@@ -430,20 +430,20 @@ protected:
         state.cluster_tag = 0;
 
         // Distinguish by current state
-        if (state.state == empty) {
+        if (state.kind == Kind::empty) {
             // With a probability of growth_rate, set the cell's state to tree
             if (_prob_distr(*this->_rng) < _param.growth_rate){
-                state.state = tree;
+                state.kind = Kind::tree;
                 return state;
             }
         }
-        else if (state.state == tree){
+        else if (state.kind == Kind::tree){
             // Tree can be infected by neighbor our by random-point-infection.
 
             // Determine whether there will be a point infection
             if (_prob_distr(*this->_rng) < _param.p_rd_infect) {
                 // Yes, point infection occurred.
-                state.state = infected;
+                state.kind = Kind::infected;
                 return state;
             }
             else {
@@ -454,21 +454,21 @@ protected:
                     // Get the neighbor cell's state
                     auto nb_state = nb->state;
 
-                    if (   nb_state.state == infected
-                        or nb_state.state == source)
+                    if (   nb_state.kind == Kind::infected
+                        or nb_state.kind == Kind::source)
                     {
                         // With a certain probability, become infected
                         if (_prob_distr(*this->_rng) < _param.p_infect) {
-                            state.state = infected;
+                            state.kind = Kind::infected;
                             return state;
                         }
                     }
                 }
             }
         }
-        else if (state.state == infected) {
+        else if (state.kind == Kind::infected) {
             // Decease -> become an empty cell
-            state.state = empty;
+            state.kind = Kind::empty;
             return state;
         }
         // else: other cell states need no update
@@ -479,7 +479,7 @@ protected:
 
     /// Identify each cluster of trees
     RuleFunc _identify_cluster = [this](const auto& cell){
-        if (cell->state.cluster_tag != 0 or cell->state.state != tree) {
+        if (cell->state.cluster_tag != 0 or cell->state.kind != Kind::tree) {
             // already labelled, nothing to do. Return current state
             return cell->state;
         }
@@ -501,7 +501,7 @@ protected:
             for (const auto& c : this->_cm.neighbors_of(cluster[i])) {
                 // If it is a tree that is not yet in the cluster, add it.
                 if (    c->state.cluster_tag == 0
-                    and c->state.state == tree)
+                    and c->state.kind == Kind::tree)
                 {
                     c->state.cluster_tag = _cluster_tag_cnt;
                     cluster.push_back(c);
@@ -547,7 +547,7 @@ public:
         // Write the cell state
         _dset_state->write(_cm.cells().begin(), _cm.cells().end(),
             [](const auto& cell) {
-                return static_cast<unsigned short int>(cell->state.state);
+                return static_cast<unsigned short int>(cell->state.kind);
             }
         );
 
