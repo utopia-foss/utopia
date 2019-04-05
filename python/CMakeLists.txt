@@ -16,7 +16,7 @@ message(STATUS "Installing required Python packages ...")
 # NOTE Take care that the versions used here match those in the README.md
 #      and those in the utopya setup.py file.
 # -- paramspace --
-python_find_package(PACKAGE paramspace VERSION 2.1.0)
+python_find_package(PACKAGE paramspace VERSION 2.1.1)
 
 if(NOT PYTHON_PACKAGE_paramspace_FOUND)
     # install from current _master_ branch
@@ -25,7 +25,7 @@ if(NOT PYTHON_PACKAGE_paramspace_FOUND)
 endif()
 
 # -- dantro --
-python_find_package(PACKAGE dantro VERSION 0.7.0rc13)
+python_find_package(PACKAGE dantro VERSION 0.7.0rc14)
 
 if(NOT PYTHON_PACKAGE_dantro_FOUND)
     # install from current _master_ branch

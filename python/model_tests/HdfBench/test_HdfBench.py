@@ -36,14 +36,13 @@ def test_write():
         bench_cfg = uni['cfg']['HdfBench']
         benchmarks = bench_cfg['benchmarks']
         
+        print("times data: ", times)
         assert times.shape == (11, len(benchmarks))
-        print("times attributes: ", times.attrs)
 
+        print("benchmark coordinate: ", times.coords['benchmark'])
         for i, bname in enumerate(benchmarks):
             # Assert that all configured benchmarks were performed
-            print("coords_benchmark attribute value: ",
-                  times.attrs['coords_benchmark'])
-            assert (times.attrs['coords_benchmark'][i]) == bname
+            assert (times.coords['benchmark'][i]) == bname
 
         # Checks for specific benchmarks
         # write_const

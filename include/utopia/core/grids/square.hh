@@ -3,6 +3,7 @@
 
 #include <cmath>
 #include <sstream>
+#include <algorithm>
 
 #include "base.hh"
 
@@ -1050,8 +1051,13 @@ protected:
                 }                   
             };
 
-            // Call the recursive lambda with the space's dimensionality
-            return num_nbs_impl(this->dim, this->_nbh_distance, num_nbs_impl);
+            // Call the recursive lambda with the space's dimensionality. Make
+            // sure the distance is >= 1, which is not guaranteed as there is
+            // also  the case where the distance is not given
+            return num_nbs_impl(this->dim,
+                                std::clamp(this->_nbh_distance,
+                                           unsigned(1), this->_nbh_distance),
+                                num_nbs_impl);
         }
         else {
             throw std::invalid_argument("No '" + nb_mode_to_string(nb_mode)

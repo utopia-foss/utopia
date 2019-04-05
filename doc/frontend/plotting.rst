@@ -19,8 +19,11 @@ also includes some general information on plotting with utopya.
 
 ----
 
+.. _plot_animations:
+
 Animations
 ----------
+
 
 By the powers of ``dantro`` and its plotting framework, it is really simple to
 let your plot function support animation.

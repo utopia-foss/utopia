@@ -2,20 +2,13 @@
 ---
 # -- Plot of the predator density against the prey density
 phase_space:
+  based_on: .default_style_and_helpers
+
   creator: universe
   universes: all
   
   module: model_plots.PredatorPrey
   plot_func: phase_space
-
-  style: &default_style
-    axes.grid: true
-    grid.linewidth: 0.5
-    grid.color: cccccc
-
-  helpers: &default_helpers
-    save_figure:
-      bbox_inches: tight
 
   # How to color-code the time axis  
   cmap: viridis_r
@@ -26,20 +19,25 @@ phase_space:
 
 # -- Time series of the predator and prey densities
 densities:
-  creator: universe
-  universes: all
-  
-  module: model_plots.PredatorPrey
-  plot_func: densities
-
-  style:
-    <<: *default_style
+  based_on: .time_series.densities
 
   helpers:
-    <<: *default_helpers
     set_limits:
       x: [0, ~]
 
+  model_name: PredatorPrey
+
+  # Which data to calculate the densities from
+  to_plot:
+    prey:
+      mean_of: [x, y]
+      apply_comparison: [==, 1]
+      label: Prey
+    
+    predator:
+      mean_of: [x, y]
+      apply_comparison: [==, 1]
+      label: Predator
 
 # -- Any kind of grid animation
 grid_animation: &grid_animation

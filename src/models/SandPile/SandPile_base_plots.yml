@@ -1,0 +1,121 @@
+# Base configurations for SandPile model plots
+---
+# --- A plot of the slope (mean - critical_slope)
+mean_slope:
+  based_on: .default_style_and_helpers
+
+  creator: universe
+  universes: all
+  
+  # Use the SandPile-specific plot functions
+  module: model_plots.SandPile
+  plot_func: mean_slope
+
+  # Select that the critical slope value should be added to the plot
+  show_critical_slope_value: true
+
+  # Arguments passed to plt.plot
+  linestyle: 'None'
+  marker: '.'
+
+
+# --- Plot the avalanche area fraction time series
+area_fraction:
+  based_on: .time_series.density
+
+  # Adjust helpers
+  helpers:
+    set_labels:
+      y: Rel. Area $[1/A]$
+    set_scales:
+      y: log
+    set_limits:
+      y: [min, 1.]
+    set_title:
+      title: Avalanche Size Area Fraction
+
+  # Specify which data to use
+  model_name: SandPile
+  path_to_data: avalanche
+  apply_comparison: [==, 1]  # to convert to a binary mask
+  mean_of: [x, y]
+
+  # And that the avalanche sizes are to be used as dot sizes. The sizes are
+  # normalized by dividing through the maximum size, which allows scaling the
+  # scatter dots via the `size_factor` argument
+  sizes_from: avalanche_size
+  size_factor: 42.
+
+  # Arguments passed on to plt.scatter ...
+  # Adjust such that they don't have an edge
+  marker: 'o'
+  alpha: .9
+
+
+# --- A plot of the cluster size distribution
+cluster_size_distribution:
+  based_on: .distribution.histogram
+
+  # Specify which data to calculate the histogram of
+  model_name: SandPile
+  path_to_data: avalanche_size
+
+  # Set scales, limits, and title
+  helpers:
+    set_title:
+      title: Cluster Size Distribution
+    set_labels:
+      x: Cluster Size $[A]$
+      y: Counts
+    set_scales:
+      y: log
+    set_limits:
+      x: [0, max]
+      y: [0.9, ~]
+
+  # Configure the histogram
+  histogram_kwargs:
+    bins: 25
+    range: [0, ~]  # None is resolved to data.min() or data.max()
+
+  # Arguments passed to plt.bar
+  # ...
+
+
+# --- A plot of the complementary cumulative probability distribution
+compl_cum_prob_dist:
+  based_on: .distribution.complementary_cumulative
+
+  # Specify basic configuration for this model
+  model_name: SandPile
+  path_to_data: avalanche_size
+
+  helpers:
+    set_title:
+      title: Compl. Cum. Prob. Distr. of Avalanche Sizes
+    set_scales:
+      x: log
+      y: log
+    set_labels:
+      x: Cluster Size $[A]$
+      y: $P_A(A)$
+    set_limits:
+      x: [1.8, ~]  # Not interested in the value at size 1
+
+  # Arguments passed to plt.plot
+
+
+# -- Any kind of grid animation
+grid_animation:
+  based_on: .ca.state
+
+  model_name: SandPile
+
+  # Use the first time index; is ignored in animation
+  time_idx: 0
+
+  # Enable the animation, using ffmpeg and .mp4 output by default
+  file_ext: mp4
+  animation:
+    enabled: true
+    writer: ffmpeg    # can be: frames, ffmpeg (if installed), ...

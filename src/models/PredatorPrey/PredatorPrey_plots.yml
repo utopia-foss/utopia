@@ -9,9 +9,6 @@ phase_space:
 densities:
   based_on: densities
 
-  # Which data to calculate the mean of and draw lines from
-  lines_from: [prey, predator]
-
 
 # -- Animation of the spatial resource development of prey and predators
 resources:

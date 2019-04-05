@@ -3,23 +3,37 @@
 # The names of the configuration entries should follow a module path naming
 # scheme, i.e. what is specified for the `module` and `plot_func` keys.
 ---
+# -- Definition of default helpers and styles ---------------------------------
+# .. A config with defaults styles and helpers ................................
+# This can be used then creating a model plot and desiring default styles that
+# are consistent with the utopya plot functions' styles
+.default_style_and_helpers:
+  helpers: &default_helpers
+    save_figure:
+      bbox_inches: tight
+
+  style: &default_style
+    axes.grid: true
+    grid.linewidth: .5
+    grid.color: cccccc
+
+# -- CA Plots -----------------------------------------------------------------
 # .. A spatial CA plot of a state .............................................
 # Supports PlotHelper and animation
-# TODO Only supports single to_plot value, currently.
 .ca.state:
   creator: universe
   universes: all
 
-  file_ext: pdf
-
   module: .ca
   plot_func: state
+
+  file_ext: pdf
 
   # All animation configuration for this plot
   animation:
     enabled: false  # has to be manually enabled
 
-    writer: frames
+    writer: frames  # assuming ffmpeg is not installed
 
     # Configuration for each writer
     writer_kwargs:
@@ -48,3 +62,68 @@
   # Video options
   writer: frames  # can be: frames, ffmpeg (if installed), ...
   dpi: 96
+
+
+# -- Distributions ------------------------------------------------------------
+# .. A histogram plot .........................................................
+.distribution.histogram: &histogram
+  creator: universe
+  universes: all
+
+  module: .distribution
+  plot_func: histogram
+
+  # Use default helpers and style
+  helpers:
+    <<: *default_helpers
+  style:
+    <<: *default_style
+
+
+# .. Plot of a complementary cumulative distribution ..........................
+# Based on histogram, but with normalization and complementary cumulation
+.distribution.complementary_cumulative:
+  <<: *histogram
+
+  normalize: true
+  cumulative: complementary
+  use_unique: true
+  mask_repeated: true
+
+  # Do a line plot (instead of the default bar plot)
+  pyplot_func_name: plot
+
+  # Arguments passed to plt.plot
+  linestyle: 'None'
+  marker: '.'
+
+
+# -- Time Series --------------------------------------------------------------
+# .. Plot of a single density .................................................
+.time_series.density:
+  creator: universe
+  universes: all
+  
+  module: .time_series
+  plot_func: density
+
+  # Use default helpers and style
+  helpers:
+    <<: *default_helpers
+  style:
+    <<: *default_style
+
+
+# .. Plot of multiple densities ...............................................
+.time_series.densities:
+  creator: universe
+  universes: all
+  
+  module: .time_series
+  plot_func: densities
+
+  # Use default helpers and style
+  helpers:
+    <<: *default_helpers
+  style:
+    <<: *default_style
