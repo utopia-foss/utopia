@@ -44,7 +44,7 @@ p_growth: 7.5e-3
 p_infect: 1.
 
 # Probability per site and time step for a random point infection of a tree cell
-p_rd_infect: 0.
+p_random_infect: 0.
 
 # Infection source - set true to activate a constant row of infected cells at
 # the bottom boundary. Requires non-periodic space.

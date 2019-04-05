@@ -48,15 +48,17 @@ struct State {
     {
         // Check if initial_density is available to set up cell state
         if (cfg["initial_density"]) {
-            const auto rho = get_as<double>("initial_density", cfg);
+            const auto init_density = get_as<double>("initial_density", cfg);
 
-            if (rho < 0. or rho > 1.) {
+            if (init_density < 0. or init_density > 1.) {
                 throw std::invalid_argument("initial_density needs to be in "
                     "interval [0., 1.], but was not!");
             }
 
             // With this probability, the cell state is a tree
-            if (std::uniform_real_distribution<double>(0., 1.)(*rng) < rho) {
+            if (std::uniform_real_distribution<double>(0., 1.)(*rng) 
+                < init_density) 
+            {
                 kind = Kind::tree;
             }
         }
@@ -75,7 +77,7 @@ struct Params {
 
     /// Probability per site and time step for a random point infection of a
     // tree cell
-    const double p_rd_infect;
+    const double p_random_infect;
 
     /// Infection source - set true to activate a constant row of infected
     /// cells at the bottom boundary
@@ -98,7 +100,7 @@ struct Params {
     :
         p_growth(get_as<double>("p_growth", cfg)),
         p_infect(get_as<double>("p_infect", cfg)),
-        p_rd_infect(get_as<double>("p_rd_infect", cfg)),
+        p_random_infect(get_as<double>("p_random_infect", cfg)),
         infection_source(get_as<bool>("infection_source", cfg)),
         stones(get_as<bool>("stones", cfg)),
         stone_init(get_as<std::string>("stone_init", cfg)),
@@ -115,9 +117,9 @@ struct Params {
             throw std::invalid_argument("Invalid p_infect! Need be in range "
                 "[0, 1], was " + std::to_string(p_infect));
         }
-        if ((p_rd_infect > 1) or (p_rd_infect < 0)) {
-            throw std::invalid_argument("Invalid p_rd_infect; Need be a value "
-                "in range [0, 1], was " + std::to_string(p_rd_infect));
+        if ((p_random_infect > 1) or (p_random_infect < 0)) {
+            throw std::invalid_argument("Invalid p_random_infect; Need be a value "
+                "in range [0, 1], was " + std::to_string(p_random_infect));
         }
         if ((stone_density > 1) or (stone_density < 0)) {
             throw std::invalid_argument("Invalid stone_density! Need be a "
@@ -441,7 +443,7 @@ protected:
             // Tree can be infected by neighbor our by random-point-infection.
 
             // Determine whether there will be a point infection
-            if (_prob_distr(*this->_rng) < _params.p_rd_infect) {
+            if (_prob_distr(*this->_rng) < _params.p_random_infect) {
                 // Yes, point infection occurred.
                 state.kind = Kind::infected;
                 return state;
