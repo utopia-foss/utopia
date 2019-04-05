@@ -28,5 +28,6 @@ parameter_space:
         predator:
           init_resources: 2
 
-        p_prey: 0.2
-        p_predator: 0.285
+        p_prey: 0.1
+        p_predator: 0.1
+        

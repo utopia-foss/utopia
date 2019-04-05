@@ -4,6 +4,7 @@ from ._setup import *
 
 import os
 import logging
+import warnings
 from typing import Union, Dict, Callable
 
 import numpy as np
@@ -14,6 +15,9 @@ import matplotlib.animation
 from matplotlib.colors import ListedColormap
 
 from utopya import DataManager
+from utopya.plotting import UniversePlotCreator, PlotHelper, is_plot_func
+
+from ._file_writer import FileWriter
 
 # Get a logger
 log = logging.getLogger(__name__)
@@ -21,84 +25,202 @@ log = logging.getLogger(__name__)
 # Increase log threshold for animation plotting
 logging.getLogger('matplotlib.animation').setLevel(logging.WARNING)
 
-# -----------------------------------------------------------------------------
-# Helper function
-
-class FileWriter():
-    """The FileWriter class yields functionality to save individual frames.
-
-    It adheres to the corresponding matplotlib animation interface.
-    """
-    def __init__(self, *,
-                 file_format: str='png',
-                 name_padding: int=6,
-                 fstr: str="{dir:}/{num:0{pad:}d}.{ext:}",
-                 **savefig_kwargs):
-        """
-        Initialize a FileWriter, which adheres to the matplotlib.animation
-        interface and can be used to write individual files.
-
-        Args:
-            name_padding (int, optional): How wide the numbering should be
-            file_format (str, optional): The file extension
-            fstr (str, optional): The format string to generate the name
-            **savefig_kwargs: kwargs to pass to figure.savefig
-        """
-        # Save arguments
-        self.cntr = 0
-        self.name_padding = name_padding
-        self.fstr = fstr
-        self.file_format = file_format
-        self.savefig_kwargs = savefig_kwargs
-
-        # Other attributes
-        self.cm = None
-
-    def saving(self, fig, base_outfile: str, **kwargs):
-        """Create an instance of the context manager"""
-        # Parse the given base file path to get a directory
-        out_dir = os.path.splitext(base_outfile)[0]
-
-        # Create and store the context manager
-        self.cm = FileWriterContextManager(fig=fig, out_dir=out_dir, **kwargs)
-        return self.cm
-
-    def grab_frame(self):
-        """Stores a single frame"""
-        # Build the output path from the info of the context manager
-        outfile = self.fstr.format(dir=self.cm.out_dir,
-                                   num=self.cntr,
-                                   pad=self.name_padding,
-                                   ext=self.file_format)
-
-        # Save the frame using the context manager, then increment the cntr
-        self.cm.fig.savefig(outfile, format=self.file_format,
-                            **self.cm.kwargs, **self.savefig_kwargs)
-        self.cntr += 1
-
-class FileWriterContextManager():
-    """This class is needed by the file writer to provide the same interface
-    as the matplotlib movie writers do.
-    """
-
-    def __init__(self, *, fig, out_dir: str, **kwargs):
-        # Store arguments
-        self.fig = fig
-        self.out_dir = out_dir
-        self.kwargs = kwargs
-
-    def __enter__(self):
-        """Called when entering context"""
-        # Create the directory of the output file
-        os.makedirs(self.out_dir)
-
-    def __exit__(self, *args):
-        """Called when exiting context"""
-        # Need to close the figure
-        plt.close(self.fig)
 
 # -----------------------------------------------------------------------------
 
+@is_plot_func(creator_type=UniversePlotCreator,
+              supports_animation=True)
+def state(dm: DataManager, *,
+          uni: UniverseGroup,
+          hlpr: PlotHelper,
+          model_name: str,
+          to_plot: dict,
+          time_idx: int,
+          preprocess_funcs: Dict[str, Callable]=None):
+    """Plots the state of the cellular automaton as a 2D heat map. 
+    This plot function can be used for a single plot, but also supports
+    animation.
+    
+    Which properties of the state to plot can be defined in `to_plot`.
+    
+    Args:
+        dm (DataManager): The DataManager that holds all loaded data
+        uni (UniverseGroup): The currently selected universe, parsed by the
+            `UniversePlotCreator`.
+        hlpr (PlotHelper): The plot helper
+        model_name (str): The name of the model of which the data is to be
+            plotted
+        to_plot (dict): Which data to plot and how. The keys of this dict
+            refer to a path within the data and can include forward slashes to
+            navigate to data of submodels. Each of these keys is expected to
+            hold yet another dict, supporting the following configuration
+            options (all optional):
+                - cmap (str or dict): The colormap to use. If it is a dict, a
+                    discrete colormap is assumed. The keys will be the labels
+                    and the values the color. Association happens in the order
+                    of entries.
+                - title (str): The title for this sub-plot
+                - limits (2-tuple, list): The fixed heat map limits of this
+                    property; if not given, limits will be auto-scaled.
+        time_idx (int): Which time index to plot the data of. Is ignored when
+            creating an animation.
+        preprocess_funcs (Dict[str, Callable], optional): A dictionary of pre-
+            processing callables, where keys need to correspond to the
+            property name in ``to_plot`` that is to be pre-processed.
+            This argument can be used to implement model-specific preprocessing
+            by implementing another plot function, which defines this dict and
+            passes it to this function.
+    
+    Raises:
+        NotImplementedError: ``to_plot`` of length != 1
+        ValueError: Shape mismatch of data selected by ``to_plot``
+    """
+    # Helper functions ........................................................
+
+    def prepare_data(prop_name: str, *,
+                     all_data: dict, time_idx: int) -> np.ndarray:
+        """Prepares the data for plotting"""
+        # Get the data from the dict of 2d data
+        data = all_data[prop_name][time_idx]
+
+        # If preprocessing is available for this property, call that function
+        if preprocess_funcs and prop_name in preprocess_funcs:
+            data = preprocess_funcs[prop_name](data)
+
+        return data
+
+    def plot_property(prop_name: str, *, data, cmap='viridis',
+                      title: str=None, limits: list=None):
+        """Helper function to plot a property on a given axis and return
+        an imshow object
+        """
+        # Get colormap, either a continuous or a discrete one
+        if isinstance(cmap, str):
+            norm = None
+            bounds = None
+            colormap = cmap
+
+        elif isinstance(cmap, dict):
+            colormap = ListedColormap(cmap.values())
+            bounds = limits
+            norm = mpl.colors.BoundaryNorm(bounds, colormap.N)
+
+        else:
+            raise TypeError("Argument cmap needs to be either a string with "
+                            "name of the colormap or a dict with values for a "
+                            "discrete colormap. Was: {} with value: '{}'"
+                            "".format(type(cmap), cmap))
+
+        # Create additional kwargs
+        kws = dict()
+        if limits:
+            kws = dict(vmin=limits[0], vmax=limits[1], **kws)
+
+        # Create imshow object on the currently selected axis
+        im = hlpr.ax.imshow(data, cmap=colormap, animated=True, origin='lower',
+                            **kws)
+        
+        # Create colorbars
+        # TODO Should be done by helper
+        cbar = hlpr.fig.colorbar(im, ax=hlpr.ax, norm=norm,
+                                 ticks=bounds, fraction=0.05, pad=0.02)
+
+        if bounds:
+            # Adjust the ticks for the discrete colormap
+            num_colors = len(cmap)
+            tick_locs = (  (np.arange(num_colors) + 0.5)
+                         * (num_colors-1)/num_colors)
+            cbar.set_ticks(tick_locs)
+            cbar.ax.set_yticklabels(cmap.keys())
+
+        hlpr.ax.axis('off')  # TODO should be done by helper
+
+        # Provide configuration options to plot helper
+        hlpr.provide_defaults('set_title',
+                              title=(title if title else prop_name))
+
+        return im
+
+    # Prepare the data ........................................................
+    # Get the group that all datasets are in
+    grp = uni['data'][model_name]
+
+    # Collect all data
+    all_data = {p: grp[p] for p in to_plot.keys()}
+    shapes = [d.shape for p, d in all_data.items()]
+
+    if any([shape != shapes[0] for shape in shapes]):
+        raise ValueError("Shape mismatch of properties {}: {}! Cannot plot."
+                         "".format(", ".join(to_plot.keys()), shapes))
+
+    # Can now be sure they all have the same shape, 
+    # so its fine to take the first shape to extract the number of steps
+    num_steps = shapes[0][0]  # TODO use xarray
+
+    # Prepare the figure ......................................................
+    # Prepare the figure to have as many columns as there are properties
+    hlpr.setup_figure(ncols=len(to_plot),
+                      scale_figsize_with_subplots_shape=True)
+
+    # Store the imshow objects such that only the data has to be updated in a
+    # following iteration step. Keys will be the property names.
+    ims = dict()
+
+    # Do the single plot for all properties, looping through subfigures
+    for col_no, (prop_name, props) in enumerate(to_plot.items()):
+        # Select the axis
+        hlpr.select_axis(col_no, 0)
+
+        # Get the data for this time step
+        data = prepare_data(prop_name, all_data=all_data, time_idx=time_idx)
+        
+        # In the first time step create a new imshow object
+        ims[prop_name] = plot_property(prop_name, data=data, **props)
+
+    # End of single frame CA state plot function ..............................
+    # NOTE The above variables are all available below, but the update function
+    #      is supposed to start plotting from frame 0.
+    
+    def update_data():
+        """Updates the data of the imshow objects"""
+        log.info("Plotting animation with %d frames of %d %s each ...",
+                 num_steps, len(to_plot),
+                 "property" if len(to_plot) == 1 else "properties")
+
+        for time_idx in range(num_steps):
+            log.debug("Plotting frame for time index %d ...", time_idx)
+
+            # Loop through the columns
+            for col_no, (prop_name, props) in enumerate(to_plot.items()):
+                # Select the axis
+                hlpr.select_axis(col_no, 0)
+
+                # Get the data for this time step
+                data = prepare_data(prop_name,
+                                    all_data=all_data, time_idx=time_idx)
+
+                # Update imshow data without creating a new object
+                ims[prop_name].set_data(data)
+
+                # If no limits are provided, autoscale the new limits in the
+                # case of continuous colormaps. A discrete colormap, that is
+                # provided as a dict, should never have to autoscale.
+                if not isinstance(props.get('cmap'), dict):
+                    if not props.get('limits'):
+                        ims[prop_name].autoscale()
+
+            # Done with this frame; yield control to the animation framework
+            # which will grab the frame...
+            yield
+
+        log.info("Animation finished.")
+
+    # Register this update method with the helper, which takes care of the rest
+    hlpr.register_animation_update(update_data)
+
+# -----------------------------------------------------------------------------
+
+# Deprecated state_anim function
 def state_anim(dm: DataManager, *, 
                out_path: str, 
                uni: UniverseGroup, 
@@ -139,10 +261,10 @@ def state_anim(dm: DataManager, *,
     
     Raises:
         ValueError: For an invalid `writer` argument
-    
-    No Longer Raises:
-        TypeError: For unknown dataset shape
     """
+    log.warning("The 'ca.state_anim' plot function is deprecated and will "
+                "soon be removed! Please use the 'ca.state' plot function "
+                "instead.")
 
     def plot_property(*, data, ax, cmap, limits: list=None, title: str=None):
         """Helper function to plot a property on a given axis and return
@@ -224,18 +346,18 @@ def state_anim(dm: DataManager, *,
     steps = shapes[0][0]
     
     # Prepare the writer ......................................................
-    if mpl.animation.writers.is_available(writer):
+    if writer == 'frames':
+        # Use the file writer to create individual frames
+        w = FileWriter(name_padding=len(str(steps)),
+                       **(frames_kwargs if frames_kwargs else {}))
+
+    elif mpl.animation.writers.is_available(writer):
         # Create animation writer if the writer is available
         wCls = mpl.animation.writers[writer]
         w = wCls(fps=fps,
                  metadata=dict(title="Grid Animation — {}"
                                      "".format(", ".join(to_plot.keys()),
                                artist="Utopia")))
-
-    elif writer == 'frames':
-        # Use the file writer to create individual frames
-        w = FileWriter(name_padding=len(str(steps)),
-                       **(frames_kwargs if frames_kwargs else {}))
 
     else:
         raise ValueError("The writer '{}' is not available on your system!"
