@@ -24,14 +24,20 @@ def mean_and_std(dm: DataManager, *,
                  mean_of: Union[str, list]=None,
                  lines_from: str=None,
                  **plot_kwargs):
-    """Plot the mean and standard deviation of multidimensional data
+    """Plot the mean and standard deviation of a selected dimension over the 
+    time. The standard deviation can either be provided in a dataset or can
+    be calculated from a dataset. If nothing is provided the function plots
+    just the mean.
     
     Args:
         dm (DataManager): The data manager
         mv_data (xr.Dataset): The extracted multidimensional data
         hlpr (PlotHelper): The plot helper
-        mean_of (str, optional): Take the mean of this dimension
-        lines_from (str, optional): Plot multiple lines from this dimension
+        mean_of (Union[str, list], optional): Take the mean over these 
+            dimensions
+        lines_from (str, optional): Plot multiple lines from data that varies
+            over this dimension name. If lines_from is None, then only a single
+            line is plotted.
         plot_kwargs (dict, optional): Kwargs that are passed to plt.errorbar
     """
     # Calculate the mean over all dimensions that are mentioned within mean_of
