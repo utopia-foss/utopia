@@ -63,8 +63,8 @@ struct State {
     }
 };
 
-/// ContDisease model parameter struct
-struct Param {
+/// Parameters of the ContDisease
+struct Params {
 
     /// Probability per site and time step to transition from state empty to tree
     const double p_growth;
@@ -94,7 +94,7 @@ struct Param {
     const double stone_cluster;
 
     /// Construct the parameters from the given configuration node
-    Param(const DataIO::Config& cfg)
+    Params(const DataIO::Config& cfg)
     :
         p_growth(get_as<double>("p_growth", cfg)),
         p_infect(get_as<double>("p_infect", cfg)),
@@ -191,7 +191,7 @@ private:
     CDCellManager _cm;
 
     /// Model parameters
-    const Param _param;
+    const Params _params;
 
     /// The range [0, 1] distribution to use for probability checks
     std::uniform_real_distribution<double> _prob_distr;
@@ -258,7 +258,7 @@ public:
         _cm(*this),
 
         // Carry over Parameters
-        _param(this->_cfg),
+        _params(this->_cfg),
 
         // Initialize remaining members
         _prob_distr(0., 1.),
@@ -293,7 +293,7 @@ public:
         // Remaining initialization steps regard macroscopic quantities
 
         // Infection source
-        if (_param.infection_source) {
+        if (_params.infection_source) {
             this->_log->debug("Setting bottom boundary cells to be "
                               "permanently infected ...");
 
@@ -308,8 +308,8 @@ public:
         }
 
         // Stones
-        if (_param.stones) {
-            if (_param.stone_init == "random") {
+        if (_params.stones) {
+            if (_params.stone_init == "random") {
                 this->_log->debug("Setting up random cells to be stones ...");
 
                 // Get a copy of the cells container and shuffle it
@@ -318,8 +318,8 @@ public:
                              *this->_rng);
 
                 // Make some parameters available for lambda captures
-                const double stone_cluster = _param.stone_cluster;
-                const double stone_density = _param.stone_density;
+                const double stone_cluster = _params.stone_cluster;
+                const double stone_density = _params.stone_density;
 
                 /// Initialize stones randomly with probability stone_density
                 RuleFunc _stone_init = [this, &stone_density](const auto& cell) {
@@ -432,7 +432,7 @@ protected:
         // Distinguish by current state
         if (state.kind == Kind::empty) {
             // With a probability of p_growth, set the cell's state to tree
-            if (_prob_distr(*this->_rng) < _param.p_growth){
+            if (_prob_distr(*this->_rng) < _params.p_growth){
                 state.kind = Kind::tree;
                 return state;
             }
@@ -441,7 +441,7 @@ protected:
             // Tree can be infected by neighbor our by random-point-infection.
 
             // Determine whether there will be a point infection
-            if (_prob_distr(*this->_rng) < _param.p_rd_infect) {
+            if (_prob_distr(*this->_rng) < _params.p_rd_infect) {
                 // Yes, point infection occurred.
                 state.kind = Kind::infected;
                 return state;
@@ -458,7 +458,7 @@ protected:
                         or nb_state.kind == Kind::source)
                     {
                         // With a certain probability, become infected
-                        if (_prob_distr(*this->_rng) < _param.p_infect) {
+                        if (_prob_distr(*this->_rng) < _params.p_infect) {
                             state.kind = Kind::infected;
                             return state;
                         }
