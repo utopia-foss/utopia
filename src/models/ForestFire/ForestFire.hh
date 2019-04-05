@@ -69,7 +69,7 @@ struct State {
   * \note   This model relies on asynchronous update for calculation of the
   *         clusters and the percolation.
   */
-using CellTraits = Utopia::CellTraits<State, Update::async>;
+using FFMCellTraits = Utopia::CellTraits<State, Update::async>;
 
 
 /// ForestFire model parameter struct
@@ -135,7 +135,7 @@ public:
     using DataSet = typename Base::DataSet;
 
     /// The type of the cell manager
-    using CellManager = CellManager<CellTraits, ForestFire>;
+    using CellManager = CellManager<FFMCellTraits, ForestFire>;
 
     /// The type of a cell
     using Cell = typename CellManager::Cell;
