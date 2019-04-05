@@ -66,7 +66,7 @@
 
 # -- Distributions ------------------------------------------------------------
 # .. A histogram plot .........................................................
-.distribution.histogram:
+.distribution.histogram: &histogram
   creator: universe
   universes: all
 
@@ -79,29 +79,23 @@
   style:
     <<: *default_style
 
-  # Arguments passed to plt.plot
-  linestyle: 'None'
-  marker: '.'
 
+# .. Plot of a complementary cumulative distribution ..........................
+# Based on histogram, but with normalization and complementary cumulation
+.distribution.complementary_cumulative:
+  <<: *histogram
 
-# .. Plot of the complementary cumulative probability distribution ............
-.distribution.compl_cum_prob_dist:
-  creator: universe
-  universes: all
+  normalize: true
+  cumulative: complementary
+  use_unique: true
+  mask_repeated: true
 
-  module: .distribution
-  plot_func: compl_cum_prob_dist
-  
-  # Use default helpers and style
-  helpers:
-    <<: *default_helpers
-  style:
-    <<: *default_style
+  # Do a line plot (instead of the default bar plot)
+  pyplot_func_name: plot
 
   # Arguments passed to plt.plot
   linestyle: 'None'
   marker: '.'
-
 
 
 # -- Time Series --------------------------------------------------------------
