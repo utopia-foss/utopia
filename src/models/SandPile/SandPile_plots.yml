@@ -1,90 +1,62 @@
 # Default plots for the SandPile model
 ---
-# Plot the slope (mean - critical_slope)
-slope:
-  universes: all
-  
-  # Use the SandPile-specific plot functions
-  module: model_plots.SandPile
-  plot_func: slope
+# --- A plot of the slope (mean - critical_slope)
+mean_slope:
+  based_on: mean_slope
 
-  # Arguments passed to plt.plot
-  linestyle: 'None'
-  marker: '.'
+  show_critical_slope_value: true
 
-# Plot the complementary cumulative probability distribution
+
+# --- Plot the avalanche area fraction time series
+area_fraction:
+  based_on: area_fraction
+
+  # By which factor to scale the relative avalanche size to get to the 
+  # size of the scatter points
+  size_factor: 1.
+
+# --- A plot the complementary cumulative probability distribution
 compl_cum_prob_dist:
-  creator: universe
-  universes: all
+  based_on: compl_cum_prob_dist
 
-  module: .distribution
-  plot_func: compl_cum_prob_dist
-  
-  model_name: SandPile
-  path_to_data: avalanche_size
 
-  # Arguments passed to plt.plot
-  linestyle: 'None'
-  marker: '.'
-
-# Plot the complementary cumulative probability distribution
+# --- A plot of the cluster size distribution
 cluster_size_dist:
-  universes: all
+  based_on: cluster_size_dist
 
-  module: .distribution
-  plot_func: cluster_size_dist
-  
-  model_name: SandPile
-  path_to_data: avalanche_size
 
-  # Arguments passed to plt.plot
-  linestyle: 'None'
-  marker: '.'
-
-# Plot an animation of the CA `slope` state and save as individual frames
+# --- An animation of the CA `slope` state
 slope_anim:
-  enabled: false
-
-  # Base this configuration on that of the animation
-  based_on: animation
+  based_on: grid_animation
 
   # Select the properties to plot
   to_plot:
     # The name of the property to plot with its options
-    slope:
+    slope: &anim_slope
       title: Slope
-      limits: [1, 4]
-      cmap: 
-        static: black
-        mobile: orange
+      cmap: copper
 
-# Plot an animation of the CA `avalanche` state and save as individual frames
+
+# --- An animation of the CA `avalanche` state
 avalanche_anim:
-
-  # Base this configuration on that of the animation
-  based_on: animation
+  based_on: grid_animation
 
   # Change the properties to be plotted to use the avalanche data
   to_plot:
-    avalanche:
+    avalanche: &anim_avalanche
       title: Avalanche
       limits: [0, 1]
       cmap: 
         static: black
         mobile: orange
 
-#Plot the avalanche area fraction as a function of time steps:
-area_fraction:
-  creator: universe
-  universes: all
 
-  # Use the SandPile-specific plot functions
-  module: model_plots.SandPile
-  plot_func: area_fraction
+# --- An animation of the slope and avalanche side by side
+slope_and_avalanche_anim:
+  based_on: grid_animation
+  enabled: true
 
-  path_to_data: avalanche
-  s: 20
-
-  # Arguments passed to plt.plot    
-  linestyle: 'None'
-  marker: '.'
+  to_plot:
+    # Re-use the information from above
+    slope: *anim_slope
+    avalanche: *anim_avalanche

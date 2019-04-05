@@ -26,11 +26,7 @@ phase_space:
 
 # -- Time series of the predator and prey densities
 densities:
-  creator: universe
-  universes: all
-  
-  module: model_plots.PredatorPrey
-  plot_func: densities
+  based_on: .time_series.densities
 
   style:
     <<: *default_style
@@ -40,6 +36,7 @@ densities:
     set_limits:
       x: [0, ~]
 
+  model_name: PredatorPrey
 
 # -- Any kind of grid animation
 grid_animation: &grid_animation

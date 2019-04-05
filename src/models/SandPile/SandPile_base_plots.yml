@@ -1,17 +1,119 @@
-# Default base plots for SandPile model
+# Base configurations for SandPile model plots
 ---
-animation:
+# --- A plot of the slope (mean - critical_slope)
+mean_slope:
+  creator: universe
+  universes: all
+  
+  # Use the SandPile-specific plot functions
+  module: model_plots.SandPile
+  plot_func: mean_slope
+
+  # Adjust helpers and style
+  helpers: &default_helpers
+    save_figure:
+      bbox_inches: tight
+
+  style: &default_style
+    axes.grid: true
+    grid.linewidth: .5
+    grid.color: cccccc
+
+  # Arguments passed to plt.plot
+  linestyle: 'None'
+  marker: '.'
+
+
+# --- Plot the avalanche area fraction time series
+area_fraction:
+  based_on: .time_series.density
+
+  # Adjust helpers and style
+  helpers:
+    <<: *default_helpers
+    set_labels:
+      y: Avalanche Area $[1/A]$
+    set_scales:
+      y: log
+    set_limits:
+      y: [min, 1.]
+    set_title:
+      title: Avalanche Size Area Fraction
+
+  style:
+    <<: *default_style
+
+  # Specify which data to use
+  model_name: SandPile
+  path_to_data: avalanche
+  threshold: .5
+  mean_of: [x, y]
+
+  # And that the avalanche sizes are to be used as dot sizes
+  sizes_from: avalanche_size
+
+  # Arguments passed on to plt.scatter
+
+
+# --- A plot of the complementary cumulative probability distribution
+# TODO Add to utopya base plot config
+compl_cum_prob_dist:
   creator: universe
   universes: all
 
-  module: .ca
-  plot_func: state_anim
+  module: .distribution
+  plot_func: compl_cum_prob_dist
+  
+  # Adjust helpers and style
+  helpers:
+    <<: *default_helpers
+  style:
+    <<: *default_style
 
-  # Select the model name; determines where to read the data from
+  # Specify basic configuration for this model
+  model_name: SandPile
+  path_to_data: avalanche_size
+
+  # Arguments passed to plt.plot
+  linestyle: 'None'
+  marker: '.'
+
+
+# --- A plot of the cluster size distribution
+# TODO Add to utopya base plot config
+cluster_size_dist:
+  creator: universe
+  universes: all
+
+  module: .distribution
+  plot_func: cluster_size_dist
+
+  # Adjust helpers and style
+  helpers:
+    <<: *default_helpers
+  style:
+    <<: *default_style
+
+  # Specify basic configuration for this model  
+  model_name: SandPile
+  path_to_data: avalanche_size
+
+  # Arguments passed to plt.plot
+  linestyle: 'None'
+  marker: '.'
+
+
+# -- Any kind of grid animation
+grid_animation:
+  based_on: .ca.state
+
   model_name: SandPile
 
-  writer: frames  # can be: frames, ffmpeg (if installed), ...
-  dpi: 96
+  # Use the first time index; is ignored in animation
+  time_idx: 0
 
-  # Video parameters (used only by ffmpeg writer)
+  # Enable the animation, using ffmpeg and .mp4 output by default
   file_ext: mp4
+  animation:
+    enabled: true
+    writer: ffmpeg    # can be: frames, ffmpeg (if installed), ...

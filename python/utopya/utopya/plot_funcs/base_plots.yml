@@ -3,23 +3,23 @@
 # The names of the configuration entries should follow a module path naming
 # scheme, i.e. what is specified for the `module` and `plot_func` keys.
 ---
+# -- CA Plots -----------------------------------------------------------------
 # .. A spatial CA plot of a state .............................................
 # Supports PlotHelper and animation
-# TODO Only supports single to_plot value, currently.
 .ca.state:
   creator: universe
   universes: all
 
-  file_ext: pdf
-
   module: .ca
   plot_func: state
+
+  file_ext: pdf
 
   # All animation configuration for this plot
   animation:
     enabled: false  # has to be manually enabled
 
-    writer: frames
+    writer: frames  # assuming ffmpeg is not installed
 
     # Configuration for each writer
     writer_kwargs:
@@ -48,3 +48,21 @@
   # Video options
   writer: frames  # can be: frames, ffmpeg (if installed), ...
   dpi: 96
+
+
+# -- Time Series --------------------------------------------------------------
+# .. Plot of a single density .................................................
+.time_series.density:
+  creator: universe
+  universes: all
+  
+  module: .time_series
+  plot_func: density
+
+# .. Plot of multiple densities ...............................................
+.time_series.densities:
+  creator: universe
+  universes: all
+  
+  module: .time_series
+  plot_func: densities

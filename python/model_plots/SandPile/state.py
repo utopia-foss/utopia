@@ -1,87 +1,78 @@
 """SandPile-model specific plot function for the state"""
 
+import logging
+from typing import Tuple
+
 import numpy as np
-import matplotlib.pyplot as plt
 import xarray as xr
+
 from utopya import DataManager, UniverseGroup
-from utopya.plotting import is_plot_func, PlotHelper, UniversePlotCreator, MultiversePlotCreator
-from ..tools import save_and_close
+from utopya.plotting import is_plot_func, PlotHelper, UniversePlotCreator
+
+# Get a logger
+log = logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------------
 
 @is_plot_func(creator_type=UniversePlotCreator,
               helper_defaults=dict(
-                  set_labels=dict(x="Iteration step",
-                                  y=r"Slope $\langle n \rangle - n_c$"),
-                  save_figure=dict(bbox_inches="tight")
-              )
-            )
-def slope(  dm: DataManager, *, 
-            uni: UniverseGroup, 
-            hlpr: PlotHelper,
-            **plot_kwargs):
-    """Calculates the mean slope minus the critical slope and performs a 
-    scatterplot.
+                set_limits=dict(x=[0., None]),
+                set_labels=dict(x="Time [Iteration Steps]",
+                                y=r"Slope $\langle n \rangle - n_c$")
+              ))
+def mean_slope(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
+               show_critical_slope_value: bool=False, **plot_kwargs):
+    """Calculates the mean slope (averaged over the whole grid) and plots it
+    against time. The mean slope is further reduced by the constant value for
+    the critical slope.
     
     Args:
         dm (DataManager): The data manager from which to retrieve the data
         uni (UniverseGroup): The selected universe data
         hlpr (PlotHelper): The PlotHelper that instantiates the figure and
             takes care of plot aesthetics (labels, title, ...) and saving
+        show_critical_slope_value (bool, optional): Whether to add a text box
+            with the critical slope value into the top-right hand corner
         **plot_kwargs: Passed on to plt.plot
     """
-    # Get the group that all datasets are in
-    grp = uni['data/SandPile']
-
-    # Extract the critical slope from the model configuration
+    # Extract the critical slope value from the model configuration
     critical_slope = uni['cfg']['SandPile']['critical_slope']
 
-    # Extract the y data which is the mean slope averaged over all grid cells 
-    # for each time step
-    y_data = [np.mean(s) - critical_slope for s in grp['slope']]
+    # Calculate the slope averaged over all grid cells for each time step
+    mean_slope = uni['data/SandPile/slope'].mean(dim=('x', 'y'))
 
-    # Call the plot function
-    hlpr.ax.plot(y_data, **plot_kwargs)
+    # If there are no time coordinates for this, use the universe time data
+    if 'time' not in mean_slope.coords:
+        mean_slope.coords['time'] = uni.get_times_array()
+
+    # Plot the mean normalised slope over time
+    hlpr.ax.plot(mean_slope.coords['time'],
+                 mean_slope - critical_slope,
+                 **plot_kwargs)
+
+    # Provide info on the value of the critical slope
+    if show_critical_slope_value:
+        hlpr.ax.text(1, 1, "$n_c = {}$".format(critical_slope),
+                     transform=hlpr.ax.transAxes,
+                     verticalalignment='top', horizontalalignment='right',
+                     fontdict=dict(fontsize="small"),
+                     bbox=dict(facecolor="white", linewidth=1.))
     
-
-@is_plot_func(creator_type=MultiversePlotCreator,
-              helper_defaults=dict(
-                  set_labels=dict(x=r"Time",
-                                  y=r"Area fraction $A/l^2$"),
-                  save_figure=dict(bbox_inches="tight"),
-                  set_scale=dict(y="log"),
-              )
-            )
-def area_fraction(dm: DataManager, *, 
-                  uni: UniverseGroup, 
-                  hlpr: PlotHelper,
-                  path_to_data: str,
-                  **plot_kwargs):
-    """Plot the area fraction of the avalanches over time
+    
+@is_plot_func(creator_type=UniversePlotCreator)
+def area_fraction(dm: DataManager, *, uni: UniverseGroup, **kwargs):
+    """This plot function wraps the .time_series.density function and
+    calculates and stores the area fraction values in the universe group such
+    that they can be used for 
     
     Args:
         dm (DataManager): The data manager from which to retrieve the data
-        hlpr (PlotHelper): The PlotHelper that instantiates the figure and
-            takes care of plot aesthetics (labels, title, ...) and saving
         uni (UniverseGroup): The selected universe data
-        **plot_kwargs: Passed on to plt.plot
+        **kwargs: Passed on to utopya.plot_funcs.time_series.density
     """
-    # Get the data
-    data = uni['data/SandPile'][path_to_data]
+    # Get the base group and the avalanche dataset
+    grp = uni['data/SandPile']
+    avalanche = grp['avalanche']
 
-    # Calculate the areas for each time step by summing over all values 
-    # from all dimensions except for the time 
-    areas = data.sum(dim=[d for d in data.dims if d != 'time'])
+    # Compute and store the relative avalanche sizes
 
-    # Remove the first element, ...
-    areas[1:]
-
-    # ... and calculate the area fraction by normalizing the data by the number
-    # of cells
-    # NOTE This calculation requires the time to be the first dimension
-    area_frac = areas / np.prod(areas.shape[1:])
-
-    # Call the plot function, adjust marker size 's' to size of avalanche
-    hlpr.ax.scatter(area_frac['time'], area_frac, **plot_kwargs)
-
-    hlpr.provide_defaults('set_limits', y=[0.95, np.prod(data.shape[1:])])
