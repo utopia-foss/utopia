@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 # Global variables, e.g. shared helper settings
 _density_hlpr_kwargs = dict(set_labels=dict(x="Time [Iteration Steps]",
                                             y="Density"),
-                            set_limits=dict(x=(0., None),
+                            set_limits=dict(x=('min', 'max'),
                                             y=(0., 1.)))
 
 # -----------------------------------------------------------------------------
@@ -44,8 +44,9 @@ def density(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
             as 1, all others as 0.
         sizes_from (str, optional): If given, this is expected to be the path
             to a dataset that contains size values for a scatter plot. This
-            leads to a scatter rather than a line-plot. The sizes are used
-            directly, only scaled with `size_factor`.
+            leads to a scatter rather than a line-plot. The sizes are not used
+            directly but are normalized by dividing with the maximum size; this
+            makes configuration via the `size_factor` parameter feasible.
         size_factor (float, optional): The factor by which to scale the sizes
             given in the `sizes_from` argument.
         **plot_kwargs: Passed on to plt.plot or plt.scatter
@@ -83,9 +84,13 @@ def density(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
         return
     
     # Otherwise, need to get the sizes and performs a scatter plot
-    sizes = uni['data'][model_name][sizes_from] * size_factor
+    sizes = uni['data'][model_name][sizes_from]
+    # Need to normalize the sizes to the maximum value, otherwise it get's
+    # really hard to choose a sensible size_factor.
 
-    hlpr.ax.scatter(density.coords['time'], density, s=sizes,
+    # Can now call the scatter plot
+    hlpr.ax.scatter(density.coords['time'], density,
+                    s=(sizes.data / sizes.max() * size_factor),
                     **plot_kwargs)
 
 

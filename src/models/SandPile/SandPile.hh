@@ -172,6 +172,10 @@ public:
 
         // Perform initial step
         this->_log->info("Adding first grain of sand and letting topple ...");
+        if (_cm.cells().size() > 4000) {
+            this->_log->info("With {} cells, this may take a while ...",
+                             _cm.cells().size());
+        }
         topple(add_sand_grain());
 
         // Write data

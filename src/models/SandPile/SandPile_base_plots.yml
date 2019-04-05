@@ -23,7 +23,7 @@ area_fraction:
   # Adjust helpers
   helpers:
     set_labels:
-      y: Avalanche Area $[1/A]$
+      y: Rel. Area $[1/A]$
     set_scales:
       y: log
     set_limits:
@@ -37,11 +37,16 @@ area_fraction:
   threshold: .5
   mean_of: [x, y]
 
-  # And that the avalanche sizes are to be used as dot sizes
+  # And that the avalanche sizes are to be used as dot sizes. The sizes are
+  # normalized by dividing through the maximum size, which allows scaling the
+  # scatter dots via the `size_factor` argument
   sizes_from: avalanche_size
+  size_factor: 42.
 
-  # Arguments passed on to plt.scatter
-
+  # Arguments passed on to plt.scatter ...
+  # Adjust such that they don't have an edge
+  marker: 'o'
+  alpha: .9
 
 # --- A plot of the cluster size distribution
 cluster_size_distribution:
@@ -50,31 +55,43 @@ cluster_size_distribution:
   # Specify which data to calculate the histogram of
   model_name: SandPile
   path_to_data: avalanche_size
-  only_unique: true
 
   # Set scales, limits, and title
   helpers:
+    set_title:
+      title: Cluster Size Distribution
+    set_labels:
+      x: Cluster Size $[A]$
+      y: Counts
+    set_limits:
+      y: [0, ~]
+
+  # Configure the histogram
+  histogram_kwargs:
+    bins: 25
+    range: [0, ~]  # None is resolved to data.min() or data.max()
+
+  # Arguments passed to plt.bar
+  # ...
+
+
+# --- A plot of the complementary cumulative probability distribution
+compl_cum_prob_dist:
+  based_on: .distribution.complementary_cumulative
+
+  # Specify basic configuration for this model
+  model_name: SandPile
+  path_to_data: avalanche_size
+
+  helpers:
+    set_title:
+      title: Compl. Cum. Prob. Distr. of Avalanche Sizes
     set_scales:
       x: log
       y: log
     set_labels:
       x: Cluster Size $[A]$
-      y: Counts
-    set_limits:
-      y: [1, ~]
-    set_title:
-      title: Cluster Size Distribution
-
-  # Arguments passed to plt.plot
-
-
-# --- A plot of the complementary cumulative probability distribution
-compl_cum_prob_dist:
-  based_on: .distribution.compl_cum_prob_dist
-
-  # Specify basic configuration for this model
-  model_name: SandPile
-  path_to_data: avalanche_size
+      y: $P_A(A)$
 
   # Arguments passed to plt.plot
 

@@ -11,10 +11,6 @@ mean_slope:
 area_fraction:
   based_on: area_fraction
 
-  # By which factor to scale the relative avalanche size to get to the 
-  # size of the scatter points
-  size_factor: 1.
-
 
 # --- A plot of the cluster size distribution
 cluster_size_distribution:
@@ -29,6 +25,7 @@ compl_cum_prob_dist:
 # --- An animation of the CA `slope` state
 slope_anim:
   based_on: grid_animation
+  enabled: false
 
   # Select the properties to plot
   to_plot:
@@ -41,6 +38,7 @@ slope_anim:
 # --- An animation of the CA `avalanche` state
 avalanche_anim:
   based_on: grid_animation
+  enabled: false
 
   # Change the properties to be plotted to use the avalanche data
   to_plot:
@@ -55,7 +53,6 @@ avalanche_anim:
 # --- An animation of the slope and avalanche side by side
 slope_and_avalanche_anim:
   based_on: grid_animation
-  enabled: true
 
   to_plot:
     # Re-use the information from above
