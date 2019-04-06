@@ -25,13 +25,13 @@ def state_mean(dm: DataManager, *, hlpr: PlotHelper, uni: UniverseGroup,
             takes care of plot aesthetics (labels, title, ...) and saving
         uni (UniverseGroup): The selected universe data
         mean_of (str): The name of the CopyMe dataset that the mean is to be
-            calcuated of
+            calculated of
         **plot_kwargs: Passed on to matplotlib.pyplot.plot
     """
     # Get the x-data, i.e. the times. Can query the UniverseGroup for that
     times = uni.get_times_array()
 
-    # Extract the data that is to be plotted on the y-axis, i.e.: 'some_state'
+    # Extract the data that is to be plotted on the y-axis, i.e.: `mean_of`
     # averaged over all grid cells for every time step
     mean = [np.mean(d) for d in uni['data/CopyMe'][mean_of]]
 

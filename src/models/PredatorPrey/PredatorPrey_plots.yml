@@ -1,68 +1,60 @@
 # This defines the default plots for the PredatorPrey model
 ---
-
-# plot the frequency of predators and preys in one plot
-frequencies:
-  creator: universe
-  universes: all
-
-  module: model_plots.PredatorPrey
-  plot_func: frequency
-
-  Population: [prey, predator]
+# -- Plot of the predator density against the prey density
+phase_space:
+  based_on: phase_space
 
 
-# plot the spatial development in the CA of the strategy
-population_and_resources:
-  creator: universe
-  universes: all
+# -- Time series of the predator and prey spatial densities
+densities:
+  based_on: densities
 
-  file_ext: mp4
 
-  module: .ca
-  plot_func: state_anim
-
-  model_name: PredatorPrey
-  
+# -- Animation of the spatial resource development of prey and predators
+resources:
+  based_on: grid_animation
 
   # Select the properties to plot
   to_plot:
-    # The name of the property to plot with its options
-    population:
-      title: Population
-      limits: [0, 3]
-
-      # Specify the colormap
-      # This can be done in two ways:
-      #   1. use a matplotlib colormap such as 'viridis'
-      #   2. provide a dictionary from which a discrete colormap
-      #      is derived. The keys correspond to the labels,
-      #      and the values define the color
-      # cmap: viridis
-      cmap: 
-        empty: blue
-        prey: green
-        predator: yellow
-        predprey: red
-
-    # The name of the property to plot with its options
     resource_prey:
-      title: resource_prey
-      limits: [0, 12]
-
-      cmap: viridis
+      title: Prey
+      limits: [0, 8]   # Should be adapted to the resource_max model parameter
 
     resource_predator:
-      title: resource_predator
-      limits: [0, 12]
-      cmap: viridis
+      title: Predator
+      limits: [0, 8]   # Should be adapted to the resource_max model parameter
 
-  # Video options
-  writer: ffmpeg  # can be: frames, ffmpeg (if installed), ...
-  fps: 2
-  dpi: 96
+  # Adjust plot aesthetics
+  helpers:
+    set_suptitle:
+      title: Resources
+      fontsize: x-large
 
-  # For the 'frames' writer, the following additional kwargs can be passed
-  frames_kwargs: 
-    name_padding: 5
-    file_format: png
+
+# -- Animation of the spatial development of the prey and predator populations
+population:
+  based_on: combined_grid_animation
+
+  to_plot:
+    prey:
+      title: Prey
+      limits: [0, 1]
+      cmap: 
+        empty: white
+        prey: orange
+
+    combined:  # Created by model_plots.PredatorPrey.ca.combine_pred_and_prey
+      title: Predator and Prey
+      limits: [0, 3]
+      cmap: 
+        empty: white
+        prey: orange
+        predator: blue
+        both: black
+
+    predator:
+      title: Predator
+      limits: [0, 1]
+      cmap: 
+        empty: white
+        predator: blue

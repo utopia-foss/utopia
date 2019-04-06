@@ -1,0 +1,33 @@
+# Config for testing the different initial states of the model
+#
+# NOTE that this sets only the common values; the changes are set via passing
+#      additional keys to the the ModelTest.create_run_load method
+---
+parameter_space:
+  # Disable steps; not needed
+  num_steps: 0
+
+  # Test for four different seeds
+  seed: !sweep
+    default: 42
+    values: [23, 42, 665, 667]
+
+  # Load the model config
+  PredatorPrey: !model
+    model_name: PredatorPrey
+
+    cell_manager:
+      grid:
+        structure: square
+        resolution: 21
+
+      cell_params:
+        prey:
+          init_resources: 2
+
+        predator:
+          init_resources: 2
+
+        p_prey: 0.1
+        p_predator: 0.1
+        

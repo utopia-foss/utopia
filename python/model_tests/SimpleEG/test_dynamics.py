@@ -115,8 +115,8 @@ def test_macroscopic_values():
         num_cells = strategy.shape[1] * strategy.shape[2]
 
         # Calculate the frequency of S0 and S1 for the last five time steps
-        counts = [np.bincount(strategy[i].flatten())
-                  for i in [-1, -2, -3, -4, -5]]
+        counts = [np.bincount(strategy.stack(grid=['x', 'y']).isel(time=i)) 
+                    for i in [-5, -4, -3, -2, -1]]
         frequencies = [c / num_cells for c in counts]
 
         print("Frequencies of S0 in last five time steps:  {}"

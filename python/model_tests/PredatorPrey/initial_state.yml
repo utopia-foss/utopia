@@ -21,16 +21,12 @@ parameter_space:
         structure: square
         resolution: 21
 
-      #cell_params:
-    inital_state: random
+      cell_params:
+        prey:
+          init_resources: 2
 
-    init_res_prey: 2.0
-    init_res_pred: 2.0
+        predator:
+          init_resources: 2
 
-    prey_prob: 0.2
-    pred_prob: 0.285
-    predprey_prob: 0.1
-
-    prey_frac: 0.2
-    pred_frac: 0.285
-    predprey_frac: 0.1
+        p_prey: 0.2
+        p_predator: 0.285

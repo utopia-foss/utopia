@@ -11,7 +11,7 @@ int main (int , char** argv) {
         Utopia::PseudoParent pp(argv[1]);
 
         // Initialize the main model instance and directly run it
-        SandPileModel("SandPile", pp).run();
+        SandPile("SandPile", pp).run();
 
         return 0;
     }

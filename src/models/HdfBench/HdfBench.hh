@@ -210,12 +210,9 @@ public:
 
         // With the dataset open, write dimension names and coordinates to
         // the dataset attributes
-        _dset_times->add_attribute<std::array<std::string, 2>>("dims",
-                                                               {{"t",
-                                                                "benchmark"}});
-        _dset_times->add_attribute("coords_benchmark", _benchmarks);
+        _dset_times->add_attribute("dim_name__1", "benchmark");
+        _dset_times->add_attribute("coords__benchmark", _benchmarks);
         _dset_times->add_attribute("initial_write", initial_write);
-
 
         this->_log->debug("Finished constructing HdfBench '{}'.", this->_name);
     }
