@@ -86,7 +86,7 @@ private:
     /// The incremental cluster tag
     unsigned int _cluster_id_cnt;
 
-      // .. Temporary objects ...................................................
+      // .. Temporary objects .................................................
     /// Densities for all states
     /** \note   This array is used for temporary storage; it is not
       *         automatically updated!
@@ -156,9 +156,6 @@ public:
         // Create a data group for the densities
         _dgrp_densities(this->_hdfgrp->open_group("densities")),
 
-        // Create dataset for cluster id
-        _dset_cluster_id(this->create_cm_dset("cluster_id", _cm)),
-
         // Create dataset for cell states
         _dset_state(this->create_cm_dset("state", _cm)),
 
@@ -172,7 +169,10 @@ public:
         _dset_density_source(  this->create_dset("source",
                                                  _dgrp_densities, {})),
         _dset_density_stone(   this->create_dset("stone",
-                                                 _dgrp_densities, {}))
+                                                 _dgrp_densities, {})),
+
+        // Create dataset for cluster id
+        _dset_cluster_id(this->create_cm_dset("cluster_id", _cm))
     {
         // Make sure the densities are not undefined
         _densities.fill(std::numeric_limits<double>::quiet_NaN());
@@ -190,8 +190,7 @@ public:
                 return state;
             };
 
-            apply_rule<Update::sync>(_source_init,  _cm.boundary_cells("bottom"));
-
+            apply_rule<Update::sync>(_source_init, _cm.boundary_cells("bottom"));
         }
 
         // Stones
@@ -218,7 +217,7 @@ public:
                     (_stone_init, _cm.cells(), *this->_rng);
             }
             
-            // Additionally, if cluster mode is selected, add clusters
+            // If cluster mode is selected, additionally add clustered stones
             if (_params.stones.init.mode == "cluster"){
                 this->_log->debug("Setting up stone clusters ...");
 
@@ -468,7 +467,6 @@ public:
                                                 _cm.cells(), 
                                                 *this->_rng);
     }
-
 };
 
 
