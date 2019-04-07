@@ -26,7 +26,9 @@ phase_diagram:
 
 # --- Create a grid animation of the state
 state_anim:
-  based_on: grid_animation
+  based_on: .ca.state.anim_ffmpeg  # update to *_frames to save frames
+
+  model_name: ContDisease
 
   # Select the properties to plot
   to_plot:
@@ -43,7 +45,9 @@ state_anim:
 
 # --- Create a grid animnation of the tree ages
 age_anim:
-  based_on: grid_animation
+  based_on: .ca.state.anim_ffmpeg  # update to *_frames to save frames
+
+  model_name: ContDisease
 
   # Select the property to plot
   to_plot:
@@ -54,7 +58,9 @@ age_anim:
 
 # --- Create a grid animation of the clusters
 cluster_anim:
-  based_on: grid_animation
+  based_on: .ca.state.anim_ffmpeg  # update to *_frames to save frames
+
+  model_name: ContDisease
 
   # Select the properties to plot
   to_plot:
