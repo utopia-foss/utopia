@@ -31,9 +31,9 @@ _density_hlpr_kwargs = dict(set_labels=dict(x="Time [Iteration Steps]",
               )
 def density(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
             model_name: str, path_to_data: str,
-            mean_of: Tuple[str]=(),
-            transformations: Tuple[Union[str, dict]]=None,
-            transformations_log_level: int=None,
+            mean_of: Tuple[str],
+            preprocess: Tuple[Union[str, dict]]=None,
+            transformations_log_level: int=10,
             sizes_from: str=None, size_factor: float=1.,
             **plot_kwargs) -> None:
     """Plot the density of a mask, i.e. of a dataset holding booleans.
@@ -43,7 +43,7 @@ def density(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
     existence of some entity or some value and False to denote its absence.
     
     If the dataset chosen via ``path_to_data`` is not already of boolean data
-    type, the ``transformations`` argument is to be used to generate the
+    type, the ``preprocess`` argument is to be used to generate the
     array-like boolean. By means of this argument, a binary operation of form
     ``data <operator> rhs_value`` is carried out, which results in the desired
     mask.
@@ -61,16 +61,20 @@ def density(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
             base path within the UniverseGroup.
         path_to_data (str): Which data to use as the mask
         mean_of (Tuple[str], optional): which data dimensions to calculate the
-            density over.
-        transformations (Tuple[Union[str, dict]], optional): With the
-            parameters specified here, multiple transformations can be applied
-            to the data. This can be used for dimensionality reduction of the
-            data, but also for other operations, e.g. to select a slice.
+            density over. If this evaluates to False, the operation will be
+            skipped
+        preprocess (Tuple[Union[str, dict]], optional): Apply pre-processing
+            transformations to the selected data.
+            With the parameters specified here, multiple transformations can
+            be applied to the data. This can be used for dimensionality
+            reduction of the data, but also for other operations, e.g. to
+            select only a slice of the data.
+            See :py:func:`utopya.dataprocessing.transform` for more info.
             NOTE The operations are carried out _before_ calculating the
             density over the parameters specified in ``mean_of``.
-            See :py:func:`utopya.dataprocessing.transform` for more info.
+            The ``preprocess``ing should not be used for calculating the mean.
         transformations_log_level (int, optional): With which log level to
-            perform the transformations. Useful for debugging.
+            perform the preprocess. Useful for debugging.
         sizes_from (str, optional): If given, this is expected to be the path
             to a dataset that contains size values for a scatter plot. This
             leads to a scatter rather than a line-plot. The sizes are not used
@@ -82,7 +86,7 @@ def density(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
     
     Raises:
         ValueError: If the selected data is not a boolean mask. This error can
-            be alleviated by providing the ``transformations`` argument.
+            be alleviated by providing the ``preprocess`` argument.
     
     Returns:
         None: Description
@@ -91,8 +95,8 @@ def density(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
     data = uni['data'][model_name][path_to_data]
 
     # Apply a mask, if configured
-    if transformations:
-        data = transform(data, *transformations,
+    if preprocess:
+        data = transform(data, *preprocess,
                          log_level=transformations_log_level)
 
     # Check if the data is binary now, which is required for all below

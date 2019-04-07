@@ -111,10 +111,11 @@
 .distribution.histogram.complementary_cumulative:
   <<: *histogram
 
-  normalize: true
-  cumulative: complementary
   use_unique: true
   mask_repeated: true
+  postprocess:
+    - normalize_to_sum
+    - cumulate_complementary
 
   # Do a line plot (instead of the default bar plot)
   pyplot_func_name: plot

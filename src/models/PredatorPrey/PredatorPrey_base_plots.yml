@@ -31,13 +31,13 @@ densities:
   to_plot:
     prey:
       mean_of: [x, y]
-      transformations:
+      preprocess:
         - create_mask: [==, 1]
       label: Prey
     
     predator:
       mean_of: [x, y]
-      transformations:
+      preprocess:
         - create_mask: [==, 1]
       label: Predator
 

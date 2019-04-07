@@ -146,7 +146,15 @@ TRANSFORMATIONS = {
     'squared':  lambda d, _: np.square(d),
     'sqrt':     lambda d, _: np.sqrt(d),
     'cubed':    lambda d, _: np.power(d, 3),
-    'sqrt3':    lambda d, _: np.power(d, 1./.3)
+    'sqrt3':    lambda d, _: np.power(d, 1./.3),
+
+    # Normalizations
+    'normalize_to_sum': lambda d, _: d / np.sum(d),
+    'normalize_to_max': lambda d, _: d / np.max(d),
+
+    # Cumulation
+    'cumulate':                 lambda d, _: np.cumsum(d),
+    'cumulate_complementary':   lambda d, _: np.cumsum(d[::-1])[::-1]
 }
 
 

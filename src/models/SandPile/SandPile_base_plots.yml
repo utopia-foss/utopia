@@ -37,8 +37,11 @@ area_fraction:
   # Specify which data to use
   model_name: SandPile
   path_to_data: avalanche
-  transformations:
-    - create_mask: [==, 1]  # to convert to a binary mask
+  
+  # Select states from which to calculate the density. Need be a binary mask.
+  preprocess:
+    - create_mask: [==, 1]
+  
   mean_of: [x, y]
 
   # And that the avalanche sizes are to be used as dot sizes. The sizes are

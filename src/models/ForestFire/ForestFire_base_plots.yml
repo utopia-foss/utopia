@@ -21,8 +21,8 @@ cluster_size_distribution:
       x: [0, ~]
       y: [0.5, ~]
 
-  # Configure dimensionality reduction of the given data
-  transformations:
+  # Perform dimensionality reduction of the given data
+  preprocess:
     # This is a sequence of operations to carry out. Each entry is either the
     # name of an operation (if there are no arguments needed for the
     # operation) or a dict where the only key refers to the name of the
@@ -33,12 +33,12 @@ cluster_size_distribution:
         time: -1
     # Then, count unique cluster IDs, i.e.: the cluster sizes
     - count_unique
-    # Now apply a logarithm
+    # Now apply a base-10 logarithm; histogram makes no sense otherwise
     - log10
 
   # Configure the histogram
   histogram_kwargs:
-    bins: 40
+    bins: 30
     range: [0, ~]  # None is resolved to data.min() or data.max()
 
   # Arguments passed to plt.bar
@@ -64,15 +64,16 @@ compl_cum_cluster_size_dist:
       y: log
 
   # Configure dimensionality reduction of the given data
-  transformations:
+  preprocess:
     # First, Select the last index along the time dimension
     - isel:
         time: -1
     # Then, count unique cluster IDs, i.e.: the cluster sizes
     - count_unique
 
-  # Do not normalize
-  normalize: false
+  # Adjust postprocessing to not normalize
+  postprocess:
+    - cumulate_complementary
 
 
 # .. Mean state ...............................................................

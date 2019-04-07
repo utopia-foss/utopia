@@ -21,15 +21,13 @@ log = logging.getLogger(__name__)
               ))
 def histogram(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
               model_name: str, path_to_data: str,
-              transformations: Tuple[Union[dict, str]]=None,
-              transformations_log_level: int=None,
               histogram_kwargs: dict=None,
-              normalize: bool=False,
-              cumulative: Union[bool, str]=False,
               use_unique: bool=False,
+              preprocess: Tuple[Union[dict, str]]=None,
+              postprocess: Tuple[Union[dict, str]]=None,
               mask_repeated: bool=False,
-              bin_width_scale: float=1.,
               show_histogram_info: bool=True,
+              transformations_log_level: int=10,
               pyplot_func_name: str='bar',
               **pyplot_func_kwargs):
     """Calculates a histogram from the data and plots it.
@@ -49,33 +47,29 @@ def histogram(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
         model_name (str): The model name that the data resides in
         path_to_data (str): The path to the data relative to the model data
             output
-        transformations (Tuple[Union[dict, str]], optional): With the
-            parameters specified here, multiple transformations can be applied
-            to the data. This can be used for dimensionality reduction of the
-            data, but also for other operations, e.g. to select a slice.
-            The operations are carried out before calculating the
-            histogram. For available parameters, see
-            :py:func:`utopya.dataprocessing.transform`
-        transformations_log_level (int, optional): With which log level to
-            perform the transformations. Useful for debugging.
         histogram_kwargs (dict, optional): Passed to np.histogram. This can be
             used to adjust the number of `bins` or set the `range` the bins
             should be spread over; the latter also allows to pass a 2-tuple
             containing None, which will be resolved to data.min() or
             data.max(). See `np.histogram` documentation for other arguments.
-        normalize (bool, optional): Whether to normalize the counts by the sum
-            of the counts.
-        cumulative (Union[bool, str], optional): Whether to make a cumulative
-            histogram. If 'complementary', the complement of the cumulative
-            sum is plotted.
         use_unique (bool, optional): If this option is set, will not do a
             regular histogram but count unique values.
+        preprocess (Tuple[Union[dict, str]], optional): Apply pre-processing
+            transformations to the selected data.
+            With the parameters specified here, multiple transformations can
+            be applied. This can be used for dimensionality reduction of the
+            data, but also for other operations, e.g. to select a slice.
+            The operations are carried out before calculating the
+            histogram. For available parameters, see
+            :py:func:`utopya.dataprocessing.transform`
+        postprocess (Tuple[Union[dict, str]], optional): Same as ``preprocess``
+            but applied _after_ the histogram was computed.
         mask_repeated (bool, optional): In `use_unique` mode, will mask the
             counts such that repeated values are not shown.
-        bin_width_scale (float, optional): Factor by which to scale bin widths
-            in the bar plot.
         show_histogram_info (bool, optional): Whether to show an info box in
             the top right-hand corner
+        transformations_log_level (int, optional): With which log level to
+            perform the transformations. Useful for debugging.
         pyplot_func_name (str, optional): The name of the matplotlib.pyplot
             function to use for plotting. By default, a bar plot is performed.
             For unique data, it might make more sense to do a line or scatter
@@ -93,8 +87,8 @@ def histogram(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
 
     # Assuming this is an xr.DataArray now
     # Apply transformations, e.g. to reduce dimensionality
-    if transformations:
-        data = transform(data, *transformations,
+    if preprocess:
+        data = transform(data, *preprocess,
                          log_level=transformations_log_level)
 
     # Calculate the histogram, either via np.histogram or np.unique
@@ -134,21 +128,10 @@ def histogram(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
             bin_pos = bin_pos[mask]
             counts = counts[mask]
 
-    # Might want to normalize
-    if normalize:
-        log.debug("Normalizing ...")
-        counts = counts / np.sum(counts)
-
-    # Can use cumulative or complementary cumulative values
-    if cumulative is True:
-        log.debug("Using cumulative sum for counts ...")
-        counts = np.cumsum(counts)
-
-    elif cumulative == 'complementary':
-        log.debug("Using complementary cumulative sum for counts ...")
-        counts = np.cumsum(counts[::-1])[::-1]
-
-    # Might want to only plot a subset. For that, allow a slice operation
+    # Postprocessing
+    if postprocess:
+        counts = transform(counts, *postprocess,
+                           log_level=transformations_log_level)
 
     # Plot the data using the given plot function name
     if pyplot_func_name == 'bar':
@@ -158,8 +141,7 @@ def histogram(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
                              "setting `pyplot_func_name` to, e.g., 'plot'.")
 
         # Special case of bar plot, where the bar widths need be given
-        hlpr.ax.bar(bin_pos, counts,
-                    width=bin_width_scale * np.diff(bin_edges),
+        hlpr.ax.bar(bin_pos, counts, width=np.diff(bin_edges),
                     **pyplot_func_kwargs)
 
     else:
@@ -174,9 +156,11 @@ def histogram(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
         if not use_unique:
             info_str = ("$N_{{data}} = {Ntot:}$\n"
                         "$N_{{bins}} = {Nbins:d}$\n"
-                        "range: $[{rg_min:.3g},\ {rg_max:.3g}]$"
+                        "bin width: ${bin_width:.3g}$\n"
+                        "bin range: $[{rg_min:.3g},\ {rg_max:.3g}]$"
                         "".format(Ntot=data.size,
                                   Nbins=len(bin_pos),
+                                  bin_width=np.mean(np.diff(bin_edges)),
                                   rg_min=bin_edges[0],
                                   rg_max=bin_edges[-1]))
             # NOTE .format operations can be escaped with '{' and '}'
