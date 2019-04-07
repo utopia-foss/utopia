@@ -14,5 +14,6 @@ parameter_space:
     cell_params:
       initial_density: 0
 
-    stones: false
+    stones: 
+      on: false
     infection_source: true

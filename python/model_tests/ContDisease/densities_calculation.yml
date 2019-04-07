@@ -14,7 +14,14 @@ parameter_space:
     cell_params:
       initial_density: 0
 
-    stones: true
+    stones: 
+      on: true
+
+      initialization:
+        mode: random
+        p_random: 0.1
+        p_cluster: 0.2
+
     infection_source: true
 
     p_growth: 1

@@ -195,38 +195,37 @@ public:
         }
 
         // Stones
-        if (_params.stones) {
-            if (_params.stone_init == "random") {
-                this->_log->debug("Setting up random cells to be stones ...");
+        if (_params.stones.on) {
+            if (_params.stones.init.mode == "random") {
+                this->_log->debug("Setting up random stones ...");
 
-                // Get a copy of the cells container and shuffle it
-                auto cells_shuffled = _cm.cells();
-                std::shuffle(cells_shuffled.begin(), cells_shuffled.end(),
-                             *this->_rng);
-
-                // Make some parameters available for lambda captures
-                const double stone_cluster = _params.stone_cluster;
-                const double stone_density = _params.stone_density;
-
-                /// Initialize stones randomly with probability stone_density
-                RuleFunc _stone_init = [this, &stone_density](const auto& cell) {
-                    // Cell will be a stone with probability stone_density
+                /// Initialize stones randomly 
+                RuleFunc _stone_init = [this](const auto& cell) {
+                    // Cell will be a stone with probability p_random
                     auto state = cell->state;
-                    if (this->_prob_distr(*this->_rng) < stone_density){
+                    if (this->_prob_distr(*this->_rng) 
+                            < this->_params.stones.init.p_random)
+                    {
                         state.kind = Kind::stone;
                         return state;
                     }
                     // else: stay in the same state
                     return state;
                 };
-
-                apply_rule<Update::sync>(_stone_init, cells_shuffled);
-
+                
+                // Set random stones
+                apply_rule<Update::async, Shuffle::on>
+                    (_stone_init, _cm.cells(), *this->_rng);
+            }
+            
+            // Additionally, if cluster mode is selected, add clusters
+            if (_params.stones.init.mode == "cluster"){
+                this->_log->debug("Setting up stone clusters ...");
 
                 // Add a stone with probability stone_cluster to any empty
                 // cell with a neighboring stone.
 
-                RuleFunc _stone_cluster = [this, &stone_cluster](const auto& cell) {
+                RuleFunc _stone_cluster = [this](const auto& cell) {
                     auto state = cell->state;
 
                     // Add the clustered stones
@@ -236,7 +235,8 @@ public:
 
                         if (    state.kind == Kind::empty
                             and nb_state.kind == Kind::stone
-                            and this->_prob_distr(*this->_rng) < stone_cluster)
+                            and this->_prob_distr(*this->_rng) 
+                                < this->_params.stones.init.p_cluster)
                         {
                             // Become a stone
                             state.kind = Kind::stone;
@@ -248,9 +248,9 @@ public:
                     return state;
                 };
 
-
-                apply_rule<Update::sync>(_stone_cluster, cells_shuffled);
-
+                // Create stone clusters
+                apply_rule<Update::async, Shuffle::on>
+                    (_stone_cluster, _cm.cells(), *this->_rng);
             }
         } // end of stones setup
 
