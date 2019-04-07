@@ -1,0 +1,118 @@
+# Default base plots for the ForestFire model
+---
+# --- A plot of the cluster size distribution ---------------------------------
+cluster_size_distribution:
+  based_on: .distribution.histogram
+
+  # Specify which data to calculate the histogram of
+  model_name: ForestFire
+  path_to_data: cluster_id
+
+  # Set scales, limits, and title
+  helpers:
+    set_title:
+      title: Cluster Size Distribution
+    set_labels:
+      x: $\log_{10}(A)$
+      y: $N_A$
+    set_scales:
+      y: log
+    set_limits:
+      x: [0, ~]
+      y: [0.5, ~]
+
+  # Perform dimensionality reduction of the given data
+  preprocess:
+    # This is a sequence of operations to carry out. Each entry is either the
+    # name of an operation (if there are no arguments needed for the
+    # operation) or a dict where the only key refers to the name of the
+    # operation and the content of the dict is passed to that function
+  
+    # First, Select the last index along the time dimension
+    - isel:
+        time: -1
+    # Then, count unique cluster IDs, i.e.: the cluster sizes
+    - count_unique
+    # Now apply a base-10 logarithm; histogram makes no sense otherwise
+    - log10
+
+  # Configure the histogram
+  histogram_kwargs:
+    bins: 30
+    range: [0, ~]  # None is resolved to data.min() or data.max()
+
+  # Arguments passed to plt.bar
+  # ...
+
+# --- Complementary Cumulative Cluster Size Distribution ----------------------
+compl_cum_cluster_size_dist:
+  based_on: .distribution.histogram.complementary_cumulative
+
+  # Specify which data to calculate the histogram of
+  model_name: ForestFire
+  path_to_data: cluster_id
+
+  # Set scales, limits, and title
+  helpers:
+    set_title:
+      title: Compl. Cum. Cluster Size Distribution
+    set_labels:
+      x: Cluster Size $[A]$
+      y: $N_A$
+    set_scales:
+      x: log
+      y: log
+
+  # Configure dimensionality reduction of the given data
+  preprocess:
+    # First, Select the last index along the time dimension
+    - isel:
+        time: -1
+    # Then, count unique cluster IDs, i.e.: the cluster sizes
+    - count_unique
+
+  # Adjust postprocessing to not normalize
+  postprocess:
+    - cumulate_complementary
+
+
+# .. Mean state ...............................................................
+mean_and_std_base: # TODO migrate
+  creator: multiverse
+  
+  # Use the ForestFire-model-specific plot functions
+  module: .state
+  plot_func: mean_and_std
+
+  # Collect the data
+  select:
+    fields:
+      mean: data/ForestFire/tree_density
+
+  mean_of: [x, y]
+
+  helpers:
+    set_labels:
+      x: Time
+      y: Tree density
+    set_scales:
+      y: log
+
+mean_and_std_snapshot_base: # TODO migrate
+  creator: multiverse
+  
+  # Use the ForestFire-model-specific plot functions
+  module: .state
+  plot_func: mean_and_std_snapshot
+
+  # Collect the data
+  select:
+    fields:
+      mean: data/ForestFire/tree_density
+
+  mean_of: [x, y]
+
+  linestyle: 'None'
+  linewidth: 0.5
+  marker: 'o'
+  markersize: 5

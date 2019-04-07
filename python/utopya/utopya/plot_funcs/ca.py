@@ -14,8 +14,8 @@ import matplotlib.pyplot as plt
 import matplotlib.animation
 from matplotlib.colors import ListedColormap
 
-from utopya import DataManager
-from utopya.plotting import UniversePlotCreator, PlotHelper, is_plot_func
+from .. import DataManager
+from ..plotting import UniversePlotCreator, PlotHelper, is_plot_func
 
 from ._file_writer import FileWriter
 

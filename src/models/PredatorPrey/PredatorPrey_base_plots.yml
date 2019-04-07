@@ -1,6 +1,6 @@
 # Base configs for PredatorPrey model plots
 ---
-# -- Plot of the predator density against the prey density
+# -- Plot of the predator density against the prey density --------------------
 phase_space:
   based_on: .default_style_and_helpers
 
@@ -17,7 +17,7 @@ phase_space:
   s: 3.5
 
 
-# -- Time series of the predator and prey densities
+# -- Time series of the predator and prey densities ---------------------------
 densities:
   based_on: .time_series.densities
 
@@ -31,35 +31,27 @@ densities:
   to_plot:
     prey:
       mean_of: [x, y]
-      apply_comparison: [==, 1]
+      preprocess:
+        - create_mask: [==, 1]
       label: Prey
     
     predator:
       mean_of: [x, y]
-      apply_comparison: [==, 1]
+      preprocess:
+        - create_mask: [==, 1]
       label: Predator
 
-# -- Any kind of grid animation
-grid_animation: &grid_animation
-  based_on: .ca.state
 
+# -- A grid animation that shows combined predator and prey positions ---------
+combined_grid_animation_frames: &combined_grid_anim
+  based_on: .ca.state.anim_frames
+  
   model_name: PredatorPrey
-
-  # Use the first time index; is ignored in animation
-  time_idx: 0
-
-  # Enable the animation, using ffmpeg and .mp4 output by default
-  file_ext: mp4
-  animation:
-    enabled: true
-
-    writer: ffmpeg    # can be: frames, ffmpeg (if installed), ...
-
-
-# -- A grid animation that computes the combined predator and prey locations
-combined_grid_animation:
-  <<: *grid_animation
 
   # Use the custom plotting function
   module: model_plots.PredatorPrey
   plot_func: combine_pred_and_prey
+
+combined_grid_animation_ffmpeg:
+  <<: *combined_grid_anim
+  based_on: .ca.state.anim_ffmpeg
