@@ -33,7 +33,7 @@ cell_manager:
   cell_params:
     # Initial tree density, value in [0, 1]
     # With this probability, a cell is initialized as tree (instead of empty)
-    initial_density: 0
+    p_tree: 0
 
 # --- Model Dynamics ----------------------------------------------------------
 # Probability per site and time step to transition from state empty to tree

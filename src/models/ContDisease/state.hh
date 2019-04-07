@@ -34,12 +34,12 @@ struct State {
         kind(Kind::empty),
         cluster_id(0)
     {
-        // Check if initial_density is available to set up cell state
-        if (cfg["initial_density"]) {
-            const auto init_density = get_as<double>("initial_density", cfg);
+        // Check if p_tree is available to set up cell state
+        if (cfg["p_tree"]) {
+            const auto init_density = get_as<double>("p_tree", cfg);
 
             if (init_density < 0. or init_density > 1.) {
-                throw std::invalid_argument("initial_density needs to be in "
+                throw std::invalid_argument("p_tree needs to be in "
                     "interval [0., 1.], but was " 
                     + std::to_string(init_density) + "!");
             }

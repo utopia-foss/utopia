@@ -12,7 +12,7 @@ parameter_space:
       grid:
         resolution: 3
     cell_params:
-      initial_density: 0
+      p_tree: 0
 
     stones:
       on: false
