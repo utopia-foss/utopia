@@ -24,6 +24,9 @@ struct State {
     /// The cell state
     Kind kind;
 
+    /// The age of the cell
+    unsigned age;
+
     /// An ID denoting to which cluster this cell belongs
     unsigned int cluster_id;
 
@@ -32,6 +35,7 @@ struct State {
     State (const DataIO::Config& cfg, const std::shared_ptr<RNG>& rng)
     :
         kind(Kind::empty),
+        age(0),
         cluster_id(0)
     {
         // Check if p_tree is available to set up cell state

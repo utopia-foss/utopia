@@ -110,6 +110,9 @@ private:
     /// 2D dataset (cell ID and time) of cell states
     std::shared_ptr<DataSet> _dset_state;
 
+    /// 2D dataset (tree age and time) of cells
+    std::shared_ptr<DataSet> _dset_age;
+
     /// 1D dataset of density of empty cells over time
     std::shared_ptr<DataSet> _dset_density_empty;
 
@@ -158,6 +161,9 @@ public:
 
         // Create dataset for cell states
         _dset_state(this->create_cm_dset("state", _cm)),
+
+        // Create dataset for tree age
+        _dset_age(this->create_cm_dset("age", _cm)),
 
         // Create datasets for all densities
         _dset_density_empty(   this->create_dset("empty",
@@ -305,11 +311,11 @@ protected:
     // .. Rule functions ......................................................
 
     /// Define the update rule
-    /** \detail Update the given cell according to the following rules:
-      *         - Empty cells grow trees with probability p_growth.
-      *         - Tree cells in neighborhood of an infected cell get infected
-      *           with the probability p_infect.
-      *         - Infected cells die and become an empty cell.
+    /** \details Update the given cell according to the following rules:
+      *          - Empty cells grow trees with probability p_growth.
+      *          - Tree cells in neighborhood of an infected cell get infected
+      *            with the probability p_infect.
+      *          - Infected cells die and become an empty cell.
       */
     RuleFunc _update = [this](const auto& cell){
         // Get the current state of the cell
@@ -325,7 +331,10 @@ protected:
             }
         }
         else if (state.kind == Kind::tree){
-            // Tree can be infected by neighbor our by random-point-infection.
+            // Increase the age of the tree
+            ++state.age;
+
+            // Tree can be infected by neighbor or by random-point-infection.
 
             // Determine whether there will be a point infection
             if (_prob_distr(*this->_rng) < _params.p_random_infect) {
@@ -356,6 +365,10 @@ protected:
         else if (state.kind == Kind::infected) {
             // Decease -> become an empty cell
             state.kind = Kind::empty;
+
+            // Reset the age of the cell to 0
+            state.age = 0;
+
             return state;
         }
         // else: other cell states need no update
@@ -435,6 +448,13 @@ public:
         _dset_state->write(_cm.cells().begin(), _cm.cells().end(),
             [](const auto& cell) {
                 return static_cast<unsigned short int>(cell->state.kind);
+            }
+        );
+
+        // Write the tree ages
+        _dset_age->write(_cm.cells().begin(), _cm.cells().end(),
+            [](const auto& cell) {
+                return static_cast<unsigned short int>(cell->state.age);
             }
         );
 

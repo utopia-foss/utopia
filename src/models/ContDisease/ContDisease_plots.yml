@@ -72,6 +72,18 @@ state_anim:
         infected: red
         source: orange
         stone: gray
+        
+
+# --- Create a grid animnation of the tree ages
+age_anim:
+  based_on: grid_animation
+
+  # Select the property to plot
+  to_plot:
+    age:
+      title: Tree age
+      cmap: Greens
+
 
 # --- Create a grid animation of the clusters
 cluster_anim:
