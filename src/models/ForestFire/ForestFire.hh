@@ -141,7 +141,7 @@ public:
     using DataSet = typename Base::DataSet;
 
     /// The type of the cell manager
-    using CellManager = CellManager<CellTraits, ForestFire>;
+    using CellManager = Utopia::CellManager<CellTraits, ForestFire>;
 
     /// The type of a cell
     using Cell = typename CellManager::Cell;
