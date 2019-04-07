@@ -3,10 +3,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from utopya import DataManager, UniverseGroup
-from utopya.plotting import is_plot_func, PlotHelper, UniversePlotCreator
-
-from ..tools import save_and_close
+from .. import DataManager, UniverseGroup
+from ..plotting import is_plot_func, PlotHelper, UniversePlotCreator
 
 # -----------------------------------------------------------------------------
 
@@ -14,7 +12,7 @@ from ..tools import save_and_close
               # Provide some (static) default values for helpers
               helper_defaults=dict(
                 set_labels=dict(x="cluster size A", y="$N_A$"),
-                set_scale=dict(x='log', y='log'),
+                set_scales=dict(x='log', y='log'),
                 set_title=dict(title='Size distribution of clusters')
                 )
               )

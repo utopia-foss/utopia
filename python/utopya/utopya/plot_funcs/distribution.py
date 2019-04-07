@@ -8,8 +8,7 @@ import numpy as np
 
 from .. import DataManager, UniverseGroup
 from ..plotting import is_plot_func, PlotHelper, UniversePlotCreator
-
-from ._data_processing import process_data
+from ..dataprocessing import transform
 
 # Get a logger
 log = logging.getLogger(__name__)
@@ -19,11 +18,11 @@ log = logging.getLogger(__name__)
 @is_plot_func(creator_type=UniversePlotCreator,
               helper_defaults=dict(
                 set_labels=dict(x="Values", y="Counts")
-              )
-            )
+              ))
 def histogram(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
               model_name: str, path_to_data: str,
-              preprocess: dict=None,
+              transformations: Tuple[Union[dict, str]]=None,
+              transformations_log_level: int=None,
               histogram_kwargs: dict=None,
               normalize: bool=False,
               cumulative: Union[bool, str]=False,
@@ -50,8 +49,15 @@ def histogram(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
         model_name (str): The model name that the data resides in
         path_to_data (str): The path to the data relative to the model data
             output
-        preprocess (dict, optional): Pre-processing arguments. These are
-            applied to the data _before_ the histogram is calculated.
+        transformations (Tuple[Union[dict, str]], optional): With the
+            parameters specified here, multiple transformations can be applied
+            to the data. This can be used for dimensionality reduction of the
+            data, but also for other operations, e.g. to select a slice.
+            The operations are carried out before calculating the
+            histogram. For available parameters, see
+            :py:func:`utopya.dataprocessing.transform`
+        transformations_log_level (int, optional): With which log level to
+            perform the transformations. Useful for debugging.
         histogram_kwargs (dict, optional): Passed to np.histogram. This can be
             used to adjust the number of `bins` or set the `range` the bins
             should be spread over; the latter also allows to pass a 2-tuple
@@ -85,8 +91,11 @@ def histogram(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
     # Get the data
     data = uni['data'][model_name][path_to_data]
 
-    # Preprocess it. Empty dict will pass data through.
-    data = process_data(data, **(preprocess if preprocess else {}))
+    # Assuming this is an xr.DataArray now
+    # Apply transformations, e.g. to reduce dimensionality
+    if transformations:
+        data = transform(data, *transformations,
+                         log_level=transformations_log_level)
 
     # Calculate the histogram, either via np.histogram or np.unique
     if not use_unique:
@@ -160,13 +169,24 @@ def histogram(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
 
     # Add histogram information
     if show_histogram_info:
-        # Generate an info string, containing total count and bin count
-        # NOTE .format operations can be escaped with '{' and '}' characters.
-        info_str = ("$N_{{data}} = {ntot:}$\n"
-                    "$N_{{{mode:}}} = {nbin:d}$"
-                    "".format(ntot=data.size,
-                              mode="bins" if not use_unique else "unique",
-                              nbin=len(bin_pos)))
+        # Generate an info string, containing total count and bin count and,
+        # for the non-unique histogram: the range info
+        if not use_unique:
+            info_str = ("$N_{{data}} = {Ntot:}$\n"
+                        "$N_{{bins}} = {Nbins:d}$\n"
+                        "range: $[{rg_min:.3g},\ {rg_max:.3g}]$"
+                        "".format(Ntot=data.size,
+                                  Nbins=len(bin_pos),
+                                  rg_min=bin_edges[0],
+                                  rg_max=bin_edges[-1]))
+            # NOTE .format operations can be escaped with '{' and '}'
+        
+        else:
+            info_str = ("$N_{{data}} = {Ntot:}$\n"
+                        "$N_{{unique}} = {Nunique:d}$"
+                        "".format(Ntot=data.size,
+                                  Nunique=len(bin_pos)))
+
         hlpr.ax.text(1, 1, info_str,
                      transform=hlpr.ax.transAxes,
                      verticalalignment='top', horizontalalignment='right',

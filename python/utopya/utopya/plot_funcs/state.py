@@ -1,12 +1,12 @@
 """This module provides plotting functions to visualize multiverse data"""
 
-from ._setup import *
 
 import xarray as xr
 from typing import Union
 
-from utopya import DataManager
-from utopya.plotting import is_plot_func, PlotHelper, MultiversePlotCreator
+from .. import DataManager
+from ..plotting import is_plot_func, PlotHelper, MultiversePlotCreator
+
 
 # -----------------------------------------------------------------------------
 

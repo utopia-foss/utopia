@@ -108,7 +108,7 @@
 
 # .. Plot of a complementary cumulative distribution ..........................
 # Based on histogram, but with normalization and complementary cumulation
-.distribution.complementary_cumulative:
+.distribution.histogram.complementary_cumulative:
   <<: *histogram
 
   normalize: true

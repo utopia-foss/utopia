@@ -6,32 +6,77 @@ cluster_size_distribution:
 
   # Specify which data to calculate the histogram of
   model_name: ForestFire
-  path_to_data: avalanche_size
+  path_to_data: cluster_id
 
   # Set scales, limits, and title
   helpers:
     set_title:
       title: Cluster Size Distribution
     set_labels:
-      x: Cluster Size $[A]$
-      y: Counts
+      x: $\log_{10}(A)$
+      y: $N_A$
     set_scales:
       y: log
     set_limits:
-      x: [0, max]
-      y: [0.9, ~]
+      x: [0, ~]
+      y: [0.5, ~]
+
+  # Configure dimensionality reduction of the given data
+  transformations:
+    # This is a sequence of operations to carry out. Each entry is either the
+    # name of an operation (if there are no arguments needed for the
+    # operation) or a dict where the only key refers to the name of the
+    # operation and the content of the dict is passed to that function
+  
+    # First, Select the last index along the time dimension
+    - isel:
+        time: -1
+    # Then, count unique cluster IDs, i.e.: the cluster sizes
+    - count_unique
+    # Now apply a logarithm
+    - log10
 
   # Configure the histogram
   histogram_kwargs:
-    bins: 25
+    bins: 40
     range: [0, ~]  # None is resolved to data.min() or data.max()
 
   # Arguments passed to plt.bar
   # ...
 
+# --- Complementary Cumulative Cluster Size Distribution ----------------------
+compl_cum_cluster_size_dist:
+  based_on: .distribution.histogram.complementary_cumulative
+
+  # Specify which data to calculate the histogram of
+  model_name: ForestFire
+  path_to_data: cluster_id
+
+  # Set scales, limits, and title
+  helpers:
+    set_title:
+      title: Compl. Cum. Cluster Size Distribution
+    set_labels:
+      x: Cluster Size $[A]$
+      y: $N_A$
+    set_scales:
+      x: log
+      y: log
+
+  # Configure dimensionality reduction of the given data
+  transformations:
+    # First, Select the last index along the time dimension
+    - isel:
+        time: -1
+    # Then, count unique cluster IDs, i.e.: the cluster sizes
+    - count_unique
+
+  # Do not normalize
+  normalize: false
+
 
 # .. Mean state ...............................................................
-mean_and_std_base:
+mean_and_std_base: # TODO migrate
   creator: multiverse
   
   # Use the ForestFire-model-specific plot functions
@@ -52,7 +97,7 @@ mean_and_std_base:
     set_scales:
       y: log
 
-mean_and_std_snapshot_base:
+mean_and_std_snapshot_base: # TODO migrate
   creator: multiverse
   
   # Use the ForestFire-model-specific plot functions

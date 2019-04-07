@@ -84,7 +84,7 @@ cluster_size_distribution:
 
 # --- A plot of the complementary cumulative probability distribution ---------
 compl_cum_prob_dist:
-  based_on: .distribution.complementary_cumulative
+  based_on: .distribution.histogram.complementary_cumulative
 
   # Specify basic configuration for this model
   model_name: SandPile
