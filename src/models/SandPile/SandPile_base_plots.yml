@@ -37,7 +37,8 @@ area_fraction:
   # Specify which data to use
   model_name: SandPile
   path_to_data: avalanche
-  apply_comparison: [==, 1]  # to convert to a binary mask
+  transformations:
+    - create_mask: [==, 1]  # to convert to a binary mask
   mean_of: [x, y]
 
   # And that the avalanche sizes are to be used as dot sizes. The sizes are
