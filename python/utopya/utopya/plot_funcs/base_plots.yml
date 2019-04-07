@@ -14,13 +14,14 @@
 
   style: &default_style
     axes.grid: true
-    grid.linewidth: .5
-    grid.color: cccccc
+    grid.linewidth: .4
+    grid.alpha: .5
+
 
 # -- CA Plots -----------------------------------------------------------------
 # .. A spatial CA plot of a state .............................................
 # Supports PlotHelper and animation
-.ca.state:
+.ca.state: &ca_state
   creator: universe
   universes: all
 
@@ -30,7 +31,7 @@
   file_ext: pdf
 
   # All animation configuration for this plot
-  animation:
+  animation: &ca_state_animation
     enabled: false  # has to be manually enabled
 
     writer: frames  # assuming ffmpeg is not installed
@@ -47,7 +48,32 @@
         saving:
           dpi: 92
 
-        
+# .. .ca.state specializations for different animation writers ................
+.ca.state.anim_frames:
+  <<: *ca_state
+
+  file_ext: pdf
+
+  time_idx: 0  # value is ignored in animation, but needs be specified
+
+  animation:
+    <<: *ca_state_animation
+    enabled: true
+    writer: frames
+
+.ca.state.anim_ffmpeg:
+  <<: *ca_state
+
+  file_ext: mp4
+
+  time_idx: 0  # value is ignored in animation, but needs be specified
+
+  animation:
+    <<: *ca_state_animation
+    enabled: true
+    writer: ffmpeg
+
+
 # .. A spatial CA plot animation ..............................................
 # NOTE Deprecated.
 .ca.state_anim:

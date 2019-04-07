@@ -14,7 +14,7 @@ space:
 cell_manager:
   grid:
     structure: square
-    resolution: 128      # cells per unit length of space's extent
+    resolution: 64           # cells per unit length of space's extent
 
   neighborhood:
     mode: vonNeumann         # can be: empty, vonNeumann, Moore

@@ -1,18 +1,20 @@
 # This defines the default plots for the PredatorPrey model
 ---
-# -- Plot of the predator density against the prey density
+# --- Plot of the predator density against the prey density -------------------
 phase_space:
   based_on: phase_space
 
 
-# -- Time series of the predator and prey spatial densities
+# --- Time series of the predator and prey spatial densities ------------------
 densities:
   based_on: densities
 
 
-# -- Animation of the spatial resource development of prey and predators
+# --- Animation of the spatial resource development of prey and predators -----
 resources:
-  based_on: grid_animation
+  based_on: .ca.state.anim_ffmpeg  # update to *_frames to save frames
+
+  model_name: PredatorPrey
 
   # Select the properties to plot
   to_plot:
@@ -28,12 +30,29 @@ resources:
   helpers:
     set_suptitle:
       title: Resources
-      fontsize: x-large
+      fontsize: xx-large
 
 
-# -- Animation of the spatial development of the prey and predator populations
+# --- Animation of the spatial development of prey and predator populations ---
 population:
-  based_on: combined_grid_animation
+  based_on: combined_grid_animation_ffmpeg  # update to *_frames to save frames
+
+  to_plot:
+    # Combined by model_plots.PredatorPrey.ca.combine_pred_and_prey function
+    combined: &population_combined
+      title: Predator and Prey
+      limits: [0, 3]
+      cmap: 
+        empty: white
+        prey: orange
+        predator: blue
+        both: black
+
+
+# --- More detailed animation: prey only, combined, predator only -------------
+population_detailed:
+  based_on: combined_grid_animation_ffmpeg  # update to *_frames to save frames
+  enabled: false
 
   to_plot:
     prey:
@@ -43,14 +62,8 @@ population:
         empty: white
         prey: orange
 
-    combined:  # Created by model_plots.PredatorPrey.ca.combine_pred_and_prey
-      title: Predator and Prey
-      limits: [0, 3]
-      cmap: 
-        empty: white
-        prey: orange
-        predator: blue
-        both: black
+    combined:
+      <<: *population_combined
 
     predator:
       title: Predator

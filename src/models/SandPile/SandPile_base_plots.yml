@@ -103,19 +103,4 @@ compl_cum_prob_dist:
       x: [1.8, ~]  # Not interested in the value at size 1
 
   # Arguments passed to plt.plot
-
-
-# -- Any kind of grid animation
-grid_animation:
-  based_on: .ca.state
-
-  model_name: SandPile
-
-  # Use the first time index; is ignored in animation
-  time_idx: 0
-
-  # Enable the animation, using ffmpeg and .mp4 output by default
-  file_ext: mp4
-  animation:
-    enabled: true
-    writer: ffmpeg    # can be: frames, ffmpeg (if installed), ...
+  # ...

@@ -11,7 +11,7 @@ mean_and_std_base:
   # Collect the data
   select:
     fields:
-      mean: data/ForestFire/mean_density
+      mean: data/ForestFire/tree_density
 
   mean_of: [x, y]
 
@@ -19,7 +19,7 @@ mean_and_std_base:
     set_labels:
       x: Time
       y: Tree density
-    set_scale:
+    set_scales:
       y: log
 
 mean_and_std_snapshot_base:
@@ -32,7 +32,7 @@ mean_and_std_snapshot_base:
   # Collect the data
   select:
     fields:
-      mean: data/ForestFire/mean_density
+      mean: data/ForestFire/tree_density
 
   mean_of: [x, y]
 
@@ -40,29 +40,3 @@ mean_and_std_snapshot_base:
   linewidth: 0.5
   marker: 'o'
   markersize: 5
-
-# .. State animation ..........................................................
-state_anim_base:
-  based_on: .ca.state
-  
-  model_name: ForestFire
-
-  # Specify the time index (will be ignored, but needs to be specified)
-  time_idx: 0
-
-  file_ext: mp4
-
-  # Enable animation (disabled by default)
-  animation:
-    enabled: true
-    writer: ffmpeg
-  
-
-# .. State animation frames ...................................................
-state_anim_frames_base:
-  based_on: state_anim_base
-
-  file_ext: pdf
-
-  animation:
-    writer: frames

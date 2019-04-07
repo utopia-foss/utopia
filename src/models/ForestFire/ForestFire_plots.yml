@@ -53,51 +53,55 @@ mean_and_std_lightning:
 #       path: data/ForestFire/cluster_id
 #       dims: [time, x, y]   
 
-# .. State animation ..........................................................
-# animation
-state_anim:
-  based_on: state_anim_base
+# .. Mean state plot ..........................................................
+# Plot the mean state and standard deviation depending on the lightning 
+# probability
+mean_and_std_mv_lightning:
+  based_on: mean_and_std_base
+  
+  lines_from: p_lightning
+
+
+mean_and_std_time_snapshot:
+  based_on: mean_and_std_snapshot_base
+
+  sweep_over: p_lightning
+
+  snapshot_at:
+    dim: time
+    idx: -1
+
+  helpers:
+    set_labels:
+      x: p_lightning
+    set_scales:
+      x: log
+
+
+# --- Animation of the spatial grid -------------------------------------------
+forest:
+  based_on: .ca.state.anim_ffmpeg  # update to *_frames to save frames
+
+  model_name: ForestFire
 
   # Select the properties to plot
   to_plot:
     kind:
-      title: State
+      title: Forest State
       limits: [0, 1]
       cmap: 
-        Empty: goldenrod
-        Tree: green
-
-# frames
-state_anim_frames:
-  based_on: state_anim_frames_base
-
-  # Select the properties to plot
-  to_plot:
-    kind:
-      title: State
-      limits: [0, 1]
-      cmap: 
-        Empty: goldenrod
-        Tree: green
+        Empty: darkkhaki
+        Tree: forestgreen
 
 
-# .. Cluster animation ........................................................
-cluster_anim:
-  based_on: state_anim_base
+# --- Animation of the clusters on the spatial grid ---------------------------
+clusters:
+  based_on: .ca.state.anim_ffmpeg  # update to *_frames to save frames
 
-  # Select the properties to plot
+  model_name: ForestFire
+
   to_plot:
     cluster_id:
-      title: Cluster
-      limits: [0, 20]
-      cmap: tab20
-
-cluster_anim_frames:
-  based_on: state_anim_frames_base
-
-  # Select the properties to plot
-  to_plot:
-    cluster_id:
-      title: Cluster
+      title: Clusters
       limits: [0, 20]
       cmap: tab20

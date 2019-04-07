@@ -39,27 +39,17 @@ densities:
       apply_comparison: [==, 1]
       label: Predator
 
-# -- Any kind of grid animation
-grid_animation: &grid_animation
-  based_on: .ca.state
-
-  model_name: PredatorPrey
-
-  # Use the first time index; is ignored in animation
-  time_idx: 0
-
-  # Enable the animation, using ffmpeg and .mp4 output by default
-  file_ext: mp4
-  animation:
-    enabled: true
-
-    writer: ffmpeg    # can be: frames, ffmpeg (if installed), ...
-
 
 # -- A grid animation that computes the combined predator and prey locations
-combined_grid_animation:
-  <<: *grid_animation
+combined_grid_animation_frames: &combined_grid_anim
+  based_on: .ca.state.anim_frames
+  
+  model_name: PredatorPrey
 
   # Use the custom plotting function
   module: model_plots.PredatorPrey
   plot_func: combine_pred_and_prey
+
+combined_grid_animation_ffmpeg:
+  <<: *combined_grid_anim
+  based_on: .ca.state.anim_ffmpeg
