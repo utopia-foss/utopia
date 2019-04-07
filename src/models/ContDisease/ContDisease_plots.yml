@@ -10,9 +10,6 @@ tree_density:
 
   color: green
 
-  save_kwargs:
-    bbox_inches: tight
-
 
 # Plots all densities over time
 densities:
@@ -22,8 +19,6 @@ densities:
   module: model_plots.ContDisease
   plot_func: densities
 
-  save_kwargs:
-    bbox_inches: tight
 
 
 # Plot the phase space of two variables
@@ -72,7 +67,7 @@ state_anim:
         infected: red
         source: orange
         stone: gray
-        
+
 
 # --- Create a grid animnation of the tree ages
 age_anim:

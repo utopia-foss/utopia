@@ -11,20 +11,23 @@ from ..tools import save_and_close, colorline
 
 # -----------------------------------------------------------------------------
 
+@is_plot_func(creator_type=UniversePlotCreator,
+              helper_defaults=dict(
+                  set_labels=dict(x="Time", y="Density"),
+                  set_limits=dict(y=[0, 1])
+              )
+              )
 def tree_density(dm: DataManager, *,
-                 out_path: str,
                  uni: UniverseGroup,
-                 fmt: str=None,
-                 save_kwargs: dict=None,
+                 hlpr: PlotHelper,
                  **plot_kwargs):
     """Plots the density of trees and perfoms a lineplot
 
     Args:
         dm (DataManager): The data manager
-        out_path (str): Where to store the plot to
         uni (UniverseGroup): The universe data to use
-        fmt (str, optional): the plt.plot format argument
-        save_kwargs (dict, optional): kwargs to the plt.savefig function
+        hlpr (PlotHelper): The PlotHelper that instantiates the figure and
+            takes care of plot aesthetics (labels, title, ...) and saving
         **plot_kwargs: Passed on to plt.plot
     """
     # Get the group that all datasets are in
@@ -39,28 +42,25 @@ def tree_density(dm: DataManager, *,
     # Call the plot function
     plt.plot(times, data, **plot_kwargs)
 
-    plt.title("Tree density")
-    plt.xlabel("Time [Steps]")
-    plt.ylabel("Density")
 
-    plt.xlim(0, max(times))
-    plt.ylim(0, 1)
-
-    save_and_close(out_path, save_kwargs=save_kwargs)
-
-
+@is_plot_func(creator_type=UniversePlotCreator,
+              helper_defaults=dict(
+                  set_labels=dict(x="Time", y="Density"),
+                  set_limits=dict(y=[0, 1]),
+                  set_legend=dict(enabled=True, loc='best')
+              )
+              )
 def densities(dm: DataManager, *,
-              out_path: str,
               uni: UniverseGroup,
-              save_kwargs: dict=None,
+              hlpr: PlotHelper,
               **plot_kwargs):
     """Plots the densities of all cell states
 
     Args:
         dm (DataManager): The data manager
-        out_path (str): Where to store the plot to
         uni (UniverseGroup): The universe data to use
-        save_kwargs (dict, optional): kwargs to the plt.savefig function
+        hlpr (PlotHelper): The PlotHelper that instantiates the figure and
+            takes care of plot aesthetics (labels, title, ...) and saving
         **plot_kwargs: Passed on to plt.plot
     """
     # Get the group that all datasets are in
@@ -86,17 +86,6 @@ def densities(dm: DataManager, *,
     plt.plot(times, d_infected, color='red', label='infected', **plot_kwargs)
     plt.plot(times, d_source, color='orange', label='source', **plot_kwargs)
     plt.plot(times, d_stone, color='gray', label='stone', **plot_kwargs)
-
-    plt.title("State Densities")
-    plt.xlabel("Time [Steps]")
-    plt.ylabel("Density")
-
-    plt.xlim(0, max(times))
-    plt.ylim(0, 1)
-
-    plt.legend(loc='best')
-
-    save_and_close(out_path, save_kwargs=save_kwargs)
 
 
 def phase_diagram(dm: DataManager, *,
