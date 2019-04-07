@@ -57,26 +57,15 @@ phase_diagram:
   # NOTE Additional arguments will be passed to matplotlib LineCollection
 
 
-# Plot the CA for all available time steps and store as video
-state_map: &state_map
-  creator: universe
-  universes: all
+# --- Create a grid animation of the state
+state_anim:
+  based_on: grid_animation
 
-  # Select the state animation function from the generalized plotting functions
-  module: .ca
-  plot_func: state_anim
-
-  file_ext: mp4
-
-  # Select which model to retrieve data from
-  model_name: ContDisease
-
-  # Select which data to plot
+  # Select the properties to plot
   to_plot:
     state:
       title: State
       limits: [0, 4]
-
       cmap:
         empty: white
         tree: green
@@ -84,35 +73,9 @@ state_map: &state_map
         source: orange
         stone: gray
 
-  # Video options
-  writer: ffmpeg  # can be: frames, ffmpeg (if installed), ...
-  fps: 10
-  dpi: 96
-
-
-# Plot the CA for all available time steps and store as individual frames
-state_map_frames:
-  # Base this plot configuration on the one creating the video
-  <<: *state_map
-
-  # Disabled by default
-  enabled: false
-
-  # Use the frames writer, instead of the inherited ffmpeg write
-  writer: frames
-
-  # For the 'frames' writer, the following additional kwargs can be passed
-  frames_kwargs:
-    file_format: png
-
-# Create frames/movies of the clusters
-cluster_map:
-  # Base the configuration here on that of the state map
-  <<: *state_map
-  writer: frames
-  # Use a custom pre-processor function
-  module: model_plots.ForestFire
-  plot_func: state_anim
+# --- Create a grid animation of the clusters
+cluster_anim:
+  based_on: grid_animation
 
   # Select the properties to plot
   to_plot:
