@@ -2,5 +2,4 @@
 
 # Make them all available here to allow easier import
 from .time_series import *
-from .ca import *
 from .cluster_distribution_multiverse import *

@@ -1,5 +1,9 @@
 # Default plots for the ForestFire model
 ---
+# --- A plot of the cluster size distribution ---------------------------------
+cluster_size_distribution:
+  based_on: cluster_size_distribution
+
 # .. Mean state ...............................................................
 # Plot the mean state depending on the lightning probability
 mean_and_std_lightning:
@@ -97,6 +101,10 @@ forest:
 # --- Animation of the clusters on the spatial grid ---------------------------
 clusters:
   based_on: .ca.state.anim_ffmpeg  # update to *_frames to save frames
+
+  # Use the model-specific plot that adds preprocessing for cluster IDs
+  module: model_plots.ForestFire.ca
+  plot_func: state
 
   model_name: ForestFire
 

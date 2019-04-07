@@ -1,6 +1,6 @@
 # Base configurations for SandPile model plots
 ---
-# --- A plot of the slope (mean - critical_slope)
+# --- A plot of the slope (mean - critical_slope) -----------------------------
 mean_slope:
   based_on: .default_style_and_helpers
 
@@ -19,7 +19,7 @@ mean_slope:
   marker: '.'
 
 
-# --- Plot the avalanche area fraction time series
+# --- Plot the avalanche area fraction time series ----------------------------
 area_fraction:
   based_on: .time_series.density
 
@@ -52,7 +52,7 @@ area_fraction:
   alpha: .9
 
 
-# --- A plot of the cluster size distribution
+# --- A plot of the cluster size distribution ---------------------------------
 cluster_size_distribution:
   based_on: .distribution.histogram
 
@@ -82,7 +82,7 @@ cluster_size_distribution:
   # ...
 
 
-# --- A plot of the complementary cumulative probability distribution
+# --- A plot of the complementary cumulative probability distribution ---------
 compl_cum_prob_dist:
   based_on: .distribution.complementary_cumulative
 

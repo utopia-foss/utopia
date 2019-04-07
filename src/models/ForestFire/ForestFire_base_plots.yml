@@ -1,5 +1,35 @@
 # Default base plots for the ForestFire model
 ---
+# --- A plot of the cluster size distribution ---------------------------------
+cluster_size_distribution:
+  based_on: .distribution.histogram
+
+  # Specify which data to calculate the histogram of
+  model_name: ForestFire
+  path_to_data: avalanche_size
+
+  # Set scales, limits, and title
+  helpers:
+    set_title:
+      title: Cluster Size Distribution
+    set_labels:
+      x: Cluster Size $[A]$
+      y: Counts
+    set_scales:
+      y: log
+    set_limits:
+      x: [0, max]
+      y: [0.9, ~]
+
+  # Configure the histogram
+  histogram_kwargs:
+    bins: 25
+    range: [0, ~]  # None is resolved to data.min() or data.max()
+
+  # Arguments passed to plt.bar
+  # ...
+
+
 # .. Mean state ...............................................................
 mean_and_std_base:
   creator: multiverse
