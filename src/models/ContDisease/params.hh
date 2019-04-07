@@ -58,7 +58,9 @@ struct StoneParams {
     StoneParams(const DataIO::Config& cfg)
     :
     on(get_as<bool>("on", cfg)),
-    init(cfg["initialization"])
+    // Use the get_as function to show a meaningful message if option is set
+    // wrongly
+    init(get_as<DataIO::Config>("initialization", cfg))
     {};
 };
 
@@ -90,7 +92,9 @@ struct Params {
         p_infect(get_as<double>("p_infect", cfg)),
         p_random_infect(get_as<double>("p_random_infect", cfg)),
         infection_source(get_as<bool>("infection_source", cfg)),
-        stones(cfg["stones"])
+        // Use the get_as function to show a meaningful message if option is set
+        // wrongly
+        stones(get_as<DataIO::Config>("stones", cfg)) 
     {
         if ((p_growth > 1) or (p_growth < 0)) {
             throw std::invalid_argument("Invalid p_growth; need be a value "
