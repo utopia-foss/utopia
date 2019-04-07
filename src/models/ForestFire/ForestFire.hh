@@ -42,26 +42,26 @@ struct State {
         cluster_id(0),
         permanently_ignited(false)
     {
-        // Check if initial_density is available to set up cell state
-        if (cfg["initial_density"]) {
-            const auto initial_density = get_as<double>("initial_density", cfg);
+        // Get the desired probability to be a tree
+        const auto p_tree = get_as<double>("p_tree", cfg);
 
-            if (initial_density < 0. or initial_density > 1.) {
-                throw std::invalid_argument("initial_density needs to be in "
-                    "interval [0., 1.], but was not!");
-            }
-
-            // With this probability, the cell state is a tree
-            if (std::uniform_real_distribution<double>(0., 1.)(*rng) 
-                < initial_density) 
-            {
-                kind = Kind::tree;
-            }
-            // NOTE Although the distribution object is created each time, this
-            //      is not a significant slow-down compared to re-using an
-            //      existing distribution object (<4%). When compiled with
-            //      optimization flags, that slowdown is even smaller...
+        if (p_tree < 0. or p_tree > 1.) {
+            throw std::invalid_argument("p_tree needs to be in interval "
+                                        "[0., 1.], but was not!");
         }
+        else if (p_tree == 0.) {
+            // No need to draw a random number
+            return;
+        }
+
+        // With this probability, the cell state is a tree
+        if (std::uniform_real_distribution<double>(0., 1.)(*rng) < p_tree) {
+            kind = Kind::tree;
+        }
+        // NOTE Although the distribution object is created each time, this
+        //      is not a significant slow-down compared to re-using an
+        //      existing distribution object (<4%). When compiled with
+        //      optimization flags, that slowdown is even smaller...
     }
 };
 

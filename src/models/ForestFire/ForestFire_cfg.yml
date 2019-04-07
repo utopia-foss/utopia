@@ -21,9 +21,9 @@ cell_manager:
 
   # Initialization parameters for each cell
   cell_params:
-    # Initial tree density, value in [0, 1]
     # With this probability, a cell is initialized as tree (instead of empty)
-    initial_density: 0.2
+    p_tree: 0.2
+    # NOTE Macroscopically, this is equivalent to the initial tree density
 
 
 # --- Model Dynamics ----------------------------------------------------------
