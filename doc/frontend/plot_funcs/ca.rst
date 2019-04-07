@@ -9,10 +9,10 @@ Spatial Representation
 ----------------------
 
 For a spatial representation of a cellular automaton, there is the ``ca.state``
-method. It supports the ``PlotHelper`` interface as well as animation.
-
-The possible parameters are specified below. For information on how to create
-animations, see there.
+method. It works with the ``PlotHelper`` interface and supports an animation
+update.
+For information on how to configure it such that it performs an animation, see
+:ref:`plot_animations`.
 
 .. autofunction:: utopya.plot_funcs.ca.state
 

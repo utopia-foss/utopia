@@ -321,8 +321,14 @@ plot_manager:
   
   # Can set creator initialization arguments here
   creator_init_kwargs:
-    universe: {}
-    multiverse: {}
+    universe:
+      style: &default_style
+        # Choose a slightly wider figure (16:10 instead of 4:3)
+        figure.figsize: [8., 5.]
+
+    multiverse:
+      style:
+        <<: *default_style
 
 
 # Parameter Space .............................................................

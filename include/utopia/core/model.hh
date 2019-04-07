@@ -250,10 +250,20 @@ public:
 
     // -- Convenience functions -- //
 
-    /// Create and setup a new HDFDataset object
-    /** @brief Create a HDFDataset object within a HDFGroup. The capacity
-     *         - the shape of the dataset - is calculated automatically from
-     *         the num_steps and write_every parameter.
+    /** @brief Create a new dataset within the given group
+     *
+     * @detail The capacity - the shape of the dataset - is calculated
+     *         automatically from the num_steps and write_every parameter.
+     *         Additionally, dataset attributes are set that carry information
+     *         on dimension labels and coordinates.
+     *
+     * @note  The attributes are only written for the `time` dimension, as that
+     *        is the only one that is known in this method. Furthermore, this
+     *        assumes that it writes at `write_every` and - importantly - has
+     *        the first write operation at time zero. Coordinates will be wrong
+     *        if that is not the case! For such cases, it is advised to
+     *        suppress writing of these attributes by setting the
+     *        configuration entry _cfg['write_dim_labels_and_coords'] to false.
      * 
      * @param name The name of the dataset
      * @param hdfgrp The parent HDFGroup
@@ -286,15 +296,37 @@ public:
         // Create the dataset and return it.
         const auto dset = hdfgrp->open_dataset(name, capacity,
                                                chunksize, compression_level);
-
         _log->debug("Successfully created dataset '{}'.", name);
+
+        // Write further attributes, if not specifically suppressed
+        if (get_as<bool>("write_dim_labels_and_coords", _cfg, true)) {
+            // We know that dimension 0 is the time dimension. Add the
+            // attributes that specify dimension names and coordinates:
+            dset->add_attribute("dim_name__0", "time");
+            dset->add_attribute("coords_mode__time", "start_and_step");
+            dset->add_attribute("coords__time",
+                                std::vector<std::size_t>{0, _write_every});
+            _log->debug("Added time dimension labels and coordinates to "
+                        "dataset '{}'.", name);
+        }
+
         return dset;
     }
 
-    /// Create and setup a new HDFDataset object
-    /** @brief Create a HDFDataset object within the model HDFGroup object.
-     *         The capacity - the shape of the dataset - is calculated 
+    /** @brief Create a new dataset within the model's base data group
+     *
+     * @detail The capacity - the shape of the dataset - is calculated
      *         automatically from the num_steps and write_every parameter.
+     *         Additionally, dataset attributes are set that carry information
+     *         on dimension labels and coordinates.
+     *
+     * @note  The attributes are only written for the `time` dimension, as that
+     *        is the only one that is known in this method. Furthermore, this
+     *        assumes that it writes at `write_every` and - importantly - has
+     *        the first write operation at time zero. Coordinates will be wrong
+     *        if that is not the case! For such cases, it is advised to
+     *        suppress writing of these attributes by setting the
+     *        configuration entry _cfg['write_dim_labels_and_coords'] to false.
      * 
      * @param name The name of the dataset
      * @param add_write_shape Additional write shape which, together with the 
@@ -318,10 +350,18 @@ public:
                            add_write_shape, compression_level, chunksize);
     }
 
-    /// Create a new HDFDataset object storing data from a CellManager
-    /** @brief Create a HDFDataset object within the model HDFGroup object.
-     *         The required capacity - the shape of the dataset - is
+    /** @brief Create a dataset storing data from a CellManager
+     *
+     * @detail The required capacity - the shape of the dataset - is
      *         calculated using both data from the model and the CellManager.
+     *         Additionally, dimension and coordinate labels are added.
+     *
+     * @note   For the time dimension, the coordinates assume that data is
+     *         written the first time at time 0 and then every _write_every.
+     *         Time coordinates will be wrong if the model does not write the
+     *         data this way. For such cases, it is advised to suppress writing
+     *         of attributes by setting the _cfg['write_dim_labels_and_coords']
+     *         entry to false.
      * 
      * @param name The name of the dataset
      * @param cm   The CellManager whose cells' states are to be stored in the
@@ -346,9 +386,31 @@ public:
         // Set attributes to mark this dataset as containing grid data
         dset->add_attribute("content", "grid");
         dset->add_attribute("grid_shape", cm.grid()->shape());
+        dset->add_attribute("space_extent", cm.grid()->space()->extent);
 
         _log->debug("Added attributes to dataset '{}' to mark it as storing "
                     "grid data.", name);
+
+        // Write additional attributes, if not specifically suppressed.
+        if (get_as<bool>("write_dim_labels_and_coords", _cfg, true)) {        
+            // We know that the dimensions here refer to (time, cell ids). Add
+            // that information to the attributes
+            dset->add_attribute("dim_name__0", "time");
+            dset->add_attribute("dim_name__1", "ids");
+
+            // For the time, we also know the coordinates
+            dset->add_attribute("coords_mode__time", "start_and_step");
+            dset->add_attribute("coords__time",
+                                std::vector<std::size_t>{0, _write_every});
+
+            // For ids, the dimensions are trivial
+            dset->add_attribute("coords_mode__ids", "range");
+            dset->add_attribute("coords__ids",
+                                std::vector<std::size_t>{cm.cells().size()});
+
+            _log->debug("Added time and cell ID dimension labels and "
+                        "coordinates to dataset '{}'.", name);
+        }
 
         return dset;
     }

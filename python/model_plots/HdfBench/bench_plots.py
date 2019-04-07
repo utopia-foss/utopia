@@ -68,13 +68,14 @@ def times(dm: DataManager, *, uni: UniverseGroup, **kwargs):
     times = uni['data/HdfBench/times']
 
     # Use helper function for actual plot
-    _plot_times(times=times, bench_names=times.attrs['coords_benchmark'],
+    _plot_times(times=times, bench_names=times.coords['benchmark'],
                 **kwargs)
 
 
 # -----------------------------------------------------------------------------
 
-def mean_times(dm: DataManager, *, mv_data, allow_failure: bool=True, **kwargs):
+def mean_times(dm: DataManager, *, mv_data,
+               allow_failure: bool=True, **kwargs):
     """Plots the benchmark times, but averages over the seed dimension of the
     data.
     
@@ -93,8 +94,6 @@ def mean_times(dm: DataManager, *, mv_data, allow_failure: bool=True, **kwargs):
         # Just warn ...
         log.warn("No 'seed' dimension available to calculate the mean over! "
                  "Skipping this plot ...")
-        # TODO use a custom error class here such that the PlotManager can
-        #      become aware of the status of this plot ...
         return
 
     # Get the times DataArray from the dataset
@@ -103,9 +102,8 @@ def mean_times(dm: DataManager, *, mv_data, allow_failure: bool=True, **kwargs):
     times_mean = times.mean('seed')
     times_std = times.std('seed')
 
-    # Get the benchmark names from the config
-    bench_names = [n for n in times.attrs["coords_benchmark"]]
-
+    # Pass on to plot function
     _plot_times(times=times_mean, std=times_std,
-                bench_names=bench_names, num_seeds=times['seed'].shape[0],
+                bench_names=times.coords['benchmark'],
+                num_seeds=times['seed'].shape[0],
                 **kwargs)

@@ -1,6 +1,12 @@
 State animation function
 ========================
 
+.. deprecated::
+
+  This method is deprecated! Use :func:`utopya.plot_funcs.ca.state` instead,
+  and see here (:doc:`ca`) for more information.
+
+
 .. autofunction:: utopya.plot_funcs.ca.state_anim
 
 

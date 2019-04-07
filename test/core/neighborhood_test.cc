@@ -23,6 +23,8 @@ int main() {
             auto cm = rect_2D_empty.cm;
             auto grid = cm.grid();
 
+            assert(grid->nb_size() == 0);
+
             // Check grid shape
             assert(grid->shape()[0] == 5);
             assert(grid->shape()[1] == 5);
@@ -43,6 +45,8 @@ int main() {
         {
             auto cm = rect_2D_vonNeumann.cm;
             auto grid = cm.grid();
+
+            assert(grid->nb_size() == 4);
 
             assert(grid->shape()[0] == 5);
             assert(grid->shape()[1] == 5);
@@ -82,6 +86,8 @@ int main() {
         {
             auto cm = rect_2D_vonNeumann_d2.cm;
             auto grid = cm.grid();
+
+            assert(grid->nb_size() == 12);
 
             assert(grid->shape()[0] == 5);
             assert(grid->shape()[1] == 5);
@@ -124,6 +130,8 @@ int main() {
         {
             auto cm = rect_2D_vonNeumann_d3.cm;
             auto grid = cm.grid();
+
+            assert(grid->nb_size() == 24);
 
             assert(grid->shape()[0] == 7);
             assert(grid->shape()[1] == 7);
@@ -183,6 +191,8 @@ int main() {
             auto cm = rect_2D_Moore.cm;
             auto grid = cm.grid();
 
+            assert(grid->nb_size() == 8);
+
             assert(grid->shape()[0] == 5);
             assert(grid->shape()[1] == 5);
             assert(grid->is_periodic());
@@ -221,6 +231,8 @@ int main() {
         {
             auto cm = rect_2D_Moore_d2.cm;
             auto grid = cm.grid();
+
+            assert(grid->nb_size() == 24);
 
             assert(grid->shape()[0] == 7);
             assert(grid->shape()[1] == 7);
@@ -287,6 +299,8 @@ int main() {
             auto cm = rect_2D_vonNeumann_np.cm;
             auto grid = cm.grid();
 
+            assert(grid->nb_size() == 4);  // _maximum_ number of neighbours
+
             assert(grid->shape()[0] == 5);
             assert(grid->shape()[1] == 5);
             assert(not grid->is_periodic());
@@ -324,6 +338,8 @@ int main() {
         {
             auto cm = rect_2D_vonNeumann_np_d2.cm;
             auto grid = cm.grid();
+
+            assert(grid->nb_size() == 12);  // _maximum_ number of neighbours
 
             assert(grid->shape()[0] == 5);
             assert(grid->shape()[1] == 5);
@@ -366,6 +382,8 @@ int main() {
         {
             auto cm = rect_2D_vonNeumann_np_d3.cm;
             auto grid = cm.grid();
+
+            assert(grid->nb_size() == 24);  // _maximum_ number of neighbors
 
             assert(grid->shape()[0] == 7);
             assert(grid->shape()[1] == 7);
@@ -417,6 +435,8 @@ int main() {
             auto cm = rect_2D_Moore_np.cm;
             auto grid = cm.grid();
 
+            assert(grid->nb_size() == 8);  // _maximum_ number of neighbours
+
             assert(grid->shape()[0] == 5);
             assert(grid->shape()[1] == 5);
             assert(not grid->is_periodic());
@@ -457,6 +477,8 @@ int main() {
         {
             auto cm = rect_2D_Moore_np_d2.cm;
             auto grid = cm.grid();
+
+            assert(grid->nb_size() == 24);  // _maximum_ number of neighbours
 
             assert(grid->shape()[0] == 7);
             assert(grid->shape()[1] == 7);

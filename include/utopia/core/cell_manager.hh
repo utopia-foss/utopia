@@ -366,8 +366,8 @@ public:
                 _log->debug("Cleared cell neighborhood cache.");
             }
 
-            _log->debug("Successfully selected '{}' neighborhood.",
-                        nb_mode_to_string(_grid->nb_mode()));
+            _log->debug("Successfully selected '{}' neighborhood (size: {}).",
+                        nb_mode_to_string(_grid->nb_mode()), nb_size());
         }
         else {
             _log->debug("Neighborhood was already set to '{}'; not changing.",
