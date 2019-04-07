@@ -9,129 +9,14 @@
 #include <utopia/core/apply.hh>
 #include <utopia/core/cell_manager.hh>
 
+// ContDisease-realted includes
+#include "params.hh"
+#include "state.hh"
 
-namespace Utopia {
-namespace Models {
-namespace ContDisease {
 
+namespace Utopia::Models::ContDisease {
 
 // ++ Type definitions ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-/// The kind of the cell: empty, tree, infected, source, stone
-enum class Kind : unsigned short {
-    /// Unoccupied
-    empty = 0,
-    /// Cell represents a tree
-    tree = 1,
-    /// Cell is infected
-    infected = 2,
-    /// Cell is an infection source: constantly infected, spreading infection
-    source = 3,
-    /// Cell cannot be infected
-    stone = 4
-};
-
-/// The full cell struct for the ContDisease model
-struct State {
-    /// The cell state
-    Kind kind;
-
-    /// An ID denoting to which cluster this cell belongs
-    unsigned int cluster_id;
-
-    /// Construct the cell state from a configuration and an RNG
-    template<class RNG>
-    State (const DataIO::Config& cfg, const std::shared_ptr<RNG>& rng)
-    :
-        kind(Kind::empty),
-        cluster_id(0)
-    {
-        // Check if initial_density is available to set up cell state
-        if (cfg["initial_density"]) {
-            const auto init_density = get_as<double>("initial_density", cfg);
-
-            if (init_density < 0. or init_density > 1.) {
-                throw std::invalid_argument("initial_density needs to be in "
-                    "interval [0., 1.], but was " 
-                    + std::to_string(init_density) + "!");
-            }
-
-            // With this probability, the cell state is a tree
-            if (std::uniform_real_distribution<double>(0., 1.)(*rng) 
-                < init_density) 
-            {
-                kind = Kind::tree;
-            }
-        }
-    }
-};
-
-/// Parameters of the ContDisease
-struct Params {
-    /// Probability per site and time step to transition from state empty to tree
-    const double p_growth;
-
-    /// Probability per site and time step for a tree cell to become infected
-    /// if an infected cell is in the neighborhood.
-    const double p_infect;
-
-    /// Probability per site and time step for a random point infection of a
-    // tree cell
-    const double p_random_infect;
-
-    /// Infection source - set true to activate a constant row of infected
-    /// cells at the bottom boundary
-    const bool infection_source;
-
-    // Extract if stones are activated
-    const bool stones;
-
-    // Extract how stones are to be initialized
-    const std::string stone_init;
-
-    // Extract stone density for stone_init = random
-    const double stone_density;
-
-    // Extract clustering weight for stone_init = random
-    const double stone_cluster;
-
-    /// Construct the parameters from the given configuration node
-    Params(const DataIO::Config& cfg)
-    :
-        p_growth(get_as<double>("p_growth", cfg)),
-        p_infect(get_as<double>("p_infect", cfg)),
-        p_random_infect(get_as<double>("p_random_infect", cfg)),
-        infection_source(get_as<bool>("infection_source", cfg)),
-        stones(get_as<bool>("stones", cfg)),
-        stone_init(get_as<std::string>("stone_init", cfg)),
-        stone_density(get_as<double>("stone_density", cfg)),
-        stone_cluster(get_as<double>("stone_cluster", cfg))
-    {
-        if ((p_growth > 1) or (p_growth < 0)) {
-            throw std::invalid_argument("Invalid p_growth; need be a value "
-                "in range [0, 1] and specify the probability per time step "
-                "and cell with which an empty cell turns into a tree. Was: "
-                + std::to_string(p_growth));
-        }
-        if ((p_infect > 1) or (p_infect < 0)) {
-            throw std::invalid_argument("Invalid p_infect! Need be in range "
-                "[0, 1], was " + std::to_string(p_infect));
-        }
-        if ((p_random_infect > 1) or (p_random_infect < 0)) {
-            throw std::invalid_argument("Invalid p_random_infect; Need be a value "
-                "in range [0, 1], was " + std::to_string(p_random_infect));
-        }
-        if ((stone_density > 1) or (stone_density < 0)) {
-            throw std::invalid_argument("Invalid stone_density! Need be a "
-                "value in range [0, 1], was " + std::to_string(stone_density));
-        }
-        if ((stone_cluster > 1) or (stone_cluster < 0)) {
-            throw std::invalid_argument("Invalid stone_cluster! Need be a "
-                "value in range [0, 1], was " + std::to_string(stone_cluster));
-        }
-    }
-};
-
 
 // Specialize the CellTraits type helper for this model
 /** \detail Specifies the type of each cells' state as first template argument
@@ -587,8 +472,6 @@ public:
 };
 
 
-} // namespace ContDisease
-} // namespace Models
-} // namespace Utopia
+} // namespace Utopia::Models::ContDisease
 
 #endif // UTOPIA_MODELS_CONTDISEASE_HH
