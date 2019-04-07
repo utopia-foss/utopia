@@ -88,54 +88,31 @@ def densities(dm: DataManager, *,
     plt.plot(times, d_stone, color='gray', label='stone', **plot_kwargs)
 
 
+@is_plot_func(creator_type=UniversePlotCreator,
+              helper_defaults=dict(
+                  set_labels=dict(x="Tree density", y="Infected density"),
+                  set_limits=dict(x=[0, 1], y=[0, 1])
+              )
+              )
 def phase_diagram(dm: DataManager, *,
-                  out_path: str,
                   uni: UniverseGroup,
+                  hlpr: PlotHelper,
                   x: str='tree',
                   y: str='infected',
-                  xlims: tuple=None,
-                  ylims: tuple=None,
-                  xlabel: str=None,
-                  ylabel: str=None,
-                  fmt: str=None,
-                  save_kwargs: dict=None,
                   **lc_kwargs):
     """Plots the the phase diagram of tree and infected tree densities
 
     Args:
         dm (DataManager): The data manager
-        out_path (str): Where to save the plot to
         uni (UniverseGroup): The universe data to use
+        hlpr (PlotHelper): The PlotHelper that instantiates the figure and
+            takes care of plot aesthetics (labels, title, ...) and saving
         x (str, optional): What to plot on the x-axis
         y (str, optional): What to plot on the y-axis
-        xlims (tuple, optional): The limits of the x-axis
-        ylims (tuple, optional): The limits of the y-axis
-        xlabel (str, optional): The x-axis label
-        ylabel (str, optional): The y-axis label
-        fmt (str, optional): the plt.plot format argument
-        save_kwargs (dict, optional): kwargs to the plt.savefig function
         **lc_kwargs: Passed on to LineCollection.__init__
     """
     # Get the group that all datasets are in
-    grp = uni['data/ContDisease']
-
-    # Extract the data for the x and y coordinates
-    d_x = grp[x]
-    d_y = grp[y]
+    densities = uni['data/ContDisease/densities']
 
     # Call the plot function
-    colorline(d_x, d_y, **lc_kwargs)
-
-    # Set title and labels
-    plt.title("Phase Diagram")
-    plt.xlabel("{}".format(xlabel) if xlabel is not None else x)
-    plt.ylabel("{}".format(ylabel) if ylabel is not None else y)
-
-    # Set limits, if given
-    if xlims:
-        plt.xlim(*xlims)
-
-    if ylims:
-        plt.ylim(*ylims)
-
-    save_and_close(out_path, save_kwargs=save_kwargs)
+    colorline(densities[x], densities[y], **lc_kwargs)

@@ -20,8 +20,7 @@ densities:
   plot_func: densities
 
 
-
-# Plot the phase space of two variables
+# --- Create a phase plot of two densities
 phase_diagram:
   creator: universe
   universes: all
@@ -29,25 +28,14 @@ phase_diagram:
   module: model_plots.ContDisease
   plot_func: phase_diagram
 
-  # Select what to create the phase diagram of
-  x: densities/tree
-  y: densities/infected
-
-  # Set the limits (optional)
-  # xlims: [0, 1]
-  # ylims: [0, 1]
-
-  # Specify the corresponding labels
-  xlabel: $\rho_{tree}$
-  ylabel: $\rho_{infected}$
+  # Select from what densities to create the phase diagram
+  x: tree
+  y: infected
 
   # Specify the colormap. Default: copper_r
   # Another good choice is 'Blues', which is better suited if the focus is on
   # the late and intermediate state development, with a less visible initial one.
   cmap: copper_r
-
-  save_kwargs:
-    bbox_inches: tight
 
   # NOTE Additional arguments will be passed to matplotlib LineCollection
 
