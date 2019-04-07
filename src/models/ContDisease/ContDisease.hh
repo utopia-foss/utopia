@@ -179,20 +179,6 @@ public:
 
         // Remaining initialization steps regard macroscopic quantities
 
-        // Infection source
-        if (_params.infection_source) {
-            this->_log->debug("Setting bottom boundary cells to be "
-                              "permanently infected ...");
-
-            RuleFunc _source_init = [this](const auto& cell) {
-                auto state = cell->state;
-                state.kind = Kind::source;
-                return state;
-            };
-
-            apply_rule<Update::sync>(_source_init, _cm.boundary_cells("bottom"));
-        }
-
         // Stones
         if (_params.stones.on) {
             if (_params.stones.init.mode == "random") {
@@ -252,6 +238,21 @@ public:
                     (_stone_cluster, _cm.cells(), *this->_rng);
             }
         } // end of stones setup
+
+
+        // Infection source
+        if (_params.infection_source) {
+            this->_log->debug("Setting bottom boundary cells to be "
+                              "permanently infected ...");
+
+            RuleFunc _source_init = [this](const auto& cell) {
+                auto state = cell->state;
+                state.kind = Kind::source;
+                return state;
+            };
+
+            apply_rule<Update::sync>(_source_init, _cm.boundary_cells("bottom"));
+        }
 
         // Initialization should be finished here.
         this->_log->debug("{} model fully set up.", this->_name);
