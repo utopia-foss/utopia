@@ -5,36 +5,38 @@
 #
 # Consult the documentation on how to change these parameters
 ---
-# --- Space
+# --- Space -------------------------------------------------------------------
 space:
   periodic: true
 
-# --- CellManager and cell initialization
+
+# --- CellManager and cell initialization -------------------------------------
 cell_manager:
   grid:
     structure: square
-    resolution: 64      # cells per unit length of space's extent
+    resolution: 64           # cells per unit length of space's extent
 
   neighborhood:
-    mode: Moore         # can be: empty, vonNeumann, Moore
+    mode: vonNeumann         # can be: empty, vonNeumann, Moore
 
   # Initialization parameters for each cell
   cell_params:
-    # Initial tree density, value in [0, 1]
     # With this probability, a cell is initialized as tree (instead of empty)
-    initial_density: 0.2
+    p_tree: 0.2
+    # NOTE Macroscopically, this is equivalent to the initial tree density
 
-# --- Model Dynamics
+
+# --- Model Dynamics ----------------------------------------------------------
 # Probability per site and time step to transition from state empty to tree
-growth_rate: 7.5e-3
+p_growth: 7.5e-3
 
 # Probability per site and time step to transition to burning state, burning
 # down the whole cluster
-lightning_frequency: 1.0e-5 
+p_lightning: 1.0e-5 
+
+# Probability (per neighbor) to _not_ catch fire from a neighbor
+p_resistance: 0.
 
 # If set to true, the bottom boundary is constantly ignited. This _requires_
 # the space to be set to non-periodic.
 light_bottom_row: false
-
-# Probability (per neighbor) to _not_ catch fire from a neighbor
-resistance: 0.

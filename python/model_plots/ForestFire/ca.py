@@ -3,23 +3,26 @@
 import numpy as np
 
 import utopya.plot_funcs.ca
+from utopya.plot_funcs.ca import is_plot_func, UniversePlotCreator
 
 # -----------------------------------------------------------------------------
 
-def state_anim(*args, **kwargs) -> None:
-    """See utopya.plot_funcs.ca.state_anim for docstring
+@is_plot_func(creator_type=UniversePlotCreator, supports_animation=True)
+def state(*args, **kwargs):
+    """A wrapper around utopya.plot_funcs.ca.state that adds a preprocessing
+    function for clusters.
 
-    This function merely wraps that function and provides the preprocess_funcs
-    that are needed for the FFM
+    See utopya.plot_funcs.ca.state for docstring.
     """
     def cluster_id_mod20(arr):
         arr = arr.astype(float)
-        arr.where(arr != 0)
+        arr = arr.where(arr != 0, np.nan)
         return arr % 20
         
-    # Bundle the functions into a dict, then call the actual state_anim
+    # Bundle the function into a dict
     pp_funcs = dict(cluster_id=cluster_id_mod20)
 
-    return utopya.plot_funcs.ca.state_anim(*args,
-                                           preprocess_funcs=pp_funcs,
-                                           **kwargs)
+    # Call the actual state plot function
+    return utopya.plot_funcs.ca.state(*args,
+                                      preprocess_funcs=pp_funcs,
+                                      **kwargs)

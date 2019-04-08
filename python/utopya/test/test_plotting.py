@@ -45,17 +45,11 @@ def test_CopyMe_plotting():
     mv.pm.plot_from_cfg()
 
 
-def test_basic_plots(tmpdir):
-    """Tests the plot_funcs.basic module"""
+def test_basic_plotting(tmpdir):
+    """Tests the plot_funcs.basic_* modules"""
     mv, _ = ModelTest('CopyMe').create_run_load()
-    mv.pm.plot("all_states",
-               creator='universe',
-               universes='all',
-               out_dir=str(tmpdir),
-               module=".basic",
-               plot_func="lineplot",
-               y="dummy/state"
-               )
+    
+    # TODO
 
 
 def test_ca_plotting():
