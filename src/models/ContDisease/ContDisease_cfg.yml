@@ -27,7 +27,7 @@ cell_manager:
     resolution: 256      # in cells per unit length of physical space
 
   neighborhood:
-    mode: Moore
+    mode: vonNeumann
 
   # Cell initialization parameters
   cell_params:
@@ -58,7 +58,7 @@ stones:
 
   initialization:
     # The mode in which to initialize stones. Valid options:
-    # 'random'    Intialize cells randomly as a stone with
+    # 'random'    Initialize cells randomly as a stone with
     #             the required probability parameter 'p_random'.
     # 'cluster'   Initialize cells randomly as clusters. For this, stones
     #             are first set randomly on all cells with the probability
