@@ -1,6 +1,6 @@
-# Base coniguration for ContDisease model plots
+# Base configuration for ContDisease model plots
 ---
-# -- Any kind of phase plot
+# -- Any kind of phase plot ---------------------------------------------------
 phase_diagram:
   creator: universe
   universes: all
@@ -14,7 +14,7 @@ phase_diagram:
   cmap: copper_r
 
 
-# -- Densities plot
+# -- Densities plot -----------------------------------------------------------
 densities:
   creator: universe
   universes: all
@@ -23,7 +23,7 @@ densities:
   plot_func: densities
 
 
-# -- Tree density plot
+# -- Tree density plot --------------------------------------------------------
 tree_density:
   creator: universe
   universes: all

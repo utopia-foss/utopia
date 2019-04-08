@@ -1,20 +1,20 @@
 # Default plots for the ContDisease model
 ---
-# --- Plots the tree density over time
+# --- Plots the tree density over time ----------------------------------------
 tree_density:
   based_on: tree_density
 
 
-# --- Plots all densities over time
+# --- Plots all densities over time -------------------------------------------
 densities:
   based_on: densities
 
 
-# --- Create a phase plot of two densities
+# --- Create a phase plot of two densities ------------------------------------
 phase_diagram:
   based_on: phase_diagram
 
-  # Select from what densities to create the phase diagram
+  # Select from what densities to create the phase diagram --------------------
   x: tree
   y: infected
 
@@ -24,7 +24,7 @@ phase_diagram:
       y: Infected
 
 
-# --- Create a grid animation of the state
+# --- Create a grid animation of the state ------------------------------------
 state_anim:
   based_on: .ca.state.anim_ffmpeg  # update to *_frames to save frames
 
@@ -43,7 +43,7 @@ state_anim:
         stone: gray
 
 
-# --- Create a grid animnation of the tree ages
+# --- Create a grid animation of the tree ages --------------------------------
 age_anim:
   based_on: .ca.state.anim_ffmpeg  # update to *_frames to save frames
 
@@ -56,7 +56,7 @@ age_anim:
       cmap: Greens
 
 
-# --- Create a grid animation of the clusters
+# --- Create a grid animation of the clusters ---------------------------------
 cluster_anim:
   based_on: .ca.state.anim_ffmpeg  # update to *_frames to save frames
 
