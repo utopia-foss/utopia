@@ -1061,7 +1061,7 @@ class FrozenMultiverse(Multiverse):
             elif re.match(r'\d{6}-\d{6}_?.*', run_dir):
                 # Is a timestamp, look relative to the model directory
                 log.info("Received timestamp '%s' for run_dir; trying to find "
-                         "one within the model directory ...", run_dir)
+                         "one within the model output directory ...", run_dir)
                 run_dir = os.path.join(model_dir, run_dir)
 
             else:

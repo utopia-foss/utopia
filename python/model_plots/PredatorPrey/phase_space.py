@@ -11,8 +11,8 @@ from utopya.plotting import is_plot_func, PlotHelper, UniversePlotCreator
 
 @is_plot_func(creator_type=UniversePlotCreator,
               helper_defaults=dict(
-                set_labels=dict(x="Predator density",
-                                y="Prey density"),
+                set_labels=dict(x="Predator Density $[1/A]$",
+                                y="Prey Density $[1/A]$"),
                 set_limits=dict(x=(0., None),
                                 y=(0., None))
               ))

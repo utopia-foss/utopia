@@ -1,5 +1,7 @@
 # Config for testing the different initial states of the model
 ---
+perform_sweep: true
+
 parameter_space:
   # Disable steps; not needed
   num_steps: 0
@@ -17,6 +19,3 @@ parameter_space:
       # Work with lower resolution
       grid:
         resolution: 32
-
-      cell_params:
-        initial_density: 0.5

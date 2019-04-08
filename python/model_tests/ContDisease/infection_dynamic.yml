@@ -12,12 +12,12 @@ parameter_space:
       grid:
         resolution: 3
     cell_params:
-      initial_density: 0
+      p_tree: 0
 
-
-    stones: false
+    stones:
+      on: false
     infection_source: true
 
-    growth_rate: 1
+    p_growth: 1
     p_infect: 1
-    p_rd_infect: 0
+    p_random_infect: 0

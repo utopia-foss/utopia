@@ -18,6 +18,14 @@ def model_cfg(**kwargs) -> dict:
     """Creates a dict that can update the config of the ForestFire"""
     return dict(parameter_space=dict(ForestFire=dict(**kwargs)))
 
+def cell_params(**kwargs) -> dict:
+    """Creates a dict that can update the config of the ForestFire"""
+    return model_cfg(cell_manager=dict(cell_params=dict(**kwargs)))
+
+def is_equal(x, y, *, tol=1e-16) -> bool:
+    """Whether x is in interval [y-tol, y+tol]"""
+    return y-tol <= x <= y+tol
+
 # Tests -----------------------------------------------------------------------
 
 def test_basics():
@@ -59,92 +67,65 @@ def test_output():
         uni_cfg = uni['cfg']
 
         # Check that all datasets are available
-        assert 'state' in data
+        assert 'kind' in data
+        assert 'tree_density' in data
         assert 'cluster_id' in data
 
 def test_initial_state_random(): 
-    """Test that the initial states are random.
+    """Test that the initial states are random and densities are carried over.
 
-    This also tests for the correct array shape, something that is not done in
-    the other tests.
+    The tests done here only perform the initial write operation.
     """
     # Use the config file for common settings, change via additional kwargs
-    mv, dm = mtc.create_run_load(from_cfg="initial_state.yml",
-                                 perform_sweep=True)
+    # Start with .5 tree density
+    p_tree = 0.5
+    _, dm = mtc.create_run_load(from_cfg="initial_state.yml",  # num_steps: 0
+                                **cell_params(p_tree=p_tree))
 
     # For all universes, perform checks on the state
     for uni in dm['multiverse'].values():
-        data = uni['data']['ForestFire']['state']
+        kind = uni['data/ForestFire/kind']
+        tree_density = uni['data/ForestFire/tree_density']
 
-        # check, that no cell is burning
-        assert 0 <= np.amax(data) <= 1
+        # Kind should be random; calculate the ratio and check limits
+        assert is_equal(kind.mean(), p_tree, tol=0.05)
 
-        # Strategies should be random; calculate the ratio and check limits
-        density = np.sum(data)/(data.shape[1] * data.shape[2])
-        assert 0.45 <= density <= 0.55  # TODO values ok?
-
+        # Check calculated tree density matches the given one
+        assert is_equal(kind.mean(), tree_density.item())
 
     # Test again for another probability value
-    initial_density = 0.2
-    mv, dm = mtc.create_run_load(from_cfg="initial_state.yml",
-                                 perform_sweep=True,
-                                 **model_cfg(
-                                    cell_manager=dict(
-                                        cell_params=dict(
-                                            initial_density=initial_density)
-                                        )
-                                    )
-                                 )
+    p_tree = 0.2
+    _, dm = mtc.create_run_load(from_cfg="initial_state.yml",
+                                **cell_params(p_tree=p_tree))
 
     for uni in dm['multiverse'].values():
-        data = uni['data']['ForestFire']['state']
+        kind = uni['data/ForestFire/kind']
+        tree_density = uni['data/ForestFire/tree_density']
+        assert is_equal(kind.mean(), p_tree, tol=0.05)
+        assert is_equal(kind.mean(), tree_density.item())
 
-        # check, that no cell is burning
-        assert 0 <= np.amax(data) <= 1
-
-        # Calculate fraction and compare to desired probability
-        density = np.sum(data)/(data.shape[1] * data.shape[2])
-        assert initial_density - 0.05 <= density <= initial_density + 0.05
-
-    # Test again for another probability value - implies _set_initial_state_empty function
-    initial_density = 0.0
-    mv, dm = mtc.create_run_load(from_cfg="initial_state.yml",
-                                 perform_sweep=True,
-                                 **model_cfg(
-                                    cell_manager=dict(
-                                        cell_params=dict(
-                                            initial_density=initial_density)
-                                        )
-                                    )
-                                 )
+    # Test again for another probability value
+    p_tree = 0.0
+    _, dm = mtc.create_run_load(from_cfg="initial_state.yml",
+                                **cell_params(p_tree=p_tree))
 
     for uni in dm['multiverse'].values():
-        data = uni['data']['ForestFire']
+        kind = uni['data/ForestFire/kind']
+        tree_density = uni['data/ForestFire/tree_density']
 
-        # check, that no cell is burning
-        assert 0 <= np.amax(data['state']) <= 1
+        # check, that no cell is a tree
+        assert (kind == 0).all()
+        assert is_equal(kind.mean(), tree_density.item())
 
-        # Calculate fraction and compare to desired probability
-        density = np.sum(data['state'])/data['state'].shape[1]
-        assert density == initial_density
-
-    initial_density = 1.0
-    mv, dm = mtc.create_run_load(from_cfg="initial_state.yml",
-                                 perform_sweep=True,
-                                 **model_cfg(
-                                    cell_manager=dict(
-                                        cell_params=dict(
-                                            initial_density=initial_density)
-                                        )
-                                    )
-                                 )
+    
+    p_tree = 1.0
+    _, dm = mtc.create_run_load(from_cfg="initial_state.yml",
+                                **cell_params(p_tree=p_tree))
 
     for uni in dm['multiverse'].values():
-        data = uni['data']['ForestFire']['state']
+        kind = uni['data/ForestFire/kind']
+        tree_density = uni['data/ForestFire/tree_density']
 
-        # check, that no cell is burning
-        assert 0 <= np.amax(data) <= 1
-
-        # Calculate fraction and compare to desired probability
-        density = np.sum(data)/(data.shape[1] * data.shape[2])
-        assert density == initial_density
+        # check, that all cells are trees
+        assert (kind == 1).all()
+        assert is_equal(kind.mean(), tree_density.item())

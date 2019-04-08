@@ -23,7 +23,7 @@ following rules:
 
    - From a neighbouring infected cell with probability ``p_infect``
      *per neighbor*
-   - Via a random point infection with probability ``p_rd_infect``
+   - Via a random point infection with probability ``p_random_infect``
    - Via a constantly infected cell, an infection ``source``
 
 For the neighborhood, both the von Neumann neighborhood (5-neighborhood) and the Moore neighborhood (9-neighborhood) are supported (see model configuration).
