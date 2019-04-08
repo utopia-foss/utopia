@@ -46,6 +46,9 @@ phase_diagram:
     set_labels:
       x: Tree
       y: Infected
+    set_limits:
+      x: [0, 0.7]
+      y: [0, 0.01]
 
 
 # --- Create a grid animation of the state ------------------------------------
