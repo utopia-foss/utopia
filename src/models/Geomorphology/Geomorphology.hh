@@ -109,8 +109,10 @@ private:
     double _toppling_frequency;
     double _toppling_critical_height; /// The critical height for toppling
 
+    const double _float_precission; /// precission when comparing floats
+
     // A map of lowest neighbors
-    std::map<GeomorphologyCellIndexType, 
+    std::unordered_map<GeomorphologyCellIndexType, 
              std::shared_ptr<GeomorphologyCellType>> _lowest_neighbors;
 
     // ** Datasets
@@ -141,6 +143,8 @@ public:
         _toppling_frequency(get_as<double>("toppling_frequency", this->_cfg)),
         _toppling_critical_height(get_as<double>("toppling_critical_height", this->_cfg)),
 
+        _float_precission(1e-10),
+
         // Create datasets using the helper functions for CellManager-data
         _dset_height(this->create_cm_dset("height", _cm)),
         _dset_drainage_area(this->create_cm_dset("drainage_area", _cm)),
@@ -164,31 +168,31 @@ public:
      */ 
     void build_network () {
         // reset network
-        apply_rule<Update::sync>(_reset_network, _cm.cells());
+        apply_rule<Update::sync>(reset_network, _cm.cells());
 
         // connect cells to drainage network
-        apply_rule<Update::async, Shuffle::off>(_connect_cells, _cm.cells(),
+        apply_rule<Update::async, Shuffle::off>(connect_cells, _cm.cells(),
                                                 *this->_rng);
 
         // fill sinks with water
-        apply_rule<Update::async, Shuffle::off>(_build_lake, _cm.cells(),
+        apply_rule<Update::async, Shuffle::off>(build_lake, _cm.cells(),
                                                 *this->_rng);
 
         // get drainage area
-        apply_rule<Update::async, Shuffle::off>(_pass_drainage_area, _cm.cells(),
+        apply_rule<Update::async, Shuffle::off>(pass_drainage_area, _cm.cells(),
                                                 *this->_rng);
     }
 
     /// Perform step
     void perform_step () {        
         // Erode
-        apply_rule<Update::sync>(_erode, _cm.cells());
+        apply_rule<Update::sync>(erode, _cm.cells());
 
         // Uplift  
-        apply_rule<Update::sync>(_uplift_rule, _cm.cells());
+        apply_rule<Update::sync>(uplift_rule, _cm.cells());
 
         // Topple
-        apply_rule<Update::async, Shuffle::on>(_toppling, _cm.cells(),
+        apply_rule<Update::async, Shuffle::on>(toppling, _cm.cells(),
                                                *this->_rng);
 
         // Build drainage network
@@ -217,6 +221,18 @@ public:
     }
 
 private:
+    // -- Helper functions ----------------------------------------------------
+    /// Compare two floats for equality
+    bool check_eq(const double& a, const double& b) {
+        return (a-b < _float_precission) && (b-a < _float_precission);
+    }
+
+    /// Compare the waterline of two cells
+    template <typename Cell>
+    bool check_eq_waterline(const Cell& a, const Cell& b) {
+        return check_eq(a->state.waterline(), b->state.waterline());
+    }
+
     // -- Initialization function --------------------------------------------- 
     /// The initialization of the cells
     /** Adds the inclination to the cells initial rock height.
@@ -235,7 +251,7 @@ private:
             double slope = get_as<double>("initial_slope", 
                                 this->_cfg["cell_manager"]["cell_params"]);
             state.rock += slope*pos[1];
-            if (state.rock < 1e-10) {
+            if (state.rock < _float_precission) {
                 std::uniform_real_distribution<> dist(0.,1e-5);
                 state.rock = dist(*this->_rng);
                 this->_log->warn("Received negative initial height. Was set "
@@ -277,8 +293,7 @@ private:
             double height_diff = n->state.waterline() - 
                                  lowest_neighbor->state.waterline();
 
-            // Check if cells have approximately the same height
-            if ((height_diff < 1e-10) && (-height_diff < 1e-10)) {
+            if (check_eq_waterline(n, lowest_neighbor)) {
                 lowest_neighbors.push_back(n);
             }
             
@@ -311,10 +326,9 @@ private:
     GmorphCellContainer update_lakesites(GmorphCellContainer& lake,
                                          GmorphCellContainer& shore) 
     {
-        double waterline = lake[0]->state.waterline();
         auto it = std::begin(shore);
         while(it != std::end(shore)) { 
-            if (std::abs((*it)->state.waterline() - waterline) < 1e-10) {
+            if (check_eq_waterline(*it, lake[0])) {
                 lake.push_back(*it);
                 auto nb = _cm.neighbors_of(*it);
                 for (auto it_lake : lake)
@@ -346,19 +360,15 @@ private:
 
     // -- Rule functions ------------------------------------------------------
     /// The rule how to uplift
-    RuleFunc _uplift_rule = [this](const auto& cell) {
+    RuleFunc uplift_rule = [this](const auto& cell) {
         auto state = cell->state;
         state.rock += this->_uplift(*(this->_rng));
         return state;
     };
 
     /// The rule how to erode with stream power
-    RuleFunc _erode = [this](const auto& cell) {
+    RuleFunc erode = [this](const auto& cell) {
         auto state = cell->state;
-
-        if (state.watercolumn > 0.) {
-            return state;
-        }
 
         double slope = state.waterline();
         if (not state.is_outflow) {
@@ -380,7 +390,7 @@ private:
      * 
      *  On failure slope is reduced to 1/3. of its initial value. 
      */
-    RuleFunc _toppling = [this](const auto& cell) {
+    RuleFunc toppling = [this](const auto& cell) {
         auto state = cell->state;
         if (_toppling_frequency == 0. or 
             _toppling_frequency < this->_prob_dist(*(this->_rng))
@@ -408,7 +418,7 @@ private:
     };
 
     /// The rule to reset the drainage network
-    RuleFunc _reset_network = [](const auto& cell) {
+    RuleFunc reset_network = [](const auto& cell) {
         auto state = cell->state;
         state.drainage_area = 1.;
         state.was_drained = false;
@@ -420,7 +430,7 @@ private:
     /** Create map: cells to their lowest_neighbor (random choice if multiple).
      *  Sinks (no lower neighbor or outflow) map to themselfes.
      */
-    RuleFunc _connect_cells = [this](const auto& cell) {
+    RuleFunc connect_cells = [this](const auto& cell) {
         if (cell->state.is_outflow) {
             _lowest_neighbors[cell->id()] = cell; // map to itself
             return cell->state;
@@ -441,7 +451,7 @@ private:
      *  
      *  \note Must be updated in an asynchronous way. No shuffle needed.
      */
-    RuleFunc _build_lake = [this](auto& cell) {
+    RuleFunc build_lake = [this](auto& cell) {
         // return if cell has lower neighbor
         if (cell->state.is_outflow or _lowest_neighbors[cell->id()] != cell) {
             return cell->state;
@@ -466,15 +476,14 @@ private:
         auto lowest_shore_cell = shore[0];
         for (const auto& sc : shore) {
             if (sc->state.waterline() < 
-                lowest_shore_cell->state.waterline() - 1e-10) 
+                lowest_shore_cell->state.waterline() - _float_precission) 
             {
                 lowest_shore_cell = sc;
             }
         }
 
         // raise waterline while no outflow to lake
-        while (lowest_shore_cell->state.waterline() > waterline + 1e-10 and 
-               no_sink) 
+        while (lowest_shore_cell->state.waterline() > waterline and no_sink) 
         {
             // raise watercolumn to new waterline
             waterline = lowest_shore_cell->state.waterline();
@@ -496,7 +505,7 @@ private:
             lowest_shore_cell = shore[0];
             for (const auto& sc : shore) {
                 if (sc->state.waterline() <
-                    lowest_shore_cell->state.waterline() - 1e-10) 
+                    lowest_shore_cell->state.waterline() - _float_precission) 
                 {
                     lowest_shore_cell = sc;
                 }
@@ -516,7 +525,7 @@ private:
             auto nbs = this->_cm.neighbors_of(lowest_shore_cell);
             auto it_nb = nbs.begin();
             while(it_nb != nbs.end()) {
-                if (std::abs((*it_nb)->state.waterline() - waterline) >= 1e-10) {
+                if (not check_eq((*it_nb)->state.waterline(), waterline)) {
                     it_nb = nbs.erase(it_nb);
                 }
                 else if (lake.end() == std::find(lake.begin(), lake.end(), (*it_nb))) {
@@ -553,7 +562,7 @@ private:
      *  
      *  \note Must be updated in an asynchronous way. No shuffle needed.
      */
-    RuleFunc _pass_drainage_area = [this](auto& cell) {
+    RuleFunc pass_drainage_area = [this](auto& cell) {
         auto state = cell->state;
         state.was_drained = true;
 
