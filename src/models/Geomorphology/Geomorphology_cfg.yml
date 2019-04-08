@@ -27,3 +27,4 @@ stream_power_coef: 0.05
 
 toppling_frequency: 1.e-5
 toppling_critical_height: 15.
+toppling_slope_reduction_factor: 0.3333333333

@@ -108,6 +108,7 @@ private:
     /// The frequency of possible toppling events per cell
     double _toppling_frequency;
     double _toppling_critical_height; /// The critical height for toppling
+    double _toppling_slope_reduction_factor; /// The factor shaping the new
 
     const double _float_precission; /// precission when comparing floats
 
@@ -142,6 +143,8 @@ public:
         _stream_power_coef(get_as<double>("stream_power_coef", this->_cfg)),
         _toppling_frequency(get_as<double>("toppling_frequency", this->_cfg)),
         _toppling_critical_height(get_as<double>("toppling_critical_height", this->_cfg)),
+        _toppling_slope_reduction_factor(
+            get_as<double>("toppling_slope_reduction_factor", this->_cfg)),
 
         _float_precission(1e-10),
 
@@ -410,8 +413,8 @@ private:
         double relief = heighest_neighbor->state.waterline() - state.waterline();
         double failure_prob = relief / _toppling_critical_height;
         if (this->_prob_dist(*(this->_rng)) < failure_prob) {
-            heighest_neighbor->state.rock -= relief / 3.0;
-            state.rock += relief / 3.0;
+            heighest_neighbor->state.rock -= relief / _toppling_slope_reduction_factor;
+            state.rock += relief / _toppling_slope_reduction_factor;
         }
 
         return state;
