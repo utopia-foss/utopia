@@ -2,149 +2,95 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-
+import utopya.plot_funcs.ca
 from utopya import DataManager, UniverseGroup
+from utopya.plotting import is_plot_func, PlotHelper, UniversePlotCreator
 
-from ..tools import save_and_close, colorline
+
+from ..tools import colorline
 
 # -----------------------------------------------------------------------------
 
-def tree_density(dm: DataManager, *, 
-                 out_path: str, 
-                 uni: UniverseGroup, 
-                 fmt: str=None, 
-                 save_kwargs: dict=None, 
-                 **plot_kwargs):
-    """Plots the density of trees and perfoms a lineplot
-    
-    Args:
-        dm (DataManager): The data manager
-        out_path (str): Where to store the plot to
-        uni (UniverseGroup): The universe data to use
-        fmt (str, optional): the plt.plot format argument
-        save_kwargs (dict, optional): kwargs to the plt.savefig function
-        **plot_kwargs: Passed on to plt.plot
-    """
-    # Get the group that all datasets are in
-    grp = uni['data/ContDisease']
-
-    # Extract the data for the tree states
-    data = grp["densities/tree"]
-
-    # Get the time steps array for this universe
-    times = uni.get_times_array()
-
-    # Call the plot function
-    plt.plot(times, data, **plot_kwargs)
-
-    plt.title("Tree density")
-    plt.xlabel("Time [Steps]")
-    plt.ylabel("Density")
-
-    plt.xlim(0, max(times))
-    plt.ylim(0, 1)
-
-    save_and_close(out_path, save_kwargs=save_kwargs)
-
-
-def densities(dm: DataManager, *, 
-              out_path: str, 
-              uni: UniverseGroup, 
-              save_kwargs: dict=None, 
+@is_plot_func(creator_type=UniversePlotCreator,
+              helper_defaults=dict(
+                  set_labels=dict(x="Time [Iteration Steps]", y="Density [1/A]"),
+                  set_title=dict(title="Densities"),
+                  set_limits=dict(y=[0, 1], x=['min', 'max']),
+                  set_legend=dict(enabled=True, loc='best'),
+              )
+              )
+def densities(dm: DataManager, *,
+              uni: UniverseGroup,
+              hlpr: PlotHelper,
+              to_plot: dict,
               **plot_kwargs):
     """Plots the densities of all cell states
-    
+
     Args:
         dm (DataManager): The data manager
-        out_path (str): Where to store the plot to
         uni (UniverseGroup): The universe data to use
-        save_kwargs (dict, optional): kwargs to the plt.savefig function
+        hlpr (PlotHelper): The PlotHelper that instantiates the figure and
+            takes care of plot aesthetics (labels, title, ...) and saving
+        to_plot (dict): A dictionary with the information on what to plot.
+            The keys are used to access the datasets and the values, which 
+            should again be given as dict's are passed onto to the plt.plot
+            function
+        **plot_kwargs: Passed on to plt.plot
+    """
+    # Get the group that all density datasets are in
+    grp = uni['data/ContDisease/densities']
+
+    # Get the time steps array for the given universe
+    times = uni.get_times_array()
+
+    # Loop through all entries and create a line plot for each one of them
+    for key, value in to_plot.items():
+        # Get the dataset
+        data = grp[key]
+
+        # If stones or sources should be plotted, expand their constant 1D 
+        # datasets to 2D to be of valid length
+        if key == 'stone' or key == 'source':
+            data = np.full(len(times), data)
+
+        # Call the plot function
+        plt.plot(times, data, **value)
+
+
+@is_plot_func(creator_type=UniversePlotCreator,
+              helper_defaults=dict(
+                  set_title=dict(title="Phase Diagram")
+              )
+              )
+def phase_diagram(dm: DataManager, *,
+                  uni: UniverseGroup,
+                  hlpr: PlotHelper,
+                  x: str,
+                  y: str,
+                  cmap: str=None,
+                  **plot_kwargs):
+    """Plots the the phase diagram of tree and infected tree densities
+
+    Args:
+        dm (DataManager): The data manager
+        uni (UniverseGroup): The universe data to use
+        hlpr (PlotHelper): The PlotHelper that instantiates the figure and
+            takes care of plot aesthetics (labels, title, ...) and saving
+        x (str): What to plot on the x-axis
+        y (str): What to plot on the y-axis
         **plot_kwargs: Passed on to plt.plot
     """
     # Get the group that all datasets are in
-    grp = uni['data/ContDisease']
+    densities = uni['data/ContDisease/densities']
 
-    # Extract the data for the tree states and convert it into a 3d-array
-    d_empty = grp["densities/empty"]
-    d_tree = grp["densities/tree"]
-    d_infected = grp["densities/infected"]
-    d_source = grp["densities/source"]
-    d_stone = grp["densities/stone"]
+    # If a colormap was given, use it to color-code the time
+    cc_kwargs = ({} if cmap is None
+                 else dict(c=uni.get_times_array(), cmap=cmap))
     
-    # Get the time steps array for the given universe
-    times = uni.get_times_array()
-    
-    # Expand the stone and source arrays (both constant) to be of valid length
-    d_stone = np.full(len(times), d_stone) 
-    d_source = np.full(len(times), d_source)
+    # Plot the phase space
+    sc = hlpr.ax.scatter(densities[x], densities[y], **cc_kwargs, **plot_kwargs)
 
-    # Call the plot function
-    plt.plot(times, d_empty, color='black', label='empty', **plot_kwargs)
-    plt.plot(times, d_tree, color='green', label='tree', **plot_kwargs)
-    plt.plot(times, d_infected, color='red', label='infected', **plot_kwargs)
-    plt.plot(times, d_source, color='orange', label='source', **plot_kwargs)
-    plt.plot(times, d_stone, color='gray', label='stone', **plot_kwargs)
-
-    plt.title("State Densities")
-    plt.xlabel("Time [Steps]")
-    plt.ylabel("Density")
-
-    plt.xlim(0, max(times))
-    plt.ylim(0, 1)
-
-    plt.legend(loc='best')
-
-    save_and_close(out_path, save_kwargs=save_kwargs)
-
-
-def phase_diagram(dm: DataManager, *, 
-                  out_path: str, 
-                  uni: UniverseGroup, 
-                  x: str='tree',
-                  y: str='infected',
-                  xlims: tuple=None,
-                  ylims: tuple=None,
-                  xlabel: str=None,
-                  ylabel: str=None,
-                  fmt: str=None, 
-                  save_kwargs: dict=None, 
-                  **lc_kwargs):
-    """Plots the the phase diagram of tree and infected tree densities
-    
-    Args:
-        dm (DataManager): The data manager
-        out_path (str): Where to save the plot to
-        uni (UniverseGroup): The universe data to use
-        x (str, optional): What to plot on the x-axis
-        y (str, optional): What to plot on the y-axis
-        xlims (tuple, optional): The limits of the x-axis
-        ylims (tuple, optional): The limits of the y-axis
-        xlabel (str, optional): The x-axis label
-        ylabel (str, optional): The y-axis label
-        fmt (str, optional): the plt.plot format argument
-        save_kwargs (dict, optional): kwargs to the plt.savefig function
-        **lc_kwargs: Passed on to LineCollection.__init__
-    """
-    # Get the group that all datasets are in
-    grp = uni['data/ContDisease']
-
-    # Extract the data for the x and y coordinates
-    d_x = grp[x]
-    d_y = grp[y]
-
-    # Call the plot function
-    colorline(d_x, d_y, **lc_kwargs)
-
-    # Set title and labels
-    plt.title("Phase Diagram")
-    plt.xlabel("{}".format(xlabel) if xlabel is not None else x)
-    plt.ylabel("{}".format(ylabel) if ylabel is not None else y)
-
-    # Set limits, if given
-    if xlims:
-        plt.xlim(*xlims)
-    
-    if ylims:
-        plt.ylim(*ylims)
-
-    save_and_close(out_path, save_kwargs=save_kwargs)
+    # Add a colorbar
+    if cc_kwargs:
+        hlpr.fig.colorbar(sc, ax=hlpr.ax, fraction=0.05, pad=0.02,
+                          label="Time [Iteration Steps]")

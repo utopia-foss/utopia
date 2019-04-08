@@ -15,47 +15,57 @@
 # Furthermore, if including other models' parameters via the `!model` tag, make
 # sure that no circular includes occur.
 ---
-# --- Space parameters
+# --- Space parameters --------------------------------------------------------
 # The physical space this model is embedded in
 space:
   periodic: false
 
-# --- CellManager and cell initialization
+# --- CellManager and cell initialization -------------------------------------
 cell_manager:
   grid:
     structure: square
-    resolution: 64      # in cells per unit length of physical space
+    resolution: 256      # in cells per unit length of physical space
 
   neighborhood:
-    mode: Moore
+    mode: vonNeumann
 
   # Cell initialization parameters
   cell_params:
     # Initial tree density, value in [0, 1]
-    # With this probablity, a cell is initialized as tree (instead of empty)
-    initial_density: 0
+    # With this probability, a cell is initialized as tree (instead of empty)
+    p_tree: 0
 
-# --- Model Dynamics
+# --- Model Dynamics ----------------------------------------------------------
 # Probability per site and time step to transition from state empty to tree
-growth_rate: 7.5e-3
+p_growth: 7.5e-3
 
-# Probablity per site and time step for a tree cell to become infected if an
+# Probability per site and time step for a tree cell to become infected if an
 # infected cell is in the neighborhood
 p_infect: 1.
 
-# Probaility per site and time step for a random point infection of a tree cell
-p_rd_infect: 0.
+# Probability per site and time step for a random point infection of a tree cell
+p_random_infect: 0.
 
 # Infection source - set true to activate a constant row of infected cells at
 # the bottom boundary. Requires non-periodic space.
 infection_source: true
 
-# Stones - set true to activate.
-stones: true
 
-# Initialization mode for stones (can be: random)
-stone_init: random
+# --- Stones ------------------------------------------------------------------
+stones:
+  # Whether to have stones or not
+  on: true
 
-# Additional parameters for stone initialization
-stone_density: 0.1   # stone density in entire grid
-stone_cluster: 0.2   # how much stones prefer to form clusters
+  initialization:
+    # The mode in which to initialize stones. Valid options:
+    # 'random'    Initialize cells randomly as a stone with
+    #             the required probability parameter 'p_random'.
+    # 'cluster'   Initialize cells randomly as clusters. For this, stones
+    #             are first set randomly on all cells with the probability
+    #             'p_random' (required parameter!) and afterwards if a cell
+    #             has a stone as neighbor, it becomes a stone with probability
+    #             'p_cluster' (required parameter)
+    mode: random
+
+    p_random: 0.1
+    p_cluster: 0.2

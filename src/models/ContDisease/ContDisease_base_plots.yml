@@ -1,0 +1,25 @@
+# Base configuration for ContDisease model plots
+---
+# -- Any kind of phase plot ---------------------------------------------------
+phase_diagram:
+  creator: universe
+  universes: all
+
+  module: model_plots.ContDisease
+  plot_func: phase_diagram
+
+  based_on: .default_style_and_helpers
+
+  cmap: viridis_r
+
+
+
+# -- Densities plot -----------------------------------------------------------
+densities:
+  creator: universe
+  universes: all
+
+  module: model_plots.ContDisease
+  plot_func: densities
+
+  based_on: .default_style_and_helpers

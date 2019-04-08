@@ -12,8 +12,9 @@ parameter_space:
       grid:
         resolution: 32
     cell_params:
-      initial_density: 0
+      p_tree: 0
 
-    stones: false
+    stones:
+      on: false
     infection_source: false
     
