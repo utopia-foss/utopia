@@ -18,8 +18,8 @@ cluster_size_distribution:
     set_scales:
       y: log
     set_limits:
-      x: [0, ~]
-      y: [0.5, ~]
+      x: [0, max]
+      y: [0.8, ~]
 
   # Perform dimensionality reduction of the given data
   preprocess:
@@ -110,10 +110,12 @@ tree_density_over_p_lightning:
   # Apply some transformations, e.g. calculate a mean over the seed
   transform_data:
     - mean: [seed]
+      _may_fail: true
 
   # Same transformations needed for std
   transform_std:
     - std: [seed]
+      _may_fail: true
 
   # Specify over which sweep to create lines
   lines_from: p_lightning

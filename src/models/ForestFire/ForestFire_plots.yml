@@ -19,6 +19,7 @@ tree_density:
 # ... Of a sweep over p_lightning and seed ....................................
 tree_density_over_p_lightning:
   based_on: tree_density_over_p_lightning
+  enabled: false  # Can enable this when sweeping over `p_lightning`
 
 
 # --- Animation of the spatial grid -------------------------------------------

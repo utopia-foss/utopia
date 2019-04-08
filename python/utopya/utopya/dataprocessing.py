@@ -157,6 +157,9 @@ TRANSFORMATIONS = {
     'cumulate_complementary':   lambda d, _: np.cumsum(d[::-1])[::-1]
 }
 
+# End of TRANSFORMATIONS dict population
+# .............................................................................
+
 
 def transform(data: xr.DataArray, *operations: Union[dict, str],
               log_level: int=None) -> xr.DataArray:
@@ -191,15 +194,28 @@ def transform(data: xr.DataArray, *operations: Union[dict, str],
         if isinstance(op_spec, str):
             op_name = op_spec
             op_spec = dict()
+            may_fail = False
 
-        elif not isinstance(op_spec, dict) or not len(op_spec) == 1:
+        elif not isinstance(op_spec, dict):
             raise TypeError("Entries of `operations` argument need to be dict"
-                            "-like and of length 1, but entry {} was {}!"
+                            "-like, but entry {} was {}!"
                             "".format(i, repr(op_spec)))
 
         else:
-            # Get the name, i.e. the only key in the dict
-            op_name = list(op_spec.keys())[0]
+            # Get the names that don't start with _
+            names = [k for k in op_spec.keys() if not k.startswith("_")]
+
+            if len(names) != 1:
+                raise ValueError("Could not extract an operation name from "
+                                 "`operations` argument at index {}! For dict-"
+                                 "like arguments, the dict need to contain "
+                                 "one and only one key that does not start "
+                                 "with '_'. Got keys: {}. Full dict: {}"
+                                 "".format(i, ", ".join(names), op_spec))
+            
+            # Get the single name
+            op_name = names[0]
+            may_fail = op_spec.get('_may_fail', False)
             op_spec = op_spec[op_name]
 
         # Get the transform operation
@@ -218,7 +234,15 @@ def transform(data: xr.DataArray, *operations: Union[dict, str],
                 i+1, len(operations), op_name)
         log.log(log_level, "  … with arguments:  %s", op_spec)
 
-        data = op_func(data, op_spec)
+        try:
+            data = op_func(data, op_spec)
+
+        except Exception as exc:
+            if may_fail:
+                log.warning("Operation '%s' failed with %s: %s",
+                            op_name, exc.__class__.__name__, exc)
+                continue
+            raise
 
         log.log(log_level, "Result:\n%s\n", data)
 
