@@ -20,7 +20,7 @@ cell_manager:
 
 # Quantities related to soil
 uplift_mean: .1
-uplift_var: .0
+uplift_var: .01 # must be > 1e-10
 erodibility: .01
 
 stream_power_coef: 0.05

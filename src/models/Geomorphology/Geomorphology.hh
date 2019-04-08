@@ -153,6 +153,10 @@ public:
         _dset_drainage_area(this->create_cm_dset("drainage_area", _cm)),
         _dset_watercolumn(this->create_cm_dset("watercolumn", _cm))
     {
+        if (get_as<double>("uplift_var", this->_cfg) <= 1e-10) {
+            throw std::invalid_argument("Invalid argument: uplift_var must be "
+                "> _float_precission (1e-10)!");
+        }
         // Update initial cell states
         _initialize_cells();
 
@@ -478,8 +482,7 @@ private:
         // lowest shore cell is candidate for outflow
         auto lowest_shore_cell = shore[0];
         for (const auto& sc : shore) {
-            if (sc->state.waterline() < 
-                lowest_shore_cell->state.waterline() - _float_precission) 
+            if (sc->state.waterline() < lowest_shore_cell->state.waterline()) 
             {
                 lowest_shore_cell = sc;
             }
@@ -508,7 +511,7 @@ private:
             lowest_shore_cell = shore[0];
             for (const auto& sc : shore) {
                 if (sc->state.waterline() <
-                    lowest_shore_cell->state.waterline() - _float_precission) 
+                    lowest_shore_cell->state.waterline()) 
                 {
                     lowest_shore_cell = sc;
                 }
