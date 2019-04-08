@@ -1,29 +1,31 @@
 # Default plots for the SandPile model
 ---
-# --- A plot of the slope (mean - critical_slope)
+# --- A plot of the slope (mean - critical_slope) -----------------------------
 mean_slope:
   based_on: mean_slope
 
 
-# --- Plot the avalanche area fraction time series
+# --- Plot the avalanche area fraction time series ----------------------------
 area_fraction:
   based_on: area_fraction
 
 
-# --- A plot of the cluster size distribution
+# --- A plot of the cluster size distribution ---------------------------------
 cluster_size_distribution:
   based_on: cluster_size_distribution
 
 
-# --- A plot the complementary cumulative probability distribution
+# --- A plot the complementary cumulative probability distribution ------------
 compl_cum_prob_dist:
   based_on: compl_cum_prob_dist
 
 
-# --- An animation of the CA `slope` state
+# --- An animation of the CA `slope` state ------------------------------------
 slope_anim:
-  based_on: grid_animation
+  based_on: .ca.state.anim_ffmpeg  # update to *_frames to save frames
   enabled: false
+
+  model_name: SandPile
 
   # Select the properties to plot
   to_plot:
@@ -33,10 +35,12 @@ slope_anim:
       cmap: copper
 
 
-# --- An animation of the CA `avalanche` state
+# --- An animation of the CA `avalanche` state --------------------------------
 avalanche_anim:
-  based_on: grid_animation
+  based_on: .ca.state.anim_ffmpeg  # update to *_frames to save frames
   enabled: false
+
+  model_name: SandPile
 
   # Change the properties to be plotted to use the avalanche data
   to_plot:
@@ -48,9 +52,11 @@ avalanche_anim:
         mobile: orange
 
 
-# --- An animation of the slope and avalanche side by side
+# --- An animation of the slope and avalanche side by side --------------------
 slope_and_avalanche_anim:
-  based_on: grid_animation
+  based_on: .ca.state.anim_ffmpeg  # update to *_frames to save frames
+  
+  model_name: SandPile
 
   to_plot:
     # Re-use the information from above

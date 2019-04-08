@@ -14,8 +14,8 @@ parameter_space:
         resolution: 32
 
       cell_params:
-        initial_density: 1.0
+        p_tree: 1.0
         
-    growth_rate: 0.01
-    lightning_frequency: 0.01
+    p_growth: 0.01
+    p_lightning: 0.01
 

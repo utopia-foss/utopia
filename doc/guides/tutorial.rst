@@ -774,7 +774,7 @@ It looks something like this:
   
   # --- Model Dynamics
   # Probability per site and time step to transition from state empty to tree
-  growth_rate: 7.5e-3
+  p_growth: 7.5e-3
   
   # Probability per site and time step to transition to burning state, burning
   # down the whole cluster
