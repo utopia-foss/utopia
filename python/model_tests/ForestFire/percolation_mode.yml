@@ -25,12 +25,12 @@ parameter_space:
 
       cell_params:
         # High initial density
-        initial_density: 0.5
+        p_tree: 0.5
     
     # Set percolation mode    
     light_bottom_row: true
 
     # Increase growth rate and deactivate lightning
-    growth_rate: 0.05
-    lightning_frequency: 0.
+    p_growth: 0.05
+    p_lightning: 0.
 

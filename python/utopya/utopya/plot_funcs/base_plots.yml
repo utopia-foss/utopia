@@ -14,13 +14,68 @@
 
   style: &default_style
     axes.grid: true
-    grid.linewidth: .5
-    grid.color: cccccc
+    grid.linewidth: .4
+    grid.alpha: .5
+    legend.fontsize: small
+
+
+# -- Basic plots --------------------------------------------------------------
+# .. Basic lineplot from universe data ........................................
+.basic_uni.lineplot:
+  creator: universe
+  universes: all
+
+  module: .basic_uni
+  plot_func: lineplot
+
+  # Use default helpers and style
+  helpers:
+    <<: *default_helpers
+  style:
+    <<: *default_style
+
+# .. Basic errorbar plot from universe data ...................................
+.basic_uni.errorbar:
+  creator: universe
+  universes: all
+
+  module: .basic_uni
+  plot_func: errorbar
+
+  # Use default helpers and style
+  helpers:
+    <<: *default_helpers
+  style:
+    <<: *default_style
+
+  # Passed to plt.errorbar or plt.fill_between
+  elinewidth: .5
+  fill_between_kwargs:
+    linewidth: 0.
+
+
+# .. Errorbar plot from Multiverse data .......................................
+.basic_mv.errorbar:
+  creator: multiverse
+
+  module: .basic_mv
+  plot_func: errorbar
+
+  helpers:
+    <<: *default_helpers
+  style:
+    <<: *default_style
+
+  # Passed to plt.errorbar
+  elinewidth: .5
+  fill_between_kwargs:
+    linewidth: 0.
+
 
 # -- CA Plots -----------------------------------------------------------------
 # .. A spatial CA plot of a state .............................................
 # Supports PlotHelper and animation
-.ca.state:
+.ca.state: &ca_state
   creator: universe
   universes: all
 
@@ -30,7 +85,7 @@
   file_ext: pdf
 
   # All animation configuration for this plot
-  animation:
+  animation: &ca_state_animation
     enabled: false  # has to be manually enabled
 
     writer: frames  # assuming ffmpeg is not installed
@@ -47,7 +102,32 @@
         saving:
           dpi: 92
 
-        
+# .. .ca.state specializations for different animation writers ................
+.ca.state.anim_frames:
+  <<: *ca_state
+
+  file_ext: pdf
+
+  time_idx: 0  # value is ignored in animation, but needs be specified
+
+  animation:
+    <<: *ca_state_animation
+    enabled: true
+    writer: frames
+
+.ca.state.anim_ffmpeg:
+  <<: *ca_state
+
+  file_ext: mp4
+
+  time_idx: 0  # value is ignored in animation, but needs be specified
+
+  animation:
+    <<: *ca_state_animation
+    enabled: true
+    writer: ffmpeg
+
+
 # .. A spatial CA plot animation ..............................................
 # NOTE Deprecated.
 .ca.state_anim:
@@ -73,7 +153,6 @@
   module: .distribution
   plot_func: histogram
 
-  # Use default helpers and style
   helpers:
     <<: *default_helpers
   style:
@@ -82,13 +161,14 @@
 
 # .. Plot of a complementary cumulative distribution ..........................
 # Based on histogram, but with normalization and complementary cumulation
-.distribution.complementary_cumulative:
+.distribution.histogram.complementary_cumulative:
   <<: *histogram
 
-  normalize: true
-  cumulative: complementary
   use_unique: true
   mask_repeated: true
+  postprocess:
+    - normalize_to_sum
+    - cumulate_complementary
 
   # Do a line plot (instead of the default bar plot)
   pyplot_func_name: plot
@@ -107,7 +187,6 @@
   module: .time_series
   plot_func: density
 
-  # Use default helpers and style
   helpers:
     <<: *default_helpers
   style:

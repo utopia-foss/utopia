@@ -209,25 +209,6 @@ def load_model_cfg(model_name: str) -> Tuple[dict, str]:
     return mcfg, path
 
 
-# operators -------------------------------------------------------------------
-
-OPERATOR_MAP = {
-    '==': operator.eq,  'eq': operator.eq,
-    '<': operator.lt,   'lt': operator.lt,
-    '<=': operator.le,  'le': operator.le,
-    '>': operator.gt,   'gt': operator.gt,
-    '>=': operator.ge,  'ge': operator.ge,
-    '!=': operator.ne,  'ne': operator.ne,
-    '^': operator.xor,  'xor': operator.xor,
-    # Expecting an iterable as second argument
-    'in':              (lambda x, y: x in y),
-    'not in':          (lambda x, y: x not in y),
-    # Performing bitwise boolean operations to support numpy logic
-    'in interval':     (lambda x, y: x >= y[0] & x <= y[1]),
-    'not in interval': (lambda x, y: x < y[0] | x > y[1]),
-}
-
-
 # working on dicts ------------------------------------------------------------
 
 def recursive_update(d: dict, u: dict) -> dict:
