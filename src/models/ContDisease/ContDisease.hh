@@ -152,9 +152,9 @@ public:
 
         // Initialize remaining members
         _prob_distr(0., 1.),
+        _cluster_id_cnt(),
         _densities{},  // undefined here, will be set in constructor body
         _cluster_members(),
-        _cluster_id_cnt(),
 
         // Create a data group for the densities
         _dgrp_densities(this->_hdfgrp->open_group("densities")),
@@ -251,7 +251,7 @@ public:
             this->_log->debug("Setting bottom boundary cells to be "
                               "permanently infected ...");
 
-            RuleFunc _source_init = [this](const auto& cell) {
+            RuleFunc _source_init = [](const auto& cell) {
                 auto state = cell->state;
                 state.kind = Kind::source;
                 return state;
