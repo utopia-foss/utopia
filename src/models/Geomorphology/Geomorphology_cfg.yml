@@ -1,0 +1,30 @@
+---
+# --- Space
+space:
+  periodic: false
+
+# --- CellManager and cell initialization
+cell_manager:
+  grid:
+    structure: square
+    resolution: 64      # cells per unit length of space's extent
+
+  neighborhood:
+    mode: Moore         # can be: empty, vonNeumann, Moore  
+
+  # Initialization parameters for each cell
+  cell_params:
+    initial_height_mean: 100. # choose large enough to don't get negative values
+    initial_height_var: 5.
+    initial_slope: 5.
+
+# Quantities related to soil
+uplift_mean: .1
+uplift_var: .01 # must be > 1e-10
+erodibility: .01
+
+stream_power_coef: 0.05
+
+toppling_frequency: 1.e-5
+toppling_critical_height: 15.
+toppling_slope_reduction_factor: !expr 1./3

@@ -1,0 +1,14 @@
+# Configuration file used to test that the output of the model is correct
+---
+run_kwargs:
+  stop_conditions:
+    - !stop-condition
+          name: single simulation timeout
+          func: timeout_wall
+          seconds: 30
+
+parameter_space:
+  Geomorphology: !model  
+    model_name: Geomorphology
+
+    # NOTE run default conigs

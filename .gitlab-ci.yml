@@ -246,6 +246,7 @@ test:models:
     - utopia run Amee --sweep --no-plot --debug
     - utopia run ContDisease --debug
     - utopia run ForestFire --debug
+    - utopia run Geomorphology --debug
     - utopia run Hierarnet --debug
     - utopia run mesonet --debug --no-plot
     - utopia run PredatorPrey --debug

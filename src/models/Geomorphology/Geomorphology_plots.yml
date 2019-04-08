@@ -1,0 +1,23 @@
+# This defines the default plots for the Geomorphology model
+---
+
+# plot the spatial development in the CA 
+map_animation:
+  based_on: .ca.state.anim_ffmpeg
+
+  # Select the model
+  model_name: Geomorphology
+
+  # Select the properties to plot
+  to_plot:
+    height:
+      title: Rock height
+      cmap: copper
+      
+    drainage_area:
+      title: Drainage Area
+      cmap: Blues
+      
+    watercolumn:
+      title: Water column
+      cmap: Blues
