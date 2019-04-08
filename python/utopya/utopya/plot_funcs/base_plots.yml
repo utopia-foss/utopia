@@ -18,6 +18,38 @@
     grid.alpha: .5
 
 
+# -- Basic plots --------------------------------------------------------------
+# .. Basic lineplot from universe data ........................................
+.basic_uni.lineplot:
+  creator: universe
+  universes: all
+
+  module: .basic_uni
+  plot_func: lineplot
+
+  # Use default helpers and style
+  helpers:
+    <<: *default_helpers
+  style:
+    <<: *default_style
+
+
+# .. Errorbar plot from Multiverse data .......................................
+.basic_mv.errorbar:
+  creator: multiverse
+
+  module: .basic_mv
+  plot_func: errorbar
+
+  helpers:
+    <<: *default_helpers
+  style:
+    <<: *default_style
+
+  # Passed to plt.errorbar
+  elinewidth: .5
+
+
 # -- CA Plots -----------------------------------------------------------------
 # .. A spatial CA plot of a state .............................................
 # Supports PlotHelper and animation
@@ -99,7 +131,6 @@
   module: .distribution
   plot_func: histogram
 
-  # Use default helpers and style
   helpers:
     <<: *default_helpers
   style:
@@ -134,7 +165,6 @@
   module: .time_series
   plot_func: density
 
-  # Use default helpers and style
   helpers:
     <<: *default_helpers
   style:

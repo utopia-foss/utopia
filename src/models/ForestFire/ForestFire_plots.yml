@@ -4,88 +4,21 @@
 cluster_size_distribution:
   based_on: cluster_size_distribution
 
+
 # --- The complementary cumulative cluster size distribution ------------------
 compl_cum_cluster_size_dist:
   based_on: compl_cum_cluster_size_dist
 
-# # Plot the cluster size distribution
-# cluster_size_distribution: # TODO Remove
-#   creator: universe
-#   universes: all
 
-#   helpers:
-#     set_title:
-#       title: Size distribution of clusters
-  
-#   # Use the ForestFire-specific plot functions
-#   module: model_plots.ForestFire
-#   plot_func: cluster_distribution
-
-#   # Which time index to plot
-#   time: -1
-
-#   plot_kwargs: 
-#     linestyle: 'None'
-#     marker: '.'
-
-# Plot the cluster size distribution
-cluster_distribution_multiverse:
-  creator: multiverse
-
-  #Use True in case of multiverse run (parameter sweep), else false  
-  enabled: false # TODO
-  
-  # Use the ForestFire-specific plot functions
-  module: model_plots.ForestFire
-  plot_func: cluster_distribution_multiverse
-
-  # Which time index to plot
-  time: -1
-
-  plot_kwargs: 
-    linestyle: 'None'
-    linewidth: 0.5
-    marker: '.'
-    markersize: 3
-
-  select:
-    field:
-      # Choose the path in the data tree (see terminal output)
-      path: data/ForestFire/cluster_id
-      dims: [time, x, y]   
-
-# .. Mean state ...............................................................
-# Plot the mean state depending on the lightning probability
-mean_and_std_lightning:
-  based_on: mean_and_std_base
-  enabled: false # TODO
+# --- Tree density ------------------------------------------------------------
+# ... Of the single universes .................................................
+tree_density:
+  based_on: tree_density
 
 
-# .. Mean state plot ..........................................................
-# Plot the mean state and standard deviation depending on the lightning 
-# probability
-mean_and_std_mv_lightning:
-  based_on: mean_and_std_base
-  enabled: false
-  
-  lines_from: p_lightning
-
-
-mean_and_std_time_snapshot:
-  based_on: mean_and_std_snapshot_base
-  enabled: false
-
-  sweep_over: p_lightning
-
-  snapshot_at:
-    dim: time
-    idx: -1
-
-  helpers:
-    set_labels:
-      x: p_lightning
-    set_scales:
-      x: log
+# ... Of a sweep over p_lightning and seed ....................................
+tree_density_over_p_lightning:
+  based_on: tree_density_over_p_lightning
 
 
 # --- Animation of the spatial grid -------------------------------------------

@@ -149,8 +149,8 @@ TRANSFORMATIONS = {
     'sqrt3':    lambda d, _: np.power(d, 1./.3),
 
     # Normalizations
-    'normalize_to_sum': lambda d, _: d / np.sum(d),
-    'normalize_to_max': lambda d, _: d / np.max(d),
+    'normalize_to_sum':         lambda d, _: d / np.sum(d),
+    'normalize_to_max':         lambda d, _: d / np.max(d),
 
     # Cumulation
     'cumulate':                 lambda d, _: np.cumsum(d),
@@ -181,7 +181,7 @@ def transform(data: xr.DataArray, *operations: Union[dict, str],
         ValueError: On bad operation name
     """
     # Set default log level
-    log_level = log_level if log_level else 10
+    log_level = log_level if log_level is not None else 10
 
     log.log(log_level, "Performing %d transformation%s on input data:\n%s\n",
             len(operations), "s" if len(operations) != 1 else "", data)
