@@ -31,9 +31,7 @@ densities:
       label: Stone
       color: gray
     
-    
-
-
+  
 # --- Create a phase plot of two densities ------------------------------------
 phase_diagram:
   based_on: phase_diagram
@@ -44,11 +42,14 @@ phase_diagram:
 
   helpers:
     set_labels:
-      x: Tree
-      y: Infected
+      x: Tree Density [1/A]
+      y: Infected Density [1/A]
     set_limits:
       x: [0, 0.7]
       y: [0, 0.01]
+
+  # Parameters that are passed on to plot.scatter
+  s: 10
 
 
 # --- Create a grid animation of the state ------------------------------------
@@ -79,7 +80,7 @@ age_anim:
   # Select the property to plot
   to_plot:
     age:
-      title: Tree age
+      title: Tree Age
       cmap: Greens
 
 

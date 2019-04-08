@@ -7,15 +7,16 @@ from utopya import DataManager, UniverseGroup
 from utopya.plotting import is_plot_func, PlotHelper, UniversePlotCreator
 
 
-from ..tools import save_and_close, colorline
+from ..tools import colorline
 
 # -----------------------------------------------------------------------------
 
 @is_plot_func(creator_type=UniversePlotCreator,
               helper_defaults=dict(
-                  set_labels=dict(x="Time", y="Density"),
-                  set_limits=dict(y=[0, 1]),
-                  set_legend=dict(enabled=True, loc='best')
+                  set_labels=dict(x="Time [Iteration Steps]", y="Density [1/A]"),
+                  set_title=dict(title="Densities"),
+                  set_limits=dict(y=[0, 1], x=['min', 'max']),
+                  set_legend=dict(enabled=True, loc='best'),
               )
               )
 def densities(dm: DataManager, *,
@@ -58,16 +59,16 @@ def densities(dm: DataManager, *,
 
 @is_plot_func(creator_type=UniversePlotCreator,
               helper_defaults=dict(
-                  set_labels=dict(x="Tree density", y="Infected density"),
-                  set_limits=dict(x=[0, 1], y=[0, 1])
+                  set_title=dict(title="Phase Diagram")
               )
               )
 def phase_diagram(dm: DataManager, *,
                   uni: UniverseGroup,
                   hlpr: PlotHelper,
-                  x: str='tree',
-                  y: str='infected',
-                  **lc_kwargs):
+                  x: str,
+                  y: str,
+                  cmap: str=None,
+                  **plot_kwargs):
     """Plots the the phase diagram of tree and infected tree densities
 
     Args:
@@ -75,12 +76,21 @@ def phase_diagram(dm: DataManager, *,
         uni (UniverseGroup): The universe data to use
         hlpr (PlotHelper): The PlotHelper that instantiates the figure and
             takes care of plot aesthetics (labels, title, ...) and saving
-        x (str, optional): What to plot on the x-axis
-        y (str, optional): What to plot on the y-axis
-        **lc_kwargs: Passed on to LineCollection.__init__
+        x (str): What to plot on the x-axis
+        y (str): What to plot on the y-axis
+        **plot_kwargs: Passed on to plt.plot
     """
     # Get the group that all datasets are in
     densities = uni['data/ContDisease/densities']
 
-    # Call the plot function
-    colorline(densities[x], densities[y], **lc_kwargs)
+    # If a colormap was given, use it to color-code the time
+    cc_kwargs = ({} if cmap is None
+                 else dict(c=uni.get_times_array(), cmap=cmap))
+    
+    # Plot the phase space
+    sc = hlpr.ax.scatter(densities[x], densities[y], **cc_kwargs, **plot_kwargs)
+
+    # Add a colorbar
+    if cc_kwargs:
+        hlpr.fig.colorbar(sc, ax=hlpr.ax, fraction=0.05, pad=0.02,
+                          label="Time [Iteration Steps]")

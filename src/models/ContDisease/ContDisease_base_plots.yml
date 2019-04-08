@@ -8,10 +8,10 @@ phase_diagram:
   module: model_plots.ContDisease
   plot_func: phase_diagram
 
-  # Specify the colormap. Default: copper_r
-  # Another good choice is 'Blues', which is better suited if the focus is on
-  # the late and intermediate state development, with a less visible initial one.
-  cmap: Blues
+  based_on: .default_style_and_helpers
+
+  cmap: viridis_r
+
 
 
 # -- Densities plot -----------------------------------------------------------
@@ -21,3 +21,5 @@ densities:
 
   module: model_plots.ContDisease
   plot_func: densities
+
+  based_on: .default_style_and_helpers
