@@ -474,16 +474,12 @@ public:
         // And those densities that are changing (empty, tree, infected)
         update_densities();
 
-        // Clusters are only identified for the last time step
-        if (this->get_time_max() == this->get_time()) {
-            // Identify clusters
-            identify_clusters();
-
-            _dset_cluster_id->write(_cm.cells().begin(), _cm.cells().end(),
-               [](const auto& cell) {
-                   return cell->state.cluster_id;
-            });
-        }
+        // Identify clusters and write them out
+        identify_clusters();
+        _dset_cluster_id->write(_cm.cells().begin(), _cm.cells().end(),
+            [](const auto& cell) {
+                return cell->state.cluster_id;
+        });
 
         // Write the densities
         _dset_density_empty->write(
