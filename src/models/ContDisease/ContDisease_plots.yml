@@ -2,12 +2,36 @@
 ---
 # --- Plots the tree density over time ----------------------------------------
 tree_density:
-  based_on: tree_density
+  based_on: densities
+
+  to_plot:
+    tree:
+      label: Tree
+      color: green
 
 
 # --- Plots all densities over time -------------------------------------------
 densities:
   based_on: densities
+
+  to_plot:
+    empty:
+      label: Empty
+      color: black
+    tree:
+      label: Tree
+      color: green
+    infected:
+      label: Infected
+      color: red
+    source:
+      label: Source
+      color: orange
+    stone:
+      label: Stone
+      color: gray
+    
+    
 
 
 # --- Create a phase plot of two densities ------------------------------------

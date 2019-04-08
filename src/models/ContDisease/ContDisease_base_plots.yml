@@ -21,14 +21,3 @@ densities:
 
   module: model_plots.ContDisease
   plot_func: densities
-
-
-# -- Tree density plot --------------------------------------------------------
-tree_density:
-  creator: universe
-  universes: all
-
-  module: model_plots.ContDisease
-  plot_func: tree_density
-
-  color: green

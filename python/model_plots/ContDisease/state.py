@@ -14,38 +14,6 @@ from ..tools import save_and_close, colorline
 @is_plot_func(creator_type=UniversePlotCreator,
               helper_defaults=dict(
                   set_labels=dict(x="Time", y="Density"),
-                  set_limits=dict(y=[0, 1])
-              )
-              )
-def tree_density(dm: DataManager, *,
-                 uni: UniverseGroup,
-                 hlpr: PlotHelper,
-                 **plot_kwargs):
-    """Plots the density of trees and perfoms a lineplot
-
-    Args:
-        dm (DataManager): The data manager
-        uni (UniverseGroup): The universe data to use
-        hlpr (PlotHelper): The PlotHelper that instantiates the figure and
-            takes care of plot aesthetics (labels, title, ...) and saving
-        **plot_kwargs: Passed on to plt.plot
-    """
-    # Get the group that all datasets are in
-    grp = uni['data/ContDisease']
-
-    # Extract the data for the tree states
-    data = grp["densities/tree"]
-
-    # Get the time steps array for this universe
-    times = uni.get_times_array()
-
-    # Call the plot function
-    plt.plot(times, data, **plot_kwargs)
-
-
-@is_plot_func(creator_type=UniversePlotCreator,
-              helper_defaults=dict(
-                  set_labels=dict(x="Time", y="Density"),
                   set_limits=dict(y=[0, 1]),
                   set_legend=dict(enabled=True, loc='best')
               )
@@ -53,6 +21,7 @@ def tree_density(dm: DataManager, *,
 def densities(dm: DataManager, *,
               uni: UniverseGroup,
               hlpr: PlotHelper,
+              to_plot: dict,
               **plot_kwargs):
     """Plots the densities of all cell states
 
@@ -61,31 +30,30 @@ def densities(dm: DataManager, *,
         uni (UniverseGroup): The universe data to use
         hlpr (PlotHelper): The PlotHelper that instantiates the figure and
             takes care of plot aesthetics (labels, title, ...) and saving
+        to_plot (dict): A dictionary with the information on what to plot.
+            The keys are used to access the datasets and the values, which 
+            should again be given as dict's are passed onto to the plt.plot
+            function
         **plot_kwargs: Passed on to plt.plot
     """
-    # Get the group that all datasets are in
-    grp = uni['data/ContDisease']
-
-    # Extract the data for the tree states and convert it into a 3d-array
-    d_empty = grp["densities/empty"]
-    d_tree = grp["densities/tree"]
-    d_infected = grp["densities/infected"]
-    d_source = grp["densities/source"]
-    d_stone = grp["densities/stone"]
+    # Get the group that all density datasets are in
+    grp = uni['data/ContDisease/densities']
 
     # Get the time steps array for the given universe
     times = uni.get_times_array()
 
-    # Expand the stone and source arrays (both constant) to be of valid length
-    d_stone = np.full(len(times), d_stone)
-    d_source = np.full(len(times), d_source)
+    # Loop through all entries and create a line plot for each one of them
+    for key, value in to_plot.items():
+        # Get the dataset
+        data = grp[key]
 
-    # Call the plot function
-    plt.plot(times, d_empty, color='black', label='empty', **plot_kwargs)
-    plt.plot(times, d_tree, color='green', label='tree', **plot_kwargs)
-    plt.plot(times, d_infected, color='red', label='infected', **plot_kwargs)
-    plt.plot(times, d_source, color='orange', label='source', **plot_kwargs)
-    plt.plot(times, d_stone, color='gray', label='stone', **plot_kwargs)
+        # If stones or sources should be plotted, expand their constant 1D 
+        # datasets to 2D to be of valid length
+        if key == 'stone' or key == 'source':
+            data = np.full(len(times), data)
+
+        # Call the plot function
+        plt.plot(times, data, **value)
 
 
 @is_plot_func(creator_type=UniversePlotCreator,
