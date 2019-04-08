@@ -180,19 +180,19 @@ public:
     }
 
     /// Perform step
-    void perform_step () {
-        // Uplift  
-        apply_rule<Update::sync>(_uplift_rule, _cm.cells());
-
-        // Build drainage network
-        build_network();
-
+    void perform_step () {        
         // Erode
         apply_rule<Update::sync>(_erode, _cm.cells());
+
+        // Uplift  
+        apply_rule<Update::sync>(_uplift_rule, _cm.cells());
 
         // Topple
         apply_rule<Update::async, Shuffle::on>(_toppling, _cm.cells(),
                                                *this->_rng);
+
+        // Build drainage network
+        build_network();
     }
 
     /// Provide monitoring data: tree density and number of clusters
@@ -206,9 +206,6 @@ public:
         _dset_height->write(_cm.cells().begin(), _cm.cells().end(),
             [](const auto& cell) { return cell->state.rock; }
         );
-
-        // build_network();
-        // NOTE if not build, drainage_area does not display current network.
 
         _dset_drainage_area->write(_cm.cells().begin(), _cm.cells().end(),
             [](const auto& cell) { return cell->state.drainage_area; }

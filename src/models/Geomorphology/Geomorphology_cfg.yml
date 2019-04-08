@@ -19,7 +19,7 @@ cell_manager:
     initial_slope: 5.
 
 # Quantities related to soil
-uplift_mean: .1 
+uplift_mean: .1
 uplift_var: .01
 erodibility: .01
 
