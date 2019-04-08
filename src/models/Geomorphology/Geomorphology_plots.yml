@@ -2,35 +2,22 @@
 ---
 
 # plot the spatial development in the CA 
-Geomorphology:
-  creator: universe
-  universes: all
-  file_ext: mp4
+map_animation:
+  based_on: .ca.state.anim_ffmpeg
 
-  module: .ca
-  plot_func: state_anim
-
-  # Select the universe
+  # Select the model
   model_name: Geomorphology
 
   # Select the properties to plot
   to_plot:
     height:
+      title: Rock height
       cmap: copper
-      # limits: [1000, 1200]
-      title: Height
       
-    drainage_area: 
-      cmap: Blues
-      # limits: [0, 100]
+    drainage_area:
       title: Drainage Area
-      
-    watercolumn: 
       cmap: Blues
-      # limits: [0, 100]
+      
+    watercolumn:
       title: Water column
-
-  # Video options
-  writer: ffmpeg  # can be: frames, ffmpeg (if installed), ...
-  fps: 2
-  dpi: 96
+      cmap: Blues
