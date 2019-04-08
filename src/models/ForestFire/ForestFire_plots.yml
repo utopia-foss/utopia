@@ -21,8 +21,12 @@ tree_density_over_p_lightning:
   based_on: tree_density_over_p_lightning
   enabled: false  # Can enable this when sweeping over `p_lightning`
 
+# --- Tree age ----------------------------------------------------------------
+mean_tree_age:
+  based_on: mean_tree_age
 
 # --- Animation of the spatial grid -------------------------------------------
+# ... With binary state .......................................................
 forest:
   based_on: .ca.state.anim_ffmpeg  # update to *_frames to save frames
 
@@ -37,6 +41,17 @@ forest:
         Empty: darkkhaki
         Tree: forestgreen
 
+# ... With age ................................................................
+forest_age:
+  based_on: .ca.state.anim_ffmpeg
+
+  model_name: ForestFire
+
+  to_plot:
+    age:
+      title: Tree Age
+      limits: [0, 250]
+      cmap: YlGn
 
 # --- Animation of the clusters on the spatial grid ---------------------------
 clusters:

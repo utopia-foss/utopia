@@ -25,6 +25,9 @@ struct State {
     /// The actual cell state
     Kind kind;
 
+    /// The age of the cell
+    unsigned short age;
+
     /// An ID denoting to which cluster this cell belongs
     unsigned int cluster_id;
 
@@ -39,6 +42,7 @@ struct State {
     State (const DataIO::Config& cfg, const std::shared_ptr<RNG>& rng)
     :
         kind(Kind::empty),
+        age(0),
         cluster_id(0),
         permanently_ignited(false)
     {
@@ -178,6 +182,9 @@ private:
     // .. Datasets ...........................................................
     /// The dataset that stores the kind for each cell, e.g. Kind::tree
     const std::shared_ptr<DataSet> _dset_kind;
+    
+    /// 2D dataset (tree age and time) of cells
+    const std::shared_ptr<DataSet> _dset_age;
 
     /// The dataset that stores the cluster id
     const std::shared_ptr<DataSet> _dset_cluster_id;
@@ -211,6 +218,7 @@ public:
 
         // Create datasets using the helper functions for CellManager-data
         _dset_kind{this->create_cm_dset("kind", _cm)},
+        _dset_age{this->create_cm_dset("age", _cm)},
         _dset_cluster_id{this->create_cm_dset("cluster_id", _cm)},
         _dset_tree_density{this->create_dset("tree_density", {})}
     {
@@ -311,16 +319,22 @@ private:
         }
 
         // Empty cells can grow a tree
-        else if (    state.kind == Kind::empty
-                 and this->_prob_distr(*this->_rng) < _param.p_growth)
-        {
-            state.kind = Kind::tree;
+        else if (state.kind == Kind::empty) {
+            if (this->_prob_distr(*this->_rng) < _param.p_growth) {
+                state.kind = Kind::tree;
+            }
         }
         
-        // Trees can be hit by lightning
-        else if (this->_prob_distr(*this->_rng) < _param.p_lightning)
-        {
-            state = _burn_cluster(cell);
+        // Is a tree
+        else {
+            // Can be hit by lightning
+            if (this->_prob_distr(*this->_rng) < _param.p_lightning) {
+                state = _burn_cluster(cell);
+            }
+            else {
+                // Lives. Increase its age
+                state.age++;
+            }
         }
 
         return state;
@@ -358,6 +372,7 @@ private:
 
                     // Bad luck. Burn.
                     c->state.kind = Kind::empty;
+                    c->state.age = 0;
                     cluster.push_back(c);
                     // This extends the outer for-loop
                 }
@@ -434,10 +449,16 @@ public:
 
     /// Write data
     void write_data () {
-        // Store all cells' state
+        // Store all cells' kind
         _dset_kind->write(_cm.cells().begin(), _cm.cells().end(),
             [](const auto& cell) {
                 return static_cast<char>(cell->state.kind);
+        });
+
+        // ... and age
+        _dset_age->write(_cm.cells().begin(), _cm.cells().end(),
+            [](const auto& cell) {
+                return cell->state.age;
         });
 
         // Identify the clusters (only needed when actually writing)

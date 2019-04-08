@@ -76,6 +76,34 @@ compl_cum_cluster_size_dist:
     - cumulate_complementary
 
 
+# --- Tree age plots ----------------------------------------------------------
+mean_tree_age:
+  based_on: .basic_uni.errorbar
+
+  model_name: ForestFire
+
+  to_plot:
+    age:
+      label: Tree Age
+      plot_std: true
+      transform_data:
+        - mean: [x, y]
+      transform_std:
+        - std: [x, y]
+
+  helpers:
+    set_title:
+      title: Mean Tree Age
+    set_labels:
+      x: Time [Iteration Steps]
+      y: Mean Age [Iteration Steps]
+    set_limits:
+      x: [0., max]
+
+  # Passed on to errorbar plot
+  # ...
+
+
 # --- Tree density plots ------------------------------------------------------
 # ... For each universe .......................................................
 tree_density:
@@ -132,7 +160,9 @@ tree_density_over_p_lightning:
       y: [0., 1.]
     set_legend:
       loc: upper left
-      fontsize: small
 
   # Use a custom color map for lines
   cmap: viridis
+
+  # Passed on to errorbar plot
+  # ...

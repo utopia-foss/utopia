@@ -61,7 +61,8 @@ def errorbar(dm: DataManager, *,
             If True, the mean data will be used. If False, no standard
             deviation is plotted.
         transform_std (Tuple[Union[dict, str]], optional): Like
-            ``transform_data``, but applied to the selected in ``plot_std``.
+            ``transform_data``, but applied to the data selected in
+            ``plot_std``
         transformations_log_level (int, optional): With which log level to
             perform the transformations. Useful for debugging.
         cmap (str, optional): If given, the lines created from ``lines_from``
@@ -87,7 +88,7 @@ def errorbar(dm: DataManager, *,
     # Distinguish by `lines_from`; determines whether 1D or 2D data is needed
     if not lines_from:
         # Just plot a single line
-        _errorbar(hlpr=hlpr, data=data, std=std)
+        _errorbar(hlpr=hlpr, data=data, std=std, **errorbar_kwargs)
 
     else:
         if lines_from not in data.coords:
