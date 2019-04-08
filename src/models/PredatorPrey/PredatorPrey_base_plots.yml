@@ -23,7 +23,11 @@ densities:
 
   helpers:
     set_limits:
-      x: [0, ~]
+      x: [0, max]
+    set_labels:
+      y: Density $[1/A]$
+    set_title:
+      title: Predator and Prey Densities
 
   model_name: PredatorPrey
 

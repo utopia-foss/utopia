@@ -25,7 +25,7 @@ parameter_space:
 
       cell_params:
         # High initial density
-        initial_density: 0.5
+        p_tree: 0.5
     
     # Set percolation mode    
     light_bottom_row: true

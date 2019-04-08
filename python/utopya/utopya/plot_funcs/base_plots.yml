@@ -16,6 +16,60 @@
     axes.grid: true
     grid.linewidth: .4
     grid.alpha: .5
+    legend.fontsize: small
+
+
+# -- Basic plots --------------------------------------------------------------
+# .. Basic lineplot from universe data ........................................
+.basic_uni.lineplot:
+  creator: universe
+  universes: all
+
+  module: .basic_uni
+  plot_func: lineplot
+
+  # Use default helpers and style
+  helpers:
+    <<: *default_helpers
+  style:
+    <<: *default_style
+
+# .. Basic errorbar plot from universe data ...................................
+.basic_uni.errorbar:
+  creator: universe
+  universes: all
+
+  module: .basic_uni
+  plot_func: errorbar
+
+  # Use default helpers and style
+  helpers:
+    <<: *default_helpers
+  style:
+    <<: *default_style
+
+  # Passed to plt.errorbar or plt.fill_between
+  elinewidth: .5
+  fill_between_kwargs:
+    linewidth: 0.
+
+
+# .. Errorbar plot from Multiverse data .......................................
+.basic_mv.errorbar:
+  creator: multiverse
+
+  module: .basic_mv
+  plot_func: errorbar
+
+  helpers:
+    <<: *default_helpers
+  style:
+    <<: *default_style
+
+  # Passed to plt.errorbar
+  elinewidth: .5
+  fill_between_kwargs:
+    linewidth: 0.
 
 
 # -- CA Plots -----------------------------------------------------------------
@@ -99,7 +153,6 @@
   module: .distribution
   plot_func: histogram
 
-  # Use default helpers and style
   helpers:
     <<: *default_helpers
   style:
@@ -134,7 +187,6 @@
   module: .time_series
   plot_func: density
 
-  # Use default helpers and style
   helpers:
     <<: *default_helpers
   style:

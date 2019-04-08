@@ -1,7 +1,5 @@
 """This module provides plotting functions to visualize cellular automata."""
 
-from ._setup import *
-
 import os
 import logging
 import warnings
@@ -14,7 +12,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation
 from matplotlib.colors import ListedColormap
 
-from .. import DataManager
+from .. import DataManager, UniverseGroup
 from ..plotting import UniversePlotCreator, PlotHelper, is_plot_func
 
 from ._file_writer import FileWriter

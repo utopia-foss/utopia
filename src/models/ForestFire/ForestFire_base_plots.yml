@@ -18,8 +18,8 @@ cluster_size_distribution:
     set_scales:
       y: log
     set_limits:
-      x: [0, ~]
-      y: [0.5, ~]
+      x: [0, max]
+      y: [0.8, ~]
 
   # Perform dimensionality reduction of the given data
   preprocess:
@@ -76,43 +76,93 @@ compl_cum_cluster_size_dist:
     - cumulate_complementary
 
 
-# .. Mean state ...............................................................
-mean_and_std_base: # TODO migrate
-  creator: multiverse
-  
-  # Use the ForestFire-model-specific plot functions
-  module: .state
-  plot_func: mean_and_std
+# --- Tree age plots ----------------------------------------------------------
+mean_tree_age:
+  based_on: .basic_uni.errorbar
 
-  # Collect the data
-  select:
-    fields:
-      mean: data/ForestFire/tree_density
+  model_name: ForestFire
 
-  mean_of: [x, y]
+  to_plot:
+    age:
+      label: Tree Age
+      plot_std: true
+      transform_data:
+        - mean: [x, y]
+      transform_std:
+        - std: [x, y]
 
   helpers:
+    set_title:
+      title: Mean Tree Age
     set_labels:
-      x: Time
-      y: Tree density
-    set_scales:
-      y: log
+      x: Time [Iteration Steps]
+      y: Mean Age [Iteration Steps]
+    set_limits:
+      x: [0., max]
 
-mean_and_std_snapshot_base: # TODO migrate
-  creator: multiverse
-  
-  # Use the ForestFire-model-specific plot functions
-  module: .state
-  plot_func: mean_and_std_snapshot
+  # Passed on to errorbar plot
+  # ...
 
-  # Collect the data
+
+# --- Tree density plots ------------------------------------------------------
+# ... For each universe .......................................................
+tree_density:
+  based_on: .basic_uni.lineplot
+
+  model_name: ForestFire
+  path_to_data: tree_density
+
+  helpers:
+    set_title:
+      title: Tree Density
+    set_labels:
+      x: Time [Iteration Steps]
+      y: Tree Density $[1/A]$
+    set_limits:
+      x: [0., max]
+      y: [0., 1.]
+
+  # Passed on to plt.plot
+  # ...
+
+# ... For a parameter sweep over seed and p_lightning .........................
+tree_density_over_p_lightning:
+  based_on: .basic_mv.errorbar
   select:
-    fields:
-      mean: data/ForestFire/tree_density
+    field: data/ForestFire/tree_density
 
-  mean_of: [x, y]
+  # Specify which data to plot and which data to use for std
+  to_plot: tree_density
+  plot_std: true
 
-  linestyle: 'None'
-  linewidth: 0.5
-  marker: 'o'
-  markersize: 5
+  # Apply some transformations, e.g. calculate a mean over the seed
+  transform_data:
+    - mean: [seed]
+      _may_fail: true
+
+  # Same transformations needed for std
+  transform_std:
+    - std: [seed]
+      _may_fail: true
+
+  # Specify over which sweep to create lines
+  lines_from: p_lightning
+
+  # Adjust helpers
+  helpers:
+    set_title:
+      title: Tree Density
+    set_labels:
+      x: Time [Iteration Steps]
+      y: Tree Density $[1/A]$
+    set_limits:
+      x: [0., max]
+      y: [0., 1.]
+    set_legend:
+      loc: upper left
+
+  # Use a custom color map for lines
+  cmap: viridis
+
+  # Passed on to errorbar plot
+  # ...

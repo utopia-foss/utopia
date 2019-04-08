@@ -46,7 +46,7 @@ population:
         empty: white
         prey: orange
         predator: blue
-        both: black
+        both: red
 
 
 # --- More detailed animation: prey only, combined, predator only -------------

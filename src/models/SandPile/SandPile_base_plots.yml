@@ -14,6 +14,11 @@ mean_slope:
   # Select that the critical slope value should be added to the plot
   show_critical_slope_value: true
 
+  # Add a title
+  helpers:
+    set_title:
+      title: Mean Slope
+
   # Arguments passed to plt.plot
   linestyle: 'None'
   marker: '.'
@@ -38,7 +43,7 @@ area_fraction:
   model_name: SandPile
   path_to_data: avalanche
   
-  # Select states from which to calculate the density. Need be a binary mask.
+  # Select states from which to calculate the density; result is binary mask
   preprocess:
     - create_mask: [==, 1]
   
@@ -69,13 +74,18 @@ cluster_size_distribution:
     set_title:
       title: Cluster Size Distribution
     set_labels:
-      x: Cluster Size $[A]$
-      y: Counts
+      x: $\log_{10}(A)$
+      y: $N_A$
     set_scales:
       y: log
     set_limits:
       x: [0, max]
-      y: [0.9, ~]
+      y: [0.8, ~]
+
+  # Preprocess the histogram
+  preprocess:
+  # Apply a base-10 logarithm; histogram makes no sense otherwise
+    - log10
 
   # Configure the histogram
   histogram_kwargs:
@@ -104,7 +114,7 @@ compl_cum_prob_dist:
       x: Cluster Size $[A]$
       y: $P_A(A)$
     set_limits:
-      x: [1.8, ~]  # Not interested in the value at size 1
+      x: [0.8, ~]
 
   # Arguments passed to plt.plot
   # ...
