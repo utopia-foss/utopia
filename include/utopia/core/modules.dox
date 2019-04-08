@@ -160,5 +160,102 @@ discretizations of physical space into rectangular, hexagonal, or triangular
 grids.
 \}
 
+\defgroup Iter Iteration Utilities
+\{
+\ingroup Core
+\brief Collection of classes and functions for custom iteration over ranges
+
+This improves the standard C++ abilities to iterate over collections of
+elements.
+
+### Zip Function and Iterator
+
+This implementation mirrors the Python `zip` function. It provides an iterator
+over arbitrarily many heterogeneous collections. The Utopia::Itertools::zip
+class stores references to the containers inserted into it and supplies
+methods for retrieving the respective Utopia::Itertools::ZipIterator.
+
+\code{.cc}
+    #include <vector>
+    #include <string>
+    #include <utopia/core/zip.hh>
+
+    constexpr size_t size = 10;
+    std::vector<int> ints(size, 0);
+    std::vector<double> doubles(size, 2.0);
+    std::vector<std::string> strings(size, "A number:");
+
+    auto range = Utopia::Itertools::zip(ints, doubles, strings);
+\endcode
+
+Zip iterators obey the C++ standard interface for iterators. They also adapt
+their functionality on the lowest level iterator category of all containers
+inserted into the object. For example, inserting an `std::vector` and an
+`std::list` into Utopia::Itertools::zip will yield a bidirectional zip
+iterator.
+
+Dereferencing this iterator returns an `std::tuple` containing references
+to the respective objects of the underlying containers. They can be captured
+using structured bindings. Use `auto&` for capturing the references is not
+necessary and might even be illegal in some situations. Extracting single
+values via `std::get`, however, obeys regular value/reference syntax.
+
+\code{.cc}
+    auto it = range.begin();
+    auto [i, d, s] = *it; // i, d, s are references
+    i = 10; // modification of first entry of ints
+
+    next = std::next(it); // advance STL-like
+    auto another_i = std::get<0>(*next); // another_i is value
+
+    i = std::get<0>(*next); // i is still reference
+    i = 20; // modification of second entry of ints
+\endcode
+
+Zip iterators can be used in range-based and regular for loops. Additionally,
+Utopia provides overloads for `ostream` std::operator<<() to write the contents
+of a tuple into the command line. This works if the objects themselves can be
+written into the same stream.
+
+\code{.cc}
+    #include <iostream>
+
+    for (auto&& tuple : range) {
+        std::cout << tuple << std::endl;
+    }
+
+    // equivalent explicit for loop without bindings:
+    for (auto it = range.begin(); it != range.end(); ++it) {
+
+        std::cout << "("
+                  << std::get<0>(*it) << ", "
+                  << std::get<1>(*it) << ", "
+                  << std::get<2>(*it) << ")"
+                  << std::endl;
+    }
+\endcode
+
+Use the free function Utopia::adapt_zip() to build a ZipIterator from an
+iterator adaptor and a set of containers.
+
+\code{.cc}
+    #include <iterator>
+
+    auto range_in = Utopia::Itertools::zip(ints, doubles);
+    std::vector<int> ints_out;
+    std::vector<double> doubles_out;
+
+    // create a ZipIterator that wraps back inserters
+    auto it_out = Utopia::Itertools::zip_adapt(
+        std::back_inserter,
+        ints_out, doubles_out);
+
+    std::transform(range_in.begin(), range_in.end(),
+                   it_out,
+                   [](auto&& tpl) {
+                       auto [i, d] = tpl;
+                       return std::make_tuple(i*i, d*d);
+                   });
+\endcode
 
 */

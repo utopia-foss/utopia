@@ -1,93 +1,60 @@
 """SandPile-model specific plot function for the state"""
 
+import logging
+from typing import Tuple
+
 import numpy as np
-import matplotlib.pyplot as plt
+import xarray as xr
 
 from utopya import DataManager, UniverseGroup
-from ..tools import save_and_close
+from utopya.plotting import is_plot_func, PlotHelper, UniversePlotCreator
+
+# Get a logger
+log = logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------------
 
-def slope(  dm: DataManager, *, 
-            uni: UniverseGroup, 
-            out_path: str, 
-            save_kwargs: dict=None, 
-            **plot_kwargs):
-    """Calculates the mean slope minus the critical slope and performs a scatterplot.
+@is_plot_func(creator_type=UniversePlotCreator,
+              helper_defaults=dict(
+                set_limits=dict(x=[0., None]),
+                set_labels=dict(x="Time [Iteration Steps]",
+                                y=r"Slope $\langle n \rangle - n_c$")
+              ))
+def mean_slope(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
+               show_critical_slope_value: bool=False, **plot_kwargs):
+    """Calculates the mean slope (averaged over the whole grid) and plots it
+    against time. The mean slope is further reduced by the constant value for
+    the critical slope.
     
     Args:
         dm (DataManager): The data manager from which to retrieve the data
         uni (UniverseGroup): The selected universe data
-        out_path (str): Where to store the plot to
-        save_kwargs (dict, optional): kwargs to the plt.savefig function
+        hlpr (PlotHelper): The PlotHelper that instantiates the figure and
+            takes care of plot aesthetics (labels, title, ...) and saving
+        show_critical_slope_value (bool, optional): Whether to add a text box
+            with the critical slope value into the top-right hand corner
         **plot_kwargs: Passed on to plt.plot
     """
-    # Get the group that all datasets are in
-    grp = uni['data/SandPile']
-
-    # Extract the critical slope from the model configuration
+    # Extract the critical slope value from the model configuration
     critical_slope = uni['cfg']['SandPile']['critical_slope']
 
-    # Extract the y data which is the mean slope averaged over all grid cells 
-    # for each time step
-    y_data = [np.mean(s) - critical_slope for s in grp['slope']]
+    # Calculate the slope averaged over all grid cells for each time step
+    mean_slope = uni['data/SandPile/slope'].mean(dim=('x', 'y'))
 
-    # Call the plot function
-    plt.plot(y_data, **plot_kwargs)
+    # If there are no time coordinates for this, use the universe time data
+    if 'time' not in mean_slope.coords:
+        mean_slope.coords['time'] = uni.get_times_array()
 
-    # Add labels to the figure
-    plt.xlabel('iteration step')
-    plt.ylabel(r'slope $\langle n \rangle - n_c$')
+    # Plot the mean normalised slope over time
+    hlpr.ax.plot(mean_slope.coords['time'],
+                 mean_slope - critical_slope,
+                 **plot_kwargs)
 
-    # Save and close figure
-    save_and_close(out_path, save_kwargs=save_kwargs)
-
-
-
-def compl_cum_prob_dist(dm: DataManager, *, 
-                        uni: UniverseGroup, 
-                        out_path: str, 
-                        save_kwargs: dict=None, 
-                        **plot_kwargs):
-    """Calculates the complementary cumulative probability distribution and 
-    performs a logarithmic scatter plot
+    # Provide info on the value of the critical slope
+    if show_critical_slope_value:
+        hlpr.ax.text(1, 1, "$n_c = {}$".format(critical_slope),
+                     transform=hlpr.ax.transAxes,
+                     verticalalignment='top', horizontalalignment='right',
+                     fontdict=dict(fontsize="small"),
+                     bbox=dict(facecolor="white", linewidth=1.))
     
-    Args:
-        dm (DataManager): The data manager from which to retrieve the data
-        uni (UniverseGroup): The selected universe data
-        out_path (str): Where to store the plot to
-        save_kwargs (dict, optional): kwargs to the plt.savefig function
-        **plot_kwargs: Passed on to plt.plot
-    """
-    # Get the group that all datasets are in
-    grp = uni['data/SandPile']
-
-    ### Extract the y data 
-    # Get the avalanche data averaged over all grid cells for each time step
-    y_data = [np.sum(d) for d in grp['avalanche']]
-
-    # Remove the first element, ...
-    y_data.pop(0)
-    # ... count the size of the avalanches, ...
-    y = np.bincount(y_data)
-    # ... and cummulatively sum them up
-    y = (np.cumsum(y[::-1])[::-1])[1:]
-    
-    # Get the index 
-    index = (y - np.roll(y, 1)) != 0
-
-    # Normalize the cummulated counts
-    y = y / y[0]
-
-    # Calculate the logarithmic values
-    y_data = np.log10(np.arange(len(y)) + np.min(y_data))[index], np.log10(y)[index]
-
-    # Call the plot function
-    plt.plot(*y_data, **plot_kwargs)
-
-    # Set labels
-    plt.xlabel(r'$\log_{10}(A)$')
-    plt.ylabel(r'$\log_{10}(P_A(A))$')
-
-    # Save and close figure
-    save_and_close(out_path, save_kwargs=save_kwargs)

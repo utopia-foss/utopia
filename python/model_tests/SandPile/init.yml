@@ -1,0 +1,13 @@
+# Configuration to test initialisation of the SandPile model
+---
+perform_sweep: true
+
+parameter_space:
+  num_steps: 0
+
+  seed: !sweep
+    default: 42
+    values: [23, 42, 665, 667]
+
+  SandPile: !model  
+    model_name: SandPile  # imports the model config for the SandPile model

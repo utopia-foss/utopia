@@ -41,8 +41,8 @@ constexpr auto apply_to_index(Function&& f, Tuplelike&&... tuplelike)
 template <typename Function, std::size_t... idxs, typename... Tuplelike>
 constexpr auto apply_to_indices(Function&& f, std::index_sequence<idxs...>, Tuplelike&&... tuplelike)
 {
-    using Returntype =
-        std::invoke_result_t<Function, std::tuple_element_t<0, std::remove_reference_t<Tuplelike>>...>;
+    using std::get;
+    using Returntype = decltype(f(get<0>(tuplelike)...));
 
     if constexpr (std::is_same_v<Returntype, void>)
     {
@@ -144,6 +144,9 @@ namespace Utils
  * @param  tuplelike Arbitrary number of compile time collections, have to be accessible
  *                   via std::get or similar user defined function.
  * @return           copy of the target object t
+ *
+ * @warning Calling this function with const-qualified tuples makes your
+ *          compiler explode!
  */
 template <typename NaryFunction, typename... Tuplelike>
 constexpr auto reduce(NaryFunction&& f, Tuplelike&&... tuplelike)
@@ -178,6 +181,9 @@ constexpr auto reduce(NaryFunction&& f, Tuplelike&&... tuplelike)
  *                   Is applied to all ith entries, in the tuplelike-argument then.
  * @param  tuplelike Arbitrary number of collections to which can be processed by std::get
  * @return           the Function f
+ *
+ * @warning Calling this function with const-qualified tuples makes your
+ *          compiler explode!
  */
 template <typename NaryFunction, typename... Tuplelike>
 constexpr NaryFunction visit(NaryFunction&& f, Tuplelike&&... tuplelike)
@@ -204,6 +210,9 @@ constexpr NaryFunction visit(NaryFunction&& f, Tuplelike&&... tuplelike)
  * @param  f         function to apply to each element
  * @param  tuplelike Object, the elements of which can be accessed via std::get.
  * @return           the UnaryFunction f
+ *
+ * @warning Calling this function with const-qualified tuples makes your
+ *          compiler explode!
  */
 template <typename Tuplelike, typename UnaryFunction>
 constexpr UnaryFunction for_each(Tuplelike&& tuplelike, UnaryFunction&& f)
@@ -218,6 +227,9 @@ constexpr UnaryFunction for_each(Tuplelike&& tuplelike, UnaryFunction&& f)
  * @param  f         function to apply to each element
  * @param  tuplelike Object, the elements of which can be accessed via std::get.
  * @return           the result of applying f to each element of 'tuplelike'
+ *
+ * @warning Calling this function with const-qualified tuples makes your
+ *          compiler explode!
  */
 template <typename Tuplelike, typename UnaryFunction>
 constexpr auto transform(Tuplelike&& tuplelike, UnaryFunction&& f)
