@@ -281,7 +281,7 @@ public:
 protected:
     // .. Helper functions ....................................................
     /// Update the densities array
-    /** @detail   Each density is calculated by counting the number of state
+    /** @details  Each density is calculated by counting the number of state
      *            occurrences and afterwards dividing by the total number of
      *            cells.
      * @attention It is possible that rounding errors occur due to the
@@ -307,6 +307,19 @@ protected:
         }
     };
 
+
+    /// Identify clusters
+    /** \details This function identifies clusters and updates the cell
+     *           specific cluster_id as well as the member variable 
+     *           cluster_id_cnt that counts the number of ids
+     */
+    void identify_clusters(){
+        // reset cluster counter
+        _cluster_id_cnt = 0;
+        apply_rule<Update::async, Shuffle::off>(_identify_cluster, 
+                                                _cm.cells(), 
+                                                *this->_rng);
+    }
 
     // .. Rule functions ......................................................
 
@@ -479,14 +492,6 @@ public:
             _densities[static_cast<unsigned short>(Kind::tree)]);
         _dset_density_infected->write(
             _densities[static_cast<unsigned short>(Kind::infected)]);
-    }
-
-    void identify_clusters(){
-        // reset cluster counter
-        _cluster_id_cnt = 0;
-        apply_rule<Update::async, Shuffle::off>(_identify_cluster, 
-                                                _cm.cells(), 
-                                                *this->_rng);
     }
 };
 
