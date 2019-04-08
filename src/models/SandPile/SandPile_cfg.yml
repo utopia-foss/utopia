@@ -24,7 +24,7 @@ space:
 cell_manager:
   grid:
     structure: square
-    resolution: 32      # in cells per unit length of physical space
+    resolution: 16      # in cells per unit length of physical space
 
   neighborhood:
     mode: vonNeumann

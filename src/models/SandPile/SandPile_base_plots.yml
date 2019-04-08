@@ -1,6 +1,6 @@
 # Base configurations for SandPile model plots
 ---
-# --- A plot of the slope (mean - critical_slope) -----------------------------
+# --- A plot of the slope (mean - critical_slope)
 mean_slope:
   based_on: .default_style_and_helpers
 
@@ -14,17 +14,12 @@ mean_slope:
   # Select that the critical slope value should be added to the plot
   show_critical_slope_value: true
 
-  # Add a title
-  helpers:
-    set_title:
-      title: Mean Slope
-
   # Arguments passed to plt.plot
   linestyle: 'None'
   marker: '.'
 
 
-# --- Plot the avalanche area fraction time series ----------------------------
+# --- Plot the avalanche area fraction time series
 area_fraction:
   based_on: .time_series.density
 
@@ -42,11 +37,7 @@ area_fraction:
   # Specify which data to use
   model_name: SandPile
   path_to_data: avalanche
-  
-  # Select states from which to calculate the density; result is binary mask
-  preprocess:
-    - create_mask: [==, 1]
-  
+  apply_comparison: [==, 1]  # to convert to a binary mask
   mean_of: [x, y]
 
   # And that the avalanche sizes are to be used as dot sizes. The sizes are
@@ -61,7 +52,7 @@ area_fraction:
   alpha: .9
 
 
-# --- A plot of the cluster size distribution ---------------------------------
+# --- A plot of the cluster size distribution
 cluster_size_distribution:
   based_on: .distribution.histogram
 
@@ -74,18 +65,13 @@ cluster_size_distribution:
     set_title:
       title: Cluster Size Distribution
     set_labels:
-      x: $\log_{10}(A)$
-      y: $N_A$
+      x: Cluster Size $[A]$
+      y: Counts
     set_scales:
       y: log
     set_limits:
       x: [0, max]
-      y: [0.8, ~]
-
-  # Preprocess the histogram
-  preprocess:
-  # Apply a base-10 logarithm; histogram makes no sense otherwise
-    - log10
+      y: [0.9, ~]
 
   # Configure the histogram
   histogram_kwargs:
@@ -96,9 +82,9 @@ cluster_size_distribution:
   # ...
 
 
-# --- A plot of the complementary cumulative probability distribution ---------
+# --- A plot of the complementary cumulative probability distribution
 compl_cum_prob_dist:
-  based_on: .distribution.histogram.complementary_cumulative
+  based_on: .distribution.complementary_cumulative
 
   # Specify basic configuration for this model
   model_name: SandPile
@@ -114,7 +100,22 @@ compl_cum_prob_dist:
       x: Cluster Size $[A]$
       y: $P_A(A)$
     set_limits:
-      x: [0.8, ~]
+      x: [1.8, ~]  # Not interested in the value at size 1
 
   # Arguments passed to plt.plot
-  # ...
+
+
+# -- Any kind of grid animation
+grid_animation:
+  based_on: .ca.state
+
+  model_name: SandPile
+
+  # Use the first time index; is ignored in animation
+  time_idx: 0
+
+  # Enable the animation, using ffmpeg and .mp4 output by default
+  file_ext: mp4
+  animation:
+    enabled: true
+    writer: ffmpeg    # can be: frames, ffmpeg (if installed), ...

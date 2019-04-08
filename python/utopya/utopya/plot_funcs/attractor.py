@@ -1,6 +1,8 @@
 """This module provides plotting functions to 
    visualize the attractive set of a dynamical system."""
 
+from ._setup import *
+
 import logging
 
 import numpy as np
