@@ -1,70 +1,72 @@
 # Default plots for the ForestFire model
 ---
-# --- A plot of the cluster size distribution ---------------------------------
-cluster_size_distribution:
-  based_on: cluster_size_distribution
+# Plot the mean state
+state_mean:
+  creator: universe
+  universes: all
+  
+  # Use the ForestFire-model-specific plot functions
+  module: model_plots.ForestFire
+  plot_func: state_mean
 
 
-# --- The complementary cumulative cluster size distribution ------------------
-compl_cum_cluster_size_dist:
-  based_on: compl_cum_cluster_size_dist
+# Plot the cluster size distribution
+cluster_distribution:
+  creator: universe
+  universes: all
+  
+  # Use the ForestFire-specific plot functions
+  module: model_plots.ForestFire
+  plot_func: cluster_distribution
+
+  # Which time index to plot
+  time: -1
+
+  plot_kwargs: 
+    linestyle: 'None'
+    marker: '.'
 
 
-# --- Tree density ------------------------------------------------------------
-# ... Of the single universes .................................................
-tree_density:
-  based_on: tree_density
+# Create frames/movies of the cell states
+state_map: &state_map
+  creator: universe
+  universes: all
 
+  file_ext: mp4
+  dpi: 96
 
-# ... Of a sweep over p_lightning and seed ....................................
-tree_density_over_p_lightning:
-  based_on: tree_density_over_p_lightning
-  enabled: false  # Can enable this when sweeping over `p_lightning`
+  module: .ca
+  plot_func: state_anim
 
-# --- Tree age ----------------------------------------------------------------
-mean_tree_age:
-  based_on: mean_tree_age
-
-# --- Animation of the spatial grid -------------------------------------------
-# ... With binary state .......................................................
-forest:
-  based_on: .ca.state.anim_ffmpeg  # update to *_frames to save frames
-
+  # Select the model to read the data from
   model_name: ForestFire
 
   # Select the properties to plot
   to_plot:
-    kind:
-      title: Forest State
+    state:
+      title: State
       limits: [0, 1]
       cmap: 
-        Empty: darkkhaki
-        Tree: forestgreen
+        Empty: goldenrod
+        Tree: green
 
-# ... With age ................................................................
-forest_age:
-  based_on: .ca.state.anim_ffmpeg
+  # Video options
+  writer: ffmpeg  # can be: frames, ffmpeg (if installed), ...
+  fps: 15
 
-  model_name: ForestFire
 
-  to_plot:
-    age:
-      title: Tree Age
-      limits: [0, 250]
-      cmap: YlGn
+# Create frames/movies of the clusters
+cluster_map:
+  # Base the configuration here on that of the state map
+  <<: *state_map
+  
+  # Use a custom pre-processor function
+  module: model_plots.ForestFire
+  plot_func: state_anim
 
-# --- Animation of the clusters on the spatial grid ---------------------------
-clusters:
-  based_on: .ca.state.anim_ffmpeg  # update to *_frames to save frames
-
-  # Use the model-specific plot that adds preprocessing for cluster IDs
-  module: model_plots.ForestFire.ca
-  plot_func: state
-
-  model_name: ForestFire
-
+  # Select the properties to plot
   to_plot:
     cluster_id:
-      title: Clusters
+      title: Cluster
       limits: [0, 20]
       cmap: tab20

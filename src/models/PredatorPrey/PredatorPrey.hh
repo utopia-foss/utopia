@@ -502,11 +502,10 @@ public:
 
     /// Perform an iteration step
     /** \details An iteration step consists of:
-     *     1. Subtracting costs of living
-     *     2. Let predator and prey move to neighboring cells
-     *     3. Lunch time: Prey eats grass and predator eats prey if on the
-     *        same cell
-     *     4. Reproduction: Create offspring
+     * 1. Subtracting costs of living
+     * 2. Let predator and prey move to neighboring cells
+     * 3. Lunch time: Prey eats grass and predator eats prey if on the same cell
+     * 4. Reproduction: Create offspring
      */
     void perform_step() {
         apply_rule<Update::async, Shuffle::off>

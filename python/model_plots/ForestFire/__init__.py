@@ -1,3 +1,5 @@
-"""This module implements plots that are specific to the ForestFire model"""
+"""Plots that are specific to the dummy model"""
 
-from .ca import state
+# Make them all available here to allow easier import
+from .time_series import *
+from .ca import *
