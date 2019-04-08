@@ -53,6 +53,11 @@ struct State {
             // No need to draw a random number
             return;
         }
+        else if (p_tree == 1.) {
+            // No need to draw a random number
+            kind = Kind::tree;
+            return;
+        }
 
         // With this probability, the cell state is a tree
         if (std::uniform_real_distribution<double>(0., 1.)(*rng) < p_tree) {
