@@ -9,7 +9,7 @@ In this tutorial, you will learn how to configure, run, and evaluate the models 
 After having worked through it, you can apply the learned concepts and methods to all available models; the content and available parameters may change but the structure remains the same.
 You can also use this tutorial as a reference guide, in which you can look up how to run a model simulation or configure plots.
 
-This requires that you already installed *Utopia* as described in the :doc:`README <../readme>`. If you have not done so already, please do so now.
+This requires that you already installed *Utopia* as described in the :doc:`README <../README>`. If you have not done so already, please do so now.
 
 Also note, that this guide does not go into how building your own model in *Utopia* works; for that please refer to :doc:`how-to-build-a-model`.
 Before you start building your model, however, you should have familiarized yourself with the core concepts of *Utopia*, as covered by this tutorial.
@@ -37,12 +37,12 @@ Getting started
 
 *Utopia* can be controlled fully from its command line interface (CLI). And that's what we're going to start with.
 
-First thing is to make the CLI accessible. For that, go to the ``utopia`` directory and run the following commands:
+First thing is to make the CLI accessible. For that, go to the ``utopia`` directory and run the following commands (Do not copy the `$`'s!):
 
-.. code-block:: bash
+.. code-block:: console
 
-   cd build             # ... to go to the utopia build directory
-   source ./activate    # ... to enter the virtual environment
+  $ cd build             # ... to go to the utopia build directory
+  $ source ./activate    # ... to enter the virtual environment
 
 *Utopia* operates inside a so-called virtual environment. With the ``source ./activate`` command, you have entered it and should now see ``(utopia-env)`` appearing on the left-hand side of your shell.
 When working with *Utopia*, make sure to always be in this virtual environment.
@@ -57,9 +57,9 @@ When working with *Utopia*, make sure to always be in this virtual environment.
 
 Let us now look at how to run a model using the CLI. Run on the command line:
 
-.. code-block:: bash
+.. code-block:: console
 
-   utopia run --help
+  $ utopia run --help
 
 You should now get a wall of text. Don't be scared, it is your friend. 
 This command shows you all the possible parameters that you might need to run your model. 
@@ -68,13 +68,13 @@ Run it whenever you forgot what options you have.
 At the very top of the printed out text, you will see the ``usage`` specified, with optional parameters in square brackets. As you see there, the only *non*-optional parameter is the name of the model you want to run.
 For testing purposes, a ``dummy`` model is available. Let's try it out:
 
-.. code-block:: bash
+.. code-block:: console
 
-   utopia run dummy
+   $ utopia run dummy
 
 This should give you some output and, ideally, end with the following line:
 
-.. ::
+.. code-block:: console
 
   INFO   utopia       All done.
 
@@ -82,7 +82,7 @@ If that is the case: Congratulations! You just ran your first (dummy) Utopia sim
 
 If not, you probably got the following error message:
 
-..  ::
+.. code-block:: console
 
   FileNotFoundError: Could not find command to execute! Did you build your binary? 
 
@@ -130,9 +130,9 @@ Run the model and see what happens
 
 Let us run the model:
 
-.. code-block:: bash
+.. code-block:: console
 
-   utopia run SandPile
+  $ utopia run SandPile
 
 You see how easy it is to run a model? 🙂
 But where are the simulation results?
@@ -169,9 +169,9 @@ You can see that only four time steps are shown.
 That is because by default *Utopia* runs 3 iteration steps producing four data points taking into account the initial state. 
 You can run 
 
-.. code-block:: bash
+.. code-block:: console
 
-   utopia run SandPile --num-steps 10000
+  $ utopia run SandPile --num-steps 10000
 
 and open the new plot (remember to go down the new data tree). It should show a more interesting plot now. You can also look at the plot for the area distribution in the ``compl_cum_prob_dist.pdf`` file.
 
@@ -183,7 +183,7 @@ Let's take a brief detour and have a look at the directory structure of the *Uto
 
 Assuming that you installed *Utopia* inside your home directory, the directory structure should look similar to the following (only most relevant directories listed here):
 
-::
+.. code-block:: console
 
   ~                          # Your home directory (or another base directory)
   ├─┬ Utopia                 # All the Utopia code
@@ -214,7 +214,7 @@ You are already familiar with the ``build`` directory, needed for the build comm
 
 The *Utopia* frontend also took care of creating an ``utopia_output`` directory, which by default is inside your home directory. The output is ordered by the name of the model you ran and the timestamp of the simulation:
 
-::
+.. code-block:: console
 
   ~                          # Your home directory (or another base directory)
   ├── Utopia                 # All the Utopia code
@@ -234,7 +234,7 @@ The *Utopia* frontend also took care of creating an ``utopia_output`` directory,
 As *Utopia* makes frequent use of configuration files, let's take care that they don't become scattered all over the place.
 It makes sense to build up another folder hierarchy for each model, which helps you organize the different *Utopia* run and evaluation settings for different models:
 
-::
+.. code-block:: console
 
   ~                          # Your home directory (or another base directory)
   ├── Utopia                 # All the Utopia code
@@ -295,9 +295,9 @@ Remember that every parameter you provide here will overwrite the default parame
 
 Now, you can run the model with the new parameters by passing the configuration file to the CLI:
 
-.. code-block:: bash
+.. code-block:: console
 
-   utopia run SandPile ~/utopia_cfgs/SandPile/test/run.yml
+  $ utopia run SandPile ~/utopia_cfgs/SandPile/test/run.yml
 
 The path to the run configuration is placed directly behind the model name.
 The model should then run for 2000 iteration steps. So, let us go and check the resulting plot.
@@ -306,9 +306,9 @@ If everything went correctly, the ``slope.pdf`` should show a plot with 2001 dat
 If you recall, you have already encountered a possibility to change parameters using the CLI and adding the parameters directly after the ``utopia run`` command.
 So, let us suppose that we have the run configuration from above and add something to the CLI, like this:
 
-.. code-block:: bash
+.. code-block:: console
 
-  utopia run SandPile ~/utopia_cfgs/SandPile/test/run.yml --num-steps 1000
+  $ utopia run SandPile ~/utopia_cfgs/SandPile/test/run.yml --num-steps 1000
 
 How many time steps will the model run?
 
@@ -316,7 +316,7 @@ The answer is: 1000 steps. Parameters provided in the CLI overwrite parameters f
 This gives you more flexibility for trying out parameters quickly.
 You can also see that in the log messages, where it will say something like:
 
-.. ::
+.. code-block:: console
 
   $ utopia run SandPile ~/utopia_cfgs/SandPile/test/run.yml --num-steps 1000
   INFO     utopia         Parsing additional command line arguments ...
@@ -365,32 +365,9 @@ built the documentation as described in the README and then open it. In the
 documentation for the ``SandPile`` model you will find a section with the
 default parameters: It looks something like this:
 
-.. code-block:: yaml
-
-  # --- Space parameters
-  # The physical space this model is embedded in
-  space:
-    periodic: false
-  
-  # --- CellManager
-  cell_manager:
-    grid:
-      structure: square
-      resolution: 16      # in cells per unit length of physical space
-      # NOTE A large number of cells can make the initialization take a while...
-  
-    neighborhood:
-      mode: vonNeumann
-  
-  # --- Dynamics
-  # The initial slope range.
-  initial_slope: [5, 6]
-  # Cells are randomly initialized using a uniform distribution in the given
-  # closed range. The first value is the lower limit and the second one the
-  # upper limit of the slope.
-  
-  # The critical slope; beyond this value, sand topples
-  critical_slope: 4
+.. literalinclude:: ../../src/models/SandPile/SandPile_cfg.yml
+   :language: yaml
+   :start-after: ---
 
 .. note::
 
@@ -435,7 +412,7 @@ So, just check out another model and change parameters if you like. 😎
 .. warning::
   Take care to choose model parameters wisely:
 
-  1. Parameters such as ``grid_size`` can lead to a dramatically increased computation time,
+  1. Parameters such as ``cell_manager.grid.resolution`` can lead to a dramatically increased computation time,
   2. Some parameters have requirements which can also depend on other parameters. If this is the case, you normally find a comment above the corresponding parameters.
 
 .. note::
@@ -466,15 +443,15 @@ Creating the simulation data
 
 To not re-run simulations all the time (you would and could not do that after a very long simulation), let us first create some simulation data and then focus only on evaluating it:
 
-.. code-block:: bash
+.. code-block:: console
 
-  utopia run SandPile ~/utopia_cfgs/SandPile/test/run.yml --no-plot
+  $ utopia run SandPile ~/utopia_cfgs/SandPile/test/run.yml --no-plot
 
 The ``--no-plot`` leads to the run being stopped after the simulation finished. You can now invoke the evaluation separately:
 
-.. code-block:: bash
+.. code-block:: console
 
-  utopia eval SandPile
+  $ utopia eval SandPile
 
 This will load the data of the *most recent* simulation run and perform the default plots.
 You will see that a new folder has been created in the ``eval`` folder of the most recently run ``SandPile`` simulation. The evaluation results are placed in a new subfolder with the timestamp of the ``utopia eval`` invocation.
@@ -495,7 +472,7 @@ Now, what will have to go into that file in order to manipulate the existing plo
 
 Plots go by a name. To find out the names of the configured plots, let's first have a look at the terminal output: In the log messages you will see output from the ``plot_mngr`` module informing you about which plots were performed:
 
-.. ::
+.. code-block:: console
 
   ...
   INFO     utopia         Plotting...
@@ -541,9 +518,9 @@ There, you will find the same names as extracted from the log as keys on the roo
 
 Let's adjust the ``slope`` plot function. To that end, copy the corresponding configuration into your ``plots.yml`` file. Make sure it works by calling:
 
-.. code-block:: shell
+.. code-block:: console
 
-  utopia eval SandPile --plots-cfg ~/utopia_cfgs/SandPile/test/plots.yml
+  $ utopia eval SandPile --plots-cfg ~/utopia_cfgs/SandPile/test/plots.yml
 
 Confirm in the logs that only the ``slope`` plot was created. Now check out the run directory, where a new directory inside ``eval`` (with the current timestamp) will hold the plot output.
 
@@ -698,7 +675,7 @@ Let's fill that in with the code that calculates the standard deviation for the 
 
       # Get the slope data and calculate the standard deviation
       slope = uni['data/SandPile/slope']
-      slope_std = np.std(slope)
+      slope_std = [np.std(s) for s in slope]
 
       # Get the corresponding x-values, i.e.: the time steps
       times = uni.get_times_array()
@@ -707,7 +684,7 @@ Let's fill that in with the code that calculates the standard deviation for the 
       plt.plot(times, slope_std)
 
       # Set the aesthetics
-      plt.xlabel("Time [steps]")
+      plt.xlabel("Time [Iteration Steps]")
       plt.ylabel("Sand Slope Std. Dev.")
 
       # Save the figure to the specified output path
@@ -734,9 +711,9 @@ Each tree can ignite with a certain probability, which will lead to whole tree c
 
 Let's dive right in and have a short test run of this model:
 
-.. code-block:: shell
+.. code-block:: console
 
-  utopia run ForestFire
+  $ utopia run ForestFire
 
 Just as for the ``SandPile`` model, it will create and run a simulation with 4 time steps.
 
@@ -764,13 +741,12 @@ It looks something like this:
       resolution: 64      # cells per unit length of space's extent
   
     neighborhood:
-      mode: Moore         # can be: empty, vonNeumann, Moore
+      mode: vonNeumann         # can be: empty, vonNeumann, Moore
   
     # Initialization parameters for each cell
     cell_params:
-      # Initial tree density, value in [0, 1]
       # With this probability, a cell is initialized as tree (instead of empty)
-      initial_density: 0.2
+      p_tree: 0.2
   
   # --- Model Dynamics
   # Probability per site and time step to transition from state empty to tree
@@ -778,15 +754,15 @@ It looks something like this:
   
   # Probability per site and time step to transition to burning state, burning
   # down the whole cluster
-  lightning_frequency: 1.0e-5 
+  p_lightning: 1.0e-5 
   
+  # Probability (per neighbor) to _not_ catch fire from a neighbor
+  p_resistance: 0.
+
   # If set to true, the bottom boundary is constantly ignited. This _requires_
   # the space to be set to non-periodic.
   light_bottom_row: false
   
-  # Probability (per neighbor) to _not_ catch fire from a neighbor
-  resistance: 0.
-
 
 To *change* these parameters, you again need to create a run configuration file, e.g. ``~/utopia_cfgs/ForestFire/test/run.yml``. In it, let's change the initial density of trees to zero:
 
@@ -811,16 +787,16 @@ To *change* these parameters, you again need to create a run configuration file,
       # Set the initial tree density, value in [0, 1]
       cell_manager:
         cell_params:
-          initial_density: 0.0
+          p_tree: 0.0
 
 You will surely see similarities to the run configuration used in the ``SandPile`` model. Again, the model-independent parameters are on the top level inside the ``parameter_space``: ``num_steps`` and ``seed`` (and others that we are not overwriting here).
 As above, the model-specific default parameters are imported using the ``!model`` tag, where ``model_name`` specifies the parameters to import.
 
 Now, pass the configuration to the CLI:
 
-.. code-block:: bash
+.. code-block:: console
 
-  utopia run ForestFire ~/utopia_cfgs/ForestFire/test/run.yml
+  $ utopia run ForestFire ~/utopia_cfgs/ForestFire/test/run.yml
 
 Compare the output with that with non-zero initial density. What happens when you turn on percolation mode? Feel free to play around. :)
 
@@ -855,9 +831,9 @@ to
 
 This now says, that instead of using the default value for a single simulation, three simulations for the specified ``seed`` values are to be made. Let's see if it works:
 
-.. code-block:: bash
+.. code-block:: console
 
-  utopia run ForestFire ~/utopia_cfgs/ForestFire/test/run.yml --sweep
+  $ utopia run ForestFire ~/utopia_cfgs/ForestFire/test/run.yml --sweep
 
 .. note::
 
@@ -889,7 +865,7 @@ Let's change the ``lightning_frequency`` parameter in the run configuration and 
 
 .. code-block:: yaml
 
-      lightning_frequency:
+      p_lightning:
         default: 1.0e-5
         logspace: [-5, -2, 7]  # 7 log-spaced values in [10^-5, 10^-2]
                                # Other ways to specify sweep values:
@@ -1009,15 +985,15 @@ So, adapt the parameter:
 Now, everything is ready and set such that the multiverse data, you have created in the previous run can be evaluated.
 To do this, type the following command into your terminal:
 
-.. code-block:: bash
+.. code-block:: console
 
-  utopia eval ForestFire --plots-cfg ~/utopia_cfgs/ForestFire/test/plots.yml
+  $ utopia eval ForestFire --plots-cfg ~/utopia_cfgs/ForestFire/test/plots.yml
 
 Of course, if you want to do a new simulation run that creates new data you can also use the command that runs and afterwards directly evaluates the data:
 
-.. code-block:: bash
+.. code-block:: console
 
-  utopia run ForestFire ~/utopia_cfgs/ForestFire/test/run.yml --plots-cfg ~/utopia_cfgs/ForestFire/test/plots.yml
+  $ utopia run ForestFire ~/utopia_cfgs/ForestFire/test/run.yml --sweep --plots-cfg ~/utopia_cfgs/ForestFire/test/plots.yml
 
 Now, go check the resulting plot. How does it look like? 
 
@@ -1067,7 +1043,7 @@ Of course, you will need to adjust some parameters.
 
 So, just play around with different models and explore the world of chaotic, complex, and evolving systems. 🗺 ️
 
-And, perhaps you even want to write your own *Utopia* model. Just follow the :doc:`Beginners Guide <../guides/beginners-guide>` ...
+And, perhaps you even want to write your own *Utopia* model. Just follow the :doc:`How-to-build-a-model Guide <how-to-build-a-model>` ...
 
 What if I have more questions?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
