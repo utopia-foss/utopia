@@ -486,7 +486,7 @@ class WorkerManager:
                 for task in self.active_tasks:
                     # Read the streams and forward them (if the tasks were
                     # configured to do so)
-                    task.read_streams()
+                    task.read_streams(forward_directly=True)
                     task.forward_streams()
 
                 # Invoke a report
