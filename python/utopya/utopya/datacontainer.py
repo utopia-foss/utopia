@@ -31,12 +31,23 @@ class NumpyDC(Hdf5ProxyMixin, NumpyDataContainer):
     """
 
 
-class XarrayDC(XrDataContainer):
+class XarrayDC(Hdf5ProxyMixin, XrDataContainer):
     """This is the base class for xarray data containers used in Utopia.
 
     It is based on the XrDataContainer provided by dantro. As of now, it has
     no proxy support, but will gain it once available on dantro side.
     """
+    # Configure proxy support .................................................
+    # Which type to resolve the proxy to. None defaults to np.ndarray
+    PROXY_RESOLVE_ASTYPE = None
+
+    # Whether to retain a proxy after resolving it; allows .reinstate_proxy()
+    PROXY_RETAIN = True
+    
+    # Which action to take if reinstating a proxy was not possible
+    PROXY_REINSTATE_FAIL_ACTION = 'log_warning'
+
+
     # Specialize XrDataContainer for Utopia ...................................
     # Define as class variable the name of the attribute that determines the
     # dimensions of the xarray.DataArray

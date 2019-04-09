@@ -276,7 +276,7 @@ data_manager:
 
     # Load the binary output data from each simulation.
     data:
-      loader: hdf5 #_proxy # TODO re-enable proxy loading
+      loader: hdf5_proxy
       glob_str: data/uni*/data.h5
       required: true
       path_regex: data/uni(\d+)/data.h5
