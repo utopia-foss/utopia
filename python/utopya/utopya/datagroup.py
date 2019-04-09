@@ -23,16 +23,18 @@ log = logging.getLogger(__name__)
 class UniverseGroup(dtr.groups.ParamSpaceStateGroup):
     """This group represents the data of a single universe"""
 
-    def get_times_array(self, *, include_t0: bool=True) -> np.ndarray:
+    def get_times_array(self) -> np.ndarray:
         """Constructs a 1D np.array using the information from this universe's
-        configuration, i.e. the `num_steps` and `write_every` keys.
-        
-        Args:
-            include_t0 (bool, optional): Whether to include an initial time
-                step
+        configuration, i.e. the ``num_steps``, ``write_start``, and
+        ``write_every`` keys.
+
+        NOTE That this data is retrieved from the universe's _top level_
+             configuration. If the ``write_start`` and ``write_every``
+             parameters were set differently within a model or the model does
+             not use ``basic`` WriteMode, this group cannot know that.
         
         Returns:
-            np.ndarray: The array of time steps
+            np.ndarray: The array of time coordinates
         """
         # Check if a configuration was loaded
         try:
@@ -45,16 +47,12 @@ class UniverseGroup(dtr.groups.ParamSpaceStateGroup):
                              "".format(self.logstr)) from err
         
         # Retrieve the necessary parameters from the configuration
+        write_start = cfg.get('write_start', 0)
+        write_every = cfg.get('write_every', 1)
         num_steps = cfg['num_steps']
-        write_every = cfg['write_every']
 
-        # Calculate the times array, either with or without initial time step
-        if include_t0:
-            return np.linspace(0, num_steps,
-                               num_steps//write_every + 1)
-        else:
-            return np.linspace(write_every, num_steps,
-                               num_steps//write_every)
+        # Combine these to a range expression, including the last time step
+        return np.arange(write_start, num_steps + 1, write_every)
 
 
 class MultiverseGroup(dtr.groups.ParamSpaceGroup):

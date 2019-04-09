@@ -25,15 +25,30 @@ namespace Utopia {
 /// How to write data in the models
 enum class WriteMode {
     /// Basic writing features: write_start, write_every
+    /** \detail This leads to `write_data` being invoked the first time at
+      *         time `write_start` and henceforth every `write_every` steps.
+      *         If `write_start` is 0, this means that `write_data` is called
+      *         after the model constructor finished and before `perform_step`
+      *         is called the first time.
+      */
     basic,
 
-    /// Fully manual: write_data method is called every iteration
+    /// Fully manual: write_data method is always called
+    /** \detail More accurately: `write_data` will be called after the model
+      *         constructor finished (and before `perform_step` is called for
+      *         the first time) and henceforth every time after `perform_step`
+      *         finished and the time was incremented. There are no further
+      *         checks and the `write_start` and `write_every` arguments are
+      *         not needed.
+      */
     manual,
 
-    /// No data is written
+    /// The write_data method is never called.
     off
 };
 
+/// Alias for the default write mode
+constexpr WriteMode DefaultWriteMode = WriteMode::basic;
 
 
 /// Wrapper struct for defining model class data types
@@ -51,7 +66,7 @@ enum class WriteMode {
  *  \tparam MonitorManagerType    The type to use for the Monitor manager
  */
 template<typename RNGType=DefaultRNG,
-         WriteMode data_write_mode=WriteMode::basic,
+         WriteMode data_write_mode=DefaultWriteMode,
          typename SpaceType=DefaultSpace,
          typename ConfigType=Utopia::DataIO::Config,
          typename DataGroupType=Utopia::DataIO::HDFGroup,
@@ -226,18 +241,21 @@ public:
             _log->info("  write_mode:  {:>7s}", "basic");
             _log->info("  write_start: {:7d}", _write_start);
             _log->info("  write_every: {:7d}", _write_every);
-            _log->info("  #writes:     {:7d}", get_num_write_operations());
+            _log->info("  #writes:     {:7d}", get_remaining_num_writes());
 
             // Store relevant info in base group attributes
+            _hdfgrp->add_attribute("write_mode", "basic");
             _hdfgrp->add_attribute("write_start", _write_start);
             _hdfgrp->add_attribute("write_every", _write_every);
             _hdfgrp->add_attribute("time_max",    _time_max);
         }
         else if constexpr (_write_mode == WriteMode::manual) {
             _log->info("  write_mode:  {:>7s}", "manual");
+            _hdfgrp->add_attribute("write_mode", "manual");
         }
         else if constexpr (_write_mode == WriteMode::off) {
             _log->info("  write_mode:  {:>7s}", "off");
+            _hdfgrp->add_attribute("write_mode", "off");
         }
 
         _log->info("  time_max:    {:7d}", _time_max);
@@ -286,13 +304,18 @@ public:
         return _write_every;
     }
 
-    /// Return the number of calls this model will make to `write_data`
-    hsize_t get_num_write_operations() const {
+    /// Return the number of remaining `write_data` calls this model will make
+    /** \detail The 'remaining' refers to the current time being included into
+      *         the calculation, e.g.: when writing every time, currently at
+      *         time == 42 and time_max == 43, it will return the value 2,
+      *         i.e. for the write operations at times 42 and 43
+      */
+    hsize_t get_remaining_num_writes() const {
         if constexpr (_write_mode == WriteMode::basic) {
-            return (  (_time_max - std::max(_time, _write_start) + 1)
-                    / _write_every);
+            return (  (_time_max - std::max(_time, _write_start))
+                    / _write_every) + 1;
         }
-        else if constexpr (_write_mode == WriteMode::basic) {
+        else if constexpr (_write_mode == WriteMode::manual) {
             return _time_max - _time + 1;
         }
         else if constexpr (_write_mode == WriteMode::off) {
@@ -363,7 +386,8 @@ public:
 
         // -- Data output
         if constexpr (_write_mode == WriteMode::basic) {
-            if ((_time - _write_start) % _write_every == 0) {
+            if (    (_time >= _write_start)
+                and (_time - _write_start) % _write_every == 0) {
                 __write_data();
             }
         }
@@ -509,7 +533,7 @@ public:
                     name, hdfgrp->get_path());
 
         // Calculate the number of time steps to be written
-        const hsize_t num_write_ops = get_num_write_operations();
+        const hsize_t num_write_ops = get_remaining_num_writes();
 
         // Calculate the shape of the dataset
         add_write_shape.insert(add_write_shape.begin(), num_write_ops);
