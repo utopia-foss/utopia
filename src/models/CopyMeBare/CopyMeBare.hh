@@ -78,9 +78,6 @@ public:
     {
         // Can do remaining initialization steps here ...
         // ...
-
-        // Write out the initial state
-        this->write_data();
     }
 
 

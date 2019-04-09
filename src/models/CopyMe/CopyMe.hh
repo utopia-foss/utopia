@@ -195,12 +195,13 @@ public:
         //      sense to just use a temporary lambda.
         this->_log->debug("VIP cells set up.");
 
+        // NOTE The initial state need and should not be written here. The
+        //      write_data method is invoked first at time `write_start`.
+        //      However, this is a good place to store data that is constant
+        //      during the run and needs to be written at some point.
+
         // Initialization should be finished here.
         this->_log->debug("{} model fully set up.", this->_name);
-
-        // Write out the initial state
-        this->write_data();
-        this->_log->debug("Initial state written.");
     }
 
 
