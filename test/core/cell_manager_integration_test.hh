@@ -9,7 +9,7 @@ namespace Utopia {
 namespace Test {
 
 /// Define data types for the cell manager test model
-using CMTestModelTypes = ModelTypes<DefaultRNG, DefaultSpace>;
+using CMTestModelTypes = ModelTypes<DefaultRNG, DefaultWriteMode, DefaultSpace>;
 
 /// Dummy cell state type
 struct CST {

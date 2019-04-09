@@ -36,15 +36,15 @@ def test_networkgroup():
 def test_universegroup_get_times_array():
     """Test the universe group"""
     mt = ModelTest("dummy", test_file=__file__)
-    mv, dm = mt.create_run_load(parameter_space=dict(num_steps=10))
+    _, dm = mt.create_run_load(parameter_space=dict(num_steps=10))
     
     for uni in dm['multiverse'].values():
         assert isinstance(uni, UniverseGroup)
 
         # Check that creation of the times array works and has expected length
         times = uni.get_times_array()
-        assert len(uni.get_times_array(include_t0=True)) == 1 + 10
-        assert len(uni.get_times_array(include_t0=False)) == 10
+        assert len(times) == 1 + 10  # 0 1 ... 10
+        assert (times == range(11)).all()
 
         # Without configuration, it should fail
         del uni['cfg']
@@ -52,10 +52,18 @@ def test_universegroup_get_times_array():
             uni.get_times_array()
     
     # Again with write_every
-    mv, dm = mt.create_run_load(parameter_space=dict(num_steps=10,
+    _, dm = mt.create_run_load(parameter_space=dict(num_steps=10,
                                                      write_every=3))
     for uni in dm['multiverse'].values():
-        # Check that creation of the times array works and has expected length
         times = uni.get_times_array()
-        assert len(uni.get_times_array(include_t0=True)) == 1 + 3  # 0 3 6 9
-        assert len(uni.get_times_array(include_t0=False)) == 3     #   3 6 9
+        assert len(times) == 1 + 3  # 0 3 6 9
+        assert (times == range(0, 11, 3)).all()
+
+    # Again with write_every and write_start
+    _, dm = mt.create_run_load(parameter_space=dict(num_steps=10,
+                                                     write_start=2,
+                                                     write_every=3))
+    for uni in dm['multiverse'].values():
+        times = uni.get_times_array()
+        assert len(times) == 3  # 2 5 8
+        assert (times == range(2, 11, 3)).all()
