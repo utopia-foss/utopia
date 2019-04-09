@@ -94,7 +94,8 @@ def test_griddc_integration():
     mtc = ModelTest("ContDisease", test_file=__file__)
 
     # Create and run a multiverse and load the data
-    _, dm = mtc.create_run_load(from_cfg="cfg/griddc_cfg.yml")
+    _, dm = mtc.create_run_load(from_cfg="cfg/griddc_cfg.yml",
+                                parameter_space=dict(num_steps=3))
 
     # Get the data
     grid_data = dm['multiverse'][0]['data/ContDisease/state']
@@ -106,5 +107,41 @@ def test_griddc_integration():
     assert 'grid_shape' in grid_data.attrs
     assert 'space_extent' in grid_data.attrs
 
-    # Get the grid shape from attributes and compre
-    assert grid_data.shape[1:] == tuple(grid_data.attrs['grid_shape'])
+    # By default, this should be a proxy
+    assert grid_data.data_is_proxy
+
+    # Nevertheless, the properties should show the target values
+    print("proxy:\n", grid_data._data)
+    assert grid_data.ndim == 3
+    assert grid_data.shape == (4,) + tuple(grid_data.attrs['grid_shape'])
+    assert grid_data.grid_shape == tuple(grid_data.attrs['grid_shape'])
+
+    # ... without resolving
+    assert grid_data.data_is_proxy
+
+    # Now resolve the proxy and check the properties again
+    grid_data.data
+    assert not grid_data.data_is_proxy
+
+    print("resolved:\n", grid_data._data)
+    assert grid_data.ndim == 3
+    assert grid_data.shape == (4,) + tuple(grid_data.attrs['grid_shape'])
+    assert grid_data.grid_shape == tuple(grid_data.attrs['grid_shape'])
+
+    # Try re-instating the proxy
+    grid_data.reinstate_proxy()
+    assert grid_data.data_is_proxy
+
+    # And resolve it again
+    grid_data.data
+    assert not grid_data.data_is_proxy
+    
+    print("reinstated:\n", grid_data._data)
+    assert grid_data.ndim == 3
+    assert grid_data.shape == (4,) + tuple(grid_data.attrs['grid_shape'])
+    assert grid_data.grid_shape == tuple(grid_data.attrs['grid_shape'])
+
+
+    # Make sure the grid shape is a multiple of the space extent
+    # Resolution 4 set in griddc_cfg.yml
+    assert (grid_data.grid_shape == 4 * grid_data.space_extent).all()
