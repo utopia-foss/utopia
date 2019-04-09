@@ -469,6 +469,7 @@ protected:
     }
 
 
+public:
     // -- Convenience functions -----------------------------------------------
 
     /** @brief Create a new dataset within the given group
@@ -798,12 +799,12 @@ public:
     
     /// Return the parameter that controls when write_data is called first
     Time get_write_start() const {
-        return get_as<Time>("write_start", _cfg);
+        return get_as<Time>("write_start", _cfg, 0);
     }
     
     /// Return the parameter that controls how often write_data is called
     Time get_write_every() const {
-        return get_as<Time>("write_every", _cfg);
+        return get_as<Time>("write_every", _cfg, 1);
     }
     
     /// Return a pointer to the RNG
