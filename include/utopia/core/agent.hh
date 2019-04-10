@@ -51,7 +51,7 @@ class Agent;
 template<typename Traits, typename Space>
 class Agent<Traits,
             Space,
-            std::enable_if_t<Traits::mode == Update::async>>
+            std::enable_if_t<Traits::mode != Update::sync>>
 :
     public Entity<Traits>
 {   
