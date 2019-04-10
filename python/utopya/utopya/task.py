@@ -26,7 +26,8 @@ sigmap = {a: int(getattr(signal, a)) for a in dir(signal) if a[:3] == "SIG"}
 # Helper methods
 # These solely relate to the WorkerTask class, thus not in the tools module
 
-def enqueue_lines(*, queue: queue.Queue, stream: BinaryIO, parse_func: Callable=None) -> None:
+def enqueue_lines(*, queue: queue.Queue, stream: BinaryIO,
+                  parse_func: Callable=None) -> None:
     """From the given stream, read line-buffered lines and add them to the
     provided queue.
 
@@ -165,7 +166,8 @@ class Task:
 
     @property
     def priority(self) -> float:
-        """The task's priority. Default is +inf, which is the lowest priority."""
+        """The task's priority. Default is +inf, which is the lowest priority
+        """
         return self._priority
 
     @property
@@ -212,8 +214,8 @@ class Task:
     
     def __eq__(self, other):
         return bool(self is other)
-        # NOTE we trust 'uuid' that the IDs are unique therefore different tasks
-        # can not get the same ID --> are different in ordering
+        # NOTE we trust 'uuid' that the IDs are unique therefore different
+        #      tasks can not get the same ID --> are different in ordering
 
     # Private methods .........................................................
 
@@ -231,7 +233,8 @@ class Task:
 # -----------------------------------------------------------------------------
 
 class WorkerTask(Task):
-    """A specialisation of the Task class that is aimed at use in the WorkerManager.
+    """A specialisation of the Task class that is aimed at use in the
+    WorkerManager.
     
     It is able to spawn a worker process, executing the task. Task execution
     is non-blocking. At the same time, the worker's stream can be read in via
@@ -261,7 +264,8 @@ class WorkerTask(Task):
                  setup_kwargs: dict=None,
                  worker_kwargs: dict=None,
                   **task_kwargs):
-        """Initialize a WorkerTask object, a specialization of a task for use in the WorkerManager.
+        """Initialize a WorkerTask object, a specialization of a task for use
+        in the WorkerManager.
         
         Args:
             setup_func (Callable, optional): The function to call before the
@@ -347,7 +351,8 @@ class WorkerTask(Task):
 
     @property
     def worker_status(self) -> Union[int, None]:
-        """The worker processe's current status or False, if there is no worker spawned yet.
+        """The worker processe's current status or False, if there is no
+        worker spawned yet.
 
         Note that this invokes a poll to the worker process if one was spawned.
         
@@ -381,7 +386,8 @@ class WorkerTask(Task):
 
     def __str__(self) -> str:
         """Return basic WorkerTask information."""
-        return "WorkerTask<uid: {}, priority: {}, worker_status: {}>".format(self.uid, self.priority, self.worker_status)
+        return ("WorkerTask<uid: {}, priority: {}, worker_status: {}>"
+                "".format(self.uid, self.priority, self.worker_status))
 
     # Public API ..............................................................
 
@@ -518,7 +524,9 @@ class WorkerTask(Task):
 
         return self.worker
 
-    def read_streams(self, stream_names: list='all', max_num_reads: int=5) -> None:
+    def read_streams(self, stream_names: list='all', *,
+                     max_num_reads: int=10,
+                     forward_directly: bool=False) -> None:
         """Read the streams associated with this task's worker.
         
         Args:
@@ -528,11 +536,16 @@ class WorkerTask(Task):
                 the buffer. For -1, reads the whole buffer.
                 WARNING: Do not make this value too large as it could block the
                 whole reader thread of this worker.
+            forward_directly (bool, optional): Whether to call the
+                `forward_streams` method; this is done before the callback and
+                can be useful if the callback should not happen before the
+                streams are forwarded.
         
         Returns:
-            None: Description
+            None
         """
-        def read_single_stream(stream: dict, stream_name: str, max_num_reads=max_num_reads) -> bool:
+        def read_single_stream(stream: dict, stream_name: str,
+                               max_num_reads=max_num_reads) -> bool:
             """A function to read a single stream
 
             Returns true, if a parsed object was among the read stream entries
@@ -545,7 +558,9 @@ class WorkerTask(Task):
             # In certain cases, read as many as queue reports to have
             if max_num_reads == -1:
                 max_num_reads = q.qsize()
-                # NOTE this value is approximate; thus, this should only be called if it is reasonably certain that the queue size will not change
+                # NOTE this value is approximate; thus, this should only be
+                #      called if it is reasonably certain that the queue size
+                #      will not change
 
             # Perform the read operations
             for _ in range(max_num_reads):
@@ -602,13 +617,18 @@ class WorkerTask(Task):
             if rv:
                 got_parsed_obj = True
 
+        # May want to forward
+        if forward_directly:
+            self.forward_streams()
+
         # Invoke a callback, if there was a parsed object
         if got_parsed_obj:
             self._invoke_callback('parsed_object_in_stream')
 
         return
 
-    def save_streams(self, stream_names: list='all', save_raw: bool=True, final: bool=False) -> None:
+    def save_streams(self, stream_names: list='all', *,
+                     save_raw: bool=True, final: bool=False) -> None:
         """For each stream, checks if it is to be saved, and if yes: saves it.
         
         The saving location is stored in the streams dict. The relevant keys
@@ -696,7 +716,8 @@ class WorkerTask(Task):
             log.debug("Saved %d lines of stream '%s'.",
                       len(lines_to_save), stream_name)
 
-    def forward_streams(self, stream_names: list='all', forward_raw: bool=False) -> bool:
+    def forward_streams(self, stream_names: list='all',
+                        forward_raw: bool=False) -> bool:
         """Forwards the streams to stdout, either via logging module or print
         
         This function can be periodically called to forward the part of the 
@@ -834,8 +855,7 @@ class WorkerTask(Task):
         # have ended prior to the call to this method
 
         # Read all remaining stream lines, then forward remaining and save all
-        self.read_streams(max_num_reads=-1)
-        self.forward_streams()
+        self.read_streams(max_num_reads=-1, forward_directly=True)
         self.save_streams(final=True)
 
         # If given, call the callback function
