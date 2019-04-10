@@ -50,6 +50,7 @@ BOOST_FIXTURE_TEST_SUITE(initialization, InitialCondition)
 
 using AgentTraitsSync = AgentTraits<AgentState, Update::sync>;
 using AgentTraitsAsync = AgentTraits<AgentState, Update::async>;
+using AgentTraitsManual = AgentTraits<AgentState, Update::manual>;
 
 /// Define the types of agents used in a template test function
 using AgentTypes = boost::mpl::list<Agent<AgentTraitsSync, DefaultSpace>,
@@ -67,11 +68,20 @@ BOOST_AUTO_TEST_CASE_TEMPLATE (initialize, ThisAgent, AgentTypes)
     BOOST_TEST(arma::approx_equal(agent.position(), pos, "absdiff", 0.0));
 }
 
-/// Check initialization of an asynchronous agent
-BOOST_AUTO_TEST_CASE (asynchronous)
+/// Check initialization of a synchronous agent
+BOOST_AUTO_TEST_CASE (synchronous)
 {
     Agent<AgentTraitsSync, DefaultSpace> agent(index, state, pos);
     BOOST_TEST(arma::approx_equal(agent.position_new(), pos, "absdiff", 0.0));
+}
+
+/// Check initialization of a agent with Update::manual
+BOOST_AUTO_TEST_CASE (manual)
+{
+    Agent<AgentTraitsManual, DefaultSpace> agent(index, state, pos);
+    BOOST_TEST(agent.state == state);
+    BOOST_TEST(agent.id() == index);
+    BOOST_TEST(arma::approx_equal(agent.position(), pos, "absdiff", 0.0));
 }
 
 /// Let suite end here
