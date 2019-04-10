@@ -64,14 +64,7 @@ p_run.add_argument('--num-steps',
                    help="Sets the number of simulation steps.")
 p_run.add_argument('--write-every',
                    default=None, nargs='?', type=int,
-                   help="Sets the root-level `write_every` parameter, "
-                        "controlling how frequently model data is written.")
-p_run.add_argument('--write-start',
-                   default=None, nargs='?', type=int,
-                   help="Sets the root-level `write_start` parameter, "
-                        "specifying the first time step at which data is "
-                        "written. After that time, data is written every "
-                        "`write_every`th step.")
+                   help="Sets the root-level `write_every` parameter.")
 p_run.add_argument('--num-seeds',
                    default=None, nargs='?', type=int,
                    help="Creates a parameter dimension for the seeds with the "
@@ -283,15 +276,6 @@ if __name__ == '__main__':
                       is_valid= lambda v: v >= 1,
                       ErrorMsg= lambda v: ValueError("Argument --write-every "
                                                      "needs to be >= 1, "
-                                                     "was {}.".format(v)))
-        
-        # The root-level write_start parameter
-        if args.write_start is not None:
-            add_entry(args.write_start, add_to=update_dict,
-                      key_path=['parameter_space', 'write_start'],
-                      is_valid= lambda v: v >= 0,
-                      ErrorMsg= lambda v: ValueError("Argument --write-start "
-                                                     "needs to be >= 0, "
                                                      "was {}.".format(v)))
 
         # Set seeds to a parameter dimension object
