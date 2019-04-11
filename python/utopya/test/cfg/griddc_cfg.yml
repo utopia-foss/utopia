@@ -1,10 +1,13 @@
 ---
 parameter_space:
-  num_steps: 1  # Just write one step.
-
 # Load the model config
   ContDisease: !model
-    model_name: ContDisease  
-    grid_size: [5, 7]        # Assure that the grid is small.
+    model_name: ContDisease
 
+    space:
+      extent: [2., 1.]
+
+    cell_manager:
+      grid:
+        resolution: 4
 

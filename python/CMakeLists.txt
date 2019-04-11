@@ -25,7 +25,7 @@ if(NOT PYTHON_PACKAGE_paramspace_FOUND)
 endif()
 
 # -- dantro --
-python_find_package(PACKAGE dantro VERSION 0.7.0rc14)
+python_find_package(PACKAGE dantro VERSION 0.7.0)
 
 if(NOT PYTHON_PACKAGE_dantro_FOUND)
     # install from current _master_ branch
