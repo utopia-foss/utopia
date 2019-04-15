@@ -43,12 +43,15 @@ set(THREADS_PREFER_PTHREAD_FLAG)
 find_package(Threads REQUIRED)
 
 # include Utopia macros
+include(UtopiaPython)
 include(UtopiaEnv)
+
+include(UtopiaGenerateModelInfo)
+
 include(UtopiaAddUnitTest)
 include(UtopiaAddModel)
 include(UtopiaAddModelTest)
-include(UtopiaGenerateModelInfo)
-include(UtopiaPython)
+
 
 # Remove latest policy stack
 cmake_policy(POP)

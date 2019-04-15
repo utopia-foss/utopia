@@ -36,19 +36,23 @@ endif()
 
 
 # Now, ready to install utopya
-message(STATUS "Installing utopya ...")
 
-# For easier development: install using symlinks to the local package
-set(UTOPIA_PYTHON_INSTALL_EDITABLE True)
+# -- utopya --
+python_find_package(PACKAGE utopya VERSION 0.3.0)
 
-# Install utopya and dependencies
-python_install_package(PATH utopya)
+if(NOT PYTHON_PACKAGE_dantro_FOUND)
+    message(STATUS "Installing utopya ...")
 
-# Add a custom target to symlink the utopia CLI
-# set(CLI_SYMLINK /usr/local/bin/utopia)
-# TODO add linker target here
+    # For easier development: install using symlinks to the local package
+    set(UTOPIA_PYTHON_INSTALL_EDITABLE True)
+
+    # Install utopya and dependencies
+    python_install_package(PATH utopya)
+endif()
+
 
 # Tests .......................................................................
+message(STATUS "")
 message(STATUS "Adding python test targets ...")
 
 # Add test for utopya, accessible via `make test_utopya`

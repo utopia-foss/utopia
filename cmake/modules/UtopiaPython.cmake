@@ -198,10 +198,11 @@ function(python_install_package)
 
     # perform the actual installation
     message (STATUS "Installing python package at ${PACKAGE_PATH} "
-                    "into the virtual environment")
+                    "into the virtual environment ...")
     execute_process(COMMAND ${UTOPIA_ENV_PIP} ${INSTALL_CMD}
                     RESULT_VARIABLE RETURN_VALUE
                     OUTPUT_QUIET)
+    
     if (NOT RETURN_VALUE EQUAL "0")
         message(SEND_ERROR "Error installing package: ${RETURN_VALUE}")
     endif ()
