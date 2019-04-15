@@ -1,6 +1,7 @@
 #include <cmath>
 #include <cassert>
 #include <iostream>
+#include <algorithm>
 
 #include <utopia/core/exceptions.hh>
 
@@ -52,7 +53,6 @@ int main() {
         
         std::cout << "Success." << std::endl << std::endl;
         
-
         // -------------------------------------------------------------------
         
         std::cout << "------ Testing agent initialization ... ------"
@@ -102,8 +102,93 @@ int main() {
 
         std::cout << "Correct." << std::endl << std::endl;
 
+        // -------------------------------------------------------------------
+        std::cout << "------ Testing overloads for add_agent ... ------"
+                  << std::endl;  
+
+        // Spacevector for testing
+        SpaceVec zerovec({0.0, 0.0});
+
+        // Test for states that are constructed via default constructor...
+        std::cout << "Check for config constructible" << std::endl;
+        // ... with a specified position
+        auto agt_dc  = mm_dc._am.add_agent(zerovec);
+        assert(mm_dc._am.agents().size() == 43);
+        // ... with a random position
+        agt_dc = mm_dc._am.add_agent();
+        assert(mm_dc._am.agents().size() == 44);  
+        
+        // Test for states that are constructed by passing a config
+        std::cout << "Check for config constructible" << std::endl;
+        auto agt_cc = mm_cc._am.add_agent(zerovec);
+        assert(mm_cc._am.agents().size() == 43);
+        // ... with a random position
+        agt_cc = mm_cc._am.add_agent();
+        assert(mm_cc._am.agents().size() == 44);  
+
+        // Test for states that are constructed with config node and rng
+        std::cout << "Check for config constructible with RNG" << std::endl;
+        auto agt_rc = mm_rc._am.add_agent(zerovec);
+        assert(mm_rc._am.agents().size() == 43);
+        // ... with a random position
+        agt_rc = mm_rc._am.add_agent();
+        assert(mm_rc._am.agents().size() == 44);
+
+        std::cout << "Works fine." << std::endl << std::endl;    
+
+        // -------------------------------------------------------------------
+        std::cout << "------ Testing removal and adding of agents"
+                     "... ------" << std::endl;
+        
+        // Create a scope to prevent hanging variables afterwards
+        {
+        std::cout << "Create a test model " << std::endl;
+        MockModel<AgentTraitsDC> mm_add_remove_periodic(
+                                        "mm_add_remove_periodic", 
+                                        cfg["default"]);
+
+        // Add an agent and save fpr inspection
+        std::cout << "Add an agent to the managed container" << std::endl;
+        auto new_agt = mm_add_remove_periodic._am.add_agent(AgentStateDC(), 
+                                                            SpaceVec({0., 0.}));        
+        
+        // Check wether the id counter was set correctly
+        assert(mm_add_remove_periodic._am.id_counter() == 43);
+
+        // Check wether there are 43 agents in the managed container
+        assert(mm_add_remove_periodic._am.agents().size() == 43);
 
 
+        
+        // Make sure the agent has the right id
+        assert(new_agt->id() == 42);
+
+        // Remove the agent from the managed container
+        std::cout << "Remove the agent from the managed container" << std::endl;
+        mm_add_remove_periodic._am.remove_agent(new_agt);
+
+        // Get the agent container
+        auto agts = mm_add_remove_periodic._am.agents();
+
+        // Make sure the agent container is back to its originial size
+        assert(mm_add_remove_periodic._am.agents().size() == 42);
+
+        // Check that the removed agent is not in the container anymore
+        assert(std::find(agts.cbegin(), agts.cend(), new_agt) == agts.cend());
+
+        std::cout << "Remove agents that fulfill some condition" << std::endl;
+        // Remove agents under a certain condtion
+        mm_add_remove_periodic._am.erase_agent_if(
+                               [&] (auto agent) {return agent->id() % 2 == 0;});
+        
+        // Make sure only agents with odd ids are left over
+        for (unsigned long i = 0; i < 21;  i++) {
+            assert(mm_add_remove_periodic._am.agents()[i]->id() == 2 * i + 1); 
+        };
+
+        std::cout << "So far, so good." << std::endl << std::endl; 
+
+        };
         // -------------------------------------------------------------------
         
         std::cout << "------ Testing agent dynamics (synchronous, periodic)"

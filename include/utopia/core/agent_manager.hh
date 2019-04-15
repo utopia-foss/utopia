@@ -1,6 +1,8 @@
 #ifndef UTOPIA_CORE_AGENTMANAGER_HH
 #define UTOPIA_CORE_AGENTMANAGER_HH
 
+#include <algorithm>
+
 #include "types.hh"
 #include "exceptions.hh"
 #include "agent.hh"
@@ -47,6 +49,9 @@ public:
     /// The type of the move function type
     using MoveFunc = std::function<void(Agent&, const SpaceVec&)>;
 
+    /// The type of the function that prepares the position of a new agent
+    using PosFunc = std::function<SpaceVec(const SpaceVec&)>;
+
     /// The random number generator type
     using RNG = typename Model::RNG;
 
@@ -74,6 +79,9 @@ private:
     /// Function that will be used for moving agents, called by move_* methods
     MoveFunc _move_to_func;
 
+    /// Function that will be used to prepare positions for adding an agent
+    PosFunc _prepare_pos;
+
 
 public:
     // -- Constructors --------------------------------------------------------
@@ -100,9 +108,11 @@ public:
         _cfg(setup_cfg(model, custom_cfg)),
         _rng(model.get_rng()),
         _space(model.get_space()),
-        _agents(setup_agents()),
-        _move_to_func(setup_move_to_func())
-    {
+        _agents(),
+        _move_to_func(setup_move_to_func()),
+        _prepare_pos(setup_prepare_pos_func())
+    {   
+        setup_agents();
         _log->info("AgentManager is all set up.");
     }
 
@@ -126,9 +136,11 @@ public:
         _cfg(setup_cfg(model, custom_cfg)),
         _rng(model.get_rng()),
         _space(model.get_space()),
-        _agents(setup_agents(initial_state)),
-        _move_to_func(setup_move_to_func())
-    {
+        _agents(),
+        _move_to_func(setup_move_to_func()),
+        _prepare_pos(setup_prepare_pos_func())
+    {   
+        setup_agents(initial_state);
         _log->info("AgentManager is all set up.");
     }
 
@@ -176,6 +188,122 @@ public:
     {
         _move_to_func(agent, agent.position() + move_vec);
     }
+
+
+    /// Create an agent and associate it with this AgentManager
+    /** \detail Adds an agent with the specified state to the managed
+     *          container of agents. It is checked whether the given position
+     *          is valid; if space is periodic, any position outside the space
+     *          is mapped back into the space.
+     *
+     *  \param state the state of the agent that is to be added
+     *  \param pos the position of the agent that is to be added
+    */
+    const std::shared_ptr<Agent>&
+        add_agent (const AgentState& state, SpaceVec pos)
+    {
+        _log->trace("Creating agent with ID {:d} ...", _id_counter);
+        _agents.emplace_back(
+            std::make_shared<Agent>(_id_counter, state, _prepare_pos(pos))
+        );
+        ++_id_counter;
+
+        return _agents.back();
+    }
+
+    /// add_agent overload for auto-constructed agent states
+    /** \detail Adds an agent with a specified position and an auto-constructed
+      *         AgentState depending on the setup, either default-constructed 
+      *         if the flag was set in the AgentTraits or config-constructed 
+      *         with or without use of the RNG.
+      *
+      * \param pos        The position of the newly created agent
+      * \param custom_cfg A custom configuration. If not given, will use the
+      *         configuration given at initialization.
+      */
+    const std::shared_ptr<Agent>& 
+        add_agent (SpaceVec pos, const DataIO::Config& custom_cfg = {})
+    {
+        // Check if flag for default constructor was set
+        if constexpr (AgentTraits::use_default_state_constructor) {
+            if (custom_cfg.size()) {
+                throw std::runtime_error("custom_cfg was passed but "
+                    "AgentTraits specified use of default constructor!");
+            }
+
+            return add_agent(AgentState(), pos);
+        }
+        else {
+            // Determine whether to use the given custom configuration or the
+            // one  passed at construction of AgentManager
+            DataIO::Config cfg;
+
+            if (custom_cfg.size()) {
+                cfg = custom_cfg;
+            }
+            else {
+                cfg = _cfg["agent_params"];
+            }       
+
+            // Distinguish the two config-constructible states
+            if constexpr (std::is_constructible<AgentState,
+                                                const DataIO::Config&,
+                                                const std::shared_ptr<RNG>&
+                                                >())
+            {
+                return add_agent(AgentState(cfg, _rng), pos);
+            }
+            else {
+                // Should be config-constructible
+                return add_agent(AgentState(cfg), pos);
+            }
+        }
+        
+    }
+    /// add_agent overload for auto constructed states and random position
+    /** \detail Add an agent with a random position and an auto-constructed
+      *         AgentState depending on the setup, either default constructed 
+      *         if the flag was set in the AgentTraits or config constructed 
+      *         with or without use of the RNG.
+      */ 
+    const std::shared_ptr<Agent>& 
+        add_agent (const DataIO::Config& custom_cfg = {})
+    {
+        return add_agent(random_pos(), custom_cfg);
+    }
+
+
+    /// Removes the given agent from the agent manager
+    void remove_agent (const std::shared_ptr<Agent>& agent) {
+        // Find the position in the agents container that belongs to the agent
+        const auto it = std::find(_agents.cbegin(), _agents.cend(), agent);
+
+        if (it == _agents.cend()) {
+            throw std::invalid_argument("The given agent is not handled by "
+                                        "this manager!");
+        };
+
+        _log->trace("Removing agent with ID {:d} ...", agent->id());
+        _agents.erase(it);
+    }
+
+    /// Remove agents if the given condition is met
+    /** \detail Uses the erase-remove idiom
+     *
+     *  \tparam UnaryPredicate type of the UnaryPredicate
+     *
+     *  \param condition The condition under which the agent is to be removed.
+     *                   This should be a callable that takes the agent shared
+     *                   pointer as argument and returns bool.
+     */
+    template<typename UnaryPredicate>
+    void erase_agent_if (UnaryPredicate&& condition) {
+        _agents.erase(
+            std::remove_if(_agents.begin(), _agents.end(), condition),
+            _agents.cend()
+        );
+    }
+
 
     /// Update the agents
     /** \detail This function is needed in the case of synchronous update.
@@ -270,12 +398,11 @@ private:
      * 
      * \param initial_state  The initial state of the agents
      * \param num_agents     The number of agents
-     *
-     * \return AgentContainer<Agent> The populated agent container
+  
      */
-    AgentContainer<Agent> setup_agents(const AgentState initial_state) {
+    void setup_agents(const AgentState initial_state) {
         // The agent container that is to be populated
-        AgentContainer<Agent> agents;
+        AgentContainer<Agent> _agents;
 
         // Extract parameters from the configuration
         if (not _cfg["initial_num_agents"]) {
@@ -285,27 +412,17 @@ private:
         }
         const auto num_agents = get_as<IndexType>("initial_num_agents", _cfg);
 
+        
         // Construct all the agents with incremented IDs, the initial state
         // and a random position
         for (IndexType i=0; i<num_agents; ++i){
-            _log->trace("Creating agent with ID {:d} ...", _id_counter);
-
-            agents.emplace_back(
-                std::make_shared<Agent>(_id_counter,
-                                        initial_state,
-                                        initial_agent_pos())
-            );
-
-            // Increase the id counter
-            ++_id_counter;
+            add_agent(initial_state, initial_agent_pos());
         }
 
         // Done. Shrink it.
-        agents.shrink_to_fit();
+        _agents.shrink_to_fit();
         _log->info("Populated agent container with {:d} agents.",
-                   agents.size());
-
-        return agents;
+                   _agents.size());
     }
 
 
@@ -326,7 +443,7 @@ private:
       *         it is called anew for _each_ agent; otherwise, an initial state
       *         is constructed _once_ and used for all agents.
       */
-    AgentContainer<Agent> setup_agents() {
+    void setup_agents() {
         // Distinguish depending on constructor.
         // Is the default constructor to be used?
         if constexpr (AgentTraits::use_default_state_constructor) {
@@ -340,7 +457,7 @@ private:
             _log->info("Setting up agents using default constructor ...");
 
             // Create the initial state (same for all agents)
-            return setup_agents(AgentState());
+            setup_agents(AgentState());
         }
 
         // Is there a constructor available that allows passing the RNG?
@@ -368,27 +485,16 @@ private:
             }
             const auto initial_num_agents = get_as<IndexType>("initial_num_agents", _cfg);
 
-            // The agent container to be populated
-            AgentContainer<Agent> cont;
-
             // Populate the container, creating the agent state anew each time
             for (IndexType i=0; i<initial_num_agents; i++) {
-                _log->trace("Creating agent with ID {:d} ...", _id_counter);
-
-                cont.emplace_back(
-                    std::make_shared<Agent>(_id_counter, 
-                                            AgentState(agent_params, _rng),
-                                            initial_agent_pos())
-                );
-
-                // Increment id counter;
-                ++_id_counter;
+                add_agent(AgentState(agent_params, _rng),
+                          initial_agent_pos());
             }
+
             // Done. Shrink it.
-            cont.shrink_to_fit();
+            _agents.shrink_to_fit();
             _log->info("Populated agent container with {:d} agents.",
-                       cont.size());
-            return cont;
+                       _agents.size());
         }
 
         // As default, require a Config constructor
@@ -443,6 +549,37 @@ private:
                 // Set the new agent position
                 agent.set_pos(pos);
             };
+        }
+    }
+
+    /// Depending on periodicity, return the function to prepare positions of 
+    /// agents before they are added
+    /** \detail The function that is used to prepare a position before an
+     *          agent is added (if passed explicitly) depends on whether the
+     *          space is periodic or not.
+     *          In the case of a periodic space the position is automatically
+     *          mapped into space again across the borders. 
+     *          For a nonperiodic space a position outside of the borders will 
+     *          throw an error.
+     */
+    PosFunc setup_prepare_pos_func() const {
+        // If periodic, map the position back into space
+        if (_space->periodic) {
+            return 
+                [this](const SpaceVec& pos){
+                    return this->_space->map_into_space(pos);
+                };
+        }
+        // If non-periodic, check wether the position is valid
+        else {
+            return
+                [this](const SpaceVec& pos) {
+                    if (not _space->contains(pos)) {
+                        throw OutOfSpace(pos, _space, 
+                                         "Given position is out of space!");
+                    }
+                    return pos;
+                };
         }
     }
 
