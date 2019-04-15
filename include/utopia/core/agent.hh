@@ -76,9 +76,9 @@ public:
      *  \param initial_state The initial state
      *  \param initial_pos   The initial position
      */
-    Agent(const IndexType id,
-            const State initial_state, 
-            const Position& initial_pos)
+    Agent (const IndexType id,
+           const State initial_state, 
+           const Position& initial_pos)
     :
         Entity<Traits>(id, initial_state),
         _pos(initial_pos)    
