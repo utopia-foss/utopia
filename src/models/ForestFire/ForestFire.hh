@@ -246,13 +246,7 @@ public:
                 *this->_rng
             );
         }
-        this->_log->debug("Cells fully set up.");
-
-        // Write initial state
-        this->write_data();
-
-        this->_log->debug("{} model all set up and initial state written.",
-                          this->_name);
+        this->_log->debug("{} model fully set up.", this->_name);
     }
 
 

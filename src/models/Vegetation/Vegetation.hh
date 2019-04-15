@@ -155,11 +155,7 @@ public:
         // Open dataset for output of cell states
         _dset_plant_mass(this->create_cm_dset("plant_mass", _cm))
     {
-        this->_log->info("Model '{}' initialized", name);
-
-        // Write initial state
-        write_data();
-        this->_log->info("Initial state written");
+        this->_log->info("'{}' model fully set up.", name);
     }
 
     /// Iterate a single step

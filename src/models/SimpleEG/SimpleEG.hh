@@ -158,10 +158,7 @@ public:
         // Initialize cells
         this->initialize_cells();
 
-        // Write initial state
-        this->write_data();
-
-        // Write _ia_matrix in _hdfgrp attribute
+        // Write calculated _ia_matrix to _hdfgrp attribute
         this->_hdfgrp->add_attribute("ia_matrix", _ia_matrix);
     }
 

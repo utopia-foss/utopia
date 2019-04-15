@@ -260,22 +260,17 @@ public:
             apply_rule<Update::sync>(_source_init, _cm.boundary_cells("bottom"));
         }
 
-        // Initialization should be finished here.
-        this->_log->debug("{} model fully set up.", this->_name);
-
-        // -- Write initial state
-        // Write all other data that is written each write_data call, which
-        // includes the remaining densities (indices 0, 1, and 2)
-        this->write_data();
-
-        // Now that all densities have been calculated (in write_data), write
-        // those that do not change throughout the simulation (indices 3 and 4)
+        // Write the data that does not change: stone and source densities
+        update_densities();
         _dset_density_stone->write(
             _densities[static_cast<unsigned short>(Kind::stone)]);
         _dset_density_source->write(
             _densities[static_cast<unsigned short>(Kind::source)]);
+        this->_log->debug("Stone and Source densities written.");
+        // NOTE All other data is written the first time at _write_start
 
-        this->_log->debug("Initial state written.");
+        // Initialization should be finished here.
+        this->_log->debug("{} model fully set up.", this->_name);
     }
 
 protected:

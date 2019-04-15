@@ -203,17 +203,12 @@ public:
         }
 
 
-        // Write initial data . . . . . . . . . . . . . . . . . . . . . . . . .
-
-        // Write out the times needed for setup
-        this->write_data();
-
-        // With the dataset open, write dimension names and coordinates to
-        // the dataset attributes
+        // Add information to the dataset attributes
         _dset_times->add_attribute("dim_name__1", "benchmark");
         _dset_times->add_attribute("coords__benchmark", _benchmarks);
         _dset_times->add_attribute("initial_write", initial_write);
 
+        // Done now.
         this->_log->debug("Finished constructing HdfBench '{}'.", this->_name);
     }
 

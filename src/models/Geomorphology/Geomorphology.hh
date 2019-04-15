@@ -160,11 +160,8 @@ public:
         // Update initial cell states
         _initialize_cells();
 
-        // Write initial state
-        this->write_data();
 
-        this->_log->debug("{} model all set up and initial state written.",
-                          this->_name);
+        this->_log->debug("{} model fully set up.", this->_name);
     }
 
     /// The set of seperately applied rules to build the drainage network

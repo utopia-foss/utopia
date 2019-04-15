@@ -491,9 +491,8 @@ public:
         _empty_cell.reserve(nb_size);
         _repro_cell.reserve(nb_size);
 
-        // Write initial state
-        this->write_data();
-        this->_log->debug("Initial state written.");
+        // Initialization finished
+        this->_log->debug("{} model fully set up.", this->_name);
     }
 
 public:

@@ -1,6 +1,8 @@
 #ifndef UTOPIA_CORE_MODEL_HH
 #define UTOPIA_CORE_MODEL_HH
 
+#include <algorithm>
+
 #include "exceptions.hh"
 #include "signal.hh"
 #include "logging.hh"
@@ -20,12 +22,42 @@ namespace Utopia {
  */
 
 
+/// How to write data in the models
+enum class WriteMode {
+    /// Basic writing features: write_start, write_every
+    /** \detail This leads to `write_data` being invoked the first time at
+      *         time `write_start` and henceforth every `write_every` steps.
+      *         If `write_start` is 0, this means that `write_data` is called
+      *         after the model constructor finished and before `perform_step`
+      *         is called the first time.
+      */
+    basic,
+
+    /// Fully manual: write_data method is always called
+    /** \detail More accurately: `write_data` will be called after the model
+      *         constructor finished (and before `perform_step` is called for
+      *         the first time) and henceforth every time after `perform_step`
+      *         finished and the time was incremented. There are no further
+      *         checks and the `write_start` and `write_every` arguments are
+      *         not needed.
+      */
+    manual,
+
+    /// The write_data method is never called.
+    off
+};
+
+/// Alias for the default write mode
+constexpr WriteMode DefaultWriteMode = WriteMode::basic;
+
+
 /// Wrapper struct for defining model class data types
 /** \detail Using the template parameters, derived classes can specify the
  *          types they desire to use.
  *
- *  \tparam Spacetype             The SpaceType to use, defaults to a 2D space
  *  \tparam RNGType               The RNG class to use
+ *  \tparam data_write_mode       Mode in which data is written in model class
+ *  \tparam Spacetype             The SpaceType to use, defaults to a 2D space
  *  \tparam ConfigType            The class to use for reading the config
  *  \tparam DataGroupType         The data group class to store datasets in
  *  \tparam DataSetType           The data group class to store data in
@@ -34,6 +66,7 @@ namespace Utopia {
  *  \tparam MonitorManagerType    The type to use for the Monitor manager
  */
 template<typename RNGType=DefaultRNG,
+         WriteMode data_write_mode=DefaultWriteMode,
          typename SpaceType=DefaultSpace,
          typename ConfigType=Utopia::DataIO::Config,
          typename DataGroupType=Utopia::DataIO::HDFGroup,
@@ -44,6 +77,7 @@ template<typename RNGType=DefaultRNG,
          >
 struct ModelTypes {
     using RNG = RNGType;
+    static constexpr WriteMode write_mode = data_write_mode;
     using Space = SpaceType;
     using Config = ConfigType;
     using DataGroup = DataGroupType;
@@ -56,19 +90,17 @@ struct ModelTypes {
 
 
 /// Base class interface for Models using the CRT Pattern
-/** \tparam Derived Type of the derived model class
- *  \tparam ModelTypes Convenience wrapper for extracting model data types
+/** \tparam Derived    Type of the derived model class
+ *  \tparam ModelTypes Traits of this model, can be used for specializing
  */
 template<class Derived, typename ModelTypes>
 class Model
 {
 public:
-    // -- Data types uses throughout the model class -- //
-    // NOTE: these are also available to derived classes
-    
+    // -- Data types uses throughout the model class --------------------------
     /// Data type that holds the configuration
     using Config = typename ModelTypes::Config;
-    
+
     /// Data type that is used for storing datasets
     using DataGroup = typename ModelTypes::DataGroup;
     
@@ -93,8 +125,9 @@ public:
     /// Data type for the hierarchical level
     using Level = typename ModelTypes::Level;
 
+
 protected:
-    // -- Member declarations -- //
+    // -- Member declarations -------------------------------------------------
     /// Name of the model instance
     const std::string _name;
 
@@ -116,6 +149,12 @@ protected:
     /// The HDF group this model instance should write its data to
     const std::shared_ptr<DataGroup> _hdfgrp;
 
+    /// Which data-writing mode the base model should use
+    static constexpr WriteMode _write_mode = ModelTypes::write_mode;
+
+    /// First time at which write_data is called
+    const Time _write_start;
+
     /// How often to call write_data from iterate
     const Time _write_every;
 
@@ -128,8 +167,23 @@ protected:
     /// The monitor
     Monitor _monitor;
 
+
+private:
+    // TODO Consider doing this in constructor directly
+    Space setup_space() const {
+        if (_cfg["space"]) {
+            // Build a space with the given parameters
+            return Space(_cfg["space"]);
+        }
+        else {
+            // Use the default space
+            return Space();
+        }
+    }
+
+
 public:
-    // -- Constructor -- //
+    // -- Constructor ---------------------------------------------------------
 
     /// Constructor
     /** \detail Uses information from a parent model to create an instance of
@@ -145,19 +199,24 @@ public:
      */
     template<class ParentModel>
     Model (const std::string name,
-           const ParentModel &parent_model)
+           const ParentModel& parent_model)
     :
         // First thing: setup name, configuration, and level in hierarchy
         _name(name),
         _cfg(parent_model.get_cfg()[_name]),
         _level(parent_model.get_level() + 1),
+
         // Determine space and time
         _space(this->setup_space()),
         _time(0),
         _time_max(parent_model.get_time_max()),
+
         // Extract the other information from the parent model object
         _hdfgrp(parent_model.get_hdfgrp()->open_group(_name)),
-        _write_every(this->determine_write_every(parent_model)),
+        _write_start(get_as<Time>("write_start", _cfg,
+                                  parent_model.get_write_start())),
+        _write_every(get_as<Time>("write_every", _cfg,
+                                  parent_model.get_write_every())),
         _rng(parent_model.get_rng()),
         _log(spdlog::stdout_color_mt(parent_model.get_logger()->name() + "."
                                      + _name)),
@@ -175,17 +234,35 @@ public:
             _log->set_level(parent_model.get_logger()->level());
         }
 
-        // Store write_every value in the hdfgrp
-        _hdfgrp->add_attribute("write_every", _write_every);
-
-        // Provide some informative log messages
+        // Provide some information, also depending on write mode
         _log->info("Model base constructor finished.");
-        _log->debug("time_max:     {} step(s)", _time_max);
-        _log->debug("write_every:  {} step(s)", _write_every);
+
+        if constexpr (_write_mode == WriteMode::basic) {
+            _log->info("  write_mode:  {:>7s}", "basic");
+            _log->info("  write_start: {:7d}", _write_start);
+            _log->info("  write_every: {:7d}", _write_every);
+            _log->info("  #writes:     {:7d}", get_remaining_num_writes());
+
+            // Store relevant info in base group attributes
+            _hdfgrp->add_attribute("write_mode", "basic");
+            _hdfgrp->add_attribute("write_start", _write_start);
+            _hdfgrp->add_attribute("write_every", _write_every);
+            _hdfgrp->add_attribute("time_max",    _time_max);
+        }
+        else if constexpr (_write_mode == WriteMode::manual) {
+            _log->info("  write_mode:  {:>7s}", "manual");
+            _hdfgrp->add_attribute("write_mode", "manual");
+        }
+        else if constexpr (_write_mode == WriteMode::off) {
+            _log->info("  write_mode:  {:>7s}", "off");
+            _hdfgrp->add_attribute("write_mode", "off");
+        }
+
+        _log->info("  time_max:    {:7d}", _time_max);
     }
 
 
-    // -- Getters -- //
+    // -- Getters -------------------------------------------------------------
 
     /// Return the space this model resides in
     std::shared_ptr<Space> get_space() {
@@ -217,9 +294,33 @@ public:
         return _hdfgrp;
     }
     
+    /// Return the parameter that controls when write_data is called first
+    Time get_write_start() const {
+        return _write_start;
+    }
+    
     /// Return the parameter that controls how often write_data is called
     Time get_write_every() const {
         return _write_every;
+    }
+
+    /// Return the number of remaining `write_data` calls this model will make
+    /** \detail The 'remaining' refers to the current time being included into
+      *         the calculation, e.g.: when writing every time, currently at
+      *         time == 42 and time_max == 43, it will return the value 2,
+      *         i.e. for the write operations at times 42 and 43
+      */
+    hsize_t get_remaining_num_writes() const {
+        if constexpr (_write_mode == WriteMode::basic) {
+            return (  (_time_max - std::max(_time, _write_start))
+                    / _write_every) + 1;
+        }
+        else if constexpr (_write_mode == WriteMode::manual) {
+            return _time_max - _time + 1;
+        }
+        else if constexpr (_write_mode == WriteMode::off) {
+            return 0;
+        }
     }
     
     /// Return a pointer to the shared RNG
@@ -248,7 +349,152 @@ public:
     }
 
 
-    // -- Convenience functions -- //
+    // -- Simulation control --------------------------------------------------
+
+    /// Iterate one (time) step of this model
+    /** Increment time, perform step, emit monitor data, and write data.
+     *  Monitoring is performed differently depending on the model level.
+     *  The write_data method is called depending on the configured value for
+     *  the `write_mode` (template parameter) and (if in mode `basic`): the
+     *  configuration parameters `write_start` and `write_every`.
+     */
+    void iterate () {
+        // -- Perform the simulation step
+        __perform_step();     
+        increment_time();
+
+        // -- Monitoring
+        /* If the model is at the first hierarchical level, check whether the
+         * monitor entries should be collected and emitted. This leads to a
+         * flag being set in the monitor manager, such that the submodels do
+         * not have to do the check against the timer as well and that all
+         * collected data stems from the same time step.
+         */ 
+        if (_level == 1) {
+            _monitor.get_monitor_manager()->check_timer();
+            __monitor();
+            
+            // If enabled for this step, perform the emission of monitor data
+            // NOTE At this point, we can be sure that all submodels have
+            //      already run, because their iterate functions were called
+            //      in the perform_step of the level 1 model.
+            _monitor.get_monitor_manager()->emit_if_enabled();
+        }
+        else {
+            __monitor();
+        }
+
+        // -- Data output
+        if constexpr (_write_mode == WriteMode::basic) {
+            if (    (_time >= _write_start)
+                and (_time - _write_start) % _write_every == 0) {
+                __write_data();
+            }
+        }
+        else if constexpr (_write_mode == WriteMode::manual) {
+            __write_data();
+        }
+
+        _log->debug("Finished iteration: {:7d} / {:d}", _time, _time_max);
+    }
+
+    /// Run the model from the current time to the maximum time
+    /** \detail This repeatedly calls the iterate method until the maximum time
+      *         is reached. Additionally, it calls the __write_data method to
+      *         allow it to write the initial state. In write mode `basic`,
+      *         this is only done if `_write_start == _time`.
+      */
+    void run () {
+        // First, attach the signal handler, such that the while loop below can
+        // be left upon receiving of a signal.
+        __attach_sig_handlers();
+
+        // Decide on whether the initial state needs to be written
+        if constexpr (_write_mode == WriteMode::basic) {
+            if (_write_start == _time) {
+                _log->info("Writing initial state ...");
+                __write_data();
+            }
+        }
+        else if constexpr (_write_mode == WriteMode::manual) {
+            __write_data();
+        }
+
+        // Now, let's go repeatedly iterate the model ...
+        _log->info("Running from current time  {}  to  {}  ...",
+                   _time, _time_max);
+
+        while (_time < _time_max) {
+            iterate();
+
+            if (stop_now.load()) {
+                _log->warn("Was told to stop. Not iterating further ...");
+                throw GotSignal(received_signum.load());
+            }
+        }
+        _log->info("Run finished. Current time:  {}", _time);
+    }
+
+
+protected:
+    // -- Functions requiring/allowing user-defined implementations -----------
+
+    /// Perform the computation of a step
+    void __perform_step () {
+        impl().perform_step();
+    }
+
+    /// Monitor information in the terminal
+    /* \detail The child implementation of this function will only be called if
+     *         the monitor manager has determined that an emission will occur,
+     *         because it only makes sense to collect data if it will be
+     *         emitted in this step.
+     */
+    void __monitor () {
+        if (_monitor.get_monitor_manager()->emit_enabled()) {
+            // Perform actions that should only happen once by the monitor at
+            // the highest level of the model hierarchy.
+            if (_level == 1){
+                // Supply the global time. When reaching this point, all sub-
+                // models will also have reached this time.
+                _monitor.get_monitor_manager()->set_time_entries(_time,
+                                                                 _time_max);
+                // This method also sets the other top level entries
+            }
+
+            // Call the child's implementation of the monitor functions.
+            impl().monitor();
+        }
+    }
+    
+    /// Write data; calls the implementation's write_data method
+    void __write_data () {
+        _log->trace("Calling write_data ...");
+        impl().write_data();
+    }
+
+    /// Increment time
+    /** \param dt Time increment, defaults to 1
+     */
+    void increment_time (const Time dt=1) {
+        _time += dt;
+    }
+
+
+    // -- CRTP ----------------------------------------------------------------
+    /// cast to the derived class
+    Derived& impl () {
+        return static_cast<Derived&>(*this);
+    }
+    
+    /// const cast to the derived interface
+    const Derived& impl () const {
+        return static_cast<const Derived&>(*this);
+    }
+
+
+public:
+    // -- Convenience functions -----------------------------------------------
 
     /** @brief Create a new dataset within the given group
      *
@@ -287,10 +533,10 @@ public:
                     name, hdfgrp->get_path());
 
         // Calculate the number of time steps to be written
-        hsize_t num_steps = this->get_time_max() / this->get_write_every() + 1;
+        const hsize_t num_write_ops = get_remaining_num_writes();
 
         // Calculate the shape of the dataset
-        add_write_shape.insert(add_write_shape.begin(), num_steps);
+        add_write_shape.insert(add_write_shape.begin(), num_write_ops);
         auto capacity = add_write_shape;
 
         // Create the dataset and return it.
@@ -305,7 +551,8 @@ public:
             dset->add_attribute("dim_name__0", "time");
             dset->add_attribute("coords_mode__time", "start_and_step");
             dset->add_attribute("coords__time",
-                                std::vector<std::size_t>{0, _write_every});
+                                std::vector<std::size_t>{_write_start,
+                                                         _write_every});
             _log->debug("Added time dimension labels and coordinates to "
                         "dataset '{}'.", name);
         }
@@ -393,172 +640,28 @@ public:
 
         // Write additional attributes, if not specifically suppressed.
         if (get_as<bool>("write_dim_labels_and_coords", _cfg, true)) {        
-            // We know that the dimensions here refer to (time, cell ids). Add
-            // that information to the attributes
-            dset->add_attribute("dim_name__0", "time");
+            // We know that the dimensions here refer to (time, cell ids). The
+            // time  information is already aded in create_dset; add the ID
+            // information here
             dset->add_attribute("dim_name__1", "ids");
-
-            // For the time, we also know the coordinates
-            dset->add_attribute("coords_mode__time", "start_and_step");
-            dset->add_attribute("coords__time",
-                                std::vector<std::size_t>{0, _write_every});
 
             // For ids, the dimensions are trivial
             dset->add_attribute("coords_mode__ids", "range");
             dset->add_attribute("coords__ids",
                                 std::vector<std::size_t>{cm.cells().size()});
 
-            _log->debug("Added time and cell ID dimension labels and "
-                        "coordinates to dataset '{}'.", name);
+            _log->debug("Added cell ID dimension labels and coordinates to "
+                        "dataset '{}'.", name);
         }
 
         return dset;
     }
 
 
-    // -- Default implementations -- //
-
-    /// Iterate one (time) step of this model
-    /** Increment time, perform step, emit monitor data, and write data.
-     *  Monitoring is performed differently depending on the model level. Also,
-     *  the write_data function may be called only every `write_every` steps.
-     */
-    void iterate () {
-        // -- Perform the simulation step -- //
-        __perform_step();     
-        increment_time();
-
-        // -- Monitoring -- //
-        /* If the model is at the first hierarchical level, check whether the
-         * monitor entries should be collected and emitted. This leads to a
-         * flag being set in the monitor manager, such that the submodels do
-         * not have to do the check against the timer as well and that all
-         * collected data stems from the same time step.
-         */ 
-        if (_level == 1) {
-            _monitor.get_monitor_manager()->check_timer();
-            __monitor();
-            
-            // If enabled for this step, perform the emission of monitor data
-            // NOTE At this point, we can be sure that all submodels have
-            //      already run, because their iterate functions were called
-            //      in the perform_step of the level 1 model.
-            _monitor.get_monitor_manager()->emit_if_enabled();
-        }
-        else {
-            __monitor();
-        }
-
-        // -- Data output -- //
-        if (_time % _write_every == 0) {
-            _log->debug("Calling write_data ...");
-            __write_data();
-        }
-
-        _log->debug("Finished iteration: {:9d} / {:d}", _time, _time_max);
-    }
-
-    /// Run the model from the current time to the maximum time
-    /** @detail This repeatedly calls the iterate method until the maximum time
-      *         is reached.
-      */
-    void run () {
-        // First, attach the signal handler, such that the while loop below can
-        // be left upon receiving of a signal.
-        __attach_sig_handlers();
-
-        // Now, let's go repeatedly iterate the model ...
-        _log->info("Running from current time  {}  to  {}  ...",
-                   _time, _time_max);
-
-        while (_time < _time_max) {
-            iterate();
-
-            if (stop_now.load()) {
-                _log->warn("Was told to stop. Not iterating further ...");
-                throw GotSignal(received_signum.load());
-            }
-        }
-        _log->info("Run finished. Current time:  {}", _time);
-    }
-
-
-    // -- Functions requiring user-defined implementations -- //
-
-    /// Perform the computation of a step
-    void __perform_step () {
-        impl().perform_step();
-    }
-
-    /// Monitor information in the terminal
-    /* @detail The child implementation of this function will only be called if
-     *         the monitor manager has determined that an emission will occur,
-     *         because it only makes sense to collect data if it will be
-     *         emitted in this step.
-     */
-    void __monitor () {
-        if (_monitor.get_monitor_manager()->emit_enabled()) {
-            // Perform actions that should only happen once by the monitor at
-            // the highest level of the model hierarchy.
-            if (_level == 1){
-                // Supply the global time. When reaching this point, all sub-
-                // models will also have reached this time.
-                _monitor.get_monitor_manager()->set_time_entries(_time,
-                                                                 _time_max);
-                // This method also sets the other top level entries
-            }
-
-            // Call the child's implementation of the monitor functions.
-            impl().monitor();
-        }
-    }
-    
-    /// Write data
-    void __write_data () {
-        impl().write_data();
-    }
-
-protected:
-    /// Increment time
-    /** \param dt Time increment, defaults to 1
-     */
-    void increment_time (const Time dt=1) {
-        _time += dt;
-    }
-    // TODO perhaps make this private?
-
-    /// cast to the derived class
-    Derived& impl () { return static_cast<Derived&>(*this); }
-    
-    /// const cast to the derived interface
-    const Derived& impl () const { return static_cast<const Derived&>(*this); }
-
 private:
-    Space setup_space() const {
-        if (_cfg["space"]) {
-            // Build a space with the given parameters
-            return Space(_cfg["space"]);
-        }
-        else {
-            // Use the default space
-            return Space();
-        }
-    }
+    // -- Private Helper Methods ----------------------------------------------
 
-
-    /// Helper function to initialize the write_every member
-    template<typename ParentModel>
-    Time determine_write_every(ParentModel &parent_model) const {
-        if (_cfg["write_every"]) {
-            // Use the value given in the configuration
-            return get_as<Time>("write_every", _cfg);
-        }
-        // Use the value from the parent
-        return parent_model.get_write_every();
-    }
-
-
-    /// Attaches the desired signal handlers for SIGINT and SIGTERM
+    /// Attaches signal handlers for SIGINT and SIGTERM
     /** These signals are caught and handled such that the run method is able
       * to finish in an ordered manner, preventing data corruption.
       */
@@ -718,9 +821,14 @@ public:
         return _hdffile->get_basegroup();
     }
     
+    /// Return the parameter that controls when write_data is called first
+    Time get_write_start() const {
+        return get_as<Time>("write_start", _cfg, 0);
+    }
+    
     /// Return the parameter that controls how often write_data is called
     Time get_write_every() const {
-        return get_as<Time>("write_every", _cfg);
+        return get_as<Time>("write_every", _cfg, 1);
     }
     
     /// Return a pointer to the RNG

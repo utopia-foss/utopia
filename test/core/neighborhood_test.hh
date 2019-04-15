@@ -18,7 +18,7 @@ using Utopia::Update;
 
 
 /// Define data types for the cell manager test model
-using NBTestModelTypes = ModelTypes<DefaultRNG, DefaultSpace>;
+using NBTestModelTypes = ModelTypes<DefaultRNG, DefaultWriteMode, DefaultSpace>;
 
 /// A cell state definition that is default-constructible
 struct CellStateDC {

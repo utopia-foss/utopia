@@ -184,10 +184,7 @@ public:
         }
         topple(add_sand_grain());
 
-        // Write data
-        this->_log->info("Writing initial state ...");
-        write_data();
-
+        // Done.
         this->_log->info("{} all set up.", this->_name);
     }
 

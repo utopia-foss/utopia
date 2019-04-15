@@ -55,10 +55,7 @@ public:
           _state(initial_state),
           _bc(_state.size(), 1.0),
           _dset_state(this->create_dset("state", {_state.size()}))
-    {        
-        // Now write the initial state
-        this->write_data();
-    }
+    {}
 
 
     /// Iterate by one time step

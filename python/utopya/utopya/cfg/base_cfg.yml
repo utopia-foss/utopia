@@ -339,20 +339,23 @@ plot_manager:
 # argument.
 #
 # IMPORTANT: In order to remain general, neither the base nor the user config
-#            should add any model-specific content here. This is either done
-#            semi-automatically in the 
+#            should add any model-specific content here
 #
 parameter_space:
   # Set a default PRNG seed
   seed: 42
 
-  # By default, perform only three steps
+  # Number of steps to perform
   num_steps: 3
 
-  # By default, write_data is called in every iteration step:
+  # At which step the write_data method should be invoked for the first time
+  write_start: 0
+
+  # Starting from write_start, how frequently write_data should be called
   write_every: 1
-  # This value is passed along to sub-models. Every sub model can also define
-  # the key on their level to change it (analogous to log_levels.)
+  # NOTE `write_start` and `write_every` are passed along to sub-models. Every
+  #       sub model can overwrite this entry by adding an entry in their model
+  #       configuration level (analogous to `log_levels`.)
 
   # By default, emit monitor data to the terminal every two seconds:
   monitor_emit_interval: 2.
