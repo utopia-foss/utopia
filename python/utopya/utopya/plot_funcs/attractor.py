@@ -1,315 +1,292 @@
-"""This module provides plotting functions to 
-   visualize the attractive set of a dynamical system."""
+"""This module provides plotting functions to visualize the attractive set of
+a dynamical system.
+"""
 
+import copy
 import logging
+from typing import Sequence, Union, Dict, Callable, Tuple
 
 import numpy as np
+import xarray as xr
 from scipy.signal import find_peaks
 
 import matplotlib as mpl
-import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 
-from utopya import DataManager
+import utopya
+import utopya.dataprocessing as utdp
+from utopya import DataManager, UniverseGroup
+from utopya.plotting import is_plot_func, PlotHelper, MultiversePlotCreator
+from utopya.tools import recursive_update
 
 
 # Get a logger
 log = logging.getLogger(__name__)
 
-# Increase log threshold for animation plotting
-# logging.getLogger('matplotlib.animation').setLevel(logging.WARNING)
 
-def bifurcation_codimension_one(dm: DataManager, *,
-                                out_path: str,
-                                mv_data,
-                                dim: str,
-                                codim: str=None,
-                                time_fraction: float=0,
-                                spin_up_fraction: float=0,
-                                find_peaks_kwargs: dict=None,
-                                to_plot_kwargs: dict,
-                                plot_kwargs: dict=None,
-                                save_kwargs: dict=None):
-    """Plots a bifurcation diagram for one parameter dimension (dim)
-        i.e. plots the final state over the parameter
+# -----------------------------------------------------------------------------
 
-    Configuration:
-        creator: multiverse
-        use the `select/field` key to associate one or multiple datasets
-        add a matching entry in `to_plot_kwargs` with at least a 
-        `plot_kwargs/color` sub_key
-        choose the dimension (dim) in which the sweep was performed
-    
-    Arguments:
+@is_plot_func(creator_type=MultiversePlotCreator,
+              helper_defaults=dict(
+                set_labels=dict(x="bifurcation parameter", y='state')
+                )
+              )
+def bifurcation_diagram(dm: DataManager, *,
+                        hlpr: PlotHelper, 
+                        mv_data,
+                        dim: str,
+                        to_plot: dict,
+                        analysis_steps: Sequence[Union[str, Tuple[str, str]]],
+                        custom_analysis_funcs: Dict[str, Callable]=None,
+                        analysis_kwargs: dict=None) -> None:
+    """Plots a bifurcation diagram for one parameter-dimension (dim). 
+
+    Args:
         dm (DataManager): The data manager from which to retrieve the data
-        out_path (str): Where to store the plot to
+        hlpr (PlotHelper): The PlotHelper that instantiates the figure and
+            takes care of plot aesthetics (labels, title, ...) and saving
         mv_data (xr.Dataset): The extracted multidimensional dataset
         dim (str): The parameter dimension of the bifurcation diagram
-        codim (str, optional): A second dimension projected onto dim
-        time_fraction(float, optional): fraction of the simulation
-            scattered.
-            Default: 0 --> equivalent of 1 step, the asymptotically 
-            reached final state.
-            Use values > 0 to evaluate maximum spread of the attractor, 
-            e.g. for oscillations, which will plot the full amplitude 
-            of the oscillation. Coloring or dot-size changing with time
-            may improve readability (not implemented).
-            Will be overwritten by specific `to_plot_kwargs/*/time_fraction`.
-            Unused if analysis performed.
-        spin_up_fraction(float, optional): fraction of the simulation
-            not used for analysis in case on signal analysis, 
-            e.g. find_peaks.
-            Only used together with `find_peaks`, other than with
-            `time_fraction` the data is processed. Hence, a dataset is
-            needed. A fraction of the simulation (the beginning) often
-            if dropped, the so called `spin up` part.
-            Will be overwritten by specific `to_plot_kwargs/*/time_fraction`.
-            Unused if no analysis performed.
-        find_peaks_kwargs (dict, optional): if given requires `height` key
-            passed on to find_peaks
-            then only the return points are plotted (for stable oscillations)
-            may be overwritten by `to_plot_kwargs/*/find_peak_kwargs`
-        to_plot_kwargs (dict): The plotting configuration. The entries
+        to_plot (dict): The configuration for the data to plot. The entries
             of this key need to match the data_vars selected in mv_data.
             sub_keys: 
-                label (str, optional): label in plot
-                time_fraction (float, optional): fraction of the simulation
-                    used for analysis. Overwrites the `time_fraction` key.
-                    See above.
-                    Default: equivalent of 1 step.
-                    Unused if analysis performed.
-                spin_up_fraction(float, optional): fraction of the simulation
-                    snot used for analysis in case on signal analysis, 
-                    e.g. find_peaks. Overwrites the `spin_up_fraction` key.
-                    See above.
-                    Unused if no analysis performed.
-                plot_kwargs (dict, optional): passed to scatter for every universe
-                    - color (str, recommended): unique color for every
-                      `to_plot` data_variable
-        plot_kwargs (dict, optional): Passed on to ax.set
-        save_kwargs (dict, optional): kwargs to the plt.savefig function
 
-    Raises:
-        ValueError: for an invalid `dim` value
-        ValueError: for an invalid or non-matching `prop_name` value
-        TypeError: for a parameter dimesion higher than 2
-        ValueError: for an invalid `to_plot_kwargs/*/time_fraction` value
-        Warning: no color defined for `to_plot_kwargs` entry (coloring misleading)
-        Warning: Simulation has one codimension, may be hard to read
+            - ``label`` (str, optional): label in plot
+            - ``plot_kwargs`` (dict, optional): passed to scatter for every
+                universe
+
+                - color (str, recommended): unique color for every 
+                    data_variable accross universes
+                    
+        analysis_steps (Sequence): The analysis steps that are to be made
+            until one is conclusive.
+
+            - If seq of str: The str will also be used as attractor key for 
+                plotting if the test is conclusive.
+            - If seq of Tuple(str, str): The first str defines the attractor
+                key for plotting, the second str is a key within 
+                custom_analysis_funcs.
+
+        custom_analysis_funcs (dict): A collection of custom analysis functions
+            that will overwrite the default analysis funcs (recursive update).
     """
-    if not dim in mv_data.dims:
-        raise ValueError("Dimension `dim` not available in multiverse data."
-            " Was: {} with value: '{}'. Available: {}"
-            "".format(type(dim), dim, mv_data.coords))
-    if not codim is None and \
-        not codim in mv_data.dims:
-        raise ValueError("Dimension `codim` not available in multiverse data."
-            " Was: {} with value: '{}'. Available: {}"
-            "".format(type(codim), codim, mv_data.coords))
-    for coord in mv_data.coords:
-        if coord == dim or coord == codim:
-            continue
-        # dimension with extend
-        if (len(mv_data[coord]) > 1):
-            raise ValueError("mv_data has higher than 2 dimensional "
-                "parameter space. Dimension of bifurcation: {}. "
-                "Available dimensions: {}.".format(dim, mv_data.coords))
-        # dimension without extend
-        else:
-            mv_data = mv_data[{coord: 0}]
-    
-    if len(mv_data.coords) > 1:
-        log.warning("mv_data has codimensional parameter space. "
-            "It may be difficult to read. Dimension of bifurcation: {}. "
-            "Available dimensions: {}.".format(dim, mv_data.coords))
-    
-    def scatter(*, raw_data, ax, diagram_kwargs: dict):
-        """ The function that scatters the data at a single dimension
-            value.
+    def plot_attractor(attractor: xr.Dataset, attractor_key: str, *,
+                       coord: float=None, **plot_kwargs):
+        """Resolves how to plot attractor of specified type 
+        at specific bifurcation parameter value.
 
-            Argument:
-                raw_data (xdarray): The data at a specific `dim` value
-                ax (mplt.axis): The axis where to plot the data
-                diagram_kwargs: The updated kwargs that are used to 
-                    process the data.
-                    subkeys:
-                    - plot_kwargs (dict): passed to ax.scatter
-                    - find_peaks_kwargs (dict): passed to 
-                         scipy.find_peaks.
-                         if given must have an `height` key.
-                    either of the following subkeys:
-                    - time_fraction (float): fraction of the simulation
-                        used for analysis.
-                        Only needed if no analysis performed.
-                    - spin_up_fraction (float): fraction of the simulation
-                        snot used for analysis in case on signal analysis, 
-                        e.g. find_peaks.
-                        Only needed if analysis performed.
+        Args:
+            attractor (xr.Dataset): The Dataset with the encoded attractor 
+                information. See possible encodings
+            attractor_key (str): Key according to which to decode the attractor
+            coord (float, optional): The bifurcation parameter's coordinate,
+                if None its derived from the attractors coordinates
+
+        Possible encodings, i.e. values for ``attractor_key``:
+            ``fixpoint``: xr.Dataset with dimensions ()
+            ``scatter``: xr.Dataset with dimensions (time: >=1)
+            ``multistability``: xr.Dataset with dimensions
+                (<initial_state>: >= 1)
+            ``oscillation``: xr.Dataset with dimensions (osc: 2), the minimum
+                and maximum
+        
+        NOTE the attractor must contain the bifurcation parameter coordinate
+        
+        Raises:
+            KeyError: Unknown attractor_key
+            KeyError: No bifurcation coordinate received
+            ValueError: Attractor encoding mismatched with the given 
+                attractor_key
         """
-        plot_kwargs = diagram_kwargs['plot_kwargs']
+        def check_compatibility(*, plot_kwargs):
+            if attractor_key == 'scatter':
+                if 'time' not in attractor.dims:
+                    raise ValueError("Attractor does not match the encoding "
+                                     "of type 'scatter'. Must be {'time': "
+                                     ">= 1} and has no dimension 'time'. "
+                                     "Was {}.".format(attractor.dims))
+                
+                if len(attractor.dims) > 1:
+                    raise ValueError("Attractor does not match the encoding "
+                                     "of type 'scatter'. Must be {'time': >= "
+                                     "1}, but has further dimension(s). "
+                                     "Was {}.".format(attractor.dims))
+                
+                # Remove duplicate entries
+                for data_var_name in attractor.data_vars:
+                    data_var_plot_kwargs = plot_kwargs.get(data_var_name, {})
 
-        # scatter data
-        if diagram_kwargs['find_peaks_kwargs'] is None:
-            time_fraction = diagram_kwargs['time_fraction']
-            plot_time = int(max(time_fraction * len(raw_data), 1.))
-
-            ax.scatter([ raw_data[dim] ] *plot_time, raw_data[-plot_time:],
-                       **plot_kwargs)
+                    # Resolve colour map
+                    if 'cmap' in data_var_plot_kwargs:
+                        data_var_plot_kwargs.pop('c', None)
+                        data_var_plot_kwargs.pop('color', None)
+                        plot_kwargs[data_var_name] = data_var_plot_kwargs
+                return
         
-        # use signal analysis: find_peaks
-        else:
-            spin_up_fraction = diagram_kwargs['spin_up_fraction']
-            spin_up_time = int(spin_up_fraction * len(raw_data))
-            plot_time = len(raw_data) - spin_up_time
+        # Get the bifurcation parameter coordinate
+        if not coord:
+            try:
+                coord = attractor[dim]
 
-            find_peaks_kwargs = diagram_kwargs['find_peaks_kwargs']
-            # find maxima
-            maxima, max_props = find_peaks(raw_data[-plot_time:],
-                                           **find_peaks_kwargs)
+            except KeyError as err:
+                raise KeyError("No bifurcation parameter coordinate '{}' "
+                               "could be found! Either have it as a "
+                               "coordinate in 'attractor' or pass it to "
+                               "'plot_attractor' explicitly.".format(dim)
+                               ) from err
+
+        # Check the encoding of the attractor
+        check_compatibility(plot_kwargs=plot_kwargs)
+
+        # A list of dicts to fill with arguments to the plot function
+        scatter_kwargs = []
+
+        # Resolve the scatter kwargs depending on attractor key
+        if attractor_key in ('fixpoint', 'endpoint', 'multistability'):
+            for data_var_name, data_var in attractor.data_vars.items():
+                entries = 1
+                if data_var.shape:
+                    entries = len(data_var)
+
+                scatter_kwargs.append(dict(x=[coord]*entries,
+                                      y=data_var,
+                                      **plot_kwargs.get(data_var_name, {})))
+        
+        elif attractor_key == 'scatter':
+            for data_var_name, data_var in attractor.data_vars.items():
+                if 'cmap' in plot_kwargs.get(data_var_name, {}):
+                    scatter_kwargs.append(
+                        dict(x=[coord]*len(data_var.data),
+                             y=data_var,
+                             c=attractor['time'],
+                             **plot_kwargs.get(data_var_name, {}))
+                    )
+                
+                else:
+                    scatter_kwargs.append(
+                        dict(x=[coord]*len(data_var.data),
+                             y=data_var,
+                             **plot_kwargs.get(data_var_name, {}))
+                    )
+        
+        elif attractor_key == 'oscillation':
+            for data_var_name, data_var in attractor.data_vars.items():
+                scatter_kwargs.append(dict(x=[coord]*len(data_var.data),
+                                        y=data_var,
+                                        **plot_kwargs.get(data_var_name, {})))
+        else:
+            raise KeyError("No attractor-key '{}' known. "
+                           "Available keys: ['endpoint', fixpoint',"
+                           " 'multistability', 'scatter', 'oscillation']."
+                           "".format(attractor_key))
+
+        # Now, call the plot function
+        for kws in scatter_kwargs:
+            hlpr.ax.scatter(**kws)
+
+    def resolve_plot_kwargs(to_plot: dict) -> tuple:
+        """Resolves the to_plot dict, e.g. to create legend handles
+
+        Returns:
+            dara_vars_plot_kwargs (dict): A dict with the 'plot_kwargs' for 
+                every data_var.
+            legend_handles (list): List of mpatches.Patch, the handles for the 
+                creation of a legend.
+        """
+        data_vars_plot_kwargs = {}
+        legend_handles = []
+
+        for k, v in to_plot.items():
+            data_vars_plot_kwargs[k] = v.pop("plot_kwargs", {})
             
-            # find minima
-            amax = np.amax(raw_data)
-            minima, min_props = find_peaks(amax - raw_data[-plot_time:],
-                                           **find_peaks_kwargs)
-            
-            # print result
-            if maxima.size is 0:
-                ax.scatter(raw_data[dim], raw_data[-1],
-                            **plot_kwargs)
+            # Get label and add to legend handles
+            label = v.pop('label', k)
+            if 'color' in data_vars_plot_kwargs[k]:
+                legend_handles.append(mpatches.Patch(label=label, 
+                            color=data_vars_plot_kwargs[k]['color']))
+
+            elif 'cmap' in data_vars_plot_kwargs[k]:
+                cmap = mpl.cm.get_cmap(data_vars_plot_kwargs[k]['cmap'])
+                c = cmap(1.)
+                legend_handles.append(mpatches.Patch(label=label, color=c))
+
             else:
-                ax.scatter([ raw_data[dim] ]*len(maxima), 
-                            max_props['peak_heights'], 
-                            **props['plot_kwargs'])
-                ax.scatter([ raw_data[dim] ]*len(minima), 
-                        [ amax ]*len(minima) - min_props['peak_heights'],
-                        **props['plot_kwargs'])
-    # end def scatter
+                log.warning("No color defined for data_var '{}'!".format(k))
+
+        return data_vars_plot_kwargs, legend_handles
+    
+    def resolve_scatter(data: xr.Dataset, *, spin_up_time: int=0,
+                        **kwargs) ->tuple:
+        """A mock analysis function to plot all times larger than a spin
+        up time.
+        """
+        return True, data.where(data.time >= spin_up_time, drop=True)
+
+    # .. Finished with helper function definitions ............................
+
+    plot_kwargs, legend_handles = resolve_plot_kwargs(copy.deepcopy(to_plot))
+
+    # Define default analysis functions
+    analysis_funcs = dict(endpoint=utdp.find_endpoint,
+                          fixpoint=utdp.find_fixpoint,
+                          oscillation=utdp.find_oscillation,
+                          scatter=resolve_scatter)
+
+    # If given, update
+    if custom_analysis_funcs:
+        log.debug("Updating with custom analysis functions ...")
+        analysis_funcs = recursive_update(analysis_funcs,
+                                          custom_analysis_funcs)
+    
+    # .. Plotting .............................................................
+    # Go over the selected parameter dimension data
+    for param_coord in mv_data[dim].values:
+        data = mv_data.sel({dim: param_coord})
+
+        for analysis_step in analysis_steps:
+            # get key and func for the analysis step
+            if isinstance(analysis_step, str):
+                analysis_key = analysis_step
+                analysis_func = analysis_step
+                analysis_func_kwargs = analysis_kwargs.get(analysis_key, {})
+
+            else:
+                # Expecting 2-tuple or list; unpack
+                analysis_key, analysis_func = analysis_step
+                analysis_func_kwargs = analysis_kwargs.get(analysis_key, {})
             
+            # resolve the analysis function from its name
+            if isinstance(analysis_func, str):
+                if analysis_func in analysis_funcs:
+                    analysis_func = analysis_funcs[analysis_func]
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-
-    legend_handles = []
-    ## iterate to_plot items, the different properties of the data
-    # get the properties of the plot from the configs
-    # scatter the data
-    for (prop_name, props) in to_plot_kwargs.items():
-        # check existence in mv_data
-        if not prop_name in mv_data.data_vars:
-            raise ValueError("Key to_plot_kwargs/prop_name not available"
-                             " in multiverse data."
-                             " Was: {} with value: '{}'."
-                             " Available in multiverse field: {}"
-                             "".format(type(prop_name),
-                                       prop_name,
-                                       mv_data.data_vars))
-
-        # get label
-        label = props.get('label', prop_name)
-
-
-
-        # add label to legend
-        if 'plot_kwargs' in props.keys() and 'color' in props['plot_kwargs']:
-            legend_handles.append(mpatches.Patch(label=label, 
-                           color=props['plot_kwargs']['color']))
-        else:
-            # coloring misleading
-            log.warning("No color defined for to_plot_kwargs {}"
-                        "".foramt(prop_name))
-
-        # the kwargs passed to the scatter function for this `prop_name`
-        diagram_kwargs = dict()
-
-        # get the `plot_kwargs`
-        diagram_kwargs['plot_kwargs'] = props.get('plot_kwargs', {})
-        
-        ## get cfg of plot mode
-        # use find_peaks function
-        diagram_kwargs['find_peaks_kwargs'] = find_peaks_kwargs
-        if not diagram_kwargs['find_peaks_kwargs'] is None and \
-           not 'height' in diagram_kwargs['find_peaks_kwargs'].keys():
-            raise ValueError("No argument `height` given in"
-                                " `find_peaks_kwargs` dict.")
-        # update the find_peaks_kwargs from props
-        if 'find_peaks_kwargs' in props.keys():
-            diagram_kwargs['find_peaks_kwargs'] = props['find_peaks_kwargs']
-            if not 'height' in diagram_kwargs['find_peaks_kwargs'].keys():
-                raise ValueError("No argument `height` given in"
-                                 " `to_plot_kwargs/{}/find_peaks_kwargs`"
-                                 " dict.".format(prop_name))
-        
-        # get time of simulation used for analysis
-        if diagram_kwargs['find_peaks_kwargs'] is None:
-            diagram_kwargs['time_fraction'] = time_fraction
-            # check validity
-            if time_fraction > 1:
-                raise ValueError("Value of argument"
-                        " `time_fraction` not valid."
-                        " Was: {} with value: '{}'."
-                        " Must be in [0., 1.]."
-                        "".format(type(props['time_fraction']),
-                                  props['time_fraction']))
+                else:
+                    # Try to get it from dataprocessing ... might fail.
+                    analysis_func = getattr(utopya.dataprocessing,
+                                            analysis_func)
             
-            # update from props
-            if 'time_fraction' in props.keys():
-                diagram_kwargs['time_fraction'] = time_fraction
-                # check validity
-                if time_fraction > 1:
-                    raise ValueError("Value of argument"
-                            " `to_plot_kwargs/{}/time_fraction` not valid."
-                            " Was: {} with value: '{}'."
-                            " Must be in [0., 1.]."
-                            "".format(prop_name,
-                                      type(props['time_fraction']),
-                                      props['time_fraction']))
-        # use signal analysis
+            # Perfom the analysis step
+            conclusive, attractor = analysis_func(data, **analysis_func_kwargs)
+
+            # Plot it, if conclusive
+            if conclusive:
+                plot_attractor(attractor, analysis_key, **plot_kwargs)
+                log.debug("Conclusive analysis step '{}'. Plotting result "
+                          "and stopping here.".format(analysis_step))
+
+                # Done here. :)
+                break
+
         else:
-            diagram_kwargs['spin_up_fraction'] = spin_up_fraction
-            # check validity
-            if spin_up_fraction < 0 or spin_up_fraction > 1:
-                raise ValueError("Value of argument"
-                        " `spin_up_fraction` not valid."
-                        " Was: {} with value: '{}'."
-                        " Must be in [0., 1.]."
-                        "".format(type(spin_up_fraction),
-                                  spin_up_fraction))
-            # update from props
-            if 'spin_up_time' in props.keys():
-                spin_up_fraction = props['spin_up_fraction']
-                diagram_kwargs['spin_up_fraction'] = spin_up_fraction
-                # check validity
-                if spin_up_fraction < 0 or spin_up_fraction > 1:
-                    raise ValueError("Value of argument"
-                            " `to_plot_kwargs/{}/spin_up_fraction` not valid."
-                            " Was: {} with value: '{}'."
-                            " Must be in [0., 1.]."
-                            "".format(prop_name,
-                                      type(spin_up_fraction),
-                                      spin_up_fraction))
-
-        ### plot data
-        # iterate the parameter dimension 
-        if (len(mv_data.coords) == 1):
-            for data in mv_data[prop_name]:
-                scatter(raw_data=data, ax=ax, diagram_kwargs=diagram_kwargs)
-        # iterate the parameter dimension and a second dimension
-        elif (len(mv_data.coords) == 2):
-            for datasets in mv_data[prop_name]:
-                for data in datasets:
-                    scatter(raw_data=data, ax=ax, diagram_kwargs=diagram_kwargs)
-        # else: Error raised
-    # end for: property
-
-    # plot legend
-    if len(legend_handles) > 0:
-        ax.legend(handles=legend_handles)
-
-    # set figure kwargs
-    ax.set_xlabel(dim)
-    ax.set_ylabel("final State")
-    ax.set(**(plot_kwargs if plot_kwargs else {}))
-
-    # Save and close figure
-    plt.savefig(out_path, **(save_kwargs if save_kwargs else {}))
-    plt.close()
+            # Inconclusive. Only reached if break was _not_ called...
+            log.warning("No conclusive analysis for universe coordinate {} "
+                        "({}). Nothing to plot! Performed the following "
+                        "analysis steps: {}."
+                        "".format(param_coord, mv_data.coords,
+                                  ", ".join(analysis_steps)))
+        
+    # Done plotting.
+    # Provide some (dynamic) default values for helpers
+    hlpr.provide_defaults('set_labels', x=dim)
+    if legend_handles:
+        hlpr.ax.legend(handles=legend_handles)

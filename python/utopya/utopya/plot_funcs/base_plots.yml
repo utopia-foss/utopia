@@ -206,3 +206,20 @@
     <<: *default_helpers
   style:
     <<: *default_style
+
+
+# -- Bifurcation diagrams -----------------------------------------------------
+.attractor.bifurcation_diagram:
+  creator: multiverse
+  module: .attractor
+  plot_func: bifurcation_diagram
+
+  analysis_kwargs:
+    oscillation:
+      height: 0.    # this kwarg is needed!
+
+  # Use default helpers and style
+  helpers:
+    <<: *default_helpers
+  style:
+    <<: *default_style

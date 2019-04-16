@@ -8,6 +8,7 @@ from typing import Union, List, Tuple
 
 import numpy as np
 import xarray as xr
+from scipy.signal import find_peaks
 
 # Local variables .............................................................
 log = logging.getLogger(__name__)
@@ -248,3 +249,122 @@ def transform(data: xr.DataArray, *operations: Union[dict, str],
 
     return data
 
+
+# Data Analysis ---------------------------------------------------------------
+
+def find_endpoint(data: xr.DataArray, *, time: int=-1,
+                  **kwargs) -> Tuple[bool, xr.DataArray]:
+    """Find the endpoint of a dataset wrt. ``time`` coordinate.
+    
+    This function is compatible with the
+    :py:func:`utopya.plot_funcs.attractor.bifurcation_diagram`.
+    
+    Arguments:
+        data (xr.DataArray): The data
+        time (int, optional): The time index to select
+        **kwargs: Passed on to ``data.isel`` call
+    
+    Returns:
+        Tuple[bool, xr.DataArray]: (endpoint found, endpoint) 
+    """
+    return True, data.isel(time=time, **kwargs)
+
+def find_fixpoint(data: xr.Dataset, *, spin_up_time: int=0,
+                  abs_std: float=None, rel_std: float=None,
+                  mean_kwargs=None, std_kwargs=None,
+                  isclose_kwargs=None) -> Tuple[bool, float]:
+    """Find the fixpoint(s) of a dataset and confirm it by standard deviation.
+    For dimensions that are not 'time' the fixpoints are compared and 
+    duplicates removed.
+    
+    This function is compatible with the
+    :py:func:`utopya.plot_funcs.attractor.bifurcation_diagram`.
+    
+    Arguments:
+        data (xr.Dataset): The data
+        spin_up_time (int, optional): The first timestep included
+        abs_std (float, optional): The maximal allowed absolute standard 
+            deviation
+        rel_std (float, optional): The maximal allowed relative standard 
+            deviation
+        mean_kwargs (dict, optional): Additional keyword arguments passed on
+            to the appropriate array function for calculating mean on data.
+        std_kwargs (dict, optional): Additional keyword arguments passed on to 
+            the appropriate array function for calculating std on data.
+        isclose_kwargs (dict, optional): Additional keyword arguments passed
+            on to the appropriate array function for calculating np.isclose for
+            fixpoint-duplicates across dimensions other than 'time'.
+    
+    Returns:
+        tuple: (fixpoint found, mean) 
+    """
+    # Get the data
+    data = data.where(data.time >= spin_up_time, drop=True)
+
+    # Calculate mean and std
+    mean = data.mean(dim='time', **(mean_kwargs if mean_kwargs else {}))
+    std = data.std(dim='time', **(std_kwargs if std_kwargs else {}))
+
+    # Apply some masking, if parameters are given
+    if abs_std is not None:
+        mean[std > abs_std] = np.nan
+
+    if rel_std is not None:
+        mean[std/mean > rel_std] = np.nan
+
+    conclusive = False
+    for data_var_name, data_var in mean.data_vars.items():
+        if data_var.shape:
+            for i, val in enumerate(data_var[:-1]):
+                mask = np.isclose(val, data_var[i+1:],
+                                  **(isclose_kwargs if isclose_kwargs else {}))
+                data_var[i+1:][mask] = np.nan
+
+        if np.count_nonzero(~np.isnan(data_var)) > 0:
+            conclusive = True
+
+    return conclusive, mean
+
+def find_oscillation(data: xr.Dataset, *, spin_up_time: int=0,
+                     **find_peak_kwargs) -> Tuple[bool, list]:
+    """Find oscillations in a dataset.
+    
+    This function is compatible with the
+    :py:func:`utopya.plot_funcs.attractor.bifurcation_diagram`.
+    
+    Arguments:
+        data (xr.Dataset): The data
+        spin_up_time (int, optional): The first timestep included
+        **find_peak_kwargs: Passed on to ``scipy.signal.find_peaks``
+    
+    Returns:
+        Tuple[bool, list]: (oscillation found, [min, max])
+    """
+    # Only use the data after spin up time
+    data = data.where(data.time >= spin_up_time, drop=True)
+
+    coords = {k: v for k, v in data.coords.items()}
+    coords.pop('time', None)
+    coords['osc'] = ['min', 'max']
+    attractor = xr.Dataset(coords=coords, attrs={'conclusive': False})
+
+    for data_var_name, data_var in data.items():
+        maxima, max_props = find_peaks(data_var, **find_peak_kwargs)
+        amax = np.amax(data_var)
+        minima, min_props = find_peaks(amax - data_var, **find_peak_kwargs)
+        
+        if not maxima.size or not minima.size:
+            mean = data_var.mean(dim='time')
+            attractor[data_var_name] = ('osc', [mean, mean])
+
+        else:
+            # Build (min, max) pair
+            min_max = [amax - min_props['peak_heights'][-1],
+                       max_props['peak_heights'][-1]]
+            
+            attractor[data_var_name] = ['osc', min_max]
+            attractor.attrs['conclusive'] = True
+
+    if attractor.attrs['conclusive']:
+        return True, attractor
+    return False, attractor

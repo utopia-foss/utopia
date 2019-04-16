@@ -1,0 +1,110 @@
+# A test configuration for the bifurcation diagram
+---
+# The configuration specific to the SavannaHomogeneous model
+bifurcation_diagram: &bifurcation_diagram
+  select:
+    # the data fields to plot
+    fields:
+      density_G:
+        path: data/SavannaHomogeneous/density_G
+      density_T:
+        path: data/SavannaHomogeneous/density_T
+      density_F:
+        path: data/SavannaHomogeneous/density_F
+
+  enabled: false
+
+  # the bifurcation parameter
+  dim: alpha
+
+  # recommended to label and colorize the fields
+  to_plot:
+    density_G:
+      label: grass
+      plot_kwargs:
+        color: green
+        s: 10
+    density_T:
+      label: trees
+      plot_kwargs:
+        color: chocolate
+        s: 6
+    density_F:
+      label: trees
+      plot_kwargs:
+        color: Black
+        s: 6
+
+# Plot the endpoint for every universe
+bifurcation_endpoint:
+  based_on: .attractor.bifurcation_diagram  
+  <<: *bifurcation_diagram
+
+  enabled: true
+  
+  # pass a Tuple(str, str): key, function name in utopya.dataprocessing.py
+  analysis_steps: [[endpoint, find_endpoint]]
+
+# Plot the fixpoint(s) for every universe if available, else the endpoint.
+# This is done for all universes at the bifurcation parameters coordinate
+# duplicate fixpoints (e.g. from different initialisations) are removed.
+bifurcation_fixpoint:
+  based_on: .attractor.bifurcation_diagram  
+  <<: *bifurcation_diagram
+
+  enabled: true
+
+  # pass a Sequence of str: keys in default_analysis_steps
+  # iterate until the first conclusive step
+  analysis_steps: [fixpoint, endpoint]
+  analysis_kwargs:
+    fixpoint:
+      spin_up_time: 75000
+
+# Scatter the datapoints for every universe
+bifurcation_scatter:
+  based_on: .attractor.bifurcation_diagram
+  <<: *bifurcation_diagram
+
+  enabled: true
+
+  analysis_steps: [scatter]
+  analysis_kwargs:
+    scatter:
+      spin_up_time: 75000
+
+  # recommended to label and colorize the fields
+  to_plot:
+    density_G:
+      label: grass
+      plot_kwargs:
+        # it is possible to chose a colormap to shift color with time
+        cmap: Greens
+        s: 10
+    density_T:
+      label: trees
+      plot_kwargs:
+        color: chocolate
+        s: 6
+    density_F:
+      label: trees
+      plot_kwargs:
+        color: Black
+        s: 6
+
+# Plot oscillation and fixpoint for every universe
+bifurcation_oscillation:
+  based_on: .attractor.bifurcation_diagram
+  <<: *bifurcation_diagram
+
+  enabled: true
+
+  # Check for oscillation, then for fixpoint.
+  # If both not conclusive nothing is plotted.
+  analysis_steps: [oscillation, fixpoint]
+  analysis_kwargs:
+    oscillation:
+      height: 0.    # this 
+      prominence: 0.05
+    fixpoint:
+      spin_up_time: 75000
