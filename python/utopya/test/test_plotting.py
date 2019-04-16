@@ -6,22 +6,18 @@ from pkg_resources import resource_filename
 
 import pytest
 
+import paramspace as psp
+
 from utopya import Multiverse
 from utopya.testtools import ModelTest
 
 # Get the test resources
-BIFURCATION_CFG_PATH = resource_filename('test', 
-                            'cfg/test_plotting_bifurcation_'
-                            'codim_one_savanna_cfg.yml')
-BIFURCATION_PLOTS_PATH = resource_filename('test', 
-                            'cfg/test_plotting_bifurcation_'
-                            'codim_one_savanna_plots.yml')
-BIFURCATION_SWEEP_CFG_PATH = resource_filename('test', 
-                            'cfg/test_plotting_bifurcation_'
-                            'codim_one_sweep_init_savanna_cfg.yml')
-BIFURCATION_SWEEP_PLOTS_PATH = resource_filename('test', 
-                            'cfg/test_plotting_bifurcation_'
-                            'codim_one_sweep_init_savanna_plots.yml')
+BIFURCATION_DIAGRAM_RUN_CFG_PATH = resource_filename('test', 
+                            'cfg/test_plotting__bifurcation_diagram__'
+                            'run_cfg.yml')
+BIFURCATION_DIAGRAM_PLOTS_CFG_PATH = resource_filename('test', 
+                            'cfg/test_plotting__bifurcation_diagram__'
+                            'plots_cfg.yml')
 
 
 # Fixtures --------------------------------------------------------------------
@@ -98,61 +94,43 @@ def test_distribution_plots():
                                    'cluster_size_distribution'])
 
 
-@pytest.mark.skip(reason="to be implemented!")  # TODO
-def test_attractor_plots():
-    """Tests the plot_funcs.attractor module"""
-    mv, _ = ModelTest('SELECT_MODEL').create_run_load()
-
-    # Plot specific plots from the default plot configuration, which are using
-    # the attractor plots
-    mv.pm.plot_from_cfg(plot_only=['ATTRACTOR_PLOT1', 'ATTRACTOR_PLOT2'])
-
-
-def test_bifurcation_codim_one_plotting(tmpdir):
-    """Tests the plot_funcs submodule using the SavannaHomogeneous model
-    
-    Sweep the growth parameter alpha and use it as a bifurcation axis
-    """
+def test_bifurcation_diagram(tmpdir):
+    """Test plotting of the bifurcation diagram"""
+    # Create and run simulation
+    raise_exc = {'plot_manager': {'raise_exc': True}}
     mv = Multiverse(model_name='SavannaHomogeneous',
-                    run_cfg_path=BIFURCATION_CFG_PATH,
-                    paths=dict(out_dir=str(tmpdir)))
+                    run_cfg_path=BIFURCATION_DIAGRAM_RUN_CFG_PATH,
+                    paths=dict(out_dir=str(tmpdir)),
+                    **raise_exc)
     mv.run_sweep()
 
     # Load
     mv.dm.load_from_cfg(print_tree=False)
 
-    # Plot the default configuration
-    mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_PLOTS_PATH,
-                        plot_only=["bifurcation_alpha"])
-    mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_PLOTS_PATH,
-                        plot_only=["bifurcation_alpha_scatter"])
-    mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_PLOTS_PATH,
-                        plot_only=["bifurcation_alpha_find_peaks"])
-
-    # with pytest.raises(ValueError):
-    #     mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_PLOTS_PATH,
-    #                     plot_only=["bifurcation_invalid_dim"])
-    # with pytest.raises(ValueError):
-    #     mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_PLOTS_PATH,
-    #                     plot_only=["bifurcation_invalid_codim"])
-    # with pytest.raises(ValueError):
-    #     mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_PLOTS_PATH,
-    #                     plot_only=["bifurcation_invalid_prop_name"])
+    # Plot the bifurcation using the last datapoint
+    mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_DIAGRAM_PLOTS_CFG_PATH,
+                        plot_only=["bifurcation_endpoint"])
+    # Plot the bifurcation using the fixpoint
+    mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_DIAGRAM_PLOTS_CFG_PATH,
+                        plot_only=["bifurcation_fixpoint"])
+    # Plot the bifurcation using scatter
+    mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_DIAGRAM_PLOTS_CFG_PATH,
+                        plot_only=["bifurcation_scatter"])
+    # Plot the bifurcation using oscillation
+    mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_DIAGRAM_PLOTS_CFG_PATH,
+                        plot_only=["bifurcation_oscillation"])
 
 
-def test_bifurcation_codim_one_sweep_init_plotting(tmpdir):
-    """Tests the plot_funcs submodule using the SavannaHomogeneous model
-    
-    Sweep the growth parameter alpha and use it as a bifurcation axis.
-    Sweep the initial_state for a codimension.
-    """
+    # Redo simulation, but using several initial conditions
     mv = Multiverse(model_name='SavannaHomogeneous',
-                    run_cfg_path=BIFURCATION_SWEEP_CFG_PATH,
-                    paths=dict(out_dir=str(tmpdir)))
+                    run_cfg_path=BIFURCATION_DIAGRAM_RUN_CFG_PATH,
+                    paths=dict(out_dir=str(tmpdir)),
+                    **raise_exc,
+                    parameter_space=dict(
+                        seed=psp.ParamDim(default=0, range=[4])))
     mv.run_sweep()
-
-    # Load
     mv.dm.load_from_cfg(print_tree=False)
 
-    # Plot the default configuration
-    mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_SWEEP_PLOTS_PATH)
+    # Plot the bifurcation using multistability
+    mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_DIAGRAM_PLOTS_CFG_PATH,
+                        plot_only=["bifurcation_fixpoint"])
