@@ -24,7 +24,7 @@ namespace Graph {
  * 
  * @return              The cycled vertex index
  */
-int _cycled_index(int vertex, int num_vertices){
+constexpr int _cycled_index(int vertex, int num_vertices){
     if (vertex <= num_vertices){
         if (vertex >= 0){
             return vertex;
@@ -48,8 +48,10 @@ int _cycled_index(int vertex, int num_vertices){
  *          probability to be created.
  * 
  * \note The underlying boost::generate_random_graph function requires the
- *       total number of edges as input. It is calculated through:
- *       num_edges = num_vertices * mean_degree / 2. 
+ *       total number of edges as input. In case of an undirected graph it is
+ *       calculated through: num_edges = num_vertices * mean_degree / 2, in
+ *       case of a directed graph through:
+ *       num_edges = num_vertices * mean_degree. 
  *       If the integer division of the right hand side leaves a rest, the 
  *       mean degree will be slightly distorted. However, for large numbers of 
  *       num_vertices this effect is negligible.
@@ -58,7 +60,8 @@ int _cycled_index(int vertex, int num_vertices){
  * \tparam RNG              The random number generator type
  * 
  * \param num_vertices      The total number of vertices
- * \param mean_degree       The mean degree
+ * \param mean_degree       The mean degree (= mean in-degree
+ *                          = mean out-degree for directed graphs)
  * \param allow_parallel    Allow parallel edges within the graph
  * \param self_edges        Allows a vertex to be connected to itself
  * \param rng               The random number generator
@@ -75,7 +78,16 @@ Graph create_ErdosRenyi_graph(std::size_t num_vertices,
     // Create an empty graph
     Graph g; 
 
-    const std::size_t num_edges = num_vertices * mean_degree / 2;
+    // Calculate the number of edges
+    const std::size_t num_edges = [&](){
+        if (boost::is_directed(g)) {
+            return num_vertices * mean_degree;
+        }
+        else {
+            return num_vertices * mean_degree / 2;
+        }
+    }(); // directly call the lambda function to initialize the variable
+
 
     // Create a random graph using the Erdös-Rényi algorithm
     boost::generate_random_graph(g, 
@@ -363,15 +375,20 @@ Graph create_BollobasRiordan_graph(std::size_t num_vertices,
 
 
 /// Create a Watts-Strogatz small-world graph
-/** \detail This function creates a small-world graph using the Watts-Strogatz 
- *          model. It creates a k-regular graph and relocates vertex connections
- *          with a given probability.
+/** \details This function creates a small-world graph using the Watts-Strogatz 
+ *           model. It creates a k-regular graph and relocates vertex connections
+ *           with a given probability.
+ *  \warning The graph generating small_world_generator function from the
+ *           boost graph library that is used in this function rewires only 
+ *           in_edges. The out_edge distribution is still constant with the 
+ *           delta-peak at the mean_degree.
  * 
  * /tparam Graph        The graph type
  * /tparam RNG          The random number generator type
  * 
  * /param num_vertices  The total number of vertices
- * /param mean_degree   The mean degree
+ * /param mean_degree   The mean degree (= mean in-degree
+ *                      = mean out-degree for directed graphs)
  * /param p_rewire      The rewiring probability
  * /param RNG           The random number generator
  * 
@@ -388,6 +405,10 @@ Graph create_WattsStrogatz_graph(std::size_t num_vertices,
 
     // Define a small-world generator
     using SWGen = boost::small_world_iterator<RNG, Graph>;
+
+    if (boost::is_directed(g)) {
+        mean_degree *= 2;
+    }
 
     // Create a small-world graph
     g = Graph(SWGen(rng, num_vertices, mean_degree, p_rewire),
@@ -419,7 +440,7 @@ Graph create_k_regular_graph(int num_vertices,
     Graph g(num_vertices);
 
     if (boost::is_directed(g)) {
-        throw std::runtime_error("This algorithm only works for directed "
+        throw std::runtime_error("This algorithm only works for undirected "
                                  "graphs in the current implementation but "
                                  "the graph type specifies a directed graph!");
     }
