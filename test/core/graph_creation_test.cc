@@ -78,10 +78,10 @@ BOOST_FIXTURE_TEST_CASE(create_graph, CreateGraphFix)
     // Check that all created graphs have 10 vertices and edges (mean_degree=2)
     for (const auto& g : g_vec){
         BOOST_TEST(boost::num_vertices(g) == 10);
-        BOOST_TEST(boost::num_vertices(g) == 10);
+        BOOST_TEST(boost::num_edges(g) == 10);
     }
 
-    // .. undirected graphs ...................................................
+    // .. directed graphs ...................................................
     // A map in which to store the graph for each model
     std::vector<DiGraph> g_vec_dir;
 
@@ -94,16 +94,20 @@ BOOST_FIXTURE_TEST_CASE(create_graph, CreateGraphFix)
             BOOST_CHECK_THROW(Utopia::Graph::create_graph<DiGraph>(cfg[m], rng),
                               std::runtime_error);
         }
+        else if (m == "BollobasRiordan") {
+            auto g = Utopia::Graph::create_graph<DiGraph>(cfg[m], rng);
+            BOOST_TEST(boost::num_vertices(g) == 10);
+        }
         else{
             g_vec_dir.push_back(Utopia::Graph::create_graph<DiGraph>(cfg[m], 
                                                                      rng));
         }
     }
 
-    // Check that all created graphs have 10 vertices and edges (mean_degree=2)
+    // Check that all created graphs have 10 vertices and 20 edges (mean_degree=2)
     for (const auto& g : g_vec_dir){
         BOOST_TEST(boost::num_vertices(g) == 10);
-        BOOST_TEST(boost::num_vertices(g) == 10);
+        BOOST_TEST(boost::num_edges(g) == 20);
     }
 
     // .. failing graphs ......................................................
