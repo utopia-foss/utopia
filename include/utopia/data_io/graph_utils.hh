@@ -15,31 +15,24 @@
 namespace Utopia {
 namespace DataIO {
 
-/// Write function for a boost::Graph
-/** This function writes a boost::graph into a HDFGroup. It assumes that the
- *  vertices and edges of the graph already supply indices.
+
+/** This function opens a HDFGroup for graph data.
  * 
  * @tparam GraphType 
  *
  * @param g The graph to save
- * @param parent_grp The parent HDFGroup the graph should be stored in
+ * @param parent_grp The parent HDFGroup the graph data should be stored in
  * @param name The name the newly created graph group should have
  *
  * @return std::shared_ptr<HDFGroup> The newly created graph group
  */
 template<typename GraphType>
-std::shared_ptr<HDFGroup> save_graph(GraphType &g,
-                                     const std::shared_ptr<HDFGroup>& parent_grp,
-                                     const std::string& name)
+std::shared_ptr<HDFGroup> open_graph_group(const GraphType &g,
+                                           const std::shared_ptr<HDFGroup>& parent_grp,
+                                           const std::string& name)
 {
-    // Collect some information on the graph
-    auto num_vertices = boost::num_vertices(g);
-    auto num_edges = boost::num_edges(g);
-
-    // Get a logger to use here (Note: needs to have been setup beforehand)
+    // Get logger
     auto log = spdlog::get("data_io");
-    log->info("Saving graph '{}' ({} vertices, {} edges) ...",
-              name, num_vertices, num_edges);
 
     // Create the group for the graph and store metadata in its attributes
     auto grp = parent_grp->open_group(name);
@@ -47,11 +40,43 @@ std::shared_ptr<HDFGroup> save_graph(GraphType &g,
     grp->add_attribute("content", "network");
     grp->add_attribute("is_directed", boost::is_directed(g));
     grp->add_attribute("is_parallel", false); // FIXME Make general
+    grp->add_attribute("custom_ids", false);
+
+    log->info("Opened graph group '{}'.", name);
+
+    // Return the newly created group
+    return grp;
+}
+
+
+/// Write function for a boost::Graph
+/** This function writes a boost::graph into a HDFGroup. It assumes that the
+ *  vertices and edges of the graph already supply indices.
+ * 
+ * @tparam GraphType 
+ *
+ * @param g The graph to save
+ * @param grp The HDFGroup the graph should be stored in
+ *
+ * @return void
+ */
+template<typename GraphType>
+void save_graph(const GraphType &g,
+                const std::shared_ptr<HDFGroup>& grp)
+{
+    // Collect some information on the graph
+    const auto num_vertices = boost::num_vertices(g);
+    const auto num_edges = boost::num_edges(g);
+
+    // Get a logger to use here (Note: needs to have been setup beforehand)
+    auto log = spdlog::get("data_io");
+    log->info("Saving graph with {} vertices and {} edges ...",
+              num_vertices, num_edges);
+
+    // Store additional metadata in the group attributes
     grp->add_attribute("num_vertices", num_vertices);
     grp->add_attribute("num_edges", num_edges);
-    grp->add_attribute("custom_ids", false);
     
-
     // Initialize datasets to store vertices and edges in
     auto dset_vl = grp->open_dataset("_vertices", {num_vertices});
     auto dset_al = grp->open_dataset("_edges", {2, num_edges});
@@ -81,9 +106,6 @@ std::shared_ptr<HDFGroup> save_graph(GraphType &g,
     );
 
     log->debug("Graph saved.");
-
-    // Return the newly created group
-    return grp;
 }
 
 
@@ -96,36 +118,29 @@ std::shared_ptr<HDFGroup> save_graph(GraphType &g,
  * @tparam PropertyMap The property map of the vertex ids
  *
  * @param g The graph to save
- * @param parent_grp The parent HDFGroup the graph should be stored in
- * @param name The name the newly created graph group should have
+ * @param grp The HDFGroup the graph should be stored in
  * @param vertex_ids A custom property map of vertex IDs to use
  *
- * @return std::shared_ptr<HDFGroup> The newly created graph group
+ * @return void
  */
 template<typename GraphType, typename PropertyMap>
-std::shared_ptr<HDFGroup> save_graph(GraphType &g,
-                                     const std::shared_ptr<HDFGroup>& parent_grp,
-                                     const std::string& name,
-                                     const PropertyMap vertex_ids)
+void save_graph(const GraphType &g,
+                const std::shared_ptr<HDFGroup>& grp,
+                const PropertyMap vertex_ids)
 {
     // Collect some information on the graph
-    auto num_vertices = boost::num_vertices(g);
-    auto num_edges = boost::num_edges(g);
+    const auto num_vertices = boost::num_vertices(g);
+    const auto num_edges = boost::num_edges(g);
 
     // Get a logger to use here (Note: needs to have been setup beforehand)
     auto log = spdlog::get("data_io");
-    log->info("Saving graph '{}' ({} vertices, {} edges) ...",
-              name, num_vertices, num_edges);
+    log->info("Saving graph with {} vertices and {} edges ...",
+              num_vertices, num_edges);
 
-    // Create the group for the graph and store metadata in its attributes
-    auto grp = parent_grp->open_group(name);
 
-    grp->add_attribute("content", "network");
-    grp->add_attribute("is_directed", boost::is_directed(g));
-    grp->add_attribute("is_parallel", false); // FIXME Make general
+    // Store additional metadata in the group attributes
     grp->add_attribute("num_vertices", num_vertices);
     grp->add_attribute("num_edges", num_edges);
-    grp->add_attribute("custom_ids", true);
     
     
     // Initialize datasets to store vertices and adjacency lists in
@@ -155,9 +170,6 @@ std::shared_ptr<HDFGroup> save_graph(GraphType &g,
     );
     
     log->debug("Graph saved.");
-
-    // Return the newly created group
-    return grp;
 }
 
 
