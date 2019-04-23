@@ -2,5 +2,5 @@ Sphinx < 2.0
 sphinx_rtd_theme
 sphinx-argparse
 sphinx-markdown-tables
-breathe
+breathe <= 4.12
 recommonmark
