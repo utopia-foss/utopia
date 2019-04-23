@@ -54,7 +54,7 @@ def _errorbar(*, hlpr: PlotHelper, data: xr.DataArray, std: xr.DataArray,
                             yerr=yerr, **errorbar_kwargs)
 
     # Now plot the confidence interval via 
-    if fill_between:
+    if fill_between and std is not None:
         # Find out the colour of the error bar line. Get line collection
         lc, _, _ = ebar
         line_color = lc.get_c()

@@ -113,7 +113,7 @@ def errorbar(dm: DataManager, *,
             # Prepare the selection (by value) specification dict
             sel_dict = {coord.name: coord.item()}  # single value -> dim. red.
             
-            # Prepare additionall kwargs
+            # Prepare additional kwargs
             add_kwargs = dict(label='${:.3g}$'.format(coord.item()))
 
             if color is not None:
