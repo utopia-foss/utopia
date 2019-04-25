@@ -1,0 +1,6 @@
+# This file holds the base configuration for Environment model plots
+---
+state_anim:
+  based_on: .ca.state.anim_frames
+  
+  model_name: Environment
