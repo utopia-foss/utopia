@@ -1,0 +1,37 @@
+# Configuration file used to test that the output of the model is correct
+---
+parameter_space:
+  num_steps: 3
+
+  Environment: !model  
+    model_name: Environment  # imports the model config for the Environment model
+
+    cell_manager:
+      grid:
+        resolution: 5
+
+      cell_params:
+        # overwritten by Environment's init_env_funcs
+        some_parameter: 0.0
+
+    init_env_funcs:
+      - slope:
+          some_parameter:
+            mode: set
+            values_north_south: [1.0, 0.]
+    env_funcs:
+      - uniform:
+          some_parameter: 
+            mode: set
+            value: 0.0
+            times: [1]
+      - slope:
+          some_parameter:
+            mode: add
+            values_north_south: [1.0, 0.]
+            times: [1]
+      - slope:
+          some_parameter:
+            mode: add
+            values_north_south: [1.0, 0.]
+            times: [2, 3]

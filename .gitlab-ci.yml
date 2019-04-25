@@ -245,6 +245,7 @@ test:models:
     # Now the actual models:
     - utopia run Amee --sweep --no-plot --debug
     - utopia run ContDisease --debug
+    - utopia run Environment --debug --num-steps 10
     - utopia run ForestFire --debug
     - utopia run Geomorphology --debug
     - utopia run Hierarnet --debug

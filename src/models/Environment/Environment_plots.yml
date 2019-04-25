@@ -1,0 +1,10 @@
+# The default plots of the CopyMe model. Can use the `based_on` feature...
+---
+# Spatial CA animations .......................................................
+parameter_anim:
+  based_on: state_anim
+
+  to_plot:
+    some_parameter:
+      title: some_parameter
+      limits: [-0.2, +1.0]

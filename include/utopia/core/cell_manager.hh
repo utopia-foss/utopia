@@ -162,6 +162,11 @@ public:
 
     /// -- Getters ------------------------------------------------------------
 
+    /// Return the configuration used for building this cell manager
+    const DataIO::Config& cfg () const {
+        return _cfg;
+    }
+
     /// Return pointer to the space, for convenience
     const std::shared_ptr<Space>& space () const {
         return _space;

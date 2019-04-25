@@ -1,0 +1,61 @@
+# Configuration file used to test that the output of the model is correct
+---
+perform_sweep: true
+
+parameter_space:
+  num_steps: 5
+
+  seed: !sweep
+    default: 42
+    range: [4]
+
+  Environment: !model  
+    model_name: Environment
+
+    cell_manager:
+      grid:
+        # Increase resolution to have a better mean
+        resolution: 256
+
+      cell_params:
+        # overwritten by Environment's init_env_funcs
+        some_parameter: 0.2
+
+    init_env_funcs:
+      - noise:
+          some_parameter:
+            mode: set
+            distribution: uniform
+            interval: [0.,2.]
+
+    env_funcs:
+      - noise:
+          some_parameter:
+            mode: set
+            distribution: uniform_int
+            interval: [0, 1]
+            times: [1]
+      - noise:
+          some_parameter:
+            mode: set
+            distribution: normal
+            mean: 0.
+            stddev: 1.
+            times: [2]
+      - uniform:
+          some_parameter:
+            mode: set
+            value: 0.0
+            times: [3]
+      - noise:
+          some_parameter:
+            mode: add
+            distribution: poisson
+            mean: 10.
+            times: [3, 4]
+      - noise:
+          some_parameter:
+            mode: add
+            distribution: exponential
+            lambda: 1.
+            times: [5]

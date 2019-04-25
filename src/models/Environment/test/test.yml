@@ -1,0 +1,16 @@
+---
+Environment:
+  cell_manager:
+    cell_params: {some_parameter: 0.}
+    grid: {resolution: 64, structure: square}
+    neighborhood: {mode: Moore}
+  env_funcs: ~
+  init_env_funcs: ~
+  space: {periodic: true}
+log_levels: {core: warning, data_io: warning, model: info}
+monitor_emit_interval: 2.0
+num_steps: 20
+seed: 42
+write_every: 1
+write_start: 0
+output_path: test.h5
