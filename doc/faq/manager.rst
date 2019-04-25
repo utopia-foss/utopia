@@ -103,7 +103,25 @@ It expects a configuration entry ``cell_manager``, which includes all the inform
 
   # Other model configuration parameters ...
 
+The same can be done for the agent manager. The respective configuration
+entries are listed below:
 
+.. code-block :: yaml
+
+  # model configuration
+  ---
+  agent_manager:
+    initial_num_agents: 10   # has to be given
+    initial_position: random # default mode is ``random``, 
+                             # currently available modes: ``random``
+                             # defines how the initial positions are set
+
+    agent_params:          # passed to cell state Config&-constructor
+      a_double: 3.14
+      a_string: foo
+      a_bool: true
+
+  # Other model configuration parameters ...
 .. note ::
 
   As the ``CellManager`` is not finished with construction at this point, it is
