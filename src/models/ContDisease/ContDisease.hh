@@ -312,8 +312,7 @@ protected:
         // reset cluster counter
         _cluster_id_cnt = 0;
         apply_rule<Update::async, Shuffle::off>(_identify_cluster, 
-                                                _cm.cells(), 
-                                                *this->_rng);
+                                                _cm.cells());
     }
 
     // .. Rule functions ......................................................

@@ -241,9 +241,7 @@ public:
                     return state;
                 },
                 // The container over which to iterate
-                _cm.boundary_cells("bottom"),
-                // The RNG (not used, but needs to be passed)
-                *this->_rng
+                _cm.boundary_cells("bottom")
             );
         }
         this->_log->debug("{} model fully set up.", this->_name);
@@ -283,7 +281,7 @@ private:
         
         // Identify clusters
         apply_rule<Update::async, Shuffle::off>(
-            _identify_cluster, _cm.cells(), *this->_rng
+            _identify_cluster, _cm.cells()
         );
 
         this->_log->debug("Identified {} clusters.", _cluster_id_cnt);

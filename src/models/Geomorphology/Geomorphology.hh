@@ -175,16 +175,13 @@ public:
         apply_rule<Update::sync>(reset_network, _cm.cells());
 
         // connect cells to drainage network
-        apply_rule<Update::async, Shuffle::off>(connect_cells, _cm.cells(),
-                                                *this->_rng);
+        apply_rule<Update::async, Shuffle::off>(connect_cells, _cm.cells());
 
         // fill sinks with water
-        apply_rule<Update::async, Shuffle::off>(build_lake, _cm.cells(),
-                                                *this->_rng);
+        apply_rule<Update::async, Shuffle::off>(build_lake, _cm.cells());
 
         // get drainage area
-        apply_rule<Update::async, Shuffle::off>(pass_drainage_area, _cm.cells(),
-                                                *this->_rng);
+        apply_rule<Update::async, Shuffle::off>(pass_drainage_area, _cm.cells());
     }
 
     /// Perform step
@@ -604,4 +601,3 @@ private:
 } // namespace Utopia
 
 #endif // GEOMORPHOLOGY_HH
-
