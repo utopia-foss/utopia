@@ -25,7 +25,6 @@ log = logging.getLogger(__name__)
 
 
 # -----------------------------------------------------------------------------
-
 @is_plot_func(creator_type=MultiversePlotCreator,
               helper_defaults=dict(
                 set_labels=dict(x="bifurcation parameter", y='state')
@@ -253,7 +252,7 @@ def bifurcation_diagram(dm: DataManager, *,
             else:
                 # Expecting 2-tuple or list; unpack
                 analysis_key, analysis_func = analysis_step
-                analysis_func_kwargs = analysis_kwargs.get(analysis_key, {})
+                analysis_func_kwargs = analysis_kwargs.get(analysis_func, {})
             
             # resolve the analysis function from its name
             if isinstance(analysis_func, str):
@@ -271,13 +270,14 @@ def bifurcation_diagram(dm: DataManager, *,
             # Plot it, if conclusive
             if conclusive:
                 plot_attractor(attractor, analysis_key, **plot_kwargs)
-                log.debug("Conclusive analysis step '{}'. Plotting result "
-                          "and stopping here.".format(analysis_step))
+                log.debug("Conclusive analysis step '{}' for coord '{}'."
+                          " Plotting result and stopping here."
+                          "".format(analysis_step, param_coord))
 
                 # Done here. :)
                 break
 
-        else:
+        if not conclusive:
             # Inconclusive. Only reached if break was _not_ called...
             log.warning("No conclusive analysis for universe coordinate {} "
                         "({}). Nothing to plot! Performed the following "

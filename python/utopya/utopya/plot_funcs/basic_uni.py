@@ -20,8 +20,8 @@ log = logging.getLogger(__name__)
 
 @is_plot_func(creator_type=UniversePlotCreator)
 def lineplot(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
-             model_name: str, path_to_data: str, transform_data: dict=None,
-             transformations_log_level: int=10,
+             model_name: str, path_to_data: Union[str, Tuple[str, str]],
+             transform_data: dict=None, transformations_log_level: int=10,
              **plot_kwargs):
     """Performs an errorbar plot of a specific universe.
     
@@ -30,7 +30,8 @@ def lineplot(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
         uni (UniverseGroup): The data for this universe
         hlpr (PlotHelper): The PlotHelper
         model_name (str): The name of the model the data resides in
-        path_to_data (str): The path to the data within the model data
+        path_to_data (str or Tuple[str, str]): The path to the data within the
+        model data or the paths to the x and the y data (resp) within the model
         transform_data (dict, optional): Transformations to apply to the data.
             This can be used for dimensionality reduction of the data, but
             also for other operations, e.g. to selecting a slice.
@@ -42,26 +43,90 @@ def lineplot(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
     
     Raises:
         ValueError: On invalid data dimensionality
+        ValueError: On mismatch of data shapes
     """
     # Get the data
-    data = uni['data'][model_name][path_to_data]
+    if isinstance(path_to_data, str):
+        data_y = uni['data'][model_name][path_to_data]
 
-    # Apply transformations
-    if transform_data:
-        data = transform(data, *transform_data,
-                         log_level=transformations_log_level)
+        # Apply transformations 
+        if transform_data:
+            data_y = transform(data_y, *transform_data,
+                               aux_data=uni['data'][model_name],
+                               log_level=transformations_log_level)
+        
+        data_x = data_y.coords[data_y.dims[0]]
+    
+    else:
+        data_x = uni['data'][model_name][path_to_data[0]]
+        data_y = uni['data'][model_name][path_to_data[1]]
+
+        # Apply transformations 
+        if transform_data:
+            data_x = transform(data_x, *transform_data.get('x', {}),
+                               aux_data=uni['data'][model_name],
+                               log_level=transformations_log_level)
+            data_y = transform(data_y, *transform_data.get('y', {}),
+                               aux_data=uni['data'][model_name],
+                               log_level=transformations_log_level)
+
+        if data_x.shape != data_y.shape:
+            raise ValueError("Mismatch of datashapes! Were {} and {}, but have"
+                             " to be of same shape (after transfromation)."
+                             "".format(data_x.shape, data_y.shape))
 
     # Require 1D data now
-    if data.ndim != 1:
+    if data_x.ndim != 1:
         raise ValueError("Lineplot requires 1D data, but got {}D data of "
                          "shape {}:\n{}\n"
                          "Apply dimensionality reducing transformations "
                          "using the `transform_data` argument to arrive "
                          "at plottable data."
-                         "".format(data.ndim, data.shape, data))
+                         "".format(data_x.ndim, data_x.shape, data_x))
+    if data_y.ndim != 1:
+        raise ValueError("Lineplot requires 1D data, but got {}D data of "
+                         "shape {}:\n{}\n"
+                         "Apply dimensionality reducing transformations "
+                         "using the `transform_data` argument to arrive "
+                         "at plottable data."
+                         "".format(data_y.ndim, data_y.shape, data_y))
 
     # Create the line plot
-    hlpr.ax.plot(data.coords[data.dims[0]], data, **plot_kwargs)
+    hlpr.ax.plot(data_x, data_y, **plot_kwargs)
+
+
+@is_plot_func(creator_type=UniversePlotCreator)
+def lineplots(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
+              model_name: str, to_plot: dict, **common_plot_kwargs):
+    """Like lineplot, but for several specifications given by the ``to_plot``
+    argument.
+
+    Args:
+        dm (DataManager): The data manager from which to retrieve the data
+        uni (UniverseGroup): The selected universe data
+        hlpr (PlotHelper): The PlotHelper that instantiates the figure and
+            takes care of plot aesthetics (labels, title, ...) and saving
+        model_name (str): The name of the model the data resides in, i.e. the
+            base path within the UniverseGroup.
+        to_plot (dict): Which data to plot. The keys of this
+            dict are used as ``path_to_data`` for the ``lineplot`` function.
+            The values are unpacked and passed to ``lineplot``
+        **common_plot_kwargs: Passed along to the ``lineplot`` plot function
+            for all calls. Note that this may not contain any keys that are
+            given within ``to_plot``!
+    """
+    for name, specs in to_plot.items():
+        if not isinstance(specs, dict):
+            raise TypeError("Parameters for property '{}' were not a dict "
+                            "but {} with value: '{}'!"
+                            "".format(name, type(specs), specs))
+        
+        path_to_data = specs.pop('path_to_data', name)
+        lineplot(dm, uni=uni, hlpr=hlpr, model_name=model_name,
+                 path_to_data=path_to_data, **specs, **common_plot_kwargs)
+
+    if len(to_plot) > 1:
+        hlpr.provide_defaults('set_legend', use_legend=True, loc='best')
 
 
 @is_plot_func(creator_type=UniversePlotCreator)

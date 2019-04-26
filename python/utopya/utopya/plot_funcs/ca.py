@@ -14,6 +14,7 @@ from matplotlib.colors import ListedColormap
 
 from .. import DataManager, UniverseGroup
 from ..plotting import UniversePlotCreator, PlotHelper, is_plot_func
+from ..dataprocessing import transform
 
 from ._file_writer import FileWriter
 
@@ -34,6 +35,7 @@ def state(dm: DataManager, *,
           model_name: str,
           to_plot: dict,
           time_idx: int,
+          transform_data: dict=None, transformations_log_level: int=10,
           preprocess_funcs: Dict[str, Callable]=None):
     """Plots the state of the cellular automaton as a 2D heat map. 
     This plot function can be used for a single plot, but also supports
@@ -62,16 +64,28 @@ def state(dm: DataManager, *,
                     property; if not given, limits will be auto-scaled.
         time_idx (int): Which time index to plot the data of. Is ignored when
             creating an animation.
+        transform_data (dict, optional): Transformations to apply to the data.
+            The top-level entries must correspond to the entries of `to_plot`.
+            This can be used for dimensionality reduction of the data, but
+            also for other operations, e.g. to selecting a slice.
+            For available parameters, see
+            :py:func:`utopya.dataprocessing.transform`
+        transformations_log_level (int, optional): The log level of all the
+            transformation operations.
         preprocess_funcs (Dict[str, Callable], optional): A dictionary of pre-
             processing callables, where keys need to correspond to the
             property name in ``to_plot`` that is to be pre-processed.
             This argument can be used to implement model-specific preprocessing
             by implementing another plot function, which defines this dict and
-            passes it to this function.
+            passes it to this function. NOTE better use the `transform_data` 
+            method if possible.
     
     Raises:
         NotImplementedError: ``to_plot`` of length != 1
         ValueError: Shape mismatch of data selected by ``to_plot``
+
+    Warns:
+        Use of transform_data and preprocess_funcs (is called in this order).
     """
     # Helper functions ........................................................
 
@@ -82,8 +96,17 @@ def state(dm: DataManager, *,
         data = all_data[prop_name][time_idx]
 
         # If preprocessing is available for this property, call that function
+        if transform_data and preprocess_funcs:
+            log.warning("Requested 'transform_data' and 'preprocess_func'!"
+                        " Perfoming first transform_data and then"
+                        " preprocess_func.",
+                            op_name, exc.__class__.__name__, exc)
+        if transform_data:
+            data = transform(data, *transform_data.get(prop_name, {}),
+                             log_level=transformations_log_level)
         if preprocess_funcs and prop_name in preprocess_funcs:
             data = preprocess_funcs[prop_name](data)
+
 
         return data
 

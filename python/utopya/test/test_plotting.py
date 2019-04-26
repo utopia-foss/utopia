@@ -45,7 +45,11 @@ def test_basic_plotting(tmpdir):
     """Tests the plot_funcs.basic_* modules"""
     mv, _ = ModelTest('CopyMe').create_run_load()
     
-    # TODO
+    # test lineplots
+    mv, _ = ModelTest('SavannaHeterogeneous').create_run_load()
+
+    mv.pm.plot_from_cfg(plot_only=["state_densities"])
+    mv.pm.plot_from_cfg(plot_only=["phase_diagram"])
 
 
 def test_ca_plotting():
