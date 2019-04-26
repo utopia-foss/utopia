@@ -285,8 +285,7 @@ public:
     /// Perform an iteration step
     void perform_step () {
         // Reset cells: All cells are not touched by an avalanche
-        apply_rule<Update::async, Shuffle::off>(_reset, _cm.cells(),
-                                                *this->_rng);
+        apply_rule<Update::async, Shuffle::off>(_reset, _cm.cells());
 
         // Add a grain of sand and, starting from the cell the grain fell on, // let all supercritical cells topple until a relaxed state is reached
         topple(add_sand_grain());

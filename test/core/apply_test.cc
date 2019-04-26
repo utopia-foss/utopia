@@ -199,8 +199,7 @@ BOOST_FIXTURE_TEST_CASE(manual, ModelFixture)
     auto& rng = *mm_manual._rng;
     auto ids = collect_ids(cm);
     Utopia::apply_rule<Update::async, Shuffle::off>(rule,
-                                                        cm.cells(),
-                                                        rng);
+                                                    cm.cells());
 
     // check that rule was applied correctly
     const auto not_one = std::count_if(cm.cells().begin(),
@@ -222,8 +221,7 @@ BOOST_FIXTURE_TEST_CASE(manual, ModelFixture)
                              };
 
     Utopia::apply_rule<Update::async, Shuffle::off>(rule_register_ids,
-                                                        cm.cells(),
-                                                        rng);
+                                                    cm.cells());
     ids = ids_now;
     ids_now.clear();
 

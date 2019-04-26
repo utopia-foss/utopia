@@ -75,8 +75,6 @@ void apply_rule (Rule&& rule, const Container& container)
  *                  (Shuffle::off).
  *  \tparam Rule The type of the rule function (object).
  *  \tparam Container The type of entity container.
- *  \tparam RNG The type of the random number generator (unused in this 
- *              overload).
  *
  *  \param rule The function (object) to apply to the entities
  *  \param container The container of entities the function will be applied to
@@ -85,13 +83,12 @@ template<Update mode,
          Shuffle shuffle = Shuffle::on,
          class Rule,
          class Container,
-         class RNG,
          typename std::enable_if_t<mode == Update::async, int> = 0,
          typename std::enable_if_t<
                     impl::entity_t<Container>::mode
-                        == Update::manual, int> = 0>
-std::enable_if_t<shuffle == Shuffle::off, void>
-    apply_rule (Rule&& rule, const Container& container, RNG&&)
+                        == Update::manual, int> = 0,
+         typename std::enable_if_t<shuffle == Shuffle::off, int> = 0>
+void apply_rule (Rule&& rule, const Container& container)
 {
     // apply the rule
     std::for_each(begin(container), end(container),
@@ -125,9 +122,9 @@ template<Update mode,
          typename std::enable_if_t<mode == Update::async, int> = 0,
          typename std::enable_if_t<
                     impl::entity_t<Container>::mode
-                        == Update::manual, int> = 0>
-std::enable_if_t<shuffle == Shuffle::on, void>
-    apply_rule (Rule&& rule, const Container& container, RNG&& rng)
+                        == Update::manual, int> = 0,
+         typename std::enable_if_t<shuffle == Shuffle::on, int> = 0>
+void apply_rule (Rule&& rule, const Container& container, RNG&& rng)
 {
     // copy the original container and shuffle it
     std::remove_const_t<Container> container_shuffled(container);

@@ -509,13 +509,13 @@ public:
      */
     void perform_step() {
         apply_rule<Update::async, Shuffle::off>
-            (_cost_of_living, _cm.cells(), *this->_rng);
+            (_cost_of_living, _cm.cells());
 
         apply_rule<Update::async, Shuffle::on>
             (_move, _cm.cells(), *this->_rng);
 
         apply_rule<Update::async, Shuffle::off>
-            (_eat, _cm.cells(), *this->_rng);
+            (_eat, _cm.cells());
 
         apply_rule<Update::async, Shuffle::on>
             (_repro, _cm.cells(), *this->_rng);
