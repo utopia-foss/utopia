@@ -73,7 +73,7 @@ def errorbar(dm: DataManager, *,
     data = mv_data[to_plot]
     
     if transform_data:
-        data = transform(data, *transform_data,
+        data = transform(data, *transform_data, aux_data=mv_data,
                          log_level=transformations_log_level)
 
     # Get the standard deviation data, if given, and also apply transformations
@@ -82,7 +82,7 @@ def errorbar(dm: DataManager, *,
         std = mv_data[plot_std if isinstance(plot_std, str) else to_plot]
 
         if transform_std:
-            std = transform(std, *transform_std,
+            std = transform(std, *transform_std, aux_data=mv_data,
                             log_level=transformations_log_level)
 
     # Distinguish by `lines_from`; determines whether 1D or 2D data is needed

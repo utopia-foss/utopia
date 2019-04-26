@@ -154,9 +154,9 @@ def densities(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
     """
     for path_to_data, specs in to_plot.items():
         if not isinstance(specs, dict):
-            log.warning("Parameters for `path_to_data` '%s' were not a dict "
-                        "but '%s'! Skipping this plot.", path_to_data, specs)
-            continue
+            raise TypeError("Parameters for `path_to_data` '{}' were not a dict "
+                            "but {} with value: '{}'!"
+                            "".format(path_to_data, type(specs), specs))
 
         density(dm, uni=uni, hlpr=hlpr, model_name=model_name,
                 path_to_data=path_to_data, **specs, **common_plot_kwargs)

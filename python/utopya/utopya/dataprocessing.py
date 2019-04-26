@@ -10,6 +10,8 @@ import numpy as np
 import xarray as xr
 from scipy.signal import find_peaks
 
+from dantro.base import BaseDataGroup
+
 # Local variables .............................................................
 log = logging.getLogger(__name__)
 
@@ -155,7 +157,20 @@ TRANSFORMATIONS = {
 
     # Cumulation
     'cumulate':                 lambda d, _: np.cumsum(d),
-    'cumulate_complementary':   lambda d, _: np.cumsum(d[::-1])[::-1]
+    'cumulate_complementary':   lambda d, _: np.cumsum(d[::-1])[::-1],
+
+    # Elementwise operations
+    'add':      lambda d, v: operator.add(d, v),
+    'concat':   lambda d, v: operator.concat(d, v),
+    'div':      lambda d, v: operator.truediv(d, v),
+    'truediv':  lambda d, v: operator.truediv(d, v),
+    'floordiv': lambda d, v: operator.floordiv(d, v),
+    'lshift':   lambda d, v: operator.lshift(d, v),
+    'mod':      lambda d, v: operator.mod(d, v),
+    'mul':      lambda d, v: operator.mul(d, v),
+    'matmul':   lambda d, v: operator.matmul(d, v),
+    'rshift':   lambda d, v: operator.rshift(d, v),
+    'sub':      lambda d, v: operator.sub(d, v)
 }
 
 # End of TRANSFORMATIONS dict population
@@ -163,6 +178,7 @@ TRANSFORMATIONS = {
 
 
 def transform(data: xr.DataArray, *operations: Union[dict, str],
+              aux_data: Union[xr.Dataset, BaseDataGroup]=None,
               log_level: int=None) -> xr.DataArray:
     """Applies transformations to the given data, e.g.: reducing dimensionality
     or calculating 
@@ -174,6 +190,9 @@ def transform(data: xr.DataArray, *operations: Union[dict, str],
             dicts, they should only have a single key, which is the name of
             the operation to perform.
             The available operations are defined in the TRANSFORMATIONS dict.
+        aux_data (Union[xr.Dataset, dantro.BaseDataGroup], optional): The
+            auxiliary data for binary operations.
+            NOTE Needed in those cases.
         log_level (int, optional): Which level to log the progress of the
             operations on. If not given, will be 10.
     
@@ -234,8 +253,20 @@ def transform(data: xr.DataArray, *operations: Union[dict, str],
         log.log(log_level, "Applying operation %d/%d:  %s  ...",
                 i+1, len(operations), op_name)
         log.log(log_level, "  … with arguments:  %s", op_spec)
-
-        try:
+        
+        # resolve op_spec for binary operations
+        if isinstance(op_spec, dict) and 'rhs_from' in op_spec:
+            rhs_data_name = op_spec['rhs_from']
+            if rhs_data_name not in aux_data:
+                raise ValueError("The requested data_path '{}' for the"
+                                    " binary operation '{}' with kws {} is not"
+                                    " provided by aux_data."
+                                    " Provided aux_data: {}"
+                                    "".format(rhs_data_name, op_name,
+                                            op_spec, aux_data))
+            op_spec = aux_data[rhs_data_name]
+        
+        try:            
             data = op_func(data, op_spec)
 
         except Exception as exc:
@@ -298,6 +329,16 @@ def find_fixpoint(data: xr.Dataset, *, spin_up_time: int=0,
     Returns:
         tuple: (fixpoint found, mean) 
     """
+    if len(data.dims) > 2:
+        raise ValueError("Method 'find_fixpoint' cannot handle data with more"
+                         " than 2 dimensions. Data has dims {}"
+                         "".format(data.dims))
+    if spin_up_time > data.time[-1]:
+        raise ValueError("Spin up time was chosen larger than actual simulation"
+                         " time in module find_fixpoint. Was {}, but"
+                         " simulation time was {}. .".format(spin_up_time,
+                                                             data.time.data[-1]))
+    
     # Get the data
     data = data.where(data.time >= spin_up_time, drop=True)
 
@@ -307,12 +348,12 @@ def find_fixpoint(data: xr.Dataset, *, spin_up_time: int=0,
 
     # Apply some masking, if parameters are given
     if abs_std is not None:
-        mean[std > abs_std] = np.nan
+        mean = mean.where(std < abs_std)
 
     if rel_std is not None:
-        mean[std/mean > rel_std] = np.nan
+        mean = mean.where(std/mean < rel_std)
 
-    conclusive = False
+    conclusive = True
     for data_var_name, data_var in mean.data_vars.items():
         if data_var.shape:
             for i, val in enumerate(data_var[:-1]):
@@ -320,9 +361,8 @@ def find_fixpoint(data: xr.Dataset, *, spin_up_time: int=0,
                                   **(isclose_kwargs if isclose_kwargs else {}))
                 data_var[i+1:][mask] = np.nan
 
-        if np.count_nonzero(~np.isnan(data_var)) > 0:
-            conclusive = True
-
+        conclusive = conclusive and (np.count_nonzero(~np.isnan(data_var)) > 0)
+    
     return conclusive, mean
 
 def find_oscillation(data: xr.Dataset, *, spin_up_time: int=0,
@@ -340,6 +380,16 @@ def find_oscillation(data: xr.Dataset, *, spin_up_time: int=0,
     Returns:
         Tuple[bool, list]: (oscillation found, [min, max])
     """
+    if len(data.dims) > 1:
+        raise ValueError("Method 'find_oscillation' cannot handle data with more"
+                         " than 1 dimension. Data has dims {}"
+                         "".format(data.dims))
+    if spin_up_time > data.time[-1]:
+        raise ValueError("Spin up time was chosen larger than actual simulation"
+                         " time in module find_oscillation. Was {}, but"
+                         " simulation time was {}. .".format(spin_up_time,
+                                                             data.time.data[-1]))
+    
     # Only use the data after spin up time
     data = data.where(data.time >= spin_up_time, drop=True)
 
@@ -360,9 +410,10 @@ def find_oscillation(data: xr.Dataset, *, spin_up_time: int=0,
         else:
             # Build (min, max) pair
             min_max = [amax - min_props['peak_heights'][-1],
-                       max_props['peak_heights'][-1]]
-            
-            attractor[data_var_name] = ['osc', min_max]
+                    max_props['peak_heights'][-1]]
+            attractor[data_var_name] = ('osc', min_max)
+
+            # at least one data_var performs oscillations
             attractor.attrs['conclusive'] = True
 
     if attractor.attrs['conclusive']:

@@ -34,6 +34,20 @@
   style:
     <<: *default_style
 
+# .. Multiple lineplots from universe data ........................................
+.basic_uni.lineplots:
+  creator: universe
+  universes: all
+
+  module: .basic_uni
+  plot_func: lineplots
+
+  # Use default helpers and style
+  helpers:
+    <<: *default_helpers
+  style:
+    <<: *default_style
+
 # .. Basic errorbar plot from universe data ...................................
 .basic_uni.errorbar:
   creator: universe
@@ -217,6 +231,8 @@
   analysis_kwargs:
     oscillation:
       height: 0.    # this kwarg is needed!
+    # find_fixpoint needs either 'abs_std' ans/or 'rel_std', else always
+    # conclusive
 
   # Use default helpers and style
   helpers:
