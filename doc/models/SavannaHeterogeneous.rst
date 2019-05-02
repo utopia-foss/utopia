@@ -113,6 +113,34 @@ To ensure this process, the Forest_Sapling state is introduced, which is suscept
 .. note:: From this stage on the mortality rate of Forest and Forest_Sapling species on a burned cell is renamed to mortality probability. 
 
 
+4. Going to effective dynamics
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The sapling states are mathematically superfluous. 
+They are direct transitory states and don't influence the non-linearities in the dynamics of the system.
+
+The effective dynamics then read:
+
+.. math::
+   \dot{G} = \nu T + \phi \phi \left(G+\gamma_t T+\gamma_f F\right) F  - \beta \left(G+\gamma_t T+\gamma_f F\right) G T  - \alpha \left(G+\gamma_t T+\gamma_f F\right) G F
+
+.. math::
+   \dot{T} = \beta \left(G+\gamma_t T+\gamma_f F\right) G T - \nu T - \alpha \left(G+\gamma_t T+\gamma_f F\right) T F
+
+.. math::
+   \dot{F} = \alpha \left(G+\gamma_t T+\gamma_f F\right) (G + T) F - \phi \left(G+\gamma_t T+\gamma_f F\right) F
+
+As before the :math:`\alpha(\cdot)` and :math:`\beta(\cdot)` have two values depending on the occurance of fires in the grass, or flammable, landscape.
+
+.. note::
+    A good starting point for choosing the parameters is :math:`\alpha_1 = \alpha_0 / 9` and :math:`\beta_1 = \beta_0 / 2`.
+
+    Better choose the catch fire algorithm.
+
+.. note::
+    The dynamics differ from the homogeneous equations in that here :math:`\phi (\dot)` is dependent on the occurance of fires. This is because the heterogeneous model accounts for fires at a cell.
+    The argument of the sigmoidal chaped parameters is hence only well represented by the well-mixed equations if :math:`\gamma_x = 1` for :math:`x` the dying species.
+
 
 The time step
 ^^^^^^^^^^^^^
@@ -159,7 +187,7 @@ Below are the default configuration parameters for the ``SavannaHeterogeneous`` 
 
 Default configuration for a catch-fire model:
 
-.. literalinclude:: ../../python/model_tests/SavannaHeterogeneous/test_no_saplings.yml
+.. literalinclude:: ../../python/model_tests/SavannaHeterogeneous/test_state_5_dynamics.yml
    :language: yaml
    :start-after: ---
 
