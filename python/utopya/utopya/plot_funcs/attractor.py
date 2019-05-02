@@ -279,11 +279,11 @@ def bifurcation_diagram(dm: DataManager, *,
 
         if not conclusive:
             # Inconclusive. Only reached if break was _not_ called...
-            log.warning("No conclusive analysis for universe coordinate {} "
+            log.warning("No conclusive analysis for universe coordinate {}={} "
                         "({}). Nothing to plot! Performed the following "
                         "analysis steps: {}."
-                        "".format(param_coord, mv_data.coords,
-                                  ", ".join(analysis_steps)))
+                        "".format(dim, param_coord, data.coords,
+                                  analysis_steps))
         
     # Done plotting.
     # Provide some (dynamic) default values for helpers

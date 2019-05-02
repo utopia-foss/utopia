@@ -60,6 +60,30 @@ The dynamics were extended to model a forest-sapling species. They then read the
     The two models are switched by the parameter :math:`\upsilon`: 
     For :math:`\upsilon` > 0 the forest-saplings exist.
 
+Effective dynamics
+^^^^^^^^^^^^^^^^^^
+
+The sapling states are mathematically superfluous. 
+They are direct transitory states and don't influence the non-linearities in the dynamics of the system.
+
+Hence, the effective dynamics read:
+
+.. math::
+   \dot{G} = \nu T + \phi_0 F  - \beta \left(G+\gamma_t T+\gamma_f F\right) G T  - \alpha \left(G+\gamma_t T+\gamma_f F\right) G F
+
+.. math::
+   \dot{T} = \beta \left(G+\gamma_t T+\gamma_f F\right) G T - \nu T - \alpha \left(G+\gamma_t T+\gamma_f F\right) T F
+
+.. math::
+   \dot{F} = \alpha \left(G+\gamma_t T+\gamma_f F\right) (G + T) F - \phi_0 F
+
+.. note::
+    This mode is used with the parameters :math:`\alpha_1 > 0` or :math:`\beta_1 > 0`.
+
+.. note::
+    A good starting point for choosing the parameters is :math:`\alpha_1 = \alpha_0 / 9` and :math:`\beta_1 = \beta_0 / 2`.
+
+As before the :math:`\alpha(\cdot)` and :math:`\beta(\cdot)` are sigmoidal functions representing thd dynamics of fires in the grass, or flammable, landscape.
 
 
 Implementation Details
