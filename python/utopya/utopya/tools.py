@@ -40,7 +40,8 @@ log.debug("Determined TTY_COLS: %s,  IS_A_TTY: %s", TTY_COLS, IS_A_TTY)
 # yaml constructors -----------------------------------------------------------
 
 def _expr_constructor(loader, node):
-    """Custom pyyaml constructor for evaluating strings with simple mathematical expressions.
+    """Custom pyyaml constructor for evaluating strings with simple
+    mathematical expressions.
 
     Supports: +, -, *, **, /, e-X, eX
     """
@@ -226,14 +227,14 @@ def recursive_update(d: dict, u: dict) -> dict:
         dict: updated version of d
     """
     # Need to check whether `d` is a mapping at all
-    if not isinstance(d, collections.Mapping):
+    if not isinstance(d, collections.abc.Mapping):
         # It is not. Need not go any further and can just return `u`
         return u
 
     # d can now assumed to be a mapping
     # Iterate over the keys of the update dict and (recursively) add them
     for key, val in u.items():
-        if isinstance(val, collections.Mapping):
+        if isinstance(val, collections.abc.Mapping):
             # Already a Mapping, continue recursion
             d[key] = recursive_update(d.get(key, {}), val)
         else:
