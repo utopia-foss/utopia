@@ -165,6 +165,13 @@ set correctly.
 
             // or alternatively: multiple ones
             // _envm.track_parameters({"some_parameter", "some_other"});
+
+            // Write the initial data of the env model
+            if (_envm.get_write_start() == 0) {
+                _envm.write_data();
+                // NOTE Need this because env model is never run, but only 
+                //      iterated
+            }
         }
 
 .. note::
