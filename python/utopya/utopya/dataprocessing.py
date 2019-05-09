@@ -300,10 +300,10 @@ def find_endpoint(data: xr.DataArray, *, time: int=-1,
     """
     return True, data.isel(time=time, **kwargs)
 
-def find_fixpoint(data: xr.Dataset, *, spin_up_time: int=0,
-                  abs_std: float=None, rel_std: float=None,
-                  mean_kwargs=None, std_kwargs=None,
-                  isclose_kwargs=None) -> Tuple[bool, float]:
+def find_fixpoint(data: xr.Dataset, *, spin_up_time: int=0, 
+                  abs_std: float=None, rel_std: float=None, mean_kwargs=None, 
+                  std_kwargs=None, isclose_kwargs=None, 
+                  squeeze: bool=True) -> Tuple[bool, float]:
     """Find the fixpoint(s) of a dataset and confirm it by standard deviation.
     For dimensions that are not 'time' the fixpoints are compared and 
     duplicates removed.
@@ -325,10 +325,14 @@ def find_fixpoint(data: xr.Dataset, *, spin_up_time: int=0,
         isclose_kwargs (dict, optional): Additional keyword arguments passed
             on to the appropriate array function for calculating np.isclose for
             fixpoint-duplicates across dimensions other than 'time'.
+        squeeze (bool, optional): Use the data.squeeze method to remove
+            dimensions of length one. Default is True.
     
     Returns:
         tuple: (fixpoint found, mean) 
     """
+    if squeeze:
+        data = data.squeeze()
     if len(data.dims) > 2:
         raise ValueError("Method 'find_fixpoint' cannot handle data with more"
                          " than 2 dimensions. Data has dims {}"
@@ -365,7 +369,35 @@ def find_fixpoint(data: xr.Dataset, *, spin_up_time: int=0,
     
     return conclusive, mean
 
-def find_oscillation(data: xr.Dataset, *, spin_up_time: int=0,
+def find_multistability(*args, **kwargs) -> Tuple[bool, float]:
+    """Find the multistabilities of a dataset.
+
+    Performs find_fixpoint. Method conclusive if find_fixpoint conclusive with
+    multiple entries.
+
+
+    Arguments:
+        *args, **kwargs: passed on to find_fixpoint
+
+    Returns
+        tuple: (multistability found, mean) 
+    """
+    conclusive, mean = find_fixpoint(*args, **kwargs)
+
+    if not conclusive:
+        return conclusive, mean
+    
+    for data_var_name, data_var in mean.data_vars.items():
+        # Conclusive only if there are at least two non-nan values.
+        # Count the non-zero entries of the inverse of boolian array np.isnan.
+        # Need negation operator for that.
+        if np.count_nonzero(~np.isnan(data_var)) > 1:
+            return True, mean
+
+    return False, mean
+
+def find_oscillation(data: xr.Dataset, *, spin_up_time: int=0, 
+                     squeeze: bool=True,
                      **find_peak_kwargs) -> Tuple[bool, list]:
     """Find oscillations in a dataset.
     
@@ -375,11 +407,16 @@ def find_oscillation(data: xr.Dataset, *, spin_up_time: int=0,
     Arguments:
         data (xr.Dataset): The data
         spin_up_time (int, optional): The first timestep included
-        **find_peak_kwargs: Passed on to ``scipy.signal.find_peaks``
+        squeeze (bool, optional): Use the data.squeeze method to remove
+            dimensions of length one. Default is True.
+        **find_peak_kwargs: Passed on to ``scipy.signal.find_peaks``. Default
+            for kwarg 'height' is -1e15.
     
     Returns:
         Tuple[bool, list]: (oscillation found, [min, max])
     """
+    if squeeze:
+        data = data.squeeze()
     if len(data.dims) > 1:
         raise ValueError("Method 'find_oscillation' cannot handle data with more"
                          " than 1 dimension. Data has dims {}"
@@ -397,6 +434,9 @@ def find_oscillation(data: xr.Dataset, *, spin_up_time: int=0,
     coords.pop('time', None)
     coords['osc'] = ['min', 'max']
     attractor = xr.Dataset(coords=coords, attrs={'conclusive': False})
+
+    if not find_peak_kwargs['height']:
+        find_peak_kwargs['height'] = -1e15
 
     for data_var_name, data_var in data.items():
         maxima, max_props = find_peaks(data_var, **find_peak_kwargs)

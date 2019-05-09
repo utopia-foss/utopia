@@ -223,19 +223,30 @@
 
 
 # -- Bifurcation diagrams -----------------------------------------------------
-.attractor.bifurcation_diagram:
+.attractor.bifurcation_diagram_1d:
   creator: multiverse
   module: .attractor
   plot_func: bifurcation_diagram
 
-  analysis_kwargs:
-    oscillation:
-      height: 0.    # this kwarg is needed!
-    # find_fixpoint needs either 'abs_std' ans/or 'rel_std', else always
-    # conclusive
+  analysis_kwargs: ~
 
-  # Use default helpers and style
+  # Use default helpers and style, but disable grid
   helpers:
     <<: *default_helpers
   style:
     <<: *default_style
+    axes.grid: false
+
+.attractor.bifurcation_diagram_2d:
+  creator: multiverse
+  module: .attractor
+  plot_func: bifurcation_diagram
+
+  analysis_kwargs: ~
+
+  # Use default helpers and style, but disable grid
+  helpers:
+    <<: *default_helpers
+  style:
+    <<: *default_style
+    axes.grid: false

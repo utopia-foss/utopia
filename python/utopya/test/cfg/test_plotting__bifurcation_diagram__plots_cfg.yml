@@ -37,7 +37,7 @@ bifurcation_diagram: &bifurcation_diagram
 
 # Plot the endpoint for every universe
 bifurcation_endpoint:
-  based_on: .attractor.bifurcation_diagram  
+  based_on: .attractor.bifurcation_diagram_1d
   <<: *bifurcation_diagram
 
   enabled: true
@@ -45,11 +45,16 @@ bifurcation_endpoint:
   # pass a Tuple(str, str): key, function name in utopya.dataprocessing.py
   analysis_steps: [[endpoint, find_endpoint]]
 
+  visualization_kwargs:
+    endpoint:
+      color: green
+      alpha: 0.3
+
 # Plot the fixpoint(s) for every universe if available, else the endpoint.
 # This is done for all universes at the bifurcation parameters coordinate
 # duplicate fixpoints (e.g. from different initialisations) are removed.
 bifurcation_fixpoint:
-  based_on: .attractor.bifurcation_diagram  
+  based_on: .attractor.bifurcation_diagram_1d
   <<: *bifurcation_diagram
 
   enabled: true
@@ -59,11 +64,52 @@ bifurcation_fixpoint:
   analysis_steps: [fixpoint, endpoint]
   analysis_kwargs:
     fixpoint:
-      spin_up_time: 75000
+      spin_up_time: 25000
+
+  visualization_kwargs:
+    endpoint:
+      color: green
+      alpha: 0.3
+    fixpoint:
+      color: yellow
+      alpha: 0.3
+
+# Plot the fixpoint - use the to_plot feature
+bifurcation_fixpoint_to_plot:
+  based_on: .attractor.bifurcation_diagram_1d
+  <<: *bifurcation_diagram
+
+  enabled: true
+
+  # pass a Sequence of str: keys in default_analysis_steps
+  # iterate until the first conclusive step
+  analysis_steps: [fixpoint, endpoint]
+  analysis_kwargs:
+    fixpoint:
+      spin_up_time: 25000
+
+  visualization_kwargs:
+    endpoint:
+      color: green
+      alpha: 0.3
+    fixpoint:
+      to_plot:
+        density_G:
+          label: fixpoint grass
+          color: green
+          alpha: 0.3
+        density_T:
+          label: fixpoint savanna
+          color: chocolate
+          alpha: 0.3
+        density_F:
+          label: fixpoint forest
+          color: black
+          alpha: 0.3
 
 # Scatter the datapoints for every universe
 bifurcation_scatter:
-  based_on: .attractor.bifurcation_diagram
+  based_on: .attractor.bifurcation_diagram_1d
   <<: *bifurcation_diagram
 
   enabled: true
@@ -71,7 +117,7 @@ bifurcation_scatter:
   analysis_steps: [scatter]
   analysis_kwargs:
     scatter:
-      spin_up_time: 75000
+      spin_up_time: 25000
 
   # recommended to label and colorize the fields
   to_plot:
@@ -94,7 +140,7 @@ bifurcation_scatter:
 
 # Plot oscillation and fixpoint for every universe
 bifurcation_oscillation:
-  based_on: .attractor.bifurcation_diagram
+  based_on: .attractor.bifurcation_diagram_1d
   <<: *bifurcation_diagram
 
   enabled: true
@@ -107,4 +153,12 @@ bifurcation_oscillation:
       height: 0.    # this 
       prominence: 0.05
     fixpoint:
-      spin_up_time: 75000
+      spin_up_time: 25000
+
+  visualization_kwargs:
+    fixpoint:
+      color: yellow
+      alpha: 0.3
+    oscillation:
+      color: red
+      alpha: 0.3
