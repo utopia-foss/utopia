@@ -18,6 +18,12 @@ BIFURCATION_DIAGRAM_RUN_CFG_PATH = resource_filename('test',
 BIFURCATION_DIAGRAM_PLOTS_CFG_PATH = resource_filename('test', 
                             'cfg/test_plotting__bifurcation_diagram__'
                             'plots_cfg.yml')
+BIFURCATION_DIAGRAM_2D_RUN_CFG_PATH = resource_filename('test', 
+                            'cfg/test_plotting__bifurcation_diagram_2d__'
+                            'run_cfg.yml')
+BIFURCATION_DIAGRAM_2D_PLOTS_CFG_PATH = resource_filename('test', 
+                            'cfg/test_plotting__bifurcation_diagram_2d__'
+                            'plots_cfg.yml')
 
 
 # Fixtures --------------------------------------------------------------------
@@ -117,6 +123,8 @@ def test_bifurcation_diagram(tmpdir):
     # Plot the bifurcation using the fixpoint
     mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_DIAGRAM_PLOTS_CFG_PATH,
                         plot_only=["bifurcation_fixpoint"])
+    mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_DIAGRAM_PLOTS_CFG_PATH,
+                        plot_only=["bifurcation_fixpoint_to_plot"])
     # Plot the bifurcation using scatter
     mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_DIAGRAM_PLOTS_CFG_PATH,
                         plot_only=["bifurcation_scatter"])
@@ -138,3 +146,23 @@ def test_bifurcation_diagram(tmpdir):
     # Plot the bifurcation using multistability
     mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_DIAGRAM_PLOTS_CFG_PATH,
                         plot_only=["bifurcation_fixpoint"])
+
+def test_bifurcation_diagram_2d(tmpdir):
+    """Test plotting of the bifurcation diagram"""
+    # Create and run simulation
+    raise_exc = {'plot_manager': {'raise_exc': True}}
+    mv = Multiverse(model_name='SavannaHomogeneous',
+                    run_cfg_path=BIFURCATION_DIAGRAM_2D_RUN_CFG_PATH,
+                    paths=dict(out_dir=str(tmpdir)),
+                    **raise_exc)
+    mv.run_sweep()
+
+    # Load
+    mv.dm.load_from_cfg(print_tree=False)
+
+    # Plot the bifurcation using the last datapoint
+    mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_DIAGRAM_2D_PLOTS_CFG_PATH,
+                        plot_only=["bifurcation_diagram_2d"])
+    # Plot the bifurcation using the fixpoint
+    mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_DIAGRAM_2D_PLOTS_CFG_PATH,
+                        plot_only=["bifurcation_diagram_2d_fixpoint_to_plot"])

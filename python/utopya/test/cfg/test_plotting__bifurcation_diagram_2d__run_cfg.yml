@@ -19,5 +19,6 @@ parameter_space:
     alpha: !sweep
       default: 0.2
       linspace: [0.0, 2.0, 4] # use >=21 values for visual inspection
-
-    beta: 0.4
+    beta: !sweep
+      default: 0.2
+      linspace: [0.0, 2.0, 4] # use >=21 values for visual inspection
