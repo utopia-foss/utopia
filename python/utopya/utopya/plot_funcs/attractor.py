@@ -419,7 +419,7 @@ def bifurcation_diagram(dm: DataManager, *, hlpr: PlotHelper,
                                         y=data_var,
                                         **plot_kwargs.get(data_var_name, {})))
         
-        else:
+        elif attractor_key:
             raise KeyError("Invalid attractor-key '{}'! "
                            "Available keys: 'endpoint', fixpoint',"
                            " 'multistability', 'scatter', 'oscillation'."
