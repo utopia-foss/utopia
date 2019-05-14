@@ -1,4 +1,4 @@
-/** @file compiletime_algos.hh
+/** @file metaprogramming.hh
  *  @brief Functions emulating stl-algortihms, but for (heterogenous)
  * collections the types and size of which are known at compile time.
  */
@@ -9,8 +9,15 @@
 namespace Utopia
 {
 // namespace for implementing tuple for each
-namespace _Compiletime_algos_helpers
+namespace Metaprogramming_helpers
 {
+
+
+// =============================================================================
+/* Here, the ability to iterate over tuplelike objects is implementd
+ */
+// =============================================================================
+
 /**
  * Take a bunch of tuples and applies the function f the tuple made up of the
  * idx-th entry of all tuples. This is needed to built the 'visit' and 'reduce'
@@ -91,31 +98,43 @@ constexpr auto&& pad_to_size(T&& v)
     return std::forward<T>(v);
 }
 
+// =============================================================================
+/* Here, a metafunction 'apply' is implemented which applies a metafunction
+ * that takes N arguments to a tuplelike type with N entries.
+ */
+// =============================================================================
+
 /**
  * @brief Prototype for apply_impl
- * 
- * @tparam Metafunc 
- * @tparam Tuplelike 
- * @tparam X 
+ *
+ * @tparam Metafunc
+ * @tparam Tuplelike
+ * @tparam X
  */
-template <template <typename...> class Metafunc, typename Tuplelike, typename X>
+template<template<typename...> class Metafunc, typename Tuplelike, typename X>
 struct apply_impl;
 
 /**
- * @brief Metafunction which applies an arbitrary metafunction to a tuplelike object - backend implementation
- * 
- * @tparam Metafunc Metafunc to apply to Tuplelike type. Has to provide a member alias 'type'.
+ * @brief Metafunction which applies an arbitrary metafunction to a tuplelike
+ * object - backend implementation
+ *
+ * @tparam Metafunc Metafunc to apply to Tuplelike type. Has to provide a member
+ * alias 'type'.
  * @tparam Tuplelike Tuplelike type treatable with std::tuple_element
- * @tparam idxs indices used to get the elements of tuplelike 
+ * @tparam idxs indices used to get the elements of tuplelike
  */
-template <template <typename...> class Metafunc, typename Tuplelike, std::size_t... idxs>
+template<template<typename...> class Metafunc,
+         typename Tuplelike,
+         std::size_t... idxs>
 struct apply_impl<Metafunc, Tuplelike, std::index_sequence<idxs...>>
 {
     // application of metafunction
-    using type = typename Metafunc<typename std::tuple_element<idxs, Tuplelike>::type...>::type;
+    using type = typename Metafunc<
+      typename std::tuple_element<idxs, Tuplelike>::type...>::type;
 };
 
-} // namespace _Compiletime_algos_helpers
+
+} // namespace Metaprogramming_helpers
 namespace Utils
 {
 /**
@@ -160,9 +179,9 @@ constexpr auto reduce(NaryFunction&& f, Tuplelike&&... tuplelike)
     }
     else
     {
-        return _Compiletime_algos_helpers::apply_to_indices(
+        return Metaprogramming_helpers::apply_to_indices(
             std::forward<NaryFunction>(f), std::make_index_sequence<N>(),
-            _Compiletime_algos_helpers::pad_to_size<N>(std::forward<Tuplelike>(tuplelike))...);
+            Metaprogramming_helpers::pad_to_size<N>(std::forward<Tuplelike>(tuplelike))...);
     }
 }
 
@@ -196,9 +215,9 @@ constexpr NaryFunction visit(NaryFunction&& f, Tuplelike&&... tuplelike)
     }
     else
     {
-        _Compiletime_algos_helpers::apply_to_indices(
+        Metaprogramming_helpers::apply_to_indices(
             std::forward<NaryFunction>(f), std::make_index_sequence<N>(),
-            _Compiletime_algos_helpers::pad_to_size<N>(std::forward<Tuplelike>(tuplelike))...);
+            Metaprogramming_helpers::pad_to_size<N>(std::forward<Tuplelike>(tuplelike))...);
         return f;
     }
 }
@@ -237,29 +256,29 @@ constexpr auto transform(Tuplelike&& tuplelike, UnaryFunction&& f)
     return reduce(std::forward<UnaryFunction>(f), std::forward<Tuplelike>(tuplelike));
 }
 
+
 /**
  * @brief Apply the metafunction 'Metafunc' to a tuplelike type 'Tuplelike'.
  *
- * @tparam Metafunc A metafunction accepting as many template args as 'Tuplelike' is big.
- * @tparam Tuplelike A tuplelike object which can be exploded into a parameter pack with std::tuple_element
+ * @tparam Metafunc A metafunction accepting as many template args as
+ * 'Tuplelike' is big.
+ * @tparam Tuplelike A tuplelike object which can be exploded into a parameter
+ * pack with std::tuple_element
  */
-template <template <typename...> class Metafunc, typename Tuplelike>
+template<template<typename...> class Metafunc, typename Tuplelike>
 struct apply
 {
 
     using type =
-        typename _Compiletime_algos_helpers::apply_impl<Metafunc, Tuplelike, std::make_index_sequence<std::tuple_size_v<Tuplelike>>>::type;
+      typename Metaprogramming_helpers::apply_impl<Metafunc,
+                          std::decay_t<Tuplelike>,
+                          std::make_index_sequence<
+                            std::tuple_size_v<std::decay_t<Tuplelike>>>>::type;
 };
 
-
-/**
- * @brief Alias for apply for applying a metafunction to a tuple
- * 
- * @tparam Metafunc A metafunction accepting as many template args as 'Tuplelike' is big.
- * @tparam Tuplelike A tuplelike object which can be exploded into a parameter pack with std::tuple_element
- */
-template <template <typename...> class Metafunc, typename Tuplelike>
+template<template<typename...> class Metafunc, typename Tuplelike>
 using apply_t = typename apply<Metafunc, Tuplelike>::type;
+
 
 } // namespace Utils
 } // namespace Utopia

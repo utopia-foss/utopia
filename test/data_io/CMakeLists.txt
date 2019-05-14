@@ -1,7 +1,10 @@
 # place auxilary files in build directory
 file(COPY
         "cfg_utils_test.yml"
+        "datamanager_test.yml"
+        "datamanager_test_anchors.yml"
      DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
 
 # register targets
 set(TESTS_DATAIO

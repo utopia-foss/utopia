@@ -1,0 +1,62 @@
+# Test configuration for datamanager test.
+# This is the most simple, and probably robust case
+---
+data_manager: 
+  # this builds the deciders
+  deciders:
+    write_every_3rd:
+      type: slice
+      args: 
+        start: 0
+        stop: 30
+        step: 3
+
+    write_every_5th:
+      type: slice
+      args: 
+        start: 30
+        stop: 50
+        step: 5
+
+    write_intervals:
+      type: interval
+      args: 
+        intervals:
+          - [0, 10]
+          - [25, 30]
+          - [100, 115]
+
+  triggers:
+    build_every_3rd:
+      type: slice
+      args: 
+        start: 0
+        stop: 30
+        step: 3
+
+    build_once:
+      type: once
+      
+    build_intervals:
+      type: interval
+      args: 
+        intervals:
+          - [0, 10]
+          - [25, 30]
+          - [100, 115]
+
+  tasks: 
+    write_x:
+      active: true
+      decider: write_every_3rd
+      trigger: build_every_3rd
+
+    write_y:
+      active: true
+      decider: write_every_5th
+      trigger: build_once
+
+    write_z:
+      active: true
+      decider: write_intervals
+      trigger: build_intervals

@@ -10,7 +10,7 @@
 #include <iterator>
 #include <iostream>
 #include <string>
-
+#include <utopia/core/utils.hh>
 #include <utopia/core/zip.hh>
 
 struct Containers {
@@ -27,6 +27,17 @@ struct Containers {
     std::deque<int> d_cpy = d;
     std::forward_list<int> f_cpy = f;
 };
+
+
+// import output operators into std, boost otherwise denies their existence
+// and does not use them correctly. 
+namespace std{
+    template<typename... Ts>
+    std::ostream& operator<<(std::ostream& out, const std::tuple<Ts...>& tpl){
+        return Utopia::Utils::operator<<(out, tpl);
+    }
+}
+
 
 BOOST_FIXTURE_TEST_SUITE(zip_iterator, Containers)
 
