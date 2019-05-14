@@ -160,6 +160,18 @@ discretizations of physical space into rectangular, hexagonal, or triangular
 grids.
 \}
 
+\defgroup AgentManager AgentManager
+\{
+\ingroup Core
+\brief An interface for agent-based models
+\}
+
+\defgroup Entity Entity
+\{
+\ingroup Core
+\brief The base class for managed entities, e.g. cells or agents.
+\}
+
 \defgroup Iter Iteration Utilities
 \{
 \ingroup Core

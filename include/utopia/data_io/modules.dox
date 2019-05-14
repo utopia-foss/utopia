@@ -2,8 +2,16 @@
 
 \defgroup DataIO DataIO
 \{
-\brief Writing data files and reporting data to the Python frontend
+\brief Writing data, reading configuration files, and reporting data to the
+       Python frontend
+\}
 
+
+
+\defgroup DataManager DataManager
+\{
+\ingroup DataIO
+\brief High-level interface for data writing
 \}
 
 

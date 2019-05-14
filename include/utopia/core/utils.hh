@@ -322,6 +322,67 @@ struct is_tuple_like : is_tuple_like_base<T, get_size_v<T>>
 template <typename... Ts>
 inline constexpr bool is_tuple_like_v = is_tuple_like<Ts...>::value;
 
+
+/**
+ * @brief Determines if the type T implements a call operator with arbitrary 
+ *        signature
+ * 
+ * @tparam T Type to check for if it is callable
+ */
+template<typename T>
+class is_callable_object
+{
+
+    struct Fallback
+    {
+        void operator()();
+    };
+
+    struct Derived
+      : T
+      , Fallback
+    {};
+
+    template<typename U, U>
+    struct Check;
+
+    typedef char True[1];  // typedef for an array of size one.
+    typedef char False[2]; // typedef for an array of size two.
+
+    template<typename S>
+    static constexpr True& f(...);
+
+    template<typename S>
+    static constexpr False& f(Check<void (Fallback::*)(), &S::operator()>*);
+
+  public:
+    static constexpr bool value = (sizeof(f<Derived>(nullptr)) == 1);
+};
+
+/**
+ * @brief Shorthand for is_callable_object<T>::value
+ *
+ * @tparam T
+ */
+template<typename T>
+constexpr bool is_callable_object_v = is_callable_object<T>::value;
+
+/**
+ * @brief 
+ * 
+ * @tparam T 
+ * @tparam U 
+ * @param out 
+ * @param pair 
+ * @return std::ostream& 
+ */
+template<typename T, typename U> 
+std::ostream& operator<<(std::ostream& out, const std::pair<T, U>& pair){
+    out << "(" << pair.first << ", " << pair.second << ")";
+    return out;
+}
+
+
 /**
  * Output the content of a container to the stream 'out' in the format
  * '[x1, x2, x3, ...]' where the x_{i} are the elements the container holds.
@@ -379,21 +440,6 @@ std::ostream& operator<<(std::ostream& out, const std::vector<bool>& container)
     return out;
 }
 
-/**
- * @brief Output pair to an std::ostream instance 
- * 
- * @tparam T1 pair first type
- * @tparam T2 pair second type
- * @param out outstream to use
- * @param pair pair to put out
- * @return std::ostream& used outstream
- */
-template<typename T1, typename T2>
-std::ostream& operator<<(std::ostream& out, const std::pair<T1, T2>& pair){
-    out << "(" << pair.first <<", " << pair.second << ")";
-    return out;
-}
-
 
 /**
  * @brief Output associative containers to an std::ostream
@@ -426,10 +472,7 @@ operator<<(std::ostream& out, const MapType<Key, Value, Args...>& map)
     return out;
 }
 
-} // namespace Utils
-} // namespace Utopia
 
-namespace std {
 
 /// Report a tuple to an outstream
 /** This works by piping the single elements inside the tuple to the stream,
@@ -444,7 +487,7 @@ std::ostream& operator<< (std::ostream& ostr, std::tuple<Types...> tuple)
     std::string val_str("(");
 
     auto report_val = [&val_str](auto&& val){
-        val_str += to_string(val) + ", ";
+        val_str += std::to_string(val) + ", ";
     };
     boost::hana::for_each(tuple, report_val);
 
@@ -456,6 +499,9 @@ std::ostream& operator<< (std::ostream& ostr, std::tuple<Types...> tuple)
     return ostr;
 }
 
-} // namespace std
+
+}
+}
+
 
 #endif

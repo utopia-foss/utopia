@@ -20,7 +20,7 @@ set(TESTS_CORE
     apply_test
     cell_manager_test
     cell_manager_integration_test
-    compiletime_algos_test
+    metaprogramming_test
     dependency_test
     exceptions_test
     graph_test
