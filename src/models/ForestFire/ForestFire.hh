@@ -357,7 +357,7 @@ private:
                     if (this->_param.p_resistance > 0.) {
                         // ... where there is a chance not to burn:
                         if (  this->_prob_distr(*this->_rng)
-                            > _param.p_resistance) {
+                            < _param.p_resistance) {
                             continue;
                         }
                     }
