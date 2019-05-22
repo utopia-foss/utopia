@@ -38,7 +38,8 @@ class DataManager(Hdf5LoaderMixin, YamlLoaderMixin, dtr.data_mngr.DataManager):
     _HDF5_MAP_FROM_ATTR = "content"
 
     # The mapping of different content values to a data group type
-    _HDF5_GROUP_MAP = dict(network=udg.NetworkGroup)
+    _HDF5_GROUP_MAP = dict(network=udg.NetworkGroup,
+                           time_series=udg.TimeSeriesGroup)
 
     # The mapping of different content values to a data container types
     _HDF5_DSET_MAP = dict(grid=udc.GridDC,

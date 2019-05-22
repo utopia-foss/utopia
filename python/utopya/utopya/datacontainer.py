@@ -5,15 +5,15 @@ the NumpyDataContainer.
 """
 
 import logging
-from typing import Union, List, Dict
 from operator import mul
 from functools import reduce
+from typing import Union, List, Dict, Sequence, Tuple
 
 import numpy as np
 import xarray as xr
 
 from dantro.containers import NumpyDataContainer, XrDataContainer
-from dantro.mixins import Hdf5ProxyMixin
+from dantro.mixins import Hdf5ProxySupportMixin
 
 # Configure and get logger
 log = logging.getLogger(__name__)
@@ -22,16 +22,16 @@ log = logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------------
 
-class NumpyDC(Hdf5ProxyMixin, NumpyDataContainer):
+class NumpyDC(Hdf5ProxySupportMixin, NumpyDataContainer):
     """This is the base class for numpy data containers used in Utopia.
 
     It is based on the NumpyDataContainer provided by dantro and extends it
-    with the Hdf5ProxyMixin, allowing to load the data from the Hdf5 file only
+    with the Hdf5ProxySupportMixin, allowing to load the data from the Hdf5 file only
     once it becomes necessary.
     """
 
 
-class XarrayDC(Hdf5ProxyMixin, XrDataContainer):
+class XarrayDC(Hdf5ProxySupportMixin, XrDataContainer):
     """This is the base class for xarray data containers used in Utopia.
 
     It is based on the XrDataContainer provided by dantro. As of now, it has
@@ -123,12 +123,99 @@ class GridDC(XarrayDC):
 
         # Call the __init__ function of the base class
         super().__init__(name=name, data=data, **dc_kwargs)
+        # ._data is an xr.DataArray now or might still be a proxy
 
-        # Data is an xr.DataArray now or might be a proxy
-        # Store the old and determine the new shape of the data, needed for
+        # Store the old and determine the new shape of the data; needed for
         # proxy property support
         self._data_shape = self.shape
+        
+        # Now, determine the shapes ... Will set the following attributes:
+        self._new_shape = None
+        self._grid_shape = None
+        self._new_dims = None
+        self._new_coords = None
+        self._determine_shape()
 
+        # Have all shapes cached now; set the flag such that the properties
+        # use those values instead of the proxy's
+        self._shapes_cached = True
+
+        # Do the reshaping and everything only if it is not a proxy
+        if not self.data_is_proxy:
+            self._data = self._reshape_data()
+        # otherwise: postpone reshaping until proxy gets resolved
+
+    def _postprocess_proxy_resolution(self):
+        """Invoked from ``dantro.Hdf5ProxySupportMixin`` after a proxy was
+        resolved, this takes care to apply the reshaping operation onto the
+        underlying data.
+        """
+        # First let the XarrayDC do its thing
+        super()._postprocess_proxy_resolution()
+
+        # Now do the reshaping
+        self._data = self._reshape_data()
+
+    def _parse_sizes_from_metadata(self) -> Sequence[Tuple[str, int]]:
+        """Invoked from _format_shape when no metadata was applied but the
+        dimension names are available. Should return data in the same form as
+        xr.DataArray.sizes.items() does.
+        """
+        if not self._shapes_cached:
+            return super()._parse_sizes_from_metadata()
+
+        # Iterate over new dimension names and grid shape and use the dim names
+        # and shape determined and cached by _determine_shape.
+        return tuple([(n, l) for i, (n, l) in enumerate(zip(self._new_dims,
+                                                            self.shape))])
+
+
+    # Properties ..............................................................
+
+    @property
+    def grid_shape(self) -> tuple:
+        """The shape of the grid"""
+        if self._shapes_cached:
+            return self.shape[1:]
+        return self.attrs.get(self._GDC_grid_shape_attr)
+
+    @property
+    def space_extent(self) -> tuple:
+        """The space's extent this grid is representing, read from attrs"""
+        return self.attrs.get(self._GDC_space_extent_attr)
+
+    @property
+    def shape(self) -> tuple:
+        """Returns shape, proxy-aware
+
+        This is an overload of the property in Hdf5ProxySupportMixin which takes care
+        that not the actual underlying proxy data shape is returned but
+        whatever the container's shape is to be after reshaping.
+        """
+        if self.data_is_proxy:
+            # Might not be set yet, i.e. during call to super().__init__
+            if self._shapes_cached:
+                return self._new_shape
+            return self.proxy.shape
+        return self.data.shape
+
+    @property
+    def ndim(self) -> int:
+        """Returns ndim, proxy-aware
+
+        This is an overload of the property in Hdf5ProxySupportMixin which takes care
+        that not the actual underlying proxy data ndim is returned but
+        whatever the container's ndim is to be after reshaping.
+        """
+        if self.data_is_proxy:
+            return len(self.shape)
+        return self.data.ndim
+
+
+    # Reshaping ...............................................................
+
+    def _determine_shape(self):
+        """Determine the new shape and store it as _new_shape attribute"""
         try:
             self._grid_shape = tuple(self.attrs[self._GDC_grid_shape_attr])
 
@@ -145,74 +232,7 @@ class GridDC(XarrayDC):
         #      the reshaped x-y data dimensions are thus appended.
         self._new_shape = tuple(self._data_shape[:-1] + self._grid_shape)
 
-        # Have all shapes cached now; set the flag such that the properties
-        # use those values instead of the proxy's
-        self._shapes_cached = True
-
-        # Do the reshaping and everything only if it is not a proxy
-        if not self.data_is_proxy:
-            self._data = self._reshape_data()
-        # otherwise: postpone reshaping until proxy gets resolved
-
-    def _postprocess_proxy_resolution(self):
-        """Invoked from ``Hdf5ProxyMixin`` after a proxy was resolved, this
-        takes care to apply the reshaping operation onto the underlying data.
-        """
-        # First let the XarrayDC do its thing
-        super()._postprocess_proxy_resolution()
-
-        # Now do the reshaping
-        self._data = self._reshape_data()
-
-
-    # Properties ..............................................................
-
-    @property
-    def grid_shape(self) -> tuple:
-        """The shape of the grid"""
-        if self._shapes_cached:
-            return self.shape[1:]
-
-    @property
-    def space_extent(self) -> tuple:
-        """The space's extent this grid is representing, read from attrs"""
-        return self.get(self._GDC_space_extent_attr)
-
-    @property
-    def shape(self) -> tuple:
-        """Returns shape, proxy-aware
-
-        This is an overload of the property in Hdf5ProxyMixin which takes care
-        that not the actual underlying proxy data shape is returned but
-        whatever the container's shape is to be after reshaping.
-        """
-        if self.data_is_proxy:
-            # Might not be set yet, i.e. during call to super().__init__
-            if self._shapes_cached:
-                return self._new_shape
-            return self.proxy.shape
-        return self.data.shape
-
-    @property
-    def ndim(self) -> int:
-        """Returns ndim, proxy-aware
-
-        This is an overload of the property in Hdf5ProxyMixin which takes care
-        that not the actual underlying proxy data ndim is returned but
-        whatever the container's ndim is to be after reshaping.
-        """
-        if self.data_is_proxy:
-            return len(self.shape)
-        return self.data.ndim
-
-
-    # Reshaping ...............................................................
-
-    def _reshape_data(self) -> xr.DataArray:
-        """Looks at the current data shape and container attributes to
-        reshape the data such that it represents a grid.
-        """
-        # New shape was already calculated, data shape is still the same
+        # New shape is now calculated, data shape is still the same
         data_shape = self._data_shape
         new_shape = self._new_shape
         grid_shape = self._grid_shape
@@ -249,6 +269,20 @@ class GridDC(XarrayDC):
 
         for n, l, dim_name in zip(grid_shape, extent, ('x', 'y', 'z')):
             new_coords[dim_name] = coord_gen(n, l)
+
+        # Store the new dimension names and coordinates
+        self._new_dims = new_dims
+        self._new_coords = new_coords
+
+    def _reshape_data(self) -> xr.DataArray:
+        """Looks at the current data shape and container attributes to
+        reshape the data such that it represents a grid.
+        """
+        data_shape = self._data_shape
+        new_shape = self._new_shape
+        grid_shape = self._grid_shape
+        new_dims = self._new_dims
+        new_coords = self._new_coords
 
         # Reshape data now
         log.debug("Reshaping data of shape %s to %s to match given grid "

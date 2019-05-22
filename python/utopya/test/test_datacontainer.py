@@ -8,10 +8,11 @@ import pytest
 from utopya.datacontainer import GridDC
 from utopya.testtools import ModelTest
 
+# -----------------------------------------------------------------------------
 
-def test_griddc() -> None:
+def test_griddc():
     """Test the functionality of the GridDC."""
-    ### 1d data ---------------------------------------------------------------
+    ### 1d data . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
     # Create some one dimensional test data of the form
     # [ 0  1  2  3  4  5 ]
     # Data in columns represents the time and data in rows the grid data
@@ -37,7 +38,11 @@ def test_griddc() -> None:
     # To check this, iterate through all elements in the data and check 
     # that each value is at the expected location. 
     for i in range(6):
-        assert(gdc_1d[i//3][i%3] == i)
+        assert gdc_1d[i//3][i%3] == i
+
+    # The format string should contains dimension information
+    assert 'x: 2' in gdc_1d._format_info()
+    assert 'y: 3' in gdc_1d._format_info()
 
     # Test the case where the grid_size is bad
     with pytest.raises(ValueError, match="Reshaping failed! "):
@@ -54,7 +59,7 @@ def test_griddc() -> None:
                data=np.zeros((2,3)), attrs=dict())
 
 
-    ### 2d data ---------------------------------------------------------------
+    ### 2d data . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
     # Create some test data of the form
     # [[ 0  1  2  3  4  5 ]
     #  [ 6  7  8  9 10 11 ]]
@@ -64,28 +69,37 @@ def test_griddc() -> None:
     # Create a GridDC and assert that the shape is correct
     attrs_2d = dict(content="grid", grid_shape=(2, 3))
     gdc_2d = GridDC(name="data_2d", data=data_2d, attrs=attrs_2d)
-    assert(gdc_2d.shape == (2,2,3))
+    
+    assert gdc_2d.shape == (2,2,3)
     assert 'time' in gdc_2d.dims
     assert 'x' in gdc_2d.dims
     assert 'y' in gdc_2d.dims
+    
     for i in range(attrs_2d['grid_shape'][0]):
         assert i == gdc_2d.data.coords['x'][i]
+    
     for i in range(attrs_2d['grid_shape'][1]):
         assert i == gdc_2d.data.coords['y'][i]
 
+    # The format string should contains dimension information
+    assert 'time: 2' in gdc_2d._format_info()
+    assert 'x: 2' in gdc_2d._format_info()
+    assert 'y: 3' in gdc_2d._format_info()
+
     # Assert that the data is correct and of the form
     # [[[ 0  1  2 ]
-    #  [ 3  4  5 ]]
-    # [[ 6  7  8 ]
-    #  [ 9 10 11 ]]]
+    #   [ 3  4  5 ]]
+    #  [[ 6  7  8 ]
+    #   [ 9 10 11 ]]]
     # To check this, iterate through all elements in the data and check 
     # that each value is at the expected location.
     for i in range(12):
-        if (i//6 == 0 ):
-            assert(gdc_2d[0][i//3][i%3] == i)
+        if i//6 == 0:
+            assert gdc_2d[0][i//3][i%3] == i
         else:
             tmp = i - 6
-            assert(gdc_2d[1][tmp//3][tmp%3] == i)
+            assert gdc_2d[1][tmp//3][tmp%3] == i
+
 
 def test_griddc_integration():
     """Integration test for the GridDC."""
@@ -116,6 +130,12 @@ def test_griddc_integration():
     assert grid_data.shape == (4,) + tuple(grid_data.attrs['grid_shape'])
     assert grid_data.grid_shape == tuple(grid_data.attrs['grid_shape'])
 
+    # And the format string should show dimension information
+    assert 'time: 4' in grid_data._format_info()
+    assert 'x: 8' in grid_data._format_info()
+    assert 'y: 4' in grid_data._format_info()
+    assert 'ids' not in grid_data._format_info()
+
     # ... without resolving
     assert grid_data.data_is_proxy
 
@@ -127,6 +147,11 @@ def test_griddc_integration():
     assert grid_data.ndim == 3
     assert grid_data.shape == (4,) + tuple(grid_data.attrs['grid_shape'])
     assert grid_data.grid_shape == tuple(grid_data.attrs['grid_shape'])
+    
+    assert 'time: 4' in grid_data._format_info()
+    assert 'x: 8' in grid_data._format_info()
+    assert 'y: 4' in grid_data._format_info()
+    assert 'ids' not in grid_data._format_info()
 
     # Try re-instating the proxy
     grid_data.reinstate_proxy()

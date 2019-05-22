@@ -16,35 +16,34 @@ namespace Utopia {
 namespace DataIO {
 
 
-/** This function opens a HDFGroup for graph data.
+/** This function opens a HDFGroup for graph data and adds attributes.
+ * @details The attributes that are set mark the newly created group as
+ *          containing network data and add some graph metadata like whether
+ *          the graph is directed and/or allows parallel edges.
  * 
- * @tparam GraphType 
+ * @tparam Graph
  *
- * @param g The graph to save
+ * @param g          The graph to save
  * @param parent_grp The parent HDFGroup the graph data should be stored in
- * @param name The name the newly created graph group should have
+ * @param name       The name the newly created graph group should have
  *
  * @return std::shared_ptr<HDFGroup> The newly created graph group
  */
-template<typename GraphType>
-std::shared_ptr<HDFGroup> open_graph_group(const GraphType &g,
-                                           const std::shared_ptr<HDFGroup>& parent_grp,
-                                           const std::string& name)
+template<typename Graph>
+std::shared_ptr<HDFGroup>
+    create_graph_group(const Graph& g,
+                       const std::shared_ptr<HDFGroup>& parent_grp,
+                       const std::string& name)
 {
-    // Get logger
-    auto log = spdlog::get("data_io");
-
     // Create the group for the graph and store metadata in its attributes
     auto grp = parent_grp->open_group(name);
 
     grp->add_attribute("content", "network");
     grp->add_attribute("is_directed", boost::is_directed(g));
-    grp->add_attribute("is_parallel", false); // FIXME Make general
-    grp->add_attribute("custom_ids", false);
+    grp->add_attribute("allows_parallel", boost::allows_parallel_edges(g));
 
-    log->info("Opened graph group '{}'.", name);
+    spdlog::get("data_io")->info("Opened graph group '{}'.", name);
 
-    // Return the newly created group
     return grp;
 }
 
@@ -53,15 +52,15 @@ std::shared_ptr<HDFGroup> open_graph_group(const GraphType &g,
 /** This function writes a boost::graph into a HDFGroup. It assumes that the
  *  vertices and edges of the graph already supply indices.
  * 
- * @tparam GraphType 
+ * @tparam Graph 
  *
  * @param g The graph to save
  * @param grp The HDFGroup the graph should be stored in
  *
  * @return void
  */
-template<typename GraphType>
-void save_graph(const GraphType &g,
+template<typename Graph>
+void save_graph(const Graph& g,
                 const std::shared_ptr<HDFGroup>& grp)
 {
     // Collect some information on the graph
@@ -114,7 +113,7 @@ void save_graph(const GraphType &g,
  *  vertex IDs, they need not be part of the graph in order for this function
  *  to operate.
  * 
- * @tparam GraphType 
+ * @tparam Graph 
  * @tparam PropertyMap The property map of the vertex ids
  *
  * @param g The graph to save
@@ -123,8 +122,8 @@ void save_graph(const GraphType &g,
  *
  * @return void
  */
-template<typename GraphType, typename PropertyMap>
-void save_graph(const GraphType &g,
+template<typename Graph, typename PropertyMap>
+void save_graph(const Graph& g,
                 const std::shared_ptr<HDFGroup>& grp,
                 const PropertyMap vertex_ids)
 {
@@ -141,7 +140,6 @@ void save_graph(const GraphType &g,
     // Store additional metadata in the group attributes
     grp->add_attribute("num_vertices", num_vertices);
     grp->add_attribute("num_edges", num_edges);
-    
     
     // Initialize datasets to store vertices and adjacency lists in
     auto dset_vl = grp->open_dataset("_vertices", {num_vertices});
@@ -270,7 +268,7 @@ constexpr void apply_all(Function&& writer_f,
 *   applied to all vertices/edges of a boost::graph into a HDFGroup.
 *
 *   For each adaptor, the data written by this function is available at the
-*   path: ``parent_grp/adaptor_name/label``, where label is a dataset of size
+*   path: ``nw_grp/adaptor_name/label``, where label is a dataset of size
 *   ``{num_adaptors, num_edges/vertices}``.
 *
 * @tparam ObjectType   The type of object that information is written from.
@@ -280,13 +278,15 @@ constexpr void apply_all(Function&& writer_f,
 *                      However, the descriptor has to be applied to the graph
 *                      in the named adaptor tuple. Thus it also has to match
 *                      the given graph!
-* @tparam GraphType
+* @tparam Graph
 * @tparam Adaptors
 *
 * @param g             The graph from which to save vertex or edge properties.
-* @param parent_grp    The HDFGroup the data should be written to. For each
-*                      tuple entry, a new group will be created, which has the
-*                      name specified in that tuple.
+* @param nw_grp        The HDFGroup the data should be written to. This should
+*                      be the previously created network group.
+*                      For each tuple entry, a new group will be created,
+*                      which has the name specified as first element of that
+*                      tuple.
 * @param label         Under which label the results of the adaptors should be
 *                      stored. This will be the name of the dataset to which
 *                      the adaptors write data. If time-varying data is to be
@@ -298,44 +298,51 @@ constexpr void apply_all(Function&& writer_f,
 * @return void
 */
 template<typename ObjectType,
-         typename GraphType,
+         typename Graph,
          typename... Adaptors>
-void save_graph_properties(GraphType &g,
-                           const std::shared_ptr<HDFGroup>& parent_grp,
+void save_graph_properties(Graph& g,
+                           const std::shared_ptr<HDFGroup>& nw_grp,
                            const std::string& label,
                            std::tuple<Adaptors...>& adaptor_tuple)
 {
     static_assert(
-        std::is_same_v<ObjectType, typename GraphType::vertex_property_type>
+        std::is_same_v<ObjectType, typename Graph::vertex_property_type>
         or
-        std::is_same_v<ObjectType, typename GraphType::edge_property_type>
+        std::is_same_v<ObjectType, typename Graph::edge_property_type>
         or
-        std::is_same_v<ObjectType, typename GraphType::vertex_descriptor>
+        std::is_same_v<ObjectType, typename Graph::vertex_descriptor>
         or
-        std::is_same_v<ObjectType, typename GraphType::edge_descriptor>,
-        "The vertex or edge type does not match the given graph!");
+        std::is_same_v<ObjectType, typename Graph::edge_descriptor>,
+        "The vertex or edge type does not match the given graph!"
+    );
 
     // Get a logger
     auto log = spdlog::get("data_io");
 
-    // Distinguish between vertex ...
+    // Distinguish between vertex property, ...
     if constexpr (std::is_same_v<ObjectType,
-                                 typename GraphType::vertex_property_type>)
+                                 typename Graph::vertex_property_type>)
     {
         // Collect some information on the graph
         const auto num_vertices = boost::num_vertices(g);
 
         // Make vertex iterators
-        typename GraphType::vertex_iterator v, v_end;
+        typename Graph::vertex_iterator v, v_end;
         boost::tie(v, v_end) = boost::vertices(g);
 
         // Save data given by an adaptor to a new dataset, fire-and-forget
-        // Format: parent_grp/adaptor_name/label
+        // Format: nw_grp/adaptor_name/label
         auto writer_f = [&](auto&& adaptor_name, auto&& adaptor, auto&&){
-            parent_grp->open_group(adaptor_name)
-                ->open_dataset(label, {num_vertices})
-                ->write(v, v_end,
-                        [&](auto&& vd){ return adaptor(g[vd]); });
+            const auto grp = nw_grp->open_group(adaptor_name);
+            
+            grp->open_dataset(label, {num_vertices})
+               ->write(v, v_end, [&](auto&& vd){ return adaptor(g[vd]); });
+
+            // NOTE At the moment this attribute is added to the data group
+            //      every time data is written, overwriting the existing one.
+            //      Once the DataManager is available this could and should
+            //      easily be handled such that it is written only once.
+            grp->add_attribute("is_vertex_property", true);
         };
 
         // Apply all tuple elements to the writer function
@@ -348,24 +355,30 @@ void save_graph_properties(GraphType &g,
         log->debug("Graph vertex properties saved with label '{}'.", label);
     }
 
-    // ... edge ...
+    // ... edge property,...
     else if constexpr (std::is_same_v<ObjectType,
-                                      typename GraphType::edge_property_type>)
+                                      typename Graph::edge_property_type>)
     {
         // Collect some information on the graph
         const auto num_edges = boost::num_edges(g);
 
         // Make edge iterators
-        typename GraphType::edge_iterator v, v_end;
+        typename Graph::edge_iterator v, v_end;
         boost::tie(v, v_end) = boost::edges(g);
 
         // Save data given by an adaptor to a new dataset, fire-and-forget
-        // Format: parent_grp/adaptor_name/label
+        // Format: nw_grp/adaptor_name/label
         auto writer_f = [&](auto&& adaptor_name, auto&& adaptor, auto&&){
-            parent_grp->open_group(adaptor_name)
-                ->open_dataset(label, {num_edges})
-                ->write(v, v_end,
-                        [&](auto&& vd){ return adaptor(g[vd]); });
+            const auto grp = nw_grp->open_group(adaptor_name);
+
+            grp->open_dataset(label, {num_edges})
+               ->write(v, v_end, [&](auto&& vd){ return adaptor(g[vd]); });
+
+            // NOTE At the moment this attribute is added to the data group
+            //      every time data is written, overwriting the existing one.
+            //      Once the DataManager is available this could and should
+            //      easily be handled such that it is written only once.
+            grp->add_attribute("is_edge_property", true);
         };
 
         // Apply all tuple elements to the writer function
@@ -380,61 +393,58 @@ void save_graph_properties(GraphType &g,
 
     // ... vertex_descriptor ...
     else if constexpr (std::is_same_v<ObjectType,
-                                      typename GraphType::vertex_descriptor>)
+                                      typename Graph::vertex_descriptor>)
     {
         // Collect some information on the graph
         const auto num_vertices = boost::num_vertices(g);
 
         // Make edge iterators
-        typename GraphType::vertex_iterator v, v_end;
+        typename Graph::vertex_iterator v, v_end;
         boost::tie(v, v_end) = boost::vertices(g);
 
         // Save data given by an adaptor to a new dataset, fire-and-forget
-        // Format: parent_grp/adaptor_name/label
+        // Format: nw_grp/adaptor_name/label
         auto writer_f = [&](auto&& adaptor_name, auto&& adaptor, auto&&){
-            parent_grp->open_group(adaptor_name)
-                    ->open_dataset(label, {num_vertices})
-                    ->write(v, v_end,
-                            [&](auto&& vd){ return adaptor(g, vd); });
+            nw_grp->open_group(adaptor_name)
+                  ->open_dataset(label, {num_vertices})
+                  ->write(v, v_end, [&](auto&& vd){ return adaptor(g, vd); });
         };
 
         // Apply all tuple elements to the writer function
         _graph_utils_helper::apply_all(
-                writer_f,
-                std::index_sequence_for<Adaptors...>(),
-                std::forward<std::tuple<Adaptors...> >(adaptor_tuple)
+            writer_f,
+            std::index_sequence_for<Adaptors...>(),
+            std::forward<std::tuple<Adaptors...> >(adaptor_tuple)
         );
 
         log->debug("Graph vertex properties saved with label '{}'.", label);
-
     }
 
     // ... and edge_descriptor
     else if constexpr (std::is_same_v<ObjectType,
-                                      typename GraphType::edge_descriptor>)
+                                      typename Graph::edge_descriptor>)
     {
 
         // Collect some information on the graph
         const auto num_edges = boost::num_edges(g);
 
         // Make edge iterators
-        typename GraphType::edge_iterator v, v_end;
+        typename Graph::edge_iterator v, v_end;
         boost::tie(v, v_end) = boost::edges(g);
 
         // Save data given by an adaptor to a new dataset, fire-and-forget
-        // Format: parent_grp/adaptor_name/label
+        // Format: nw_grp/adaptor_name/label
         auto writer_f = [&](auto&& adaptor_name, auto&& adaptor, auto&&){
-            parent_grp->open_group(adaptor_name)
-                    ->open_dataset(label, {num_edges})
-                    ->write(v, v_end,
-                            [&](auto&& vd){ return adaptor(g, vd); });
+            nw_grp->open_group(adaptor_name)
+                  ->open_dataset(label, {num_edges})
+                  ->write(v, v_end, [&](auto&& vd){ return adaptor(g, vd); });
         };
 
         // Apply all tuple elements to the writer function
         _graph_utils_helper::apply_all(
-                writer_f,
-                std::index_sequence_for<Adaptors...>(),
-                std::forward<std::tuple<Adaptors...> >(adaptor_tuple)
+            writer_f,
+            std::index_sequence_for<Adaptors...>(),
+            std::forward<std::tuple<Adaptors...> >(adaptor_tuple)
         );
 
         log->debug("Graph edge properties saved with label '{}'.", label);
