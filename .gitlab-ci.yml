@@ -44,13 +44,19 @@ variables:
   # Docker Hub login command
   DOCKER_HUB_LOGIN: docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_PW
 
+  # Documentation server configuration
+  DOC_HOST: root@hermes.iup.uni-heidelberg.de
+  DOC_PORT: 2022      # ... forwards to utopia_doc_server container. root ok ;)
+  DOC_REMOTE_BASE_DIR: /var/utopia_doc
+  DOC_KEEP_LAST_N: 10 # How many documentation pushes to keep
+
 
 # Define the image to use as base for all stages
 image: ${BASE_IMAGE}
 # NOTE Some jobs overwrite this setting locally
 
 stages:
-  - setup     # only runs on master
+  - setup
   - build
   - test
   - deploy
@@ -198,6 +204,7 @@ build:debug-clang:
 # -- Test stage ---------------------------------------------------------------
 # Using the artifacts of the build stage, executes tests of core, data i/o,
 # frontend, and models.
+
 test:core: &test_core
   stage: test
   <<: *ssh_access
@@ -312,6 +319,9 @@ test:cli:
 
 
 # -- Deploy Stage -------------------------------------------------------------
+# Deploy the docker image and the documentation
+# TODO Consider using GitLab Environments for deployment
+
 deploy:dockerhub-latest:
   <<: *dind
   stage: deploy
@@ -327,3 +337,30 @@ deploy:dockerhub-latest:
                    -t ccees/utopia:latest
                    ./
     - docker push ccees/utopia:latest
+
+deploy:docs:
+  stage: deploy
+  <<: *ssh_access
+  only:
+    - master@utopia/utopia
+  dependencies:
+    - build:docs
+  script:
+    # Determine the directory name
+    - export DOC_LATEST=$CI_COMMIT_SHORT_SHA
+    - export DOC_REMOTE_PATH=$DOC_REMOTE_BASE_DIR/$DOC_LATEST
+
+    # Create the directory on the remote
+    - echo "Creating remote directory $DOC_REMOTE_PATH ..."
+    - ssh -p $DOC_PORT $DOC_HOST "mkdir -p $DOC_REMOTE_PATH/doxygen/"
+
+    # Move to built docs and copy sphinx & doxygen HTML documentation to remote
+    - cd build/doc
+    - echo "Uploading documentation to $DOC_REMOTE_PATH/ ..."
+    - scp -P $DOC_PORT -pvr html         $DOC_HOST:$DOC_REMOTE_PATH/
+    - scp -P $DOC_PORT -pvr doxygen/html $DOC_HOST:$DOC_REMOTE_PATH/doxygen/
+
+    # Invoke the cleanup and link script on the doc server, passing arguments
+    - ssh -p $DOC_PORT $DOC_HOST "/postprocess.sh $DOC_REMOTE_BASE_DIR $DOC_LATEST $DOC_KEEP_LAST_N"
+
+    - echo "Finished. :)"

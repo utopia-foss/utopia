@@ -3,7 +3,7 @@
 __Utopia__ (_gr.,_ no-place), a non-existent society described in considerable
 detail. [Wikipedia, 2016]
 
-Utopia is a modelling framework
+Utopia is a modelling framework.
 
 #### Contents of this Readme
 * [Installation](#installation)
@@ -267,30 +267,30 @@ See below for further information.
 
 ## Utopia Documentation
 This Readme only covers the basics. For all further documentation, tutorials,
-guides, model descriptions, and more, have a look into the documentation. It
-is _highly_ recommended to do this.
+guides, model descriptions, frequently asked questions and more, you should
+consult the actual Utopia documentation.
 
-Utopia builds a documentation with [Sphinx](http://www.sphinx-doc.org/en/master/index.html),
-including all relevant information for the every-day user as well as
-developers. Additionally, a C++ code documentation is built by Doxygen. To
-build the docs locally, navigate to the `build` directory and execute
+The latest build (corresponding to the latest commit to `master`) is available
+[here](https://hermes.iup.uni-heidelberg.de/utopia_doc/latest/html/index.html).
+
+To build the docs locally, navigate to the `build` directory and execute
 
 ```bash
 make doc
 ```
 
-The user documentation will then be located at `build/doc/html/`, and the
-Doxygen documentation at `build/doc/doxygen/html/`. Open the respective
-`index.html` files to browse the documentation.
-
-For first-time users, it is recommended to check out the Utopia Tutorial there.
+The [Sphinx](http://www.sphinx-doc.org/en/master/index.html)-built user
+documentation will then be located at `build/doc/html/`, and the
+C++ [doxygen](http://www.stack.nl/~dimitri/doxygen/)-documentation can be found
+at `build/doc/doxygen/html/`. Open the respective `index.html` files to browse
+the documentation.
 
 
 ## Quickstart
 This section gives a glimpse into working with Utopia. It's not more than a
 glimpse; after playing around with this,
-[build the documentation](#utopia-documentation) to have access to more
-information material, and especially: the **Utopia Tutorial**.
+[consult the documentation](#utopia-documentation) to have access to more
+information material, and especially: the [**Utopia Tutorial**](https://hermes.iup.uni-heidelberg.de/utopia_doc/latest/html/guides/tutorial.html).
 
 ### How to run a model?
 The Utopia command line interface (CLI) is, by default, only available in a
@@ -341,9 +341,8 @@ Best place to continue from here: The tutorial in the Utopia documentation.
 ## Information for Developers
 ### New to Utopia? How do I implement a model?
 Aside from exploring the already existing models, you should check out the
-guides in the documentation (see above on
-[how to build it](#building-the-documentation)) which will get you started for
-implementing your own, fancy, new Utopia model. :tada:
+guides in the [documentation](#utopia-documentation)) which will get you
+started for implementing your own, fancy, new Utopia model. :tada:
 
 
 ### Build Types
