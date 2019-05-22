@@ -33,6 +33,11 @@ def test_networkgroup():
         # Check that the number of vertices matches
         assert g.number_of_nodes() == cfg['Hierarnet']['create_network']['num_vertices']
 
+        # TODO Extend tests to test that dantro interface works as desired. The
+        #      full functionality is tested on dantro side, but we would need a
+        #      model that uses the save_graph_properties functionality such
+        #      that it could be tested here...
+
 def test_universegroup_get_times_array():
     """Test the universe group"""
     mt = ModelTest("dummy", test_file=__file__)

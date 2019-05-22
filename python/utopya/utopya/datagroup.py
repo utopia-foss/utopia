@@ -11,7 +11,7 @@ import numpy as np
 import dantro as dtr
 import dantro.groups
 
-from .datacontainer import NumpyDC, XarrayDC
+from .datacontainer import XarrayDC
 
 # Configure and get logger
 log = logging.getLogger(__name__)
@@ -68,14 +68,22 @@ class MultiverseGroup(dtr.groups.ParamSpaceGroup):
     _NEW_GROUP_CLS = UniverseGroup
 
 
+class TimeSeriesGroup(dtr.groups.TimeSeriesGroup):
+    """This group is meant to manage time series data, with the container names
+    being interpreted as the time coordinate.
+    """
+    _NEW_CONTAINER_CLS = XarrayDC
+
+
 class NetworkGroup(dtr.groups.NetworkGroup):
     """This group is meant to manage network data and create a NetworkX graph
-    from it."""
-    # Allow only Numpy Data Containers for now # FIXME
-    _NEW_CONTAINER_CLS = NumpyDC
+    from it.
+    """
+    # Let new groups contain only time series
+    _NEW_GROUP_CLS = TimeSeriesGroup
 
     # Define allowed member container types
-    _ALLOWED_CONT_TYPES = (NumpyDC,)
+    _ALLOWED_CONT_TYPES = (TimeSeriesGroup, XarrayDC)
 
     # Expected names for the containers that hold vertex/edge information
     _NWG_node_container = "_vertices"
@@ -83,4 +91,6 @@ class NetworkGroup(dtr.groups.NetworkGroup):
 
     # Expected _group_ attribute names determining the type of graph
     _NWG_attr_directed = "is_directed"
-    _NWG_attr_parallel = "is_parallel"
+    _NWG_attr_parallel = "allows_parallel"
+    _NWG_attr_node_prop = "is_vertex_property"
+    _NWG_attr_edge_prop = "is_edge_property"

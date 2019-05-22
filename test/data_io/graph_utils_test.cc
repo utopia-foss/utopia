@@ -109,7 +109,7 @@ GraphType create_and_initialize_test_graph(const int num_vertices, const int num
 /// Test the save graph functionality
 void test_save_graph()
 {
-    using Utopia::DataIO::open_graph_group;
+    using Utopia::DataIO::create_graph_group;
     using Utopia::DataIO::save_graph;
 
     // Create a test HDFFile and a HDFGroup
@@ -124,7 +124,7 @@ void test_save_graph()
     auto g_vvu = create_and_initialize_test_graph<Graph_vertvecS_edgevecS_undir>(10,3);
 
     // Open a graph group and save the graph
-    auto grp_vvu = open_graph_group(g_vvu, grp, "g_vvu");
+    auto grp_vvu = create_graph_group(g_vvu, grp, "g_vvu");
     save_graph(g_vvu, grp_vvu);
 
     // Test case 2:
@@ -147,7 +147,7 @@ void test_save_graph()
     VertexIdMapLLU vertex_id_map_llu = get(&Vertex::id, g_llu);
 
     // Open a graph group and save the graph
-    auto grp_llu = open_graph_group(g_llu, grp, "g_llu");
+    auto grp_llu = create_graph_group(g_llu, grp, "g_llu");
     save_graph(g_llu, grp_llu, vertex_id_map_llu);
 
 
@@ -171,7 +171,7 @@ void test_save_graph()
     VertexIdMapSSU vertex_id_map_ssu = get(&Vertex::id, g_ssu);
 
     // Open a graph group and save the graph
-    auto grp_ssu = open_graph_group(g_ssu, grp, "g_ssu");
+    auto grp_ssu = create_graph_group(g_ssu, grp, "g_ssu");
     save_graph(g_ssu, grp_ssu, vertex_id_map_ssu);
 
 
@@ -184,7 +184,7 @@ void test_save_graph()
     auto g_vvd = create_and_initialize_test_graph<Graph_vertvecS_edgevecS_dir>(10,3);
 
     // Open a graph group and save the graph
-    auto grp_vvd = open_graph_group(g_vvd, grp, "g_vvd");
+    auto grp_vvd = create_graph_group(g_vvd, grp, "g_vvd");
     save_graph(g_vvd, grp_vvd);
 
 
