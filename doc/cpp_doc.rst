@@ -2,7 +2,7 @@
 C++ documentation
 -----------------
 
-Just have a look at the `Utopia C++ documentation <../../doxygen/html/index.html>`_. 😃
+Just have a look at the `Utopia C++ documentation <../doxygen/html/index.html>`_. 😃
 
 Writing documentation
 ^^^^^^^^^^^^^^^^^^^^^
