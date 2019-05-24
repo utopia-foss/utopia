@@ -40,7 +40,7 @@ endif()
 # -- utopya --
 python_find_package(PACKAGE utopya VERSION 0.3.0)
 
-if(NOT PYTHON_PACKAGE_dantro_FOUND)
+if(NOT PYTHON_PACKAGE_utopya_FOUND)
     message(STATUS "Installing utopya ...")
 
     # For easier development: install using symlinks to the local package
