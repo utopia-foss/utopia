@@ -1,14 +1,18 @@
 #ifndef UTOPIA_DATAIO_GRAPH_UTILS_HH
 #define UTOPIA_DATAIO_GRAPH_UTILS_HH
 
-#include <boost/graph/properties.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/adjacency_matrix.hpp>
 #include <boost/graph/graph_traits.hpp>
+#include <boost/graph/properties.hpp>
+#include <boost/hana/for_each.hpp>
+#include <boost/hana/all_of.hpp>
+#include <boost/hana/ext/std/tuple.hpp>
 
 #include <hdf5.h>
 
 #include "../core/logging.hh"
+#include "../core/utils.hh"
 #include "hdfgroup.hh"
 #include "hdfdataset.hh"
 
@@ -171,98 +175,21 @@ void save_graph(const Graph& g,
 }
 
 
-namespace _graph_utils_helper {
+// helper functions for checking properties of adaptor types for save_graph_properties
 
-/** Helper to apply all sub-adaptors of a name-adaptor-tuple to the writer
- * Determines the tuple size and adapts the dataset size
-*
-* @tparam Function
-* @tparam Is
-* @tparam Tuple
-*
-* @param writer_f lambda to save data
-* @param std::index_sequence The index_sequence to unpack
-*                            the `name_adaptor_tuple`
-* @param name_adaptor_tuple A name-lambda-tuple
-*
-* @return void
-*/
-template<typename Function, std::size_t... Is, typename Tuple>
-constexpr void apply_to_write(Function&& writer_f,
-                              std::index_sequence<0, Is...>,
-                              Tuple&& name_adaptor_tuple)
+// checks if typename T is tuplelike of size 2, base case
+template <typename T, typename U = std::void_t<>>
+struct is_size_two : std::false_type
 {
+};
 
-    // Get size of sub-tuple
-    constexpr std::size_t N = std::tuple_size<Tuple>::value;
-
-    static_assert(N == 2, "Irregular name-adaptor-tuple size"
-                          "Should be 2");
-
-    (std::apply(
-        writer_f,
-        std::forward_as_tuple(
-            // Get the dataset name
-            std::get<0>(name_adaptor_tuple),
-            // apply all sub-adaptors
-            std::get<Is>(name_adaptor_tuple),
-            // size equal number adaptors
-            N - 1)
-            ),
-        ...);
-
-}
-
-/** Helper to call `apply_to_writer` for every lambda of the input tuple
-*
-* @tparam Function
-* @tparam Adaptors
-*
-* @param writer_f lambda to save data
-* @param name_adaptor_tuple Tuple of a datagroup-name and an arbitrary
-*                           amount of lambdas
-*                           which state how to get data from a given graph
-*
-* @return void
-*/
-template<typename Function, typename... Adaptors>
-constexpr void apply_one(Function&& writer_f,
-                         std::tuple<Adaptors...>& name_adaptor_tuple)
+// checks if typenam T is tuplelike of size 2, positive case
+template <typename T>
+struct is_size_two<
+    T, std::void_t<std::enable_if_t<std::tuple_size_v<std::decay_t<T>> == 2>>>
+    : std::true_type
 {
-    apply_to_write(
-        writer_f,
-        std::index_sequence_for<Adaptors...>(),
-        std::forward<std::tuple<Adaptors...> >(name_adaptor_tuple)
-        );
-
-}
-
-
-/** Helper to call `apply_one` for every element of the input tuple
-*
-* @tparam Function
-* @tparam Is
-* @tparam Tuple
-*
-* @param writer_f lambda to save data
-* @param std::index_sequence The index_sequence to unpack the `adaptor_tuple`
-* @param adaptor_tuple Tuple of name-lambda-tuples
-*
-* @return void
-*/
-template<typename Function, std::size_t... Is, typename Tuple>
-constexpr void apply_all(Function&& writer_f,
-                         std::index_sequence<Is...>,
-                         Tuple&& adaptor_tuple)
-{
-    (apply_one(
-        std::forward<Function>(writer_f),
-        std::get<Is>(adaptor_tuple)),
-                ...);
-}
-
-} // namespace _graph_utils_helper
-
+};
 
 /** This function writes the results of all functions in a named tuple,
 *   applied to all vertices/edges of a boost::graph into a HDFGroup.
@@ -297,14 +224,33 @@ constexpr void apply_all(Function&& writer_f,
 *
 * @return void
 */
-template<typename ObjectType,
-         typename Graph,
-         typename... Adaptors>
-void save_graph_properties(Graph& g,
-                           const std::shared_ptr<HDFGroup>& nw_grp,
-                           const std::string& label,
-                           std::tuple<Adaptors...>& adaptor_tuple)
+template <typename ObjectType, typename Graph, typename... Adaptors>
+void
+save_graph_properties(Graph& g, const std::shared_ptr<HDFGroup>& nw_grp,
+                      const std::string& label,
+                      std::tuple<Adaptors...>& adaptor_tuple)
 {
+
+    static_assert(
+        // assert size of adaptors
+        std::conjunction_v<is_size_two<std::decay_t<Adaptors>>...>,
+        "Error: The content of 'adaptor_tuple' has to be tuplelike of size 2");
+
+    static_assert(
+        // assert stringlike-ness of first thing
+        std::conjunction_v<Utils::is_string<
+            std::tuple_element_t<0, std::decay_t<Adaptors>>>...>,
+        "Error, the first entry of each entry of 'adaptor_tuple' has to be "
+        "string like, to name the adaptor");
+
+    static_assert(
+        // assert that the second one is a callable
+        std::conjunction_v<Utils::is_callable_object<
+            std::tuple_element_t<1, std::decay_t<Adaptors>>>...>,
+        "Error, the second enry of each entry of 'adaptor_tuple has to be a "
+        "callable "
+        "object");
+
     static_assert(
         std::is_same_v<ObjectType, typename Graph::vertex_property_type>
         or
@@ -313,8 +259,11 @@ void save_graph_properties(Graph& g,
         std::is_same_v<ObjectType, typename Graph::vertex_descriptor>
         or
         std::is_same_v<ObjectType, typename Graph::edge_descriptor>,
-        "The vertex or edge type does not match the given graph!"
+        "Error: the vertex or edge type does not match the given graph!"
     );
+
+    // enum to ACCess members of adaptortuple elements by name
+    enum Acc{name, adaptor};
 
     // Get a logger
     auto log = spdlog::get("data_io");
@@ -330,13 +279,28 @@ void save_graph_properties(Graph& g,
         typename Graph::vertex_iterator v, v_end;
         boost::tie(v, v_end) = boost::vertices(g);
 
+
+        // assert scalar property of adaptor return type
+        static_assert(
+            std::conjunction_v<
+                std::is_scalar<std::invoke_result_t<
+                    std::tuple_element_t<1, Adaptors>,
+                    decltype(g[*v])
+                    >
+                >...
+            >,    
+            "Error: Adaptors need to return scalar types.");
+
         // Save data given by an adaptor to a new dataset, fire-and-forget
-        // Format: nw_grp/adaptor_name/label
-        auto writer_f = [&](auto&& adaptor_name, auto&& adaptor, auto&&){
-            const auto grp = nw_grp->open_group(adaptor_name);
+        // adaptor_pair = [name, adaptor_function]
+        auto writer_f = [&](auto&& adaptor_pair) {
+            const auto grp = nw_grp->open_group(std::get<Acc::name>(adaptor_pair));
+            
             
             grp->open_dataset(label, {num_vertices})
-               ->write(v, v_end, [&](auto&& vd){ return adaptor(g[vd]); });
+               ->write(v, v_end, [&](auto&& vd){ 
+                    return std::get<Acc::adaptor>(adaptor_pair)(g[vd]);
+                });
 
             // NOTE At the moment this attribute is added to the data group
             //      every time data is written, overwriting the existing one.
@@ -345,12 +309,8 @@ void save_graph_properties(Graph& g,
             grp->add_attribute("is_vertex_property", true);
         };
 
-        // Apply all tuple elements to the writer function
-        _graph_utils_helper::apply_all(
-            writer_f,
-            std::index_sequence_for<Adaptors...>(),
-            std::forward<std::tuple<Adaptors...> >(adaptor_tuple)
-        );
+        boost::hana::for_each(
+          std::forward<std::tuple<Adaptors...>>(adaptor_tuple), writer_f);
 
         log->debug("Graph vertex properties saved with label '{}'.", label);
     }
@@ -363,16 +323,24 @@ void save_graph_properties(Graph& g,
         const auto num_edges = boost::num_edges(g);
 
         // Make edge iterators
-        typename Graph::edge_iterator v, v_end;
-        boost::tie(v, v_end) = boost::edges(g);
+        typename Graph::edge_iterator ei, ei_end;
+        boost::tie(ei, ei_end) = boost::edges(g);
+
+        // assert scalar property of adaptor return type
+        static_assert(
+            std::conjunction_v<std::is_scalar<std::invoke_result_t<
+                std::tuple_element_t<1, Adaptors>, decltype(g[*ei])>>...>,
+            "Error: Adaptors need to return scalar types.");
 
         // Save data given by an adaptor to a new dataset, fire-and-forget
-        // Format: nw_grp/adaptor_name/label
-        auto writer_f = [&](auto&& adaptor_name, auto&& adaptor, auto&&){
-            const auto grp = nw_grp->open_group(adaptor_name);
+        // adaptor_pair = [name, adaptor_function]
+        auto writer_f = [&](auto&& adaptor_pair) {
+            const auto grp = nw_grp->open_group(std::get<Acc::name>(adaptor_pair));
 
-            grp->open_dataset(label, {num_edges})
-               ->write(v, v_end, [&](auto&& vd){ return adaptor(g[vd]); });
+            grp->open_dataset(label, { num_edges })
+               ->write(ei, ei_end, [&](auto&& ed) {
+                    return std::get<Acc::adaptor>(adaptor_pair)(g[ed]);
+              });
 
             // NOTE At the moment this attribute is added to the data group
             //      every time data is written, overwriting the existing one.
@@ -381,12 +349,9 @@ void save_graph_properties(Graph& g,
             grp->add_attribute("is_edge_property", true);
         };
 
-        // Apply all tuple elements to the writer function
-        _graph_utils_helper::apply_all(
-            writer_f,
-            std::index_sequence_for<Adaptors...>(),
-            std::forward<std::tuple<Adaptors...> >(adaptor_tuple)
-        );
+
+        boost::hana::for_each(
+          std::forward<std::tuple<Adaptors...>>(adaptor_tuple), writer_f);
 
         log->debug("Graph edge properties saved with label '{}'.", label);
     }
@@ -402,20 +367,26 @@ void save_graph_properties(Graph& g,
         typename Graph::vertex_iterator v, v_end;
         boost::tie(v, v_end) = boost::vertices(g);
 
+        // assert scalar property of adaptor return type
+        static_assert(
+            std::conjunction_v<std::is_scalar<
+                std::invoke_result_t<std::tuple_element_t<1, Adaptors>,
+                                     decltype(g), decltype(*v)&>>...>,
+            "Error: Adaptors need to return scalar types.");
+
         // Save data given by an adaptor to a new dataset, fire-and-forget
-        // Format: nw_grp/adaptor_name/label
-        auto writer_f = [&](auto&& adaptor_name, auto&& adaptor, auto&&){
-            nw_grp->open_group(adaptor_name)
-                  ->open_dataset(label, {num_vertices})
-                  ->write(v, v_end, [&](auto&& vd){ return adaptor(g, vd); });
+        // adaptor_pair = [name, adaptor_function]
+        auto writer_f = [&](auto&& adaptor_pair) {
+
+            nw_grp->open_group(std::get<Acc::name>(adaptor_pair))
+              ->open_dataset(label, { num_vertices })
+              ->write(v, v_end, [&](auto&& vd) {
+                  return std::get<Acc::adaptor>(adaptor_pair)(g, vd);
+              });
         };
 
-        // Apply all tuple elements to the writer function
-        _graph_utils_helper::apply_all(
-            writer_f,
-            std::index_sequence_for<Adaptors...>(),
-            std::forward<std::tuple<Adaptors...> >(adaptor_tuple)
-        );
+        boost::hana::for_each(
+            std::forward<std::tuple<Adaptors...>>(adaptor_tuple), writer_f);
 
         log->debug("Graph vertex properties saved with label '{}'.", label);
     }
@@ -429,23 +400,28 @@ void save_graph_properties(Graph& g,
         const auto num_edges = boost::num_edges(g);
 
         // Make edge iterators
-        typename Graph::edge_iterator v, v_end;
-        boost::tie(v, v_end) = boost::edges(g);
+        typename Graph::edge_iterator ei, ei_end;
+        boost::tie(ei, ei_end) = boost::edges(g);
+
+        // assert scalar property of adaptor return type
+        static_assert(
+            std::conjunction_v<std::is_scalar<
+                std::invoke_result_t<std::tuple_element_t<1, Adaptors>,
+                                     decltype(g), decltype(*ei)&>>...>,
+            "Error: Adaptors need to return scalar types.");
 
         // Save data given by an adaptor to a new dataset, fire-and-forget
-        // Format: nw_grp/adaptor_name/label
-        auto writer_f = [&](auto&& adaptor_name, auto&& adaptor, auto&&){
-            nw_grp->open_group(adaptor_name)
-                  ->open_dataset(label, {num_edges})
-                  ->write(v, v_end, [&](auto&& vd){ return adaptor(g, vd); });
+        // adaptor_pair = [name, adaptor_function]
+        auto writer_f = [&](auto&& adaptor_pair) {
+            nw_grp->open_group(std::get<Acc::name>(adaptor_pair))
+                ->open_dataset(label, { num_edges })
+                ->write(ei, ei_end, [&](auto&& ed) {
+                    return std::get<Acc::adaptor>(adaptor_pair)(g, ed);
+              });
         };
 
-        // Apply all tuple elements to the writer function
-        _graph_utils_helper::apply_all(
-            writer_f,
-            std::index_sequence_for<Adaptors...>(),
-            std::forward<std::tuple<Adaptors...> >(adaptor_tuple)
-        );
+        boost::hana::for_each(
+            std::forward<std::tuple<Adaptors...>>(adaptor_tuple), writer_f);
 
         log->debug("Graph edge properties saved with label '{}'.", label);
     }
