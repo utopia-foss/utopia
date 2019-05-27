@@ -14,10 +14,16 @@ namespace Utopia {
  */
 
 /// A grid discretization using square cells
-/** \detail This is a grid discretization where the cells are vector spaces
-  *         that are spanned by orthogonal basis vectors and each cell has the
-  *         same physical extent in each dimension. In the 2D case, this refers
-  *         to perfectly square cells; in 3D these would be perfect cubes, etc.
+/** This is a grid discretization where the cells are vector spaces that are
+  * spanned by orthogonal basis vectors and each cell has the same physical
+  * extent in each dimension. In the 2D case, this refers to perfectly square
+  * cells; in 3D these would be perfect cubes, etc.
+  *
+  * \note Indices are constructed in "Fortran"-style, i.e. with the first index
+  *       changing fastest (also called "column major").
+  *       For example, when iterating over the cell IDs and having a 2D space,
+  *       the iteration goes first along the x-axis and then along the y-axis:
+  *       ``0, 1, …, N_x, N_x + 1, …, 2*N_x, 2*N_x + 1, …, N_x * N_y - 1``
   */
 template<class Space>
 class SquareGrid

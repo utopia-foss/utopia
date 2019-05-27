@@ -138,8 +138,8 @@ def state(dm: DataManager, *,
             kws = dict(vmin=limits[0], vmax=limits[1], **kws)
 
         # Create imshow object on the currently selected axis
-        im = hlpr.ax.imshow(data, cmap=colormap, animated=True, origin='lower',
-                            **kws)
+        im = hlpr.ax.imshow(data.T, cmap=colormap, animated=True,
+                            origin='lower', aspect='equal', **kws)
         
         # Create colorbars
         # TODO Should be done by helper
@@ -221,7 +221,7 @@ def state(dm: DataManager, *,
                                     all_data=all_data, time_idx=time_idx)
 
                 # Update imshow data without creating a new object
-                ims[prop_name].set_data(data)
+                ims[prop_name].set_data(data.T)
 
                 # If no limits are provided, autoscale the new limits in the
                 # case of continuous colormaps. A discrete colormap, that is
@@ -313,10 +313,10 @@ def state_anim(dm: DataManager, *,
 
         # Create imshow
         if limits:
-            im = ax.imshow(data, cmap=colormap, animated=True,
+            im = ax.imshow(data.T, cmap=colormap, animated=True,
                         origin='lower', vmin=limits[0], vmax=limits[1])
         else:
-            im = ax.imshow(data, cmap=colormap, animated=True,
+            im = ax.imshow(data.T, cmap=colormap, animated=True,
                         origin='lower')
 
         # Set title
@@ -421,7 +421,7 @@ def state_anim(dm: DataManager, *,
 
                 # For t>0, it is better to update imshow data without creating
                 # a new object
-                ims[prop_name].set_data(data)
+                ims[prop_name].set_data(data.T)
 
                 # If no limits are provided, autoscale the new limits
                 # in the case of continuous colormaps.

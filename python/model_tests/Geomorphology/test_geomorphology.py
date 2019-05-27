@@ -49,6 +49,14 @@ def test_output():
 
 
 def test_drainage_network():
+    """Test the correct initialization of the drainage network
+    
+    The drainage of water must be a conserved quantity. The (instantly
+    cumulative) drainage area at the southern (outflow) boundary must equal the
+    number of cells in the system (note it is not normalized to the space units).
+    Hence the sum over the cells with index 'y'=0 in dim 'x' must equal the
+    number of cells.    
+    """
     mv, dm = mtc.create_run_load(from_cfg="network.yml", perform_sweep=True)
 
     for uni_no, uni in dm['multiverse'].items():
@@ -59,5 +67,6 @@ def test_drainage_network():
         grid_shape = network_data.shape[1:]
         num_cells = grid_shape[0] * grid_shape[1]
 
-        assert np.sum(network_data, axis=2)[0][0] == num_cells
+        assert network_data.isel({'y': 0, 'time': 0}).sum(dim='x') == num_cells
+        assert network_data.isel({'y': 0, 'time': 1}).sum(dim='x') == num_cells
 
