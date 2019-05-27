@@ -197,6 +197,10 @@ def test_format_time():
     assert t.format_time(123) == "2m 3s"
     assert t.format_time(123, ms_precision=2) == "2m 3s"
     assert t.format_time(60*60*24 + 60*60*2 + 60*3 + 4) == "1d 2h 3m 4s"
+    assert t.format_time(60*60*24 + 60*60*2 + 60*3 + 4,
+                         max_num_parts=3) == "1d 2h 3m"
+    assert t.format_time(60*60*24 + 60*60*2 + 60*3 + 4,
+                         max_num_parts=2) == "1d 2h"
 
 def test_fill_line():
     """Tests the fill_line and center_in_line methods"""

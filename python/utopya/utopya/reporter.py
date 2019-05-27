@@ -11,7 +11,7 @@ from collections import OrderedDict, Counter
 
 import numpy as np
 
-import utopya.tools as tools
+from .tools import format_time, TTY_COLS
 
 # Initialise logger
 log = logging.getLogger(__name__)
@@ -23,7 +23,8 @@ TTY_MARGIN = 2
 
 class ReportFormat:
 
-    def __init__(self, *, parser: Callable, writers: List[Callable], min_report_intv: float=None):
+    def __init__(self, *, parser: Callable, writers: List[Callable],
+                 min_report_intv: float=None):
         """Initialises a ReportFormat object, which gathers callables needed to
         create a report in a certain format.
         
@@ -109,7 +110,10 @@ class Reporter:
     It needs to be subclassed in order to specialise its reporting functions.
     """
 
-    def __init__(self, *, report_formats: Union[List[str], Dict[str, dict]]=None, default_format: str=None, report_dir: str=None, suppress_cr: bool=False):
+    def __init__(self, *,
+                 report_formats: Union[List[str], Dict[str, dict]]=None,
+                 default_format: str=None, report_dir: str=None,
+                 suppress_cr: bool=False):
         """Initialize the Reporter for the WorkerManager.
         
         Args:
@@ -211,7 +215,10 @@ class Reporter:
 
     # Public API ..............................................................
 
-    def add_report_format(self, name: str, *, parser: str=None, write_to: Union[str, Dict[str, dict]]='stdout', min_report_intv: float=None, rf_kwargs: dict=None, **parser_kwargs):
+    def add_report_format(self, name: str, *, parser: str=None,
+                          write_to: Union[str, Dict[str, dict]]='stdout',
+                          min_report_intv: float=None, rf_kwargs: dict=None,
+                          **parser_kwargs):
         """Add a report format to this reporter.
         
         Args:
@@ -279,7 +286,8 @@ class Reporter:
         # Delegate reporting to the ReportFormat class
         return rf.report(**kwargs)
 
-    def parse_and_write(self, *, parser: Union[str, Callable], write_to: Union[str, Callable], **parser_kwargs):
+    def parse_and_write(self, *, parser: Union[str, Callable],
+                        write_to: Union[str, Callable], **parser_kwargs):
         """This function allows to select a parser and writer explicitly.
         
         Args:
@@ -308,7 +316,8 @@ class Reporter:
 
     # Private methods .........................................................
     
-    def _resolve_parser(self, parser: Union[str, Callable], **parser_kwargs) -> Callable:
+    def _resolve_parser(self, parser: Union[str, Callable],
+                        **parser_kwargs) -> Callable:
         """Given a string or a callable, returns the corresponding callable.
         
         Args:
@@ -482,7 +491,8 @@ class Reporter:
         """
         log.log(lvl, s)
 
-    def _write_to_file(self, s: str, *, path: str="_report.txt", mode: str='w'):
+    def _write_to_file(self, s: str, *, path: str="_report.txt",
+                       mode: str='w'):
         """Writes the given string to a file
         
         Args:
@@ -719,7 +729,7 @@ class WorkerManagerReporter(Reporter):
                           p=cntr['finished']/cntr['total'] * 100))
 
     def _parse_progress_bar(self, *,
-                            num_cols: int=(tools.TTY_COLS - TTY_MARGIN),
+                            num_cols: int=(TTY_COLS - TTY_MARGIN),
                             show_total: bool=False, show_times: bool=False,
                             report_no: int=None) -> str:
         """Returns a progress bar.
@@ -835,12 +845,13 @@ class WorkerManagerReporter(Reporter):
 
         # Convert some values to duration strings
         if times['elapsed']:
-            tstrs['elapsed'] = tools.format_time(times['elapsed'])
+            tstrs['elapsed'] = format_time(times['elapsed'])
         else:
             tstrs['elapsed'] = "(not started)"
 
         if times['est_left']:
-            tstrs['est_left'] = tools.format_time(times['est_left'])
+            tstrs['est_left'] = format_time(times['est_left'],
+                                            max_num_parts=2)
         else:
             # No est_left available 
             # Distinguish between finished and not started simulaltions
@@ -908,7 +919,8 @@ class WorkerManagerReporter(Reporter):
 
     # Multi-line parsers . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
-    def _parse_runtime_stats(self, *, fstr: str="  {k:<13s} {v:}", join_char="\n", report_no: int=None) -> str:
+    def _parse_runtime_stats(self, *, fstr: str="  {k:<13s} {v:}",
+                             join_char="\n", report_no: int=None) -> str:
         """Parses the runtime statistics dict into a multiline string
         
         Args:
@@ -924,12 +936,13 @@ class WorkerManagerReporter(Reporter):
         """
         rtstats = self.calc_runtime_statistics()
 
-        parts = [fstr.format(k=k, v=tools.format_time(v, ms_precision=1))
+        parts = [fstr.format(k=k, v=format_time(v, ms_precision=1))
                  for k, v in rtstats.items()]
 
         return join_char.join(parts)
 
-    def _parse_sim_report(self, *, fstr: str="  {k:<13s} {v:}", min_num: int=1, report_no: int=None) -> str:
+    def _parse_sim_report(self, *, fstr: str="  {k:<13s} {v:}",
+                          min_num: int=1, report_no: int=None) -> str:
         """Parses the report of the simulation into a multiline string
         
         Keyword Arguments:
@@ -966,7 +979,7 @@ class WorkerManagerReporter(Reporter):
         parts += [""]
     
         # Add the runtime statistics
-        parts += [fstr.format(k=k, v=tools.format_time(v, ms_precision=1))
+        parts += [fstr.format(k=k, v=format_time(v, ms_precision=1))
                   for k, v in rtstats.items()]
 
         # In cluster mode, add more information
@@ -999,7 +1012,8 @@ class WorkerManagerReporter(Reporter):
             *args: Passed on to parent method
             path (str, optional): The path to save to
             cluster_mode_path (str, optional): The format string to use for the
-                path in cluster mode. _Requires_ to contain the format key '{0:}' which retains the given `path`, extension split off.
+                path in cluster mode. _Requires_ to contain the format key
+                '{0:}' which retains the given `path`, extension split off.
                 Extension can be used via 'ext' (already includes the dot).
                 Additional format keys: 'node_name', 'job_id'.
             **kwargs: Passed on to parent method
