@@ -47,6 +47,5 @@ def test_percolation_mode():
         data = uni['data']['ForestFire']['kind']
 
         # All cells in the bottom row are always in state empty
-        assert np.all((data[1:, :, :] == 0)[:, 0, :])
+        assert (data.isel(y=0, time=slice(1, None)) == 0).all()
         # NOTE For the initial state, this is not true.
-        # NOTE The "bottom" row actually corresponds to "x" coordinate here

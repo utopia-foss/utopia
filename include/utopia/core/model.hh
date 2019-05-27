@@ -634,6 +634,8 @@ public:
         dset->add_attribute("content", "grid");
         dset->add_attribute("grid_shape", cm.grid()->shape());
         dset->add_attribute("space_extent", cm.grid()->space()->extent);
+        dset->add_attribute("index_order", "F");
+        // NOTE CellManager uses "column-style" index ordering, also called "Fortran-style".
 
         _log->debug("Added attributes to dataset '{}' to mark it as storing "
                     "grid data.", name);

@@ -64,12 +64,12 @@ def test_slope():
         
         # value changes for every y value
         true_data = np.empty(data.grid_shape)
-        true_data[0].fill(0.)
-        true_data[1].fill(0.)
-        true_data[2].fill(0.5)
-        true_data[3].fill(0.5)
-        true_data[4].fill(1.)
-        true_data[5].fill(1.)
+        true_data[:,0].fill(0.)
+        true_data[:,1].fill(0.)
+        true_data[:,2].fill(0.5)
+        true_data[:,3].fill(0.5)
+        true_data[:,4].fill(1.)
+        true_data[:,5].fill(1.)
         assert np.isclose(data.sel({'time': 0}), true_data).all()
         assert np.isclose(data.sel({'time': 1}), true_data*1).all()
         assert np.isclose(data.sel({'time': 2}), true_data*2).all()

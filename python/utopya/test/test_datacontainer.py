@@ -19,10 +19,10 @@ def test_griddc():
     data_1d = np.arange(6)
 
     # Create a GridDC and assert that the shape is correct
-    attrs_1d = dict(content="grid", grid_shape=(2, 3))
+    attrs_1d = dict(content="grid", grid_shape=(2, 3), index_order="F")
     gdc_1d = GridDC(name="data_1d", data=data_1d, attrs=attrs_1d)
 
-    assert gdc_1d.shape == (2,3)
+    assert gdc_1d.shape == (2, 3)
     assert 'x' in gdc_1d.dims
     assert 'y' in gdc_1d.dims
 
@@ -32,13 +32,9 @@ def test_griddc():
     for i in range(attrs_1d['grid_shape'][1]):
         assert i == gdc_1d.data.coords['y'][i]
     
-    # Assert that the data is correct and have the form
-    # [[ 0  1  2 ]
-    #  [ 3  4  5 ]]
-    # To check this, iterate through all elements in the data and check 
-    # that each value is at the expected location. 
-    for i in range(6):
-        assert gdc_1d[i//3][i%3] == i
+    # Assert that the data is correct and have the form:
+    assert (gdc_1d == np.array([[0, 2, 4],
+                                [1, 3, 5]])).all()
 
     # The format string should contains dimension information
     assert 'x: 2' in gdc_1d._format_info()
@@ -60,17 +56,15 @@ def test_griddc():
 
 
     ### 2d data . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-    # Create some test data of the form
-    # [[ 0  1  2  3  4  5 ]
-    #  [ 6  7  8  9 10 11 ]]
+    # Create some test data of the form (2,3,4)
     # Data in columns represents the time and data in rows the grid data
-    data_2d = np.arange(12).reshape((2, 6))
+    data_2d = np.arange(2*3*4).reshape((2, 12))
 
     # Create a GridDC and assert that the shape is correct
-    attrs_2d = dict(content="grid", grid_shape=(2, 3))
+    attrs_2d = dict(content="grid", grid_shape=(3, 4), index_order="F")
     gdc_2d = GridDC(name="data_2d", data=data_2d, attrs=attrs_2d)
     
-    assert gdc_2d.shape == (2,2,3)
+    assert gdc_2d.shape == (2,3,4)
     assert 'time' in gdc_2d.dims
     assert 'x' in gdc_2d.dims
     assert 'y' in gdc_2d.dims
@@ -83,26 +77,44 @@ def test_griddc():
 
     # The format string should contains dimension information
     assert 'time: 2' in gdc_2d._format_info()
-    assert 'x: 2' in gdc_2d._format_info()
-    assert 'y: 3' in gdc_2d._format_info()
+    assert 'x: 3' in gdc_2d._format_info()
+    assert 'y: 4' in gdc_2d._format_info()
 
     # Assert that the data is correct and of the form
-    # [[[ 0  1  2 ]
-    #   [ 3  4  5 ]]
-    #  [[ 6  7  8 ]
-    #   [ 9 10 11 ]]]
-    # To check this, iterate through all elements in the data and check 
-    # that each value is at the expected location.
-    for i in range(12):
-        if i//6 == 0:
-            assert gdc_2d[0][i//3][i%3] == i
-        else:
-            tmp = i - 6
-            assert gdc_2d[1][tmp//3][tmp%3] == i
+    expected_2d = np.array([[[ 0,  3,  6,  9],
+                             [ 1,  4,  7, 10],
+                             [ 2,  5,  8, 11]],
+                            [[12, 15, 18, 21],
+                             [13, 16, 19, 22],
+                             [14, 17, 20, 23]]])
+    assert (gdc_2d == expected_2d).all()
+
+    ### 2d data (C-order) . . . . . . . . . . . . . . . . . . . . . . . . . . .
+    data_2d_C = np.arange(2*3*4).reshape((2, 12))
+
+    # Create a GridDC and assert that the shape is correct
+    attrs_2d_C = dict(content="grid", grid_shape=(3, 4), index_order="C")
+    gdc_2d_C = GridDC(name="data_2d_C", data=data_2d_C, attrs=attrs_2d_C)
+    
+    assert gdc_2d_C.shape == (2,3,4)
+    expected_2d_C = np.array([[[ 0,  1,  2,  3],
+                               [ 4,  5,  6,  7],
+                               [ 8,  9, 10, 11]],
+                              [[12, 13, 14, 15],
+                               [16, 17, 18, 19],
+                               [20, 21, 22, 23]]])
+    assert (gdc_2d_C == expected_2d_C).all()
+
+
+    # Error messages ..........................................................
+    # Missing index order attribute
+    with pytest.raises(KeyError, match="No attribute \'index_order\' found"):
+        GridDC(name="missing_index_order_attr", data=data_2d_C,
+               attrs=dict(content="grid", grid_shape=(3, 4)))
 
 
 def test_griddc_integration():
-    """Integration test for the GridDC."""
+    """Integration test for the GridDC using the ContDisease model"""
 
     # Configure the ModelTest class for ContDisease
     mtc = ModelTest("ContDisease", test_file=__file__)
@@ -113,6 +125,7 @@ def test_griddc_integration():
 
     # Get the data
     grid_data = dm['multiverse'][0]['data/ContDisease/state']
+    print("Grid data: ", grid_data)
 
     # Assert the type of the state is a GridDC
     assert isinstance(grid_data, GridDC)
@@ -123,6 +136,7 @@ def test_griddc_integration():
 
     # By default, this should be a proxy
     assert grid_data.data_is_proxy
+    assert 'proxy' in grid_data._format_info()
 
     # Nevertheless, the properties should show the target values
     print("proxy:\n", grid_data._data)
@@ -142,6 +156,7 @@ def test_griddc_integration():
     # Now resolve the proxy and check the properties again
     grid_data.data
     assert not grid_data.data_is_proxy
+    assert 'proxy' not in grid_data._format_info()
 
     print("resolved:\n", grid_data._data)
     assert grid_data.ndim == 3
@@ -156,17 +171,34 @@ def test_griddc_integration():
     # Try re-instating the proxy
     grid_data.reinstate_proxy()
     assert grid_data.data_is_proxy
+    assert 'proxy' in grid_data._format_info()
 
     # And resolve it again
     grid_data.data
     assert not grid_data.data_is_proxy
+    assert 'proxy' not in grid_data._format_info()
     
     print("reinstated:\n", grid_data._data)
     assert grid_data.ndim == 3
+    assert len(grid_data['time']) == 4
+
     assert grid_data.shape == (4,) + tuple(grid_data.attrs['grid_shape'])
     assert grid_data.grid_shape == tuple(grid_data.attrs['grid_shape'])
-
 
     # Make sure the grid shape is a multiple of the space extent
     # Resolution 4 set in griddc_cfg.yml
     assert (grid_data.grid_shape == 4 * grid_data.space_extent).all()
+
+
+    # Test some further things related to grid shape . . . . . . . . . . . . .
+    cfg = dm['multiverse'][0]['cfg/ContDisease']
+    space_extent = tuple(cfg['space']['extent'])
+    resolution = cfg['cell_manager']['grid']['resolution']
+
+    # Calculate the expected grid shape
+    expected_grid_shape = (int(space_extent[0] * resolution),
+                           int(space_extent[1] * resolution))
+
+    assert grid_data.shape == (4, *expected_grid_shape)
+    assert len(grid_data['x']) == expected_grid_shape[0]
+    assert len(grid_data['y']) == expected_grid_shape[1]

@@ -26,10 +26,10 @@ class NumpyDC(Hdf5ProxySupportMixin, NumpyDataContainer):
     """This is the base class for numpy data containers used in Utopia.
 
     It is based on the NumpyDataContainer provided by dantro and extends it
-    with the Hdf5ProxySupportMixin, allowing to load the data from the Hdf5 file only
-    once it becomes necessary.
+    with the Hdf5ProxySupportMixin, allowing to load the data from the Hdf5
+    file only once it becomes necessary.
     """
-
+    
 
 class XarrayDC(Hdf5ProxySupportMixin, XrDataContainer):
     """This is the base class for xarray data containers used in Utopia.
@@ -100,6 +100,9 @@ class GridDC(XarrayDC):
 
     # The attribute to read the space extent from
     _GDC_space_extent_attr = 'space_extent'
+
+    # The attribute to read the index order from
+    _GDC_index_order_attr = 'index_order'
 
     # .........................................................................
 
@@ -188,9 +191,9 @@ class GridDC(XarrayDC):
     def shape(self) -> tuple:
         """Returns shape, proxy-aware
 
-        This is an overload of the property in Hdf5ProxySupportMixin which takes care
-        that not the actual underlying proxy data shape is returned but
-        whatever the container's shape is to be after reshaping.
+        This is an overload of the property in Hdf5ProxySupportMixin which
+        takes care that not the actual underlying proxy data shape is returned
+        but whatever the container's shape is to be after reshaping.
         """
         if self.data_is_proxy:
             # Might not be set yet, i.e. during call to super().__init__
@@ -203,9 +206,9 @@ class GridDC(XarrayDC):
     def ndim(self) -> int:
         """Returns ndim, proxy-aware
 
-        This is an overload of the property in Hdf5ProxySupportMixin which takes care
-        that not the actual underlying proxy data ndim is returned but
-        whatever the container's ndim is to be after reshaping.
+        This is an overload of the property in Hdf5ProxySupportMixin which
+        takes care that not the actual underlying proxy data ndim is returned
+        but whatever the container's ndim is to be after reshaping.
         """
         if self.data_is_proxy:
             return len(self.shape)
@@ -284,12 +287,31 @@ class GridDC(XarrayDC):
         new_dims = self._new_dims
         new_coords = self._new_coords
 
+        # Determine index order
+        try:
+            index_order = self.attrs[self._GDC_index_order_attr]
+
+        except KeyError as err:
+            raise KeyError("No attribute '{}' found in {}, but information "
+                           "about index ordering is needed for the reshaping "
+                           "operation!"
+                           "".format(self._GDC_index_order_attr, self.logstr)
+                           ) from err
+
+        # Have to postprocess this if order is stored as array of strings
+        if isinstance(index_order, np.ndarray):
+            if index_order.ndim == 0:
+                index_order = index_order.item()
+            else:
+                index_order = index_order.flatten()[0]
+
         # Reshape data now
-        log.debug("Reshaping data of shape %s to %s to match given grid "
-                  "shape %s ...", data_shape, new_shape, grid_shape)
+        log.debug("Reshaping data of shape %s to %s (assuming order '%s') to "
+                  "match given grid shape %s ...",
+                  data_shape, new_shape, index_order, grid_shape)
 
         try:
-            data = np.reshape(self._data.values, new_shape)
+            data = np.reshape(self._data.values, new_shape, order=index_order)
 
         except ValueError as err:
             raise ValueError("Reshaping failed! This is probably due to a "

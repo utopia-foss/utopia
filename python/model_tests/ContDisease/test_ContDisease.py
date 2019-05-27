@@ -22,9 +22,6 @@ def test_initial_state_empty():
     grp = dm['multiverse'][0]['data/ContDisease']
     data_ = grp["state"]
 
-    # Check that only one step was performed and written
-    assert grp["state"].shape[0] == 1
-
     # Check if all cells are empty
     assert (data_ == 0).all()
 
@@ -37,9 +34,6 @@ def test_initial_stones():
     # Get data
     grp = dm['multiverse'][0]['data/ContDisease']
     data_ = grp["state"]
-
-    # Check that only one step was performed and written
-    assert grp["state"].shape[0] == 1
 
     # Check if any cell is in stone state
     assert (data_ == 4).any()
@@ -56,14 +50,11 @@ def test_initial_state_source_south():
     grp = dm['multiverse'][0]['data/ContDisease']
     data = grp["state"]
 
-    # Check that only one step was written
-    assert grp["state"].shape[0] == 1
-
     # Check if all Cells are empty, apart from the lowest horizontal row
-    assert (data[0][1:] == 0).all()
+    assert (data.isel(y=slice(1, None)) == 0).all()
 
     # Check if the lowest row is an infection source
-    assert (data[0][0] == 3).all()
+    assert (data.isel(y=0) == 3).all()
 
 def test_growing_dynamic():
     """
@@ -77,11 +68,8 @@ def test_growing_dynamic():
     grp = dm['multiverse'][0]['data/ContDisease']
     data_ = grp["state"]
 
-    # Check that only two steps were written
-    assert grp["state"].shape[0] == 2
-
     # Check that all cells are trees after one timestep
-    assert (data_[1] == 1).all()
+    assert (data_.isel(time=1) == 1).all()
 
 def test_infection_dynamic():
     """
@@ -96,23 +84,20 @@ def test_infection_dynamic():
     grp = dm['multiverse'][0]['data/ContDisease']
     data = grp["state"]
 
-    # Check that only three steps were written
-    assert grp["state"].shape[0] == 4
-
-    #Check that the last row is an infection source
-    assert (data[0][0] == 3).all()
+    # Check that the last row is an infection source
+    assert (data.isel(y=0) == 3).all()
 
     # Check that only the second row is infected after two timesteps and the
     # first are trees.
-    assert (data[2][-1] == 1).all()
-    assert (data[2][1] == 2).all()
-    assert (data[2][0] == 3).all()
+    assert (data.isel(time=2, y=2) == 1).all()
+    assert (data.isel(time=2, y=1) == 2).all()
+    assert (data.isel(time=2, y=0) == 3).all()
 
     # Check that the second row is empty after three timesteps and the
     # first is infected.
-    assert (data[3][-1] == 2).all()
-    assert (data[3][1] == 0).all()
-    assert (data[3][0] == 3).all()
+    assert (data.isel(time=3, y=2) == 2).all()
+    assert (data.isel(time=3, y=1) == 0).all()
+    assert (data.isel(time=3, y=0) == 3).all()
 
 
 def test_densities_calculation():
@@ -131,11 +116,11 @@ def test_densities_calculation():
     assert [dps + d_stones.data + d_source.data == pytest.approx(1.) for dps in d_partial_sum]
 
     # Densities should always be in the range 0<=d<=1
-    assert([0 <= d <= 0 for d in d_tree])
-    assert([0 <= d <= 0 for d in d_empty])
-    assert([0 <= d <= 0 for d in d_infected])
-    assert(0 <= d_stones <= 1)
-    assert(0 <= d_source <= 1)
+    assert [0 <= d <= 0 for d in d_tree]
+    assert [0 <= d <= 0 for d in d_empty]
+    assert [0 <= d <= 0 for d in d_infected]
+    assert 0 <= d_stones <= 1
+    assert 0 <= d_source <= 1
 
     # Initially, no tree should be infected
-    assert(d_infected[0] == 0)
+    assert d_infected.isel(time=0) == 0
