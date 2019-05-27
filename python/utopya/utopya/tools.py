@@ -153,7 +153,8 @@ def read_yml(path: str, *, error_msg: str=None) -> dict:
 def write_yml(d: dict, *, path: str) -> None:
     """Write dict to yml file in path.
     
-    Writes a given dictionary into a yaml file. Error is raised if file already exists.
+    Writes a given dictionary into a yaml file. Error is raised if file
+    already exists.
     
     Args:
         d (dict): dict to be written
@@ -247,7 +248,8 @@ def recursive_update(d: dict, u: dict) -> dict:
 
 # string formatting -----------------------------------------------------------
 
-def format_time(duration: Union[float, timedelta], *, ms_precision: int=0) -> str:
+def format_time(duration: Union[float, timedelta], *,
+                ms_precision: int=0, max_num_parts: int=None) -> str:
     """Given a duration (in seconds), formats it into a string.
     
     The formatting divisors are: days, hours, minutes, seconds
@@ -258,11 +260,15 @@ def format_time(duration: Union[float, timedelta], *, ms_precision: int=0) -> st
     Args:
         duration (Union[float, timedelta]): The duration in seconds to format
             into a duration string; it can also be a timedelta object.
-        ms_precision (int, optional): The precision of the seconds slot if only
-            seconds will be shown.
+        ms_precision (int, optional): The precision of the seconds slot
+        max_num_parts (int, optional): How many parts to include when creating
+            the formatted time string. For example, if the time consists of
+            the parts seconds, minutes, and hours, and the argument is ``2``,
+            only the hours and minutes parts will be shown.
+            If None, all parts are included.
     
     Returns:
-        str: The formatted duration string    
+        str: The formatted duration string
     """
 
     if isinstance(duration, timedelta):
@@ -317,14 +323,17 @@ def format_time(duration: Union[float, timedelta], *, ms_precision: int=0) -> st
 
         parts.append(s)
 
+    # Prepend a minus for negative values
     if is_negative:
-        # Prepend a minus
         parts = ["-"] + parts
 
-    return " ".join(parts)
+    # Join the parts together, but only the maximum number of parts
+    return " ".join(parts[:(max_num_parts if max_num_parts else len(parts))])
 
-def fill_line(s: str, *, num_cols: int=TTY_COLS, fill_char: str=" ", align: str="left") -> str:
-    """Extends the given string such that it fills a whole line of `num_cols` columns.
+def fill_line(s: str, *, num_cols: int=TTY_COLS, fill_char: str=" ",
+              align: str="left") -> str:
+    """Extends the given string such that it fills a whole line of `num_cols`
+    columns.
     
     Args:
         s (str): The string to extend to a whole line
@@ -357,7 +366,8 @@ def fill_line(s: str, *, num_cols: int=TTY_COLS, fill_char: str=" ", align: str=
 
     raise ValueError("align argument '{}' not supported".format(align))
 
-def center_in_line(s: str, *, num_cols: int=TTY_COLS, fill_char: str="·", spacing: int=1) -> str:
+def center_in_line(s: str, *, num_cols: int=TTY_COLS, fill_char: str="·",
+                   spacing: int=1) -> str:
     """Shortcut for a common fill_line use case.
     
     Args:
