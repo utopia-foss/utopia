@@ -18,6 +18,12 @@
     grid.alpha: .5
     legend.fontsize: small
 
+# .. Save as PNG for use in documentation .....................................
+.png4docs:
+  file_ext: png
+  helpers:
+    save_figure:
+      dpi: 254
 
 # -- Basic plots --------------------------------------------------------------
 # .. Basic lineplot from universe data ........................................
@@ -34,7 +40,7 @@
   style:
     <<: *default_style
 
-# .. Multiple lineplots from universe data ........................................
+# .. Multiple lineplots from universe data ....................................
 .basic_uni.lineplots:
   creator: universe
   universes: all
@@ -86,6 +92,24 @@
     linewidth: 0.
 
 
+# .. Asymptotic average from Multiverse data ..................................
+.basic_mv.asymptotic_average:
+  creator: multiverse
+
+  module: .basic_mv
+  plot_func: asymptotic_average
+
+  helpers:
+    <<: *default_helpers
+  style:
+    <<: *default_style
+
+  # Passed to plt.errorbar
+  linestyle: ''
+  elinewidth: .5
+  marker: o
+
+
 # -- CA Plots -----------------------------------------------------------------
 # .. A spatial CA plot of a state .............................................
 # Supports PlotHelper and animation
@@ -97,6 +121,11 @@
   plot_func: state
 
   file_ext: pdf
+
+  helpers:
+    <<: *default_helpers
+    # NOTE As the PlotHelper.save_figure method is _not_ invoked during
+    #      animation, there is no issue with bbox_inches tight
 
   # All animation configuration for this plot
   animation: &ca_state_animation
@@ -116,6 +145,7 @@
         saving:
           dpi: 92
 
+
 # .. .ca.state specializations for different animation writers ................
 .ca.state.anim_frames:
   <<: *ca_state
@@ -124,10 +154,15 @@
 
   time_idx: 0  # value is ignored in animation, but needs be specified
 
+  # Use a different figure size as most animation plots are square
+  style: &ca_state_anim_style
+    figure.figsize: [6., 5.]
+
   animation:
     <<: *ca_state_animation
     enabled: true
     writer: frames
+
 
 .ca.state.anim_ffmpeg:
   <<: *ca_state
@@ -135,6 +170,9 @@
   file_ext: mp4
 
   time_idx: 0  # value is ignored in animation, but needs be specified
+
+  style:
+    <<: *ca_state_anim_style
 
   animation:
     <<: *ca_state_animation

@@ -32,7 +32,7 @@ p_growth: 7.5e-3
 
 # Probability per site and time step to transition to burning state, burning
 # down the whole cluster
-p_lightning: 1.0e-5 
+p_lightning: 1.0e-5
 
 # Probability (per neighbor) to _not_ catch fire from a neighbor
 p_resistance: 0.
@@ -40,3 +40,8 @@ p_resistance: 0.
 # If set to true, the bottom boundary is constantly ignited. This _requires_
 # the space to be set to non-periodic.
 light_bottom_row: false
+
+# --- Output Configuration ----------------------------------------------------
+# Whether to only write out the tree density; useful for runs on large grids
+# where spatial information is not needed.
+write_only_tree_density: false

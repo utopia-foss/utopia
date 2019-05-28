@@ -87,8 +87,10 @@ mean_tree_age:
       label: Tree Age
       plot_std: true
       transform_data:
+        - where: ['>', 0]
         - mean: [x, y]
       transform_std:
+        - where: ['>', 0]
         - std: [x, y]
 
   helpers:
@@ -105,7 +107,7 @@ mean_tree_age:
 
 
 # --- Tree density plots ------------------------------------------------------
-# ... For each universe .......................................................
+# ... Time series for each universe ...........................................
 tree_density:
   based_on: .basic_uni.lineplot
 
@@ -166,3 +168,74 @@ tree_density_over_p_lightning:
 
   # Passed on to errorbar plot
   # ...
+
+
+# ... Asymptotic tree density .................................................
+tree_density_asymptotic:
+  based_on: .basic_mv.asymptotic_average
+
+  select:
+    fields:
+      data: data/ForestFire/tree_density
+
+  # Make this a time-averaged tree density
+  average_dim: time
+  average_fraction: .01
+
+  # Average over seed, if available
+  transform_data:
+    - mean: [seed]
+      _may_fail: true
+
+  # Don't plot std
+  plot_std: false
+
+  # Adjust helpers
+  helpers:
+    set_title:
+      title: Asymptotic Tree Density
+    set_labels:
+      x: Tree Density $[1/A]$
+    set_limits:
+      x: [0., ~]
+
+
+# --- Grid Snapshots ----------------------------------------------------------
+# ... The forest ..............................................................
+forest_snapshot:
+  based_on: .ca.state
+  model_name: ForestFire
+  
+  to_plot:
+    kind:
+      title: Forest State
+      limits: [0, 1]
+      cmap: 
+        Empty: darkkhaki
+        Tree: forestgreen
+
+# ... The forest age ..........................................................
+forest_age_snapshot:
+  based_on: .ca.state
+  model_name: ForestFire
+
+  to_plot:
+    age:
+      title: Forest Age
+      cmap: YlGn
+
+# ... The clusters ............................................................
+clusters_snapshot:
+  based_on: .ca.state
+  model_name: ForestFire
+
+  # Use the model-specific plot that adds preprocessing for cluster IDs
+  module: model_plots.ForestFire.ca
+  plot_func: state
+
+  to_plot:
+    cluster_id:
+      title: Clusters
+      limits: [0, 20]
+      cmap: tab20
+      no_cbar_markings: true

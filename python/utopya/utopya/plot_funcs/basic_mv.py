@@ -7,7 +7,7 @@ import numpy as np
 import xarray as xr
 import matplotlib as mpl
 
-from .. import DataManager, MultiverseGroup
+from .. import DataManager
 from ..plotting import is_plot_func, PlotHelper, MultiversePlotCreator
 from ..dataprocessing import transform
 
@@ -127,3 +127,88 @@ def errorbar(dm: DataManager, *,
 
         # Set the title of the legend to include `lines_from`
         hlpr.provide_defaults('set_legend', title=lines_from)
+
+
+@is_plot_func(creator_type=MultiversePlotCreator)
+def asymptotic_average(dm: DataManager, *,
+                       mv_data: xr.Dataset,
+                       hlpr: PlotHelper,
+                       average_dim: str,
+                       average_fraction: float,
+                       data_variable: str='data',
+                       plot_std: bool=True,
+                       transform_data: Tuple[Union[str, dict]]=None,
+                       transformations_log_level: int=10,
+                       **errorbar_kwargs):
+    """Plots asymptotically averaged single values.
+    
+    After ``transform_data``, the ``data_variable`` in ``mv_data`` should be a
+    2D array where one of the dimensions is ``average_dim``. All data from
+    the other dimension are plotted as single points with standard deviation.
+    
+    Args:
+        dm (DataManager): The data manager
+        mv_data (xr.Dataset): The selected multiverse data
+        hlpr (PlotHelper): The PlotHelper
+        average_dim (str): The name of the dimension to average over.
+        average_fraction (float): Which fraction of the dimension specified in
+            ``average_dim`` to use for averaging. If it is desired to make
+            this absolute, choose ``1.`` and use ``transform_data`` to select
+            a smaller slice of the data.
+        data_variable (str, optional): Name of the data variable from
+            ``mv_data`` to use for plotting.
+        transform_data (Tuple[Union[str, dict]], optional): Applied to the
+            data array from ``mv_data``.
+        transformations_log_level (int, optional): Log level of transformation
+            operations.
+        **errorbar_kwargs: Passed to plt.errorbar
+    
+    Raises:
+        ValueError: On data that is not 2D or does not contain a time dimension
+    """
+    # Get the data
+    data = mv_data[data_variable]
+
+    # Apply transformations
+    if transform_data:
+        data = transform(data, *transform_data,
+                         log_level=transformations_log_level)
+
+    # Check that dimensionality is 2
+    if data.ndim != 2 or average_dim not in data.dims:
+        raise ValueError("Need a 2-dimensional xr.DataArray where one "
+                         "dimension is 'time', but got: {}".format(data))
+
+    # Select the subset by index
+    num_indices = max(1, int(average_fraction * len(data.coords[average_dim])))
+    to_average = data.isel(**{average_dim: slice(-num_indices, None)})
+    log.info("Selected '%s' data in asymptotic value interval [%s, %s] "
+             "(the %d data points available in last %.1f%% of [%s, %s]) "
+             "for averaging ...",
+             average_dim,
+             to_average.coords[average_dim].min().item(),
+             to_average.coords[average_dim].max().item(),
+             len(to_average.coords[average_dim]),
+             average_fraction*100,
+             data.coords[average_dim].min().item(),
+             data.coords[average_dim].max().item())
+
+    # Perform the averaging
+    mean = to_average.mean(dim=average_dim)
+    std = to_average.std(dim=average_dim)
+
+    # Find out which dimension remains
+    iter_dim_name = mean.dims[0]
+    
+    # For the remaining dimension, plot the mean values
+    log.info("Plotting %d point(s) over remaining dimension '%s' ...",
+             len(mean.coords[iter_dim_name]), iter_dim_name)
+
+    for coord_val in mean.coords[iter_dim_name]:
+        sel_dict = {coord_val.name: coord_val.item()}
+        hlpr.ax.errorbar(mean.sel(**sel_dict), coord_val,
+                         yerr=std.sel(**sel_dict) if plot_std else None,
+                         label="{:.3g}".format(coord_val.item()),
+                         **errorbar_kwargs)
+    
+    hlpr.provide_defaults('set_labels', y=dict(label=iter_dim_name))

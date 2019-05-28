@@ -2,32 +2,90 @@
 ``ForestFire`` — Model of Forest Fires
 ======================================
 
-The ``ForestFire`` model simulates the development of a forest under influence of forest fires. Trees grow on a random basis and fires cause their death, for a whole cluster instantaneously; this is the so-called "two state model".
+The ``ForestFire`` model simulates the development of a forest under influence of fires and was first proposed by P. Bak, K. Chen, and C. Tang in 1990.
+Trees grow on a random basis and lightning causes them and the trees in the same cluster to burn down instantaneously; this is the so-called "two state model".
 
-Fundamentals
-------------
+Implementation
+--------------
+The model is implemented based on the the description in the CCEES lecture notes by Kurt Roth (chapter: Discrete Complex Systems - Contact Processes).
+The forest is modelled as a cellular automaton, where each cell can have one of two states: ``empty`` or ``tree``.
 
-The model is based on the description in the CCEES Lecture Notes by Kurt Roth in chapter 7.3 (Discrete Complex Systems - Contact Processes).
+The update procedure is as follows: In each iteration step, iterate over all cells in a random order. For each cell, one of two actions can take place, depending on the current state of the cell:
 
-It is modelled as a cellular automaton, where each cell can have one of the two states ``empty`` or ``tree``.
+* An ``empty`` cell becomes a ``tree`` with probability ``p_growth``.
+* A ``tree`` ignites with a probability ``p_lightning`` and ignites all cells indirectly connected to it. The cluster burns down instantaneously and all cells transition to state ``empty``.
 
-Trees grow on an empty cell with probability ``p_growth``. With the probability ``p_lightning`` a cell is ignited and this cell, as well as all cells indirectly connected to it (the cluster) burn instantaneously and turn to empty; a percolation occurs.
-The cluster is determined by recursively percolating through the Moore neighbours (by default) of each cell.
+The new state of a cell is applied directly after it was iterated over, i.e. cell states are updated *sequentially*.
 
-Percolation mode
+Percolation Mode
 ^^^^^^^^^^^^^^^^
-
-There is the possibility to use the model feature ``ignite_bottom_row`` instead of a lightning frequency. In that mode, cells at the bottom (southern) boundary of the grid are constantly ignited.
-It makes sense to set the ``p_lightning`` to zero in this mode.
+There is the possibility to use the model feature ``ignite_bottom_row``, where the cells at the bottom (southern) boundary of the grid are constantly ignited.
+It makes sense to set the ``p_lightning`` parameter to zero in this mode.
 
 .. note::
 
   In this mode, it is required to make the space non-periodic.
+  Consult the model default configuration below to see how that can be done.
+
+Data Output
+^^^^^^^^^^^
+The following data is stored alongside the simulation:
+
+* ``kind``: the state of each cell. ``0`` maps to ``empty``, ``1`` to ``tree``.
+* ``age``: the age of each tree, reset after lightning strikes
+* ``cluster_id``: a number identifying to which cluster a cell belongs
+* ``tree_density``: the global tree density
 
 
-Default configuration parameters
+Simulation Results
+------------------
+Below, some example simulation results are shown.
+If not marked otherwise, the default values (see below) were used and the grid was chosen to have :math:`1024^2` cells.
+
+Spatial Representation
+^^^^^^^^^^^^^^^^^^^^^^
+Snapshots of the forest state, its age and the identified clusters after 223 iteration steps:
+
+.. image:: https://ts-gitlab.iup.uni-heidelberg.de/utopia/doc_resources/raw/master/models/ForestFire/forest_snapshot.png
+  :width: 600
+
+.. image:: https://ts-gitlab.iup.uni-heidelberg.de/utopia/doc_resources/raw/master/models/ForestFire/forest_age_snapshot.png
+  :width: 600
+
+.. image:: https://ts-gitlab.iup.uni-heidelberg.de/utopia/doc_resources/raw/master/models/ForestFire/clusters_snapshot.png
+  :width: 600
+
+Tree Density
+^^^^^^^^^^^^
+The time development of the tree density shows how the system relaxes into its quasi-stable equilibrium state.
+
+.. image:: https://ts-gitlab.iup.uni-heidelberg.de/utopia/doc_resources/raw/master/models/ForestFire/tree_density.png
+  :width: 600
+
+..
+    (-- To be added once corresponding simulation have been run --)
+
+    The temporal development of the mean tree density (sample size: 10) for five different lightning probabilites:
+
+    .. image:: https://ts-gitlab.iup.uni-heidelberg.de/utopia/doc_resources/raw/master/models/ForestFire/tree_density_over_p_lightning.png
+      :width: 600
+
+    Additionally, we can look at the asymptotic tree density.
+    Here, "asymptotic" refers to both time and space, as a small grid will show undesirable results.
+
+    .. image:: https://ts-gitlab.iup.uni-heidelberg.de/utopia/doc_resources/raw/master/models/ForestFire/tree_density_asymptotic.png
+      :width: 600
+
+Cluster Size Analysis
+^^^^^^^^^^^^^^^^^^^^^
+In a complementary cumulative cluster size distribution plot, the scale-free nature of the system can be deduced by observation of those parts of the plot that appear linear in a log-log representation.
+
+.. image:: https://ts-gitlab.iup.uni-heidelberg.de/utopia/doc_resources/raw/master/models/ForestFire/compl_cum_cluster_size_dist.png
+  :width: 600
+
+
+Default Configuration Parameters
 --------------------------------
-
 Below are the default configuration parameters for the ``ForestFire`` model.
 
 .. literalinclude:: ../../src/models/ForestFire/ForestFire_cfg.yml
@@ -35,52 +93,20 @@ Below are the default configuration parameters for the ``ForestFire`` model.
    :start-after: ---
 
 
-Simulation Results
-------------------
+Available Plots
+---------------
+The following plot configurations are available for the ``ForestFire`` model:
 
-Here, three different plots of the ForestFire Model are shown. 
-They show properties of the system for different lightning probabilites.
-The tree growth rate was held constant at 0.0075 in all cases while
-the simulation grid's extent was 1024*1024 cells.
-
-The corresponding plots of the lecture can be found on pages 279-283 in the CCEES script.
-
-.. image:: https://i.imgur.com/542svyu.png
-  :width: 500
-
-A snapshot of the state animation. The chosen lightning probability is 1e-5.
-
-.. image:: https://i.imgur.com/1CgylFK.png
-  ..width: 500
-
-The cluster size distribution belonging to the state animation above.  
-
-.. image:: https://i.imgur.com/LeFDGBT.png
-  :width: 500
-
-The cluster size distribution is plotted against their number, on a log-log scale.
-The scale-free nature of the system can be deduced by the straight parts of the plot.
-
-
-.. image:: https://i.imgur.com/8CBcKRQ.png
-  :width: 500
-
-The temporal development of the mean tree density for six different lightning probabilites.
-
-
-.. image:: https://i.imgur.com/OqC3jqL.png
-  :width: 500
-
-Asymptotic mean tree density. In this case, asymptotic refers to both, time and space, 
-as a small grid will show undesirable results.
+.. literalinclude:: ../../src/models/ForestFire/ForestFire_plots.yml
+   :language: yaml
+   :start-after: ---
 
 
 References
 ----------
 
-* 
-  Bak, P., K. Chen and C. Tang, 1990: A forest-fire model and some thoughts on turbulence, Phys. Lett. A, 147, (5-6), 297–300,
-  doi: `10.1016/0375–9601(90)90451–S <https://doi.org/10.1016/0375-9601(90)90451-S>`_ (`PDF <http://cqb.pku.edu.cn/tanglab/pdf/1990-55.pdf>`_).
+* Bak, P., K. Chen and C. Tang, 1990: A forest-fire model and some thoughts on turbulence, Phys. Lett. A, 147, (5-6), 297–300,
+  doi: `10.1016/0375–9601(90)90451–S <https://doi.org/10.1016/0375-9601(90)90451-S>`_
+  (`PDF <http://cqb.pku.edu.cn/tanglab/pdf/1990-55.pdf>`_).
 
-* 
-  Kurt Roth: Complex, Chaotic and Evolving Environmental Systems (Lecture Notes). Chapter 7.3 (Discrete Complex Systems - Contact Processes)
+* Kurt Roth: Complex, Chaotic and Evolving Environmental Systems (Lecture Notes). Chapter: Discrete Complex Systems - Contact Processes

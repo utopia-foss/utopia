@@ -1,11 +1,13 @@
 """This module provides plotting functions to visualize cellular automata."""
 
 import os
+import copy
 import logging
 import warnings
 from typing import Union, Dict, Callable
 
 import numpy as np
+import xarray as xr
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -110,10 +112,31 @@ def state(dm: DataManager, *,
 
         return data
 
-    def plot_property(prop_name: str, *, data, cmap='viridis',
-                      title: str=None, limits: list=None):
+    def plot_property(prop_name: str, *, data: xr.DataArray,
+                      limits: list=None, cmap: Union[str, dict]='viridis',
+                      title: str=None,
+                      no_cbar_markings: bool=False, imshow_kwargs: dict=None,
+                      **cbar_kwargs):
         """Helper function to plot a property on a given axis and return
         an imshow object
+        
+        Args:
+            prop_name (str): The property to plot
+            data (xr.DataArray): The array-like data to plot as image
+            limits (list, optional): The imshow limits to use; will also be
+                the limits of the colorbar.
+            cmap (Union[str, dict], optional): The colormap to use
+            title (str, optional): The title of this figure
+            no_cbar_markings (bool, optional): Whether to suppress colorbar
+                markings (ticks and tick labels)
+            imshow_kwargs (dict, optional): Passed to plt.imshow
+            **cbar_kwargs: Passed to fig.colorbar
+        
+        Returns:
+            imshow object
+        
+        Raises:
+            TypeError: For invalid ``cmap`` argument.
         """
         # Get colormap, either a continuous or a discrete one
         if isinstance(cmap, str):
@@ -132,29 +155,46 @@ def state(dm: DataManager, *,
                             "discrete colormap. Was: {} with value: '{}'"
                             "".format(type(cmap), cmap))
 
-        # Create additional kwargs
-        kws = dict()
+        # Fill imshow_kwargs
+        imshow_kwargs = imshow_kwargs if imshow_kwargs else {}
         if limits:
-            kws = dict(vmin=limits[0], vmax=limits[1], **kws)
+            imshow_kwargs = dict(vmin=limits[0], vmax=limits[1],
+                                 **imshow_kwargs)
 
         # Create imshow object on the currently selected axis
-        im = hlpr.ax.imshow(data.T, cmap=colormap, animated=True,
-                            origin='lower', aspect='equal', **kws)
+        im = hlpr.ax.imshow(data, cmap=colormap, animated=True,
+                            origin='lower', aspect='equal',
+                            **imshow_kwargs)
         
-        # Create colorbars
-        # TODO Should be done by helper
-        cbar = hlpr.fig.colorbar(im, ax=hlpr.ax, norm=norm,
-                                 ticks=bounds, fraction=0.05, pad=0.02)
+        # Parse additional colorbar kwargs and set some default values
+        add_cbar_kwargs = dict()
+        if 'fraction' not in cbar_kwargs:
+            add_cbar_kwargs['fraction'] = 0.05
 
+        if 'pad' not in cbar_kwargs:
+            add_cbar_kwargs['pad'] = 0.02
+
+        # Create the colorbar
+        cbar = hlpr.fig.colorbar(im, ax=hlpr.ax, norm=norm, ticks=bounds,
+                                 **cbar_kwargs, **add_cbar_kwargs)
+        # TODO Should be done by helper
+
+        # For a discrete colormap, adjust the tick positions
         if bounds:
-            # Adjust the ticks for the discrete colormap
             num_colors = len(cmap)
             tick_locs = (  (np.arange(num_colors) + 0.5)
                          * (num_colors-1)/num_colors)
             cbar.set_ticks(tick_locs)
             cbar.ax.set_yticklabels(cmap.keys())
 
-        hlpr.ax.axis('off')  # TODO should be done by helper
+        # Remove markings, if configured to do so
+        if no_cbar_markings:
+            cbar.set_ticks([])
+            cbar.ax.set_yticklabels([])
+        
+        # Remove main axis labels and ticks
+        hlpr.ax.axis('off')
+        # TODO should be done by helper
 
         # Provide configuration options to plot helper
         hlpr.provide_defaults('set_title',

@@ -254,10 +254,6 @@ class GridDC(XarrayDC):
         # Determine new coordinates
         new_coords = dict()
 
-        # Carry over time, if possible
-        if 'time' in new_coords and 'time' in self.coords:
-            new_coords['time'] = self.coords['time']
-
         # If there is a space extent attribute available, use that to set the
         # spatial coordinates. Otherwise, assign the trivial coordinates.
         extent = self.attrs.get(self._GDC_space_extent_attr)
@@ -272,6 +268,8 @@ class GridDC(XarrayDC):
 
         for n, l, dim_name in zip(grid_shape, extent, ('x', 'y', 'z')):
             new_coords[dim_name] = coord_gen(n, l)
+
+        # NOTE Time coordinate is not changed.
 
         # Store the new dimension names and coordinates
         self._new_dims = new_dims
@@ -288,15 +286,7 @@ class GridDC(XarrayDC):
         new_coords = self._new_coords
 
         # Determine index order
-        try:
-            index_order = self.attrs[self._GDC_index_order_attr]
-
-        except KeyError as err:
-            raise KeyError("No attribute '{}' found in {}, but information "
-                           "about index ordering is needed for the reshaping "
-                           "operation!"
-                           "".format(self._GDC_index_order_attr, self.logstr)
-                           ) from err
+        index_order = self.attrs.get(self._GDC_index_order_attr, 'F')
 
         # Have to postprocess this if order is stored as array of strings
         if isinstance(index_order, np.ndarray):

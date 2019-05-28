@@ -1,6 +1,5 @@
 """Plotting tools that can be used from all model-specific plot functions"""
 
-import warnings
 from typing import Union
 
 import numpy as np
@@ -8,8 +7,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 from matplotlib.colors import ListedColormap, BoundaryNorm, Colormap, Normalize
-
-from utopya import UniverseGroup
 
 # -----------------------------------------------------------------------------
 
@@ -22,34 +19,6 @@ def save_and_close(out_path: str, *, save_kwargs: dict=None) -> None:
     """
     plt.savefig(out_path, **(save_kwargs if save_kwargs else {}))
     plt.close()
-
-
-def get_times(uni: UniverseGroup, *, include_t0: bool=True):
-    """Get the time steps from the configuration of the universe
-    
-    Args:
-        uni (UniverseGroup): The universe group
-        include_t0 (bool, optional): Include the initial time t=0 in the 
-    
-    Returns:
-        np.array: The times array
-    """
-    warnings.warn("The get_times function is deprecated and might be removed "
-                  "at any time! Instead, use the object-oriented interface "
-                  "provided by the utopya.UniverseGroup.get_times_array "
-                  "function.", DeprecationWarning)
-
-    # Retrive the necessary parameters from the configuration
-    cfg = uni['cfg']
-    num_steps = cfg['num_steps']
-    write_every = cfg['write_every']
-
-    # Calculate the times array which either includes the initial write or not
-    # and return it.
-    if include_t0:
-        return np.linspace(0, num_steps, num_steps//write_every + 1)
-    else:
-        return np.linspace(write_every, num_steps, num_steps//write_every + 1)
 
 
 def colorline(x, y, *, 
