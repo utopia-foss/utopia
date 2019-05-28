@@ -256,10 +256,14 @@ private:
                 state.slope -= _topple_num_grains;
                 state.in_avalanche = true;
 
-                // Add grains (=slopes) to the neighbors
+                // Add grains (=slopes) to the neighbors 
+                // and add only neighbors with supercritical slope to the queue
                 for (const auto& nb : _cm.neighbors_of(cell)){
-                    nb->state.slope += 1;
-                    queue.push(nb);
+                    auto& nb_slope = nb->state.slope;
+                    nb_slope += 1;
+                    if (nb_slope > _critical_slope){
+                        queue.push(nb);
+                    }
                 }
             }
         }

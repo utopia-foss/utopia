@@ -6,6 +6,9 @@ mean_slope:
 
 
 # --- Plot the avalanche area fraction time series ----------------------------
+# Depending on the number of cells, you will perhaps need to adjust the
+# y limits of the plot accordingly. Set the minimum smaller or equal to
+# 1/num_cells
 area_fraction:
   based_on: area_fraction
 

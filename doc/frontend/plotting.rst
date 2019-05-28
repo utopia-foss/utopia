@@ -84,7 +84,7 @@ One should not have to worry about the aesthetics too much.
 The ``PlotHelper`` framework can make your life easier by quite a lot as it already takes care of most of the plot aesthetics by making large parts of the matplotlib interface accessible via the plot configuration.
 That way, you don't need to touch Python code for trivial tasks like changing the plot limits. It also takes care of setting up a figure and storing it in the appropriate location.
 
-Most importantly, it will make your plots future-proof and let them profit from upcoming features. A glimpse of that can be seen in how easy it is to implement an animated plot, see :ref:`plot_animations`_.
+Most importantly, it will make your plots future-proof and let them profit from upcoming features. A glimpse of that can be seen in how easy it is to implement an animated plot, see :ref:`plot_animations`.
 
 
 With ``PlotHelper`` framework

@@ -45,7 +45,6 @@ with an additional weight to encourage clustering of stones.
 
 Default configuration parameters
 --------------------------------
-
 Below are the default configuration parameters for the ``ContDisease`` model.
 
 .. literalinclude:: ../../src/models/ContDisease/ContDisease_cfg.yml
@@ -53,19 +52,23 @@ Below are the default configuration parameters for the ``ContDisease`` model.
    :start-after: ---
 
 
-Simulation Results
-------------------
+Available plots
+---------------
+The following plot configurations are available for the ``ContDisease`` model:
 
-*TODO*
+Default Plot Configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. literalinclude:: ../../src/models/ContDisease/ContDisease_plots.yml
+   :language: yaml
+   :start-after: ---
 
-Theoretical Background
-----------------------
+Base Plot Configuration
+^^^^^^^^^^^^^^^^^^^^^^^
+.. literalinclude:: ../../src/models/ContDisease/ContDisease_base_plots.yml
+   :language: yaml
+   :start-after: ---
 
-*TODO*
-
-Possible Future Extensions
---------------------------
-* More ways to initialize stones.
+For the utopya base plots, see :doc:`here </frontend/inc/base_plots_cfg>`.
 
 
 References
