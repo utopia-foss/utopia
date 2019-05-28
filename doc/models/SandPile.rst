@@ -18,7 +18,6 @@ The model is based on the description in the CCEES Lecture Notes by Kurt Roth in
 
 Default Model Configuration
 ---------------------------
-
 Below are the default configuration parameters for the ``SandPile`` model.
 
 .. literalinclude:: ../../src/models/SandPile/SandPile_cfg.yml
@@ -27,13 +26,21 @@ Below are the default configuration parameters for the ``SandPile`` model.
 
 Available Plots
 ---------------
+The following plot configurations are available for the ``SandPile`` model:
 
-By default, the following plots are available for the ``SandPile`` model:
-
+Default Plot Configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. literalinclude:: ../../src/models/SandPile/SandPile_plots.yml
    :language: yaml
    :start-after: ---
 
+Base Plot Configuration
+^^^^^^^^^^^^^^^^^^^^^^^
+.. literalinclude:: ../../src/models/SandPile/SandPile_base_plots.yml
+   :language: yaml
+   :start-after: ---
+
+For the utopya base plots, see :doc:`here </frontend/inc/base_plots_cfg>`.
 
 References
 ----------

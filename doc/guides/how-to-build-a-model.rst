@@ -5,6 +5,10 @@ How to Implement Your Own Model in Utopia
 After having been through the :doc:`README <../README>` and the
 :doc:`tutorial <tutorial>`, this guide is for creating a new model in *Utopia*.
 
+.. note::
+
+  As a model developer, you can **not** use the Utopia docker image, as it does not contain the model source code.
+
 If you go through all the steps, you will end up with a model that can profit
 from all *Utopia* features and can do ... basically nothing interesting yet.
 It is a starting point for your own expedition in the *Utopia* model world.
@@ -65,7 +69,7 @@ latter; if you are already more proficient, use the former.
 4. Rename all the files inside of the newly created directory such that all
    occurrences of ``CopyMe`` are replaced by ``MyFancyModel``.
 
-  - You can do so by using the `parameter expasion capabilities <http://wiki.bash-hackers.org/syntax/pe>`_ of BASH:
+  - You can do so by using the `parameter expansion capabilities <http://wiki.bash-hackers.org/syntax/pe>`_ of BASH:
   Inside your model directory, call
 
   .. code-block:: bash
@@ -229,7 +233,7 @@ Finished!
 
 Congratulations, you have build a new model! :)
 
-Your next guide will be the :doc:`<model-requirements>`.
+Your next guide will be the :doc:`model requirements <model-requirements>`.
 It contains information what requirements your code must fulfill such that it
 can be accepted as a model within *Utopia*, e.g. that it can be merged into
 *Utopia*'s ``master`` branch.

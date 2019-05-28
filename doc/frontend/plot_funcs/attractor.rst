@@ -37,4 +37,4 @@ Other than in 1d the attractor itself cannot be visualized by its state, hence t
     The visualisation_kwarg to 'fixpoint' can have a ``to_plot`` entry that defines kwargs proper to every used data field. 
     In that case the field with the heighest fixpoint value defines the coloring.
 
-.. autofunction:: utopya.plot_funcs.attractor.bifurcation_diagram_2d
+.. autofunction:: utopya.plot_funcs.attractor.bifurcation_diagram

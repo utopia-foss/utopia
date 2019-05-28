@@ -8,7 +8,7 @@ Welcome to Utopia's documentation!
 
 And welcome to Utopia! We are happy that you found your way to the documentation.
 
-If you are **new to Utopia**, you should start with the :doc:`tutorial <guides/tutorial>`. You can then work your way through the other guides. :)
+If you are **new to Utopia**, you should start with the :doc:`Tutorial <guides/tutorial>`. You can then work your way through the other guides. :)
 
 
 .. toctree::
@@ -58,3 +58,8 @@ If you are **new to Utopia**, you should start with the :doc:`tutorial <guides/t
    :glob:
 
    examples
+
+
+.. note::
+
+  If you notice any errors in this documentation, even minor, or have suggestions for improvements, please inform `Benni <herdeanu@iup.uni-heidelberg.de>`_ and/or `Yunus <yunus.sevinchan@iup.uni-heidelberg.de>`_ of them. Thank you! :)
