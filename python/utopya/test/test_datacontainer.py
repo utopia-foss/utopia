@@ -106,13 +106,6 @@ def test_griddc():
     assert (gdc_2d_C == expected_2d_C).all()
 
 
-    # Error messages ..........................................................
-    # Missing index order attribute
-    with pytest.raises(KeyError, match="No attribute \'index_order\' found"):
-        GridDC(name="missing_index_order_attr", data=data_2d_C,
-               attrs=dict(content="grid", grid_shape=(3, 4)))
-
-
 def test_griddc_integration():
     """Integration test for the GridDC using the ContDisease model"""
 
@@ -167,6 +160,13 @@ def test_griddc_integration():
     assert 'x: 8' in grid_data._format_info()
     assert 'y: 4' in grid_data._format_info()
     assert 'ids' not in grid_data._format_info()
+
+    # Check that coordinate information is available
+    assert (grid_data.coords['time'] == [0, 1, 2, 3]).all()
+    assert np.isclose(grid_data.coords['x'],
+                      np.linspace(0., 2., 8, False) + 2./(2*8)).all()
+    assert np.isclose(grid_data.coords['y'],
+                      np.linspace(0., 1., 4, False) + 1./(2*4)).all()
 
     # Try re-instating the proxy
     grid_data.reinstate_proxy()

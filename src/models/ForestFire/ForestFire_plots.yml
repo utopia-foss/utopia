@@ -21,11 +21,53 @@ tree_density_over_p_lightning:
   based_on: tree_density_over_p_lightning
   enabled: false  # Can enable this when sweeping over `p_lightning`
 
+# ... Asymptotic tree density .................................................
+tree_density_asymptotic_over_p_lightning:
+  based_on: tree_density_asymptotic
+  enabled: false  # Can enable this when sweeping over any dimension
+
+  # Specialization for p_lightning
+  helpers:
+    set_labels:
+      y: $p_{lightning}$
+    set_scales:
+      y: log
+    set_limits:
+      y: [min, ~]
+
+  # Select the time steps to average over
+  average_fraction: .06
+
+  # Passed to plt.errorbar
+  color: tab:blue
+
+
 # --- Tree age ----------------------------------------------------------------
 mean_tree_age:
   based_on: mean_tree_age
 
-# --- Animation of the spatial grid -------------------------------------------
+
+# --- Snapshots of the spatial grid -------------------------------------------
+# ... The forest ..............................................................
+forest_snapshot:
+  based_on: forest_snapshot
+  enabled: false
+  time_idx: -1
+
+# ... The forest age ..........................................................
+forest_age_snapshot:
+  based_on: forest_age_snapshot
+  enabled: false
+  time_idx: -1
+
+# ... The clusters ............................................................
+clusters_snapshot:
+  based_on: clusters_snapshot
+  enabled: false
+  time_idx: -1
+
+
+# --- Animations of the spatial grid ------------------------------------------
 # ... With binary state .......................................................
 forest:
   based_on: .ca.state.anim_ffmpeg  # update to *_frames to save frames
@@ -53,7 +95,7 @@ forest_age:
       limits: [0, 250]
       cmap: YlGn
 
-# --- Animation of the clusters on the spatial grid ---------------------------
+# ... Clusters ................................................................
 clusters:
   based_on: .ca.state.anim_ffmpeg  # update to *_frames to save frames
 
@@ -68,3 +110,4 @@ clusters:
       title: Clusters
       limits: [0, 20]
       cmap: tab20
+      no_cbar_markings: true

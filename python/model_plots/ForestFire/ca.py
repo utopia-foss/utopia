@@ -3,7 +3,7 @@
 import numpy as np
 
 import utopya.plot_funcs.ca
-from utopya.plot_funcs.ca import is_plot_func, UniversePlotCreator
+from utopya.plotting import is_plot_func, UniversePlotCreator
 
 # -----------------------------------------------------------------------------
 

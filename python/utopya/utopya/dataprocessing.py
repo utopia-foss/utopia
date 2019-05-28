@@ -4,6 +4,7 @@ functions.
 
 import operator
 import logging
+import warnings
 from typing import Union, List, Tuple
 
 import numpy as np
@@ -77,6 +78,18 @@ def create_mask(data: xr.DataArray, *,
                         coords=data.coords,
                         attrs=dict(**data.attrs))
 
+def where(data: xr.DataArray, *,
+          operator_name: str, rhs_value: float) -> xr.DataArray:
+    """Filter elements from the given data according to a condition. Only
+    those elemens where the condition is fulfilled are not masked.
+
+    NOTE This leads to a dtype change to float.
+    """
+    # Get the mask and apply it
+    return data.where(create_mask(data,
+                                  operator_name=operator_name,
+                                  rhs_value=rhs_value))
+
 
 def count_unique(data, **kwargs):
     """Applies np.unique to the given data"""
@@ -132,11 +145,16 @@ TRANSFORMATIONS = {
     # Count unique values
     'count_unique': lambda d, _: count_unique(d),
     
-    # Count unique values
+    # Create a mask from the given data
     'create_mask':  
         lambda d, kws: create_mask(d, **(kws if isinstance(kws, dict)
                                          else dict(operator_name=kws[0],
                                                    rhs_value=kws[1]))),
+
+    # Filter values that do not match a condition, i.e.: make them NaN
+    'where':    lambda d, kws: where(d, **(kws if isinstance(kws, dict)
+                                           else dict(operator_name=kws[0],
+                                                     rhs_value=kws[1]))),
 
     # Logarithms
     'log':      lambda d, _: np.log(d),
@@ -249,32 +267,46 @@ def transform(data: xr.DataArray, *operations: Union[dict, str],
                                        ", ".join(TRANSFORMATIONS.keys()))
                              ) from err
 
-        # Apply it
+        # Resolve auxilary data for binary operations. This changes op_spec
+        # such that it is no longer the dict but the object that is to be used
+        # as the right-hand side of a binary operation.
+        if isinstance(op_spec, dict) and 'rhs_from' in op_spec:
+            try:
+                op_spec = aux_data[op_spec['rhs_from']]
+
+            except KeyError as err:
+                raise ValueError("The requested data path '{}' for the "
+                                 "binary operation '{}' was not provided as "
+                                 "part of the auxilary data. Available "
+                                 "aux_data: {}"
+                                 "".format(op_spec['rhs_from'], op_name,
+                                           aux_data)) from err
+
         log.log(log_level, "Applying operation %d/%d:  %s  ...",
                 i+1, len(operations), op_name)
         log.log(log_level, "  … with arguments:  %s", op_spec)
-        
-        # resolve op_spec for binary operations
-        if isinstance(op_spec, dict) and 'rhs_from' in op_spec:
-            rhs_data_name = op_spec['rhs_from']
-            if rhs_data_name not in aux_data:
-                raise ValueError("The requested data_path '{}' for the"
-                                    " binary operation '{}' with kws {} is not"
-                                    " provided by aux_data."
-                                    " Provided aux_data: {}"
-                                    "".format(rhs_data_name, op_name,
-                                            op_spec, aux_data))
-            op_spec = aux_data[rhs_data_name]
-        
-        try:            
-            data = op_func(data, op_spec)
 
-        except Exception as exc:
-            if may_fail:
-                log.warning("Operation '%s' failed with %s: %s",
-                            op_name, exc.__class__.__name__, exc)
-                continue
-            raise
+        # Catch and record warnings instead of displaying
+        with warnings.catch_warnings(record=True) as caught_warnings:
+            # Apply the transformation
+            try:
+                data = op_func(data, op_spec)
+
+            except Exception as exc:
+                if may_fail:
+                    log.warning("Operation '%s' failed with %s: %s",
+                                op_name, exc.__class__.__name__, exc)
+                    continue
+                raise
+
+        # Emit any warnings that might have been generated
+        if caught_warnings:
+            log.log(log_level,
+                    "Operation '%s' generated the following warnings:\n{}\n",
+                    op_name,
+                    "\n".join([warnings.formatwarning(w.message, w.category,
+                                                      w.filename, w.lineno)
+                               for w in caught_warnings]))
 
         log.log(log_level, "Result:\n%s\n", data)
 

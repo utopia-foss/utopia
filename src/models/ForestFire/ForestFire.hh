@@ -25,7 +25,7 @@ struct State {
     /// The actual cell state
     Kind kind;
 
-    /// The age of the cell
+    /// The age of the tree on this cell
     unsigned short age;
 
     /// An ID denoting to which cluster this cell belongs
@@ -135,9 +135,8 @@ using ModelTypes = Utopia::ModelTypes<>;
 
 /// The ForestFire model
 /** The ForestFire model simulates the development of a forest under influence
- *  of forest fires. 
- *  Trees grow randomly and fires lead to a whole cluster instantaneously
- *  burning down; thus being a so-called two state model.
+ *  of fires. Trees grow randomly and lightning strikes lead to a whole cluster
+ *  instantaneously burning down. This is the so-called two state model.
  */
 class ForestFire:
     public Model<ForestFire, ModelTypes>
@@ -173,13 +172,16 @@ private:
     /// A [0,1]-range uniform distribution used for evaluating probabilities
     std::uniform_real_distribution<double> _prob_distr;
 
-    /// The incremental cluster tag
+    /// The incremental cluster tag caching variable
     unsigned int _cluster_id_cnt;
 
     /// A temporary container for use in cluster identification
     std::vector<std::shared_ptr<CellManager::Cell>> _cluster_members;
 
-    // .. Datasets ...........................................................
+    // .. Output-related ......................................................
+    /// Whether to _only_ write the tree density
+    const bool _write_only_tree_density;
+
     /// The dataset that stores the kind for each cell, e.g. Kind::tree
     const std::shared_ptr<DataSet> _dset_kind;
     
@@ -215,6 +217,7 @@ public:
         _prob_distr(0., 1.),
         _cluster_id_cnt(0),
         _cluster_members(),
+        _write_only_tree_density(get_as<bool>("write_only_tree_density",_cfg)),
 
         // Create datasets using the helper functions for CellManager-data
         _dset_kind{this->create_cm_dset("kind", _cm)},
@@ -441,6 +444,14 @@ public:
 
     /// Write data
     void write_data () {
+        // Calculate and write the tree density
+        _dset_tree_density->write(calculate_tree_density()); 
+
+        if (_write_only_tree_density) {
+            // Done here.
+            return;
+        }
+
         // Store all cells' kind
         _dset_kind->write(_cm.cells().begin(), _cm.cells().end(),
             [](const auto& cell) {
@@ -459,9 +470,6 @@ public:
             [](const auto& cell) {
                 return cell->state.cluster_id;
         });
-
-        // Calculate and write the tree density
-        _dset_tree_density->write(calculate_tree_density()); 
     }
 };
 
