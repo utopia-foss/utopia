@@ -387,6 +387,9 @@ deploy:dockerhub-latest:
                    -t ccees/utopia:latest
                    ./
     - docker push ccees/utopia:latest
+  environment:
+    name: docker/latest
+    url: https://hub.docker.com/r/ccees/utopia
 
 deploy:docs:
   stage: deploy
@@ -414,3 +417,7 @@ deploy:docs:
     - ssh -p $DOC_PORT $DOC_HOST "/postprocess.sh $DOC_REMOTE_BASE_DIR $DOC_LATEST $DOC_KEEP_LAST_N"
 
     - echo "Finished. :)"
+
+  environment:
+    name: docs/latest
+    url: https://hermes.iup.uni-heidelberg.de/utopia_doc/latest/html/
