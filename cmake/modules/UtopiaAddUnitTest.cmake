@@ -71,7 +71,7 @@ function(add_unit_test)
     set(unit_test ${group_upper}_${KW_NAME})
     add_executable(${unit_test} ${KW_SOURCES})
     target_link_libraries(${unit_test}
-        PUBLIC utopia Boost::unit_test_framework)
+        PUBLIC Utopia::utopia Boost::unit_test_framework)
     # NOTE: Might lead to issues if linked to the static unit test library
     target_compile_definitions(${unit_test}
         PRIVATE BOOST_TEST_DYN_LINK)

@@ -17,7 +17,7 @@ function(add_model target_name)
     add_executable(${target_name} ${ARGN})
 
     # link to Utopia target
-    target_link_libraries(${target_name} PUBLIC utopia)
+    target_link_libraries(${target_name} PUBLIC Utopia::utopia)
 
     # the rest of this function is to relay information to the utopya package
     # add name to target list

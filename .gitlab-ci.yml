@@ -201,6 +201,27 @@ build:debug-clang:
     - make $MAKE_FLAGS_BUILD build_tests_models
     - make $MAKE_FLAGS_BUILD all
 
+build:install:
+  stage: build
+  <<: [*ssh_access]
+
+  artifacts:
+    name: "$CI_JOB_NAME"
+    paths:
+      - $CI_PROJECT_DIR/build
+      - $CI_PROJECT_DIR/python # to include configured Python scripts
+      - $CI_PROJECT_DIR/install # installation directory
+    expire_in: 3 hours
+
+  script:
+    - mkdir build && cd build
+    - cmake
+        -DCMAKE_INSTALL_PREFIX=$CI_PROJECT_DIR/install
+        -DCMAKE_BUILD_TYPE=Release
+        ..
+    - make $MAKE_FLAGS_BUILD install
+    - cp -r ~/.cmake . # copy the packgage registry
+
 # -- Test stage ---------------------------------------------------------------
 # Using the artifacts of the build stage, executes tests of core, data i/o,
 # frontend, and models.
@@ -317,6 +338,35 @@ test:cli:
     - utopia run dummy --set-params num_steps=3 write_every=2
     - utopia run dummy --set-cfg parameter_space.seed=23
 
+# Test if using Utopia in a downstream module works
+test:link_build_tree:
+  stage: test
+  dependencies:
+    - build:install
+  script:
+    # move the package registry into the user path
+    - cd build && cp -r .cmake ~/
+    # build downstream module
+    - cd $CI_PROJECT_DIR && mkdir build-dep && cd build-dep
+    # package should be found via registry
+    - cmake ../test/dependency
+    - make $MAKE_FLAGS_BUILD all
+    - make test
+
+test:link_install_tree:
+  stage: test
+  dependencies:
+    - build:install
+  script:
+    # build downstream module
+    - mkdir build-dep && cd build-dep
+    # CMake v3.10 is restricted to _DIR, CMake >=v3.14 can use _ROOT
+    - cmake
+        -DUtopia_DIR=$CI_PROJECT_DIR/install/lib/cmake/Utopia
+        -DUtopia_ROOT=$CI_PROJECT_DIR/install
+        ../test/dependency
+    - make $MAKE_FLAGS_BUILD all
+    - make test
 
 # -- Deploy Stage -------------------------------------------------------------
 # Deploy the docker image and the documentation
