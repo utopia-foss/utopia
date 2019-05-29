@@ -57,19 +57,6 @@ target_link_libraries(utopia INTERFACE
     yaml-cpp
 )
 
-# yaml-cpp does not export interface include dirs
-# NOTE This should be reported as bug or patched via MR in the yaml-cpp
-#      repository. See https://pabloariasal.github.io/2018/02/19/its-time-to-do-cmake-right/
-#      as a reference on how to do that.
-# NOTE: Add this path only in the build context because yaml-cpp will be
-#       inside the above include path after installation
-target_include_directories(utopia
-    # register as system headers (compilers might ignore warnings)
-    SYSTEM
-    INTERFACE
-        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/plugins/vendor/yaml-cpp/include/>
-)
-
 # --- Include Config Tree ---
 
 # Enable testing via CTest engine
