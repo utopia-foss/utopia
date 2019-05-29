@@ -1,0 +1,68 @@
+@PACKAGE_INIT@
+
+# --- Include the Utopia CMake macros ---
+
+# The local path to this file
+get_filename_component(current_dir ${CMAKE_CURRENT_LIST_FILE} PATH)
+
+# Add the installed modules to the module path
+set_and_check(cmake_modules_dir @PACKAGE_cmake_modules_dir@)
+list(APPEND CMAKE_MODULE_PATH ${cmake_modules_dir})
+
+# Include all modules
+include(UtopiaPython)
+include(UtopiaGenerateModelInfo)
+include(UtopiaAddUnitTest)
+include(UtopiaAddModel)
+include(UtopiaAddModelTest)
+
+# --- Find the dependencies ---
+
+# Add function 'find_dependency' which simply calls 'find_package',
+# but implicitly uses QUIET and REQUIRED.
+include(CMakeFindDependencyMacro)
+
+find_dependency(Boost 1.62
+                COMPONENTS unit_test_framework)
+find_dependency(FFTW3 3.3)
+
+set(THREADS_PREFER_PTHREAD_FLAG)
+find_dependency(Threads)
+
+# --- Include Dependencies with custom CMake setup ---
+
+# ARMADILLO
+# Queck if we find it in config mode
+# NOTE: Use 'find_package' because this is not required to succeed!
+find_package(Armadillo CONFIG QUIET)
+# fall back to our module if no target is defined
+if (NOT TARGET armadillo)
+    find_dependency(Armadillo MODULE)
+endif()
+
+# HDF5
+find_dependency(HDF5 1.10
+                COMPONENTS C HL)
+include(RegisterHDF5)
+
+# --- Include Submodules ---
+# Make sure we actually find the submodules and no other installation
+
+find_dependency(spdlog
+                CONFIG
+                NO_DEFAULT_PATH
+                PATHS @PACKAGE_CMAKE_INSTALL_PREFIX@
+                      @PACKAGE_spdlog_config_dir@)
+find_dependency(yaml-cpp
+                CONFIG
+                NO_DEFAULT_PATH
+                PATHS @PACKAGE_CMAKE_INSTALL_PREFIX@
+                      @PACKAGE_yaml-cpp_config_dir@)
+
+# --- Include our target file ---
+# (Makes targets Utopia::<target> available)
+
+include(${current_dir}/@targets_export_name@.cmake)
+
+# --- Finalize configuration ---
+check_required_components(@PROJECT_NAME@)

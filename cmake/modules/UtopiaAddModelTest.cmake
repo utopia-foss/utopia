@@ -67,7 +67,8 @@ function(add_model_test)
     add_dependencies(${model_test_target} ${target})
 
     # link to Utopia target
-    target_link_libraries(${target} PUBLIC utopia Boost::unit_test_framework)
+    target_link_libraries(${target}
+        PUBLIC Utopia::utopia Boost::unit_test_framework)
     # NOTE: Might lead to issues if linked to the static unit test library
     target_compile_definitions(${target} PRIVATE BOOST_TEST_DYN_LINK)
 
