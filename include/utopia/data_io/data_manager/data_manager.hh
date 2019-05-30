@@ -29,19 +29,26 @@ using namespace Utopia::Utils;
 /**
  *  \addtogroup DataManager
  *  \{
+ *  @brief 
+ */
+
+/**
+ * @page Datamanager Datamanager module
+ * \section what Overview 
  * 
  * The data management high-level interface has as its central piece the
  * ::DataManager class. That class orchestrates one or many WriteTask objects
  * and determines depending on so-called deciders and triggers, whether they
  * are to perform their write operation and whether a new write destination
  * should be acquired, respectively.
- *
- * For more information, see the class implementations.
+ * \section impl Implementation
+ * 
+ * 
  */
 
 /**
  * @brief    Type traits for the DataManager
- * @detail   This allows to specify custom types for the DataManager. Usually,
+ *           This allows to specify custom types for the DataManager. Usually,
  *           you only need to touch this if you do not want to use the
  *           defaults or if you want to need to explicitly specify a common
  *           base class because it cannot be deduced automatically.
@@ -72,8 +79,7 @@ struct DataManagerTraits {
 /**
  * @brief Manage different tasks of writing out data from a source in a uniform
  *        yet flexible way.
-
- * @detail This is a class which, when being supplied with appropriate
+ *         This is a class which, when being supplied with appropriate
  *         callables, manages their execution.
  *
  *         ## Idea
@@ -417,8 +423,7 @@ class DataManager
 
     /**
      * @brief  Register a new task and its name with the DataManager
-     *
-     * @detail No task named ``name`` may already be registered
+     *        No task named ``name`` may already be registered
      *
      * @tparam Tsk       Type of the task to register
      *
@@ -438,8 +443,7 @@ class DataManager
 
     /**
      * @brief  Register a new decider and its name with the DataManager
-     *
-     * @detail No decider named ``name`` may already be registered
+     *         No decider named ``name`` may already be registered
      * 
      * @tparam Dcd         Type of the decider to register
      *
@@ -460,8 +464,7 @@ class DataManager
 
     /**
      * @brief  Register a new trigger and its name with the DataManager
-     *
-     * @detail No trigger named ``name`` may already be registered
+     *         No trigger named ``name`` may already be registered
      *
      * @tparam Trgr         Type of the trigger to register
      *
@@ -554,8 +557,7 @@ class DataManager
 
     /**
      * @brief Register a decider->trigger->task procedure after construction
-     *
-     * @detail This will invoke the respective ``register_*`` and
+     *        This will invoke the respective ``register_*`` and
      *         ``link_task_to_*`` methods.
      *
      * @note   It is not possible to use config information here; that has to
@@ -729,7 +731,7 @@ class DataManager
 
     /**
      * @brief Construct a new DataManager object
-     * @detail This constructor needs to be supplied with arbitrary
+     *         This constructor needs to be supplied with arbitrary
      *         tuplelike objects containing pairs of (name, decider),
      *         (name, trigger), and (name, task) respectivly. They all need to
      *         be of the same length.
@@ -931,8 +933,7 @@ DataManager(
 namespace Default {
 /**
  * @brief  A default DataManager type
- *
- * @detail This uses all the default types for deciders, triggers, write task,
+ *         This uses all the default types for deciders, triggers, write task,
  *         and execution process
  *
  * @note   Cannot go anywhere else currently... Once possible, move to a more
@@ -951,7 +952,7 @@ using DefaultDataManager =
 }
 
 /**
- *  \}  // endgroup DataManager::Defaults
+ *  \}  // endgroup DataManager
  */
 
 

@@ -25,6 +25,18 @@ namespace Utopia
 {
 namespace DataIO
 {
+/*!
+* \addtogroup DataIO
+* \{
+*/
+
+/*!
+* \addtogroup HDF5
+* \{
+*/
+
+
+
 /**
  * @brief Check for validity of a hdf5 htri_t type or similar
  * @param [in] valid parameter to check
@@ -73,22 +85,18 @@ bool check_validity(T valid, std::string object_name)
 }
 
 /// Checks iteratively if each segment of a path exists
-/** \param loc_id  Identifier of the file or group to query.
-  * \param path    The path of the link to check. This can be a relative or
+
+
+ /**
+  * @brief Checks if a given path exists in a hdf5 object identitifed by its id. 
+
+  * @param loc_id Identifier of the file or group to query.
+  * @param path The path of the link to check. This can be a relative or
   *                an absolute path, but (as with H5Lexists) it can NOT use
   *                the ``../`` syntax to go to the parent object. For such
   *                cases, an absolute path needs to be given.
-  * \param link_property_list  Link access property list identifier.
-  *
-  * \note This happens according to the recommended way to use H5Lexists, which
-  *       only checks for the existence of the final path segment.
-  *
-  * \detail For example, a path /foo/bar/baz is checked in the following way:
-  *             /
-  *             /foo
-  *             /foo/bar
-  *             /foo/bar/baz
-  *         If any of the segements does not yet exist, the function returns
+  * @param link_property_list  Link access property list identifier.
+  * @return htri_t Variable which tells if the given path exists (true > 0, false = 0, error < 0)
   */
 htri_t path_exists(hid_t loc_id,
                    std::string path,
@@ -120,6 +128,8 @@ htri_t path_exists(hid_t loc_id,
     // Checked the full path. Can return the last return value now:
     return rv;
 }
+/*! \} */ // end of group HDF5
+/*! \} */ // end of group DataIO
 
 
 } // namespace DataIO

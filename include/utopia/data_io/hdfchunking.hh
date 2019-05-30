@@ -12,6 +12,15 @@
 
 namespace Utopia {
 namespace DataIO {
+/*!
+* \addtogroup DataIO
+* \{
+*/
+
+/*!
+* \addtogroup ChunkingUtilities
+* \{
+*/
 
 // ++ Helper functions ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 namespace _chunk_helpers {
@@ -66,7 +75,7 @@ std::string to_str(const Cont& vec) {
 
 /**
  * @brief   Optimizes the chunks along all axes to find a good default
- * @detail  This algorithm is only aware of the current size of the chunks and
+ * @details  This algorithm is only aware of the current size of the chunks and
  *          the target byte size of a chunk. Given that information, it either
  *          tries to reduce the extend of chunk dimensions, or enlarge it. To
  *          do that, it iterates over all chunk dimensions and either doubles
@@ -233,7 +242,7 @@ void opt_chunks_target(Cont& chunks,
 
 /**
  * @brief   Optimize chunk sizes using max_extend information
- * @detail  This algorithm is aware of the maximum extend of a dataset and can
+ * @details  This algorithm is aware of the maximum extend of a dataset and can
  *          use that information during optimization, aiming to increase the
  *          size of the chunks towards CHUNKSIZE_MAX as far as possible without
  *          going beyond max_extend. The paradigm here is that the _number_ of
@@ -495,7 +504,7 @@ void opt_chunks_with_max_extend(Cont& chunks,
 
 /**
  * @brief   Try to guess a good chunksize for a dataset
- * @detail  The premise is that a single write operation should be as fast
+ * @details  The premise is that a single write operation should be as fast
  *          as possible, i.e. that it occurs within one chunk. Also, if a
  *          maximum dataset extend is known, it is taken into account to
  *          determine more favourable chunk sizes.
@@ -755,6 +764,8 @@ const Cont calc_chunksize(const hsize_t typesize,
 
     return chunks;
 }
+/*! \} */ // end of group ChunkingUtilities
+/*! \} */ // end of group DataIO
 
 } // namespace DataIO
 } // namespace Utopia

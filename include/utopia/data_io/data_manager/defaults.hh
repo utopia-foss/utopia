@@ -16,7 +16,7 @@ namespace Default {
  *  \addtogroup DataManagerDefaults Defaults
  *  \{
  *  \ingroup DataManager
- *  \detail Here, default implementations for common deciders, triggers and
+ *  @details Here, default implementations for common deciders, triggers and
  *          write tasks for the ::DataManager are defined, as well as a
  *          default execution process which is to run the actual writer tasks.
  */
@@ -52,7 +52,7 @@ using DefaultAttributeWriterDataset =
 /**
  * @brief  A default WriteTask definition
  *
- * @detail This uses the other ``Default``-prefixed builders and writers from
+ * @details This uses the other ``Default``-prefixed builders and writers from
  *         this namespace.
  *
  * @tparam Model The type of the model that is made available to each callable
@@ -95,7 +95,7 @@ DefaultWriteTask<Model>
  * @brief Functor representing what is considered the most widely used
  *        execution process for writing data.
  *
- * @detail First runs over all triggers, and checks whether new datasets need
+ * @details First runs over all triggers, and checks whether new datasets need
  *         to be built. If yes, the builder in the respective dataset is
  *         called.
  */
@@ -432,7 +432,7 @@ struct SimpleCompositeDecider : DefaultDecider<Model>
     }
 
     /// Set up a SimpleCompositeDecider from configuration node.
-    /** @detail Expects keys ``slice`` and ``interval`` to pass to the
+    /** @details Expects keys ``slice`` and ``interval`` to pass to the
       *         respective deciders
       */
     SimpleCompositeDecider(const Config& cfg)

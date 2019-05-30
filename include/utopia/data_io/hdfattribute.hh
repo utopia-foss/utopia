@@ -23,6 +23,18 @@ namespace Utopia
 {
 namespace DataIO
 {
+
+/*!
+* \addtogroup DataIO
+* \{
+*/
+
+/*!
+* \addtogroup HDF5
+* \{
+*/
+
+
 /**
  * @brief      Class for hdf5 attribute, which can be attached to groups and
  *             datasets.
@@ -57,7 +69,7 @@ private:
     /**
      * @brief Function for writing containers as attribute.
      *
-     * @detail Only buffers if necessary, i.e. if non-vector containers or
+     * @details Only buffers if necessary, i.e. if non-vector containers or
      *         nested containers or containers of strings have to be written.
      */
     template <typename Type>
@@ -869,6 +881,8 @@ void swap(HDFAttribute<ParentObject1>& lhs, HDFAttribute<ParentObject2>& rhs)
 {
     lhs.swap(rhs);
 }
+/*! \} */ // end of group HDF5
+/*! \} */ // end of group DataIO
 
 } // namespace DataIO
 } // namespace Utopia

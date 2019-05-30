@@ -24,6 +24,18 @@ namespace Utopia
 {
 namespace DataIO
 {
+/*!
+* \addtogroup DataIO
+* \{
+*/
+
+
+/*!
+* \addtogroup HDF5
+* \{
+*/
+
+
 /**
  * @brief      Class representing a HDFDataset, wich reads and writes
  * data and attributes
@@ -480,7 +492,7 @@ private:
     }
 
     /// read attirbute data which contains a single string.
-    /** \detail this is always read into std::strings, and hence we can use
+    /** \details this is always read into std::strings, and hence we can use
      *         'resize'
      */
     template <typename Type>
@@ -494,7 +506,7 @@ private:
     }
 
     /// read pointertype.
-    /** \detail Either this is given by the user, or it is assumed to be 1d,
+    /** \details Either this is given by the user, or it is assumed to be 1d,
      *         thereby flattening Nd attributes
      */
     template <typename Type>
@@ -611,7 +623,7 @@ protected:
     /**
      * @brief  A buffer for storing attributes before the dataset exists
      *
-     * @detail A vector holding very large variant types to store attributes
+     * @details A vector holding very large variant types to store attributes
      *         in before the dataset exists physically.
      *         The string in the held pairs is for path of the attribute, the
      *         variant for the data.
@@ -784,7 +796,7 @@ public:
     /**
      * @brief      add attribute to the dataset
      *
-     * @detail     If the dataset is not opened already, the attribute is
+     * @details     If the dataset is not opened already, the attribute is
      *             stored in the _attribute_buffer and written on close.
      *
      * @note       Attributes stored when the dataset was not yet opened will
@@ -836,7 +848,7 @@ public:
     /**
      * @brief      Close the dataset
      *
-     * @detail     This function is called by the destructor and also takes
+     * @details     This function is called by the destructor and also takes
      *             care that the attribute buffer is written out, ensuring that
      *             a correctly closed dataset contains all specified attributes
      */
@@ -1534,6 +1546,8 @@ void swap(HDFDataset<HDFObject>& lhs, HDFDataset<HDFObject>& rhs)
 {
     lhs.swap(rhs);
 }
+/*! \} */ // end of group HDF5
+/*! \} */ // end of group DataIO
 
 } // namespace DataIO
 } // namespace Utopia
