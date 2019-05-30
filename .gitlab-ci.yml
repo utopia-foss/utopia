@@ -136,7 +136,13 @@ setup:utopia-base:
 # Build the documentation; artifacts used for documentation deployment
 build:docs:
   stage: build
-  <<: [*ssh_access, *artifacts]
+  <<: [*ssh_access]
+
+  artifacts:
+    name: "$CI_JOB_NAME"
+    paths:
+      - $CI_PROJECT_DIR/build/doc
+    expire_in: 1 day
 
   script:
     - mkdir build && cd build
