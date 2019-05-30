@@ -19,6 +19,20 @@ namespace Utopia
 {
 namespace DataIO
 {
+
+/*!
+* \addtogroup DataIO
+* \{
+*/
+
+/*!
+* \addtogroup HDF5
+* \{
+*/
+
+
+
+
 /**
  * @brief Class which handles the conversion of C-types into hdf5types.
  *
@@ -186,6 +200,8 @@ hid_t HDFTypeFactory::__get_type__<char>()
 {
     return H5T_NATIVE_CHAR;
 }
+/*! \} */ // end of group HDF5
+/*! \} */ // end of group DataIO
 
 } // namespace DataIO
 } // namespace Utopia

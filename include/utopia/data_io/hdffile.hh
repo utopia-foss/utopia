@@ -21,6 +21,45 @@
 namespace Utopia {
 namespace DataIO {
 
+// Doxygen group for dataIO backend ++++++++++++++++++++++++++++++++++++++++++++++
+/*!
+* \addtogroup DataIO
+* \{
+*/
+
+/**
+ *  \addtogroup HDF5 HDF5
+ *  \{
+ * 
+ */
+
+
+/**
+ * @page HDFclasses  HDF5 Backend Module
+ * 
+ * \section what Overview
+ * This backend is a replacement of the HDF5 C++ wrappers. It does not implement 
+ * the full HDF5 standard, but only the features we deemed useful and needed 
+ * for the Utopia project.
+ * It was created because the C++ wrappers supplied by the HDF5 group do not support
+ * STL containers and  in general no modern C++ features. Furthermore, development 
+ * of the pure C implementation is much faster and it is generally more complete.
+ * 
+ * \section impl Implementation
+ * In this module, C++ classes are created which represent HDF5 files, groups, 
+ * datasets and attributes, with the associated object creation- and data I/O-
+ * capabilities, limited to one and two-dimensional datasets of arrays, 
+ * containers or scalars. Additionally, helper classes for organizing type mapping 
+ * and type conversion are supplied, which normally are irelevant for users.
+ * Finally a number of helper functions are supplied which are used to assert
+ * correctness.
+ */
+
+
+/**
+ * @brief Class representing a HDF5 file.
+ * 
+ */
 class HDFFile
 {
 protected:
@@ -46,7 +85,7 @@ public:
     }
 
     /**
-     * @brief      closes the hdffile
+     * @brief      Closes the hdffile
      */
     void close()
     {
@@ -153,7 +192,8 @@ public:
     /**
      * @brief      Get the referencecounter object
      *
-     * @return     auto
+     * @return     unorderd_map which holds object id and the number of currently 
+     *              referencing objects for this id.
      */
     auto get_referencecounter()
     {
@@ -309,6 +349,10 @@ public:
         close();
     }
 };
+
+/*! \} */ // end of group HDF5
+/*! \} */ // end of group DataIO
+
 } // namespace DataIO
 } // namespace Utopia
 #endif

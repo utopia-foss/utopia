@@ -18,6 +18,29 @@
 
 namespace Utopia {
 namespace DataIO {
+/*!
+* \addtogroup DataIO
+* \{
+*/
+
+/*!
+* \addtogroup GraphUtilities
+* \{
+*/
+/**
+ * \page GraphUtils Graph Utilities Module
+ * 
+ * \section what Overview
+ * This module implements functions which wrap common tasks people face when 
+ * they wish to extract data from boost::graph objects. 
+ * 
+ * \section impl Implementation
+ * The provided functions can be separated into two groups, one which saves 
+ * the entire graph, i.e., its edge-vertex structure, and a second one which 
+ * allows to extract data associated with either edges or vertices via 
+ * user supplied functions. 
+ * 
+ */
 
 
 /** This function opens a HDFGroup for graph data and adds attributes.
@@ -173,6 +196,7 @@ void save_graph(const Graph& g,
     
     log->debug("Graph saved.");
 }
+/*! \} */ // end of group GraphUtilities
 
 
 // helper functions for checking properties of adaptor types for save_graph_properties
@@ -190,6 +214,13 @@ struct is_size_two<
     : std::true_type
 {
 };
+
+
+/*!
+* \addtogroup GraphUtilities
+* \{
+*/
+
 
 /** This function writes the results of all functions in a named tuple,
 *   applied to all vertices/edges of a boost::graph into a HDFGroup.
@@ -428,6 +459,9 @@ save_graph_properties(Graph& g, const std::shared_ptr<HDFGroup>& nw_grp,
 }
 
 // TODO add functions here to open datasets for edge or node attributes.
+
+/*! \} */ // end of group GraphUtilities
+/*! \} */ // end of group DataIO
 
 } // namespace DataIO
 } // namespace Utopia

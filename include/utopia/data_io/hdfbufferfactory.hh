@@ -19,6 +19,17 @@ namespace Utopia
 {
 namespace DataIO
 {
+/*!
+* \addtogroup DataIO
+* \{
+*/
+
+/*!
+* \addtogroup HDF5
+* \{
+*/
+
+
 /**
  * @brief      Class which turns non-vector or plain-array containers into
  *             vectors. If the value_types are containers themselves, these are
@@ -130,6 +141,8 @@ public:
         }
     }
 };
+/*! \} */ // end of group HDF5
+/*! \} */ // end of group DataIO
 
 } // namespace DataIO
 } // namespace Utopia

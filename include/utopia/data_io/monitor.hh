@@ -5,11 +5,33 @@
 #include <chrono>
 #include <iostream>
 #include <utility>
-
 #include <yaml-cpp/yaml.h>
 
 namespace Utopia {
 namespace DataIO {
+
+/*!
+* \addtogroup DataIO
+* \{
+*/
+
+/*!
+* \addtogroup Monitor
+* \{
+*/
+
+/**
+ * \page monitor Monitor Module
+ * 
+ * \section what Overview
+ * This module implements a class and associated helpers which allow for the 
+ * monitoring and output of user selected properties of a model which are  
+ * forwarded to standard out in a specified real-time interval measured in 
+ * seconds. 
+ * 
+ */
+
+
 
 /// Test whether an object is callable. 
 /** is_callable returns true for callable functions such as std::functions or
@@ -30,7 +52,6 @@ struct is_callable
 
     static constexpr bool value = decltype(test<F>(0))::value;
 };
-
 
 /// The MonitorTimer keeps track of the time when to emit monitor data
 class MonitorTimer {
@@ -215,7 +236,7 @@ public:
     }
 
     /// Set time- and progress-related top level entries
-    /** @detail Using the given parameters, this method sets the top-level
+    /** @brief Using the given parameters, this method sets the top-level
      *          entries 'time' and 'progress'
      *
      *  @tparam Time The data type of the time
@@ -342,6 +363,10 @@ public:
         return _name;
     }
 };
+
+/*! \} */ // end of group Monitor
+/*! \} */ // end of group DataIO
+
 
 } // namespace DataIO
 } // namespace Utopia

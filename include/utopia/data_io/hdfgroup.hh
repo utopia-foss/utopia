@@ -21,6 +21,23 @@ namespace Utopia
 {
 namespace DataIO
 {
+/*!
+* \addtogroup DataIO
+* \{
+*/
+
+/*!
+* \addtogroup HDF5
+* \{
+*/
+
+
+
+/**
+ * @brief Class represting a HDFGroup, an object analogous to a folder for 
+ *          HDFFiles.
+ * 
+ */
 class HDFGroup
 {
 protected:
@@ -327,6 +344,8 @@ void swap(HDFGroup& lhs, HDFGroup& rhs)
 {
     lhs.swap(rhs);
 }
+/*! \} */ // end of group HDF5
+/*! \} */ // end of group DataIO
 
 } // namespace DataIO
 } // namespace Utopia
