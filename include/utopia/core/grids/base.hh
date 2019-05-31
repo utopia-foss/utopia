@@ -9,11 +9,6 @@ namespace Utopia {
  *  \{
  */
 
-/// Type of the neighborhood calculating function
-template<class Grid>
-using NBFuncID = std::function<IndexContainer(const IndexType&)>;
-
-
 /// Possible neighborhood types; availability depends on choice of grid
 enum class NBMode {
     /// Every entity is utterly alone in the world
@@ -25,7 +20,6 @@ enum class NBMode {
 };
 // NOTE When adding new neighborhood types, take care to update nb_mode_map!
 
-
 /// A map from strings to neighborhood enum values
 const std::map<std::string, NBMode> nb_mode_map {
     {"empty",       NBMode::empty},
@@ -34,10 +28,10 @@ const std::map<std::string, NBMode> nb_mode_map {
 };
 
 /// Given an NBMode enum value, return the corresponding string key
-/** \detail  This iterates over the nb_mode_map and returns the first key that
-  *          matches the given enum value.
+/** This iterates over the nb_mode_map and returns the first key that matches
+  * the given enum value.
   */
-std::string nb_mode_to_string(NBMode nb_mode) {
+std::string nb_mode_to_string(const NBMode& nb_mode) {
     for (const auto& m : nb_mode_map) {
         if (m.second == nb_mode) {
             return m.first;
@@ -46,9 +40,15 @@ std::string nb_mode_to_string(NBMode nb_mode) {
     // Entry is missing; this should not happen, as the nb_mode_map is meant to
     // include all possible enum values. Inform about it ...
     throw std::invalid_argument("The given nb_mode was not available in the "
-        "nb_mode_map! Are all NBMode values represented in the map?");
+        "nb_mode_map! Are all NBMode enum values represented in the map?");
 };
 
+/// Type of the neighborhood calculating function
+template<class Grid>
+using NBFuncID = std::function<IndexContainer(const IndexType&)>;
+
+
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 /// The base class for all grid discretizations used by the CellManager
 template<class Space>
@@ -191,19 +191,19 @@ public:
     virtual SpaceVec extent_of(const IndexType&) const = 0;
 
     /// Returns the vertices of the cell with the given ID
-    /** \detail Consult the derived class implementation's documentation on
-      *         the order of the vertices in the returned container.
+    /** Consult the derived class implementation's documentation on the order
+      * of the vertices in the returned container.
+      *
       * \note   This method does not perform bounds checking of the given ID!
       */
     virtual std::vector<SpaceVec> vertices_of(const IndexType&) const = 0;
 
     /// Return the ID of the cell covering the given point in physical space
-    /** \detail Cells are interpreted as covering half-open intervals in space,
-      *         i.e., including their low-value edges and excluding their high-
-      *         value edges.
-      *         The special case of points on high-value edges for non-periodic
-      *         space behaves such that these points are associated with the
-      *         cells at the boundary.
+    /** Cells are interpreted as covering half-open intervals in space, i.e.,
+      * including their low-value edges and excluding their high-value edges.
+      * The special case of points on high-value edges for non-periodic space
+      * behaves such that these points are associated with the cells at the
+      * boundary.
       *
       * \note   This function always returns IDs of cells that are inside
       *         physical space. For non-periodic space, a check is performed
@@ -229,8 +229,8 @@ public:
 
     // .. Getters .............................................................
     /// Get number of cells
-    /** \detail This information is used by the CellManager to populate the
-      *         cell container with the returned number of cells
+    /** This information is used by the CellManager to populate the cell
+      * container with the returned number of cells
       */
     virtual IndexType num_cells() const = 0;
     
@@ -240,11 +240,11 @@ public:
     }
 
     /// Returns the effective resolution into each dimension of the grid
-    /** \detail Depending on choice of resolution and extent of physical space,
-      *         the resolution given at initialization might not represent the
-      *         density of cells per unit of space fully accurately.
-      *         The effective resolution accounts for the scaling that was
-      *         required to map an integer number of cells onto the space.
+    /** Depending on choice of resolution and extent of physical space, the
+      * resolution given at initialization might not represent the density of
+      * cells per unit of space fully accurately. The effective resolution
+      * accounts for the scaling that was required to map an integer number of
+      * cells onto the space.
       */
     virtual SpaceVec effective_resolution() const = 0;
 
@@ -265,8 +265,8 @@ public:
 protected:
     // -- Neighborhood functions ----------------------------------------------
     /// Retrieve the neighborhood function depending on the mode
-    /** \detail The configuration node that is passed along can be used to
-      *         specify the neighborhood parameter members.
+    /** The configuration node that is passed along can be used to specify the
+      * neighborhood parameter members.
       */
     virtual NBFuncID<Self> get_nb_func(NBMode, const DataIO::Config&) = 0;
 
@@ -279,8 +279,8 @@ protected:
     }
 
     /// Function to use to set neighborhood parameters
-    /** \detail Provides understandable error messages if a parameter is
-      *         missing or the conversion failed.
+    /** Provides understandable error messages if a parameter is missing or
+      * the conversion failed.
       *
       * \param  nbh_params  The configuration node to read the parameters from
       * \param  keys        A pair that specifies the key and whether that key

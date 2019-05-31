@@ -8,7 +8,7 @@
 #include "agent_manager_test.hh"
 #include "testtools.hh"
 
-using namespace Utopia::Test;
+using namespace Utopia::Test::AgentManager;
 
 
 int main() {

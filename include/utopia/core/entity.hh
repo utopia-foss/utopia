@@ -70,15 +70,25 @@ struct EntityTraits {
   *          so-called "custom links". These specializations are carried into
   *          the entity by means of the EntityTraits struct.
   *          An entity is embedded into the EntityManager, where the 
-  *          discretization allows assigning a position in space to the entity. 
+  *          discretization allows assigning a position in space to the
+  *          entity. 
   *          The entity itself does not know anything about that ...
+  *
+  * \tparam  _Traits Valid \ref EntityTraits, specializing this entity.
   */
-template<typename Traits>
+template<typename _Traits>
 class Entity :
-    public StateContainer<typename Traits::State, Traits::mode>,
-    public Traits::Tags
+    public StateContainer<typename _Traits::State, _Traits::mode>,
+    public _Traits::Tags
 {
 public:
+    /// The traits of this entity
+    /** By exporting this, it is made possible to check for the specialization
+      * of the entity. For example, \ref Utopia::is_cell_manager makes use of
+      * this export.
+      */
+    using Traits = _Traits;
+
     /// The type of this entity
     using Self = Entity<Traits>;
 
@@ -96,7 +106,8 @@ public:
      *  if they have the same traits as this entity. This makes creation of
      *  links to other entities of the same type easier.
      */
-    using CustomLinkContainers = typename Traits::template CustomLinks<EntityContainer<Self>>;
+    using CustomLinkContainers =
+        typename Traits::template CustomLinks<EntityContainer<Self>>;
 
 
 private:
@@ -119,8 +130,6 @@ public:
         _custom_links()
     {}
 
-
-    // -- Public interface -- //
     /// Return const reference to entity ID
     const IndexType& id() const {
         return _id;

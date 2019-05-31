@@ -1,11 +1,18 @@
-#ifndef UTOPIA_CORE_MANAGER_HH
-#define UTOPIA_CORE_MANAGER_HH
+#ifndef UTOPIA_CORE_CELL_MANAGER_HH
+#define UTOPIA_CORE_CELL_MANAGER_HH
 
+#include <algorithm>
 #include <type_traits>
+#include <string_view>
+#include <unordered_set>
+
 #include "logging.hh"
 #include "types.hh"
+#include "exceptions.hh"
 #include "cell.hh"
 #include "grids.hh"
+#include "apply.hh"
+#include "select.hh"
 
 
 namespace Utopia {
@@ -37,6 +44,9 @@ public:
     /// Type of the managed cells
     using Cell = Utopia::Cell<CellTraits>;
 
+    /// Alias for entity type; part of the shared interface of entity managers
+    using Entity = Cell;
+
     /// Type of the cell state
     using CellState = typename CellTraits::State;
 
@@ -58,14 +68,19 @@ public:
     /// Random number generator type
     using RNG = typename Model::RNG;
 
+    /// Configuration node type
+    using Config = typename Model::Config;
+
     /// The type of a rule function acting on the cells of this cell manager
-    /** \detail This is a convenience type def that models can use to easily
-      *         have this type available.
+    /** This is a convenience type def that models can use to easily have this
+      * type available.
       */
-    using RuleFunc = typename std::function<CellState(const std::shared_ptr<Cell>&)>;
+    using RuleFunc =
+        typename std::function<CellState(const std::shared_ptr<Cell>&)>;
 
     /// Type of multi-index like arrays
     using MultiIndex = typename GridType::MultiIndex;
+    
 
 private:
     // -- Members -------------------------------------------------------------
@@ -73,7 +88,7 @@ private:
     const std::shared_ptr<spdlog::logger> _log;
 
     /// Cell manager configuration node
-    const DataIO::Config _cfg;
+    const Config _cfg;
 
     /// The model's random number generator, used e.g. for cell construction
     const std::shared_ptr<RNG> _rng;
@@ -97,12 +112,11 @@ private:
 public:
     // -- Constructors --------------------------------------------------------
     /// Construct a cell manager
-    /** \detail With the model available, the CellManager can extract the
-      *         required information from the model without the need to pass
-      *         it explicitly. Furthermore, this constructor differs to the
-      *         one with the `initial_state` parameter such that the way the
-      *         initial state of the cells is determined can be controlled via
-      *         the configuration.
+    /** With the model available, the CellManager can extract the required
+      * information from the model without the need to pass it explicitly.
+      * Furthermore, this constructor differs to the one with the
+      * ``initial_state`` parameter such that the way the initial state of the
+      * cells is determined can be controlled via the configuration.
       * 
       * \param  model       The model this CellManager belongs to  
       * \param  custom_cfg  A custom config node to use to use for grid and
@@ -110,7 +124,7 @@ public:
       *                     is used to extract the required entries.
       */
     CellManager (Model& model,
-                 const DataIO::Config& custom_cfg = {})
+                 const Config& custom_cfg = {})
     :
         _log(model.get_logger()),
         _cfg(setup_cfg(model, custom_cfg)),
@@ -140,7 +154,7 @@ public:
       */
     CellManager (Model& model,
                  const CellState initial_state,
-                 const DataIO::Config& custom_cfg = {})
+                 const Config& custom_cfg = {})
     :
         _log(model.get_logger()),
         _cfg(setup_cfg(model, custom_cfg)),
@@ -161,10 +175,19 @@ public:
 
 
     /// -- Getters ------------------------------------------------------------
+    /// Return the CellManager logger
+    const auto& log () const {
+        return _log;
+    }
 
     /// Return the configuration used for building this cell manager
-    const DataIO::Config& cfg () const {
+    const Config& cfg () const {
         return _cfg;
+    }
+
+    /// Return a reference to the shared random number generator
+    const std::shared_ptr<RNG>& rng () const {
+        return _rng;
     }
 
     /// Return pointer to the space, for convenience
@@ -180,6 +203,11 @@ public:
     /// Return const reference to the managed CA cells
     const CellContainer<Cell>& cells () const {
         return _cells;
+    }
+
+    /// Return const reference to the entities managed by this manager: cells
+    const CellContainer<Cell>& entities () const {
+        return cells();
     }
 
 
@@ -223,9 +251,9 @@ public:
     }
 
     /// Returns a container of vertices of the given cell
-    /** \detail The vertices are the absolute coordinates that define the cell.
-      *         For example, a 2D square cell is the surface of a polygon
-      *         defined by four points.
+    /** The vertices are the absolute coordinates that define the cell. For
+      * example, a 2D square cell is the surface of a polygon defined by four
+      * points.
       *
       * \note   Consult the documentation of the selected grid discretization
       *         to learn about the order of the returned values.
@@ -245,12 +273,11 @@ public:
     }
 
     /// Return the cell covering the given point in physical space
-    /** \detail Cells are interpreted as covering half-open intervals in space,
-      *         i.e., including their low-value edges and excluding their high-
-      *         value edges.
-      *         The special case of points on high-value edges for non-periodic
-      *         space behaves such that these points are associated with the
-      *         cells at the boundary.
+    /** Cells are interpreted as covering half-open intervals in space, i.e.,
+      * including their low-value edges and excluding their high-value edges.
+      * The special case of points on high-value edges for non-periodic space
+      * behaves such that these points are associated with the cells at the
+      * boundary.
       *
       * \note   For non-periodic space, a check is performed whether the given
       *         point is inside the physical space associated with the grid. If
@@ -262,30 +289,60 @@ public:
         return _cells[_grid->cell_at(pos)];
     }
 
+    // .. Cell Selection ......................................................
     /// Retrieve a container of cells that are at a specified boundary
-    /** \note   For a periodic space, an empty container is returned; no error
-      *         or warning is emitted!
+    /** Lets the grid compute the set of cell IDs at the boundary and then
+      * converts them into pointers to cells. As the set is sorted by cell
+      * IDs, the returned container is also sorted.
       *
-      * \detail Lets the grid compute the set of cell IDs at the boundary and
-      *         then converts them into pointers to cells. As the set is sorted
-      *         by cell IDs, the returned container is also sorted.
+      * \warning For a periodic space, an empty container is returned; no error
+      *          or warning is emitted!
       *
-      * \param  Select which boundary to return the cell IDs of. If 'all',
-      *         all boundary cells are returned. Other available values depend
-      *         on the dimensionality of the grid:
-      *                1D:  left, right
-      *                2D:  bottom, top
-      *                3D:  back, front
+      * \param
+      * \parblock  Select which boundary to return the cell IDs of. If 'all',
+      *            all boundary cells are returned. Other available values
+      *            depend on the dimensionality of the grid:
+      *                * 1D:  left, right
+      *                * 2D:  bottom, top
+      *                * 3D:  back, front
       */
-    CellContainer<Cell> boundary_cells(std::string select="all") const {
-        return cells_from_ids(_grid->boundary_cells(select));
+    CellContainer<Cell> boundary_cells(const std::string& select="all") const {
+        return entity_pointers_from_ids(_grid->boundary_cells(select));
+    }
+
+    /// Select cells using the \ref Utopia::select_entities interface
+    /** Returns a container of cells that were selected according to a certain
+      * selection mode. This is done via the \ref Utopia::select_entities
+      * interface.
+      * 
+      * \tparam  mode    The selection mode
+      *
+      * \args    args    Forwarded to \ref Utopia::select_entities
+      */
+    template<SelectionMode mode, class... Args>
+    CellContainer<Cell> select_cells(Args&&... args) {
+        return select_entities<mode>(*this, std::forward<Args>(args)...);
+    }
+
+    /// Select entities according to parameters specified in a configuration
+    /** Via the ``mode`` key, one of the selection modes can be chosen; for
+      * available oens, see \ref Utopia::SelectionMode.
+      *
+      * Depending on that mode, the other parameters are extracted from the
+      * configuration. See \ref Utopia::select_entities for more info.
+      *
+      * \param  sel_cfg  The configuration node containing the expected
+      *                  key-value pairs specifying the selection.
+      */
+    CellContainer<Cell> select_cells(const Config& sel_cfg) {
+        return select_entities(*this, sel_cfg);
     }
 
 
     // .. Neighborhood-related ................................................
     /// Retrieve the given cell's neighbors
-    /** \detail The behaviour of this method is different depending on the
-      *         choice of neighborhood.
+    /** The behaviour of this method is different depending on the choice of
+      * neighborhood.
       */
     CellContainer<Cell> neighbors_of(const Cell& cell) const {
         return _nb_func(cell);
@@ -293,19 +350,18 @@ public:
 
 
     /// Retrieve the given cell's neighbors
-    /** \detail The behaviour of this method is different depending on the
-      *         choice of neighborhood.
+    /** The behaviour of this method is different depending on the choice of
+      * neighborhood.
       */
     CellContainer<Cell> neighbors_of(const std::shared_ptr<Cell>& cell) const {
         return _nb_func(*cell);
     }
 
     /// Select the neighborhood and all parameters fully from a config node
-    void select_neighborhood(const DataIO::Config& nb_cfg) {
+    void select_neighborhood(const Config& nb_cfg) {
         // Extract the desired values
         if (not nb_cfg["mode"]) {
-            throw std::invalid_argument("Missing key 'mode' in neighborhood "
-                "configuration! Perhaps a typo in 'neighborhood'?");
+            throw KeyError("mode", nb_cfg, "Could not select neighborhood!");
         }
         const auto nb_mode = get_as<std::string>("mode", nb_cfg);
 
@@ -321,9 +377,9 @@ public:
     }
 
     /// Select the neighborhood mode using a string for the mode argument
-    void select_neighborhood(const std::string nb_mode,
+    void select_neighborhood(const std::string& nb_mode,
                              const bool compute_and_store = false,
-                             const DataIO::Config& nb_params = {})
+                             const Config& nb_params = {})
     {
         // Check if the string is valid
         if (not nb_mode_map.count(nb_mode)) {
@@ -342,9 +398,9 @@ public:
       *                           and henceforth use the buffer to get these
       *                           neighbors.
       */
-    void select_neighborhood(const NBMode nb_mode,
+    void select_neighborhood(const NBMode& nb_mode,
                              const bool compute_and_store = false,
-                             const DataIO::Config& nb_params = {})
+                             const Config& nb_params = {})
     {
         // Only change the neighborhood if it is different to the one already
         // set in the grid or if it is set to be empty
@@ -386,9 +442,8 @@ public:
     }
 
     /// Compute (and store) all cells' neighbors
-    /** \detail After this function was called, the cell neighbors will be
-      *         returned from the storage container rather than re-calculated
-      *         for every access.
+    /** After this function was called, the cell neighbors will be returned
+      * from the storage container rather than re-calculated for every access.
       */
     void compute_cell_neighbors() {
         _log->info("Computing and storing '{}' neighbors of all {} cells ...",
@@ -423,17 +478,13 @@ public:
     }
 
 
-private:
-    // -- Helper functions ----------------------------------------------------
-    // ...
+    // -- Public Helpers ------------------------------------------------------
 
-
-    // -- Helpers for Neighbors interface -------------------------------------
-
-    /// Given a container of cell IDs, convert it to container of cell pointers
+    /// Given a container IDs, convert it to container of entity pointers
+    /** \TODO This should move into a common manager base class
+      */
     template<class IndexContainer>
-    CellContainer<Cell> cells_from_ids(IndexContainer&& ids) const {
-        // Initialize container to be returned and fix it in size
+    CellContainer<Cell> entity_pointers_from_ids(IndexContainer&& ids) const {
         CellContainer<Cell> ret;
         ret.reserve(ids.size());
 
@@ -444,8 +495,12 @@ private:
         return ret;
     }
 
+private:
+    // -- Private Helpers -----------------------------------------------------
+    // ...
+
     
-    // .. std::functions to call from neighbors_of ............................
+    // -- std::functions to call from neighbors_of ----------------------------
     
     /// Return the pre-computed neighbors of the given cell
     NBFuncCell _nb_from_cache = [this](const Cell& cell) {
@@ -454,7 +509,9 @@ private:
 
     /// Compute the neighbors for the given cell using the grid
     NBFuncCell _nb_compute_each_time = [this](const Cell& cell) {
-        return this->cells_from_ids(this->_grid->neighbors_of(cell.id()));
+        return
+            this->entity_pointers_from_ids(
+                this->_grid->neighbors_of(cell.id()));
     };
 
     /// Compute the neighbors for the given cell using the grid
@@ -462,18 +519,20 @@ private:
         this->_log->warn("No neighborhood selected! Calls to the "
             "CellManager::neighbors_of method will always return an empty "
             "container.");
-        return this->cells_from_ids(this->_grid->neighbors_of(cell.id()));
+        return
+            this->entity_pointers_from_ids(
+                this->_grid->neighbors_of(cell.id()));
     };
 
 
     // -- Setup functions -----------------------------------------------------
 
     /// Set up the cell manager configuration member
-    /** \detail This function determines whether to use a custom configuration
-      *         or the one provided by the model this CellManager belongs to
+    /** This function determines whether to use a custom configuration or the
+      * one provided by the model this CellManager belongs to
       */
-    DataIO::Config setup_cfg(Model& model, const DataIO::Config& custom_cfg) {
-        DataIO::Config cfg;
+    Config setup_cfg(Model& model, const Config& custom_cfg) {
+        Config cfg;
 
         if (custom_cfg.size() > 0) {
             _log->debug("Using custom config for cell manager setup ...");
@@ -497,6 +556,7 @@ private:
     /// Set up the grid discretization
     std::shared_ptr<GridType> setup_grid() {
         // Check if the required parameter nodes are available
+        // TODO Throw KeyErrors here instead!
         if (not _cfg["grid"]) {
             throw std::invalid_argument("Missing entry 'grid' in the "
                 "configuration node supplied to the CellManager! Check that "
@@ -550,17 +610,17 @@ private:
     }
 
     /// Set up cells container via config or default constructor
-    /** \detail If no explicit initial state is given, this setup function is
-      *         called.
-      *         There are three modes: If the \ref CellTraits are set such that
-      *         the default constructor of the cell state is to be used, that
-      *         constructor is required and is called for each cell.
-      *         Otherwise, the CellState needs to be constructible via a
-      *         const DataIO::Config& argument, which gets passed the config
-      *         entry 'cell_params' from the CellManager's configuration. If a
-      *         constructor with the signature
-      *         (const DataIO::Config&, const std::shared_ptr<RNG>&) is
-      *         supported, that constructor is called instead.
+    /** If no explicit initial state is given, this setup function is called.
+      * There are three modes: If the \ref CellTraits are set such that the
+      * default constructor of the cell state is to be used, that constructor
+      * is required and is called for each cell.
+      *
+      * Otherwise, the CellState needs to be constructible via a
+      * ``const Config&`` argument, which gets passed the config entry
+      * ``cell_params`` from the CellManager's configuration. If a constructor
+      * with the signature
+      * ``(const Config&, const std::shared_ptr<RNG>&)`` is supported,
+      * that constructor is called instead.
       *
       * \note   If the constructor for the cell state has an RNG available
       *         it is called anew for _each_ cell; otherwise, an initial state
@@ -570,12 +630,14 @@ private:
         // Distinguish depending on constructor.
         // Is the default constructor to be used?
         if constexpr (CellTraits::use_default_state_constructor) {
-            static_assert(std::is_default_constructible<CellState>(),
+            static_assert(
+                std::is_default_constructible<CellState>(),
                 "CellTraits were configured to use the default constructor to "
                 "create cell states, but the CellState is not "
                 "default-constructible! Either implement such a constructor, "
                 "unset the flag in the CellTraits, or pass an explicit "
-                "initial cell state to the CellManager.");
+                "initial cell state to the CellManager."
+            );
 
             _log->info("Setting up cells using default constructor ...");
 
@@ -585,7 +647,7 @@ private:
 
         // Is there a constructor available that allows passing the RNG?
         else if constexpr (std::is_constructible<CellState,
-                                                 const DataIO::Config&,
+                                                 const Config&,
                                                  const std::shared_ptr<RNG>&
                                                  >())
         {
@@ -618,14 +680,14 @@ private:
 
         // As default, require a Config constructor
         else {
-            static_assert(std::is_constructible<CellState,
-                                                const DataIO::Config&
-                                                >(),
+            static_assert(
+                std::is_constructible<CellState, const Config&>(),
                 "CellManager::CellState needs to be constructible using "
-                "const DataIO::Config& as only argument. Either implement "
+                "const Config& as only argument. Either implement "
                 "such a constructor, pass an explicit initial cell state to "
                 "the CellManager, or set the CellTraits such that a default "
-                "constructor is to be used.");
+                "constructor is to be used."
+            );
 
             _log->info("Setting up cells using config constructor ...");
             
@@ -665,4 +727,4 @@ private:
 
 } // namespace Utopia
 
-#endif // UTOPIA_CORE_MANAGER_HH
+#endif // UTOPIA_CORE_CELL_MANAGER_HH

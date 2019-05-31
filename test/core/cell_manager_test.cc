@@ -8,6 +8,8 @@
 #include "testtools.hh"
 #include "cell_manager_test.hh"
 
+using namespace Utopia::Test::CellManager;
+
 // Import some types
 using Utopia::NBMode;
 using Utopia::Update;
@@ -115,6 +117,11 @@ int main() {
         // Initialize the mock model with default-constructible cell type
         std::cout << "... default-constructible state" << std::endl;
         MockModel<CellTraitsDC> mm_dc("mm_dc", cfg["default"]);
+        std::cout << "Success." << std::endl << std::endl;
+        
+        // Initialize the mock model with default-constructible cell type
+        std::cout << "... default-constructible state" << std::endl;
+        MockModel<CellTraitsDC> mm_dc_np("mm_dc_np", cfg["default_np"]);
         std::cout << "Success." << std::endl << std::endl;
         
         // Initialize the mock model with config-constructible cell type
@@ -323,7 +330,7 @@ int main() {
         { // Local test scope
 
         // Use a previously construct mock model's cell manager
-        auto cm = mm_dc._cm;     // shared pointer
+        auto cm = mm_dc._cm;
         auto c0 = cm.cells()[0]; // shared pointer
 
         // Only test callability; function is tested in the grid tests
@@ -354,6 +361,28 @@ int main() {
 
         } // End of local test scope
 
+        // -------------------------------------------------------------------
+        std::cout << "------ Testing selection-interface ... ------"
+                  << std::endl;
+
+        { // Local test scope
+        using Utopia::SelectionMode;
+
+        // Use a previously construct mock model's cell manager
+        auto cm = mm_dc_np._cm; // with non-periodic space
+
+        // ... and do some general tests
+        auto c1 = cm.select_cells<SelectionMode::sample>(42);
+        auto c2 = cm.select_cells(cfg["select_cell"]);
+        assert(c1.size() == 42);
+        assert(c2.size() == 42);
+        assert(c1 != c2);
+
+        // NOTE The rest of select_cells is tested by select_test.cc
+
+        std::cout << "Success." << std::endl << std::endl;
+
+        } // End of local test scope
         // -------------------------------------------------------------------
         // Done.
         std::cout << "------ Total success. ------" << std::endl << std::endl;

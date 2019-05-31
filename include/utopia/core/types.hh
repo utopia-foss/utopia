@@ -23,11 +23,11 @@ using EntityContainer = std::vector<std::shared_ptr<EntityType>>;
 
 /// Type of the variably sized container for cells
 template<typename CellType>
-using CellContainer = std::vector<std::shared_ptr<CellType>>;
+using CellContainer = EntityContainer<CellType>;
 
 /// Type of the variably sized container for agents
 template<typename AgentType>
-using AgentContainer = std::vector<std::shared_ptr<AgentType>>;
+using AgentContainer = EntityContainer<AgentType>;
 
 
 /// Type for dimensions, i.e. very small unsigned integers

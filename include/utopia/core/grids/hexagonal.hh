@@ -109,8 +109,9 @@ public:
     }
 
     /// Returns the vertices of the cell with the given ID
-    /** \detail The order of the vertices is not guaranteed.
-      * \note   This method does not perform bounds checking of the given ID!
+    /** \warning The order of the vertices is not guaranteed.
+      * 
+      * \note    This method does not perform bounds checking of the given ID!
       */
     std::vector<SpaceVec> vertices_of(const IndexType&) const override {
         throw std::runtime_error("The HexagonalGrid::vertices_of method is "
@@ -119,12 +120,11 @@ public:
     }
 
     /// Return the ID of the cell covering the given point in physical space
-    /** \detail Cells are interpreted as covering half-open intervals in space,
-      *         i.e., including their low-value edges and excluding their high-
-      *         value edges.
-      *         The special case of points on high-value edges for non-periodic
-      *         space behaves such that these points are associated with the
-      *         cells at the boundary.
+    /** Cells are interpreted as covering half-open intervals in space, i.e.,
+      * including their low-value edges and excluding their high-value edges.
+      * The special case of points on high-value edges for non-periodic space
+      * behaves such that these points are associated with the cells at the
+      * boundary.
       *
       * \note   This function always returns IDs of cells that are inside
       *         physical space. For non-periodic space, a check is performed
