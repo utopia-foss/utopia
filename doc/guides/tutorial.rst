@@ -910,13 +910,14 @@ So, let us do it here equivalently: Create the file ``~/utopia_cfgs/ForestFire/t
    # The plot.yml configuration file for a test simulation of the ForestFire model.
    ---
    ensemble_averaged_mean_state:
-     # As you need the data of many universes, select the multiverse plot creator:
+     # As you need the data of many universes, select the multiverse plot creator
      creator: multiverse
 
-     # The `select` key is used to select a hyperslab out of the data:
+     # Select a hyperslab of the multidimensional data
      select:
-       # Choose the path in the data tree (see terminal output)
-       field: data/ForestFire/state
+       # Choose the path within each universe (see data tree in terminal output)
+       field: data/ForestFire/kind
+       # NOTE The "kind of a cell" is equivalent to its state: empty (0) or tree (1)
 
      # Select the plot function, just as for a universe plot
      module_file: ~/path/to/my/plot/function/file.py
@@ -925,12 +926,19 @@ So, let us do it here equivalently: Create the file ``~/utopia_cfgs/ForestFire/t
 The file is located in the same directory as the run configuration to indicate that they belong together.
 
 The short description of what you told *Utopia*'s frontend to do is:
-Create a plot called ``ensemble_averaged_mean_state`` that should use all the multiverse data (``creator: multiverse``).
-Make a ``select`` ion of data in a multidimensional array ``field`` and fill it with the data that you can find in the data tree of each single universe under the ``data/ForestFire/state``.
-You can look up the path in the data tree that is printed out in the terminal.
-This dataset has the following dimensions: ``time``, ``x``, and ``y``; remember that you have two dimensional grid data for each time step.
-The dataset will obviously have another additional dimension: the ``seed`` you are sweeping over.
-All this data is loaded into an `xarray <http://xarray.pydata.org/en/stable/>`_ ``Dataset`` object which will be given to the plotting function. The data variable ``state`` stored in that ``xarray.Dataset`` will thus have four dimensions.
+
+1. Create a plot called ``ensemble_averaged_mean_state`` that should use all the multiverse data (``creator: multiverse``).
+2. Before entering the plot function, make a ``select`` ion of data:
+
+    1. For each universe, access the ``field`` located under ``data/ForestFire/kind``. You can look up the path in the data tree that is printed out in the terminal. This dataset has the following dimensions: ``time``, ``x``, and ``y``; remember that you have two dimensional grid data for each time step.
+    2. Align all these data using the parameter sweep dimensions ...
+    3. ... into a higher-dimensional data structure, here: an `xarray <http://xarray.pydata.org/en/stable/>`_ ``Dataset`` object. This will obviously have another additional dimension: the ``seed`` you are sweeping over. If you have more sweep dimensions, they will also appear in the ``Dataset``. The data variable ``kind`` stored in that ``xarray.Dataset`` will thus have four dimensions.
+
+3. Pass this multidimensional data to the plot function as ``mv_data`` argument.
+
+.. note::
+
+  For more information on how to select data from a multiverse, see :ref:`select_mv_data`.
 
 So, we roughly understand the first part of the configuration file.
 Plotting will, however, not work: 
@@ -961,7 +969,7 @@ Within this file, let us create the ``ensemble_averaged_mean_state`` function wi
       """Plots the ensemble averaged mean state over multiple universes"""
       # Calculate the mean state averaged over all universes.
       # The mean is calculated over the dimensions: 'x', 'y', and 'seed'
-      mean_state = mv_data['state'].mean(['x', 'y', 'seed'])
+      mean_state = mv_data['kind'].mean(['x', 'y', 'seed'])
 
       # Plot it
       plt.plot(mean_state, **plot_kwargs)
