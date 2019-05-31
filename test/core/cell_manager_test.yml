@@ -11,6 +11,17 @@ default:
       structure: square
       resolution: 42
 
+# For default-constructible, with nonperiodic space
+default_np:
+  space:
+    periodic: false
+    extent: [2., 2.]
+
+  cell_manager:
+    grid:
+      structure: square
+      resolution: 42
+
 # For config-constructible
 config:
   space:
@@ -185,3 +196,10 @@ nb_bad2:
 
     neighborhood:
       mode: vonNeumann  # not available for triangular
+
+
+# Selection interface ---------------------------------------------------------
+
+select_cell:
+  mode: sample
+  num_cells: 42

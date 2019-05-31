@@ -3,6 +3,10 @@
 
 #include <utopia/core/cell_manager.hh>
 
+namespace Utopia {
+namespace Test {
+namespace CellManager {
+
 using Utopia::CellManager;
 using Utopia::DataIO::Config;
 
@@ -14,6 +18,7 @@ public:
     using Space = Utopia::DefaultSpace;
     using CellStateType = typename CellTraits::State;
     using RNG = std::mt19937;
+    using Config = Utopia::DataIO::Config;
 
     const std::string _name;
     const Config _cfg;
@@ -103,5 +108,8 @@ public:
     }
 };
 
+} // namespace CellManager
+} // namespace Test
+} // namespace Utopia
 
 #endif // UTOPIA_CORE_TEST_CELL_MANAGER_TEST_HH

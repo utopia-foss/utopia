@@ -1,11 +1,12 @@
-#ifndef UTOPIA_TEST_AGENT_MANAGER_INTEGRATION_TEST_HH
-#define UTOPIA_TEST_AGENT_MANAGER_INTEGRATION_TEST_HH
+#ifndef UTOPIA_TEST_AGENT_MANAGER_TEST_HH
+#define UTOPIA_TEST_AGENT_MANAGER_TEST_HH
 
 #include <utopia/core/model.hh>
 #include <utopia/core/agent_manager.hh>
 
 namespace Utopia {
 namespace Test {
+namespace AgentManager {
 
 using DataIO::Config;
 using Utopia::get_as;
@@ -122,7 +123,7 @@ public:
     Space _space;
 
     // The public agent manager (for easier testing access)
-    AgentManager<AgentTraits, MockModel> _am;
+    Utopia::AgentManager<AgentTraits, MockModel> _am;
 
 
     // -- Constructors -- //
@@ -203,8 +204,9 @@ public:
     }
 };
 
+} // namespace AgentManager
 } // namespace Test
 } // namespace Utopia
 
 
-#endif // UTOPIA_TEST_AGENT_MANAGER_INTEGRATION_TEST_HH
+#endif // UTOPIA_TEST_AGENT_MANAGER_TEST_HH

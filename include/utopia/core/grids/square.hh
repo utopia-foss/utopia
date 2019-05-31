@@ -99,7 +99,7 @@ public:
     // .. Number of cells & shape .............................................
 
     /// Number of square cells required to fill the physical space
-    /** \detail Is calculated simply from the _shape member
+    /** This is calculated simply from the _shape member.
       */
     IndexType num_cells() const override {
         return std::accumulate(this->_shape.begin(), this->_shape.end(),
@@ -107,8 +107,8 @@ public:
     };
 
     /// The effective cell resolution into each physical space dimension
-    /** \detail For a square lattice, this is just the quotient of grid shape
-      *         and extent of physical space, separately in each dimension
+    /** For a square lattice, this is just the quotient of grid shape and
+      * extent of physical space, separately in each dimension
       */
     SpaceVec effective_resolution() const override {
         // Use element-wise division by the physical extent (double)
@@ -117,7 +117,6 @@ public:
 
     /// Get shape of the square grid
     MultiIndex shape() const override {
-        // Can just return the calculated member here
         return _shape;
     }
 
@@ -155,9 +154,10 @@ public:
     }
 
     /// Returns the vertices of the cell with the given ID
-    /** \detail Only available for 2D currently; the vertices are given in
-      *         counter-clockwise order, starting with the position of the
-      *         bottom left-hand vertex of the cell.
+    /** Only available for 2D currently; the vertices are given in
+      * counter-clockwise order, starting with the position of the bottom
+      * left-hand vertex of the cell.
+      *
       * \note   This method does not perform bounds checking of the given ID!
       */
     std::vector<SpaceVec> vertices_of(const IndexType& id) const override {
@@ -178,12 +178,11 @@ public:
     }
 
     /// Return the ID of the cell covering the given point in physical space
-    /** \detail Cells are interpreted as covering half-open intervals in space,
-      *         i.e., including their low-value edges and excluding their high-
-      *         value edges.
-      *         The special case of points on high-value edges for non-periodic
-      *         space behaves such that these points are associated with the
-      *         cells at the boundary.
+    /** Cells are interpreted as covering half-open intervals in space, i.e.,
+      * including their low-value edges and excluding their high-value edges.
+      * The special case of points on high-value edges for non-periodic space
+      * behaves such that these points are associated with the cells at the
+      * boundary.
       *
       * \note   This function always returns IDs of cells that are inside
       *         physical space. For non-periodic space, a check is performed
@@ -379,12 +378,11 @@ public:
 private:
     // -- Helper functions ----------------------------------------------------
     /// Given the resolution, return the grid shape required to fill the space
-    /** \detail Integer rounding takes place here. A physical space of extents
-      *         of 2.1 length units in each dimension and a resolution of two
-      *         cells per unit length will result in 4 cells in each dimension,
-      *         each cell's size scaled up slightly and the effective
-      *         effective resolution thus slightly smaller than the specified
-      *         resolution.
+    /** Integer rounding takes place here. A physical space of extents of 2.1
+      * length units in each dimension and a resolution of two cells per unit
+      * length will result in 4 cells in each dimension, each cell's size
+      * scaled up slightly and the effective resolution thus slightly smaller
+      * than the specified resolution.
       */
     MultiIndex determine_shape() const {
         MultiIndex shape;
@@ -554,7 +552,6 @@ protected:
 
         // Return the container of cell indices
         return neighbor_ids;
-    
     };
 
     /// The Von-Neumann neighborhood for non-periodic grids
@@ -999,10 +996,9 @@ protected:
     }
 
     /// Computes the expected number of neighbors for a neighborhood mode
-    /** \detail This function is used to calculate the amount of memory
-      *         that should be reserved for the neighbor_ids vector.
-      *         For the calculation it uses the member variables: 
-      *         `dim` and `_nbh_distance`
+    /** This function is used to calculate the amount of memory that should be
+      * reserved for the neighbor_ids vector. For the calculation it uses the
+      * member variables: ``dim`` and ``_nbh_distance``
       *  
       * For a von Neumann neighborhood, the number of neighbors is:
       *                      { 2 * distance   for distance = 1

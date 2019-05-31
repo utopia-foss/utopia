@@ -1,0 +1,40 @@
+---
+models:
+  # -- CellManager: For default-constructible, with nonperiodic space
+  with_cm:
+    space:
+      periodic: false
+      extent: [2., 2.]
+
+    cell_manager:
+      grid:
+        structure: square
+        resolution: 42
+
+  # -- AgentManager
+  with_am:
+    space:
+      periodic: true
+
+    agent_manager:
+      initial_num_agents: 42
+
+
+# -----------------------------------------------------------------------------
+sample:
+  mode: sample
+  num_cells: 42
+
+probability:
+  mode: probability
+  probability: .5
+
+boundary:
+  mode: boundary
+  boundary: bottom
+
+clustered:
+  mode: clustered_simple
+  p_seed: .01
+  p_attach: .2
+  num_passes: 10

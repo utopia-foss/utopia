@@ -2,10 +2,12 @@
 #define UTOPIA_CORE_AGENTMANAGER_HH
 
 #include <algorithm>
+#include <string_view>
 
 #include "types.hh"
 #include "exceptions.hh"
 #include "agent.hh"
+#include "select.hh"
 
 namespace Utopia {
 /**
@@ -36,6 +38,9 @@ public:
 
     /// The type of the managed agents
     using Agent = Utopia::Agent<AgentTraits, Space>;
+    
+    /// Alias for entity type; part of the shared interface of entity managers
+    using Entity = Agent;
 
     /// The type of the agent state
     using AgentState = typename AgentTraits::State;
@@ -145,6 +150,21 @@ public:
     }
 
     /// -- Getters ------------------------------------------------------------
+    /// Return the logger of this AgentManager
+    const auto& log () const {
+        return _log;
+    }
+
+    /// Return the configuration used for building this AgentManager
+    const DataIO::Config& cfg () const {
+        return _cfg;
+    }
+
+    /// Return a reference to the shared random number generator
+    const std::shared_ptr<RNG>& rng () const {
+        return _rng;
+    }
+
     /// Return pointer to the space, for convenience
     const std::shared_ptr<Space>& space () const {
         return _space;
@@ -153,6 +173,11 @@ public:
     /// Return const reference to the managed agents
     const AgentContainer<Agent>& agents () const {
         return _agents;
+    }
+
+    /// Return const reference to the entities managed by this manager: agents
+    const AgentContainer<Agent>& entities () const {
+        return agents();
     }
 
     /// Return the ID counter
@@ -326,6 +351,35 @@ public:
         for (const auto& agent : _agents){
             agent->update();
         }
+    }
+
+    // .. Agent Selection .....................................................
+    /// Select agents using the \ref Utopia::select_entities interface
+    /** Returns a container of agents that were selected according to a certain
+      * selection mode. This is done via the \ref Utopia::select_entities
+      * interface.
+      * 
+      * \tparam  mode    The selection mode
+      *
+      * \args    args    Forwarded to \ref Utopia::select_entities
+      */
+    template<SelectionMode mode, class... Args>
+    AgentContainer<Agent> select_agents(Args&&... args) {
+        return select_entities<mode>(*this, std::forward<Args>(args)...);
+    }
+
+    /// Select entities according to parameters specified in a configuration
+    /** Via the ``mode`` key, one of the selection modes can be chosen; for
+      * available oens, see \ref Utopia::SelectionMode.
+      *
+      * Depending on that mode, the other parameters are extracted from the
+      * configuration. See \ref Utopia::select_entities for more info.
+      *
+      * \param  sel_cfg  The configuration node containing the expected
+      *                  key-value pairs specifying the selection.
+      */
+    AgentContainer<Agent> select_agents(const DataIO::Config& sel_cfg) {
+        return select_entities(*this, sel_cfg);
     }
 
 

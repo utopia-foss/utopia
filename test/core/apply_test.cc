@@ -6,6 +6,10 @@
 
 #include "cell_manager_test.hh"
 
+// Use the CellManager namespace as it provides the MockModel
+using namespace Utopia::Test::CellManager;
+
+
 template<class CellManager>
 decltype(auto) get_rule_acc_neighbors_with_mngr (CellManager& manager){
     auto rule = [&manager](const auto cell) {
@@ -30,6 +34,7 @@ using CellTraitsManual = Utopia::CellTraits<int,
 
 using Config = Utopia::DataIO::Config;
 
+// ++ Fixtures ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 struct ModelFixture
 {
     Config cfg;
@@ -64,6 +69,7 @@ private:
     }
 };
 
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 /// Return the IDs of the cells contained in a CellManager
 template<class CellManager>
 std::vector<int> collect_ids (const CellManager& cm)

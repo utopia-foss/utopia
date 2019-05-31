@@ -55,7 +55,7 @@ class Agent<Traits,
 :
     public Entity<Traits>
 {   
-public:  
+public:
     /// The type of the state
     using State = typename Traits::State;
 
@@ -141,8 +141,8 @@ public:
      *  \param initial_pos   The initial position
      */
     Agent(const IndexType id,
-            const State& initial_state, 
-            const Position& initial_pos)
+          const State& initial_state, 
+          const Position& initial_pos)
     :
         Entity<Traits>(id, initial_state),
         _pos(initial_pos),
