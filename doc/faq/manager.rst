@@ -1,5 +1,5 @@
-Cell and Agent manager
-======================
+Cell and Agent Managers
+=======================
 
 Below, some frequently asked questions regarding the ``CellManager`` and ``AgentManager`` are addressed.
 
@@ -26,6 +26,9 @@ Only two properties need always be defined: The state type of the entity and whe
   
   /// Traits for cells with asynchronous update
   using MyAsyncCell = Utopia::CellTraits<MyCellState, Update::async>;
+  
+  /// Traits for cells with determination of update via apply_rule call
+  using MyManualCell = Utopia::CellTraits<MyCellState, Update::manual>;
 
 
 Initialize cells and agents

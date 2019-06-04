@@ -129,3 +129,27 @@ def test_initial_state_random():
         # check, that all cells are trees
         assert (kind == 1).all()
         assert is_equal(kind.mean(), tree_density.item())
+
+
+def test_fire_lanes():
+    """Runs the model with the bottom row constantly ignited"""
+    mv, dm = mtc.create_run_load(from_cfg="lanes.yml")
+
+    for uni_no, uni in dm['multiverse'].items():
+        data = uni['data']['ForestFire']['kind']
+
+        # The first row and first column are stones for all times
+        assert (data.isel(x=0) == 4).all()
+        assert (data.isel(y=0) == 4).all()
+
+        # With 2 vertical and 5 horizontal lanes, and a resolution of 22 on a
+        # 1x1 space, the following indices are also stones for all times:
+        assert (data.isel(x=11) == 4).all()
+        assert (data.isel(y=int(22*1/5)) == 4).all()
+        assert (data.isel(y=int(22*2/5)) == 4).all()
+        assert (data.isel(y=int(22*3/5)) == 4).all()
+        assert (data.isel(y=int(22*4/5)) == 4).all()
+
+        # ... while neighbouring rows and columns are not!
+        assert not (data.isel(y=int(22*1/5) + 1) == 4).all()
+        assert not (data.isel(y=int(22*1/5) - 1) == 4).all()

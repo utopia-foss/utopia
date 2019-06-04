@@ -47,12 +47,19 @@ mean_tree_age:
   based_on: mean_tree_age
 
 
-# --- Snapshots of the spatial grid -------------------------------------------
+# --- Snapshots and animations of the spatial grid ----------------------------
+# NOTE These are both based on the snapshot base plots and add the remaining
+#      parameters: For snapshots, the time index that is to be plotted; for
+#      animations, the animation parameters (using multiple inheritance).
+
 # ... The forest ..............................................................
 forest_snapshot:
   based_on: forest_snapshot
   enabled: false
   time_idx: -1
+
+forest:
+  based_on: [forest_snapshot, .ca.state.anim_ffmpeg]
 
 # ... The forest age ..........................................................
 forest_age_snapshot:
@@ -60,54 +67,20 @@ forest_age_snapshot:
   enabled: false
   time_idx: -1
 
+forest_age:
+  based_on: [forest_age_snapshot, .ca.state.anim_ffmpeg]
+
 # ... The clusters ............................................................
 clusters_snapshot:
   based_on: clusters_snapshot
   enabled: false
   time_idx: -1
 
-
-# --- Animations of the spatial grid ------------------------------------------
-# ... With binary state .......................................................
-forest:
-  based_on: .ca.state.anim_ffmpeg  # update to *_frames to save frames
-
-  model_name: ForestFire
-
-  # Select the properties to plot
-  to_plot:
-    kind:
-      title: Forest State
-      limits: [0, 1]
-      cmap: 
-        Empty: darkkhaki
-        Tree: forestgreen
-
-# ... With age ................................................................
-forest_age:
-  based_on: .ca.state.anim_ffmpeg
-
-  model_name: ForestFire
-
-  to_plot:
-    age:
-      title: Tree Age
-      limits: [0, 250]
-      cmap: YlGn
-
-# ... Clusters ................................................................
 clusters:
-  based_on: .ca.state.anim_ffmpeg  # update to *_frames to save frames
+  based_on: [clusters_snapshot, .ca.state.anim_ffmpeg]
 
-  # Use the model-specific plot that adds preprocessing for cluster IDs
-  module: model_plots.ForestFire.ca
-  plot_func: state
-
-  model_name: ForestFire
-
-  to_plot:
-    cluster_id:
-      title: Clusters
-      limits: [0, 20]
-      cmap: tab20
-      no_cbar_markings: true
+# --- Miscellaneous -----------------------------------------------------------
+# ... Combined plot of forest states and clusters .............................
+forest_and_clusters:
+  based_on: [forest_snapshot, clusters_snapshot, .ca.state.anim_ffmpeg]
+  enabled: false

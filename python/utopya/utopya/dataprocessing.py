@@ -90,7 +90,6 @@ def where(data: xr.DataArray, *,
                                   operator_name=operator_name,
                                   rhs_value=rhs_value))
 
-
 def count_unique(data, **kwargs):
     """Applies np.unique to the given data"""
     unique, counts = np.unique(data, return_counts=True)
@@ -143,7 +142,8 @@ TRANSFORMATIONS = {
     'squeeze':  lambda d, kws: d.squeeze(**(kws if kws else {})),
 
     # Count unique values
-    'count_unique': lambda d, _: count_unique(d),
+    'count_unique': 
+        lambda d, _: count_unique(d),
     
     # Create a mask from the given data
     'create_mask':  
@@ -152,9 +152,10 @@ TRANSFORMATIONS = {
                                                    rhs_value=kws[1]))),
 
     # Filter values that do not match a condition, i.e.: make them NaN
-    'where':    lambda d, kws: where(d, **(kws if isinstance(kws, dict)
-                                           else dict(operator_name=kws[0],
-                                                     rhs_value=kws[1]))),
+    'where':   
+        lambda d, kws: where(d, **(kws if isinstance(kws, dict)
+                                   else dict(operator_name=kws[0],
+                                             rhs_value=kws[1]))),
 
     # Logarithms
     'log':      lambda d, _: np.log(d),
@@ -282,9 +283,9 @@ def transform(data: xr.DataArray, *operations: Union[dict, str],
                                  "".format(op_spec['rhs_from'], op_name,
                                            aux_data)) from err
 
-        log.log(log_level, "Applying operation %d/%d:  %s  ...",
+        log.log(log_level, "Applying operation %d/%d:  %s",
                 i+1, len(operations), op_name)
-        log.log(log_level, "  … with arguments:  %s", op_spec)
+        log.log(log_level, "  Arguments:  %s", op_spec)
 
         # Catch and record warnings instead of displaying
         with warnings.catch_warnings(record=True) as caught_warnings:
@@ -308,7 +309,7 @@ def transform(data: xr.DataArray, *operations: Union[dict, str],
                                                       w.filename, w.lineno)
                                for w in caught_warnings]))
 
-        log.log(log_level, "Result:\n%s\n", data)
+        log.log(log_level, "  Result:\n%s\n", data)
 
     return data
 

@@ -1,0 +1,29 @@
+# Test the percolation mode
+---
+parameter_space:
+  # Make a few steps
+  num_steps: 10
+
+  ForestFire: !model
+    model_name: ForestFire
+
+    # Work with lower resolution and no tree cells at time zero
+    cell_manager:
+      grid:
+        resolution: 22
+
+      cell_params:
+        p_tree: 0.0
+    
+    # Enable stones
+    stones:
+      enabled: true
+
+      mode: lanes
+      # ... in periodic 1. x 1. space ...
+      num_vertical: 2     # at x indices: 
+      num_horizontal: 5   # at y indices 
+
+    # Increase growth rate and lightning probability
+    p_growth: 0.05
+    p_lightning: .1

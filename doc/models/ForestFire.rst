@@ -5,10 +5,16 @@
 The ``ForestFire`` model simulates the development of a forest under influence of fires and was first proposed by P. Bak, K. Chen, and C. Tang in 1990.
 Trees grow on a random basis and lightning causes them and the trees in the same cluster to burn down instantaneously; this is the so-called "two state model".
 
+.. contents::
+   :local:
+   :depth: 2
+
+----
+
 Implementation
 --------------
 The model is implemented based on the the description in the CCEES lecture notes by Kurt Roth (chapter: Discrete Complex Systems - Contact Processes).
-The forest is modelled as a cellular automaton, where each cell can have one of two states: ``empty`` or ``tree``.
+The forest is modelled as a cellular automaton, where each cell has a state: ``empty`` or ``tree``.
 
 The update procedure is as follows: In each iteration step, iterate over all cells in a random order. For each cell, one of two actions can take place, depending on the current state of the cell:
 
@@ -17,23 +23,29 @@ The update procedure is as follows: In each iteration step, iterate over all cel
 
 The new state of a cell is applied directly after it was iterated over, i.e. cell states are updated *sequentially*.
 
-Percolation Mode
-^^^^^^^^^^^^^^^^
-There is the possibility to use the model feature ``ignite_bottom_row``, where the cells at the bottom (southern) boundary of the grid are constantly ignited.
-It makes sense to set the ``p_lightning`` parameter to zero in this mode.
+Heterogeneities
+^^^^^^^^^^^^^^^
+There is the possibility to introduce heterogeneities into the grid, which are implemented as two additional possible cell states, ``source`` and ``stone``:
 
-.. note::
+* A cell can be a constantly ignited fire ``source``, instantly burning down a cluster that comes in contact with it.
+* A cell can be a ``stone``, being immune to fire and not taking part in any model dynamics.
 
-  In this mode, it is required to make the space non-periodic.
-  Consult the model default configuration below to see how that can be done.
+These heterogeneities are controlled via the ``ignite_permanantly`` and ``stones`` entries of the model configuration, which both make use of the :ref:`entity selection interface <entity_selection>`.
 
 Data Output
 ^^^^^^^^^^^
 The following data is stored alongside the simulation:
 
-* ``kind``: the state of each cell. ``0`` maps to ``empty``, ``1`` to ``tree``.
+* ``kind``: the state of each cell. Possible values:
+
+   * ``0``: ``empty``
+   * ``1``: ``tree``
+   * ``2``: (not used)
+   * ``3``: ``source``, is constantly ignited
+   * ``4``: ``stone``, does not take part in any interaction 
+
 * ``age``: the age of each tree, reset after lightning strikes
-* ``cluster_id``: a number identifying to which cluster a cell belongs
+* ``cluster_id``: a number identifying to which cluster a cell belongs; ``0`` for non-tree cells
 * ``tree_density``: the global tree density
 
 

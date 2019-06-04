@@ -201,6 +201,7 @@ tree_density_asymptotic:
 
 
 # --- Grid Snapshots ----------------------------------------------------------
+# NOTE These can also be used as basis for grid animations.
 # ... The forest ..............................................................
 forest_snapshot:
   based_on: .ca.state
@@ -209,10 +210,13 @@ forest_snapshot:
   to_plot:
     kind:
       title: Forest State
-      limits: [0, 1]
+      limits: [0, 4]
       cmap: 
-        Empty: darkkhaki
-        Tree: forestgreen
+        empty: darkkhaki
+        tree: forestgreen
+        ' ': none                # kind value 2: infected (not used in FFM)
+        source: firebrick
+        stone: slategrey
 
 # ... The forest age ..........................................................
 forest_age_snapshot:
@@ -229,13 +233,14 @@ clusters_snapshot:
   based_on: .ca.state
   model_name: ForestFire
 
-  # Use the model-specific plot that adds preprocessing for cluster IDs
-  module: model_plots.ForestFire.ca
-  plot_func: state
-
   to_plot:
     cluster_id:
       title: Clusters
       limits: [0, 20]
       cmap: tab20
       no_cbar_markings: true
+
+  transform_data:
+    cluster_id:
+      - where: ['!=', 0]       # 0 is masked: not part of a cluster
+      - mod: 20                # ... to match the tab20 color map

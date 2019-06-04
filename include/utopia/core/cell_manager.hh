@@ -59,11 +59,11 @@ public:
     /// Grid type; this refers to the base type of the stored (derived) object
     using GridType = Grid<Space>;
 
-    /// Neighborhood function used in public interface (with cell as argument)
-    using NBFuncCell = std::function<CellContainer<Cell>(const Cell&)>;
-
     /// Type of vectors that represent a physical quantity
     using SpaceVec = SpaceVecType<dim>;
+
+    /// Type of multi-index like arrays
+    using MultiIndex = typename GridType::MultiIndex;
 
     /// Random number generator type
     using RNG = typename Model::RNG;
@@ -71,15 +71,15 @@ public:
     /// Configuration node type
     using Config = typename Model::Config;
 
+    /// Neighborhood function used in public interface (with cell as argument)
+    using NBFuncCell = std::function<CellContainer<Cell>(const Cell&)>;
+    
     /// The type of a rule function acting on the cells of this cell manager
     /** This is a convenience type def that models can use to easily have this
       * type available.
       */
     using RuleFunc =
         typename std::function<CellState(const std::shared_ptr<Cell>&)>;
-
-    /// Type of multi-index like arrays
-    using MultiIndex = typename GridType::MultiIndex;
     
 
 private:
@@ -307,6 +307,11 @@ public:
       *                * 3D:  back, front
       */
     CellContainer<Cell> boundary_cells(const std::string& select="all") const {
+        if (_space->periodic) {
+            _log->warn("Selecting boundary cells (mode '{}') of a periodic "
+                       "space will always return an empty container!", select);
+        }
+        
         return entity_pointers_from_ids(_grid->boundary_cells(select));
     }
 
