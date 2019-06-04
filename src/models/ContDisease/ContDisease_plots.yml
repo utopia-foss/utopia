@@ -1,42 +1,14 @@
 # Default plots for the ContDisease model
 ---
-# --- Plots the tree density over time ----------------------------------------
-tree_density:
-  based_on: densities
-
-  to_plot:
-    tree:
-      label: Tree
-      color: green
-
-
-# --- Plots all densities over time -------------------------------------------
+# --- Plot of all densities over time -----------------------------------------
 densities:
   based_on: densities
-
-  to_plot:
-    empty:
-      label: Empty
-      color: black
-    tree:
-      label: Tree
-      color: green
-    infected:
-      label: Infected
-      color: red
-    source:
-      label: Source
-      color: orange
-    stone:
-      label: Stone
-      color: gray
-    
   
 # --- Create a phase plot of two densities ------------------------------------
 phase_diagram:
   based_on: phase_diagram
 
-  # Select from what densities to create the phase diagram --------------------
+  # Select from what densities to create the phase diagram
   x: tree
   y: infected
 
@@ -52,47 +24,40 @@ phase_diagram:
   s: 10
 
 
-# --- Create a grid animation of the state ------------------------------------
-state_anim:
-  based_on: .ca.state.anim_ffmpeg  # update to *_frames to save frames
+# --- Snapshots and animations of the spatial grid ----------------------------
+# NOTE These are both based on the snapshot base plots and add the remaining
+#      parameters: For snapshots, the time index that is to be plotted; for
+#      animations, the animation parameters (using multiple inheritance).
 
-  model_name: ContDisease
+# ... The forest ..............................................................
+forest_snapshot:
+  based_on: forest_snapshot
+  enabled: false
+  time_idx: -1
 
-  # Select the properties to plot
-  to_plot:
-    state:
-      title: State
-      limits: [0, 4]
-      cmap:
-        empty: white
-        tree: green
-        infected: red
-        source: orange
-        stone: gray
+forest:
+  based_on: [forest_snapshot, .ca.state.anim_ffmpeg]
 
+# ... The forest age ..........................................................
+forest_age_snapshot:
+  based_on: forest_age_snapshot
+  enabled: false
+  time_idx: -1
 
-# --- Create a grid animation of the tree ages --------------------------------
-age_anim:
-  based_on: .ca.state.anim_ffmpeg  # update to *_frames to save frames
+forest_age:
+  based_on: [forest_age_snapshot, .ca.state.anim_ffmpeg]
 
-  model_name: ContDisease
+# ... The clusters ............................................................
+clusters_snapshot:
+  based_on: clusters_snapshot
+  enabled: false
+  time_idx: -1
 
-  # Select the property to plot
-  to_plot:
-    age:
-      title: Tree Age
-      cmap: Greens
+clusters:
+  based_on: [clusters_snapshot, .ca.state.anim_ffmpeg]
 
-
-# --- Create a grid animation of the clusters ---------------------------------
-cluster_anim:
-  based_on: .ca.state.anim_ffmpeg  # update to *_frames to save frames
-
-  model_name: ContDisease
-
-  # Select the properties to plot
-  to_plot:
-    cluster_id:
-      title: Cluster
-      limits: [0, 20]
-      cmap: tab20
+# --- Miscellaneous -----------------------------------------------------------
+# ... Combined plot of forest states and clusters .............................
+forest_and_clusters:
+  based_on: [forest_snapshot, clusters_snapshot, .ca.state.anim_ffmpeg]
+  enabled: false

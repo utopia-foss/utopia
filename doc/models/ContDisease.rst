@@ -7,13 +7,13 @@ on the description in the script of the CCEES lecture of Prof. Roth.
 
 Fundamentals
 ------------
-
 We model a "forest" on a two dimensional square grid of cells. Each cell can be
 in one of five different states: empty, tree, infected, herd or stones.
 
+Implementation
+--------------
 Update Rules
-------------
-
+^^^^^^^^^^^^
 Each time step the cells update their respective states according to the
 following rules:
 
@@ -21,26 +21,43 @@ following rules:
 2. An ``empty`` cell can become a ``tree`` cell with probability ``p_growth``.
 3. A ``tree`` cell can become infected in the following ways:
 
-   - From a neighbouring infected cell with probability ``p_infect``
+   - From a neighbouring infected cell with probability 1-``p_immunity``
      *per neighbor*
-   - Via a random point infection with probability ``p_random_infect``
+   - Via a random point infection with probability ``p_infect``
    - Via a constantly infected cell, an infection ``source``
 
 For the neighborhood, both the von Neumann neighborhood (5-neighborhood) and the Moore neighborhood (9-neighborhood) are supported (see model configuration).
 
-Infection sources
+Heterogeneities
+^^^^^^^^^^^^^^^
+As in the :doc:`Forest Fire model <ForestFire>`, there is the possibility to introduce heterogeneities into the grid, which are implemented as two additional possible cell states:
+
+* ``source``: These are constant infection sources. They spread infection like normal infected trees, but don't revert back to the empty state. If activated, they are per default on the lower boundary of the grid. 
+* ``stone``: Stones are cells that can't be infected nor turn into trees. They are used to represent barriers in the forest. If enabled, the default mode is ``clustered_simple``, which leads to randomly distributed stones whose neighbours have a certain probability to also be a stone.
+
+Both make use of the :ref:`entity selection interface <entity_selection>`.
+
+Infection Control
 ^^^^^^^^^^^^^^^^^
+Via the ``infection_control`` parameter in the model configuration, additional infections can be introduced at desired times.
 
-Constant infection sources can be activated at the lower boundary of the grid.
-They spread infection like normal infected trees, but don't revert back to the
-empty state.
+The infections are introduced before the update rule above is carried out.
 
-Stones
-^^^^^^
+Data Output
+^^^^^^^^^^^
+The following data is stored alongside the simulation:
 
-Stone are cells that can't be infected nor turn into trees. They are used to
-represent barriers in the forest. At the moment they can initialized at random,
-with an additional weight to encourage clustering of stones.
+* ``kind``: the state of each cell. Possible values:
+
+   * ``0``: ``empty``
+   * ``1``: ``tree``
+   * ``2``: ``infected``
+   * ``3``: ``source``, is constantly ignited
+   * ``4``: ``stone``, does not take part in any interaction 
+
+* ``age``: the age of each tree, reset after lightning strikes
+* ``cluster_id``: a number identifying to which cluster a cell belongs; ``0`` for non-tree cells
+* ``densities``: the densities of each of the kind of cells over time; this is a labelled 2D array with the dimensions ``time`` and ``kind``.
 
 
 Default configuration parameters

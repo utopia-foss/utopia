@@ -1,13 +1,9 @@
-# Configuration file used to test that the initialization of the model is correct
-
+# Configuration file used to test initialization
 ---
-
 parameter_space:
   num_steps: 0
 
-# Load the model config
-  ContDisease: !model
-    model_name: ContDisease  # imports the model config for the CopyMe model
+  ContDisease:
     cell_manager:
       grid:
         resolution: 32
@@ -15,7 +11,7 @@ parameter_space:
       p_tree: 0
 
     stones:
-      on: true
+      enabled: true
 
-    infection_source: false
-    stone_density: 0.8
+    infection_source:
+      enabled: false

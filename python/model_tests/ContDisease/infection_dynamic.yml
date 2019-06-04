@@ -1,23 +1,23 @@
-# Configuration file used to test that the infection dynamic of the model is correct
+# Configuration file used to test the infection dynamics
 
 ---
-
 parameter_space:
   num_steps: 3
 
-# Load the model config
-  ContDisease: !model
-    model_name: ContDisease  # imports the model config for the ContDisease model
+  ContDisease:
     cell_manager:
       grid:
         resolution: 3
+    
     cell_params:
-      p_tree: 0
+      p_tree: 0.
 
     stones:
-      on: false
-    infection_source: true
+      enabled: false
+
+    infection_source:
+      enabled: true
 
     p_growth: 1
-    p_infect: 1
-    p_random_infect: 0
+    p_immunity: 0
+    p_infect: 0

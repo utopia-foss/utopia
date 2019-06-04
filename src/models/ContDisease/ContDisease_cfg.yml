@@ -1,19 +1,9 @@
 # The model configuration for the ContDisease model
+# 
+# NOTE This file holds the _default_ values for a single instance.
+#      Do NOT change the values here!
 #
-# This file should ONLY contain model-specific configuration and needs to be
-# written such that it can be used by _every_ model instance, regardless
-# of the level within a model hierarchy.
-#
-# To that end, it needs to specify the parameters at the level of the instance
-# of a Model class.
-#
-# This file is usually handled by the frontend: usage of advanced yaml features
-# like anchors and tags is supported.
-#
-# Note, however, that this file should hold the _default_ values for a single
-# instance. Therefore, parameter sweeps should not be specified here!
-# Furthermore, if including other models' parameters via the `!model` tag, make
-# sure that no circular includes occur.
+# Consult the documentation on how to change these parameters
 ---
 # --- Space parameters --------------------------------------------------------
 # The physical space this model is embedded in
@@ -24,7 +14,7 @@ space:
 cell_manager:
   grid:
     structure: square
-    resolution: 256      # in cells per unit length of physical space
+    resolution: 64      # in cells per unit length of physical space
 
   neighborhood:
     mode: vonNeumann
@@ -39,33 +29,66 @@ cell_manager:
 # Probability per site and time step to transition from state empty to tree
 p_growth: 7.5e-3
 
-# Probability per site and time step for a tree cell to become infected if an
-# infected cell is in the neighborhood
-p_infect: 1.
+# Probability per site and time step for a tree cell to not become infected if
+# an infected cell is in the neighborhood. This probability applies per event
+# so it does _not_ mean that an immune cell is also immune in the next
+# iteration step
+p_immunity: 0.
 
-# Probability per site and time step for a random point infection of a tree cell
-p_random_infect: 0.
+# Probability per site and time step for a random point infection of a tree
+p_infect: 0.
+# NOTE This is affected by the infection control, see below.
 
-# Infection source - set true to activate a constant row of infected cells at
-# the bottom boundary. Requires non-periodic space.
-infection_source: true
+# --- Infection Control -------------------------------------------------------
+# Infection control to investigate the time-dependent influence of the 
+# disease driving force. Note that infection control is applied at the
+# beginning of an iteration step. It's effect is seen in the following
+# time step
+infection_control:
+  enabled: false
 
+  # The number of additional infections to be placed on the grid
+  num_additional_infections: 10
 
-# --- Stones ------------------------------------------------------------------
+  # Add the additional infections at the given times
+  # Note the the !listgen tag creates a list from the parameters 
+  # (start, stop, step_size)
+  # To disable, pass an empty sequence.
+  at_times: !listgen [0, 100, 20]
+
+  # Change the probability of a random infection.
+  # The expected value is a list of [iteration_step, new_value] pairs, e.g.
+  #   - [10, .5]
+  #   - [42, 0.]
+  # ... will set p_infect from the default value to .5 at time 10 and set it
+  # back to 0. at time 42.
+  # To disable, pass an empty sequence.
+  change_p_infect: []
+
+# --- Heterogeneities ---------------------------------------------------------
+# Some cells can be permanently infected or turned into stones.
+# Both these features are using the `select_entities` interface; consult the
+# documentation regarding information on available selection modes.
+
+# Turn some cells into stones: these do not take part in any of the processes
 stones:
-  # Whether to have stones or not
-  on: true
+  enabled: false
+  mode: clustered_simple
 
-  initialization:
-    # The mode in which to initialize stones. Valid options:
-    # 'random'    Initialize cells randomly as a stone with
-    #             the required probability parameter 'p_random'.
-    # 'cluster'   Initialize cells randomly as clusters. For this, stones
-    #             are first set randomly on all cells with the probability
-    #             'p_random' (required parameter!) and afterwards if a cell
-    #             has a stone as neighbor, it becomes a stone with probability
-    #             'p_cluster' (required parameter)
-    mode: random
+  # Clustering parameters
+  p_seed: .02                # Probability with which a cell is a cluster seed
+  p_attach: .1               # Attachment probability (per neighbor)
+  num_passes: 5              # How many attachment procedures to perform
 
-    p_random: 0.1
-    p_cluster: 0.2
+# Set some cells to be permanently infected (invoked after stones are set)
+infection_source:
+  enabled: true
+  mode: boundary
+
+  # Boundary selection parameters (requires space to be set to NON-periodic!)
+  boundary: bottom
+
+# --- Output Configuration ----------------------------------------------------
+# Whether to only write out the densities; useful for runs on large grids
+# where spatial information is not needed.
+write_only_densities: false

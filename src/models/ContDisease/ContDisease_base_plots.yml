@@ -2,24 +2,117 @@
 ---
 # -- Any kind of phase plot ---------------------------------------------------
 phase_diagram:
+  based_on: .default_style_and_helpers
+
   creator: universe
   universes: all
 
   module: model_plots.ContDisease
   plot_func: phase_diagram
 
-  based_on: .default_style_and_helpers
-
   cmap: viridis_r
 
+  helpers:
+    set_title:
+      title: Phase Diagram
 
 
 # -- Densities plot -----------------------------------------------------------
 densities:
-  creator: universe
-  universes: all
+  based_on: .basic_uni.lineplots
 
-  module: model_plots.ContDisease
-  plot_func: densities
+  model_name: ContDisease
 
-  based_on: .default_style_and_helpers
+  to_plot:
+    empty:
+      path_to_data: densities
+      transform_data:
+        - sel: { kind: empty }
+      label: empty
+      color: &color_empty darkkhaki
+
+    tree:
+      path_to_data: densities
+      transform_data:
+        - sel: { kind: tree }
+      label: tree
+      color: &color_tree forestgreen
+
+    infected:
+      path_to_data: densities
+      transform_data:
+        - sel: { kind: infected }
+      label: infected
+      color: &color_infected firebrick
+
+    source:
+      path_to_data: densities
+      transform_data:
+        - sel: { kind: source }
+      label: source
+      color: &color_source orange
+
+    stone:
+      transform_data:
+        - sel: { kind: stone }
+      path_to_data: densities
+      label: stone
+      color: &color_stone slategray
+
+  helpers:
+    set_limits:
+      x: [min, max]
+      y: [0., 1.]
+    set_labels:
+      x: Time [Iteration Steps]
+      y: Density [1/A]
+    set_title:
+      title: Densities
+    set_legend:
+      loc: best
+
+
+# --- Grid Snapshots ----------------------------------------------------------
+# NOTE These can also be used as basis for grid animations.
+# ... The forest ..............................................................
+forest_snapshot:
+  based_on: .ca.state
+  model_name: ContDisease
+  
+  to_plot:
+    kind:
+      title: Forest State
+      limits: [0, 4]
+      cmap:
+        empty: *color_empty
+        tree: *color_tree
+        infected: *color_infected
+        source: *color_source
+        stone: *color_stone
+
+# ... The forest age ..........................................................
+forest_age_snapshot:
+  based_on: .ca.state
+  model_name: ContDisease
+
+  to_plot:
+    age:
+      title: Forest Age
+      cmap: YlGn
+
+# ... The clusters ............................................................
+clusters_snapshot:
+  based_on: .ca.state
+  model_name: ContDisease
+
+  to_plot:
+    cluster_id:
+      title: Clusters
+      limits: [0, 20]
+      cmap: tab20
+      no_cbar_markings: true
+
+  transform_data:
+    cluster_id:
+      - where: ['!=', 0]       # 0 is masked: not part of a cluster
+      - mod: 20                # ... to match the tab20 color map
