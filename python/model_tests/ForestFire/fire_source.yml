@@ -4,7 +4,7 @@ perform_sweep: true
 
 parameter_space:
   # Make a few steps
-  num_steps: 100
+  num_steps: 23
 
   seed: !sweep
     default: 42
@@ -27,8 +27,9 @@ parameter_space:
         # High initial density
         p_tree: 0.5
     
-    # Set percolation mode    
-    light_bottom_row: true
+    # Enable constant fire on bottom row (default values)
+    ignite_permanently:
+      enabled: true
 
     # Increase growth rate and deactivate lightning
     p_growth: 0.05

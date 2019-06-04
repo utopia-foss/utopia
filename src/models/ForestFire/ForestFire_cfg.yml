@@ -34,12 +34,35 @@ p_growth: 7.5e-3
 # down the whole cluster
 p_lightning: 1.0e-5
 
-# Probability (per neighbor) to _not_ catch fire from a neighbor
-p_resistance: 0.
+# Probability (per neighbor) to _not_ catch fire from a burning neighbor
+p_immunity: 0.
 
-# If set to true, the bottom boundary is constantly ignited. This _requires_
-# the space to be set to non-periodic.
-light_bottom_row: false
+
+# --- Heterogeneities ---------------------------------------------------------
+# Some cells can be permanently ignited or turned into stones. Both are making
+# use of the selection interface; consult the documentation for parameters.
+# Both these features are using the `select_entities` interface; consult the
+# documentation regarding information on available selection modes.
+
+# Turn some cells into stones: these do not take part in any of the processes
+stones:
+  enabled: false
+  mode: clustered_simple
+  # NOTE Check the documentation for available selection modes.
+
+  # Clustering parameters
+  p_seed: .02                # Probability with which a cell is a cluster seed
+  p_attach: .1               # Attachment probability (per neighbor)
+  num_passes: 5              # How many attachment procedures to perform
+
+# Set some cells on fire permanently (invoked after stones are set)
+ignite_permanently:
+  enabled: false
+  mode: boundary
+
+  # Boundary selection parameters (requires space to be set to NON-periodic!)
+  boundary: bottom
+
 
 # --- Output Configuration ----------------------------------------------------
 # Whether to only write out the tree density; useful for runs on large grids

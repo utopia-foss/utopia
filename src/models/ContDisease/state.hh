@@ -6,7 +6,7 @@
 namespace Utopia::Models::ContDisease {
 
 /// The kind of the cell: empty, tree, infected, source, stone
-enum class Kind : unsigned short {
+enum class Kind : char {
     /// Unoccupied
     empty = 0,
     /// Cell represents a tree

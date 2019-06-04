@@ -72,15 +72,15 @@ def state(dm: DataManager, *,
             also for other operations, e.g. to selecting a slice.
             For available parameters, see
             :py:func:`utopya.dataprocessing.transform`
-        transformations_log_level (int, optional): The log level of all the
-            transformation operations.
+        transformations_log_level (int, optional): The logging level of all the
+            data transformation operations.
         preprocess_funcs (Dict[str, Callable], optional): A dictionary of pre-
             processing callables, where keys need to correspond to the
             property name in ``to_plot`` that is to be pre-processed.
             This argument can be used to implement model-specific preprocessing
             by implementing another plot function, which defines this dict and
-            passes it to this function. NOTE better use the `transform_data` 
-            method if possible.
+            passes it to this function.
+            NOTE If possible, use `transform_data`.
     
     Raises:
         NotImplementedError: ``to_plot`` of length != 1
@@ -99,16 +99,16 @@ def state(dm: DataManager, *,
 
         # If preprocessing is available for this property, call that function
         if transform_data and preprocess_funcs:
-            log.warning("Requested 'transform_data' and 'preprocess_func'!"
-                        " Perfoming first transform_data and then"
-                        " preprocess_func.",
-                            op_name, exc.__class__.__name__, exc)
+            log.warning("Received both arguments `transform_data` and "
+                        "`preprocess_funcs`! Will perform first the "
+                        "transformations, then the additional preprocessing.")
+        
         if transform_data:
             data = transform(data, *transform_data.get(prop_name, {}),
                              log_level=transformations_log_level)
+
         if preprocess_funcs and prop_name in preprocess_funcs:
             data = preprocess_funcs[prop_name](data)
-
 
         return data
 

@@ -1,0 +1,30 @@
+# Test the percolation mode
+---
+perform_sweep: true
+
+parameter_space:
+  # Make a few steps
+  num_steps: 23
+
+  seed: !sweep
+    default: 42
+    range: [4]
+
+  ForestFire: !model
+    model_name: ForestFire
+
+    # Work with lower resolution and no tree cells at time zero
+    cell_manager:
+      grid:
+        resolution: 10
+
+      cell_params:
+        p_tree: 0.0
+    
+    # Enable stones
+    stones:
+      enabled: true
+      
+    # Increase growth rate and deactivate lightning
+    p_growth: 0.05
+    p_lightning: 0.

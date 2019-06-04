@@ -9,6 +9,7 @@
 #include <utopia/core/apply.hh>
 #include <utopia/core/cell_manager.hh>
 
+#include "../ContDisease/state.hh"
 
 namespace Utopia {
 namespace Models {
@@ -16,23 +17,23 @@ namespace ForestFire {
 
 // ++ Type definitions ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-/// The values a cell's state can take: empty and tree
-enum class Kind { empty=0, tree=1 };
+/// The values a cell's state can take: empty, tree, source or stone.
+/** \note Uses the same representation as the ContDisease model, but not making
+  *       use of the ``infected`` state.
+  */
+using Utopia::Models::ContDisease::Kind;
 
 
 /// The full cell struct for the ForestFire model
 struct State {
-    /// The actual cell state
+    /// The kind of object that populates this cell, e.g. a tree
     Kind kind;
 
     /// The age of the tree on this cell
     unsigned short age;
 
-    /// An ID denoting to which cluster this cell belongs
+    /// An ID denoting to which cluster this cell belongs (if it is a tree)
     unsigned int cluster_id;
-
-    /// Whether the cell is permanently ignited
-    bool permanently_ignited;
 
     /// Remove default constructor, for safety
     State () = delete;
@@ -43,22 +44,20 @@ struct State {
     :
         kind(Kind::empty),
         age(0),
-        cluster_id(0),
-        permanently_ignited(false)
+        cluster_id(0)
     {
         // Get the desired probability to be a tree
         const auto p_tree = get_as<double>("p_tree", cfg);
 
+        // Check obvious cases (no need to draw a random number)
         if (p_tree < 0. or p_tree > 1.) {
             throw std::invalid_argument("p_tree needs to be in interval "
                                         "[0., 1.], but was not!");
         }
         else if (p_tree == 0.) {
-            // No need to draw a random number
             return;
         }
         else if (p_tree == 1.) {
-            // No need to draw a random number
             kind = Kind::tree;
             return;
         }
@@ -94,34 +93,30 @@ struct Param {
     /// Frequency of lightning occurring per cell
     const double p_lightning;
 
-    /// Whether the bottom row should be constantly on fire
-    const bool light_bottom_row;
-
-    /// The resistance probability
-    const double p_resistance;
+    /// The probability (per neighbor) to be immune to a spreading fire
+    const double p_immunity;
 
     /// Construct the parameters from the given configuration node
     Param(const DataIO::Config& cfg)
     :
         p_growth(get_as<double>("p_growth", cfg)),
         p_lightning(get_as<double>("p_lightning", cfg)),
-        light_bottom_row(get_as<bool>("light_bottom_row", cfg)),
-        p_resistance(get_as<double>("p_resistance", cfg))
+        p_immunity(get_as<double>("p_immunity", cfg))
     {
-        if ((p_growth > 1) or (p_growth < 0)) {
-            throw std::invalid_argument("Invalid p_growth; need be a value "
+        if ((p_growth > 1.) or (p_growth < 0.)) {
+            throw std::invalid_argument("Invalid p_growth! Need be a value "
                 "in range [0, 1] and specify the probability per time step "
                 "and cell with which an empty cell turns into a tree.");
         }
-        if ((p_lightning > 1) or (p_lightning < 0)) {
-            throw std::invalid_argument("Invalid p_lightning; need be "
+        if ((p_lightning > 1.) or (p_lightning < 0.)) {
+            throw std::invalid_argument("Invalid p_lightning! Need be "
                 "in range [0, 1] and specify the probability per cell and "
                 "time step for lightning to strike.");
         }
-        if ((p_resistance > 1) or (p_resistance < 0)) {
-            throw std::invalid_argument("Invalid resistance argument! "
+        if ((p_immunity > 1.) or (p_immunity < 0.)) {
+            throw std::invalid_argument("Invalid p_immunity! "
                 "Need be a value in range [0, 1] and specify the probability "
-                "per neighbor with which that neighbor can resist fire");
+                "per neighbor with which that neighbor is immune to fire.");
         }
     }
 };
@@ -225,28 +220,52 @@ public:
         _dset_cluster_id{this->create_cm_dset("cluster_id", _cm)},
         _dset_tree_density{this->create_dset("tree_density", {})}
     {
-        // Cells are already set up in the CellManager
-        // Still need to take care of the ignited bottom row
-        if (_param.light_bottom_row) {
-            this->_log->debug("Setting bottom boundary cells to be "
-                              "permanently ignited ...");
+        // Cells are already set up in the CellManager.
+        // Take care of the heterogeneities now:
 
-            if (this->_space.periodic) {
-                this->_log->warn("The parameter 'light_bottom_row' has no "
-                    "effect with the space configured to be periodic!");
-            }
+        // Stones
+        if (_cfg["stones"] and get_as<bool>("enabled", _cfg["stones"])) {
+            this->_log->info("Setting cells to be stones ...");
 
+            // Get the container
+            auto to_turn_to_stone = _cm.select_cells(_cfg["stones"]);
+
+            // Apply a rule to all cells of that container: turn to stone
             apply_rule<Update::async, Shuffle::off>(
-                // The rule to apply
                 [](const auto& cell){
                     auto& state = cell->state;
-                    state.permanently_ignited = true;
+                    state.kind = Kind::stone;
                     return state;
                 },
-                // The container over which to iterate
-                _cm.boundary_cells("bottom")
+                to_turn_to_stone
             );
+
+            this->_log->info("Set {} cells to be stones using selection mode "
+                             "'{}'.", to_turn_to_stone.size(),
+                             get_as<std::string>("mode", _cfg["stones"]));
         }
+        
+        // Ignite some cells permanently: fire sources
+        if (    _cfg["ignite_permanently"]
+            and get_as<bool>("enabled", _cfg["ignite_permanently"]))
+        {
+            this->_log->info("Setting cells to be permanently ignited ...");
+            auto to_be_ignited = _cm.select_cells(_cfg["ignite_permanently"]);
+
+            apply_rule<Update::async, Shuffle::off>(
+                [](const auto& cell){
+                    auto& state = cell->state;
+                    state.kind = Kind::source;
+                    return state;
+                },
+                to_be_ignited
+            );
+
+            this->_log->info("Set {} cells to be permanently ignited using "
+                "selection mode '{}'.", to_be_ignited.size(),
+                get_as<std::string>("mode", _cfg["ignite_permanently"]));
+        }
+
         this->_log->debug("{} model fully set up.", this->_name);
     }
 
@@ -272,17 +291,17 @@ private:
     }
 
     /// Identifies clusters in the cells and labels them with corresponding IDs
-    /** \details This function updates the cluster id of each cell
+    /** This function updates the cluster ID of each cell. This only applies to
+     *  cells that are trees; all others keep ID 0.
      * 
-     * \return Number of clusters identified
+     *  \return Number of clusters identified
      */
     unsigned int identify_clusters() {
         this->_log->debug("Identifying clusters...");
 
-        // reset tmp counter for cluster IDs
-        _cluster_id_cnt = 0; 
-        
-        // Identify clusters
+        // Reset counter for cluster IDs, then call the identification function
+        _cluster_id_cnt = 0;
+
         apply_rule<Update::async, Shuffle::off>(
             _identify_cluster, _cm.cells()
         );
@@ -294,12 +313,18 @@ private:
 
     // .. Rule functions ......................................................
     /// Update rule, called every step
-    /** \detail The possible transitions are the following:
-      *           - empty -> tree (with p_growth)
-      *           - tree -> burning (with p_lightning)
-      *         A burning tree directly invokes the burning of the whole
-      *         cluster of connected trees ("two-state FFM"). After that, all
-      *         burned cells are in the empty state again.
+    /** The possible transitions are the following:
+      *
+      *     - empty -> tree (with p_growth)
+      *     - tree -> burning (with p_lightning)
+      *
+      * A burning tree directly invokes the burning of the whole cluster of
+      * connected trees ("two-state FFM"). After that, all burned cells are in
+      * the empty state again.
+      *
+      * Additionally, some trees are constantly ignited and will always lead to
+      * the burning of the adjacent cluster. Other cells ("stones") do not take
+      * part in interactions at all.
       *
       * \note   This rule relies on an asynchronous cell update.
       */
@@ -307,21 +332,16 @@ private:
         // Get the current state of the cell and reset the cluster tag
         auto& state = cell->state;
         state.cluster_id = 0;
-        
-        // Permanently ignited cells always burn the cluster
-        if (state.permanently_ignited) {
-            state = _burn_cluster(cell);
-        }
 
         // Empty cells can grow a tree
-        else if (state.kind == Kind::empty) {
+        if (state.kind == Kind::empty) {
             if (this->_prob_distr(*this->_rng) < _param.p_growth) {
                 state.kind = Kind::tree;
             }
         }
         
-        // Is a tree
-        else {
+        // Trees can be hit by lightning or continue living 
+        else if (state.kind == Kind::tree) {
             // Can be hit by lightning
             if (this->_prob_distr(*this->_rng) < _param.p_lightning) {
                 state = _burn_cluster(cell);
@@ -332,6 +352,21 @@ private:
             }
         }
 
+        // Permanently ignited cells always burn the cluster
+        else if (state.kind == Kind::source) {
+            state = _burn_cluster(cell);
+        }
+
+        // Stones don't do anything
+        else if (state.kind == Kind::stone) {
+            // Not doing anything, like the good stone I am ...
+        }
+
+        else {
+            // Should never occur!
+            throw std::invalid_argument("Invalid cell state!");
+        }
+
         return state;
     };
 
@@ -340,8 +375,11 @@ private:
       *       from the update method. It relies on an asynchronous cell update.
       */
     RuleFunc _burn_cluster = [this](const auto& cell) {
-        // The current cell surely is empty now.
-        cell->state.kind = Kind::empty;
+        // A tree cell should burn, i.e.: transition to empty.
+        if (cell->state.kind == Kind::tree) {
+            cell->state.kind = Kind::empty;
+        }
+        // The only other possibility would be a fire source: remains alight!
         
         // Use existing cluster member container, clear it, add current cell
         auto& cluster = _cluster_members;
@@ -356,11 +394,11 @@ private:
             for (const auto& c : this->_cm.neighbors_of(cluster_member)) {
                 // If it is a tree, it will burn ...
                 if (c->state.kind == Kind::tree) {
-                    // ... unless there is p_resistance > 0 ...
-                    if (this->_param.p_resistance > 0.) {
+                    // ... unless there is p_immunity > 0 ...
+                    if (this->_param.p_immunity > 0.) {
                         // ... where there is a chance not to burn:
                         if (  this->_prob_distr(*this->_rng)
-                            < _param.p_resistance) {
+                            < _param.p_immunity) {
                             continue;
                         }
                     }
@@ -379,18 +417,20 @@ private:
     };
 
     /// Get the identity of each cluster of trees
-    /* \detail Runs a percolation on a cell, that has ID 0. Then, give all
-     *         cells of that percolation the same ID.
-     *         The _cluster_id_cnt member keeps track of already given IDs.
+    /* Runs a percolation on a cell, that has ID 0. Then, give all cells of
+     * that percolation the same ID. The ``_cluster_id_cnt`` member keeps
+     * track of already given IDs.
+     * Both a cell's cluster ID and the cluster ID counter are reset as part of
+     * a regular iteration step.
      */
     RuleFunc _identify_cluster = [this](const auto& cell){
+        // Only need to continue if a tree and not already labelled
         if (   cell->state.cluster_id != 0
-            or cell->state.kind == Kind::empty)
+            or cell->state.kind != Kind::tree)
         {
-            // already labelled, nothing to do. Return unchanged state
             return cell->state;
         }
-        // else: need to label this cell
+        // else: is an unlabelled tree; need to label it.
 
         // Increment the cluster ID counter and label the given cell
         _cluster_id_cnt++;

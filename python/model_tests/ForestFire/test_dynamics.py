@@ -37,15 +37,30 @@ def test_dynamics():
         density = data.mean(dim=['x', 'y'])
         assert 0.01 <= density[{'time': 2}].values <= 0.02 + 0.05
 
+def test_immunity():
+    """ """
+    pass
 
-def test_percolation_mode():
+def test_fire_source():
     """Runs the model with the bottom row constantly ignited"""
-    mv, dm = mtc.create_run_load(from_cfg="percolation_mode.yml")
+    mv, dm = mtc.create_run_load(from_cfg="fire_source.yml")
 
-    # Make sure the bottom row is always empty
+    # Make sure the bottom row is always marked as source
     for uni_no, uni in dm['multiverse'].items():
         data = uni['data']['ForestFire']['kind']
 
-        # All cells in the bottom row are always in state empty
-        assert (data.isel(y=0, time=slice(1, None)) == 0).all()
-        # NOTE For the initial state, this is not true.
+        # All cells in the bottom row are always in state "source", i.e.: 3
+        assert (data.isel(y=0) == 3).all()
+
+def test_stones():
+    """Runs the model with stone clusters"""
+    mv, dm = mtc.create_run_load(from_cfg="stones.yml")
+
+    for uni_no, uni in dm['multiverse'].items():
+        data = uni['data']['ForestFire']['kind']
+
+        # There is a non-zero number of stone cells
+        assert (data == 4).sum() > 0
+
+        # ... which is constant over time
+        assert ((data == 4).sum(['x', 'y']).diff('time') == 0).all()

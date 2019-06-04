@@ -1,7 +1,18 @@
 ---
 models:
-  # -- CellManager: For default-constructible, with nonperiodic space
+  # -- CellManager: For default-constructible, with periodic space
   with_cm:
+    space:
+      periodic: true
+      extent: [2., 2.]
+
+    cell_manager:
+      grid:
+        structure: square
+        resolution: 42
+  
+  # -- CellManager: For default-constructible, with nonperiodic space
+  with_cm_np:
     space:
       periodic: false
       extent: [2., 2.]
@@ -29,9 +40,21 @@ probability:
   mode: probability
   probability: .5
 
+position:
+  mode: position
+  positions:
+    - [0., 0.]
+    - [0.5, 0.5]
+    - [1., 1.]
+
 boundary:
   mode: boundary
   boundary: bottom
+
+lanes:
+  mode: lanes
+  num_vertical: 2
+  num_horizontal: 3
 
 clustered:
   mode: clustered_simple
