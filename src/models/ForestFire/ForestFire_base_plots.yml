@@ -211,11 +211,11 @@ forest_snapshot:
     kind:
       title: Forest State
       limits: [0, 4]
-      cmap: 
+      cmap:
         empty: darkkhaki
         tree: forestgreen
-        ' ': none                # kind value 2: infected (not used in FFM)
-        source: firebrick
+        ' ': none  # not used in FFM
+        source: orange
         stone: slategrey
 
 # ... The forest age ..........................................................

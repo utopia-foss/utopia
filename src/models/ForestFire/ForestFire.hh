@@ -212,7 +212,8 @@ public:
         _prob_distr(0., 1.),
         _cluster_id_cnt(0),
         _cluster_members(),
-        _write_only_tree_density(get_as<bool>("write_only_tree_density",_cfg)),
+        _write_only_tree_density(get_as<bool>("write_only_tree_density",
+                                              this->_cfg)),
 
         // Create datasets using the helper functions for CellManager-data
         _dset_kind{this->create_cm_dset("kind", _cm)},

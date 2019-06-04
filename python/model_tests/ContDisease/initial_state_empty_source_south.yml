@@ -1,19 +1,20 @@
-# Configuration file used to test that the initialization of the model is correct
-
+# Configuration file used to test the initial state
 ---
-
 parameter_space:
-  num_steps: 0
+  num_steps: 23
 
-# Load the model config
-  ContDisease: !model
-    model_name: ContDisease  # imports the model config for the ContDisease model
+  ContDisease:
     cell_manager:
       grid:
         resolution: 32
     cell_params:
       p_tree: 0
 
+    p_infect: 0.
+    p_growth: 0.
+
     stones: 
-      on: false
-    infection_source: true
+      enabled: false
+    
+    infection_source:
+      enabled: true

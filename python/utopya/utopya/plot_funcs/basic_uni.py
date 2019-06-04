@@ -31,7 +31,7 @@ def lineplot(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
         hlpr (PlotHelper): The PlotHelper
         model_name (str): The name of the model the data resides in
         path_to_data (str or Tuple[str, str]): The path to the data within the
-        model data or the paths to the x and the y data (resp) within the model
+            model data or the paths to the x and the y data, respectively
         transform_data (dict, optional): Transformations to apply to the data.
             This can be used for dimensionality reduction of the data, but
             also for other operations, e.g. to selecting a slice.

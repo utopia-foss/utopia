@@ -117,7 +117,7 @@ def test_griddc_integration():
                                 parameter_space=dict(num_steps=3))
 
     # Get the data
-    grid_data = dm['multiverse'][0]['data/ContDisease/state']
+    grid_data = dm['multiverse'][0]['data/ContDisease/kind']
     print("Grid data: ", grid_data)
 
     # Assert the type of the state is a GridDC

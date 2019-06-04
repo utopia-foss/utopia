@@ -8,6 +8,7 @@
 #include <utopia/core/model.hh>
 #include <utopia/core/apply.hh>
 #include <utopia/core/cell_manager.hh>
+#include <utopia/core/select.hh>
 
 // ContDisease-realted includes
 #include "params.hh"
@@ -19,8 +20,8 @@ namespace Utopia::Models::ContDisease {
 // ++ Type definitions ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 // Specialize the CellTraits type helper for this model
-/** \detail Specifies the type of each cells' state as first template argument
-  *         and the update mode as second.
+/** Specifies the type of each cells' state as first template argument
+  * and the update mode as second.
   *
   * See \ref Utopia::CellTraits for more information.
   */
@@ -34,21 +35,17 @@ using CDTypes = ModelTypes<>;
 // ++ Model definition ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 /// Contagious disease model on a grid
-/** \detail In this model, we model the spread of a disease through a forest on
- *          a 2D grid. Each cell can have one of five different states: empty,
- *          tree, infected, source or empty.
- *          Each time step, cells update their state according to the update
- *          rules. Empty cells will convert with a certain probability
- *          to tress, while trees represent cells that can be infected.
- *          Infection can happen either through a neighboring cells, or
- *          through random point infection. An infected cells reverts back to
- *          empty after one time step.
- *          Stones represent cells that can not be infected, therefore
- *          represent a blockade for the spread of the infection.
- *          Infection sources are cells that continuously spread infection
- *          without dying themselves.
- *          Different starting conditions, and update mechanisms can be
- *          configured.
+/** In this model, we model the spread of a disease through a forest on
+ *  a 2D grid. Each cell can have one of five different states: empty, tree, 
+ *  infected, source or empty. Each time step, cells update their state 
+ *  according to the update rules. Empty cells will convert with a certain 
+ *  probability to tress, while trees represent cells that can be infected.
+ *  Infection can happen either through a neighboring cells, or through random 
+ *  point infection. An infected cells reverts back to empty after one time 
+ *  step. Stones represent cells that can not be infected, therefore
+ *  represent a blockade for the spread of the infection. Infection sources are 
+ *  cells that continuously spread infection without dying themselves.
+ *  Different starting conditions, and update mechanisms can be configured.
  */
 class ContDisease:
     public Model<ContDisease, CDTypes>
@@ -65,6 +62,12 @@ public:
 
     /// Type of the CellManager to use
     using CellManager = Utopia::CellManager<CDCellTraits, ContDisease>;
+
+    /// Type of a cell
+    using Cell = typename CellManager::Cell;
+
+    /// Type of a container of shared pointers to cells
+    using CellContainer = Utopia::CellContainer<Cell>;
 
     /// Rule function type
     using RuleFunc = typename CellManager::RuleFunc;
@@ -86,51 +89,31 @@ private:
     /// The incremental cluster tag
     unsigned int _cluster_id_cnt;
 
-      // .. Temporary objects .................................................
-    /// Densities for all states
-    /** \note   This array is used for temporary storage; it is not
-      *         automatically updated!
-      * \detail The array entries map to the CellState enum:
-      *         0: empty
-      *         1: tree
-      *         2: infected
-      *         3: source
-      *         4: stone
-      */
-    std::array<double, 5> _densities;
-
     /// A temporary container for use in cluster identification
     std::vector<std::shared_ptr<CellManager::Cell>> _cluster_members;
 
-    // .. Data groups .........................................................
-    /// The data group where all density datasets are stored in
-    std::shared_ptr<DataGroup> _dgrp_densities;
+    /// Densities for all states
+    /** Array indices are linked to \ref Utopia::Models::ContDisease::Kind
+      *
+      * \warning This array is used for temporary storage; it is not
+      *          automatically updated but only upon write operations.
+      */
+    std::array<double, 5> _densities;
 
-    // .. Datasets ............................................................
-    /// 2D dataset (cell ID and time) of cell states
-    std::shared_ptr<DataSet> _dset_state;
+    // .. Data-Output related members .........................................
+    bool _write_only_densities;
+
+    /// 2D dataset (densities array and time) of density values
+    std::shared_ptr<DataSet> _dset_densities;
+
+    /// 2D dataset (cell ID and time) of cell kinds
+    std::shared_ptr<DataSet> _dset_kind;
 
     /// 2D dataset (tree age and time) of cells
     std::shared_ptr<DataSet> _dset_age;
 
-    /// 1D dataset of density of empty cells over time
-    std::shared_ptr<DataSet> _dset_density_empty;
-
-    /// 1D dataset of density of tree cells over time
-    std::shared_ptr<DataSet> _dset_density_tree;
-
-    /// 1D dataset of density of infected cells over time
-    std::shared_ptr<DataSet> _dset_density_infected;
-
-    /// 1D dataset of density of infected infection source cells over time
-    std::shared_ptr<DataSet> _dset_density_source;
-
-    /// 1D dataset of density of infected stone cells over time
-    std::shared_ptr<DataSet> _dset_density_stone;
-
     /// The dataset for storing the cluster ID associated with each cell
     std::shared_ptr<DataSet> _dset_cluster_id;
-
 
 
 public:
@@ -153,29 +136,19 @@ public:
         // Initialize remaining members
         _prob_distr(0., 1.),
         _cluster_id_cnt(),
-        _densities{},  // undefined here, will be set in constructor body
         _cluster_members(),
+        _densities{},  // undefined here, will be set in constructor body
+        _write_only_densities(get_as<bool>("write_only_densities",
+                                           this->_cfg)),
 
-        // Create a data group for the densities
-        _dgrp_densities(this->_hdfgrp->open_group("densities")),
+        // Create the dataset for the densities; shape is known
+        _dset_densities(this->create_dset("densities", {5})),
 
         // Create dataset for cell states
-        _dset_state(this->create_cm_dset("state", _cm)),
+        _dset_kind(this->create_cm_dset("kind", _cm)),
 
         // Create dataset for tree age
         _dset_age(this->create_cm_dset("age", _cm)),
-
-        // Create datasets for all densities
-        _dset_density_empty(   this->create_dset("empty",
-                                                 _dgrp_densities, {})),
-        _dset_density_tree(    this->create_dset("tree",
-                                                 _dgrp_densities, {})),
-        _dset_density_infected(this->create_dset("infected",
-                                                 _dgrp_densities, {})),
-        _dset_density_source(  this->create_dset("source",
-                                                 _dgrp_densities, {})),
-        _dset_density_stone(   this->create_dset("stone",
-                                                 _dgrp_densities, {})),
 
         // Create dataset for cluster id
         _dset_cluster_id(this->create_cm_dset("cluster_id", _cm))
@@ -183,91 +156,61 @@ public:
         // Make sure the densities are not undefined
         _densities.fill(std::numeric_limits<double>::quiet_NaN());
 
-        // Remaining initialization steps regard macroscopic quantities
+        // Cells are already set up by the CellManager.
+        // Remaining initialization steps regard only macroscopic quantities,
+        // e.g. the setup of heterogeneities: Stones and infection source.
 
         // Stones
-        if (_params.stones.on) {
-            if (_params.stones.init.mode == "random") {
-                this->_log->debug("Setting up random stones ...");
+        if (_cfg["stones"] and get_as<bool>("enabled", _cfg["stones"])) {
+            this->_log->info("Setting cells to be stones ...");
 
-                /// Initialize stones randomly 
-                RuleFunc _stone_init = [this](const auto& cell) {
-                    // Cell will be a stone with probability p_random
-                    auto state = cell->state;
-                    if (this->_prob_distr(*this->_rng) 
-                            < this->_params.stones.init.p_random)
-                    {
-                        state.kind = Kind::stone;
-                        return state;
-                    }
-                    // else: stay in the same state
+            // Get the container
+            auto to_turn_to_stone = _cm.select_cells(_cfg["stones"]);
+
+            // Apply a rule to all cells of that container: turn to stone
+            apply_rule<Update::async, Shuffle::off>(
+                [](const auto& cell){
+                    auto& state = cell->state;
+                    state.kind = Kind::stone;
                     return state;
-                };
-                
-                // Set random stones
-                apply_rule<Update::async, Shuffle::on>
-                    (_stone_init, _cm.cells(), *this->_rng);
-            }
-            
-            // If cluster mode is selected, additionally add clustered stones
-            if (_params.stones.init.mode == "cluster"){
-                this->_log->debug("Setting up stone clusters ...");
+                },
+                to_turn_to_stone
+            );
 
-                // Add a stone with probability stone_cluster to any empty
-                // cell with a neighboring stone.
+            this->_log->info("Set {} cells to be stones using selection mode "
+                             "'{}'.", to_turn_to_stone.size(),
+                             get_as<std::string>("mode", _cfg["stones"]));
+        }
+        
+        // Ignite some cells permanently: fire sources
+        if (    _cfg["infection_source"]
+            and get_as<bool>("enabled", _cfg["infection_source"]))
+        {
+            this->_log->info("Setting cells to be infection sources ...");
+            auto source_cells = _cm.select_cells(_cfg["infection_source"]);
 
-                RuleFunc _stone_cluster = [this](const auto& cell) {
-                    auto state = cell->state;
-
-                    // Add the clustered stones
-                    // Iterate over all neighbors of the current cell
-                    for (auto& nb: this->_cm.neighbors_of(cell)) {
-                        auto nb_state = nb->state;
-
-                        if (    state.kind == Kind::empty
-                            and nb_state.kind == Kind::stone
-                            and this->_prob_distr(*this->_rng) 
-                                < this->_params.stones.init.p_cluster)
-                        {
-                            // Become a stone
-                            state.kind = Kind::stone;
-                        }
-                        else {
-                            break;
-                        }
-                    }
+            apply_rule<Update::async, Shuffle::off>(
+                [](const auto& cell){
+                    auto& state = cell->state;
+                    state.kind = Kind::source;
                     return state;
-                };
+                },
+                source_cells
+            );
 
-                // Create stone clusters
-                apply_rule<Update::async, Shuffle::on>
-                    (_stone_cluster, _cm.cells(), *this->_rng);
-            }
-        } // end of stones setup
-
-
-        // Infection source
-        if (_params.infection_source) {
-            this->_log->debug("Setting bottom boundary cells to be "
-                              "permanently infected ...");
-
-            RuleFunc _source_init = [](const auto& cell) {
-                auto state = cell->state;
-                state.kind = Kind::source;
-                return state;
-            };
-
-            apply_rule<Update::sync>(_source_init, _cm.boundary_cells("bottom"));
+            this->_log->info("Set {} cells to be infection sources using "
+                "selection mode '{}'.", source_cells.size(),
+                get_as<std::string>("mode", _cfg["infection_source"]));
         }
 
-        // Write the data that does not change: stone and source densities
-        update_densities();
-        _dset_density_stone->write(
-            _densities[static_cast<unsigned short>(Kind::stone)]);
-        _dset_density_source->write(
-            _densities[static_cast<unsigned short>(Kind::source)]);
-        this->_log->debug("Stone and Source densities written.");
-        // NOTE All other data is written the first time at _write_start
+        // Add attributes to density dataset that provide coordinates
+        _dset_densities->add_attribute("dim_name__1", "kind");
+        _dset_densities->add_attribute("coords_mode__kind", "values");
+        _dset_densities->add_attribute("coords__kind",
+            std::vector<std::string>{
+                "empty", "tree", "infected", "source", "stone"
+            });
+        this->_log->debug("Added coordinates to densities dataset.");
 
         // Initialization should be finished here.
         this->_log->debug("{} model fully set up.", this->_name);
@@ -276,12 +219,12 @@ public:
 protected:
     // .. Helper functions ....................................................
     /// Update the densities array
-    /** @details  Each density is calculated by counting the number of state
-     *            occurrences and afterwards dividing by the total number of
-     *            cells.
-     * @attention It is possible that rounding errors occur due to the
-     *            division, thus, it is not guaranteed that the densities
-     *            exactly add up to 1. The errors should be negligible.
+    /** Each density is calculated by counting the number of state
+     *  occurrences and afterwards dividing by the total number of cells.
+     * 
+     *  @attention It is possible that rounding errors occur due to the
+     *             division, thus, it is not guaranteed that the densities
+     *             exactly add up to 1. The errors should be negligible.
      */
     void update_densities() {
         // Temporarily overwrite every entry in the densities with zeroes
@@ -291,7 +234,7 @@ protected:
         // member for that in order to not create a new array.
         for (const auto& cell : this->_cm.cells()) {
             // Cast enum to integer to arrive at the corresponding index
-            ++_densities[static_cast<unsigned short int>(cell->state.kind)];
+            ++_densities[static_cast<char>(cell->state.kind)];
         }
         // The _densities array now contains the counts.
 
@@ -304,9 +247,9 @@ protected:
 
 
     /// Identify clusters
-    /** \details This function identifies clusters and updates the cell
-     *           specific cluster_id as well as the member variable 
-     *           cluster_id_cnt that counts the number of ids
+    /** This function identifies clusters and updates the cell
+     *  specific cluster_id as well as the member variable 
+     *  cluster_id_cnt that counts the number of ids
      */
     void identify_clusters(){
         // reset cluster counter
@@ -315,17 +258,77 @@ protected:
                                                 _cm.cells());
     }
 
+    /// Apply infection control
+    /** Add infections if the iteration step matches the ones specified in 
+     *  the configuration. There are two available modes of infection control 
+     *  that are applied, if provided, in this order:
+     *
+     *  1.  At specified times (parameter: ``at_times``) a number of additional
+     *      infections is added (parameter: ``num_additional_infections``)
+     *  2.  The parameter ``p_infect`` is changed to a new value at given
+     *      times. This can happen multiple times.
+     *      Parameter: ``change_p_infect``
+     */
+    void infection_control(){
+        // Check that time matches the first element of the sorted queue of 
+        // time steps at which to apply the given number of infections.
+        if (not _params.infection_control.at_times.empty()){
+            // Check whether time has come for infections
+            if (this->_time == _params.infection_control.at_times.front()){
+                // Select cells that are trees 
+                // (not empty, stones, infected, or source)
+                const auto cells_pool =
+                    _cm.select_cells<SelectionMode::condition>(
+                        [&](const auto& cell){
+                            return (cell->state.kind == Kind::tree);
+                        }
+                    );
+
+                // Sample cells from the pool and ...
+                CellContainer sample{};
+                std::sample(
+                    cells_pool.begin(), cells_pool.end(),
+                    std::back_inserter(sample),
+                    _params.infection_control.num_additional_infections,
+                    *this->_rng
+                );
+                
+                // ... and infect the sampled cells
+                for (const auto& cell : sample){
+                    cell->state.kind = Kind::infected;
+                }
+
+                // Done. Can now remove first element of the queue.
+                _params.infection_control.at_times.pop();
+            }
+        }
+
+        // Change p_infect if the iteration step matches the ones
+        // specified in the configuration. This leads to constant time lookup.
+        if (not _params.infection_control.change_p_infect.empty()) {
+            const auto change_p_infect =
+                _params.infection_control.change_p_infect.front();
+
+            if (this->_time == change_p_infect.first) {
+                _params.p_infect = change_p_infect.second;
+
+                // Done. Can now remove the element from the queue.
+                _params.infection_control.change_p_infect.pop();
+            }
+        }
+    }
+
     // .. Rule functions ......................................................
 
     /// Define the update rule
-    /** \details Update the given cell according to the following rules:
-      *          - Empty cells grow trees with probability p_growth.
-      *          - Tree cells in neighborhood of an infected cell get infected
-      *            with the probability p_infect.
-      *          - Infected cells die and become an empty cell.
+    /** Update the given cell according to the following rules:
+      * - Empty cells grow trees with probability p_growth.
+      * - Tree cells in neighborhood of an infected cell do not get infected
+      *   with the probability p_immunity.
+      * - Infected cells die and become an empty cell.
       */
     RuleFunc _update = [this](const auto& cell){
-        // Get the current state of the cell
+        // Get the current state of the cell and reset its cluster ID
         auto state = cell->state;
         state.cluster_id = 0;
 
@@ -344,7 +347,7 @@ protected:
             // Tree can be infected by neighbor or by random-point-infection.
 
             // Determine whether there will be a point infection
-            if (_prob_distr(*this->_rng) < _params.p_random_infect) {
+            if (_prob_distr(*this->_rng) < _params.p_infect) {
                 // Yes, point infection occurred.
                 state.kind = Kind::infected;
                 return state;
@@ -352,7 +355,7 @@ protected:
             else {
                 // Go through neighbor cells (according to Neighborhood type),
                 // and check if they are infected (or an infection source).
-                // If yes, infect cell with the probability p_infect.
+                // If yes, infect cell with the probability 1-p_immunity.
                 for (const auto& nb: this->_cm.neighbors_of(cell)) {
                     // Get the neighbor cell's state
                     auto nb_state = nb->state;
@@ -361,7 +364,7 @@ protected:
                         or nb_state.kind == Kind::source)
                     {
                         // With a certain probability, become infected
-                        if (_prob_distr(*this->_rng) < _params.p_infect) {
+                        if (_prob_distr(*this->_rng) > _params.p_immunity) {
                             state.kind = Kind::infected;
                             return state;
                         }
@@ -426,10 +429,18 @@ public:
     // .. Simulation Control ..................................................
 
     /// Iterate a single time step
-    /** \detail This updates all cells (synchronously) according to the
-      *         _update rule. For specifics, see there.
+    /** This updates all cells (synchronously) according to the _update rule. 
+      * For specifics, see there.
+      *
+      * If infection control is activated, the cells are first modified 
+      * according to the specific infection control parameters.
       */
     void perform_step () {
+        // Apply infection control if enabled
+        if (_params.infection_control.enabled){
+            infection_control();
+        }
+
         // Apply the update rule to all cells.
         apply_rule<Update::sync>(_update, _cm.cells());
         // NOTE The cell state is updated synchronously, i.e.: only after all
@@ -438,7 +449,7 @@ public:
 
 
     /// Monitor model information
-    /** \detail Supplies the `densities` array to the monitor.
+    /** Supplies the `densities` array to the monitor.
       */
     void monitor () {
         update_densities();
@@ -447,14 +458,26 @@ public:
 
 
     /// Write data
-    /** \detail Writes out the cell state and the densities of cells with the
-      *         states empty, tree, or infected (i.e.: those that may change)
+    /** Writes out the cell state and the densities of cells with the states 
+      * empty, tree, or infected (i.e.: those that may change)
       */
     void write_data () {
+        // Update densities and write them
+        update_densities();
+        _dset_densities->write(_densities);
+        // NOTE Although stones and source density are not changing, they are
+        //      calculated anyway and writing them again is not a big cost
+        //      (two doubles) while making analysis much easier.
+
+        // If only the densities are to be written, can stop here.
+        if (_write_only_densities) {
+            return;
+        }
+
         // Write the cell state
-        _dset_state->write(_cm.cells().begin(), _cm.cells().end(),
+        _dset_kind->write(_cm.cells().begin(), _cm.cells().end(),
             [](const auto& cell) {
-                return static_cast<unsigned short int>(cell->state.kind);
+                return static_cast<char>(cell->state.kind);
             }
         );
 
@@ -465,23 +488,12 @@ public:
             }
         );
 
-        // And those densities that are changing (empty, tree, infected)
-        update_densities();
-
         // Identify clusters and write them out
         identify_clusters();
         _dset_cluster_id->write(_cm.cells().begin(), _cm.cells().end(),
             [](const auto& cell) {
                 return cell->state.cluster_id;
         });
-
-        // Write the densities
-        _dset_density_empty->write(
-            _densities[static_cast<unsigned short>(Kind::empty)]);
-        _dset_density_tree->write(
-            _densities[static_cast<unsigned short>(Kind::tree)]);
-        _dset_density_infected->write(
-            _densities[static_cast<unsigned short>(Kind::infected)]);
     }
 };
 
