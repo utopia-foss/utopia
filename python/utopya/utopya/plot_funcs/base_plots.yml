@@ -73,6 +73,20 @@
   fill_between_kwargs:
     linewidth: 0.
 
+# .. Distance map from Universe data .......................................
+.basic_uni.distance_map:
+  creator: universe
+  universes: all
+
+  module: .basic_uni
+  plot_func: distance_map
+
+  # Use default helpers and style
+  helpers:
+    <<: *default_helpers
+  style:
+    <<: *default_style
+
 
 # .. Errorbar plot from Multiverse data .......................................
 .basic_mv.errorbar:

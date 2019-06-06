@@ -122,13 +122,13 @@ They are direct transitory states and don't influence the non-linearities in the
 The effective dynamics then read:
 
 .. math::
-   \dot{G} = \nu T + \phi \phi \left(G+\gamma_t T+\gamma_f F\right) F  - \beta \left(G+\gamma_t T+\gamma_f F\right) G T  - \alpha \left(G+\gamma_t T+\gamma_f F\right) G F
+   \dot{G} = \nu T + \phi F  - \beta (\star) G T  - \alpha (\star) G F
 
 .. math::
-   \dot{T} = \beta \left(G+\gamma_t T+\gamma_f F\right) G T - \nu T - \alpha \left(G+\gamma_t T+\gamma_f F\right) T F
+   \dot{T} = \beta (\star) G T - \nu T - \alpha (\star) T F
 
 .. math::
-   \dot{F} = \alpha \left(G+\gamma_t T+\gamma_f F\right) (G + T) F - \phi \left(G+\gamma_t T+\gamma_f F\right) F
+   \dot{F} = \alpha (\star) (G + T) F - \phi F
 
 As before the :math:`\alpha(\cdot)` and :math:`\beta(\cdot)` have two values depending on the occurance of fires in the grass, or flammable, landscape.
 

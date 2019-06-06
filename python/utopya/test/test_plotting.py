@@ -12,6 +12,9 @@ from utopya import Multiverse
 from utopya.testtools import ModelTest
 
 # Get the test resources
+BASIC_UNI_PLOTS_CFG_PATH = resource_filename('test', 
+                            'cfg/test_plotting__basic_uni__'
+                            'plots_cfg.yml')
 BIFURCATION_DIAGRAM_RUN_CFG_PATH = resource_filename('test', 
                             'cfg/test_plotting__bifurcation_diagram__'
                             'run_cfg.yml')
@@ -50,6 +53,9 @@ def test_CopyMe_plotting():
 def test_basic_plotting(tmpdir):
     """Tests the plot_funcs.basic_* modules"""
     mv, _ = ModelTest('CopyMe').create_run_load()
+
+    mv.pm.plot_from_cfg(plots_cfg=BASIC_UNI_PLOTS_CFG_PATH,
+                        plot_only=["distance_map"])
     
     # test lineplots
     mv, _ = ModelTest('SavannaHeterogeneous').create_run_load()
