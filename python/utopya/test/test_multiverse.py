@@ -99,13 +99,9 @@ def test_simple_init(mv_kwargs):
 
 def test_invalid_model_name_and_operation(default_mv, mv_kwargs):
     """Tests for correct behaviour upon invalid model names"""
-    # Try to change the model name although it was already set
-    with pytest.raises(RuntimeError, match="A Multiverse's associated"):
-        default_mv.model_name = "dummy"
-
     # Try to instantiate with invalid model name
     mv_kwargs['model_name'] = "invalid_model_RandomShit_bgsbjkbkfvwuRfopiwehGP"
-    with pytest.raises(ValueError, match="No such model 'invalid_model_Ran"):
+    with pytest.raises(KeyError, match="No model with name 'invalid_model_"):
         Multiverse(**mv_kwargs)
 
 def test_config_handling(mv_kwargs):

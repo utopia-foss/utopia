@@ -21,7 +21,7 @@ To do so, use the CLI to create the user configuration file for you:
 
 .. code-block:: bash
 
-  utopia config --deploy
+  utopia config user --deploy
 
 Follow the instructions given there. A file will then be created at ``~/.config/utopia/user_cfg.yml``. Open that file and find the ``paths`` entry. Uncomment the ``paths`` entry and the nested ``out_dir`` entry such that it looks like this:
 

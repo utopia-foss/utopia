@@ -110,7 +110,6 @@ stages:
     name: "$CI_JOB_NAME"
     paths:
       - $CI_PROJECT_DIR/build
-      - $CI_PROJECT_DIR/python # to include configured Python scripts
     expire_in: 3 hours
 
 
@@ -253,7 +252,11 @@ test:utopya:
   dependencies:
     - build:models
   script:
+    # Prepare
     - cd build
+    - cmake ..   # TODO Improve. Use artifacts (currently missing ~/.config)
+    #
+    # Run the tests
     - make test_utopya
 
 test:models:
@@ -262,8 +265,11 @@ test:models:
   dependencies:
     - build:models
   script:
-    # Test all models using the testing framework
+    # Prepare
     - cd build
+    - cmake ..   # TODO Improve. Use artifacts (currently missing ~/.config)
+    #
+    # Test all models using the testing framework
     - make $MAKE_FLAGS_TEST test_models
     #
     # Also test each model via the CLI.
@@ -305,15 +311,17 @@ test:cli:
       - $CI_PROJECT_DIR/utopia_output/
     expire_in: 1h
   script:
+    # Prepare
+    - cd build
+    - cmake ..   # TODO Improve. Use artifacts (currently missing ~/.config)
+    #
     # Now, enter the virtual environment and test the CLI
     - $ENTER_UTOPIA_ENV
     #
     # Test deployment of user configuration
-    - utopia config --deploy
+    - utopia config user --deploy
     # Adjust the user configuration to store to a local directory
-    - "echo \"\npaths: {out_dir: ${CI_PROJECT_DIR}/utopia_output}\"
-       > $HOME/.config/utopia/user_cfg.yml"
-    # TODO Once available, use the utopia config CLI to set this value.
+    - utopia config user --set paths.out_dir=${CI_PROJECT_DIR}/utopia_output --get
     #
     # Test the CLI with the dummy model and its default configuration
     - utopia run dummy

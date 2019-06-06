@@ -2,22 +2,14 @@
 
 import os
 import sys
-import operator
 import io
-import re
 import logging
 import collections
 import subprocess
 from datetime import timedelta
-from typing import Union, Tuple
+from typing import Union, Tuple, Sequence, Callable
 
-import numpy as np
-
-from paramspace import yaml
-import paramspace.yaml_constructors as pspyc
-
-import utopya.stopcond
-from utopya.info import MODELS
+from ._yaml import yaml, load_yml, write_yml
 
 # Local constants
 log = logging.getLogger(__name__)
@@ -37,180 +29,6 @@ log.debug("Determined TTY_COLS: %s,  IS_A_TTY: %s", TTY_COLS, IS_A_TTY)
 
 
 # -----------------------------------------------------------------------------
-# yaml constructors -----------------------------------------------------------
-
-def _expr_constructor(loader, node):
-    """Custom pyyaml constructor for evaluating strings with simple
-    mathematical expressions.
-
-    Supports: +, -, *, **, /, e-X, eX
-    """
-    # get expression string
-    expr_str = loader.construct_scalar(node)
-
-    # Remove spaces
-    expr_str = expr_str.replace(" ", "")
-
-    # Parse some special strings
-    if expr_str in ['nan', 'NaN']:
-        return float("nan")
-
-    # NOTE these will cause errors if emitted file is not read by python!
-    elif expr_str in ['np.inf', 'inf', 'INF']:
-        return np.inf
-
-    elif expr_str in ['-np.inf', '-inf', '-INF']:
-        return -np.inf
-
-    # remove everything that might cause trouble -- only allow digits, dot, +,
-    # -, *, /, and eE to allow for writing exponentials
-    expr_str = re.sub(r'[^0-9eE\-.+\*\/]', '', expr_str)
-
-    # Try to eval
-    return eval(expr_str)
-
-def _model_cfg_constructor(loader, node) -> dict:
-    """Custom yaml constructor for loading a model configuration file.
-
-    This extracts the `model_name` key, loads the corresponding model config
-    and then recursively updates the loaded config with the remaining keys
-    from that part of the configuration.
-    """
-    # Get a mapping from the node
-    d = loader.construct_mapping(node, deep=True)
-    # NOTE using the deep flag here to allow nested calls to this constructor
-
-    # Extract the model name
-    model_name = d.pop('model_name')
-
-    # Load the corresponding model configuration
-    mcfg, _ = load_model_cfg(model_name)
-
-    # Update the loaded config with the remaining keys
-    mcfg = recursive_update(mcfg, d)
-
-    # Return the updated dictionary
-    return mcfg
-
-# .............................................................................
-# Attaching representers and constructors .....................................
-# First register the classes, which directly implemented dumping/loading
-yaml.register_class(utopya.stopcond.StopCondition)
-
-# Now, add (additional, potentially overwriting) constructors for certain tags
-# For the expression and model config objects.
-yaml.constructor.add_constructor(u'!expr',
-                                 _expr_constructor)
-yaml.constructor.add_constructor(u'!model',
-                                 _model_cfg_constructor)
-
-# Add aliases for the (coupled) parameter dimensions
-yaml.constructor.add_constructor(u'!sweep',
-                                 pspyc.pdim)
-yaml.constructor.add_constructor(u'!sweep-default',
-                                 pspyc.pdim_default)
-
-yaml.constructor.add_constructor(u'!coupled-sweep',
-                                 pspyc.coupled_pdim)
-yaml.constructor.add_constructor(u'!coupled-sweep-default',
-                                 pspyc.coupled_pdim_default)
-
-# Set the flow style
-yaml.default_flow_style = False
-
-
-# input/output ----------------------------------------------------------------
-
-def read_yml(path: str, *, error_msg: str=None) -> dict:
-    """Read a yaml file and return the resulting dict.
-    
-    Args:
-        path (str): path to yml file that is to be read
-        error_msg (str, optional): if given, this is used as error message
-    
-    Returns:
-        dict: with contents of yml file
-    
-    Raises:
-        FileNotFoundError: If file was not found at `path`
-    """
-    # Ensure the given path is a string (and not a path-like object)
-    path = str(path)
-
-    # Try opening and loading
-    try:
-        with open(path, 'r') as ymlfile:
-            d = yaml.load(ymlfile)
-
-    except FileNotFoundError as err:
-        if error_msg:  # is None by default
-            raise FileNotFoundError(error_msg) from err
-        raise err
-
-    # Everything ok, return the dict
-    return d
-
-def write_yml(d: dict, *, path: str) -> None:
-    """Write dict to yml file in path.
-    
-    Writes a given dictionary into a yaml file. Error is raised if file
-    already exists.
-    
-    Args:
-        d (dict): dict to be written
-        path (str): target path. This should include the extension `*.yml`
-    
-    Raises:
-        FileExistsError: If the file already exists.
-    """
-    # Ensure the given path is a string (and not a path-like object)
-    path = str(path)
-    
-    # check whether file already exists
-    if os.path.exists(path):
-        raise FileExistsError("Target file {0} already exists.".format(path))
-    
-    # else: dump the dict into the config file
-    with open(path, 'w') as ymlout:
-        yaml.dump(d, ymlout)
-
-def load_model_cfg(model_name: str) -> Tuple[dict, str]:
-    """Loads the model configuration for the given model name using the info
-    from the info module.
-    
-    The model configuration is a file named <model_name>_cfg.yml and resides
-    beside the source files.
-    
-    Args:
-        model_name (str): The name of the model to load
-    
-    Returns:
-        Tuple[dict, str]: The corresponding model configuration and the path
-            to the model configuration file
-    
-    Raises:
-        ValueError: model name not registered with info module
-    """
-    log.debug("Loading model configuration for '%s' model ...", model_name)
-
-    # Check the model name
-    if model_name not in MODELS:
-        raise ValueError("No '{}' model available! Model names registered "
-                         "with the info module are: {}"
-                         "".format(model_name, [k for k in MODELS.keys()]))
-
-    # Get the path to the model configuration
-    path = MODELS[model_name]['model_cfg']
-
-    # Read in the model configuration
-    mcfg = read_yml(path, error_msg=("Could not locate model configuration "
-                                     "for '{}' model! Expected to find it at: "
-                                     "{}".format(model_name, path)))
-
-    # And return it
-    return mcfg, path
-
-
 # working on dicts ------------------------------------------------------------
 
 def recursive_update(d: dict, u: dict) -> dict:
@@ -245,6 +63,113 @@ def recursive_update(d: dict, u: dict) -> dict:
     # Finished at this level; return updated dict
     return d
 
+
+def load_selected_keys(src: dict, *, add_to: dict,
+                       keys: Sequence[Tuple[str, type, bool]], 
+                       err_msg_prefix: str=None,
+                       prohibit_unexpected: bool=True) -> None:
+        """Loads (only) selected keys from dict ``src`` into dict ``add_to``.
+        
+        Args:
+            src (dict): The dict to load values from
+            add_to (dict): The dict to load values into
+            keys (Sequence[Tuple[str, type, bool]]): Which keys to load, given
+                as sequence of (key, allowed types, [required=False]) tuples.
+            description (str): A description string, used in error message
+            prohibit_unexpected (bool, optional): Whether to raise on keys
+                that were unexpected, i.e. not given in ``keys`` argument.
+        
+        Raises:
+            KeyError: On missing key in ``src``
+            TypeError: On bad type of value in ``src``
+            ValueError: On unexpected keys in ``src``
+        """
+        for spec in keys:
+            if len(spec) == 3:
+                k, allowed_types, required = spec
+            else:
+                k, allowed_types = spec
+                required = False
+
+            if k not in src:
+                if not required:
+                    continue
+                raise KeyError("{}Missing required key: {}"
+                               "".format(err_msg_prefix + " "
+                                         if err_msg_prefix else "",
+                                         k))
+
+            if not isinstance(src[k], allowed_types):
+                raise TypeError("{}Bad type for value of '{}': {}! Expected "
+                                "{} but got {}."
+                                "".format(err_msg_prefix + " "
+                                          if err_msg_prefix else "",
+                                          k, src[k], allowed_types,
+                                          type(src[k])))
+
+            add_to[k] = src[k]
+
+        if not prohibit_unexpected:
+            return
+
+        unexpected_keys = [k for k in src if k not in add_to]
+        if unexpected_keys:
+            raise ValueError("{}Received unexpected keys: {}! "
+                             "Expected only: {}"
+                             "".format(err_msg_prefix + " "
+                                       if err_msg_prefix else "",
+                                       ", ".join(unexpected_keys),
+                                       ", ".join([s[0] for s in keys])))
+
+
+def add_item(value, *, add_to: dict, key_path: Sequence[str],
+             value_func: Callable=None, is_valid: Callable=None,
+             ErrorMsg: Callable=None) -> None:
+    """Adds the given value to the ``add_to`` dict, traversing the given key
+    path. This operation happens in-place.
+    
+    Args:
+        value: The value of what is to be stored. If this is a callable, the
+            result of the call is stored.
+        add_to (dict): The dict to add the entry to
+        key_path (Sequence[str]): The path at which to add it
+        value_func (Callable, optional): If given, calls it with `value` as
+            argument and uses the return value to add to the dict
+        is_valid (Callable, optional): Used to determine whether `value` is
+            valid or not; should take single positional argument, return bool
+        ErrorMsg (Callable, optional): A raisable object that prints an error
+            message; gets passed `value` as positional argument.
+    
+    Raises:
+        ErrorMsg: (depends on specified exception callable)
+    """
+    # Check the value by calling the function; it should raise an error
+    if is_valid is not None:
+        if not is_valid(value):
+            raise ErrorMsg(value)
+
+    # Determine which keys need to be traversed
+    traverse_keys, last_key = key_path[:-1], key_path[-1]
+
+    # Set the starting point
+    d = add_to
+
+    # Traverse keys
+    for _key in traverse_keys:
+        # Check if a new entry is needed
+        if _key not in d:
+            d[_key] = dict()
+
+        # Select the new entry
+        d = d[_key]
+
+    # Now d is where the value should be added
+    # If applicable
+    if value_func is not None:
+        value = value_func(value)
+    
+    # Store in dict, mutable. Done.
+    d[last_key] = value
 
 # string formatting -----------------------------------------------------------
 
@@ -397,6 +322,7 @@ def pformat(obj) -> str:
 
     This is achieved by creating a yaml representation.
     """
+
     sstream = io.StringIO("")
     yaml.dump(obj, stream=sstream)
     sstream.seek(0)

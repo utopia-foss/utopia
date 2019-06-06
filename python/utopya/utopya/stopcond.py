@@ -6,9 +6,7 @@ import logging
 import warnings
 from typing import List, Callable, Union
 
-import ruamel.yaml
-
-import utopya.stopcond_funcs as sc_funcs
+import utopya.stopcond_funcs as sc_funcs  # TODO Make relative
 
 # Initialise logger
 log = logging.getLogger(__name__)
@@ -24,7 +22,9 @@ class StopCondition:
     condition if fulfilled or not.
     """
 
-    def __init__(self, *, to_check: List[dict]=None, name: str=None, description: str=None, enabled: bool=True, func: Union[Callable, str]=None, **func_kwargs):
+    def __init__(self, *, to_check: List[dict]=None, name: str=None,
+                 description: str=None, enabled: bool=True,
+                 func: Union[Callable, str]=None, **func_kwargs):
         """Create a new stop condition
         
         Args:
@@ -68,7 +68,8 @@ class StopCondition:
                   "function(s).", self.name, len(self.to_check))
 
     @staticmethod
-    def _resolve_sc_funcs(to_check: List[dict], func: Callable, func_kwargs: dict) -> List[tuple]:
+    def _resolve_sc_funcs(to_check: List[dict], func: Callable,
+                          func_kwargs: dict) -> List[tuple]:
         """Resolves the functions and kwargs that are to be checked."""
 
         def retrieve_func(func_name: str) -> Callable:
