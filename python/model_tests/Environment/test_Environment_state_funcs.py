@@ -1,4 +1,4 @@
-"""Tests of the output of the Environement model"""
+"""Tests of the state functions of the Environement model"""
 
 import numpy as np
 
@@ -14,28 +14,6 @@ mtc = ModelTest("Environment", test_file=__file__)
 
 
 # Tests -----------------------------------------------------------------------
-
-def test_output(): 
-    """Test that the output structure is correct"""
-    # Create a Multiverse and let it run
-    _, dm = mtc.create_run_load(from_cfg="state_output.yml", perform_sweep=True)
-    # NOTE this is a shortcut. It creates the mv, lets it run, then loads data
-
-    # Get the meta-config from the DataManager
-    mcfg = dm['cfg']['meta']
-
-    # For each universe, iterate over the output data and assert the shape
-    # and the content of the output data
-    for uni_no, uni in dm['multiverse'].items():
-        # Get the data
-        data = uni['data']['Environment']
-
-        # Get the config of this universe
-        uni_cfg = uni['cfg']
-
-        # Check that all datasets are available
-        assert 'some_global_parameter' in data
-        assert 'some_heterogeneous_parameter' in data
 
 def test_uniform():
     """Tests that the output from 'uniform' is correct"""

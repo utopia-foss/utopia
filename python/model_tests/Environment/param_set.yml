@@ -1,0 +1,31 @@
+# Configuration file used to test that the output of the model is correct
+---
+parameter_space:
+  num_steps: 5
+
+  Environment: !model  
+    model_name: Environment
+
+    cell_manager:
+      grid:
+        resolution: 4
+
+      cell_params:
+        # overwritten by Environment's init_env_state_funcs
+        some_heterogeneous_parameter: 0.2
+
+    some_global_parameter: 0.
+
+    env_param_funcs:
+      - set:
+          some_global_parameter:
+            value: 1.
+            invoke_at_initialization: True
+            times: !listgen [3]
+      - set:
+          some_global_parameter:
+            value: 2.
+            times: [3]
+
+    init_env_state_funcs: ~
+    env_state_funcs: ~

@@ -1,6 +1,5 @@
 #ifndef UTOPIA_MODELS_ENVIRONMENT_HH
 #define UTOPIA_MODELS_ENVIRONMENT_HH
-// TODO Adjust above include guard (and at bottom of file)
 
 // standard library includes
 #include <random>
@@ -14,19 +13,71 @@
 #include <utopia/core/types.hh>
 #include <utopia/core/cell_manager.hh>
 
+// Collections of environment functions
+#include "env_param_func_collection.hh"
+#include "env_state_func_collection.hh"
+
 
 namespace Utopia {
 namespace Models {
 namespace Environment {
 
+/** \addtogroup Environment
+ *  \{
+ *  \details For details on how this is to be used, consult the actual model
+ *           documentation. The doxygen documentation here provides merely the
+ *           API reference and information on the available parameters for each
+ *           of the environment functions.
+ */
+
+using namespace ParameterFunctionCollection;
+using namespace StateFunctionCollection;
+
 // ++ Type definitions ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+/// Base type for environment parameter
+/** \detail This class is meant to be derived from and used as a basis for the
+  *         desired kind of environment.
+  */
+struct BaseEnvParam {
+    virtual ~BaseEnvParam() = default;
+
+    /// Get an environment variable
+    virtual double get_env(const std::string&) const = 0;
+
+    /// Set an environment variable
+    virtual void set_env(const std::string&, const double&) = 0;
+};
+
+/// Dummy type for environment parameter
+/** \detail This class is meant to be derived from and used as a basis for the
+  *         desired kind of environment.
+  */
+struct DummyEnvParam : BaseEnvParam
+{
+    DummyEnvParam(const DataIO::Config&) { }
+
+    ~DummyEnvParam() = default;
+
+    /// Getter
+    double get_env(const std::string&) const override {
+        throw std::invalid_argument("Accessing getter of the dummy type of "
+                                    "EnvParam!");
+    }
+
+    /// Setter
+    void set_env(const std::string&, const double&) override {
+        throw std::invalid_argument("Accessing setter of the dummy type of "
+                                    "EnvParam!");
+    }
+};
 
 /// Base type for environment cell states
 /** \detail This class is meant to be derived from and used as a basis for the
   *         desired kind of environment.
   */
 struct BaseEnvCellState {
-    using SpaceVec = Utopia::SpaceVecType<2>;
+    using SpaceVec = SpaceVecType<2>;
 
     /// Cached barycenter of the cell
     SpaceVec position;
@@ -40,6 +91,29 @@ struct BaseEnvCellState {
     virtual void set_env(const std::string&, const double&) = 0;
 };
 
+/// Dummy type for environment cell states
+/** \detail This class is meant to be derived from and used as a basis for the
+  *         desired kind of environment.
+  */
+struct DummyEnvCellState : BaseEnvCellState
+{
+    DummyEnvCellState(const DataIO::Config&) { }
+
+    ~DummyEnvCellState() = default;
+
+    /// Getter
+    double get_env(const std::string&) const override {
+        throw std::invalid_argument("Accessing getter of the dummy type of "
+                                    "EnvCellState!");
+    }
+
+    /// Setter
+    void set_env(const std::string&, const double&) override {
+        throw std::invalid_argument("Accessing setter of the dummy type of "
+                                    "EnvCellState!");
+    }
+};
+
 
 /// Type helper to define types used by the model
 using ModelTypes = Utopia::ModelTypes<>;
@@ -47,24 +121,23 @@ using ModelTypes = Utopia::ModelTypes<>;
 
 // ++ Model definition ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-/// The Environment Model
-/** \detail A model for a non-uniform parameter background, coupled to another
- *          model's CellManager.
+/// The Environment model provides a non-uniform, dynamic parameter background
+/** This happens by coupling to another model's CellManager. Additionally,
+ *  global parameters can also be changed.
  * 
+ * \tparam EnvParam       The parameter type of the environment
  * \tparam EnvCellState   The cell state type of the environment cells
- * \tparam associate      Whether to associate with the CellManager of the
- *                        parent model. Use ``false`` for running this model
- *                        as a standalone model and ``true`` when desiring
- *                        cells from another model being linked to the cells of
- *                        the Environment model
+ * \tparam standalone     Whether to have the model as a standalone model
  */
-template<typename EnvCellState, bool associate=true>
+template<typename EnvParam=DummyEnvParam, 
+         typename EnvCellState=DummyEnvCellState,
+         bool standalone=false>
 class Environment:
-    public Model<Environment<EnvCellState, associate>, ModelTypes>
+    public Model<Environment<EnvParam, EnvCellState, standalone>, ModelTypes>
 {
 public:
     /// Type of this class
-    using Self = Environment<EnvCellState, associate>;
+    using Self = Environment<EnvParam, EnvCellState, standalone>;
 
     /// The type of the Model base class of this derived class
     using Base = Model<Self, ModelTypes>;
@@ -81,28 +154,72 @@ public:
     /// The type of the cell manager
     using CellManager = Utopia::CellManager<CellTraits, Self>;
 
-    /// The type of the environment functions; basically a rule function
-    using EnvFunc = typename CellManager::RuleFunc;
+    /// The type of the environment state functions; basically a rule function
+    using EnvStateFunc = typename CellManager::RuleFunc;
+
+    /// The type of the environment parameter functions
+    using EnvParamFunc = typename std::function<double()>;
 
     /// The type of the model time
     using Time = typename Base::Time;
 
     /// Configuration node type alias
     using Config = DataIO::Config;
-
-    /// The environment function bundle
-    /** \detail This gathers the environment function alongside some metadata
-      *         into a custom construct.
+    
+    /// The environment parameter function bundle
+    /** \detail This gathers the environment parameter function alongside some
+      *         metadata into a custom construct.
      */
-    struct EnvFuncBundle {
+    struct EnvParamFuncBundle {
         std::string name;
-        EnvFunc func;
+        std::string param_name;
+        EnvParamFunc func;
+        bool invoke_at_initialization;
+        bool invoke_always;
+        std::set<Time> times;
+
+        EnvParamFuncBundle(std::string name,
+                           std::string param_name,
+                           EnvParamFunc func,
+                           bool invoke_at_initialization,
+                           bool invoke_always = true,
+                           std::set<Time> times = {})
+        :
+            name(name),
+            param_name(param_name),
+            func(func),
+            invoke_at_initialization(invoke_at_initialization),
+            invoke_always(invoke_always),
+            times(times)
+        {}
+
+        EnvParamFuncBundle(std::string name,
+                           std::string param_name,
+                           EnvParamFunc func,
+                           std::tuple<bool, bool,
+                                      std::set<Time>> invoke_times_tuple = {
+                                                            false, true, {}})
+        :
+            EnvParamFuncBundle(name, param_name, func, 
+                               std::get<0>(invoke_times_tuple),
+                               std::get<1>(invoke_times_tuple),
+                               std::get<2>(invoke_times_tuple))
+        {}
+    };
+
+    /// The environment state function bundle
+    /** \detail This gathers the environment state function alongside some
+      *         metadata into a custom construct.
+     */
+    struct EnvStateFuncBundle {
+        std::string name;
+        EnvStateFunc func;
         Update update;
         bool invoke_always;
         std::set<Time> times;
 
-        EnvFuncBundle(std::string name,
-                      EnvFunc func,
+        EnvStateFuncBundle(std::string name,
+                      EnvStateFunc func,
                       Update update = Update::sync,
                       bool invoke_always = true,
                       std::set<Time> times = {})
@@ -114,12 +231,12 @@ public:
             times(times)
         {}
 
-        EnvFuncBundle(std::string name,
-                      EnvFunc func,
+        EnvStateFuncBundle(std::string name,
+                      EnvStateFunc func,
                       Update update = Update::sync,
                       std::pair<bool, std::set<Time>> times_pair = {true, {}})
         :
-            EnvFuncBundle(name, func, update,
+            EnvStateFuncBundle(name, func, update,
                           times_pair.first, times_pair.second)
         {}
     };
@@ -139,15 +256,27 @@ private:
     /// The cell manager
     CellManager _cm;
 
+    /// The environment parameters
+    EnvParam _params;
+
+    /// Container of functions that are invoked every time step
+    /** Functions changing a parameter*/
+    std::vector<EnvParamFuncBundle> _env_param_funcs;
+
     /// Container of rule functions that are invoked once at initialisation
-    std::vector<EnvFuncBundle> _init_env_funcs;
+    /** Functions changing a state*/
+    std::vector<EnvStateFuncBundle> _init_env_state_funcs;
 
     /// Container of rule functions that are invoked every time step
-    std::vector<EnvFuncBundle> _env_funcs;
+    /** Functions changing a state*/
+    std::vector<EnvStateFuncBundle> _env_state_funcs;
 
     // .. Datasets ............................................................
-    /// Dynamically generated map of datasets
-    std::unordered_map<std::string, std::shared_ptr<DataSet>> _dsets;
+    /// Dynamically generated map of datasets of cell states
+    std::unordered_map<std::string, std::shared_ptr<DataSet>> _dsets_state;
+
+    /// Dynamically generated map of datasets of parameters
+    std::unordered_map<std::string, std::shared_ptr<DataSet>> _dsets_param;
 
 
 public:
@@ -173,15 +302,20 @@ public:
         //      always returns an empty configuration which leads to this
         //      internal CellManager being set up from _cfg["cell_manager"]
 
-        // Set up environment function bundle containers empty
-        _init_env_funcs{},
-        _env_funcs{},
+        //set up the environment params
+        _params(this->_cfg),
 
-        // Map of datasets; empty until parameters are set to be tracked
-        _dsets{}
+        // Set up environment function bundle containers empty
+        _env_param_funcs{},
+        _init_env_state_funcs{},
+        _env_state_funcs{},
+
+        // Map of datasets; empty until states are set to be tracked
+        _dsets_state{},
+        _dsets_param{}
     {
         // Associate the CellManager's cells with each other
-        if constexpr (associate) {
+        if constexpr (not std::is_same<CellManager, DummyCellManager>()) {
             for (std::size_t i=0; i < _cm.cells().size(); i++) {
                 associate_cm.cells()[i]->custom_links().env = _cm.cells()[i];
             }
@@ -189,14 +323,20 @@ public:
             this->_log->info("Associated '{}' cells with those of the parent "
                              "model '{}'.", this->_name, parent.get_name());
         }
-        else {
-            // Only allow standalone mode when a DummyCellManager is passed
-            static_assert(std::is_same<CellManager, DummyCellManager>(),
-                "Do not pass a CellManager when desiring to instantiate the "
-                "Environment model in standalone mode!");
-            // NOTE Can consider to remove this restriction. Leaving it here
-            //      now for safety ...
+        else if constexpr (not standalone) {
+            // Only allow coupled models without coupled cellmanagers when 
+            // a EnvCellState is the dummy type
+            static_assert(std::is_same<EnvCellState, DummyEnvCellState>(),
+                          "The cm for association of environment cells cannot "
+                          "be the DummyCellManager! \n"
+                          "Setup the model with type DummyEnvCellState for "
+                          "standalone model or pass a cell manager for "
+                          "associated model.");
 
+            this->_log->info("Setting up '{}' as coupled model without "
+                             "associated cell manager.", this->_name);
+        }
+        else {
             this->_log->info("Setting up '{}' as standalone model ...",
                              this->_name);
         }
@@ -205,6 +345,11 @@ public:
         static_assert(std::is_base_of<BaseEnvCellState, EnvCellState>::value,
                       "The model's EnvCellState must derive from "
                       "Utopia::Models::Environment::BaseEnvCellState!");
+
+        // Check inheritance of EnvParam; needed for getters and setters
+        static_assert(std::is_base_of<BaseEnvParam, EnvParam>::value,
+                      "The model's EnvParam must derive from "
+                      "Utopia::Models::Environment::BaseEnvParam!");
 
         // Store positions
         apply_rule<Update::sync>(
@@ -217,20 +362,36 @@ public:
         );
         this->_log->debug("Cell barycenters cached.");
 
-        // Now set up the actual environment functions
-        if (this->_cfg["init_env_funcs"]) {
-            setup_env_funcs<true>(this->_cfg["init_env_funcs"]);
-        }
-        if (this->_cfg["env_funcs"]) {
-            setup_env_funcs<false>(this->_cfg["env_funcs"]);
+
+        // Now set up the actual environment parameter functions
+        if (this->_cfg["env_param_funcs"]) {
+            setup_env_param_funcs(this->_cfg["env_param_funcs"]);
         }
 
-        // Apply the env_funcs for initialization
-        this->_log->info("Applying {} initial environment function{} ...",
-                         _init_env_funcs.size(),
-                         _init_env_funcs.size() != 1 ? "s" : "");
-        for (auto& efb : _init_env_funcs) {
-            apply_env_func(efb);
+        // Apply the env_param_funcs for initialization
+        this->_log->debug("Applying {} initial environment param function{} ...",
+                         _env_param_funcs.size(),
+                         _env_param_funcs.size() != 1 ? "s" : "");
+        for (auto& epfb : _env_param_funcs) {
+            if (epfb.invoke_at_initialization) {
+                apply_env_param_func(epfb, true);
+            }
+        }
+
+        // Now set up the actual environment state functions
+        if (this->_cfg["init_env_state_funcs"]) {
+            setup_env_state_funcs<true>(this->_cfg["init_env_state_funcs"]);
+        }
+        if (this->_cfg["env_state_funcs"]) {
+            setup_env_state_funcs<false>(this->_cfg["env_state_funcs"]);
+        }
+
+        // Apply the env_state_funcs for initialization
+        this->_log->info("Applying {} initial environment state function{} ...",
+                         _init_env_state_funcs.size(),
+                         _init_env_state_funcs.size() != 1 ? "s" : "");
+        for (auto& esfb : _init_env_state_funcs) {
+            apply_env_state_func(esfb);
         }
 
         this->_log->info("{} set up.", this->_name);
@@ -238,17 +399,20 @@ public:
 
     /// Construct Environment without associated CellManager
     /** \note This constructor can be used to set up a Environment as a
-      *       standalone model. The ``associate`` template parameter needs to
-      *       be set to ``false`` for that.
+      *       standalone model or with only the EnvParam. 
+      *       In the case of standalone the ``standalone`` template parameter
+      *       needs to be set to ``true``.
+      *       In the the other case the EnvCellState needs to be the default
+      *       dummy type ``DummyEnvCellState`` and the ``standalone`` template
+      *       parameter needs to be ``false`` (default).
       */
-    template<class ParentModel,
-             class = typename std::enable_if_t<not associate, ParentModel>>
+    template <typename ParentModel>
     Environment (const std::string name, ParentModel& parent)
     :
         // Use existing constructor, passing a _DummyCellManager instance that
         // ensures that no configuration is carried over.
         Environment(name, parent, DummyCellManager())
-    {}
+    { }
 
 
     // -- Public Interface ----------------------------------------------------
@@ -256,8 +420,11 @@ public:
 
     /// Iterate a single step
     void perform_step () {
-        for (auto& efb : _env_funcs) {
-            apply_env_func(efb);
+        for (auto& epfb : _env_param_funcs) {
+            apply_env_param_func(epfb);
+        }
+        for (auto& esfb : _env_state_funcs) {
+            apply_env_state_func(esfb);
         }
     }
 
@@ -268,13 +435,20 @@ public:
 
 
     /// Write data
-    /** For all parameters registered for writing, writes the parameter values
-     *  to the corresponding dataset.
+    /** For all parameters and states  registered for writing, writes the
+     *  values to the corresponding dataset.
      * 
-     *  \note To register keys, use ::track_parameter method
+     *  \note To register keys, use ::track_parameter and ::track_state method,
+     *        respectively
      */
     void write_data () {
-        for (auto& param_dset_pair : _dsets) {
+        // write parameters
+        for (auto& [key, dset] : _dsets_param) {
+            dset->write(_params.get_env(key));
+        }
+
+        // write states
+        for (auto& param_dset_pair : _dsets_state) {
             const auto key = std::get<0>(param_dset_pair);
             auto& dset = std::get<1>(param_dset_pair);
 
@@ -288,32 +462,56 @@ public:
 
     
     // Getters and setters ....................................................
+    /// Return the current value of the parameter with param_name
+    double get_parameter(const std::string& param_name) const {
+        return this->_params.get_env(param_name);
+    }
+
+    /// Return a const reference to the cell manager
+    const auto& cm() const {
+        return this->_cm;
+    }
+    
+    /// Add a param function at the end of the sequence of env functions
+    /** \param epf      EnvParamFunc that is applied to all cm.cells()
+     */
+    void add_env_param_func(const std::string& name,
+                            const std::string& param_name,
+                            const EnvParamFunc& epf,
+                            const std::set<Time>& times = {})
+    {
+        add_env_param_func(
+            EnvParamFuncBundle(name, param_name, epf, false, bool(times.size()),
+                               times)
+        );
+    }
+    
     /// Add a rule function at the end of the sequence of environment functions
-    /** \param ef      EnvFunc that is applied to all cm.cells()
-     *  \param update  The Update mode to use with apply_rule(ef, cm.cells)
+    /** \param esf      EnvStateFunc that is applied to all cm.cells()
+     *  \param update   The Update mode to use with apply_rule(esf, cm.cells)
      */
     template<bool add_to_initial=false>
-    void add_env_func(const std::string& name,
-                      const EnvFunc& ef,
-                      const Update& update = Update::sync,
-                      const std::set<Time>& times = {})
+    void add_env_state_func(const std::string& name,
+                            const EnvStateFunc& esf,
+                            const Update& update = Update::sync,
+                            const std::set<Time>& times = {})
     {
-        add_env_func<add_to_initial>(
-            EnvFuncBundle(name, ef, update, bool(times.size()), times)
+        add_env_state_func<add_to_initial>(
+            EnvStateFuncBundle(name, esf, update, bool(times.size()), times)
         );
     }
 
     /// Mark a parameter as being tracked, i.e. store its data in write_data
     void track_parameter(const std::string& key) {
-        if (_dsets.find(key) != _dsets.end()) {
+        if (_dsets_param.find(key) != _dsets_param.end()) {
             throw std::invalid_argument("Parameter '" + key + "' is already "
                                         "being tracked!");
         }
-        _dsets.insert({key, this->create_cm_dset(key, _cm)});
+        _dsets_param.insert({key, this->create_dset(key, {})});
     }
 
     /// Track multiple parameters
-    /** \detail Invokes ::track_parameter for each entry
+    /** \detail Invokes ::track_state for each entry
       */
     void track_parameters(const std::vector<std::string>& keys) {
         for (const auto& key : keys) {
@@ -321,30 +519,40 @@ public:
         }
     }
 
-private:
-    // .. Environment Function Bundle Handling ................................
-    /// Add a rule function at the end of the sequence of environment functions
-    /** \param ef_pair  The pair of rule function and update mode that is to
-     *                  be added as an Environment function
-     */
-    template<bool add_to_initial=false, class EFB>
-    void add_env_func(EFB&& efb) {
-        if constexpr (add_to_initial) {
-            _init_env_funcs.push_back(efb);
+    /// Mark a state as being tracked, i.e. store its data in write_data
+    void track_state(const std::string& key) {
+        if (_dsets_state.find(key) != _dsets_state.end()) {
+            throw std::invalid_argument("State '" + key + "' is already "
+                                        "being tracked!");
         }
-        else {
-            _env_funcs.push_back(efb);
-        }
-        this->_log->debug("Added {}environment function '{}'.",
-                          add_to_initial ? "initial " : "", efb.name);
+        _dsets_state.insert({key, this->create_cm_dset(key, _cm)});
     }
 
-    /// Construct the rule funcs sequence from cfg
-    template<bool add_to_initial=false>
-    void setup_env_funcs(const Config& cfg) {
-        this->_log->info("Setting up {}environment function sequence from "
-                         "{} configuration entr{} ...",
-                         add_to_initial ? "initial " : "",
+    /// Track multiple states
+    /** \detail Invokes ::track_state for each entry
+      */
+    void track_states(const std::vector<std::string>& keys) {
+        for (const auto& key : keys) {
+            track_state(key); 
+        }
+    }
+
+private:
+    // .. Environment Function Bundle Handling ................................
+    /// Add a rule function at the end of the sequence of parameter functions
+    /** \param epfb      The EnvParamFuncBundle of environment parameter
+     *                   function that is to be added and its metadata. 
+     */
+    template<class EPFB>
+    void add_env_param_func(EPFB&& epfb) {
+        _env_param_funcs.push_back(epfb);
+        this->_log->debug("Added environment param function '{}'.", epfb.name);
+    }
+
+    /// Construct the rule funcs sequencefor EnvParam from cfg
+    void setup_env_param_funcs(const Config& cfg) {
+        this->_log->info("Setting up environment param function sequence "
+                         "from {} configuration entr{} ...",
                          cfg.size(), cfg.size() != 1 ? "ies" : "y");
 
         // For zombie or empty configurations, return empty container
@@ -358,90 +566,221 @@ private:
         }
 
         // Iterate over the sequence of mappings
-        for (const auto& efs : cfg) {
-            // efs.IsMap() == true
-            // The top `efs` keys are now the names of the desired environment
+        for (const auto& epfs : cfg) {
+            // epfs.IsMap() == true
+            // The top `epfs` keys are now the names of the desired environment
             // functions. Iterate over those ...
-            for (const auto& ef_pair : efs) {
-                // ef_pair is a pair of (key node, value node)
+            for (const auto& epf_pair : epfs) {
+                // epf_pair is a pair of (key node, value node)
                 // Find out the name of the rule function
-                const auto ef_name = ef_pair.first.as<std::string>();
+                const auto epf_name = epf_pair.first.as<std::string>();
 
-                this->_log->trace("  Function name:  {}", ef_name);
+                this->_log->trace("  Function name:  {}", epf_name);
 
                 // Now iterate over the (param name, param cfg) pairs
-                for (const auto& kv_pair : ef_pair.second) {
+                for (const auto& kv_pair : epf_pair.second) {
                     // Get the parameter name and configuration
                     const auto param_name = kv_pair.first.as<std::string>();
-                    const auto& ef_cfg = kv_pair.second;
-                    
-                    this->_log->trace("  Parameter:      {}", param_name);
+                    const auto& epf_cfg = kv_pair.second;
 
                     // Distinguish by name of rule function
-                    if (ef_name == "noise") {
-                        add_env_func<add_to_initial>(
-                            _ef_noise(param_name, ef_cfg)
+                    if (epf_name == "increment") {
+                        add_env_param_func(
+                            epf_increment(*this, param_name, epf_cfg)
                         );
                     }
-                    else if (ef_name == "slope") {
-                        add_env_func<add_to_initial>(
-                            _ef_slope(param_name, ef_cfg)
+                    else if (epf_name == "rectangular") {
+                        add_env_param_func(
+                            epf_rectangular(*this, param_name, epf_cfg)
                         );
                     }
-                    else if (ef_name == "steps") {
-                        add_env_func<add_to_initial>(
-                            _ef_steps(param_name, ef_cfg)
+                    else if (epf_name == "set") {
+                        add_env_param_func(
+                            epf_set(*this, param_name, epf_cfg)
                         );
                     }
-                    else if (ef_name == "uniform") {
-                        add_env_func<add_to_initial>(
-                            _ef_uniform(param_name, ef_cfg)
+                    else if (epf_name == "sinusoidal") {
+                        add_env_param_func(
+                            epf_sinusoidal(*this, param_name, epf_cfg)
+                        );
+                    }
+                    // .. can add more rule functions here (alphabetic order). 
+                    //    Add also in invalid_argument message below ..
+                    else if (epf_name != "void") {
+                        throw std::invalid_argument("No environment parameter "
+                            "function '" + epf_name + "' available to "
+                            "construct! Choose from: increment, rectangular, "
+                            "set, sinusoidal.");
+                    }
+
+                    this->_log->debug("Added '{}' environment parameter "
+                        "function for parameter '{}'.", epf_name, param_name);
+                }
+            }
+        }
+    };
+
+    /// Add a rule function at the end of the sequence of state functions
+    /** \param esf_pair  The EnvStateFuncBundle of environment state
+     *                   function that is to be added and its metadata. 
+     */
+    template<bool add_to_initial=false, class ESFB>
+    void add_env_state_func(ESFB&& esfb) {
+        if constexpr (add_to_initial) {
+            _init_env_state_funcs.push_back(esfb);
+        }
+        else {
+            _env_state_funcs.push_back(esfb);
+        }
+        this->_log->debug("Added {}environment function '{}'.",
+                          add_to_initial ? "initial " : "", esfb.name);
+    }
+
+    /// Construct the rule funcs sequence from cfg
+    template<bool add_to_initial=false>
+    void setup_env_state_funcs(const Config& cfg) {
+        this->_log->info("Setting up {}environment sttae function sequence "
+                         "from {} configuration entr{} ...",
+                         add_to_initial ? "initial " : "",
+                         cfg.size(), cfg.size() != 1 ? "ies" : "y");
+
+        // For zombie or empty configurations, return empty container
+        if (not cfg or not cfg.size()) {
+            return;
+        }
+        // Otherwise, require a sequence
+        if (not cfg.IsSequence()) {
+            throw std::invalid_argument("The config for initializing the "
+                "environment state functions must be a sequence!");
+        }
+
+        // Iterate over the sequence of mappings
+        for (const auto& esfs : cfg) {
+            // esfs.IsMap() == true
+            // The top `esfs` keys are now the names of the desired environment
+            // functions. Iterate over those ...
+            for (const auto& esf_pair : esfs) {
+                // esf_pair is a pair of (key node, value node)
+                // Find out the name of the rule function
+                const auto esf_name = esf_pair.first.as<std::string>();
+
+                this->_log->trace("  Function name:  {}", esf_name);
+
+                // Now iterate over the (param name, param cfg) pairs
+                for (const auto& kv_pair : esf_pair.second) {
+                    // Get the parameter name and configuration
+                    const auto param_name = kv_pair.first.as<std::string>();
+                    const auto& esf_cfg = kv_pair.second;
+                    
+                    // Distinguish by name of rule function
+                    if (esf_name == "noise") {
+                        add_env_state_func<add_to_initial>(
+                            esf_noise(*this, param_name, esf_cfg)
+                        );
+                    }
+                    else if (esf_name == "slope") {
+                        add_env_state_func<add_to_initial>(
+                            esf_slope(*this, param_name, esf_cfg,
+                                      _cm.space()->extent)
+                        );
+                    }
+                    else if (esf_name == "steps") {
+                        add_env_state_func<add_to_initial>(
+                            esf_steps(*this, param_name, esf_cfg)
+                        );
+                    }
+                    else if (esf_name == "uniform") {
+                        add_env_state_func<add_to_initial>(
+                            esf_uniform(*this, param_name, esf_cfg)
                         );
                     }
                     // .. can add more rule functions here ..
-                    else if (ef_name != "void") {
-                        throw std::invalid_argument("No environment function '"
-                            + ef_name + "' available to construct! Choose "
-                            "from: noise, slope, steps, uniform.");
+                    else if (esf_name != "void") {
+                        throw std::invalid_argument("No environment state "
+                            "function '" + esf_name + "' available to "
+                            "construct! Choose from: noise, slope, steps, "
+                            "uniform.");
                     }
+
+                    this->_log->trace("Added '{}' environment state"
+                        "function for parameter '{}'.", esf_name, param_name);
                 }
             }
         }
     };
 
 
-    /// Apply a given environment function
-    /** \param ef   EnvFunc that is applied to _cm.cells()
-     *  \param update   The Update mode to use with apply_rule(ef, cm.cells)
-     */
-    template<class EFB>
-    void apply_env_func(EFB&& efb) {
+    /// Apply a given environment parameter function
+    /** \param esf   EnvParamFunc that is applied */
+    template<class EPFB>
+    void apply_env_param_func(EPFB&& epfb, bool initialization = false) {
         // Check whether to invoke
-        if (not efb.invoke_always) {
+        if (initialization) {
+            if (not epfb.invoke_at_initialization) {
+                this->_log->trace("Not invoking environment function '{}' at "
+                                  "initialization.", epfb.name);
+                return;
+            }
+        }
+        else if (not epfb.invoke_always) {
             // Compare to first element of the times set
             // NOTE This approach has a low and constant complexity as no tree
             //      traversal in the set takes place. This, however, relies on
             //      the ordering of the set and that the first element is
             //      never smaller than (current time + 1), which would lead to
             //      clogging of the erasure ...
-            if (efb.times.size() and *efb.times.begin() == (this->_time + 1)) {
+            if (    epfb.times.size()
+                and *epfb.times.begin() == (this->_time + 1))
+            {
                 // Invoke at this time; pop element corresponding to this time
-                efb.times.erase(efb.times.begin());
+                epfb.times.erase(epfb.times.begin());
             }
             else {
                 this->_log->trace("Not invoking environment function '{}' in "
-                                  "this iteration.", efb.name);
+                                  "this iteration.", epfb.name);
                 return;
             }
         }
 
-        this->_log->debug("Applying environment function '{}' ...", efb.name);
+        this->_log->debug("Applying environment parameter function '{}' ...",
+                          epfb.name);
+        this->_params.set_env(epfb.param_name, epfb.func());
+    }
 
-        if (efb.update == Update::sync) {
-            apply_rule<Update::sync>(efb.func, _cm.cells());
+    /// Apply a given environment state function
+    /** \param esf   EnvStateFunc that is applied to _cm.cells() */
+    template<class ESFB>
+    void apply_env_state_func(ESFB&& esfb) {
+        // Check whether to invoke
+        if (not esfb.invoke_always) {
+            // Compare to first element of the times set
+            // NOTE This approach has a low and constant complexity as no tree
+            //      traversal in the set takes place. This, however, relies on
+            //      the ordering of the set and that the first element is
+            //      never smaller than (current time + 1), which would lead to
+            //      clogging of the erasure ...
+            if (    esfb.times.size()
+                and *esfb.times.begin() == (this->_time + 1))
+            {
+                // Invoke at this time; pop element corresponding to this time
+                esfb.times.erase(esfb.times.begin());
+            }
+            else {
+                this->_log->trace("Not invoking environment function '{}' in "
+                                  "this iteration.", esfb.name);
+                return;
+            }
         }
-        else if (efb.update == Update::async) {
-            apply_rule<Update::async>(efb.func, _cm.cells(), *this->_rng);
+
+        this->_log->debug("Applying environment state function '{}' ...",
+                          esfb.name);
+
+        // Need to distinguish by update mode
+        if (esfb.update == Update::sync) {
+            apply_rule<Update::sync>(esfb.func, _cm.cells());
+        }
+        else if (esfb.update == Update::async) {
+            apply_rule<Update::async>(esfb.func, _cm.cells(), *this->_rng);
         }
         else {
             // Throw in case the Update enum gets extended and an unexpected
@@ -451,346 +790,12 @@ private:
     }
 
     // .. Helper functions ....................................................
-
-    /// Value calculation mode
-    enum class ValMode {Set, Add};
-
-    /// Given a configuration node, extract the value mode
-    ValMode extract_val_mode(const Config& cfg,
-                             const std::string& context) const
-    {
-        const auto mode_key = get_as<std::string>("mode", cfg);
-
-        if (mode_key == "add") {
-            return ValMode::Add;
-        }
-        else if (mode_key == "set") {
-            return ValMode::Set;
-        }
-
-        throw std::invalid_argument("The `mode` argument for configuration of "
-            "environment function " + context + " can be 'add' or 'set', but "
-            "was '" + mode_key + "'!");
-    }
-
-    /// Given a configuration, extracts the set of times at which to invoke
-    /** \note If ``times`` was empty, only adds a single element, which is the
-     *        numeric limit of Time, denoting that it is to be invoked at every
-     *        time step.
-     */
-    std::pair<bool, std::set<Time>> extract_times(const Config& cfg) const {
-        bool invoke_always = true;
-        std::set<Time> times;
-
-        if (not cfg.IsMap()) {
-            // Already return here
-            return {invoke_always, times};
-        }
-
-        // Extract information from configuration
-        if (cfg["times"]) {
-            invoke_always = false;
-            auto times_list = get_as<std::vector<Time>>("times", cfg);
-            // TODO Consider wrapping negative values around
-
-            // Make sure negative times or 0 is not included
-            // NOTE 0 may not be included because 
-            times_list.erase(
-                std::remove_if(times_list.begin(), times_list.end(),
-                               [](auto& t){ return (t <= 0); }),
-                times_list.end()
-            );
-
-            // Populate the set; this will impose ordering
-            times.insert(times_list.begin(), times_list.end());
-        }
-
-        return {invoke_always, times};
-    }
-
-    /// Create a rule function that uses a random number distribution
-    /** \detail This constructs a mutable ``EnvFunc`` lambda, moving the
-      *         ``dist`` into the capture.
-      */
-    template<class DistType>
-    EnvFunc build_rng_env_func(DistType&& dist,
-                               const std::string& param_name,
-                               const ValMode& mode) const
-    {
-        // NOTE It is VITAL to move-construct the perfectly-forwarded dist into
-        //      the lambda; otherwise it has to be stored outside, which is a
-        //      real pita. Also, the lambda has to be declared mutable such
-        //      that the captured object are allowed to be changed; again, this
-        //      is only relevant for the distribution's internal state ...
-        return
-            [this, param_name, mode, dist{std::move(dist)}]
-            (const auto& env_cell) mutable {
-                auto& env_state = env_cell->state;
-
-                double current_value = 0.;
-                if (mode == ValMode::Add) {
-                    current_value = env_state.get_env(param_name);
-                }
-                const double rn = dist(*this->_rng);
-
-                env_state.set_env(param_name, current_value + rn);
-                return env_state;
-            };
-    }
-
-
-    // -- Environment modification functions ----------------------------------
-    // .. Keep these in alphabetical order and prefix with _ef_ ! .............
-    // NOTE The methods below do _not_ change any state, they just generate
-    //      a function object that does so at the desired point in time.
-
-    /// Creates a rule function for noisy parameter values
-    /** 
-     * \param param_name  The parameter to attach this environment function to
-     * \param cfg
-     *   \parblock
-     *     Configuration for this environment function. Allows the following
-     *     arguments:
-     *
-     *     - ``mode``: ``set`` (default) or ``add``
-     *     - ``times``: Sequence of time points at which to invoke this
-     *     - ``distribution``: The distribution type. For each value below, the
-     *       corresponding additional parameters are required in ``cfg``:
-     *         - ``normal``: ``mean`` and ``stddev``
-     *         - ``poisson``: ``mean``
-     *         - ``exponential``: ``lambda``
-     *         - ``uniform``: ``interval`` (length 2 array)
-     *         - ``uniform_int``: ``interval`` (length 2 array)
-     *   \endparblock
-     */
-    EnvFuncBundle _ef_noise(const std::string& param_name,
-                            const Config& cfg) const
-    {
-        this->_log->debug("Constructing 'noise' environment function for "
-                          "parameter '{}' ...", param_name);
-
-        // Extract parameters
-        const auto efb_name = "noise." + param_name;
-        auto times_pair = extract_times(cfg);
-        const auto mode = extract_val_mode(cfg, "noise");
-        const auto distribution = get_as<std::string>("distribution", cfg);
-
-        // Depending on chosen distribution, construct it and build a rule
-        // function using a reference to the newly created one...
-        if (distribution == "normal") {
-            const auto mean = get_as<double>("mean", cfg);
-            const auto stddev = get_as<double>("stddev", cfg);
-            std::normal_distribution<> dist(mean, stddev);
-
-            auto ef = build_rng_env_func(std::move(dist), param_name, mode);
-            return {efb_name, ef, Update::sync, times_pair};
-        }
-        else if (distribution == "poisson") {
-            const auto mean = get_as<double>("mean", cfg);
-            std::poisson_distribution<> dist(mean);
-            
-            auto ef = build_rng_env_func(std::move(dist), param_name, mode);
-            return {efb_name, ef, Update::sync, times_pair};
-        }
-        else if (distribution == "exponential") {
-            const auto lambda = get_as<double>("lambda", cfg);
-            std::exponential_distribution<> dist(lambda);
-            
-            auto ef = build_rng_env_func(std::move(dist), param_name, mode);
-            return {efb_name, ef, Update::sync, times_pair};
-        }
-        else if (distribution == "uniform_int") {
-            auto interval = get_as<std::array<int, 2>>("interval", cfg);
-            std::uniform_int_distribution<> dist(interval[0], interval[1]);
-            
-            auto ef = build_rng_env_func(std::move(dist), param_name, mode);
-            return {efb_name, ef, Update::sync, times_pair};
-        }
-        else if (distribution == "uniform_real" or distribution == "uniform") {
-            auto interval = get_as<std::array<double, 2>>("interval", cfg);
-            std::uniform_real_distribution<> dist(interval[0], interval[1]);
-
-            auto ef = build_rng_env_func(std::move(dist), param_name, mode);
-            return {efb_name, ef, Update::sync, times_pair};
-        }
-        else {
-            throw std::invalid_argument("No method implemented to resolve "
-                "noise distribution '" + distribution + "'! Valid options: "
-                "normal, poisson, uniform_int, uniform_real.");
-        }
-    };
-
-    /// Creates a rule function for spatially linearly parameter values
-    /** 
-     * \param param_name  The parameter to attach this environment function to
-     * \param cfg
-     *   \parblock
-     *     Configuration for this environment function. Allows the following
-     *     arguments:
-     *
-     *     - ``mode``: ``set`` (default) or ``add``
-     *     - ``times``: Sequence of time points
-     *     - ``values_north_south``: Values at northern and souther boundary;
-     *       uses linear interpolation in between.
-     *   \endparblock
-     */ 
-    EnvFuncBundle _ef_slope(const std::string& param_name,
-                            const Config& cfg) const
-    {
-        this->_log->debug("Constructing 'slope' environment function for "
-                          "parameter '{}' ...", param_name);
-
-        const auto efb_name = "slope." + param_name;
-        auto times_pair = extract_times(cfg);
-        const auto mode = extract_val_mode(cfg, "slope");
-
-        const auto values_north_south =
-            get_as<std::array<double, 2>>("values_north_south", cfg);
-
-        EnvFunc ef =
-            [this, param_name, mode, values_north_south]
-            (const auto& env_cell) mutable
-        {
-            auto& env_state = env_cell->state;
-
-            // Use the relative position along y-dimension
-            const double pos = (  env_state.position[1]
-                                / this->_cm.space()->extent[1]);
-            const double slope = values_north_south[0] - values_north_south[1];
-            const double value = values_north_south[1] + pos * slope;
-
-            double current_value = 0.;
-            if (mode == ValMode::Add) {
-                current_value = env_state.get_env(param_name);
-            }
-            env_state.set_env(param_name, current_value + value);
-            return env_state;
-        };
-        return EnvFuncBundle(efb_name, ef, Update::sync, times_pair);
-    };
-    
-    /// Creates a rule function for spatial steps in the parameter values
-    /**  
-     * \param param_name  The parameter to attach this environment function to
-     * \param cfg
-     *   \parblock
-     *     Configuration for this environment function. Allows the following
-     *     arguments:
-     *
-     *     - ``mode``: ``set`` (default) or ``add``
-     *     - ``times``: Sequence of time points
-     *     - ``values_north_south``: Sequence of parameter values for the step
-     *       heights, from north to south.
-     *     - ``latitudes``: Sequence of latitudes of separation, from north to
-     *       south
-     *   \endparblock
-     */ 
-    EnvFuncBundle _ef_steps(const std::string& param_name,
-                            const Config& cfg) const
-    {
-        this->_log->debug("Constructing 'steps' environment function for "
-                          "parameter '{}' ...", param_name);
-
-        const auto efb_name = "steps." + param_name;
-        auto times_pair = extract_times(cfg);
-        const auto mode = extract_val_mode(cfg, "steps");
-
-        const auto latitudes =
-            get_as<std::vector<double>>("latitudes", cfg, {0.5});
-        const auto values_north_south =
-            get_as<std::vector<double>>("values_north_south", cfg);
-        
-        if (latitudes.size() != values_north_south.size() - 1) {
-            throw std::invalid_argument("The list of 'latitudes' and"
-                " 'values_north_south' don't match in size. Sizes were " 
-                + std::to_string(latitudes.size()) + " and "
-                + std::to_string(values_north_south.size()) + 
-                ". Values_north_south must have one element more that"
-                " latitudes.");
-        }
-
-        EnvFunc ef = 
-            [param_name, mode, latitudes, values_north_south]
-            (const auto& env_cell) mutable
-        {
-            auto& env_state = env_cell->state;
-            double value = values_north_south[0];
-            for (unsigned int i = 0; i < latitudes.size(); ++i) {
-                if (env_state.position[1] > latitudes[i]) {
-                    break;
-                }
-                value = values_north_south[i+1];
-            }
-
-            double current_value = 0.;
-            if (mode == ValMode::Add) {
-                current_value = env_state.get_env(param_name);
-            }
-            env_state.set_env(param_name, current_value + value);
-            return env_state;
-        };
-
-        this->_log->debug("Constructed 'steps' environment function for "
-                          "parameter '{}'.", param_name);
-        return EnvFuncBundle(efb_name, ef, Update::sync, times_pair);
-    };
-
-    /// Creates a rule function for spatially uniform parameter values
-    /** 
-     * \param param_name  The parameter to attach this environment function to
-     * \param cfg
-     *   \parblock
-     *     Configuration for this environment function. Allows the following
-     *     arguments:
-     *
-     *     - ``mode``: ``set`` (default) or ``add``
-     *     - ``times``: Sequence of time points
-     *     - ``value``: The scalar value to use
-     *   \endparblock
-     */ 
-    EnvFuncBundle _ef_uniform(const std::string& param_name,
-                              const Config& cfg) const
-    {
-        this->_log->debug("Constructing 'uniform' environment function "
-                          "for parameter '{}' ...", param_name);
-
-        const auto efb_name = "uniform." + param_name;
-        auto times_pair = extract_times(cfg);
-        ValMode mode;
-        double value;
-
-        // Extract configuration depending on whether cfg is scalar or mapping
-        if (cfg.IsScalar()) {
-            // Interpret as desiring to set to the given scalar value
-            mode = ValMode::Set;
-            value = cfg.as<double>();
-        }
-        else if (cfg.IsMap()) {
-            mode = extract_val_mode(cfg, "uniform");
-            value = get_as<double>("value", cfg);
-        }
-        else {
-            throw std::invalid_argument("The configuration for environment "
-                "function 'uniform' must be a scalar or a mapping!");
-        }
-
-        EnvFunc ef =
-            [param_name, mode, value]
-            (const auto& env_cell) mutable
-        {
-            auto& env_state = env_cell->state;
-
-            double current_value = 0.;
-            if (mode == ValMode::Add) {
-                current_value = env_state.get_env(param_name);
-            }
-
-            env_state.set_env(param_name, current_value + value);
-            return env_state;
-        };
-        return EnvFuncBundle(efb_name, ef, Update::sync, times_pair);
-    };
 };
+
+// End group Environment
+/**
+ *  \}
+ */
 
 } // namespace Environment
 } // namespace Models

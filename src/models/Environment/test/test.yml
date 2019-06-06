@@ -4,8 +4,10 @@ Environment:
     cell_params: {some_parameter: 0.}
     grid: {resolution: 64, structure: square}
     neighborhood: {mode: Moore}
-  env_funcs: ~
-  init_env_funcs: ~
+  some_parameter: 0.
+  env_param_funcs: ~
+  env_state_funcs: ~
+  init_env_state_funcs: ~
   space: {periodic: true}
 log_levels: {core: warning, data_io: warning, model: info}
 monitor_emit_interval: 2.0

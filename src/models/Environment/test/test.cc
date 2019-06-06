@@ -2,6 +2,8 @@
 #include <iostream>
 
 #include "../Environment.hh"
+#include "../env_param_func_collection.hh"
+#include "../env_state_func_collection.hh"
 
 using namespace Utopia;
 using namespace Utopia::Models::Environment;
@@ -15,42 +17,97 @@ void assert_eq(T arg1, T arg2, const double epsilon=1e-12) {
 
 template <typename Model>
 void test_add_env_func(Model& model) {
-    using EnvFunc = typename Model::EnvFunc;
+    using EnvStateFunc = typename Model::EnvStateFunc;
+    using EnvParamFunc = typename Model::EnvParamFunc;
 
     // Add a custom lambda
-    model.add_env_func("test",
+    model.add_env_param_func("test_param",
+        "some_glob_parameter",
+        []() { return -1; }
+    );
+
+    EnvParamFunc epf = []() { return -2; };
+
+    // Add with update mode
+    model.add_env_param_func("another param test", "some_glob_parameter", epf);
+
+
+    // Add a custom lambda
+    model.add_env_state_func("test_state",
         [](const auto& env_cell) {
             auto& env_state = env_cell->state;
-            env_state.set_env("some_parameter", -1.);
+            env_state.set_env("some_het_parameter", -1.);
             return env_state;
         }
     );
 
-    EnvFunc ef = [](const auto& env_cell) {
+    EnvStateFunc esf = [](const auto& env_cell) {
         auto& env_state = env_cell->state;
-        env_state.set_env("some_parameter", -1.);
+        env_state.set_env("some_het_parameter", -1.);
         return env_state;
     };
 
     // Add with update mode
-    model.add_env_func("another test", ef, Update::async);
+    model.add_env_state_func("another state test", esf, Update::async);
 
     // Add initial env func
-    model.template add_env_func<true>("initial", ef);
+    model.template add_env_state_func<true>("initial state", esf);
     // will not be invoked, but this still tests the interface
+
+    // Use getter
+    double my_param = model.get_parameter("some_glob_parameter");
+    (void)(my_param);
 
     // Iterate
     model.iterate();
 }
 
-/// Create a non-abstract EnvCellState
-struct EnvCellState : Utopia::Models::Environment::BaseEnvCellState
+/// A non-abstract EnvParam, derived from the base class
+/** \note This is used to allow standalone operation.
+  */
+struct EnvParam : BaseEnvParam
 {
-    double some_parameter;
+    double some_glob_parameter;
+
+    EnvParam(const Utopia::DataIO::Config& cfg)
+    : 
+        some_glob_parameter(Utopia::get_as<double>("some_glob_parameter",
+                                                     cfg, 0.))
+    { }
+
+    ~EnvParam() = default;
+
+    /// Getter
+    double get_env(const std::string& key) const override {
+        if (key == "some_glob_parameter") {
+            return some_glob_parameter;
+        }
+        throw std::invalid_argument("No access method for key '" + key
+                                    + "' in EnvParam!");
+    }
+
+    /// Setter
+    void set_env(const std::string& key,
+                 const double& value) override
+    {
+        if (key == "some_glob_parameter") {
+            some_glob_parameter = value;
+        }
+        else {
+            throw std::invalid_argument("No setter method for key '" + key
+                                        + "' in EnvParam!");
+        }
+    }
+};
+
+/// Create a non-abstract EnvCellState
+struct EnvCellState : BaseEnvCellState
+{
+    double some_het_parameter;
 
     EnvCellState(const Utopia::DataIO::Config& cfg)
     : 
-        some_parameter(Utopia::get_as<double>("some_parameter",
+        some_het_parameter(Utopia::get_as<double>("some_het_parameter",
                                                 cfg, 0.))
     { }
 
@@ -58,8 +115,8 @@ struct EnvCellState : Utopia::Models::Environment::BaseEnvCellState
 
     /// Getter
     double get_env(const std::string& key) const {
-        if (key == "some_parameter") {
-            return some_parameter;
+        if (key == "some_het_parameter") {
+            return some_het_parameter;
         }
         throw std::invalid_argument("No access method to the key '" 
                                     + key + "' in EnvCellState!");
@@ -67,8 +124,8 @@ struct EnvCellState : Utopia::Models::Environment::BaseEnvCellState
 
     /// Setter
     void set_env(const std::string& key, const double& value) {
-        if (key == "some_parameter") {
-            some_parameter = value;
+        if (key == "some_het_parameter") {
+            some_het_parameter = value;
             return;
         }
         throw std::invalid_argument("No setter method to the key '"
@@ -83,12 +140,14 @@ int main ()
         Utopia::PseudoParent pp("test.yml");
 
         // Initialize the main model instance and directly run it
-        // Use the constructed EnvCellState and don't associate with the 
-        // PseudoParents cells (they don't exist).
-        auto model = Environment<EnvCellState, false>("Environment", pp);
+        // Use the constructed EnvParam and EnvCellState; Have the model in
+        // standalone mode.
+        auto model = Environment<EnvParam, EnvCellState, true>(
+                            "Environment", pp);
 
         // use the register function
-        model.track_parameter("some_parameter");
+        model.track_state("some_het_parameter");
+        model.track_parameter("some_glob_parameter");
 
         // Use the push rule function
         test_add_env_func(model);

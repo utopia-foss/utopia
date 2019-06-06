@@ -15,29 +15,31 @@ cell_manager:
   # Cell initialization parameters
   cell_params:
     # The heterogeneous model default parameter.
-    # Here, it will be overwritten by the Environment's init_env_funcs
-    some_parameter: 0.2
+    # Here, it will be overwritten by the Environment's init_env_state_funcs
+    some_heterogeneous_parameter: 0.2
+
+some_global_parameter: 0.
 
 
 # --- Default configuration for Environment model -----------------------------
 # ... Environment functions invoked once at initialisation ....................
-init_env_funcs:
+init_env_state_funcs:
   # provide a sequence here
   - uniform:
       # The parameter to which to apply the env
-      some_parameter:
+      some_heterogeneous_parameter:
         mode: set     # can be: set, add
         value: 0.0
       # Can add more parameters here ..
-  
+
   - steps:
-      some_parameter:
+      some_heterogeneous_parameter:
         mode: add
         latitudes: [0.5]
         values_north_south: [.4, .0]
-  
+
   - noise:
-      some_parameter:
+      some_heterogeneous_parameter:
         mode: add
         distribution: normal
         mean: .0
@@ -48,22 +50,37 @@ init_env_funcs:
 # which is a sequence of invocation times. If the `times` key is not given,
 # the environment function is invoked _every_ step. Note that zero or negative
 # times are filtered out. For longer sequences, the !listgen tag can be used.
-env_funcs:
+env_state_funcs:
   - noise:
-      some_parameter:
+      some_heterogeneous_parameter:
         mode: add
         distribution: normal
         mean: .0
         stddev: .02
 
   - slope:
-      some_parameter:
+      some_heterogeneous_parameter:
         mode: add
         values_north_south: [-0.1, 0.]
         times: !listgen [5]
 
   - slope:
-      some_parameter:
+      some_heterogeneous_parameter:
         mode: add
         values_north_south: [0.2, 0.]
         times: !listgen [5, 11, 2]
+
+
+env_param_funcs:
+  - set:
+      some_global_parameter:
+        value: 10
+        invoke_at_initialization: True
+  - sinusoidal:
+      some_global_parameter:
+        amplitude: 10
+        period: 20
+        times: !listgen [100]
+        phase: 1
+        offset: 10
+
