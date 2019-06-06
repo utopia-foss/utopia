@@ -34,8 +34,7 @@ find_package(Threads REQUIRED)
 # include Utopia macros
 include(UtopiaPython)
 include(UtopiaEnv)
-
-include(UtopiaGenerateModelInfo)
+include(UtopiaFrontendModelRegistry)
 
 include(UtopiaAddUnitTest)
 include(UtopiaAddModel)

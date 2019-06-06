@@ -3,97 +3,51 @@
 import os
 import re
 import logging
-from typing import Callable
+from typing import Callable, Dict
 from pkg_resources import resource_filename
 
-from utopya.multiverse import Multiverse
-
-# Configure and get logger
-log = logging.getLogger(__name__)
+from .multiverse import Multiverse
+from .tools import recursive_update, add_item
 
 # Local constants
+log = logging.getLogger(__name__)
+
 USER_CFG_HEADER_PATH = resource_filename('utopya', 'cfg/user_cfg_header.yml')
 BASE_CFG_PATH = resource_filename('utopya', 'cfg/base_cfg.yml')
 
 # -----------------------------------------------------------------------------
 
-def add_entry(value, *, add_to: dict, key_path: list,
-              value_func: Callable=None, is_valid: Callable=None,
-              ErrorMsg: Callable=None):
-    """Adds the given value to the `add_to` dict at the given key path.
-    
-    If `value` is a callable, that function is called and the return value is
-    what is stored in the dict.
-    
-    Args:
-        value: The value of what is to be stored
-        add_to (dict): The dict to add the entry to
-        key_path (list): The path at which to add it
-        value_func (Callable, optional): If given, calls it with `value` as
-            argument and uses the return value to add to the dict
-        is_valid (Callable, optional): Used to determine whether `value` is
-            valid or not; should take single positional argument, return bool
-        ErrorMsg (Callable, optional): A raisable object that prints an error
-            message; gets passed `value` as positional argument.
-    
-    Raises:
-        ErrorMsg: Description
-    """
-    log.debug("Adding CLI entry '%s' at %s ...")
-
-    # Check the value by calling the function; it should raise an error
-    if is_valid is not None:
-        if not is_valid(value):
-            raise ErrorMsg(value)
-
-    # Determine which keys need to be traversed
-    traverse_keys, last_key = key_path[:-1], key_path[-1]
-
-    # Set the starting point
-    d = add_to
-
-    # Traverse keys
-    for _key in traverse_keys:
-        log.debug("Traversing key '%s' ...", _key)
-
-        # Check if a new entry is needed
-        if _key not in d:
-            d[_key] = dict()
-
-        # Select the new entry
-        d = d[_key]
-
-    # Now d is where the value should be added
-    # If applicable
-    if value_func is not None:
-        value = value_func(value)
-        log.debug("Resolved value from callable:  %s", value)
-    
-    # Store in dict, mutable
-    d[last_key] = value
-
-    log.debug("Successfully added entry.")
-
-
 def add_from_kv_pairs(*pairs, add_to: dict,
                       attempt_conversion: bool=True,
-                      allow_eval: bool=False):
+                      allow_eval: bool=False,
+                      allow_deletion: bool=True) -> None:
     """Parses the key=value pairs and adds them to the given dict.
+
+    Note that this happens directly on the object, i.e. making use of the
+    mutability of the given dict. This function has no return value!
     
     Args:
         *pairs: Sequence of key=value strings
         add_to (dict): The dict to add the pairs to
-        base_path (list, optional): The path within `add_to` that is considered
-            as the base
         attempt_conversion (bool, optional): Whether to attempt converting the
             strings to bool, float, int types
         allow_eval (bool, optional): Whether to try calling eval() on the
             value strings during conversion
+        allow_deletion (bool, optional): If set, can pass DELETE string to
+            a key to remove the corresponding entry.
     """
+    # Object to symbolise deletion
+    class _DEL: pass
+    DEL = _DEL()
+
     def conversions(val):
         # Boolean
         if val.lower() in ["true", "false"]:
             return bool(val.lower() == "true")
+        
+        # None
+        if val.lower() in ["null"]:
+            return None
 
         # Floating point number (requiring '.' being present)
         if re.match(r'^[-+]?[0-9]*\.[0-9]*([eE][-+]?[0-9]+)?$', val):
@@ -108,6 +62,10 @@ def add_from_kv_pairs(*pairs, add_to: dict,
                 return int(val)
             except: # very unlike to be reached; regex is quite restrictive
                 pass
+
+        # Deletion placeholder
+        if val == "DELETE":
+            return DEL
 
         # Last resort, if activated: eval
         if allow_eval:
@@ -146,14 +104,81 @@ def add_from_kv_pairs(*pairs, add_to: dict,
         if attempt_conversion:
             val = conversions(val)
 
-        # Write the value
-        d[last_key] = val
+        # In all cases but that where the value is the DEL object, write:
+        if val is not DEL:
+            d[last_key] = val
+            continue
+
+        # Otherwise: need to check whether deletion is allowed and the entry
+        # is present ...
+        if not allow_deletion:
+            raise ValueError("Attempted deletion of value for key '{}', but "
+                             "deletion is not allowed.".format(key))
+
+        if last_key not in d:
+            continue
+        del d[last_key]
 
     # No need to return the base dict as it is a mutable!
     log.debug("Added %d entries from key-value pairs.", len(pairs))
 
 
-def deploy_user_cfg(user_cfg_path: str=Multiverse.USER_CFG_SEARCH_PATH) -> None:
+def register_models(args, *, registry):
+    """Handles registration of multiple models given argparse args"""
+    # The dict to hold all arguments
+    specs = dict()
+
+    if not args.separator:
+        # Will only register a single model.
+        # Gather all the path-related arguments
+        raise NotImplementedError() # TODO
+        # paths = dict()
+        # specs[args.model_name] = dict(paths=paths)
+
+    else:
+        # Got separator for lists of model names, binary paths, and source dirs
+        log.debug("Splitting given model registration arguments by '%s' ...",
+                  args.separator)
+
+        model_names = args.model_name.split(args.separator)
+        bin_paths = args.bin_path.split(args.separator)
+        src_dirs = args.src_dir.split(args.separator)
+
+        if not (len(model_names) == len(bin_paths) == len(src_dirs)):
+            raise ValueError("Mismatch of sequence lengths during batch model "
+                             "registration! The model_name, bin_path, and "
+                             "src_dir lists should all be of equal length "
+                             "after having been split by separator '{}', but "
+                             "were: {}, {}, and {}, respectively."
+                             "".format(args.separator, model_names,
+                                       bin_paths, src_dirs))
+        # TODO Will ignore other path-related arguments! Warn if given.
+
+        # Go over them, create the path_args dict, and populate specs dict
+        for model_name, bin_path, src_dir in zip(model_names,
+                                                 bin_paths, src_dirs):
+            paths = dict(src_dir=src_dir,
+                         binary=bin_path,
+                         base_src_dir=args.base_src_dir,
+                         base_bin_dir=args.base_bin_dir)
+            specs[model_name] = dict(paths=paths)
+
+    log.debug("Received registry parameters for %d model%s.",
+              len(specs), "s" if len(specs) != 1 else "")
+
+    # Now, actually register. Here, pass along the common arguments.
+    for model_name, bundle_kwargs in specs.items():
+        registry.register_model_info(model_name, **bundle_kwargs,
+                                     remove_existing=args.remove_existing,
+                                     skip_existing=args.skip_existing,
+                                     label=args.label
+                                     )
+
+    log.info("Model registration finished.\n\n%s\n", registry.info_str)
+
+
+def deploy_user_cfg(user_cfg_path: str=Multiverse.USER_CFG_SEARCH_PATH
+                    ) -> None:
     """Deploys a copy of the full config to the specified location (usually
     the user config search path of the Multiverse class)
     

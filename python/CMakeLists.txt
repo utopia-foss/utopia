@@ -1,13 +1,5 @@
 # Handle configuration and installation of python packages and tests here
 
-# Pass info to utopya  ........................................................
-message(STATUS "Updating utopya module with information about models...")
-
-generate_model_info(
-    ${CMAKE_CURRENT_SOURCE_DIR}/utopya/utopya/info.py.in
-    ${CMAKE_CURRENT_SOURCE_DIR}/utopya/utopya/info.py
-)
-
 # Installations ...............................................................
 message(STATUS "")
 message(STATUS "Installing required Python packages ...")
@@ -38,7 +30,7 @@ endif()
 # Now, ready to install utopya
 
 # -- utopya --
-python_find_package(PACKAGE utopya VERSION 0.3.0)
+python_find_package(PACKAGE utopya VERSION 0.4.0)
 
 if(NOT PYTHON_PACKAGE_utopya_FOUND)
     message(STATUS "Installing utopya ...")
@@ -50,6 +42,18 @@ if(NOT PYTHON_PACKAGE_utopya_FOUND)
     python_install_package(PATH utopya)
 endif()
 
+
+# Pass info to utopya  ........................................................
+message(STATUS "")
+message(STATUS "Providing model information to Utopia frontend ...")
+
+# Register the existing models
+register_models_with_frontend()
+
+# Register additional modules
+register_python_module(NAME utopia_python
+                       MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
+# TODO This, unfortunately, also adds the `model_test` module
 
 # Tests .......................................................................
 message(STATUS "")
@@ -77,5 +81,6 @@ add_custom_target(test_models_python
 
 # Add the python model tests as a dependency for the test_models target
 add_dependencies(test_models test_models_python)
+
 
 message(STATUS "Python setup complete.\n")

@@ -3,29 +3,15 @@
 import pytest
 
 import utopya.cltools as clt
+import utopya.model_registry as mr
+from utopya.yaml import write_yml
 
-# Other tests -----------------------------------------------------------------
+# Fixtures --------------------------------------------------------------------
 
-def test_add_entry():
-    """Tests the add_entry method"""
-    # Basic case
-    d = dict()
-    clt.add_entry(123, add_to=d, key_path=["foo", "bar"])
-    assert d['foo']['bar'] == 123
+from .test_cfg import tmp_cfg_dir
+from .test_model_registry import tmp_model_registry
 
-    # With function call
-    d = dict()
-    clt.add_entry(123, add_to=d, key_path=["foo", "bar"],
-                  value_func=lambda v: v**2)
-    assert d['foo']['bar'] == 123**2
-
-    # Invalid value
-    with pytest.raises(ValueError, match="My custom error message with -123"):
-        clt.add_entry(-123, add_to=d, key_path=["foo", "bar"],
-                      is_valid=lambda v: v>0,
-                      ErrorMsg=lambda v: ValueError("My custom error message "
-                                                    "with {}".format(v)))
-
+# -----------------------------------------------------------------------------
 
 def test_add_from_kv_pairs():
     """Tests the add_from_kv_pairs method"""
@@ -36,6 +22,7 @@ def test_add_from_kv_pairs():
                           "an_int=123",
                           "a_float=1.23",
                           "a_bool=true",
+                          "None=null",
                           "long_string=long string with spaces",
                           "not_an_int=- 10",
                           "another_float=-1.E10",
@@ -52,6 +39,8 @@ def test_add_from_kv_pairs():
     assert isinstance(d["a_float"], float)
     
     assert d["a_bool"] is True
+    
+    assert d["None"] is None
 
     assert d["long_string"] == "long string with spaces"
 
@@ -74,6 +63,17 @@ def test_add_from_kv_pairs():
     assert d["squared"] == 16
     assert d["list"] == [1, 2, 3]
     assert d["bad_syntax"] == "foo"
+
+    # Deletion
+    clt.add_from_kv_pairs("squared=DELETE", add_to=d)
+    assert 'squared' not in d
+    
+    assert 'i_do_not_exist' not in d
+    clt.add_from_kv_pairs("i_do_not_exist=DELETE", add_to=d)
+    assert 'i_do_not_exist' not in d
+
+    with pytest.raises(ValueError, match="Attempted deletion"):
+        clt.add_from_kv_pairs("list=DELETE", add_to=d, allow_deletion=False)
 
 
 def test_deploy_user_cfg(tmpdir, monkeypatch, capsys):
@@ -114,3 +114,36 @@ def test_deploy_user_cfg(tmpdir, monkeypatch, capsys):
     assert out.find("A config file already exists at") >= 0
     assert out.find("Not deploying user config.") >= 0
 
+
+def test_register_models(tmp_model_registry, tmpdir):
+    """"""
+    # An attribute dict to use to mock the object that is returned after
+    # command line args are parsed: an attribute-access dict
+    class MockArgs(dict):
+        def __init__(self, *args, **kwargs):
+            super(MockArgs, self).__init__(*args, **kwargs)
+            self.__dict__ = self
+
+    # Create some testing arguments
+    args = MockArgs()
+    args.separator = ";"
+    args.model_name = "foo;bar"
+    args.bin_path = "bin/foo;bin/bar"
+    args.src_dir = "src/foo;src/bar"
+    args.base_src_dir = tmpdir.join("base_src")
+    args.base_bin_dir = tmpdir.join("base_bin")
+    args.remove_existing = False
+    args.skip_existing = False
+    args.label = None
+
+    # Try registration ... will fail, because files are missing in this test
+    with pytest.raises(KeyError, match="Missing required key: default_cfg"):
+        clt.register_models(args, registry=tmp_model_registry)
+    # NOTE It's not crucial to test a full registration here, because that's
+    #      done in the test there. We just want to ascertain that the cltools
+    #      function does what is expected of it
+
+    # List mismatch
+    args.src_dir += ";src/spam"
+    with pytest.raises(ValueError, match="Mismatch of sequence lengths"):
+        clt.register_models(args, registry=tmp_model_registry)

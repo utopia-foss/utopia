@@ -1,231 +1,379 @@
 #!/usr/bin/env python3
 """This is the command line interface for Utopia"""
 
+import os
 import sys
 import argparse
-import warnings
 
-# Define the CLI
-parser = argparse.ArgumentParser(description="Command line access to Utopia.")
+# Define the CLI --------------------------------------------------------------
+# Top level parsers
+parser = argparse.ArgumentParser(description="Welcome to the Utopia command "
+                                             "line interface.")
 
-# Add sub-parsers to allow sub-commands
-subparsers = parser.add_subparsers(dest='mode',
-                                   title="commands")
-p_run  = subparsers.add_parser('run',
-                               help="perform a simulation run")
-p_eval = subparsers.add_parser('eval',
-                               help="load a finished Utopia run and perform "
-                                    "only the evaluation")
-p_cfg  = subparsers.add_parser('config',
-                               help="set user-specific config options")
+subparsers = parser.add_subparsers(dest='mode')
+
+p_models= subparsers.add_parser('models',
+                                help="view and manipulate the model registry")
+p_cfg   = subparsers.add_parser('config',
+                                help="set user-specific config options")
+p_run   = subparsers.add_parser('run',
+                                help="perform a simulation run")
+p_eval  = subparsers.add_parser('eval',
+                                help="load a finished Utopia run and perform "
+                                     "only the evaluation")
+
+
+# subcommand: models ..........................................................
+p_models_sp = p_models.add_subparsers(dest='models_mode')
+
+pm_reg = p_models_sp.add_parser('register',
+                                help="add a new model to the model registry")
+pm_edit= p_models_sp.add_parser('edit',
+                                help="edit an existing model registry entry")
+pm_ls  = p_models_sp.add_parser('ls',
+                                help="list registered models")
+pm_rm  = p_models_sp.add_parser('rm',
+                                help="remove registered models")
+
+# sub-subcommand: model registration  . . . . . . . . . . . . . . . . . . . . .
+# Main arguments
+pm_reg.add_argument('model_name',
+    help="Name of the model to register. Supports --separator argument.")
+pm_reg.add_argument('--bin-path', required=True,
+    help="Path to the binary that is to be associated with this model. If "
+         "--base-bin-dir is given, this may be a relative path. "
+         "Supports --separator argument.")
+
+# Directories; useful for registration via CMake and in combination with --sep
+pm_reg_dir = pm_reg.add_argument_group('directory paths')
+pm_reg_dir.add_argument('--src-dir',
+    help="Path to the model source directoy. If given, it is attempted to "
+         "locate the configuration files in this directory and custom paths "
+         "may be specified as relative to this directory. If --base-src-dir "
+         "was given, this directory may be specified in relative terms. "
+         "Supports --separator.")
+pm_reg_dir.add_argument('--base-src-dir',
+    help="Shared base path to source directory; if given, --src-dir may be "
+         "relative.")
+pm_reg_dir.add_argument('--base-bin-dir',
+    help="Shared base path to binary directory; if given, --bin-path may be "
+         "a relative path")
+
+# Config files
+pm_reg_cfg = pm_reg.add_argument_group('configuration files',
+                        description="Paths to model-related YAML config files")
+pm_reg_cfg.add_argument('--model-cfg',
+    help="Path to the (default) model configuration. If --src-dir was given, "
+         "it may be given relative to it. The path given here has precedence "
+         "over a potentially auto-detected path within --src-dir.")
+pm_reg_cfg.add_argument('--plots-cfg',
+    help="Path to the default plots configuration. If --src-dir was given, "
+         "it may be given relative to it. The path given here has precedence "
+         "over a potentially auto-detected path within --src-dir.")
+pm_reg_cfg.add_argument('--base-plots-cfg',
+    help="Path to the base plots configuration. If --src-dir was given, "
+         "it may be given relative to it. The path given here has precedence "
+         "over a potentially auto-detected path within --src-dir.")
+
+# Modifiers
+pm_reg.add_argument('--label',
+    help="The label under which this configuration will be stored in the "
+         "model registry. Useful if there will be multiple configuration "
+         "bundles for the same model name.")
+pm_reg.add_argument('--separator',
+    help="If set, this allows the model_name, --bin-path, and --src-dir "
+         "arguments to be lists that are separated by the given string. Note "
+         "that in such a case ONLY these arguments are considered; all others "
+         "are ignored. Spaces need to be escaped.")
+pm_reg.add_argument('--remove-existing',
+    action='store_true',
+    help="Removes existing configuration bundles that are registered for the "
+         "given model before the new bundle is added.")
+pm_reg.add_argument('--skip-existing',
+    action='store_true',
+    help="If given, will skip registration if a model is already registered "
+         "under the given name.")
+
+
+
+# sub-subcommand: edit model registry entry  . . . . . . . . . . . . . . . . . 
+# TODO Implement
+pm_edit.add_argument('model_name',
+    help="Name of the model whose registry entry to edit.")
+
+
+# sub-subcommand: list model registry entries . . . . . . . . . . . . . . . . .
+# TODO Make more options available (low priority) 
+pm_ls.add_argument('-l', '--long', help="List in long format.")
+
+
+# sub-subcommand: remove model registry entries . . . . . . . . . . . . . . . .
+# TODO Implement (low priority)
+pm_rm.add_argument('model_name',
+    nargs='?',
+    help="Names of the models to remove")
+pm_rm.add_argument('--all',
+    action='store_true',
+    help="Remove all model registration entries.")
+
+
+# subcommand: config ..........................................................
+# the name of the config to manipulate
+p_cfg.add_argument('cfg_name',
+    choices=['user', 'external_module_paths'],
+    help="The name of the configuration entry that is to be manipulated.")
+
+p_cfg.add_argument('--set',
+    nargs='+',
+    help="Set entries in the specified configuration. Expected arguments are "
+         "key=value pairs, where the key may be a dot-separated string of "
+         "keys for dict traversal. If the configuration file does not exist, "
+         "it will be created.")
+p_cfg.add_argument('--get',
+    action='store_true',
+    help="Retrieve all entries from the specified configuration. This is "
+         "always invoked _after_ the --set command was executed (if given).")
+
+p_cfg.add_argument('--deploy',
+    action='store_true',
+    help="Deploy an empty or default configuration file to ~/.config/utopia/, "
+         "if it does not already exist. For the user configuration, deploys a "
+         "file (with all entries disabled) to ~/.config/utopia/user_cfg.yml, "
+         "asking for input if a file already exists at that location.")
+
+
 
 # subcommand: run .............................................................
 p_run.add_argument('model_name',
-                   help="Name of the model to run")
+    help="Name of the model to run")
 p_run.add_argument('run_cfg_path',
-                   default=None, nargs='?',
-                   help="Path to the run configuration. If not given, the "
-                        "default model configuration is used.")
+    default=None, nargs='?',
+    help="Path to the run configuration. If not given, the default model "
+         "configuration is used.")
 
-# single or sweep?
-p_run.add_argument('-s', '--single',
-                   action='store_true',
-                   help="If given, forces a single simulation.")
-p_run.add_argument('-p', '--sweep',
-                   action='store_true',
-                   help="If given, forces a parameter sweep. Is ignored, if "
-                        "the --single flag was also given.")
+p_run_mode = p_run.add_mutually_exclusive_group()
+p_run_mode.add_argument('-s', '--single',
+    action='store_true',
+    help="If given, forces a single simulation. If a parameter space was "
+         "configured, uses the default location.")
+p_run_mode.add_argument('-p', '--sweep',
+    action='store_true',
+    help="If given, forces a parameter sweep. Fails if no parameter space was "
+         "configured.")
 
 # updating specific meta configuration entries
-p_run.add_argument('--note',
-                   default=None, nargs='?',
-                   help="Overwrites the `paths->model_note` entry which is "
-                        "used in creation of the run directory path.")
-p_run.add_argument('--debug',
-                   action='store_true',
-                   help="If given, sets a number of configuration parameters "
-                        "which make debugging of the model and the associated "
-                        "plotting scripts easier, e.g. by lowering the model "
-                        "log level to DEBUG and creating tracebacks for "
-                        "exceptions in the python scripts. Note that the "
-                        "--sim-errors flag takes precedence over what is set "
-                        "here.")
-p_run.add_argument('--sim-errors',
-                   default=None, nargs='?',
-                   choices=['ignore', 'warn', 'warn_all', 'raise'],
-                   help="Controls the value of the WorkerManager's "
-                        "`nonzero_exit_handling` flag which defines how "
-                        "errors in simulations are handled. Allowed values "
-                        "are: 'ignore', 'warn', 'warn_all', 'raise'. "
-                        "If not given, the default from the base config or "
-                        "(if set) the user configuration is used.")
-p_run.add_argument('--num-steps',
-                   default=None, nargs='?', type=int,
-                   help="Sets the number of simulation steps.")
-p_run.add_argument('--write-every',
-                   default=None, nargs='?', type=int,
-                   help="Sets the root-level `write_every` parameter, "
-                        "controlling how frequently model data is written.")
-p_run.add_argument('--write-start',
-                   default=None, nargs='?', type=int,
-                   help="Sets the root-level `write_start` parameter, "
-                        "specifying the first time step at which data is "
-                        "written. After that time, data is written every "
-                        "`write_every`th step.")
-p_run.add_argument('--num-seeds',
-                   default=None, nargs='?', type=int,
-                   help="Creates a parameter dimension for the seeds with the "
-                        "given number of seed values. This also sets the "
-                        "`perform_sweep` parameter to True, such that a sweep "
-                        "is invoked.")
+p_run_upd = p_run.add_argument_group('update meta-configuration')
+p_run_upd.add_argument('--note',
+    default=None, nargs='?',
+    help="Overwrites the `paths->model_note` entry which is used in creation "
+         "of the run directory path.")
+p_run_upd.add_argument('--debug',
+    action='store_true',
+    help="If given, sets a number of configuration parameters which make "
+         "debugging of the model and the associated plotting scripts easier, "
+         "e.g. by lowering the model log level to DEBUG and creating "
+         "tracebacks for exceptions in the python scripts. Note that the "
+         "--sim-errors flag takes precedence over what is set here.")
+p_run_upd.add_argument('--sim-errors',
+    default=None, nargs='?',
+    choices=['ignore', 'warn', 'warn_all', 'raise'],
+    help="Controls the value of the WorkerManager's `nonzero_exit_handling` "
+         "flag which defines how errors in simulations are handled. Allowed "
+         "values are: 'ignore', 'warn', 'warn_all', 'raise'. "
+         "If not given, the default from the base config or (if set) the user "
+         "configuration is used.")
+p_run_upd.add_argument('--num-steps',
+    default=None, nargs='?', type=int,
+    help="Sets the number of simulation steps.")
+p_run_upd.add_argument('--write-every',
+    default=None, nargs='?', type=int,
+    help="Sets the root-level `write_every` parameter, controlling how "
+         "frequently model data is written.")
+p_run_upd.add_argument('--write-start',
+    default=None, nargs='?', type=int,
+    help="Sets the root-level `write_start` parameter, specifying the first "
+         "time step at which data is written. After that time, data is "
+         "written every `write_every`th step.")
+p_run_upd.add_argument('--num-seeds',
+    default=None, nargs='?', type=int,
+    help="Creates a parameter dimension for the seeds with the given number "
+         "of seed values. This also sets the `perform_sweep` parameter to "
+         "True, such that a sweep is invoked.")
 
 # arguments for generically updating meta configuration keys
-p_run.add_argument('--set-params',
-                   default=None, nargs='+', type=str,
-                   help="Sets key-value pairs in the `parameter_space` entry "
-                        "of the meta configuration. Example: foo.bar=42 sets "
-                        "the 'bar' entry in the 'foo' dict to 42. "
-                        "Note that multiple parameter can be set at once by "
-                        "separating them with a space; if a space needs to be "
-                        "in the argument value, put the strings into '...' or "
-                        "\"...\".")
-p_run.add_argument('--set-cfg',
-                   default=None, nargs='+', type=str,
-                   help="Like --set-params but attaching to the root level of "
-                        "the meta configuration. This function is carried out "
-                        "after --set-params, such that it can overwrite any "
-                        "of the previously defined arguments.")
-p_run.add_argument('--set-model-params',
-                   default=None, nargs='+', type=str,
-                   help="Like --set-params but attaching to the level of the "
-                        "currently selected model within the parameter space. "
-                        "This function is carried out before --set-params, "
-                        "meaning that --set-params can overwrite values set "
-                        "using this argument.")
+p_run_upd.add_argument('--set-params',
+    default=None, nargs='+', type=str,
+    help="Sets key-value pairs in the `parameter_space` entry of the meta "
+         "configuration. Example: foo.bar=42 sets the 'bar' entry in the "
+         "'foo' dict to 42. Note that multiple parameter can be set at once "
+         "by separating them with a space; if a space needs to be in the "
+         "argument value, put the strings into '...' or \"...\".")
+p_run_upd.add_argument('--set-cfg',
+    default=None, nargs='+', type=str,
+    help="Like --set-params but attaching to the root level of the meta "
+         "configuration. This function is carried out after --set-params, "
+         "such that it can overwrite any of the previously defined arguments.")
+p_run_upd.add_argument('--set-model-params',
+    default=None, nargs='+', type=str,
+    help="Like --set-params but attaching to the level of the currently "
+         "selected model within the parameter space. This function is carried "
+         "out before --set-params, meaning that --set-params can overwrite "
+         "values set using this argument.")
 
-# arguments referring to loading of data
+# plotting
+p_run_plt = p_run.add_argument_group('plotting')
+p_run_plt.add_argument('--plots-cfg',
+    default=None, nargs='?',
+    help="If given, uses the plots configuration file found at this path "
+         "instead of the defaults of the model.")
+p_run_plt.add_argument('--update-plots-cfg',
+    default=None, nargs='+',
+    help="Sets key-value pairs in the `plots_cfg` entry of the plots meta "
+         "configuration. Example: plot_foo.bar=42 sets the 'bar' entry in the "
+         "'plot_foo' dict to 42. Note that multiple parameter can be set at "
+         "once by separating them with a space; if a space needs to be in the "
+         "argument value, put the strings into '...' or \"...\".")
+p_run_plt.add_argument('--no-plot',
+    action='store_true',
+    help="If set, no plots will be created. To perform plots a later point, "
+         "use the `utopia eval` subcommand.")
+p_run_plt.add_argument('--plot-only',
+    default=None, nargs='*',
+    help="If given, will plot only those entries of the plot configuration "
+         "that match the names given here.")
+
+# misc
 p_run.add_argument('--suppress-data-tree',
-                   action='store_true',
-                   help="If set, loading of data will not print out the data "
-                        "tree.")
-
-
-# plotting after the run
-p_run.add_argument('--no-plot',
-                   action='store_true',
-                   help="If set, no plots will be created. To perform plots "
-                        "a later point, use the `utopia eval` subcommand.")
-p_run.add_argument('--plots-cfg',
-                   default=None, nargs='?',
-                   help="If given, uses the plots configuration file found "
-                        "at this path instead of the defaults of the model.")
-p_run.add_argument('--update-plots-cfg',
-                   default=None, nargs='+',
-                   help="Sets key-value pairs in the `plots_cfg` entry of the "
-                        "plots meta configuration. Example: plot_foo.bar=42 "
-                        "sets the 'bar' entry in the 'plot_foo' dict to 42. "
-                        "Note that multiple parameter can be set at once by "
-                        "separating them with a space; if a space needs to be "
-                        "in the argument value, put the strings into '...' or "
-                        "\"...\".")
-p_run.add_argument('--plot-only',
-                   default=None, nargs='*',
-                   help="If given, will plot only those entries of the plot "
-                        "configuration that match the names given here.")
+    action='store_true',
+    help="If set, loading of data will not print out the data tree.")
 
 
 # subcommand: eval ............................................................
 p_eval.add_argument('model_name',
-                    help="Name of the model to evaluate. This is used to find "
-                         "the output directory")
+    help="Name of the model to evaluate. This is used to find the output "
+         "directory")
 p_eval.add_argument('run_dir_path',
-                    default=None, nargs='?',
-                    help="Path to the run directory that is to be loaded. "
-                         "It can be a relative or absolute path, or the "
-                         "timestamp (including model note, if present) of the "
-                         "directory. If not given, the directory with the "
-                         "most recent timestamp is used.")
+    default=None, nargs='?',
+    help="Path to the run directory that is to be loaded. It can be a "
+         "relative or absolute path, or the timestamp (including model note, "
+         "if present) of the directory. If not given, the directory with the "
+         "most recent timestamp is used.")
 
-# arguments for generically changing the meta configuration
-p_eval.add_argument('--set-cfg',
-                    default=None, nargs='+', type=str,
-                    help="Sets key-value pairs in the meta configuration. "
-                         "Example: foo.bar=42 sets the 'bar' entry in the "
-                         "'foo' dict to 42. Note that multiple parameter can "
-                         "be set at once by separating them with a space; if "
-                         "a space needs to be in the argument value, put the "
-                         "strings into '...' or \"...\".")
+# plot configuration
+p_eval_plt = p_eval.add_argument_group('plotting')
+p_eval_plt.add_argument('--plots-cfg',
+    default=None, nargs='?',
+    help="If given, uses the plots configuration file found at this path "
+         "instead of the defaults of the model.")
+p_eval_plt.add_argument('--update-plots-cfg',
+    default=None, nargs='+',
+    help="Sets key-value pairs in the `plots_cfg` entry of the plots meta "
+         "configuration. Example: plot_foo.bar=42 sets the 'bar' entry in "
+         "the 'plot_foo' dict to 42. Note that multiple parameter can be set "
+         "at once by separating them with a space; if a space needs to be in "
+         "the argument value, put the strings into '...' or \"...\".")
+p_eval_plt.add_argument('--plot-only',
+    default=None, nargs='*',
+    help="If given, will plot only those entries of the plot configuration "
+         "that match the names given here.")
+p_eval_plt.add_argument('--run-cfg-path',
+    default=None, nargs='?',
+    help="Path to the run configuration. Can be used to change the "
+         "configuration of DataManager and PlotManager.")
 
-# arguments referring to loading of data
-p_eval.add_argument('--suppress-data-tree',
-                    action='store_true',
-                    help="If set, loading of data will not print out the data "
-                         "tree.")
-
-# arguments regarding plotting
-p_eval.add_argument('--plots-cfg',
-                    default=None, nargs='?',
-                    help="If given, uses the plots configuration file found "
-                         "at this path instead of the defaults of the model.")
-p_eval.add_argument('--update-plots-cfg',
-                   default=None, nargs='+',
-                   help="Sets key-value pairs in the `plots_cfg` entry of the "
-                        "plots meta configuration. Example: plot_foo.bar=42 "
-                        "sets the 'bar' entry in the 'plot_foo' dict to 42. "
-                        "Note that multiple parameter can be set at once by "
-                        "separating them with a space; if a space needs to be "
-                        "in the argument value, put the strings into '...' or "
-                        "\"...\".")
-p_eval.add_argument('--plot-only',
-                    default=None, nargs='*',
-                    help="If given, will plot only those entries of the plot "
-                         "configuration that match the names given here.")
-p_eval.add_argument('--run-cfg-path',
-                    default=None, nargs='?',
-                    help="Path to the run configuration. Can be used to "
-                         "change the configuration of DataManager and "
-                         "PlotManager.")
+# misc
 p_eval.add_argument('--debug',
-                    action='store_true',
-                    help="If given, configures the PlotManager such that it "
-                         "raises exceptions instead of warning.")
+    action='store_true',
+    help="If given, configures the PlotManager such that it raises exceptions "
+         "instead of warning.")
+p_eval.add_argument('--set-cfg',
+    default=None, nargs='+', type=str,
+    help="Sets key-value pairs in the meta configuration. Example: foo.bar=42 "
+         "sets the 'bar' entry in the 'foo' dict to 42. Note that multiple "
+         "parameter can be set at once by separating them with a space; if a "
+         "space needs to be in the argument value, put the strings into '...' "
+         "or \"...\".")
+p_eval.add_argument('--suppress-data-tree',
+    action='store_true',
+    help="If set, loading of data will not print out the data tree.")
 
 
-# subcommand: config ..........................................................
-p_cfg.add_argument('--deploy',
-                   action='store_true',
-                   help="Deploy the user config file (all entries disabled) "
-                        "to ~/.config/utopia/user_cfg.yml, asking for further "
-                        "action if a file already exists at that location.")
-# TODO add --get and --set to easily manipulate entries
-
-
-# subcommand: ...  ............................................................
-# ... can add more sub commands here ...
-
-
-
+# .............................................................................
 # CLI defined now. Parse the given arguments...
 args = parser.parse_args()
 
+if args.mode is None:
+    parser.print_help()
+    sys.exit()
 
 # -----------------------------------------------------------------------------
 # If continuing further, need some imports
 import logging
-log = logging.getLogger(__name__)
+log = logging.getLogger(__name__) # TODO Make this controllable!
 
 from paramspace import ParamDim
 
 import utopya
-from utopya.tools import pformat, read_yml
-from utopya.cltools import deploy_user_cfg, add_entry, add_from_kv_pairs
+from utopya.tools import pformat, load_yml, add_item
+from utopya.cltools import deploy_user_cfg, register_models, add_from_kv_pairs
+from utopya.cfg import load_from_cfg_dir, write_to_cfg_dir, get_cfg_path
 
 
 if __name__ == '__main__':
     # Config subcommand .......................................................
     if args.mode == 'config':
-        if args.deploy:
+        if args.cfg_name == 'user' and args.deploy:
             deploy_user_cfg()
+            sys.exit()
+
+        elif args.deploy:
+            raise NotImplementedError('Can only deploy user config for now.')
+
+        # Need at least one of the get or set arguments
+        if not args.get and not args.set:
+            raise ValueError("Missing --set and/or --get argument.")
+
+        # For all the following, need a configuration
+        cfg = load_from_cfg_dir(args.cfg_name)  # empty dict if file is missing
+
+        if args.set:
+            add_from_kv_pairs(*args.set, add_to=cfg)
+            write_to_cfg_dir(args.cfg_name, cfg)
+            log.info("Set %d entr%s in '%s' configuration.",
+                     len(args.set), "ies" if len(args.set) != 1 else "y",
+                     args.cfg_name)
+
+        if args.get:
+            log.info("Reading '%s' configuration file from:\n  %s",
+                     args.cfg_name, get_cfg_path(args.cfg_name))
+            print("\n--- {} Configuration ---\n{}"
+                  "".format(args.cfg_name.replace("_", " ").title(),
+                            pformat(cfg)))
+        # Done here.
+        sys.exit()
+
+
+    # Models subcommand .......................................................
+
+    if args.mode == 'models':
+        if args.models_mode == 'register':
+            register_models(args, registry=utopya.MODELS)
+
+        elif args.models_mode == 'edit':
+            raise NotImplementedError("utopia models edit")
+
+        elif args.models_mode == 'rm':
+            raise NotImplementedError("utopia models rm")
+
+        else:
+            # Mode: ls or None
+            if getattr(args, 'long', False):
+                info_str = utopya.MODELS.info_str_detailed
+
+            else:
+                info_str = utopya.MODELS.info_str
+
+            print(info_str, end="\n\n")
 
         # End here.
         sys.exit()
@@ -243,84 +391,77 @@ if __name__ == '__main__':
     # In debug mode, set a number of configuration keys
     if args.debug:
         # Set model log level to DEBUG
-        add_entry('debug', add_to=update_dict,
-                  key_path=['parameter_space', 'log_levels', 'model'])
+        add_item('debug', add_to=update_dict,
+                 key_path=['parameter_space', 'log_levels', 'model'])
         
         # Let PlotManager raise exceptions
-        add_entry(True, add_to=update_dict,
-                  key_path=['plot_manager', 'raise_exc'])
+        add_item(True, add_to=update_dict,
+                 key_path=['plot_manager', 'raise_exc'])
 
         # Let WorkerManager raise exceptions
-        add_entry('raise', add_to=update_dict,
-                  key_path=['worker_manager', 'nonzero_exit_handling'])
+        add_item('raise', add_to=update_dict,
+                 key_path=['worker_manager', 'nonzero_exit_handling'])
 
 
     # Additional arguments relevant in run mode
     if args.mode == 'run':
         # If a model_note was given, add it to the paths
         if args.note:
-            add_entry(args.note, add_to=update_dict,
-                      key_path=['paths', 'model_note'])
+            add_item(args.note, add_to=update_dict,
+                     key_path=['paths', 'model_note'])
 
         # The WorkerManager's non-zero exit handling, if in debug mode
         if args.sim_errors:
-            add_entry(args.sim_errors, add_to=update_dict,
-                      key_path=['worker_manager', 'nonzero_exit_handling'])
+            add_item(args.sim_errors, add_to=update_dict,
+                     key_path=['worker_manager', 'nonzero_exit_handling'])
 
         # Number of simulation steps
         if args.num_steps is not None:
-            add_entry(args.num_steps, add_to=update_dict,
-                      key_path=['parameter_space', 'num_steps'],
-                      is_valid= lambda v: v >= 0,
-                      ErrorMsg= lambda v: ValueError("Argument --num-steps "
-                                                     "needs to be positive, "
-                                                     "was {}.".format(v)))
+            add_item(args.num_steps, add_to=update_dict,
+                     key_path=['parameter_space', 'num_steps'],
+                     is_valid= lambda v: v >= 0,
+                     ErrorMsg= lambda v: ValueError("Argument --num-steps "
+                                                    "needs to be positive, "
+                                                    "was {}.".format(v)))
 
         # The root-level write_every parameter
         if args.write_every is not None:
-            add_entry(args.write_every, add_to=update_dict,
-                      key_path=['parameter_space', 'write_every'],
-                      is_valid= lambda v: v >= 1,
-                      ErrorMsg= lambda v: ValueError("Argument --write-every "
-                                                     "needs to be >= 1, "
-                                                     "was {}.".format(v)))
+            add_item(args.write_every, add_to=update_dict,
+                     key_path=['parameter_space', 'write_every'],
+                     is_valid= lambda v: v >= 1,
+                     ErrorMsg= lambda v: ValueError("Argument --write-every "
+                                                    "needs to be >= 1, "
+                                                    "was {}.".format(v)))
         
         # The root-level write_start parameter
         if args.write_start is not None:
-            add_entry(args.write_start, add_to=update_dict,
-                      key_path=['parameter_space', 'write_start'],
-                      is_valid= lambda v: v >= 0,
-                      ErrorMsg= lambda v: ValueError("Argument --write-start "
-                                                     "needs to be >= 0, "
-                                                     "was {}.".format(v)))
+            add_item(args.write_start, add_to=update_dict,
+                     key_path=['parameter_space', 'write_start'],
+                     is_valid= lambda v: v >= 0,
+                     ErrorMsg= lambda v: ValueError("Argument --write-start "
+                                                    "needs to be >= 0, "
+                                                    "was {}.".format(v)))
 
         # Set seeds to a parameter dimension object
         if args.num_seeds is not None:
-            add_entry(args.num_seeds,
-                      value_func=lambda v: ParamDim(default=42, range=[v]),
-                      add_to=update_dict,
-                      key_path=['parameter_space', 'seed'],
-                      is_valid= lambda v: bool(v > 1),
-                      ErrorMsg= lambda v: ValueError("Argument --num-seeds "
-                                                     "needs to be > 1, "
-                                                     "was {}.".format(v)))
+            add_item(args.num_seeds,
+                     value_func=lambda v: ParamDim(default=42, range=[v]),
+                     add_to=update_dict,
+                     key_path=['parameter_space', 'seed'],
+                     is_valid= lambda v: bool(v > 1),
+                     ErrorMsg= lambda v: ValueError("Argument --num-seeds "
+                                                    "needs to be > 1, "
+                                                    "was {}.".format(v)))
 
             # Make it, by default, perform a sweep
-            add_entry(True, add_to=update_dict, key_path=['perform_sweep'])
+            add_item(True, add_to=update_dict, key_path=['perform_sweep'])
 
         # Set the perform_sweep parameter
         if args.single:
-            if args.sweep:
-                warnings.warn("Received both --single and --sweep command "
-                              "line arguments; will perform a single "
-                              "simulation.",
-                              UserWarning)
-                # TODO use utopya-specific warning class
-
-            add_entry(False, add_to=update_dict, key_path=['perform_sweep'])
+            add_item(False, add_to=update_dict, key_path=['perform_sweep'])
 
         elif args.sweep:
-            add_entry(True, add_to=update_dict, key_path=['perform_sweep'])
+            add_item(True, add_to=update_dict, key_path=['perform_sweep'])
 
 
         # Set general configuration entries
@@ -333,7 +474,6 @@ if __name__ == '__main__':
             if not update_dict['parameter_space'].get(args.model_name):
                 update_dict['parameter_space'][args.model_name] = dict()
 
-            # Add an entry for each pair
             add_from_kv_pairs(*args.set_model_params,
                               add_to=update_dict['parameter_space'][args.model_name])
 
@@ -342,12 +482,10 @@ if __name__ == '__main__':
             if not update_dict.get('parameter_space'):
                 update_dict['parameter_space'] = dict()
 
-            # Add an entry for each pair
             add_from_kv_pairs(*args.set_params,
                               add_to=update_dict['parameter_space'])
     
         if args.set_cfg:
-            # Add an entry for each pair
             add_from_kv_pairs(*args.set_cfg, add_to=update_dict)
         
         if args.update_plots_cfg:
@@ -355,17 +493,15 @@ if __name__ == '__main__':
                 add_from_kv_pairs(*args.update_plots_cfg,
                                   add_to=update_plots_cfg)
             except ValueError:
-                update_plots_cfg = read_yml(*args.update_plots_cfg)
+                update_plots_cfg = load_yml(*args.update_plots_cfg)
 
 
     # Adjustments in eval mode
     if args.mode == 'eval':
         if args.set_cfg:
-            # Add an entry for each pair
             add_from_kv_pairs(*args.set_cfg, add_to=update_dict)
     
         if args.update_plots_cfg:
-            # Add an entry for each pair
             add_from_kv_pairs(*args.update_plots_cfg, add_to=update_plots_cfg)
 
 
@@ -376,19 +512,16 @@ if __name__ == '__main__':
     # Preparations finished now.
     
     
-    # Create Multiverse and perform the run  . . . . . . . . . . . . . . . . . 
-    # NOTE the subcommands only differ in which Multiverse class is created and
-    #      whether a run is performed or not
+    # Create Model and perform the run  . . . . . . . . . . . . . . . . . . . .
+    # Instantiate a Model object to take care of the rest
+    model = utopya.Model(name=args.model_name)
+    # TODO Do bundle selection here
 
+    # Distinguish by CLI mode whether to create Multiverse or FrozenMultiverse
     if args.mode in ['run']:
-        # Instantiate a Multiverse object
-        mv = utopya.Multiverse(model_name=args.model_name,
-                               run_cfg_path=args.run_cfg_path,
-                               **update_dict)
-
-        # Run. Which mode is used depends on the `perform_sweep` entry
+        # Get the Multiverse object and run a simulation
+        mv = model.create_mv(run_cfg_path=args.run_cfg_path, **update_dict)
         mv.run()
-        
         log.info("Simulation run finished.\n")
 
         # Only need to continue if plots are to be created
@@ -396,37 +529,26 @@ if __name__ == '__main__':
             log.info("Received --no-plot. Exiting now.")
             sys.exit()
 
-
     elif args.mode in ['eval']:
-        # Create a frozen Multiverse object that supplies all the necessary
-        # structures to load data and plot ...
-        mv = utopya.FrozenMultiverse(model_name=args.model_name,
-                                     run_dir=args.run_dir_path,
-                                     run_cfg_path=args.run_cfg_path,
-                                     **update_dict)
+        # Create frozen Multiverse; supplies similar interface as Multiverse
+        mv = model.create_frozen_mv(run_dir=args.run_dir_path,
+                                    run_cfg_path=args.run_cfg_path,
+                                    **update_dict)
 
-    # else: should not occur!
+    else:
+        raise ValueError("Unexpected CLI mode: {}".format(args.mode))
 
     # Loading  . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
     log.info("Loading data...")
-
-    # Tell the DataManager to load
     mv.dm.load_from_cfg(print_tree=bool(not args.suppress_data_tree))
-    # NOTE This will load the data using the utopya default configuration
-
     log.info("Loading data finished.\n")
 
 
     # Plotting . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
     log.info("Plotting...")
-
-    # Tell the PlotManager to plot
-    mv.pm.plot_from_cfg(plots_cfg=args.plots_cfg, plot_only=args.plot_only, 
+    mv.pm.plot_from_cfg(plots_cfg=args.plots_cfg,
+                        plot_only=args.plot_only, 
                         **update_plots_cfg)
-    # NOTE If plots_cfg was not given, this uses the plot configuration that
-    #      belongs to the model. If it is given, the configuration is loaded
-    #      from the given file path.
-    
     log.info("Plotting finished.\n")
 
     log.info("All done.\n")

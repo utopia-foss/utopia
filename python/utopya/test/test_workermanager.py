@@ -8,9 +8,11 @@ import pkg_resources
 import numpy as np
 import pytest
 
-from utopya.workermanager import WorkerManager, WorkerManagerTotalTimeout, WorkerTaskNonZeroExit
+from utopya.workermanager import (WorkerManager,
+                                  WorkerManagerTotalTimeout,
+                                  WorkerTaskNonZeroExit)
 from utopya.task import sigmap
-from utopya.tools import read_yml
+from utopya.yaml import load_yml
 
 # Some constants
 STOP_CONDS_PATH = pkg_resources.resource_filename('test', 'cfg/stop_conds.yml')
@@ -73,7 +75,7 @@ def wm_with_tasks(sleep_task):
 
 @pytest.fixture
 def sc_run_kws():
-    return read_yml(STOP_CONDS_PATH)['run_kwargs']
+    return load_yml(STOP_CONDS_PATH)['run_kwargs']
 
 # Tests -----------------------------------------------------------------------
 

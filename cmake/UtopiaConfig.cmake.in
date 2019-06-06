@@ -9,9 +9,10 @@ get_filename_component(current_dir ${CMAKE_CURRENT_LIST_FILE} PATH)
 set_and_check(cmake_modules_dir @PACKAGE_cmake_modules_dir@)
 list(APPEND CMAKE_MODULE_PATH ${cmake_modules_dir})
 
-# Include all modules
+# Include all modules (manually because UtopiaMacros also does other stuff ...)
 include(UtopiaPython)
-include(UtopiaGenerateModelInfo)
+include(UtopiaFrontendModelRegistry)
+
 include(UtopiaAddUnitTest)
 include(UtopiaAddModel)
 include(UtopiaAddModelTest)

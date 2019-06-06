@@ -5,7 +5,6 @@ both from the dantro PlotManager and some PlotCreator classes.
 """
 
 import os
-import sys
 import logging
 from typing import Callable
 
@@ -16,7 +15,7 @@ import dantro.plot_mngr
 # Import some frequently used objects directly
 from dantro.plot_creators import is_plot_func, PlotHelper
 
-from utopya.info import _CMAKE_SOURCE_DIR as SRC_DIR
+from ._path_setup import add_modules_to_path as _add_modules_to_path
 
 # Configure and get logger
 log = logging.getLogger(__name__)
@@ -65,15 +64,11 @@ class ExternalPlotCreator(dtr.plot_creators.ExternalPlotCreator):
     # The PlotHelper class to use
     PLOT_HELPER_CLS = PlotHelper
 
-    # Define path to Utopia's python directory to add to sys.path
-    UTOPIA_PYTHON_DIR = os.path.join(SRC_DIR, "python")
-
     def _resolve_plot_func(self, **kwargs) -> Callable:
-        """Extends the parent method by ensuring that the UTOPIA_PYTHON_DIR
-        is part of sys.path
+        """Extends the parent method by ensuring that any registered external
+        model plot modules are part of the sys.path
         """
-        if not self.UTOPIA_PYTHON_DIR in sys.path:
-            sys.path.append(self.UTOPIA_PYTHON_DIR)
+        _add_modules_to_path('utopia_python')
 
         return super()._resolve_plot_func(**kwargs)
 

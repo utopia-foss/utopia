@@ -16,8 +16,8 @@ else ()
     set (Python_EXECUTABLE ${PYTHON_EXECUTABLE})
 endif ()
 
-# the designated paths for the virtual env and some environments
-# might not exist yet at this point
+# the designated paths for the virtual env and some environments.
+# some might not exist yet at this point, are created below
 set (UTOPIA_ENV_DIR ${CMAKE_BINARY_DIR}/utopia-env)
 set (UTOPIA_ENV_EXECUTABLE ${UTOPIA_ENV_DIR}/bin/python)
 set (UTOPIA_ENV_PIP ${UTOPIA_ENV_DIR}/bin/pip)
@@ -65,6 +65,8 @@ if (BASH)
           FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
                            GROUP_READ GROUP_WRITE GROUP_EXECUTE
                            WORLD_READ WORLD_WRITE WORLD_EXECUTE)
+
+    set (RUN_IN_UTOPIA_ENV ${CMAKE_BINARY_DIR}/run-in-utopia-env)
 else ()
     message (WARNING "Bash was not found. Your system likely does not support "
                      "the utopia-env. Skipping creation of run script.")

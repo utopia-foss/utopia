@@ -1,11 +1,17 @@
-"""Tests the utopya testtools module"""
+"""Tests the utopya.testtools modules and the Model class
+
+The reason why the Model class is tested alongside the ModelTest class is
+partly historical; however, the overlap is large and the ModelTest class has
+the advantage of already working on temporary directories.
+"""
 
 import os
+import time
 
 import pytest
 
 import utopya
-import utopya.testtools as tt
+from utopya.testtools import ModelTest
 
 
 # Fixtures --------------------------------------------------------------------
@@ -13,49 +19,36 @@ import utopya.testtools as tt
 
 # Tests -----------------------------------------------------------------------
 
-def test_init():
+def test_ModelTest_init():
     """Tests the initialisation and properties of the ModelTest class"""
     # Initialize
-    mtc = tt.ModelTest("dummy", test_file=__file__)
+    mtc = ModelTest("dummy", test_file=__file__)
 
-    # Non-existing model name should not be possible
-    with pytest.raises(ValueError, match="No such model 'invalid'"):
-        tt.ModelTest("invalid")
-
-    # As well as changing the existing model name
-    with pytest.raises(RuntimeError, match="A ModelTest's associated model "):
-        mtc.model_name = "foo"
-
-    # And a non-existing test_file path should not work out either
-    with pytest.raises(ValueError, match="Could not extract a valid"):
-        tt.ModelTest("dummy", test_file="/some/imaginary/path/to/a/testfile")
 
     # Assert that property access works
-    assert mtc.model_name == "dummy"
-    assert mtc.test_dir
+    assert mtc.name == "dummy"
+    assert mtc.base_dir
 
     # No Multiverse's should be stored
     assert not mtc._mvs
 
-def test_get_file_path():
-    """Test the method to get a config by name"""
-    # Get the paths of config files of other tests
-    mtc = tt.ModelTest("dummy", test_file=__file__)
+    # String representation
+    assert "dummy" in str(mtc)
 
-    assert mtc.get_file_path("cfg/run_cfg.yml")
+    # Get the default model configuration
+    assert isinstance(mtc.default_model_cfg, dict)
 
-    with pytest.raises(FileNotFoundError, match="No file 'non-existing-file'"):
-        mtc.get_file_path("non-existing-file")
+    # Non-registered model names should not be possible
+    with pytest.raises(KeyError, match="No model with name 'invalid' found"):
+        ModelTest("invalid")
 
-    # It should not work without a test_file being passed during init
-    mtc2 = tt.ModelTest("dummy")
+    # And a non-existing test_file path should not work out either
+    with pytest.raises(ValueError, match="Given base_dir path /some/imag"):
+        ModelTest("dummy", test_file="/some/imaginary/path/to/a/testfile")
 
-    with pytest.raises(ValueError):
-        mtc2.get_file_path("foo")
-
-def test_create_mv():
+def test_ModelTest_create_mv():
     """Tests the creation of Multiverses using the ModelTest class"""
-    mtc = tt.ModelTest("dummy", test_file=__file__)
+    mtc = ModelTest("dummy", test_file=__file__)
 
     # Basic initialization
     mv1 = mtc.create_mv(from_cfg="cfg/run_cfg.yml")
@@ -70,9 +63,10 @@ def test_create_mv():
     assert isinstance(mv2, utopya.Multiverse)
     assert mv2.wm.num_workers == 1
 
-def test_create_run_load():
+
+def test_ModelTest_create_run_load():
     """Tests the chained version of create_mv"""
-    mtc = tt.ModelTest("dummy", test_file=__file__)
+    mtc = ModelTest("dummy", test_file=__file__)
 
     # Run with different arguments:
     # Without
@@ -82,15 +76,30 @@ def test_create_run_load():
     mtc.create_run_load(from_cfg="cfg/run_cfg.yml")
     
     # With run_cfg_path
-    mtc.create_run_load(run_cfg_path=str(mtc.test_dir.join("cfg/run_cfg.yml")))
+    mtc.create_run_load(run_cfg_path=os.path.join(mtc.base_dir,
+                                                  "cfg", "run_cfg.yml"))
 
     # With both
     with pytest.raises(ValueError, match="Can only pass either"):
         mtc.create_run_load(from_cfg="foo", run_cfg_path="bar")
 
-def test_tmpdir_is_tmp():
+def test_ModelTest_create_frozen_mv():
+    """Tests the creation of a FrozenMultiverse using the ModelTest class"""
+    mtc = ModelTest("dummy", test_file=__file__)
+
+    # First, create a regular multiverse and run it
+    mv = mtc.create_mv(from_cfg="cfg/run_cfg.yml")
+    mv.run()
+
+    # Now, load it as a frozen multiverse
+    # Need to wait a sec to have a different timestamp for the eval directory
+    time.sleep(1.1)
+    fmv = mtc.create_frozen_mv(run_dir=mv.dirs['run'])
+    assert fmv.dirs['run'] == mv.dirs['run']
+
+def test_ModelTest_tmpdir_is_tmp():
     """This test is to assert that the temporary directory is really temporary"""
-    mtc = tt.ModelTest("dummy", test_file=__file__)
+    mtc = ModelTest("dummy", test_file=__file__)
     mv = mtc.create_mv(from_cfg="cfg/run_cfg.yml")
 
     # Extract the path to the temporary directory and assert it was created

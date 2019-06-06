@@ -20,10 +20,15 @@ INSTALL_DEPS = ['numpy>=1.13',
 setup(name='utopya',
       #
       # Package information
-      version='0.3.0',
+      version='0.4.0',
       # NOTE This needs to correspond to utopya.__init__.__version__
       description='The Utopia frontend package.',
       url='https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia',
+      author='Utopia Developers',
+      author_email=('Benjamin Herdeanu '
+                    '<Benjamin.Herdeanu@iup.uni-heidelberg.de>, '
+                    'Yunus Sevinchan '
+                    '<Yunus.Sevinchan@iup.uni-heidelberg.de>'),
       classifiers=[
           'Programming Language :: Python :: 3.6',
           'Topic :: Utilities'
