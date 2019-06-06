@@ -11,29 +11,29 @@ parameter_space:
         resolution: 6
 
       cell_params:
-        # overwritten by Environment's init_env_funcs
-        some_parameter: 0.0
+        # overwritten by Environment's init_env_state_funcs
+        some_heterogeneous_parameter: 0.0
 
-    init_env_funcs:
+    init_env_state_funcs:
       - steps:
-          some_parameter:
+          some_heterogeneous_parameter:
             mode: set
             values_north_south: [1.0, 0.5, 0.]
             latitudes: [0.66, 0.33]
-    env_funcs:
+    env_state_funcs:
       - uniform:
-          some_parameter: 
+          some_heterogeneous_parameter: 
             mode: set
             value: 0.0
             times: [1]
       - steps:
-          some_parameter:
+          some_heterogeneous_parameter:
             mode: add
             values_north_south: [1.0, 0.5, 0.]
             latitudes: [0.66, 0.33]
             times: [1]
       - steps:
-          some_parameter:
+          some_heterogeneous_parameter:
             mode: add
             values_north_south: [1.0, 0.5, 0.]
             latitudes: [0.66, 0.33]

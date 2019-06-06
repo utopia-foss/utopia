@@ -1,0 +1,47 @@
+# Configuration file used to test that the output of the model is correct
+---
+parameter_space:
+  num_steps: 80
+
+  Environment: !model  
+    model_name: Environment
+
+    cell_manager:
+      grid:
+        resolution: 4
+
+      cell_params:
+        # overwritten by Environment's init_env_state_funcs
+        some_heterogeneous_parameter: 0.2
+
+    some_global_parameter: 0.
+
+    env_param_funcs:
+      - rectangular:
+          some_global_parameter:
+            amplitude: 1
+            offset: 1
+            period: 10
+            invoke_at_initialization: True
+            times: !listgen [20]
+      - rectangular:
+          some_global_parameter:
+            amplitude: 1
+            period: 10
+            times: !listgen [20, 40]
+      - rectangular:
+          some_global_parameter:
+            amplitude: 1
+            period: 10
+            phase: 0.5
+            times: !listgen [45, 65]
+      - rectangular:
+          some_global_parameter:
+            amplitude: 1
+            period: 10
+            time_in_max: 2
+            times: !listgen [65, 85]
+      
+
+    init_env_state_funcs: ~
+    env_state_funcs: ~

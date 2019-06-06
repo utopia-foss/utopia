@@ -5,6 +5,17 @@ parameter_anim:
   based_on: state_anim
 
   to_plot:
-    some_parameter:
-      title: some_parameter
+    some_heterogeneous_parameter:
+      title: some_heterogeneous_parameter
       limits: [-0.2, +1.0]
+
+trajectory:
+  based_on: .basic_uni.lineplot
+  model_name: Environment
+
+  path_to_data: some_global_parameter
+
+  helpers:
+    set_labels:
+      x: time
+      y: some global parameter

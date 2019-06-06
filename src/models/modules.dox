@@ -5,4 +5,11 @@
 \brief Models implemented in Utopia
 \}
 
+\defgroup Environment Environment
+\{
+\ingroup Models
+\brief The environment model provides a collection of parameter functions
+       designed for coupling to other models.
+\}
+
 */
