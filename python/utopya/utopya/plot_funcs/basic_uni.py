@@ -5,6 +5,7 @@ from typing import Union, Tuple
 
 import numpy as np
 import xarray as xr
+import pandas as pd
 
 from .. import DataManager, UniverseGroup
 from ..plotting import is_plot_func, PlotHelper, UniversePlotCreator
@@ -253,3 +254,69 @@ def errorbar(dm: DataManager, *,
         errorbar_single(dm, uni=uni, hlpr=hlpr, path_to_data=path_to_data,
                         **plot_spec, **add_kwargs, **errorbar_kwargs)
 
+@is_plot_func(creator_type=UniversePlotCreator,
+              helper_defaults=dict(
+                  set_labels=dict(x="$t_0$", y="$t_1$")
+              )
+             )
+def distance_map(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
+                 model_name: str, path_to_data: str,
+                 transform_data: dict=None, transformations_log_level: int=10,
+                 cbar_kwargs: dict=None, **plot_kwargs):
+    """Creates a distance map of data at t_0 to data at t_1.
+    
+    Args:
+        dm (DataManager): The data manager from which to retrieve the data
+        uni (UniverseGroup): The data for this universe
+        hlpr (PlotHelper): The PlotHelper
+        model_name (str): The name of the model the data resides in
+        path_to_data (str): The path to the data within the model data
+        transform_data (dict, optional): Transformations to apply to the data.
+            This can be used for dimensionality reduction of the data, but
+            also for other operations, e.g. to selecting a slice.
+            For available parameters, see
+            :py:func:`utopya.dataprocessing.transform`
+        transformations_log_level (int, optional): The log level of all the
+            transformation operations.
+        cbar_kwargs (dict, optional): Passed on to fig.colorbar
+        **plot_kwargs: Passed on to ax.matshow
+    
+    Raises:
+        ValueError: On invalid data dimensionality
+    """
+    # Get the data
+    data = uni['data'][model_name][path_to_data]
+
+    # Apply transformations 
+    if transform_data:
+        data = transform(data, *transform_data,
+                         aux_data=uni['data'][model_name],
+                         log_level=transformations_log_level)
+
+    # Require 1D data now
+    if data.ndim != 1:
+        raise ValueError("Distance map requires 1D data, but got {}D data of "
+                         "shape {}:\n{}\n"
+                         "Apply dimensionality reducing transformations "
+                         "using the `transform_data` argument to arrive "
+                         "at plottable data."
+                         "".format(data.ndim, data.shape, data))
+
+    # Create the distance map dataset - index (rows) is t0
+    distance_map = pd.DataFrame(index=data['time'].data)
+    
+    # Add column for every time t1
+    for time in data['time'].data:
+        distance_map[time] = abs(data - data.sel({'time': time})).data
+
+    # Plot heatmap
+    cax = hlpr.ax.matshow(distance_map, **plot_kwargs)
+
+    # Adjust ticks
+    hlpr.ax.invert_yaxis()
+    hlpr.fig.gca().xaxis.tick_bottom()
+    
+    # Add colobar
+    if not cbar_kwargs:
+        cbar_kwargs = {'label': 'distance'}
+    hlpr.fig.colorbar(cax, **cbar_kwargs)
