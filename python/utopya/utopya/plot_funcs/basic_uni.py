@@ -302,15 +302,11 @@ def distance_map(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
                          "at plottable data."
                          "".format(data.ndim, data.shape, data))
 
-    # Create the distance map dataset - index (rows) is t0
-    distance_map = pd.DataFrame(index=data['time'].data)
-    
-    # Add column for every time t1
-    for time in data['time'].data:
-        distance_map[time] = abs(data - data.sel({'time': time})).data
+    # Create new dim
+    data = data.expand_dims('t1')
 
-    # Plot heatmap
-    cax = hlpr.ax.matshow(distance_map, **plot_kwargs)
+    # Plot distance_map
+    cax = hlpr.ax.matshow(abs(data.data - data.T.data), **plot_kwargs)
 
     # Adjust ticks
     hlpr.ax.invert_yaxis()
