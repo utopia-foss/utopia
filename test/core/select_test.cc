@@ -1,7 +1,6 @@
 #define BOOST_TEST_MODULE select test
 
-#include <boost/test/unit_test.hpp>
-
+#include <boost/test/included/unit_test.hpp>
 #include <utopia/core/select.hh>
 #include <utopia/data_io/cfg_utils.hh>
 

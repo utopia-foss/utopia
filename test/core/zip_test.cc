@@ -1,6 +1,6 @@
 #define BOOST_TEST_MODULE zip iterator test
 #include <boost/mpl/list.hpp>       // type lists for testing
-#include <boost/test/unit_test.hpp> // for unit tests
+#include <boost/test/included/unit_test.hpp> // for unit tests
 #include <vector> 
 #include <list> 
 #include <unordered_map>

@@ -1,9 +1,9 @@
-#define BOOST_TEST_MODULE datamanager_test
+#define BOOST_TEST_MODULE writetask_test
 
 #include <sstream> // needed for testing throw messages from exceptions
 
 #include <boost/mpl/list.hpp>       // type lists for testing
-#include <boost/test/unit_test.hpp> // for unit tests
+#include <boost/test/included/unit_test.hpp> // for unit tests
 
 #include <utopia/core/utils.hh> // for output operators, get size...
 

@@ -10,6 +10,20 @@ namespace Utopia {
 namespace DataIO {
 namespace _DMUtils {
 
+/**
+ *  \addtogroup DataManagerUtils Utilities
+ *  \{
+ *  \ingroup DataManager
+ *  @details Here some utility functions for the datamanager are implemented.
+ */
+
+/**
+ * @page
+ * \section what Overview
+ * This module provides auxilliary functions which are used in the datamanager 
+ * class. 
+ *
+ */
 
 /**
  * @brief Helper function to unpack (key, value) container into a map of
@@ -121,6 +135,7 @@ AssocsMap build_task_association_map(const NameTaskPairs& tasks,
 
     return map;
 }
+/*! @} */
 
 
 } // namespace _DMUtils

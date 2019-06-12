@@ -1,0 +1,54 @@
+# Test configuration for datamanager test.
+# This is the most simple, and probably robust case
+---
+data_manager: 
+  # this builds the deciders
+  deciders:
+
+    write_intervals: &intervals
+      type: interval
+      args: 
+        intervals:
+          - [0, 100]
+
+  triggers:
+    build_intervals: *intervals
+
+  tasks: 
+    adaption:
+      active: true
+      decider: write_intervals
+      trigger: build_intervals
+      typetag: plain
+      basegroup_path: Agents
+      dataset_path: "adaption$time"
+      # uncomment to set, else default
+      # capacity: 
+      # chunksize: 
+      compression: 1
+
+    age:
+      active: true
+      decider: write_intervals
+      trigger: build_intervals
+      basegroup_path: Agents
+      typetag: plain
+      dataset_path: age$time
+      # uncomment to set, else default
+      # capacity: 
+      # chunksize: 
+      # compression: 1
+
+    # no dataset info needed, built by hand
+    coords:
+      active: true
+      decider: write_intervals
+      trigger: build_intervals
+      typetag: plain
+
+
+    resources:
+      active: true
+      decider: write_intervals
+      trigger: build_intervals
+      typetag: plain
