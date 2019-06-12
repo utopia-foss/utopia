@@ -1,9 +1,4 @@
-# -- Continuous Integration and Deployment of Utopia --------------------------
-#
-# This CI does the following:
-#   - Automatically create a docker image for testing
-#   - Build Utopia using gcc and clang
-#   - Test Utopia (using the results of the gcc build)
+# Continuous Integration and Deployment of Utopia
 ---
 # ++ Pipeline preparations ++++++++++++++++++++++++++++++++++++++++++++++++++++
 variables:
@@ -12,7 +7,7 @@ variables:
 
   # For __deployment__, the Utopia version
   UTOPIA_VERSION: "0.999"   # ... almost 1.0
-  # This is used, e.g., in the deployment of the docker image.
+  # NOTE Currently unused, but should be used in docker image deployment.
 
   # Variables needed for docker image deployment
   # The different segments of the resulting test image tag
@@ -21,10 +16,6 @@ variables:
   BASE_IMAGE: "${BASE_IMAGE_NAME}:v${BASE_IMAGE_VERSION}"
   # NOTE Do not forget to increment the BASE_IMAGE_VERSION when changes to the
   #      docker file are introduced.
-
-  UTOPIA_IMAGE_NAME: ccees/utopia
-  UTOPIA_IMAGE_VERSION: "${UTOPIA_VERSION}"
-  UTOPIA_IMAGE: "${UTOPIA_IMAGE_NAME}:v${UTOPIA_IMAGE_VERSION}"
 
 
   # Setting number of processes for build jobs and DIND jobs
@@ -127,7 +118,7 @@ stages:
 # Jobs in this stage can be used on development branches to test the CI itself.
 
 # Test building of the docker image and deployment
-# The image is then available under: ccees/utopia:test-image
+# The image is then available under: ccees/utopia:dev
 ci_test:docker-image:
   <<: *dind
   stage: ci_test
@@ -139,9 +130,9 @@ ci_test:docker-image:
                    --build-arg BASE_IMAGE=$BASE_IMAGE
                    --build-arg DEPLOY_KEY="$SSH_PRIVATE_KEY"
                    --build-arg PROCNUM=$CPUS_DIND
-                   -t $UTOPIA_IMAGE_NAME:test-image
+                   -t ccees/utopia:dev
                    ./
-    - docker push $UTOPIA_IMAGE_NAME:test-image
+    - docker push ccees/utopia:dev
 
     # Abort, such that the rest of the pipeline does not run.
     - exit 1
@@ -450,8 +441,7 @@ deploy:docs:
     url: https://hermes.iup.uni-heidelberg.de/utopia_doc/latest/html/
 
 
-# Build and deploy the docker image to docker hub
-# It is tagged both as :latest and :v${UTOPIA_VERSION}, see top of file.
+# Build and deploy the docker image to docker hub: ccees/utopia:latest
 deploy:dockerhub-latest:
   <<: *dind
   stage: deploy
@@ -464,11 +454,9 @@ deploy:dockerhub-latest:
                    --build-arg BASE_IMAGE=$BASE_IMAGE
                    --build-arg DEPLOY_KEY="$SSH_PRIVATE_KEY"
                    --build-arg PROCNUM=$CPUS_DIND
-                   -t $UTOPIA_IMAGE
-                   -t $UTOPIA_IMAGE_NAME:latest
+                   -t ccees/utopia:latest
                    ./
-    - docker push $UTOPIA_IMAGE
-    - docker push $UTOPIA_IMAGE_NAME:latest
+    - docker push ccees/utopia:latest
   environment:
     name: docker/latest
     url: https://hub.docker.com/r/ccees/utopia
