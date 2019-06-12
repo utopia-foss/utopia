@@ -10,6 +10,10 @@ variables:
   # Load submodules and submodules of submodules by default
   GIT_SUBMODULE_STRATEGY: recursive
 
+  # For __deployment__, the Utopia version
+  UTOPIA_VERSION: "0.999"   # ... almost 1.0
+  # This is used, e.g., in the deployment of the docker image.
+
   # Variables needed for docker image deployment
   # The different segments of the resulting test image tag
   BASE_IMAGE_NAME: ccees/utopia-base
@@ -18,15 +22,15 @@ variables:
   # NOTE Do not forget to increment the BASE_IMAGE_VERSION when changes to the
   #      docker file are introduced.
 
-  # For __deployment__, the Utopia version
-  UTOPIA_VERSION: "0.99999"
-  # TODO Ideally, there is a script that reads the version dynamically; this
-  #      variable should then be removed.
+  UTOPIA_IMAGE_NAME: ccees/utopia
+  UTOPIA_IMAGE_VERSION: "${UTOPIA_VERSION}"
+  UTOPIA_IMAGE: "${UTOPIA_IMAGE_NAME}:v${UTOPIA_IMAGE_VERSION}"
+
 
   # Setting number of processes for build jobs and DIND jobs
   CPUS_BUILD: 4
   CPUS_TEST: 4
-  CPUS_DIND: 2
+  CPUS_DIND: 4
 
   # Build flags
   MAKE_FLAGS_BUILD: -j$CPUS_BUILD
@@ -43,6 +47,9 @@ variables:
 
   # Docker Hub login command
   DOCKER_HUB_LOGIN: docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_PW
+  # NOTE Both variables here are secret and protected variables. While the
+  #      login command will complain, using --password-stdin actually EXPOSES
+  #      the variable! No no.
 
   # Documentation server configuration
   DOC_HOST: root@hermes.iup.uni-heidelberg.de
@@ -56,10 +63,11 @@ image: ${BASE_IMAGE}
 # NOTE Some jobs overwrite this setting locally
 
 stages:
-  - setup
-  - build
-  - test
-  - deploy
+  - ci_test   # (on selected branches) tests CI itself, then aborts
+  - setup     # (on master) set up the docker base image
+  - build     # build utopia and all tests
+  - test      # carry out tests
+  - deploy    # (on master) deploy documentation; build and deploy docker image
 
 
 # .. YAML Templates ...........................................................
@@ -102,9 +110,9 @@ stages:
   variables:
     DOCKER_DRIVER: overlay2
   before_script:
-    # NOTE Both variables here are secret and protected variables
     - $DOCKER_HUB_LOGIN
 
+# Create artifacts of the build directory
 .artifacts: &artifacts
   artifacts:
     name: "$CI_JOB_NAME"
@@ -114,6 +122,31 @@ stages:
 
 
 # ++ Job definitions ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+# -- CI testing stage ---------------------------------------------------------
+# Jobs in this stage can be used on development branches to test the CI itself.
+
+# Test building of the docker image and deployment
+# The image is then available under: ccees/utopia:test-image
+ci_test:docker-image:
+  <<: *dind
+  stage: ci_test
+  only:
+    - my-development-branch-name  # Change this to suit your needs.
+  script:
+    # Same build command as in deploy:dockerhub-latest, but with different tag
+    - docker build -f docker/utopia.dockerfile
+                   --build-arg BASE_IMAGE=$BASE_IMAGE
+                   --build-arg DEPLOY_KEY="$SSH_PRIVATE_KEY"
+                   --build-arg PROCNUM=$CPUS_DIND
+                   -t $UTOPIA_IMAGE_NAME:test-image
+                   ./
+    - docker push $UTOPIA_IMAGE_NAME:test-image
+
+    # Abort, such that the rest of the pipeline does not run.
+    - exit 1
+
+
 # -- Setup stage --------------------------------------------------------------
 # This stage takes care to build the utopia base testing image
 
@@ -382,29 +415,9 @@ test:link_install_tree:
     - make $MAKE_FLAGS_BUILD all
     - make test
 
+
 # -- Deploy Stage -------------------------------------------------------------
-# Deploy the docker image and the documentation
-# TODO Consider using GitLab Environments for deployment
-
-deploy:dockerhub-latest:
-  <<: *dind
-  stage: deploy
-  only:
-    # master branch in core repo (no forks)
-    - master@utopia/utopia
-  dependencies: []
-  script:
-    - docker build -f docker/utopia.dockerfile
-                   --build-arg BASE_IMAGE=$BASE_IMAGE
-                   --build-arg DEPLOY_KEY="$SSH_PRIVATE_KEY"
-                   --build-arg PROCNUM=$CPUS_DIND
-                   -t ccees/utopia:latest
-                   ./
-    - docker push ccees/utopia:latest
-  environment:
-    name: docker/latest
-    url: https://hub.docker.com/r/ccees/utopia
-
+# Deploy the documentation to a self-hosted web server
 deploy:docs:
   stage: deploy
   <<: *ssh_access
@@ -435,3 +448,27 @@ deploy:docs:
   environment:
     name: docs/latest
     url: https://hermes.iup.uni-heidelberg.de/utopia_doc/latest/html/
+
+
+# Build and deploy the docker image to docker hub
+# It is tagged both as :latest and :v${UTOPIA_VERSION}, see top of file.
+deploy:dockerhub-latest:
+  <<: *dind
+  stage: deploy
+  only:
+    # master branch in core repo (no forks)
+    - master@utopia/utopia
+  dependencies: []
+  script:
+    - docker build -f docker/utopia.dockerfile
+                   --build-arg BASE_IMAGE=$BASE_IMAGE
+                   --build-arg DEPLOY_KEY="$SSH_PRIVATE_KEY"
+                   --build-arg PROCNUM=$CPUS_DIND
+                   -t $UTOPIA_IMAGE
+                   -t $UTOPIA_IMAGE_NAME:latest
+                   ./
+    - docker push $UTOPIA_IMAGE
+    - docker push $UTOPIA_IMAGE_NAME:latest
+  environment:
+    name: docker/latest
+    url: https://hub.docker.com/r/ccees/utopia
