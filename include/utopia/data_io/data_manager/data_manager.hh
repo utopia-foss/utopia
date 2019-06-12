@@ -6,7 +6,6 @@
 #include <memory>
 #include <unordered_map>
 #include <vector>
-#include <sstream>
 
 #include <boost/hana/ext/std/array.hpp>
 #include <boost/hana/ext/std/tuple.hpp>
@@ -29,7 +28,6 @@ using namespace Utopia::Utils;
 /**
  *  \addtogroup DataManager
  *  \{
- *  @brief 
  */
 
 /**
@@ -37,12 +35,16 @@ using namespace Utopia::Utils;
  * \section what Overview 
  * 
  * The data management high-level interface has as its central piece the
- * ::DataManager class. That class orchestrates one or many WriteTask objects
- * and determines depending on so-called deciders and triggers, whether they
- * are to perform their write operation and whether a new write destination
- * should be acquired, respectively.
+ * ::DataManager class, which acts as a manager for abstract 'writetasks' 
+ * which contain the relevant functionality.
  * \section impl Implementation
- * 
+ * The datamanager is implemented as a class which orchestrates so called write 
+ * tasks, which consist of functionality for creating resources to write to, 
+ * extracting data for writing and actual data writing, and for handling meta 
+ * data. It is flanked by functions which decide when to write and when to 
+ * change the associated resource. A datamanager is not bound to a specific 
+ * data format or library, hence does not know anything about the actual 
+ * process of writing out data. It merely organizes the writing process.
  * 
  */
 
@@ -234,16 +236,34 @@ class DataManager
      */
     template<typename ObjMap, typename ObjTuple>
     ObjMap setup_from_config(const Config& cfg, ObjTuple&& known_objects) {
+        _log->debug("Setting up name -> object map from config node ...");
+
         // Check whether the given configuration is valid
         if (not cfg) {
             throw std::invalid_argument("Received a zombie node for the setup "
                                         "of DataManager objects!");
         }
         else if (not cfg.IsMap()) {
-            std::stringstream cfg_stream;
-            cfg_stream << cfg;
             throw std::invalid_argument("Expected a mapping for DataManager "
-                "object setup, got:\n" + cfg_stream.str());
+                "object setup, got:\n" + to_string(cfg));
+        }
+
+        // Compare size of yaml node to size of object tuple. Fewer configs
+        // than tuple elements is allowed, but not the other way round.
+        // FIXME: any smarter way to do this? node.size() gives 1!
+        std::size_t nodesize = 0;
+        for ([[maybe_unused]] auto& node_pair : cfg) {
+            ++nodesize;
+        }
+
+        // Failing to catch this ends in segfaults ...
+        if (nodesize > std::tuple_size_v<std::decay_t<ObjTuple>>) {
+            throw std::invalid_argument(
+                "DataManager config node specifies " + std::to_string(nodesize)
+                + " objects, but argument tuple contains "
+                + std::to_string(std::tuple_size_v<std::decay_t<ObjTuple>>)
+                + " objects! Need to provide at least as many keys as there "
+                "are elements in the tuple. Given config: " + to_string(cfg));
         }
 
         // The name -> object map that is to be populated
@@ -251,23 +271,34 @@ class DataManager
         _log->debug("Configuring DataManager objects ... (container size: {})",
                     std::tuple_size_v<std::decay_t<ObjTuple>>);
 
+        // FIXME: add security  for number of config nodes not matching number 
+        // of arguments in tuples
+        // The following applies: allowed is less config nodes than tuples, 
+        // but not the other way round. First iteration is to check that 
+        // they are equal in size and throw if they are not.
+        //
+        //
         // Iterate over the given configuration and populate the object map
-        for (const auto& node_pair : cfg) {
-            // Unpack the (key node, value node) pair, i.e. the name of the
-            // object that is to be configured and the corresponding
-            // configuration node
-            const auto name = node_pair.first.as<std::string>();
-            const auto& obj_cfg = node_pair.second;
+        boost::hana::for_each(known_objects, [&](const auto& named_object){
+            auto [obj_name, object] = named_object;
 
-            _log->trace("Configuration key:  {}", name);
+            _log->trace("  Object name:      {}", obj_name);
 
-            // Go over the known objects and decide whether to retain them or
-            // whether new objects need to be constructed from the known ones
-            boost::hana::for_each(known_objects, [&](const auto& named_object){
-                auto [obj_name, object] = named_object;
-                _log->trace("  Object name:      {}", obj_name);
+            using ObjType = std::decay_t<decltype(object)>;
 
-                using ObjType = std::decay_t<decltype(object)>;
+
+            for (const auto& node_pair : cfg) {
+                // Unpack the (key node, value node) pair, i.e. the name of the
+                // object that is to be configured and the corresponding
+                // configuration node
+                const auto name = node_pair.first.as<std::string>();
+                const auto& obj_cfg = node_pair.second;
+
+                _log->trace("Configuration key:  {}", name);
+
+                // Go over the known objects and decide whether to retain them
+                // or whether new objects need to be constructed from the
+                // known ones
 
                 // Depending on the name of the object, the name given in the
                 // configuration, and the configuration itself, decide on
@@ -327,10 +358,13 @@ class DataManager
                         _log->trace("  Not marked active. Skipping ...");
                     }
                 }
+                else{
+                    _log->warn("No match for config key '{}' found!", name);
+                }
 
                 // else: No match for this config key. Do not add an entry.
-            });
-        }
+            }
+        });
 
         return map;
     }
@@ -356,10 +390,8 @@ class DataManager
                 "association with lookup key '" + lookup_key + "'!");
         }
         else if (not cfg.IsMap()) {
-            std::stringstream cfg_stream;
-            cfg_stream << cfg;
             throw std::invalid_argument("Expected a mapping for task -> "
-                + lookup_key + " association, got:\n" + cfg_stream.str());
+                + lookup_key + " association, got:\n" + to_string(cfg));
         }
 
         _log->info("Building task to {} associations from given config ...",
@@ -700,21 +732,26 @@ class DataManager
      * @param tasks     Tuple of (name, Task) tuples
      * TODO
      */
-    template<class Model,
-             class Tasks,
+    template<class Tasks,
              class Deciders,
              class Triggers,
              class ExecProcess,
-             std::enable_if_t<is_callable_object_v<ExecProcess>, int> = 0>
-    DataManager(Model& model,
-                const Config& cfg,
+             std::enable_if_t<    Utils::is_tuple_like_v<std::decay_t<Tasks>>
+                              and Utils::is_tuple_like_v<std::decay_t<Deciders>>
+                              and Utils::is_tuple_like_v<std::decay_t<Triggers>>
+                              and is_callable_object_v<std::decay_t<ExecProcess>>,
+                              int> = 0
+            >
+    DataManager(const Config& cfg,
                 Tasks&& tasks,
                 Deciders&& deciders,
                 Triggers&& triggers,
                 ExecProcess&& execproc)
-      : _log(model.get_logger())
+      : 
+      // Get the global data manager logger
+      _log(spdlog::get("data_mngr"))
 
-      // setup tasks, deciders and triggers from the given args and the config
+      //setup tasks, deciders and triggers from the given args and the config
       , _tasks(setup_from_config<TaskMap>(cfg["tasks"], tasks))
       , _deciders(setup_from_config<DeciderMap>(cfg["deciders"], deciders))
       , _triggers(setup_from_config<TriggerMap>(cfg["triggers"], triggers))
@@ -726,7 +763,9 @@ class DataManager
                                                 _triggers, "trigger"))
       , _execution_process(execproc)
     {
-        _log->info("DataManager for '{}' model set up.", model.get_name());
+        _log->info("DataManager setup with {} task(s), {} decider(s), and "
+                   "{} trigger(s).", _tasks.size(),
+                   _decider_task_map.size(), _trigger_task_map.size());
     }
 
     /**
@@ -753,25 +792,26 @@ class DataManager
      * @param task_trigger_assocs  Container of task -> trigger association
      *                  pairs, i.e. (task name, trigger name) pairs
      */
-    template<class Model,
-             class Tasks,
+    template<class Tasks,
              class Deciders,
              class Triggers,
              class ExecProcess,
-             std::enable_if_t<    Utils::is_tuple_like_v<Tasks>
-                              and Utils::is_tuple_like_v<Deciders>
-                              and Utils::is_tuple_like_v<Triggers>,
-                              int> = 0>
+             std::enable_if_t<    Utils::is_tuple_like_v<std::decay_t<Tasks>>
+                              and Utils::is_tuple_like_v<std::decay_t<Deciders>>
+                              and Utils::is_tuple_like_v<std::decay_t<Triggers>>
+                              and is_callable_object_v<std::decay_t<ExecProcess>>,
+                              int> = 0
+            >
     DataManager(
-      Model& model,
       Tasks&& tasks,
       Deciders&& deciders,
       Triggers&& triggers,
       ExecProcess&& execproc,
       std::vector<std::pair<std::string, std::string>> task_decider_assocs = {},
       std::vector<std::pair<std::string, std::string>> task_trigger_assocs = {})
-      : // Get whatever is needed from the model
-      _log(model.get_logger())
+      :
+      // Get the global data manager logger
+      _log(spdlog::get("data_mngr"))
 
       // Unpack tasks, deciders, and triggers into the respective containers
       , _tasks(   _DMUtils::unpack_shared<TaskMap, Task>(tasks))
@@ -819,7 +859,9 @@ class DataManager
       }())
       , _execution_process(execproc)
     {
-        _log->info("DataManager for '{}' model set up.", model.get_name());
+        _log->info("DataManager setup with {} task(s), {} decider(s), and "
+                   "{} trigger(s).", _tasks.size(),
+                   _decider_task_map.size(), _trigger_task_map.size());
     }
 
     // .. Helper Methods ......................................................
@@ -874,14 +916,17 @@ struct determine_common_type_in_named_tpl {
 };
 
 /// Deduction guides for DataManager tuple (+cfg) constructor
-template<class Model,
-         class Tasks,
+template<class Tasks,
          class Deciders,
          class Triggers,
          class ExecProcess,
-         std::enable_if_t<is_callable_object_v<ExecProcess>, int> = 0>
+         std::enable_if_t<    Utils::is_tuple_like_v<std::decay_t<Tasks>>
+                          and Utils::is_tuple_like_v<std::decay_t<Deciders>>
+                          and Utils::is_tuple_like_v<std::decay_t<Triggers>>
+                          and is_callable_object_v<std::decay_t<ExecProcess>>,
+                          int> = 0
+                        > 
 DataManager(
-    Model& model,
     const Config& cfg,
     Tasks&& tasks,
     Deciders&& deciders,
@@ -889,24 +934,24 @@ DataManager(
     ExecProcess&& execproc)
     ->DataManager<
         DataManagerTraits<
-            Default::DefaultWriteTask<Model>,
-            Default::DefaultDecider<Model>,
-            Default::DefaultTrigger<Model>,
-            ExecProcess
+            Utils::apply_t<determine_common_type_in_named_tpl, Tasks>,
+            Utils::apply_t<determine_common_type_in_named_tpl, Deciders>,
+            Utils::apply_t<determine_common_type_in_named_tpl, Triggers>,
+            std::decay_t<ExecProcess>
         >>;
 
 /// Deduction guides for DataManager tuple constructor
-template<class Model,
-         class Tasks,
+template<class Tasks,
          class Deciders,
          class Triggers,
          class ExecProcess,
-         std::enable_if_t<    Utils::is_tuple_like_v<Tasks>
-                          and Utils::is_tuple_like_v<Deciders>
-                          and Utils::is_tuple_like_v<Triggers>,
-                          int> = 0>
+         std::enable_if_t<    Utils::is_tuple_like_v<std::decay_t<Tasks>>
+                          and Utils::is_tuple_like_v<std::decay_t<Deciders>>
+                          and Utils::is_tuple_like_v<std::decay_t<Triggers>>
+                          and is_callable_object_v<std::decay_t<ExecProcess>>,
+                          int> = 0
+                        >
 DataManager(
-    Model& model,
     Tasks&& tasks,
     Deciders&& deciders,
     Triggers&& triggers,
@@ -918,7 +963,7 @@ DataManager(
             Utils::apply_t<determine_common_type_in_named_tpl, Tasks>,
             Utils::apply_t<determine_common_type_in_named_tpl, Deciders>,
             Utils::apply_t<determine_common_type_in_named_tpl, Triggers>,
-            ExecProcess
+            std::decay_t<ExecProcess>
         >>;
 
 

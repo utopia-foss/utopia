@@ -3,6 +3,7 @@ file(COPY
         "cfg_utils_test.yml"
         "datamanager_test.yml"
         "datamanager_test_anchors.yml"
+        "datamanager_test_factory.yml"
      DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 
@@ -26,6 +27,7 @@ set(TESTS_DATAIO
     monitor_test
     writetask_test
     datamanager_test
+    factory_test
     )
 
 # Add DATAIO_-prefixed test targets

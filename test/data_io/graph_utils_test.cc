@@ -3,10 +3,7 @@
 #include <random>
 #include <cstdio>
 
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/adjacency_matrix.hpp>
-#include <boost/graph/random.hpp>
-#include <boost/graph/properties.hpp>
+#include "dataio_test.hh"
 
 #include <utopia/data_io/graph_utils.hh>
 #include <utopia/data_io/hdfgroup.hh>
@@ -14,97 +11,7 @@
 
 
 using namespace Utopia;
-
-
-/// Vertex struct containing some properties
-struct Vertex {
-    int test_int;
-    double test_double;
-    std::size_t id;
-
-    double get_test_value() {
-        return test_double * test_int;
-    }
-};
-
-/// Edge struct with property
-struct Edge {
-    float weight;
-};
-
-
-// Create different graph types to be tested.
-using Graph_vertvecS_edgevecS_undir =  boost::adjacency_list<
-                                            boost::vecS,        // edge container
-                                            boost::vecS,        // vertex container
-                                            boost::undirectedS,
-                                            Vertex,             // vertex struct
-                                            Edge>;              // edge struct
-
-using Graph_vertlistS_edgelistS_undir =  boost::adjacency_list<
-                                            boost::listS,       // edge container
-                                            boost::listS,       // vertex container
-                                            boost::undirectedS,
-                                            Vertex,             // vertex struct
-                                            Edge>;              // edge struct
-
-using Graph_vertsetS_edgesetS_undir =  boost::adjacency_list<
-                                            boost::setS,        // edge container
-                                            boost::setS,        // vertex container
-                                            boost::undirectedS,
-                                            Vertex,             // vertex struct
-                                            Edge>;              // edge struct
-
-using Graph_vertvecS_edgevecS_dir =  boost::adjacency_list<
-                                            boost::vecS,        // edge container
-                                            boost::vecS,        // vertex container
-                                            boost::directedS,
-                                            Vertex,             // vertex struct
-                                            Edge>;              // edge struct
-
-using Graph_vertvecS_edgevecS_undir_vdesc = Graph_vertvecS_edgevecS_undir::vertex_descriptor;
-using Graph_vertlistS_edgelistS_undir_vdesc = Graph_vertlistS_edgelistS_undir::vertex_descriptor;
-using Graph_vertsetS_edgesetS_undir_vdesc = Graph_vertsetS_edgesetS_undir ::vertex_descriptor;
-using Graph_vertvecS_edgevecS_dir_vdesc = Graph_vertvecS_edgevecS_dir::vertex_descriptor;
-
-using Graph_vertvecS_edgevecS_undir_edesc = Graph_vertvecS_edgevecS_undir::edge_descriptor;
-using Graph_vertlistS_edgelistS_undir_edesc = Graph_vertlistS_edgelistS_undir::edge_descriptor;
-using Graph_vertsetS_edgesetS_undir_edesc = Graph_vertsetS_edgesetS_undir ::edge_descriptor;
-using Graph_vertvecS_edgevecS_dir_edesc = Graph_vertvecS_edgevecS_dir::edge_descriptor;
-
-/// Creates a small test graph
-template<typename GraphType>
-GraphType create_and_initialize_test_graph(const int num_vertices, const int num_edges){
-    GraphType g;
-
-    std::mt19937 rng(42);
-
-    // Add vertices and initialize
-    for (int i = 0; i < num_vertices; i++){
-        // Add vertex
-        auto v = add_vertex(g);
-        
-        // Initialize vertex
-        g[v].test_int = num_vertices - i;
-        g[v].test_double = 2.3;
-        g[v].id = i;
-    }
-
-    // Randomly add edges
-    for (int i = 0; i < num_edges; i++){
-        // Add random edge
-        auto v1 = random_vertex(g, rng);
-        auto v2 = random_vertex(g, rng);
-        auto e = add_edge(v1,v2,g);
-        
-        // Initialize edge
-        g[e.first].weight = i;
-    }
-
-    // Return the graph
-    return g;
-}
-
+using namespace Utopia::DataIO;
 
 /// Test the save graph functionality
 void test_save_graph()

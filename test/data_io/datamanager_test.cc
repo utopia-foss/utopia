@@ -3,7 +3,7 @@
 #include <sstream> // needed for testing throw messages from exceptions
 
 #include <boost/mpl/list.hpp>       // type lists for testing
-#include <boost/test/unit_test.hpp> // for unit tests
+#include <boost/test/included/unit_test.hpp> // for unit tests
 
 #include <utopia/core/logging.hh>
 #include <utopia/core/utils.hh> // for output operators, get size...
@@ -40,6 +40,8 @@ BOOST_AUTO_TEST_CASE(datamanager_tuplelike_constructor)
 {
     using namespace Utopia::Utils; // enable output operators defined in
 
+    Utopia::setup_loggers();
+
     // needed for all the structors
     Model model("fixture_1");
 
@@ -50,7 +52,6 @@ BOOST_AUTO_TEST_CASE(datamanager_tuplelike_constructor)
                                   Default::DefaultExecutionProcess>;
 
     DataManager<DMT> dm(
-      model,
       // tasks
       std::array<std::pair<std::string, Simpletask>, 2>{
         std::make_pair(
@@ -108,7 +109,6 @@ BOOST_AUTO_TEST_CASE(datamanager_tuplelike_constructor)
 
     try {
         DataManager<DMT> dm2(
-          model,
           // tasks
           std::array<std::pair<std::string, Simpletask>, 1>{ std::make_pair(
             "t1_2"s,
@@ -146,7 +146,6 @@ BOOST_AUTO_TEST_CASE(datamanager_tuplelike_constructor)
     // build a datamanager with explicit associations.
     // Additionally mix arrays and tuples
     DataManager<DMT> dm3(
-      model,
       // tasks
       std::make_tuple(
         std::make_pair(
@@ -214,6 +213,7 @@ BOOST_AUTO_TEST_CASE(datamanager_tuplelike_constructor)
 
 BOOST_AUTO_TEST_CASE(datamanager_lifecycle)
 {
+    Utopia::setup_loggers();
     // needed for all the structors
     Model model("fixture_3");
 
@@ -226,7 +226,6 @@ BOOST_AUTO_TEST_CASE(datamanager_lifecycle)
     using DM = DataManager<DMT>;
     // datamanager to use for testing copy, move etc
     DM dm(
-      model,
       // tasks
       std::make_tuple(
         std::make_pair(
@@ -268,7 +267,6 @@ BOOST_AUTO_TEST_CASE(datamanager_lifecycle)
 
     // datamanager to use for testing copy, move etc
     DM dm2(
-      model,
       // tasks
       std::make_tuple(std::make_pair(
         "t1"s,
@@ -327,7 +325,7 @@ BOOST_AUTO_TEST_CASE(datamanager_polymorphism)
                                   Default::DefaultExecutionProcess>;
     using DM = DataManager<DMT>;
     // datamanager to use for testing copy, move etc
-    DM dm(model,
+    DM dm(
           // tasks
           std::make_tuple(std::make_pair("basic"s, BasicTask()),
                           std::make_pair("derived"s, DerivedTask())),
@@ -363,7 +361,6 @@ BOOST_AUTO_TEST_CASE(datamanager_customize_association)
     using E = Default::DefaultExecutionProcess;
     // datamanager to use for testing copy, move etc
     DataManager<DataManagerTraits<Simpletask, D, T, E>> dm(
-      model,
       // tasks
       std::make_tuple(
         std::make_pair(
@@ -483,9 +480,9 @@ BOOST_AUTO_TEST_CASE(datamanager_customize_association)
 
 BOOST_AUTO_TEST_CASE(datamanager_call_operator_default)
 {
-    // init fucking loggers
+    // init loggers
     Utopia::setup_loggers();
-    spdlog::get("data_io")->set_level(spdlog::level::debug);
+    spdlog::get("data_mngr")->set_level(spdlog::level::debug);
 
     using BGB =
       std::function<std::shared_ptr<HDFGroup>(std::shared_ptr<HDFGroup> &&)>;
@@ -555,7 +552,6 @@ BOOST_AUTO_TEST_CASE(datamanager_call_operator_default)
 
     // build fucking datamanager from it
     Utopia::DataIO::DataManager dm(
-      model,
       // tasks
       std::make_tuple(std::make_pair("wt1"s, t1), std::make_pair("wt2"s, t2)),
       // deciders
@@ -642,7 +638,7 @@ BOOST_AUTO_TEST_CASE(default_datamananger_written_data_check)
 BOOST_AUTO_TEST_CASE(datamanager_call_operator_custom)
 {
     Utopia::setup_loggers();
-    spdlog::get("data_io")->set_level(spdlog::level::debug);
+    spdlog::get("data_mngr")->set_level(spdlog::level::debug);
 
     using BGB = std::function<std::shared_ptr<HDFGroup>(Model&)>;
     using W = std::function<void(
@@ -777,7 +773,6 @@ BOOST_AUTO_TEST_CASE(datamanager_call_operator_custom)
 
     // define custom exec process
     Utopia::DataIO::DataManager dm(
-      model,
       // tasks
       std::make_tuple(std::make_pair("wt1"s, t1), std::make_pair("wt2"s, t2)),
       // deciders
@@ -936,9 +931,9 @@ BOOST_AUTO_TEST_CASE(custom_datamananger_written_data_check)
 
 BOOST_AUTO_TEST_CASE(datamanager_default_config_check)
 {
-    // init fucking loggers
+    // init loggers
     Utopia::setup_loggers();
-    spdlog::get("data_io")->set_level(spdlog::level::debug);
+    spdlog::get("data_mngr")->set_level(spdlog::level::debug);
 
     using Task = Default::DefaultWriteTask<Model>;
 
@@ -1040,7 +1035,6 @@ BOOST_AUTO_TEST_CASE(datamanager_default_config_check)
           });
 
         Utopia::DataIO::DataManager dm(
-          model,
           cfg["data_manager"],
           // tasks
           std::make_tuple(std::make_pair("write_x"s, t1),
@@ -1285,7 +1279,6 @@ BOOST_AUTO_TEST_CASE(datamanager_test_execution_process_with_config)
       });
 
     Utopia::DataIO::DataManager dm(
-      model,
       cfg["data_manager"],
       // tasks
       std::make_tuple(std::make_pair("write_x"s, t1),

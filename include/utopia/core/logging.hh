@@ -11,8 +11,9 @@ namespace Utopia {
  *  \{
  */
 
-inline const std::string log_data_io = "data_io";
 inline const std::string log_core = "core";
+inline const std::string log_data_io = "data_io";
+inline const std::string log_data_mngr = "data_mngr";
 
 /// Initialize a logger with a certain name and log level
 /** If the logger already exists, issue a warning and only set the log level.
@@ -51,17 +52,21 @@ inline std::shared_ptr<spdlog::logger> init_logger (
  */
 inline void setup_loggers (
     const spdlog::level::level_enum level_core = spdlog::level::warn,
-    const spdlog::level::level_enum level_data_io = spdlog::level::warn
+    const spdlog::level::level_enum level_data_io = spdlog::level::warn,
+    const spdlog::level::level_enum level_data_mngr = spdlog::level::warn
 )
 {
     // initialize
     init_logger(log_core, level_core, false);
     init_logger(log_data_io, level_data_io, false);
+    init_logger(log_data_mngr, level_data_mngr, false);
     spdlog::flush_on(spdlog::level::err);
 
     // set global pattern to
     // "[HH:MM:SS.mmm] [level(colored)] [logger]  <message>"
     spdlog::set_pattern("[%T.%e] [%^%l%$] [%n]  %v");
+
+    spdlog::get("core")->info("Set up loggers: core, data_io, data_mngr.");
 }
 
 // end group logging

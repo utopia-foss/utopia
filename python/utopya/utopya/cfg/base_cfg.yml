@@ -362,10 +362,15 @@ parameter_space:
 
   # The default logging levels
   log_levels:
-    # level for I/O operations
-    data_io: warning
     # level for backend internal operations
     core: warning
+    
+    # level for general I/O operations
+    data_io: warning
+
+    # level for the DataManager in WriteMode::managed
+    data_mngr: warning
+
     # level for all models, if not specified otherwise in the run cfg
     # NOTE The level is propagated hierarchically, with models 'inheriting' the
     #      log level of their parents if they don't receive a custom level.

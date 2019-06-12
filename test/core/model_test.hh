@@ -6,7 +6,8 @@
 namespace Utopia {
 
 /// Define data types for the test models
-using TestModelTypes = ModelTypes<>;
+template<WriteMode data_write_mode=DefaultWriteMode>
+using TestModelTypes = ModelTypes<DefaultRNG, data_write_mode>;
 
 /// Test model with simple update rule
 /** Holds a vector of doubles and increments its entries by the boundary
@@ -15,12 +16,13 @@ using TestModelTypes = ModelTypes<>;
  *  This also tests whether inheritance from the base Model class works as
  *  desired.
  */
+template<WriteMode data_write_mode = DefaultWriteMode>
 class TestModel:
-    public Model<TestModel, TestModelTypes>
+    public Model<TestModel<data_write_mode>, TestModelTypes<data_write_mode>>
 {
 public:
     /// The base model class
-    using Base = Model<TestModel, TestModelTypes>;
+    using Base = Model<TestModel<data_write_mode>, TestModelTypes<data_write_mode>>;
 
     /// Define the data type to use
     using Data = std::vector<double>;
@@ -44,13 +46,14 @@ public:
     /// Construct the test model with an initial state
     /** \param state Initial state of the model
      */
-    template<class ParentModel>
+    template<class ParentModel, class... WriterArgs>
     TestModel (const std::string name,
                const ParentModel &parent_model,
-               const Data& initial_state)
+               const Data& initial_state, 
+               WriterArgs&&... writer_args)
     :
         // Pass arguments to the base class constructor
-        Base(name, parent_model),
+        Base(name, parent_model, std::forward<WriterArgs>(writer_args)...),
         // Initialize state and boundary condition members
         _state(initial_state),
         _bc(_state.size(), 1.0),
@@ -60,6 +63,9 @@ public:
         _dset_mean(
             this->create_dset("mean", {}, false))
     {}
+
+
+
 
     /// Iterate by one time step
     void perform_step ()
@@ -72,7 +78,7 @@ public:
 
     /// Monitor the mean of the state
     void monitor () {
-        _monitor.set_entry("state_mean", [this](){
+        this->_monitor.set_entry("state_mean", [this](){
             const double sum = std::accumulate(this->_state.begin(),
                                                this->_state.end(),
                                                0);
@@ -81,7 +87,9 @@ public:
     }
 
     /// Do nothing yet
-    void write_data () {}
+    void write_data () {
+        _dset_state->write(_state);
+    }
 
     // Set model boundary condition
     void set_bc (const Data& bc) { _bc = bc; }
@@ -106,7 +114,7 @@ public:
 
 /// Test model checking if 'iterate' can be overwritten
 class TestModelWithIterate :
-    public TestModel
+    public TestModel<Utopia::WriteMode::basic>
 {
 private:
     using Data = TestModel::Data;

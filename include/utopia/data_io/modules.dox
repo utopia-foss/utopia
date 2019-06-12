@@ -18,6 +18,27 @@
 \brief Provides default implementations for the datamanager's requirements.
 \}
 
+\defgroup DataManagerUtils Utilities
+\{
+\ingroup DataManager
+\brief Provides a number of helper functions for the datamanager class.
+\}
+
+\defgroup DataManagerFactories Factories
+\{
+\ingroup DataManager
+\brief Provides a Functor for producing writetasks and a function for producing 
+       a datamanager using that functor. Exists for simplifying creation
+       of default datamanagers for model builders.
+\}
+
+\defgroup DataManagerWriteTask WriteTask
+\{
+\ingroup DataManager 
+\brief Provides a class which encapsulates the process of acquiring resources to 
+       write data to, writing data to that resource, and handling meta information.
+\}
+
 \defgroup GraphUtilities Graph Utilities
 \{
 \ingroup DataIO

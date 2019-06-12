@@ -1,7 +1,7 @@
 #define BOOST_TEST_MODULE graph creation test
 
 #include <variant>
-#include <boost/test/unit_test.hpp>
+#include <boost/test/included/unit_test.hpp>
 #include <boost/graph/adjacency_list.hpp>
 
 #include "utopia/core/graph.hh"

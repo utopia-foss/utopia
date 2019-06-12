@@ -14,28 +14,41 @@ namespace Utopia {
 namespace DataIO {
 
 /**
- *  \addtogroup DataManagerDefaults Defaults
+ *  \addtogroup DataManagerWriteTask WriteTask
  *  \{
  *  \ingroup DataManager   
  */
 
-// TODO
+
+/**
+ * @page
+ * \section what Overview
+ * A writetask is an object which encapsulates the ability to acquire resources 
+ * for writing data, the functionality to write data from a given source, 
+ * and to handle metadata. This is geared towards use with HDF5 here.
+ * \section impl Implementation
+ * A writetask contains a function to build a basic hdfgroup, a function which 
+ * generates datasets in that group, and a function which writes data to these 
+ * datasets. Furthermore, functions for writing attributes to the basegroup 
+ * and the datasets are included.
+ */
+
+
 /**
  * @brief Encapsulate a task for writing data to a destination.
  *        Containes a callable 'writer' responisible for writing data to a held
  *        dataset. Contains a callabel 'build_dataset' which builds or opens a
  * dataset for writing to in a held HDFGroup. A WriteTask is bound to a group
  *        for its entire lifetime.
- * @tparam BGB
- * @tparam DW
- * @tparam DB
- * @tparam AWG
- * @tparam AWD
+ * @tparam BGB Basegroup builder type, automatically determined
+ * @tparam DW Data writer type, automatically determined
+ * @tparam DB Dataset builder type, automatically deterimned
+ * @tparam AWG Group attribute writer type, automatically determined
+ * @tparam AWD Dataset attribute writer type, automatically determined
  */
 template<class BGB, class DW, class DB, class AWG, class AWD>
 struct WriteTask
 {
-    // TODO
     using BasegroupBuilder = BGB;
     using Writer = DW;
     using Builder = DB;
@@ -131,18 +144,16 @@ struct WriteTask
     /**
      * @brief Construct a new Write Task object.
      *
-     * @tparam Model
-     * @tparam Basegroupbuilder
-     * @tparam Writertype
-     * @tparam Buildertype
-     * @tparam AWritertypeG
-     * @tparam AWritertypeD
-     * @param m
-     * @param bgb
-     * @param w
-     * @param b
-     * @param ad
-     * @param ag
+     * @tparam Basegroupbuilder Automatically determined.
+     * @tparam Writertype Automatically determined.
+     * @tparam Buildertype Automatically determined.
+     * @tparam AWritertypeG Automatically determined.
+     * @tparam AWritertypeD Automatically determined.
+     * @param bgb builder function for basegroup
+     * @param w   writer function for wrtiing data
+     * @param b builder function for dataset
+     * @param ag group attribute writer
+     * @param ad dataset attribute writer
      */
     template<typename Basegroupbuilder,
              typename Writertype,
@@ -233,15 +244,15 @@ WriteTask(Basegroupbuilder&& bgb,
           Buildertype&& b,
           AWritertypeG&& ad,
           AWritertypeD&& ag)
-  ->WriteTask<Basegroupbuilder,
-              Writertype,
-              Buildertype,
-              AWritertypeG,
-              AWritertypeD>;
+  ->WriteTask<std::decay_t<Basegroupbuilder>,
+              std::decay_t<Writertype>,
+              std::decay_t<Buildertype>,
+              std::decay_t<AWritertypeG>,
+              std::decay_t<AWritertypeD>>;
 
 
 /**
- *  \}  // end of DataManagerDefaults group
+ *  \}  // end of DataManagerWriteTask
  */
 
 } // namespace DataIO

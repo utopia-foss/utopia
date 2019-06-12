@@ -12,6 +12,8 @@
 #include "../data_io/hdfgroup.hh"
 #include "../data_io/cfg_utils.hh"
 #include "../data_io/monitor.hh"
+#include "../data_io/data_manager/data_manager.hh"
+#include "../data_io/data_manager/factory.hh"
 
 
 namespace Utopia {
@@ -25,21 +27,30 @@ namespace Utopia {
 /// How to write data in the models
 enum class WriteMode {
     /// Basic writing features: write_start, write_every
-    /** \detail This leads to `write_data` being invoked the first time at
-      *         time `write_start` and henceforth every `write_every` steps.
-      *         If `write_start` is 0, this means that `write_data` is called
-      *         after the model constructor finished and before `perform_step`
-      *         is called the first time.
+    /** This leads to `write_data` being invoked the first time at time
+      * `write_start` and henceforth every `write_every` steps. If
+      * `write_start` is 0, this means that `write_data` is called after the
+      * model constructor finished and before `perform_step` is called the
+      * first time.
       */
     basic,
 
+    /// Use the \ref DataManager to handle output
+    /** The DataManager is invoked before the initial iteration and then once
+      * after each iteration; it decides itself whether data is to be written
+      * or not.
+      * Note that the `write_start` and `write_every` arguments are ignored;
+      * such functionality has to be implemented via the DataManager's
+      * interface.
+      */
+    managed,
+
     /// Fully manual: write_data method is always called
-    /** \detail More accurately: `write_data` will be called after the model
-      *         constructor finished (and before `perform_step` is called for
-      *         the first time) and henceforth every time after `perform_step`
-      *         finished and the time was incremented. There are no further
-      *         checks and the `write_start` and `write_every` arguments are
-      *         not needed.
+    /** More accurately: `write_data` will be called after the model
+      * constructor finished (and before `perform_step` is called for the
+      * first time) and henceforth every time after `perform_step` finished
+      * and the time was incremented. There are no further checks and the
+      * `write_start` and `write_every` arguments are not needed.
       */
     manual,
 
@@ -65,16 +76,17 @@ constexpr WriteMode DefaultWriteMode = WriteMode::basic;
  *  \tparam MonitorType           The type to use for the Monitor member
  *  \tparam MonitorManagerType    The type to use for the Monitor manager
  */
-template<typename RNGType=DefaultRNG,
-         WriteMode data_write_mode=DefaultWriteMode,
-         typename SpaceType=DefaultSpace,
-         typename ConfigType=Utopia::DataIO::Config,
-         typename DataGroupType=Utopia::DataIO::HDFGroup,
-         typename DataSetType=Utopia::DataIO::HDFDataset<Utopia::DataIO::HDFGroup>,
-         typename TimeType=std::size_t,
-         typename MonitorType=Utopia::DataIO::Monitor,
-         typename MonitorManagerType=Utopia::DataIO::MonitorManager
-         >
+template<
+    typename RNGType=DefaultRNG,
+    WriteMode data_write_mode=DefaultWriteMode,
+    typename SpaceType=DefaultSpace,
+    typename ConfigType=Utopia::DataIO::Config,
+    typename DataGroupType=Utopia::DataIO::HDFGroup,
+    typename DataSetType=Utopia::DataIO::HDFDataset<Utopia::DataIO::HDFGroup>,
+    typename TimeType=std::size_t,
+    typename MonitorType=Utopia::DataIO::Monitor,
+    typename MonitorManagerType=Utopia::DataIO::MonitorManager
+    >
 struct ModelTypes {
     using RNG = RNGType;
     static constexpr WriteMode write_mode = data_write_mode;
@@ -100,6 +112,9 @@ public:
     // -- Data types uses throughout the model class --------------------------
     /// Data type that holds the configuration
     using Config = typename ModelTypes::Config;
+
+    /// The data manager to use, specialized with the derived model
+    using DataManager = DataIO::Default::DefaultDataManager<Derived>;
 
     /// Data type that is used for storing datasets
     using DataGroup = typename ModelTypes::DataGroup;
@@ -167,6 +182,11 @@ protected:
     /// The monitor
     Monitor _monitor;
 
+    /// Manager object for handling data output; see \ref DataManager
+    /** \note The data manager is always constructed, but only used if the
+      *       ``_write_mode`` was set to WriteMode::managed.
+      */
+    DataManager _datamanager;
 
 private:
     // TODO Consider doing this in constructor directly
@@ -196,10 +216,14 @@ public:
      *  \param parent_model The parent model object from which the
      *                      corresponding config node, the group, the RNG,
      *                      and the parent log level are extracted.
+     *  \param w_args       Passed on to DataManager constructor. If not given,
+     *                      the DataManager will still be constructed. Take
+     *                      care to also set the WriteMode accordingly.
      */
-    template<class ParentModel>
+    template<class ParentModel, class... WriterArgs>
     Model (const std::string name,
-           const ParentModel& parent_model)
+           const ParentModel& parent_model,
+           WriterArgs&&... w_args)
     :
         // First thing: setup name, configuration, and level in hierarchy
         _name(name),
@@ -220,7 +244,10 @@ public:
         _rng(parent_model.get_rng()),
         _log(spdlog::stdout_color_mt(parent_model.get_logger()->name() + "."
                                      + _name)),
-        _monitor(Monitor(name, parent_model.get_monitor_manager()))
+        _monitor(Monitor(name, parent_model.get_monitor_manager())),
+
+        // Default-construct the data maanger; only used if needed, see below.
+        _datamanager()
     {
         // Set this model instance's log level
         if (_cfg["log_level"]) {
@@ -236,6 +263,7 @@ public:
 
         // Provide some information, also depending on write mode
         _log->info("Model base constructor finished.");
+        _log->info("  time_max:    {:7d}", _time_max);
 
         if constexpr (_write_mode == WriteMode::basic) {
             _log->info("  write_mode:  {:>7s}", "basic");
@@ -257,8 +285,46 @@ public:
             _log->info("  write_mode:  {:>7s}", "off");
             _hdfgrp->add_attribute("write_mode", "off");
         }
+        else if constexpr (_write_mode == WriteMode::managed) {
+            static_assert(sizeof...(w_args) > 0,
+                          "No arguments to construct write_tasks given!");
 
-        _log->info("  time_max:    {:7d}", _time_max);
+            _log->info("  write_mode:  {:>7s}", "managed");
+
+            // Store relevant info in base group attributes
+            _hdfgrp->add_attribute("write_mode", "managed");
+
+            // Some convenience key checks for nicer error messages.
+            if (not _cfg["data_manager"]) {
+                throw KeyError("data_manager", _cfg,
+                               "Cannot set up DataManager!");
+            }
+            const auto dm_cfg = _cfg["data_manager"];
+
+            if (not dm_cfg["tasks"]) {
+                throw KeyError("tasks", dm_cfg,
+                               "Cannot set up DataManager tasks!");
+            }
+            if (not dm_cfg["deciders"]) {
+                throw KeyError("deciders", dm_cfg,
+                               "Cannot set up DataManager deciders!");
+            }
+            if (not dm_cfg["triggers"]) {
+                throw KeyError("triggers", dm_cfg,
+                               "Cannot set up DataManager triggers!");
+            }
+
+            _log->info("Invoking DataManager task factory ...");
+
+            _datamanager = DataIO::DataManagerFactory<Derived>()(
+                dm_cfg, std::forward_as_tuple(w_args...)
+            );
+
+            _log->info("DataManager set up with {} task(s), {} decider(s), "
+                       "and {} trigger(s).", _datamanager.get_tasks().size(),
+                       _datamanager.get_deciders().size(),
+                       _datamanager.get_triggers().size());
+        }
     }
 
 
@@ -304,6 +370,11 @@ public:
         return _write_every;
     }
 
+    /// return the datamanager
+    DataManager get_datamanager() const {
+        return _datamanager;
+    }
+
     /// Return the number of remaining `write_data` calls this model will make
     /** \detail The 'remaining' refers to the current time being included into
       *         the calculation, e.g.: when writing every time, currently at
@@ -311,6 +382,15 @@ public:
       *         i.e. for the write operations at times 42 and 43
       */
     hsize_t get_remaining_num_writes() const {
+
+        static_assert(_write_mode == WriteMode::basic
+                     or 
+                     _write_mode == WriteMode::manual 
+                     or 
+                     _write_mode == WriteMode::off
+                     or 
+                     _write_mode == WriteMode::managed);
+
         if constexpr (_write_mode == WriteMode::basic) {
             return (  (_time_max - std::max(_time, _write_start))
                     / _write_every) + 1;
@@ -318,9 +398,10 @@ public:
         else if constexpr (_write_mode == WriteMode::manual) {
             return _time_max - _time + 1;
         }
-        else if constexpr (_write_mode == WriteMode::off) {
+        else{
             return 0;
         }
+        
     }
     
     /// Return a pointer to the shared RNG
@@ -394,6 +475,9 @@ public:
         else if constexpr (_write_mode == WriteMode::manual) {
             __write_data();
         }
+        else if constexpr (_write_mode == WriteMode::managed) {
+            _datamanager(static_cast<Derived&>(*this));
+        }
 
         _log->debug("Finished iteration: {:7d} / {:d}", _time, _time_max);
     }
@@ -418,6 +502,9 @@ public:
         }
         else if constexpr (_write_mode == WriteMode::manual) {
             __write_data();
+        }
+        else if constexpr (_write_mode == WriteMode::managed) {
+            _datamanager(static_cast<Derived&>(*this));
         }
 
         // Now, let's go repeatedly iterate the model ...
@@ -469,6 +556,7 @@ protected:
     
     /// Write data; calls the implementation's write_data method
     void __write_data () {
+
         _log->trace("Calling write_data ...");
         impl().write_data();
     }

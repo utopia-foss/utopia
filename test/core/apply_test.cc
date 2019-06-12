@@ -1,6 +1,5 @@
 #define BOOST_TEST_MODULE apply rule test
-#include <boost/test/unit_test.hpp>
-
+#include <boost/test/included/unit_test.hpp>
 #include <utopia/core/apply.hh>
 #include <utopia/data_io/cfg_utils.hh>
 

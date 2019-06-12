@@ -11,6 +11,7 @@
 
 #include <boost/hana/ext/std/tuple.hpp>
 #include <boost/hana/for_each.hpp>
+#include <boost/hana/tuple.hpp>
 
 namespace Utopia
 {
@@ -187,6 +188,103 @@ struct is_container<T, std::void_t<typename remove_qualifier_t<T>::iterator, std
 {
 };
 
+
+
+/**
+ * @brief Metafunction for checking if a type  T has a vertex descriptor, base
+ * case.
+ *
+ * @tparam T type to check
+ */
+template<typename T, typename U = std::void_t<>>
+struct has_vertex_descriptor : std::false_type
+{
+};
+
+/**
+ * @brief Metafunction for checking if a type T has a vertex descriptor -
+ * positive case.
+ *
+ * @tparam T type to check
+ */
+template<typename T>
+struct has_vertex_descriptor<T, std::void_t<typename T::vertex_descriptor>>
+  : std::true_type
+{
+};
+
+/**
+ * @brief shorthand for has_vertex_descriptor
+ *
+ * @tparam T
+ */
+template<typename T>
+inline constexpr bool has_vertex_descriptor_v = has_vertex_descriptor<T>::value;
+
+/**
+ * @brief Metafunction for checking if a type  T has a vertex descriptor, base
+ * case.
+ *
+ * @tparam T type to check
+ */
+template<typename T, typename U = std::void_t<>>
+struct has_edge_descriptor : std::false_type
+{
+};
+
+/**
+ * @brief Metafunction for checking if a type T has a edge_descriptor - positive
+ * case.
+ *
+ * @tparam T type to check
+ */
+template<typename T>
+struct has_edge_descriptor<T, std::void_t<typename T::edge_descriptor>>
+  : std::true_type
+{
+};
+
+/**
+ * @brief shorthand for has_edge_descriptor
+ *
+ * @tparam  T Type to check
+ */
+template<typename T>
+inline constexpr bool has_edge_descriptor_v = has_edge_descriptor<T>::value;
+
+/**
+ * @brief Metafunction for checking if some type T is a graph by checking if it
+ *          has edge_- and vertex_descriptors - base case
+ *
+ * @tparam T Type to check
+ */
+template<typename T, typename U = std::void_t<>>
+struct is_graph : std::false_type
+{
+};
+
+/**
+ * @brief Metafunction for checking if some type T is a graph by checking if it
+ *          has edge_- and vertex_descriptors - positive case
+ *
+ * @tparam T Type to check
+ */
+template<typename T>
+struct is_graph<T,
+                std::void_t<std::enable_if_t<has_edge_descriptor_v<T> and
+                                               has_vertex_descriptor_v<T>,
+                                             int>>> : std::true_type
+{
+};
+
+/**
+ * @brief shorthand for is_graph
+ *
+ * @tparam  T Type to check
+ */
+template<typename T>
+inline constexpr bool is_graph_v = is_graph<T>::value;
+
 /**
  * @brief Prototype for get_size functor for constexpr size containers.
  *        Returns the size of the container at compile time.
@@ -233,6 +331,17 @@ struct get_size<std::tuple<Ts...>> : std::integral_constant<std::size_t, sizeof.
 template <typename A, typename B>
 struct get_size<std::pair<A, B>> : std::integral_constant<std::size_t, 2>
 {
+};
+
+/**
+ * @brief overload for hana tuples
+ * 
+ * @tparam Ts 
+ */
+template <typename... Ts> 
+struct get_size<boost::hana::tuple<Ts...>>: std::integral_constant<std::size_t, sizeof...(Ts)>
+{
+
 };
 
 /**
@@ -324,13 +433,26 @@ inline constexpr bool is_tuple_like_v = is_tuple_like<Ts...>::value;
 
 
 /**
+ * @brief Prototype for is_callable_objct metafunction
+ * 
+ * @tparam T 
+ * @tparam std::void_t<> 
+ */
+template<typename T, typename X = std::void_t<>> 
+class is_callable_object{
+    public: 
+    static constexpr bool value = false;
+};
+
+
+/**
  * @brief Determines if the type T implements a call operator with arbitrary 
  *        signature
  * 
  * @tparam T Type to check for if it is callable
  */
 template<typename T>
-class is_callable_object
+class is_callable_object<T, std::void_t<std::enable_if_t<std::is_class_v<std::decay_t<T>>, T>>>
 {
 
     struct Fallback
@@ -358,6 +480,18 @@ class is_callable_object
   public:
     static constexpr bool value = (sizeof(f<Derived>(nullptr)) == 1);
 };
+
+// /**
+//  * @brief Specialization for non-class types
+//  * 
+//  * @tparam T 
+//  */
+// template<typename T> 
+// class is_callable_object<T, std::void_t<std::enable_if_t<not std::is_object_v<std::decay_t<T>>, T>>>{
+//     public:
+//     static constexpr bool value = false;
+// };
+
 
 /**
  * @brief Shorthand for is_callable_object<T>::value

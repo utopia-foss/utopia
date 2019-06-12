@@ -64,8 +64,7 @@ namespace DataIO
  * 	             printf("error determining whether data type is committed\n");
  *	         }
  */
-template <typename T>
-bool check_validity(T valid, std::string object_name)
+bool check_validity(htri_t valid, std::string object_name)
 {
     if (valid > 0)
     {

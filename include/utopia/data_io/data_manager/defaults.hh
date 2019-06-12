@@ -64,28 +64,6 @@ using DefaultWriteTask = WriteTask<DefaultBaseGroupBuilder,
                                    DefaultAttributeWriterGroup<Model>,
                                    DefaultAttributeWriterDataset<Model>>;
 
-/// Forward declaration of a factor to produce an agent state writing task
-template<typename Model,
-         typename Getter,
-         typename GroupBuilder,
-         typename Builder>
-DefaultWriteTask<Model>
-    make_default_agent_task(typename Model::Agentmanager&,
-                            Getter&&,
-                            GroupBuilder&&,
-                            Builder&&);
-
-/// Forward declaration of a factor to produce a cell state writing task
-template<typename Model,
-         typename Getter,
-         typename GroupBuilder,
-         typename Builder>
-DefaultWriteTask<Model>
-    make_default_cell_task(typename Model::Cellmanager&,
-                           Getter&&,
-                           GroupBuilder&&,
-                           Builder&&);
-
 
 // =============================================================================
 // ================================ Execution Process ==========================

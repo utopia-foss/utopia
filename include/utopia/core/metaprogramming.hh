@@ -35,7 +35,7 @@ struct apply_impl<Metafunc, Tuplelike, std::index_sequence<idxs...>>
 {
     // application of metafunction
     using type = typename Metafunc<
-      typename std::tuple_element<idxs, Tuplelike>::type...>::type;
+      typename std::tuple_element_t<idxs, Tuplelike>...>::type;
 };
 
 } // namespace _Metaprogramming_helpers
@@ -57,8 +57,8 @@ struct apply
 
     using type = typename _Metaprogramming_helpers::apply_impl<
       Metafunc,
-      Tuplelike,
-      std::make_index_sequence<std::tuple_size_v<Tuplelike>>>::type;
+      std::decay_t<Tuplelike>,
+      std::make_index_sequence<std::tuple_size_v<std::decay_t<Tuplelike>>>>::type;
 };
 
 /**
