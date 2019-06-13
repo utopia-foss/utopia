@@ -56,7 +56,7 @@ that you consider part of the environment.
     /// Parameter of the Environment model
     /** NOTE this needs to inherit from the Environment::BaseEnvParam
      */
-    struct EnvParam : BaseEnvParam
+    struct EnvParam : Environment::BaseEnvParam
     {
         double some_global_parameter;
         // .. Add more parameters of type double here ..
@@ -391,6 +391,26 @@ model, e.g. initialize a spatial gradient within ``some_heterogeneous_parameter`
     Environment's config, e.g. using yaml anchors. Otherwise the association of 
     the two cell manager will fail!
 
+.. note::
+
+    If your current model is not using a cell_manager you can still use the features of the model.
+    If you only use the EnvParam just use the model without associated cell manager (see changes to constructor of your model).
+    If you want to use the EnvCellState pass the template argument ``associate=false``; the model can now be initialized without associated cm.
+    However, in these cases you must configure the cell_manager within the Environment node of your config
+    
+    .. code-block:: yaml
+
+        Environment:
+          cell_manager:
+            grid:
+              structure: square
+              resolution: 1
+            neighborhood: 
+              mode: empty
+            cell_params: ~
+
+          
+          # Continue as described above
 
 Collection of parameter and state functions
 -------------------------------------------
