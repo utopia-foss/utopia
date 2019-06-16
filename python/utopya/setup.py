@@ -13,8 +13,8 @@ INSTALL_DEPS = ['numpy>=1.13',
                 'pytest-cov>=2.5.1',
                 # From private repositories:
                 # NOTE Versions need also be set in python/CMakeLists.txt
-                'paramspace>=2.2.1',
-                'dantro>=0.8.0'
+                'paramspace>=2.2.3',
+                'dantro>=0.9.1'
                 ]
 
 setup(name='utopya',

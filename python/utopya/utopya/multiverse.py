@@ -68,7 +68,8 @@ class Multiverse:
         # First things first: get the info bundle
         self._info_bundle = get_info_bundle(model_name=model_name,
                                             info_bundle=info_bundle)
-        log.info("Initializing Multiverse for '%s' model ...", self.model_name)
+        log.progress("Initializing Multiverse for '%s' model ...",
+                     self.model_name)
 
         # Setup property-managed attributes
         self._meta_cfg = None
@@ -108,7 +109,7 @@ class Multiverse:
         # Create the run directory and write the meta configuration into it.
         # This already performs the backup of the configuration files.
         self._create_run_dir(**self.meta_cfg['paths'], cfg_parts=files)
-        log.info("Run directory:\n  %s", self.dirs['run'])
+        log.note("Run directory:\n  %s", self.dirs['run'])
 
         # Create a data manager
         self._dm = DataManager(self.dirs['run'],
@@ -131,7 +132,7 @@ class Multiverse:
                         plots_cfg=self.info_bundle.paths.get('default_plots'),
                         **self.meta_cfg['plot_manager'])
 
-        log.info("Initialized Multiverse.")
+        log.progress("Initialized Multiverse.\n")
 
     # Properties ..............................................................
 
@@ -221,7 +222,7 @@ class Multiverse:
         uni_cfg = pspace.default
 
         # Add the task to the worker manager.
-        log.info("Adding task for simulation of a single universe ...")
+        log.progress("Adding task for simulation of a single universe ...")
         self._add_sim_task(uni_id_str="0", uni_cfg=uni_cfg, is_sweep=False)
 
         # Prevent adding further tasks to disallow further runs
@@ -230,7 +231,7 @@ class Multiverse:
         # Tell the WorkerManager to start working (is a blocking call)
         self.wm.start_working(**self.meta_cfg['run_kwargs'])
 
-        log.info("Finished single universe run. Yay. :)")
+        log.success("Finished single universe run. Yay. :)")
 
     def run_sweep(self):
         """Runs a parameter sweep.
@@ -258,8 +259,8 @@ class Multiverse:
         # Distinguish whether to do a regular sweep or we are in cluster mode
         if not self.cluster_mode:
             # Do a sweep over the whole activated parameter space
-            log.info("Adding tasks for simulation of %d universes ...",
-                     pspace.volume)
+            log.progress("Adding tasks for simulation of %d universes ...",
+                         pspace.volume)
 
             for uni_cfg, uni_id_str in psp_iter:
                 self._add_sim_task(uni_id_str=uni_id_str, uni_cfg=uni_cfg,
@@ -281,11 +282,11 @@ class Multiverse:
             node_index = rcps['node_index']
 
             # Inform about the number of universes to be simulated
-            log.info("Adding tasks for cluster-mode simulation of "
-                     "%d universes on this node (%d of %d) ...",
-                     (   pspace.volume//num_nodes
-                      + (pspace.volume%num_nodes > node_index)),
-                     node_index + 1, num_nodes)
+            log.progress("Adding tasks for cluster-mode simulation of "
+                         "%d universes on this node (%d of %d) ...",
+                         (   pspace.volume//num_nodes
+                          + (pspace.volume%num_nodes > node_index)),
+                         node_index + 1, num_nodes)
 
             for i, (uni_cfg, uni_id_str) in enumerate(psp_iter):
                 # Skip if this node is not responsible
@@ -305,7 +306,7 @@ class Multiverse:
         # Tell the WorkerManager to start working (is a blocking call)
         self.wm.start_working(**self.meta_cfg['run_kwargs'])
 
-        log.info("Finished parameter sweep. Wohoo. :)")
+        log.success("Finished parameter sweep. Wohoo. :)")
 
     # Helpers .................................................................
 
@@ -919,8 +920,8 @@ class FrozenMultiverse(Multiverse):
         # First things first: get the info bundle
         self._info_bundle = get_info_bundle(model_name=model_name,
                                             info_bundle=info_bundle)
-        log.info("Initializing FrozenMultiverse for '%s' model ...",
-                 self.model_name)
+        log.progress("Initializing FrozenMultiverse for '%s' model ...",
+                     self.model_name)
         
         # Initialize property-managed attributes
         self._meta_cfg = None
@@ -976,7 +977,7 @@ class FrozenMultiverse(Multiverse):
 
         # Generate the path to the run directory that is to be loaded
         self._create_run_dir(**self.meta_cfg['paths'], run_dir=run_dir)
-        log.info("Run directory:\n  %s", self.dirs['run'])
+        log.note("Run directory:\n  %s", self.dirs['run'])
 
         # Create a data manager
         self._dm = DataManager(self.dirs['run'],
@@ -991,7 +992,7 @@ class FrozenMultiverse(Multiverse):
                         plots_cfg=self.info_bundle.paths['default_plots'],
                         **self.meta_cfg['plot_manager'])
 
-        log.info("Initialized FrozenMultiverse.")
+        log.progress("Initialized FrozenMultiverse.\n")
 
     def _create_run_dir(self, *, out_dir: str, run_dir: str, **kwargs):
         """Helper function to find the run directory from arguments given

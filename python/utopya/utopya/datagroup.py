@@ -12,6 +12,7 @@ import dantro as dtr
 import dantro.groups
 
 from .datacontainer import XarrayDC
+from .dataprocessing import transform
 
 # Configure and get logger
 log = logging.getLogger(__name__)
@@ -28,6 +29,11 @@ class UniverseGroup(dtr.groups.ParamSpaceStateGroup):
         configuration, i.e. the ``num_steps``, ``write_start``, and
         ``write_every`` keys.
 
+        .. deprecated::
+
+            Instead, label the data correctly and use its coordinates; that
+            approach is also much more robust...
+
         NOTE That this data is retrieved from the universe's _top level_
              configuration. If the ``write_start`` and ``write_every``
              parameters were set differently within a model or the model does
@@ -36,6 +42,10 @@ class UniverseGroup(dtr.groups.ParamSpaceStateGroup):
         Returns:
             np.ndarray: The array of time coordinates
         """
+        log.warning("The get_times_array method is deprecated and will soon "
+                    "be removed. Instead, label your data with coordinates "
+                    "and use those coordiantes.")
+
         # Check if a configuration was loaded
         try:
             cfg = self['cfg']
@@ -63,12 +73,24 @@ class MultiverseGroup(dtr.groups.ParamSpaceGroup):
     are only identified by their ID, which is a zero-padded _string_. This
     group adds the ability to access them via integer indices.
 
-    Furthermore, via dantro, an easy data selector is available
+    Furthermore, via dantro, an easy data selector method is available, see
+    `dantro.groups.ParamSpaceGroup.select`.
     """
     _NEW_GROUP_CLS = UniverseGroup
 
+    # Make the transformation interface available to the select method
+    _PSPGRP_TRANSFORMATOR = lambda _, d, *ops, **kws: transform(d, *ops, **kws)
+    # NOTE first argument (self) not needed here
+
 
 class TimeSeriesGroup(dtr.groups.TimeSeriesGroup):
+    """This group is meant to manage time series data, with the container names
+    being interpreted as the time coordinate.
+    """
+    _NEW_CONTAINER_CLS = XarrayDC
+
+
+class HeterogeneousTimeSeriesGroup(dtr.groups.HeterogeneousTimeSeriesGroup):
     """This group is meant to manage time series data, with the container names
     being interpreted as the time coordinate.
     """

@@ -101,6 +101,11 @@ def count_unique(data, **kwargs):
                         coords=dict(unique=unique),
                         attrs=dict(**data.attrs))
 
+def show_data(data, *_):
+    """Show the data and (if given) additional properties"""
+    print(data)
+    return data
+
 
 # Transformation interface ----------------------------------------------------
 
@@ -108,6 +113,16 @@ def count_unique(data, **kwargs):
 # All callables expect xr.DataArray as their first argument and additional
 # arguments as their second argument
 TRANSFORMATIONS = {
+    # Attribute access, also allowing fallback
+    'getattr':  lambda d, kws: getattr(d, *(kws if not isinstance(kws, str)
+                                            else [kws])),
+    
+    # Item access
+    'getitem':  lambda d, kws: d[kws],
+
+    # Get coordinates
+    'coords':   lambda d, kws: d.coords[kws],
+
     # Select data by value
     'sel':      lambda d, kws: d.sel(**(kws if kws else {})),
 
@@ -178,7 +193,7 @@ TRANSFORMATIONS = {
     'cumulate':                 lambda d, _: np.cumsum(d),
     'cumulate_complementary':   lambda d, _: np.cumsum(d[::-1])[::-1],
 
-    # Elementwise operations
+    # Elementwise (binary) operations
     'add':      lambda d, v: operator.add(d, v),
     'concat':   lambda d, v: operator.concat(d, v),
     'div':      lambda d, v: operator.truediv(d, v),
@@ -189,7 +204,10 @@ TRANSFORMATIONS = {
     'mul':      lambda d, v: operator.mul(d, v),
     'matmul':   lambda d, v: operator.matmul(d, v),
     'rshift':   lambda d, v: operator.rshift(d, v),
-    'sub':      lambda d, v: operator.sub(d, v)
+    'sub':      lambda d, v: operator.sub(d, v),
+
+    # Miscellaneous
+    'show':    lambda d, props: show_data(d, *props)
 }
 
 # End of TRANSFORMATIONS dict population
@@ -224,9 +242,12 @@ def transform(data: xr.DataArray, *operations: Union[dict, str],
     """
     # Set default log level
     log_level = log_level if log_level is not None else 10
+    _log = lambda *args: log.log(log_level, *args)
 
-    log.log(log_level, "Performing %d transformation%s on input data:\n%s\n",
-            len(operations), "s" if len(operations) != 1 else "", data)
+    log.remark("Applying %d transformation%s on %s ...",
+               len(operations), "s" if len(operations) != 1 else "",
+               type(data).__name__)
+    _log("Input data:\n%s\n", data)
 
     # Apply operations in the given order
     for i, op_spec in enumerate(operations):
@@ -283,9 +304,8 @@ def transform(data: xr.DataArray, *operations: Union[dict, str],
                                  "".format(op_spec['rhs_from'], op_name,
                                            aux_data)) from err
 
-        log.log(log_level, "Applying operation %d/%d:  %s",
-                i+1, len(operations), op_name)
-        log.log(log_level, "  Arguments:  %s", op_spec)
+        _log("Applying operation %d/%d:  %s", i+1, len(operations), op_name)
+        _log("  Arguments:  %s", op_spec)
 
         # Catch and record warnings instead of displaying
         with warnings.catch_warnings(record=True) as caught_warnings:
@@ -302,15 +322,16 @@ def transform(data: xr.DataArray, *operations: Union[dict, str],
 
         # Emit any warnings that might have been generated
         if caught_warnings:
-            log.log(log_level,
-                    "Operation '%s' generated the following warnings:\n{}\n",
-                    op_name,
-                    "\n".join([warnings.formatwarning(w.message, w.category,
-                                                      w.filename, w.lineno)
-                               for w in caught_warnings]))
+            _log("Operation '%s' generated the following warnings:\n{}\n",
+                 op_name,
+                 "\n".join([warnings.formatwarning(w.message, w.category,
+                                                   w.filename, w.lineno)
+                            for w in caught_warnings]))
 
-        log.log(log_level, "  Result:\n%s\n", data)
+        _log("  Result:\n%s\n", data)
 
+    log.remark("Transformation%s applied.",
+               "s" if len(operations) != 1 else "")
     return data
 
 

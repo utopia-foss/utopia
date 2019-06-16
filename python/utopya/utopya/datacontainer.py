@@ -15,6 +15,8 @@ import xarray as xr
 from dantro.containers import NumpyDataContainer, XrDataContainer
 from dantro.mixins import Hdf5ProxySupportMixin
 
+from .tools import yaml
+
 # Configure and get logger
 log = logging.getLogger(__name__)
 
@@ -64,12 +66,22 @@ class XarrayDC(Hdf5ProxySupportMixin, XrDataContainer):
     # the default coordinate mode or, if given, the coords_mode__* attribute
     _XRC_COORDS_ATTR_PREFIX = 'coords__'
 
-    # The default mode by which coordinates are interpreted. Available modes:
-    #   - `list`            List of coordinate values
-    #   - `range`           Range expression (start, stop, step)
-    #   - `start_and_step`  Range (start, <deduced>, step) with auto-deduced
-    #                       stop value from length of dataset
-    _XRC_COORDS_MODE_DEFAULT = 'list'
+    # The default mode by which coordinates are interpreted. See the base
+    # class, `dantro.containers.XrDataContainer` for more information.
+    # Available modes:
+    #   - ``values``: the explicit values (iterable) to use for coordinates
+    #   - ``trivial``: The trivial indices; ignores the coordinate argument
+    #   - ``scalar``: makes sure only a single coordinate is provided
+    #   - ``range``: python built-in range function arguments
+    #   - ``arange``: np.arange arguments
+    #   - ``linspace``: np.linspace arguments
+    #   - ``logspace``: np.logspace arguments
+    #   - ``start_and_step``: the start and step values of an integer range
+    #       expression; the stop value is deduced by looking at the length
+    #       of the corresponding dimension.
+    #   - ``linked``: Load the coordinates from a linked object within the
+    #       tree, specified by a relative path from the current object.
+    _XRC_COORDS_MODE_DEFAULT = 'values'
 
     # Prefix for the coordinate mode if a custom mode is to be used. To, e.g.,
     # use mode 'start_and_step' for time dimension, set the coords_mode__time
@@ -83,6 +95,35 @@ class XarrayDC(Hdf5ProxySupportMixin, XrDataContainer):
     # container attributes available that match the prefix but don't match a
     # valid dimension name. Can be disabled for speed improvements
     _XRC_STRICT_ATTR_CHECKING = True
+
+
+# -----------------------------------------------------------------------------
+
+class XarrayYamlDC(XarrayDC):
+    """An XarrayDC specialization that assumes that each array entry is a
+    YAML string, which is subsequently loaded. This can be done alongside the
+    metadata application of the XarrayDC.
+    """
+
+    def _apply_metadata(self):
+        """Whenever metadata is applied that is also a good point to resolve
+        the YAML data...
+        """
+        super()._apply_metadata()
+
+        def convert_to_yaml(element) -> dict:
+            """Given an array element, try to convert it to yaml"""
+            try:
+                if isinstance(element, bytes):
+                    return yaml.load(element.decode("utf8"))
+                return yaml.load(element)
+            
+            except Exception as exc:
+                raise ValueError("Could not convert element of type {} to "
+                                 "yaml! Element value was:  {}"
+                                 "".format(type(element), element)) from exc
+
+        self._data = xr.apply_ufunc(np.vectorize(convert_to_yaml), self._data)
 
 
 # -----------------------------------------------------------------------------
