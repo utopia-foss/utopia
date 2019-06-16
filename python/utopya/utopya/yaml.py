@@ -2,7 +2,8 @@
 
 import re
 import logging
-from typing import Tuple
+from functools import partial
+from typing import Tuple, Callable
 
 import numpy as np
 
@@ -74,6 +75,17 @@ def _model_cfg_constructor(loader, node) -> dict:
     # Return the updated dictionary
     return mcfg
 
+def _func_on_sequence_constructor(loader, node, *, func: Callable):
+    """Custom yaml constructor that constructs a sequence, passes it to the
+    given function, and returns the result of that call.
+
+    Can be used e.g. in conjunction with the any and all functions, evaluating
+    sequences of booleans.
+    """
+    # Get a sequence from the node
+    s = loader.construct_sequence(node, deep=True)
+    return func(s)
+
 # -----------------------------------------------------------------------------
 # Attaching representers and constructors
 
@@ -82,12 +94,23 @@ yaml.register_class(StopCondition)
 yaml.register_class(ModelInfoBundle)
 yaml.register_class(ModelRegistryEntry)
 
-# Now, add (additional, potentially overwriting) constructors for certain tags
-# For the expression and model config objects.
-yaml.constructor.add_constructor(u'!expr',
-                                 _expr_constructor)
-yaml.constructor.add_constructor(u'!model',
-                                 _model_cfg_constructor)
+# Now, add (additional, potentially overwriting) constructors for certain tags.
+# Evaluate a mathematical expression
+yaml.constructor.add_constructor(u'!expr', _expr_constructor)
+
+# Apply the any operator to a sequence
+yaml.constructor.add_constructor(u'!any',
+                                 partial(_func_on_sequence_constructor,
+                                         func=any))
+
+# Apply the all operator to a sequence
+yaml.constructor.add_constructor(u'!all',
+                                 partial(_func_on_sequence_constructor,
+                                         func=all))
+
+# Load a model configuration
+yaml.constructor.add_constructor(u'!model', _model_cfg_constructor)
+
 
 # Add aliases for the (coupled) parameter dimensions
 yaml.constructor.add_constructor(u'!sweep',

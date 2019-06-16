@@ -8,7 +8,7 @@ message(STATUS "Installing required Python packages ...")
 # NOTE Take care that the versions used here match those in the README.md
 #      and those in the utopya setup.py file.
 # -- paramspace --
-python_find_package(PACKAGE paramspace VERSION 2.2.1)
+python_find_package(PACKAGE paramspace VERSION 2.2.3)
 
 if(NOT PYTHON_PACKAGE_paramspace_FOUND)
     # install from current _master_ branch
@@ -17,12 +17,12 @@ if(NOT PYTHON_PACKAGE_paramspace_FOUND)
 endif()
 
 # -- dantro --
-python_find_package(PACKAGE dantro VERSION 0.8.0)
+python_find_package(PACKAGE dantro VERSION 0.9.1)
 
 if(NOT PYTHON_PACKAGE_dantro_FOUND)
     # install from current _master_ branch
     python_install_package_remote(
-        URL ssh://git@ts-gitlab.iup.uni-heidelberg.de:10022/utopia/dantro.git@release/v0.8
+        URL ssh://git@ts-gitlab.iup.uni-heidelberg.de:10022/utopia/dantro.git@release/v0.9
         TRUSTED_HOST ts-gitlab.iup.uni-heidelberg.de)
 endif()
 

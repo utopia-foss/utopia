@@ -9,8 +9,7 @@ import pytest
 import utopya.tools as t
 
 # Local constants
-READ_TEST_PATH = resource_filename('test', 'cfg/read_test.yml')
-CONSTR_TEST_PATH = resource_filename('test', 'cfg/constr_test.yml')
+
 
 # Fixtures --------------------------------------------------------------------
 @pytest.fixture
@@ -22,8 +21,9 @@ def testdict():
 
 
 # Test YAML constructors ------------------------------------------------------
+# NOTE These are actually defined in the yaml module ... but available in tools
 
-def test_expr_constr():
+def test_expr_constructor():
     """Tests the expression constructor"""
     tstr = """
         one:   !expr 1*2*3
@@ -46,6 +46,27 @@ def test_expr_constr():
     assert d['five'] == eval('1E10') == 10.0**10
     assert d['six'] == np.inf
     assert np.isnan(d['seven'])
+
+
+def test_any_and_all_constructor():
+    """Tests the !any and !all yaml tags"""
+    tstr = """
+        any0: !any [false, false, 0]
+        any1: !any [true, false, false]
+        any2: !any [foo, bar, baz]
+        all0: !all [false, 0, true]
+        all1: !all [true, true, 1]
+        all2: !all [foo, bar, false]
+    """
+    d = t.yaml.load(tstr)
+
+    assert not d['any0']
+    assert d['any1']
+    assert d['any2']
+
+    assert not d['all0']
+    assert d['all1']
+    assert not d['all2']
 
 
 def test_model_cfg_constructor():

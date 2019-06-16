@@ -79,14 +79,14 @@ def lineplot(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
     # Require 1D data now
     if data_x.ndim != 1:
         raise ValueError("Lineplot requires 1D data, but got {}D data of "
-                         "shape {}:\n{}\n"
+                         "shape {} for x-axis data:\n{}\n"
                          "Apply dimensionality reducing transformations "
                          "using the `transform_data` argument to arrive "
                          "at plottable data."
                          "".format(data_x.ndim, data_x.shape, data_x))
     if data_y.ndim != 1:
         raise ValueError("Lineplot requires 1D data, but got {}D data of "
-                         "shape {}:\n{}\n"
+                         "shape {} for y-axis data:\n{}\n"
                          "Apply dimensionality reducing transformations "
                          "using the `transform_data` argument to arrive "
                          "at plottable data."
@@ -111,7 +111,9 @@ def lineplots(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
             base path within the UniverseGroup.
         to_plot (dict): Which data to plot. The keys of this
             dict are used as ``path_to_data`` for the ``lineplot`` function.
-            The values are unpacked and passed to ``lineplot``
+            The values are unpacked and passed to ``lineplot``. Alternatively,
+            the ``path_to_data`` can be given explicitly, which e.g. allows
+            plotting individual columns of the same data container.
         **common_plot_kwargs: Passed along to the ``lineplot`` plot function
             for all calls. Note that this may not contain any keys that are
             given within ``to_plot``!

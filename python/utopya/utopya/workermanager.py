@@ -114,7 +114,7 @@ class WorkerManager:
         Raises:
             ValueError: For too negative `num_workers` argument
         """
-        log.info("Initializing WorkerManager ...")
+        log.progress("Initializing WorkerManager ...")
 
         # Initialize attributes, some of which are property-managed
         self._num_workers = None
@@ -166,16 +166,16 @@ class WorkerManager:
             self.rf_spec.update(rf_spec)
 
         # Provide some information
-        log.info("  Number of available CPUs:  %d", os.cpu_count())
-        log.info("  Number of workers:         %d", self.num_workers)
-        log.info("  Non-zero exit handling:    %s", self.nonzero_exit_handling)
+        log.note("  Number of available CPUs:  %d", os.cpu_count())
+        log.note("  Number of workers:         %d", self.num_workers)
+        log.note("  Non-zero exit handling:    %s", self.nonzero_exit_handling)
 
         # Store some profiling information
         self.times = dict(init=dt.now(), start_working=None,
                           timeout=None, end_working=None)
         # These are also accessed by the reporter
 
-        log.info("Initialized WorkerManager.")
+        log.progress("Initialized WorkerManager.")
 
     # Properties ..............................................................
     @property
@@ -445,7 +445,7 @@ class WorkerManager:
         poll_no = 0
         self.times['start_working'] = dt.now()
 
-        log.info("Starting to work ...")
+        log.hilight("Starting to work ...")
         log.debug("  Timeout:             now + %ss", timeout)
         log.debug("  Stop conditions:     %s", stop_conditions)
 
@@ -622,8 +622,8 @@ class WorkerManager:
         self._invoke_report('after_work', force=True)
 
         print("")
-        log.info("Finished working. Total tasks worked on: %d",
-                 self.task_count)
+        log.success("Finished working. Total tasks worked on: %d",
+                    self.task_count)
 
     # Non-public API ..........................................................
 

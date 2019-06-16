@@ -48,7 +48,7 @@ class Model:
         # Determine model info bundle to use (via Multiverse class method)
         self._info_bundle = get_info_bundle(model_name=name,
                                             info_bundle=info_bundle)
-        log.info("Initializing '%s' model ...", self.name)
+        log.progress("Initializing '%s' model ...", self.name)
 
         # Store other attributes
         self._sim_errors = sim_errors
