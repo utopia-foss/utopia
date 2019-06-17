@@ -14,7 +14,7 @@ from .._yaml import write_yml, load_yml
 from ..cfg import UTOPIA_CFG_DIR
 from ..tools import pformat
 
-from ._exceptions import ModelRegistryError
+from ._exceptions import ModelRegistryError, BundleExistsError
 from .info_bundle import TIME_FSTR, ModelInfoBundle
 
 # Local constants
@@ -138,7 +138,7 @@ class ModelRegistryEntry:
     
     # Manipulation ............................................................
 
-    def add_bundle(self, *, label: str=None, overwrite_existing: bool=False,
+    def add_bundle(self, *, label: str=None, overwrite_label: bool=False,
                    update_registry_file: bool=True, **bundle_kwargs
                    ) -> ModelInfoBundle:
         """Add a new configuration bundle to this registry entry.
@@ -149,9 +149,9 @@ class ModelRegistryEntry:
         Args:
             label (str, optional): The label under which to add it. If None,
                 will be added as unlabelled.
-            overwrite_existing (bool, optional): If True, allows to overwrite
-                an existing bundle under the same label. This option does not
-                affect unlabelled bundles or registry file updates.
+            overwrite_label (bool, optional): If True, overwrites an existing
+                bundle under the same label. This option does not affect
+                unlabelled bundles or registry file updates.
             update_registry_file (bool, optional): Whether to write changes
                 directly to the registry file.
             **bundle_kwargs: Passed on to construct the ModelInfoBundle that
@@ -164,10 +164,10 @@ class ModelRegistryEntry:
         bundle = ModelInfoBundle(model_name=self.model_name, **bundle_kwargs)
 
         if bundle in self:
-            raise ModelRegistryError("A bundle that compared equal to the to-"
-                                     "be-added bundle already exists in {}! "
-                                     "Not adding it again.\n{}"
-                                     "".format(self, bundle))
+            raise BundleExistsError("A bundle that compared equal to the to-"
+                                    "be-added bundle already exists in {}! "
+                                    "Not adding it again.\n{}"
+                                    "".format(self, bundle))
             # TODO should this warn instead of raising?!
 
         # Depending on whether a label was specified, decide on the container
@@ -183,7 +183,7 @@ class ModelRegistryEntry:
                                 "may not be an int!"
                                 "".format(self.model_name))
 
-            if not overwrite_existing and label in self._labelled:
+            if not overwrite_label and label in self._labelled:
                 raise ModelRegistryError("A bundle with label '{}' already "
                                          "exists in {}! Remove it first."
                                          "".format(label, self))

@@ -169,9 +169,9 @@ def register_models(args, *, registry):
     # Now, actually register. Here, pass along the common arguments.
     for model_name, bundle_kwargs in specs.items():
         registry.register_model_info(model_name, **bundle_kwargs,
-                                     remove_existing=args.remove_existing,
-                                     skip_existing=args.skip_existing,
-                                     label=args.label
+                                     exists_action=args.exists_action,
+                                     label=args.label,
+                                     overwrite_label=args.overwrite_label
                                      )
 
     log.info("Model registration finished.\n\n%s\n", registry.info_str)

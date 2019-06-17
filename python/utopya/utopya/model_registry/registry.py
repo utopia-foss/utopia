@@ -15,6 +15,7 @@ from ..cfg import UTOPIA_CFG_DIR
 from ..tools import pformat, recursive_update
 
 from .entry import ModelRegistryEntry
+from ._exceptions import BundleExistsError
 
 # Local constants
 log = logging.getLogger(__name__)
@@ -140,10 +141,7 @@ class ModelRegistry:
                            "".format(model_name, ", ".join(self.keys()))
                            ) from err
 
-    def register_model_info(self, model_name: str, *,
-                            skip_existing: bool=False,
-                            clear_existing: bool=False,
-                            extend_existing: bool=False,
+    def register_model_info(self, model_name: str, *, exists_action: str=None,
                             **bundle_kwargs) -> ModelRegistryEntry:
         """Register information for a single model. This method also allows to
         create a new entry if a model does not exist.
@@ -153,50 +151,71 @@ class ModelRegistry:
         
         Args:
             model_name (str): The name of the model to register
-            skip_existing (bool, optional): Whether to skip registration if a
-                model of that name already exists. In that case returns the
-                already registered entry.
-            clear_existing (bool, optional): Whether to clear an existing
-                entry for the given model name before adding. This removes all
-                existing config bundles!
-            extend_existing (bool, optional): Whether to extend an existing
-                model entry. May raise an error if the same bundle is already
-                present.
+            exists_action (str, optional): The action to take when a model of
+                the given name already exists. Possible values:
+
+                    * ``None``: Continue with registering the info bundle; note
+                        that this might still lead to errors if the exact same
+                        bundle already exists.
+                    * ``skip``: Skip bundle registration
+                    * ``raise``: Raise an error
+                    * ``clear``: Clear all existing bundles
+                        from the corresponding model registry entry.
+                    * ``validate``: Makes sure the bundle that will be created
+                        from the given kwargs is part of the registry entry.
+
             **bundle_kwargs: Passed on to ModelRegistryEntry.add_bundle
         
         Returns:
             ModelRegistryEntry: The registry entry for this model.
         
         Raises:
-            ValueError: On already existing model if neither skip nor remove
-                options were set.
+            ValueError: On ``exists_action == 'raise'`` and model already
+                existing.
         """
+        ACTIONS = ('skip', 'raise', 'clear', 'validate')
+
+        # Check exists_action
+        if exists_action and exists_action not in ACTIONS:
+            raise ValueError("Invalid value for argument exists_action: '{}'! "
+                             "Possible actions: None, {}."
+                             "".format(exists_action, ", ".join(ACTIONS)))
+
         # Register the model, if not already done
         if model_name not in self:
             self._add_entry(model_name)
 
-        elif skip_existing:
+        # Handle the exists_action argument
+        if exists_action == 'skip':
             log.debug("Model '%s' already registered. Skipping ...",
                       model_name)
             return self[model_name]
 
-        elif clear_existing:
+        elif exists_action == 'clear':
             log.debug("Removing existing configuration bundles for model "
                       "'%s' ...", model_name)
             self[model_name].clear()
 
-        elif not extend_existing:
+        elif exists_action == 'raise':
             raise ValueError("A registry entry for model '{}' already exists! "
                              "To add a configuration bundle to it, use its "
-                             "add_bundle method or pass the extend_existing "
-                             "or clear_existing arguments to this method."
+                             "add_bundle method or set the exists_action "
+                             "argument to control the behaviour."
                              "".format(model_name))
 
         # If this point is reached, a bundle is also to be added.
         if bundle_kwargs:
-            self[model_name].add_bundle(**bundle_kwargs)
+            try:
+                self[model_name].add_bundle(**bundle_kwargs)
 
-        # To be consistent, return the entry, not the bundle
+            except BundleExistsError:
+                # The exact same bundle already exists; this is the validation.
+                if exists_action != 'validate':
+                    # ... but it was not to be validated. Raise.
+                    raise
+
+        # To be consistent with cases where no bundle is added, return the
+        # entry, not the newly added bundle
         return self[model_name]
 
     def remove_entry(self, model_name: str):
@@ -209,11 +228,13 @@ class ModelRegistry:
                            "no such model is registered. Available models: "
                            "{}".format(model_name, ", ".join(self.keys()))
                            ) from err
+        else:
+            log.info("Removed entry for model '%s' from model registry.",
+                     model_name)
         
         os.remove(entry.registry_file_path)
-        log.debug("Removed entry for model '%s' from Utopia Model Registry "
-                  "and removed associated registry file at %s.",
-                  model_name, entry.registry_file_path)
+        log.debug("Removed associated registry file:  %s",
+                  entry.registry_file_path)
         # Entry goes out of scope now and is then be garbage-collected if it
         # does not exist anywhere else... Only if some action is taken on that
         # entry does it lead to file being created again.

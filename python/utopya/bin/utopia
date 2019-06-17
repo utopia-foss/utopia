@@ -80,20 +80,21 @@ pm_reg.add_argument('--label',
     help="The label under which this configuration will be stored in the "
          "model registry. Useful if there will be multiple configuration "
          "bundles for the same model name.")
+pm_reg.add_argument('--overwrite-label',
+    action='store_true',
+    help="Whether a labelled model info bundle that already exists in the "
+         "registry entry may be overwritten.")
 pm_reg.add_argument('--separator',
     help="If set, this allows the model_name, --bin-path, and --src-dir "
          "arguments to be lists that are separated by the given string. Note "
          "that in such a case ONLY these arguments are considered; all others "
          "are ignored. Spaces need to be escaped.")
-pm_reg.add_argument('--remove-existing',
-    action='store_true',
-    help="Removes existing configuration bundles that are registered for the "
-         "given model before the new bundle is added.")
-pm_reg.add_argument('--skip-existing',
-    action='store_true',
-    help="If given, will skip registration if a model is already registered "
-         "under the given name.")
-
+pm_reg.add_argument('--exists-action',
+    default=None,
+    choices=['skip', 'raise', 'clear', 'validate'],
+    help="Action to take on the _model_ already existing; this controls the "
+         "behaviour with respect to the bundle information that is to be "
+         "added.")
 
 
 # sub-subcommand: edit model registry entry  . . . . . . . . . . . . . . . . . 
@@ -104,17 +105,18 @@ pm_edit.add_argument('model_name',
 
 # sub-subcommand: list model registry entries . . . . . . . . . . . . . . . . .
 # TODO Make more options available (low priority) 
-pm_ls.add_argument('-l', '--long', help="List in long format.")
+pm_ls.add_argument('-l', '--long',
+    action='store_true',
+    help="List in long format.")
 
 
 # sub-subcommand: remove model registry entries . . . . . . . . . . . . . . . .
-# TODO Implement (low priority)
-pm_rm.add_argument('model_name',
-    nargs='?',
+pm_rm.add_argument('model_names',
+    nargs='*',
     help="Names of the models to remove")
 pm_rm.add_argument('--all',
     action='store_true',
-    help="Remove all model registration entries.")
+    help="Remove the registry entries for all currently registered models.")
 
 
 # subcommand: config ..........................................................
@@ -363,7 +365,19 @@ if __name__ == '__main__':
             raise NotImplementedError("utopia models edit")
 
         elif args.models_mode == 'rm':
-            raise NotImplementedError("utopia models rm")
+            model_names = args.model_names
+            if args.all:
+                model_names = list(utopya.MODELS.keys())
+
+            if not model_names:
+                log.info("No models registered. Cannot remove anything.")
+                sys.exit()
+
+            log.info("Removing model registry entries for the following "
+                     "models:\n  %s", ", ".join(model_names))
+            
+            for model_name in model_names:
+                utopya.MODELS.remove_entry(model_name)
 
         else:
             # Mode: ls or None
