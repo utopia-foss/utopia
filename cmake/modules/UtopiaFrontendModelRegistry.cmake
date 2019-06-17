@@ -20,7 +20,9 @@ function(register_models_with_frontend)
                         --base-bin-dir "${CMAKE_BINARY_DIR}"
                         --base-src-dir "${CMAKE_SOURCE_DIR}"
                         --separator ";"
-                        --skip-existing    # Might have to re-evaluate this one
+                        --label added_by_cmake
+                        --overwrite-label
+                        --exists-action validate
                     RESULT_VARIABLE exit_code
                     OUTPUT_VARIABLE output
                     ERROR_VARIABLE output

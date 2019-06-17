@@ -348,6 +348,10 @@ test:cli:
     # Adjust the user configuration to store to a local directory
     - utopia config user --set paths.out_dir=${CI_PROJECT_DIR}/utopia_output --get
 
+    # Show which models are available
+    - utopia models
+    - utopia models ls --long
+    
     # Test the CLI with the dummy model and its default configuration
     - utopia run dummy
 
@@ -385,6 +389,11 @@ test:cli:
     - utopia run dummy --set-model-params foo=3 bar=2.0
     - utopia run dummy --set-params num_steps=3 write_every=2
     - utopia run dummy --set-cfg parameter_space.seed=23
+
+    # Test model registry entry removal interface; do this last, obviously
+    - utopia models rm dummy HdfBench
+    - utopia models rm --all
+    - if utopia run dummy; then exit 1; else echo "failed as expected"; fi
 
 # Test if using Utopia in a downstream module works
 test:link_build_tree:

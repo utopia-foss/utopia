@@ -4,7 +4,7 @@ provide the required model information to the frontend and use it throughout.
 # Make names of class definitions available
 from .info_bundle import ModelInfoBundle
 from .entry import ModelRegistryEntry
-from ._exceptions import ModelRegistryError
+from ._exceptions import ModelRegistryError, BundleExistsError
 
 # Import the registry class only as "private"; should only be instantiated once
 from .registry import ModelRegistry as _ModelRegistry

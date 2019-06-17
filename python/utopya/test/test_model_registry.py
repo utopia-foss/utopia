@@ -7,7 +7,7 @@ from pkg_resources import resource_filename
 import pytest
 
 import utopya.model_registry as umr
-from utopya.model_registry import ModelRegistryError
+from utopya.model_registry import ModelRegistryError, BundleExistsError
 from utopya.yaml import yaml, write_yml
 
 # Fixtures --------------------------------------------------------------------
@@ -187,7 +187,7 @@ def test_ModelRegistryEntry_bundle_handling(tmpdir, mib_kwargs):
     assert len(e) == 2
     
     e.add_bundle(label="some_label", **mib_kwargs, some_val=345,
-                 overwrite_existing=True)
+                 overwrite_label=True)
     assert len(e) == 2
 
     # Popping elements
@@ -282,18 +282,36 @@ def test_ModelRegistry(tmp_cfg_dir, mib_kwargs):
     assert len(mr) == 2
 
     # Try to add it again; should be skipped
-    assert entry2 is mr.register_model_info("model2", skip_existing=True)
+    assert entry2 is mr.register_model_info("model2", exists_action='skip')
     assert len(entry2) == 1
     assert len(mr) == 2
 
     # Same with clearing the bundles
-    assert entry2 is mr.register_model_info("model2", clear_existing=True)
+    assert entry2 is mr.register_model_info("model2", exists_action='clear')
     assert len(entry2) == 0
 
     # Same with extending the bundles
-    assert entry2 is mr.register_model_info("model2", extend_existing=True,
+    assert entry2 is mr.register_model_info("model2",
                                             **mib_kwargs, some_val=123123)
     assert len(entry2) == 1
+
+    # Adding it again, though, will fail, as it already exists
+    with pytest.raises(BundleExistsError):
+        mr.register_model_info("model2", **mib_kwargs, some_val=123123)
+    assert len(entry2) == 1
+
+    # ...unless selected to validate it
+    mr.register_model_info("model2", **mib_kwargs, some_val=123123,
+                           exists_action='validate')
+    assert len(entry2) == 1
+
+    # Could also desire raising
+    with pytest.raises(ModelRegistryError, match="already exists"):
+        mr.register_model_info("model2", **mib_kwargs, some_val=123123)
+
+    # Bad exists action
+    with pytest.raises(ValueError, match="Invalid value for argument exists_"):
+        mr.register_model_info("foo", exists_action='bad_value')
 
     # String representation
     assert 'bundle' not in mr.info_str

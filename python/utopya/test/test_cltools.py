@@ -132,9 +132,9 @@ def test_register_models(tmp_model_registry, tmpdir):
     args.src_dir = "src/foo;src/bar"
     args.base_src_dir = tmpdir.join("base_src")
     args.base_bin_dir = tmpdir.join("base_bin")
-    args.remove_existing = False
-    args.skip_existing = False
+    args.exists_action = None
     args.label = None
+    args.overwrite_label = False
 
     # Try registration ... will fail, because files are missing in this test
     with pytest.raises(KeyError, match="Missing required key: default_cfg"):
