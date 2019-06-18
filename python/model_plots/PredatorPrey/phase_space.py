@@ -39,7 +39,7 @@ def phase_space(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
 
     # If a colormap was given, use it to color-code the time
     cc_kwargs = ({} if cmap is None
-                 else dict(c=uni.get_times_array(), cmap=cmap))
+                 else dict(c=f_prey.coords['time'], cmap=cmap))
     
     # Plot the phase space
     sc = hlpr.ax.scatter(f_predator, f_prey, **cc_kwargs, **scatter_kwargs)

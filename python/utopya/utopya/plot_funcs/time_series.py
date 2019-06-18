@@ -112,7 +112,8 @@ def density(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
 
     # Associate time coordinates, if not already the case
     if 'time' not in density.coords:
-        density.coords['time'] = uni.get_times_array()
+        log.warning("Missing time coordinates for density data! Got:\n%s",
+                    density)
 
     # If there are no sizes to be plotted, can directly do the line plot
     if sizes_from is None:

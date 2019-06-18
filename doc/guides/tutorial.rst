@@ -704,15 +704,14 @@ Let's fill that in with the code that calculates the standard deviation for the 
           out_path: The generated path at which this plot should be saved
           uni:      Contains the data from the single selected universe
       """
-      # Get the slope data and calculate the standard deviation
+      # Get the slope data
       slope = uni['data/SandPile/slope']
-      slope_std = [np.std(s) for s in slope]
 
-      # Get the corresponding x-values, i.e.: the time steps
-      times = uni.get_times_array()
+      # Calculate the standard deviation over the spatial dimensions
+      slope_std = slope.std(['x', 'y'])
 
-      # Call the plot function
-      plt.plot(times, slope_std)
+      # Plot it over time
+      plt.plot(slope_std.coords['time'], slope_std)
 
       # Set the aesthetics
       plt.xlabel("Time [Iteration Steps]")
@@ -720,6 +719,11 @@ Let's fill that in with the code that calculates the standard deviation for the 
 
       # Save the figure to the specified output path
       plt.savefig(out_path)
+
+.. note::
+
+  The ``slope`` and ``slope_std`` in the example above both behave like ``xarray.DataArray`` objects. As you see, they allow to specify operations on labelled dimensions, which not only reduces errors but is also far easier to read.
+  You can read up on it `in their documentation <http://xarray.pydata.org/en/stable/data-structures.html#dataarray>`_.
 
 .. note::
 

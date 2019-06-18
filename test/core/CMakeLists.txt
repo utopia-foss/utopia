@@ -47,5 +47,4 @@ foreach(test ${TESTS_CORE})
                   SOURCES ${test}.cc)
 endforeach(test)
 
-# custom dependencies of dependency test
-target_link_libraries(CORE_dependency_test PUBLIC FFTW3::fftw3)
+# custom dependencies of certain tests can be added below

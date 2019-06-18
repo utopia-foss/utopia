@@ -52,12 +52,23 @@ Before we can explain this question, we first need to roughly understand what th
 
 Now: Check out the `About GitLab <https://about.gitlab.com/>`_ page and also Utopia's project page to get yourself familiarised with the purpose and interface of GitLab.
 
+For members of the CCEES group, development takes place not only in the
+``utopia/utopia`` project, but also in the ``utopia/models`` project, which you
+can access `here <https://ts-gitlab.iup.uni-heidelberg.de/utopia/models>`_.
+The distinction exists in order to separate framework code (developed in the
+``utopia`` project) from personal model implementations (in the ``models``
+project).
+
 Issues: The planning phase
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+Everyone who works with Utopia needs to know what topics are up for discussion, which features are planned, which model should be implemented, and so on. All of these things can be looked up on the `issues <https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/issues>`_ page of the respective GitLab projects.
+Just go there, click around, look at different issues, the discussions that sometimes emerge and if you have an idea or comment, just feel free to write it in the comment section! :)
 
-Everyone who works with Utopia needs to know what topics are up for discussion, which features are planned, which model should be implemented, and so on. All of these things can be looked up in the `issues <https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/issues>`_. Just go there, click around, look at different issues, the discussions that sometimes emerge and if you have an idea or comment, just feel free to write it in the comment section! :)
-
-Let's say you want to create a new model. Just click on the top right hand corner on the ``New issue`` button. A new window will appear. In the field ``choose a template`` select ``task``. Now, some text will appear. Fill in the sections and keep in mind that in an issue you try to plan what you would like to do and tell others (and of course yourself) about it. Everyone should be able to know, what is going on in Utopia. Do not worry if you cannot really fill in every section. The description can also be changed later.
+Let's say you want to create a new model. If this is a model for your personal
+project, visit the `issues page of the models project <https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/issues>`_ and click on the "New issue" button in the top right-hand corner of the page.
+A new page will open. In the field "Choose a template", select "Model".
+Now, some text will appear. Fill in the sections and keep in mind that in an issue you try to plan what you would like to do and tell others (and of course yourself) about it. Everyone should be able to know what is going on in Utopia.
+Do not worry if you cannot really fill in every section. The description can also be changed later.
 
 If you create an issue you should also look at the labels you can give it. Select the appropriate labels such that everyone who sees the issue immediately roughly knows what the issue is about.
 
@@ -65,19 +76,31 @@ Now click on the ``Submit issue`` button and congratulations you have created yo
 At the bottom of the issue, there is the possibility to write comments and discussions. So others can look at your issue, encourage you to go for it, add their ideas, and so on. Ideally, this is the place to discuss everything that is related to the issue. So, also if you have doubts about certain aspects or details just start a discussion. You will always get fruitful input from others! You can even refer to others by writing typing ``@`` followed by the name.
 We encourage you to try it out and profit from the exchange with others.
 
-During your model development, whenever you have the impression that some feature is missing in Utopia, something does not work the way you need it in your model, etc. ... *just write an issue.*
+During your model development, whenever you have the impression that some feature is missing in Utopia, something does not work the way you need it in your model, etc. ... *just write an issue*.
 Even if you do not exactly know, whether it is a good idea, you just want to discuss something, or bring something up: Writing an issue – even if brief – is the best way to discuss something, include others when needed, use code examples, connect to other issues, let actual code changes follow from your issue...
 
 Of course, it makes sense to make this process efficient, both for you and for others: If there is a minor bug that you don't want to spend time on right now, let the issue description be brief as well.
 If it is a larger thing you would like to discuss, it might make sense to invest fifteen minutes, such that others know exactly what you would like to discuss.
 
+.. note::
+
+  If you are wondering whether an issue should go into the ``utopia`` framework project or the ``models`` project, the answer is simple:
+  
+  If the issue relates solely to the implementation or enhancement of your *personal* project, e.g. a model you investigate as part of your MSc project,
+  it goes into ``models``.
+  Otherwise, your issue probably belongs into the ``utopia`` framework project;
+  for example, a bug report or a suggestion of a new *general* feature.
+
+  If you are uncertain about this, don't despair. Issues can also be moved around; just ask someone what they think.
+  However, the issue should be in the right project *before* you create a merge request in the next step.
+
+
 Merge Request: The development phase
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-If you want to start working on an issue, click on the ``Create merge request`` button. This will redirect you automatically to a new page with your merge request. Further, this will create a new branch which departs from the master branch. If you do not remember, what this means, look it up above. 😉
+If you have planned out your issue to a sufficient extent (*you* decide what that means) and want to start working on an issue, click on the "Create merge request" button you find in the issue.
+This will redirect you automatically to a new page with your merge request. Further, this will create a new branch which departs from the master branch. If you do not remember, what this means, look it up above. 😉
 
 There are two things you should do before you start actually writing code:
-
 
 #. 
    Provide information about what you want to actually implement. For this, click on the ``Edit`` button in the top right hand corner of the page. As for the issue, you can also ``Choose a template``. Choose the ``Model-MR`` and fill in what you can already fill in. You should update this description alongside your work on the merge request, the latest when you are nearing the merge.
@@ -97,12 +120,10 @@ Importantly, note that all annotations are there to *help* you and to guarantee 
 
 Comments and Discussions
 """"""""""""""""""""""""
-
 Just use the possibility to write comments and discussions a lot! Especially if you are unsure about something, you think that your code is bad, ugly, and does not work correctly, or before you would invest a lot of time without a lot of progress just ask the others! We are a really open group and want to help you wherever we can do! So just go ahead and ask. ☺
 
 Automatic Testing Pipeline
 """"""""""""""""""""""""""
-
 How do we ensure that everything that is implemented in Utopia works correctly? We write tests!
 
 With tests we can for example check that a function returns exactly what it should return in all possible cases. So, if you automatically check every subpart of your code with a test you can be quite sure that your code does what you want it to do. Even more, if someone changes something in the future, which would break your code, it will lead to failing tests because it will always be automatically checked if your code still works. 
@@ -121,7 +142,6 @@ Just fix the error, commit it, and push it again. Only when you want your merge 
 
 Git
 ---
-
 There are a lot of guides and tutorials online where you can learn how to use Git. A quick-start would be `this one <https://git-scm.com/book/en/v2/Getting-Started-Git-Basics>`_; a longer one can be found on `git-tower <https://www.git-tower.com/learn/git/ebook>`_. Also, the `git documentation <https://git-scm.com/doc>`_ is quite comprehensive and well-written.
 
 Here, for that reason, we provide only a small selection of commands that you will use a lot during your code development and address some frequent issues encountered when starting to use git are mentioned.
@@ -132,7 +152,6 @@ Also, searching the internet for what you want to do is usually quite effective 
 
 Stage files
 ^^^^^^^^^^^
-
 The commands below demonstrate a typical way of commiting files to the repository.
 
 .. code-block:: shell
@@ -154,7 +173,6 @@ The commands below demonstrate a typical way of commiting files to the repositor
 
 Global .gitignore
 """""""""""""""""
-
 You run the ``git status`` command and see a lot of files that you have not created e.g. ``.DS_Store``\ , ``./vscode``\ , or similar?
 This sometimes are files created by your operating system or by your IDE.
 You can and should create a global ``.gitignore`` file to not see them again. Either google it, or look `here <http://egorsmirnov.me/2015/05/04/global-gitignore-file.html>`_.
@@ -162,7 +180,6 @@ You can and should create a global ``.gitignore`` file to not see them again. Ei
 
 Merge the master into your branch
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 If you want to get updates that are available on the master branch, you can follow the commands below.
 
 First, we need to get the updates for the master branch:
@@ -189,7 +206,6 @@ Don't forget to re-build the code afterwards. 😉
 
 Problems with git?
 ^^^^^^^^^^^^^^^^^^
-
 `Oh shit, Git! <https://ohshitgit.com/>`_
 
 ----

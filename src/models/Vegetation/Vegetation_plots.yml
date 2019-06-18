@@ -16,32 +16,15 @@ average_plant_mass_time:
 
 # Plot the spatial development in the CA
 plant_mass_spatial:
-  creator: universe
-  universes: all
-
-  file_ext: mp4
-
-  module: .ca
-  plot_func: state_anim
-
-  # Select the universe
+  based_on: .ca.state.anim_ffmpeg
+  
+  # Select the model
   model_name: Vegetation
 
   # Select the properties to plot
   to_plot:
-
     # The name of the property to plot with its options
     plant_mass:
       title: Plant Biomass
       cmap: Greens
       limits: [0, 12]
-
-  # Video options
-  writer: frames  # can be: frames, ffmpeg (if installed), ...
-  fps: 2
-  dpi: 96
-
-  # For the 'frames' writer, the following additional kwargs can be passed
-  frames_kwargs: 
-    file_format: png
-
