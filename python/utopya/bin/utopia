@@ -122,7 +122,7 @@ pm_rm.add_argument('--all',
 # subcommand: config ..........................................................
 # the name of the config to manipulate
 p_cfg.add_argument('cfg_name',
-    choices=['user', 'external_module_paths'],
+    choices=['user', 'external_module_paths', 'plot_module_paths'],
     help="The name of the configuration entry that is to be manipulated.")
 
 p_cfg.add_argument('--set',

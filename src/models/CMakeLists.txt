@@ -7,6 +7,7 @@
 #      it is important that the names of folders and targets match.
 #   5. Re-configure using `cmake ..`
 
+message(STATUS "")
 message(STATUS "Starting Utopia model registration ...")
 
 # Register the model directories
