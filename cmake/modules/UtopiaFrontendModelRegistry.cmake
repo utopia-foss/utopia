@@ -38,17 +38,14 @@ function(register_models_with_frontend)
                    "${num_model_targets} models.")
 endfunction()
 
+
 # Register an (external) python module with the Utopia Frontend
 #
 # .. cmake_function:: register_python_module
 #
-#   This function calls the utopya CLI to register model information with the
-#   frontend.
-#   Effectively, it passes the model target names, binary paths and source
-#   directory paths to the CLI; all that information is stored in the cache
-#   variables which are maintained by the add_model cmake function.
+#   This function calls the utopya CLI to register paths to external python
+#   modules with the frontend
 #
-
 function(register_python_module)
     # Parse function arguments
     set(OPTION)
@@ -58,7 +55,7 @@ function(register_python_module)
     cmake_parse_arguments(ARG "${OPTION}" "${SINGLE}" "${MULTI}" "${ARGN}")
 
     if(ARG_UNPARSED_ARGUMENTS)
-        message(WARNING "Unparsed arguments in python_find_package!")
+        message(WARNING "Unparsed arguments in register_python_module!")
     endif()
 
     # Invoke the CLI
@@ -75,8 +72,47 @@ function(register_python_module)
     if (NOT ${exit_code} STREQUAL "0")
         message(STATUS "Output of utopya CLI:\n${output}")
         message(SEND_ERROR "Error ${exit_code} in registering external python "
-                           "modules with Utopia!")
+                           "modules with Utopia frontend!")
     endif()
 
     message(STATUS "Registered external '${ARG_NAME}' module with frontend.")
+endfunction()
+
+
+# Register a custom plotting module with the Utopia frontend
+#
+# .. cmake_function:: register_plot_module
+#
+#   This function calls the utopya CLI to pass the information to the frontend.
+#
+function(register_plot_module)
+    # Parse function arguments
+    set(OPTION)
+    set(SINGLE NAME MODULE_PATH)
+    set(MULTI)
+    include(CMakeParseArguments)
+    cmake_parse_arguments(ARG "${OPTION}" "${SINGLE}" "${MULTI}" "${ARGN}")
+
+    if(ARG_UNPARSED_ARGUMENTS)
+        message(WARNING "Unparsed arguments in register_plot_module!")
+    endif()
+
+    # Invoke the CLI
+    execute_process(COMMAND
+                        ${RUN_IN_UTOPIA_ENV}
+                        utopia config plot_module_paths
+                        --get
+                        --set "${ARG_NAME}=${ARG_MODULE_PATH}"
+                    RESULT_VARIABLE exit_code
+                    OUTPUT_VARIABLE output
+                    ERROR_VARIABLE output
+                    )
+
+    if (NOT ${exit_code} STREQUAL "0")
+        message(STATUS "Output of utopya CLI:\n${output}")
+        message(SEND_ERROR "Error ${exit_code} in registering plot module "
+                           "with Utopia frontend!")
+    endif()
+
+    message(STATUS "Registered plot module '${ARG_NAME}' with frontend.")
 endfunction()

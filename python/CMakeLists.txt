@@ -50,10 +50,11 @@ message(STATUS "Providing model information to Utopia frontend ...")
 # Register the existing models
 register_models_with_frontend()
 
-# Register additional modules
-register_python_module(NAME utopia_python
-                       MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
-# TODO This, unfortunately, also adds the `model_test` module
+# Register paths of additional python modules with the frontend. This is used
+# to communicate to the plotting framework in which places to look for further
+# model-specific plots.
+register_plot_module(NAME base_models
+                     MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/model_plots")
 
 # Tests .......................................................................
 message(STATUS "")
