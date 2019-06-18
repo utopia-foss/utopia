@@ -1,7 +1,5 @@
 """Test the plotting module"""
 
-import os
-import uuid
 from pkg_resources import resource_filename
 
 import pytest
@@ -11,23 +9,20 @@ import paramspace as psp
 from utopya import Multiverse
 from utopya.testtools import ModelTest
 
-# Get the test resources
-BASIC_UNI_PLOTS_CFG_PATH = resource_filename('test', 
-                            'cfg/test_plotting__basic_uni__'
-                            'plots_cfg.yml')
-BIFURCATION_DIAGRAM_RUN_CFG_PATH = resource_filename('test', 
-                            'cfg/test_plotting__bifurcation_diagram__'
-                            'run_cfg.yml')
-BIFURCATION_DIAGRAM_PLOTS_CFG_PATH = resource_filename('test', 
-                            'cfg/test_plotting__bifurcation_diagram__'
-                            'plots_cfg.yml')
-BIFURCATION_DIAGRAM_2D_RUN_CFG_PATH = resource_filename('test', 
-                            'cfg/test_plotting__bifurcation_diagram_2d__'
-                            'run_cfg.yml')
-BIFURCATION_DIAGRAM_2D_PLOTS_CFG_PATH = resource_filename('test', 
-                            'cfg/test_plotting__bifurcation_diagram_2d__'
-                            'plots_cfg.yml')
 
+# Get the test resources ......................................................
+# Basic universe plots
+BASIC_UNI_PLOTS = resource_filename('test', 'cfg/plots/basic_uni.yml')
+
+# Bifurcation diagram, 1D and 2D
+BIFURCATION_DIAGRAM_RUN = resource_filename('test', 
+                                'cfg/plots/bifurcation_diagram/run.yml')
+BIFURCATION_DIAGRAM_PLOTS = resource_filename('test', 
+                                'cfg/plots/bifurcation_diagram/plots.yml')
+BIFURCATION_DIAGRAM_2D_RUN = resource_filename('test', 
+                                'cfg/plots/bifurcation_diagram_2d/run.yml')
+BIFURCATION_DIAGRAM_2D_PLOTS = resource_filename('test', 
+                                'cfg/plots/bifurcation_diagram_2d/plots.yml')
 
 # Fixtures --------------------------------------------------------------------
 
@@ -54,14 +49,8 @@ def test_basic_plotting(tmpdir):
     """Tests the plot_funcs.basic_* modules"""
     mv, _ = ModelTest('CopyMe').create_run_load()
 
-    mv.pm.plot_from_cfg(plots_cfg=BASIC_UNI_PLOTS_CFG_PATH,
+    mv.pm.plot_from_cfg(plots_cfg=BASIC_UNI_PLOTS,
                         plot_only=["distance_map"])
-    
-    # test lineplots
-    mv, _ = ModelTest('SavannaHeterogeneous').create_run_load()
-
-    mv.pm.plot_from_cfg(plot_only=["state_densities"])
-    mv.pm.plot_from_cfg(plot_only=["phase_diagram"])
 
 
 def test_ca_plotting():
@@ -109,13 +98,13 @@ def test_distribution_plots():
     mv.pm.plot_from_cfg(plot_only=['compl_cum_prob_dist',
                                    'cluster_size_distribution'])
 
-
+@pytest.mark.skip(reason="Need alternative way of testing this")
 def test_bifurcation_diagram(tmpdir):
     """Test plotting of the bifurcation diagram"""
     # Create and run simulation
     raise_exc = {'plot_manager': {'raise_exc': True}}
     mv = Multiverse(model_name='SavannaHomogeneous',
-                    run_cfg_path=BIFURCATION_DIAGRAM_RUN_CFG_PATH,
+                    run_cfg_path=BIFURCATION_DIAGRAM_RUN,
                     paths=dict(out_dir=str(tmpdir)),
                     **raise_exc)
     mv.run_sweep()
@@ -124,24 +113,24 @@ def test_bifurcation_diagram(tmpdir):
     mv.dm.load_from_cfg(print_tree=False)
 
     # Plot the bifurcation using the last datapoint
-    mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_DIAGRAM_PLOTS_CFG_PATH,
+    mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_DIAGRAM_PLOTS,
                         plot_only=["bifurcation_endpoint"])
     # Plot the bifurcation using the fixpoint
-    mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_DIAGRAM_PLOTS_CFG_PATH,
+    mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_DIAGRAM_PLOTS,
                         plot_only=["bifurcation_fixpoint"])
-    mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_DIAGRAM_PLOTS_CFG_PATH,
+    mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_DIAGRAM_PLOTS,
                         plot_only=["bifurcation_fixpoint_to_plot"])
     # Plot the bifurcation using scatter
-    mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_DIAGRAM_PLOTS_CFG_PATH,
+    mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_DIAGRAM_PLOTS,
                         plot_only=["bifurcation_scatter"])
     # Plot the bifurcation using oscillation
-    mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_DIAGRAM_PLOTS_CFG_PATH,
+    mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_DIAGRAM_PLOTS,
                         plot_only=["bifurcation_oscillation"])
 
 
     # Redo simulation, but using several initial conditions
     mv = Multiverse(model_name='SavannaHomogeneous',
-                    run_cfg_path=BIFURCATION_DIAGRAM_RUN_CFG_PATH,
+                    run_cfg_path=BIFURCATION_DIAGRAM_RUN,
                     paths=dict(out_dir=str(tmpdir)),
                     **raise_exc,
                     parameter_space=dict(
@@ -150,15 +139,16 @@ def test_bifurcation_diagram(tmpdir):
     mv.dm.load_from_cfg(print_tree=False)
 
     # Plot the bifurcation using multistability
-    mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_DIAGRAM_PLOTS_CFG_PATH,
+    mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_DIAGRAM_PLOTS,
                         plot_only=["bifurcation_fixpoint"])
 
+@pytest.mark.skip(reason="Need alternative way of testing this")
 def test_bifurcation_diagram_2d(tmpdir):
     """Test plotting of the bifurcation diagram"""
     # Create and run simulation
     raise_exc = {'plot_manager': {'raise_exc': True}}
     mv = Multiverse(model_name='SavannaHomogeneous',
-                    run_cfg_path=BIFURCATION_DIAGRAM_2D_RUN_CFG_PATH,
+                    run_cfg_path=BIFURCATION_DIAGRAM_2D_RUN,
                     paths=dict(out_dir=str(tmpdir)),
                     **raise_exc)
     mv.run_sweep()
@@ -167,8 +157,8 @@ def test_bifurcation_diagram_2d(tmpdir):
     mv.dm.load_from_cfg(print_tree=False)
 
     # Plot the bifurcation using the last datapoint
-    mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_DIAGRAM_2D_PLOTS_CFG_PATH,
+    mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_DIAGRAM_2D_PLOTS,
                         plot_only=["bifurcation_diagram_2d"])
     # Plot the bifurcation using the fixpoint
-    mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_DIAGRAM_2D_PLOTS_CFG_PATH,
+    mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_DIAGRAM_2D_PLOTS,
                         plot_only=["bifurcation_diagram_2d_fixpoint_to_plot"])

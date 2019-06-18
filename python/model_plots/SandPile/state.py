@@ -41,10 +41,6 @@ def mean_slope(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
     # Calculate the slope averaged over all grid cells for each time step
     mean_slope = uni['data/SandPile/slope'].mean(dim=('x', 'y'))
 
-    # If there are no time coordinates for this, use the universe time data
-    if 'time' not in mean_slope.coords:
-        mean_slope.coords['time'] = uni.get_times_array()
-
     # Plot the mean normalised slope over time
     hlpr.ax.plot(mean_slope.coords['time'],
                  mean_slope - critical_slope,

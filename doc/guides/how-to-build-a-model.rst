@@ -11,9 +11,9 @@ After having been through the :doc:`README <../README>` and the
 
 If you go through all the steps, you will end up with a model that can profit
 from all *Utopia* features and can do ... basically nothing interesting yet.
-It is a starting point for your own expedition in the *Utopia* model world.
+It is a **starting point** for your own expedition into the *Utopia* world.
 You will be the one who afterwards defines the rules, the entities etc. of
-this world.
+that world.
 
 To that end, there are two models supplied that can be used as a basis for new
 models: the so-called ``CopyMe`` models. Use those for 
@@ -35,10 +35,10 @@ following sections from top to bottom.
 
   The steps in this guide are numbered; if you run into problems and ask for
   help, you can name the step you got stuck at.
+  
 
 Setting Up The Infrastructure
 -----------------------------
-
 We assume that you want to build your own model, called ``MyFancyModel``.
 Probably, you will give it a more suitable name. So, keep in mind to replace
 every ``MyFancyModel`` below with the actual model name.
@@ -53,6 +53,14 @@ latter; if you are already more proficient, use the former.
 
 1. Move to the ``src/models`` directory inside the ``utopia`` repository.
 2. Copy the ``CopyMe`` directory and paste it in the same directory.
+
+.. note::
+
+  **Important!** If you are a CCEES group member, you should **not** paste
+  into the ``src/models`` directory in the ``utopia`` repository (which holds
+  the framework code), but into the same directory inside the group-internal
+  `models repository <https://ts-gitlab.iup.uni-heidelberg.de/utopia/models>`_.
+
 3. Rename the copied directory to ``MyFancyModel`` (or rather, your chosen
    name).
 

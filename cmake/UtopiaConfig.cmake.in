@@ -5,6 +5,12 @@
 # The local path to this file
 get_filename_component(current_dir ${CMAKE_CURRENT_LIST_FILE} PATH)
 
+# Store the paths to the venv binaries
+set_and_check(UTOPIA_ENV_EXECUTABLE @UTOPIA_ENV_EXECUTABLE@)
+set_and_check(UTOPIA_ENV_PIP @UTOPIA_ENV_PIP@)
+set_and_check(UTOPIA_ENV_DIR @UTOPIA_ENV_DIR@)
+set_and_check(RUN_IN_UTOPIA_ENV @RUN_IN_UTOPIA_ENV@)
+
 # Add the installed modules to the module path
 set_and_check(cmake_modules_dir @PACKAGE_cmake_modules_dir@)
 list(APPEND CMAKE_MODULE_PATH ${cmake_modules_dir})
@@ -25,7 +31,6 @@ include(CMakeFindDependencyMacro)
 
 find_dependency(Boost 1.62
                 COMPONENTS unit_test_framework)
-find_dependency(FFTW3 3.3)
 
 set(THREADS_PREFER_PTHREAD_FLAG)
 find_dependency(Threads)

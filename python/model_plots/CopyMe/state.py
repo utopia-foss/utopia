@@ -28,15 +28,14 @@ def state_mean(dm: DataManager, *, hlpr: PlotHelper, uni: UniverseGroup,
             calculated of
         **plot_kwargs: Passed on to matplotlib.pyplot.plot
     """
-    # Get the x-data, i.e. the times. Can query the UniverseGroup for that
-    times = uni.get_times_array()
+    # Extract the data
+    data = uni['data/CopyMe'][mean_of]
 
-    # Extract the data that is to be plotted on the y-axis, i.e.: `mean_of`
-    # averaged over all grid cells for every time step
-    mean = [np.mean(d) for d in uni['data/CopyMe'][mean_of]]
+    # Calculate the mean over the spatial dimensions
+    mean = data.mean(['x', 'y'])
 
     # Call the plot function on the currently selected axis in the plot helper
-    hlpr.ax.plot(times, mean, **plot_kwargs)
+    hlpr.ax.plot(mean.coords['time'], mean, **plot_kwargs)
     # NOTE `hlpr.ax` is just the current matplotlib.axes object. It has the
     #      same interface as `plt`, aka `matplotlib.pyplot`
 

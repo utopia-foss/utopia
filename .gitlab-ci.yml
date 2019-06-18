@@ -1,4 +1,4 @@
-# Continuous Integration and Deployment of Utopia
+# Continuous Integration and Deployment of Utopia Framework Repository
 ---
 # ++ Pipeline preparations ++++++++++++++++++++++++++++++++++++++++++++++++++++
 variables:
@@ -6,13 +6,14 @@ variables:
   GIT_SUBMODULE_STRATEGY: recursive
 
   # For __deployment__, the Utopia version
-  UTOPIA_VERSION: "0.999"   # ... almost 1.0
+  UTOPIA_VERSION: "1.0"
   # NOTE Currently unused, but should be used in docker image deployment.
+  # TODO Single-source this
 
   # Variables needed for docker image deployment
   # The different segments of the resulting test image tag
   BASE_IMAGE_NAME: ccees/utopia-base
-  BASE_IMAGE_VERSION: "1.1"
+  BASE_IMAGE_VERSION: "1.2"
   BASE_IMAGE: "${BASE_IMAGE_NAME}:v${BASE_IMAGE_VERSION}"
   # NOTE Do not forget to increment the BASE_IMAGE_VERSION when changes to the
   #      docker file are introduced.
@@ -27,12 +28,7 @@ variables:
   MAKE_FLAGS_BUILD: -j$CPUS_BUILD
   MAKE_FLAGS_TEST: -j$CPUS_TEST
 
-  # Shortcuts
-  # ... for directories
-  MODEL_SRC: $CI_PROJECT_DIR/src/models
-  MODEL_PYTESTS: $CI_PROJECT_DIR/python/model_tests
-
-  # ... for certain commands
+  # Utopia virtual environment shortcuts
   RUN_IN_UTOPIA_ENV: $CI_PROJECT_DIR/build/run-in-utopia-env
   ENTER_UTOPIA_ENV: source $CI_PROJECT_DIR/build/activate
 
@@ -49,16 +45,16 @@ variables:
   DOC_KEEP_LAST_N: 10 # How many documentation pushes to keep
 
 
-# Define the image to use as base for all stages
-image: ${BASE_IMAGE}
-# NOTE Some jobs overwrite this setting locally
-
 stages:
   - ci_test   # (on selected branches) tests CI itself, then aborts
   - setup     # (on master) set up the docker base image
   - build     # build utopia and all tests
   - test      # carry out tests
   - deploy    # (on master) deploy documentation; build and deploy docker image
+
+
+# As base image for the jobs, use the Utopia image created in the setup stage
+image: ${BASE_IMAGE}
 
 
 # .. YAML Templates ...........................................................
@@ -75,27 +71,27 @@ stages:
     #   https://docs.gitlab.com/ce/ci/ssh_keys/
     # Run ssh-agent (inside the build environment)
     - eval $(ssh-agent -s)
-    #
+    
     # Add the SSH key stored in SSH_PRIVATE_KEY variable to the agent store
     # We're using tr to fix line endings which makes ed25519 keys work
     # without extra base64 encoding.
     # https://gitlab.com/gitlab-examples/ssh-private-key/issues/1#note_48526556
     - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
-    #
+    
     # Create the SSH directory and give it the right permissions
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
-    #
+    
     # Add the known hosts lists to ensure this ssh connection is the right one
     - echo "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
-    # - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config' # FIXME turn this on again
+
 
 # Use the Docker-in-Docker executor and services, log into Docker Hub
 .dind: &dind
+  image: docker:stable
   tags:
     - dind
-  image: docker:stable
   services:
     - docker:dind
   variables:
@@ -103,12 +99,15 @@ stages:
   before_script:
     - $DOCKER_HUB_LOGIN
 
+
 # Create artifacts of the build directory
 .artifacts: &artifacts
   artifacts:
     name: "$CI_JOB_NAME"
     paths:
-      - $CI_PROJECT_DIR/build
+      - $CI_PROJECT_DIR/build       # Build files
+      - $CI_PROJECT_DIR/python      # Editably-installed python code
+      - $CI_PROJECT_DIR/.config     # Frontend configuration files
     expire_in: 3 hours
 
 
@@ -159,24 +158,21 @@ setup:utopia-base:
 # Build the documentation; artifacts used for documentation deployment
 build:docs:
   stage: build
-  <<: [*ssh_access]
-
+  <<: *ssh_access
   artifacts:
     name: "$CI_JOB_NAME"
     paths:
       - $CI_PROJECT_DIR/build/doc
     expire_in: 1 day
-
   script:
     - mkdir build && cd build
     - cmake ..
     - make doc
 
 # Build the unit tests; artifacts used in test stage
-build:unit_tests:
+build:backend_tests:
   stage: build
   <<: [*ssh_access, *artifacts]
-
   script:
     - mkdir build && cd build
     - cmake ..
@@ -187,27 +183,27 @@ build:unit_tests:
 build:models:
   stage: build
   <<: [*ssh_access, *artifacts]
-
   script:
     - mkdir build && cd build
     - cmake ..
     - make $MAKE_FLAGS_BUILD all
     - make $MAKE_FLAGS_BUILD build_tests_models
-
+  after_script:
+    # Copy the frontend configuration to the project dir such that it is part
+    # of the artifacts and can be re-used in the test stages
+    - cp -r ~/.config $CI_PROJECT_DIR/
 
 # Build in debug mode, once with gcc and once with clang
 build:debug: &build_debug
   stage: build
   <<: *ssh_access
   allow_failure: true
-
   script:
     - mkdir build && cd build
     - cmake
         -DCMAKE_BUILD_TYPE=Debug
         -DCMAKE_CXX_FLAGS_DEBUG='-Werror'
       ..
-    # FIXME After Utopia::as_ is removed, allow the deprecation warning again
     - make $MAKE_FLAGS_BUILD build_tests_core
     - make $MAKE_FLAGS_BUILD build_tests_dataio
     - make $MAKE_FLAGS_BUILD build_tests_models
@@ -215,7 +211,6 @@ build:debug: &build_debug
 
 build:debug-clang:
   <<: *build_debug
-
   script:
     - mkdir build && cd build
     - cmake
@@ -224,7 +219,6 @@ build:debug-clang:
         -DCMAKE_CXX_COMPILER=clang++
         -DCMAKE_CXX_FLAGS_DEBUG='-Werror'
       ..
-    # FIXME After Utopia::as_ is removed, allow the deprecation warning again
     - make $MAKE_FLAGS_BUILD build_tests_core
     - make $MAKE_FLAGS_BUILD build_tests_dataio
     - make $MAKE_FLAGS_BUILD build_tests_models
@@ -232,16 +226,13 @@ build:debug-clang:
 
 build:install:
   stage: build
-  <<: [*ssh_access]
-
+  <<: *ssh_access
   artifacts:
     name: "$CI_JOB_NAME"
     paths:
       - $CI_PROJECT_DIR/build
-      - $CI_PROJECT_DIR/python # to include configured Python scripts
       - $CI_PROJECT_DIR/install # installation directory
     expire_in: 3 hours
-
   script:
     - mkdir build && cd build
     - cmake
@@ -251,15 +242,16 @@ build:install:
     - make $MAKE_FLAGS_BUILD install
     - cp -r ~/.cmake . # copy the packgage registry
 
+
 # -- Test stage ---------------------------------------------------------------
-# Using the artifacts of the build stage, executes tests of core, data i/o,
-# frontend, and models.
+# Using the artifacts of the build stage, executes tests of core, data I/O,
+# frontend, models, and CLI.
 
 test:core: &test_core
   stage: test
   <<: *ssh_access
   dependencies:
-    - build:unit_tests
+    - build:backend_tests
   script:
     - cd build
     - make $MAKE_FLAGS_TEST test_core
@@ -272,61 +264,50 @@ test:dataio:
 
 test:utopya:
   stage: test
-  <<: *ssh_access
   dependencies:
     - build:models
+  before_script:
+    # Place a symlink at the expected path to make the model registry available
+    - &add_cfg_symlink ln -s $CI_PROJECT_DIR/.config ~/.config && ls -la ~/
   script:
-    # Prepare
     - cd build
-    - cmake ..   # TODO Improve. Use artifacts (currently missing ~/.config)
-    #
-    # Run the tests
     - make test_utopya
 
 test:models:
   stage: test
-  <<: *ssh_access
   dependencies:
     - build:models
-  script:
-    # Prepare
+  before_script:
+    # Make model registry available (from build:models job)
+    - *add_cfg_symlink
+  script:    
+    # Test models using C++ and Python model tests
     - cd build
-    - cmake ..   # TODO Improve. Use artifacts (currently missing ~/.config)
-    #
-    # Test all models using the testing framework
     - make $MAKE_FLAGS_TEST test_models
-    #
+    
     # Also test each model via the CLI.
     # Need to enter the virtual env first
     - $ENTER_UTOPIA_ENV
-    #
+    - pip freeze  # FIXME
+    
     # First, the test and benchmark models:
     - utopia run dummy --debug
     - utopia run CopyMe --debug
     - utopia run CopyMeBare --debug --no-plot
     - utopia run HdfBench --sweep --num-seeds 3 --debug
-    #
+
     # Now the actual models:
-    - utopia run Amee --sweep --no-plot --debug
     - utopia run ContDisease --debug
     - utopia run Environment --debug --num-steps 10
     - utopia run ForestFire --debug
     - utopia run Geomorphology --debug
-    - utopia run Hierarnet --debug
-    - utopia run mesonet --debug
     - utopia run PredatorPrey --debug
     - utopia run SandPile --debug
-    - utopia run SavannaHeterogeneous --debug
-    - utopia run SavannaHomogeneous --debug
     - utopia run SimpleEG --debug
     - utopia run Vegetation --debug
-    # TODO Add a call for your model here, alphabetically sorted!
-    #      Don't forget to add the --debug flag. If you'd rather not plot, add
-    #      the --no-plot flag as well.
 
 test:cli:
   stage: test
-  <<: *ssh_access
   dependencies:
     - build:models
   artifacts:
@@ -334,29 +315,29 @@ test:cli:
     paths:
       - $CI_PROJECT_DIR/utopia_output/
     expire_in: 1h
+  before_script:
+    # Make model registry available (from build:models job)
+    - *add_cfg_symlink
   script:
-    # Prepare
-    - cd build
-    - cmake ..   # TODO Improve. Use artifacts (currently missing ~/.config)
-
     # Now, enter the virtual environment and test the CLI
     - $ENTER_UTOPIA_ENV
+    - pip freeze  # FIXME
     
     # Test deployment of user configuration
     - utopia config user --deploy
     
     # Adjust the user configuration to store to a local directory
-    - utopia config user --set paths.out_dir=${CI_PROJECT_DIR}/utopia_output --get
+    - utopia config user --set paths.out_dir=$CI_PROJECT_DIR/utopia_output --get
 
     # Show which models are available
     - utopia models
     - utopia models ls --long
     
-    # Test the CLI with the dummy model and its default configuration
+    # Test the run command
     - utopia run dummy
 
     # Test passing a custom run configuration and performing a sweep
-    - utopia run dummy $MODEL_PYTESTS/dummy/sweep.yml --sweep --note sweep
+    - utopia run dummy python/model_tests/dummy/sweep.yml --sweep --note sweep
 
     # Test setting the number of steps (negative should fail)
     - utopia run dummy --num-steps 1 --no-plot
@@ -381,9 +362,12 @@ test:cli:
     # Need to sleep here because the eval directory will already exist
     - utopia run dummy --note plt1
     - utopia run dummy --note plt2 --plot-only states
-    - utopia run dummy --note plt3 --plots-cfg $MODEL_SRC/dummy/dummy_plots.yml
-    - utopia run dummy --note plt4 --update-plots-cfg state_step_1.based_on=states state_step_1.step=1
-    - utopia run dummy --note plt5 --update-plots-cfg $MODEL_SRC/dummy/dummy_plots.yml 
+    - utopia run dummy --note plt3
+        --plots-cfg src/models/dummy/dummy_plots.yml
+    - utopia run dummy --note plt4
+        --update-plots-cfg state_step_1.based_on=states state_step_1.step=1
+    - utopia run dummy --note plt5
+        --update-plots-cfg src/models/dummy/dummy_plots.yml 
     
     # Test the setting of parameters and config parameters from CLI
     - utopia run dummy --set-model-params foo=3 bar=2.0
@@ -432,7 +416,7 @@ deploy:docs:
   stage: deploy
   <<: *ssh_access
   only:
-    - master@utopia/utopia
+    - master
   dependencies:
     - build:docs
   script:
@@ -454,7 +438,6 @@ deploy:docs:
     - ssh -p $DOC_PORT $DOC_HOST "/postprocess.sh $DOC_REMOTE_BASE_DIR $DOC_LATEST $DOC_KEEP_LAST_N"
 
     - echo "Finished. :)"
-
   environment:
     name: docs/latest
     url: https://hermes.iup.uni-heidelberg.de/utopia_doc/latest/html/
@@ -465,9 +448,7 @@ deploy:dockerhub-latest:
   <<: *dind
   stage: deploy
   only:
-    # master branch in core repo (no forks)
-    - master@utopia/utopia
-  dependencies: []
+    - master
   script:
     - docker build -f docker/utopia.dockerfile
                    --build-arg BASE_IMAGE=$BASE_IMAGE

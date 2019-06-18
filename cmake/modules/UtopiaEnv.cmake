@@ -6,6 +6,8 @@
 #   - UTOPIA_ENV_DIR            Path to the venv installation
 #   - UTOPIA_ENV_EXECUTABLE     Python interpreter executable inside the venv
 #   - UTOPIA_ENV_PIP            Pip module executable inside the venv
+#   - RUN_IN_UTOPIA_ENV         Binary for executing a single command in a
+#                               shell configured with the virtual env.
 #
 
 # search Python (different routines depending on CMake version)
@@ -14,6 +16,13 @@ if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.12)
 else ()
     find_package(PythonInterp 3.6 REQUIRED)
     set (Python_EXECUTABLE ${PYTHON_EXECUTABLE})
+endif ()
+
+# search for a Bash environment
+find_package(UnixCommands)
+if (NOT DEFINED BASH)
+    message(SEND_ERROR "Bash is required to execute commands in the virtual "
+                       "environment")
 endif ()
 
 # the designated paths for the virtual env and some environments.
@@ -53,27 +62,21 @@ else ()
 endif ()
 
 # write the convenience bash script
-find_package(UnixCommands)
-if (BASH)
-    # configure the script
-    configure_file(${CMAKE_SOURCE_DIR}/cmake/scripts/run-in-utopia-env.in
-                   ${CMAKE_BINARY_DIR}/cmake/scripts/run-in-utopia-env
-                   @ONLY)
-    # copy the script, changing file permissions
-    file (COPY ${CMAKE_BINARY_DIR}/cmake/scripts/run-in-utopia-env
-          DESTINATION ${CMAKE_BINARY_DIR}
-          FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
-                           GROUP_READ GROUP_WRITE GROUP_EXECUTE
-                           WORLD_READ WORLD_WRITE WORLD_EXECUTE)
+# configure the script
+configure_file(${CMAKE_SOURCE_DIR}/cmake/scripts/run-in-utopia-env.in
+                ${CMAKE_BINARY_DIR}/cmake/scripts/run-in-utopia-env
+                @ONLY)
+# copy the script, changing file permissions
+file (COPY ${CMAKE_BINARY_DIR}/cmake/scripts/run-in-utopia-env
+        DESTINATION ${CMAKE_BINARY_DIR}
+        FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+                        GROUP_READ GROUP_WRITE GROUP_EXECUTE
+                        WORLD_READ WORLD_WRITE WORLD_EXECUTE)
 
-    set (RUN_IN_UTOPIA_ENV ${CMAKE_BINARY_DIR}/run-in-utopia-env)
-else ()
-    message (WARNING "Bash was not found. Your system likely does not support "
-                     "the utopia-env. Skipping creation of run script.")
-endif ()
+set (RUN_IN_UTOPIA_ENV ${CMAKE_BINARY_DIR}/run-in-utopia-env)
+
 
 # -- virtual environment fully set up now -------------------------------------
-
 
 # update pip and installation packages only if they are below a certain version
 # number; updating everytime is unnecessary and takes too long... while this

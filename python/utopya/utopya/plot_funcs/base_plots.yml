@@ -194,22 +194,6 @@
     writer: ffmpeg
 
 
-# .. A spatial CA plot animation ..............................................
-# NOTE Deprecated.
-.ca.state_anim:
-  creator: universe
-  universes: all
-
-  file_ext: mp4
-
-  module: .ca
-  plot_func: state_anim
-
-  # Video options
-  writer: frames  # can be: frames, ffmpeg (if installed), ...
-  dpi: 96
-
-
 # -- Distributions ------------------------------------------------------------
 # .. A histogram plot .........................................................
 .distribution.histogram: &histogram

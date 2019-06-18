@@ -48,13 +48,15 @@ target_include_directories(utopia INTERFACE
 )
 
 # Link with required libraries
+# NOTE: Plugins might also be located in system paths, so they have to be
+#       linked *first* such that their include directories are searched first.
 target_link_libraries(utopia INTERFACE
+    spdlog
+    yaml-cpp
+    Threads::Threads # NOTE: required by spdlog on Ubuntu 18.04
     armadillo
     Boost::boost
     hdf5
-    spdlog
-    Threads::Threads # NOTE: required by spdlog on Ubuntu 18.04
-    yaml-cpp
 )
 
 # --- Include Config Tree ---
@@ -105,6 +107,10 @@ configure_package_config_file(
     PATH_VARS cmake_modules_dir
               spdlog_config_dir
               yaml-cpp_config_dir
+              UTOPIA_ENV_EXECUTABLE
+              UTOPIA_ENV_PIP
+              UTOPIA_ENV_DIR
+              RUN_IN_UTOPIA_ENV
 )
 
 # --- Installation Routine ---

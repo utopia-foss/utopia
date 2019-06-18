@@ -7,8 +7,7 @@
 
 FROM ubuntu:bionic
 
-LABEL maintainer="Lukas Riedel <lriedel@iup.uni-heidelberg.de>, \
-                  Yunus Sevinchan <ysevinch@iup.uni-heidelberg.de>"
+LABEL maintainer="Lukas Riedel <lriedel@iup.uni-heidelberg.de>, Yunus Sevinchan <ysevinch@iup.uni-heidelberg.de>"
 
 # install dependencies
 RUN apt-get update \
@@ -31,8 +30,13 @@ RUN apt-get update \
         python3-pip \
         python3-venv \
         ffmpeg \
+    && apt-get install -y \
         libfftw3-dev \
+        vim \
+        nano \
     && apt-get clean
+# NOTE Not all packages above are _required_ by Utopia; some are added for
+#      convenience in downstream images, like: FFTW, vim, nano
 
 # manage locales
 RUN rm -rf /var/lib/apt/lists/* \

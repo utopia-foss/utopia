@@ -27,7 +27,7 @@ frequencies:
 # plot the spatial development in the CA of the strategy
 strategy_and_payoff: &strategy_and_payoff
   # Base this plot on a utopya base plot configuration
-  based_on: .ca.state_anim
+  based_on: .ca.state.anim_ffmpeg
 
   model_name: SimpleEG
 
@@ -45,10 +45,6 @@ strategy_and_payoff: &strategy_and_payoff
       title: Payoff
       limits: [0, 12]
       cmap: viridis
-
-  # Video options
-  writer: ffmpeg  # can be: frames, ffmpeg (if installed), ...
-  fps: 10
 
 
 # another plot that stores things as frames
