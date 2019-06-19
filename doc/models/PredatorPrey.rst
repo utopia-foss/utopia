@@ -79,7 +79,7 @@ Default Model Configuration
 
 Below are the default configuration parameters for the ``PredatorPrey`` model.
 
-.. literalinclude:: ../../src/models/PredatorPrey/PredatorPrey_cfg.yml
+.. literalinclude:: ../../src/utopia/models/PredatorPrey/PredatorPrey_cfg.yml
    :language: yaml
    :start-after: ---
 
@@ -90,7 +90,7 @@ Plotting
 The following plots are pre-configured and available for the ``PredatorPrey``
 model:
 
-.. literalinclude:: ../../src/models/PredatorPrey/PredatorPrey_plots.yml
+.. literalinclude:: ../../src/utopia/models/PredatorPrey/PredatorPrey_plots.yml
    :language: yaml
    :start-after: ---
 

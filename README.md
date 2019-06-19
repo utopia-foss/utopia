@@ -164,7 +164,7 @@ utopia run SomeModel
 
 where `SomeModel` needs to be replaced with a valid model name.
 To get a list of available models, run the `utopia models ls` command.
-Alternatively, have a look at the [`src/models`](src/models) directory, where they are implemented.
+Alternatively, have a look at the [`src/utopia/models`](src/utopia/models) directory, where they are implemented.
 
 The `utopia run` command carries out a pre-configured simulation for that model, loads the data, and performs automated plots.
 

@@ -19,7 +19,7 @@ Thus, you can make changes to the configuration file and thereby change which en
 
 For example, :doc:`../models/ForestFire` uses this interface to configure heterogeneities:
 
-.. literalinclude:: ../../src/models/ForestFire/ForestFire_cfg.yml
+.. literalinclude:: ../../src/utopia/models/ForestFire/ForestFire_cfg.yml
    :language: yaml
    :start-after: # --- Heterogeneities
    :end-before: # --- Output
