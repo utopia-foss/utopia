@@ -395,14 +395,14 @@ default configuration is included in its documentation. For example, in the
 documentation of the ``SandPile`` model you will find a section with the
 default parameters; it looks like this:
 
-.. literalinclude:: ../../src/models/SandPile/SandPile_cfg.yml
+.. literalinclude:: ../../src/utopia/models/SandPile/SandPile_cfg.yml
    :language: yaml
    :start-after: ---
 
 .. note::
 
   You can also locate the default model configuration of the ``SandPile``
-  model at ``src/models/SandPile/SandPile_cfg.yml``. This file really is only
+  model at ``src/utopia/models/SandPile/SandPile_cfg.yml``. This file really is only
   for *looking*; to change parameters, there is the ``run.yml`` file.
 
 So, let's change the grid resolution to a more interesting value. In your
@@ -542,7 +542,7 @@ To find out more about the default plot configuration, locate the corresponding 
 
 There, you will find the same names as extracted from the log as keys on the root level of the configuration file. It looks something like this:
 
-.. literalinclude:: ../../src/models/SandPile/SandPile_plots.yml
+.. literalinclude:: ../../src/utopia/models/SandPile/SandPile_plots.yml
    :language: yaml
    :start-after: ---
    :end-before: # --- An animation
@@ -602,7 +602,7 @@ Animations
 At one point you might be interested in making cool animations of the state variables, but you might be deterred as it is generally hard to do. Not with *Utopia*\ !
 In fact, it is part of the default plotting system. You might have noticed the corresponding plot configuration already. It looks something like this:
 
-.. literalinclude:: ../../src/models/SandPile/SandPile_plots.yml
+.. literalinclude:: ../../src/utopia/models/SandPile/SandPile_plots.yml
    :language: yaml
    :start-after: # --- An animation of the CA `slope`
    :end-before: # --- An animation of the CA `avalanche`
@@ -763,7 +763,7 @@ Parameters
 For getting to know the parameters available to the ``ForestFire`` model, let's have a look at that model's default configuration by opening its description in the Utopia documentation.
 It looks like this:
 
-.. literalinclude:: ../../src/models/ForestFire/ForestFire_cfg.yml
+.. literalinclude:: ../../src/utopia/models/ForestFire/ForestFire_cfg.yml
    :language: yaml
    :start-after: ---
 

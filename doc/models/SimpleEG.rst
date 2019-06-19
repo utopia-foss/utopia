@@ -120,7 +120,7 @@ Default Model Configuration
 
 Below is the default model configuration for the ``SimpleEG`` model:
 
-.. literalinclude:: ../../src/models/SimpleEG/SimpleEG_cfg.yml
+.. literalinclude:: ../../src/utopia/models/SimpleEG/SimpleEG_cfg.yml
    :language: yaml
    :start-after: ---
 

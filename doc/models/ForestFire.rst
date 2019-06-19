@@ -100,7 +100,7 @@ Default Configuration Parameters
 --------------------------------
 Below are the default configuration parameters for the ``ForestFire`` model.
 
-.. literalinclude:: ../../src/models/ForestFire/ForestFire_cfg.yml
+.. literalinclude:: ../../src/utopia/models/ForestFire/ForestFire_cfg.yml
    :language: yaml
    :start-after: ---
 
@@ -111,13 +111,13 @@ The following plot configurations are available for the ``ForestFire`` model:
 
 Default Plot Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. literalinclude:: ../../src/models/ForestFire/ForestFire_plots.yml
+.. literalinclude:: ../../src/utopia/models/ForestFire/ForestFire_plots.yml
    :language: yaml
    :start-after: ---
 
 Base Plot Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^
-.. literalinclude:: ../../src/models/ForestFire/ForestFire_base_plots.yml
+.. literalinclude:: ../../src/utopia/models/ForestFire/ForestFire_base_plots.yml
    :language: yaml
    :start-after: ---
 

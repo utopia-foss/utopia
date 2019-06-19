@@ -427,6 +427,6 @@ Default Model Configuration
 Below are the default configuration parameters for the ``Environment`` model.
 These include an example of how environment functions can be set up.
 
-.. literalinclude:: ../../src/models/Environment/Environment_cfg.yml
+.. literalinclude:: ../../src/utopia/models/Environment/Environment_cfg.yml
    :language: yaml
    :start-after: ---

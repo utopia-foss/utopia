@@ -44,7 +44,8 @@ target_compile_features(utopia INTERFACE cxx_std_17)
 # Add include directories
 target_include_directories(utopia INTERFACE
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/>
-    $<INSTALL_INTERFACE:include> # NOTE: not used for now
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/>
+    $<INSTALL_INTERFACE:include>
 )
 
 # Link with required libraries
@@ -67,7 +68,7 @@ enable_testing()
 # Include subdirectories
 add_subdirectory(plugins/vendor)
 add_subdirectory(doc)
-add_subdirectory(src/models)
+add_subdirectory(src/utopia/models)
 add_subdirectory(python)
 add_subdirectory(test EXCLUDE_FROM_ALL)
 
@@ -148,8 +149,9 @@ install(
 )
 
 # Install the C++ headers
+# Headers in the src/ dir will be moved into the install include/ dir
 install(
-    DIRECTORY include/
+    DIRECTORY include/ src/
     # NOTE: CMake >=v3.14 supports TYPE argument
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     FILES_MATCHING PATTERN "*.hh"

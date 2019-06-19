@@ -54,7 +54,7 @@ Default parameters
 
 Below are the default configuration parameters for the ``Geomorphology`` model.
 
-.. literalinclude:: ../../src/models/Geomorphology/Geomorphology_cfg.yml
+.. literalinclude:: ../../src/utopia/models/Geomorphology/Geomorphology_cfg.yml
    :language: yaml
    :start-after: ---
 
@@ -66,4 +66,3 @@ The model is analyzed in depth in the bachelor thesis of Julian Weninger (2016).
 
 * 
   Weninger, J., 2016. Development of Mountain Ranges and their Rivers - A Cellular Automaton Simulation. Bachelor’s Thesis, IUP (TS&CCEES) at Universität Heidelberg.
-

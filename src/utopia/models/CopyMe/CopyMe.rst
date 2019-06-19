@@ -1,6 +1,6 @@
 
-``CopyMeBare`` - The bare basics for your new model
-===================================================
+``CopyMe`` - A good place to start with your CA-based model
+===========================================================
 
 This is an *example* for the documentation of your model implementation. 
 Use your own creativity and structure to convey the important information about your model in a nice and catchy way.
@@ -50,9 +50,9 @@ You can use some short code blocks to convey some information. Adjust the langua
 Default Model Configuration
 ---------------------------
 
-Below are the default configuration parameters for the ``CopyMeBare`` model.
+Below are the default configuration parameters for the ``CopyMe`` model.
 
-.. literalinclude:: ../../src/models/CopyMeBare/CopyMeBare_cfg.yml
+.. literalinclude:: ../../src/utopia/models/CopyMe/CopyMe_cfg.yml
    :language: yaml
    :start-after: ---
 

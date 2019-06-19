@@ -132,7 +132,7 @@ Where do the tests come from? You write them. You can write tests in C++ and/or 
 
 * Python: Look at the files in ``utopia/python/model_tests/``
 * C++: Look at the files in the ``test`` directory inside of each model within
-  the ``src/models`` directory.
+  the ``src/utopia/models`` directory.
 
 For setting up the testing system for your model, look at the description in :doc:`how-to-build-a-model`. For running your tests, see the :doc:`README <../readme>`.
 

@@ -20,7 +20,7 @@ Default Model Configuration
 ---------------------------
 Below are the default configuration parameters for the ``SandPile`` model.
 
-.. literalinclude:: ../../src/models/SandPile/SandPile_cfg.yml
+.. literalinclude:: ../../src/utopia/models/SandPile/SandPile_cfg.yml
    :language: yaml
    :start-after: ---
 
@@ -30,13 +30,13 @@ The following plot configurations are available for the ``SandPile`` model:
 
 Default Plot Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. literalinclude:: ../../src/models/SandPile/SandPile_plots.yml
+.. literalinclude:: ../../src/utopia/models/SandPile/SandPile_plots.yml
    :language: yaml
    :start-after: ---
 
 Base Plot Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^
-.. literalinclude:: ../../src/models/SandPile/SandPile_base_plots.yml
+.. literalinclude:: ../../src/utopia/models/SandPile/SandPile_base_plots.yml
    :language: yaml
    :start-after: ---
 

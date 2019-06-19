@@ -51,13 +51,13 @@ basics* needed for a model, while the ``CopyMe`` model also includes showcase
 of some functionality. If you are new to *Utopia*, you should go with the
 latter; if you are already more proficient, use the former.
 
-1. Move to the ``src/models`` directory inside the ``utopia`` repository.
+1. Move to the ``src/utopia/models`` directory inside the ``utopia`` repository.
 2. Copy the ``CopyMe`` directory and paste it in the same directory.
 
 .. note::
 
   **Important!** If you are a CCEES group member, you should **not** paste
-  into the ``src/models`` directory in the ``utopia`` repository (which holds
+  into the ``src/utopia/models`` directory in the ``utopia`` repository (which holds
   the framework code), but into the same directory inside the group-internal
   `models repository <https://ts-gitlab.iup.uni-heidelberg.de/utopia/models>`_.
 
@@ -87,31 +87,31 @@ latter; if you are already more proficient, use the former.
 5. Tell *Utopia* that there is a new model, e.g. include your model in the
    Utopia CMake build routine:
 
-  - In ``src/models/``, you find a ``CMakeLists.txt`` file. Open it and let
+  - In ``src/utopia/models/``, you find a ``CMakeLists.txt`` file. Open it and let
     CMake find your model directory by including the command:
     ``add_subdirectory(MyFancyModel)`` 
-  - In ``src/models/MyFancyModel/``, there is another ``CMakeLists.txt`` file.
+  - In ``src/utopia/models/MyFancyModel/``, there is another ``CMakeLists.txt`` file.
     Open it and change the line ``add_model(CopyMe CopyMe.cc)`` to
     ``add_model(MyFancyModel MyFancyModel.cc)``. With this command, you tell
     CMake that a new model should be kept track of.
 
-6. Open the file ``MyFancyModel.cc`` in the ``src/models/MyFancyModel/``
+6. Open the file ``MyFancyModel.cc`` in the ``src/utopia/models/MyFancyModel/``
    directory and do the following:
 
   - Throughout the file, replace all ``CopyMe``'s by ``MyFancyModel``'s.
 
-7. Open the file ``MyFancyModel.hh`` in the ``src/models/MyFancyModel/``
+7. Open the file ``MyFancyModel.hh`` in the ``src/utopia/models/MyFancyModel/``
    directory and do the following:
 
   - Throughout the file, replace all ``CopyMe``\ 's by ``MyFancyModel``\ 's.
   - Throughout the file, replace all ``COPYME``\ 's by ``MYFANCYMODEL``\ 's.
 
-8. Open the file ``MyFancyModel_plots.yml`` in the ``src/models/MyFancyModel/``
+8. Open the file ``MyFancyModel_plots.yml`` in the ``src/utopia/models/MyFancyModel/``
    directory and do the following:
 
   - Throughout the file, replace all ``CopyMe``\ 's by ``MyFancyModel``\ 's.
 
-9. Open the file ``MyFancyModel_cfg.yml`` in the ``src/models/MyFancyModel/``
+9. Open the file ``MyFancyModel_cfg.yml`` in the ``src/utopia/models/MyFancyModel/``
    directory and do the following:
 
   - Throughout the file, replace all ``CopyMe``\ 's by ``MyFancyModel``\ 's.
@@ -197,7 +197,7 @@ Inspiration from other models
 
 If you want to learn more about the capabilities of Utopia and how models can
 look like, we recommend that you have a look at the already implemented models
-in the ``src/models`` directory.
+in the ``src/utopia/models`` directory.
 
 ``log->debug`` instead of ``std::cout``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
