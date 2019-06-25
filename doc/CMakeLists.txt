@@ -45,7 +45,10 @@ add_custom_target(sphinx_html
             ${CMAKE_CURRENT_BINARY_DIR}/html # output dir
 )
 
-add_dependencies(sphinx_html doxygen_utopia)
+# Add the doxygen-dependent documentation target only when doxygen was found
+if (DOXYGEN_FOUND)
+    add_dependencies(sphinx_html doxygen_utopia)
+endif ()
 
 add_custom_target(doc)
 add_dependencies(doc sphinx_html)
