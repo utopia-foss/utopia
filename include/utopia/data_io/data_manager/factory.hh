@@ -619,6 +619,12 @@ class DataManagerFactory
 
             return std::apply(factory, std::forward<ArgTpl>(arg_tpl));
         }
+        else if (typetag == "vertex_property")
+        {
+            DataIO::TaskFactory<Model, TypeTag::vertex_property> factory;
+
+            return std::apply(factory, std::forward<ArgTpl>(arg_tpl));
+        }
         else
         {
             DataIO::TaskFactory<Model, TypeTag::edge_descriptor> factory;
