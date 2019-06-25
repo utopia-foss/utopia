@@ -310,7 +310,7 @@ class GridDC(XarrayDC):
         for n, l, dim_name in zip(grid_shape, extent, ('x', 'y', 'z')):
             new_coords[dim_name] = coord_gen(n, l)
 
-        # NOTE Time coordinate is not changed.
+        # NOTE Time coordinates are not changed, thus need not be determined
 
         # Store the new dimension names and coordinates
         self._new_dims = new_dims
@@ -354,15 +354,18 @@ class GridDC(XarrayDC):
                                        grid_shape, data_shape)
                              ) from err
 
-        # All succeeded. Overwrite the existing _data attribute with a new
-        # xr.DataArray, to which all the information is carried over.
+        # All succeeded. Based on the existing data, create a new DataArray
         new_data = xr.DataArray(name=self.name, data=data,
                                 dims=new_dims, coords=new_coords,
                                 attrs={k: v for k, v in self.attrs.items()
                                        if k in (self._GDC_space_extent_attr,
                                                 self._GDC_grid_shape_attr)})
 
-        log.debug("Successfully reshaped data to represent a spatial grid.")
+        # Carry over the time coordinates
+        if 'time' in self._data.dims:
+            new_data.coords['time'] = self._data.coords['time']
 
+        # Done.
+        log.debug("Successfully reshaped data to represent a spatial grid.")
         return new_data
 

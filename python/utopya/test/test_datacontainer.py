@@ -202,3 +202,19 @@ def test_griddc_integration():
     assert grid_data.shape == (4, *expected_grid_shape)
     assert len(grid_data['x']) == expected_grid_shape[0]
     assert len(grid_data['y']) == expected_grid_shape[1]
+
+
+    # Test coordinates . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+    _, dm = mtc.create_run_load(from_cfg="cfg/griddc_cfg.yml",
+                                parameter_space=dict(num_steps=11,
+                                                     write_every=2))
+    grid_data = dm['multiverse'][0]['data/ContDisease/kind']
+    print("Grid data: ", grid_data)
+    print("Attributes: ", dict(grid_data.attrs))
+
+    # Assert the type of the state is a GridDC and that it's loaded as proxy
+    assert isinstance(grid_data, GridDC)
+    assert grid_data.data_is_proxy
+
+    # Check the time coordinates
+    assert (grid_data.coords['time'] == [0, 2, 4, 6, 8, 10]).all()
