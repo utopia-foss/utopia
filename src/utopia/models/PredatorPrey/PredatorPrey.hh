@@ -229,11 +229,11 @@ private:
         auto& state = cell->state;
         auto& nb_state = nb_cell->state;
 
-        state.prey.on_cell = false;
-        state.prey.resources = 0.;
-
         nb_state.prey.on_cell = true;
         nb_state.prey.resources = state.prey.resources;
+
+        state.prey.on_cell = false;
+        state.prey.resources = 0.;
     }
 
     /// Move a predator on the given cell
@@ -301,8 +301,8 @@ private:
                 // Collect empty neighboring cells to which the prey could flee
                 _empty_cell.clear();
                 for (const auto& nb : this->_cm.neighbors_of(cell)) {
-                    if (    not nb->state.prey.on_cell
-                        and nb->state.predator.on_cell) {
+                    if (    (not nb->state.prey.on_cell)
+                        and (not nb->state.predator.on_cell)) {
                         _empty_cell.push_back(nb);
                     }
                 }
@@ -535,7 +535,8 @@ public:
                 if (state.prey.on_cell) {
                     prey_sum++;
                 }
-                else if (state.predator.on_cell) {
+                
+                if (state.predator.on_cell) {
                     predator_sum++;
                 }
             }
