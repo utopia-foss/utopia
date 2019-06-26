@@ -30,20 +30,28 @@ log = logging.getLogger(__name__)
 # -----------------------------------------------------------------------------
 
 class Multiverse:
-    """The Multiverse is where a single simulation run is orchestrated.
-    
-    Attributes:
-        BASE_META_CFG_PATH (str): The path to the base meta configuration,
-            supplied with the utopya package
-        RUN_DIR_TIME_FSTR (str): The time format string to generate the run
-            directory with
-        USER_CFG_SEARCH_PATH (str): The path at which a user config is expected
-        UTOPYA_BASE_PLOTS_PATH (str): The path to the base plots configuration
+    """The Multiverse is where a single simulation run is orchestrated from.
+
+    It spawns multiple universes, each of which represents a single simulation
+    of the selected model with the parameters specified by the meta
+    configuration.
+
+    The WorkerManager takes care to perform these simulations in parallel, the
+    DataManager allows loading the created data, and the PlotManager handles
+    plotting of that data.
     """
 
+    # Where the default meta configuration can be found
     BASE_META_CFG_PATH = resource_filename('utopya', 'cfg/base_cfg.yml')
+
+    # Where to look for the user configuration
     USER_CFG_SEARCH_PATH = _get_cfg_path('user')
+
+    # The time format string for the run directory
     RUN_DIR_TIME_FSTR = "%y%m%d-%H%M%S"
+
+    # Where the utopya base plots configuration can be found; this is passed to
+    # the PlotManager
     UTOPYA_BASE_PLOTS_PATH = resource_filename('utopya',
                                                'plot_funcs/base_plots.yml')
 
@@ -526,72 +534,58 @@ class Multiverse:
 
             log.info("Backed up configuration files.")
 
-        # Create the folder path to the simulation directory
-        # NOTE The str cast ensures that out_dir is not a path-like object
-        #      which causes problems for python < 3.6
-        log.debug("Creating path for run directory inside %s ...", out_dir)
-        out_dir = os.path.expanduser(str(out_dir))
+        # Define a list of format string parts, starting with timestamp
+        fstr_parts = ['{timestamp:}']
 
-        # Distinguish between regular mode and cluster mode
+        # Add respective information, depending on mode
         if not self.cluster_mode:
-            # Not in cluster mode; can use the timestamp directly
-            timestr = time.strftime(self.RUN_DIR_TIME_FSTR)
-
-            # Define format string and build kwargs
-            fstr = "{timestamp:}{note:}"
-            fstr_kwargs = dict(timestamp=timestr,
-                               note=("" if not model_note
-                                     else "_" + model_note))
+            # Available information is only the timestamp and the model note
+            fstr_kwargs = dict(timestamp=time.strftime(self.RUN_DIR_TIME_FSTR),
+                               model_note=model_note)
 
         else:
             # In cluster mode, need to resolve cluster parameters first
             rcps = self.resolved_cluster_params
 
-            # Define parts of the format string and the corresponding kwargs
-            fstr_parts = []
-            fstr_kwargs = dict()
+            # Now, gather all information for the format string that will
+            # determine the name of the output directory. Make all the info
+            # available that was supplied from environment variables
+            fstr_kwargs = {k: v for k, v in rcps.items()
+                           if k not in ('custom_out_dir',)}
         
-            # required: timestamp
+            # Parse timestamp and model note separately
             timestr = time.strftime(self.RUN_DIR_TIME_FSTR,
-                                      time.gmtime(rcps['timestamp']))
-            fstr_parts += ["{timestamp:}"]
-            fstr_kwargs['timestamp'] = timestr
+                                    time.gmtime(rcps['timestamp']))
+            fstr_kwargs['timestamp'] = timestr       # overwrites existing
+            fstr_kwargs['model_note'] = model_note   # may be None
 
-            # required: job id
-            fstr_parts += ["job{job_id:07d}"]
-            fstr_kwargs['job_id'] = rcps['job_id']
+            # Add the additional run dir format string parts; its the user's
+            # responsibility to supply something reasonable here.
+            if self.cluster_params.get('additional_run_dir_fstrs'):
+                fstr_parts += self.cluster_params['additional_run_dir_fstrs']
 
-            # optional
-            if rcps.get('job_account'):
-                fstr_parts += ["{job_account:}"]
-                fstr_kwargs['job_account'] = rcps['job_account']
+            # Now, also allow a custom output directory
+            if rcps.get('custom_out_dir'):
+                out_dir = rcps['custom_out_dir']
 
-            if rcps.get('cluster_name'):
-                fstr_parts += ["{cluster_name:}"]
-                fstr_kwargs['cluster_name'] = rcps['cluster_name']
+        # Have the model note as suffix
+        if model_note:
+            fstr_parts += ['{model_note:}']
 
-            if rcps.get('job_name'):
-                fstr_parts += ["{job_name:}"]
-                fstr_kwargs['job_name'] = rcps['job_name']
-
-            if model_note:
-                fstr_parts += ["{model_note:}"]
-                fstr_kwargs['model_note'] = model_note
-
-            # Connect all parts with an underscore to generate the actual fstr
-            fstr = "_".join(fstr_parts)
-
-        # fstr and fstr_kwargs ready now. Carry out the format operation
+        # fstr_parts and fstr_kwargs ready now. Carry out the format operation.
+        fstr = "_".join(fstr_parts)
         run_dir_name = fstr.format(**fstr_kwargs)
         log.debug("Determined run directory name:  %s", run_dir_name)
-        
-        # Built the run directory path
+
+        # Parse the output directory, then build the run directory path
+        log.debug("Creating path for run directory inside %s ...", out_dir)
+        out_dir = os.path.expanduser(str(out_dir))
+
         run_dir = os.path.join(out_dir, self.model_name, run_dir_name)
         log.debug("Built run directory path:  %s", run_dir)
         self.dirs['run'] = run_dir
 
-
-        # Recursively create the whole path to the run directory
+        # ... and create it. In cluster mode, it may already exist.
         try:
             os.makedirs(run_dir, exist_ok=self.cluster_mode)
 
@@ -602,7 +596,7 @@ class Multiverse:
                                "almost the same time. Try to start the "
                                "simulation again.") from err
 
-        # Make subfolders
+        # Create the subfolders
         for subdir in ('config', 'data', 'eval'):
             subdir_path = os.path.join(run_dir, subdir)
             os.makedirs(subdir_path, exist_ok=self.cluster_mode)
@@ -611,6 +605,7 @@ class Multiverse:
         log.debug("Finished creating run directory.")
         log.debug("Paths registered:  %s", self._dirs)
 
+        # Back up the configuration files
         if not self.cluster_mode:
             # Should backup in any case
             backup_config()

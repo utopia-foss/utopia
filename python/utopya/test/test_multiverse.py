@@ -11,6 +11,7 @@ from pkg_resources import resource_filename
 import pytest
 
 from utopya import Multiverse, FrozenMultiverse
+from utopya.multiverse import DataManager, PlotManager, WorkerManager
 
 # Get the test resources
 RUN_CFG_PATH = resource_filename('test', 'cfg/run_cfg.yml')
@@ -49,7 +50,7 @@ def default_mv(mv_kwargs) -> Multiverse:
     return Multiverse(**mv_kwargs)
 
 @pytest.fixture
-def cluster_env() -> dict:
+def cluster_env(tmpdir) -> dict:
     return dict(TEST_JOB_ID="123",
                 TEST_JOB_NUM_NODES="5",
                 TEST_JOB_NODELIST="node[002-004,011,006]",
@@ -58,7 +59,8 @@ def cluster_env() -> dict:
                 TEST_JOB_ACCOUNT="testaccount",
                 TEST_CPUS_ON_NODE="42",
                 TEST_CLUSTER_NAME="testcluster",
-                TEST_TIMESTAMP=str(int(time.time()))
+                TEST_TIMESTAMP=str(int(time.time())),
+                TEST_CUSTOM_OUT_DIR=str(tmpdir.join("my_custom_dir"))
                 )
 
 # Initialisation tests --------------------------------------------------------
@@ -66,7 +68,12 @@ def cluster_env() -> dict:
 def test_simple_init(mv_kwargs):
     """Tests whether initialisation works for all basic cases."""
     # With the full set of arguments
-    Multiverse(**mv_kwargs)
+    mv = Multiverse(**mv_kwargs)
+
+    # Assert some basic types
+    assert isinstance(mv.wm, WorkerManager)
+    assert isinstance(mv.dm, DataManager)
+    assert isinstance(mv.pm, PlotManager)
 
     # Without the run configuration
     mv_kwargs.pop('run_cfg_path')
@@ -207,8 +214,10 @@ def test_multiple_runs_not_allowed(mv_kwargs):
     with pytest.raises(RuntimeError, match="Could not add simulation task"):
         mv.run_single()
 
-def test_cluster_mode_resolve_params(mv_kwargs, cluster_env):
-    """Tests cluster mode resolution of parameters"""
+def test_cluster_mode(mv_kwargs, cluster_env):
+    """Tests cluster mode basics like: resolution of parameters, creation of
+    the run directory, ...
+    """
     # Define a custom test environment
     mv_kwargs['run_cfg_path'] = CLUSTER_MODE_CFG_PATH
     mv_kwargs['cluster_params'] = dict(env=cluster_env)
@@ -217,7 +226,13 @@ def test_cluster_mode_resolve_params(mv_kwargs, cluster_env):
     mv = Multiverse(**mv_kwargs)
 
     rcps = mv.resolved_cluster_params
-    assert len(rcps) == 9 + 1
+    assert len(rcps) == 10 + 1
+
+    # Check the custom output directory
+    assert 'my_custom_dir' in mv.dirs['run']
+
+    # Check the job ID is part of the run directory path
+    assert 'job123' in mv.dirs['run']
 
     # Make sure the required keys are available
     assert all([k in rcps for k in ('job_id', 'num_nodes', 'node_list',
@@ -235,6 +250,12 @@ def test_cluster_mode_resolve_params(mv_kwargs, cluster_env):
     assert rcps['timestamp'] > 0
     assert rcps['node_list'] == ["node002", "node003", "node004",
                                  "node006", "node011"]
+
+    # Can add additional info to the run directory
+    mv_kwargs['cluster_params']['additional_run_dir_fstrs'] = ["xyz{job_id:}",
+                                                               "N{num_nodes:}"]
+    mv = Multiverse(**mv_kwargs)
+    assert 'xyz123_N5' in mv.dirs['run']
 
     # Test error messages
     # Node name not in node list
