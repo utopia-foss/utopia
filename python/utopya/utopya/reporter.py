@@ -994,6 +994,7 @@ class WorkerManagerReporter(Reporter):
                                 'node_list', 'job_id', 'job_name',
                                 'job_account', 'cluster_name', 'num_procs')
                       if rcps.get(k)]
+            parts += [""]
 
         return " \n".join(parts)
       
