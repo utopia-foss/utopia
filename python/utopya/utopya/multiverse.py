@@ -94,10 +94,11 @@ class Multiverse:
         dm_cluster_kwargs = dict()
         wm_cluster_kwargs = dict()
         if self.cluster_mode:
+            log.note("Cluster mode enabled.")
             self._resolved_cluster_params = self._resolve_cluster_params()
             rcps = self.resolved_cluster_params  # creates a deep copy
 
-            log.info("Running in cluster mode. This is node %d of %d.",
+            log.note("This is node %d of %d.",
                      rcps['node_index'] + 1, rcps['num_nodes'])
 
             # Changes to the meta configuration
@@ -956,10 +957,11 @@ class FrozenMultiverse(Multiverse):
         # Need to make some DataManager adjustments; do so via update dicts
         dm_cluster_kwargs = dict()
         if self.cluster_mode:
+            log.note("Cluster mode enabled.")
             self._resolved_cluster_params = self._resolve_cluster_params()
             rcps = self.resolved_cluster_params  # creates a deep copy
 
-            log.info("Running in cluster mode. This is node %d of %d.",
+            log.note("This is node %d of %d.",
                      rcps['node_index'] + 1, rcps['num_nodes'])
 
             # Changes to the meta configuration
