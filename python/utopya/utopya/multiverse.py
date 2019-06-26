@@ -872,8 +872,9 @@ class Multiverse:
         log.debug("Added simulation task: %s.", uni_basename)
 
 
+
 # -----------------------------------------------------------------------------
-# TODO return errors in properties that are unavailable?!
+# -----------------------------------------------------------------------------
 
 class FrozenMultiverse(Multiverse):
     """A frozen Multiverse is like a Multiverse, but frozen.
@@ -988,8 +989,8 @@ class FrozenMultiverse(Multiverse):
         # Instantiate the PlotManager with the model-specific plot config
         self._pm = PlotManager(dm=self.dm,
                         base_cfg=self.UTOPYA_BASE_PLOTS_PATH,
-                        update_base_cfg=self.info_bundle.paths['base_plots'],
-                        plots_cfg=self.info_bundle.paths['default_plots'],
+                        update_base_cfg=self.info_bundle.paths.get('base_plots'),
+                        plots_cfg=self.info_bundle.paths.get('default_plots'),
                         **self.meta_cfg['plot_manager'])
 
         log.progress("Initialized FrozenMultiverse.\n")
