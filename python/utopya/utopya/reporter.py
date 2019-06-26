@@ -993,7 +993,7 @@ class WorkerManagerReporter(Reporter):
                       for k in ('node_name', 'node_index', 'num_nodes',
                                 'node_list', 'job_id', 'job_name',
                                 'job_account', 'cluster_name', 'num_procs')
-                      if rcps.get(k)]
+                      if rcps.get(k) is not None]
             parts += [""]
 
         return " \n".join(parts)
