@@ -257,6 +257,12 @@ def test_cluster_mode(mv_kwargs, cluster_env):
     mv = Multiverse(**mv_kwargs)
     assert 'xyz123_N5' in mv.dirs['run']
 
+    # Single-node case
+    cluster_env['TEST_JOB_NUM_NODES'] = '1'
+    cluster_env['TEST_JOB_NODELIST'] = "node006"
+    mv = Multiverse(**mv_kwargs)
+    assert mv.resolved_cluster_params['node_list'] == ["node006"]
+
     # Test error messages
     # Node name not in node list
     cluster_env['TEST_NODENAME'] = 'node042'

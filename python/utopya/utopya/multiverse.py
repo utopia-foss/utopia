@@ -641,38 +641,45 @@ class Multiverse:
             mode = self.cluster_params['node_list_parser_params'][manager]
 
             if mode == 'condensed':
-                # Is in the following form:  node[002,004-011,016]
-                # Split off prefix and nodes
+                # Is in the following form:  node[002,004-011,016] or node042
+                # Try to split off prefix and nodes
                 pattern = r'^(?P<prefix>\w+)\[(?P<nodes>[\d\-\,\s]+)\]$'
                 match = re.match(pattern, node_list)
-                prefix, nodes = match['prefix'], match['nodes']
 
-                # Remove whitespace and split
-                segments = nodes.replace(" ", "").split(",")
-                segments = [seg.split("-") for seg in segments]
+                if match is None:
+                    # Was only a single node; only list element
+                    node_list = [node_list]
 
-                # Get the string width
-                digits = (len(segments[0]) if len(segments[0]) == 1
-                          else len(segments[0][0]))
+                else:
+                    # Got a match; need to continue parsing it ...
+                    prefix, nodes = match['prefix'], match['nodes']
 
-                # In segments, lists longer than 1 are intervals, the others
-                # are node numbers of a single node
-                # Expand intervals
-                segments = [[int(seg[0])] if len(seg) == 1
-                            else list(range(int(seg[0]), int(seg[1])+1))
-                            for seg in segments]
+                    # Remove whitespace and split
+                    segments = nodes.replace(" ", "").split(",")
+                    segments = [seg.split("-") for seg in segments]
 
-                # Combine to list of individual node numbers
-                node_nos = []
-                for seg in segments:
-                    node_nos += seg
+                    # Get the string width
+                    digits = (len(segments[0]) if len(segments[0]) == 1
+                              else len(segments[0][0]))
 
-                # Need the numbers as strings
-                node_nos = ["{val:0{digs:}d}".format(val=no, digs=digits)
-                            for no in node_nos]
+                    # In segments, lists longer than 1 are intervals, the
+                    # others are node numbers of a single node.
+                    # Expand intervals
+                    segments = [[int(seg[0])] if len(seg) == 1
+                                else list(range(int(seg[0]), int(seg[1])+1))
+                                for seg in segments]
 
-                # Now, finally, parse the list
-                node_list = [prefix+no for no in node_nos]
+                    # Combine to list of individual node numbers
+                    node_nos = []
+                    for seg in segments:
+                        node_nos += seg
+
+                    # Need the numbers as strings
+                    node_nos = ["{val:0{digs:}d}".format(val=no, digs=digits)
+                                for no in node_nos]
+
+                    # Now, finally, parse the list
+                    node_list = [prefix+no for no in node_nos]
 
             else:
                 raise ValueError("Invalid parser '{}' for manager '{}'!")
