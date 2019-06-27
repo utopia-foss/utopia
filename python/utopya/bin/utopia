@@ -248,6 +248,9 @@ p_run_plt.add_argument('--plot-only',
 p_run.add_argument('--suppress-data-tree',
     action='store_true',
     help="If set, loading of data will not print out the data tree.")
+p_run.add_argument('--cluster-mode',
+    action='store_true',
+    help="Enables cluster mode.")
 
 
 # subcommand: eval ............................................................
@@ -298,6 +301,10 @@ p_eval.add_argument('--set-cfg',
 p_eval.add_argument('--suppress-data-tree',
     action='store_true',
     help="If set, loading of data will not print out the data tree.")
+p_eval.add_argument('--cluster-mode',
+    action='store_true',
+    help="Enables cluster mode. Note that for plotting, this information is "
+         "not yet taken into account!")
 
 
 # .............................................................................
@@ -477,6 +484,9 @@ if __name__ == '__main__':
         elif args.sweep:
             add_item(True, add_to=update_dict, key_path=['perform_sweep'])
 
+        # Set the cluster mode flag
+        if args.cluster_mode:
+            add_item(True, add_to=update_dict, key_path=['cluster_mode'])
 
         # Set general configuration entries
         if args.set_model_params:
@@ -517,6 +527,9 @@ if __name__ == '__main__':
     
         if args.update_plots_cfg:
             add_from_kv_pairs(*args.update_plots_cfg, add_to=update_plots_cfg)
+
+        if args.cluster_mode:
+            add_item(True, add_to=update_dict, key_path=['cluster_mode'])
 
 
     # Finished with generating the update dict; give some info on it

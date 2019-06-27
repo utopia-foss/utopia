@@ -23,6 +23,9 @@ cluster_params:
       # Name of the current node
       node_name: TEST_NODENAME
 
+      # Used for the name of the run
+      timestamp: TEST_TIMESTAMP
+
       # --- Optional values ---
       # Name of the job
       job_name: TEST_JOB_NAME
@@ -36,8 +39,8 @@ cluster_params:
       # Cluster name
       cluster_name: TEST_CLUSTER_NAME
 
-      # If a unix timestamp is given, this is used for the name of the run
-      timestamp: TEST_TIMESTAMP
+      # Custom output directory
+      custom_out_dir: TEST_CUSTOM_OUT_DIR
 
     # Could have more managers here, e.g.: docker
 

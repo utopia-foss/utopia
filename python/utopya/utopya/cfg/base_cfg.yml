@@ -212,12 +212,20 @@ cluster_params:
       # Cluster name
       cluster_name: SLURM_CLUSTER_NAME
 
+      # Custom output directory
+      custom_out_dir: UTOPIA_CLUSTER_MODE_OUT_DIR
+
     # Could have more managers here, e.g.: docker
 
   # Which parser to use to extract node names from node list
   node_list_parser_params:
     slurm: condensed  # e.g.: node[002,004-011,016]
 
+  # Which additional info to include into the name of the run directory, i.e.
+  # after the timestamp and before the model directory. All information that
+  # is extracted from the environment variables is available as keyword
+  # argument to format. Should be a sequence of format strings.
+  additional_run_dir_fstrs: [ "job{job_id:}" ]
 
 # Data Manager ................................................................
 # The DataManager takes care of loading the data into a tree-like structure
