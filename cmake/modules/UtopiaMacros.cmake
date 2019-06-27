@@ -29,6 +29,10 @@ endif()
 set(THREADS_PREFER_PTHREAD_FLAG)
 find_package(Threads REQUIRED)
 
+# Doxygen (for documentation only)
+find_package(Doxygen
+             OPTIONAL_COMPONENTS dot)
+
 # Include Utopia macros
 include(UtopiaPython)
 include(UtopiaEnv)

@@ -1,7 +1,3 @@
-# look for Doxygen
-find_package(Doxygen
-             OPTIONAL_COMPONENTS dot)
-
 if (DOXYGEN_FOUND)
     # set the input directories (relative to the top-level source dir)
     set(doxygen_dirs include src)
