@@ -45,6 +45,17 @@ cell_manager:
     p_predator: 0.1
 
 
+# Load prey and predator positions from datasets of a HDF5 file. If enabled,
+# the probabilistically set predator and prey positions are overwritten.
+# Two datasets are expected in the HDF5 file: `prey`, `predator`.
+# Values can only be 0 or 1, specifying whether the respective entity is
+# present on the corresponding cell.
+cell_states_from_file:
+  hdf5_file: /abs/path/to/data.hdf5
+  load_predator: false
+  load_prey: false
+
+
 # --- Model dynamics ----------------------------------------------------------
 # Species specific parameter from which the model dynamics arrises
 params:

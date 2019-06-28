@@ -30,8 +30,8 @@ struct State {
     template<class RNGType>
     State(const DataIO::Config& cfg, const std::shared_ptr<RNGType>& rng)
     :
-    predator{},
-    prey{}
+        predator{},
+        prey{}
     {
         std::uniform_real_distribution<double> dist(0., 1.);
 
@@ -431,6 +431,7 @@ private:
             if (_repro_cell.size() > 0) {
                 // choose a random cell for the offspring to be placed on
                 std::uniform_int_distribution<> dist(0, _repro_cell.size() - 1);
+                // TODO Use std::sample
 
                 auto nb_cell = _repro_cell[dist(*this->_rng)];
 
@@ -477,14 +478,52 @@ public:
         _dset_resource_prey(this->create_cm_dset("resource_prey", _cm)),
         _dset_resource_predator(this->create_cm_dset("resource_predator", _cm))
     {
-        // Check if _repro_cost is in the allowed range
-        if (_params.predator.repro_cost >= _params.predator.repro_resource_requ
-            or _params.prey.repro_cost >= _params.prey.repro_resource_requ) {
-            throw std::invalid_argument("repro_cost needs to be smaller than "
-                "or equal to the minimal reproduction requirements of "
-                "resources!");
+        // Load the cell state from a file, overwriting the current state
+        if (this->_cfg["cell_states_from_file"]) {
+            const auto& cs_cfg = this->_cfg["cell_states_from_file"];
+            const auto hdf5_file = get_as<std::string>("hdf5_file", cs_cfg);
+
+            if (get_as<bool>("load_predator", cs_cfg)) {
+                this->_log->info("Loading predator positions from file ...");
+
+                // Use the CellManager to set the cell state from the data
+                // given by the `predator` dataset. Load as int to be able to
+                // detect that a user supplied invalid values (better than
+                // failing silently, which would happen with booleans).
+                _cm.set_cell_states<int>(hdf5_file, "predator",
+                    [](auto& cell, const int on_cell){
+                        if (on_cell == 0 or on_cell == 1) {
+                            cell->state.predator.on_cell = on_cell;
+                            return;
+                        }
+                        throw std::invalid_argument("While setting predator "
+                            "positions, encountered an invalid value: "
+                            + std::to_string(on_cell) + ". Allowed: 0 or 1.");
+                    }
+                );
+
+                this->_log->info("Predator positions loaded.");
+            }
+
+            if (get_as<bool>("load_prey", cs_cfg)) {
+                this->_log->info("Loading prey positions from file ...");
+
+                _cm.set_cell_states<int>(hdf5_file, "prey",
+                    [](auto& cell, const int on_cell){
+                        if (on_cell == 0 or on_cell == 1) {
+                            cell->state.prey.on_cell = on_cell;
+                            return;
+                        }
+                        throw std::invalid_argument("While setting prey "
+                            "positions, encountered an invalid value: "
+                            + std::to_string(on_cell) + ". Allowed: 0 or 1.");
+                    }
+                );
+
+                this->_log->info("Prey positions loaded.");
+            }
         }
-        
+
         // Reserve memory in the size of the neighborhood for the temp. vectors
         const auto nb_size = _cm.nb_size();
         _prey_cell.reserve(nb_size);
