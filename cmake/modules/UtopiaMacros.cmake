@@ -24,10 +24,6 @@ else ()
     find_package(Armadillo MODULE REQUIRED)
 endif()
 
-target_link_libraries(armadillo INTERFACE hdf5)
-target_compile_options(armadillo INTERFACE ARMA_USE_HDF5)
-
-
 # --- Threads (NOTE: required by spdlog on Ubuntu 18.04) ---
 set(THREADS_PREFER_PTHREAD_FLAG)
 find_package(Threads REQUIRED)
