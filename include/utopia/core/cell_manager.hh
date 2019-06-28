@@ -375,7 +375,7 @@ public:
     template<class ElementT=double, class SetterFunc>
     void set_cell_states(const std::string& hdf5_file,
                          const std::string& dset_path,
-                         SetterFunc setter_func)
+                         const SetterFunc& setter_func)
     {
         static_assert(dim == 2, "Loading cell state is only supported in 2D!");
         static_assert(CellTraits::mode == Update::manual,
@@ -415,7 +415,7 @@ public:
 
         // Go over all cells, extract multi index, and let the setter function
         // set the cell state.
-        for (auto& cell : _cells) {
+        for (const auto& cell : _cells) {
             const auto midx = this->midx_of(cell);
             setter_func(cell, data(midx[0], midx[1]));
         }
@@ -552,7 +552,7 @@ public:
         _cell_neighbors.reserve(_cells.size());
 
         // Compute cell neighbors and store them
-        for (auto& cell : _cells) {
+        for (const auto& cell : _cells) {
             _cell_neighbors.push_back(neighbors_of(cell));
         }
 
