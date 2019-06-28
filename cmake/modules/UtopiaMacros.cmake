@@ -25,7 +25,7 @@ else ()
 endif()
 
 target_link_libraries(armadillo INTERFACE hdf5)
-target_compile_definitions(armadillo INTERFACE ARMA_USE_HDF5)
+target_compile_options(armadillo INTERFACE ARMA_USE_HDF5)
 
 
 # --- Threads (NOTE: required by spdlog on Ubuntu 18.04) ---
