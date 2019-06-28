@@ -465,7 +465,7 @@ public:
         // Initialize the cell manager, binding it to this model
         _cm(*this),
         // Extract model parameters
-        _params(this->_cfg["params"]),
+        _params(this->_cfg),
         // Temporary cell containers
         _prey_cell(),
         _empty_cell(),

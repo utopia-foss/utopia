@@ -76,8 +76,8 @@ def test_initial_state_random():
         data = uni['data']['PredatorPrey']
 
         # Get the number of predators and prey for the population of the cell
-        num_prey = np.sum(data['prey'])
-        num_predator = np.sum(data['predator'])
+        num_prey = data['prey'].sum()
+        num_predator = data['predator'].sum()
 
         # Total number of cells can be extracted from shape
         num_cells = np.prod(data['prey'].shape[1:])
@@ -97,20 +97,24 @@ def test_initial_state_random():
         assert num_predator == np.sum(data['resource_predator']) / 2
 
         # Population should be random; calculate the ratio and check limits
-        assert 0.15 <= num_prey / num_cells <= 0.25  # prey
-        assert 0.235 <= num_predator / num_cells <= 0.335  # predator
+        assert 0.15 <= num_prey / num_cells <= 0.25
+        assert 0.235 <= num_predator / num_cells <= 0.335
 
 
     # Test again for another probability value
-    mv, dm = mtc.create_run_load(from_cfg="initial_state_2.yml",
-                                 perform_sweep=True)
+    mv, dm = mtc.create_run_load(from_cfg="initial_state.yml",
+                                 parameter_space=dict(
+                                    PredatorPrey=dict(
+                                        cell_manager=dict(
+                                            cell_params=dict(
+                                                p_prey=0.1, p_predator=0.1)))))
                                     
     for uni in dm['multiverse'].values():
         data = uni['data']['PredatorPrey']
 
         # Get the number of predators and prey for the population of the cell
-        num_prey = np.sum(data['prey'])
-        num_predator = np.sum(data['predator'])
+        num_prey = data['prey'].sum()
+        num_predator = data['predator'].sum()
 
         # Total number of cells can be extracted from shape
         num_cells = np.prod(data['prey'].shape[1:])
