@@ -3,7 +3,14 @@ Utopia Tutorial
 
 .. note::
 
-  If you notice any errors in this tutorial or other parts of the documentation, even minor, or have suggestions for improvements, please inform `Benni <herdeanu@iup.uni-heidelberg.de>`_ and/or `Yunus <yunus.sevinchan@iup.uni-heidelberg.de>`_ of them. Thank you! :)
+  If you notice any errors in this tutorial, other parts of the documentation, or the code — even minor ones — please open an `issue <https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/issues>`_ on the GitLab project page.
+
+  In general, if you have *any* kind of question or remark regarding Utopia, you should **open an issue.**
+  This applies even to small or very specific questions; other people might have the same small or very specific question. This approach preserves the question as well as the answer to it.
+
+  If you happen not to have access to the GitLab, write directly to `Benni <herdeanu@iup.uni-heidelberg.de>`_ and/or `Yunus <yunus.sevinchan@iup.uni-heidelberg.de>`_.
+
+  Thank you! :)
 
 In this tutorial, you will learn how to configure, run, and evaluate the models already implemented in *Utopia*.
 After having worked through it, you can apply the learned concepts and methods to all available models; the content and available parameters may change but the structure remains the same.
