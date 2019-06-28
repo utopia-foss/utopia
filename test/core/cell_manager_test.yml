@@ -203,3 +203,17 @@ nb_bad2:
 select_cell:
   mode: sample
   num_cells: 42
+
+
+# Set cell states -------------------------------------------------------------
+
+# Default constructible, with low resolution and uneven grid extent
+set_cell_state:
+  space:
+    periodic: false
+    extent: [1., 2.]
+
+  cell_manager:
+    grid:
+      structure: square
+      resolution: 4

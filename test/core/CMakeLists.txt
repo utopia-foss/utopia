@@ -3,6 +3,7 @@ file(COPY
         "agent_manager_test.yml"
         "agent_manager_integration_test.yml"
         "cell_manager_test.yml"
+        "cell_manager_test.h5"
         "cell_manager_integration_test.yml"
         "graph_creation_test.yml"
         "grid_square_test.yml"

@@ -6,6 +6,8 @@
 #include <string_view>
 #include <unordered_set>
 
+#include <armadillo>
+
 #include "logging.hh"
 #include "types.hh"
 #include "exceptions.hh"
@@ -344,7 +346,99 @@ public:
     }
 
 
+    // .. Setting the cell states .............................................
+
+    /// Set all cell states using information from a HDF5 file
+    /** Using armadillo functionality, this loads the data from the given HDF5
+      * file into an array of ``ElementT``. It then iterates over all
+      * cells, looks up the multi index, and passes it to the ``setter_func``,
+      * which has the responsibility of setting the cell state accordingly.
+      *
+      * The ``setter_func`` should accept as first argument a reference to the
+      * cell (more accurately: ``const std::shared_ptr<Cell>&``) and as second
+      * argument the value from the loaded dataset.
+      *
+      * \note Currently only supports 2D grids and cells with Update::manual.
+      *
+      * \tparam ElemenT     The type that armadillo should load the data as.
+      *                     Need be supported by armadillo.
+      * \tparam SetterFunc  Type of the setter function, e.g. std::function<…>
+      *
+      * \param hdf5_file    The hdf5 file to load the data from. Can be an
+      *                     absolute path or relative to the working directory.
+      * \param dset_path    The path within the HDF5 file that points to the
+      *                     dataset to load data from.
+      * \param setter_func  The ``void(cell, value)`` function that sets the
+      *                     cell state given the value from the loaded dataset
+      *                     corresponding to the cells' multi-index.
+      */
+    template<class ElementT=double, class SetterFunc>
+    void set_cell_states(const std::string& hdf5_file,
+                         const std::string& dset_path,
+                         SetterFunc setter_func)
+    {
+        static_assert(dim == 2, "Loading cell state is only supported in 2D!");
+        static_assert(CellTraits::mode == Update::manual,
+                      "Setting cell states for cell update modes other than "
+                      "Update::manual is currently not supported.");
+        // TODO Once passing of additional arguments to rule functions becomes
+        //      possible, remove this restriction and use apply_rule below!
+
+        _log->debug("Setting cell states using HDF5 data ...");
+        _log->debug("  File:          {}", hdf5_file);
+        _log->debug("  Dataset path:  {}", dset_path);
+
+        // Load the array data
+        arma::Mat<ElementT> data;
+        data.load(arma::hdf5_name(hdf5_file, dset_path,
+                                  arma::hdf5_opts::trans));
+        // NOTE Need to load transposed; otherwise the index-access below would
+        //      be reversed. This is to account for the different ordering
+        //      between armadillo and CellManager coordinates.
+        //      Thus: n_rows corresponds to N_x, n_cols to N_y!
+
+        // Check that data was loaded
+        if (not data.size()) {
+            throw std::runtime_error("Failed loading HDF5 data! Is the file "
+                                     "used by another program?");
+        }
+
+        // Check against grid shape
+        const auto grid_shape = _grid->shape();
+        if (data.n_rows != grid_shape[0] or data.n_cols != grid_shape[1]) {
+            throw std::invalid_argument("Shape mismatch between loaded data ("
+                + std::to_string(data.n_rows) + ", "
+                + std::to_string(data.n_cols) + ") and grid ("
+                + std::to_string(grid_shape[0]) + ", "
+                + std::to_string(grid_shape[1]) + ")!");
+        }
+
+        // Go over all cells, extract multi index, and let the setter function
+        // set the cell state.
+        for (auto& cell : _cells) {
+            const auto midx = this->midx_of(cell);
+            setter_func(cell, data(midx[0], midx[1]));
+        }
+
+        _log->debug("Cell states set successfully.");
+    }
+
     // .. Neighborhood-related ................................................
+
+    /// Return the currently selected neighborhood mode
+    /** \note This is a shortcut that accesses the value set in the grid.
+      */
+    const NBMode& nb_mode () const {
+        return _grid->nb_mode();
+    }
+    
+    /// Return the (maximum) size of the currently selected neighborhood
+    /** \note This is a shortcut that accesses the value computed in the grid.
+      */
+    auto nb_size () const {
+        return _grid->nb_size();
+    }
+
     /// Retrieve the given cell's neighbors
     /** The behaviour of this method is different depending on the choice of
       * neighborhood.
@@ -352,7 +446,6 @@ public:
     CellContainer<Cell> neighbors_of(const Cell& cell) const {
         return _nb_func(cell);
     }
-
 
     /// Retrieve the given cell's neighbors
     /** The behaviour of this method is different depending on the choice of
@@ -459,27 +552,13 @@ public:
         _cell_neighbors.reserve(_cells.size());
 
         // Compute cell neighbors and store them
-        for (auto cell : _cells) {
+        for (auto& cell : _cells) {
             _cell_neighbors.push_back(neighbors_of(cell));
         }
 
         // Change access function to access the storage directly. Done.
         _nb_func = _nb_from_cache;
         _log->info("Computed and stored cell neighbors.");
-    }
-
-    /// Return the currently selected neighborhood mode
-    /** \note This is a shortcut that accesses the value set in the grid.
-      */
-    const NBMode& nb_mode () const {
-        return _grid->nb_mode();
-    }
-    
-    /// Return the (maximum) size of the currently selected neighborhood
-    /** \note This is a shortcut that accesses the value computed in the grid.
-      */
-    auto nb_size () const {
-        return _grid->nb_size();
     }
 
 

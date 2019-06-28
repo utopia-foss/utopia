@@ -17,9 +17,9 @@ using Utopia::get_as;
 
 /// A cell state definition that is default-constructible
 struct CellStateDC {
-    double a_double;
-    std::string a_string;
-    bool a_bool;
+    double a_double = 0.;
+    std::string a_string = "";
+    bool a_bool = false;
 };
 
 /// A cell state definition that is config-constructible
@@ -85,6 +85,9 @@ struct TestLinks {
 /// For a default-constructible cell state
 using CellTraitsDC = Utopia::CellTraits<CellStateDC, Update::sync, true>;
 
+/// Default constructible, manual update
+using CellTraitsDM = Utopia::CellTraits<CellStateDC, Update::manual, true>;
+
 /// For a config-constructible cell state
 using CellTraitsCC = Utopia::CellTraits<CellStateCC, Update::sync>;
 
@@ -100,6 +103,7 @@ using CellTraitsCL = Utopia::CellTraits<CellStateDC,
                                         true,    // use default constructor
                                         Utopia::EmptyTag,
                                         TestLinks>;
+
 
 // ----------------------------------------------------------------------------
 
@@ -383,6 +387,74 @@ int main() {
         std::cout << "Success." << std::endl << std::endl;
 
         } // End of local test scope
+
+        // -------------------------------------------------------------------
+        std::cout << "------ Testing cell state setter ... ------"
+                  << std::endl;
+
+        { // Local test scope
+        // Construct mock model for this test and extract cell manager
+        MockModel<CellTraitsDM> mm_scs("mm_scs", cfg["set_cell_state"]);
+        auto cm = mm_scs._cm;
+
+        // Check the initial states are all 0. and false
+        for (const auto& cell : cm.cells()) {
+            assert(cell->state.a_double == 0.);
+            assert(cell->state.a_bool == false);
+        }
+
+        // Check the grid shape is uneven
+        const auto grid_shape = cm.grid()->shape();
+        assert(grid_shape[0] == 4);
+        assert(grid_shape[1] == 8);
+
+        // Set from hdf5 file
+        cm.set_cell_states<double>("cell_manager_test.h5",
+                                   "set_cell_state/cell_ids",
+            [](auto& cell, const double val){
+                cell->state.a_double = val;
+            }
+        );
+
+        cm.set_cell_states<int>("cell_manager_test.h5",
+                                "set_cell_state/ones",
+            [](auto& cell, const int val){
+                cell->state.a_bool = static_cast<bool>(val);
+            }
+        );
+
+        // Check the states were carried over
+        for (const auto& cell : cm.cells()) {
+            assert(cell->state.a_double == cell->id());
+            assert(cell->state.a_bool);
+        }
+
+        // Check error messages
+        assert(check_error_message<std::runtime_error>(
+            "failed loading data",
+            [&cm]() mutable {
+                cm.set_cell_states<int>("cell_manager_test.h5",
+                                        "set_cell_state/i_do_not_exist",
+                    [](auto&, const int){}
+                );
+            }, "Failed loading HDF5 data!")
+        );
+        assert(check_error_message<std::invalid_argument>(
+            "shape mismatch",
+            [&cm]() mutable {
+                cm.set_cell_states<float>("cell_manager_test.h5",
+                                          "set_cell_state/bad_shape",
+                    [](auto&, const float){}
+                );
+            }, "Shape mismatch between loaded data (4, 4) and grid (4, 8)!")
+        );
+
+
+        std::cout << "Success." << std::endl << std::endl;
+
+        } // End of local test scope
+        
+
         // -------------------------------------------------------------------
         // Done.
         std::cout << "------ Total success. ------" << std::endl << std::endl;
@@ -390,12 +462,10 @@ int main() {
     }
     catch (std::exception& e) {
         std::cerr << "Exception occurred: " << e.what() << std::endl;
-        // NOTE cannot call cleanup here because the scope is not shared
         return 1;
     }
     catch (...) {
         std::cout << "Exception occurred!" << std::endl;
-        // NOTE cannot call cleanup here because the scope is not shared
         return 1;
     }
 }
