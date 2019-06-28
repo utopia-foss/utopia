@@ -48,14 +48,22 @@ struct SpeciesBaseParams {
     double repro_prob;
 
     // .. Constructors ........................................................
-    /// Construct a species from a configuration node
-    SpeciesBaseParams(const Utopia::DataIO::Config& cfg){
-        cost_of_living = get_as<double>("cost_of_living", cfg);
-        resource_intake = get_as<double>("resource_intake", cfg);
-        repro_resource_requ = get_as<double>("repro_resource_requ", cfg);
-        resource_max = get_as<double>("resource_max", cfg);
-        repro_cost = get_as<double>("repro_cost", cfg);
-        repro_prob = get_as<double>("repro_prob", cfg);
+    /// Load species parameters from a configuration node
+    SpeciesBaseParams(const Utopia::DataIO::Config& cfg)
+    :
+        cost_of_living(get_as<double>("cost_of_living", cfg)),
+        resource_intake(get_as<double>("resource_intake", cfg)),
+        repro_resource_requ(get_as<double>("repro_resource_requ", cfg)),
+        resource_max(get_as<double>("resource_max", cfg)),
+        repro_cost(get_as<double>("repro_cost", cfg)),
+        repro_prob(get_as<double>("repro_prob", cfg))
+    {
+        // Perform some checks
+        if (repro_cost >= repro_resource_requ) {
+            throw std::invalid_argument("repro_cost needs to be smaller than "
+                "or equal to the minimal reproduction requirements of "
+                "resources!");
+        }
     }
 
     SpeciesBaseParams() = delete;
@@ -103,8 +111,8 @@ struct SpeciesParams{
     /// Construct through a configuration file
     SpeciesParams(const Utopia::DataIO::Config& cfg)
     :
-    prey(cfg["prey"]),
-    predator(cfg["predator"])
+        prey(cfg["prey"]),
+        predator(cfg["predator"])
     {};
 
     /// Default constructor

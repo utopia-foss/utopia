@@ -60,6 +60,11 @@ target_link_libraries(utopia INTERFACE
     hdf5
 )
 
+# Set preprocessor definitions
+target_compile_definitions(utopia INTERFACE
+    ARMA_USE_HDF5  # Enable HDF5 functions of Armadillo
+)
+
 # --- Include Config Tree ---
 
 # Enable testing via CTest engine

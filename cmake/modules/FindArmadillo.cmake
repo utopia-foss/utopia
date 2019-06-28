@@ -49,7 +49,7 @@ if (Armadillo_FOUND)
     set(Armadillo_INCLUDE_DIRS ${Armadillo_INCLUDE_DIR})
 
     # add the library target
-    add_library(armadillo SHARED IMPORTED)
+    add_library(armadillo SHARED IMPORTED GLOBAL)
     set_target_properties(armadillo
         PROPERTIES IMPORTED_LOCATION ${Armadillo_LIBRARIES}
                    INTERFACE_INCLUDE_DIRECTORIES ${Armadillo_INCLUDE_DIRS}

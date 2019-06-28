@@ -12,10 +12,6 @@ mtc = ModelTest("PredatorPrey", test_file=__file__)
 
 # Utility functions -----------------------------------------------------------
 
-def assert_eq(a, b, *, epsilon=1e-6):
-    """Assert that two quantities are equal within a numerical epsilon range"""
-    assert(np.absolute(a-b) < epsilon)
-
 # Tests -----------------------------------------------------------------------
 
 # Test all the basic functions that determine the dynamics of the model:
@@ -23,6 +19,8 @@ def assert_eq(a, b, *, epsilon=1e-6):
 # - predators move to prey and prey tries to flee
 # - taking up resources
 # - reproduction
+# TODO Improve these by using more xarray functionality, also to arrive at a
+#      more readable representation (instead of the np.unique stuff)
 
 def test_cost_of_living_prey():
     """Test the cost of living of the prey"""
