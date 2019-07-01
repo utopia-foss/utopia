@@ -86,7 +86,7 @@ def test_time_series_plots():
 
     # Plot specific plots from the default plot configuration, which are using
     # the time_series plots
-    mv.pm.plot_from_cfg(plot_only=['densities'])
+    mv.pm.plot_from_cfg(plot_only=['species_densities', 'phase_space'])
 
 
 def test_distribution_plots():

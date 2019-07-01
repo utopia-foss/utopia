@@ -1,19 +1,4 @@
-# The model configuration for the Predator-Prey model
-#
-# This file should ONLY contain model-specific configuration and needs to be
-# written such that it can be used by _every_ model instance, regardless
-# of the level within a model hierarchy.
-# 
-# To that end, it needs to specify the parameters at the level of the instance
-# of a Model class.
-# 
-# This file is usually handled by the frontend: usage of advanced yaml features
-# like anchors and tags is supported.
-# 
-# Note, however, that this file should hold the _default_ values for a single
-# instance. Therefore, parameter sweeps should not be specified here!
-# Furthermore, if including other models' parameters via the `!model` tag, make
-# sure that no circular includes occur.
+# Default configuration for the Predator-Prey model
 ---
 # --- Space -------------------------------------------------------------------
 space:
@@ -29,14 +14,13 @@ cell_manager:
   neighborhood:
     mode: Moore
 
-  # Initializing a cell takes the following parameters
-  # that are passed to the cell state Config&-constructor 
+  # Initial species parameters
   cell_params:
-    # Initial species state parameters
+    # Resource reservoir for predator and prey
     predator:
-      init_resources: 2.      # The initial resource reservoir
+      init_resources: 2
     prey:
-      init_resources: 2.      # The initial resource reservoir
+      init_resources: 2
 
     # The probabilities to have a cell initialized with prey and/or predator 
     # on it. Need be non-negative and sum up to a value <= 1.0
@@ -44,9 +28,9 @@ cell_manager:
     p_prey: 0.2
 
 
-# Load prey and predator positions from datasets of a HDF5 file. If enabled,
-# the probabilistically set predator and prey positions are overwritten.
-# Two datasets are expected in the HDF5 file: `prey`, `predator`.
+# Load species positions from datasets of a HDF5 file.
+# If enabled, the presence of an entity is set using data from the respective
+# dataset, i.e. `predator` and `prey`.
 # Values can only be 0 or 1, specifying whether the respective entity is
 # present on the corresponding cell.
 cell_states_from_file:
@@ -58,23 +42,28 @@ cell_states_from_file:
 # --- Model dynamics ----------------------------------------------------------
 # Species-specific parameters; the model dynamics arise from these
 predator:
-  resource_intake: 3.       # Resource intake from eating
-  resource_max: 8.          # Maximum resource reserve
+  # Resource intake from eating and maximum resource value
+  resource_intake: 3.
+  resource_max: 8.
 
-  cost_of_living: 1.        # Cost of living that is taken each time step
+  # Cost of living (per time step)
+  cost_of_living: 1.
 
-  repro_resource_requ: 4.   # Minimal resource requirements for reproduction
-  repro_prob: 0.2           # Reproduction probability
-  repro_cost: 2.            # Cost of reproduction
+  # Reproduction parameters: minimum resources required, probability for
+  # the reproduction taking place, and cost of reproduction.
+  repro_resource_requ: 4.
+  repro_prob: 0.2
+  repro_cost: 2.
 
 prey:
-  resource_intake: 3.       # Resource intake from eating
-  resource_max: 8.          # Maximum resource reserve
+  resource_intake: 3.
+  resource_max: 8.
 
-  cost_of_living: 1.        # Cost of living that is taken each time step
-  p_flee: 0.5               # Probability to flee from a predator 
-                            # if on the same cell
+  cost_of_living: 1.
 
-  repro_resource_requ: 4.   # Minimal resource requirements for reproduction
-  repro_prob: 0.2           # Reproduction probability
-  repro_cost: 2.            # Cost of reproduction
+  # Fleeing probability when on the same cell together with a predator
+  p_flee: 0.5
+
+  repro_resource_requ: 4.
+  repro_prob: 0.2
+  repro_cost: 2.

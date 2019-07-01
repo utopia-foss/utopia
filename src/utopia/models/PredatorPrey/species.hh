@@ -5,23 +5,21 @@
 
 #include "utopia/core/types.hh"
 
-namespace Utopia {
-namespace Models {
-namespace PredatorPrey {
+namespace Utopia::Models::PredatorPrey {
 
 /// Struct that holds all species states
 struct SpeciesState {
+    /// Whether the species is on the cell
+    bool on_cell;
+
     /// The internal resources reservoir
     double resources;
-
-    /// Whether the species is on a cell
-    bool on_cell;
 
     // .. Constructors ........................................................
     /// The default constructor
     SpeciesState() : 
-    resources{0},
-    on_cell{false}
+        on_cell{false},
+        resources{0.}
     {}
 };
 
@@ -59,10 +57,10 @@ struct SpeciesBaseParams {
         repro_prob(get_as<double>("repro_prob", cfg))
     {
         // Perform some checks
-        if (repro_cost >= repro_resource_requ) {
-            throw std::invalid_argument("repro_cost needs to be smaller than "
-                "or equal to the minimal reproduction requirements of "
-                "resources!");
+        if (repro_cost > repro_resource_requ) {
+            throw std::invalid_argument("Parameter repro_cost needs to be "
+                "smaller than or equal to the minimal resources required for "
+                "reproduction!");
         }
     }
 
@@ -73,7 +71,10 @@ struct SpeciesBaseParams {
 struct PredatorParams : public SpeciesBaseParams{
     // .. Constructors ........................................................
     /// Construct a predator object from a configuration node
-    PredatorParams(const Utopia::DataIO::Config& cfg) : SpeciesBaseParams(cfg){};
+    PredatorParams(const Utopia::DataIO::Config& cfg)
+    :
+        SpeciesBaseParams(cfg)
+    {};
 
     /// The default constructor
     PredatorParams() = delete;
@@ -82,23 +83,25 @@ struct PredatorParams : public SpeciesBaseParams{
 /// Struct that holds all prey-species specific parameters
 struct PreyParams : public SpeciesBaseParams {
     // .. Interaction .........................................................
-    // Probability to flee from a predator if on the same cell
+    /// Probability to flee from a predator if on the same cell
     double p_flee;
 
     // .. Constructors ........................................................
     /// Construct a prey object from a configuration node
-    PreyParams(const Utopia::DataIO::Config& cfg) : SpeciesBaseParams(cfg){
-        p_flee = get_as<double>("p_flee", cfg);
-    };
+    PreyParams(const Utopia::DataIO::Config& cfg)
+    :
+        SpeciesBaseParams(cfg),
+        p_flee(get_as<double>("p_flee", cfg))
+    {};
 
     /// The default constructor
     PreyParams() = delete;
 };
 
 /// The parameter of all species
-/** \detail This struct contains for each available species one species-specific
- *          parameter struct that contains all parameters belonging to that
- *          specific species.
+/** This struct contains for each available species one species-specific
+ *  parameter struct that contains all parameters belonging to that specific
+ *  species.
  */
 struct SpeciesParams{
     /// Prey parameters
@@ -119,9 +122,7 @@ struct SpeciesParams{
     SpeciesParams() = delete;
 };
 
-}
-}
-}
 
+} // Utopia::Models::PredatorPrey
 
 #endif // UTOPIA_MODELS_PREDATORPREY_SPECIES_HH

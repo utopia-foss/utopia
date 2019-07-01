@@ -258,6 +258,21 @@
     <<: *default_style
 
 
+# .. Phase space with colour-coded time .......................................
+.time_series.phase_space:
+  creator: universe
+  universes: all
+  
+  module: .time_series
+  plot_func: phase_space
+
+  # Use default helpers and style
+  helpers:
+    <<: *default_helpers
+  style:
+    <<: *default_style
+
+
 # -- Bifurcation diagrams -----------------------------------------------------
 .attractor.bifurcation_diagram_1d:
   creator: multiverse

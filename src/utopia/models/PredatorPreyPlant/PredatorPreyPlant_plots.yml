@@ -1,35 +1,53 @@
-# This defines the default plots for the PredatorPrey model
----
-# --- Plot of the predator density against the prey density -------------------
-phase_space:
+# --- Phase Space Plots -------------------------------------------------------
+phase_space/predator_prey:
   based_on: phase_space
 
+  x: predator
+  y: prey
 
-# --- Time series of the predator and prey spatial densities and resources ----
+  helpers:
+    set_labels:
+      x: Predator Density $[1/A]$
+      y: Prey Density $[1/A]$
+
+phase_space/prey_plant:
+  based_on: phase_space
+  
+  x: prey
+  y: plant
+
+  helpers:
+    set_labels:
+      x: Prey Density $[1/A]$
+      y: Plant Density $[1/A]$
+
+
+# --- Time series of mean values ----------------------------------------------
 species_densities:
   based_on: species_densities
 
 mean_resources:
   based_on: mean_resources
 
-
 # --- Animation of the spatial resource development of prey and predators -----
 resources:
   based_on: .ca.state.anim_ffmpeg  # update to *_frames to save frames
+  enabled: true
 
-  model_name: PredatorPrey
+  model_name: PredatorPreyPlant
 
   # Select the properties to plot
   to_plot:
     resource_predator:
       title: Predator
-      limits: [0, 8]   # Should be adapted to the resource_max model parameter
-      
+      limits: [0, 8]   # Adapt to resource_max species parameter
+      cmap: viridis
+
     resource_prey:
       title: Prey
-      limits: [0, 8]   # Should be adapted to the resource_max model parameter
+      limits: [0, 8]   # Adapt to resource_max species parameter
+      cmap: viridis
 
-  # Adjust plot aesthetics
   helpers:
     set_suptitle:
       title: Resources
@@ -39,9 +57,10 @@ resources:
 # --- Animation of the spatial development of prey and predator populations ---
 population:
   based_on: combined_grid_animation_ffmpeg  # update to *_frames to save frames
+  enabled: true
 
   to_plot:
-    # Combined by model_plots.PredatorPrey.ca.combine_pred_and_prey function
+    # Combined in model_plots.PredatorPreyPlant.ca.combine_pred_and_prey
     combined: &population_combined
       title: Predator and Prey
       limits: [0, 3]
@@ -55,7 +74,7 @@ population:
 # --- More detailed animation: prey only, combined, predator only -------------
 population_detailed:
   based_on: combined_grid_animation_ffmpeg  # update to *_frames to save frames
-  enabled: false
+  enabled: true
 
   to_plot:
     predator:
@@ -64,7 +83,7 @@ population_detailed:
       cmap: 
         empty: white
         predator: blue
-
+        
     combined:
       <<: *population_combined
 
@@ -74,3 +93,10 @@ population_detailed:
       cmap: 
         empty: white
         prey: orange
+
+    plant:
+      title: Plant
+      limits: [0, 1]
+      cmap: 
+        empty: white
+        plant: green

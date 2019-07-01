@@ -1,0 +1,24 @@
+---
+perform_sweep: true
+
+parameter_space:
+  # Disable steps; not needed
+  num_steps: 0
+
+  # Test for four different seeds
+  seed: !sweep
+    default: 42
+    values: [23, 42, 665, 667]
+
+  # Load the model config
+  PredatorPreyPlant: !model
+    model_name: PredatorPreyPlant
+
+    cell_manager:
+      grid:
+        structure: square
+        resolution: 21
+
+      cell_params:
+        p_prey: 0.2
+        p_predator: 0.285
