@@ -1,0 +1,33 @@
+---
+parameter_space:
+  num_steps: 2
+
+  PredatorPreyPlant: !model
+    model_name: PredatorPreyPlant
+
+    space:
+      extent: [2, 1]
+
+    cell_manager:
+      grid:
+        structure: square
+        resolution: 1
+
+      cell_params:
+        prey:
+          min_init_resources: 2
+          max_init_resources: 2
+
+        predator:
+          min_init_resources: 2
+          max_init_resources: 2
+
+        p_prey: 1.
+        p_predator: 0.
+          
+    prey:
+      cost_of_living: 1.
+      repro_cost: 2.
+      resource_intake: 2.0
+    plant:
+      growth_model: none

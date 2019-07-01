@@ -40,7 +40,7 @@ struct State {
         const auto p_predator = get_as<double>("p_predator", cfg);
 
         // Check wether the conditions for the probabilities are met
-        if (p_prey < 0. 
+        if (   p_prey < 0. 
             or p_predator < 0.
             or (p_prey + p_predator) > 1.)
         {
@@ -51,30 +51,18 @@ struct State {
                 + std::to_string(p_predator) + "!");
         }
 
-        // Check that the prey and predator key are given in the configuration
-        if (not cfg["prey"]){
-            throw std::invalid_argument(
-                "The 'prey' key is missing in the cell_params!"
-            );
-        }
-        if (not cfg["predator"]){
-            throw std::invalid_argument(
-                "The 'predator' key is missing in the cell_params!"
-            );
-        } 
-
         // Set a prey on a cell with the given probability by generating a 
         // random number in [0, 1) and compare it to wanted probability.
         if (dist(*rng) < p_prey){
             prey.on_cell = true;
-            prey.resources = get_as<double>("init_resources", 
+            prey.resources = get_as<double>("init_resources",
                                             cfg["prey"]);
         }
 
         // Set a predator on a cell with the given probability.
         if (dist(*rng) < p_predator){
             predator.on_cell = true;
-            predator.resources = get_as<double>("init_resources", 
+            predator.resources = get_as<double>("init_resources",
                                                 cfg["predator"]);
         }
     }
@@ -464,15 +452,19 @@ public:
         Base(name, parent),
         // Initialize the cell manager, binding it to this model
         _cm(*this),
+        
         // Extract model parameters
         _params(this->_cfg),
+
         // Temporary cell containers
         _prey_cell(),
         _empty_cell(),
         _repro_cell(),
-        // uniform real distribution
+
+        // Initialize distributions
         _prob_distr(0., 1.),
-        // create datasets
+
+        // Create datasets
         _dset_prey(this->create_cm_dset("prey", _cm)),
         _dset_predator(this->create_cm_dset("predator", _cm)),
         _dset_resource_prey(this->create_cm_dset("resource_prey", _cm)),
@@ -531,7 +523,7 @@ public:
         _repro_cell.reserve(nb_size);
 
         // Initialization finished
-        this->_log->debug("{} model fully set up.", this->_name);
+        this->_log->info("{} model fully set up.", this->_name);
     }
 
 public:

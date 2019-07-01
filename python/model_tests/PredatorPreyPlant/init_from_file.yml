@@ -1,0 +1,21 @@
+# Test initialisation with prey and predator states given in a file
+---
+parameter_space:
+  # Disable steps; not needed
+  num_steps: 0
+
+  # Load the model config
+  PredatorPreyPlant: !model
+    model_name: PredatorPreyPlant
+
+    cell_manager:
+      grid:
+        structure: square
+        resolution: 21
+
+    cell_states_from_file:
+      hdf5_file: set_dynamically_in_test
+      load_predator: true
+      load_prey: true
+      load_plant: true
+

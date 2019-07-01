@@ -1,0 +1,43 @@
+# Config for testing that the model does the expected for a specific minimal scenario
+#
+# The testing scenario is a single 
+#
+# NOTE that this sets only the common values; the changes are set via passing
+#      additional keys to the the ModelTest.create_run_load method
+---
+perform_sweep: false
+
+parameter_space:
+  # Do a number of steps
+  num_steps: 80
+
+  # Load the default model config
+  PredatorPreyPlant: !model
+    model_name: PredatorPreyPlant
+
+    space:
+      extent: [10, 10]
+
+    cell_manager:
+      grid:
+        structure: square
+        resolution: 1
+
+      cell_params:
+        prey:
+          min_init_resources: 2
+          max_init_resources: 2
+        predator:
+          min_init_resources: 6
+          max_init_resources: 6
+        p_prey: 1
+        p_predator: 0
+          
+    prey:
+      cost_of_living: 1
+      resource_intake: 0.
+
+    plant:
+      growth_model: stochastic
+      regen_prob: 0.0
+      

@@ -155,8 +155,8 @@ def densities(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
     """
     for path_to_data, specs in to_plot.items():
         if not isinstance(specs, dict):
-            raise TypeError("Parameters for `path_to_data` '{}' were not a dict "
-                            "but {} with value: '{}'!"
+            raise TypeError("Parameters for `path_to_data` '{}' were not a "
+                            "dict but {} with value: '{}'!"
                             "".format(path_to_data, type(specs), specs))
 
         density(dm, uni=uni, hlpr=hlpr, model_name=model_name,
@@ -164,3 +164,51 @@ def densities(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
 
     if len(to_plot) > 1:
         hlpr.provide_defaults('set_legend', use_legend=True, loc='best')
+
+
+@is_plot_func(creator_type=UniversePlotCreator,
+              helper_defaults=dict(
+                set_limits=dict(x=(0., None), y=(0., None))
+              ))
+def phase_space(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
+                model_name: str, x: str, y: str,
+                cmap: str=None, **scatter_kwargs):
+    """Plots ``x`` and ``y`` data in a phase space plot. If ``cmap`` is given,
+    the time development will be colour coded.
+
+    .. note::
+
+        This automatically calculates the mean over all *but* the ``time``
+        dimension of the data.
+    
+    Args:
+        dm (DataManager): The data manager from which to retrieve the data
+        uni (UniverseGroup): The universe from which to plot the data
+        hlpr (PlotHelper): The PlotHelper instance
+        model_name (str): The model name from which to take the data
+        x (str): The path to the data relative to the model_name which to
+            plot on the x axis of the phase space plot.
+        y (str): The path to the data relative to the model_name which to
+            plot on the x axis of the phase space plot
+        cmap (str, optional): The cmap which is used to color-code the time
+            development. If not given, will not color-code it.
+        **scatter_kwargs: Passed on to plt.scatter
+    """
+    x = uni['data'][model_name][x]
+    y = uni['data'][model_name][y]
+
+    # To reduce dimensionality, take the mean of all but the time dimension.
+    f_x = x.mean(dim=[d for d in x.dims if d != 'time'])
+    f_y = y.mean(dim=[d for d in y.dims if d != 'time'])
+
+    # If a colormap was given, use it to color-code the time
+    cc_kwargs = ({} if cmap is None
+                 else dict(c=f_y.coords['time'], cmap=cmap))
+    
+    # Plot the phase space
+    sc = hlpr.ax.scatter(f_x, f_y, **cc_kwargs, **scatter_kwargs)
+
+    # Add a colorbar
+    if cc_kwargs:
+        hlpr.fig.colorbar(sc, ax=hlpr.ax, fraction=0.05, pad=0.02,
+                          label="Time [Iteration Steps]")

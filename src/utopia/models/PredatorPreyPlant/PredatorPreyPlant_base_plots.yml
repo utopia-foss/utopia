@@ -1,20 +1,10 @@
-# Base configs for PredatorPrey model plots
+# Base configs for PredatorPreyPlant model plots
 ---
-# -- Plot of the predator density against the prey density --------------------
+# -- Phase space plots --------------------------------------------------------
 phase_space:
   based_on: .time_series.phase_space
 
-  model_name: PredatorPrey
-
-  # Select the data
-  x: predator
-  y: prey
-
-  # Set helpers accordingly
-  helpers:
-    set_labels:
-      x: Predator Density $[1/A]$
-      y: Prey Density $[1/A]$
+  model_name: PredatorPreyPlant
 
   # How to color-code the time axis  
   cmap: viridis_r
@@ -23,7 +13,7 @@ phase_space:
   s: 3.5
 
 
-# -- Time series of the predator and prey densities ---------------------------
+# -- Time series --------------------------------------------------------------
 species_densities:
   based_on: .time_series.densities
 
@@ -33,9 +23,9 @@ species_densities:
     set_labels:
       y: Density $[1/A]$
     set_title:
-      title: Predator and Prey Densities
+      title: Densities
 
-  model_name: PredatorPrey
+  model_name: PredatorPreyPlant
 
   # Which data to calculate the densities from
   to_plot:
@@ -50,6 +40,12 @@ species_densities:
       preprocess:
         - create_mask: [==, 1]
       label: Prey
+    
+    plant:
+      mean_of: [x, y]
+      preprocess:
+        - create_mask: [==, 1]
+      label: Plant
 
 mean_resources:
   based_on: .time_series.densities
@@ -63,7 +59,7 @@ mean_resources:
     set_title:
       title: Mean Total Resources
 
-  model_name: PredatorPrey
+  model_name: PredatorPreyPlant
 
   to_plot:
     resource_predator:
@@ -78,14 +74,15 @@ mean_resources:
         - create_mask: [==, 1]
       label: Prey
 
+
 # -- A grid animation that shows combined predator and prey positions ---------
 combined_grid_animation_frames: &combined_grid_anim
   based_on: .ca.state.anim_frames
   
-  model_name: PredatorPrey
+  model_name: PredatorPreyPlant
 
   # Use the custom plotting function
-  module: model_plots.PredatorPrey
+  module: model_plots.PredatorPreyPlant
   plot_func: combine_pred_and_prey
 
 combined_grid_animation_ffmpeg:

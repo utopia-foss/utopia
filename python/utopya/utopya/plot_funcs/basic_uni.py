@@ -187,9 +187,8 @@ def errorbar_single(dm: DataManager, *,
                             log_level=transformations_log_level)
 
     # Just plot a single line
-    _errorbar(hlpr=hlpr, data=data, std=std, **errorbar_kwargs)
+    _errorbar(hlpr=hlpr, data=data, std=std, **errorbar_kwargs) 
 
-    # Done.    
 
 @is_plot_func(creator_type=UniversePlotCreator)
 def errorbar(dm: DataManager, *,
@@ -255,6 +254,7 @@ def errorbar(dm: DataManager, *,
         # Pass it on to the function that plots only a single line
         errorbar_single(dm, uni=uni, hlpr=hlpr, path_to_data=path_to_data,
                         **plot_spec, **add_kwargs, **errorbar_kwargs)
+
 
 @is_plot_func(creator_type=UniversePlotCreator,
               helper_defaults=dict(

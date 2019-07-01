@@ -15,3 +15,9 @@ Multiple Densities
 ------------------
 
 .. autofunction:: utopya.plot_funcs.time_series.densities
+
+
+Phase Space
+-----------
+
+.. autofunction:: utopya.plot_funcs.time_series.phase_space

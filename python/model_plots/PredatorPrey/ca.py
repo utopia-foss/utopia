@@ -13,6 +13,8 @@ import utopya.plot_funcs.ca
 def combine_pred_and_prey(dm: DataManager, *,
                           uni: UniverseGroup,
                           model_name: str,
+                          x: str='predator',
+                          y: str='prey',
                           **kwargs):
     """See utopya.plot_funcs.ca.state for docstring.
 
