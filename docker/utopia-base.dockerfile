@@ -31,7 +31,6 @@ RUN apt-get update \
         python3-venv \
         ffmpeg \
     && apt-get install -y \
-        libfftw3-dev \
         vim \
         nano \
     && apt-get clean
