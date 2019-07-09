@@ -45,6 +45,20 @@ init_env_state_funcs:
         mean: .0
         stddev: .1
 
+  - uniform:
+      # The parameter to which to apply the env
+      some_heterogeneous_parameter:
+        mode: set     # can be: set, add
+        value: -0.2
+        select:   # apply this rule only to cm.select_cells(..)
+          mode: clustered_simple
+          generate: once  # can be once or always
+
+          # Clustering parameters
+          p_seed: .02    # Probability with which a cell is a cluster seed
+          p_attach: .1   # Attachment probability (per neighbor)
+          num_passes: 5  # How many attachment procedures to perform
+
 # ... Environment functions invoked each step .................................
 # To control the times at which these are invoked, you can add the `times` key,
 # which is a sequence of invocation times. If the `times` key is not given,
@@ -83,4 +97,6 @@ env_param_funcs:
         times: !listgen [100]
         phase: 1
         offset: 10
+
+        invoke_at_initialization: False # must not be invoked at initialization
 

@@ -20,10 +20,11 @@ parameter_space:
       - increment:
           some_global_parameter:
             value: 1.
+            invoke_at_initialization: True
       - increment:
           some_global_parameter:
             value: 1.
-            invoke_at_initialization: True
+            invoke_at_initialization: False
             times: !listgen [4]
 
     init_env_state_funcs: ~

@@ -13,6 +13,9 @@
 #include <utopia/core/types.hh>
 #include <utopia/core/cell_manager.hh>
 
+// FuncBundle classes
+#include "func_bundle.hh"
+
 // Collections of environment functions
 #include "env_param_func_collection.hh"
 #include "env_state_func_collection.hh"
@@ -154,92 +157,27 @@ public:
     /// The type of the cell manager
     using CellManager = Utopia::CellManager<CellTraits, Self>;
 
-    /// The type of the environment state functions; basically a rule function
-    using EnvStateFunc = typename CellManager::RuleFunc;
-
-    /// The type of the environment parameter functions
-    using EnvParamFunc = typename std::function<double()>;
+    /// The type of the EnvCellContainer
+    using EnvCellContainer = CellContainer<typename CellManager::Cell>;
 
     /// The type of the model time
     using Time = typename Base::Time;
 
+    /// The type of the environment parameter functions
+    using EnvParamFunc = typename std::function<double()>;
+
+    /// The type wrapping EnvParamFunc with metadata
+    using EnvParamFuncBundle = FuncBundle::ParamFuncBundle<EnvParamFunc, Time>;
+
+    /// The type of the environment state functions; basically a rule function
+    using EnvStateFunc = typename CellManager::RuleFunc;
+
+    /// The type wrapping EnvStateFunc with metadata
+    using EnvStateFuncBundle = FuncBundle::RuleFuncBundle<EnvStateFunc, Time,
+                                                          EnvCellContainer>;
+
     /// Configuration node type alias
     using Config = DataIO::Config;
-    
-    /// The environment parameter function bundle
-    /** \detail This gathers the environment parameter function alongside some
-      *         metadata into a custom construct.
-     */
-    struct EnvParamFuncBundle {
-        std::string name;
-        std::string param_name;
-        EnvParamFunc func;
-        bool invoke_at_initialization;
-        bool invoke_always;
-        std::set<Time> times;
-
-        EnvParamFuncBundle(std::string name,
-                           std::string param_name,
-                           EnvParamFunc func,
-                           bool invoke_at_initialization,
-                           bool invoke_always = true,
-                           std::set<Time> times = {})
-        :
-            name(name),
-            param_name(param_name),
-            func(func),
-            invoke_at_initialization(invoke_at_initialization),
-            invoke_always(invoke_always),
-            times(times)
-        {}
-
-        EnvParamFuncBundle(std::string name,
-                           std::string param_name,
-                           EnvParamFunc func,
-                           std::tuple<bool, bool,
-                                      std::set<Time>> invoke_times_tuple = {
-                                                            false, true, {}})
-        :
-            EnvParamFuncBundle(name, param_name, func, 
-                               std::get<0>(invoke_times_tuple),
-                               std::get<1>(invoke_times_tuple),
-                               std::get<2>(invoke_times_tuple))
-        {}
-    };
-
-    /// The environment state function bundle
-    /** \detail This gathers the environment state function alongside some
-      *         metadata into a custom construct.
-     */
-    struct EnvStateFuncBundle {
-        std::string name;
-        EnvStateFunc func;
-        Update update;
-        bool invoke_always;
-        std::set<Time> times;
-
-        EnvStateFuncBundle(std::string name,
-                      EnvStateFunc func,
-                      Update update = Update::sync,
-                      bool invoke_always = true,
-                      std::set<Time> times = {})
-        :
-            name(name),
-            func(func),
-            update(update),
-            invoke_always(invoke_always),
-            times(times)
-        {}
-
-        EnvStateFuncBundle(std::string name,
-                      EnvStateFunc func,
-                      Update update = Update::sync,
-                      std::pair<bool, std::set<Time>> times_pair = {true, {}})
-        :
-            EnvStateFuncBundle(name, func, update,
-                          times_pair.first, times_pair.second)
-        {}
-    };
 
 private:
     /// A dummy CellManager type that is used in standalone mode
@@ -471,34 +409,131 @@ public:
     const auto& cm() const {
         return this->_cm;
     }
+
+    // .. Environment Function Bundle Handling ................................
+    /// Add a rule function at the end of the sequence of parameter functions
+    /** \param epfb      The EnvParamFuncBundle of environment parameter
+     *                   function that is to be added and its metadata.
+     */
+    template<class EPFB>
+    void add_env_param_func(EPFB&& epfb) {
+        _env_param_funcs.push_back(epfb);
+        this->_log->debug("Added environment param function '{}'.", epfb.name);
+    }
     
     /// Add a param function at the end of the sequence of env functions
     /** \param epf      EnvParamFunc that is applied to all cm.cells()
+     *  \param times_tuple  invoke_at_initialization, invoke_always, 
+     *                      set of times when to invoke the function
      */
-    void add_env_param_func(const std::string& name,
-                            const std::string& param_name,
-                            const EnvParamFunc& epf,
-                            const std::set<Time>& times = {})
+    void add_env_param_func(const std::string& name, const EnvParamFunc& epf,
+            const std::string& param_name,
+            std::tuple<bool, bool, std::set<Time>> times_tuple)
     {
         add_env_param_func(
-            EnvParamFuncBundle(name, param_name, epf, false, bool(times.size()),
-                               times)
+            EnvParamFuncBundle(name, epf, param_name, times_tuple)
+        );
+    }
+    
+    /// Add a param function at the end of the sequence of env functions
+    /** \param epf      EnvParamFunc that is applied to all cm.cells()
+     *  \param cfg      From which invoke_at_initialization and times to invoke
+     *                  the function is extracted
+     */
+    void add_env_param_func_from_cfg(const std::string& name,
+            const EnvParamFunc& epf, const std::string& param_name,
+            const Config& cfg = {})
+    {
+        auto invoke_times_tuple = extract_times_and_initialization<Time>(cfg);
+        add_env_param_func(name, epf, param_name, invoke_times_tuple);
+    }
+
+    /// Add a rule function at the end of the sequence of state functions
+    /** \param esfb  The EnvStateFuncBundle of environment state
+     *                   function that is to be added and its metadata.
+     */
+    template<bool add_to_initial=false, class ESFB>
+    void add_env_state_func(ESFB&& esfb) {
+        if constexpr (add_to_initial) {
+            _init_env_state_funcs.push_back(esfb);
+        }
+        else {
+            _env_state_funcs.push_back(esfb);
+        }
+        this->_log->debug("Added {}environment function '{}'.",
+                          add_to_initial ? "initial " : "", esfb.name);
+    }
+    
+    /// Add a rule function at the end of the sequence of environment functions
+    /** \param esf      EnvStateFunc that is applied to all cm.cells()
+     *  \param update   The Update mode to use with apply_rule(esf, cm.cells)
+     *  \param times_pair   invoke_always, Set of times at which to invoke
+     *                      function. 
+     *  \param select_cfg   Config passed to _cm.select_cells
+     */
+    template<bool add_to_initial=false>
+    void add_env_state_func(const std::string& name,
+            const EnvStateFunc& esf, const Update& update = Update::sync,
+            std::pair<bool, std::set<Time>> times_pair = {true, {}}, 
+            Config select_cfg = {})
+    {
+        // resolve select option
+        bool fix_selection;
+        EnvCellContainer cell_selection = {};
+        if (not select_cfg.IsNull()) {
+            std::string generate = get_as<std::string>("generate", select_cfg);
+            if (generate == "once") {
+                fix_selection = true;
+            }
+            else if (generate == "always") {
+                fix_selection = false;
+            }
+            else {
+                throw std::invalid_argument("Key 'generate' in 'select' "
+                        "feature of environment state function '"
+                        + name + "' must be 'once' to fix selection or "
+                        "'always' to generate it on the fly, but was '" 
+                        + generate + "'!");
+            }
+
+            if (fix_selection) {
+                this->_log->debug("Generating a selection of cells and fixing "
+                                  "it for the rule '{}'.", name);
+                cell_selection = _cm.select_cells(select_cfg);
+            }
+        }
+        else {
+            fix_selection = false;
+        }
+
+        add_env_state_func<add_to_initial>(
+            EnvStateFuncBundle(name, esf, update, add_to_initial, times_pair,
+                               {fix_selection, cell_selection, select_cfg})
         );
     }
     
     /// Add a rule function at the end of the sequence of environment functions
     /** \param esf      EnvStateFunc that is applied to all cm.cells()
      *  \param update   The Update mode to use with apply_rule(esf, cm.cells)
+     *  \param cfg      The config of the state_func. Here, times and select are
+     *                  extracted; All other entries ignored. 
+     *                  Defaults are invoke always and select all cells.
      */
     template<bool add_to_initial=false>
-    void add_env_state_func(const std::string& name,
-                            const EnvStateFunc& esf,
-                            const Update& update = Update::sync,
-                            const std::set<Time>& times = {})
+    void add_env_state_func_from_cfg(
+        const std::string& name,
+        const EnvStateFunc& esf,
+        const Update& update = Update::sync,
+        const Config& cfg = {})
     {
-        add_env_state_func<add_to_initial>(
-            EnvStateFuncBundle(name, esf, update, bool(times.size()), times)
-        );
+        auto times_pair = extract_times<Time>(cfg);
+        Config select_cfg = {};
+        if (not cfg.IsNull()) {
+            select_cfg = get_as<Config>("select", cfg, {});
+        }
+
+        add_env_state_func<add_to_initial>(name, esf, update, times_pair, 
+                                           select_cfg);
     }
 
     /// Mark a parameter as being tracked, i.e. store its data in write_data
@@ -538,17 +573,6 @@ public:
     }
 
 private:
-    // .. Environment Function Bundle Handling ................................
-    /// Add a rule function at the end of the sequence of parameter functions
-    /** \param epfb      The EnvParamFuncBundle of environment parameter
-     *                   function that is to be added and its metadata. 
-     */
-    template<class EPFB>
-    void add_env_param_func(EPFB&& epfb) {
-        _env_param_funcs.push_back(epfb);
-        this->_log->debug("Added environment param function '{}'.", epfb.name);
-    }
-
     /// Construct the rule funcs sequencefor EnvParam from cfg
     void setup_env_param_funcs(const Config& cfg) {
         this->_log->info("Setting up environment param function sequence "
@@ -585,23 +609,27 @@ private:
 
                     // Distinguish by name of rule function
                     if (epf_name == "increment") {
-                        add_env_param_func(
-                            epf_increment(*this, param_name, epf_cfg)
+                        auto epf = epf_increment(*this, param_name, epf_cfg);
+                        add_env_param_func_from_cfg(
+                            epf_name+"."+param_name, epf, param_name, epf_cfg
                         );
                     }
                     else if (epf_name == "rectangular") {
-                        add_env_param_func(
-                            epf_rectangular(*this, param_name, epf_cfg)
+                        auto epf = epf_rectangular(*this, epf_cfg);
+                        add_env_param_func_from_cfg(
+                            epf_name+"."+param_name, epf, param_name, epf_cfg
                         );
                     }
                     else if (epf_name == "set") {
-                        add_env_param_func(
-                            epf_set(*this, param_name, epf_cfg)
+                        auto epf = epf_set(*this, epf_cfg);
+                        add_env_param_func_from_cfg(
+                            epf_name+"."+param_name, epf, param_name, epf_cfg
                         );
                     }
                     else if (epf_name == "sinusoidal") {
-                        add_env_param_func(
-                            epf_sinusoidal(*this, param_name, epf_cfg)
+                        auto epf = epf_sinusoidal(*this, epf_cfg);
+                        add_env_param_func_from_cfg(
+                            epf_name+"."+param_name, epf, param_name, epf_cfg
                         );
                     }
                     // .. can add more rule functions here (alphabetic order). 
@@ -620,26 +648,10 @@ private:
         }
     };
 
-    /// Add a rule function at the end of the sequence of state functions
-    /** \param esf_pair  The EnvStateFuncBundle of environment state
-     *                   function that is to be added and its metadata. 
-     */
-    template<bool add_to_initial=false, class ESFB>
-    void add_env_state_func(ESFB&& esfb) {
-        if constexpr (add_to_initial) {
-            _init_env_state_funcs.push_back(esfb);
-        }
-        else {
-            _env_state_funcs.push_back(esfb);
-        }
-        this->_log->debug("Added {}environment function '{}'.",
-                          add_to_initial ? "initial " : "", esfb.name);
-    }
-
     /// Construct the rule funcs sequence from cfg
     template<bool add_to_initial=false>
     void setup_env_state_funcs(const Config& cfg) {
-        this->_log->info("Setting up {}environment sttae function sequence "
+        this->_log->info("Setting up {}environment state function sequence "
                          "from {} configuration entr{} ...",
                          add_to_initial ? "initial " : "",
                          cfg.size(), cfg.size() != 1 ? "ies" : "y");
@@ -674,24 +686,36 @@ private:
                     
                     // Distinguish by name of rule function
                     if (esf_name == "noise") {
-                        add_env_state_func<add_to_initial>(
-                            esf_noise(*this, param_name, esf_cfg)
+                        auto esf_update_pair = esf_noise(*this, param_name,
+                                                         esf_cfg);
+                        add_env_state_func_from_cfg<add_to_initial>(
+                            "noise."+param_name, esf_update_pair.first,
+                            esf_update_pair.second, esf_cfg
                         );
                     }
                     else if (esf_name == "slope") {
-                        add_env_state_func<add_to_initial>(
-                            esf_slope(*this, param_name, esf_cfg,
-                                      _cm.space()->extent)
+                        auto esf_update_pair = esf_slope(*this, param_name,
+                                                         esf_cfg,
+                                                         _cm.space()->extent);
+                        add_env_state_func_from_cfg<add_to_initial>(
+                            "slope."+param_name, esf_update_pair.first,
+                            esf_update_pair.second, esf_cfg
                         );
                     }
                     else if (esf_name == "steps") {
-                        add_env_state_func<add_to_initial>(
-                            esf_steps(*this, param_name, esf_cfg)
+                        auto esf_update_pair = esf_steps(*this, param_name,
+                                                         esf_cfg);
+                        add_env_state_func_from_cfg<add_to_initial>(
+                            "steps."+param_name, esf_update_pair.first,
+                            esf_update_pair.second, esf_cfg
                         );
                     }
                     else if (esf_name == "uniform") {
-                        add_env_state_func<add_to_initial>(
-                            esf_uniform(*this, param_name, esf_cfg)
+                        auto esf_update_pair = esf_uniform(*this, param_name,
+                                                           esf_cfg);
+                        add_env_state_func_from_cfg<add_to_initial>(
+                            "uniform."+param_name, esf_update_pair.first,
+                            esf_update_pair.second, esf_cfg
                         );
                     }
                     // .. can add more rule functions here ..
@@ -775,12 +799,30 @@ private:
         this->_log->debug("Applying environment state function '{}' ...",
                           esfb.name);
 
+        // get EnvCellContainer over which to apply the function
+        EnvCellContainer cell_selection = {};
+        if (esfb.fix_selection) {
+            cell_selection = esfb.cell_selection;
+        }
+        else if (not esfb.select_cfg.IsNull()) {
+            this->_log->debug("Generating a new selection of cells for "
+                              "environment state function '{}' ...", esfb.name);
+            cell_selection = _cm.select_cells(esfb.select_cfg);
+        }
+        else {
+            cell_selection = _cm.cells();
+        }
+
+        this->_log->debug("Applying to {} cells ...", 
+                          (cell_selection.size() == _cm.cells().size() ? 
+                           "all" : std::to_string(cell_selection.size())));
+
         // Need to distinguish by update mode
         if (esfb.update == Update::sync) {
-            apply_rule<Update::sync>(esfb.func, _cm.cells());
+            apply_rule<Update::sync>(esfb.func, cell_selection);
         }
         else if (esfb.update == Update::async) {
-            apply_rule<Update::async>(esfb.func, _cm.cells(), *this->_rng);
+            apply_rule<Update::async>(esfb.func, cell_selection, *this->_rng);
         }
         else {
             // Throw in case the Update enum gets extended and an unexpected

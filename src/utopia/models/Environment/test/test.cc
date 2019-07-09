@@ -21,15 +21,14 @@ void test_add_env_func(Model& model) {
     using EnvParamFunc = typename Model::EnvParamFunc;
 
     // Add a custom lambda
-    model.add_env_param_func("test_param",
-        "some_glob_parameter",
-        []() { return -1; }
-    );
+    model.add_env_param_func("test_param", []() { return -1; },
+                             "some_glob_parameter", {true, true, {}});
 
     EnvParamFunc epf = []() { return -2; };
 
     // Add with update mode
-    model.add_env_param_func("another param test", "some_glob_parameter", epf);
+    model.add_env_param_func("another param test", epf, "some_glob_parameter",
+                             {true, true, {}});
 
 
     // Add a custom lambda

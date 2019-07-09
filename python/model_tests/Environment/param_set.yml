@@ -25,6 +25,7 @@ parameter_space:
       - set:
           some_global_parameter:
             value: 2.
+            invoke_at_initialization: False
             times: [3]
 
     init_env_state_funcs: ~

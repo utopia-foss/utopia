@@ -77,3 +77,20 @@ def test_noise():
                           atol=5.e-2)
         assert np.isclose(data.sel({'time': 4}).mean(dim=['x', 'y']), [20.],
                           atol=5.e-2)
+
+
+def test_select():
+    """Tests that the output from 'select' is correct"""
+    _, dm = mtc.create_run_load(from_cfg="state_uniform_select.yml")
+
+    for uni_no, uni in dm['multiverse'].items():
+        data = uni['data']['Environment']['some_heterogeneous_parameter']
+        cfg = uni['cfg']['Environment']
+
+
+        assert np.isclose(data.isel({'time': 0}).sum(), 0.4).all()
+        assert np.isclose(data.isel({'time': 1}).sum(), 0.8).all()
+        assert np.isclose(data.isel({'time': 2}).sum(), 1.6).all()
+        assert np.isclose(data.isel({'time': 3}).sum(), 0.4).all()
+        assert np.isclose(data.isel({'time': 4}), 0.1).any()
+        assert np.isclose(data.isel({'time': 4}).sum(), 0.8).all()

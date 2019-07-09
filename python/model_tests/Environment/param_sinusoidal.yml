@@ -22,6 +22,8 @@ parameter_space:
             amplitude: 10.
             period: 100
             times: !listgen [200]
+
+            invoke_at_initialization: False
       - sinusoidal:
           some_global_parameter:
             amplitude: 10.
@@ -29,6 +31,8 @@ parameter_space:
             phase: 0.5
             offset: 10.
             times: !listgen [200, 401]
+
+            invoke_at_initialization: False
         
 
     init_env_state_funcs: ~
