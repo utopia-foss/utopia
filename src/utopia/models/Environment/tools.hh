@@ -6,7 +6,6 @@ namespace Utopia::Models::Environment {
 /** \addtogroup Environment
  *  \{
  */
-
 /// Value calculation mode
 enum class ValMode {
     /// Set a value, discarding the current state
@@ -36,10 +35,6 @@ ValMode extract_val_mode(const DataIO::Config& cfg,
 
 /// Given a configuration, extracts the set of times at which to invoke
 /// environment functions
-/** \note If ``times`` was empty, only adds a single element, which is the
- *        numeric limit of Time, denoting that it is to be invoked at every
- *        time step.
- */
 template <typename Time>
 std::pair<bool, std::set<Time>> extract_times(const DataIO::Config& cfg) {
     bool invoke_always = true;
@@ -74,19 +69,12 @@ std::pair<bool, std::set<Time>> extract_times(const DataIO::Config& cfg) {
 
 /// Given a configuration, extracts the set of times at which to invoke
 /// environment functions and whether to invoke them at initialization
-/** \note If ``times`` was empty, only adds a single element, which is the
- *        numeric limit of Time, denoting that it is to be invoked at every
- *        time step.
- */
 template <typename Time>
 std::tuple<bool, bool, std::set<Time>>
-    extract_times_and_initialization(const DataIO::Config& cfg,
-                                     bool invoke_at_initialization=false)
+    extract_times_and_initialization(const DataIO::Config& cfg)
 {
-    if (cfg["invoke_at_initialization"]) {
-        invoke_at_initialization = get_as<bool>(
-                                        "invoke_at_initialization", cfg); 
-    }
+    bool invoke_at_initialization = get_as<bool>("invoke_at_initialization",
+                                                 cfg);
 
     auto [invoke_always, times] = extract_times<Time>(cfg);
 

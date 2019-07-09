@@ -1,0 +1,61 @@
+# Configuration file used to test that the output of the model is correct
+---
+parameter_space:
+  num_steps: 4
+
+  Environment: !model  
+    model_name: Environment  # imports the model config for the Environment model
+
+    cell_manager:
+      grid:
+        resolution: 10
+
+      cell_params:
+        # overwritten by Environment's init_env_state_funcs
+        some_heterogeneous_parameter: 0.2
+
+    init_env_state_funcs:
+      - uniform:
+          some_heterogeneous_parameter:
+            mode: set
+            value: 0.0   # overwrites initialisation to 0.0
+      - uniform:
+          some_heterogeneous_parameter:
+            mode: add
+            value: 0.1   # increases to 0.1
+            select:
+              mode: sample
+              generate: always
+              num_cells: 4
+
+    env_state_funcs:
+      - uniform:
+          some_heterogeneous_parameter:
+            mode: set
+            value: 0.0
+            times: [1]
+      - uniform:
+          some_heterogeneous_parameter:
+            mode: add
+            value: 0.2
+            times: [1, 2]
+            select:
+              mode: sample
+              generate: once
+              num_cells: 4
+      - uniform:
+          some_heterogeneous_parameter:
+            mode: set
+            value: 0.0
+            times: [3]
+      - uniform:
+          some_heterogeneous_parameter:
+            mode: add
+            value: 0.1
+            times: [3, 4]
+            select:
+              mode: sample
+              generate: always
+              num_cells: 4
+
+

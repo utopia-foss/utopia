@@ -73,16 +73,11 @@ EnvStateFunc
  *   \endparblock
  */
 template<typename EnvModel,
-         class EnvStateFuncBundle = typename EnvModel::EnvStateFuncBundle>
-EnvStateFuncBundle esf_noise(const EnvModel& model,
-                             const std::string& param_name,
-                             const Config& cfg)
+         class EnvStateFunc = typename EnvModel::EnvStateFunc>
+std::pair<EnvStateFunc, Update> esf_noise(const EnvModel& model,
+                                          const std::string& param_name,
+                                          const Config& cfg)
 {
-    using Time = typename EnvModel::Time;
-
-    // Extract parameters
-    const auto esfb_name = "noise." + param_name;
-    auto times_pair = extract_times<Time>(cfg);
     const auto mode = extract_val_mode(cfg, "noise");
     const auto distribution = get_as<std::string>("distribution", cfg);
 
@@ -95,7 +90,7 @@ EnvStateFuncBundle esf_noise(const EnvModel& model,
 
         auto esf = build_rng_env_state_func(model, std::move(dist), param_name,
                                             mode);
-        return EnvStateFuncBundle(esfb_name, esf, Update::sync, times_pair);
+        return {esf, Update::sync};
     }
     else if (distribution == "poisson") {
         const auto mean = get_as<double>("mean", cfg);
@@ -103,7 +98,7 @@ EnvStateFuncBundle esf_noise(const EnvModel& model,
         
         auto esf = build_rng_env_state_func(model, std::move(dist), param_name,
                                             mode);
-        return EnvStateFuncBundle(esfb_name, esf, Update::sync, times_pair);
+        return {esf, Update::sync};
     }
     else if (distribution == "exponential") {
         const auto lambda = get_as<double>("lambda", cfg);
@@ -111,7 +106,7 @@ EnvStateFuncBundle esf_noise(const EnvModel& model,
         
         auto esf = build_rng_env_state_func(model, std::move(dist), param_name,
                                             mode);
-        return EnvStateFuncBundle(esfb_name, esf, Update::sync, times_pair);
+        return {esf, Update::sync};
     }
     else if (distribution == "uniform_int") {
         auto interval = get_as<std::array<int, 2>>("interval", cfg);
@@ -119,7 +114,7 @@ EnvStateFuncBundle esf_noise(const EnvModel& model,
         
         auto esf = build_rng_env_state_func(model, std::move(dist), param_name,
                                             mode);
-        return EnvStateFuncBundle(esfb_name, esf, Update::sync, times_pair);
+        return {esf, Update::sync};
     }
     else if (distribution == "uniform_real" or distribution == "uniform") {
         auto interval = get_as<std::array<double, 2>>("interval", cfg);
@@ -127,7 +122,7 @@ EnvStateFuncBundle esf_noise(const EnvModel& model,
 
         auto esf = build_rng_env_state_func(model, std::move(dist), param_name,
                                             mode);
-        return EnvStateFuncBundle(esfb_name, esf, Update::sync, times_pair);
+        return {esf, Update::sync};
     }
     else {
         throw std::invalid_argument("No method implemented to resolve "
@@ -152,17 +147,12 @@ EnvStateFuncBundle esf_noise(const EnvModel& model,
  * \param extent      The extent of space
  */ 
 template<typename EnvModel, typename Extent,
-         class EnvStateFuncBundle = typename EnvModel::EnvStateFuncBundle>
-EnvStateFuncBundle esf_slope(const EnvModel&, 
+         class EnvStateFunc = typename EnvModel::EnvStateFunc>
+std::pair<EnvStateFunc, Update> esf_slope(const EnvModel&, 
                              const std::string& param_name,
                              const Config& cfg,
                              const Extent& extent)
 {
-    using EnvStateFunc = typename EnvModel::EnvStateFunc;
-    using Time = typename EnvModel::Time;
-
-    const auto esfb_name = "slope." + param_name;
-    auto times_pair = extract_times<Time>(cfg);
     const auto mode = extract_val_mode(cfg, "slope");
 
     const auto values_north_south =
@@ -187,7 +177,7 @@ EnvStateFuncBundle esf_slope(const EnvModel&,
         return env_state;
     };
     
-    return EnvStateFuncBundle(esfb_name, esf, Update::sync, times_pair);
+    return {esf, Update::sync};
 };
 
 /// Creates a rule function for spatial steps in the parameter values
@@ -207,16 +197,11 @@ EnvStateFuncBundle esf_slope(const EnvModel&,
  *   \endparblock
  */ 
 template<typename EnvModel,
-         class EnvStateFuncBundle = typename EnvModel::EnvStateFuncBundle>
-EnvStateFuncBundle esf_steps(const EnvModel&, 
+         class EnvStateFunc = typename EnvModel::EnvStateFunc>
+std::pair<EnvStateFunc, Update> esf_steps(const EnvModel&, 
                              const std::string& param_name,
                              const Config& cfg)
 {
-    using EnvStateFunc = typename EnvModel::EnvStateFunc;
-    using Time = typename EnvModel::Time;
-
-    const auto esfb_name = "steps." + param_name;
-    auto times_pair = extract_times<Time>(cfg);
     const auto mode = extract_val_mode(cfg, "steps");
 
     const auto latitudes =
@@ -254,7 +239,7 @@ EnvStateFuncBundle esf_steps(const EnvModel&,
         return env_state;
     };
 
-    return EnvStateFuncBundle(esfb_name, esf, Update::sync, times_pair);
+    return {esf, Update::sync};
 };
 
 /// Creates a rule function for spatially uniform parameter values
@@ -271,16 +256,11 @@ EnvStateFuncBundle esf_steps(const EnvModel&,
  *   \endparblock
  */
 template<typename EnvModel,
-         class EnvStateFuncBundle = typename EnvModel::EnvStateFuncBundle>
-EnvStateFuncBundle esf_uniform(const EnvModel&, 
-                               const std::string& param_name,
-                               const Config& cfg)
+         class EnvStateFunc = typename EnvModel::EnvStateFunc>
+std::pair<EnvStateFunc, Update> esf_uniform(const EnvModel&, 
+                                            const std::string& param_name,
+                                            const Config& cfg)
 {
-    using EnvStateFunc = typename EnvModel::EnvStateFunc;
-    using Time = typename EnvModel::Time;
-
-    const auto esfb_name = "uniform." + param_name;
-    auto times_pair = extract_times<Time>(cfg);
     ValMode mode;
     double value;
 
@@ -314,7 +294,7 @@ EnvStateFuncBundle esf_uniform(const EnvModel&,
         return env_state;
     };
 
-    return EnvStateFuncBundle(esfb_name, esf, Update::sync, times_pair);
+    return {esf, Update::sync};
 }
 
 // End group Environment

@@ -20,6 +20,9 @@ For the environment state functions it differentiates between functions which
 are invoked once at initialization and others which are invoked during
 iteration. Furthermore, it is possible to control the times at which these
 functions are invoked.
+Additionally a select config can be added within the state function
+configuration, that is passed to the ``select_cells`` feature of the
+``CellManager`` (see :ref:`entity_selection`).
 
 The ``Environment`` model is an example of how Utopia models can be nested in
 each other.
@@ -357,6 +360,17 @@ model, e.g. initialize a spatial gradient within ``some_heterogeneous_parameter`
                 mode: set
                 values_north_south: [0., 1.]  # flip the slope
                 times: [2]                    # ... in the second iteration
+          - uniform:
+              some_heterogeneous_parameter:
+                mode: add
+                value: 0.1
+                select: # this function is applied only to a selection of cells
+                  mode: sample
+                  generate: once    # generate a selection that is fixed
+                  # can also be 'always' to generate every invocation
+                  num_cells: 4
+                  fix_selection: false  # generated new for every call
+
 
 .. note::
 

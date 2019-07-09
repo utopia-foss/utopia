@@ -28,18 +28,21 @@ parameter_space:
           some_global_parameter:
             amplitude: 1
             period: 10
+            invoke_at_initialization: False
             times: !listgen [20, 40]
       - rectangular:
           some_global_parameter:
             amplitude: 1
             period: 10
             phase: 0.5
+            invoke_at_initialization: False
             times: !listgen [45, 65]
       - rectangular:
           some_global_parameter:
             amplitude: 1
             period: 10
             time_in_max: 2
+            invoke_at_initialization: False
             times: !listgen [65, 85]
       
 
