@@ -31,11 +31,13 @@ RUN apt-get update \
         python3-venv \
         ffmpeg \
     && apt-get install -y \
+        libgraphviz-dev \
+        graphviz \
         vim \
         nano \
     && apt-get clean
 # NOTE Not all packages above are _required_ by Utopia; some are added for
-#      convenience in downstream images, like: FFTW, vim, nano
+#      convenience in downstream images, like: vim and nano
 
 # manage locales
 RUN rm -rf /var/lib/apt/lists/* \

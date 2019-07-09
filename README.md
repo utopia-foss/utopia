@@ -64,7 +64,7 @@ However, notice that there might be issues during [the configuration step](#4-co
 ```bash
 apt update
 apt install cmake doxygen gcc g++ gfortran git libarmadillo-dev \
-            libboost-dev libboost-test-dev libhdf5-dev libyaml-cpp-dev \
+            libboost-dev libboost-test-dev libhdf5-dev \
             pkg-config python3-dev python3-pip python3-venv
 ```
 
@@ -82,7 +82,7 @@ As package manager on macOS, we recommend [Homebrew](https://brew.sh/).
 
 ```bash
 brew update
-brew install armadillo boost cmake doxygen hdf5 gcc pkg-config python3 yaml-cpp
+brew install armadillo boost cmake doxygen hdf5 gcc pkg-config python3
 ```
 
 
@@ -363,6 +363,7 @@ Check out the [troubleshooting section](#troubleshooting) if this fails.
 | Software | Version | Purpose |
 | ---------| ------- | ------- |
 | [doxygen](http://www.stack.nl/~dimitri/doxygen/) | >= 1.8.14 | Builds the C++ code documentation |
+| [graphviz](https://graphviz.gitlab.io) | >= 2.38 | Used by doxygen to create dependency diagrams |
 | [ffmpeg](https://www.ffmpeg.org) | >= 4.0 | Used for creating videos |
 
 
