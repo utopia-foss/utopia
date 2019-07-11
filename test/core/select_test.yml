@@ -56,6 +56,18 @@ lanes:
   num_vertical: 2
   num_horizontal: 3
 
+lanes_w_permeability:
+  mode: lanes
+  num_vertical: 2
+  num_horizontal: 3
+  permeability: [0.2, 0.3]
+  
+lanes_w_gates:
+  mode: lanes
+  num_vertical: 2
+  num_horizontal: 3
+  gates_width: [2, 3]
+
 clustered:
   mode: clustered_simple
   p_seed: .01

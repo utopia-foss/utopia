@@ -167,6 +167,38 @@ BOOST_FIXTURE_TEST_CASE(cm_lanes, ModelFixture)
     BOOST_TEST(cp1 != cnp1);
     BOOST_TEST(cp2 != cnp2);
 
+    // interface for permeable lanes
+    auto cp_wp1 = cm.select_cells<SelectionMode::lanes>(2, 3,
+                        std::pair<double, double>({0.2, 0.2}));
+    auto cp_wp2 = cm.select_cells(cfg["lanes_w_permeability"]);
+    auto cnp_wp1 = cm_np.select_cells<SelectionMode::lanes>(2, 3,
+                        std::pair<double, double>({0.2, 0.3}));
+    auto cnp_wp2 = cm_np.select_cells(cfg["lanes_w_permeability"]);
+    BOOST_TEST(cp_wp1 != cp1);
+    BOOST_TEST(cp_wp2 != cp2);
+    BOOST_TEST(cnp_wp1 != cnp1);
+    BOOST_TEST(cnp_wp2 != cnp2);
+
+    // interface for gated lanes
+    auto cp_wg1 = cm.select_cells<SelectionMode::lanes>(2, 3,
+                        std::pair<double, double>({0., 0.}),
+                        std::pair<unsigned int, unsigned int>({2, 3}));
+    auto cp_wg2 = cm.select_cells(cfg["lanes_w_gates"]);
+    auto cnp_wg1 = cm_np.select_cells<SelectionMode::lanes>(2, 3, 
+                        std::pair<double, double>({0., 0.}),
+                        std::pair<unsigned int, unsigned int>({2, 3}));
+    auto cnp_wg2 = cm_np.select_cells(cfg["lanes_w_gates"]);
+    BOOST_TEST(cp_wg1 == cp_wg2);
+    BOOST_TEST(cnp_wg1 == cnp_wg2);
+    BOOST_TEST(cp_wg1 != cp1);
+    BOOST_TEST(cp_wg2 != cp2);
+    BOOST_TEST(cnp_wg1 != cnp1);
+    BOOST_TEST(cnp_wg2 != cnp_wp2);
+    BOOST_TEST(cp_wg1 != cp_wp1);
+    BOOST_TEST(cp_wg2 != cp_wp2);
+    BOOST_TEST(cnp_wg1 != cnp_wp1);
+    BOOST_TEST(cnp_wg2 != cnp_wp2);
+
     // expected positions in periodic space (2x2 extent, resolution 42)
     for (auto& cell : cp1) {
         MultiIndex midx = cm.midx_of(cell);
@@ -186,6 +218,62 @@ BOOST_FIXTURE_TEST_CASE(cm_lanes, ModelFixture)
             // horizontal: either at y-index 21, 42 or 63
             BOOST_TEST(  (midx[0] == 28) | (midx[0] == 56)
                        | (midx[1] == 21) | (midx[1] == 42) | (midx[1] == 63));
+        }
+    }
+
+
+    // expected positions of gates in periodic space (2x2 extent, resolution 42)
+    for (auto& cell : cp_wg1) {
+        MultiIndex midx = cm.midx_of(cell);
+        BOOST_TEST_CONTEXT("Cell ID: " << cell->id() << "\nmidx:\n" << midx) {
+            // vertical:   either at x-index 0 or 42
+            //             gates at y-index 13, 14, 15 / 41, 42, 43 / 69, 70, 71
+            // horizontal: either at y-index 0, 28 or 56
+            //             gates at x-index 20, 21, and 62, 63
+            BOOST_TEST(  (midx[0] == 0) | (midx[0] == 42)
+                       | (midx[1] == 0) | (midx[1] == 28) | (midx[1] == 56));
+            
+            // not selecting gate cells in vertical lanes
+            BOOST_TEST(midx[1] != 13); BOOST_TEST(midx[1] != 14);
+            BOOST_TEST(midx[1] != 15);
+            BOOST_TEST(midx[1] != 41); BOOST_TEST(midx[1] != 42);
+            BOOST_TEST(midx[1] != 43);
+            BOOST_TEST(midx[1] != 69); BOOST_TEST(midx[1] != 70);
+            BOOST_TEST(midx[1] != 71);
+
+
+            // not selecting gate cells in horizontal lanes
+            BOOST_TEST(midx[0] != 20); BOOST_TEST(midx[0] != 21);
+            BOOST_TEST(midx[0] != 62); BOOST_TEST(midx[0] != 63);
+        }
+    }
+
+    // expected positions of gates in non-periodic space
+    // (2x2 extent, resolution 42)
+    for (auto& cell : cnp_wg1) {
+        MultiIndex midx = cm_np.midx_of(cell);
+        BOOST_TEST_CONTEXT("Cell ID: " << cell->id() << "\nmidx:\n" << midx) {
+            // vertical:   either at x-index 28 or 56
+            //             gates at y-index 10.5, 31.5, 52.5, 73.5
+            // horizontal: either at y-index 21, 42 or 63
+            //             gates at x-index  14, 42, 70
+            BOOST_TEST(  (midx[0] == 28) | (midx[0] == 56)
+                       | (midx[1] == 21) | (midx[1] == 42) | (midx[1] == 63));
+
+            // not selecting gate cells in vertical lanes
+            BOOST_TEST(midx[1] != 9); BOOST_TEST(midx[1] != 10);
+            BOOST_TEST(midx[1] != 11);
+            BOOST_TEST(midx[1] != 30); BOOST_TEST(midx[1] != 31);
+            BOOST_TEST(midx[1] != 32);
+            BOOST_TEST(midx[1] != 51); BOOST_TEST(midx[1] != 52);
+            BOOST_TEST(midx[1] != 53);
+            BOOST_TEST(midx[1] != 72); BOOST_TEST(midx[1] != 73);
+            BOOST_TEST(midx[1] != 74);
+
+            // not selecting gate cells in horizontal lanes
+            BOOST_TEST(midx[0] != 13); BOOST_TEST(midx[0] != 14);
+            BOOST_TEST(midx[0] != 41); BOOST_TEST(midx[0] != 42);
+            BOOST_TEST(midx[0] != 69); BOOST_TEST(midx[0] != 70);
         }
     }
 }

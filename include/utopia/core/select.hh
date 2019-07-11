@@ -249,7 +249,12 @@ Container select_entities(const Manager& mngr, const DataIO::Config& sel_cfg)
         if (mode == SelectionMode::lanes) {
             const auto num_v = get_as<unsigned>("num_vertical", sel_cfg);
             const auto num_h = get_as<unsigned>("num_horizontal", sel_cfg);
-            return select_entities<SelectionMode::lanes>(mngr, num_v, num_h);
+            const auto perm = get_as<std::pair<double, double>>(
+                                    "permeability", sel_cfg, {0., 0.});
+            const auto gates_width = get_as<std::pair<unsigned int,
+                                                      unsigned int>>(
+                                        "gates_width", sel_cfg, {0, 0});
+            return select_entities<SelectionMode::lanes>(mngr, num_v, num_h, perm, gates_width);
         }
 
         if (mode == SelectionMode::clustered_simple) {
@@ -461,6 +466,12 @@ Container select_entities(const Manager& mngr,
   *                         be a \ref Utopia::CellManager .
   * \param  num_vertical    Number of vertical lanes
   * \param  num_horizontal  Number of horizontal lanes
+  * \param  permeability    The permeability of the horizontal and vertical
+  *                         lanes respectively. The probability that a cell is
+  *                         spared out. Optional.
+  * \param  gates_width      The width of gates in horizontal and vertical lanes
+  *                         respectively. Given in number of cells per
+  *                         compartment, i.e. between two lanes. Optional.
   */
 template<
     SelectionMode mode,
@@ -470,7 +481,11 @@ template<
     >
 Container select_entities(const Manager& mngr,
                           const unsigned int num_vertical,
-                          const unsigned int num_horizontal)
+                          const unsigned int num_horizontal,
+                          const std::pair<double,
+                                          double> permeability = {0., 0.},
+                          const std::pair<unsigned int,
+                                          unsigned int> gates_width = {0, 0})
 {
     static_assert(Manager::Space::dim == 2, "Only 2D space is supported.");
     using SpaceVec = typename Manager::SpaceVec;
@@ -481,6 +496,7 @@ Container select_entities(const Manager& mngr,
     const MultiIndex shape = grid->shape();
     const auto num_cells = grid->num_cells();
     const SpaceVec extent = grid->space()->extent;
+    const auto eff_resolution = grid->effective_resolution();
 
     // The number of lanes should not exceed the number of cells
     if (num_vertical >= shape[0] or num_horizontal >= shape[1]) {
@@ -523,8 +539,58 @@ Container select_entities(const Manager& mngr,
         indices_y.insert(grid->midx_of(grid->cell_at(proxy_pos))[1]);
     }
 
+    // Gates are centered between the lanes
+    auto num_gates = num_lanes;
+    SpaceVec gate_start, gate_step;
+    const SpaceVec grid_step = 1./eff_resolution;
+    if (grid->is_periodic()) {
+        gate_step = extent / num_gates;
+    }
+    else {
+        num_gates = num_gates + 1;
+        gate_step = extent / num_gates;
+    }
+
+    // center of gate at gate_step / 2.
+    // but, want lower edge of the gate and iterate from there
+    // hence, distinguish pair and impair gates width
+    if (gates_width.first % 2 == 0) {
+        gate_start = gate_step / 2. - SpaceVec(
+                        {grid_step[0] * (gates_width.first - 1) / 2.,
+                         grid_step[1] * (gates_width.second - 1) / 2.});
+    }
+    else {
+        gate_start = gate_step / 2. - SpaceVec(
+                        {grid_step[0] * (gates_width.first) / 2.,
+                         grid_step[1] * (gates_width.second) / 2.});
+    }
+
+    // Determine x- and y-indices for every gate
+    std::set<IndexType> gates_indices_x, gates_indices_y;
+    for (unsigned int i = 0; i < num_gates[0]; i++) {
+        SpaceVec proxy_pos; 
+
+        for (unsigned int j = 0; j < gates_width.first; j++) {
+            proxy_pos = {gate_start[0] + i * gate_step[0] + j * grid_step[0],
+                         0.};
+            gates_indices_x.insert(grid->midx_of(grid->cell_at(proxy_pos))[0]);
+        }
+    }
+    for (unsigned int i = 0; i < num_gates[1]; i++) {
+        SpaceVec proxy_pos; 
+
+        for (unsigned int j = 0; j < gates_width.second; j++) {
+            proxy_pos = {0.,
+                         gate_start[1] + i * gate_step[1] + j * grid_step[1]};
+            gates_indices_y.insert(grid->midx_of(grid->cell_at(proxy_pos))[1]);
+        }
+    }
+
     // Now need a container for selected cell IDs
     std::vector<IndexType> selected_ids{};
+
+    // Build the distribution, selection condition lambda, and select ...
+    std::uniform_real_distribution<> dist(0., 1.);
 
     // Populate it by iterating over all grid cell IDs, determining their
     // multi index, and then checking it against the containers of cells.
@@ -537,12 +603,39 @@ Container select_entities(const Manager& mngr,
     //      as it operates on a tree and the indices can be easily sorted.
     for (IndexType cell_id = 0; cell_id < num_cells; cell_id++) {
         const auto midx = grid->midx_of(cell_id);
-
-        // Check whether this cell belongs to a vertical or horizontal lane and
+        
+        // Check whether this cell belongs to a horizontal lane and
         // if so, add its index to the container of indices.
-        if (   indices_x.find(midx[0]) != indices_x.end()
-            or indices_y.find(midx[1]) != indices_y.end())
+        if (indices_y.find(midx[1]) != indices_y.end())
         {
+            // skip because gate
+            if (gates_indices_x.find(midx[0]) != gates_indices_x.end()) {
+                continue; // skip
+            }
+            // skip because of permeability
+            else if (permeability.first > 0 and
+                     dist(*mngr.rng()) < permeability.first) 
+            {
+                continue; // skip
+            }
+            
+            // Add cell if not skipped
+            selected_ids.push_back(cell_id);
+        }
+        // Do the same for cells belonging to vertical lanes
+        else if (indices_x.find(midx[0]) != indices_x.end()) {
+            // skip because gate
+            if (gates_indices_y.find(midx[1]) != gates_indices_y.end()) {
+                continue; // skip
+            }
+            // skip because of permeability
+            else if (permeability.second > 0 and
+                     dist(*mngr.rng()) < permeability.second) 
+            {
+                continue; // skip
+            }
+            
+            // Add cell if not skipped
             selected_ids.push_back(cell_id);
         }
     }
