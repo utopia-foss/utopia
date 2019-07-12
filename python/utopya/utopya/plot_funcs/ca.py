@@ -155,7 +155,7 @@ def state(dm: DataManager, *,
                                  **imshow_kwargs)
 
         # Create imshow object on the currently selected axis
-        im = hlpr.ax.imshow(data, cmap=colormap, animated=True,
+        im = hlpr.ax.imshow(data.T, cmap=colormap, animated=True,
                             origin='lower', aspect='equal',
                             **imshow_kwargs)
         
