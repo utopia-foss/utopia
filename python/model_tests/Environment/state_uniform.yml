@@ -16,9 +16,9 @@ parameter_space:
 
     init_env_state_funcs:
       - uniform:
-          some_heterogeneous_parameter:
-            mode: set
-            value: 0.0   # overwrites initialisation to 0.0
+          some_heterogeneous_parameter: 0.
+            # mode: set    # this is default
+            # value: 0.
       - uniform:
           some_heterogeneous_parameter:
             mode: add
