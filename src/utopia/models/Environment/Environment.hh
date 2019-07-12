@@ -528,7 +528,7 @@ public:
     {
         auto times_pair = extract_times<Time>(cfg);
         Config select_cfg = {};
-        if (not cfg.IsNull()) {
+        if (cfg.IsMap()) {
             select_cfg = get_as<Config>("select", cfg, {});
         }
 
