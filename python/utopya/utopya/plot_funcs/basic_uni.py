@@ -129,7 +129,7 @@ def lineplots(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
                  path_to_data=path_to_data, **specs, **common_plot_kwargs)
 
     if len(to_plot) > 1:
-        hlpr.provide_defaults('set_legend', use_legend=True, loc='best')
+        hlpr.provide_defaults('set_legend', use_legend=True)
 
 
 @is_plot_func(creator_type=UniversePlotCreator)
