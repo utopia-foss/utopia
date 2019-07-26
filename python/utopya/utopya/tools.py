@@ -217,12 +217,13 @@ def format_time(duration: Union[float, timedelta], *,
 
         if time_to_represent > 0:
             # Distinguish between seconds and other divisors for short times
-            if ms_precision <= 0 or duration > 60:
-                # Regular behaviour: Seconds do not have decimals
+            if ms_precision <= 0 or duration >= 60:
+                # Regular behaviour: Seconds do not have decimals or duration
+                # is so long that they need not be represented.
                 s = "{:d}{:}".format(time_to_represent, letter)
 
-            elif ms_precision > 0 and letter == "s":
-                # Decimal places for seconds
+            else:
+                # There are decimaly to be represented.
                 s = "{val:.{prec:d}f}s".format(val=(time_to_represent
                                                     + remaining),
                                                prec=int(ms_precision))
