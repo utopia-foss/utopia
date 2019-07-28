@@ -164,9 +164,15 @@ def test_format_time():
     assert t.format_time(10.1, ms_precision=2) == "10.10s"
     assert t.format_time(0.1) == "< 1s"
     assert t.format_time(0.1, ms_precision=2) == "0.10s"
+    assert t.format_time(59.127, ms_precision=2) == "59.13s"
+    assert t.format_time(60.127, ms_precision=2) == "1m"
+    assert t.format_time(61.127, ms_precision=2) == "1m 1s"
     assert t.format_time(123) == "2m 3s"
     assert t.format_time(123, ms_precision=2) == "2m 3s"
+    assert t.format_time(60*60*24 + 60*60*2 + 60*3 + 4 + .5) == "1d 2h 3m 4s"
     assert t.format_time(60*60*24 + 60*60*2 + 60*3 + 4) == "1d 2h 3m 4s"
+    assert t.format_time(60*60*24 + 60*60*2 + 60*3 + 0) == "1d 2h 3m"
+    assert t.format_time(60*60*24 + 60*60*2 + 60*0 + 4) == "1d 2h 4s"
     assert t.format_time(60*60*24 + 60*60*2 + 60*3 + 4,
                          max_num_parts=3) == "1d 2h 3m"
     assert t.format_time(60*60*24 + 60*60*2 + 60*3 + 4,
