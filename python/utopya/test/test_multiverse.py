@@ -123,8 +123,8 @@ def test_config_handling(mv_kwargs):
     with pytest.raises(FileNotFoundError):
         Multiverse(**mv_kwargs)
 
-def test_granular_backup(mv_kwargs):
-    """Tests whether the backup of all config parts works"""
+def test_backup(mv_kwargs):
+    """Tests whether the backup of all config parts and the executable works"""
     mv = Multiverse(**mv_kwargs)
     cfg_path = mv.dirs['config']
 
@@ -133,6 +133,14 @@ def test_granular_backup(mv_kwargs):
     assert os.path.isfile(os.path.join(cfg_path, 'model_cfg.yml'))
     assert os.path.isfile(os.path.join(cfg_path, 'run_cfg.yml'))
     assert os.path.isfile(os.path.join(cfg_path, 'update_cfg.yml'))
+
+    # And once more, now including the executable
+    mv_kwargs['backups'] = dict(backup_executable=True)
+    mv_kwargs['paths']['model_note'] = "with-exec-backup"
+    mv = Multiverse(**mv_kwargs)
+
+    assert os.path.isfile(os.path.join(mv.dirs['run'], 'backup', 'dummy'))
+
 
 def test_create_run_dir(default_mv):
     """Tests the folder creation in the initialsation of the Multiverse."""
@@ -374,7 +382,7 @@ def test_FrozenMultiverse(mv_kwargs, cluster_env):
                          data_manager=dict(out_dir="eval/{timestamp:}_5"))
 
     # Non-existing directory should fail
-    with pytest.raises(IOError, match="No directory found at"):
+    with pytest.raises(IOError, match="No run directory found at"):
         FrozenMultiverse(**mv_kwargs, run_dir="my_non-existing_directory",
                          data_manager=dict(out_dir="eval/{timestamp:}_6"))
 

@@ -29,9 +29,21 @@ paths:
   # <out_dir>/<model_name>/<timestamp>-<model_note>/
   # With subfolders: config, eval, universes
 
+# Control of the backup of files that belong to a simulation
+backups:
   # Whether to save all involved config files granularly, i.e. one by one.
   # If false, only the resulting meta_cfg is saved to the config subdirectory.
-  backup_involved_cfg_files: true
+  backup_cfg_files: true
+
+  # Whether to save the executable
+  backup_executable: false
+
+# Control of the model executable
+executable_control:
+  # Whether to copy the binary to a temporary directory at the initialization
+  # of the Multiverse and execute it from there. This way, accidental changes
+  # to the executable _during_ a simulation are prevented.
+  run_from_tmpdir: true
 
 # Whether to perfom a parameter sweep
 # Is evaluated by the Multiverse.run method
