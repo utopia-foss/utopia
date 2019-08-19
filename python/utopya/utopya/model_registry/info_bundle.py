@@ -202,7 +202,7 @@ class ModelInfoBundle:
                        "".format(key, self.model_name, path))
                 
                 if missing_path_action == 'warn':
-                    log.warn(msg)
+                    log.warning(msg)
                 
                 elif missing_path_action in ('log', 'ignore'):
                     log.debug(msg)

@@ -8,7 +8,8 @@ import copy
 import glob
 import re
 import logging
-from shutil import copyfile
+from tempfile import TemporaryDirectory
+from shutil import copy2
 from pkg_resources import resource_filename
 from typing import Union
 
@@ -31,14 +32,20 @@ log = logging.getLogger(__name__)
 
 class Multiverse:
     """The Multiverse is where a single simulation run is orchestrated from.
-
+    
     It spawns multiple universes, each of which represents a single simulation
     of the selected model with the parameters specified by the meta
     configuration.
-
+    
     The WorkerManager takes care to perform these simulations in parallel, the
     DataManager allows loading the created data, and the PlotManager handles
     plotting of that data.
+    
+    Attributes:
+        BASE_META_CFG_PATH (TYPE): Description
+        RUN_DIR_TIME_FSTR (str): Description
+        USER_CFG_SEARCH_PATH (TYPE): Description
+        UTOPYA_BASE_PLOTS_PATH (TYPE): Description
     """
 
     # Where the default meta configuration can be found
@@ -80,15 +87,17 @@ class Multiverse:
                      self.model_name)
 
         # Setup property-managed attributes
-        self._meta_cfg = None
         self._dirs = dict()
+        self._model_binpath = None
+        self._tmpdir = None
         self._resolved_cluster_params = None
 
         # Create meta configuration and list of used config files
-        files = self._create_meta_cfg(run_cfg_path=run_cfg_path,
-                                      user_cfg_path=user_cfg_path,
-                                      update_meta_cfg=update_meta_cfg)
-        # NOTE this already stores it in self._meta_cfg
+        mcfg, cfg_parts= self._create_meta_cfg(run_cfg_path=run_cfg_path,
+                                               user_cfg_path=user_cfg_path,
+                                               update_meta_cfg=update_meta_cfg)
+        self._meta_cfg = mcfg
+        log.info("Loaded meta configuration.")
 
         # In cluster mode, need to make some adjustments via additional dicts
         dm_cluster_kwargs = dict()
@@ -115,10 +124,30 @@ class Multiverse:
             wm_cluster_kwargs = dict(cluster_mode=True,
                                      resolved_cluster_params=rcps)
 
+
         # Create the run directory and write the meta configuration into it.
-        # This already performs the backup of the configuration files.
-        self._create_run_dir(**self.meta_cfg['paths'], cfg_parts=files)
+        self._create_run_dir(**self.meta_cfg['paths'])
         log.note("Run directory:\n  %s", self.dirs['run'])
+
+        # Backup involved files, if not in cluster mode or on the relevant node
+        if (   not self.cluster_mode
+            or self.resolved_cluster_params['node_index'] == 0):
+            # If not in cluster mode, should backup in any case.
+            # In cluster mode, the first node is responsible for backing up
+            # the configuration; all others can relax.
+            self._perform_backup(**self.meta_cfg['backups'],
+                                 cfg_parts=cfg_parts)
+
+        else:
+            log.debug("Not backing up config files, because it was already "
+                      "taken care of by the first node.")
+            # NOTE Not taking a try-except approach here because it might get
+            #      messy when multiple nodes try to backup the configuration
+            #      at the same time ...
+
+        # Prepare the executable
+        self._prepare_executable(**self.meta_cfg['executable_control'])
+
 
         # Create a data manager
         self._dm = DataManager(self.dirs['run'],
@@ -126,12 +155,14 @@ class Multiverse:
                                **self.meta_cfg['data_manager'],
                                **dm_cluster_kwargs)
 
+
         # Create a WorkerManager instance and its associated reporter
         self._wm = WorkerManager(**self.meta_cfg['worker_manager'],
                                  **wm_cluster_kwargs)
         self._reporter = WorkerManagerReporter(self.wm,
                                                report_dir=self.dirs['run'],
                                                **self.meta_cfg['reporter'])
+
 
         # And instantiate the PlotManager with the model-specific plot config
         self._pm = PlotManager(
@@ -146,7 +177,7 @@ class Multiverse:
     # Properties ..............................................................
 
     @property
-    def info_bundle(self) -> str:
+    def info_bundle(self) -> ModelInfoBundle:
         """The model info bundle for this Multiverse"""
         return self._info_bundle
 
@@ -158,7 +189,9 @@ class Multiverse:
     @property
     def model_binpath(self) -> str:
         """The path to this model's binary"""
-        return self._info_bundle.paths['binary']
+        if self._model_binpath is not None:
+            return self._model_binpath
+        return self.info_bundle.paths['binary']
 
     @property
     def meta_cfg(self) -> dict:
@@ -442,10 +475,6 @@ class Multiverse:
         pspace = meta_tmp['parameter_space']
         meta_tmp['parameter_space'] = psp.ParamSpace(pspace)
         log.debug("Converted parameter_space to ParamSpace object.")
-        
-        # Store it
-        self._meta_cfg = meta_tmp
-        log.info("Loaded meta configuration.")
 
         # Prepare dict to store paths for config files in (for later backup)
         log.debug("Preparing dict of config parts ...")
@@ -455,29 +484,27 @@ class Multiverse:
                          run=run_cfg_path,
                          update=update_meta_cfg)
 
-        return cfg_parts
+        return meta_tmp, cfg_parts
 
-    def _create_run_dir(self, *, out_dir: str, model_note: str=None,
-                        backup_involved_cfg_files: bool=True,
-                        cfg_parts: dict=None) -> None:
+    def _create_run_dir(self, *, out_dir: str, model_note: str=None) -> None:
         """Create the folder structure for the run output.
         
-        This will also write the meta config to the corresponding config
-        directory.
-        
-        The following folder tree will be created
-        utopia_output/   # all utopia output should go here
-            model_a/
-                180301-125410_my_model_note/
-                    config/
-                    data/
-                        uni000/
-                        uni001/
-                        ...
-                    eval/
-            model_b/
-                180301-125412_my_first_sim/
-                180301-125413_my_second_sim/
+        For the chosen model name and current timestamp, the run directory
+        will be of form <timestamp>_<model_note> and be part of the following
+        directory tree:
+
+            utopia_output
+                model_a
+                    180301-125410_my_model_note
+                        config
+                        data
+                            uni000
+                            uni001
+                            ...
+                        eval
+                model_b
+                    180301-125412_my_first_sim
+                    180301-125413_my_second_sim
         
         If running in cluster mode, the cluster parameters are resolved and
         used to determine the name of the simulation. The pattern then does not
@@ -490,13 +517,10 @@ class Multiverse:
             {timestamp}_{job id*}_{cluster}_{job account}_{job name}_{note}
 
         Args:
-            out_dir (str): The base output directory, where all simulation data
-                is stored
-            model_note (str, optional): The note to add to the model
-            backup_involved_cfg_files (bool, optional): If true, saves all
-                involved parts of the configuration process to the config
-                directory. Note: the meta configuration is always saved there!
-            cfg_parts (dict, optional): The parts of the config to backup
+            out_dir (str): The base output directory, where all Utopia output 
+                is stored.
+            model_note (str, optional): The note to add to the run directory
+                of the current run.
         
         Raises:
             RuntimeError: If the simulation directory already existed. This
@@ -504,37 +528,6 @@ class Multiverse:
                 you either started two simulations very close to each other or 
                 something is seriously wrong. Strange time zone perhaps?
         """
-        def backup_config():
-            # Write the meta config to the config directory.
-            write_yml(self.meta_cfg,
-                      path=os.path.join(self.dirs['config'], "meta_cfg.yml"))
-            log.debug("Stored meta configuration in config directory.")
-
-            # Separately, store the parameter space there
-            write_yml(self.meta_cfg['parameter_space'],
-                      path=os.path.join(self.dirs['config'],
-                                        "parameter_space.yml"))
-            log.debug("Stored parameter space.")
-
-            # If configured, backup the other cfg files one by one
-            if backup_involved_cfg_files and cfg_parts:
-                log.debug("Backing up %d config parts...", len(cfg_parts))
-
-                for part_name, val in cfg_parts.items():
-                    _path = os.path.join(self.dirs['config'],
-                                         part_name + "_cfg.yml")
-                    # Distinguish two types of payload that will be saved:
-                    if isinstance(val, str):
-                        # Assumed to be path to a config file; copy it
-                        log.debug("Copying %s config ...", part_name)
-                        copyfile(val, _path)
-
-                    elif isinstance(val, dict):
-                        log.debug("Dumping %s config dict ...", part_name)
-                        write_yml(val, path=_path)
-
-            log.info("Backed up configuration files.")
-
         # Define a list of format string parts, starting with timestamp
         fstr_parts = ['{timestamp:}']
 
@@ -595,35 +588,109 @@ class Multiverse:
                                "should not have happened and is probably due "
                                "to two simulations having been started at "
                                "almost the same time. Try to start the "
-                               "simulation again.") from err
+                               "simulation again or add a unique model note."
+                               ) from err
 
-        # Create the subfolders
+        log.debug("Created run directory.")
+
+        # Create the subfolders that are always assumed to be present
         for subdir in ('config', 'data', 'eval'):
             subdir_path = os.path.join(run_dir, subdir)
             os.makedirs(subdir_path, exist_ok=self.cluster_mode)
             self.dirs[subdir] = subdir_path
 
-        log.debug("Finished creating run directory.")
-        log.debug("Paths registered:  %s", self._dirs)
+        log.debug("Created subdirectories:  %s", self._dirs)
 
-        # Back up the configuration files
-        if not self.cluster_mode:
-            # Should backup in any case
-            backup_config()
+    def _perform_backup(self, *, cfg_parts: dict,
+                        backup_cfg_files: bool=True,
+                        backup_executable: bool=False) -> None:
+        """Performs a backup of that information that can be used to recreate a
+        simulation.
 
-        elif self.resolved_cluster_params['node_index'] == 0:
-            # In cluster mode, the first node is responsible for backing up
-            # the configuration; all others can relax.
-            backup_config()
+        The configuration files are backed up into the ``config`` subdirectory
+        of the run directory. All other relevant information is stored in an
+        additionally created ``backup`` subdirectory.
 
-        else:
-            log.debug("Not backing up config files, because it was already "
-                      "taken care of by the first node.")
-            # NOTE Not taking a try-except approach here because it might get
-            #      messy when multiple nodes try to backup the configuration
-            #      at the same time ...
+        Args:
+            cfg_parts (dict): A dict of either paths to configuration files or
+                dict-like data that is to be dumped into a configuration file.
+            backup_cfg_files (bool, optional): Whether to backup the individual
+                configuration files (i.e. the ``cfg_parts`` information). If
+                false, the meta configuration will still be backed up.
+            backup_executable (bool, optional): Whether to backup the
+                executable. Note that these files can sometimes be quite large.
+        """
+        log.info("Performing backups ...")
 
-        # Done.
+        # Write the meta config to the config directory.
+        write_yml(self.meta_cfg,
+                  path=os.path.join(self.dirs['config'], "meta_cfg.yml"))
+        log.note("Backed up meta configuration.")
+
+        # Separately, store the parameter space there.
+        write_yml(self.meta_cfg['parameter_space'],
+                  path=os.path.join(self.dirs['config'],
+                                    "parameter_space.yml"))
+        log.note("Backed up parameter space representation.")
+
+        # If configured, backup the other cfg files one by one.
+        if backup_cfg_files:
+            log.debug("Backing up %d involved configuration parts...",
+                      len(cfg_parts))
+
+            for part_name, val in cfg_parts.items():
+                _path = os.path.join(self.dirs['config'],
+                                     part_name + "_cfg.yml")
+                # Distinguish two types of payload that will be saved:
+                if isinstance(val, str):
+                    # Assumed to be path to a config file; copy it
+                    log.debug("Copying %s config ...", part_name)
+                    copy2(val, _path)
+
+                elif isinstance(val, dict):
+                    log.debug("Dumping %s config dict ...", part_name)
+                    write_yml(val, path=_path)
+            
+            log.note("Backed up all involved configuration files.")
+
+        # If enabled, back up the executable as well
+        if backup_executable:
+            backup_dir = os.path.join(self.dirs['run'], 'backup')
+            os.makedirs(backup_dir, exist_ok=True)
+
+            copy2(self.model_binpath,
+                  os.path.join(backup_dir, self.model_name))
+            log.note("Backed up executable.")
+
+    def _prepare_executable(self, *, run_from_tmpdir: bool=False) -> None:
+        """Prepares the model executable, potentially copying it to a temporary
+        location.
+
+        Note that ``run_from_tmpdir`` requires the executable to be relocatable
+        to another location, i.e. be position-independent.
+        
+        Args:
+            run_from_tmpdir (bool, optional): Whether to copy the executable
+                to a temporary directory that goes out of scope once the
+                Multiverse instance goes out of scope.
+        
+        Returns:
+            None
+        """
+        binpath = self.info_bundle.paths['binary']
+        
+        if run_from_tmpdir:
+            self._tmpdir = TemporaryDirectory(prefix=self.model_name)
+            tmp_binpath = os.path.join(self._tmpdir.name,
+                                       os.path.basename(binpath))
+            
+            log.info("Copying executable to temporary directory ...")
+            log.debug("  Original:   %s", binpath)
+            log.debug("  Temporary:  %s", tmp_binpath)
+            copy2(binpath, tmp_binpath)
+            binpath = tmp_binpath
+
+        self._model_binpath = binpath
 
     def _resolve_cluster_params(self) -> dict:
         """This resolves the cluster parameters, e.g. by setting parameters
@@ -949,15 +1016,14 @@ class FrozenMultiverse(Multiverse):
         else:
             # Need to create a meta configuration from the currently available
             # values.
-            self._create_meta_cfg(run_cfg_path=run_cfg_path,
-                                  user_cfg_path=user_cfg_path,
-                                  update_meta_cfg=update_meta_cfg)
-            # NOTE this already stores it in self._meta_cfg
+            mcfg, _ = self._create_meta_cfg(run_cfg_path=run_cfg_path,
+                                            user_cfg_path=user_cfg_path,
+                                            update_meta_cfg=update_meta_cfg)
 
         # Only keep selected entries from the meta configuration. The rest is
         # not needed and is deleted in order to not confuse the user with
         # potentially varying versions of the meta config.
-        self._meta_cfg = {k: v for k, v in self._meta_cfg.items()
+        self._meta_cfg = {k: v for k, v in mcfg.items()
                           if k in ('paths', 'data_manager', 'plot_manager',
                                    'cluster_mode', 'cluster_params')}
 
@@ -999,14 +1065,16 @@ class FrozenMultiverse(Multiverse):
 
         log.progress("Initialized FrozenMultiverse.\n")
 
-    def _create_run_dir(self, *, out_dir: str, run_dir: str, **kwargs):
+    def _create_run_dir(self, *, out_dir: str, run_dir: str, **__):
         """Helper function to find the run directory from arguments given
         to __init__.
+
+        Overwrites the method from the parent Multiverse class.
         
         Args:
             out_dir (str): The output directory
             run_dir (str): The run directory to use
-            **kwargs: ignored
+            **__: ignored
         
         Raises:
             IOError: No directory found to use as run directory
@@ -1055,15 +1123,13 @@ class FrozenMultiverse(Multiverse):
             
         # Check if the directory exists
         if not os.path.isdir(run_dir):
-            raise IOError("No directory found at run path '{}'!"
+            raise IOError("No run directory found at '{}'!"
                           "".format(run_dir))
 
-        # It does. Store it as attribute.
+        # Store the path and associate the subdirectories
         self.dirs['run'] = run_dir
 
-        # Also associate the sub directories
         for subdir in ('config', 'eval', 'data'):
-            # Generate the path and store
             subdir_path = os.path.join(run_dir, subdir)
             self.dirs[subdir] = subdir_path
             # TODO Consider checking if it exists?
