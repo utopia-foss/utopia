@@ -31,6 +31,8 @@
 !*Doxylocal
 !*.bib
 !*.tex
+!LICENSE
+!LICENSE.LESSER
 
 # Python and configuration
 !*.py
@@ -50,5 +52,6 @@ build/
 *.pytest_cache
 __pycache__
 
-# Ignore _copied_ version of root-level readme file
+# Ignore _copied_ version of root-level readme & copyright files
 doc/README.md
+doc/COPYING.md

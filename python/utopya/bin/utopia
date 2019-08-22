@@ -7,8 +7,18 @@ import argparse
 
 # Define the CLI --------------------------------------------------------------
 # Top level parsers
-parser = argparse.ArgumentParser(description="Welcome to the Utopia command "
-                                             "line interface.")
+parser = argparse.ArgumentParser(
+    description="Welcome to the Utopia command line interface.",
+    epilog="Utopia  Copyright (C) 2016 – 2019  TS-CCEES Utopia Developers\n"
+           "This program comes with ABSOLUTELY NO WARRANTY.\n"
+           "This is free software, and you are welcome to redistribute it\n"
+           "under certain conditions. Please refer to the copyright notice\n"
+           "(COPYING.md) and license texts (LICENSE and LICENSE.LESSER) in\n"
+           "the source code repository for details:\n"
+           "https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia",
+    # we want to set line breaks ourselves
+    formatter_class=argparse.RawDescriptionHelpFormatter
+)
 
 subparsers = parser.add_subparsers(dest='mode')
 

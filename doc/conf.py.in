@@ -27,8 +27,8 @@ from recommonmark.transform import AutoStructify
 # -- Project information -----------------------------------------------------
 
 project = 'Utopia'
-copyright = '2019, Utopia Developer Team'
-author = 'Utopia Developer Team'
+copyright = '2019, TS-CCEES Utopia Developers'
+author = 'TS-CCEES Utopia Developers'
 
 # TODO
 # The short X.Y version
@@ -151,7 +151,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'Utopia.tex', 'Utopia Documentation',
-     'Utopia Developer Team', 'manual'),
+     'TS-CCEES Utopia Developers', 'manual'),
 ]
 
 
