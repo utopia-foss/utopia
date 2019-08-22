@@ -30,8 +30,9 @@ utopia_install_doc_utils()
 # Register subdirectories
 add_subdirectory("doxygen")
 
-# Copy README to this directory
-file(COPY "${CMAKE_SOURCE_DIR}/README.md"
+# Copy README and COPYING.md to this directory
+file(COPY ${CMAKE_SOURCE_DIR}/README.md
+          ${CMAKE_SOURCE_DIR}/COPYING.md
      DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Configure sphinx and register associated files

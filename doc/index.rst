@@ -8,6 +8,11 @@ Welcome to Utopia's documentation!
 
 And welcome to Utopia! We are happy that you found your way to the documentation.
 
+Utopia is free software and licensed under the
+`GNU Lesser General Public License Version 3 <https://www.gnu.org/licenses/lgpl-3.0.en.html>`_
+or any later version.
+For details, please refer to the :doc:`Copyright Information <COPYING>`.
+
 If you are **new to Utopia**, you should start with the :doc:`Tutorial <guides/tutorial>`. You can then work your way through the other guides. :)
 
 
@@ -58,6 +63,7 @@ If you are **new to Utopia**, you should start with the :doc:`Tutorial <guides/t
    :glob:
 
    examples
+   Copyright Information <COPYING>
 
 
 .. note::

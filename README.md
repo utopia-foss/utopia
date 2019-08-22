@@ -6,6 +6,11 @@ Utopia is a comprehensive modelling framework for complex environmental systems.
 It aims to provide the tools to conveniently implement a model, configure and perform simulation runs, and evaluate the resulting data.
 <!-- TODO Write more here ... -->
 
+Utopia is free software and licensed under the
+[GNU Lesser General Public License Version 3](https://www.gnu.org/licenses/lgpl-3.0.en.html)
+or any later version.
+For the copyright notice and the list of copyright holders, see
+[`COPYING.md`](COPYING.md).
 
 #### Contents of this README
 * [Installation](#installation)

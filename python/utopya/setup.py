@@ -29,7 +29,7 @@ setup(
     # TODO single-source this
     description='The Utopia Frontend Package',
     url='https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia',
-    author='Utopia Developers',
+    author='TS-CCEES Utopia Developers',
     author_email=('Benjamin Herdeanu '
                   '<Benjamin.Herdeanu@iup.uni-heidelberg.de>, '
                   'Yunus Sevinchan '
@@ -37,6 +37,7 @@ setup(
     classifiers=[
         'Programming Language :: Python :: 3.6',
         'Intended Audience :: Science/Research',
+        'License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)',
         'Topic :: Utilities'
     ],
     #
