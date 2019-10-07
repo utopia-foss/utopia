@@ -28,6 +28,46 @@ def test_increment():
         assert np.isclose(data.sel({'time': 2}), 5)
         assert np.isclose(data.sel({'time': 3}), 7)
 
+def test_random():
+    """Tests that the output from 'epf_random' is correct"""
+    _, dm = mtc.create_run_load(from_cfg="param_random.yml")
+
+    for uni_no, uni in dm['multiverse'].items():
+        data = uni['data']['Environment']['some_global_parameter']
+        cfg = uni['cfg']['Environment']
+
+        # normal: mean 0, stddev 1
+        assert np.isclose(data.sel(time=slice(0,999)).mean(dim=['time']),
+                    [0.], atol=5.e-2).all()
+        assert np.isclose(data.sel(time=slice(0,999)).std(dim=['time']),
+                    [1.], atol=5.e-2).all()
+
+        # poisson mean 10
+        assert np.isclose(data.sel(time=slice(1000,1999)).mean(dim=['time']),
+                    [10.], rtol=0.1).all()
+
+        # exponential lambda 10
+        assert np.isclose(data.sel(time=slice(2000,2999)).mean(dim=['time']),
+                    [0.1], atol=5.e-2).all()
+        assert np.isclose(data.sel(time=slice(2000,2999)).std(dim=['time']),
+                    [0.1], atol=5.e-2).all()
+
+        # uniform_int interval [0,10]
+        assert np.isclose(data.sel(time=slice(3000,3999)).mean(dim=['time']),
+                    [5], atol=5.e-2).all()
+        assert np.isclose(data.sel(time=slice(3000,3999)).min(dim=['time']),
+                    [0], atol=0).all()
+        assert np.isclose(data.sel(time=slice(3000,3999)).max(dim=['time']),
+                    [10], atol=0).all()
+
+        # uniform_real interval [0, 1.]
+        assert np.isclose(data.sel(time=slice(4000,4999)).mean(dim=['time']),
+                    [0.5], atol=5.e-2).all()
+        assert np.isclose(data.sel(time=slice(4000,4999)).min(dim=['time']),
+                    [0.], atol=5.e-2).all()
+        assert np.isclose(data.sel(time=slice(4000,4999)).max(dim=['time']),
+                    [1.], atol=5.e-2).all()
+
 def test_rectangular():
     """Tests that the output from 'epf_rectangular' is correct"""
     _, dm = mtc.create_run_load(from_cfg="param_rectangular.yml")

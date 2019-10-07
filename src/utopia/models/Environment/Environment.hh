@@ -614,6 +614,12 @@ private:
                             epf_name+"."+param_name, epf, param_name, epf_cfg
                         );
                     }
+                    else if (epf_name == "random") {
+                        auto epf = epf_random(*this, param_name, epf_cfg);
+                        add_env_param_func_from_cfg(
+                            epf_name+"."+param_name, epf, param_name, epf_cfg
+                        );
+                    }
                     else if (epf_name == "rectangular") {
                         auto epf = epf_rectangular(*this, epf_cfg);
                         add_env_param_func_from_cfg(
@@ -637,8 +643,8 @@ private:
                     else if (epf_name != "void") {
                         throw std::invalid_argument("No environment parameter "
                             "function '" + epf_name + "' available to "
-                            "construct! Choose from: increment, rectangular, "
-                            "set, sinusoidal.");
+                            "construct! Choose from: increment, random, "
+                            "rectangular, set, sinusoidal.");
                     }
 
                     this->_log->debug("Added '{}' environment parameter "

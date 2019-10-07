@@ -12,6 +12,37 @@ namespace ParameterFunctionCollection {
 /// Configuration node type alias
 using Config = DataIO::Config;
 
+// -- Helper functions --------------------------------------------------------
+
+/// Create a rule function that uses a random number distribution
+/** \detail This constructs a mutable ``EnvParamFunc`` lambda, moving the
+     *         ``dist`` into the capture.
+     */
+template<typename EnvModel, class DistType,
+         class EnvParamFunc = typename EnvModel::EnvParamFunc>
+EnvParamFunc
+    build_rng_env_param_func(const EnvModel& model,
+                             DistType&& dist,
+                             const std::string& param_name,
+                             const ValMode& mode)
+{
+    // NOTE It is VITAL to move-construct the perfectly-forwarded dist into
+    //      the lambda; otherwise it has to be stored outside, which is a
+    //      real pita. Also, the lambda has to be declared mutable such
+    //      that the captured object are allowed to be changed; again, this
+    //      is only relevant for the distribution's internal state ...
+    return
+        [&model, param_name, mode, dist{std::move(dist)}] () mutable {
+            double current_value = 0.;
+            if (mode == ValMode::Add) {
+                current_value = model.get_parameter(param_name);
+            }
+            const double rn = dist(*model.get_rng());
+
+            return current_value + rn;
+        };
+}
+
 /** 
  * \addtogroup Environment
  * \{
@@ -50,6 +81,78 @@ EnvParamFunc epf_increment(const EnvModel& model, const std::string param_name,
 
     return epf;
 }
+
+/// Creates a rule function for random parameter values
+/** 
+ * \param param_name  The parameter to attach this environment function to
+ * \param cfg
+ *   \parblock
+ *     Configuration for this environment function. Allows the following
+ *     arguments:
+ *
+ *     - ``mode``: ``set`` (default) or ``add``
+ *     - ``times``: Sequence of time points at which to invoke this
+ *     - ``distribution``: The distribution type. For each value below, the
+ *       corresponding additional parameters are required in ``cfg``:
+ *         - ``normal``: ``mean`` and ``stddev``
+ *         - ``poisson``: ``mean``
+ *         - ``exponential``: ``lambda``
+ *         - ``uniform``: ``interval`` (length 2 array)
+ *         - ``uniform_int``: ``interval`` (length 2 array)
+ *   \endparblock
+ */
+template<typename EnvModel,
+         class EnvParamFunc = typename EnvModel::EnvParamFunc>
+EnvParamFunc epf_random(const EnvModel& model, const std::string& param_name,
+                       const Config& cfg)
+{
+    const auto mode = extract_val_mode(cfg, "random");
+    const auto distribution = get_as<std::string>("distribution", cfg);
+
+    // Depending on chosen distribution, construct it and build a rule
+    // function using a reference to the newly created one...
+    if (distribution == "normal") {
+        const auto mean = get_as<double>("mean", cfg);
+        const auto stddev = get_as<double>("stddev", cfg);
+        std::normal_distribution<> dist(mean, stddev);
+
+        return build_rng_env_param_func(model, std::move(dist), param_name,
+                                        mode);
+    }
+    else if (distribution == "poisson") {
+        const auto mean = get_as<double>("mean", cfg);
+        std::poisson_distribution<> dist(mean);
+        
+        return build_rng_env_param_func(model, std::move(dist), param_name,
+                                        mode);
+    }
+    else if (distribution == "exponential") {
+        const auto lambda = get_as<double>("lambda", cfg);
+        std::exponential_distribution<> dist(lambda);
+        
+        return build_rng_env_param_func(model, std::move(dist), param_name,
+                                        mode);
+    }
+    else if (distribution == "uniform_int") {
+        auto interval = get_as<std::array<int, 2>>("interval", cfg);
+        std::uniform_int_distribution<> dist(interval[0], interval[1]);
+        
+        return build_rng_env_param_func(model, std::move(dist), param_name,
+                                        mode);
+    }
+    else if (distribution == "uniform_real" or distribution == "uniform") {
+        auto interval = get_as<std::array<double, 2>>("interval", cfg);
+        std::uniform_real_distribution<> dist(interval[0], interval[1]);
+
+        return build_rng_env_param_func(model, std::move(dist), param_name,
+                                        mode);
+    }
+    else {
+        throw std::invalid_argument("No method implemented to resolve "
+            "noise distribution '" + distribution + "'! Valid options: "
+            "normal, poisson, uniform_int, uniform_real.");
+    }
+};
 
 /// Creates a rule function for rectangular function like parameter values
 /** Rectangular shaped parameters. 

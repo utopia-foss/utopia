@@ -1,0 +1,58 @@
+# Configuration file used to test that the output of the model is correct
+---
+parameter_space:
+  num_steps: 5000
+
+  Environment: !model  
+    model_name: Environment
+
+    cell_manager:
+      grid:
+        resolution: 4
+
+      cell_params:
+        # overwritten by Environment's init_env_state_funcs
+        some_heterogeneous_parameter: 0.2
+
+    some_global_parameter: 0.
+
+    env_param_funcs:
+      - random:
+          some_global_parameter:
+            distribution: normal
+            mode: set
+            mean: 0.
+            stddev: 1.
+            invoke_at_initialization: True
+            times: !listgen [1000]
+      - random:
+          some_global_parameter:
+            distribution: poisson
+            mode: set
+            mean: 10
+            invoke_at_initialization: False
+            times: !listgen [1000, 2000]
+      - random:
+          some_global_parameter:
+            distribution: exponential
+            mode: set
+            lambda: 10
+            invoke_at_initialization: False
+            times: !listgen [2000, 3000]
+      - random:
+          some_global_parameter:
+            distribution: uniform_int
+            mode: set
+            interval: [0, 10]
+            invoke_at_initialization: False
+            times: !listgen [3000, 4000]
+      - random:
+          some_global_parameter:
+            distribution: uniform_real
+            mode: set
+            interval: [0, 1]
+            invoke_at_initialization: False
+            times: !listgen [4000, 5000]
+
+    init_env_state_funcs: ~
+    env_state_funcs: ~
