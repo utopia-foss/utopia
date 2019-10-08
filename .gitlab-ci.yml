@@ -42,7 +42,7 @@ variables:
   DOC_HOST: root@hermes.iup.uni-heidelberg.de
   DOC_PORT: 2022      # ... forwards to utopia_doc_server container. root ok ;)
   DOC_REMOTE_BASE_DIR: /var/utopia_doc
-  DOC_KEEP_LAST_N: 10 # How many documentation pushes to keep
+  DOC_REMOTE_PATH: $DOC_REMOTE_BASE_DIR/$CI_COMMIT_REF_SLUG
 
 
 stages:
@@ -416,31 +416,53 @@ deploy:docs:
   stage: deploy
   <<: *ssh_access
   only:
-    - master
+    - branches@utopia/utopia
   dependencies:
     - build:docs
+  needs: ["build:docs"] # May execute out of order if dependencies are ready
   script:
-    # Determine the directory name
-    - export DOC_LATEST=$CI_COMMIT_SHORT_SHA
-    - export DOC_REMOTE_PATH=$DOC_REMOTE_BASE_DIR/$DOC_LATEST
-
-    # Create the directory on the remote
+    # Create the directory on the remote, removing any prior version
     - echo "Creating remote directory $DOC_REMOTE_PATH ..."
+    - ssh -p $DOC_PORT $DOC_HOST "rm -rf $DOC_REMOTE_PATH"
     - ssh -p $DOC_PORT $DOC_HOST "mkdir -p $DOC_REMOTE_PATH/doxygen/"
 
-    # Move to built docs and copy sphinx & doxygen HTML documentation to remote
+    # Copy sphinx & doxygen HTML documentation to remote
     - cd build/doc
     - echo "Uploading documentation to $DOC_REMOTE_PATH/ ..."
-    - scp -P $DOC_PORT -pvr html         $DOC_HOST:$DOC_REMOTE_PATH/
-    - scp -P $DOC_PORT -pvr doxygen/html $DOC_HOST:$DOC_REMOTE_PATH/doxygen/
-
-    # Invoke the cleanup and link script on the doc server, passing arguments
-    - ssh -p $DOC_PORT $DOC_HOST "/postprocess.sh $DOC_REMOTE_BASE_DIR $DOC_LATEST $DOC_KEEP_LAST_N"
+    - scp -P $DOC_PORT -pr html         $DOC_HOST:$DOC_REMOTE_PATH/
+    - scp -P $DOC_PORT -pr doxygen/html $DOC_HOST:$DOC_REMOTE_PATH/doxygen/
 
     - echo "Finished. :)"
+
   environment:
-    name: docs/latest
-    url: https://hermes.iup.uni-heidelberg.de/utopia_doc/latest/html/
+    name: docs/$CI_COMMIT_REF_NAME
+    url: https://hermes.iup.uni-heidelberg.de/utopia_doc/$CI_COMMIT_REF_SLUG/html/
+    on_stop: deploy:stop_docs
+
+# Stop the deployed "docs" environment for this branch
+# NOTE: This job is automatically executed if the original branch is deleted
+#       (*GitLab Magic*) or someone stops the environment.
+deploy:stop_docs:
+  stage: deploy
+  when: manual # Also triggered on branch deletion
+  variables:
+    # Stop GitLab from checking out the commit again (branch is deleted!)
+    GIT_STRATEGY: none
+  dependencies: []
+  # NOTE: Same "needs" as for "deploy:docs", because on_stop relation does not
+  #       work otherwise (this might be a bug?)
+  needs: ["build:docs"]
+
+  <<: *ssh_access
+  script:
+    - echo "Removing remote directory $DOC_REMOTE_PATH ..."
+    - ssh -p $DOC_PORT $DOC_HOST "rm -rf $DOC_REMOTE_PATH"
+
+    - echo "It's gone. :)"
+
+  environment:
+    name: docs/$CI_COMMIT_REF_NAME
+    action: stop
 
 
 # Build and deploy the docker image to docker hub: ccees/utopia:latest
