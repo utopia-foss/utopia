@@ -9,6 +9,15 @@
 #   variables which are maintained by the add_model cmake function.
 #
 function(register_models_with_frontend)
+    # Check how many models are available. Only continue if there are models
+    # available ...
+    list(LENGTH UTOPIA_MODEL_TARGETS num_model_targets)
+
+    if (${num_model_targets} EQUAL 0)
+        message(STATUS "No models available to register with frontend.")
+        return()
+    endif()
+
     # NOTE Consider searching for utopia cli via find_program. Will perhaps be
     #      necessary once the utopia-env is no longer available ...
     execute_process(COMMAND
@@ -33,7 +42,6 @@ function(register_models_with_frontend)
         message(SEND_ERROR "Error ${exit_code} in adding models to registry!")
     endif()
 
-    list(LENGTH UTOPIA_MODEL_TARGETS num_model_targets)
     message(STATUS "Added or updated model registry entries for "
                    "${num_model_targets} models.")
 endfunction()
