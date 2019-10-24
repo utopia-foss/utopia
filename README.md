@@ -29,7 +29,8 @@ For the copyright notice and the list of copyright holders, see
 <!-- ###################################################################### -->
 
 ## Installation
-The following instructions will install Utopia into a development environment on your machine.
+The following instructions will install Utopia into a development environment
+on your machine.
 
 If you simply want to _run_ Utopia, you can do so via a [ready-to-use docker image](https://hub.docker.com/r/ccees/utopia); see [below](#utopia-via-docker) for more information.
 
@@ -38,23 +39,32 @@ If you simply want to _run_ Utopia, you can do so via a [ready-to-use docker ima
 These instructions are intended for 'clean' __Ubuntu__ (18.04) or __macOS__
 setups.
 
-#### 1 — Setup
-First, create a `Utopia` directory at a place of your choice.
-This is where the Utopia repository will be stored.
-When working with or developing for Utopia, auxilary data will have a place here as well.
+#### 1 — Get access to the repository
+To work comfortably with Utopia, access to the GitLab needs to be easy.
+The best way to achieve that is by registering a so-called SSH key with your
+GitLab account.
+
+To do that, follow the linked instructions to [generate a key pair](https://docs.gitlab.com/ce/ssh/#generating-a-new-ssh-key-pair)
+and to [add a key to your GitLab account](https://docs.gitlab.com/ce/ssh/#adding-an-ssh-key-to-your-gitlab-account).
 
 
 #### 2 — Cloning Utopia
+First, create a `Utopia` directory at a place of your choice.
+This is where the Utopia repository will be stored.
+When working with or developing for Utopia, auxilary data will have a place
+here as well.
+
 In your terminal, enter the `Utopia` directory you just created.
 
 With access to the Utopia GitLab project, you can clone the repository to that
 directory using the following command:
 
 ```bash
-git clone --recurse-submodules https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia.git
+git clone --recurse-submodules ssh://git@ts-gitlab.iup.uni-heidelberg.de:10022/utopia/utopia.git
 ```
 
-Inside your top level `Utopia` directory, there will now be a `utopia` directory, which mirrors this repository.
+Inside your top level `Utopia` directory, there will now be a `utopia`
+directory, which mirrors this repository.
 
 _Note:_ Utopia uses [Git Submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules); with the `--recurse-submodules` option, the submodule repositories are automatically cloned alongside the `utopia` repository.
 
@@ -87,7 +97,7 @@ As package manager on macOS, we recommend [Homebrew](https://brew.sh/).
 
 ```bash
 brew update
-brew install armadillo boost cmake doxygen hdf5 gcc pkg-config python3
+brew install armadillo boost cmake doxygen hdf5 pkg-config python3
 ```
 
 
