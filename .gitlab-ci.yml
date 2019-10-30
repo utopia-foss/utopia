@@ -204,9 +204,14 @@ build:debug: &build_debug
         -DCMAKE_BUILD_TYPE=Debug
         -DCMAKE_CXX_FLAGS_DEBUG='-Werror'
       ..
+    # Build all the tests
     - make $MAKE_FLAGS_BUILD build_tests_core
     - make $MAKE_FLAGS_BUILD build_tests_dataio
     - make $MAKE_FLAGS_BUILD build_tests_models
+    # Test that additional convenience targets exist
+    - make $MAKE_FLAGS_BUILD build_tests_backend
+    - make $MAKE_FLAGS_BUILD build_tests_all
+    # Build all the models
     - make $MAKE_FLAGS_BUILD all
 
 build:debug-clang:
@@ -219,9 +224,14 @@ build:debug-clang:
         -DCMAKE_CXX_COMPILER=clang++
         -DCMAKE_CXX_FLAGS_DEBUG='-Werror'
       ..
+    # Build all the tests
     - make $MAKE_FLAGS_BUILD build_tests_core
     - make $MAKE_FLAGS_BUILD build_tests_dataio
     - make $MAKE_FLAGS_BUILD build_tests_models
+    # Test that additional convenience targets exist
+    - make $MAKE_FLAGS_BUILD build_tests_backend
+    - make $MAKE_FLAGS_BUILD build_tests_all
+    # Build all the models
     - make $MAKE_FLAGS_BUILD all
 
 build:install:

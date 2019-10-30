@@ -77,7 +77,12 @@ add_subdirectory(src/utopia/models)
 add_subdirectory(python)
 add_subdirectory(test EXCLUDE_FROM_ALL)
 
-# Add a test target to rule them all
+# Add test targets to rule them all
+add_custom_target(build_tests_all)
+add_dependencies(build_tests_all
+                    build_tests_backend
+                    build_tests_models)
+
 add_custom_target(test_all)
 add_dependencies(test_all
                     test_core
