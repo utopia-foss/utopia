@@ -3,6 +3,7 @@
 
 #include <numeric>
 #include <functional>
+#include <queue>
 
 #include <utopia/core/model.hh>
 #include <utopia/core/apply.hh>

@@ -46,4 +46,4 @@ updates. See the list below for the current setup.
 | Software | Checkout | Branch? |
 | -------- | -------- | ------- |
 | yaml-cpp | `yaml-cpp-0.6.2` | No |
-| spdlog | `v0.17.0` | No |
+| spdlog | `v1.3.1` | No |
