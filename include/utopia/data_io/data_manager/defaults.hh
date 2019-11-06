@@ -244,7 +244,7 @@ struct SliceDecider : DefaultDecider<Model>
             return [start, stop, step](Model& m) -> bool {
                 return (    (m.get_time() >= start)
                         and (m.get_time() < stop)
-                        and (m.get_time() % step == 0));
+                        and ((m.get_time()-start) % step == 0));
                 };
         }())
     {}
