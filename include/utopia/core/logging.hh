@@ -2,7 +2,9 @@
 #define UTOPIA_CORE_LOGGING_HH
 
 #include <string>
+
 #include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 
 namespace Utopia {
 
