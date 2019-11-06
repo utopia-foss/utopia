@@ -39,6 +39,7 @@ include(UtopiaPython)
 include(UtopiaEnv)
 include(UtopiaFrontendModelRegistry)
 
+include(UtopiaAddCoverageFlags)
 include(UtopiaAddUnitTest)
 include(UtopiaAddModel)
 include(UtopiaAddModelTest)

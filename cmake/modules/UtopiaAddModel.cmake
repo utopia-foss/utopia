@@ -19,6 +19,11 @@ function(add_model target_name)
     # link to Utopia target
     target_link_libraries(${target_name} PUBLIC Utopia::utopia)
 
+    # Add coverage flags if enabled
+    if(CPP_COVERAGE)
+        add_coverage_flags(${target_name})
+    endif()
+
     # the rest of this function is to relay information to the utopya package
     # add name to target list
     set(UTOPIA_MODEL_TARGETS ${UTOPIA_MODEL_TARGETS} ${target_name}

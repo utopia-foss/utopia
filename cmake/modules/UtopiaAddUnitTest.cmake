@@ -76,6 +76,11 @@ function(add_unit_test)
     target_compile_definitions(${unit_test}
         PRIVATE BOOST_TEST_DYN_LINK)
 
+    # Add coverage flags if enabled
+    if(CPP_COVERAGE)
+        add_coverage_flags(${unit_test})
+    endif()
+
     # add this build target to the collective build target
     add_dependencies(${collective_build} ${unit_test})
 

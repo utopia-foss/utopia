@@ -17,6 +17,13 @@ if (CMAKE_BUILD_TYPE STREQUAL "")
     set (CMAKE_BUILD_TYPE None)
 endif()
 
+# Parse CMake options
+include(CMakeDependentOption)
+# Option is only presented if CMAKE_BUILD_TYPE is not set to 'Release'.
+# It always defaults to OFF and will always be OFF for 'Release' builds.
+cmake_dependent_option(CPP_COVERAGE "Compile C++ code with coverage flags" OFF
+                       "NOT CMAKE_BUILD_TYPE STREQUAL Release" OFF)
+
 # --- CMake Modules ---
 
 # Insert Utopia macros on top of the module path list
