@@ -308,6 +308,9 @@ test:utopya:
   script:
     - cd build
     - make test_utopya
+  retry:
+    max: 2
+    when: script_failure
 
 test:models:
   stage: test
