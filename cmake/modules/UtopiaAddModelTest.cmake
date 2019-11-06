@@ -72,6 +72,11 @@ function(add_model_test)
     # NOTE: Might lead to issues if linked to the static unit test library
     target_compile_definitions(${target} PRIVATE BOOST_TEST_DYN_LINK)
 
+    # Add coverage flags if enabled
+    if(CPP_COVERAGE)
+        add_coverage_flags(${target})
+    endif()
+
     # Done. Inform about it
     message(STATUS "Added model test target:     ${target}")
 

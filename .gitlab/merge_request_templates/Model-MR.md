@@ -14,6 +14,7 @@ _fill this in_
    - [ ] Python tests
    - [ ] ~~C++ tests~~ __(optional)__
    - [ ] Added model to `test:models` job in [`.gitlab-ci.yml`](.gitlab-ci.yml)
+   - [ ] Checked [test code coverage](README.md#evaluating-test-code-coverage) on new and adjusted code
 - [ ] Implemented plotting functions
 - [ ] Added documentation
    - [ ] Model itself is reasonably well documented

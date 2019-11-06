@@ -342,6 +342,76 @@ _Note:_ Make sure you entered the virtual environment and the required
 executables are built. See `pytest --help` for more information regarding the
 CLI.
 
+#### Evaluating Test Code Coverage
+Code coverage is useful information when writing and evaluating tests.
+The coverage percentage is reported via the GitLab CI pipeline.
+It is the mean of the test coverage for the Python code and the C++ code.
+
+For retrieving this information on your machine, follow the instructions below.
+
+##### Python code coverage
+The Python code coverage is only relevant for the `utopya` package.
+It can be analyzed using the [`pytest-cov`](https://github.com/pytest-dev/pytest-cov)
+extension for `pytest`, which is installed into the `utopia-env` alongside the
+other dependencies.  
+When running `make test_utopya`, the code coverage is tracked by default and
+shows a table of utopya files and the lines within them that were _not_
+covered by the tests.
+
+If you would like to test for the coverage of some specific part of `utopya`,
+adjust the test command accordingly to show the coverage report only for one
+module, for example `utopya.multiverse`:
+
+```bash
+python -m pytest -v utopya/test/test_multiverse.py --cov=utopya.multiverse --cov-report=term-missing
+```
+
+
+##### C++ code coverage
+
+1. Compile the source code with code coverage flags. Utopia provides the CMake
+    configuration option `CPP_COVERAGE` for that purpose.
+
+    When calling CMake, append `CPP_COVERAGE=On` to add the flags to all tests
+    and models within the Utopia framework. Notice that code coverage is
+    disabled for `Release` builds because aggressive compiler optimization
+    produces unreliable coverage results.
+
+2. Execute the tests. Simply call the test commands listed in the previous
+    sections.
+
+3. Run the coverage result utility [`gcovr`](https://gcovr.com/en/stable/).
+
+    First, install it via `pip`. If you want your host system to be unaffected,
+    enter the Utopia virtual environment first.
+
+        pip3 install gcovr
+
+    `gcovr` takes several arguments. The easiest way of using it is moving to
+    the build directory and executing
+
+        gcovr --root ../
+
+    This will display the source files and their respective coverage summary
+    into the terminal. You can narrow down the report to certain source code
+    paths using the `--filter` option and exclude others with the `--exclude`
+    option.
+
+    `gcovr` can give you a detailed HTML summary containing the color coded
+    source code. We recommend reserving a separate directory in the build
+    directory for that matter:
+
+        mkdir coverage
+        gcovr --root ../ --html --html-details -o coverage/report.html
+
+Note that the C++ code coverage can also be evaluated when using the Python
+test framework to run the tests, because the information is gathered directly
+from the executable.  
+This makes sense especially for the model tests, where it is sometimes more
+convenient to test the results of a model run rather than some individual part
+of it.
+
+
 
 <!-- ###################################################################### -->
 
