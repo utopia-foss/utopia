@@ -8,7 +8,7 @@ INSTALL_DEPS = [
     'scipy>=1.1.0',
     'matplotlib>=3.1',
     'coloredlogs>=10.0',
-    'ruamel.yaml',
+    'ruamel.yaml>=0.16.5',
     
     # Required for testing:
     'pytest>=3.4.0',
@@ -16,17 +16,38 @@ INSTALL_DEPS = [
 
     # From private repositories:
     'paramspace>=2.2.3',
-    'dantro>=0.9.1'
+    'dantro>=0.10.0'
     # NOTE Versions need also be set in python/CMakeLists.txt
 ]
+
+# .............................................................................
+
+# A function to extract version number from __init__.py
+def find_version(*file_paths) -> str:
+    """Tries to extract a version from the given path sequence"""
+    import os, re, codecs
+
+    def read(*parts):
+        """Reads a file from the given path sequence, relative to this file"""
+        here = os.path.abspath(os.path.dirname(__file__))
+        with codecs.open(os.path.join(here, *parts), 'r') as fp:
+            return fp.read()
+
+    # Read the file and match the __version__ string
+    file = read(*file_paths)
+    match = re.search(r"^__version__\s?=\s?['\"]([^'\"]*)['\"]", file, re.M)
+    if match:
+        return match.group(1)
+    raise RuntimeError("Unable to find version string in " + str(file_paths))
+
+# .............................................................................
 
 setup(
     name='utopya',
     #
     # Package information
-    version='0.5.0',
-    # NOTE This needs to correspond to utopya.__init__.__version__
-    # TODO single-source this
+    version=find_version('utopya', '__init__.py'),
+    #
     description='The Utopia Frontend Package',
     url='https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia',
     author='TS-CCEES Utopia Developers',
