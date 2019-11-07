@@ -106,10 +106,9 @@ latter; if you are already more proficient, use the former.
   - Throughout the file, replace all ``CopyMe``\ 's by ``MyFancyModel``\ 's.
   - Throughout the file, replace all ``COPYME``\ 's by ``MYFANCYMODEL``\ 's.
 
-8. Open the file ``MyFancyModel_plots.yml`` in the ``src/utopia/models/MyFancyModel/``
-   directory and do the following:
+8. Open the ``MyFancyModel_plots.yml`` and ``MyFancyModel_base_plots.yml`` files in the ``src/utopia/models/MyFancyModel/`` directory and do the following:
 
-  - Throughout the file, replace all ``CopyMe``\ 's by ``MyFancyModel``\ 's.
+  - Throughout the files, replace all ``CopyMe``\ 's by ``MyFancyModel``\ 's.
 
 9. Open the file ``MyFancyModel_cfg.yml`` in the ``src/utopia/models/MyFancyModel/``
    directory and do the following:
@@ -164,7 +163,6 @@ the ``utopya.testtools`` module (as exemplified in the ``CopyMe`` model tests.)
 
 Custom Model Plots
 ^^^^^^^^^^^^^^^^^^
-
 As you saw in the :doc:`tutorial <tutorial>`, it is possible to have custom
 model plots which are taylored to the data your model is producing.
 You can set them up in the following way:
@@ -173,14 +171,31 @@ You can set them up in the following way:
 17. Copy the ``CopyMe`` directory and rename it to ``MyFancyModel``. Make sure
     that there is a file named ``__init__.py`` inside the directory.
 
+The ``*_plots.yml`` files you copied alongside the model configuration control
+the behavior of the plotting framework. In the ``MyFancyModel_plots.yml`` file,
+you can specify which plots are to be performed automatically.
+
 The ``state.py`` script is provided to show you how a model specific plotting
-script could look like. Remember to remove it (comment it out) if you start
-removing or changing parts of the former ``CopyMe`` model code. Otherwise, you
-will get error messages.
+script could look like.
+In ``generic.py`` you see some examples of generic plotting functions which can
+be used in combination with Utopia's :ref:`data transformation and selection
+framework <external_plot_creator_DAG_support>`.
+
+When starting to implement more plots, you should definitely have a look at
+the :doc:`detailed plotting documentation <../frontend/plotting>`!
+
+.. note::
+
+    Once you change parts of the former ``CopyMe`` model code, the plots might
+    break and you might get errors during plot creation. To alleviate them,
+    either adapt the plotting functions, remove them, or temporary disable
+    them in the plot configuration (using ``enabled: false``) until you have
+    adapted them.
+
+
 
 Adapting your code
 ------------------
-
 Depending on what model you want to implement, you will need to delete or
 adapt some provided functions. So, feel free to remove anything, you do not
 need.
@@ -194,14 +209,13 @@ Some Final Remarks and Advice
 
 Inspiration from other models
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 If you want to learn more about the capabilities of Utopia and how models can
 look like, we recommend that you have a look at the already implemented models
 in the ``src/utopia/models`` directory.
 
+
 ``log->debug`` instead of ``std::cout``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 If you are used to writing ``C++`` code you probably often use ``std::cout``
 to print information or to debug your code. We advice you to use the
 functionality of ``spdlog`` if you work with *Utopia*. This has at least two
@@ -226,7 +240,6 @@ and formatting schemes can be found
 
 Monitoring
 ^^^^^^^^^^
-
 Utopia models have the ability to communicate the model's current state to the
 frontend, e.g. the number of cells with a certain state, or the density of
 agents or the like.
@@ -236,9 +249,9 @@ computing resources. As this data is communicated to the frontend via
 
 For examples, check out the ``monitor`` function of the ``CopyMe`` model.
 
+
 Finished!
 ---------
-
 Congratulations, you have build a new model! :)
 
 Your next guide will be the :doc:`model requirements <model-requirements>`.

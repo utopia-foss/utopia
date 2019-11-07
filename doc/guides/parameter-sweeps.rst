@@ -67,6 +67,12 @@ See ``utopia run --help`` for a detailed description.
 2. Create a plot configuration and corresponding plots
 ------------------------------------------------------
 
+.. warning::
+
+    There are a bunch of new capabilities in the plotting framework that are not reflected in the examples below!
+
+    Make sure to check out the :doc:`documentation of the plotting framework <../frontend/plotting>`.
+
 Plotting multidimensional data can be achieved through different means depending on what you want to plot.
 
 For the following, create a new plot configuration file and specify the desired plots you want to perform. You can pass the plot configuration file to the CLI by adding ``--plot-cfg path/to/plot_cfg.yml``. See ``utopia run --help`` for a detailed description.

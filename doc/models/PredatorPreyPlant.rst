@@ -1,5 +1,5 @@
-``PredatorPreyPlant`` — Model of Predator-Prey Dynamics including Vegetation Dynamics
-===============================================================================
+``PredatorPreyPlant`` — Model of Predator-Prey Dynamics including Vegetation
+============================================================================
 
 This is an expansion of the :doc:`Predator-Prey <PredatorPrey>` model where plants (the resource the prey feeds on) is modelled explicitly.
 

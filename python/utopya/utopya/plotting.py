@@ -28,15 +28,17 @@ log = logging.getLogger(__name__)
 # PlotHelper specialisations
 
 class PlotHelper(dtr.plot_creators.PlotHelper):
-    """A specialization of the dantro PlotHelper for ExternalPlotCreator-
-    derived plot creators.
+    """A specialization of the dantro ``PlotHelper`` used in plot creators that
+    are derived from ``ExternalPlotCreator``.
 
-    This can be used to add additional helpers for use in utopya without
+    This can be used to add additional helpers for use in Utopia without
     requiring changes on dantro-side.
 
-    NOTE The helpers implemented here should try to adhere to the interface
-         exemplified by the dantro PlotHelper class, with the aim that they can
-         then be migrated into dantro in the long run.
+    .. note::
+
+        The helpers implemented here should try to adhere to the interface
+        exemplified by the dantro ``PlotHelper`` class, with the aim that they
+        can then be migrated into dantro in the long run.
     """
 
     # .. Helper methods .......................................................
@@ -47,14 +49,14 @@ class PlotHelper(dtr.plot_creators.PlotHelper):
 # Plot creators
 
 class ExternalPlotCreator(dtr.plot_creators.ExternalPlotCreator):
-    """This is the Utopia-specific version of the dantro ExternalPlotCreator
+    """This is the Utopia-specific version of dantro's ``ExternalPlotCreator``
 
     Its main purpose is to define common settings for plotting. By adding this
     extra layer, it allows for future extensibility as well.
 
-    One of the common settings is that it sets as BASE_PKG the utopya sub-
-    package `plot_funcs`, which is an extension of those functions supplied by
-    dantro.
+    One of the common settings is that it sets as ``BASE_PKG`` the utopya
+    :py:module:`utopya.plot_funcs`, which is an extension of those functions
+    supplied by dantro.
     """
     # Extensions
     EXTENSIONS = 'all'   # no checks performed
