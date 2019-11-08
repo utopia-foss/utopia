@@ -374,7 +374,7 @@ Other possible plot function signatures
 
 .. warning::
 
-    The examples below are for the :py:class:`~utopya.plotting.ExternalPlotCreator` and might not work for the specialized plot creators.
+    The examples below are for the :py:class:`~utopya.plotting.ExternalPlotCreator` and might need to be adapted for the specialized plot creators.
 
     Examples for those creators are given in the `dantro documentation <https://hermes.iup.uni-heidelberg.de/dantro_doc/master/html/plotting/plot_data_selection.html>`_ and :ref:`here <uni_and_mv_plots>`.
 

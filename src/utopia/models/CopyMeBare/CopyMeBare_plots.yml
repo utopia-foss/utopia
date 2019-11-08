@@ -1,2 +1,5 @@
-# Default plots for the CopyMeBare model
+# The default plots of this model
+#
+# These can use the `based_on` feature with configurations specified in the
+# accompanying *_base_plots.yml file and in the utopya base plot configs.
 ---
