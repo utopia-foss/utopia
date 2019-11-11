@@ -301,3 +301,17 @@
   style:
     <<: *default_style
     axes.grid: false
+
+
+
+# -----------------------------------------------------------------------------
+# -- DAG-based plots ----------------------------------------------------------
+# -----------------------------------------------------------------------------
+.dag.generic.time_series:
+  module: .dag.time_series
+  plot_func: time_series
+
+  helpers:
+    <<: *default_helpers
+  style:
+    <<: *default_style

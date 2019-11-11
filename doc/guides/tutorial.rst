@@ -732,11 +732,15 @@ Let's fill that in with the code that calculates the standard deviation for the 
   The ``slope`` and ``slope_std`` in the example above both behave like ``xarray.DataArray`` objects. As you see, they allow to specify operations on labelled dimensions, which not only reduces errors but is also far easier to read.
   You can read up on it `in their documentation <http://xarray.pydata.org/en/stable/data-structures.html#dataarray>`_.
 
-.. note::
+.. hint::
 
-  The plotting framework is actually more advanced. For example, it provides a ``PlotHelper`` framework. It makes plotting much easier by allowing to configure your plots' aesthetics via the configuration, i.e. without touching any code. For example, you can set the labels and limits of the plots conveniently via the configuration.
+  The plotting framework is actually more advanced.
+  For example, it provides a ``PlotHelper`` framework which makes plotting much easier by allowing to configure your plots' aesthetics via the configuration, i.e. without touching any code.
+  For example, you can set the labels and limits of the plots conveniently via the configuration.
 
-  To read up on it, check out the section on :ref:`plot_func_signature`.
+  Furthermore, there is a :ref:`data transformation framework <external_plot_creator_DAG_support>` that follows a similar approach: making it possible to select specific data and apply transformations to it before passing it to a generic plotting function.
+
+  To read up on both, check out the :doc:`plotting documentation <../frontend/plotting>`.
 
 
 Parameter Sweeps and the ``Multiverse``

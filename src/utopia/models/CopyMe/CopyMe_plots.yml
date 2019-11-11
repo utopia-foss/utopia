@@ -1,4 +1,7 @@
-# The default plots of the CopyMe model. Can use the `based_on` feature...
+# The default plots of this model
+#
+# These can use the `based_on` feature with configurations specified in the
+# accompanying *_base_plots.yml file and in the utopya base plot configs.
 ---
 # Mean value plots ............................................................
 some_state_mean:
@@ -36,3 +39,111 @@ state_and_trait_anim:
       title: State
     some_trait:
       title: Trait
+
+
+# Plots using the DAG framework ...............................................
+# Plot individual cell states over time using a generic plotting function
+single_cell_states:
+  based_on: time_series.uni
+
+  # Select some single cells to plot the states of, tagging it 'y'
+  select:
+    y:
+      path: some_state
+      with_previous_result: true  # makes the select data available as first
+                                  # positional argument to the transform
+                                  # operation; and the result of the first
+                                  # transformation to the first argument of the
+                                  # second transformation, etc.
+      transform:
+        - .isel: {x: [0, 1, 2, 4, 8], y: 0}
+        - increment
+
+  helpers:
+    set_title:
+      title: Individual Cell States
+
+# Plot both mean state and mean trait using a generic plotting function
+mean_state_and_trait:
+  based_on: time_series.uni
+
+  # Select the state and trait and average it spatially
+  select:
+    state_mean: &mean_xy
+      path: some_state
+      transform:
+        - .mean: {dim: ['x', 'y']}
+          with_previous_result: true  # ... to use the result of the select
+                                      # operation as first positional argument
+                                      # to this operation.
+
+    trait_mean:
+      <<: *mean_xy
+      path: some_trait
+
+  # Combine the mean values into a xr.Dataset and tag it with 'y'
+  transform:
+    - xr.Dataset:
+        - '$<state>$': !dag_tag state_mean
+          '$<trait>$': !dag_tag trait_mean
+      tag: y
+
+  # Configure helpers
+  helpers:
+    set_title:
+      title: State and Trait (spatial mean)
+    set_legend:
+      use_legend: true
+
+
+# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+# Some example DAG-based plots that are implemented in the CopyMe model plots
+# and performs some visualization that is not generalizable but needs be
+# implemented specifically for the CopyMe model
+
+# ... Specilization for universe data
+some_universe_plot:
+  based_on: some_dag_based_CopyMe_plot
+
+  creator: universe
+  universes: all
+
+  select:
+    scatter:
+      path: some_state
+      with_previous_result: true
+      transform:
+        - .mean: {dim: ['x', 'y']}
+        - increment
+
+  transform:
+    - .coords: [!dag_tag scatter, time]
+      tag: x_values
+    - .mean: !dag_tag scatter
+      tag: offset
+    - .std: !dag_tag scatter
+      tag: amplitude
+    - define: [0.1234]
+      tag: frequency
+
+  dag_options:
+    # Provide the base path within the universe to make selection easier
+    select_path_prefix: data/CopyMe
+
+  scatter_kwargs:
+    label: mean state
+
+  helpers:
+    set_labels:
+      x: Time
+    set_title:
+      title: Some Absurd Plot
+
+# ... Specilization for multiverse data
+some_multiverse_plot:
+  based_on: some_dag_based_CopyMe_plot
+  enabled: false   # manually enable for a multiverse plot
+
+  creator: multiverse
+
+  # specify further arguments here

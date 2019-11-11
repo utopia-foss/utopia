@@ -17,12 +17,12 @@ if(NOT PYTHON_PACKAGE_paramspace_FOUND)
 endif()
 
 # -- dantro --
-python_find_package(PACKAGE dantro VERSION 0.9.1)
+python_find_package(PACKAGE dantro VERSION 0.10)
 
 if(NOT PYTHON_PACKAGE_dantro_FOUND)
     # install from current _master_ branch
     python_install_package_remote(
-        URL ssh://git@ts-gitlab.iup.uni-heidelberg.de:10022/utopia/dantro.git@release/v0.9
+        URL ssh://git@ts-gitlab.iup.uni-heidelberg.de:10022/utopia/dantro.git@release/v0.10
         TRUSTED_HOST ts-gitlab.iup.uni-heidelberg.de)
 endif()
 
@@ -30,7 +30,7 @@ endif()
 # Now, ready to install utopya
 
 # -- utopya --
-python_find_package(PACKAGE utopya VERSION 0.5.0)
+python_find_package(PACKAGE utopya VERSION 0.6)
 
 if(NOT PYTHON_PACKAGE_utopya_FOUND)
     message(STATUS "Installing utopya ...")

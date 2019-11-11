@@ -8,7 +8,7 @@ import logging
 
 import dantro as dtr
 import dantro.data_mngr
-from dantro.data_loaders import YamlLoaderMixin, Hdf5LoaderMixin
+import dantro.data_loaders
 
 import utopya.datacontainer as udc
 import utopya.datagroup as udg
@@ -20,11 +20,14 @@ log = logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------------
 
-class DataManager(Hdf5LoaderMixin, YamlLoaderMixin, dtr.data_mngr.DataManager):
+class DataManager(dtr.data_loaders.AllAvailableLoadersMixin,
+                  dtr.data_mngr.DataManager):
     """This class manages the data that is written out by Utopia simulations.
 
     It is based on the dantro.DataManager class and adds the functionality for
     specific loader functions that are needed in Utopia: Hdf5 and Yaml.
+
+    Furthermore, to enable file caching via the DAG framework, the 
     """
 
     # Register known group types
