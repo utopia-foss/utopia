@@ -46,8 +46,9 @@
 !.gitmodules
 
 
-# Again blacklist certain directories completely
+# Again blacklist certain directories and files completely
 build/
+/doc/api_*
 *.egg-info
 *.pytest_cache
 __pycache__

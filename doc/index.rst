@@ -42,6 +42,7 @@ For details, please refer to the :doc:`Copyright Information <COPYING>`.
    frontend/data
    frontend/plotting
    frontend/inc/base_plots_cfg
+   utopya API Reference <api_utopya/utopya>
    frontend/interactive
    frontend/*
 
@@ -66,3 +67,6 @@ For details, please refer to the :doc:`Copyright Information <COPYING>`.
 
    Copyright Information <COPYING>
    Documentation Examples <examples>
+
+* :ref:`Page Index <genindex>`
+* :ref:`Python Module Index <modindex>`
