@@ -12,32 +12,6 @@
 namespace Utopia {
 namespace Graph {
 
-// -- Helper Functions --------------------------------------------------------
-
-/// Cycles a vertex index
-/** \detail Cycles the index of a vertex such that if the vertex index exceeds 
- *          the number of vertices it is projected on the interval 
- *          [0, num_vertices]
- * 
- * @param vertex        The vertex index
- * @param num_vertices  The number of vertices
- * 
- * @return              The cycled vertex index
- */
-constexpr int _cycled_index(int vertex, int num_vertices){
-    if (vertex <= num_vertices){
-        if (vertex >= 0){
-            return vertex;
-        }
-        else {
-            return _cycled_index(vertex + num_vertices, num_vertices);
-        }
-    }
-    else{
-        return _cycled_index(vertex % num_vertices, num_vertices);
-    }
-}
-
 // -- Graph creation algorithms -----------------------------------------------
 
 /// Create a Erdös-Rényi random graph
@@ -420,100 +394,11 @@ Graph create_WattsStrogatz_graph(std::size_t num_vertices,
 }
 
 
-/// Create a k-regular graph (a circular graph)
-/** \brief  Create a regular graph with degree k.
- *          Creates a regular graph arranged on a circle where vertices are 
- *          connected to their k/2 next neighbors on both sides for the case 
- *          that k is even. If k is uneven an additional connection is added to 
- *          the opposite lying vertex. In this case, the total number of 
- *          vertices n has to be even otherwise the code returns an error.
- * 
- * \tparam Graph        The graph type
- * 
- * \param num_vertices  The number of vertices
- * \param degree        The degree of every vertex
- */
-template<typename Graph>
-Graph create_k_regular_graph(int num_vertices, 
-                             int degree) {
-    // Create an empty graph
-    Graph g(num_vertices);
-
-    if (boost::is_directed(g)) {
-        throw std::runtime_error("This algorithm only works for undirected "
-                                 "graphs in the current implementation but "
-                                 "the graph type specifies a directed graph!");
-    }
-
-    // Case of uneven degree
-    if (degree % 2 == 1)
-    {
-        // Case of uneven number of vertices
-        if (num_vertices % 2 == 1){
-            throw std::invalid_argument("If the degree is uneven, the number "
-                                        "of vertices cannot be uneven too!");
-        }
-        // Case of even number of vertices
-        // Imagine vertices arranged on a circle.
-        // For every node add connections to the next degree/2 next 
-        // neighbors in both directions.
-        // Additionally add a node to the opposite neighbor on the circle
-        for (auto [v, v_end] = boost::vertices(g); v!=v_end; ++v){
-            for (auto nb = -degree/2; nb <= degree/2; ++nb){
-                if (nb != 0){
-                    // Calculate the source and target of the new edge
-                    auto source = _cycled_index(*v, num_vertices);
-                    auto target = _cycled_index(*v + nb, num_vertices)
-                                    % num_vertices;
-                    
-                    // If the edge does not exist yet, create it
-                    if (not edge(source, target, g).second){
-                        boost::add_edge(source, target, g);
-                    }
-                }
-                else if (nb == 0){
-                    // Calculate source and target of the edge
-                    auto source = _cycled_index(*v, num_vertices);
-                    auto target = _cycled_index(*v + num_vertices / 2, 
-                                                num_vertices) 
-                                    % num_vertices;
-
-                    // If the edge does not exist yet, create it
-                    if (not boost::edge(source, target, g).second){
-                        boost::add_edge(source, target, g);
-                    }
-                }
-            }
-        }
-    }
-    // Case of even degree
-    else
-    {
-        for (auto [v, v_end] = boost::vertices(g); v!=v_end; ++v){
-            for (auto nb = -degree/2; nb <= degree/2; ++nb){
-                if (nb != 0){
-                    // Calculate source and target of the new edge
-                    auto source = *v;
-                    auto target = _cycled_index(*v + nb, num_vertices) 
-                                    % num_vertices;
-
-                    // Add the new edge if it not yet exists
-                    if (not boost::edge(source, target, g).second){
-                        boost::add_edge(source, target, g); 
-                    }
-                }
-            }
-        }
-    }
-    return g;
-}
-
-
 // .. Convenient graph creation function ......................................
 
 /// Create a graph from a configuration node 
-/** \detail Select a graph creation algorithm and create the graph object from  
- *          a configuration node.
+/** Select a graph creation algorithm and create the graph object from a 
+ *  configuration node.
  * 
  * \tparam Graph        The graph type
  * \tparam Config       The configuration node type
@@ -534,9 +419,11 @@ Graph create_graph(const Utopia::DataIO::Config& cfg, RNG& rng)
     // node.
     if (model == "regular")
     {
-        return create_k_regular_graph<Graph>(
-                    get_as<int>("num_vertices", cfg),
-                    get_as<int>("mean_degree", cfg));
+        return create_WattsStrogatz_graph<Graph>(
+                    get_as<std::size_t>("num_vertices", cfg),
+                    get_as<std::size_t>("mean_degree", cfg),
+                    0., // p_rewire=0 for regular networks
+                    rng);
     }
     else if (model == "ErdosRenyi")
     {
