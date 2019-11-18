@@ -122,9 +122,11 @@ Graph create_BarabasiAlbert_graph(std::size_t num_vertices,
 
         // Create initial spawning network that is fully connected
         for (std::size_t i = 0; i<mean_degree+1; ++i){
+            const auto v0 = boost::add_vertex(g);
             for (std::size_t j = 0; j<i; ++j){
+                const auto v1 = boost::add_vertex(g);
                 // Increase the number of edges only if an edge was added
-                if (boost::add_edge(i, j, g).second == true){
+                if (boost::add_edge(v0, v1, g).second == true){
                     ++num_edges;
                 }
             }
@@ -237,12 +239,12 @@ Graph create_BollobasRiordan_graph(std::size_t num_vertices,
     }
 
     // Create three-cycle as spawning network.
-    boost::add_vertex(g);
-    boost::add_vertex(g);
-    boost::add_vertex(g);
-    boost::add_edge(0, 1, g);
-    boost::add_edge(1, 2, g);
-    boost::add_edge(2, 0, g);
+    auto v0 = boost::add_vertex(g);
+    auto v1 = boost::add_vertex(g);
+    auto v2 = boost::add_vertex(g);
+    boost::add_edge(v0, v1, g);
+    boost::add_edge(v1, v2, g);
+    boost::add_edge(v2, v0, g);
 
     std::uniform_real_distribution<> distr(0, 1);
 

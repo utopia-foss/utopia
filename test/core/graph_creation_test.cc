@@ -88,8 +88,7 @@ BOOST_FIXTURE_TEST_CASE(create_graph, CreateGraphFix)
     // Fill the map with directed graphs for each model
     for (const auto& m : models){
         // These graph models require undirected graphs
-        if ((m == "BarabasiAlbert") or 
-            (m == "regular")){
+        if (m == "BarabasiAlbert"){
             // undirected Graph should not work
             BOOST_CHECK_THROW(Utopia::Graph::create_graph<DiGraph>(cfg[m], rng),
                               std::runtime_error);

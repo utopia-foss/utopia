@@ -58,12 +58,10 @@ struct ErdosRenyiGraphFixture {
                                         false, false, rng); 
 };
 
-
 using ErdosRenyiDirGraphsFixtures = boost::mpl::vector<
     ErdosRenyiGraphFixture<G_dir_vec>,
     ErdosRenyiGraphFixture<G_dir_list>
 >;
-
 
 using ErdosRenyiUndirGraphsFixtures = boost::mpl::vector<
     ErdosRenyiGraphFixture<G_vec>,
@@ -89,17 +87,70 @@ struct WattsStrogatzGraphFixture {
                                            rng); 
 };
 
-
 using WattsStrogatzDirGraphsFixtures = boost::mpl::vector<
     WattsStrogatzGraphFixture<G_dir_vec>,
     WattsStrogatzGraphFixture<G_dir_list>
 >;
 
-
 using WattsStrogatzUndirGraphsFixtures = boost::mpl::vector<
     WattsStrogatzGraphFixture<G_vec>,
     WattsStrogatzGraphFixture<G_list>
 >;
+
+// .. Barabási-Albert graph fixtures ------------------------------------------
+template<class G>
+struct BarabasiAlbertGraphFixture {
+    // Create a random number generator together with a copy
+    Utopia::DefaultRNG rng;
+    Utopia::DefaultRNG rng_copy = rng;
+
+    // Set graph properties
+    const unsigned num_vertices = 200;
+    const unsigned mean_degree = 8;
+
+    // Create test graph
+    G g = create_BarabasiAlbert_graph<G>(num_vertices,
+                                           mean_degree,
+                                           rng); 
+};
+
+using BarabasiAlbertUndirGraphsFixtures = boost::mpl::vector<
+    BarabasiAlbertGraphFixture<G_vec>,
+    BarabasiAlbertGraphFixture<G_list>
+>;
+
+
+// .. Bollobas-Riordan graph fixtures ------------------------------------------
+template<class G>
+struct BollobasRiordanGraphFixture {
+    // Create a random number generator together with a copy
+    Utopia::DefaultRNG rng;
+    Utopia::DefaultRNG rng_copy = rng;
+
+    // Set graph properties
+    const std::size_t num_vertices = 200;
+    const double alpha = 0.2;
+    const double beta = 0.8;
+    const double gamma = 0.;
+    const double del_in = 0.;
+    const double del_out = 0.5;
+
+    // Create test graph
+    G g = create_BollobasRiordan_graph<G>(num_vertices,
+                                                      alpha,
+                                                      beta,
+                                                      gamma,
+                                                      del_in,
+                                                      del_out,
+                                                      rng);
+};
+
+using BollobasRiordanDirGraphsFixtures = boost::mpl::vector<
+    BollobasRiordanGraphFixture<G_dir_vec>,
+    BollobasRiordanGraphFixture<G_dir_list>
+>;
+
+
 // -- Tests -------------------------------------------------------------------
 
 /// Test the function that creates a random graph
@@ -175,150 +226,130 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_create_WattsStrogatzDirected_graph, G,
     BOOST_TEST(G::rng!=G::rng_copy);
 }
 
-// /// Test the function that creates a scale-free graph
-// void test_create_BarabasiAlbert_graph(){
-//     // Create a random number generator
-//     Utopia::DefaultRNG rng;
-//     Utopia::DefaultRNG rng_copy = rng;
+/// Test the function that creates a scale-free Barabási-Albert graph
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_create_BarabasiAlbertUndirected_graph, G, 
+    BarabasiAlbertUndirGraphsFixtures, G)
+{
+    // Assert that the number of vertices and edges is correct
+    BOOST_TEST(G::num_vertices == boost::num_vertices(G::g));
+    BOOST_TEST(G::num_vertices * G::mean_degree / 2 == boost::num_edges(G::g));
 
-//     // Set graph properties
-//     const int num_vertices = 200;
-//     const int mean_degree = 8;
+    // Check that at least one vertex has more than 10 edges
+    bool at_least_one_more_than_ten_edges = false;
+    for (auto [v, v_end] = boost::vertices(G::g); v!=v_end; ++v){
+        if (boost::out_degree(*v, G::g) > 10){
+            at_least_one_more_than_ten_edges = true;
+            break;
+        }
+    }
+    BOOST_TEST(at_least_one_more_than_ten_edges == true);
 
-//     // Create test graph
-//     auto g = create_BarabasiAlbert_graph<G>(num_vertices,
-//                                             mean_degree,
-//                                             rng); 
+    // Assert that the state of the rng has changed.
+    BOOST_TEST(G::rng!=G::rng_copy);
+}
 
-//     // Assert that the number of vertices and edges is correct
-//     assert(num_vertices == boost::num_vertices(g));
-//     assert(num_vertices * mean_degree / 2 == boost::num_edges(g));
+BOOST_AUTO_TEST_CASE(test_create_BarabasiAlbert_failing_high_degree)
+{
+    // Create a random number generator 
+    Utopia::DefaultRNG rng;
 
-//     // Check that at least one vertex has more than 10 edges
-//     bool at_least_one_more_than_ten_edges = false;
-//     for (auto [v, v_end] = boost::vertices(g); v!=v_end; ++v){
-//         if (boost::out_degree(*v, g) > 10){
-//             at_least_one_more_than_ten_edges = true;
-//             break;
-//         }
-//     }
-//     assert(at_least_one_more_than_ten_edges == true);
+    // Set graph properties
+    const unsigned num_vertices = 5;
+    const unsigned mean_degree = 6;
 
-//     // Assert that the state of the rng has changed.
-//     assert(rng!=rng_copy);
+    // Try to create a graph and test that it fails
+    BOOST_CHECK_THROW(create_BarabasiAlbert_graph<G_vec>(num_vertices,
+                                           mean_degree,
+                                           rng),
+                                           std::invalid_argument);
+}
 
-//     /// Test catching exceptions
-//     // Case: directed Graph
-//     try
-//     {
-//         auto g_dir = create_BarabasiAlbert_graph<G_directed> (num_vertices, mean_degree, rng);
-//     }
-//     catch (const std::exception& e)
-//     {
-//         std::cerr << "Caught expected exception" << std::endl;
-//     }
-//     catch (...){
-//         throw std::runtime_error("Caught unexpected exception in "
-//                                  "create_BarabasiAlbert_graph function test.");
-//     }
+BOOST_AUTO_TEST_CASE(test_create_BarabasiAlbert_failing_odd_mean_degree)
+{
+    // Create a random number generator 
+    Utopia::DefaultRNG rng;
 
-//     // Case: mean degree greater than number of vertices
-//     try
-//     {
-//         auto g_fail = create_BarabasiAlbert_graph<G> (5, 6, rng);
-//     }
-//     catch (const std::exception& e)
-//     {
-//         std::cerr << "Caught expected exception" << std::endl;
-//     }
-//     catch (...){
-//         throw std::runtime_error("Caught unexpected exception in "
-//                                  "create_BarabasiAlbert_graph function test.");
-//     }
+    // Set graph properties
+    const unsigned num_vertices = 5;
+    const unsigned mean_degree = 5;
 
-//     // Case: mean degree is odd
-//     try
-//     {
-//         auto g_fail = create_BarabasiAlbert_graph<G> (10, 5, rng);
-//     }
-//     catch (const std::exception& e)
-//     {
-//         std::cerr << "Caught expected exception" << std::endl;
-//     }
-//     catch (...){
-//         throw std::runtime_error("Caught unexpected exception in "
-//                                  "create_BarabasiAlbert_graph function test.");
-//     }
-// }
+    // Try to create a graph and test that it fails
+    BOOST_CHECK_THROW(create_BarabasiAlbert_graph<G_vec>(num_vertices,
+                                           mean_degree,
+                                           rng),
+                                           std::invalid_argument);
+}
 
 
-// /// Test the function that creates a directed scale-free graph
-// void test_create_BollobasRiordan_graph(){
-//     // Create a random number generator
-//     Utopia::DefaultRNG rng;
-//     Utopia::DefaultRNG rng_copy = rng;
+BOOST_AUTO_TEST_CASE(test_create_BarabasiAlbert_failing_due_to_directed_graph)
+{
+    // Create a random number generator 
+    Utopia::DefaultRNG rng;
 
-//     // Set graph properties
-//     const std::size_t num_vertices = 200;
-//     const double alpha = 0.2;
-//     const double beta = 0.8;
-//     const double gamma = 0.;
-//     const double del_in = 0.;
-//     const double del_out = 0.5;
+    // Set graph properties
+    const unsigned num_vertices = 5;
+    const unsigned mean_degree = 6;
 
-//     // Create test graph
-//     auto g = create_BollobasRiordan_graph<G_directed>(num_vertices,
-//                                                       alpha,
-//                                                       beta,
-//                                                       gamma,
-//                                                       del_in,
-//                                                       del_out,
-//                                                       rng);
+    // Try to create a graph and test that it fails
+    BOOST_CHECK_THROW(create_BarabasiAlbert_graph<G_dir_vec>(num_vertices,
+                                           mean_degree,
+                                           rng),
+                                           std::invalid_argument);
+}
 
-//     // Assert that the number of vertices is correct
-//     assert(num_vertices == boost::num_vertices(g));
+/// Test the function that creates a directed scale-free graph
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_create_BollobasRiordan_graph, G, 
+    BollobasRiordanDirGraphsFixtures, G)
+{
+    // Assert that the number of vertices is correct
+    BOOST_TEST(G::num_vertices == boost::num_vertices(G::g));
 
-//     // Assert that only tree vertices (the initial network)
-//     // have an in-degree unequal Zero.
-//     auto count = 0;
-//     for (auto [v, v_end] = boost::vertices(g); v!=v_end; ++v){
-//         if (boost::in_degree(*v, g) > 0) {
-//             ++count;
-//         }
-//     }
-//     assert(count == 3);
+    // BOOST_TEST that only tree vertices (the initial network)
+    // have an in-degree unequal Zero.
+    auto count = 0;
+    for (auto [v, v_end] = boost::vertices(G::g); v!=v_end; ++v){
+        if (boost::in_degree(*v, G::g) > 0) {
+            ++count;
+        }
+    }
+    BOOST_TEST(count == 3);
 
-//     // Check that at least one vertex has more than 10 in-edges
-//     bool at_least_one_more_than_ten_edges = false;
-//     for (auto [v, v_end] = boost::vertices(g); v!=v_end; ++v){
-//         if (boost::in_degree(*v, g) > 10){
-//             at_least_one_more_than_ten_edges = true;
-//             break;
-//         }
-//     }
-//     assert(at_least_one_more_than_ten_edges == true);
+    // Check that at least one vertex has more than 10 in-edges
+    bool at_least_one_more_than_ten_edges = false;
+    for (auto [v, v_end] = boost::vertices(G::g); v!=v_end; ++v){
+        if (boost::in_degree(*v, G::g) > 10){
+            at_least_one_more_than_ten_edges = true;
+            break;
+        }
+    }
+    BOOST_TEST(at_least_one_more_than_ten_edges == true);
 
-//     // Assert that the state of the rng has changed.
-//     assert(rng!=rng_copy);
+    // BOOST_TEST that the state of the rng has changed.
+    BOOST_TEST(G::rng!=G::rng_copy);
 
-//     /// Test catching exceptions
-//     // Case: undirected Graph
-//     try
-//     {
-//         auto g_dir = create_BollobasRiordan_graph<G>(   num_vertices,
-//                                                             alpha,
-//                                                             beta,
-//                                                             gamma,
-//                                                             del_in,
-//                                                             del_out,
-//                                                             rng);
-//     }
-//     catch (const std::exception& e)
-//     {
-//         std::cerr << "Caught expected exception" << std::endl;
-//     }
-//     catch (...){
-//         throw std::runtime_error("Caught unexpected exception in "
-//                         "create_directed_scale_free_graph function test.");
-//     }
-// }
+}
+
+BOOST_AUTO_TEST_CASE(test_create_BollobasRiordan_failing_due_to_undirected_graph)
+{
+// Create a random number generator together with a copy
+    Utopia::DefaultRNG rng;
+    Utopia::DefaultRNG rng_copy = rng;
+
+    // Set graph properties
+    const std::size_t num_vertices = 200;
+    const double alpha = 0.2;
+    const double beta = 0.8;
+    const double gamma = 0.;
+    const double del_in = 0.;
+    const double del_out = 0.5;
+
+    // Try to create an undirected test graph and catch the error
+    BOOST_CHECK_THROW(create_BollobasRiordan_graph<G_vec>(num_vertices,
+                                                      alpha,
+                                                      beta,
+                                                      gamma,
+                                                      del_in,
+                                                      del_out,
+                                                      rng),
+                                                      std::runtime_error);
+}
