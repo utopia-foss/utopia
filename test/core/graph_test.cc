@@ -98,7 +98,7 @@ using WattsStrogatzUndirGraphsFixtures = boost::mpl::vector<
 >;
 
 // .. Barabási-Albert graph fixtures ------------------------------------------
-template<class G>
+template<class G, bool create_parallel_edges>
 struct BarabasiAlbertGraphFixture {
     // Create a random number generator together with a copy
     Utopia::DefaultRNG rng;
@@ -111,12 +111,15 @@ struct BarabasiAlbertGraphFixture {
     // Create test graph
     G g = create_BarabasiAlbert_graph<G>(num_vertices,
                                            mean_degree,
+                                           create_parallel_edges,
                                            rng); 
 };
 
 using BarabasiAlbertUndirGraphsFixtures = boost::mpl::vector<
-    BarabasiAlbertGraphFixture<G_vec>,
-    BarabasiAlbertGraphFixture<G_list>
+    BarabasiAlbertGraphFixture<G_vec, true>,
+    BarabasiAlbertGraphFixture<G_vec, false>,
+    BarabasiAlbertGraphFixture<G_list, true>,
+    BarabasiAlbertGraphFixture<G_list, false>
 >;
 
 
@@ -260,6 +263,13 @@ BOOST_AUTO_TEST_CASE(test_create_BarabasiAlbert_failing_high_degree)
     // Try to create a graph and test that it fails
     BOOST_CHECK_THROW(create_BarabasiAlbert_graph<G_vec>(num_vertices,
                                            mean_degree,
+                                           true, // creating parallel edges
+                                           rng),
+                                           std::invalid_argument);
+
+    BOOST_CHECK_THROW(create_BarabasiAlbert_graph<G_vec>(num_vertices,
+                                           mean_degree,
+                                           false, // not creating parallel edges
                                            rng),
                                            std::invalid_argument);
 }
@@ -276,6 +286,13 @@ BOOST_AUTO_TEST_CASE(test_create_BarabasiAlbert_failing_odd_mean_degree)
     // Try to create a graph and test that it fails
     BOOST_CHECK_THROW(create_BarabasiAlbert_graph<G_vec>(num_vertices,
                                            mean_degree,
+                                           true, // creating parallel edges
+                                           rng),
+                                           std::invalid_argument);
+
+    BOOST_CHECK_THROW(create_BarabasiAlbert_graph<G_vec>(num_vertices,
+                                           mean_degree,
+                                           false, // not creating parallel edges
                                            rng),
                                            std::invalid_argument);
 }
@@ -293,6 +310,13 @@ BOOST_AUTO_TEST_CASE(test_create_BarabasiAlbert_failing_due_to_directed_graph)
     // Try to create a graph and test that it fails
     BOOST_CHECK_THROW(create_BarabasiAlbert_graph<G_dir_vec>(num_vertices,
                                            mean_degree,
+                                           true, // creating parallel edges
+                                           rng),
+                                           std::invalid_argument);
+
+    BOOST_CHECK_THROW(create_BarabasiAlbert_graph<G_dir_vec>(num_vertices,
+                                           mean_degree,
+                                           false, // not creating parallel edges
                                            rng),
                                            std::invalid_argument);
 }
