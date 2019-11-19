@@ -119,9 +119,11 @@ YAML file looks like this:
       mean_degree: 4
 
       ### model-specific parameters
-      ## ErdosRenyi
+      ## ErdosRenyi and BarabasiAlbert
       # Allow parallel edges
       parallel: false
+
+      ## ErdosRenyi
       # Allow self edges
       self-edges: false
 

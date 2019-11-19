@@ -357,7 +357,6 @@ BOOST_AUTO_TEST_CASE(test_create_BollobasRiordan_failing_due_to_undirected_graph
 {
 // Create a random number generator together with a copy
     Utopia::DefaultRNG rng;
-    Utopia::DefaultRNG rng_copy = rng;
 
     // Set graph properties
     const std::size_t num_vertices = 200;
