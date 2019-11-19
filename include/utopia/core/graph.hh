@@ -76,117 +76,28 @@ Graph create_ErdosRenyi_graph(std::size_t num_vertices,
 }
 
 
-// /// Create a Barabási-Albert scale-free graph
-// /** \detail This function generates a scale-free graph using the 
-//  *          Barabási-Albert model. The algorithm starts with a small spawning 
-//  *          network to which new vertices are added one at a time. Each new 
-//  *          vertex receives a connection to mean_degree existing vertices with a 
-//  *          probability that is proportional to the number of links of the 
-//  *          corresponding vertex. 
-//  *
-//  * \tparam Graph        The graph type
-//  * \tparam RNG          The random number generator type
-//  * 
-//  * \param num_vertices  The total number of vertices
-//  * \param mean_degree   The mean degree
-//  * \param rng           The random number generator
-//  * 
-//  * \return Graph        The scale-free graph
-//  */
-// template <typename Graph, typename RNG>
-// Graph create_BarabasiAlbert_graph(std::size_t num_vertices,
-//                                   std::size_t mean_degree,
-//                                   RNG& rng)
-// {
-//     // Create an empty graph
-//     Graph g{};
-    
-//     // Check for cases in which the algorithm does not work
-//     if (num_vertices < mean_degree){
-//         throw std::invalid_argument("The mean degree has to be smaller than "
-//                                     "the total number of vertices!");
-//     }
-//     else if (mean_degree % 2){
-//         throw std::invalid_argument("The mean degree needs to be even but "
-//                                     "is not an even number!");
-//     }
-//     else if (boost::is_directed(g)){
-//         throw std::runtime_error("This scale-free generator algorithm "
-//                                  "only works for undirected graphs! " 
-//                                  "But the provided graph is directed.");
-//     }
-//     else{
-//         // Define helper variables
-//         auto num_edges = 0;
-//         auto deg_ignore = 0;
-
-//         // Create initial spawning network that is fully connected
-//         for (std::size_t i = 0; i<mean_degree + 1; ++i){
-//             boost::add_vertex(g);
-//             for (std::size_t j = 0; j<i; ++j){
-//                 // Increase the number of edges only if an edge was added
-//                 if (boost::add_edge(boost::vertex(i,g), 
-//                         boost::vertex(j,g), g).second == true){
-//                     ++num_edges;
-//                 }
-//             }
-//         }
-
-//         // Keep account whether an edge has been added or not
-//         bool edge_added = false;
-
-//         // Add i times a vertex and connect it randomly but weighted 
-//         // to the existing vertices
-//         std::uniform_real_distribution<> distr(0, 1);
-//         for (std::size_t i = 0; i<(num_vertices - mean_degree - 1); ++i){
-//             // Add a new vertex
-//             const auto new_vertex = boost::add_vertex(g);
-//             auto edges_added = 0;
-
-//             // Add the desired number of edges
-//             for (std::size_t edge = 0; edge<mean_degree/2; ++edge){
-//                 // Keep track of the probability
-//                 auto prob = 0.;
-
-//                 // Loop through every vertex and look if it can be connected
-//                 for (auto [v, v_end] = boost::vertices(g); v!=v_end; ++v)
-//                 {
-//                     // Until now, no edge has been added. Reset edge_added.
-//                     edge_added = false;
-//                     // accumulate the probability fractions
-//                     prob += boost::out_degree(*v, g) 
-//                             / ((2. * num_edges) - deg_ignore);
-
-//                     if (distr(rng) <= prob){
-//                         // Check whether the nodes are already connected
-//                         if (not boost::edge(new_vertex, *v, g).second){
-//                             // create an edge between the two vertices
-//                             deg_ignore = boost::out_degree(*v, g);
-//                             boost::add_edge(new_vertex, *v, g);
-
-//                             // Increase the number of added edges and keep
-//                             // track that an edge has been added
-//                             ++edges_added;
-//                             edge_added = true;
-//                             break;
-//                         }
-//                     }
-//                 }
-
-//                 // If no edge has been attached in one loop through the vertices
-//                 // try again to attach an edge with another random number
-//                 if (not edge_added){
-//                     --edge;
-//                 }
-//             }
-//             num_edges+=edges_added;
-//         }
-//     }
-//     return g;
-// }
-
-
-
+/// Generate a Barabási-Albert scale-free graph with parallel edges
+/** This is the classic version of the generating model with a completely
+ *  connected spawning network.
+ *  This function generates a scale-free graph using the Barabási-Albert model. 
+ *  The algorithm starts with a small spawning network to which new vertices 
+ *  are added one at a time. Each new vertex receives a connection to 
+ *  mean_degree existing vertices with a probability that is proportional to 
+ *  the number of links of the corresponding vertex. In this version, the 
+ *  repeated vertices, that are added during the whole generating process, are 
+ *  stored. With each vertex added a uniform sample from the repeated_vertex
+ *  is drawn. Each vertex thus has a probability to get selected that is 
+ *  proportional to the number of degrees of that vertex.
+ *
+ * \tparam Graph        The graph type
+ * \tparam RNG          The random number generator type
+ * 
+ * \param num_vertices  The total number of vertices
+ * \param mean_degree   The mean degree
+ * \param rng           The random number generator
+ * 
+ * \return Graph        The scale-free graph
+ */
 template <typename Graph, typename RNG>
 Graph BarabasiAlbert_parallel_generator(std::size_t num_vertices,
                                         std::size_t mean_degree,
@@ -261,6 +172,22 @@ Graph BarabasiAlbert_parallel_generator(std::size_t num_vertices,
 }
 
 
+/// Generate a Barabási-Albert scale-free graph with no parallel edges
+/** This function generates a scale-free graph using the Barabási-Albert model. 
+ *  The algorithm starts with a small spawning network to which new vertices 
+ *  are added one at a time. Each new vertex receives a connection to 
+ *  mean_degree existing vertices with a probability that is proportional to 
+ *  the number of links of the corresponding vertex. 
+ *
+ * \tparam Graph        The graph type
+ * \tparam RNG          The random number generator type
+ * 
+ * \param num_vertices  The total number of vertices
+ * \param mean_degree   The mean degree
+ * \param rng           The random number generator
+ * 
+ * \return Graph        The scale-free graph
+ */
 template <typename Graph, typename RNG>
 Graph BarabasiAlbert_nonparallel_generator(std::size_t num_vertices,
                                            std::size_t mean_degree,
