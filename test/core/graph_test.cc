@@ -312,13 +312,13 @@ BOOST_AUTO_TEST_CASE(test_create_BarabasiAlbert_failing_due_to_directed_graph)
                                            mean_degree,
                                            true, // creating parallel edges
                                            rng),
-                                           std::invalid_argument);
+                                           std::runtime_error);
 
     BOOST_CHECK_THROW(create_BarabasiAlbert_graph<G_dir_vec>(num_vertices,
                                            mean_degree,
                                            false, // not creating parallel edges
                                            rng),
-                                           std::invalid_argument);
+                                           std::runtime_error);
 }
 
 /// Test the function that creates a directed scale-free graph
