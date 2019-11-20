@@ -376,3 +376,27 @@ BOOST_AUTO_TEST_CASE(test_create_BollobasRiordan_failing_due_to_undirected_graph
                                                       rng),
                                                       std::runtime_error);
 }
+
+BOOST_AUTO_TEST_CASE(test_create_BollobasRiordan_failing_due_to_wrong_parameters)
+{
+// Create a random number generator together with a copy
+    Utopia::DefaultRNG rng;
+
+    // Set graph properties
+    const std::size_t num_vertices = 200;
+    const double alpha = 0.2;
+    const double beta = 0.8;
+    const double gamma = 0.1;
+    const double del_in = 0.;
+    const double del_out = 0.5;
+
+    // Try to create an undirected test graph and catch the error
+    BOOST_CHECK_THROW(create_BollobasRiordan_graph<G_dir_vec>(num_vertices,
+                                                      alpha,
+                                                      beta,
+                                                      gamma,
+                                                      del_in,
+                                                      del_out,
+                                                      rng),
+                                                      std::invalid_argument);
+}
