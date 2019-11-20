@@ -361,9 +361,9 @@ Graph create_BollobasRiordan_graph(std::size_t num_vertices,
     }
 
     // Create three-cycle as spawning network.
-    auto v0 = boost::add_vertex(g);
-    auto v1 = boost::add_vertex(g);
-    auto v2 = boost::add_vertex(g);
+    const auto v0 = boost::add_vertex(g);
+    const auto v1 = boost::add_vertex(g);
+    const auto v2 = boost::add_vertex(g);
     boost::add_edge(v0, v1, g);
     boost::add_edge(v1, v2, g);
     boost::add_edge(v2, v0, g);
