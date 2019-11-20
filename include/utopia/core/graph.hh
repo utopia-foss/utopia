@@ -212,9 +212,6 @@ Graph BarabasiAlbert_nonparallel_generator(std::size_t num_vertices,
         }
     }
 
-    // Keep account whether an edge has been added or not
-    bool edge_added = false;
-
     // Add i times a vertex and connect it randomly but weighted 
     // to the existing vertices
     std::uniform_real_distribution<> distr(0, 1);
@@ -231,8 +228,6 @@ Graph BarabasiAlbert_nonparallel_generator(std::size_t num_vertices,
             // Loop through every vertex and look if it can be connected
             for (auto [v, v_end] = boost::vertices(g); v!=v_end; ++v)
             {
-                // Until now, no edge has been added. Reset edge_added.
-                edge_added = false;
                 // accumulate the probability fractions
                 prob += boost::out_degree(*v, g) 
                         / ((2. * num_edges) - deg_ignore);
@@ -244,19 +239,11 @@ Graph BarabasiAlbert_nonparallel_generator(std::size_t num_vertices,
                         deg_ignore = boost::out_degree(*v, g);
                         boost::add_edge(new_vertex, *v, g);
 
-                        // Increase the number of added edges and keep
-                        // track that an edge has been added
+                        // Increase the number of added edges
                         ++edges_added;
-                        edge_added = true;
                         break;
                     }
                 }
-            }
-
-            // If no edge has been attached in one loop through the vertices
-            // try again to attach an edge with another random number
-            if (not edge_added){
-                --edge;
             }
         }
         num_edges+=edges_added;
