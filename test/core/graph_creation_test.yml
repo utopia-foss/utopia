@@ -6,7 +6,7 @@ regular:
   num_vertices: 10
   mean_degree: 2
 
-ErdosRenyi: &ErdosRenyi
+ErdosRenyi:
   model: ErdosRenyi
   num_vertices: 10
   mean_degree: 2
@@ -61,9 +61,3 @@ BollobasRiordan:
   del_in: 0.
   del_out: 0.5
   
-# Failing cases
-Fail:
-  model: fail
-
-missing_arg:
-  model: regular

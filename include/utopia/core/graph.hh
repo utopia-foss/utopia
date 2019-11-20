@@ -125,8 +125,8 @@ Graph BarabasiAlbert_parallel_generator(std::size_t num_vertices,
     }
 
     // Create a vector in which to store all target vertices of each step ...
-    std::vector<VertexDesc> target_vertices {boost::vertices(g).first, 
-                                            boost::vertices(g).second};
+    std::vector<VertexDesc> target_vertices (boost::vertices(g).first, 
+                                            boost::vertices(g).second);
 
     // Create a vector that stores all the repeated vertices
     std::vector<VertexDesc> repeated_vertices{};

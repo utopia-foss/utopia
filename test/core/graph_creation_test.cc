@@ -49,30 +49,24 @@ struct CreateGraphFix : GraphFix, DiGraphFix {
 
 BOOST_FIXTURE_TEST_CASE(create_graph, CreateGraphFix)
 {
-    std::vector<std::string> models {"regular",
-                                    "ErdosRenyi", 
-                                    "ErdosRenyiP", 
-                                    "ErdosRenyiS", 
-                                    "ErdosRenyiPS", 
-                                    "WattsStrogatz", 
-                                    "BarabasiAlbert",
-                                    "BarabasiAlbertP",
-                                    "BollobasRiordan"
-                                    };
     // .. undirected graphs ...................................................
     // A map in which to store the graph for each model
     std::vector<Graph> g_vec;
 
     // Fill the map with undirected graphs for each model
-    for (const auto& m : models){
+    for (const auto& model_map : cfg){
+        // Unpack the returned key-value pairs
+        const auto model = model_map.second["model"].as<std::string>();
+        const auto& model_cfg = model_map.second;
+
         // Bollobas-Riordan scale-free graphs require directed graphs.
-        if (m == "BollobasRiordan"){
+        if (model == "BollobasRiordan"){
             // undirected Graph should not work
-            BOOST_CHECK_THROW(Utopia::Graph::create_graph<Graph>(cfg[m], rng),
+            BOOST_CHECK_THROW(Utopia::Graph::create_graph<Graph>(model_cfg, rng),
                               std::runtime_error);
         }
         else{
-            g_vec.push_back(Utopia::Graph::create_graph<Graph>(cfg[m], rng));
+            g_vec.push_back(Utopia::Graph::create_graph<Graph>(model_cfg, rng));
         }
     }
 
@@ -99,19 +93,24 @@ BOOST_FIXTURE_TEST_CASE(create_graph, CreateGraphFix)
     std::vector<DiGraph> g_vec_dir;
 
     // Fill the map with directed graphs for each model
-    for (const auto& m : models){
+    // Fill the map with undirected graphs for each model
+    for (const auto& model_map : cfg){
+        // Unpack the returned key-value pairs
+        const auto model = model_map.second["model"].as<std::string>();
+        const auto& model_cfg = model_map.second;
+
         // These graph models require undirected graphs
-        if (m == "BarabasiAlbert" or m == "BarabasiAlbertP"){
+        if (model == "BarabasiAlbert" or model == "BarabasiAlbertP"){
             // undirected Graph should not work
-            BOOST_CHECK_THROW(Utopia::Graph::create_graph<DiGraph>(cfg[m], rng),
+            BOOST_CHECK_THROW(Utopia::Graph::create_graph<DiGraph>(model_cfg, rng),
                               std::runtime_error);
         }
-        else if (m == "BollobasRiordan") {
-            auto g = Utopia::Graph::create_graph<DiGraph>(cfg[m], rng);
+        else if (model == "BollobasRiordan") {
+            auto g = Utopia::Graph::create_graph<DiGraph>(model_cfg, rng);
             BOOST_TEST(boost::num_vertices(g) == 10);
         }
         else{
-            g_vec_dir.push_back(Utopia::Graph::create_graph<DiGraph>(cfg[m], 
+            g_vec_dir.push_back(Utopia::Graph::create_graph<DiGraph>(model_cfg, 
                                                                      rng));
         }
     }
@@ -135,10 +134,14 @@ BOOST_FIXTURE_TEST_CASE(create_graph, CreateGraphFix)
     }
 
     // .. failing graphs ......................................................
-    BOOST_CHECK_THROW(Utopia::Graph::create_graph<Graph>(cfg["Fail"], rng),
+    Utopia::DataIO::Config fail_cfg, missing_args_cfg;
+    fail_cfg["model"] = "fail";
+    missing_args_cfg["model"] = "regular";
+
+    BOOST_CHECK_THROW(Utopia::Graph::create_graph<Graph>(fail_cfg, rng),
                       std::invalid_argument);
 
-    BOOST_CHECK_THROW(Utopia::Graph::create_graph<Graph>(cfg["missing_arg"], 
+    BOOST_CHECK_THROW(Utopia::Graph::create_graph<Graph>(missing_args_cfg, 
                                                          rng),
                       std::runtime_error);
 }
