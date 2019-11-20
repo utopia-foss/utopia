@@ -52,14 +52,18 @@ def test_fire_source():
         # All cells in the bottom row are always in state "source", i.e.: 3
         assert (data.isel(y=0) == 3).all()
 
+# SPHINX-MARKER (you can ignore this)
 def test_stones():
-    """Runs the model with stone clusters"""
+    """Tests that stones are created and are constant over time"""
+    # Create the multiverse, run it with the stones config, and load data
     mv, dm = mtc.create_run_load(from_cfg="stones.yml")
 
+    # Go over all the created universes
     for uni_no, uni in dm['multiverse'].items():
+        # Get the kind of each cell
         data = uni['data']['ForestFire']['kind']
 
-        # There is a non-zero number of stone cells
+        # There is a non-zero number of stone cells (encoded by kind == 4)
         assert (data == 4).sum() > 0
 
         # ... which is constant over time

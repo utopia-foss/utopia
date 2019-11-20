@@ -12,6 +12,8 @@ Utopia.
 
 ----
 
+.. _create_graphs:
+
 Create graphs
 -------------
 How do I attach custom objects to the vertices and edges of my graph?
@@ -138,6 +140,7 @@ This of course is a highly documented configuration. You only need to specify
 configuration options if the creation algorithm you set requires them, otherwise
 they will be just ignored.
 
+.. _save_graph_properties:
 
 Save node & edge properties
 ---------------------------
