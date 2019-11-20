@@ -82,6 +82,18 @@ BOOST_FIXTURE_TEST_CASE(create_graph, CreateGraphFix)
         BOOST_TEST(boost::num_edges(g) == 10);
     }
 
+    // For regular graphs check that all vertices have the same correct number
+    // of edges
+    auto g_reg_undir = Utopia::Graph::create_graph<Graph>(cfg["regular"], rng);
+    for (auto v : boost::make_iterator_range(
+            boost::vertices(g_reg_undir).first,
+            boost::vertices(g_reg_undir).second))
+    {
+        BOOST_TEST(boost::out_degree(v,g_reg_undir) 
+                    == Utopia::get_as<unsigned>("mean_degree", cfg["regular"]));
+    }
+    
+
     // .. directed graphs ...................................................
     // A map in which to store the graph for each model
     std::vector<DiGraph> g_vec_dir;
@@ -108,6 +120,18 @@ BOOST_FIXTURE_TEST_CASE(create_graph, CreateGraphFix)
     for (const auto& g : g_vec_dir){
         BOOST_TEST(boost::num_vertices(g) == 10);
         BOOST_TEST(boost::num_edges(g) == 20);
+    }
+
+
+    // For regular graphs check that all vertices have the same correct number
+    // of edges
+    auto g_reg_dir = Utopia::Graph::create_graph<DiGraph>(cfg["regular"], rng);
+    for (auto v : boost::make_iterator_range(
+            boost::vertices(g_reg_dir).first,
+            boost::vertices(g_reg_dir).second))
+    {
+        BOOST_TEST(boost::out_degree(v,g_reg_dir) 
+                    == Utopia::get_as<unsigned>("mean_degree", cfg["regular"]));
     }
 
     // .. failing graphs ......................................................
