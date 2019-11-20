@@ -14,6 +14,7 @@ This is an excerpt of the relevant API references for the plotting framework.
 --------------------------------------
 
 .. autoclass:: utopya.plotting.PlotManager
+    :noindex:
     :members: __init__, plot_from_cfg, plot
 
 
@@ -25,6 +26,7 @@ Plot Creators
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. autoclass:: utopya.plotting.ExternalPlotCreator
+    :noindex:
     :members: plot, _plot
 
 
@@ -32,12 +34,14 @@ Plot Creators
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. autoclass:: utopya.plotting.UniversePlotCreator
+    :noindex:
 
 
 :py:class:`utopya.plotting.MultiversePlotCreator`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. autoclass:: utopya.plotting.MultiversePlotCreator
+    :noindex:
     :members: _prepare_plot_func_args
 
 
@@ -45,6 +49,7 @@ Plot Creators
 -------------------------------------------------
 
 .. autodecorator:: utopya.plotting.is_plot_func
+    :noindex:
 
 
 
@@ -62,6 +67,7 @@ Full :py:class:`~utopya.plotting.PlotHelper` interface
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. autoclass:: utopya.plotting.PlotHelper
+    :noindex:
     :members:
     :inherited-members:
     :private-members:

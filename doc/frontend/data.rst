@@ -1,3 +1,5 @@
+.. _data_handling:
+
 Data Handling
 =============
 
@@ -34,6 +36,7 @@ While the interface is uniform, the parts of the data tree can be specialized to
 It is tightly coupled to the data *output* of Utopia on C++ side, where the most efficient way to write data is along the *index* of the entities rather than the x and y coordinates.
 However, to *handle* that data, one expects data with the dimensions ``x``, ``y`` and ``time``; the :py:class:`~utopya.datacontainer.GridDC` takes care to reshape that data in this way.
 
+.. _data_handling_proxy:
 
 Handling Large Amounts of Data
 ------------------------------
@@ -46,6 +49,8 @@ Objects that were loaded as proxy are marked with ``(proxy)`` in the tree repres
 To load HDF5 data as proxy, use the ``hdf5_proxy`` loader in the :ref:`data_manager_load_cfg`.
 
 These proxy objects already make handling large amounts of data much easier, because the data is only loaded once needed.
+
+.. _data_handling_dask:
 
 How about *huge* amounts of data?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -6,7 +6,7 @@ import logging
 import warnings
 from typing import List, Callable, Union
 
-import utopya.stopcond_funcs as sc_funcs  # TODO Make relative
+import utopya.stopcond_funcs as sc_funcs
 
 # Initialise logger
 log = logging.getLogger(__name__)

@@ -262,10 +262,7 @@ The ``select`` argument allows a number of ways to specify which data is to be s
 
 The fields ``data`` and ``std`` are then made available to the ``mv_data`` argument to the plotting function.
 
-For further documentation, see the functions invoked by ``MultiversePlotCreator``, ``ParamSpaceGroup.select`` and ``ParamSpace.activate_subspace``:
+For further documentation, see the functions invoked by ``MultiversePlotCreator``, ``ParamSpaceGroup.select`` and :py:meth:`paramspace.paramspace.ParamSpace.activate_subspace`:
 
 .. autoclass:: dantro.groups.ParamSpaceGroup
     :members: select
-
-.. autoclass:: paramspace.ParamSpace
-    :members: activate_subspace

@@ -1,3 +1,5 @@
+.. _managers:
+
 Cell and Agent Managers
 =======================
 
