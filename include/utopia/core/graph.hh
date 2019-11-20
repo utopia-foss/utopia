@@ -116,12 +116,12 @@ Graph BarabasiAlbert_parallel_generator(std::size_t num_vertices,
     // Create an empty graph
     Graph g{};
 
-    // Start with a fully connected graph
+    // Generate the (fully-connected) spawning network
     for (unsigned v0 = 0; v0 < mean_degree; ++v0){
         boost::add_vertex(g);
         for (unsigned v1 = 0; v1 < v0; ++v1){
             boost::add_edge(boost::vertex(v0, g), boost::vertex(v1, g), g);
-        }    
+        }
     }
 
     // Create a vector in which to store all target vertices of each step ...
@@ -134,10 +134,11 @@ Graph BarabasiAlbert_parallel_generator(std::size_t num_vertices,
     // Reserve enough memory for the repeated vertices collection
     repeated_vertices.reserve(num_vertices * num_new_edges_per_step * 2);
 
-    // Define a counter variable 
-    std::size_t counter = mean_degree;
+    // Initialise a counter variable with mean_degree because
+    // that is the number of vertices already added to the graph.
+    std::size_t counter = boost::num_vertices(g);
 
-    // add num_vertices - mean_degree times a node and mean_degree new edges
+    // Add (num_vertices - mean_degree) new vertices and mean_degree new edges
     while (counter < num_vertices)
     {
         const auto new_vertex = boost::add_vertex(g);
@@ -164,7 +165,6 @@ Graph BarabasiAlbert_parallel_generator(std::size_t num_vertices,
                     num_new_edges_per_step,
                     rng);
 
-        // increase the counter
         ++counter;
     }
 
@@ -197,16 +197,17 @@ Graph BarabasiAlbert_nonparallel_generator(std::size_t num_vertices,
     Graph g{};
 
     // Define helper variables
-    auto num_edges = 0;
-    auto deg_ignore = 0;
+    std::size_t num_edges = 0;
+    std::size_t deg_ignore = 0;
 
     // Create initial spawning network that is fully connected
-    for (std::size_t i = 0; i<mean_degree + 1; ++i){
+    for (std::size_t i = 0; i <= mean_degree; ++i){
         boost::add_vertex(g);
         for (std::size_t j = 0; j<i; ++j){
             // Increase the number of edges only if an edge was added
-            if (boost::add_edge(boost::vertex(i,g), 
-                    boost::vertex(j,g), g).second == true){
+            if (boost::add_edge(boost::vertex(i,g), boost::vertex(j,g),
+                                g).second)
+            {
                 ++num_edges;
             }
         }
@@ -218,12 +219,12 @@ Graph BarabasiAlbert_nonparallel_generator(std::size_t num_vertices,
     for (std::size_t i = 0; i<(num_vertices - mean_degree - 1); ++i){
         // Add a new vertex
         const auto new_vertex = boost::add_vertex(g);
-        auto edges_added = 0;
+        std::size_t edges_added = 0;
 
         // Add the desired number of edges
         for (std::size_t edge = 0; edge<mean_degree/2; ++edge){
             // Keep track of the probability
-            auto prob = 0.;
+            double prob = 0.;
 
             // Loop through every vertex and look if it can be connected
             for (auto [v, v_end] = boost::vertices(g); v!=v_end; ++v)
@@ -241,12 +242,17 @@ Graph BarabasiAlbert_nonparallel_generator(std::size_t num_vertices,
 
                         // Increase the number of added edges
                         ++edges_added;
+
+                        // Leave the for loop because an edge has already
+                        // been placed. For the next edge to be places,
+                        // the accumulated probability has to be 
+                        // recalculated.
                         break;
                     }
                 }
             }
         }
-        num_edges+=edges_added;
+        num_edges += edges_added;
     }
     return g;
 }
@@ -285,8 +291,9 @@ Graph create_BarabasiAlbert_graph(std::size_t num_vertices,
     Graph g{};
     if (boost::is_directed(g)){
         throw std::runtime_error("This scale-free generator algorithm "
-                                    "only works for undirected graphs! " 
-                                    "But the provided graph is directed.");
+                                 "only works for undirected graphs! " 
+                                 "But the provided graph is directed.");
+
     } else if (num_vertices < mean_degree){
         throw std::invalid_argument("The mean degree has to be smaller than "
                                     "the total number of vertices!");
