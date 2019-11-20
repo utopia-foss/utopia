@@ -62,7 +62,7 @@ struct CellState {
 
 
 /// Specialize the CellTraits type helper for this model
-/** \detail Specifies the type of each cells' state as first template argument
+/** \details Specifies the type of each cells' state as first template argument
   *         and the update mode as second.
   *
   * See \ref Utopia::CellTraits for more information.
@@ -78,8 +78,8 @@ using ModelTypes = Utopia::ModelTypes<>;
 
 /// The CopyMe Model; a good start for a CA-based model
 /** TODO Add your model description here.
- *  This model's only right to exist is to be a template for new models. 
- *  That means its functionality is based on nonsense but it shows how 
+ *  This model's only right to exist is to be a template for new models.
+ *  That means its functionality is based on nonsense but it shows how
  *  actually useful functionality could be implemented.
  */
 class CopyMe:
@@ -88,10 +88,10 @@ class CopyMe:
 public:
     /// The type of the Model base class of this derived class
     using Base = Model<CopyMe, ModelTypes>;
-    
+
     /// Data type of the group to write model data to, holding datasets
     using DataGroup = typename Base::DataGroup;
-    
+
     /// Data type for a dataset
     using DataSet = typename Base::DataSet;
 
@@ -100,7 +100,7 @@ public:
     // NOTE that it requires the model's type as second template argument
 
     /// Extract the type of the rule function from the CellManager
-    /** \detail This is a function that receives a reference to a cell and
+    /** \details This is a function that receives a reference to a cell and
       *         returns the new cell state. For more details, check out
       *         \ref Utopia::CellManager
       *
@@ -110,7 +110,7 @@ public:
       */
     using RuleFunc = typename CellManager::RuleFunc;
 
-    
+
 private:
     // Base members: _time, _name, _cfg, _hdfgrp, _rng, _monitor, _log, _space
     // ... but you should definitely check out the documentation ;)
@@ -130,7 +130,7 @@ private:
 
     // .. Temporary objects ...................................................
 
-    
+
     // .. Datasets ............................................................
     // NOTE They should be named '_dset_<name>', where <name> is the
     //      dataset's actual name as set in its constructor. If you are using
@@ -266,7 +266,7 @@ public:
     // .. Simulation Control ..................................................
 
     /// Iterate a single step
-    /** \detail Here you can add a detailed description what exactly happens 
+    /** \details Here you can add a detailed description what exactly happens
       *         in a single iteration step
       */
     void perform_step () {
@@ -277,7 +277,7 @@ public:
 
 
     /// Monitor model information
-    /** \detail Here, functions and values can be supplied to the monitor that
+    /** \details Here, functions and values can be supplied to the monitor that
      *          are then available to the frontend. The monitor() function is
      *          _only_ called if a certain emit interval has passed; thus, the
      *          performance hit is small.
@@ -293,7 +293,7 @@ public:
 
 
     /// Write data
-    /** \detail This function is called to write out data. It should be called
+    /** \details This function is called to write out data. It should be called
       *         at the end of the model constructor to write out the initial
       *         state. After that, the configuration determines at which times
       *         data is written.
@@ -326,7 +326,7 @@ public:
         return sum / _cm.cells().size();
     }
 
-    
+
 };
 
 } // namespace CopyMe

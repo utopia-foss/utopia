@@ -7,7 +7,7 @@
 namespace Utopia {
 
 /// The flag indicating whether to stop whatever is being done right now
-/** @detail This needs to be an atomic flag in order to be thread-safe. While
+/** @details This needs to be an atomic flag in order to be thread-safe. While
   *         the check of this flag is about three times slower than checking a
   *         boolean's value (quick-bench.com/IRtD4sQfp_xUwGPa2YrATD4vEyA), this
   *         difference is minute to other computations done between two checks.
@@ -24,7 +24,7 @@ void default_signal_handler(int signum) {
 }
 
 /// Attaches a signal handler for the given signal via sigaction
-/** @detail This function sets 
+/** @details This function sets 
   *
   * @param  signum  The signal number to attach a custom handler to
   * @param  handler Pointer to the function that should be invoked when the

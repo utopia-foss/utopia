@@ -33,14 +33,14 @@ class CopyMeBare:
 public:
     /// The type of the Model base class of this derived class
     using Base = Model<CopyMeBare, ModelTypes>;
-    
+
     /// Data type of the group to write model data to, holding datasets
     using DataGroup = typename Base::DataGroup;
-    
+
     /// Data type for a dataset
     using DataSet = typename Base::DataSet;
 
-    
+
 private:
     // Base members: _time, _name, _cfg, _hdfgrp, _rng, _monitor, _space
     // ... but you should definitely check out the documentation ;)
@@ -50,7 +50,7 @@ private:
 
     // .. Temporary objects ...................................................
 
-    
+
     // .. Datasets ............................................................
     // NOTE They should be named '_dset_<name>', where <name> is the
     //      dataset's actual name as set in its constructor. Ideally, do not
@@ -83,7 +83,7 @@ public:
 
 private:
     // .. Setup functions .....................................................
-   
+
     // .. Helper functions ....................................................
 
 public:
@@ -91,19 +91,19 @@ public:
     // .. Simulation Control ..................................................
 
     /// Iterate a single step
-    /** \detail Here you can add a detailed description what exactly happens 
+    /** \details Here you can add a detailed description what exactly happens 
       *         in a single iteration step
       */
     void perform_step () {
-        
+
     }
 
 
     /// Monitor model information
-    /** \detail Here, functions and values can be supplied to the monitor that
+    /** \details Here, functions and values can be supplied to the monitor that
      *          are then available to the frontend. The monitor() function is
      *          _only_ called if a certain emit interval has passed; thus, the
-     *          performance hit is small. 
+     *          performance hit is small.
      */
     void monitor () {
         // Can supply information to the monitor here in two ways:
@@ -113,7 +113,7 @@ public:
 
 
     /// Write data
-    /** \detail This function is called to write out data. It should be called
+    /** \details This function is called to write out data. It should be called
       *         at the end of the model constructor to write out the initial
       *         state. After that, the configuration determines at which times
       *         data is written.
@@ -127,10 +127,10 @@ public:
         // });
     }
 
-    
+
     // Getters and setters ....................................................
     // Add getters and setters here to interface with other model
-    
+
 };
 
 } // namespace CopyMeBare

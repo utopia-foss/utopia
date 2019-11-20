@@ -68,7 +68,7 @@ private:
     /// The seeding rate
     double _seeding_rate;
 
-    
+
     // Datasets -- //
     /// Plant mass dataset
     std::shared_ptr<DataSet> _dset_plant_mass;
@@ -76,7 +76,7 @@ private:
 
     // -- Rule functions -- //
     /// Apply logistic growth and seeding
-    /** @detail For each cell, a random gauss-distributed number is drawn that 
+    /** @details For each cell, a random gauss-distributed number is drawn that 
      *          represents the rainfall onto that cell. If the plant bio-mass
      *          at that cell is already non-zero, it is increased according to
      *          a logistic growth model, modelled by the Beverton-Holt
@@ -94,7 +94,7 @@ private:
         }
 
         // Distinguish by mass whether to grow or to seed
-        // If negative or smaller than machine epsilon at 1.0 for doubles, 
+        // If negative or smaller than machine epsilon at 1.0 for doubles,
         // consider invalid and reseed
         if (not (mass < 1e-16)) {
             // Logistic Growth
@@ -102,9 +102,9 @@ private:
              * Be careful that when using the Wikipedia version
              *   [https://en.wikipedia.org/wiki/Beverton–Holt_model], the R0
              * parameter therein is >= 1 -> proliferation rate!
-             * This means that, as given therein, we have: 
+             * This means that, as given therein, we have:
              *   n_{t+1} = (r*n_t)/(1 + (n_t*(r-1)/K))
-             *  with r >= 1, which has to be turned into 
+             *  with r >= 1, which has to be turned into
              *   n_{t+1} =((r+1.)*n_t)/(1 +(n_t*r)/K)
              * when r is given as a growth rate proper.
              */
@@ -165,7 +165,7 @@ public:
     }
 
     /// Write the cell states (aka plant bio-mass)
-    void write_data () 
+    void write_data ()
     {
         _dset_plant_mass->write(_cm.cells().begin(),
                                 _cm.cells().end(),

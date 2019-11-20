@@ -15,13 +15,13 @@ namespace Graph {
 // -- Helper Functions --------------------------------------------------------
 
 /// Cycles a vertex index
-/** \detail Cycles the index of a vertex such that if the vertex index exceeds 
- *          the number of vertices it is projected on the interval 
+/** \details Cycles the index of a vertex such that if the vertex index exceeds
+ *          the number of vertices it is projected on the interval
  *          [0, num_vertices]
- * 
+ *
  * @param vertex        The vertex index
  * @param num_vertices  The number of vertices
- * 
+ *
  * @return              The cycled vertex index
  */
 constexpr int _cycled_index(int vertex, int num_vertices){
@@ -41,42 +41,42 @@ constexpr int _cycled_index(int vertex, int num_vertices){
 // -- Graph creation algorithms -----------------------------------------------
 
 /// Create a Erdös-Rényi random graph
-/** \detail This function uses the create_random_graph function from the boost 
- *          graph library. It uses the Erdös-Rényi algorithm to generate the 
+/** \details This function uses the create_random_graph function from the boost
+ *          graph library. It uses the Erdös-Rényi algorithm to generate the
  *          random graph. Sources and targets of edges are randomly selected
- *          with equal probability. Thus, every possible edge has the same 
+ *          with equal probability. Thus, every possible edge has the same
  *          probability to be created.
- * 
+ *
  * \note The underlying boost::generate_random_graph function requires the
  *       total number of edges as input. In case of an undirected graph it is
  *       calculated through: num_edges = num_vertices * mean_degree / 2, in
  *       case of a directed graph through:
- *       num_edges = num_vertices * mean_degree. 
- *       If the integer division of the right hand side leaves a rest, the 
- *       mean degree will be slightly distorted. However, for large numbers of 
+ *       num_edges = num_vertices * mean_degree.
+ *       If the integer division of the right hand side leaves a rest, the
+ *       mean degree will be slightly distorted. However, for large numbers of
  *       num_vertices this effect is negligible.
  *
  * \tparam Graph            The graph type
  * \tparam RNG              The random number generator type
- * 
+ *
  * \param num_vertices      The total number of vertices
  * \param mean_degree       The mean degree (= mean in-degree
  *                          = mean out-degree for directed graphs)
  * \param allow_parallel    Allow parallel edges within the graph
  * \param self_edges        Allows a vertex to be connected to itself
  * \param rng               The random number generator
- * 
+ *
  * \return Graph            The random graph
  */
 template<typename Graph, typename RNG>
-Graph create_ErdosRenyi_graph(std::size_t num_vertices, 
+Graph create_ErdosRenyi_graph(std::size_t num_vertices,
                               std::size_t mean_degree,
                               bool allow_parallel,
                               bool self_edges,
                               RNG& rng)
 {
     // Create an empty graph
-    Graph g; 
+    Graph g;
 
     // Calculate the number of edges
     const std::size_t num_edges = [&](){
@@ -90,12 +90,12 @@ Graph create_ErdosRenyi_graph(std::size_t num_vertices,
 
 
     // Create a random graph using the Erdös-Rényi algorithm
-    boost::generate_random_graph(g, 
-                                 num_vertices, 
-                                 num_edges, 
-                                 rng, 
-                                 allow_parallel, 
-                                 self_edges); 
+    boost::generate_random_graph(g,
+                                 num_vertices,
+                                 num_edges,
+                                 rng,
+                                 allow_parallel,
+                                 self_edges);
 
     // Return graph
     return g;
@@ -103,20 +103,20 @@ Graph create_ErdosRenyi_graph(std::size_t num_vertices,
 
 
 /// Create a Barabási-Albert scale-free graph
-/** \detail This function generates a scale-free graph using the 
- *          Barabási-Albert model. The algorithm starts with a small spawning 
- *          network to which new vertices are added one at a time. Each new 
- *          vertex receives a connection to mean_degree existing vertices with a 
- *          probability that is proportional to the number of links of the 
- *          corresponding vertex. 
+/** \details This function generates a scale-free graph using the
+ *          Barabási-Albert model. The algorithm starts with a small spawning
+ *          network to which new vertices are added one at a time. Each new
+ *          vertex receives a connection to mean_degree existing vertices with a
+ *          probability that is proportional to the number of links of the
+ *          corresponding vertex.
  *
  * \tparam Graph        The graph type
  * \tparam RNG          The random number generator type
- * 
+ *
  * \param num_vertices  The total number of vertices
  * \param mean_degree   The mean degree
  * \param rng           The random number generator
- * 
+ *
  * \return Graph        The scale-free graph
  */
 template <typename Graph, typename RNG>
@@ -126,7 +126,7 @@ Graph create_BarabasiAlbert_graph(std::size_t num_vertices,
 {
     // Create an empty graph
     Graph g;
-    
+
     // Check for cases in which the algorithm does not work
     if (num_vertices < mean_degree){
         throw std::invalid_argument("The mean degree has to be smaller than "
@@ -138,7 +138,7 @@ Graph create_BarabasiAlbert_graph(std::size_t num_vertices,
     }
     else if (boost::is_directed(g)){
         throw std::runtime_error("This scale-free generator algorithm "
-                                 "only works for undirected graphs! " 
+                                 "only works for undirected graphs! "
                                  "But the provided graph is directed.");
     }
     else{
@@ -159,7 +159,7 @@ Graph create_BarabasiAlbert_graph(std::size_t num_vertices,
         // Keep account whether an edge has been added or not
         bool edge_added = false;
 
-        // Add i times a vertex and connect it randomly but weighted 
+        // Add i times a vertex and connect it randomly but weighted
         // to the existing vertices
         std::uniform_real_distribution<> distr(0, 1);
         for (std::size_t i = 0; i<(num_vertices - mean_degree - 1); ++i){
@@ -178,7 +178,7 @@ Graph create_BarabasiAlbert_graph(std::size_t num_vertices,
                     // Until now, no edge has been added. Reset edge_added.
                     edge_added = false;
                     // accumulate the probability fractions
-                    prob += boost::out_degree(*v, g) 
+                    prob += boost::out_degree(*v, g)
                             / ((2. * num_edges) - deg_ignore);
 
                     if (distr(rng) <= prob){
@@ -211,7 +211,7 @@ Graph create_BarabasiAlbert_graph(std::size_t num_vertices,
 
 
 /// Create a scale-free directed graph
-/** \detail This function generates a scale-free graph using the model from
+/** \details This function generates a scale-free graph using the model from
  *          Bollobás et al. Multi-edges and self-loops are not allowed.
  *          The graph is built by continuously adding new edges via preferential
  *          attachment. In each step, an edge is added in one of the following
@@ -220,7 +220,7 @@ Graph create_BarabasiAlbert_graph(std::size_t num_vertices,
  *          - B: add edge between two already existing vertices
  *          - C: add edge from an existing vertex to a newly added vertex
  *          As the graph is directed there can be different attachment
- *          probability distributions for in-edges and out-edges. 
+ *          probability distributions for in-edges and out-edges.
  *          The probability for choosing a vertex as source (target) of the new
  *          edge is proportional to its current out-degree (in-degree).
  *          Each newly added vertex has a fixed initial probability to be chosen
@@ -290,7 +290,7 @@ Graph create_BollobasRiordan_graph(std::size_t num_vertices,
         norm_in = num_edges + del_in * boost::num_vertices(g);
         norm_out = num_edges + del_out * boost::num_vertices(g);
         const auto rand_num = distr(rng);
-        
+
         if (rand_num < alpha) {
             // option 'A'
             // Add new vertex v and add edge (v,w) with w drawn from the
@@ -300,7 +300,7 @@ Graph create_BollobasRiordan_graph(std::size_t num_vertices,
             const auto r = distr(rng);
 
             for (auto [p, p_end] = boost::vertices(g); p!=p_end; ++p) {
-                
+
                 prob_sum += (boost::in_degree(*p, g) + del_in) / norm_in;
                 if (r < prob_sum) {
                     w = *p;
@@ -322,7 +322,7 @@ Graph create_BollobasRiordan_graph(std::size_t num_vertices,
 
             // Find the source of the new edge.
             for (auto [p, p_end] = boost::vertices(g); p!=p_end; ++p) {
-                
+
                 prob_sum_out += (boost::out_degree(*p, g) + del_out)/norm_out;
                 if (r_out < prob_sum_out) {
                     v = *p;
@@ -331,7 +331,7 @@ Graph create_BollobasRiordan_graph(std::size_t num_vertices,
             }
             // Find the target of the new edge.
             for (auto [p, p_end] = boost::vertices(g); p!=p_end; ++p) {
-                
+
                 prob_sum_in += (boost::in_degree(*p, g) + del_in)/norm_in;
                 if (r_in < prob_sum_in) {
                     if (v!=*p and (not boost::edge(v,*p, g).second)) {
@@ -356,7 +356,7 @@ Graph create_BollobasRiordan_graph(std::size_t num_vertices,
             const auto r = distr(rng);
 
             for (auto [p, p_end] = boost::vertices(g); p!=p_end; ++p) {
-                
+
                 prob_sum += (boost::out_degree(*p, g) + del_out)/norm_out;
                 if (r < prob_sum) {
                     v = *p;
@@ -375,23 +375,23 @@ Graph create_BollobasRiordan_graph(std::size_t num_vertices,
 
 
 /// Create a Watts-Strogatz small-world graph
-/** \details This function creates a small-world graph using the Watts-Strogatz 
+/** \details This function creates a small-world graph using the Watts-Strogatz
  *           model. It creates a k-regular graph and relocates vertex connections
  *           with a given probability.
  *  \warning The graph generating small_world_generator function from the
- *           boost graph library that is used in this function rewires only 
- *           in_edges. The out_edge distribution is still constant with the 
+ *           boost graph library that is used in this function rewires only
+ *           in_edges. The out_edge distribution is still constant with the
  *           delta-peak at the mean_degree.
- * 
+ *
  * /tparam Graph        The graph type
  * /tparam RNG          The random number generator type
- * 
+ *
  * /param num_vertices  The total number of vertices
  * /param mean_degree   The mean degree (= mean in-degree
  *                      = mean out-degree for directed graphs)
  * /param p_rewire      The rewiring probability
  * /param RNG           The random number generator
- * 
+ *
  * /return Graph        The small-world graph
  */
 template <typename Graph, typename RNG>
@@ -412,7 +412,7 @@ Graph create_WattsStrogatz_graph(std::size_t num_vertices,
 
     // Create a small-world graph
     g = Graph(SWGen(rng, num_vertices, mean_degree, p_rewire),
-              SWGen(), 
+              SWGen(),
               num_vertices);
 
     // Return the graph
@@ -422,19 +422,19 @@ Graph create_WattsStrogatz_graph(std::size_t num_vertices,
 
 /// Create a k-regular graph (a circular graph)
 /** \brief  Create a regular graph with degree k.
- *          Creates a regular graph arranged on a circle where vertices are 
- *          connected to their k/2 next neighbors on both sides for the case 
- *          that k is even. If k is uneven an additional connection is added to 
- *          the opposite lying vertex. In this case, the total number of 
+ *          Creates a regular graph arranged on a circle where vertices are
+ *          connected to their k/2 next neighbors on both sides for the case
+ *          that k is even. If k is uneven an additional connection is added to
+ *          the opposite lying vertex. In this case, the total number of
  *          vertices n has to be even otherwise the code returns an error.
- * 
+ *
  * \tparam Graph        The graph type
- * 
+ *
  * \param num_vertices  The number of vertices
  * \param degree        The degree of every vertex
  */
 template<typename Graph>
-Graph create_k_regular_graph(int num_vertices, 
+Graph create_k_regular_graph(int num_vertices,
                              int degree) {
     // Create an empty graph
     Graph g(num_vertices);
@@ -455,7 +455,7 @@ Graph create_k_regular_graph(int num_vertices,
         }
         // Case of even number of vertices
         // Imagine vertices arranged on a circle.
-        // For every node add connections to the next degree/2 next 
+        // For every node add connections to the next degree/2 next
         // neighbors in both directions.
         // Additionally add a node to the opposite neighbor on the circle
         for (auto [v, v_end] = boost::vertices(g); v!=v_end; ++v){
@@ -465,7 +465,7 @@ Graph create_k_regular_graph(int num_vertices,
                     auto source = _cycled_index(*v, num_vertices);
                     auto target = _cycled_index(*v + nb, num_vertices)
                                     % num_vertices;
-                    
+
                     // If the edge does not exist yet, create it
                     if (not edge(source, target, g).second){
                         boost::add_edge(source, target, g);
@@ -474,8 +474,8 @@ Graph create_k_regular_graph(int num_vertices,
                 else if (nb == 0){
                     // Calculate source and target of the edge
                     auto source = _cycled_index(*v, num_vertices);
-                    auto target = _cycled_index(*v + num_vertices / 2, 
-                                                num_vertices) 
+                    auto target = _cycled_index(*v + num_vertices / 2,
+                                                num_vertices)
                                     % num_vertices;
 
                     // If the edge does not exist yet, create it
@@ -494,12 +494,12 @@ Graph create_k_regular_graph(int num_vertices,
                 if (nb != 0){
                     // Calculate source and target of the new edge
                     auto source = *v;
-                    auto target = _cycled_index(*v + nb, num_vertices) 
+                    auto target = _cycled_index(*v + nb, num_vertices)
                                     % num_vertices;
 
                     // Add the new edge if it not yet exists
                     if (not boost::edge(source, target, g).second){
-                        boost::add_edge(source, target, g); 
+                        boost::add_edge(source, target, g);
                     }
                 }
             }
@@ -511,17 +511,17 @@ Graph create_k_regular_graph(int num_vertices,
 
 // .. Convenient graph creation function ......................................
 
-/// Create a graph from a configuration node 
-/** \detail Select a graph creation algorithm and create the graph object from  
+/// Create a graph from a configuration node
+/** \details Select a graph creation algorithm and create the graph object from
  *          a configuration node.
- * 
+ *
  * \tparam Graph        The graph type
  * \tparam Config       The configuration node type
  * \tparam RNG          The random number generator type
- * 
+ *
  * \param cfg           The configuration
  * \param rng           The random number generator
- * 
+ *
  * \return Graph        The graph
  */
 template<typename Graph, typename RNG>
@@ -574,7 +574,7 @@ Graph create_graph(const Utopia::DataIO::Config& cfg, RNG& rng)
                     rng);
     }
     else {
-        throw std::invalid_argument("The given graph model '" + model + 
+        throw std::invalid_argument("The given graph model '" + model +
                                     "'does not exist! Valid options are: "
                                     "'regular', 'ErdosRenyi', "
                                     "'WattsStrogatz', 'BarabasiAlbert', "

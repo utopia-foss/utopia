@@ -43,7 +43,7 @@ using IndexType = std::size_t;
 using IndexContainer = std::vector<IndexType>;
 
 /// Type for index type vectors that are associated with a physical space
-/** \detail Uses a fixed-size Armadillo column vector of IndexType
+/** \details Uses a fixed-size Armadillo column vector of IndexType
   *
   * \note   This vector is not to be interpreted as a "container"
   *
@@ -53,7 +53,7 @@ template<DimType dim>
 using MultiIndexType = arma::Col<IndexType>::fixed<dim>;
 
 /// Type for vector-like data that is associated with a physical space
-/** \detail Uses a fixed-size Armadillo column vector of doubles
+/** \details Uses a fixed-size Armadillo column vector of doubles
   *
   * \tparam dim  The dimensionality (or: rank) of the vector
   */
