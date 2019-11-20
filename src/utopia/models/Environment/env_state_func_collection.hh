@@ -12,7 +12,7 @@ using Config = DataIO::Config;
 // -- Helper functions --------------------------------------------------------
 
 /// Create a rule function that uses a random number distribution
-/** \detail This constructs a mutable ``EnvStateFunc`` lambda, moving the
+/** \details This constructs a mutable ``EnvStateFunc`` lambda, moving the
      *         ``dist`` into the capture.
      */
 template<typename EnvModel, class DistType,
@@ -54,7 +54,7 @@ EnvStateFunc
 //      a function object that does so at the desired point in time.
 
 /// Creates a rule function for noisy parameter values
-/** 
+/**
  * \param param_name  The parameter to attach this environment function to
  * \param cfg
  *   \parblock
@@ -95,7 +95,7 @@ std::pair<EnvStateFunc, Update> esf_noise(const EnvModel& model,
     else if (distribution == "poisson") {
         const auto mean = get_as<double>("mean", cfg);
         std::poisson_distribution<> dist(mean);
-        
+
         auto esf = build_rng_env_state_func(model, std::move(dist), param_name,
                                             mode);
         return {esf, Update::sync};
@@ -103,7 +103,7 @@ std::pair<EnvStateFunc, Update> esf_noise(const EnvModel& model,
     else if (distribution == "exponential") {
         const auto lambda = get_as<double>("lambda", cfg);
         std::exponential_distribution<> dist(lambda);
-        
+
         auto esf = build_rng_env_state_func(model, std::move(dist), param_name,
                                             mode);
         return {esf, Update::sync};
@@ -111,7 +111,7 @@ std::pair<EnvStateFunc, Update> esf_noise(const EnvModel& model,
     else if (distribution == "uniform_int") {
         auto interval = get_as<std::array<int, 2>>("interval", cfg);
         std::uniform_int_distribution<> dist(interval[0], interval[1]);
-        
+
         auto esf = build_rng_env_state_func(model, std::move(dist), param_name,
                                             mode);
         return {esf, Update::sync};
@@ -132,7 +132,7 @@ std::pair<EnvStateFunc, Update> esf_noise(const EnvModel& model,
 };
 
 /// Creates a rule function for spatially linearly parameter values
-/** 
+/**
  * \param param_name  The parameter to attach this environment function to
  * \param cfg
  *   \parblock
@@ -145,10 +145,10 @@ std::pair<EnvStateFunc, Update> esf_noise(const EnvModel& model,
  *       uses linear interpolation in between.
  *   \endparblock
  * \param extent      The extent of space
- */ 
+ */
 template<typename EnvModel, typename Extent,
          class EnvStateFunc = typename EnvModel::EnvStateFunc>
-std::pair<EnvStateFunc, Update> esf_slope(const EnvModel&, 
+std::pair<EnvStateFunc, Update> esf_slope(const EnvModel&,
                              const std::string& param_name,
                              const Config& cfg,
                              const Extent& extent)
@@ -176,12 +176,12 @@ std::pair<EnvStateFunc, Update> esf_slope(const EnvModel&,
         env_state.set_env(param_name, current_value + value);
         return env_state;
     };
-    
+
     return {esf, Update::sync};
 };
 
 /// Creates a rule function for spatial steps in the parameter values
-/**  
+/**
  * \param param_name  The parameter to attach this environment function to
  * \param cfg
  *   \parblock
@@ -195,10 +195,10 @@ std::pair<EnvStateFunc, Update> esf_slope(const EnvModel&,
  *     - ``latitudes``: Sequence of latitudes of separation, from north to
  *       south
  *   \endparblock
- */ 
+ */
 template<typename EnvModel,
          class EnvStateFunc = typename EnvModel::EnvStateFunc>
-std::pair<EnvStateFunc, Update> esf_steps(const EnvModel&, 
+std::pair<EnvStateFunc, Update> esf_steps(const EnvModel&,
                              const std::string& param_name,
                              const Config& cfg)
 {
@@ -208,17 +208,17 @@ std::pair<EnvStateFunc, Update> esf_steps(const EnvModel&,
         get_as<std::vector<double>>("latitudes", cfg, {0.5});
     const auto values_north_south =
         get_as<std::vector<double>>("values_north_south", cfg);
-    
+
     if (latitudes.size() != values_north_south.size() - 1) {
         throw std::invalid_argument("The list of 'latitudes' and"
-            " 'values_north_south' don't match in size. Sizes were " 
+            " 'values_north_south' don't match in size. Sizes were "
             + std::to_string(latitudes.size()) + " and "
-            + std::to_string(values_north_south.size()) + 
+            + std::to_string(values_north_south.size()) +
             ". Values_north_south must have one element more that"
             " latitudes.");
     }
 
-    EnvStateFunc esf = 
+    EnvStateFunc esf =
         [param_name, mode, latitudes, values_north_south]
         (const auto& env_cell) mutable
     {
@@ -243,7 +243,7 @@ std::pair<EnvStateFunc, Update> esf_steps(const EnvModel&,
 };
 
 /// Creates a rule function for spatially uniform parameter values
-/** 
+/**
  * \param param_name  The parameter to attach this environment function to
  * \param cfg
  *   \parblock
@@ -257,7 +257,7 @@ std::pair<EnvStateFunc, Update> esf_steps(const EnvModel&,
  */
 template<typename EnvModel,
          class EnvStateFunc = typename EnvModel::EnvStateFunc>
-std::pair<EnvStateFunc, Update> esf_uniform(const EnvModel&, 
+std::pair<EnvStateFunc, Update> esf_uniform(const EnvModel&,
                                             const std::string& param_name,
                                             const Config& cfg)
 {

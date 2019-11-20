@@ -59,7 +59,7 @@ public:
 
 
     /// Iterate by one time step
-    /** @detail This writes random numbers into the state vector, incrementing
+    /** @details This writes random numbers into the state vector, incrementing
      *          the already existing ones. Thus, with numbers between 0 and 1,
      *          the mean value of the state increases by 0.5 for each
      *          performed step.
@@ -76,7 +76,7 @@ public:
 
 
     /// Monitor model information
-    /** @detail Supply a function that calculates the state mean, if the
+    /** @details Supply a function that calculates the state mean, if the
      *          monitor will perform an emission.
      */
     void monitor ()

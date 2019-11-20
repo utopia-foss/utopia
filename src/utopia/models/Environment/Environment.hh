@@ -39,7 +39,7 @@ using namespace StateFunctionCollection;
 // ++ Type definitions ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 /// Base type for environment parameter
-/** \detail This class is meant to be derived from and used as a basis for the
+/** \details This class is meant to be derived from and used as a basis for the
   *         desired kind of environment.
   */
 struct BaseEnvParam {
@@ -53,7 +53,7 @@ struct BaseEnvParam {
 };
 
 /// Dummy type for environment parameter
-/** \detail This class is meant to be derived from and used as a basis for the
+/** \details This class is meant to be derived from and used as a basis for the
   *         desired kind of environment.
   */
 struct DummyEnvParam : BaseEnvParam
@@ -76,7 +76,7 @@ struct DummyEnvParam : BaseEnvParam
 };
 
 /// Base type for environment cell states
-/** \detail This class is meant to be derived from and used as a basis for the
+/** \details This class is meant to be derived from and used as a basis for the
   *         desired kind of environment.
   */
 struct BaseEnvCellState {
@@ -95,7 +95,7 @@ struct BaseEnvCellState {
 };
 
 /// Dummy type for environment cell states
-/** \detail This class is meant to be derived from and used as a basis for the
+/** \details This class is meant to be derived from and used as a basis for the
   *         desired kind of environment.
   */
 struct DummyEnvCellState : BaseEnvCellState
@@ -127,12 +127,12 @@ using ModelTypes = Utopia::ModelTypes<>;
 /// The Environment model provides a non-uniform, dynamic parameter background
 /** This happens by coupling to another model's CellManager. Additionally,
  *  global parameters can also be changed.
- * 
+ *
  * \tparam EnvParam       The parameter type of the environment
  * \tparam EnvCellState   The cell state type of the environment cells
  * \tparam standalone     Whether to have the model as a standalone model
  */
-template<typename EnvParam=DummyEnvParam, 
+template<typename EnvParam=DummyEnvParam,
          typename EnvCellState=DummyEnvCellState,
          bool standalone=false>
 class Environment:
@@ -144,10 +144,10 @@ public:
 
     /// The type of the Model base class of this derived class
     using Base = Model<Self, ModelTypes>;
-    
+
     /// Data type of the group to write model data to, holding datasets
     using DataGroup = typename Base::DataGroup;
-    
+
     /// Data type for a dataset
     using DataSet = typename Base::DataSet;
 
@@ -187,7 +187,7 @@ private:
             return {};
         }
     };
-    
+
     // -- Members -------------------------------------------------------------
     // Base members: _time, _name, _cfg, _hdfgrp, _rng, _monitor, _space
 
@@ -257,12 +257,12 @@ public:
             for (std::size_t i=0; i < _cm.cells().size(); i++) {
                 associate_cm.cells()[i]->custom_links().env = _cm.cells()[i];
             }
-                
+
             this->_log->info("Associated '{}' cells with those of the parent "
                              "model '{}'.", this->_name, parent.get_name());
         }
         else if constexpr (not standalone) {
-            // Only allow coupled models without coupled cellmanagers when 
+            // Only allow coupled models without coupled cellmanagers when
             // a EnvCellState is the dummy type
             static_assert(std::is_same<EnvCellState, DummyEnvCellState>(),
                           "The cm for association of environment cells cannot "
@@ -337,7 +337,7 @@ public:
 
     /// Construct Environment without associated CellManager
     /** \note This constructor can be used to set up a Environment as a
-      *       standalone model or with only the EnvParam. 
+      *       standalone model or with only the EnvParam.
       *       In the case of standalone the ``standalone`` template parameter
       *       needs to be set to ``true``.
       *       In the the other case the EnvCellState needs to be the default
@@ -375,7 +375,7 @@ public:
     /// Write data
     /** For all parameters and states  registered for writing, writes the
      *  values to the corresponding dataset.
-     * 
+     *
      *  \note To register keys, use ::track_parameter and ::track_state method,
      *        respectively
      */
@@ -398,7 +398,7 @@ public:
         }
     }
 
-    
+
     // Getters and setters ....................................................
     /// Return the current value of the parameter with param_name
     double get_parameter(const std::string& param_name) const {
@@ -420,10 +420,10 @@ public:
         _env_param_funcs.push_back(epfb);
         this->_log->debug("Added environment param function '{}'.", epfb.name);
     }
-    
+
     /// Add a param function at the end of the sequence of env functions
     /** \param epf      EnvParamFunc that is applied to all cm.cells()
-     *  \param times_tuple  invoke_at_initialization, invoke_always, 
+     *  \param times_tuple  invoke_at_initialization, invoke_always,
      *                      set of times when to invoke the function
      */
     void add_env_param_func(const std::string& name, const EnvParamFunc& epf,
@@ -434,7 +434,7 @@ public:
             EnvParamFuncBundle(name, epf, param_name, times_tuple)
         );
     }
-    
+
     /// Add a param function at the end of the sequence of env functions
     /** \param epf      EnvParamFunc that is applied to all cm.cells()
      *  \param cfg      From which invoke_at_initialization and times to invoke
@@ -463,18 +463,18 @@ public:
         this->_log->debug("Added {}environment function '{}'.",
                           add_to_initial ? "initial " : "", esfb.name);
     }
-    
+
     /// Add a rule function at the end of the sequence of environment functions
     /** \param esf      EnvStateFunc that is applied to all cm.cells()
      *  \param update   The Update mode to use with apply_rule(esf, cm.cells)
      *  \param times_pair   invoke_always, Set of times at which to invoke
-     *                      function. 
+     *                      function.
      *  \param select_cfg   Config passed to _cm.select_cells
      */
     template<bool add_to_initial=false>
     void add_env_state_func(const std::string& name,
             const EnvStateFunc& esf, const Update& update = Update::sync,
-            std::pair<bool, std::set<Time>> times_pair = {true, {}}, 
+            std::pair<bool, std::set<Time>> times_pair = {true, {}},
             Config select_cfg = {})
     {
         // resolve select option
@@ -492,7 +492,7 @@ public:
                 throw std::invalid_argument("Key 'generate' in 'select' "
                         "feature of environment state function '"
                         + name + "' must be 'once' to fix selection or "
-                        "'always' to generate it on the fly, but was '" 
+                        "'always' to generate it on the fly, but was '"
                         + generate + "'!");
             }
 
@@ -511,12 +511,12 @@ public:
                                {fix_selection, cell_selection, select_cfg})
         );
     }
-    
+
     /// Add a rule function at the end of the sequence of environment functions
     /** \param esf      EnvStateFunc that is applied to all cm.cells()
      *  \param update   The Update mode to use with apply_rule(esf, cm.cells)
      *  \param cfg      The config of the state_func. Here, times and select are
-     *                  extracted; All other entries ignored. 
+     *                  extracted; All other entries ignored.
      *                  Defaults are invoke always and select all cells.
      */
     template<bool add_to_initial=false>
@@ -532,7 +532,7 @@ public:
             select_cfg = get_as<Config>("select", cfg, {});
         }
 
-        add_env_state_func<add_to_initial>(name, esf, update, times_pair, 
+        add_env_state_func<add_to_initial>(name, esf, update, times_pair,
                                            select_cfg);
     }
 
@@ -546,11 +546,11 @@ public:
     }
 
     /// Track multiple parameters
-    /** \detail Invokes ::track_state for each entry
+    /** \details Invokes ::track_state for each entry
       */
     void track_parameters(const std::vector<std::string>& keys) {
         for (const auto& key : keys) {
-            track_parameter(key); 
+            track_parameter(key);
         }
     }
 
@@ -564,11 +564,11 @@ public:
     }
 
     /// Track multiple states
-    /** \detail Invokes ::track_state for each entry
+    /** \details Invokes ::track_state for each entry
       */
     void track_states(const std::vector<std::string>& keys) {
         for (const auto& key : keys) {
-            track_state(key); 
+            track_state(key);
         }
     }
 
@@ -638,7 +638,7 @@ private:
                             epf_name+"."+param_name, epf, param_name, epf_cfg
                         );
                     }
-                    // .. can add more rule functions here (alphabetic order). 
+                    // .. can add more rule functions here (alphabetic order).
                     //    Add also in invalid_argument message below ..
                     else if (epf_name != "void") {
                         throw std::invalid_argument("No environment parameter "
@@ -689,7 +689,7 @@ private:
                     // Get the parameter name and configuration
                     const auto param_name = kv_pair.first.as<std::string>();
                     const auto& esf_cfg = kv_pair.second;
-                    
+
                     // Distinguish by name of rule function
                     if (esf_name == "noise") {
                         auto esf_update_pair = esf_noise(*this, param_name,
@@ -819,8 +819,8 @@ private:
             cell_selection = _cm.cells();
         }
 
-        this->_log->debug("Applying to {} cells ...", 
-                          (cell_selection.size() == _cm.cells().size() ? 
+        this->_log->debug("Applying to {} cells ...",
+                          (cell_selection.size() == _cm.cells().size() ?
                            "all" : std::to_string(cell_selection.size())));
 
         // Need to distinguish by update mode

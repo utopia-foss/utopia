@@ -36,7 +36,7 @@ struct CellState {
 
 
 /// Specialize the CellTraits type helper for the SimpleEG model
-/** \detail Specifies the type of each cells' state as first template argument
+/** \details Specifies the type of each cells' state as first template argument
   *         and the update mode as second. The SimpleEG model relies on sync
   *         update for all its cells.
   *         The third template parameter here specifies that the default
@@ -48,7 +48,7 @@ using CellTraits = Utopia::CellTraits<CellState, Update::sync, true>;
 
 
 
-/// Typehelper to define data types of SimpleEG model 
+/// Typehelper to define data types of SimpleEG model
 using ModelTypes = Utopia::ModelTypes<>;
 
 
@@ -56,14 +56,14 @@ using ModelTypes = Utopia::ModelTypes<>;
 // ++ Model definition ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 /// Simple model of evolutionary games on grids
-/** In this model, cells have an internal strategy, which determines their 
+/** In this model, cells have an internal strategy, which determines their
  * success in the interactions with their neighboring cells. The success is
  * given by an interaction matrix. In one interaction step, every cell
- * interacts with all its neighboring cells (interaction lambda function). 
- * Afterwards, all cells are updated synchronously (update lambda function). 
- * From a cells perspective, the mechanism is as follows: 
- * Look around in you neighborhood for the cell, which had the highest payoff 
- * from the interactions. Change your state to this `fittest` neighboring 
+ * interacts with all its neighboring cells (interaction lambda function).
+ * Afterwards, all cells are updated synchronously (update lambda function).
+ * From a cells perspective, the mechanism is as follows:
+ * Look around in you neighborhood for the cell, which had the highest payoff
+ * from the interactions. Change your state to this `fittest` neighboring
  * cell's state. If multiple cells within a neighborhood have the same payoff
  * choose randomly between their strategies.
  */
@@ -76,7 +76,7 @@ public:
 
     /// Data type that holds the configuration
     using Config = typename Base::Config;
-    
+
     /// Data type for a dataset
     using DataSet = typename Base::DataSet;
 
@@ -84,7 +84,7 @@ public:
     using CellManager = Utopia::CellManager<CellTraits, SimpleEG>;
 
     /// Extract the type of the rule function from the CellManager
-    /** \detail This is a function that receives a reference to a cell and
+    /** \details This is a function that receives a reference to a cell and
       *         returns the new cell state. For more details, check out
       *         \ref Utopia::CellManager
       *
@@ -120,7 +120,7 @@ private:
     /// Uniform real distribution in [0., 1.) used for evaluating probabilities
     std::uniform_real_distribution<double> _prob_distr;
 
-    
+
     // .. Datasets ............................................................
     /// Stores cell strategies over time
     std::shared_ptr<DataSet> _dset_strategy;
@@ -154,7 +154,7 @@ public:
         // And open datasets for strategy and payoff
         _dset_strategy(this->create_cm_dset("strategy", _cm)),
         _dset_payoff(this->create_cm_dset("payoff", _cm))
-    {   
+    {
         // Initialize cells
         this->initialize_cells();
 
@@ -166,11 +166,11 @@ public:
 private:
     // Setup functions ........................................................
     /// Initialize the cells according to `initial_state` config parameter
-    /** \detail The cell initialization for most cases is done directly 
+    /** \details The cell initialization for most cases is done directly
      *          at cell construction. However, some initialization options
      *          depend on the position of the cell on the grid. Only these cases
      *          are dealt with in this initialization function.
-     */ 
+     */
     void initialize_cells() {
         static_assert(Base::Space::dim == 2, "Only 2D space is supported.");
 
@@ -198,10 +198,10 @@ private:
 
                 return state;
             };
-            
+
             // Apply the rule to all cells
             apply_rule(set_random_strategy, _cm.cells());
-        } 
+        }
 
         else if (initial_state == "fraction") {
             // Get the value for the fraction of cells to have strategy 1
@@ -270,7 +270,7 @@ private:
             //       to single_strategy. Then use rule application to set
             //       default_strategy.
 
-            // Determine which strategy is the common default strategy 
+            // Determine which strategy is the common default strategy
             // and which one is the single strategy in the center of the grid
             Strategy default_strategy, single_strategy;
             if (initial_state == "single_s0") {
@@ -290,7 +290,7 @@ private:
                 // Get the multi index to find out if this cell is central
                 const auto midx = _cm.midx_of(cell);
 
-                if (    midx[0] == grid_shape[0] / 2 
+                if (    midx[0] == grid_shape[0] / 2
                     and midx[1] == grid_shape[1] / 2) {
                     // The cell _is_ in the center of the grid
                     state.strategy = single_strategy;
@@ -299,7 +299,7 @@ private:
                     // The cell _is not_ in the center of the grid
                     state.strategy = default_strategy;
                 }
-                
+
                 return state;
             };
 
@@ -330,18 +330,18 @@ private:
      *        S0    S1
      *   S0 [b-c    -c]
      *   S1 [b       0]
-     * 
+     *
      * 3) Setting the benefit parameter `b` following the paper of Nowak&May1992
      *        S0    S1
      *   S0 [1       0]
      *   S1 [b(>1)   0]
-     * 
-     * 
+     *
+     *
      * If 1) is set, 2) and 3) will be ignored. The function returns the
      * explicitly given ia_matrix.
      * If 1) is not set, then the interaction matrix of 2) will be returned.
      * If 1) and 2) are not set, the interaction matrix of 3) will be returned.
-     * 
+     *
      * @return IAMatrixType The interaction matrix
      */
     IAMatrixType extract_ia_matrix() const {
@@ -397,7 +397,7 @@ private:
     // Rule functions that can be applied to the CellManager's cells
 
     /// The interaction between players
-    /** \detail This rule calculates the payoff for a given cell, depending on
+    /** \details This rule calculates the payoff for a given cell, depending on
       *         the interaction matrix and the payoffs of the neighbors.
       */
     RuleFunc _interaction = [this](const auto& cell){
@@ -454,7 +454,7 @@ private:
         double highest_payoff = state.payoff;
         _fittest_cells_in_nbhood.clear();
         _fittest_cells_in_nbhood.push_back(cell);
-        
+
         // Iterate over neighbors of this cell:
         for (const auto& nb : this->_cm.neighbors_of(cell)){
             if (nb->state().payoff > highest_payoff) {
@@ -497,7 +497,7 @@ public:
     // .. Simulation Control ..................................................
 
     /** @brief Iterate a single step
-     *  @detail In the config, the following interaction matrix is stored:
+     *  @details In the config, the following interaction matrix is stored:
      *                S0                 S1
      *      S0 ( _ia_matrix[0][0]  _ia_matrix[0][1]  )
      *      S1 ( _ia_matrix[1][0]  _ia_matrix[1][1]  )
@@ -538,7 +538,7 @@ public:
 
     // .. Getters and setters .................................................
     // Add getters and setters here to interface with other models
- 
+
 };
 
 

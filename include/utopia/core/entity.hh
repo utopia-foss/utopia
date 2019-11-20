@@ -16,7 +16,7 @@ namespace Utopia {
 /// Default struct for EntityTraits; use this one if there are no custom links
 /** \tparam EntityContainerType The type of the entity container. Note that the
   *                             entity container type need not be known to pass
-  *                             this struct to the EntityTraits. The entity 
+  *                             this struct to the EntityTraits. The entity
   *                             takes care of setting the EntityContainerType.
   */
 template<typename EntityContainerType>
@@ -66,12 +66,12 @@ struct EntityTraits {
 
 
 /// An entity is a slightly specialized state container
-/** \detail  It can be extended with the use of tags and can be associated with
+/** \details  It can be extended with the use of tags and can be associated with
   *          so-called "custom links". These specializations are carried into
   *          the entity by means of the EntityTraits struct.
-  *          An entity is embedded into the EntityManager, where the 
+  *          An entity is embedded into the EntityManager, where the
   *          discretization allows assigning a position in space to the
-  *          entity. 
+  *          entity.
   *          The entity itself does not know anything about that ...
   *
   * \tparam  _Traits Valid \ref EntityTraits, specializing this entity.
@@ -139,7 +139,7 @@ public:
     CustomLinkContainers& custom_links() {
         return _custom_links;
     }
-    
+
     /// Return const reference to custom link containers
     const CustomLinkContainers& custom_links() const {
         return _custom_links;

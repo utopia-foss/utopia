@@ -61,7 +61,7 @@ struct State {
 };
 
 /// Cell traits specialization using the state type
-/** \detail The first template parameter specifies the type of the cell state,
+/** \details The first template parameter specifies the type of the cell state,
   *         the second sets them to be manually updated.
   *         The third argument sets the use of the default constructor.
   */
@@ -77,7 +77,7 @@ using SandPileTypes = ModelTypes<>;
 /// The SandPile Model
 /** The SandPile model simulates a sand pile under the influence of new grains
  *  of sand that get added every iteration. The sand reaches a critical
- *  state _critical_slope, after which it collapses, passing sand on to 
+ *  state _critical_slope, after which it collapses, passing sand on to
  *  the neighboring cells
  */
 
@@ -87,10 +87,10 @@ class SandPile:
 public:
     /// The base model's type
     using Base = Model<SandPile, SandPileTypes>;
-    
+
     /// The type of the cell manager
     using CellManager = Utopia::CellManager<CellTraits, SandPile>;
-    
+
     /// Cell type
     using Cell = typename CellManager::Cell;
 
@@ -99,7 +99,7 @@ public:
 
     /// Supply a type for rule functions that are applied to cells
     using RuleFunc = typename CellManager::RuleFunc;
-    
+
     /// Data type for a dataset
     using DataSet = typename Base::DataSet;
 
@@ -160,7 +160,7 @@ public:
 
         // Initialize the distribution such that a random cell can be selected
         _cell_distr(0, _cm.cells().size() - 1),
-        
+
         // create datasets
         _dset_slope(this->create_cm_dset("slope", _cm)),
         _dset_avalanche(this->create_cm_dset("avalanche", _cm)),
@@ -194,7 +194,7 @@ private:
     // .. Helper functions ....................................................
 
     /// Calculate the avalanche size
-    /** \detail Count all cells that are marked as in_avalanche
+    /** \details Count all cells that are marked as in_avalanche
      */
     unsigned int avalanche_size() const {
         return
@@ -228,13 +228,13 @@ private:
         // information to do its thing
         return cell;
     };
-    
+
     /// Topple cells if the critical slope is exceeded
-    /** \detail Starting from the first_cell, every time a cell topples the
+    /** \details Starting from the first_cell, every time a cell topples the
      *          neighbors are also checked whether they need to topple. This is
      *          implemented by adding them into a queue and toppling until the
      *          queue is empty.
-     * 
+     *
      * \param first_cell The first cell from which the topple avalanche starts
      */
     void topple(const std::shared_ptr<Cell>& first_cell) {
@@ -245,19 +245,19 @@ private:
         queue.push(first_cell);
 
         while (not queue.empty()) {
-            // Get the first element from the queue, extract its state and 
+            // Get the first element from the queue, extract its state and
             // remove it from the queue.
             const auto& cell = queue.front();
             auto& state = cell->state;
             queue.pop();
-            
+
             // A cell will topple only if its slope is greater than the
             // critical slope.
             if (state.slope > _critical_slope) {
                 state.slope -= _topple_num_grains;
                 state.in_avalanche = true;
 
-                // Add grains (=slopes) to the neighbors 
+                // Add grains (=slopes) to the neighbors
                 // and add only neighbors with supercritical slope to the queue
                 for (const auto& nb : _cm.neighbors_of(cell)){
                     auto& nb_slope = nb->state.slope;
@@ -274,7 +274,7 @@ private:
     // Define functions that can be applied to the cells of the grid
 
     /// Resets cells for the next iteration
-    /** \detail Marks cell as untouched by the avalanche and updates the slope
+    /** \details Marks cell as untouched by the avalanche and updates the slope
       *         to the cached future slope
       */
     RuleFunc _reset = [](const auto& cell){
@@ -298,7 +298,7 @@ public:
 
 
     /// Supply monitor information to the frontend
-    /** \detail Provides 'avalanche_size' at the current time step
+    /** \details Provides 'avalanche_size' at the current time step
       */
     void monitor () {
         // Supply the last avalanche size to the monitor
@@ -330,7 +330,7 @@ public:
 
         // Calculate and write the avalanche size
         _dset_avalanche_size->write(avalanche_size());
-    }   
+    }
 };
 
 } // namespace SandPile

@@ -75,10 +75,10 @@ struct State {
 
 
 /// Cell traits specialization using the state type
-/** \detail The first template parameter specifies the type of the cell state,
+/** \details The first template parameter specifies the type of the cell state,
   *         the second sets them to not be synchronously updated.
   *         See \ref Utopia::CellTraits
-  * 
+  *
   * \note   This model relies on asynchronous update for calculation of the
   *         clusters and the percolation.
   */
@@ -139,7 +139,7 @@ class ForestFire:
 public:
     /// The base model type
     using Base = Model<ForestFire, ModelTypes>;
-    
+
     /// Data type for a dataset
     using DataSet = typename Base::DataSet;
 
@@ -179,7 +179,7 @@ private:
 
     /// The dataset that stores the kind for each cell, e.g. Kind::tree
     const std::shared_ptr<DataSet> _dset_kind;
-    
+
     /// 2D dataset (tree age and time) of cells
     const std::shared_ptr<DataSet> _dset_age;
 
@@ -245,7 +245,7 @@ public:
                              "'{}'.", to_turn_to_stone.size(),
                              get_as<std::string>("mode", _cfg["stones"]));
         }
-        
+
         // Ignite some cells permanently: fire sources
         if (    _cfg["ignite_permanently"]
             and get_as<bool>("enabled", _cfg["ignite_permanently"]))
@@ -278,7 +278,7 @@ private:
     /// Calculate and return the density of tree cells
     double calculate_tree_density() const {
         // NOTE If execution policies are implemented, this could be easily
-        //      made parallel by replacing std::accumulate with std::reduce 
+        //      made parallel by replacing std::accumulate with std::reduce
         //      and adding std::execution::par from the header
         //      <execution> as first argument.
         return
@@ -294,7 +294,7 @@ private:
     /// Identifies clusters in the cells and labels them with corresponding IDs
     /** This function updates the cluster ID of each cell. This only applies to
      *  cells that are trees; all others keep ID 0.
-     * 
+     *
      *  \return Number of clusters identified
      */
     unsigned int identify_clusters() {
@@ -340,8 +340,8 @@ private:
                 state.kind = Kind::tree;
             }
         }
-        
-        // Trees can be hit by lightning or continue living 
+
+        // Trees can be hit by lightning or continue living
         else if (state.kind == Kind::tree) {
             // Can be hit by lightning
             if (this->_prob_distr(*this->_rng) < _param.p_lightning) {
@@ -381,7 +381,7 @@ private:
             cell->state.kind = Kind::empty;
         }
         // The only other possibility would be a fire source: remains alight!
-        
+
         // Use existing cluster member container, clear it, add current cell
         auto& cluster = _cluster_members;
         cluster.clear();
@@ -476,9 +476,9 @@ public:
 
     /// Provide monitoring data: tree density and number of clusters
     /** \details The monitored data relies on tracking data variables
-     *           that need not correspond exactly to the actual value at this 
+     *           that need not correspond exactly to the actual value at this
      *           time. They are calculated before the writing them out.
-     */ 
+     */
     void monitor () {
         this->_monitor.set_entry("tree_density", calculate_tree_density());
     }
@@ -486,7 +486,7 @@ public:
     /// Write data
     void write_data () {
         // Calculate and write the tree density
-        _dset_tree_density->write(calculate_tree_density()); 
+        _dset_tree_density->write(calculate_tree_density());
 
         if (_write_only_tree_density) {
             // Done here.
