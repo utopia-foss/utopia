@@ -562,38 +562,50 @@ Graph create_graph(const Utopia::DataIO::Config& cfg, RNG& rng)
     }
     else if (model == "ErdosRenyi")
     {
+        // Get the model-specific configuration options
+        const auto& cfg_ER = get_as<DataIO::Config>("ErdosRenyi", cfg);
+
         return create_ErdosRenyi_graph<Graph>(
                     get_as<std::size_t>("num_vertices", cfg),
                     get_as<std::size_t>("mean_degree", cfg),
-                    get_as<bool>("parallel", cfg),
-                    get_as<bool>("self_edges", cfg),
+                    get_as<bool>("parallel", cfg_ER),
+                    get_as<bool>("self_edges", cfg_ER),
                     rng);
     }
     else if (model == "WattsStrogatz")
     {
+        // Get the model-specific configuration options
+        const auto& cfg_WS = get_as<DataIO::Config>("WattsStrogatz", cfg);
+
         return create_WattsStrogatz_graph<Graph>(
                     get_as<std::size_t>("num_vertices", cfg),
                     get_as<std::size_t>("mean_degree", cfg),
-                    get_as<double>("p_rewire", cfg),
+                    get_as<double>("p_rewire", cfg_WS),
                     rng);
     }
     else if (model == "BarabasiAlbert")
     {
+        // Get the model-specific configuration options
+        const auto& cfg_BA = get_as<DataIO::Config>("BarabasiAlbert", cfg);
+
         return create_BarabasiAlbert_graph<Graph>(
                     get_as<std::size_t>("num_vertices", cfg),
                     get_as<std::size_t>("mean_degree", cfg),
-                    get_as<bool>("parallel", cfg),
+                    get_as<bool>("parallel", cfg_BA),
                     rng);
     }
     else if (model == "BollobasRiordan")
     {
+        // Get the model-specific configuration options
+        const auto& cfg_BR = get_as<DataIO::Config>("BollobasRiordan", cfg);
+
         return create_BollobasRiordan_graph<Graph>(
                     get_as<std::size_t>("num_vertices", cfg),
-                    get_as<double>("alpha", cfg),
-                    get_as<double>("beta", cfg),
-                    get_as<double>("gamma", cfg),
-                    get_as<double>("del_in", cfg),
-                    get_as<double>("del_out", cfg),
+                    get_as<double>("alpha", cfg_BR),
+                    get_as<double>("beta", cfg_BR),
+                    get_as<double>("gamma", cfg_BR),
+                    get_as<double>("del_in", cfg_BR),
+                    get_as<double>("del_out", cfg_BR),
                     rng);
     }
     else {

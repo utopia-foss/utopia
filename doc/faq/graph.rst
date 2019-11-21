@@ -118,22 +118,30 @@ YAML file looks like this:
       #                  not relevant in BollobasRiordan model)
       mean_degree: 4
 
-      ### model-specific parameters
-      ## ErdosRenyi and BarabasiAlbert
-      # Allow parallel edges
-      parallel: false
+      # Model-specific parameters
+      ErdosRenyi:
+        # Allow parallel edges
+        parallel: false
+    
+        # Allow self edges
+        self-edges: false
 
-      ## ErdosRenyi
-      # Allow self edges
-      self-edges: false
+      WattsStrogatz:
+        # Rewiring probability
+        p_rewire: 0.2
 
-      ## BollobasRiordan
-      # Graph generating parameters
-      alpha: 0.2
-      beta: 0.8
-      gamma: 0.
-      del_in: 0.
-      del_out: 0.5
+      BarabasiAlbert:
+        # Allow parallel edges
+        parallel: false
+
+      BollobasRiordan:
+        # Graph generating parameters
+        alpha: 0.2
+        beta: 0.8
+        gamma: 0.
+        del_in: 0.
+        del_out: 0.5
+
 
 
 This of course is a highly documented configuration. You only need to specify

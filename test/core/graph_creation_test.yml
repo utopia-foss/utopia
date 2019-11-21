@@ -10,54 +10,62 @@ ErdosRenyi:
   model: ErdosRenyi
   num_vertices: 10
   mean_degree: 2
-  parallel: false
-  self_edges: false
+  ErdosRenyi:
+    parallel: false
+    self_edges: false
 
 ErdosRenyiP:
   model: ErdosRenyi
   num_vertices: 10
   mean_degree: 2
-  parallel: true
-  self_edges: false
+  ErdosRenyi:
+    parallel: true
+    self_edges: false
 
 ErdosRenyiS:
   model: ErdosRenyi
   num_vertices: 10
   mean_degree: 2
-  parallel: false
-  self_edges: true
+  ErdosRenyi:
+    parallel: false
+    self_edges: true
 
 ErdosRenyiPS:
   model: ErdosRenyi
   num_vertices: 10
   mean_degree: 2
-  parallel: true
-  self_edges: true
+  ErdosRenyi:
+    parallel: true
+    self_edges: true
 
 WattsStrogatz:
   model: WattsStrogatz
   num_vertices: 10
   mean_degree: 2
-  p_rewire: 0.2
+  WattsStrogatz:
+    p_rewire: 0.2
 
 BarabasiAlbert:
   model: BarabasiAlbert
   num_vertices: 10
   mean_degree: 2
-  parallel: false
+  BarabasiAlbert:
+    parallel: false
 
 BarabasiAlbertP:
   model: BarabasiAlbert
   num_vertices: 10
   mean_degree: 2
-  parallel: true
+  BarabasiAlbert:
+    parallel: true
 
 BollobasRiordan:
   model: BollobasRiordan
   num_vertices: 10
-  alpha: 0.2
-  beta: 0.8
-  gamma: 0.
-  del_in: 0.
-  del_out: 0.5
+  BollobasRiordan:
+    alpha: 0.2
+    beta: 0.8
+    gamma: 0.
+    del_in: 0.
+    del_out: 0.5
   
