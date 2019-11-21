@@ -9,14 +9,14 @@ INSTALL_DEPS = [
     'matplotlib>=3.1',
     'coloredlogs>=10.0',
     'ruamel.yaml>=0.16.5',
+    'paramspace>=2.3',
     
     # Required for testing:
     'pytest>=3.4.0',
     'pytest-cov>=2.5.1',
 
     # From private repositories:
-    'paramspace>=2.2.3',
-    'dantro>=0.10.0'
+    'dantro>=0.10.1'
     # NOTE Versions need also be set in python/CMakeLists.txt
 ]
 

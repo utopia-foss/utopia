@@ -7,17 +7,8 @@ message(STATUS "Installing required Python packages ...")
 # Manually install dependencies for utopya, if they are not already satisfied
 # NOTE Take care that the versions used here match those in the README.md
 #      and those in the utopya setup.py file.
-# -- paramspace --
-python_find_package(PACKAGE paramspace VERSION 2.2.3)
-
-if(NOT PYTHON_PACKAGE_paramspace_FOUND)
-    # install from current _master_ branch
-    python_install_package_remote(URL ssh://git@ts-gitlab.iup.uni-heidelberg.de:10022/yunus/paramspace.git@release/v2.x
-        TRUSTED_HOST ts-gitlab.iup.uni-heidelberg.de)
-endif()
-
 # -- dantro --
-python_find_package(PACKAGE dantro VERSION 0.10)
+python_find_package(PACKAGE dantro VERSION 0.10.1)
 
 if(NOT PYTHON_PACKAGE_dantro_FOUND)
     # install from current _master_ branch
