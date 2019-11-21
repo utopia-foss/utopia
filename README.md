@@ -39,6 +39,10 @@ If you simply want to _run_ Utopia, you can do so via a [ready-to-use docker ima
 These instructions are intended for 'clean' __Ubuntu__ (18.04) or __macOS__
 setups.
 
+If you encounter difficulties, it's worth having a look at the [troubleshooting section](#troubleshooting).
+If this does not resolve your installation problems, [file an issue in the GitLab project](https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/issues).
+
+
 #### 1 — Get access to the repository
 To work comfortably with Utopia, access to the GitLab needs to be easy.
 The best way to achieve that is by registering a so-called SSH key with your
@@ -432,7 +436,7 @@ of it.
 
 
 #### Python
-Utopia's frontend, `utopya`, uses some custom packages that are not part of the Python Package Index yet.
+Utopia's frontend, `utopya`, uses some additional python packages.
 
 These packages and their dependencies are _automatically_ installed into a virtual environment when the `cmake ..` command is carried out during the [configuration step of the installation](#4-configure-and-build)).
 Check out the [troubleshooting section](#troubleshooting) if this fails.
@@ -440,8 +444,8 @@ Check out the [troubleshooting section](#troubleshooting) if this fails.
 | Software | Version | Purpose |
 | ---------| ------- | ------- |
 | [Sphinx](https://www.sphinx-doc.org/en/master/) | >=2.0 | Documentation generator |
-| [paramspace](https://ts-gitlab.iup.uni-heidelberg.de/yunus/paramspace) | >= 2.2 | Makes parameter sweeps easy |
-| [dantro](https://ts-gitlab.iup.uni-heidelberg.de/utopia/dantro) | >= 0.10 | A data loading and plotting framework |
+| [paramspace](https://ts-gitlab.iup.uni-heidelberg.de/yunus/paramspace) | >= 2.3 | Makes parameter sweeps easy |
+| [dantro](https://ts-gitlab.iup.uni-heidelberg.de/utopia/dantro) | >= 0.10.1 | A data loading and plotting framework (not on PyPI!) |
 
 
 #### Recommended
