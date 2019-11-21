@@ -9,7 +9,7 @@ namespace FuncBundle {
  */
 
 /// A bundle wrapping a (iterative) function with metadata
-/** \detail This gathers a function alongside some metadata into a custom
+/** \details This gathers a function alongside some metadata into a custom
  *          construct. The function is ment to be applied within an iterative
  *          model.
  */
@@ -34,7 +34,7 @@ struct FuncBundle {
 };
 
 /// A bundle wrapping a (iterative) function with metadata
-/** \detail This gathers a function alongside some metadata into a custom
+/** \details This gathers a function alongside some metadata into a custom
  *          construct. The function is ment to be applied within an iterative
  *          model.
  */
@@ -63,7 +63,7 @@ struct ParamFuncBundle : FuncBundle<Func, Time> {
 };
 
 /// A bundle wrapping a (rule-)function with metadata
-/** \detail This gathers a rule function alongside some metadata into a custom
+/** \details This gathers a rule function alongside some metadata into a custom
  *          construct. It can (optional) carry its own cellcontainer or a Config
  *          how to select cells from the cell manager.
  */
@@ -83,7 +83,7 @@ struct RuleFuncBundle : FuncBundle<RuleFunc, Time> {
     RuleFuncBundle(std::string name, RuleFunc func,
             Update update = Update::sync, bool invoke_at_initialization = true,
             bool invoke_always = true, std::set<Time> times = {},
-            bool fix_selection = false, 
+            bool fix_selection = false,
             const CellContainer& cell_selection = {},
             const DataIO::Config& select_cfg = {})
     :
@@ -103,7 +103,7 @@ struct RuleFuncBundle : FuncBundle<RuleFunc, Time> {
         RuleFuncBundle<RuleFunc, Time, CellContainer>(name, func, update,
                 invoke_at_initialization, times_pair.first, times_pair.second,
                 std::get<bool>(select_tuple),
-                std::get<CellContainer>(select_tuple), 
+                std::get<CellContainer>(select_tuple),
                 std::get<DataIO::Config>(select_tuple))
     {}
 };

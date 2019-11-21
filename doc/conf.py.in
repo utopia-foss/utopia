@@ -208,6 +208,14 @@ todo_include_todos = True
 mathjax_path = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"
 
 
+#### Autodoc configuration ---------------------------------------------------
+# Show both class docstring and __init__ docstring
+autoclass_content = "both"
+
+# Sort members in the same way they were sorted in source (devs had reasons)
+autodoc_member_order = "by_source"
+
+
 #### Breathe configuration ---------------------------------------------------
 
 breathe_projects = { "utopia": "@CMAKE_CURRENT_BINARY_DIR@/doxygen/xml/" }

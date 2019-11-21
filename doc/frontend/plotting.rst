@@ -78,6 +78,38 @@ For more information on the :py:class:`~utopya.plotting.PlotManager`, refer to `
     The top level of that file then denotes the *names* of the plots.
     In the example above that is ``my_plot`` and ``my_other_plot``.
 
+.. hint::
+
+    Plot configuration entries starting with an underscore are ignored by the plot manager:
+
+    .. code-block:: yaml
+
+        ---
+        _foobar:        # This entry is ignored
+          # ...
+
+        my_plot:        # -> creates my_plot
+          # ...
+
+        my_other_plot:  # -> creates my_other_plot
+          # ...
+
+    This can be useful when desiring to define YAML anchors that are used in the actual configuration entries.
+
+.. hint::
+
+    Plot configuration entries can also make use of parameter sweeps. Simply add the ``!pspace`` tag to the top-level entry:
+
+    .. code-block:: yaml
+
+        ---
+        my_plot: !pspace
+          some_param: !sweep
+            default: foo
+            values: [foo, bar, baz]
+
+    This will automatically create a separate file for each plot and include the value of the parameter into the file or folder name.
+
 
 .. _plot_cfg_inheritance:
 

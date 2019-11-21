@@ -11,7 +11,7 @@ For details, please refer to the :doc:`Copyright Information <COPYING>`.
 
 .. hint::
 
-    If you are **new to Utopia**, you should start with the :doc:`Tutorial <guides/tutorial>`. You can then work your way through the other guides. :)
+    **If you are new to Utopia**, you should start with the :doc:`Tutorial <guides/tutorial>`. You can then work your way through the other guides. :)
 
 .. note::
 
@@ -23,6 +23,7 @@ For details, please refer to the :doc:`Copyright Information <COPYING>`.
 
    The README <README>
    C++ Documentation <cpp_doc>
+   Utopia Feature List <features>
 
 .. toctree::
    :caption: Guides
@@ -39,12 +40,14 @@ For details, please refer to the :doc:`Copyright Information <COPYING>`.
    :glob:
    :maxdepth: 2
 
+   frontend/inc/utopya_base_cfg
    frontend/data
    frontend/plotting
    frontend/inc/base_plots_cfg
    utopya API Reference <api_utopya/utopya>
    frontend/interactive
    frontend/*
+   frontend/inc/api_paramspace
 
 .. toctree::
    :caption: Models

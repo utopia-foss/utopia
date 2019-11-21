@@ -44,14 +44,14 @@ public:
 
 
 /// An exception for when the program should end due to handling of a signal
-/** @detail This exception can only be initialized with a signal number. From
+/** @details This exception can only be initialized with a signal number. From
   *         that, a standardized what-argument is generated and the exit code
   *         is calculated according to Unix convention as 128 + abs(signum)
   */
 class GotSignal : public Exception {
 public:
     /// Construct a GotSignal exception, which has a standardized what message
-    /** @detail The constructor takes the number of the signal that triggered
+    /** @details The constructor takes the number of the signal that triggered
       *         this exception and computes an exit code from that according to
       *         Unix convention, i.e.: 128 + abs(signum)
       */
@@ -81,7 +81,7 @@ private:
                                   std::string prefix)
     {
         std::stringstream msg;
-        
+
         if (prefix.length()) {
             msg << prefix << std::endl;
         }
@@ -125,7 +125,7 @@ public:
             }
             emsg << "The given position " << std::endl << invalid_pos
                  << "is not within the non-periodic space with extent"
-                 << std::endl << space->extent; 
+                 << std::endl << space->extent;
             return emsg.str();
         }())
     {}

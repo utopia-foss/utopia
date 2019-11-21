@@ -2,9 +2,9 @@
 ``Environment`` — Model for non-uniform parameter background
 ============================================================
 
-The ``Environment`` model is designed to handle changing external parameters 
+The ``Environment`` model is designed to handle changing external parameters
 and the initialization and update of non-uniform parameter backgrounds to any
-spatial model. 
+spatial model.
 To that end, the model associates its own ``CellManager`` with the
 ``CellManager`` of the parent model, i.e. it uses the configuration from the
 parent's ``CellManager`` to build its own. A cell in the parent model is then
@@ -13,8 +13,8 @@ access to its state. If only the uniform parameter is used, this is optional.
 
 This model provides one library of so-called "environment parameter functions"
 that can be used to modify the uniform parameter values in time, and a second
-library of so-called "environment state functions" that can be used to set and 
-modify cell-wise (heterogeneous) parameters. It is also possible to add custom 
+library of so-called "environment state functions" that can be used to set and
+modify cell-wise (heterogeneous) parameters. It is also possible to add custom
 environment functions of both types.
 For the environment state functions it differentiates between functions which
 are invoked once at initialization and others which are invoked during
@@ -35,10 +35,10 @@ The following is a guide to give a finished CA-model access to a global
 parameter and a non-uniform parameter background, or, in other words: an
 environment.
 The model is considered to have a global parameter named
-``some_global_parameter`` and a heterogeneous parameter named 
-``some_heterogeneous_parameter`` which were up to now constant in time and 
+``some_global_parameter`` and a heterogeneous parameter named
+``some_heterogeneous_parameter`` which were up to now constant in time and
 spatially uniform, i.e. of the same value for all cells.
-Of course it is possible to use only either of the two types of parameters and 
+Of course it is possible to use only either of the two types of parameters and
 to have several global or heterogeneous parameter.
 
 First things first: include the header of the Environment model:
@@ -47,7 +47,7 @@ First things first: include the header of the Environment model:
 
     #include "../Environment/Environment.hh"
 
-Create your Environment's global parameter. Here, you add those parameters 
+Create your Environment's global parameter. Here, you add those parameters
 that you consider part of the environment.
 
 .. code-block:: cpp
@@ -65,7 +65,7 @@ that you consider part of the environment.
         // .. Add more parameters of type double here ..
 
         EnvParam(const Utopia::DataIO::Config& cfg)
-        : 
+        :
             some_global_parameter(
                 Utopia::get_as<double>("some_global_parameter",cfg, 0.))
             // .. initialize additional parameters here ..
@@ -118,7 +118,7 @@ parameters that you consider part of the environment.
         // Can add more parameters here ...
 
         /// Construct the cell state
-        /** \detail Uses the cell_manager.cell_params entry of your model
+        /** \details Uses the cell_manager.cell_params entry of your model
          */
         EnvCellState(const DataIO::Config& cfg)
         :
@@ -228,7 +228,7 @@ set correctly.
 
         // Initialize the CellManager
         _cm(*this),
-        
+
         // Initialize the Environment, providing it with that cell manager
         _envm("Environment", *this, _cm),
         // NOTE you can forgo without associated cm if you use the
@@ -254,7 +254,7 @@ set correctly.
             // Write the initial data of the env model
             if (_envm.get_write_start() == 0) {
                 _envm.write_data();
-                // NOTE Need this because env model is never run, but only 
+                // NOTE Need this because env model is never run, but only
                 //      iterated
             }
         }
@@ -289,7 +289,7 @@ You can access the parameter the following way
         // The environment cell's state
         auto env_state = cell->custom_links().env->state;
 
-        // use the synchronized some_global_parameter 
+        // use the synchronized some_global_parameter
 
 With this, your model is ready to use and just needs to be configured.
 
@@ -350,7 +350,7 @@ model, e.g. initialize a spatial gradient within ``some_heterogeneous_parameter`
           - slope:
               some_heterogeneous_parameter:
                 mode: add
-                values_north_south: [1., 0.] 
+                values_north_south: [1., 0.]
                 # interpolate linearly between these two values
 
         # provide some state functions for updates
@@ -375,7 +375,7 @@ model, e.g. initialize a spatial gradient within ``some_heterogeneous_parameter`
 .. note::
 
     Make sure that when using recursive update of the configuration files to
-    overwrite entries that you no longer wish to use. 
+    overwrite entries that you no longer wish to use.
     So, if you define default ``env_state_funcs`` in your default model config,
     but don't want to update the intial environmental state from a run config
     write:
@@ -402,7 +402,7 @@ model, e.g. initialize a spatial gradient within ``some_heterogeneous_parameter`
     The cell manager is currently set up according to the config of the parent's
     cell manager. Unfortunately this does not include information about the
     space, hence make sure, that you copy the space config also to the
-    Environment's config, e.g. using yaml anchors. Otherwise the association of 
+    Environment's config, e.g. using yaml anchors. Otherwise the association of
     the two cell manager will fail!
 
 .. note::
@@ -411,7 +411,7 @@ model, e.g. initialize a spatial gradient within ``some_heterogeneous_parameter`
     If you only use the EnvParam just use the model without associated cell manager (see changes to constructor of your model).
     If you want to use the EnvCellState pass the template argument ``associate=false``; the model can now be initialized without associated cm.
     However, in these cases you must configure the cell_manager within the Environment node of your config
-    
+
     .. code-block:: yaml
 
         Environment:
@@ -419,11 +419,11 @@ model, e.g. initialize a spatial gradient within ``some_heterogeneous_parameter`
             grid:
               structure: square
               resolution: 1
-            neighborhood: 
+            neighborhood:
               mode: empty
             cell_params: ~
 
-          
+
           # Continue as described above
 
 Collection of parameter and state functions

@@ -15,20 +15,20 @@ namespace Utopia {
  */
 
 /// AgentTraits are just another name for Utopia::EntityTraits
-template<typename StateType, 
+template<typename StateType,
          Update update_mode,
          bool use_def_state_constr=false,
          typename AgentTags=EmptyTag,
          template<class> class CustomLinkContainers=NoCustomLinks>
-using AgentTraits = EntityTraits<StateType, 
+using AgentTraits = EntityTraits<StateType,
                                  update_mode,
                                  use_def_state_constr,
-                                 AgentTags, 
+                                 AgentTags,
                                  CustomLinkContainers>;
 
 
 /// An agent is a slightly specialized state container
-/** \detail  It can be extended with the use of tags and can be associated with
+/** \details  It can be extended with the use of tags and can be associated with
   *          so-called "custom links". These specializations are carried into
   *          the agent by means of the AgentTraits struct.
   *          An agent is embedded into the Utopia::AgentManager, which has
@@ -54,7 +54,7 @@ class Agent<Traits,
             std::enable_if_t<Traits::mode != Update::sync>>
 :
     public Entity<Traits>
-{   
+{
 public:
     /// The type of the state
     using State = typename Traits::State;
@@ -64,10 +64,10 @@ public:
 
     /// Make the agent manager a friend of this class
     template<class T, class M>
-    friend class AgentManager;   
+    friend class AgentManager;
 
 private:
-    /// The position of the agent 
+    /// The position of the agent
     Position _pos;
 
 public:
@@ -77,22 +77,22 @@ public:
      *  \param initial_pos   The initial position
      */
     Agent (const IndexType id,
-           const State initial_state, 
+           const State initial_state,
            const Position& initial_pos)
     :
         Entity<Traits>(id, initial_state),
-        _pos(initial_pos)    
+        _pos(initial_pos)
     {}
 
     /// Return a copy of the current position of the agent
-    Position position() const { 
+    Position position() const {
         return _pos;
     };
 
 
 protected:
     /// Set the position of the agent
-    /** \detail This function allows befriended classes to set the position of
+    /** \details This function allows befriended classes to set the position of
      *          this agent.
      *
      *  \note   No check is carried out whether the new position is valid; this
@@ -115,20 +115,20 @@ class Agent<Traits,
             std::enable_if_t<Traits::mode == Update::sync>>
 :
     public Entity<Traits>
-{   
+{
 public:
     /// The type of the state
     using State = typename Traits::State;
 
     /// The type of the position vector
     using Position = typename Space::SpaceVec;
-    
+
     /// Make the agent manager a friend
     template<class T, class M>
-    friend class AgentManager;   
+    friend class AgentManager;
 
 private:
-    /// The current position of the agent 
+    /// The current position of the agent
     Position _pos;
 
     /// The position buffer for the synchronous position update
@@ -141,7 +141,7 @@ public:
      *  \param initial_pos   The initial position
      */
     Agent(const IndexType id,
-          const State& initial_state, 
+          const State& initial_state,
           const Position& initial_pos)
     :
         Entity<Traits>(id, initial_state),
@@ -150,19 +150,19 @@ public:
     {}
 
     /// Return the current position of the agent
-    Position position() const { 
+    Position position() const {
         return _pos;
     }
-    
+
     /// Return the position buffer of the agent
     Position position_new() const {
         return _pos_new;
     }
 
-    /// Update the position and the state 
-    /** \detail Writes the buffer of state and position to the current state
+    /// Update the position and the state
+    /** \details Writes the buffer of state and position to the current state
      *          and position. This is necessary for the synchronous update mode
-     *          only. 
+     *          only.
      */
     void update () {
         // Update the state as defined in the Entity class
@@ -174,7 +174,7 @@ public:
 
 protected:
     /// Set the position buffer of the (synchronously updated) agent
-    /** \detail This function allows befriended classes to set the position of
+    /** \details This function allows befriended classes to set the position of
      *          this agent.
      *
      *  \note   No check is carried out whether the new position is valid; this

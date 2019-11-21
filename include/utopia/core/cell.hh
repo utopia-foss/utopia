@@ -15,19 +15,19 @@ namespace Utopia {
  */
 
 /// CellTraits are just another name for Utopia::EntityTraits
-template<typename StateType, 
+template<typename StateType,
          Update update_mode,
          bool use_def_state_constr=false,
          typename CellTags=EmptyTag,
          template<class> class CustomLinkContainers=NoCustomLinks>
-using CellTraits = EntityTraits<StateType, 
+using CellTraits = EntityTraits<StateType,
                                 update_mode,
                                 use_def_state_constr,
-                                CellTags, 
+                                CellTags,
                                 CustomLinkContainers>;
 
 /// A cell is a slightly specialized state container
-/** \detail  It can be extended with the use of tags and can be associated with
+/** \details  It can be extended with the use of tags and can be associated with
   *          so-called "custom links". These specializations are carried into
   *          the cell by means of the CellTraits struct.
   *          A cell is embedded into the CellManager, where the discretization

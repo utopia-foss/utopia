@@ -113,6 +113,8 @@ worker_manager:
 
     # How long to wait for workers to shut down before calling SIGKILL on them
     grace_period: 5.
+    # WARNING Choosing a grace period that is shorter than the duration of one
+    #         iteration step of your model might lead to corrupted HDF5 data!
 
     # Whether to exit after working; exit code will be 128 + abs(signum)
     exit: false
@@ -139,19 +141,28 @@ run_kwargs:
   # The entries of the following list are OR-connected, i.e. it suffices that
   # one is fulfilled for the corresponding worker to be stopped
   stop_conditions: ~
-  # EXAMPLE:
+  # Below, an EXAMPLE for two OR-connected stop conditions
+    # # First condition: Timeout for long simulations
     # - !stop-condition
     #   name: single simulation timeout
-    #   description: terminates a worker if it ran for too long
-    #   enabled: true  # also the default value
+    #   description: terminates a simulation if it ran for too long
+    #   enabled: true               # (optional, true by default)
+    #   to_check:                   # A sequence of AND-connected conditions
+    #     - func: timeout_wall      # Looked up in utopya.stopcond_funcs
+    #       seconds: !expr 60*10    # --> terminated after 10 minutes wall time
+    #       # ... further arguments here are passed on to the selected function
+    #
+    # # Second condition: Terminating depending on a monitor entry
+    # - !stop-condition
+    #   name: extinction
+    #   description: terminates a simulation if entity density goes to zero
     #   to_check:
-    #     # The functions specified here are AND-connected, i.e.: _all_
-    #     # need to return True for the stop condition to be fulfilled
-    #     - func: timeout_wall
-    #       # will look for utopya.stopcond._sc_timeout_wall method
-    #       seconds: !expr 60*10
-    #       # further arguments to utopya.stopcond._sc_timeout_wall
-  # NOTE: For available function names, see the utopya.stopcond_funcs module
+    #     - func: check_monitor_entry
+    #       entry_name: MyModel.density
+    #       operator: <=
+    #       value: 0.
+    #       # Will stop if: {monitor entry} <= 0.
+  # End of StopCondition example
 
 
 # The defaults for the worker_kwargs

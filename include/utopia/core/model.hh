@@ -63,7 +63,7 @@ constexpr WriteMode DefaultWriteMode = WriteMode::basic;
 
 
 /// Wrapper struct for defining model class data types
-/** \detail Using the template parameters, derived classes can specify the
+/** \details Using the template parameters, derived classes can specify the
  *          types they desire to use.
  *
  *  \tparam RNGType               The RNG class to use
@@ -118,7 +118,7 @@ public:
 
     /// Data type that is used for storing datasets
     using DataGroup = typename ModelTypes::DataGroup;
-    
+
     /// Data type that is used for storing data
     using DataSet = typename ModelTypes::DataSet;
 
@@ -151,7 +151,7 @@ protected:
 
     /// The hierarchical level
     const Level _level;
-    
+
     /// The space this model resides in
     Space _space;
 
@@ -206,7 +206,7 @@ public:
     // -- Constructor ---------------------------------------------------------
 
     /// Constructor
-    /** \detail Uses information from a parent model to create an instance of
+    /** \details Uses information from a parent model to create an instance of
      *          this model.
      *
      *  \tparam ParentModel The parent model's type
@@ -354,17 +354,17 @@ public:
     std::string get_name() const {
         return _name;
     }
-    
+
     /// Return a pointer to the HDF group this model stores data in
     std::shared_ptr<DataGroup> get_hdfgrp() const {
         return _hdfgrp;
     }
-    
+
     /// Return the parameter that controls when write_data is called first
     Time get_write_start() const {
         return _write_start;
     }
-    
+
     /// Return the parameter that controls how often write_data is called
     Time get_write_every() const {
         return _write_every;
@@ -376,7 +376,7 @@ public:
     }
 
     /// Return the number of remaining `write_data` calls this model will make
-    /** \detail The 'remaining' refers to the current time being included into
+    /** \details The 'remaining' refers to the current time being included into
       *         the calculation, e.g.: when writing every time, currently at
       *         time == 42 and time_max == 43, it will return the value 2,
       *         i.e. for the write operations at times 42 and 43
@@ -384,11 +384,11 @@ public:
     hsize_t get_remaining_num_writes() const {
 
         static_assert(_write_mode == WriteMode::basic
-                     or 
-                     _write_mode == WriteMode::manual 
-                     or 
+                     or
+                     _write_mode == WriteMode::manual
+                     or
                      _write_mode == WriteMode::off
-                     or 
+                     or
                      _write_mode == WriteMode::managed);
 
         if constexpr (_write_mode == WriteMode::basic) {
@@ -401,9 +401,9 @@ public:
         else{
             return 0;
         }
-        
+
     }
-    
+
     /// Return a pointer to the shared RNG
     std::shared_ptr<RNG> get_rng() const {
         return _rng;
@@ -441,7 +441,7 @@ public:
      */
     void iterate () {
         // -- Perform the simulation step
-        __perform_step();     
+        __perform_step();
         increment_time();
 
         // -- Monitoring
@@ -450,11 +450,11 @@ public:
          * flag being set in the monitor manager, such that the submodels do
          * not have to do the check against the timer as well and that all
          * collected data stems from the same time step.
-         */ 
+         */
         if (_level == 1) {
             _monitor.get_monitor_manager()->check_timer();
             __monitor();
-            
+
             // If enabled for this step, perform the emission of monitor data
             // NOTE At this point, we can be sure that all submodels have
             //      already run, because their iterate functions were called
@@ -483,7 +483,7 @@ public:
     }
 
     /// Run the model from the current time to the maximum time
-    /** \detail This repeatedly calls the iterate method until the maximum time
+    /** \details This repeatedly calls the iterate method until the maximum time
       *         is reached. Additionally, it calls the __write_data method to
       *         allow it to write the initial state. In write mode `basic`,
       *         this is only done if `_write_start == _time`.
@@ -532,7 +532,7 @@ protected:
     }
 
     /// Monitor information in the terminal
-    /* \detail The child implementation of this function will only be called if
+    /* \details The child implementation of this function will only be called if
      *         the monitor manager has determined that an emission will occur,
      *         because it only makes sense to collect data if it will be
      *         emitted in this step.
@@ -553,7 +553,7 @@ protected:
             impl().monitor();
         }
     }
-    
+
     /// Write data; calls the implementation's write_data method
     void __write_data () {
 
@@ -574,7 +574,7 @@ protected:
     Derived& impl () {
         return static_cast<Derived&>(*this);
     }
-    
+
     /// const cast to the derived interface
     const Derived& impl () const {
         return static_cast<const Derived&>(*this);
@@ -586,7 +586,7 @@ public:
 
     /** @brief Create a new dataset within the given group
      *
-     * @detail The capacity - the shape of the dataset - is calculated
+     * @details The capacity - the shape of the dataset - is calculated
      *         automatically from the num_steps and write_every parameter.
      *         Additionally, dataset attributes are set that carry information
      *         on dimension labels and coordinates.
@@ -598,10 +598,10 @@ public:
      *        if that is not the case! For such cases, it is advised to
      *        suppress writing of these attributes by setting the
      *        configuration entry _cfg['write_dim_labels_and_coords'] to false.
-     * 
+     *
      * @param name The name of the dataset
      * @param hdfgrp The parent HDFGroup
-     * @param add_write_shape Additional write shape which, together with the 
+     * @param add_write_shape Additional write shape which, together with the
      *                        number of time steps, is used to calculate
      *                        the capacity of the dataset:
      *                        (capacity = (num_time_steps, add_write_shape)).
@@ -650,7 +650,7 @@ public:
 
     /** @brief Create a new dataset within the model's base data group
      *
-     * @detail The capacity - the shape of the dataset - is calculated
+     * @details The capacity - the shape of the dataset - is calculated
      *         automatically from the num_steps and write_every parameter.
      *         Additionally, dataset attributes are set that carry information
      *         on dimension labels and coordinates.
@@ -662,9 +662,9 @@ public:
      *        if that is not the case! For such cases, it is advised to
      *        suppress writing of these attributes by setting the
      *        configuration entry _cfg['write_dim_labels_and_coords'] to false.
-     * 
+     *
      * @param name The name of the dataset
-     * @param add_write_shape Additional write shape which, together with the 
+     * @param add_write_shape Additional write shape which, together with the
      *                        number of time steps, is used to calculate
      *                        the capacity of the dataset:
      *                        (capacity = (num_time_steps, add_write_shape)).
@@ -687,7 +687,7 @@ public:
 
     /** @brief Create a dataset storing data from a CellManager
      *
-     * @detail The required capacity - the shape of the dataset - is
+     * @details The required capacity - the shape of the dataset - is
      *         calculated using both data from the model and the CellManager.
      *         Additionally, dimension and coordinate labels are added.
      *
@@ -697,7 +697,7 @@ public:
      *         data this way. For such cases, it is advised to suppress writing
      *         of attributes by setting the _cfg['write_dim_labels_and_coords']
      *         entry to false.
-     * 
+     *
      * @param name The name of the dataset
      * @param cm   The CellManager whose cells' states are to be stored in the
      *             dataset
@@ -729,7 +729,7 @@ public:
                     "grid data.", name);
 
         // Write additional attributes, if not specifically suppressed.
-        if (get_as<bool>("write_dim_labels_and_coords", _cfg, true)) {        
+        if (get_as<bool>("write_dim_labels_and_coords", _cfg, true)) {
             // We know that the dimensions here refer to (time, cell ids). The
             // time  information is already aded in create_dset; add the ID
             // information here
@@ -757,7 +757,7 @@ private:
       */
     void __attach_sig_handlers() {
         _log->debug("Attaching signal handlers for SIGINT and SIGTERM ...");
-        
+
         attach_signal_handler(SIGINT);
         attach_signal_handler(SIGTERM);
 
@@ -768,7 +768,7 @@ private:
 
 
 /// A class to use at the top level of the model hierarchy as a mock parent
-/** \detail It is especially useful when initializing a top-level model as then
+/** \details It is especially useful when initializing a top-level model as then
  *          the model constructor that expects a Model-class-like object can
  *          be used.
  *          This class also takes care to load and hold a configuration file,
@@ -813,7 +813,7 @@ protected:
 
 public:
     /// Constructor that only requires path to a config file
-    /** \detail From the config file, all necessary information is extracted,
+    /** \details From the config file, all necessary information is extracted,
      *          i.e.: the path to the output file ('output_path') and the seed
      *          of the shared RNG ('seed'). These keys have to be located at
      *          the top level of the configuration file.
@@ -847,7 +847,7 @@ public:
         _log->debug("emit_interval:  {}s",
                     get_as<double>("monitor_emit_interval", _cfg));
     }
-    
+
 
     /// Constructor that allows granular control over config parameters
     /**
@@ -905,22 +905,22 @@ public:
     std::shared_ptr<HDFFile> get_hdffile() const {
         return _hdffile;
     }
-    
+
     /// Return a pointer to the HDF group, which is the base group of the file
     std::shared_ptr<HDFGroup> get_hdfgrp() const {
         return _hdffile->get_basegroup();
     }
-    
+
     /// Return the parameter that controls when write_data is called first
     Time get_write_start() const {
         return get_as<Time>("write_start", _cfg, 0);
     }
-    
+
     /// Return the parameter that controls how often write_data is called
     Time get_write_every() const {
         return get_as<Time>("write_every", _cfg, 1);
     }
-    
+
     /// Return a pointer to the RNG
     std::shared_ptr<RNG> get_rng() const {
         return _rng;
@@ -932,7 +932,7 @@ public:
     }
 
     /// The maximum time value as it can be found in the config
-    /** @detail Currently, this reads the `num_steps` key, but this might be
+    /** @details Currently, this reads the `num_steps` key, but this might be
      *          changed in the future to allow continuous time steps.
      */
     Time get_time_max() const {

@@ -56,7 +56,7 @@ Default Plot Configuration
 
 Base Plot Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^
-.. literalinclude:: ../../src/utopia/models/PredatorPreyPlant/PredatorPrey_base_plots.yml
+.. literalinclude:: ../../src/utopia/models/PredatorPreyPlant/PredatorPreyPlant_base_plots.yml
    :language: yaml
    :start-after: ---
 

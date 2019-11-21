@@ -16,9 +16,9 @@ namespace Utopia {
  */
 
 /// The Space bundles properties about the physical space a model resides in
-/** \detail It is, for example, used by the CellManager and its Grid
+/** \details It is, for example, used by the CellManager and its Grid
   *         discretization.
-  * 
+  *
   * \tparam num_dims  The dimensionality of the space
   */
 template<std::size_t num_dims>
@@ -51,7 +51,7 @@ struct Space {
     }
 
     /// Constructor without any arguments, i.e. constructing a default space
-    /** \detail The default space is non-periodic and has default extent of 1.
+    /** \details The default space is non-periodic and has default extent of 1.
       *         into each dimension.
       */
     Space()
@@ -65,12 +65,12 @@ struct Space {
 
     // -- Public interface ----------------------------------------------------
     /// Whether this space contains the given coordinate (without mapping it)
-    /** \detail Checks whether the given coordinate is within this space's
+    /** \details Checks whether the given coordinate is within this space's
       *         extent by computing the relative position and checking whether
       *         it is within [0, 1] or [0, 1) for all elements.
       *
       * \note   No distinction is made between periodic and non-periodic space.
-      *         
+      *
       * \tparam  include_high_value_boundary  Whether to check the closed or
       *         the half-open interval. The latter case is useful when working
       *         with periodic grids, allowing to map values on the high-value
@@ -91,7 +91,7 @@ struct Space {
     }
 
     /// Map a position (potentially outside space's extent) back into space
-    /** \detail This is intended for use with periodic grids. It will also work
+    /** \details This is intended for use with periodic grids. It will also work
       *         with non-periodic grids, but the input value should not have
       *         been permitted in the first place.
       *

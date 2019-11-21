@@ -21,13 +21,13 @@ namespace Utopia {
 namespace Models {
 namespace HdfBench {
 
-/// Typehelper to define types of HdfBench model 
+/// Typehelper to define types of HdfBench model
 using HdfBenchModelTypes = ModelTypes<>;
 
 
 /// The HdfBench Model
 /** This model implements a benchmark of Utopia's Hdf5 writing capabilities.
- *  
+ *
  *  It does not implement a manager or a grid but focusses on benchmarking the
  *  write times, given iterable data.
  */
@@ -69,7 +69,7 @@ private:
 
     /// A map of implemented write functions
     std::map<std::string, BenchFunc> _write_funcs;
-    
+
     /// Names of benchmarks
     const std::vector<std::string> _benchmarks;
 
@@ -79,7 +79,7 @@ private:
     /// The results of the measurements, stored under the benchmark name
     std::map<std::string, double> _times;
 
-    
+
     // -- Datasets -- //
     /// Dataset to store the write times in
     std::shared_ptr<DataSet> _dset_times;
@@ -88,13 +88,13 @@ private:
     std::map<std::string, std::shared_ptr<DataSet>> _dsets;
 
 
-    // -- Configuration parameters applicable to all benchmarks -- //    
+    // -- Configuration parameters applicable to all benchmarks -- //
     /// Whether to delete datasets after the last step
     const bool _delete_afterwards;
-    
+
     /// Sleep time in seconds at the beginning of each step
     const std::chrono::duration<double> _sleep_step;
-    
+
     /// Sleep time in seconds before each benchmark
     const std::chrono::duration<double> _sleep_bench;
 
@@ -121,7 +121,7 @@ private:
                 throw;
             }
         }
-        
+
         this->_log->debug("Got {} benchmark configurations.", cfg.size());
         return cfg;
     }
@@ -159,13 +159,13 @@ public:
         _delete_afterwards(get_as<bool>("delete_afterwards", this->_cfg)),
         _sleep_step(get_as<double>("sleep_step", this->_cfg)),
         _sleep_bench(get_as<double>("sleep_bench", this->_cfg))
-    {   
+    {
         // Check arguments
         if (_delete_afterwards) {
             throw std::invalid_argument("delete_afterwards feature is not yet "
                                         "implemented!");
         }
-                
+
         // Set up the function mappings . . . . . . . . . . . . . . . . . . . .
         // FIXME Creating func maps should be possible in initializer list, but
         //       although it compiles, it leads to segfaults ...
@@ -173,12 +173,12 @@ public:
         this->_log->debug("Associating setup functions ...");
         _setup_funcs["setup_nd"] = setup_nd;
         _setup_funcs["setup_nd_with_chunks"] = setup_nd_with_chunks;
-        
+
 
         this->_log->debug("Associating write functions ...");
         _write_funcs["write_const"] = write_const;
 
-        
+
         this->_log->debug("Associated {} setup and {} write function(s).",
                           _setup_funcs.size(), _write_funcs.size());
 
@@ -215,7 +215,7 @@ public:
     // Runtime functions ......................................................
 
     /** @brief Iterate a single step
-     *  @detail The "iteration" in this model is the step that _creates_ the
+     *  @details The "iteration" in this model is the step that _creates_ the
      *          data that is written in the write_data method, i.e.: it carries
      *          out the benchmarks and stores the corresponding times in the
      *          _times member, to be written out in write_data
@@ -235,10 +235,10 @@ public:
 
 
     /// Monitor model information
-    /** @detail Here, functions and values can be supplied to the monitor that
+    /** @details Here, functions and values can be supplied to the monitor that
      *          are then available to the frontend. The monitor() function is
      *          _only_ called if a certain emit interval has passed; thus, the
-     *          performance hit is small. 
+     *          performance hit is small.
      */
     void monitor ()
     {
@@ -249,7 +249,7 @@ public:
 
 
     /// Write the result times of each benchmark
-    void write_data () {   
+    void write_data () {
         _dset_times->write(_benchmarks.begin(), _benchmarks.end(),
                            [this](const auto& bname) {
                                 return this->_times.at(bname);
@@ -279,17 +279,17 @@ protected:
         // Call the function; its return value is the time it took to execute
         const auto btime = bfunc(bname, bcfg);
 
-        // Log the time, then return it        
+        // Log the time, then return it
         this->_log->debug("Benchmark result {:>20s} {} : {:>10.3f} ms",
                           bname, setup ? "setup" : "write", btime * 1E3);
-        return btime; 
+        return btime;
     }
 
     /// Returns the time (in seconds) since the given time point
     double time_since(const Time start) {
         return time_between(start, Clock::now());
     }
-    
+
     /// Returns the absolute time (in seconds) between the given time points
     double time_between(const Time start, const Time end) {
         const DurationType seconds = abs(end - start);
@@ -300,7 +300,7 @@ protected:
     // Setup functions ........................................................
 
     /* @brief Sets up an n-dimensional dataset
-     * @detail The dataset shape corresponds to the write_shape argument, but
+     * @details The dataset shape corresponds to the write_shape argument, but
      *         with an extra dimension in front that has as extend time_max + 1
      */
     BenchFunc setup_nd = [this](const auto& bname, auto cfg){
@@ -335,7 +335,7 @@ protected:
 
         // --- benchmark end --- //
         return time_setup + time_since(start);
-    };    
+    };
 
 
     // Write functions ........................................................
