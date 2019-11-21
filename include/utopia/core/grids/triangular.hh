@@ -27,6 +27,9 @@ public:
     /// The type of multi-index like arrays, e.g. the grid shape
     using MultiIndex = MultiIndexType<dim>;
 
+    /// The configuration type
+    using Config = DataIO::Config;
+
 
 private:
     // -- TriagonalGrid-specific members --------------------------------------
@@ -38,7 +41,7 @@ public:
     /** \param  space   The space to construct the discretization for
       * \param  cfg     Further configuration parameters
       */
-    TriangularGrid (std::shared_ptr<Space> space, const DataIO::Config& cfg)
+    TriangularGrid (std::shared_ptr<Space> space, const Config& cfg)
     :
         Base(space, cfg)
     {}
@@ -48,7 +51,7 @@ public:
       *                 stored as shared pointer
       * \param  cfg     Further configuration parameters
       */
-    TriangularGrid (Space& space, const DataIO::Config& cfg)
+    TriangularGrid (Space& space, const Config& cfg)
     :
         TriangularGrid(std::make_shared<Space>(space), cfg)
     {}
@@ -159,8 +162,7 @@ public:
 protected:
     // -- Neighborhood interface ----------------------------------------------
     /// Retrieve the neighborhood function depending on the mode
-    NBFuncID<Base> get_nb_func(NBMode nb_mode,
-                               const DataIO::Config&) override
+    NBFuncID<Base> get_nb_func(NBMode nb_mode, const Config&) override
     {
         if (nb_mode == NBMode::empty) {
             return this->_nb_empty;
@@ -172,7 +174,9 @@ protected:
     }
 
     /// Computes the expected number of neighbors for a neighborhood mode
-    DistType expected_num_neighbors(const NBMode& nb_mode) const override {
+    DistType expected_num_neighbors(const NBMode& nb_mode,
+                                    const Config&) const override
+    {
         if (nb_mode == NBMode::empty) {
             return 0;
         }

@@ -66,6 +66,9 @@ public:
     /// The type of multi-index like arrays, e.g. the grid shape
     using MultiIndex = MultiIndexType<dim>;
 
+    /// The configuration type
+    using Config = DataIO::Config;
+
 
 protected:
     // -- Members -------------------------------------------------------------
@@ -82,16 +85,11 @@ protected:
     /// Neighborhood mode
     NBMode _nb_mode;
 
+    /// Neighborhood parameters
+    Config _nb_params;
+
     /// Neighborhood function (working on cell IDs)
     NBFuncID<Self> _nb_func;
-
-    // .. Neighborhood parameters .............................................
-    // These are parameters that are required by some neighborhood functions
-
-    /// A distance parameter; interpretation depends on chosen neighborhood
-    DistType _nbh_distance;
-
-    // NOTE When adding new members here, make sure to update the reset method!
 
 
 public:
@@ -100,7 +98,7 @@ public:
     /** \param  space   The space to construct the discretization for
       * \param  cfg     Further configuration parameters
       */
-    Grid (std::shared_ptr<Space> space, const DataIO::Config& cfg)
+    Grid (std::shared_ptr<Space> space, const Config& cfg)
     :
         _space(space),
         _resolution([&cfg](){
@@ -118,13 +116,11 @@ public:
             }
             return res;
         }()),
-        _nb_mode(NBMode::empty)
+        _nb_mode(NBMode::empty),
+        _nb_params()
     {
         // Set the neighborhood function to not return anything
         _nb_func = _nb_empty;
-
-        // Set the neighborhood parameters to their "empty" values
-        reset_nbh_params();
     }
 
     /// Construct a grid discretization
@@ -132,7 +128,7 @@ public:
       *                 stored as shared pointer
       * \param  cfg     Further configuration parameters
       */
-    Grid (Space& space, const DataIO::Config& cfg)
+    Grid (Space& space, const Config& cfg)
     :
         Grid(std::make_shared<Space>(space), cfg)
     {}
@@ -150,7 +146,7 @@ public:
     }
 
     void select_neighborhood(NBMode nb_mode,
-                             const DataIO::Config& nb_params = {})
+                             const Config& nb_params = {})
     {
         try {
             _nb_func = get_nb_func(nb_mode, nb_params);
@@ -161,6 +157,7 @@ public:
         }
         
         _nb_mode = nb_mode;
+        _nb_params = nb_params;
     }
 
     /// Const reference to the currently selected neighborhood mode
@@ -168,9 +165,14 @@ public:
         return _nb_mode;
     }
 
+    /// The neighborhood parameters of the currently selected neighborhood
+    const Config& nb_params() const {
+        return _nb_params;
+    }
+
     /// Maximum size of the currently selected neighborhood
     auto nb_size() const {
-        return expected_num_neighbors(_nb_mode);
+        return expected_num_neighbors(_nb_mode, _nb_params);
     }
 
 
@@ -268,68 +270,12 @@ protected:
     /** The configuration node that is passed along can be used to specify the
       * neighborhood parameter members.
       */
-    virtual NBFuncID<Self> get_nb_func(NBMode, const DataIO::Config&) = 0;
+    virtual NBFuncID<Self> get_nb_func(NBMode, const Config&) = 0;
 
-    /// Computes the expected number of neighbors for a neighborhood mode
-    virtual DistType expected_num_neighbors(const NBMode&) const = 0;
-
-    /// Resets all neighborhood parameters to their default / "empty" value
-    void reset_nbh_params() {
-        _nbh_distance = 0;
-    }
-
-    /// Function to use to set neighborhood parameters
-    /** Provides understandable error messages if a parameter is missing or
-      * the conversion failed.
-      *
-      * \param  nbh_params  The configuration node to read the parameters from
-      * \param  keys        A pair that specifies the key and whether that key
-      *                     is required.
-      *
-      * \note   Resets all other neighborhood parameters! Thus, this method's
-      *         exceptions should only be caught if it is taken care that the
-      *         neighborhood parameters are in a well-defined state for the
-      *         continued use of the grid.
-      */
-    template<class opt_pair=std::pair<std::string, bool>>
-    void set_nbh_params(const DataIO::Config& nbh_params,
-                        const std::vector<opt_pair> keys)
-    {
-        // First, reset all parameters
-        reset_nbh_params();
-
-        // Now go over the desired keys and store them in the associated
-        // member. If the key is required, an error will be thrown.
-        for (const auto& [key, required] : keys) {
-            try {
-                if (key == "distance") {
-                    try {
-                        _nbh_distance = get_as<DistType>("distance",
-                                                         nbh_params);
-                    }
-                    catch (...) {
-                        if (required) throw;
-                    }
-
-                    // Needs to fit into the shape of the grid
-                    if (_nbh_distance * 2 + 1 > this->shape().min()) {
-                        throw std::invalid_argument("Grid shape is too small "
-                            "to accomodate a neighborhood with parameter "
-                            "'distance' set to "
-                            + get_as<std::string>("distance", nbh_params)+"!");
-                        // NOTE Reading as string only to build error message
-                    }
-                }
-                // ... can add other parameter assignments here
-            }
-            catch (std::exception& e) {
-                throw std::invalid_argument("Could not set the required "
-                    "neighborhood parameter '" + key + "': "
-                    + ((std::string) e.what()));
-            }
-        }
-    }
-
+    /// Computes the expected number of neighbors for a given neighborhood mode
+    /// and a corresponding set of neighborhood parameters
+    virtual DistType expected_num_neighbors(const NBMode&,
+                                            const Config&) const = 0;
 
     /// A neighborhood function for empty neighborhood
     NBFuncID<Self> _nb_empty = [](const IndexType&) {

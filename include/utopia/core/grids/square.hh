@@ -42,6 +42,9 @@ public:
     /// The type of multi-index like arrays, e.g. the grid shape
     using MultiIndex = MultiIndexType<dim>;
 
+    /// The configuration type
+    using Config = DataIO::Config;
+
 
 private:
     // -- SquareGrid-specific members -----------------------------------------
@@ -58,7 +61,7 @@ public:
     /** \param  space   The space to construct the discretization for
       * \param  cfg     Further configuration parameters
       */
-    SquareGrid (std::shared_ptr<Space> space, const DataIO::Config& cfg)
+    SquareGrid (std::shared_ptr<Space> space, const Config& cfg)
     :
         Base(space, cfg),
         _shape(determine_shape()),
@@ -89,7 +92,7 @@ public:
       *                 stored as shared pointer
       * \param  cfg     Further configuration parameters
       */
-    SquareGrid (Space& space, const DataIO::Config& cfg)
+    SquareGrid (Space& space, const Config& cfg)
     :
         SquareGrid(std::make_shared<Space>(space), cfg)
     {}
@@ -398,62 +401,18 @@ private:
 protected:
     // -- Neighborhood interface ----------------------------------------------
 
-    /// Retrieve the neighborhood function depending on the mode
+    /// Retrieve the neighborhood function depending on the mode and parameters
     NBFuncID<Base> get_nb_func(NBMode nb_mode,
-                               const DataIO::Config& nbh_params) override
+                               const Config& nb_params) override
     {
         if (nb_mode == NBMode::empty) {
             return this->_nb_empty;
         }
         else if (nb_mode == NBMode::vonNeumann) {
-            // Supports the optional neighborhood parameter 'distance'
-            this->set_nbh_params(nbh_params,
-                                 // Container of (key, required?) pairs:
-                                 {{"distance", false}});
-            // If the distance was not given, _nbh_distance is 0
-
-            // Use the function that is best specialized for each scenario
-            if (this->is_periodic()) {
-                if (this->_nbh_distance <= 1) {
-                    return _nb_vonNeumann_periodic;
-                }
-                else {
-                    return _nb_VonNeumann_periodic_with_Manhatten_distance;
-                }
-            }
-            else {
-                if (this->_nbh_distance <= 1) {
-                    return _nb_vonNeumann_nonperiodic;
-                }
-                else {
-                    return _nb_vonNeumann_nonperiodic_with_Manhatten_distance;
-                }
-            }
+            return get_nb_func_vonNeumann(nb_params);
         }
         else if (nb_mode == NBMode::Moore) {
-            // Supports the optional neighborhood parameter 'distance'
-            this->set_nbh_params(nbh_params,
-                                 // Container of (key, required?) pairs:
-                                 {{"distance", false}});
-            // If the distance was not given, _nbh_distance is 0
-
-            // Use the function that is best specialized for each scenario
-            if (this->is_periodic()) {
-                if (this->_nbh_distance <= 1) {
-                    return _nb_Moore_periodic;
-                }
-                else {
-                    return _nb_Moore_periodic_with_Chebychev_distance;
-                }
-            }
-            else {
-                if (this->_nbh_distance <= 1) {
-                    return _nb_Moore_nonperiodic;
-                }
-                else {
-                    return _nb_Moore_nonperiodic_with_Chebychev_distance;
-                }
-            }
+            return get_nb_func_Moore(nb_params);
         }
         else {
             throw std::invalid_argument("No '" + nb_mode_to_string(nb_mode)
@@ -465,18 +424,234 @@ protected:
     // .. Neighborhood implementations ........................................
     // NOTE With C++20, the below lambdas would allow template arguments
 
+    // .. von Neumann . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+    /// Returns a standalone von-Neumann neighborhood function
+    /** \details It extracts the distance parameter from the configuration and
+      *          depending on the distance parameter and the periodicity of the
+      *          space decides between four different neighborhood calculation
+      *          functions.
+      *          The returned callable does rely on the SquareGrid object, but
+      *          it includes all parameters from the configuration that can be
+      *          computed once and then captured; this avoids recomputation.
+      * 
+      * \param  nb_params   The configuration for the von-Neumann neighborhood
+      *                     method. Expected keys: ``distance`` (optional,
+      *                     defaults to 1), which refers to the Manhattan
+      *                     distance of included neighbors.
+      */
+    NBFuncID<Base> get_nb_func_vonNeumann(const Config& nb_params) {
+        // Extract the optional distance parameter
+        const auto distance = get_nb_param_distance(nb_params);
+
+        // For distance 1, use the specialized functions which are defined as
+        // class members (to don't bloat this method even more). Those
+        // functions do not require any calculation or capture that goes beyond
+        // the capture of ``this``.
+        if (distance <= 1) {
+            if (this->is_periodic()) {
+                return _nb_vonNeumann_periodic;
+            }
+            else {
+                return _nb_vonNeumann_nonperiodic;
+            }
+        }
+        // else: distance is > 1. Depending on periodicity of the grid, define
+        // the relevant lambda and let it capture as many values as possible in
+        // order to avoid recomputation.
+
+        // Compute neighborhood size to allow it to be captured
+        const auto nb_size = expected_num_neighbors(NBMode::vonNeumann,
+                                                    nb_params);
+
+        if (this->is_periodic()) {
+            return [this, distance, nb_size](const IndexType& root_id){
+                static_assert((dim >= 1 and dim <= 2),
+                    "VonNeumann neighborhood is implemented only for 1D or 2D "
+                    "space!");
+
+                // Instantiate container in which to store the neighboring IDs
+                IndexContainer neighbor_ids{};
+
+                // Pre-allocating space brings factor ~2 speed improvement
+                neighbor_ids.reserve(nb_size);
+
+                // Depending on the number of dimensions, add the IDs of
+                // neighboring cells in those dimensions.
+                // Add neighbors in dimension 1
+                for (DistType dist=1; dist <= distance; ++dist) {
+                    add_low_val_neighbor_in_<0, true>(root_id,
+                                                      dist,
+                                                      neighbor_ids);
+                    add_high_val_neighbor_in_<0, true>(root_id,
+                                                       dist,
+                                                       neighbor_ids);
+                }
+
+                // If the dimension exists, add neighbors in dimension 2
+                if constexpr (dim >= 2) {
+                    // Go through all the previously added neighbors and add
+                    // the additional neighbors from the other dimension.
+                    // NOTE that this algorithm requires the neighbors nearest
+                    //      to the root_id to have been pushed to the vector
+                    //      first. The fixed ordering of the previous addition
+                    //      is required.
+                    const auto nb_size = neighbor_ids.size();
+
+                    for (DistType i=0; i < nb_size; ++i) {
+                        // Add all neighbor ids up to the maximal distance
+                        // along the dimension 2.
+                        for (DistType dist = 1; 
+                             dist <= distance - 1 - i/2 + (i%2)/2; 
+                             ++dist)
+                        {
+                            // front neighbor
+                            add_low_val_neighbor_in_<1, true>(neighbor_ids[i],
+                                                              dist,
+                                                              neighbor_ids);
+
+                            // back neighbor
+                            add_high_val_neighbor_in_<1, true>(neighbor_ids[i],
+                                                               dist,
+                                                               neighbor_ids);
+                        }
+                    }
+
+                    // Finally, add the root cell's neighbors in the 2nd dim.
+                    for (DistType dist=1; dist <= distance; ++dist) {
+                        add_low_val_neighbor_in_<1, true>(root_id,
+                                                          dist,
+                                                          neighbor_ids);
+                        add_high_val_neighbor_in_<1,true>(root_id,
+                                                          dist,
+                                                          neighbor_ids);
+                    }
+                }
+
+                // Return the container of cell indices
+                return neighbor_ids;
+            };  // End of lambda definition for periodic space
+        }
+
+        else { // Space is non-periodic
+            return [this, distance, nb_size](const IndexType& root_id){
+                static_assert(((dim == 1) or (dim == 2)),
+                    "VonNeumann neighborhood is implemented only for 1D or 2D "
+                    "space!");
+
+                // Instantiate containers in which to store the neighboring IDs
+                IndexContainer front_nb_ids{};
+                IndexContainer back_nb_ids{};
+
+                // Pre-allocating space brings a factor ~2 speed improvement
+                // NOTE The front_nb_ids vector needs to reserve memory for all
+                //      neighbors including the back neighbors because these
+                //      will be added to the container directly before
+                //      returning it.
+                front_nb_ids.reserve(nb_size);
+                back_nb_ids.reserve(nb_size / 2);
+
+                // Depending on the number of dimensions, add the IDs of
+                // neighboring cells in those dimensions.
+                // Add front neighbors in dimension 1
+                for (DistType dist=1; dist <= distance; ++dist) {
+                    add_low_val_neighbor_in_<0, false>(root_id,
+                                                       dist,
+                                                       front_nb_ids);
+                    add_high_val_neighbor_in_<0, false>(root_id,
+                                                        dist,
+                                                        back_nb_ids);
+                }
+
+                // If the dimension exists, add neighbors in dimension 2
+                if constexpr (dim >= 2) {
+                    // Go through the front neighbor ids in dimension 1 and add
+                    // the neighbor ids in dimension 2
+                    // NOTE that this algorithm requires the neighbors nearest
+                    //      to the root_id to have been pushed to the vector
+                    //      first. The fixed ordering of the previous addition
+                    //      is required.
+                    const DistType front_nb_size = front_nb_ids.size();
+
+                    for (DistType i=0; i < front_nb_size; ++i) {
+                        // Add all front neighbor ids up to the maximal
+                        // distance along dimension 2.
+                        for (DistType dist = 1; 
+                             dist <= distance - (i + 1); 
+                             ++dist)
+                        {
+                            // add front neighbors ids in dimension 2
+                            add_low_val_neighbor_in_<1, false>(front_nb_ids[i],
+                                                               dist,
+                                                               front_nb_ids);
+                            
+                            // add back neighbors ids in dimension 2
+                            add_high_val_neighbor_in_<1,false>(front_nb_ids[i],
+                                                               dist,
+                                                               front_nb_ids);
+                        }
+                    }
+
+                    // Go through the front neighbor ids in dimension 1 and add
+                    // the neighbor ids in dimension 2
+                    // NOTE that this algorithm requires the neighbors nearest
+                    //      to the root_id to have been pushed to the vector
+                    //      first. The fixed ordering of the previous addition
+                    //      is required.
+                    const DistType back_nb_size = back_nb_ids.size();
+
+                    for (DistType i=0; i<back_nb_size; ++i) {
+                        // Add all neighbor ids up to the maximal distance
+                        // along second dimension
+                        for (DistType dist = 1; 
+                             dist <= distance - (i + 1); 
+                             ++dist)
+                        {
+                            add_low_val_neighbor_in_<1, false>(back_nb_ids[i],
+                                                               dist,
+                                                               back_nb_ids);
+
+                            add_high_val_neighbor_in_<1, false>(back_nb_ids[i],
+                                                                dist,
+                                                                back_nb_ids);
+                        }
+                    }
+
+                    // Finally, add the root cell's neighbors in the 2nd dim.
+                    for (DistType dist=1; dist <= distance; ++dist) {
+                        add_low_val_neighbor_in_<1, false>(root_id,
+                                                           dist,
+                                                           front_nb_ids);
+
+                        add_high_val_neighbor_in_<1, false>(root_id,
+                                                            dist,
+                                                            back_nb_ids);
+                    }
+                }
+
+                // Combine the front and back neighbors container
+                front_nb_ids.insert(front_nb_ids.end(),
+                                    back_nb_ids.begin(), back_nb_ids.end());
+
+                // Done now. The front neighbor container contains all the IDs.
+                return front_nb_ids;
+            };  // End of lambda definition for non-periodic space
+        }
+    }
+
+
     /// The Von-Neumann neighborhood for periodic grids
     NBFuncID<Base> _nb_vonNeumann_periodic = 
         [this](const IndexType& root_id)
     {
         static_assert((dim >= 1 and dim <= 2),
-            "VonNeumann neighborhood is implemented for 1D or 2D space!");
+            "VonNeumann neighborhood is implemented only for 1D or 2D space!");
 
         // Instantiate container in which to store the neighboring cell IDs
         IndexContainer neighbor_ids{};
 
         // The number of neighbors is known; pre-allocating space brings a
-        // speed improvement of about factor 2
+        // speed improvement of about factor 2.
         neighbor_ids.reserve(2 * dim);
 
         // Depending on the number of dimensions, add the IDs of neighboring
@@ -491,68 +666,6 @@ protected:
         return neighbor_ids;
     };
 
-    /// The Von-Neumann neighborhood for periodic grids and arbitrary Manhatten distance
-    NBFuncID<Base> _nb_VonNeumann_periodic_with_Manhatten_distance =
-        [this](const IndexType& root_id)
-    {
-        static_assert((dim >= 1 and dim <= 2),
-            "VonNeumann neighborhood is implemented for 1D or 2D space!");
-
-        // Instantiate container in which to store the neighboring cell IDs
-        IndexContainer neighbor_ids{};
-
-        // Compute neighborhood size
-        const auto nb_size = expected_num_neighbors(NBMode::vonNeumann);
-
-        // Pre-allocating space brings a speed improvement of about factor 2
-        neighbor_ids.reserve(nb_size);
-
-        // Depending on the number of dimensions, add the IDs of neighboring
-        // cells in those dimensions
-        // Add neighbors in dimension 1
-        for (DistType dist=1; dist <= this->_nbh_distance; ++dist) {
-            add_low_val_neighbor_in_<0, true>(root_id, dist, neighbor_ids);
-            add_high_val_neighbor_in_<0, true>(root_id, dist, neighbor_ids);
-        }
-
-        // If the dimension exists, add neighbors in dimension 2
-        if constexpr (dim >= 2) {
-            // Go through all the previously added neighbors and add the
-            // additional neighbors from the other dimension.
-            // NOTE that this algorithm requires the neighbors nearest
-            //      to the root_id to have been pushed to the vector first.
-            //      The fixed ordering of the previous addition is required.
-            const auto nb_size = neighbor_ids.size();
-
-            for (DistType i=0; i < nb_size; ++i) {
-                // Add all neighbor ids up to the maximal distance along the
-                // dimension 2.
-                for (DistType dist = 1; 
-                     dist <= this->_nbh_distance - 1 - i/2 + (i%2)/2; 
-                     ++dist)
-                {
-                    // front neighbor
-                    add_low_val_neighbor_in_<1, true>(neighbor_ids[i],
-                                                      dist,
-                                                      neighbor_ids);
-
-                    // back neighbor
-                    add_high_val_neighbor_in_<1, true>(neighbor_ids[i],
-                                                       dist,
-                                                       neighbor_ids);
-                }
-            }
-
-            // Finally, add the root cell's neighbors in the second dimension
-            for (DistType dist=1; dist <= this->_nbh_distance; ++dist) {
-                add_low_val_neighbor_in_<1, true>(root_id, dist, neighbor_ids);
-                add_high_val_neighbor_in_<1,true>(root_id, dist, neighbor_ids);
-            }
-        }
-
-        // Return the container of cell indices
-        return neighbor_ids;
-    };
 
     /// The Von-Neumann neighborhood for non-periodic grids
     NBFuncID<Base> _nb_vonNeumann_nonperiodic = 
@@ -580,105 +693,129 @@ protected:
         // Return the container of cell indices
         return neighbor_ids;
     };
-
-    /// The Von-Neumann neighborhood for non-periodic grids and arbitrary Manhatten distance
-    NBFuncID<Base> _nb_vonNeumann_nonperiodic_with_Manhatten_distance = 
-        [this](const IndexType& root_id)
-    {
-        static_assert(((dim == 1) or (dim == 2)),
-            "VonNeumann neighborhood is implemented for 1D or 2D space!");
-
-        // Instantiate containers in which to store the neighboring cell IDs
-        IndexContainer front_nb_ids{};
-        IndexContainer back_nb_ids{};
-
-        // Pre-allocating space brings a speed improvement of about factor 2
-        // NOTE The front_nb_ids vector needs to reserve memory for all
-        //      neighbors including the back neighbors because these will be
-        //      added to the container directly before returning it.
-        front_nb_ids.reserve(expected_num_neighbors(NBMode::vonNeumann));
-        back_nb_ids.reserve(expected_num_neighbors(NBMode::vonNeumann) / 2);
-
-        // Depending on the number of dimensions, add the IDs of neighboring
-        // cells in those dimensions
-        // Add front neighbors in dimension 1
-        for (DistType dist=1; dist <= this->_nbh_distance; ++dist) {
-            add_low_val_neighbor_in_<0, false>(root_id, dist, front_nb_ids);
-            add_high_val_neighbor_in_<0, false>(root_id, dist, back_nb_ids);
-        }
-
-        // If the dimension exists, add neighbors in dimension 2
-        if constexpr (dim >= 2) {
-            // Go through the front neighbor ids in dimension 1 and add
-            // the neighbor ids in dimension 2
-            // NOTE that this algorithm requires the neighbors nearest
-            //      to the root_id to have been pushed to the vector first.
-            //      The fixed ordering of the previous addition is required.
-            const DistType front_nb_size = front_nb_ids.size();
-
-            for (DistType i=0; i < front_nb_size; ++i) {
-                // Add all front neighbor ids up to the maximal distance along
-                // dimension 2.
-                for (DistType dist = 1; 
-                     dist <= this->_nbh_distance - (i + 1); 
-                     ++dist)
-                {
-                    // add front neighbors ids in dimension 2
-                    add_low_val_neighbor_in_<1, false>(front_nb_ids[i],
-                                                       dist,
-                                                       front_nb_ids);
-                    
-                    // add back neighbors ids in dimension 2
-                    add_high_val_neighbor_in_<1, false>(front_nb_ids[i],
-                                                        dist,
-                                                        front_nb_ids);
-                }
-            }
-
-            // Go through the front neighbor ids in dimension 1 and add
-            // the neighbor ids in dimension 2
-            // NOTE that this algorithm requires the neighbors nearest
-            //      to the root_id to have been pushed to the vector first.
-            //      The fixed ordering of the previous addition is required.
-            const DistType back_nb_size = back_nb_ids.size();
-
-            for (DistType i=0; i<back_nb_size; ++i) {
-                // Add all neighbor ids up to the maximal distance along
-                // second dimension
-                for (DistType dist = 1; 
-                     dist <= this->_nbh_distance - (i + 1); 
-                     ++dist)
-                {
-                    add_low_val_neighbor_in_<1, false>(back_nb_ids[i],
-                                                       dist,
-                                                       back_nb_ids);
-
-                    add_high_val_neighbor_in_<1, false>(back_nb_ids[i],
-                                                        dist,
-                                                        back_nb_ids);
-                }
-            }
-
-            // Finally, add the root cell's neighbors in the second dimension
-            for (DistType dist=1; dist <= this->_nbh_distance; ++dist) {
-                add_low_val_neighbor_in_<1, false>(root_id,
-                                                   dist,
-                                                   front_nb_ids);
-
-                add_high_val_neighbor_in_<1, false>(root_id,
-                                                    dist,
-                                                    back_nb_ids);
-            }
-        }
-
-        // Combine the front and back neighbors container
-        front_nb_ids.insert(front_nb_ids.end(),
-                            back_nb_ids.begin(), back_nb_ids.end());
-
-        // Done now. The front neighbor container contains all the IDs.
-        return front_nb_ids;
-    };
     
+
+    // .. Moore . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+    /// Returns a standalone Moore neighborhood function
+    /** \details It extracts the distance parameter from the configuration and
+      *          depending on the distance parameter and the periodicity of the
+      *          space decides between four different neighborhood calculation
+      *          functions.
+      *          The returned callable does rely on the SquareGrid object, but
+      *          it includes all parameters from the configuration that can be
+      *          computed once and then captured; this avoids recomputation.
+      * 
+      * \param  nb_params   The configuration for the Moore neighborhood
+      *                     method. Expected keys: ``distance`` (optional,
+      *                     defaults to 1), which refers to the Chebychev
+      *                     distance of the included neighbors.
+      */
+    NBFuncID<Base> get_nb_func_Moore(const Config& nb_params) {
+        // Extract the optional distance parameter
+        const auto distance = get_nb_param_distance(nb_params);
+
+        // For distance 1, use the specialized functions which are defined as
+        // class members (to don't bloat this method even more). Those
+        // functions do not require any calculation or capture that goes beyond
+        // the capture of ``this``.
+        if (distance <= 1) {
+            if (this->is_periodic()) {
+                return _nb_Moore_periodic;
+            }
+            else {
+                return _nb_Moore_nonperiodic;
+            }
+        }
+        // else: distance is > 1. Depending on periodicity of the grid, define
+        // the relevant lambda and let it capture as many values as possible in
+        // order to avoid recomputation.
+
+        // Compute neighborhood size to allow it to be captured
+        const auto nb_size = expected_num_neighbors(NBMode::Moore,
+                                                    nb_params);
+
+        if (this->is_periodic()) {
+            return [this, distance, nb_size](const IndexType& root_id){
+                static_assert(dim == 2,
+                              "Moore neighborhood is only available in 2D!");
+        
+                // Generate vector in which to store the neighbors... 
+                IndexContainer neighbor_ids{};
+
+                // ... and allocate space
+                neighbor_ids.reserve(nb_size);
+
+                // Get all neighbors in the first dimension
+                for (DistType dist=1; dist <= distance; ++dist) {
+                    add_low_val_neighbor_in_<0,  true>(root_id, dist,
+                                                       neighbor_ids);
+                    add_high_val_neighbor_in_<0, true>(root_id, dist,
+                                                       neighbor_ids);
+                }
+
+                // For these neighbors, add _their_ neighbors in the second dimension
+                for (const auto& nb : neighbor_ids) {
+                    for (DistType dist=1; dist <= distance; ++dist) {
+                        add_low_val_neighbor_in_<1,  true>(nb, dist,
+                                                           neighbor_ids);
+                        add_high_val_neighbor_in_<1, true>(nb, dist,
+                                                           neighbor_ids);
+                    }
+                }
+
+                // And finally, add the root cell's neighbors in the second dimension
+                for (DistType dist=1; dist <= distance; ++dist) {
+                    add_low_val_neighbor_in_<1,  true>(root_id, dist,
+                                                       neighbor_ids);
+                    add_high_val_neighbor_in_<1, true>(root_id, dist,
+                                                       neighbor_ids);
+                }
+
+                return neighbor_ids;
+            };  // End of lambda definition for periodic space
+        }
+        else {  // Space is non-periodic
+            return [this, distance, nb_size](const IndexType& root_id){
+                static_assert(dim == 2,
+                              "Moore neighborhood is only available in 2D!");
+
+                // Generate vector in which to store the neighbors...
+                IndexContainer neighbor_ids{};
+                
+                // ... and allocate space
+                neighbor_ids.reserve(nb_size);
+
+                // Get all neighbors in the first dimension
+                for (DistType dist=1; dist <= distance; ++dist) {
+                    add_low_val_neighbor_in_<0,  false>(root_id, dist,
+                                                        neighbor_ids);
+                    add_high_val_neighbor_in_<0, false>(root_id, dist,
+                                                        neighbor_ids);
+                }
+
+                // For these neighbors, add _their_ neighbors in the second dimension
+                for (const auto& nb : neighbor_ids) {
+                    for (DistType dist=1; dist <= distance; ++dist) {
+                        add_low_val_neighbor_in_<1,  false>(nb, dist,
+                                                            neighbor_ids);
+                        add_high_val_neighbor_in_<1, false>(nb, dist, neighbor_ids);
+                    }
+                }
+
+                // And finally, add the root cell's neighbors in the second dimension
+                for (DistType dist=1; dist <= distance; ++dist) {
+                    add_low_val_neighbor_in_<1,  false>(root_id, dist,
+                                                        neighbor_ids);
+                    add_high_val_neighbor_in_<1, false>(root_id, dist,
+                                                        neighbor_ids);
+                }
+
+                return neighbor_ids;
+            };  // End of lambda definition for non-periodic space
+        }
+    }
+
     /// Moore neighbors for periodic 2D grid
     NBFuncID<Base> _nb_Moore_periodic = 
        [this](const IndexType& root_id)
@@ -699,41 +836,6 @@ protected:
 
         // And finally, add the root cell's neighbors in the first dimension
         add_neighbors_in_<0, true>(root_id, neighbor_ids);
-
-        return neighbor_ids;
-    };
-
-    /// Moore neighbors for periodic 2D grid for arbitrary Chebychev distance
-    NBFuncID<Base> _nb_Moore_periodic_with_Chebychev_distance = 
-        [this](const IndexType& root_id)
-    {
-        static_assert(dim == 2, "Moore neighborhood is only available in 2D!");
-        
-        // Generate vector in which to store the neighbors... 
-        IndexContainer neighbor_ids{};
-
-        // ... and allocate space
-        neighbor_ids.reserve(expected_num_neighbors(NBMode::Moore));
-
-        // Get all neighbors in the first dimension
-        for (DistType dist=1; dist <= this->_nbh_distance; ++dist) {
-            add_low_val_neighbor_in_<0, true>(root_id, dist, neighbor_ids);
-            add_high_val_neighbor_in_<0, true>(root_id, dist, neighbor_ids);
-        }
-
-        // For these neighbors, add _their_ neighbors in the second dimension
-        for (const auto& nb : neighbor_ids) {
-            for (DistType dist=1; dist <= this->_nbh_distance; ++dist) {
-                add_low_val_neighbor_in_<1, true>(nb, dist, neighbor_ids);
-                add_high_val_neighbor_in_<1, true>(nb, dist, neighbor_ids);
-            }
-        }
-
-        // And finally, add the root cell's neighbors in the second dimension
-        for (DistType dist=1; dist <= this->_nbh_distance; ++dist) {
-            add_low_val_neighbor_in_<1, true>(root_id, dist, neighbor_ids);
-            add_high_val_neighbor_in_<1, true>(root_id, dist, neighbor_ids);
-        }
 
         return neighbor_ids;
     };
@@ -767,41 +869,6 @@ protected:
 
         // Finally, add the root's neighbors in the first dimension
         add_neighbors_in_<0, false>(root_id, neighbor_ids);
-
-        return neighbor_ids;
-    };
-
-    /// Moore neighbors for non-periodic 2D grid
-    NBFuncID<Base> _nb_Moore_nonperiodic_with_Chebychev_distance = 
-        [this](const IndexType& root_id)
-    {
-        static_assert(dim == 2, "Moore neighborhood is only available in 2D!");
-
-        // Generate vector in which to store the neighbors...
-        IndexContainer neighbor_ids{};
-        
-        // ... and allocate space
-        neighbor_ids.reserve(expected_num_neighbors(NBMode::Moore));
-
-        // Get all neighbors in the first dimension
-        for (DistType dist=1; dist <= this->_nbh_distance; ++dist) {
-            add_low_val_neighbor_in_<0, false>(root_id, dist, neighbor_ids);
-            add_high_val_neighbor_in_<0, false>(root_id, dist, neighbor_ids);
-        }
-
-        // For these neighbors, add _their_ neighbors in the second dimension
-        for (const auto& nb : neighbor_ids) {
-            for (DistType dist=1; dist <= this->_nbh_distance; ++dist) {
-                add_low_val_neighbor_in_<1, false>(nb, dist, neighbor_ids);
-                add_high_val_neighbor_in_<1, false>(nb, dist, neighbor_ids);
-            }
-        }
-
-        // And finally, add the root cell's neighbors in the second dimension
-        for (DistType dist=1; dist <= this->_nbh_distance; ++dist) {
-            add_low_val_neighbor_in_<1, false>(root_id, dist, neighbor_ids);
-            add_high_val_neighbor_in_<1, false>(root_id, dist, neighbor_ids);
-        }
 
         return neighbor_ids;
     };
@@ -998,7 +1065,8 @@ protected:
     /// Computes the expected number of neighbors for a neighborhood mode
     /** This function is used to calculate the amount of memory that should be
       * reserved for the neighbor_ids vector. For the calculation it uses the
-      * member variables: ``dim`` and ``_nbh_distance``
+      * member variables: ``dim`` and the ``distance`` parameter from the given
+      * configuration.
       *  
       * For a von Neumann neighborhood, the number of neighbors is:
       *                      { 2 * distance   for distance = 1
@@ -1019,16 +1087,22 @@ protected:
       * 
       * \return const DistType The expected number of neighbors
       */
-    DistType expected_num_neighbors(const NBMode& nb_mode) const override {
+    DistType expected_num_neighbors(const NBMode& nb_mode,
+                                    const Config& nb_params) const override
+    {
+        // Get the distance parameter, used in Moore and vonNeumann calculation
+        const auto distance = get_nb_param_distance(nb_params);
+
+        // Distinguish by mode
         if (nb_mode == NBMode::empty) {
             return 0;
         }
         else if (nb_mode == NBMode::Moore) {
-            if (this->_nbh_distance <= 1) {
+            if (distance <= 1) {
                 return std::pow(2 + 1, dim) - 1;
             }
             else {
-                return std::pow(2 * this->_nbh_distance + 1, dim) - 1;
+                return std::pow(2 * distance + 1, dim) - 1;
             }
         }
         else if (nb_mode == NBMode::vonNeumann) {
@@ -1053,19 +1127,36 @@ protected:
                 }                   
             };
 
-            // Call the recursive lambda with the space's dimensionality. Make
-            // sure the distance is >= 1, which is not guaranteed as there is
-            // also  the case where the distance is not given
-            return num_nbs_impl(this->dim,
-                                std::clamp(this->_nbh_distance,
-                                           unsigned(1), this->_nbh_distance),
-                                num_nbs_impl);
+            // Call the recursive lambda with the space's dimensionality.
+            return num_nbs_impl(this->dim, distance, num_nbs_impl);
         }
         else {
             throw std::invalid_argument("No '" + nb_mode_to_string(nb_mode)
                 + "' available for rectangular grid discretization!");
         }
     };
+
+
+    // .. Neighborhood parameter extraction helpers ...........................
+
+    DistType get_nb_param_distance(const Config& params) const {
+        const auto distance = get_as<DistType>("distance", params, 1);
+
+        // Check the value is smaller than the grid shape. It eeds to fit into
+        // the shape of the grid
+        if (distance * 2 + 1 > this->shape().min()) {
+            // To inform about the grid shape, create a stringstream
+            std::stringstream shape_ss;
+            this->shape().print(shape_ss, "Grid Shape:");
+
+            throw std::invalid_argument("Grid shape is too small to "
+                "accomodate a neighborhood with 'distance' parameter set to "
+                + get_as<std::string>("distance", params, "1") + "! "
+                + shape_ss.str());
+        }
+
+        return distance;
+    }
 };
 
 // end group CellManager
