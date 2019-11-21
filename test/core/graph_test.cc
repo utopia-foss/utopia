@@ -140,17 +140,43 @@ struct BollobasRiordanGraphFixture {
 
     // Create test graph
     G g = create_BollobasRiordan_graph<G>(num_vertices,
-                                                      alpha,
-                                                      beta,
-                                                      gamma,
-                                                      del_in,
-                                                      del_out,
-                                                      rng);
+                                            alpha,
+                                            beta,
+                                            gamma,
+                                            del_in,
+                                            del_out,
+                                            rng);
+};
+
+template<class G>
+struct BollobasRiordanGraphGammaFixture {
+    // Create a random number generator together with a copy
+    Utopia::DefaultRNG rng;
+    Utopia::DefaultRNG rng_copy = rng;
+
+    // Set graph properties
+    const std::size_t num_vertices = 200;
+    const double alpha = 0.2;
+    const double beta = 0.7;
+    const double gamma = 0.1;
+    const double del_in = 0.;
+    const double del_out = 0.5;
+
+    // Create test graph
+    G g = create_BollobasRiordan_graph<G>(num_vertices,
+                                            alpha,
+                                            beta,
+                                            gamma,
+                                            del_in,
+                                            del_out,
+                                            rng);
 };
 
 using BollobasRiordanDirGraphsFixtures = boost::mpl::vector<
     BollobasRiordanGraphFixture<G_dir_vec>,
-    BollobasRiordanGraphFixture<G_dir_list>
+    BollobasRiordanGraphFixture<G_dir_list>,
+    BollobasRiordanGraphGammaFixture<G_dir_vec>
+    // BollobasRiordanGraphGammaFixture<G_dir_list>
 >;
 
 
@@ -328,15 +354,17 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_create_BollobasRiordan_graph, G,
     // Assert that the number of vertices is correct
     BOOST_TEST(G::num_vertices == boost::num_vertices(G::g));
 
-    // BOOST_TEST that only tree vertices (the initial network)
+    // BOOST_TEST that only three vertices (the initial network)
     // have an in-degree unequal Zero.
-    auto count = 0;
-    for (auto [v, v_end] = boost::vertices(G::g); v!=v_end; ++v){
-        if (boost::in_degree(*v, G::g) > 0) {
-            ++count;
+    if (G::gamma == 0){
+        auto count = 0;
+        for (auto [v, v_end] = boost::vertices(G::g); v!=v_end; ++v){
+            if (boost::in_degree(*v, G::g) > 0) {
+                ++count;
+            }
         }
+        BOOST_TEST(count == 3);
     }
-    BOOST_TEST(count == 3);
 
     // Check that at least one vertex has more than 10 in-edges
     bool at_least_one_more_than_ten_edges = false;
@@ -350,7 +378,6 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_create_BollobasRiordan_graph, G,
 
     // BOOST_TEST that the state of the rng has changed.
     BOOST_TEST(G::rng!=G::rng_copy);
-
 }
 
 BOOST_AUTO_TEST_CASE(test_create_BollobasRiordan_failing_due_to_undirected_graph)
@@ -384,13 +411,27 @@ BOOST_AUTO_TEST_CASE(test_create_BollobasRiordan_failing_due_to_wrong_parameters
 
     // Set graph properties
     const std::size_t num_vertices = 200;
-    const double alpha = 0.2;
-    const double beta = 0.8;
-    const double gamma = 0.1;
+    double alpha = 0.2;
+    double beta = 0.8;
+    double gamma = 0.1;
     const double del_in = 0.;
     const double del_out = 0.5;
 
-    // Try to create an undirected test graph and catch the error
+    // Try to create a test graph with non-normalized probabilities
+    BOOST_CHECK_THROW(create_BollobasRiordan_graph<G_dir_vec>(num_vertices,
+                                                      alpha,
+                                                      beta,
+                                                      gamma,
+                                                      del_in,
+                                                      del_out,
+                                                      rng),
+                                                      std::invalid_argument);
+
+    alpha = 0.;
+    beta = 1.;
+    gamma = 0.;
+    
+    // Try to create an undirected test graph with beta=1
     BOOST_CHECK_THROW(create_BollobasRiordan_graph<G_dir_vec>(num_vertices,
                                                       alpha,
                                                       beta,

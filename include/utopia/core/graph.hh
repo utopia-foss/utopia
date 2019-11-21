@@ -357,7 +357,8 @@ Graph create_BollobasRiordan_graph(std::size_t num_vertices,
     Graph g;
 
     // Check for cases in which the algorithm does not work.
-    if (alpha + beta + gamma != 1.) {
+    if (std::fabs(alpha + beta + gamma - 1.) 
+            > std::numeric_limits<double>::epsilon()) {
         throw std::invalid_argument("The probabilities alpha, beta and gamma "
                                     "have to add up to 1!");
     }
@@ -365,6 +366,9 @@ Graph create_BollobasRiordan_graph(std::size_t num_vertices,
         throw std::runtime_error("This algorithm only works for directed "
                                  "graphs but the graph type specifies an "
                                  "undirected graph!");
+    }
+    if (beta == 1.){
+        throw std::invalid_argument("The probability beta must not be 1!");
     }
 
     // Create three-cycle as spawning network.
