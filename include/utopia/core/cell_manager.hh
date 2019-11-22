@@ -481,8 +481,8 @@ public:
     {
         // Check if the string is valid
         if (not nb_mode_map.count(nb_mode)) {
-            throw std::invalid_argument("Could not translate given value for "
-                "neighborhood mode ('" + nb_mode + "') to valid enum entry!");
+            throw std::invalid_argument("Got unexpected neighborhood mode '"
+                + nb_mode + "'! Available modes: empty, vonNeumann, Moore.");
         }
 
         // Translate string; pass all other arguments through

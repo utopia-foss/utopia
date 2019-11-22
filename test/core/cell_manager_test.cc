@@ -316,7 +316,9 @@ int main() {
             [&](){
                 MockModel<CellTraitsDC> mm_nb_bad1("mm_nb_bad1",
                                                    cfg["nb_bad1"]);
-            }, "Could not translate given value for neighborhood mode"));
+            },
+            "Got unexpected neighborhood mode 'bad'! Available modes: "
+            "empty, vonNeumann, Moore."));
 
         assert(check_error_message<std::invalid_argument>(
             "nb_bad2",

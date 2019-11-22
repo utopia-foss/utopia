@@ -19,6 +19,8 @@ enum class NBMode {
     Moore = 2
 };
 // NOTE When adding new neighborhood types, take care to update nb_mode_map!
+//      Also, some high-level error messages (e.g. in the CellManager) might
+//      need to be adapted.
 
 /// A map from strings to neighborhood enum values
 const std::map<std::string, NBMode> nb_mode_map {

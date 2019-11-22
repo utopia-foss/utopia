@@ -39,6 +39,33 @@ int main() {
         } // End of test scope
         std::cout << "Success." << std::endl << std::endl;
 
+        std::cout << ".....  Neighborhood:  Empty (w/ params) ..." <<std::endl;
+        NBTest rect_2D_empty_sa("rect_2D_empty_superfluous_args", pp);
+        {
+            auto cm = rect_2D_empty_sa.cm;
+            auto grid = cm.grid();
+
+            assert(grid->nb_size() == 0);
+
+            // Check grid shape
+            assert(grid->shape()[0] == 5);
+            assert(grid->shape()[1] == 5);
+            assert(grid->is_periodic());
+            std::cout << "Grid shape and periodicity matches." << std::endl;
+
+            // Check neighbors count for all cells
+            std::cout << "Testing neighbor count ..." << std::endl;
+            check_num_neighbors(cm, 0);
+            std::cout << "Neighbor count matches." << std::endl;
+
+            // Arriving here means it did not throw despite the `distance`
+            // parameter being given and being larger than the grid shape.
+            // It should _only_ throw in the case of an actual neighborhood
+            // being selected, not for the empty neighborhood.
+
+        } // End of test scope
+        std::cout << "Success." << std::endl << std::endl;
+
 
         std::cout << ".....  Neighborhood:  vonNeumann  ..." << std::endl;
         NBTest rect_2D_vonNeumann("rect_2D_vonNeumann", pp);
@@ -80,6 +107,20 @@ int main() {
         }
         std::cout << "Success." << std::endl << std::endl;
 
+
+        std::cout << ".....  Neighborhood:  vonNeumann  (grid too small) ..."
+                  << std::endl;
+        assert(check_error_message<std::invalid_argument>(
+            "rect_2D_vonNeumann_small_grid",
+            [&pp](){
+                NBTest should_fail("rect_2D_vonNeumann_small_grid", pp);
+            },
+            "The grid shape is too small to accomodate a neighborhood with "
+            "'distance' parameter set to 1 in a periodic space!",
+            "", true
+        ));
+        std::cout << "Success." << std::endl << std::endl;
+        
 
         std::cout << ".....  Neighborhood:  vonNeumann (d=2) ..." << std::endl;
         NBTest rect_2D_vonNeumann_d2("rect_2D_vonNeumann_d2", pp);
@@ -328,6 +369,44 @@ int main() {
                                       {19, 23}));
             std::cout << "  Neighbors match for cell (4, 4)." << std::endl;
 
+        }
+        std::cout << "Success." << std::endl << std::endl;
+
+
+        std::cout << ".....  Neighborhood:  vonNeumann (small grid)  ..."
+                  << std::endl;
+        NBTest rect_2D_vonNeumann_np_sg("rect_2D_vonNeumann_np_small_grid",pp);
+        {
+            auto cm = rect_2D_vonNeumann_np_sg.cm;
+            auto grid = cm.grid();
+
+            assert(grid->nb_size() == 4);  // _maximum_ number of neighbours
+
+            // There are only three cells... and due to the grid not being
+            // periodic, this does not throw an error (as it does in the case
+            // of the periodic grid with a small shape)
+            assert(grid->shape()[0] == 3);
+            assert(grid->shape()[1] == 1);
+            assert(not grid->is_periodic());
+            std::cout << "Grid shape and periodicity matches." << std::endl;
+
+            std::cout << "Testing uniqueness ..." << std::endl;
+            assert(unique_neighbors(cm));
+            std::cout << "  Neighbors are unique." << std::endl;
+
+            std::cout << "Testing neighborhoods explicitly ..." << std::endl;
+
+            assert(expected_neighbors(cm, cm.cells().at(0), // (0,0)
+                                      {1}));
+            std::cout << "  Neighbors match for cell (0, 0)." << std::endl;
+
+            assert(expected_neighbors(cm, cm.cells().at(1), // (1,0)
+                                      {0, 2}));
+            std::cout << "  Neighbors match for cell (1, 0)." << std::endl;
+
+            assert(expected_neighbors(cm, cm.cells().at(2), // (2,0)
+                                      {1}));
+            std::cout << "  Neighbors match for cell (2, 0)." << std::endl;
         }
         std::cout << "Success." << std::endl << std::endl;
 

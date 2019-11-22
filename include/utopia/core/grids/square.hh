@@ -442,7 +442,7 @@ protected:
       */
     NBFuncID<Base> get_nb_func_vonNeumann(const Config& nb_params) {
         // Extract the optional distance parameter
-        const auto distance = get_nb_param_distance(nb_params);
+        const auto distance = get_nb_param_distance<true>(nb_params);
 
         // For distance 1, use the specialized functions which are defined as
         // class members (to don't bloat this method even more). Those
@@ -713,7 +713,7 @@ protected:
       */
     NBFuncID<Base> get_nb_func_Moore(const Config& nb_params) {
         // Extract the optional distance parameter
-        const auto distance = get_nb_param_distance(nb_params);
+        const auto distance = get_nb_param_distance<true>(nb_params);
 
         // For distance 1, use the specialized functions which are defined as
         // class members (to don't bloat this method even more). Those
@@ -1090,14 +1090,14 @@ protected:
     DistType expected_num_neighbors(const NBMode& nb_mode,
                                     const Config& nb_params) const override
     {
-        // Get the distance parameter, used in Moore and vonNeumann calculation
-        const auto distance = get_nb_param_distance(nb_params);
-
         // Distinguish by mode
         if (nb_mode == NBMode::empty) {
             return 0;
         }
         else if (nb_mode == NBMode::Moore) {
+            // Neighborhood size depends on the distance parameter. Get it.
+            const auto distance = get_nb_param_distance(nb_params);
+
             if (distance <= 1) {
                 return std::pow(2 + 1, dim) - 1;
             }
@@ -1106,6 +1106,9 @@ protected:
             }
         }
         else if (nb_mode == NBMode::vonNeumann) {
+            // Neighborhood size depends on the distance parameter. Get it.
+            const auto distance = get_nb_param_distance(nb_params);
+
             // This one is more complicated ...
             // Define a lambda that can be called recursively
             auto num_nbs_impl = [](const unsigned short int d,  // dimension
@@ -1139,20 +1142,41 @@ protected:
 
     // .. Neighborhood parameter extraction helpers ...........................
 
+    /// Extract the ``distance`` neighborhood parameter from the given config
+    /** \note   This will never return a KeyError; if the key is not given,
+      *         this method will return ``1``.
+      *
+      * \tparam check_shape  Whether to check the shape of the grid is large
+      *                      enough for this distance. For all SquareGrid
+      *                      neighborhoods in periodic space, the grid needs
+      *                      to be at least ``2 * distance + 1`` cells wide in
+      *                      each dimension.
+      *
+      * \param  params       The neighborhood parameters to extract the
+      *                      ``distance`` parameter from.
+      */
+    template<bool check_shape=false>
     DistType get_nb_param_distance(const Config& params) const {
         const auto distance = get_as<DistType>("distance", params, 1);
 
-        // Check the value is smaller than the grid shape. It eeds to fit into
-        // the shape of the grid
-        if (distance * 2 + 1 > this->shape().min()) {
-            // To inform about the grid shape, create a stringstream
-            std::stringstream shape_ss;
-            this->shape().print(shape_ss, "Grid Shape:");
+        // Check the value is smaller than the grid shape. It needs to fit into
+        // the shape of the grid, otherwise all the algorithms above would have
+        // to check for duplicate entries and be set-based, which would be
+        // very inefficient.
+        if constexpr (check_shape) {
+            if (    this->is_periodic()
+                and (distance * 2 + 1 > this->shape().min()))
+            {
+                // To inform about the grid shape, print it to the stringstream
+                // and include it in the error message below.
+                std::stringstream shape_ss;
+                this->shape().print(shape_ss, "Grid Shape:");
 
-            throw std::invalid_argument("Grid shape is too small to "
-                "accomodate a neighborhood with 'distance' parameter set to "
-                + get_as<std::string>("distance", params, "1") + "! "
-                + shape_ss.str());
+                throw std::invalid_argument("The grid shape is too small to "
+                    "accomodate a neighborhood with 'distance' parameter set "
+                    "to " + get_as<std::string>("distance", params, "1")
+                    + " in a periodic space!\n" + shape_ss.str());
+            }
         }
 
         return distance;
