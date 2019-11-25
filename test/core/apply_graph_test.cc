@@ -6,7 +6,7 @@
 
 #include <utopia/core/apply.hh>
 #include <utopia/core/state.hh>
-#include <utopia/core/cell.hh>
+#include <utopia/core/graph_entity.hh>
 
 namespace Utopia
 {
@@ -22,16 +22,17 @@ struct EdgeState {
 };
 
 
-/// Specify the traits of vertices and edges
-/** Vertices and edges need to be defined as Utopia::Cells. The cell struct
- *  contains all relevant traits that are required to provide 
- *  the full functionality required to use Utopia features.
- */
-using VertexTraits = Utopia::CellTraits<VertexState, Update::manual>;
-using EdgeTraits = Utopia::CellTraits<EdgeState, Update::manual>;
+/// The traits of a vertex are just the traits of a graph entity
+using VertexTraits = Utopia::GraphEntityTraits<VertexState, Update::manual>;
 
-using Vertex = Cell<VertexTraits>;
-using Edge = Cell<EdgeTraits>;
+/// The traits of an edge are just the traits of a graph entity
+using EdgeTraits = Utopia::GraphEntityTraits<EdgeState, Update::manual>;
+
+/// A vertex is a graph entity with vertex traits
+using Vertex = GraphEntity<VertexTraits>;
+
+/// An edge is a graph entity with edge traits
+using Edge = GraphEntity<EdgeTraits>;
 
 /// The test graph types
 using G_undir_vec = boost::adjacency_list<
@@ -79,17 +80,15 @@ struct GraphFixture {
         g{}
     {
         for (auto v = 0u; v<10; ++v){
-            boost::add_vertex(Vertex(v, VertexState{10}), this->g);
+            boost::add_vertex(Vertex(VertexState{10}), this->g);
         }
 
         // Create num_edges random edges
         std::uniform_int_distribution<unsigned> dist(0, num_vertices - 1);
         for (auto e = 0u; e < num_edges; ++e){
-            // Sample two random vertices
-            const auto v1 = boost::vertex(dist(rng), g);
-            const auto v2 = boost::vertex(dist(rng), g);
-
-            boost::add_edge(v1, v2, Edge(e, EdgeState{}), g);
+            boost::add_edge(boost::random_vertex(g, rng), 
+                            boost::random_vertex(g, rng), 
+                            Edge(EdgeState{20}), g);
         }
 
 
@@ -97,10 +96,10 @@ struct GraphFixture {
 };
 
 using GraphFixtures = boost::mpl::vector<
-    // GraphFixture<G_dir_vec>,
+    GraphFixture<G_dir_vec>,
     GraphFixture<G_dir_list>,
-    GraphFixture<G_undir_list>
-    // GraphFixture<G_undir_vec>
+    GraphFixture<G_undir_list>,
+    GraphFixture<G_undir_vec>
 >;
 
 
