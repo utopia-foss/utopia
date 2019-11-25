@@ -4,7 +4,7 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/random.hpp>
 
-#include <utopia/core/apply.hh>
+#include <utopia/core/graph_apply.hh>
 #include <utopia/core/state.hh>
 #include <utopia/core/graph_entity.hh>
 
@@ -107,6 +107,23 @@ using GraphFixtures = boost::mpl::vector<
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_manual_rule, G, 
     GraphFixtures, G)
 {
+    apply_rule<Over::vertices, Update::async, Shuffle::off>(
+        [](auto v, auto& g){
+            auto& state = g[v].state;
+            state.v_prop = 1;
+            return state;
+        },
+        G::g
+    );
+
+    // apply_rule<Over::vertices, Update::async, Shuffle::on>(
+    //     [](auto v, auto& g){
+    //         auto& state = g[v].state;
+    //         state.v_prop = 10;
+    //         return state;
+    //     },
+    //     G::g
+    // );
 
 }
 
