@@ -89,16 +89,87 @@ For Python, the `h5py <http://www.h5py.org>`_ library provides a very convenient
 
   While working with Utopia's output data directly is possible, be aware that the frontend takes care of a great deal of things, which are not available in such a case: It loads many HDF5 files into a uniform data tree, makes the configuration accessible, allows to collect data from different parts of the tree for plotting, reshapes data to be in the expected shape ...
 
+The versatile ways of configuring your simulations
+--------------------------------------------------
 
-Config file madness
--------------------
-What is this config file madness?
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The many different configuration files might be overwhelming at first. But be sure: They are all there for a reason and you can greatly benefit from them.
 
-.. todo::
+What possibilities are there to configure my model?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  Write this.
+When you get started with Utopia, you will probably run an already existing
+model, which has a base configuration, so that everything it right up to work fine. 
+To be a little bit more specific, first of all Utopias core itself has a base configuration and then on top of 
+this follow a hierarchy of configuration possibilities. 
+
+#. **Base configuration:** all the default values for the Multiverse
+#. **User configuration:** user- or machine-specific defaults
+
+    * Deploy using ``utopia config user --deploy``; see CLI help for more info.
+
+#. **Model configurations:** model-specific defaults
+
+    * Defined alongside the respective models, see :ref:`above <feature_model_config>`
+    * Provide defaults not for the *whole* meta configuration but for the respective models; can be imported where needed.
+
+#. **Run configuration:** adaptations for a specific simulation run
+#. **Temporary changes:** defined via the CLI
+
+This could be a little bit confusing on the first glance, but no worries. In the
+next chapter is a more detailed description of the single possibilities and when
+to use what. 
+
+
+
+Then it is possible to crate your own user or machine specific configuration
+file. To do this just create the file ``~/.config/utopia/user_cfg.yml`` and fill it
+with all the configurations, you want to have as default. 
+
+What when to use?
+^^^^^^^^^^^^^^^^^
+
+Think about importance or frequencies in change of different parameters. Some of
+them will maybe never change. The following enumeration will start at the lowest
+frequency which will be the: 
+
+#. **Base configuration:** 
+    The base or meta configuration of Utopia includes a lot of technical details. 
+    For example where get's the libraries, where to put the output of a simulation, and so on. 
+    The most stuff of this you will rarely get in touch with. 
+
+#. **User configuration:** 
+    The next step are then your personal user specific configuration in the 
+    ``~/.config/utopia/user_cfg.yml`` file. So you can overwrite some default values, if
+    you need it, without editing the core code. This is a meta configuration,
+    because it will influence every model in every run.
+    As mentioned above make use of ``utopia config user --deploy``.
+
+#. **Model configuration:**
+    Every model has it's own default configuration file, where you can define
+    parameters which effect only this model, but in every run. This is clearly
+    distinct from the user configuration file, which affects all models.
+
+#. **Run configuration:** 
+    If you want to pass your own configuration to a specific model, you can do this by
+    passing a configuration file trough the run command to it. This can be done by 
+    ``Utopia run <model> run_cfg_path </path/to/config/file>``. Since this kind
+    of configuration use the run command, it is only valid for this specific
+    run. 
+
+#. **Temporary changes:** 
+    If you call ``Utopia run --help`` your can find a list of some useful commands 
+    which can by passed by the run command. For example with ``Utopia run
+    --num-steps <NUMSTEPS>``, you can choose how many time steps the model
+    should iterate. 
+
+If you have more questions about this, you should take a look on the
+:ref:`Utopia feature list<utopia_features>`.
+Otherwise, if you're dealing with the CLT, adding the --help flag is always a good idea 
+if you have no clue what a command does. 
+
+As you can see, which way to configure your use of Utopia depends on the scope
+on which you want to change something. So ask yourself, before changing
+something, where and when do you need it. 
 
 
 Data tree structure
