@@ -37,8 +37,9 @@ namespace DataIO
  *
  * @tparam T Parameter pack to check
  */
-template <typename... T>
-struct all_callable : std::conjunction<Utopia::Utils::is_callable_object<T>...>
+template < typename... T >
+struct all_callable
+    : std::conjunction< Utopia::Utils::is_callable_object< T >... >
 {
 };
 
@@ -52,16 +53,15 @@ struct all_callable : std::conjunction<Utopia::Utils::is_callable_object<T>...>
  * @page DataManagerFactories Factories module
  *  \section what Overview
  *  This file provides a functor for producing default writetasks from complete
- *  or simplified arguments and another functor for producing a default datamanager.
- *  \section impl Implementation
- *  The writetask factory is implemented as class because its encapsulation
- *  together with its helper functions is natural. It takes care of building
- *  writetasks from simplified user supplied arguments, and is build to be
- *  extendible. It distinguishes between the use of these simplified arguments
- *  and the usage of the full argument list needed to invoke the writetask
- *  constructor directly.
- *  The datamanager factory is much simpler in its logic, and hences is
- * implemented as a template function.
+ *  or simplified arguments and another functor for producing a default
+ * datamanager. \section impl Implementation The writetask factory is
+ * implemented as class because its encapsulation together with its helper
+ * functions is natural. It takes care of building writetasks from simplified
+ * user supplied arguments, and is build to be extendible. It distinguishes
+ * between the use of these simplified arguments and the usage of the full
+ * argument list needed to invoke the writetask constructor directly. The
+ * datamanager factory is much simpler in its logic, and hences is implemented
+ * as a template function.
  *
  */
 
@@ -75,10 +75,10 @@ struct all_callable : std::conjunction<Utopia::Utils::is_callable_object<T>...>
  */
 struct DatasetDescriptor
 {
-    std::string path;
-    std::vector<hsize_t> dataset_capacity = {};
-    std::vector<hsize_t> dataset_chunksize = {};
-    int dataset_compression = 0;
+    std::string            path;
+    std::vector< hsize_t > dataset_capacity    = {};
+    std::vector< hsize_t > dataset_chunksize   = {};
+    int                    dataset_compression = 0;
 };
 
 /**
@@ -112,12 +112,13 @@ enum struct TypeTag
  * @tparam TypeTag::plain Typetag, indicates what type of data source is used,
  *         has only to be changed for graphs.
  */
-template <class Model, TypeTag typetag = TypeTag::plain>
+template < class Model, TypeTag typetag = TypeTag::plain >
 class TaskFactory
 {
   private:
-    static std::unordered_map<std::string,
-                              std::function<std::string(std::string, Model&)>>
+    static std::unordered_map<
+        std::string,
+        std::function< std::string(std::string, Model&) > >
         _path_modifier;
 
     /**
@@ -139,14 +140,14 @@ class TaskFactory
      * @return Func Function which writes attributes as constructed from
      arguments.
      */
-    template <class Func, class Attribute>
+    template < class Func, class Attribute >
     Func
     _make_attribute_writer(Attribute&& attr)
     {
         Func writer{};
 
-        if constexpr (std::is_convertible_v<std::decay_t<Attribute>,
-                                            std::string>)
+        if constexpr (std::is_convertible_v< std::decay_t< Attribute >,
+                                             std::string >)
         {
             // string-ization silences warning regarding
             // array comparison via '=='
@@ -163,37 +164,39 @@ class TaskFactory
             }
         }
         else if constexpr (Utopia::Utils::is_tuple_like_v<
-                               std::decay_t<Attribute>>)
+                               std::decay_t< Attribute > >)
         {
             // if the first thing held by the Dataset_attribute tuplelike is
             // not convertible to stirng, and hence cannot be used to name
             // the thing, error is thrown.
             static_assert(
-                std::is_convertible_v<std::decay_t<decltype(std::get<0>(attr))>,
-                                      std::string>,
+                std::is_convertible_v<
+                    std::decay_t< decltype(std::get< 0 >(attr)) >,
+                    std::string >,
                 "Error, first entry of Dataset_attribute must be a string "
                 "naming the attribute!");
 
             // check if the $ indicating string interpolation like behavior
             // is found. If yes, invoke path modifier, else leave as is
-            std::string name = std::get<0>(attr);
-            auto pos = name.find('$'); // find indicator
+            std::string name = std::get< 0 >(attr);
+            auto        pos  = name.find('$'); // find indicator
 
             if (pos != std::string::npos)
             {
-                auto path_builder = _path_modifier[name.substr(pos + 1)];
-                std::string new_path = name.substr(0, pos);
+                auto        path_builder = _path_modifier[name.substr(pos + 1)];
+                std::string new_path     = name.substr(0, pos);
 
                 writer = [attr, path_builder, new_path](auto& object,
                                                         auto& m) -> void {
                     object->add_attribute(path_builder(new_path, m),
-                                          std::get<1>(attr));
+                                          std::get< 1 >(attr));
                 };
             }
             else
             {
                 writer = [attr](auto& object, auto&) -> void {
-                    object->add_attribute(std::get<0>(attr), std::get<1>(attr));
+                    object->add_attribute(std::get< 0 >(attr),
+                                          std::get< 1 >(attr));
                 };
             }
         }
@@ -214,10 +217,10 @@ class TaskFactory
      * @param dataset_descriptor Describes dataset properties.
      * @return auto Default::DefaultBuilder<Model> object
      */
-    Default::DefaultBuilder<Model>
+    Default::DefaultBuilder< Model >
     _make_dataset_builder(DatasetDescriptor dataset_descriptor)
     {
-        Default::DefaultBuilder<Model> dataset_builder;
+        Default::DefaultBuilder< Model > dataset_builder;
         auto pos = dataset_descriptor.path.find('$'); // find indicator
         if (pos != std::string::npos)
         {
@@ -228,9 +231,9 @@ class TaskFactory
             std::string new_path = dataset_descriptor.path.substr(0, pos);
             // put the latter into the dataset builder
             dataset_builder =
-                [dataset_descriptor, path_builder,
-                 new_path](std::shared_ptr<HDFGroup>& group,
-                           Model& m) -> std::shared_ptr<HDFDataset<HDFGroup>> {
+                [dataset_descriptor, path_builder, new_path](
+                    std::shared_ptr< HDFGroup >& group,
+                    Model& m) -> std::shared_ptr< HDFDataset< HDFGroup > > {
                 return group->open_dataset(
                     path_builder(new_path, m),
                     dataset_descriptor.dataset_capacity,
@@ -243,8 +246,8 @@ class TaskFactory
 
             dataset_builder =
                 [dataset_descriptor](
-                    std::shared_ptr<HDFGroup>& group,
-                    Model&) -> std::shared_ptr<HDFDataset<HDFGroup>> {
+                    std::shared_ptr< HDFGroup >& group,
+                    Model&) -> std::shared_ptr< HDFDataset< HDFGroup > > {
                 return group->open_dataset(
                     dataset_descriptor.path,
                     dataset_descriptor.dataset_capacity,
@@ -267,24 +270,24 @@ class TaskFactory
      * @param getter Extracts data from the type given by typetag.
      * @return Default::DefaultDataWriter<Model>
      */
-    template <class SourceGetter, class Getter>
-    Default::DefaultDataWriter<Model>
+    template < class SourceGetter, class Getter >
+    Default::DefaultDataWriter< Model >
     _adapt_graph_writer(SourceGetter&& get_source, Getter&& getter)
     {
         // this is largely a copy of the 'save_graph_properties' function
 
-        Default::DefaultDataWriter<Model> writer;
+        Default::DefaultDataWriter< Model > writer;
 
         // using GraphType =
         // std::decay_t<decltype(get_source(std::declval<Model>()))>;
-        using GraphType =
-            std::decay_t<std::invoke_result_t<decltype(get_source), Model&>>;
+        using GraphType = std::decay_t<
+            std::invoke_result_t< decltype(get_source), Model& > >;
 
         if constexpr (typetag == TypeTag::vertex_property)
         {
             writer = [&getter, &get_source](
-                         std::shared_ptr<HDFDataset<HDFGroup>>& dataset,
-                         Model& m) -> void {
+                         std::shared_ptr< HDFDataset< HDFGroup > >& dataset,
+                         Model&                                     m) -> void {
                 // Collect some information on the graph
                 auto& graph = get_source(m);
 
@@ -300,8 +303,8 @@ class TaskFactory
         else if constexpr (typetag == TypeTag::edge_property)
         {
             writer = [&getter, &get_source](
-                         std::shared_ptr<HDFDataset<HDFGroup>>& dataset,
-                         Model& m) -> void {
+                         std::shared_ptr< HDFDataset< HDFGroup > >& dataset,
+                         Model&                                     m) -> void {
                 auto& graph = get_source(m);
 
                 // Make edge iterators
@@ -314,13 +317,13 @@ class TaskFactory
             };
         }
         else if constexpr (typetag == TypeTag::vertex_descriptor and
-                           not std::is_same_v<std::decay_t<Getter>,
-                                              std::function<void()>>)
+                           not std::is_same_v< std::decay_t< Getter >,
+                                               std::function< void() > >)
         {
 
             writer = [&getter, &get_source](
-                         std::shared_ptr<HDFDataset<HDFGroup>>& dataset,
-                         Model& m) -> void {
+                         std::shared_ptr< HDFDataset< HDFGroup > >& dataset,
+                         Model&                                     m) -> void {
                 auto& graph = get_source(m);
 
                 // Make edge iterators
@@ -332,12 +335,12 @@ class TaskFactory
             };
         }
         else if constexpr (typetag == TypeTag::edge_descriptor and
-                           not std::is_same_v<std::decay_t<Getter>,
-                                              std::function<void()>>)
+                           not std::is_same_v< std::decay_t< Getter >,
+                                               std::function< void() > >)
         {
             writer = [&getter, &get_source](
-                         std::shared_ptr<HDFDataset<HDFGroup>>& dataset,
-                         Model& m) -> void {
+                         std::shared_ptr< HDFDataset< HDFGroup > >& dataset,
+                         Model&                                     m) -> void {
                 auto& graph = get_source(m);
 
                 // Make edge iterators
@@ -352,13 +355,13 @@ class TaskFactory
         // for writing pure graphs
 
         // vertex
-        else if constexpr (std::is_same_v<std::decay_t<Getter>,
-                                          std::function<void()>> and
+        else if constexpr (std::is_same_v< std::decay_t< Getter >,
+                                           std::function< void() > > and
                            typetag == TypeTag::vertex_descriptor)
         {
-            writer =
-                [&get_source](std::shared_ptr<HDFDataset<HDFGroup>>& dataset,
-                              Model& m) -> void {
+            writer = [&get_source](
+                         std::shared_ptr< HDFDataset< HDFGroup > >& dataset,
+                         Model&                                     m) -> void {
                 auto& graph = get_source(m);
 
                 auto [v, v_end] = boost::vertices(graph);
@@ -368,24 +371,26 @@ class TaskFactory
             };
         }
         // edges
-        else if constexpr (std::is_same_v<std::decay_t<Getter>,
-                                          std::function<void()>> and
+        else if constexpr (std::is_same_v< std::decay_t< Getter >,
+                                           std::function< void() > > and
                            typetag == TypeTag::edge_descriptor)
         {
             writer =
-                [get_source](std::shared_ptr<HDFDataset<HDFGroup>>& dataset,
+                [get_source](std::shared_ptr< HDFDataset< HDFGroup > >& dataset,
                              Model& m) -> void {
                 auto& graph = get_source(m);
 
                 auto [e, e_end] = boost::edges(graph);
 
                 dataset->write(e, e_end, [&](auto&& ed) {
-                    return boost::get(boost::vertex_index_t(), graph,
+                    return boost::get(boost::vertex_index_t(),
+                                      graph,
                                       boost::source(ed, graph));
                 });
 
                 dataset->write(e, e_end, [&](auto&& ed) {
-                    return boost::get(boost::vertex_index_t(), graph,
+                    return boost::get(boost::vertex_index_t(),
+                                      graph,
                                       boost::target(ed, graph));
                 });
             };
@@ -452,79 +457,84 @@ class TaskFactory
      *         pair containing a name and a writetask, to be used with the
      *         datamanager.
      */
-    template <class SourceGetter, class Getter, class Group_attribute,
-              class Dataset_attribute> // FIXME: make a descriptor for this!
-    std::pair<std::string, Default::DefaultWriteTask<Model>>
+    template < class SourceGetter,
+               class Getter,
+               class Group_attribute,
+               class Dataset_attribute > // FIXME: make a descriptor for this!
+    std::pair< std::string, Default::DefaultWriteTask< Model > >
     operator()(
         // is in config
-        std::string name, std::string basegroup_path,
+        std::string       name,
+        std::string       basegroup_path,
         DatasetDescriptor dataset_descriptor,
         // has to be given
-        SourceGetter&& get_source, Getter&& getter,
-        Group_attribute&& group_attribute,
+        SourceGetter&&      get_source,
+        Getter&&            getter,
+        Group_attribute&&   group_attribute,
         Dataset_attribute&& dataset_attribute)
     {
         // return type of get_source when used with model
         using Container =
-            std::decay_t<decltype(get_source(std::declval<Model&>()))>;
+            std::decay_t< decltype(get_source(std::declval< Model& >())) >;
 
         // asserts that the SourceGetter-type is really a container type.
         static_assert(
-            Utils::is_container_v<std::decay_t<Container>> or
-                Utils::is_graph_v<std::decay_t<Container>>,
+            Utils::is_container_v< std::decay_t< Container > > or
+                Utils::is_graph_v< std::decay_t< Container > >,
             "Error, the argument 'get_source' must return a container "
             "type or graph, i.e., "
             "a type with an iterator");
 
         // make basegroup builder and attribute builders
 
-        Default::DefaultBuilder<Model> dataset_builder =
+        Default::DefaultBuilder< Model > dataset_builder =
             _make_dataset_builder(dataset_descriptor);
 
-        auto group_attribute_writer =
-            _make_attribute_writer<Default::DefaultAttributeWriterGroup<Model>>(
-                std::forward<Group_attribute>(group_attribute));
+        auto group_attribute_writer = _make_attribute_writer<
+            Default::DefaultAttributeWriterGroup< Model > >(
+            std::forward< Group_attribute >(group_attribute));
 
         auto dataset_attribute_writer = _make_attribute_writer<
-            Default::DefaultAttributeWriterDataset<Model>>(
-            std::forward<Dataset_attribute>(dataset_attribute));
+            Default::DefaultAttributeWriterDataset< Model > >(
+            std::forward< Dataset_attribute >(dataset_attribute));
 
-        Default::DefaultDataWriter<Model> datawriter;
+        Default::DefaultDataWriter< Model > datawriter;
 
-        if constexpr (Utils::is_graph_v<std::decay_t<Container>> and
+        if constexpr (Utils::is_graph_v< std::decay_t< Container > > and
                       (typetag != TypeTag::plain))
         {
             datawriter =
-                _adapt_graph_writer(std::forward<SourceGetter>(get_source),
-                                    std::forward<Getter>(getter));
+                _adapt_graph_writer(std::forward< SourceGetter >(get_source),
+                                    std::forward< Getter >(getter));
         }
         else
         {
 
             datawriter = [getter, get_source](
-                             std::shared_ptr<HDFDataset<HDFGroup>>& dataset,
+                             std::shared_ptr< HDFDataset< HDFGroup > >& dataset,
                              Model& m) -> void {
-                dataset->write(get_source(m).begin(), get_source(m).end(),
-                               getter);
+                dataset->write(
+                    get_source(m).begin(), get_source(m).end(), getter);
             };
         }
 
         // build a defaultwriteTask
         return std::make_pair(
-            name, Default::DefaultWriteTask<Model>{
-                      // builds the basegroup to write datasets in
-                      Default::DefaultBaseGroupBuilder(
-                          [basegroup_path](std::shared_ptr<HDFGroup> parent) {
-                              return parent->open_group(basegroup_path);
-                          }),
-                      // writes out data
-                      datawriter,
-                      // builds datasets as needed
-                      dataset_builder,
-                      // writes attributes to base group
-                      group_attribute_writer,
-                      // writes attributes to dataset
-                      dataset_attribute_writer});
+            name,
+            Default::DefaultWriteTask< Model >{
+                // builds the basegroup to write datasets in
+                Default::DefaultBaseGroupBuilder(
+                    [basegroup_path](std::shared_ptr< HDFGroup > parent) {
+                        return parent->open_group(basegroup_path);
+                    }),
+                // writes out data
+                datawriter,
+                // builds datasets as needed
+                dataset_builder,
+                // writes attributes to base group
+                group_attribute_writer,
+                // writes attributes to dataset
+                dataset_attribute_writer });
     }
 
     /**
@@ -541,16 +551,18 @@ class TaskFactory
      * active dataset
      * @return std::pair<std::string, Default::DefaultWriteTask<Model>>
      */
-    std::pair<std::string, Default::DefaultWriteTask<Model>>
-    operator()(std::string name, Default::DefaultBaseGroupBuilder group_builder,
-               Default::DefaultDataWriter<Model> writer,
-               Default::DefaultBuilder<Model> dataset_builder,
-               Default::DefaultAttributeWriterGroup<Model> group_attr,
-               Default::DefaultAttributeWriterDataset<Model> dset_attr)
+    std::pair< std::string, Default::DefaultWriteTask< Model > >
+    operator()(std::string                                     name,
+               Default::DefaultBaseGroupBuilder                group_builder,
+               Default::DefaultDataWriter< Model >             writer,
+               Default::DefaultBuilder< Model >                dataset_builder,
+               Default::DefaultAttributeWriterGroup< Model >   group_attr,
+               Default::DefaultAttributeWriterDataset< Model > dset_attr)
     {
-        return std::make_pair(name, Default::DefaultWriteTask<Model>(
-                                        group_builder, writer, dataset_builder,
-                                        group_attr, dset_attr));
+        return std::make_pair(
+            name,
+            Default::DefaultWriteTask< Model >(
+                group_builder, writer, dataset_builder, group_attr, dset_attr));
     }
 };
 
@@ -560,15 +572,16 @@ class TaskFactory
  * @tparam Model
  * @tparam typetag
  */
-template <typename Model, TypeTag typetag>
-std::unordered_map<std::string, std::function<std::string(std::string, Model&)>>
-    TaskFactory<Model, typetag>::_path_modifier =
-        std::unordered_map<std::string,
-                           std::function<std::string(std::string, Model&)>>{
-            {"time",
-             [](std::string path, Model& m) {
-                 return path + "_" + std::to_string(m.get_time());
-             }} // for time addition
+template < typename Model, TypeTag typetag >
+std::unordered_map< std::string,
+                    std::function< std::string(std::string, Model&) > >
+    TaskFactory< Model, typetag >::_path_modifier =
+        std::unordered_map< std::string,
+                            std::function< std::string(std::string, Model&) > >{
+            { "time",
+              [](std::string path, Model& m) {
+                  return path + "_" + std::to_string(m.get_time());
+              } } // for time addition
         };
 
 /**
@@ -582,100 +595,105 @@ std::unordered_map<std::string, std::function<std::string(std::string, Model&)>>
  * @param w_args Tuples, have to contain [tagtype, name, argumnets...]
  * @return auto DefaultDatamanager with DefaultWriteTasks produced from model
  */
-template <class Model>
+template < class Model >
 class DataManagerFactory
 {
 
     /**
-     * @brief Function which calls the taskfactory with argument tuples, 
+     * @brief Function which calls the taskfactory with argument tuples,
      *        and takes care of using the correct type-tags
      *
-     * @tparam ArgTpl automatically determined 
+     * @tparam ArgTpl automatically determined
      * @param typetag string indicating which type tag to use
      * @param arg_tpl tuple of arguments to invoke the taskfactory with
-     * @return Default::DefaultWriteTask<Model> produced by invoking the 
+     * @return Default::DefaultWriteTask<Model> produced by invoking the
      *         TaskFactory with the passed argument tuple
      */
-    template <typename ArgTpl>
-    std::pair<std::string, Default::DefaultWriteTask<Model>>
+    template < typename ArgTpl >
+    std::pair< std::string, Default::DefaultWriteTask< Model > >
     _call_taskfactory(std::string typetag, ArgTpl&& arg_tpl)
     {
 
         if (typetag == "plain")
         {
-            DataIO::TaskFactory<Model, TypeTag::plain> factory;
+            DataIO::TaskFactory< Model, TypeTag::plain > factory;
 
-            return std::apply(factory, std::forward<ArgTpl>(arg_tpl));
+            return std::apply(factory, std::forward< ArgTpl >(arg_tpl));
         }
         else if (typetag == "edge_property")
         {
-            DataIO::TaskFactory<Model, TypeTag::edge_property> factory;
+            DataIO::TaskFactory< Model, TypeTag::edge_property > factory;
 
-            return std::apply(factory, std::forward<ArgTpl>(arg_tpl));
+            return std::apply(factory, std::forward< ArgTpl >(arg_tpl));
         }
         else if (typetag == "vertex_descriptor")
         {
-            DataIO::TaskFactory<Model, TypeTag::vertex_descriptor> factory;
+            DataIO::TaskFactory< Model, TypeTag::vertex_descriptor > factory;
 
-            return std::apply(factory, std::forward<ArgTpl>(arg_tpl));
+            return std::apply(factory, std::forward< ArgTpl >(arg_tpl));
         }
         else if (typetag == "vertex_property")
         {
-            DataIO::TaskFactory<Model, TypeTag::vertex_property> factory;
+            DataIO::TaskFactory< Model, TypeTag::vertex_property > factory;
 
-            return std::apply(factory, std::forward<ArgTpl>(arg_tpl));
+            return std::apply(factory, std::forward< ArgTpl >(arg_tpl));
         }
         else
         {
-            DataIO::TaskFactory<Model, TypeTag::edge_descriptor> factory;
+            DataIO::TaskFactory< Model, TypeTag::edge_descriptor > factory;
 
-            return std::apply(factory, std::forward<ArgTpl>(arg_tpl));
+            return std::apply(factory, std::forward< ArgTpl >(arg_tpl));
         }
     }
 
   public:
     /**
      * @brief Builds a new datamanager from a config file and a tuple of tuples
-     *        of arguments. 
-     * @details The latter are supplemented by the arguments given 
-     *        by the config, and then passed to the writetask factory, each. 
-     *        The result is then used for creating the datamanager. The 
-     *        arguments that need to be supplied in the code are 
-     *        - function which returns the data source, preferably by reference. 
-     *          Mind that you need to use decltype(auto) as return type if using 
-     *          a lambda. 
-     *        - the getter function which extracts data from the sources values, 
-     *          same thing as employed by dataset->write. 
-     *        - callable to write  group attribute or tuple containing (name, data)
-     *          or string reading "empty" if no attributes are desired
-     *        - callable to write  dataset attribute or tuple containing (name, data)
-     *          or string reading "empty" if no attributes are desired     
-     * 
+     *        of arguments.
+     * @details The latter are supplemented by the arguments given
+     *        by the config, and then passed to the writetask factory, each.
+     *        The result is then used for creating the datamanager. The
+     *        arguments that need to be supplied in the code are
+     *        - function which returns the data source, preferably by reference.
+     *          Mind that you need to use decltype(auto) as return type if using
+     *          a lambda.
+     *        - the getter function which extracts data from the sources values,
+     *          same thing as employed by dataset->write.
+     *        - callable to write  group attribute or tuple containing (name,
+     * data) or string reading "empty" if no attributes are desired
+     *        - callable to write  dataset attribute or tuple containing (name,
+     * data) or string reading "empty" if no attributes are desired
+     *
      * @tparam Args automatically determined
      * @param conf config node giving the 'data_manager' configuration nodes
-     * @param args tuple of argument tuples 
-     * @return auto DefaultDatamanager<Model> with the tasks built from config and arguments
+     * @param args tuple of argument tuples
+     * @return auto DefaultDatamanager<Model> with the tasks built from config
+     * and arguments
      */
-    template <typename... Args>
-    auto operator()(const Config& conf, const std::tuple<Args...>& args) {
+    template < typename... Args >
+    auto
+    operator()(const Config& conf, const std::tuple< Args... >& args)
+    {
         // Get the global data manager logger
         const auto _log = spdlog::get("data_mngr");
         // FIXME: make this a member
 
-        if constexpr (sizeof...(Args) == 0) {
+        if constexpr (sizeof...(Args) == 0)
+        {
             _log->info("Empty argument tuple for DataManager factory, "
                        "building default ...");
-            return Default::DefaultDataManager<Model>{};
+            return Default::DefaultDataManager< Model >{};
         }
-        else {
+        else
+        {
             // read the tasks from the config into a map
             // has the consequence that the ordering need to match
-            std::map<std::string, Config> tasknodes;
+            std::map< std::string, Config > tasknodes;
             for (auto&& node : conf["tasks"])
             {
                 _log->info("Name of current task: {}",
-                           node.first.as<std::string>());
-                tasknodes[node.first.as<std::string>()] = node.second;
+                           node.first.as< std::string >());
+                tasknodes[node.first.as< std::string >()] = node.second;
             }
 
             auto tasks = boost::hana::transform(
@@ -688,9 +706,9 @@ class DataManagerFactory
                 // taksfactory. If no config node for a given taskname is found,
                 // exception is thrown
                 [&](const auto& arg_tpl) {
-                    std::string name = "";
-                    std::string name_in_tpl = std::get<0>(arg_tpl);
-                    auto tasknode_iter = tasknodes.find(name_in_tpl);
+                    std::string name          = "";
+                    std::string name_in_tpl   = std::get< 0 >(arg_tpl);
+                    auto        tasknode_iter = tasknodes.find(name_in_tpl);
 
                     // find the current task in the config, if not found throw
                     if (tasknode_iter != tasknodes.end())
@@ -700,34 +718,37 @@ class DataManagerFactory
                     else
                     {
                         // .. and throw if it is not
-                        throw std::invalid_argument("A task with name '"
-                            + name_in_tpl + "' was not found in the config!");
+                        throw std::invalid_argument(
+                            "A task with name '" + name_in_tpl +
+                            "' was not found in the config!");
                         // TODO Show available task names
                     }
 
                     // read out the typetag from the config
                     std::string typetag = "";
-                    if (not tasknode_iter->second["typetag"]){
+                    if (not tasknode_iter->second["typetag"])
+                    {
                         typetag = "plain";
                     }
-                    else{
-                        get_as<std::string>("typetag", tasknode_iter->second);
+                    else
+                    {
+                        get_as< std::string >("typetag", tasknode_iter->second);
                     }
 
                     // make a tuple of types from the argtuple except the first
                     // element which is the sentinel name
                     auto type_tuple = boost::hana::transform(
                         boost::hana::remove_at(arg_tpl,
-                                               boost::hana::size_t<0>{}),
+                                               boost::hana::size_t< 0 >{}),
                         [](auto&& t) {
                             return boost::hana::type_c<
-                                std::decay_t<decltype(t)>>;
+                                std::decay_t< decltype(t) > >;
                         });
 
-                    constexpr bool is_all_callable =
-                        decltype(boost::hana::unpack(
-                            type_tuple,
-                            boost::hana::template_<all_callable>))::type::value;
+                    constexpr bool is_all_callable = decltype(
+                        boost::hana::unpack(type_tuple,
+                                            boost::hana::template_<
+                                                all_callable >))::type::value;
 
                     // all arguments are callables
                     if constexpr (is_all_callable)
@@ -745,31 +766,31 @@ class DataManagerFactory
                             // name
                             name_in_tpl,
                             // basegroup_path
-                            get_as<std::string>("basegroup_path",
-                                                tasknode_iter->second),
+                            get_as< std::string >("basegroup_path",
+                                                  tasknode_iter->second),
                             // dataset_descriptor
                             DatasetDescriptor{
-                                get_as<std::string>("dataset_path",
-                                                    tasknode_iter->second),
+                                get_as< std::string >("dataset_path",
+                                                      tasknode_iter->second),
                                 (tasknode_iter->second["capacity"]
-                                     ? get_as<std::vector<hsize_t>>(
+                                     ? get_as< std::vector< hsize_t > >(
                                            "capacity", tasknode_iter->second)
-                                     : std::vector<hsize_t>{}),
+                                     : std::vector< hsize_t >{}),
                                 (tasknode_iter->second["chunksize"]
-                                     ? get_as<std::vector<hsize_t>>(
+                                     ? get_as< std::vector< hsize_t > >(
                                            "chunksize", tasknode_iter->second)
-                                     : std::vector<hsize_t>{}),
+                                     : std::vector< hsize_t >{}),
                                 (tasknode_iter->second["compression"]
-                                     ? get_as<int>("compression",
-                                                   tasknode_iter->second)
-                                     : 0)});
+                                     ? get_as< int >("compression",
+                                                     tasknode_iter->second)
+                                     : 0) });
 
                         // remove the sentinel name and concat the tuples, which
                         // then is forwarded to args
                         auto full_arg_tpl = std::tuple_cat(
                             config_args,
                             boost::hana::remove_at(arg_tpl,
-                                                   boost::hana::size_t<0>{}));
+                                                   boost::hana::size_t< 0 >{}));
 
                         _log->info("Building write task '{}' via factory ...",
                                    name);
@@ -781,9 +802,11 @@ class DataManagerFactory
             // then produce default datamanager with all default deciders,
             // triggers etc
 
-            return Default::DefaultDataManager<Model>(
-                conf, tasks, Default::default_decidertypes<Model>,
-                Default::default_triggertypes<Model>,
+            return Default::DefaultDataManager< Model >(
+                conf,
+                tasks,
+                Default::default_decidertypes< Model >,
+                Default::default_triggertypes< Model >,
                 Default::DefaultExecutionProcess());
         }
     }

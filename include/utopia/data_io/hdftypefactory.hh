@@ -21,17 +21,14 @@ namespace DataIO
 {
 
 /*!
-* \addtogroup DataIO
-* \{
-*/
+ * \addtogroup DataIO
+ * \{
+ */
 
 /*!
-* \addtogroup HDF5
-* \{
-*/
-
-
-
+ * \addtogroup HDF5
+ * \{
+ */
 
 /**
  * @brief Class which handles the conversion of C-types into hdf5types.
@@ -40,45 +37,45 @@ namespace DataIO
  */
 class HDFTypeFactory
 {
-private:
-    template <typename T>
+  private:
+    template < typename T >
     hid_t static inline __get_type__()
     {
         return 0;
     }
 
-public:
+  public:
     // typedef for variant type to store attributes in
     // all supported types are assembled into one variant here
-    using Variant = std::variant<float,
-                                 double,
-                                 long double,
-                                 int,
-                                 short int,
-                                 long int,
-                                 long long int,
-                                 unsigned int,
-                                 unsigned short int,
-                                 std::size_t,
-                                 unsigned long long,
-                                 bool,
-                                 char,
-                                 std::vector<float>,
-                                 std::vector<double>,
-                                 std::vector<long double>,
-                                 std::vector<int>,
-                                 std::vector<short int>,
-                                 std::vector<long int>,
-                                 std::vector<long long int>,
-                                 std::vector<unsigned int>,
-                                 std::vector<unsigned short int>,
-                                 std::vector<std::size_t>,
-                                 std::vector<unsigned long long>,
-                                 // std::vector<bool>,
-                                 std::vector<char>,
-                                 std::vector<std::string>,
-                                 std::string,
-                                 const char*>;
+    using Variant = std::variant< float,
+                                  double,
+                                  long double,
+                                  int,
+                                  short int,
+                                  long int,
+                                  long long int,
+                                  unsigned int,
+                                  unsigned short int,
+                                  std::size_t,
+                                  unsigned long long,
+                                  bool,
+                                  char,
+                                  std::vector< float >,
+                                  std::vector< double >,
+                                  std::vector< long double >,
+                                  std::vector< int >,
+                                  std::vector< short int >,
+                                  std::vector< long int >,
+                                  std::vector< long long int >,
+                                  std::vector< unsigned int >,
+                                  std::vector< unsigned short int >,
+                                  std::vector< std::size_t >,
+                                  std::vector< unsigned long long >,
+                                  // std::vector<bool>,
+                                  std::vector< char >,
+                                  std::vector< std::string >,
+                                  std::string,
+                                  const char* >;
     /**
      * @brief returns a HDF5 type from a given C++ primitive type
      *
@@ -89,26 +86,27 @@ public:
      *
      * @return     hid_t HDF5 library type corresponding to the given c++ type.
      */
-    template <typename T>
-    static inline hid_t type([[maybe_unused]] std::size_t size = 0)
+    template < typename T >
+    static inline hid_t
+    type([[maybe_unused]] std::size_t size = 0)
     {
         // include const char* which is a  c-string
-        if constexpr (Utils::is_container_v<T>)
+        if constexpr (Utils::is_container_v< T >)
         {
             if (size == 0)
             {
-                return H5Tvlen_create(__get_type__<typename T::value_type>());
+                return H5Tvlen_create(__get_type__< typename T::value_type >());
             }
             else
             {
-                hsize_t dim[1] = {size};
-                hid_t type =
-                    H5Tarray_create(__get_type__<typename T::value_type>(), 1, dim);
+                hsize_t dim[1] = { size };
+                hid_t   type   = H5Tarray_create(
+                    __get_type__< typename T::value_type >(), 1, dim);
 
                 return type;
             }
         }
-        else if constexpr (Utils::is_string_v<T>)
+        else if constexpr (Utils::is_string_v< T >)
         {
             if (size == 0)
             {
@@ -125,7 +123,7 @@ public:
         }
         else
         {
-            return __get_type__<T>();
+            return __get_type__< T >();
         }
     }
 };
@@ -133,70 +131,83 @@ public:
 // bunch of overloads of __get_type__ for getting hdf5 types for different c++
 // types
 template <>
-hid_t HDFTypeFactory::__get_type__<float>()
+hid_t
+HDFTypeFactory::__get_type__< float >()
 {
     return H5T_NATIVE_FLOAT;
 }
 template <>
-hid_t HDFTypeFactory::__get_type__<double>()
+hid_t
+HDFTypeFactory::__get_type__< double >()
 {
     return H5T_NATIVE_DOUBLE;
 }
 template <>
-hid_t HDFTypeFactory::__get_type__<long double>()
+hid_t
+HDFTypeFactory::__get_type__< long double >()
 {
     return H5T_NATIVE_LDOUBLE;
 }
 template <>
-hid_t HDFTypeFactory::__get_type__<int>()
+hid_t
+HDFTypeFactory::__get_type__< int >()
 {
     return H5T_NATIVE_INT;
 }
 
 template <>
-hid_t HDFTypeFactory::__get_type__<short int>()
+hid_t
+HDFTypeFactory::__get_type__< short int >()
 {
     return H5T_NATIVE_SHORT;
 }
 template <>
-hid_t HDFTypeFactory::__get_type__<long int>()
+hid_t
+HDFTypeFactory::__get_type__< long int >()
 {
     return H5T_NATIVE_LONG;
 }
 template <>
-hid_t HDFTypeFactory::__get_type__<long long int>()
+hid_t
+HDFTypeFactory::__get_type__< long long int >()
 {
     return H5T_NATIVE_LLONG;
 }
 template <>
-hid_t HDFTypeFactory::__get_type__<unsigned int>()
+hid_t
+HDFTypeFactory::__get_type__< unsigned int >()
 {
     return H5T_NATIVE_UINT;
 }
 template <>
-hid_t HDFTypeFactory::__get_type__<unsigned short int>()
+hid_t
+HDFTypeFactory::__get_type__< unsigned short int >()
 {
     return H5T_NATIVE_UINT16;
 }
 template <>
-hid_t HDFTypeFactory::__get_type__<std::size_t>()
+hid_t
+HDFTypeFactory::__get_type__< std::size_t >()
 {
     return H5T_NATIVE_ULLONG;
 }
 
 template <>
-hid_t HDFTypeFactory::__get_type__<unsigned long long>()
+hid_t
+HDFTypeFactory::__get_type__< unsigned long long >()
 {
     return H5T_NATIVE_ULLONG;
 }
 
 template <>
-hid_t HDFTypeFactory::__get_type__<bool>()
+hid_t
+HDFTypeFactory::__get_type__< bool >()
 {
     return H5T_NATIVE_HBOOL;
 }
 template <>
-hid_t HDFTypeFactory::__get_type__<char>()
+hid_t
+HDFTypeFactory::__get_type__< char >()
 {
     return H5T_NATIVE_CHAR;
 }

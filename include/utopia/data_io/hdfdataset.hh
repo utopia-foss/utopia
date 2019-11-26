@@ -25,16 +25,14 @@ namespace Utopia
 namespace DataIO
 {
 /*!
-* \addtogroup DataIO
-* \{
-*/
-
+ * \addtogroup DataIO
+ * \{
+ */
 
 /*!
-* \addtogroup HDF5
-* \{
-*/
-
+ * \addtogroup HDF5
+ * \{
+ */
 
 /**
  * @brief      Class representing a HDFDataset, wich reads and writes
@@ -42,10 +40,10 @@ namespace DataIO
  *
  * @tparam     HDFObject  The type of the parent object
  */
-template <class HDFObject>
+template < class HDFObject >
 class HDFDataset
 {
-private:
+  private:
     /**
      * @brief      helper function for making a non compressed dataset
      *
@@ -55,18 +53,20 @@ private:
      *
      * @return     The created dataset
      */
-    template <typename Datatype>
-    hid_t __create_dataset__(std::size_t typesize)
+    template < typename Datatype >
+    hid_t
+    __create_dataset__(std::size_t typesize)
     {
         hid_t dset = 0;
         // create group property list and (potentially) intermediate groups
         hid_t group_plist = H5Pcreate(H5P_LINK_CREATE);
         H5Pset_create_intermediate_group(group_plist, 1);
 
-        hid_t type = HDFTypeFactory::type<Datatype>(typesize);
+        hid_t   type  = HDFTypeFactory::type< Datatype >(typesize);
         hsize_t tsize = H5Tget_size(type);
 
-        // this is something different than typesize, which has meaning for arrays only
+        // this is something different than typesize, which has meaning for
+        // arrays only
         if (_capacity != _current_extent)
         {
             if (_chunksizes.size() != _rank)
@@ -89,25 +89,35 @@ private:
             }
 
             // make dataspace
-            hid_t dspace =
-                H5Screate_simple(_rank, _current_extent.data(), _capacity.data());
+            hid_t dspace = H5Screate_simple(
+                _rank, _current_extent.data(), _capacity.data());
             // create dataset and return
-            dset = H5Dcreate(_parent_object->get_id(), _path.c_str(), type,
-                             dspace, group_plist, plist, H5P_DEFAULT);
+            dset = H5Dcreate(_parent_object->get_id(),
+                             _path.c_str(),
+                             type,
+                             dspace,
+                             group_plist,
+                             plist,
+                             H5P_DEFAULT);
         }
         else
         {
             // make dataspace
-            hid_t dspace =
-                H5Screate_simple(_rank, _current_extent.data(), _capacity.data());
+            hid_t dspace = H5Screate_simple(
+                _rank, _current_extent.data(), _capacity.data());
 
             // can create the dataset right away
-            dset = H5Dcreate(_parent_object->get_id(), _path.c_str(), type,
-                             dspace, group_plist, H5P_DEFAULT, H5P_DEFAULT);
+            dset = H5Dcreate(_parent_object->get_id(),
+                             _path.c_str(),
+                             type,
+                             dspace,
+                             group_plist,
+                             H5P_DEFAULT,
+                             H5P_DEFAULT);
         }
 
         H5Oget_info(dset, &_info);
-        _address = _info.addr;
+        _address                       = _info.addr;
         (*_referencecounter)[_address] = 1;
         return dset;
     }
@@ -122,23 +132,32 @@ private:
      *
      * @return     the dataset subset vector, consisting of dspace and memspace
      */
-    std::pair<hid_t, hid_t> __select_dataset_subset__(std::vector<hsize_t> count,
-                                                      std::vector<hsize_t> stride = {})
+    std::pair< hid_t, hid_t >
+    __select_dataset_subset__(std::vector< hsize_t > count,
+                              std::vector< hsize_t > stride = {})
     {
         // select the new slab we just added for writing.
         hid_t filespace = H5Dget_space(_dataset);
 
-        hid_t memspace = H5Screate_simple(_rank, count.data(), NULL);
-        herr_t err = 0;
+        hid_t  memspace = H5Screate_simple(_rank, count.data(), NULL);
+        herr_t err      = 0;
         if (stride.size() == 0)
         {
-            err = H5Sselect_hyperslab(filespace, H5S_SELECT_SET, _offset.data(),
-                                      NULL, count.data(), NULL);
+            err = H5Sselect_hyperslab(filespace,
+                                      H5S_SELECT_SET,
+                                      _offset.data(),
+                                      NULL,
+                                      count.data(),
+                                      NULL);
         }
         else
         {
-            err = H5Sselect_hyperslab(filespace, H5S_SELECT_SET, _offset.data(),
-                                      stride.data(), count.data(), NULL);
+            err = H5Sselect_hyperslab(filespace,
+                                      H5S_SELECT_SET,
+                                      _offset.data(),
+                                      stride.data(),
+                                      count.data(),
+                                      NULL);
         }
 
         if (err < 0)
@@ -147,14 +166,15 @@ private:
                                      ": Selecting hyperslab failed!");
         }
 
-        return {filespace, memspace};
+        return { filespace, memspace };
     }
 
     /**
      * @brief Adds attributes for rank, current_extent and capacity
      *
      */
-    void __add_topology_attributes__()
+    void
+    __add_topology_attributes__()
     {
         add_attribute("rank", _rank);
         add_attribute("current_extent", _current_extent);
@@ -165,29 +185,38 @@ private:
      * @brief Writes containers to the dataset
      *
      * @tparam T automatically determined
-     * @param data data to write, can contain almost everything, also other containers
+     * @param data data to write, can contain almost everything, also other
+     * containers
      * @param memspace memory dataspace
-     * @param filespace file dataspace: how the data shall be represented in the file
+     * @param filespace file dataspace: how the data shall be represented in the
+     * file
      * @return herr_t status variable indicating if write was successful or not
      */
-    template <typename T>
-    herr_t __write_container__(T data, hid_t memspace, hid_t filespace)
+    template < typename T >
+    herr_t
+    __write_container__(T data, hid_t memspace, hid_t filespace)
     {
-        using value_type_1 = typename Utils::remove_qualifier_t<T>::value_type;
-        using base_type = Utils::remove_qualifier_t<value_type_1>;
+        using value_type_1 =
+            typename Utils::remove_qualifier_t< T >::value_type;
+        using base_type = Utils::remove_qualifier_t< value_type_1 >;
 
-        // we can write directly if we have a plain vector, no nested or stringtype.
-        if constexpr (std::is_same_v<T, std::vector<value_type_1>> &&
-                      !Utils::is_container_v<value_type_1> &&
-                      !Utils::is_string_v<value_type_1>)
+        // we can write directly if we have a plain vector, no nested or
+        // stringtype.
+        if constexpr (std::is_same_v< T, std::vector< value_type_1 > > &&
+                      !Utils::is_container_v< value_type_1 > &&
+                      !Utils::is_string_v< value_type_1 >)
         {
             // check if attribute has been created, else do
             if (_dataset == -1)
             {
-                _dataset = __create_dataset__<base_type>(0);
+                _dataset = __create_dataset__< base_type >(0);
             }
-            return H5Dwrite(_dataset, HDFTypeFactory::type<base_type>(0),
-                            memspace, filespace, H5P_DEFAULT, data.data());
+            return H5Dwrite(_dataset,
+                            HDFTypeFactory::type< base_type >(0),
+                            memspace,
+                            filespace,
+                            H5P_DEFAULT,
+                            data.data());
         }
         // when stringtype or containertype is stored in a container, then
         // we have to buffer. bufferfactory handles how to do this in detail
@@ -196,24 +225,31 @@ private:
             std::size_t typesize = 0;
             // check if array, if yes, get typesize, else typesize is 0 and
             // typefactory creates vlen data or string data
-            if constexpr (Utils::is_container_v<base_type> and Utils::is_array_like_v<base_type>)
+            if constexpr (Utils::is_container_v< base_type > and
+                          Utils::is_array_like_v< base_type >)
             {
                 // get_size is a metafunction defined in hdfutilities.hh
-                typesize = Utils::get_size<base_type>::value;
+                typesize = Utils::get_size< base_type >::value;
             }
 
             if (_dataset == -1)
             {
-                _dataset = __create_dataset__<base_type>(typesize);
+                _dataset = __create_dataset__< base_type >(typesize);
             }
 
-            // the reference is needed here, because addresses of underlaying data arrays are needed.
+            // the reference is needed here, because addresses of underlaying
+            // data arrays are needed.
             auto buffer = HDFBufferFactory::buffer(
-                std::begin(data), std::end(data),
+                std::begin(data),
+                std::end(data),
                 [](auto& value) -> value_type_1& { return value; });
 
-            return H5Dwrite(_dataset, HDFTypeFactory::type<base_type>(typesize),
-                            memspace, filespace, H5P_DEFAULT, buffer.data());
+            return H5Dwrite(_dataset,
+                            HDFTypeFactory::type< base_type >(typesize),
+                            memspace,
+                            filespace,
+                            H5P_DEFAULT,
+                            buffer.data());
         }
     }
 
@@ -222,38 +258,44 @@ private:
      *
      * @param data data to write, (const) char* or std::string
      * @param memspace memory dataspace
-     * @param filespace file dataspace: how the data shall be represented in the file
+     * @param filespace file dataspace: how the data shall be represented in the
+     * file
      * @return herr_t status variable indicating if write was successful or not
      */
-    template <typename T>
-    herr_t __write_stringtype__(T data, hid_t memspace, hid_t filespace)
+    template < typename T >
+    herr_t
+    __write_stringtype__(T data, hid_t memspace, hid_t filespace)
     {
         // Since std::string cannot be written directly,
         // (only const char*/char* can), a buffer pointer has been added
         // to handle writing in a clearer way and with less code
-        auto len = 0;
+        auto        len    = 0;
         const char* buffer = nullptr;
 
-        if constexpr (std::is_pointer_v<T>) // const char* or char* -> strlen
-                                            // needed
+        if constexpr (std::is_pointer_v< T >) // const char* or char* -> strlen
+                                              // needed
         {
-            len = std::strlen(data);
+            len    = std::strlen(data);
             buffer = data;
         }
         else // simple for strings
         {
-            len = data.size();
+            len    = data.size();
             buffer = data.c_str();
         }
 
         // check if attribute has been created, else do
         if (_dataset == -1)
         {
-            _dataset = __create_dataset__<const char*>(len);
+            _dataset = __create_dataset__< const char* >(len);
         }
         // use that strings store data in consecutive memory
-        return H5Dwrite(_dataset, HDFTypeFactory::type<const char*>(len),
-                        memspace, filespace, H5P_DEFAULT, buffer);
+        return H5Dwrite(_dataset,
+                        HDFTypeFactory::type< const char* >(len),
+                        memspace,
+                        filespace,
+                        H5P_DEFAULT,
+                        buffer);
     }
 
     /**
@@ -263,26 +305,33 @@ private:
      * @param data data to write. Can contain only plain old data
      * @param data data to write
      * @param memspace memory dataspace
-     * @param filespace file dataspace: how the data shall be represented in the file
+     * @param filespace file dataspace: how the data shall be represented in the
+     * file
      * @return herr_t status variable indicating if write was successful or not
      */
-    template <typename T>
-    herr_t __write_pointertype__(T data, hid_t memspace, hid_t filespace)
+    template < typename T >
+    herr_t
+    __write_pointertype__(T data, hid_t memspace, hid_t filespace)
     {
         // result types removes pointers, references, and qualifiers
-        using basetype = Utils::remove_qualifier_t<T>;
+        using basetype = Utils::remove_qualifier_t< T >;
 
         if (_dataset == -1)
         {
-            _dataset = __create_dataset__<basetype>(0);
+            _dataset = __create_dataset__< basetype >(0);
         }
 
-        return H5Dwrite(_dataset, HDFTypeFactory::type<basetype>(), memspace,
-                        filespace, H5P_DEFAULT, data);
+        return H5Dwrite(_dataset,
+                        HDFTypeFactory::type< basetype >(),
+                        memspace,
+                        filespace,
+                        H5P_DEFAULT,
+                        data);
     }
 
     /**
-     * @brief Writes simple scalars, which are not pointers, containers or strings
+     * @brief Writes simple scalars, which are not pointers, containers or
+     * strings
      *
      * @tparam T automatically determined
      * @param data data to write
@@ -290,19 +339,24 @@ private:
      * @param filespace dataspace representing the shape of the data in memory
      * @return herr_t status telling if write was successul, < 0 if not.
      */
-    template <typename T>
-    herr_t __write_scalartype__(T data, hid_t memspace, hid_t filespace)
+    template < typename T >
+    herr_t
+    __write_scalartype__(T data, hid_t memspace, hid_t filespace)
     {
         // because we just write a scalar, the shape tells basically that
         // the attribute is pointlike: 1D and 1 entry.
-        using basetype = Utils::remove_qualifier_t<T>;
+        using basetype = Utils::remove_qualifier_t< T >;
         if (_dataset == -1)
         {
-            _dataset = __create_dataset__<T>(0);
+            _dataset = __create_dataset__< T >(0);
         }
 
-        return H5Dwrite(_dataset, HDFTypeFactory::type<basetype>(), memspace,
-                        filespace, H5P_DEFAULT, &data);
+        return H5Dwrite(_dataset,
+                        HDFTypeFactory::type< basetype >(),
+                        memspace,
+                        filespace,
+                        H5P_DEFAULT,
+                        &data);
     }
 
     /// Read a cointainer
@@ -310,25 +364,28 @@ private:
     // reads), and thus this and the following functions expect an argument
     // 'buffer' to store their data in. The function 'read(..)' is then
     // overloaded to allow for automatic buffer creation or a buffer argument.
-    template <typename Type>
-    herr_t __read_container__(Type& buffer, hid_t memspace, hid_t filespace)
+    template < typename Type >
+    herr_t
+    __read_container__(Type& buffer, hid_t memspace, hid_t filespace)
     {
-        using value_type_1 = Utils::remove_qualifier_t<typename Type::value_type>;
+        using value_type_1 =
+            Utils::remove_qualifier_t< typename Type::value_type >;
 
         // when the value_type of Type is a container again, we want nested
         // arrays basically. Therefore we have to check if the desired type
         // Type is suitable to hold them, read the nested data into a hvl_t
         // container, assuming that they are varlen because this is the more
         // general case, and then turn them into the desired type again...
-        if constexpr (Utils::is_container_v<value_type_1> || Utils::is_string_v<value_type_1>)
+        if constexpr (Utils::is_container_v< value_type_1 > ||
+                      Utils::is_string_v< value_type_1 >)
         {
             using value_type_2 =
-                Utils::remove_qualifier_t<typename value_type_1::value_type>;
+                Utils::remove_qualifier_t< typename value_type_1::value_type >;
 
             // if we have nested containers of depth larger than 2, throw a
             // runtime error because we cannot handle this
             // TODO extend this to work more generally
-            if constexpr (Utils::is_container_v<value_type_2>)
+            if constexpr (Utils::is_container_v< value_type_2 >)
             {
                 throw std::runtime_error(
                     "Dataset" + _path +
@@ -336,7 +393,7 @@ private:
                     "in attribute " +
                     _path + " into vector containers!");
             }
-            if constexpr (!std::is_same_v<std::vector<value_type_1>, Type>)
+            if constexpr (!std::is_same_v< std::vector< value_type_1 >, Type >)
             {
                 throw std::runtime_error("Dataset" + _path +
                                          ": Can only read data"
@@ -357,7 +414,7 @@ private:
             {
                 // check if std::array is given as value_type,
                 // if not adjust sizes
-                if constexpr (!Utils::is_array_like_v<value_type_1>)
+                if constexpr (!Utils::is_array_like_v< value_type_1 >)
                 {
                     // if yes, throw exception is size is insufficient because
                     // the size cannot be adjusted
@@ -368,12 +425,16 @@ private:
                         "when data type in file is fixed array type");
                 }
 
-                return H5Dread(_dataset, type, memspace, filespace, H5P_DEFAULT,
+                return H5Dread(_dataset,
+                               type,
+                               memspace,
+                               filespace,
+                               H5P_DEFAULT,
                                buffer.data());
             }
             else if (H5Tget_class(type) == H5T_STRING)
             {
-                if constexpr (!Utils::is_string_v<value_type_1>)
+                if constexpr (!Utils::is_string_v< value_type_1 >)
                 {
                     throw std::invalid_argument(
                         "Dataset " + _path +
@@ -382,24 +443,27 @@ private:
                 else
                 {
                     /*
-                     * we have two possibilities, which have to be treated sparatly,
-                     * thanks to fucking hdf5 being the most crappy designed library
-                     * I ever came accross:
-                     * 1): dataset contains variable length strings
-                     * 2): dataset contains fixed size strings
+                     * we have two possibilities, which have to be treated
+                     * sparatly, thanks to fucking hdf5 being the most crappy
+                     * designed library I ever came accross: 1): dataset
+                     * contains variable length strings 2): dataset contains
+                     * fixed size strings
                      *
                      * logic:
                      *       - check if we have a stringtype
                      *       - make a variable length stringtype
-                     *       - check if the type of the dataset is  varlen string
+                     *       - check if the type of the dataset is  varlen
+                     * string
                      *           - yes:
                      *               - read into char** buffer,
                      *               - then put into container<std::string>
                      *           - no:
                      *               - get size of type
-                     *               - make string (=> char array) of size bufferlen*typesize
+                     *               - make string (=> char array) of size
+                     * bufferlen*typesize
                      *               - read into it
-                     *               - split the long string each typesize chars -> get entries
+                     *               - split the long string each typesize chars
+                     * -> get entries
                      *               - put them into final buffer
                      * Mind that the buffer is preallocated to the correct size
                      */
@@ -408,27 +472,36 @@ private:
 
                     if (H5Tequal(vlentype, type))
                     {
-                        std::vector<char*> temp_buffer(buffer.size());
-                        herr_t err = H5Dread(_dataset, type, memspace, filespace,
-                                             H5P_DEFAULT, &temp_buffer[0]);
+                        std::vector< char* > temp_buffer(buffer.size());
+                        herr_t               err = H5Dread(_dataset,
+                                             type,
+                                             memspace,
+                                             filespace,
+                                             H5P_DEFAULT,
+                                             &temp_buffer[0]);
 
                         auto tb = temp_buffer.begin();
-                        std::generate(buffer.begin(), buffer.end(),
-                                      [&tb]() { return *(tb++); });
+                        std::generate(buffer.begin(), buffer.end(), [&tb]() {
+                            return *(tb++);
+                        });
                         return err;
                     }
                     else
                     {
                         // get size of the type, set up intermediate string
                         // buffer, adjust its size
-                        auto s = H5Tget_size(type) / sizeof(char);
+                        auto        s = H5Tget_size(type) / sizeof(char);
                         std::string temp_buffer;
 
                         temp_buffer.resize(buffer.size() * s);
 
                         // actual read
-                        herr_t err = H5Dread(_dataset, type, memspace, filespace,
-                                             H5P_DEFAULT, &temp_buffer[0]);
+                        herr_t err = H5Dread(_dataset,
+                                             type,
+                                             memspace,
+                                             filespace,
+                                             H5P_DEFAULT,
+                                             &temp_buffer[0]);
 
                         // content of dataset is now one consectuive line of
                         // stuff in temp_buffer. Use read size s to cut out the
@@ -436,7 +509,7 @@ private:
                         // strings are ugly to work with in general, and this is
                         // the most simple solution I can currently come up with
 
-                        std::size_t i = 0;
+                        std::size_t i       = 0;
                         std::size_t buffidx = 0;
                         while (i < temp_buffer.size())
                         {
@@ -454,23 +527,28 @@ private:
             else if (H5Tget_class(type) == H5T_VLEN)
             {
                 // if
-                std::vector<hvl_t> temp_buffer(buffer.size());
+                std::vector< hvl_t > temp_buffer(buffer.size());
 
-                herr_t err = H5Dread(_dataset, type, memspace, filespace,
-                                     H5P_DEFAULT, temp_buffer.data());
+                herr_t err = H5Dread(_dataset,
+                                     type,
+                                     memspace,
+                                     filespace,
+                                     H5P_DEFAULT,
+                                     temp_buffer.data());
 
                 // turn the varlen buffer into the desired type.
                 // Cumbersome, but necessary...
 
                 for (std::size_t i = 0; i < buffer.size(); ++i)
                 {
-                    if constexpr (!Utils::is_array_like_v<value_type_1>)
+                    if constexpr (!Utils::is_array_like_v< value_type_1 >)
                     {
                         buffer[i].resize(temp_buffer[i].len);
                     }
                     for (std::size_t j = 0; j < temp_buffer[i].len; ++j)
                     {
-                        buffer[i][j] = static_cast<value_type_2*>(temp_buffer[i].p)[j];
+                        buffer[i][j] =
+                            static_cast< value_type_2* >(temp_buffer[i].p)[j];
                     }
                 }
                 return err;
@@ -484,10 +562,15 @@ private:
             }
         }
 
-        else // no nested container or container of strings, but one containing simple types
+        else // no nested container or container of strings, but one containing
+             // simple types
         {
-            return H5Dread(_dataset, H5Dget_type(_dataset), memspace, filespace,
-                           H5P_DEFAULT, buffer.data());
+            return H5Dread(_dataset,
+                           H5Dget_type(_dataset),
+                           memspace,
+                           filespace,
+                           H5P_DEFAULT,
+                           buffer.data());
         }
     }
 
@@ -495,37 +578,50 @@ private:
     /** \details this is always read into std::strings, and hence we can use
      *         'resize'
      */
-    template <typename Type>
-    auto __read_stringtype__(Type& buffer, hid_t memspace, hid_t filespace)
+    template < typename Type >
+    auto
+    __read_stringtype__(Type& buffer, hid_t memspace, hid_t filespace)
     {
         hid_t type = H5Dget_type(_dataset);
 
         buffer.resize(buffer.size() * H5Tget_size(type));
         // read data
-        return H5Dread(_dataset, type, memspace, filespace, H5P_DEFAULT, buffer.data());
+        return H5Dread(
+            _dataset, type, memspace, filespace, H5P_DEFAULT, buffer.data());
     }
 
     /// read pointertype.
     /** \details Either this is given by the user, or it is assumed to be 1d,
      *         thereby flattening Nd attributes
      */
-    template <typename Type>
-    auto __read_pointertype__(Type buffer, hid_t memspace, hid_t filespace)
+    template < typename Type >
+    auto
+    __read_pointertype__(Type buffer, hid_t memspace, hid_t filespace)
     {
-        return H5Dread(_dataset, H5Dget_type(_dataset), memspace, filespace,
-                       H5P_DEFAULT, buffer);
+        return H5Dread(_dataset,
+                       H5Dget_type(_dataset),
+                       memspace,
+                       filespace,
+                       H5P_DEFAULT,
+                       buffer);
     }
 
     /// read scalar type, trivial
-    template <typename Type>
-    auto __read_scalartype__(Type& buffer, hid_t memspace, hid_t filespace)
+    template < typename Type >
+    auto
+    __read_scalartype__(Type& buffer, hid_t memspace, hid_t filespace)
     {
-        return H5Dread(_dataset, H5Dget_type(_dataset), memspace, filespace,
-                       H5P_DEFAULT, &buffer);
+        return H5Dread(_dataset,
+                       H5Dget_type(_dataset),
+                       memspace,
+                       filespace,
+                       H5P_DEFAULT,
+                       &buffer);
     }
 
     /// write out the attribute buffer
-    void __write_attribute_buffer__()
+    void
+    __write_attribute_buffer__()
     {
         // do nothing if the buffer is empty;
         if (_attribute_buffer.size() == 0)
@@ -543,7 +639,8 @@ private:
                 // this is a universal reference and hence perfect
                 // forwarding can be employed via std::forward
                 [&attr](auto&& arg) {
-                    attr.write(std::forward<std::remove_reference_t<decltype(arg)>>(arg));
+                    attr.write(std::forward<
+                               std::remove_reference_t< decltype(arg) > >(arg));
                 },
                 variant);
         }
@@ -552,7 +649,7 @@ private:
         _attribute_buffer.clear();
     }
 
-protected:
+  protected:
     /**
      *  @brief Pointer to the parent object of the dataset
      */
@@ -576,29 +673,30 @@ protected:
     /**
      *  @brief the currently occupied size of the dataset in number of elements
      */
-    std::vector<hsize_t> _current_extent;
+    std::vector< hsize_t > _current_extent;
 
     /**
      * @brief  the maximum number of elements which can be stored in the dataset
      */
-    std::vector<hsize_t> _capacity;
+    std::vector< hsize_t > _capacity;
 
     /**
-     * @brief the chunksizes per dimensions if dataset is extendible or compressed
+     * @brief the chunksizes per dimensions if dataset is extendible or
+     * compressed
      */
-    std::vector<hsize_t> _chunksizes;
+    std::vector< hsize_t > _chunksizes;
 
     /**
      * @brief offset of the data
      *
      */
-    std::vector<hsize_t> _offset;
+    std::vector< hsize_t > _offset;
 
     /**
      * @brief buffer for extent update
      *
      */
-    std::vector<hsize_t> _new_extent;
+    std::vector< hsize_t > _new_extent;
 
     /**
      * @brief the level of compression, 0 to 10
@@ -611,14 +709,15 @@ protected:
     H5O_info_t _info;
 
     /**
-     * @brief the address of the dataset in the file, a unique value given by the hdf5 lib
+     * @brief the address of the dataset in the file, a unique value given by
+     * the hdf5 lib
      */
     haddr_t _address;
 
     /**
      * @brief Pointer to underlying file's referencecounter
      */
-    std::shared_ptr<std::unordered_map<haddr_t, int>> _referencecounter;
+    std::shared_ptr< std::unordered_map< haddr_t, int > > _referencecounter;
 
     /**
      * @brief  A buffer for storing attributes before the dataset exists
@@ -628,13 +727,15 @@ protected:
      *         The string in the held pairs is for path of the attribute, the
      *         variant for the data.
      */
-    std::vector<std::pair<std::string, typename HDFTypeFactory::Variant>> _attribute_buffer;
+    std::vector< std::pair< std::string, typename HDFTypeFactory::Variant > >
+        _attribute_buffer;
 
-public:
+  public:
     /**
      * @brief Returns the attribute buffer of this dataset
      */
-    auto get_attribute_buffer()
+    auto
+    get_attribute_buffer()
     {
         return _attribute_buffer;
     }
@@ -644,7 +745,8 @@ public:
      *
      * @return std::shared_ptr<HDFObject>
      */
-    HDFObject& get_parent()
+    HDFObject&
+    get_parent()
     {
         return *_parent_object;
     }
@@ -654,7 +756,8 @@ public:
      *
      * @return std::string
      */
-    std::string get_path()
+    std::string
+    get_path()
     {
         return _path;
     }
@@ -664,7 +767,8 @@ public:
      *
      * @return std::size_t
      */
-    std::size_t get_rank()
+    std::size_t
+    get_rank()
     {
         return _rank;
     }
@@ -674,7 +778,8 @@ public:
      *
      * @return std::vector<hsize_t>
      */
-    auto get_current_extent()
+    auto
+    get_current_extent()
     {
         return _current_extent;
     }
@@ -684,7 +789,8 @@ public:
      *
      * @return std::vector<hsize_t>
      */
-    auto get_offset()
+    auto
+    get_offset()
     {
         return _offset;
     }
@@ -693,7 +799,8 @@ public:
      *
      * @return std::vector<hsize_t>
      */
-    auto get_capacity()
+    auto
+    get_capacity()
     {
         return _capacity;
     }
@@ -703,7 +810,8 @@ public:
      *
      * @return auto
      */
-    auto get_chunksizes()
+    auto
+    get_chunksizes()
     {
         return _chunksizes;
     }
@@ -713,7 +821,8 @@ public:
      *
      * @return auto
      */
-    auto get_compresslevel()
+    auto
+    get_compresslevel()
     {
         return _compress_level;
     }
@@ -723,7 +832,8 @@ public:
      *
      * @return std::vector<hsize_t>
      */
-    hid_t get_id()
+    hid_t
+    get_id()
     {
         return _dataset;
     }
@@ -733,7 +843,8 @@ public:
      *
      * @return std::map<haddr_t, int>
      */
-    auto get_referencecounter()
+    auto
+    get_referencecounter()
     {
         return _referencecounter;
     }
@@ -743,7 +854,8 @@ public:
      *
      * @return haddr_t
      */
-    haddr_t get_address()
+    haddr_t
+    get_address()
     {
         return _address;
     }
@@ -753,7 +865,8 @@ public:
      *
      * @param capacity
      */
-    void set_capacity(std::vector<hsize_t> capacity)
+    void
+    set_capacity(std::vector< hsize_t > capacity)
     {
         if (_dataset != -1)
         {
@@ -763,7 +876,7 @@ public:
         }
         else
         {
-            _rank = capacity.size();
+            _rank     = capacity.size();
             _capacity = capacity;
         }
     }
@@ -773,7 +886,8 @@ public:
      *
      * @param chunksizes
      */
-    void set_chunksize(std::vector<hsize_t> chunksizes)
+    void
+    set_chunksize(std::vector< hsize_t > chunksizes)
     {
         if (_dataset != -1)
         {
@@ -807,8 +921,9 @@ public:
      *
      * @tparam     Attrdata        The type of the attribute data
      */
-    template <typename Attrdata>
-    void add_attribute(std::string attribute_path, Attrdata data)
+    template < typename Attrdata >
+    void
+    add_attribute(std::string attribute_path, Attrdata data)
     {
         // Can only write directly, if the dataset is valid
         if (check_validity(H5Iis_valid(_dataset), _path))
@@ -822,25 +937,30 @@ public:
             // The dataset was not opened yet. Need to write to buffer
 
             // For non-vector container data, need to convert to vector
-            if constexpr (Utils::is_container_v<Attrdata>)
+            if constexpr (Utils::is_container_v< Attrdata >)
             {
-                if constexpr (not std::is_same_v<std::vector<typename Attrdata::value_type>, Attrdata>)
+                if constexpr (not std::is_same_v<
+                                  std::vector< typename Attrdata::value_type >,
+                                  Attrdata >)
                 {
                     // Make it a vector and write to buffer
                     _attribute_buffer.push_back(std::make_pair(
-                        attribute_path, std::vector<typename Attrdata::value_type>(
-                                            std::begin(data), std::end(data))));
+                        attribute_path,
+                        std::vector< typename Attrdata::value_type >(
+                            std::begin(data), std::end(data))));
                 }
                 else
                 {
                     // Can write directly
-                    _attribute_buffer.push_back(std::make_pair(attribute_path, data));
+                    _attribute_buffer.push_back(
+                        std::make_pair(attribute_path, data));
                 }
             }
             else
             {
                 // Can write directly
-                _attribute_buffer.push_back(std::make_pair(attribute_path, data));
+                _attribute_buffer.push_back(
+                    std::make_pair(attribute_path, data));
             }
         }
     }
@@ -852,7 +972,8 @@ public:
      *             care that the attribute buffer is written out, ensuring that
      *             a correctly closed dataset contains all specified attributes
      */
-    void close()
+    void
+    close()
     {
         if (check_validity(H5Iis_valid(_dataset), _path))
         {
@@ -885,24 +1006,28 @@ public:
     /**
      * @brief Open the dataset in parent_object with relative path 'path'.
      *
-     * @param parent_object The HDFGroup/HDFFile into which the dataset shall be created
-     * @param adaptor The function which makes the data to be written from given iterators
+     * @param parent_object The HDFGroup/HDFFile into which the dataset shall be
+     * created
+     * @param adaptor The function which makes the data to be written from given
+     *                iterators
      * @param path The path of the dataset in the parent_object
      * @param rank The number of dimensions of the dataset
      * @param capacity The maximum size of the dataset in each dimension. Give
      *                 H5S_UNLIMITED if unlimited size is desired. Then you have
      *                 to give chunksizes.
      * @param chunksize The chunksizes in each dimension to use
-     * @param compress_level The compression level to use, 0 to 10 (0 = no compression, 10 highest compression)
+     * @param compress_level The compression level to use, 0 to 10 (0 = no
+     * compression, 10 highest compression)
      */
-    void open(HDFObject& parent_object,
-              std::string path,
-              std::vector<hsize_t> capacity = {},
-              std::vector<hsize_t> chunksizes = {},
-              hsize_t compress_level = 0)
+    void
+    open(HDFObject&             parent_object,
+         std::string            path,
+         std::vector< hsize_t > capacity       = {},
+         std::vector< hsize_t > chunksizes     = {},
+         hsize_t                compress_level = 0)
     {
-        _parent_object = &parent_object;
-        _path = path;
+        _parent_object    = &parent_object;
+        _path             = path;
         _referencecounter = parent_object.get_referencecounter();
 
         // Try to find the dataset in the parent_object
@@ -918,19 +1043,21 @@ public:
         if (H5LTfind_dataset(_parent_object->get_id(), _path.c_str()) == 1)
         { // dataset exists
             // open it
-            _dataset = H5Dopen(_parent_object->get_id(), _path.c_str(), H5P_DEFAULT);
+            _dataset =
+                H5Dopen(_parent_object->get_id(), _path.c_str(), H5P_DEFAULT);
             // get dataspace and read out rank, extend, capacity
             hid_t dataspace = H5Dget_space(_dataset);
-            _rank = H5Sget_simple_extent_ndims(dataspace);
+            _rank           = H5Sget_simple_extent_ndims(dataspace);
             _current_extent.resize(_rank, 0);
             _capacity.resize(_rank, 0);
             _chunksizes.resize(_rank, 0);
             // get chunksizes
             hid_t creation_plist = H5Dget_create_plist(_dataset);
-            hid_t layout = H5Pget_layout(creation_plist);
+            hid_t layout         = H5Pget_layout(creation_plist);
             if (layout == H5D_CHUNKED)
             {
-                herr_t err = H5Pget_chunk(creation_plist, _rank, _chunksizes.data());
+                herr_t err =
+                    H5Pget_chunk(creation_plist, _rank, _chunksizes.data());
                 if (err < 0)
                 {
                     throw std::runtime_error(
@@ -941,8 +1068,8 @@ public:
             H5Pclose(creation_plist);
 
             // get topology of dataset
-            H5Sget_simple_extent_dims(dataspace, _current_extent.data(),
-                                      _capacity.data());
+            H5Sget_simple_extent_dims(
+                dataspace, _current_extent.data(), _capacity.data());
             H5Sclose(dataspace);
 
             _offset = _current_extent;
@@ -960,15 +1087,15 @@ public:
             // The size to reserve would be a rather wild guess however.
             if (capacity.size() == 0)
             {
-                _rank = 1;
-                _capacity = std::vector<hsize_t>(_rank, H5S_UNLIMITED);
-                _offset = std::vector<hsize_t>(_rank, 0);
+                _rank     = 1;
+                _capacity = std::vector< hsize_t >(_rank, H5S_UNLIMITED);
+                _offset   = std::vector< hsize_t >(_rank, 0);
             }
             else
             {
                 _capacity = capacity;
-                _rank = _capacity.size();
-                _offset = std::vector<hsize_t>(_rank, 0);
+                _rank     = _capacity.size();
+                _offset   = std::vector< hsize_t >(_rank, 0);
             }
 
             // if chunksizes is given, everything is fine, if not, it is empty
@@ -987,7 +1114,8 @@ public:
      *
      * @param      other  The other
      */
-    void swap(HDFDataset& other)
+    void
+    swap(HDFDataset& other)
     {
         using std::swap;
         swap(_parent_object, other._parent_object);
@@ -1013,11 +1141,12 @@ public:
      * @param data data to write
      * @param shape shape array, only useful currently if pointer data given
      */
-    template <typename T>
-    void write(T data, [[maybe_unused]] std::vector<hsize_t> shape = {})
+    template < typename T >
+    void
+    write(T data, [[maybe_unused]] std::vector< hsize_t > shape = {})
     {
         // dataset does not yet exist
-        hid_t memspace = H5S_ALL;
+        hid_t memspace  = H5S_ALL;
         hid_t filespace = H5S_ALL;
 
         if (_dataset == -1)
@@ -1035,20 +1164,21 @@ public:
                     if 1d:
                         current_extent = data.size()
                     else:
-                        current_extent = {1, data.size()}, i.e one line in matrix
+                        current_extent = {1, data.size()}, i.e one line in
+            matrix
 
                 if pointer:
                     current_extent is shape
                 if string or scalar:
                     current_extent is 1
 
-                then check if chunking is needed but not known and calculate it or throw error.
-                this is done within the individual __write_X__ methods because detailed
-                type info is needed.
+                then check if chunking is needed but not known and calculate it
+            or throw error. this is done within the individual __write_X__
+            methods because detailed type info is needed.
             */
             _current_extent.resize(_rank);
 
-            if constexpr (Utils::is_container_v<T>)
+            if constexpr (Utils::is_container_v< T >)
             {
                 if (_rank == 1)
                 {
@@ -1061,7 +1191,8 @@ public:
                 }
             }
 
-            else if constexpr (std::is_pointer_v<T> and !Utils::is_string_v<T>)
+            else if constexpr (std::is_pointer_v< T > and
+                               !Utils::is_string_v< T >)
             {
                 if (shape.size() == 0)
                 {
@@ -1081,12 +1212,10 @@ public:
         {
             /*
             if dataset does  exist:
-                make _new_extent array equalling current_extent, leave current_extent
-                 If is container:
-                    if 1d:
-                        _new_extent = current_extent + data.size()
-                    else:
-                        _new_extent = {current_extent[0]+1, current_extent[1]}, i.e one new line in matrix
+                make _new_extent array equalling current_extent, leave
+            current_extent If is container: if 1d: _new_extent = current_extent
+            + data.size() else: _new_extent = {current_extent[0]+1,
+            current_extent[1]}, i.e one new line in matrix
 
                 if pointer:
                     current_extent += shape
@@ -1106,7 +1235,7 @@ public:
                 write
             */
             // make a temporary for new extent
-            std::vector<hsize_t> _new_extent = _current_extent;
+            std::vector< hsize_t > _new_extent = _current_extent;
 
             if (_capacity == _current_extent)
             {
@@ -1117,8 +1246,9 @@ public:
             else
             {
                 // set offset array
-                // this is needed because multiple writes one after the other could
-                // occur without intermediate close and reopen (which would set _offset correctly)
+                // this is needed because multiple writes one after the other
+                // could occur without intermediate close and reopen (which
+                // would set _offset correctly)
                 _offset = _current_extent;
 
                 if (_rank > 1)
@@ -1134,7 +1264,7 @@ public:
                 // shape, else we have to add 1 because we either write
                 // a single scalar or string
 
-                if constexpr (Utils::is_container_v<T>)
+                if constexpr (Utils::is_container_v< T >)
                 {
                     if (_rank == 1)
                     {
@@ -1145,7 +1275,8 @@ public:
                         _new_extent[0] += 1;
                     }
                 }
-                else if constexpr (std::is_pointer_v<T> and !Utils::is_string_v<T>)
+                else if constexpr (std::is_pointer_v< T > and
+                                   !Utils::is_string_v< T >)
                 {
                     if (shape.size() == 0)
                     {
@@ -1184,26 +1315,27 @@ public:
             }
             // select counts for dataset
             // this has to be generalized and refactored
-            std::vector<hsize_t> counts(_rank, 0);
-            if constexpr (Utils::is_container_v<T>)
+            std::vector< hsize_t > counts(_rank, 0);
+            if constexpr (Utils::is_container_v< T >)
             {
                 if (_rank == 1)
                 {
-                    counts = {data.size()};
+                    counts = { data.size() };
                 }
                 else
                 {
-                    counts = {1, data.size()};
+                    counts = { 1, data.size() };
                 }
             }
             // when is pointer, the counts are given by shape
-            else if constexpr (std::is_pointer_v<T> and !Utils::is_string_v<T>)
+            else if constexpr (std::is_pointer_v< T > and
+                               !Utils::is_string_v< T >)
             {
                 counts = shape;
             }
             else
             {
-                counts = {1};
+                counts = { 1 };
             }
 
             // extent the dataset
@@ -1236,34 +1368,38 @@ public:
                 size *= s;
             }
 
-            // get file and memory spaces which represent the selection to write at
+            // get file and memory spaces which represent the selection to write
+            // at
             std::tie(filespace, memspace) = __select_dataset_subset__(counts);
 
             _current_extent = _new_extent;
         }
 
         // everything is prepared, we can write the data
-        if constexpr (Utils::is_container_v<T>)
+        if constexpr (Utils::is_container_v< T >)
         {
-            herr_t err = __write_container__(std::forward<T>(data), memspace, filespace);
+            herr_t err = __write_container__(
+                std::forward< T >(data), memspace, filespace);
             if (err < 0)
             {
                 throw std::runtime_error("Dataset " + _path +
                                          ": Error in appending container");
             }
         }
-        else if constexpr (Utils::is_string_v<T>)
+        else if constexpr (Utils::is_string_v< T >)
         {
-            herr_t err = __write_stringtype__(std::forward<T>(data), memspace, filespace);
+            herr_t err = __write_stringtype__(
+                std::forward< T >(data), memspace, filespace);
             if (err < 0)
             {
                 throw std::runtime_error("Dataset " + _path +
                                          ": Error in appending string");
             }
         }
-        else if constexpr (std::is_pointer_v<T> and !Utils::is_string_v<T>)
+        else if constexpr (std::is_pointer_v< T > and !Utils::is_string_v< T >)
         {
-            herr_t err = __write_pointertype__(std::forward<T>(data), memspace, filespace);
+            herr_t err = __write_pointertype__(
+                std::forward< T >(data), memspace, filespace);
             if (err < 0)
             {
                 throw std::runtime_error("Dataset " + _path +
@@ -1272,7 +1408,8 @@ public:
         }
         else
         {
-            herr_t err = __write_scalartype__(std::forward<T>(data), memspace, filespace);
+            herr_t err = __write_scalartype__(
+                std::forward< T >(data), memspace, filespace);
             if (err < 0)
             {
                 throw std::runtime_error("Dataset " + _path +
@@ -1285,31 +1422,36 @@ public:
     }
 
     /**
-     * @brief Write function for writing iterator ranges [start, end), in accordance with respective stl pattern
+     * @brief Write function for writing iterator ranges [start, end), in
+     * accordance with respective stl pattern
      *
      * @tparam Iter automatically determined
      * @tparam Adaptor automatically determined
      * @param begin start iterator of range to write
      * @param end end iteator of range to write
-     * @param adaptor Modifier function which takes a reference of type Iter::value_type and returns some arbitrary type,
-     *                from which a buffer is made which then is written to the dataset. This hence determines what
-     *                is written to the dataset
+     * @param adaptor Modifier function which takes a reference of type
+     *                Iter::value_type and returns some arbitrary type, from 
+     *                which a buffer is made which then is written to the 
+     *                dataset. This hence determines what is written to the 
+     *                dataset
      */
-    template <typename Iter, typename Adaptor>
-    void write(Iter begin, Iter end, Adaptor&& adaptor)
+    template < typename Iter, typename Adaptor >
+    void
+    write(Iter begin, Iter end, Adaptor&& adaptor)
     {
-        using Type = Utils::remove_qualifier_t<decltype(adaptor(*begin))>;
+        using Type = Utils::remove_qualifier_t< decltype(adaptor(*begin)) >;
         // if we copy only the content of [begin, end), then simple vector
         // copy suffices
-        if constexpr (std::is_same_v<Type, typename Iter::value_type>)
+        if constexpr (std::is_same_v< Type, typename Iter::value_type >)
         {
-            write(std::vector<Type>(begin, end));
+            write(std::vector< Type >(begin, end));
         }
         else
         {
-            std::vector<Type> buff(std::distance(begin, end));
-            std::generate(buff.begin(), buff.end(),
-                          [&begin, &adaptor]() { return adaptor(*(begin++)); });
+            std::vector< Type > buff(std::distance(begin, end));
+            std::generate(buff.begin(), buff.end(), [&begin, &adaptor]() {
+                return adaptor(*(begin++));
+            });
 
             write(std::move(buff));
         }
@@ -1319,7 +1461,8 @@ public:
      * @brief  Read (a subset of ) a dataset into a buffer of type 'Type'.
      *         Type gives the type of the buffer to read, and currently only
      *         1d reads are supported, so ND dataset of double has to be read
-     *         into a 1d buffer containing doubles of size = product of dimenions of datasets.
+     *         into a 1d buffer containing doubles of size = product of
+     * dimenions of datasets.
      *
      * @tparam Type  Type to read to.
      * @param start  offset to start reading from (inclusive)
@@ -1327,10 +1470,11 @@ public:
      * @param stride stride to use when reading -> like numpy stride
      * @return auto  Buffer of type 'Type' containing read elements
      */
-    template <typename Type>
-    auto read([[maybe_unused]] std::vector<hsize_t> start = {},
-              [[maybe_unused]] std::vector<hsize_t> end = {},
-              [[maybe_unused]] std::vector<hsize_t> stride = {})
+    template < typename Type >
+    auto
+    read([[maybe_unused]] std::vector< hsize_t > start  = {},
+         [[maybe_unused]] std::vector< hsize_t > end    = {},
+         [[maybe_unused]] std::vector< hsize_t > stride = {})
     {
         if (!check_validity(H5Iis_valid(_dataset), _path))
         {
@@ -1339,17 +1483,18 @@ public:
         }
 
         // variables needed for reading
-        std::vector<hsize_t> readshape; // shape vector for read, either _current_extent or another shape
-        hid_t filespace = 0;
-        hid_t memspace = 0;
-        std::size_t size = 1;
+        std::vector< hsize_t > readshape; // shape vector for read, either
+                                          // _current_extent or another shape
+        hid_t       filespace = 0;
+        hid_t       memspace  = 0;
+        std::size_t size      = 1;
 
         // read entire dataset
         if (start.size() == 0)
         {
             readshape = _current_extent;
             filespace = H5S_ALL;
-            memspace = H5S_ALL;
+            memspace  = H5S_ALL;
 
             // make flattened size of data to read
             for (auto& s : readshape)
@@ -1361,7 +1506,8 @@ public:
         else
         {
             // throw error if ranks and shape sizes do not match
-            if (start.size() != _rank or end.size() != _rank or stride.size() != _rank)
+            if (start.size() != _rank or end.size() != _rank or
+                stride.size() != _rank)
             {
                 throw std::invalid_argument("Dataset " + _path +
                                             ": start, end, stride have to be "
@@ -1374,9 +1520,10 @@ public:
             // make count vector
             // exploit that hsize_t((end-start)/stride) cuts off decimal
             // places and thus results in floor((end-start)/stride) always.
-            std::vector<hsize_t> count(start.size());
+            std::vector< hsize_t > count(start.size());
 
-            // build the count array -> how many elements to read in each dimension
+            // build the count array -> how many elements to read in each
+            // dimension
             for (std::size_t i = 0; i < _rank; ++i)
             {
                 count[i] = (end[i] - start[i]) / stride[i];
@@ -1388,16 +1535,17 @@ public:
             }
 
             readshape = count;
-            std::tie(filespace, memspace) = __select_dataset_subset__(count, stride);
+            std::tie(filespace, memspace) =
+                __select_dataset_subset__(count, stride);
         }
 
         // Below the actual reading happens
 
         // type to read in is a container type, which can hold containers
         // themselvels or just plain types.
-        if constexpr (Utils::is_container_v<Type>)
+        if constexpr (Utils::is_container_v< Type >)
         {
-            Type buffer(size);
+            Type   buffer(size);
             herr_t err = __read_container__(buffer, memspace, filespace);
             if (err < 0)
             {
@@ -1406,11 +1554,11 @@ public:
             }
             return std::make_tuple(readshape, buffer);
         }
-        else if constexpr (Utils::is_string_v<Type>) // we can have string types
-                                                     // too, i.e. char*, const
-                                                     // char*, std::string
+        // we can have string types too, i.e. char*, const char*, std::string
+        else if constexpr (Utils::is_string_v< Type >) 
         {
-            std::string buffer; // resized in __read_stringtype__ because this as a scalar
+             // resized in __read_stringtype__ because this as a scalar
+            std::string buffer;
             buffer.resize(size);
             herr_t err = __read_stringtype__(buffer, memspace, filespace);
             if (err < 0)
@@ -1421,12 +1569,14 @@ public:
 
             return std::make_tuple(readshape, buffer);
         }
-        else if constexpr (std::is_pointer_v<Type> && !Utils::is_string_v<Type>)
+        else if constexpr (std::is_pointer_v< Type > &&
+                           !Utils::is_string_v< Type >)
         {
-            std::shared_ptr<Utils::remove_qualifier_t<Type>> buffer(
-                new Utils::remove_qualifier_t<Type>[size]);
+            std::shared_ptr< Utils::remove_qualifier_t< Type > > buffer(
+                new Utils::remove_qualifier_t< Type >[size]);
 
-            herr_t err = __read_pointertype__(buffer.get(), memspace, filespace);
+            herr_t err =
+                __read_pointertype__(buffer.get(), memspace, filespace);
 
             if (err < 0)
             {
@@ -1437,7 +1587,7 @@ public:
         }
         else // reading scalar types is simple enough
         {
-            Type buffer(0);
+            Type   buffer(0);
             herr_t err = __read_scalartype__(buffer, memspace, filespace);
             if (err < 0)
             {
@@ -1458,21 +1608,15 @@ public:
      *
      * @param      other  The other
      */
-    HDFDataset(const HDFDataset& other)
-        : _parent_object(other._parent_object),
-          _path(other._path),
-          _dataset(other._dataset),
-          _rank(other._rank),
-          _current_extent(other._current_extent),
-          _capacity(other._capacity),
-          _chunksizes(other._chunksizes),
-          _offset(other._offset),
-          _new_extent(other._new_extent),
-          _compress_level(other._compress_level),
-          _info(other._info),
-          _address(other._address),
-          _referencecounter(other._referencecounter),
-          _attribute_buffer((other._attribute_buffer))
+    HDFDataset(const HDFDataset& other) :
+        _parent_object(other._parent_object), _path(other._path),
+        _dataset(other._dataset), _rank(other._rank),
+        _current_extent(other._current_extent), _capacity(other._capacity),
+        _chunksizes(other._chunksizes), _offset(other._offset),
+        _new_extent(other._new_extent), _compress_level(other._compress_level),
+        _info(other._info), _address(other._address),
+        _referencecounter(other._referencecounter),
+        _attribute_buffer((other._attribute_buffer))
     {
         (*_referencecounter)[_address] += 1;
     }
@@ -1494,7 +1638,8 @@ public:
      *
      * @return     HDFDataset&
      */
-    HDFDataset& operator=(HDFDataset other)
+    HDFDataset&
+    operator=(HDFDataset other)
     {
         this->swap(other);
         return *this;
@@ -1503,8 +1648,10 @@ public:
     /**
      * @brief Construct a new HDFDataset object
      *
-     * @param parent_object The HDFGroup/HDFFile into which the dataset shall be created
-     * @param adaptor The function which makes the data to be written from given iterators
+     * @param parent_object The HDFGroup/HDFFile into which the dataset shall be
+     *          created
+     * @param adaptor The function which makes the data to be written from given
+     *                iterators
      * @param path The path of the dataset in the parent_object
      * @param rank The number of dimensions of the dataset
      * @param capacity The maximum size of the dataset in each dimension. Give
@@ -1513,12 +1660,12 @@ public:
      * @param chunksize The chunksizes in each dimension to use
      * @param compress_level The compression level to use
      */
-    HDFDataset(HDFObject& parent_object,
-               std::string path,
-               std::vector<hsize_t> capacity = {},
-               std::vector<hsize_t> chunksizes = {},
-               hsize_t compress_level = 0)
-        : _referencecounter(parent_object.get_referencecounter())
+    HDFDataset(HDFObject&             parent_object,
+               std::string            path,
+               std::vector< hsize_t > capacity       = {},
+               std::vector< hsize_t > chunksizes     = {},
+               hsize_t                compress_level = 0) :
+        _referencecounter(parent_object.get_referencecounter())
 
     {
         open(parent_object, path, capacity, chunksizes, compress_level);
@@ -1541,8 +1688,9 @@ public:
  *
  * @tparam     HDFObject  The type of the parent object
  */
-template <typename HDFObject>
-void swap(HDFDataset<HDFObject>& lhs, HDFDataset<HDFObject>& rhs)
+template < typename HDFObject >
+void
+swap(HDFDataset< HDFObject >& lhs, HDFDataset< HDFObject >& rhs)
 {
     lhs.swap(rhs);
 }
