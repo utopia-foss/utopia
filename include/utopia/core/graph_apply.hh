@@ -31,19 +31,19 @@ void apply_rule(Rule&& rule, Graph&& g)
         auto [it, it_end] = iterate<over>(g);
 
         // initialize the state cache
-        using State = typename std::iterator_traits<decltype(it)>::value_type::State;
+        using State = 
+            typename std::iterator_traits<decltype(it)>::value_type::State;
         std::vector<State> state_cache;
         state_cache.reserve(std::distance(it, it_end));
 
         // apply the rule
         std::transform(it, it_end,
                     back_inserter(state_cache),
-                    std::forward<Rule>(
-                        boost::bind(&rule, _1, g)));
+                    std::forward<Rule>(rule));
 
         // move the cache
-        Utopia::Itertools::ZipIterator zip_it_begin(it, std::begin(state_cache));
-        Utopia::Itertools::ZipIterator zip_it_end(it, std::end(state_cache));
+        Itertools::ZipIterator zip_it_begin(it, std::begin(state_cache));
+        Itertools::ZipIterator zip_it_end(it, std::end(state_cache));
         for (auto zip_it = zip_it_begin; zip_it != zip_it_end; ++zip_it){
             auto [entity, state_cached] = *zip_it;
             g[entity].state = std::move(state_cached);
@@ -53,7 +53,7 @@ void apply_rule(Rule&& rule, Graph&& g)
     else if constexpr (mode == Update::async){
         // Apply the rule to each element 
         for (auto g_entity : range<over>(g)){
-            g[g_entity].state = rule(g_entity, g);
+            g[g_entity].state = rule(g_entity);
         }
     }
 }
@@ -64,27 +64,42 @@ template<Over over,
          Shuffle shuffle = Shuffle::on,
          typename Graph, 
          typename Rule,
-         typename RNG,
          typename std::enable_if_t<shuffle == Shuffle::on, int> = 0>
-void apply_rule(Rule&& f, Graph&& g, RNG&& rng)
+void apply_rule(Rule&& rule, Graph&& g)
 {
-    // Get iterators ...
-    auto [it, it_end] = iterate<over>(g);
-
-    // ... and shuffle them
-    std::shuffle(it, it_end, rng);
-
     if constexpr (mode == Update::sync) {
-        // TODO implement
+        // Get the iterators
+        auto [it, it_end] = iterate<over>(g);
+
+        // initialize the state cache
+        using State = 
+            typename std::iterator_traits<decltype(it)>::value_type::State;
+        std::vector<State> state_cache;
+        state_cache.reserve(std::distance(it, it_end));
+
+        // apply the rule
+        std::transform(it, it_end,
+                    back_inserter(state_cache),
+                    std::forward<Rule>(rule));
+
+        // move the cache
+        Itertools::ZipIterator zip_it_begin(it, std::begin(state_cache));
+        Itertools::ZipIterator zip_it_end(it, std::end(state_cache));
+        for (auto zip_it = zip_it_begin; zip_it != zip_it_end; ++zip_it){
+            auto [entity, state_cached] = *zip_it;
+            g[entity].state = std::move(state_cached);
+        }
     }
 
     else if constexpr (mode == Update::async){
         // Apply the rule to each element 
-        for (auto g_entity : boost::make_iterator_range(it, it_end)){
-            g[g_entity].state = rule(g_entity, g);
+        for (auto g_entity : range<over>(g)){
+            g[g_entity].state = rule(g_entity);
         }
     }
 }
+
+
 
 
 /**

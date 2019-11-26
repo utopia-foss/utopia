@@ -3,6 +3,7 @@
 #include <boost/test/included/unit_test.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/random.hpp>
+#include <boost/graph/copy.hpp>
 
 #include <utopia/core/graph_apply.hh>
 #include <utopia/core/state.hh>
@@ -67,31 +68,41 @@ using G_dir_list = boost::adjacency_list<
 template<class G>
 struct GraphFixture {
     // Create a random number generator
-    Utopia::DefaultRNG rng;
+    Utopia::DefaultRNG rng, rng_ref;
 
     const unsigned num_vertices;
     const unsigned num_edges;
 
-    G g;
+    G g, g_ref;
 
     GraphFixture() :
         num_vertices{10},
         num_edges{20},
-        g{}
+        g{},
+        g_ref{}
     {
+        // Creatig a test graph
         for (auto v = 0u; v<10; ++v){
             boost::add_vertex(Vertex(VertexState{10}), this->g);
         }
 
-        // Create num_edges random edges
-        std::uniform_int_distribution<unsigned> dist(0, num_vertices - 1);
         for (auto e = 0u; e < num_edges; ++e){
             boost::add_edge(boost::random_vertex(g, rng), 
                             boost::random_vertex(g, rng), 
                             Edge(EdgeState{20}), g);
         }
 
+        // Creating an equal reference graph     
+        // NOTE: Using boost::copy_graph() does not compile.
+        for (auto v = 0u; v<10; ++v){
+            boost::add_vertex(Vertex(VertexState{10}), this->g_ref);
+        }
 
+        for (auto e = 0u; e < num_edges; ++e){
+            boost::add_edge(boost::random_vertex(g_ref, rng_ref), 
+                            boost::random_vertex(g_ref, rng_ref), 
+                            Edge(EdgeState{20}), g_ref);
+        }
     };
 };
 
@@ -104,27 +115,51 @@ using GraphFixtures = boost::mpl::vector<
 
 
 // ++ Tests +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_manual_rule, G, 
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_manual_rule_noshuffle, G, 
     GraphFixtures, G)
 {
+    // Set the vertex property to a counter value that increments with each
+    // assignment.
+    auto counter = 0u;
     apply_rule<Over::vertices, Update::async, Shuffle::off>(
-        [](auto v, auto& g){
-            auto& state = g[v].state;
+        [this, &counter](auto v){
+            auto& state = this->G::g[v].state;
+            state.v_prop = counter;
+            ++counter;
+            return state;
+        },
+        G::g
+    );
+    
+    // Set the properties manually in the reference graph
+    counter = 0;
+    for (auto [it, it_end] = boost::vertices(G::g_ref); it!=it_end; ++it){
+        G::g_ref[*it].state.v_prop = counter;
+        ++counter;
+    }
+
+    // Test that both manually applying the rule leads to the same result
+    // as with the apply_rule interface
+    for (auto i = 0u; i < boost::num_vertices(G::g); ++i){
+        BOOST_TEST(G::g[boost::vertex(i, G::g)].state.v_prop 
+                == G::g_ref[boost::vertex(i, G::g_ref)].state.v_prop);
+        BOOST_TEST(G::g[boost::vertex(i, G::g)].state.v_prop == i);
+    }
+}
+
+
+
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_manual_rule_shuffle, G, 
+    GraphFixtures, G)
+{
+    apply_rule<Over::vertices, Update::async, Shuffle::on>(
+        [this](auto v){
+            auto& state = this->G::g[v].state;
             state.v_prop = 1;
             return state;
         },
         G::g
     );
-
-    // apply_rule<Over::vertices, Update::async, Shuffle::on>(
-    //     [](auto v, auto& g){
-    //         auto& state = g[v].state;
-    //         state.v_prop = 10;
-    //         return state;
-    //     },
-    //     G::g
-    // );
-
 }
 
 }   // namespace Utopia
