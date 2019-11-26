@@ -44,6 +44,8 @@ enum class IterateOver {
 };
 
 
+namespace Graph
+{
 
 /// Get an iterator pair over selected graph entities
 /** 
@@ -58,7 +60,7 @@ enum class IterateOver {
  * \return decltype(auto) The iterator pair
  */
 template<IterateOver iterate_over, typename Graph>
-decltype(auto) iterate(const Graph& g){
+decltype(auto) iterator_pair(const Graph& g){
     if constexpr (iterate_over == IterateOver::vertices){
         return boost::vertices(g);
     }
@@ -89,7 +91,7 @@ decltype(auto) iterate(const Graph& g){
  * \return decltype(auto) The iterator pair
  */
 template<IterateOver iterate_over, typename Graph, typename EntityDesc>
-decltype(auto) iterate(EntityDesc e, const Graph& g){
+decltype(auto) iterator_pair(EntityDesc e, const Graph& g){
     if constexpr (iterate_over == IterateOver::neighbors){
         return boost::adjacent_vertices(e, g);
     }
@@ -103,6 +105,8 @@ decltype(auto) iterate(EntityDesc e, const Graph& g){
         return boost::out_edges(e, g);
     }
 }
+
+} // namespace Graph
 
 
 /// Get the iterator range over specified graph entities
@@ -119,7 +123,7 @@ decltype(auto) iterate(EntityDesc e, const Graph& g){
  */
 template<IterateOver iterate_over, typename Graph>
 decltype(auto) range(const Graph& g){
-    return boost::make_iterator_range(iterate<iterate_over>(g));
+    return boost::make_iterator_range(Graph::iterator_pair<iterate_over>(g));
 }
 
 
@@ -146,7 +150,7 @@ decltype(auto) range(const Graph& g){
  */
 template<IterateOver iterate_over, typename Graph, typename EntityDesc>
 decltype(auto) range(EntityDesc e, const Graph& g){
-    return boost::make_iterator_range(iterate<iterate_over>(e, g));
+    return boost::make_iterator_range(Graph::iterator_pair<iterate_over>(e, g));
 }
 
 // end group GraphIterators

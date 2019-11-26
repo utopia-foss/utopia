@@ -72,7 +72,7 @@ template<IterateOver iterate_over,
          typename std::enable_if_t<shuffle == Shuffle::off, int> = 0>
 void apply_rule(Rule&& rule, Graph&& g)
 {
-    auto [it, it_end] = iterate<iterate_over>(g);
+    auto [it, it_end] = Utopia::Graph::iterator_pair<iterate_over>(g);
 
     if constexpr (mode == Update::sync) {
         _apply_sync(it, it_end, g, rule);
@@ -100,7 +100,7 @@ void apply_rule(Rule&& rule, Graph&& g, RNG&& rng)
     // Get the iterators, create a vector with a copy because the 
     // original iterators are const, thus cannot be shuffed,
     // and shuffle them.
-    auto [it, it_end] = iterate<iterate_over>(g);
+    auto [it, it_end] = Utopia::Graph::iterator_pair<iterate_over>(g);
     std::vector<VertexDesc> it_shuffled(it, it_end);
     std::shuffle(std::begin(it_shuffled), std::end(it_shuffled), rng);
 
