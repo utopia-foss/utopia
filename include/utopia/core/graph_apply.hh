@@ -18,7 +18,7 @@ namespace Utopia {
  */
 
 
-template<Over over,
+template<IterateOver iterate_over,
          Update mode,
          Shuffle shuffle = Shuffle::on,
          typename Graph, 
@@ -28,7 +28,7 @@ void apply_rule(Rule&& rule, Graph&& g)
 {
     if constexpr (mode == Update::sync) {
         // Get the iterators
-        auto [it, it_end] = iterate<over>(g);
+        auto [it, it_end] = iterate<iterate_over>(g);
 
         // initialize the state cache
         using State = 
@@ -52,14 +52,14 @@ void apply_rule(Rule&& rule, Graph&& g)
 
     else if constexpr (mode == Update::async){
         // Apply the rule to each element 
-        for (auto g_entity : range<over>(g)){
+        for (auto g_entity : range<iterate_over>(g)){
             g[g_entity].state = rule(g_entity);
         }
     }
 }
 
 
-template<Over over,
+template<IterateOver iterate_over,
          Update mode,
          Shuffle shuffle = Shuffle::on,
          typename Graph, 
@@ -69,7 +69,7 @@ void apply_rule(Rule&& rule, Graph&& g)
 {
     if constexpr (mode == Update::sync) {
         // Get the iterators
-        auto [it, it_end] = iterate<over>(g);
+        auto [it, it_end] = iterate<iterate_over>(g);
 
         // initialize the state cache
         using State = 
@@ -93,7 +93,7 @@ void apply_rule(Rule&& rule, Graph&& g)
 
     else if constexpr (mode == Update::async){
         // Apply the rule to each element 
-        for (auto g_entity : range<over>(g)){
+        for (auto g_entity : range<iterate_over>(g)){
             g[g_entity].state = rule(g_entity);
         }
     }

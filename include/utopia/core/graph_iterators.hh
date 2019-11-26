@@ -11,7 +11,7 @@ namespace Utopia {
 
 
 /// Over which graph entity to iterate 
-enum class Over {
+enum class IterateOver {
     /// Iterate over vertices.
     vertices,
 
@@ -49,20 +49,20 @@ enum class Over {
 /** 
  * \tparam iterate_over Specify over which graph entities to iterate
  *                      Valid options: 
- *                          - Over::vertices
- *                          - Over::edges
+ *                          - IterateOver::vertices
+ *                          - IterateOver::edges
  * \tparam Graph        The graph type
  * 
  * \param g             The graph
  * 
  * \return decltype(auto) The iterator pair
  */
-template<Over iterate_over, typename Graph>
+template<IterateOver iterate_over, typename Graph>
 decltype(auto) iterate(const Graph& g){
-    if constexpr (iterate_over == Over::vertices){
+    if constexpr (iterate_over == IterateOver::vertices){
         return boost::vertices(g);
     }
-    else if constexpr (iterate_over == Over::edges){
+    else if constexpr (iterate_over == IterateOver::edges){
         return boost::edges(g);
     }
 }
@@ -75,10 +75,10 @@ decltype(auto) iterate(const Graph& g){
  * 
  * \tparam iterate_over Specify over which graph entities to iterate over
  *                      Valid options: 
- *                          - Over::neighbors
- *                          - Over::inv_neighbors
- *                          - Over::in_edges
- *                          - Over::OutEgdes
+ *                          - IterateOver::neighbors
+ *                          - IterateOver::inv_neighbors
+ *                          - IterateOver::in_edges
+ *                          - IterateOver::OutEgdes
  * \tparam Graph        The graph type
  * \tparam EntityDesc   The graph entity descriptor that is the reference point 
  *                      for the iteration.
@@ -88,18 +88,18 @@ decltype(auto) iterate(const Graph& g){
  * 
  * \return decltype(auto) The iterator pair
  */
-template<Over iterate_over, typename Graph, typename EntityDesc>
+template<IterateOver iterate_over, typename Graph, typename EntityDesc>
 decltype(auto) iterate(EntityDesc e, const Graph& g){
-    if constexpr (iterate_over == Over::neighbors){
+    if constexpr (iterate_over == IterateOver::neighbors){
         return boost::adjacent_vertices(e, g);
     }
-    else if constexpr (iterate_over == Over::inv_neighbors){
+    else if constexpr (iterate_over == IterateOver::inv_neighbors){
         return boost::inv_adjacent_vertices(e, g);
     }
-    else if constexpr (iterate_over == Over::in_edges){
+    else if constexpr (iterate_over == IterateOver::in_edges){
         return boost::in_edges(e, g);
     }
-    else if constexpr (iterate_over == Over::out_edges){
+    else if constexpr (iterate_over == IterateOver::out_edges){
         return boost::out_edges(e, g);
     }
 }
@@ -109,15 +109,15 @@ decltype(auto) iterate(EntityDesc e, const Graph& g){
 /** 
  * \tparam iterate_over Specify over which graph entities to iterate over
  *                      Valid options: 
- *                          - Over::vertices
- *                          - Over::edges
+ *                          - IterateOver::vertices
+ *                          - IterateOver::edges
  * \tparam Graph        The graph type
  * 
  * \param g             The graph
  * 
  * \return decltype(auto) The iterator range
  */
-template<Over iterate_over, typename Graph>
+template<IterateOver iterate_over, typename Graph>
 decltype(auto) range(const Graph& g){
     return boost::make_iterator_range(iterate<iterate_over>(g));
 }
@@ -131,10 +131,10 @@ decltype(auto) range(const Graph& g){
  * 
  * \tparam iterate_over Specify over which graph entities to iterate over
  *                      Valid options: 
- *                          - Over::neighbors
- *                          - Over::inv_neighbors
- *                          - Over::in_edges
- *                          - Over::OutEgdes
+ *                          - IterateOver::neighbors
+ *                          - IterateOver::inv_neighbors
+ *                          - IterateOver::in_edges
+ *                          - IterateOver::OutEgdes
  * \tparam Graph        The graph type
  * \tparam EntityDesc   The graph entity descriptor that is the reference point 
  *                      for the iteration.
@@ -144,7 +144,7 @@ decltype(auto) range(const Graph& g){
  * 
  * \return decltype(auto) The iterator range
  */
-template<Over iterate_over, typename Graph, typename EntityDesc>
+template<IterateOver iterate_over, typename Graph, typename EntityDesc>
 decltype(auto) range(EntityDesc e, const Graph& g){
     return boost::make_iterator_range(iterate<iterate_over>(e, g));
 }

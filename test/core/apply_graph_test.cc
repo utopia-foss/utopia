@@ -121,7 +121,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_manual_rule_noshuffle, G,
     // Set the vertex property to a counter value that increments with each
     // assignment.
     auto counter = 0u;
-    apply_rule<Over::vertices, Update::async, Shuffle::off>(
+    apply_rule<IterateOver::vertices, Update::async, Shuffle::off>(
         [this, &counter](auto v){
             auto& state = this->G::g[v].state;
             state.v_prop = counter;
@@ -152,7 +152,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_manual_rule_noshuffle, G,
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_manual_rule_shuffle, G, 
     GraphFixtures, G)
 {
-    apply_rule<Over::vertices, Update::async, Shuffle::on>(
+    apply_rule<IterateOver::vertices, Update::async, Shuffle::on>(
         [this](auto v){
             auto& state = this->G::g[v].state;
             state.v_prop = 1;
