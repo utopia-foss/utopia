@@ -22,25 +22,23 @@ namespace Utopia
 namespace DataIO
 {
 /*!
-* \addtogroup DataIO
-* \{
-*/
+ * \addtogroup DataIO
+ * \{
+ */
 
 /*!
-* \addtogroup HDF5
-* \{
-*/
-
-
+ * \addtogroup HDF5
+ * \{
+ */
 
 /**
- * @brief Class represting a HDFGroup, an object analogous to a folder for 
+ * @brief Class represting a HDFGroup, an object analogous to a folder for
  *          HDFFiles.
- * 
+ *
  */
 class HDFGroup
 {
-protected:
+  protected:
     hid_t _group;
 
     std::string _path;
@@ -49,15 +47,16 @@ protected:
 
     haddr_t _address;
 
-    std::shared_ptr<std::unordered_map<haddr_t, int>> _referencecounter;
+    std::shared_ptr< std::unordered_map< haddr_t, int > > _referencecounter;
 
-public:
+  public:
     /**
      * @brief      switch state of object with other's state
      *
      * @param      other  The other
      */
-    void swap(HDFGroup& other)
+    void
+    swap(HDFGroup& other)
     {
         using std::swap;
         swap(_group, other._group);
@@ -72,7 +71,8 @@ public:
      *
      * @return     std::string
      */
-    std::string get_path()
+    std::string
+    get_path()
     {
         return _path;
     }
@@ -82,7 +82,8 @@ public:
      *
      * @return     the ID of the group
      */
-    hid_t get_id()
+    hid_t
+    get_id()
     {
         return _group;
     }
@@ -92,7 +93,8 @@ public:
      *
      * @return     the reference counter
      */
-    auto get_referencecounter()
+    auto
+    get_referencecounter()
     {
         return _referencecounter;
     }
@@ -102,7 +104,8 @@ public:
      *
      * @return     the address
      */
-    auto get_address()
+    auto
+    get_address()
     {
         return _address;
     }
@@ -110,18 +113,18 @@ public:
     /**
      * @brief      prints info about the group to std::cout
      */
-    void info()
+    void
+    info()
     {
         // get information from the hdf5 group
         H5G_info_t info;
-        herr_t err = H5Gget_info(_group, &info);
+        herr_t     err = H5Gget_info(_group, &info);
 
         // if information is succesfully retrieved print out the information
         if (err < 0)
         {
-            throw std::runtime_error(
-                "Getting group information by calling "
-                "H5Gget_info failed!");
+            throw std::runtime_error("Getting group information by calling "
+                                     "H5Gget_info failed!");
         }
 
         std::cout << "Group information:" << std::endl
@@ -130,7 +133,8 @@ public:
                   << "- Number of links in group: " << info.nlinks << std::endl
                   << "- Current max. creation order value: " << info.max_corder
                   << std::endl
-                  << "- Mounted files on the group: " << info.mounted << std::endl;
+                  << "- Mounted files on the group: " << info.mounted
+                  << std::endl;
     }
 
     /**
@@ -141,16 +145,18 @@ public:
      *
      * @tparam     Attrdata        type of attribute data
      */
-    template <typename Attrdata>
-    void add_attribute(std::string name, Attrdata attribute_data)
+    template < typename Attrdata >
+    void
+    add_attribute(std::string name, Attrdata attribute_data)
     {
-        HDFAttribute<HDFGroup>(*this, name).write(attribute_data);
+        HDFAttribute< HDFGroup >(*this, name).write(attribute_data);
     }
 
     /**
      * @brief      close group
      */
-    void close()
+    void
+    close()
     {
         if (check_validity(H5Iis_valid(_group), _path))
         {
@@ -174,11 +180,12 @@ public:
      * @param parent
      * @param path
      */
-    template <typename HDFObject>
-    void open(HDFObject& parent, std::string path)
+    template < typename HDFObject >
+    void
+    open(HDFObject& parent, std::string path)
     {
-        _path = path;
-        _info = H5O_info_t();
+        _path    = path;
+        _info    = H5O_info_t();
         _address = 0;
 
         _referencecounter = parent.get_referencecounter();
@@ -203,8 +210,11 @@ public:
             // create the group and intermediates
             hid_t group_plist = H5Pcreate(H5P_LINK_CREATE);
             H5Pset_create_intermediate_group(group_plist, 1);
-            _group = H5Gcreate(parent.get_id(), _path.c_str(), group_plist,
-                               H5P_DEFAULT, H5P_DEFAULT);
+            _group = H5Gcreate(parent.get_id(),
+                               _path.c_str(),
+                               group_plist,
+                               H5P_DEFAULT,
+                               H5P_DEFAULT);
             if (_group < 0)
             {
                 throw std::runtime_error("Group creation for path '" + path +
@@ -212,7 +222,7 @@ public:
             }
             // get info and update reference counter
             H5Oget_info(_group, &_info);
-            _address = _info.addr;
+            _address                       = _info.addr;
             (*_referencecounter)[_address] = 1;
         }
     }
@@ -224,9 +234,10 @@ public:
      *
      * @return     std::shared_ptr<HDFGroup>
      */
-    std::shared_ptr<HDFGroup> open_group(std::string path)
+    std::shared_ptr< HDFGroup >
+    open_group(std::string path)
     {
-        return std::make_shared<HDFGroup>(*this, path);
+        return std::make_shared< HDFGroup >(*this, path);
     }
 
     /**
@@ -237,12 +248,13 @@ public:
      *
      * @return     A std::shared_ptr pointing at the newly created dataset
      */
-    std::shared_ptr<HDFDataset<HDFGroup>> open_dataset(std::string path,
-                                                       std::vector<hsize_t> capacity = {},
-                                                       std::vector<hsize_t> chunksizes = {},
-                                                       std::size_t compresslevel = 0)
+    std::shared_ptr< HDFDataset< HDFGroup > >
+    open_dataset(std::string            path,
+                 std::vector< hsize_t > capacity      = {},
+                 std::vector< hsize_t > chunksizes    = {},
+                 std::size_t            compresslevel = 0)
     {
-        return std::make_shared<HDFDataset<HDFGroup>>(
+        return std::make_shared< HDFDataset< HDFGroup > >(
             *this, path, capacity, chunksizes, compresslevel);
     }
 
@@ -251,7 +263,8 @@ public:
      *
      * @param      path  relative path to group to delete
      */
-    void delete_group(std::string path)
+    void
+    delete_group(std::string path)
     {
         // check if group exists in file. If it does, delete the link
         herr_t status = 1;
@@ -278,12 +291,9 @@ public:
      *
      * @param      other  The other
      */
-    HDFGroup(const HDFGroup& other)
-        : _group(other._group),
-          _path(other._path),
-          _info(other._info),
-          _address(other._address),
-          _referencecounter(other._referencecounter)
+    HDFGroup(const HDFGroup& other) :
+        _group(other._group), _path(other._path), _info(other._info),
+        _address(other._address), _referencecounter(other._referencecounter)
     {
         (*_referencecounter)[_address] += 1;
     }
@@ -305,7 +315,8 @@ public:
      *
      * @return     HDFGroup&
      */
-    HDFGroup& operator=(HDFGroup other)
+    HDFGroup&
+    operator=(HDFGroup other)
     {
         this->swap(other);
         return *this;
@@ -319,7 +330,7 @@ public:
      *
      * @tparam     HDFObject  { description }
      */
-    template <typename HDFObject>
+    template < typename HDFObject >
     HDFGroup(HDFObject& parent, std::string path)
     {
         open(parent, path);
@@ -340,7 +351,8 @@ public:
  * @param      lhs   The left hand side
  * @param      rhs   The right hand side
  */
-void swap(HDFGroup& lhs, HDFGroup& rhs)
+void
+swap(HDFGroup& lhs, HDFGroup& rhs)
 {
     lhs.swap(rhs);
 }

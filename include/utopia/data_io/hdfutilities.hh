@@ -26,16 +26,14 @@ namespace Utopia
 namespace DataIO
 {
 /*!
-* \addtogroup DataIO
-* \{
-*/
+ * \addtogroup DataIO
+ * \{
+ */
 
 /*!
-* \addtogroup HDF5
-* \{
-*/
-
-
+ * \addtogroup HDF5
+ * \{
+ */
 
 /**
  * @brief Check for validity of a hdf5 htri_t type or similar
@@ -46,15 +44,18 @@ namespace DataIO
  * @details This function is necessary because for instance H5Iis_valid does not
  *           return a boolean (non existant in C), but a value which is > 0 if
  *           everything is fine, < 0 if some error occurred during checking and
- *           0 if the object to check is invalid. This has to be taken into account
- *           in order to be able to track bugs or wrong usage properly.
- *           See here: https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.6/hdf5-1.6.7/src/unpacked/src/H5public.h
+ *           0 if the object to check is invalid. This has to be taken into
+ *           account in order to be able to track bugs or wrong usage properly.
+ *           See here:
+ *           https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.6/hdf5-1.6.7/src/unpacked/src/H5public.h
  *           which yields the following snippet:
- *          // Boolean type.  Successful return values are zero (false) or positive
- *          // (true). The typical true value is 1 but don't bet on it.  Boolean
- *          // functions cannot fail.  Functions that return `htri_t' however return zero
- *          // (false), positive (true), or negative (failure). The proper way to test
- *          // for truth from a htri_t function is:
+ *
+ *           Boolean type.  Successful return values are zero (false) or
+ *           positive (true). The typical true value is 1 but don't bet on it.
+ *           Boolean functions cannot fail.  Functions that return `htri_t'
+ *           however return zero (false), positive (true), or negative
+ *           (failure).
+ *           The proper way to test for truth from a htri_t function is:
  *
  * 	         if ((retval = H5Tcommitted(type))>0) {
  *	             printf("data type is committed\n");
@@ -64,7 +65,8 @@ namespace DataIO
  * 	             printf("error determining whether data type is committed\n");
  *	         }
  */
-bool check_validity(htri_t valid, std::string object_name)
+bool
+check_validity(htri_t valid, std::string object_name)
 {
     if (valid > 0)
     {
@@ -85,21 +87,23 @@ bool check_validity(htri_t valid, std::string object_name)
 
 /// Checks iteratively if each segment of a path exists
 
+/**
+ * @brief Checks if a given path exists in a hdf5 object identitifed by its id.
 
- /**
-  * @brief Checks if a given path exists in a hdf5 object identitifed by its id. 
-
-  * @param loc_id Identifier of the file or group to query.
-  * @param path The path of the link to check. This can be a relative or
-  *                an absolute path, but (as with H5Lexists) it can NOT use
-  *                the ``../`` syntax to go to the parent object. For such
-  *                cases, an absolute path needs to be given.
-  * @param link_property_list  Link access property list identifier.
-  * @return htri_t Variable which tells if the given path exists (true > 0, false = 0, error < 0)
-  */
-htri_t path_exists(hid_t loc_id,
-                   std::string path,
-                   hid_t link_property_list = H5P_DEFAULT) {
+ * @param loc_id Identifier of the file or group to query.
+ * @param path The path of the link to check. This can be a relative or
+ *                an absolute path, but (as with H5Lexists) it can NOT use
+ *                the ``../`` syntax to go to the parent object. For such
+ *                cases, an absolute path needs to be given.
+ * @param link_property_list  Link access property list identifier.
+ * @return htri_t Variable which tells if the given path exists (true > 0, false
+ = 0, error < 0)
+ */
+htri_t
+path_exists(hid_t       loc_id,
+            std::string path,
+            hid_t       link_property_list = H5P_DEFAULT)
+{
     // Position of the segment cursor; all characters before are checked
     // For absolute paths, search always needs to start behind index 1
     std::size_t seg_pos = (path.find("/") == 0) ? 1 : 0;
@@ -108,18 +112,20 @@ htri_t path_exists(hid_t loc_id,
     htri_t rv;
 
     // Go over all segments until the whole string is
-    while (seg_pos != std::string::npos) {
+    while (seg_pos != std::string::npos)
+    {
         // Find the position of the next "/", strictly after the current
         // cursor position
-        seg_pos = path.find("/", seg_pos+1);
+        seg_pos = path.find("/", seg_pos + 1);
 
         // Check for existence of the subpath. If seg_pos is string::npos,
         // the substring is the full path and this is the last loop iteration.
-        rv = H5Lexists(loc_id, path.substr(0, seg_pos).c_str(),
-                       link_property_list);
+        rv = H5Lexists(
+            loc_id, path.substr(0, seg_pos).c_str(), link_property_list);
 
         // If this segment does not exists, need to return already
-        if (rv <= 0) {
+        if (rv <= 0)
+        {
             return rv;
         }
     }
@@ -129,7 +135,6 @@ htri_t path_exists(hid_t loc_id,
 }
 /*! \} */ // end of group HDF5
 /*! \} */ // end of group DataIO
-
 
 } // namespace DataIO
 } // namespace Utopia

@@ -9,30 +9,29 @@
 #include "../hdfdataset.hh"
 #include "../hdfgroup.hh"
 
-
-namespace Utopia {
-namespace DataIO {
+namespace Utopia
+{
+namespace DataIO
+{
 
 /**
  *  \addtogroup DataManagerWriteTask WriteTask
  *  \{
- *  \ingroup DataManager   
+ *  \ingroup DataManager
  */
-
 
 /**
  * @page
  * \section what Overview
- * A writetask is an object which encapsulates the ability to acquire resources 
- * for writing data, the functionality to write data from a given source, 
+ * A writetask is an object which encapsulates the ability to acquire resources
+ * for writing data, the functionality to write data from a given source,
  * and to handle metadata. This is geared towards use with HDF5 here.
  * \section impl Implementation
- * A writetask contains a function to build a basic hdfgroup, a function which 
- * generates datasets in that group, and a function which writes data to these 
- * datasets. Furthermore, functions for writing attributes to the basegroup 
+ * A writetask contains a function to build a basic hdfgroup, a function which
+ * generates datasets in that group, and a function which writes data to these
+ * datasets. Furthermore, functions for writing attributes to the basegroup
  * and the datasets are included.
  */
-
 
 /**
  * @brief Encapsulate a task for writing data to a destination.
@@ -46,13 +45,13 @@ namespace DataIO {
  * @tparam AWG Group attribute writer type, automatically determined
  * @tparam AWD Dataset attribute writer type, automatically determined
  */
-template<class BGB, class DW, class DB, class AWG, class AWD>
+template < class BGB, class DW, class DB, class AWG, class AWD >
 struct WriteTask
 {
-    using BasegroupBuilder = BGB;
-    using Writer = DW;
-    using Builder = DB;
-    using AttributeWriterGroup = AWG;
+    using BasegroupBuilder       = BGB;
+    using Writer                 = DW;
+    using Builder                = DB;
+    using AttributeWriterGroup   = AWG;
     using AttributeWriterDataset = AWD;
 
     /**
@@ -63,12 +62,12 @@ struct WriteTask
     /**
      * @brief pointer to the hdfgroup in which all produced datasets live.
      */
-    std::shared_ptr<HDFGroup> base_group;
+    std::shared_ptr< HDFGroup > base_group;
 
     /**
      * @brief pointer to the dataset which is currently active
      */
-    std::shared_ptr<HDFDataset<HDFGroup>> active_dataset;
+    std::shared_ptr< HDFDataset< HDFGroup > > active_dataset;
 
     /**
      * @brief Callable to write data
@@ -96,11 +95,15 @@ struct WriteTask
      *
      * @return std::string
      */
-    std::string get_active_path()
+    std::string
+    get_active_path()
     {
-        if (active_dataset != nullptr) {
+        if (active_dataset != nullptr)
+        {
             return active_dataset->get_path();
-        } else {
+        }
+        else
+        {
             return "";
         }
     }
@@ -110,11 +113,15 @@ struct WriteTask
      *
      * @return std::string
      */
-    std::string get_base_path()
+    std::string
+    get_base_path()
     {
-        if (base_group != nullptr) {
+        if (base_group != nullptr)
+        {
             return base_group->get_path();
-        } else {
+        }
+        else
+        {
             return "";
         }
     }
@@ -124,11 +131,15 @@ struct WriteTask
      *
      * @param other Different WriteTask object
      */
-    void swap(WriteTask& other)
+    void
+    swap(WriteTask& other)
     {
-        if (this == &other) {
+        if (this == &other)
+        {
             return;
-        } else {
+        }
+        else
+        {
             using std::swap;
             swap(build_basegroup, other.build_basegroup);
             swap(base_group, other.base_group);
@@ -155,24 +166,22 @@ struct WriteTask
      * @param ag group attribute writer
      * @param ad dataset attribute writer
      */
-    template<typename Basegroupbuilder,
-             typename Writertype,
-             typename Buildertype,
-             typename AWritertypeG,
-             typename AWritertypeD>
+    template < typename Basegroupbuilder,
+               typename Writertype,
+               typename Buildertype,
+               typename AWritertypeG,
+               typename AWritertypeD >
     WriteTask(Basegroupbuilder&& bgb,
-              Writertype&& w,
-              Buildertype&& b,
-              AWritertypeG&& ag,
-              AWritertypeD&& ad)
-      : build_basegroup(bgb)
-      , base_group(nullptr)
-      , active_dataset(nullptr)
-      , write_data(w)
-      , build_dataset(b)
-      , write_attribute_active_dataset(ad)
-      , write_attribute_basegroup(ag)
-    {}
+              Writertype&&       w,
+              Buildertype&&      b,
+              AWritertypeG&&     ag,
+              AWritertypeD&&     ad) :
+        build_basegroup(bgb),
+        base_group(nullptr), active_dataset(nullptr), write_data(w),
+        build_dataset(b), write_attribute_active_dataset(ad),
+        write_attribute_basegroup(ag)
+    {
+    }
 
     /**
      * @brief Construct a new writer Task object
@@ -200,7 +209,8 @@ struct WriteTask
      * @param other Object to assign from
      * @return WriteTask&
      */
-    WriteTask& operator=(const WriteTask& other) = default;
+    WriteTask&
+    operator=(const WriteTask& other) = default;
 
     /**
      * @brief Move assign from 'other'
@@ -208,14 +218,14 @@ struct WriteTask
      * @param other Object to assign from.
      * @return WriteTask&
      */
-    WriteTask& operator=(WriteTask&& other) = default;
+    WriteTask&
+    operator=(WriteTask&& other) = default;
 
     /**
      * @brief Destroy the writer Task object
      */
     virtual ~WriteTask() = default;
 };
-
 
 /**
  * @brief Swaps the state of lhs and rhs
@@ -225,31 +235,30 @@ struct WriteTask
  * @param lhs
  * @param rhs
  */
-template<class BGB, class DW, class DB, class AWG, class AWD>
+template < class BGB, class DW, class DB, class AWG, class AWD >
 void
-swap(WriteTask<BGB, DW, DB, AWG, AWD>& lhs,
-     WriteTask<BGB, DW, DB, AWG, AWD>& rhs)
+swap(WriteTask< BGB, DW, DB, AWG, AWD >& lhs,
+     WriteTask< BGB, DW, DB, AWG, AWD >& rhs)
 {
     lhs.swap(rhs);
 }
 
 // Deduction guide for WriteTask
-template<typename Basegroupbuilder,
-         typename Writertype,
-         typename Buildertype,
-         typename AWritertypeG,
-         typename AWritertypeD>
+template < typename Basegroupbuilder,
+           typename Writertype,
+           typename Buildertype,
+           typename AWritertypeG,
+           typename AWritertypeD >
 WriteTask(Basegroupbuilder&& bgb,
-          Writertype&& w,
-          Buildertype&& b,
-          AWritertypeG&& ad,
-          AWritertypeD&& ag)
-  ->WriteTask<std::decay_t<Basegroupbuilder>,
-              std::decay_t<Writertype>,
-              std::decay_t<Buildertype>,
-              std::decay_t<AWritertypeG>,
-              std::decay_t<AWritertypeD>>;
-
+          Writertype&&       w,
+          Buildertype&&      b,
+          AWritertypeG&&     ad,
+          AWritertypeD&&     ag)
+    ->WriteTask< std::decay_t< Basegroupbuilder >,
+                 std::decay_t< Writertype >,
+                 std::decay_t< Buildertype >,
+                 std::decay_t< AWritertypeG >,
+                 std::decay_t< AWritertypeD > >;
 
 /**
  *  \}  // end of DataManagerWriteTask

@@ -8,8 +8,10 @@
 #include "../core/exceptions.hh"
 #include "../core/types.hh" // NOTE: DataIO::Config type declared there
 
-namespace Utopia {
-namespace DataIO {
+namespace Utopia
+{
+namespace DataIO
+{
 
 /*!
  * \addtogroup DataIO
@@ -62,11 +64,11 @@ namespace DataIO {
 
 // TODO Make this an actual Utopia exception
 /// Improves yaml-cpp exceptions occurring for a given node
-template<class Exc>
+template < class Exc >
 YAML::Exception
-improve_yaml_exception(const Exc& e,
+improve_yaml_exception(const Exc&    e,
                        const Config& node,
-                       std::string prefix = {})
+                       std::string   prefix = {})
 {
     // The string stream for the new, improved error message
     std::stringstream e_msg;
@@ -75,12 +77,14 @@ improve_yaml_exception(const Exc& e,
 
     // Create a custom error message depending on whether the node is a
     // zombie or a mark is available
-    if (not node) {
+    if (not node)
+    {
         // Was a zombie
         e_msg << "The given node was a Zombie! Check that the key you are "
                  "trying to read from actually exists. ";
     }
-    else if (not node.Mark().is_null()) {
+    else if (not node.Mark().is_null())
+    {
         // A mark is available to use as a hint
         // NOTE Mark() provides the line and column in the config file, if
         //      available, i.e.: if not a zombie node
@@ -97,16 +101,16 @@ improve_yaml_exception(const Exc& e,
 
 /// Given a config node, returns a string representation of it
 /** This is done by dumping the config node into an std::stringstream.
-  */
-std::string to_string(const Config& node) {
+ */
+std::string
+to_string(const Config& node)
+{
     std::stringstream s;
     s << YAML::Dump(node);
     return s.str();
 }
 
-
 } // namespace DataIO
-
 
 /*!
  * \addtogroup ConfigUtilities
@@ -116,10 +120,9 @@ std::string to_string(const Config& node) {
 // NOTE All code below is not inside the Utopia::DataIO namespace to make
 //      includes into models more convenient.
 
-
 /// This function is a wrapper around the yaml-cpp YAML::Node::as function
 /** It enhances the error messages that can occur in a read operation.
- * 
+ *
  * Example:
  * \code{.cc}
  *   using namespace Utopia;
@@ -146,53 +149,64 @@ std::string to_string(const Config& node) {
  *  \throw  Utopia::KeyError On missing key
  *  \throw  YAML::Exception On bad conversions or other YAML-related errors
  */
-template<typename ReturnType>
-ReturnType get_as(const std::string& key, const DataIO::Config& node)
+template < typename ReturnType >
+ReturnType
+get_as(const std::string& key, const DataIO::Config& node)
 {
-    try {
-        return node[key].template as<ReturnType>();
+    try
+    {
+        return node[key].template as< ReturnType >();
     }
-    catch (YAML::Exception& e) {
-        if (not node[key]) {
+    catch (YAML::Exception& e)
+    {
+        if (not node[key])
+        {
             throw KeyError(key, node);
         }
         // else: throw an improved error message
-        throw DataIO::improve_yaml_exception(
-          e, node, "Could not read key '" + key + "' from given config node!");
+        throw DataIO::improve_yaml_exception(e,
+                                             node,
+                                             "Could not read key '" + key +
+                                                 "' from given config node!");
     }
-    catch (std::exception& e) {
+    catch (std::exception& e)
+    {
         // Some other exception; provide at least some info and context
         std::cerr << boost::core::demangle(typeid(e).name())
-                  << " occurred during reading key '"
-                  << key << "' from config!" << std::endl;
+                  << " occurred during reading key '" << key << "' from config!"
+                  << std::endl;
 
         // Re-throw the original exception
         throw;
     }
-    catch (...) {
+    catch (...)
+    {
         throw std::runtime_error("Unexpected exception occurred during "
-                                 "reading key '" + key + "'' from config!");
+                                 "reading key '" +
+                                 key + "'' from config!");
     }
 }
 
 /// Like Utopia::get_as, but instead of KeyError, returns a fallback value
-template<typename ReturnType>
-ReturnType get_as(const std::string& key,
-                  const DataIO::Config& node, ReturnType fallback)
+template < typename ReturnType >
+ReturnType
+get_as(const std::string& key, const DataIO::Config& node, ReturnType fallback)
 {
-    try {
-        return get_as<ReturnType>(key, node);
+    try
+    {
+        return get_as< ReturnType >(key, node);
     }
-    catch (KeyError&) {
+    catch (KeyError&)
+    {
         return fallback;
     }
     // All other errors will (rightly) be thrown
 }
 
-
 // Armadillo-related specialization
 // TODO These should be implemented specializations of the get_as function!
-namespace DataIO {
+namespace DataIO
+{
 
 /// Retrieve a config entry as Armadillo column vector using get_
 /** \note This method is necessary because arma::Col::fixed cannot be
@@ -202,26 +216,30 @@ namespace DataIO {
  * \tparam CVecT The Armadillo vector type to return
  * \tparam dim   The dimensionality of the vector (only needed for)
  */
-template<typename CVecT, DimType dim = 0>
-CVecT get_as_arma_vec(const std::string& key, const DataIO::Config& node)
+template < typename CVecT, DimType dim = 0 >
+CVecT
+get_as_arma_vec(const std::string& key, const DataIO::Config& node)
 {
     // Extract the field vector element type; assuming Armadillo interface
     using element_t = typename CVecT::elem_type;
 
     // Check if it can be constructed from a vector
-    if constexpr (std::is_constructible<CVecT, std::vector<element_t>>()) {
-        return get_as<std::vector<element_t>>(key, node);
+    if constexpr (std::is_constructible< CVecT, std::vector< element_t > >())
+    {
+        return get_as< std::vector< element_t > >(key, node);
     }
-    else {
+    else
+    {
         static_assert(dim > 0,
                       "Need template argument dim given if target type is not "
                       "constructible from std::vector.");
 
         // Needs to be constructed element-wise
-        CVecT cvec;
-        const auto vec = get_as<std::array<element_t, dim>>(key, node);
+        CVecT      cvec;
+        const auto vec = get_as< std::array< element_t, dim > >(key, node);
 
-        for (DimType i = 0; i < dim; i++) {
+        for (DimType i = 0; i < dim; i++)
+        {
             cvec[i] = vec[i];
         }
 
@@ -233,21 +251,21 @@ CVecT get_as_arma_vec(const std::string& key, const DataIO::Config& node)
 /// Special case of Utopia::get_as to retrieve an entry as SpaceVec
 /** \tparam dim The dimensionality of the returned Utopia::SpaceVecType
  */
-template<DimType dim>
-SpaceVecType<dim> get_as_SpaceVec(const std::string& key,
-                                  const DataIO::Config& node)
+template < DimType dim >
+SpaceVecType< dim >
+get_as_SpaceVec(const std::string& key, const DataIO::Config& node)
 {
-    return DataIO::get_as_arma_vec<SpaceVecType<dim>, dim>(key, node);
+    return DataIO::get_as_arma_vec< SpaceVecType< dim >, dim >(key, node);
 }
 
 /// Special case of Utopia::get_as to retrieve an entry as MultiIndex
 /** \tparam dim The dimensionality of the returned Utopia::MultiIndexType
  */
-template<DimType dim>
-MultiIndexType<dim> get_as_MultiIndex(const std::string& key,
-                                      const DataIO::Config& node)
+template < DimType dim >
+MultiIndexType< dim >
+get_as_MultiIndex(const std::string& key, const DataIO::Config& node)
 {
-    return DataIO::get_as_arma_vec<MultiIndexType<dim>, dim>(key, node);
+    return DataIO::get_as_arma_vec< MultiIndexType< dim >, dim >(key, node);
 }
 
 // end group ConfigUtilities
