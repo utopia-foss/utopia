@@ -5,9 +5,9 @@
 #include <boost/graph/random.hpp>
 #include <boost/graph/copy.hpp>
 
-#include <utopia/core/graph_apply.hh>
+#include <utopia/core/graph/apply.hh>
 #include <utopia/core/state.hh>
-#include <utopia/core/graph_entity.hh>
+#include <utopia/core/graph/entity.hh>
 
 namespace Utopia
 {

@@ -1,8 +1,8 @@
 #ifndef UTOPIA_CORE_GRAPH_ENTITY_HH
 #define UTOPIA_CORE_GRAPH_ENTITY_HH
 
-#include "tags.hh"
-#include "entity.hh"
+#include "../tags.hh"
+#include "../entity.hh"
 
 namespace Utopia {
 /**

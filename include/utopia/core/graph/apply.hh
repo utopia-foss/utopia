@@ -1,11 +1,11 @@
 #ifndef UTOPIA_CORE_GRAPH_APPLY_HH
 #define UTOPIA_CORE_GRAPH_APPLY_HH
 
-#include "graph/iterators.hh"
-#include "graph/apply.hh"
-#include "apply.hh"             // for Shuffle enum
-#include "state.hh"             // for Update enum
-#include "zip.hh"
+#include "iterators.hh"
+#include "apply.hh"
+#include "../apply.hh"             // for Shuffle enum
+#include "../state.hh"             // for Update enum
+#include "../zip.hh"
 
 namespace Utopia {
 
