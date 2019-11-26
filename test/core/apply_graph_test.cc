@@ -158,7 +158,8 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_manual_rule_shuffle, G,
             state.v_prop = 1;
             return state;
         },
-        G::g
+        G::g,
+        G::rng
     );
 }
 
