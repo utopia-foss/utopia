@@ -4,7 +4,7 @@
 #include <type_traits>
 #include <boost/graph/graph_traits.hpp>
 
-#include "iterators.hh"
+#include "iterator.hh"
 #include "apply.hh"
 #include "../apply.hh"             // for Shuffle enum
 #include "../state.hh"             // for Update enum
