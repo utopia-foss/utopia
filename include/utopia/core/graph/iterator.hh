@@ -44,7 +44,7 @@ enum class IterateOver {
 };
 
 
-namespace Graph
+namespace GraphUtil
 {
 
 /// Get an iterator pair over selected graph entities
@@ -123,7 +123,8 @@ decltype(auto) iterator_pair(EntityDesc e, const Graph& g){
  */
 template<IterateOver iterate_over, typename Graph>
 decltype(auto) range(const Graph& g){
-    return boost::make_iterator_range(Graph::iterator_pair<iterate_over>(g));
+    return boost::make_iterator_range(
+                GraphUtil::iterator_pair<iterate_over>(g));
 }
 
 
@@ -150,7 +151,8 @@ decltype(auto) range(const Graph& g){
  */
 template<IterateOver iterate_over, typename Graph, typename EntityDesc>
 decltype(auto) range(EntityDesc e, const Graph& g){
-    return boost::make_iterator_range(Graph::iterator_pair<iterate_over>(e, g));
+    return boost::make_iterator_range(
+                GraphUtil::iterator_pair<iterate_over>(e, g));
 }
 
 // end group GraphIterators
