@@ -41,7 +41,7 @@ void _apply_async(Iter it_begin, Iter it_end, Graph&& g, Rule&& rule)
 
 
 template<typename Iter, typename Graph, typename Rule>
-void _apply_sync(Iter it, Iter it_end, Graph&& g, const Rule& rule)
+void _apply_sync(Iter it, Iter it_end, Graph&& g, Rule&& rule)
 {
     // initialize the state cache
     std::vector<decltype(g[*it].state)> state_cache;
@@ -50,7 +50,7 @@ void _apply_sync(Iter it, Iter it_end, Graph&& g, const Rule& rule)
     // apply the rule
     std::transform(it, it_end,
                 std::back_inserter(state_cache),
-                rule);
+                std::forward<Rule>(rule));
 
     // move the cache
     auto counter = 0u;

@@ -63,6 +63,7 @@ BOOST_FIXTURE_TEST_CASE(get_iterator_pair, TestGraph)
 {
     // .. Vertices
     {
+        [[maybe_unused]] // because it_end is not used 
         auto [it, it_end] = GraphUtil::iterator_pair<IterateOver::vertices>(g);
         for (auto [v, v_end] = boost::vertices(g); v!=v_end; ++v){
             BOOST_TEST(*it == *v);
@@ -72,6 +73,7 @@ BOOST_FIXTURE_TEST_CASE(get_iterator_pair, TestGraph)
 
     // .. Edges
     {
+        [[maybe_unused]] // because it_end is not used 
         auto [it, it_end] = GraphUtil::iterator_pair<IterateOver::edges>(g);
         for (auto [e, e_end] = boost::edges(g); e!=e_end; ++e){
             BOOST_TEST(*it == *e);
@@ -84,6 +86,7 @@ BOOST_FIXTURE_TEST_CASE(get_iterator_pair, TestGraph)
     VertexDesc v = 2;
 
     {
+        [[maybe_unused]] // because it_end is not used 
         auto [it, it_end] = GraphUtil::iterator_pair<IterateOver::neighbors>(v, g);
         for (auto [nb, nb_end] = boost::adjacent_vertices(v, g); nb!=nb_end; ++nb){
             BOOST_TEST(*it == *nb);
@@ -93,6 +96,7 @@ BOOST_FIXTURE_TEST_CASE(get_iterator_pair, TestGraph)
 
     // .. inverse Neighbors
     {
+        [[maybe_unused]] // because it_end is not used 
         auto [it, it_end] = GraphUtil::iterator_pair<IterateOver::neighbors>(v, g);
         for (auto [nb, nb_end] = boost::inv_adjacent_vertices(v, g); nb!=nb_end; ++nb){
             BOOST_TEST(*it == *nb);
@@ -102,6 +106,7 @@ BOOST_FIXTURE_TEST_CASE(get_iterator_pair, TestGraph)
 
     // .. in edges
     {
+        [[maybe_unused]] // because it_end is not used 
         auto [it, it_end] = GraphUtil::iterator_pair<IterateOver::in_edges>(v, g);
         for (auto [e, e_end] = boost::in_edges(v, g); e!=e_end; ++e){
             BOOST_TEST(*it == *e);
@@ -111,6 +116,7 @@ BOOST_FIXTURE_TEST_CASE(get_iterator_pair, TestGraph)
 
     // .. out edges
     {
+        [[maybe_unused]] // because it_end is not used 
         auto [it, it_end] = GraphUtil::iterator_pair<IterateOver::out_edges>(v, g);
         for (auto [e, e_end] = boost::out_edges(v, g); e!=e_end; ++e){
             BOOST_TEST(*it == *e);
@@ -125,6 +131,7 @@ BOOST_FIXTURE_TEST_CASE(get_range, TestGraph)
 {
     // .. Vertices
     {
+        [[maybe_unused]] // because it_end is not used 
         auto [it, it_end] = boost::vertices(g);
         for (auto v : range<IterateOver::vertices>(g)){
             BOOST_TEST(*it == v);
@@ -134,6 +141,7 @@ BOOST_FIXTURE_TEST_CASE(get_range, TestGraph)
 
     // .. Edges
     {
+        [[maybe_unused]] // because it_end is not used 
         auto [it, it_end] = boost::edges(g);
         for (auto e : range<IterateOver::edges>(g)){
             BOOST_TEST(*it == e);
@@ -146,6 +154,7 @@ BOOST_FIXTURE_TEST_CASE(get_range, TestGraph)
     VertexDesc v = 2;
 
     {
+        [[maybe_unused]] // because it_end is not used 
         auto [it, it_end] = boost::adjacent_vertices(v, g);
         for (auto nb : range<IterateOver::neighbors>(v, g)) {
             BOOST_TEST(*it == nb);
@@ -155,6 +164,7 @@ BOOST_FIXTURE_TEST_CASE(get_range, TestGraph)
 
     // .. inverse Neighbors
     {
+        [[maybe_unused]] // because it_end is not used 
         auto [it, it_end] = boost::inv_adjacent_vertices(v, g);
         for (auto nb : range<IterateOver::inv_neighbors>(v, g)) {
             BOOST_TEST(*it == nb);
@@ -164,6 +174,7 @@ BOOST_FIXTURE_TEST_CASE(get_range, TestGraph)
 
     // .. in edges
     {
+        [[maybe_unused]] // because it_end is not used 
         auto [it, it_end] = boost::in_edges(v, g);
         for (auto e : range<IterateOver::in_edges>(v, g)){
             BOOST_TEST(*it == e);
@@ -173,6 +184,7 @@ BOOST_FIXTURE_TEST_CASE(get_range, TestGraph)
 
     // .. out edges
     {
+        [[maybe_unused]] // because it_end is not used 
         auto [it, it_end] = boost::out_edges(v, g);
         for (auto e : range<IterateOver::out_edges>(v, g)){
             BOOST_TEST(*it == e);
