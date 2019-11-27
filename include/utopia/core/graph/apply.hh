@@ -41,7 +41,7 @@ void _apply_async(Iter it_begin, Iter it_end, Graph&& g, Rule&& rule)
 
 
 template<typename Iter, typename Graph, typename Rule>
-void _apply_sync(Iter it, Iter it_end, Graph&& g, Rule&& rule)
+void _apply_sync(Iter it, Iter it_end, Graph&& g, const Rule& rule)
 {
     // initialize the state cache
     std::vector<decltype(g[*it].state)> state_cache;
@@ -50,7 +50,7 @@ void _apply_sync(Iter it, Iter it_end, Graph&& g, Rule&& rule)
     // apply the rule
     std::transform(it, it_end,
                 std::back_inserter(state_cache),
-                std::forward<Rule>(rule));
+                rule);
 
     // move the cache
     auto counter = 0u;
@@ -149,11 +149,6 @@ template<IterateOver iterate_over,
          typename std::enable_if_t<shuffle == Shuffle::on, int> = 0>
 void apply_rule(Rule&& rule, VertexDesc parent_vertex, Graph&& g, RNG&& rng)
 {
-    // // Get types
-    // using GraphType = typename std::remove_reference_t<Graph>;
-    // using VertexDesc = typename boost::graph_traits<GraphType>
-    //                                                     ::vertex_descriptor;
-    
     // Get the iterators, create a vector with a copy because the 
     // original iterators are const, thus cannot be shuffed,
     // and shuffle them.

@@ -207,7 +207,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_manual_rule_noshuffle_sync, G,
     auto counter = 0u;
     apply_rule<IterateOver::vertices, Update::sync, Shuffle::off>(
         [this, &counter](auto v){
-            auto& state = this->G::g[v].state;
+            auto state = this->G::g[v].state;
             state.v_prop = counter;
 
             // Add all neighbors v_prop
@@ -240,7 +240,6 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_manual_rule_noshuffle_sync, G,
     for (auto i = 0u; i < boost::num_vertices(G::g); ++i){
         BOOST_TEST(G::g[boost::vertex(i, G::g)].state.v_prop 
                 == G::g_ref[boost::vertex(i, G::g_ref)].state.v_prop);
-        BOOST_TEST(G::g[boost::vertex(i, G::g)].state.v_prop == i);
     }
 }
 
