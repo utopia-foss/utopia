@@ -21,12 +21,12 @@ set(TESTS_CORE
     agent_manager_integration_test
     agent_test
     apply_test
-    apply_graph_test
     cell_manager_test
     cell_manager_integration_test
     dependency_test
     exceptions_test
     graph_test
+    graph_apply_test
     graph_creation_test
     graph_iterator_test
     grid_square_test
