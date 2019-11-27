@@ -44,22 +44,20 @@ template<typename Iter, typename Graph, typename Rule>
 void _apply_sync(Iter it, Iter it_end, Graph&& g, Rule&& rule)
 {
     // initialize the state cache
-    using State = 
-        typename std::iterator_traits<decltype(it)>::value_type::State;
-    std::vector<State> state_cache;
+    std::vector<decltype(g[*it].state)> state_cache;
     state_cache.reserve(std::distance(it, it_end));
 
     // apply the rule
     std::transform(it, it_end,
-                back_inserter(state_cache),
+                std::back_inserter(state_cache),
                 std::forward<Rule>(rule));
 
     // move the cache
-    Itertools::ZipIterator zip_it_begin(it, std::begin(state_cache));
-    Itertools::ZipIterator zip_it_end(it_end, std::end(state_cache));
-    for (auto zip_it = zip_it_begin; zip_it != zip_it_end; ++zip_it){
-        auto [entity, state_cached] = *zip_it;
-        g[entity].state = std::move(state_cached);
+    auto counter = 0u;
+    for (auto entity : boost::make_iterator_range(it, it_end)){
+        g[entity].state = std::move(state_cache[counter]);
+        
+        ++counter;
     }
 }
 
@@ -113,6 +111,65 @@ void apply_rule(Rule&& rule, Graph&& g, RNG&& rng)
     }
 }
 
+
+
+
+template<IterateOver iterate_over,
+         Update mode,
+         Shuffle shuffle = Shuffle::on,
+         typename Graph, 
+         typename Rule,
+         typename VertexDesc = typename boost::graph_traits<
+            std::remove_reference_t<Graph>>::vertex_descriptor, 
+         typename std::enable_if_t<shuffle == Shuffle::off, int> = 0>
+void apply_rule(Rule&& rule, 
+                VertexDesc parent_vertex,
+                Graph&& g)
+{
+    auto [it, it_end] = Utopia::GraphUtil::iterator_pair<iterate_over>
+                            (parent_vertex, g);
+
+    if constexpr (mode == Update::sync) {
+        _apply_sync(it, it_end, g, rule);
+    }
+    else if constexpr (mode == Update::async){
+        _apply_async(it, it_end, g, rule);
+    }
+}
+
+
+template<IterateOver iterate_over,
+         Update mode,
+         Shuffle shuffle = Shuffle::on,
+         typename Graph, 
+         typename Rule,
+         typename RNG,
+         typename VertexDesc = typename boost::graph_traits<
+            std::remove_reference_t<Graph>>::vertex_descriptor,
+         typename std::enable_if_t<shuffle == Shuffle::on, int> = 0>
+void apply_rule(Rule&& rule, VertexDesc parent_vertex, Graph&& g, RNG&& rng)
+{
+    // // Get types
+    // using GraphType = typename std::remove_reference_t<Graph>;
+    // using VertexDesc = typename boost::graph_traits<GraphType>
+    //                                                     ::vertex_descriptor;
+    
+    // Get the iterators, create a vector with a copy because the 
+    // original iterators are const, thus cannot be shuffed,
+    // and shuffle them.
+    auto [it, it_end] = Utopia::GraphUtil::iterator_pair<iterate_over>
+                            (parent_vertex, g);
+    std::vector<VertexDesc> it_shuffled(it, it_end);
+    std::shuffle(std::begin(it_shuffled), std::end(it_shuffled), rng);
+
+    if constexpr (mode == Update::sync) {
+        _apply_sync(std::begin(it_shuffled), std::end(it_shuffled), g, rule);
+    }
+    else if constexpr (mode == Update::async){
+        // Apply the rule to each element asynchronously
+        _apply_async(std::begin(it_shuffled), std::end(it_shuffled), g, rule);
+    }
+}
 
 /**
  *  \} // endgroup Rules
