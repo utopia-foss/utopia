@@ -16,12 +16,11 @@ namespace Utopia {
  */
 template<typename StateType,
          Update update_mode=Update::manual,
-         bool use_def_state_constr=false,
          typename GraphEntityTags=EmptyTag,
          template<class> class CustomLinkContainers=NoCustomLinks>
 using GraphEntityTraits = EntityTraits<StateType,
                                 update_mode,
-                                use_def_state_constr,
+                                false,          // use_def_state_constr
                                 GraphEntityTags,
                                 CustomLinkContainers>;
 
